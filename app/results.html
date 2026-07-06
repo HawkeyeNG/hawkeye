@@ -31,6 +31,18 @@
       padding: 12px 14px; font-size: 0.92rem; margin: 16px 0;
     }
     .updated { color: var(--muted); font-size: 0.82rem; }
+    /* at-a-glance charts (no chart lib — conic donut + div bars) */
+    .glance { display: grid; grid-template-columns: 200px 1fr; gap: 26px; align-items: center; }
+    @media (max-width: 620px) { .glance { grid-template-columns: 1fr; } }
+    .gdonut { width: 170px; height: 170px; border-radius: 50%; position: relative; margin: 0 auto; }
+    .gdonut::after { content: attr(data-label); position: absolute; inset: 38px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.72rem; color: var(--muted); padding: 12px; }
+    .gbar-row { display: grid; grid-template-columns: 110px 1fr 46px; gap: 8px; align-items: center; font-size: 0.82rem; margin: 5px 0; }
+    .gbar-row .tr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gbar { height: 14px; border-radius: 999px; background: #eef2ef; overflow: hidden; }
+    .gbar > i { display: block; height: 100%; background: var(--green); border-radius: 999px; }
+    .gbar-row b { text-align: right; font-size: 0.78rem; }
+    .glegend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8rem; color: var(--muted); margin-top: 8px; justify-content: center; }
+    .glegend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; margin-right: 4px; }
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -63,6 +75,7 @@
         <a href="integrity.html">Election Integrity</a>
         <a href="map-unit.html">Map a Polling Unit</a>
         <a href="incidents.html">Report an Incident</a>
+        <a href="candidates.html">2027 Candidates</a>
         <a href="political.html">Political Data</a>
         <a href="how.html">How Hawkeye Works</a>
         <a href="guide.html">Observer Guide</a>
@@ -102,6 +115,11 @@
         <span><i style="background:#e9e9e7"></i> Awaiting reports</span>
         <span><i style="background:#e2ecdf"></i> Reporting — leader's emblem shown</span>
       </p>
+    </div>
+
+    <div class="card">
+      <h2>Data at a glance</h2>
+      <div id="glance" class="glance"><p class="meta">Charts appear as soon as reports arrive.</p></div>
     </div>
 
     <div class="card">
@@ -226,6 +244,28 @@
 
     const REGION_WORD = { state: 'state', lga: 'state', senatorial: 'senatorial district', federal: 'federal constituency' };
 
+    // "Data at a glance": vote-share donut + top regions by units reporting.
+    function renderGlance(data, word) {
+      const el = document.getElementById('glance');
+      const total = data.national.reduce((s, r) => s + r.votes, 0);
+      if (!total) { el.innerHTML = '<p class="meta">Charts appear as soon as reports arrive.</p>'; return; }
+      let acc = 0;
+      const stops = data.national.map((r) => {
+        const from = (acc / total) * 100; acc += r.votes;
+        return `${color(r.party)} ${from}% ${(acc / total) * 100}%`;
+      }).join(', ');
+      const legend = data.national.slice(0, 6).map((r) =>
+        `<span><i style="background:${color(r.party)}"></i>${r.party} ${total ? ((r.votes / total) * 100).toFixed(1) : 0}%</span>`).join('');
+      const top = [...data.regions].sort((a, b) => b.unitsReporting - a.unitsReporting).slice(0, 8);
+      const max = top[0]?.unitsReporting || 1;
+      const bars = top.map((r) => `<div class="gbar-row"><span class="tr" title="${r.region}">${r.region}</span>
+        <div class="gbar"><i style="width:${(r.unitsReporting / max) * 100}%"></i></div><b>${r.unitsReporting}</b></div>`).join('');
+      el.innerHTML = `
+        <div><div class="gdonut" data-label="vote share" style="background:conic-gradient(${stops})"></div>
+          <div class="glegend">${legend}</div></div>
+        <div><p class="hint" style="margin:0 0 6px">Most-reporting ${word}s (units)</p>${bars}</div>`;
+    }
+
     async function refresh() {
       const contest = document.getElementById('sel-contest').value || 'PRES';
       const data = await fetch(`/api/national/${contest}`).then((r) => r.json());
@@ -241,6 +281,7 @@
       document.getElementById('led-col').textContent = `${plural[0].toUpperCase()}${plural.slice(1)} led`;
       renderMap(data);
       renderBoard(data);
+      renderGlance(data, word);
       document.getElementById('updated').textContent =
         `${data.unitsReporting} unit(s) reporting · updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
     }

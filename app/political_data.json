@@ -153,7 +153,7 @@
  },
  "race2027": {
   "asOf": "2026-07-06",
-  "note": "Major declared candidates so far — the field can change until INEC closes nominations.",
+  "note": "Declared candidates so far — the field can change until INEC closes nominations (expected 11 July 2026).",
   "election": "Presidential · 2027 general election",
   "candidates": [
    {
@@ -161,25 +161,84 @@
     "party": "APC",
     "initials": "BAT",
     "line": "Incumbent president seeking a second term; APGA has endorsed the bid.",
-    "incumbent": true
+    "incumbent": true,
+    "home": "Lagos (South-West)",
+    "bids": "2nd bid — incumbent",
+    "status": "Nominee; APGA endorsement"
    },
    {
     "name": "Atiku Abubakar",
     "party": "ADC",
     "initials": "AA",
-    "line": "Former vice-president on a fourth presidential run; candidacy under court challenge."
+    "line": "Former vice-president on a fourth presidential run; candidacy under court challenge.",
+    "home": "Adamawa (North-East)",
+    "bids": "4th bid",
+    "status": "Candidacy under court challenge"
    },
    {
     "name": "Peter Obi",
     "party": "NDC",
     "initials": "PO",
-    "line": "Second presidential run, now on the NDC platform, backed by the Obidient movement."
+    "line": "Second presidential run, now on the NDC platform, backed by the Obidient movement.",
+    "home": "Anambra (South-East)",
+    "bids": "2nd bid — placed 3rd in 2023",
+    "status": "NDC platform; Obidient movement"
    },
    {
     "name": "Goodluck Jonathan",
     "party": "PDP",
     "initials": "GJ",
-    "line": "Former president attempting a return; nomination disputed within the party."
+    "line": "Former president attempting a return; nomination disputed within the party.",
+    "home": "Bayelsa (South-South)",
+    "bids": "Return bid — president 2010–2015",
+    "status": "Nomination disputed by Wike faction"
+   }
+  ],
+  "minors": [
+   {
+    "name": "Seyi Makinde",
+    "party": "APM",
+    "meta": "Sitting Governor, Oyo — defected from PDP May 2026"
+   },
+   {
+    "name": "Yusuf Datti Baba-Ahmed",
+    "party": "LP",
+    "meta": "Senator; 2023 LP VP candidate (Kaduna)"
+   },
+   {
+    "name": "Prince Adewole Adebayo",
+    "party": "SDP",
+    "meta": "Lawyer; 2023 SDP candidate (Ondo)"
+   },
+   {
+    "name": "Anita Zugwai-Chukwu",
+    "party": "YPP",
+    "meta": "YPP standard-bearer (Kaduna)"
+   },
+   {
+    "name": "Esther Okereke",
+    "party": "NRM",
+    "meta": "Actress and producer (Imo)"
+   },
+   {
+    "name": "Aliyu Abbas",
+    "party": "ADP",
+    "meta": "ADP nominee"
+   },
+   {
+    "name": "Gbenga Hashim",
+    "party": "Accord",
+    "meta": "Accord standard-bearer"
+   },
+   {
+    "name": "Sunday Adenuga",
+    "party": "BOOT",
+    "meta": "BOOT nominee"
+   },
+   {
+    "name": "Adekunle Rufai Omoaje",
+    "party": "AA",
+    "meta": "AA flag bearer"
    }
   ]
  }

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /review.html
+Disallow: /train.html
+Disallow: /preview.html
+Disallow: /api/
+
+Sitemap: https://hawkeye.com.ng/sitemap.xml

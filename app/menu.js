@@ -39,6 +39,40 @@
     if (nav.children.length) btn.parentNode.insertBefore(nav, btn);
   }
 
+  // Group the (15-item) menu into scannable sections. Built dynamically from
+  // the page's own links so page HTML stays a flat, JS-free fallback list.
+  const GROUPS = [
+    ['Take part', ['observe.html', 'collation.html', 'incidents.html', 'map-unit.html']],
+    ['Live data', ['results.html', 'dashboard.html', 'candidates.html', 'political.html']],
+    ['Trust & verify', ['ledger.html', 'integrity.html']],
+    ['Learn', ['how.html', 'guide.html', 'faq.html']],
+    ['About', ['about.html', 'privacy.html']],
+  ];
+  if (panel && !panel.querySelector('.menu-group')) {
+    const links = new Map([...panel.querySelectorAll('a')].map((a) => [a.getAttribute('href'), a]));
+    for (const [label, hrefs] of GROUPS) {
+      const members = hrefs.map((h) => links.get(h)).filter(Boolean);
+      if (!members.length) continue;
+      const g = document.createElement('div');
+      g.className = 'menu-group';
+      g.textContent = label;
+      panel.appendChild(g);
+      for (const a of members) { panel.appendChild(a); links.delete(a.getAttribute('href')); }
+    }
+    for (const a of links.values()) panel.appendChild(a); // anything unmapped keeps working
+  }
+
+  // Accessibility: skip-to-content link, first in the tab order.
+  const main = document.querySelector('main');
+  if (main && !document.querySelector('.skip-link')) {
+    if (!main.id) main.id = 'main';
+    const skip = document.createElement('a');
+    skip.className = 'skip-link';
+    skip.href = `#${main.id}`;
+    skip.textContent = 'Skip to content';
+    document.body.prepend(skip);
+  }
+
   // Shared helpers + canonical footer (one source of truth for every page).
   window.timeAgo = (ts) => {
     const d = new Date(ts); const diff = (Date.now() - d.getTime()) / 1000;

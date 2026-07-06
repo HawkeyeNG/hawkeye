@@ -153,8 +153,8 @@
  },
  "race2027": {
   "asOf": "2026-07-06",
-  "note": "Declared candidates so far — the field can change until INEC closes nominations (expected 11 July 2026).",
-  "election": "Presidential · 2027 general election",
+  "note": "Declared candidates so far \u2014 the field can change until INEC closes nominations (expected 11 July 2026).",
+  "election": "Presidential \u00b7 2027 general election",
   "candidates": [
    {
     "name": "Bola Ahmed Tinubu",
@@ -163,8 +163,9 @@
     "line": "Incumbent president seeking a second term; APGA has endorsed the bid.",
     "incumbent": true,
     "home": "Lagos (South-West)",
-    "bids": "2nd bid — incumbent",
-    "status": "Nominee; APGA endorsement"
+    "bids": "2nd bid \u2014 incumbent",
+    "status": "Nominee; APGA endorsement",
+    "photo": "photos/candidates/tinubu.jpg"
    },
    {
     "name": "Atiku Abubakar",
@@ -173,7 +174,8 @@
     "line": "Former vice-president on a fourth presidential run; candidacy under court challenge.",
     "home": "Adamawa (North-East)",
     "bids": "4th bid",
-    "status": "Candidacy under court challenge"
+    "status": "Candidacy under court challenge",
+    "photo": "photos/candidates/atiku.jpg"
    },
    {
     "name": "Peter Obi",
@@ -181,8 +183,9 @@
     "initials": "PO",
     "line": "Second presidential run, now on the NDC platform, backed by the Obidient movement.",
     "home": "Anambra (South-East)",
-    "bids": "2nd bid — placed 3rd in 2023",
-    "status": "NDC platform; Obidient movement"
+    "bids": "2nd bid \u2014 placed 3rd in 2023",
+    "status": "NDC platform; Obidient movement",
+    "photo": "photos/candidates/obi.jpg"
    },
    {
     "name": "Goodluck Jonathan",
@@ -190,25 +193,28 @@
     "initials": "GJ",
     "line": "Former president attempting a return; nomination disputed within the party.",
     "home": "Bayelsa (South-South)",
-    "bids": "Return bid — president 2010–2015",
-    "status": "Nomination disputed by Wike faction"
+    "bids": "Return bid \u2014 president 2010\u20132015",
+    "status": "Nomination disputed by Wike faction",
+    "photo": "photos/candidates/jonathan.jpg"
    }
   ],
   "minors": [
    {
     "name": "Seyi Makinde",
     "party": "APM",
-    "meta": "Sitting Governor, Oyo — defected from PDP May 2026"
+    "meta": "Sitting Governor, Oyo \u2014 defected from PDP May 2026"
    },
    {
     "name": "Yusuf Datti Baba-Ahmed",
     "party": "LP",
-    "meta": "Senator; 2023 LP VP candidate (Kaduna)"
+    "meta": "Senator; 2023 LP VP candidate (Kaduna)",
+    "photo": "photos/candidates/datti.jpg"
    },
    {
     "name": "Prince Adewole Adebayo",
     "party": "SDP",
-    "meta": "Lawyer; 2023 SDP candidate (Ondo)"
+    "meta": "Lawyer; 2023 SDP candidate (Ondo)",
+    "photo": "photos/candidates/adebayo.jpg"
    },
    {
     "name": "Anita Zugwai-Chukwu",
@@ -240,6 +246,7 @@
     "party": "AA",
     "meta": "AA flag bearer"
    }
-  ]
+  ],
+  "photoCredit": "Portraits via Wikipedia / Wikimedia Commons"
  }
 }

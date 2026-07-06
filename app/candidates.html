@@ -104,14 +104,25 @@
     const PC = { APC:'#2e7d32', PDP:'#c62828', LP:'#388e3c', NNPP:'#1565c0', APGA:'#f9a825', SDP:'#5e35b1', ADC:'#00897b', YPP:'#ef6c00', APM:'#283593', NDC:'#6a1b9a', NRM:'#827717', ADP:'#455a64', AA:'#3e2723', BOOT:'#37474f', Accord:'#00838f' };
     const color = (p) => PC[p] || '#9aa7a0';
     (async () => {
-      const data = await fetch('political_data.json').then((r) => r.json());
+      const [data, LOGOS] = await Promise.all([
+        fetch('political_data.json').then((r) => r.json()),
+        fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
+      ]);
       const r = data.race2027;
       if (!r) return;
+      const av = (c) => c.photo
+        ? `<span class="av"><img src="${c.photo}" alt="${c.name}" loading="lazy"
+             style="width:100%;height:100%;object-fit:cover;border-radius:50%"
+             onerror="this.parentNode.textContent='${c.initials || ''}'"></span>`
+        : `<span class="av">${c.initials || ''}</span>`;
+      const flag = (p, sz = 15) => LOGOS[p]
+        ? `<img src="${LOGOS[p]}" alt="" style="width:${sz}px;height:${sz}px;border-radius:50%;object-fit:contain;background:#fff;vertical-align:-2px;margin-right:4px">`
+        : '';
       document.getElementById('race-note').textContent = `${r.election}. ${r.note} (as of ${r.asOf})`;
       document.getElementById('race').innerHTML = r.candidates.map((c) => `
         <div class="cand" style="--pc:${color(c.party)}">
-          <div class="row1"><span class="av">${c.initials}</span>
-            <div><span class="pill">${c.party}</span><h3>${c.name}${c.incumbent ? '<span class="inc">Incumbent</span>' : ''}</h3></div>
+          <div class="row1">${av(c)}
+            <div><span class="pill">${flag(c.party, 13)}${c.party}</span><h3>${c.name}${c.incumbent ? '<span class="inc">Incumbent</span>' : ''}</h3></div>
           </div>
           <p>${c.line}</p>
           <dl>
@@ -122,12 +133,18 @@
         </div>`).join('');
       document.getElementById('compare').innerHTML = r.candidates.map((c) => `
         <tr><td><strong>${c.name}</strong></td>
-        <td><span style="color:${color(c.party)};font-weight:700">${c.party}</span></td>
+        <td>${flag(c.party)}<span style="color:${color(c.party)};font-weight:700">${c.party}</span></td>
         <td>${c.home || '—'}</td><td>${c.bids || '—'}</td><td>${c.status || '—'}</td></tr>`).join('');
       document.getElementById('minors').innerHTML = (r.minors || []).map((m) => `
         <div class="minor" style="--pc:${color(m.party)}">
-          <em>${m.party}</em><strong>${m.name}</strong><span>${m.meta}</span>
+          <em>${flag(m.party, 13)}${m.party}</em><strong>${m.name}</strong><span>${m.meta}</span>
         </div>`).join('');
+      if (r.photoCredit) {
+        const p = document.createElement('p');
+        p.className = 'hint';
+        p.textContent = r.photoCredit;
+        document.querySelector('main').appendChild(p);
+      }
     })();
   </script>
   <script src="tg.js?v=62"></script>

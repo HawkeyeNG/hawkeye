@@ -4,11 +4,14 @@
 //   makeLimiter     — fixed-window per-IP rate limiter for abuse-prone endpoints
 
 // CSP notes: pages use inline <script>/<style> (static files, no templating — so
-// 'unsafe-inline', not nonces). Leaflet comes from unpkg; OSM tiles are images;
-// opencv.js WASM needs 'wasm-unsafe-eval'. frame-ancestors 'none' = no clickjacking.
+// 'unsafe-inline', not nonces). Leaflet is self-hosted; OSM tiles are images;
+// opencv.js WASM needs 'wasm-unsafe-eval'. telegram.org hosts the Mini App SDK,
+// and Telegram Web (web.telegram.org) embeds the site in an iframe — so
+// frame-ancestors allows exactly that origin (no X-Frame-Options: it can't
+// express an allow-list and would override this).
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://unpkg.com",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://unpkg.com https://telegram.org",
   "style-src 'self' 'unsafe-inline' https://unpkg.com",
   "img-src 'self' data: blob: https://*.openstreetmap.org https://tile.openstreetmap.org",
   "media-src 'self' blob:",
@@ -18,14 +21,13 @@ const CSP = [
   "worker-src 'self' blob:",
   "base-uri 'self'",
   "form-action 'self'",
-  "frame-ancestors 'none'",
+  "frame-ancestors 'self' https://web.telegram.org",
 ].join('; ');
 
 export function securityHeaders(_req, res, next) {
   res.setHeader('Content-Security-Policy', CSP);
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   // The PWA itself needs camera + GPS (same origin); everything else off.
   res.setHeader('Permissions-Policy', 'camera=(self), geolocation=(self), microphone=(), payment=(), usb=()');

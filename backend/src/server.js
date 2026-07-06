@@ -47,6 +47,7 @@ app.use(express.json({ limit: '100kb' }));
 app.use('/api/observers/register', makeLimiter({ windowMs: 600_000, max: 600, name: 'register' }));
 app.use('/api/observers/verify', makeLimiter({ windowMs: 600_000, max: 800, name: 'verify' }));
 app.use('/api/observers/resume', makeLimiter({ windowMs: 600_000, max: 1500, name: 'resume' }));
+app.use('/api/observers/telegram-verify', makeLimiter({ windowMs: 600_000, max: 800, name: 'tg-verify' }));
 app.use('/api/admin', makeLimiter({ windowMs: 600_000, max: 60, name: 'admin' })); // owner-only
 app.use('/api/submissions', makeLimiter({ windowMs: 600_000, max: 500, name: 'submissions' }));
 app.use('/api/incidents', makeLimiter({ windowMs: 600_000, max: 300, name: 'incidents' }));

@@ -7,6 +7,7 @@ import { validatePublicKeyJwk } from '../services/signatures.js';
 import { sendOtp } from '../services/sms.js';
 import { notifyChat, notifyMaster, chatIdByHash } from '../services/notify.js';
 import { noteRegistration } from '../services/integrity.js';
+import { verifyWebAppPayload, parseJsonField } from '../services/telegramWebApp.js';
 
 export const observersRouter = Router();
 
@@ -104,6 +105,69 @@ observersRouter.post('/verify', (req, res) => {
   notifyChat(chatId,
     `✅ Hawkeye verification complete.\nObserver ID: ${observer.id}\nIdentity hash: ${hash.slice(0, 16)}…\nRegistered: ${when} UTC\nThis device is now saved — you won't need to sign up again on it.`);
   notifyMaster(`${isNew ? 'NEW' : 'repeat'} phone verified · observer #${observer.id} · ${hash.slice(0, 12)}…`);
+  if (isNew) { try { noteRegistration(); } catch { /* informational only */ } }
+
+  const token = jwt.sign({ sub: String(observer.id) }, config.jwtSecret, { expiresIn: '30d' });
+  res.json({ ok: true, observerId: observer.id, token });
+});
+
+// Telegram Mini App sign-in: no OTP. Telegram itself vouches for the phone —
+// the app calls WebApp.requestContact(), and Telegram hands back a payload
+// signed with the bot token containing the account's verified phone number.
+// We verify BOTH signatures (initData and the contact payload), require the
+// contact to belong to the same Telegram user, then mint the same observer
+// identity the OTP path would (same phone hash ⇒ same observer row either way).
+observersRouter.post('/telegram-verify', (req, res) => {
+  const jwk = req.body?.publicKeyJwk;
+  if (!validatePublicKeyJwk(jwk)) return res.status(400).json({ error: 'invalid_public_key' });
+
+  const init = verifyWebAppPayload(String(req.body?.initData || ''));
+  if (!init) return res.status(401).json({ error: 'tg_initdata_invalid' });
+  const tgUser = parseJsonField(init.user);
+  if (!tgUser?.id) return res.status(401).json({ error: 'tg_user_missing' });
+
+  // contact payload: the SDK returns the raw signed querystring (sometimes
+  // nested under .response) — accept a string only; anything unverifiable
+  // falls back to the SMS flow client-side.
+  const rawContact = typeof req.body?.contactResponse === 'string'
+    ? req.body.contactResponse
+    : req.body?.contactResponse?.response;
+  const contactParams = verifyWebAppPayload(String(rawContact || ''), 600);
+  const contact = contactParams && parseJsonField(contactParams.contact);
+  if (!contact?.phone_number) return res.status(422).json({ error: 'tg_phone_unverified' });
+  if (contact.user_id && Number(contact.user_id) !== Number(tgUser.id)) {
+    return res.status(401).json({ error: 'tg_user_mismatch' });
+  }
+
+  const digits = String(contact.phone_number).replace(/[^\d]/g, '');
+  const phone = normalizePhone(digits.startsWith('234') ? `+${digits}` : digits);
+  if (!phone) return res.status(400).json({ error: 'not_a_nigerian_number' });
+
+  const hash = phoneHash(phone);
+  const jwkJson = JSON.stringify(jwk);
+  const deviceId = String(req.headers['x-device-id'] || '').slice(0, 64) || null;
+  let observer = db.prepare('SELECT * FROM observers WHERE phone_hash = ?').get(hash);
+  let isNew = false;
+  if (!observer) {
+    isNew = true;
+    const info = db
+      .prepare('INSERT INTO observers (phone_hash, public_key_jwk, device_id, created_at) VALUES (?, ?, ?, ?)')
+      .run(hash, jwkJson, deviceId, Date.now());
+    observer = db.prepare('SELECT * FROM observers WHERE id = ?').get(info.lastInsertRowid);
+  } else {
+    // Telegram's contact-share proves control of the phone, same as a fresh OTP.
+    db.prepare('UPDATE observers SET public_key_jwk = ?, device_id = ? WHERE id = ?')
+      .run(jwkJson, deviceId, observer.id);
+  }
+
+  // Bind the Telegram chat for alerts/receipts (contact share implies the user
+  // has the bot conversation open, so messages will deliver).
+  db.prepare('INSERT OR REPLACE INTO telegram_links (phone_hash, chat_id, created_at) VALUES (?, ?, ?)')
+    .run(hash, tgUser.id, Date.now());
+
+  notifyChat(tgUser.id,
+    `✅ Signed in to Hawkeye via Telegram.\nObserver ID: ${observer.id}\nNo codes needed on this device again.`);
+  notifyMaster(`${isNew ? 'NEW' : 'repeat'} Telegram sign-in · observer #${observer.id} · ${hash.slice(0, 12)}…`);
   if (isNew) { try { noteRegistration(); } catch { /* informational only */ } }
 
   const token = jwt.sign({ sub: String(observer.id) }, config.jwtSecret, { expiresIn: '30d' });

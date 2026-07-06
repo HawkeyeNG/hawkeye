@@ -18,8 +18,9 @@
       tg.setHeaderColor('#00251a');
       tg.setBackgroundColor('#f7f8f6');
     } catch (e) { /* older clients */ }
-    // Future: tg.initDataUnsafe.user gives a Telegram-verified identity that can
-    // replace phone-OTP for registration (validated server-side via initData hash).
+    // Pages that offer Telegram-native flows (OTP-free sign-in in app.js) hook this.
+    window.HawkeyeTG = tg;
+    document.dispatchEvent(new CustomEvent('hawkeye-tg-ready'));
   };
   document.head.appendChild(s);
 })();

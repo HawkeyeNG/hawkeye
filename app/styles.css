@@ -132,6 +132,10 @@ main.wrap { max-width: 840px; }
 .sec-sub { color: var(--muted); max-width: 42rem; margin: 0 0 40px; }
 section.how-sec { padding: 72px 0; }
 section.how-sec h2 { font-size: 1.9rem; margin: 0 0 12px; }
+/* marketing-section headings are plain blocks (global h2 is flex, which
+   breaks text-align:center and forces multi-line wrapping quirks) */
+.how-sec h2, .trust h2, .cta-band h2 { display: block; }
+.how-sec .sec-sub { max-width: none; }
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
 .step { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 22px; }
 .step .num {
@@ -353,6 +357,9 @@ button.menu-btn:hover { background: rgba(255, 255, 255, 0.12); filter: none; }
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
+  max-height: calc(100vh - 110px);
+  max-height: calc(100dvh - 110px);
+  overflow-y: auto;
   min-width: 254px;
   background: #fff;
   border: 1px solid var(--line);
@@ -387,6 +394,8 @@ button.menu-btn:hover { background: rgba(255, 255, 255, 0.12); filter: none; }
   border-top: 1px solid #eef2ef;
 }
 .menu-group:first-child { border-top: none; }
+@media (min-width: 900px) { .menu-panel .tp-hide { display: none; } }
+.inec-link { color: inherit; font-weight: inherit; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 .skip-link {
   position: absolute; left: -9999px; top: 0; z-index: 200;
   background: var(--gold); color: var(--ink); font-weight: 700;

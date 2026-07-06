@@ -25,7 +25,7 @@
 
   // Desktop: a horizontal quick-nav of primary links (the ☰ still holds the full
   // list). Built from the panel so page HTML needs no changes. CSS shows it ≥900px.
-  const PRIMARY = ['observe.html', 'results.html', 'integrity.html', 'map-unit.html', 'how.html'];
+  const PRIMARY = ['map-unit.html', 'incidents.html', 'how.html', 'observe.html'];
   if (panel && btn && !document.querySelector('.desktop-primary')) {
     const nav = document.createElement('nav');
     nav.className = 'desktop-primary';
@@ -41,25 +41,34 @@
 
   // Group the (15-item) menu into scannable sections. Built dynamically from
   // the page's own links so page HTML stays a flat, JS-free fallback list.
+  // Footer-only pages: not in the ☰ menu (menu stays short); the canonical
+  // footer below carries them on every page.
+  const FOOTER_ONLY = ['about.html', 'how.html', 'privacy.html', 'faq.html', 'guide.html'];
+  // "Take part" is hidden on desktop (≥900px) — its links live in the header there.
   const GROUPS = [
-    ['Take part', ['observe.html', 'collation.html', 'incidents.html', 'map-unit.html']],
-    ['Live data', ['results.html', 'dashboard.html', 'candidates.html', 'political.html']],
+    ['Take part', ['observe.html', 'collation.html', 'incidents.html', 'map-unit.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html']],
-    ['Learn', ['how.html', 'guide.html', 'faq.html']],
-    ['About', ['about.html', 'privacy.html']],
+    ['Live data', ['results.html', 'dashboard.html', 'candidates.html', 'political.html']],
   ];
   if (panel && !panel.querySelector('.menu-group')) {
     const links = new Map([...panel.querySelectorAll('a')].map((a) => [a.getAttribute('href'), a]));
-    for (const [label, hrefs] of GROUPS) {
+    for (const [label, hrefs, tp] of GROUPS) {
       const members = hrefs.map((h) => links.get(h)).filter(Boolean);
       if (!members.length) continue;
       const g = document.createElement('div');
-      g.className = 'menu-group';
+      g.className = 'menu-group' + (tp ? ' tp-hide' : '');
       g.textContent = label;
       panel.appendChild(g);
-      for (const a of members) { panel.appendChild(a); links.delete(a.getAttribute('href')); }
+      for (const a of members) {
+        if (tp) a.classList.add('tp-hide');
+        panel.appendChild(a);
+        links.delete(a.getAttribute('href'));
+      }
     }
-    for (const a of links.values()) panel.appendChild(a); // anything unmapped keeps working
+    for (const [href, a] of links) {
+      if (FOOTER_ONLY.includes(href)) a.remove();
+      else panel.appendChild(a); // anything unmapped keeps working
+    }
   }
 
   // Accessibility: skip-to-content link, first in the tab order.
@@ -85,10 +94,41 @@
   };
   const foot = document.querySelector('.gov-footer nav');
   if (foot) {
-    foot.innerHTML = '<a href="observe.html">Report a Result</a><a href="results.html">Live Results</a>'
-      + '<a href="how.html">How It Works</a><a href="ledger.html">Verify the Ledger</a><a href="faq.html">FAQ</a>'
-      + '<a href="about.html">About &amp; Contact</a><a href="privacy.html">Privacy</a>';
+    foot.innerHTML = '<a href="about.html">About</a><a href="how.html">How Hawkeye Works</a>'
+      + '<a href="privacy.html">Privacy Policy</a><a href="faq.html">FAQ</a>'
+      + '<a href="guide.html">Observer Guide</a>';
   }
+
+  // Every visible "INEC" mention links to the commission's site. Runs over
+  // static text now and once more after async content settles.
+  const INEC_URL = 'https://www.inecnigeria.org';
+  function linkInec(root) {
+    const skip = /^(A|SCRIPT|STYLE|TITLE|TEXTAREA|INPUT|SELECT|OPTION|CODE)$/;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (/\bINEC\b/.test(n.nodeValue) && n.parentElement && !skip.test(n.parentElement.tagName)
+        && !n.parentElement.closest('a, svg')) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const n of nodes) {
+      const frag = document.createDocumentFragment();
+      const parts = n.nodeValue.split(/\b(INEC)\b/);
+      for (const part of parts) {
+        if (part === 'INEC') {
+          const a = document.createElement('a');
+          a.href = INEC_URL;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.className = 'inec-link';
+          a.textContent = 'INEC';
+          frag.appendChild(a);
+        } else if (part) frag.appendChild(document.createTextNode(part));
+      }
+      n.parentNode.replaceChild(frag, n);
+    }
+  }
+  linkInec(document.body);
+  setTimeout(() => linkInec(document.body), 2500);
 
   // Sign out — shown only when signed in. Clears the token AND the device key so
   // auto-resume can't silently sign back in; sends the user to a fresh sign-up.

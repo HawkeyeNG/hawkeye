@@ -24,6 +24,18 @@ import path from 'node:path';
 const app = express();
 app.set('trust proxy', true);
 app.disable('x-powered-by');
+
+// Origin lock (dormant until ORIGIN_AUTH_SECRET is set in .env): GO54 fronts
+// the origin with its own proxy, so an Apache IP allowlist can't tell our
+// Cloudflare zone's traffic from direct scans — instead a CF Transform Rule
+// stamps X-Origin-Auth on every request and we reject anything without it.
+if (config.originAuthSecret) {
+  app.use((req, res, next) => {
+    if (req.headers['x-origin-auth'] === config.originAuthSecret) return next();
+    res.status(403).json({ error: 'origin_locked' });
+  });
+}
+
 app.use(securityHeaders);
 app.use(express.json({ limit: '100kb' }));
 

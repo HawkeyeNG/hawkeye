@@ -35,6 +35,8 @@ export const config = {
     process.env.APPROX_CSV_PATH ||
     path.join(backendRoot, 'storage', 'raw', 'approx_locations.csv'),
 
+  // set this AND a matching Cloudflare Transform Rule header to lock the origin
+  originAuthSecret: process.env.ORIGIN_AUTH_SECRET || '',
   jwtSecret: process.env.JWT_SECRET || DEV_DEFAULT,
   oracleSecret: process.env.ORACLE_SECRET || DEV_DEFAULT, // signs location attestations
   phoneSalt: process.env.PHONE_SALT || DEV_DEFAULT,       // phones stored as HMAC only

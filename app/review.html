@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Hawkeye — Review Console</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <style>
+    .tabs { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+    .tab { border: 1px solid var(--border); background: var(--card); padding: 6px 14px; border-radius: 999px; cursor: pointer; font-weight: 700; font-size: 0.9rem; }
+    .tab.on { background: var(--green); color: #fff; border-color: var(--green); }
+    .inc { background: var(--card); border: 1px solid var(--border); border-left: 5px solid var(--green); padding: 14px; margin-bottom: 12px; }
+    .inc.pending { border-left-color: #d4770c; }
+    .inc.rejected { border-left-color: var(--muted); opacity: 0.7; }
+    .inc h3 { margin: 0 0 4px; font-size: 1.05rem; }
+    .inc .meta { color: var(--muted); font-size: 0.82rem; }
+    .inc .m { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+    .inc .m img, .inc .m video { width: 160px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+    .acts { display: flex; gap: 10px; margin-top: 8px; }
+    .acts button { margin: 0; width: auto; }
+    .btn-reject { background: #6b7280; box-shadow: 0 2px 0 #4b5563; }
+    .btn-reject:hover { background: #4b5563; }
+    .social { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+    #login { max-width: 380px; }
+    .empty { color: var(--muted); padding: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <span class="brand"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Review Console — private</span></div></span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="login" class="card">
+      <h1>Review Console</h1>
+      <p class="lede">Owner access only.</p>
+      <label for="pass">Passphrase</label>
+      <input id="pass" type="password" autocomplete="off" placeholder="Enter console passphrase" />
+      <button id="btn-login">Unlock</button>
+      <p id="login-status" class="status" role="status"></p>
+    </section>
+
+    <section id="console" hidden>
+      <h1>Incident review</h1>
+      <div class="tabs" id="tabs">
+        <span class="tab on" data-s="pending">Pending <b id="c-pending"></b></span>
+        <span class="tab" data-s="published">Published <b id="c-published"></b></span>
+        <span class="tab" data-s="rejected">Rejected <b id="c-rejected"></b></span>
+        <span class="tab" data-s="_logout" style="margin-left:auto">Lock 🔒</span>
+      </div>
+      <div id="list"><p class="empty">Loading…</p></div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const KIND = {
+      violence: 'Violence', ballot_snatching: 'Ballot snatching', vote_buying: 'Vote-buying',
+      intimidation: 'Voter intimidation', bvas_failure: 'BVAS failure', late_materials: 'Late materials',
+      obstruction: 'Obstruction of observers', other: 'Other irregularity',
+    };
+    let secret = sessionStorage.getItem('hawkeye_admin') || '';
+    let tab = 'pending';
+    const hdr = () => ({ 'x-admin-secret': secret });
+
+    async function login() {
+      secret = $('pass').value.trim();
+      const r = await fetch('/api/admin/auth', { method: 'POST', headers: hdr() });
+      if (r.ok) {
+        sessionStorage.setItem('hawkeye_admin', secret);
+        $('login').hidden = true; $('console').hidden = false;
+        load();
+      } else {
+        $('login-status').textContent = r.status === 403 ? 'Console is disabled (no passphrase set on server).' : 'Wrong passphrase.';
+      }
+    }
+    $('btn-login').onclick = login;
+    $('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+    async function load() {
+      const r = await fetch(`/api/admin/incidents?status=${tab}`, { headers: hdr() });
+      if (r.status === 401) { logout(); return; }
+      const { incidents, counts } = await r.json();
+      $('c-pending').textContent = counts.pending || 0;
+      $('c-published').textContent = counts.published || 0;
+      $('c-rejected').textContent = counts.rejected || 0;
+      if (!incidents.length) { $('list').innerHTML = `<p class="empty">Nothing ${tab}.</p>`; return; }
+      $('list').innerHTML = incidents.map((i) => {
+        const media = (i.media || []).map((m) => m.type === 'video'
+          ? `<video src="/uploads/${m.file}" controls muted></video>`
+          : `<a href="/uploads/${m.file}" target="_blank"><img src="/uploads/${m.file}" alt="" /></a>`).join('');
+        const gps = (i.lat != null && i.lng != null)
+          ? ` · <a href="https://maps.google.com/?q=${i.lat},${i.lng}" target="_blank" rel="noopener">📍 map</a>` : '';
+        const acts = tab === 'pending'
+          ? `<div class="acts"><button onclick="act(${i.id},'publish')">Publish</button>
+             <button class="btn-reject" onclick="act(${i.id},'reject')">Reject</button></div>` : '';
+        return `<div class="inc ${i.status}">
+          <h3>${KIND[i.kind] || i.kind}</h3>
+          <div class="meta">#${i.id} · observer ${i.observer_id ?? '—'}${i.state ? ' · ' + i.state : ''}${i.pu_code ? ' · ' + i.pu_code : ''}${gps} · ${new Date(i.created_at).toLocaleString()}</div>
+          ${i.description ? `<p>${i.description.replace(/</g, '&lt;')}</p>` : '<p class="meta">(no text)</p>'}
+          ${media ? `<div class="m">${media}</div>` : ''}
+          ${acts}
+        </div>`;
+      }).join('');
+    }
+
+    window.act = async (id, action) => {
+      if (action === 'reject' && !confirm('Reject and hide this report?')) return;
+      const r = await fetch(`/api/admin/incidents/${id}/${action}`, { method: 'POST', headers: hdr() });
+      await r.json().catch(() => ({}));
+      load();
+    };
+
+    function logout() { sessionStorage.removeItem('hawkeye_admin'); location.reload(); }
+    $('tabs').addEventListener('click', (e) => {
+      const t = e.target.closest('.tab'); if (!t) return;
+      if (t.dataset.s === '_logout') return logout();
+      tab = t.dataset.s;
+      document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t));
+      load();
+    });
+
+    if (secret) { $('login').hidden = true; $('console').hidden = false; load(); }
+  </script>
+</body>
+</html>

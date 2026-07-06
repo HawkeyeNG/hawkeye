@@ -1,0 +1,29 @@
+{
+  "name": "hawkeye-backend",
+  "version": "0.1.0",
+  "description": "Hawkeye election monitoring — backend API, location oracle and tamper-evident ledger",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "smoke": "node scripts/smoke_test.js"
+  },
+  "dependencies": {
+    "@techstark/opencv-js": "^5.0.0-release.1",
+    "@turf/helpers": "^7.3.5",
+    "@turf/simplify": "^7.3.5",
+    "@turf/union": "^7.3.5",
+    "@xenova/transformers": "^2.17.2",
+    "better-sqlite3": "9.6.0",
+    "csv-parse": "^7.0.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.1",
+    "sharp": "^0.33.5",
+    "tesseract.js": "^7.0.0",
+    "topojson-client": "^3.1.0",
+    "topojson-server": "^3.0.1",
+    "topojson-simplify": "^3.0.3"
+  }
+}

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="Hawkeye Election Integrity — a live log of automatically-detected anomalies in crowd-reported polling-unit results." />
+  <title>Hawkeye — Election Integrity</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <style>
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--green); padding: 14px; }
+    .stat.high { border-top-color: var(--danger); }
+    .stat.med { border-top-color: #d4770c; }
+    .stat b { display: block; font-size: 1.7rem; line-height: 1.1; }
+    .stat span { font-size: 0.8rem; color: var(--muted); }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0 4px; }
+    .chip { border: 1px solid var(--border); background: var(--card); padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 0.85rem; font-weight: 700; }
+    .chip.on { background: var(--green); color: #fff; border-color: var(--green); }
+    .filters select { width: auto; min-width: 150px; margin: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e6e6e5; vertical-align: top; }
+    th { border-bottom: 2px solid var(--ink); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .sev { font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; white-space: nowrap; }
+    .sev.high { background: #fbeaea; color: var(--danger); }
+    .sev.medium { background: #fff3e0; color: #b45309; }
+    .sev.low { background: #eef5f0; color: var(--green-dark); }
+    .type-tag { font-weight: 700; }
+    .benford { display: flex; align-items: flex-end; gap: 6px; height: 120px; margin-top: 10px; }
+    .benford .bar { flex: 1; background: var(--green); position: relative; min-height: 2px; }
+    .benford .bar .exp { position: absolute; left: 0; right: 0; border-top: 2px dashed #b45309; }
+    .benford .lbl { text-align: center; font-size: 0.72rem; color: var(--muted); }
+    .empty { color: var(--muted); padding: 20px; text-align: center; }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Election Integrity" />
+  <meta property="og:description" content="Hawkeye Election Integrity — a live log of automatically-detected anomalies in crowd-reported polling-unit results." />
+  <meta property="og:url" content="https://hawkeye.com.ng/integrity.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Beta</strong> — anomalies are automated flags for scrutiny, not verdicts. Official results remain INEC's.</div></div>
+
+  <main class="wrap">
+    <h1>Election Integrity</h1>
+    <p class="lede">Every crowd-reported result is run through automated integrity checks. Anything
+    that looks wrong is logged here in the open — over-voting, impossible turnout, forged form
+    serials, conflicting counts and statistical outliers.</p>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="card">
+      <h2>Detected discrepancies</h2>
+      <div class="filters" id="sev-filters">
+        <span class="chip on" data-sev="">All</span>
+        <span class="chip" data-sev="high">🚩 High</span>
+        <span class="chip" data-sev="medium">⚠️ Medium</span>
+        <span class="chip" data-sev="low">ℹ️ Low</span>
+        <select id="type-filter"><option value="">All types</option></select>
+        <select id="state-filter"><option value="">All states</option></select>
+      </div>
+      <table>
+        <thead><tr><th>Severity</th><th>Type</th><th>Polling unit</th><th>Detail</th><th>When</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="5"><div class="skel" style="height:14px;margin:6px 0"></div><div class="skel" style="height:14px;margin:6px 0;width:70%"></div></td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Benford last-digit test</h2>
+      <p class="hint">Distribution of the last digit of winning-party counts. A healthy spread sits
+      near the 10% line (dashed). Sharp departures can indicate fabricated figures. <span id="benford-n"></span></p>
+      <div class="benford" id="benford"></div>
+    </div>
+
+    <div class="card">
+      <h2>INEC IReV cross-check</h2>
+      <p class="hint">Each crowd-reported count is compared against the EC8A sheet INEC itself
+      uploads to its Results Viewing portal (IReV) for the same polling unit — INEC's own
+      evidence checked against the crowd's. Mismatches appear above with a link to INEC's sheet.</p>
+      <p id="irev-status" class="scope-note">Loading…</p>
+    </div>
+
+    <div class="card">
+      <h2>Collation reconciliation (EC8B/C/D)</h2>
+      <p class="hint">Announced ward, LGA and state collation totals are checked against the
+      polling-unit sheets underneath them. A collated figure can never be <em>less</em> than the
+      sum of the covered units alone — when it is, that's proof of subtraction, flagged above.
+      <a href="collation.html">Report a collation result →</a></p>
+      <p id="collation-status" class="scope-note">Loading…</p>
+    </div>
+
+    <div class="card">
+      <h2>What we check</h2>
+      <ul>
+        <li><strong>INEC IReV mismatch</strong> — the crowd's counts don't appear on INEC's own uploaded sheet for that unit.</li>
+        <li><strong>Collation undercount</strong> — a ward/LGA/state form showing less for a party than its covered polling units alone add up to.</li>
+        <li><strong>Collation mismatch</strong> — every unit in the scope is verified, yet the form's totals still differ.</li>
+        <li><strong>Collation chain undercount</strong> — an LGA/state form showing less than the collation forms directly under it.</li>
+        <li><strong>Conflicting collation reports</strong> — observers at the same collation centre reporting different totals.</li>
+        <li><strong>Over-voting</strong> — more votes than registered voters at a unit (impossible).</li>
+        <li><strong>Impossible turnout</strong> — turnout above ~95%, or a strong outlier vs. its state.</li>
+        <li><strong>Single-party sweep</strong> — one party taking ≥98% of a sizeable unit.</li>
+        <li><strong>Duplicate form serial</strong> — the same EC8A serial reported at two units.</li>
+        <li><strong>Conflicting counts</strong> — independent observers at one unit disagreeing.</li>
+        <li><strong>Location inconsistency</strong> — a GPS cluster far from where a unit can be.</li>
+      </ul>
+    </div>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a href="results.html">National Leaderboard</a><a href="ledger.html">Verify the Ledger</a><a href="incidents.html">Report an Incident</a></nav>
+    <p>Automated flags aid scrutiny; they are not proof of fraud. Official results remain INEC's.</p>
+  </div></footer>
+
+  <script src="tg.js?v=59"></script>
+  <script src="menu.js?v=59"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const TYPE_LABEL = {
+      over_voting: 'Over-voting', high_turnout: 'Impossible turnout', turnout_outlier: 'Turnout outlier',
+      single_party_sweep: 'Single-party sweep', duplicate_serial: 'Duplicate serial',
+      disputed_counts: 'Conflicting counts', location_inconsistent: 'Location inconsistent',
+      irev_mismatch: 'INEC IReV mismatch',
+      collation_undercount: 'Collation undercount', collation_disputed: 'Conflicting collation reports',
+      collation_mismatch: 'Collation mismatch (full coverage)', collation_chain_undercount: 'Collation chain undercount',
+      collation_ocr_mismatch: 'Collation form OCR mismatch',
+      signup_burst: 'Signup burst (informational)',
+    };
+    let sev = '';
+    const fmtTime = (t) => timeAgo(t);
+
+    async function loadSummary() {
+      const s = await fetch('/api/integrity/summary').then((r) => r.json());
+      const bySev = Object.fromEntries(s.bySeverity.map((r) => [r.severity, r.c]));
+      $('cards').innerHTML = `
+        <div class="stat high"><b>${bySev.high || 0}</b><span>High-severity flags</span></div>
+        <div class="stat med"><b>${bySev.medium || 0}</b><span>Medium flags</span></div>
+        <div class="stat"><b>${bySev.low || 0}</b><span>Low flags</span></div>
+        <div class="stat"><b>${s.unitsFlagged}</b><span>Units flagged</span></div>
+        <div class="stat"><b>${s.reports.toLocaleString()}</b><span>Reports screened</span></div>`;
+      const types = [...new Set(s.byType.map((r) => r.type))];
+      const tf = $('type-filter');
+      if (tf.options.length === 1) for (const t of types) tf.add(new Option(TYPE_LABEL[t] || t, t));
+    }
+
+    async function loadRows() {
+      const type = $('type-filter').value, state = $('state-filter').value;
+      const qs = new URLSearchParams({ ...(sev && { severity: sev }), ...(type && { type }), ...(state && { state }) });
+      const { discrepancies } = await fetch('/api/integrity/discrepancies?' + qs).then((r) => r.json());
+      if (!discrepancies.length) { $('rows').innerHTML = '<tr><td colspan="5" class="empty">No discrepancies match — nothing flagged yet. 🎉</td></tr>'; return; }
+      const states = [...new Set(discrepancies.map((d) => d.state).filter(Boolean))].sort();
+      const sf = $('state-filter');
+      if (sf.options.length === 1) for (const st of states) sf.add(new Option(st, st));
+      $('rows').innerHTML = discrepancies.map((d) => `
+        <tr>
+          <td><span class="sev ${d.severity}">${d.severity.toUpperCase()}</span></td>
+          <td class="type-tag">${TYPE_LABEL[d.type] || d.type}</td>
+          <td>${d.pu_name ? `${d.pu_name}<br /><small>${d.pu_code}${d.state ? ' · ' + d.state : ''}</small>` : (d.state || '—')}</td>
+          <td>${d.detail.summary || ''}${d.contest ? ` <small>(${d.contest})</small>` : ''}${d.detail.docUrl ? ` · <a href="${d.detail.docUrl}" target="_blank" rel="noopener">view INEC's sheet →</a>` : ''}</td>
+          <td><small>${fmtTime(d.created_at)}</small></td>
+        </tr>`).join('');
+    }
+
+    async function loadBenford() {
+      const b = await fetch('/api/integrity/benford').then((r) => r.json());
+      $('benford-n').textContent = `Based on ${b.n} unit result(s).`;
+      const max = Math.max(1, ...b.lastDigit.map((d) => d.observed));
+      $('benford').innerHTML = b.lastDigit.map((d) => {
+        const h = Math.round((d.observed / max) * 100);
+        const expH = Math.round((b.n * 0.1 / max) * 100);
+        return `<div style="flex:1;text-align:center">
+          <div class="bar" style="height:${h}%"><div class="exp" style="bottom:${expH}%"></div></div>
+          <div class="lbl">${d.digit}</div></div>`;
+      }).join('');
+    }
+
+    async function loadIrev() {
+      const v = await fetch('/api/integrity/irev').then((r) => r.json());
+      const c = v.counts || {};
+      $('irev-status').textContent = !v.electionId
+        ? 'Waiting for INEC to open the election on IReV — the check activates automatically once configured.'
+        : `Checked ${Object.values(c).reduce((s, n) => s + n, 0)} unit(s): ${c.consistent || 0} consistent · ${c.mismatch || 0} mismatched · ${c.inconclusive || 0} inconclusive · ${c.no_doc || 0} not yet on IReV.`;
+    }
+
+    async function loadCollation() {
+      const v = await fetch('/api/integrity/collation').then((r) => r.json());
+      const b = v.byLevel || {}, f = v.flags || {};
+      const total = (b.ward || 0) + (b.lga || 0) + (b.state || 0);
+      $('collation-status').textContent = total
+        ? `${total} collation report(s): ${b.ward || 0} ward · ${b.lga || 0} LGA · ${b.state || 0} state — ${f.collation_undercount || 0} undercount flag(s), ${f.collation_disputed || 0} disputed.`
+        : 'No collation reports yet — they arrive on election night as results move up the ladder.';
+    }
+
+    function refresh() { loadSummary(); loadRows(); loadBenford(); loadIrev(); loadCollation(); }
+    $('sev-filters').addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip'); if (!chip) return;
+      sev = chip.dataset.sev;
+      document.querySelectorAll('#sev-filters .chip').forEach((c) => c.classList.toggle('on', c === chip));
+      loadRows();
+    });
+    $('type-filter').onchange = loadRows;
+    $('state-filter').onchange = loadRows;
+    refresh();
+    setInterval(refresh, 30000);
+  </script>
+</body>
+</html>

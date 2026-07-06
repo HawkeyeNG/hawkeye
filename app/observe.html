@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="Hawkeye — independent, crowd-verified monitoring of polling unit results in Nigeria." />
+  <title>Hawkeye — Report a Polling Unit Result</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Report a Polling Unit Result" />
+  <meta property="og:description" content="Hawkeye — independent, crowd-verified monitoring of polling unit results in Nigeria." />
+  <meta property="og:url" content="https://hawkeye.com.ng/observe.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home">
+        <span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text">
+          <strong>HAWKEYE</strong>
+          <span>Independent Election Results Monitor</span>
+        </div>
+      </a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById(&quot;menu-panel&quot;);const open=m.hidden;m.hidden=!open;this.setAttribute(&quot;aria-expanded&quot;,String(open));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner">
+    <div class="wrap"><strong>Beta</strong> — this service is in public testing. Official results remain INEC's.</div>
+  </div>
+
+  <main class="wrap">
+    <!-- 1. Registration -->
+    <section id="screen-register" hidden>
+      <p id="intent-note" class="notice" hidden></p>
+      <h1 id="register-title">Register your device</h1>
+      <p class="lede">One verified phone number equals one observer identity. Your number is
+      never stored in readable form and is never published.</p>
+      <div class="card">
+        <label for="auth-input">Nigerian mobile number</label>
+        <input id="auth-input" type="tel" inputmode="tel" placeholder="Enter Phone Number" autocomplete="tel" />
+        <p id="otp-hint" class="hint"></p>
+        <button id="btn-auth">Request OTP</button>
+        <p class="hint"><a id="auth-reset" href="#" hidden>← Use a different number</a></p>
+      </div>
+    </section>
+
+    <!-- 2. Locate -->
+    <section id="screen-locate" hidden>
+      <h1>Find your polling unit</h1>
+      <p class="lede">Units with a verified or crowd-confirmed location appear automatically
+      when you are standing near them.</p>
+      <div class="card">
+        <button id="btn-locate">Find polling units near me</button>
+        <p id="locate-status" class="status" role="status"></p>
+        <div id="pu-list" class="option-list"></div>
+      </div>
+      <details id="browse-block" class="card">
+        <summary>Can't see your unit? Browse the register</summary>
+        <p class="hint">Your unit may not have a verified location yet. You can still report —
+        your GPS position is recorded with the report and it stays marked
+        “location unverified” until independent reports from the same place confirm it.</p>
+        <label for="sel-state">State</label>
+        <select id="sel-state"><option value="">— select —</option></select>
+        <label for="sel-lga">Local Government Area</label>
+        <select id="sel-lga" disabled><option value="">— select —</option></select>
+        <label for="sel-ward">Ward</label>
+        <select id="sel-ward" disabled><option value="">— select —</option></select>
+        <div id="register-units" class="option-list"></div>
+      </details>
+    </section>
+
+    <!-- 3. Submit -->
+    <section id="screen-submit" hidden>
+      <h1 id="submit-pu-name"></h1>
+      <p id="tier-notice" class="notice" hidden></p>
+
+      <div class="card">
+        <label for="sel-contest">Election being reported</label>
+        <select id="sel-contest"></select>
+        <p id="contest-scope" class="scope-note"></p>
+        <p class="hint">Several elections may be counted at this unit today. Submit one
+        report per election — each needs its own photographs of that election's
+        results sheet.</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">1</span> Photograph the evidence</h2>
+        <p class="hint">Both photographs must be taken live, here at the polling unit.
+        Gallery uploads are not possible. Each photo is time- and location-stamped.</p>
+
+        <div class="capture-slot" id="slot-sheet">
+          <div class="slot-head">
+            <div>
+              <strong>Results sheet (EC8A)</strong>
+              <small>The official announced results form</small>
+            </div>
+            <span class="slot-status" id="status-sheet">Required</span>
+          </div>
+          <img id="preview-sheet" alt="Results sheet preview" hidden />
+          <button id="btn-cam-sheet" class="secondary">Take photo</button>
+        </div>
+
+        <div class="capture-slot" id="slot-venue">
+          <div class="slot-head">
+            <div>
+              <strong>Polling venue</strong>
+              <small>The building, booth or surroundings of this unit</small>
+            </div>
+            <span class="slot-status" id="status-venue">Required</span>
+          </div>
+          <img id="preview-venue" alt="Polling venue preview" hidden />
+          <button id="btn-cam-venue" class="secondary">Take photo</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">2</span> Enter the announced counts</h2>
+        <div id="vote-inputs"></div>
+        <label for="sheet-serial">EC8A form serial number <small>(optional — printed on the sheet)</small></label>
+        <input id="sheet-serial" type="text" inputmode="text" placeholder="e.g. 0451233" autocomplete="off" />
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">3</span> Sign and submit</h2>
+        <p class="hint">Your report is signed on this device and recorded permanently on a
+        public, tamper-evident ledger. It cannot be edited or withdrawn.</p>
+        <button id="btn-submit" disabled>Sign &amp; submit report</button>
+        <p id="submit-status" class="status" role="status"></p>
+      </div>
+    </section>
+
+    <!-- 4. Result -->
+    <section id="screen-result" hidden>
+      <div class="confirm-panel">
+        <h1>Report recorded</h1>
+        <p>Your report is permanently on the public ledger.</p>
+      </div>
+      <div class="card" id="result-summary"></div>
+      <p class="hint">Ledger entry: <code id="entry-hash"></code></p>
+      <a class="link" href="dashboard.html">View the public dashboard →</a><br /><br />
+      <button id="btn-another" class="secondary">Report another unit</button>
+    </section>
+  </main>
+
+  <!-- Camera: opens only when a "Take photo" button is pressed -->
+  <div id="camera-overlay" hidden>
+    <div class="camera-frame">
+      <p id="camera-title">Results sheet (EC8A)</p>
+      <div class="video-wrap">
+        <video id="video" playsinline></video>
+        <canvas id="scan-canvas" hidden></canvas>
+      </div>
+      <p id="scan-hint" hidden></p>
+      <div class="camera-actions">
+        <button id="btn-cancel-camera" class="secondary">Cancel</button>
+        <button id="btn-capture">Capture</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="gov-footer">
+    <div class="wrap">
+      <nav>
+        <a href="observe.html">Report a result</a>
+        <a href="results.html">Public results</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="political.html">Political data</a>
+      </nav>
+      <p>Hawkeye is an independent transparency initiative. It does not declare election
+      results; the official results of any election remain those announced by the
+      Independent National Electoral Commission (INEC).</p>
+    </div>
+  </footer>
+
+  <script src="device.js"></script>
+  <script src="scan.js"></script>
+  <script src="app.js"></script>
+  <script src="tg.js?v=59"></script>
+  <script src="menu.js?v=59"></script>
+</body>
+</html>

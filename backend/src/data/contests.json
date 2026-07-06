@@ -1,0 +1,7 @@
+[
+  { "code": "PRES", "name": "Presidential" },
+  { "code": "SEN", "name": "Senate (National Assembly)" },
+  { "code": "REP", "name": "House of Representatives" },
+  { "code": "GOV", "name": "Governorship" },
+  { "code": "SHA", "name": "State House of Assembly" }
+]

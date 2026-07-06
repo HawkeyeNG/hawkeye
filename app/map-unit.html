@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <title>Hawkeye — Map a Polling Unit</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <!-- Leaflet self-hosted (vendor/leaflet) — CDN was a single point of failure
+       on flaky networks and inside the future Telegram webview. -->
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+  <style>
+    #lmap { height: 420px; border: 1px solid var(--border); }
+    .map-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+    .map-tools input#ward-search { flex: 1; min-width: 170px; margin: 0; }
+    .map-tools button { width: auto; margin: 0; }
+    .ward-toggle { display: flex; align-items: center; gap: 6px; font-weight: 400; margin: 0; white-space: nowrap; }
+    .ward-toggle input { width: auto; margin: 0; }
+    .map-key { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); margin-top: 8px; }
+    .map-key span { display: inline-flex; align-items: center; gap: 5px; }
+    .map-key i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Map a Polling Unit" />
+  <meta property="og:description" content="Crowd-verified, tamper-evident monitoring of polling-unit results in Nigeria." />
+  <meta property="og:url" content="https://hawkeye.com.ng/map-unit.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Optional community activity</strong> — help map polling units before election day.</div></div>
+
+  <main class="wrap">
+    <h1>Map a Polling Unit</h1>
+    <p class="lede">Most units have no verified location yet, so they can't be geofenced.
+    Standing <strong>at a polling unit</strong>, capture its GPS position. When a few
+    independent people map the same unit, its location is confirmed for election day.</p>
+    <p id="stats" class="scope-note"></p>
+
+    <section class="card">
+      <h2>Polling unit map &amp; locator</h2>
+      <p class="hint">Search a ward to jump to it, switch on ward boundaries, or show the polling
+      units near you. Tap an orange unit to map it.</p>
+      <div class="map-tools">
+        <input id="ward-search" type="text" placeholder="Search a ward or LGA…" />
+        <button id="btn-search" class="secondary">Find</button>
+        <button id="btn-near" class="secondary">📍 Near me</button>
+        <label class="ward-toggle"><input type="checkbox" id="toggle-wards" /> Ward boundaries</label>
+      </div>
+      <div id="lmap"></div>
+      <p class="map-key" hidden id="map-key">
+        <span><i style="background:#008751"></i> Location confirmed</span>
+        <span><i style="background:#1565c0"></i> Crowd-mapped</span>
+        <span><i style="background:#f9a825"></i> Needs mapping (approximate area)</span>
+      </p>
+      <p id="near-status" class="status" role="status"></p>
+    </section>
+
+    <section id="need-auth" class="card" hidden>
+      <p>To map a polling unit, register your device first.</p>
+      <a class="btn-link" href="observe.html?intent=map">Register your device →</a>
+    </section>
+
+    <section id="picker" class="card" hidden>
+      <label for="sel-state">State</label>
+      <select id="sel-state"><option value="">— select —</option></select>
+      <label for="sel-lga">Local Government Area</label>
+      <select id="sel-lga" disabled><option value="">— select —</option></select>
+      <label for="sel-ward">Ward</label>
+      <select id="sel-ward" disabled><option value="">— select —</option></select>
+      <div id="units" class="option-list"></div>
+    </section>
+
+    <section id="capture" class="card" hidden>
+      <h2 id="unit-name"></h2>
+      <p class="hint">Only do this while physically standing at the unit. Your GPS fix is
+      recorded; nothing is published.</p>
+      <button id="btn-gps">📍 Capture GPS at this unit</button>
+      <p id="cap-status" class="status" role="status"></p>
+    </section>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap"><p>Crowd mapping is optional and community-run. Official results remain INEC's.</p></div></footer>
+
+  <script src="device.js"></script>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const token = localStorage.getItem('hawkeye_token');
+    let unit = null;
+    const api = (p, o) => fetch(p, o).then((r) => r.json().then((b) => ({ status: r.status, b })));
+
+    async function stats() {
+      const s = await fetch('/api/mapping/stats').then((r) => r.json());
+      $('stats').textContent = `${s.verified.toLocaleString()} of ${s.total.toLocaleString()} units have a verified location · ${s.crowdMapped} crowd-mapped so far`;
+    }
+    async function fill(sel, items, ph) { sel.innerHTML = `<option value="">${ph}</option>` + items.map((i) => `<option>${i}</option>`).join(''); sel.disabled = !items.length; }
+
+    $('sel-state').onchange = async () => {
+      $('units').innerHTML = ''; fill($('sel-ward'), [], '— select —');
+      fill($('sel-lga'), await (await fetch('/api/register/lgas?state=' + encodeURIComponent($('sel-state').value))).json(), '— select LGA —');
+    };
+    $('sel-lga').onchange = async () => {
+      $('units').innerHTML = '';
+      fill($('sel-ward'), await (await fetch(`/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`)).json(), '— select ward —');
+    };
+    $('sel-ward').onchange = async () => {
+      const r = await (await fetch(`/api/register/units?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}&ward=${encodeURIComponent($('sel-ward').value)}`)).json();
+      $('units').innerHTML = '';
+      for (const u of r.units || []) {
+        const b = document.createElement('button'); b.className = 'pu-option';
+        b.innerHTML = `<strong>${u.name}</strong><br /><small>${u.pu_code} · ${u.locationTier === 'verified' ? '📍 already located' : 'needs mapping'}</small>`;
+        b.onclick = () => { unit = u; $('unit-name').textContent = `${u.name} (${u.pu_code})`; $('capture').hidden = false; $('cap-status').textContent = ''; $('capture').scrollIntoView(); };
+        $('units').appendChild(b);
+      }
+    };
+
+    $('btn-gps').onclick = () => {
+      $('cap-status').textContent = 'Getting a precise GPS fix…';
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+        const { status, b } = await api('/api/mappings', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() },
+          body: JSON.stringify({ puCode: unit.pu_code, lat, lng, accuracy }),
+        });
+        if (status === 201) {
+          $('cap-status').textContent = b.mapped
+            ? '✅ This unit is now location-confirmed. Thank you!'
+            : `${b.replaced ? 'Your fix was updated' : 'Recorded'} (${b.fixes}/${b.needed} needed to confirm this unit).`;
+          stats();
+        } else if (status === 401) {
+          localStorage.removeItem('hawkeye_token');
+          $('cap-status').innerHTML = 'Session expired — <a href="observe.html?intent=map">register your device again →</a>';
+          $('picker').hidden = true; $('capture').hidden = true; $('need-auth').hidden = false;
+        } else {
+          $('cap-status').textContent = ({ gps_accuracy_too_low: 'GPS too weak — move to open sky and retry.', too_far_from_unit: 'You are too far from this unit — only map it while standing there.' })[b.error] || b.error;
+        }
+      }, () => { $('cap-status').textContent = 'Location unavailable.'; }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    };
+
+    // ---------- Leaflet map: locator + ward boundaries + nearby PUs ----------
+    const STATUS_COLOR = { verified: '#008751', crowd: '#1565c0', approx: '#f9a825' };
+    let lmap = null, envelope = null, nearLayer = null;
+    let wardLayer = null, wardFeatures = null, wardLoading = null;
+
+    function initMap() {
+      if (lmap) return lmap;
+      if (typeof L === 'undefined') { // library failed to load — degrade, don't crash
+        document.getElementById('lmap').innerHTML =
+          '<p class="hint" style="padding:14px">Map library failed to load — check your connection and refresh. The register browser below still works.</p>';
+        return null;
+      }
+      lmap = L.map('lmap', { preferCanvas: true }).setView([9.05, 7.5], 6); // Nigeria
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(lmap);
+      return lmap;
+    }
+
+    function selectFromMap(u) {
+      if (!token) { $('need-auth').hidden = false; $('need-auth').scrollIntoView(); return; }
+      unit = { pu_code: u.puCode, name: u.name };
+      $('unit-name').textContent = `${u.name} (${u.puCode})`;
+      $('capture').hidden = false; $('cap-status').textContent = '';
+      $('capture').scrollIntoView();
+    }
+
+    // Ward boundaries — 9,300 polygons, lazy-loaded once, rendered on canvas.
+    function loadWards() {
+      if (wardLoading) return wardLoading;
+      $('near-status').textContent = 'Loading ward boundaries…';
+      wardLoading = fetch('/nga_wards.geojson').then((r) => r.json()).then((geo) => {
+        wardFeatures = geo.features;
+        wardLayer = L.geoJSON(geo, {
+          style: { color: '#00482b', weight: 0.6, fill: false, opacity: 0.7 },
+          onEachFeature: (f, layer) => {
+            const p = f.properties;
+            layer.bindPopup(`<strong>${p.w || 'Ward'}</strong><br />${p.l || ''}${p.s ? ', ' + p.s : ''}`);
+            layer.on('mouseover', () => layer.setStyle({ weight: 2, color: '#008751' }));
+            layer.on('mouseout', () => wardLayer.resetStyle(layer));
+          },
+        });
+        $('near-status').textContent = `Ward boundaries loaded (${wardFeatures.length.toLocaleString()} wards).`;
+        return wardLayer;
+      });
+      return wardLoading;
+    }
+
+    $('toggle-wards').onchange = async (e) => {
+      if (!initMap()) return;
+      const layer = await loadWards();
+      if (e.target.checked) layer.addTo(lmap);
+      else lmap.removeLayer(layer);
+    };
+
+    $('btn-search').onclick = doSearch;
+    $('ward-search').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+    async function doSearch() {
+      const q = $('ward-search').value.trim().toLowerCase();
+      if (!q) return;
+      if (!initMap()) return;
+      $('toggle-wards').checked = true;
+      const layer = await loadWards();
+      layer.addTo(lmap);
+      const hit = wardFeatures.find((f) => {
+        const p = f.properties;
+        return (p.w || '').toLowerCase().includes(q) || (p.l || '').toLowerCase().includes(q);
+      });
+      if (!hit) { $('near-status').textContent = `No ward or LGA matching "${q}".`; return; }
+      const gj = L.geoJSON(hit);
+      lmap.fitBounds(gj.getBounds(), { maxZoom: 13 });
+      gj.addTo(lmap).eachLayer((l) => l.bindPopup(`<strong>${hit.properties.w}</strong><br />${hit.properties.l}, ${hit.properties.s}`).openPopup());
+      setTimeout(() => lmap.removeLayer(gj), 6000);
+      $('near-status').textContent = `Showing ${hit.properties.w}, ${hit.properties.l}.`;
+    }
+
+    $('btn-near').onclick = () => {
+      $('near-status').textContent = 'Getting your position…';
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        const r = await fetch(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=5000`).then((x) => x.json());
+        if (!initMap()) return;
+        $('map-key').hidden = false;
+        lmap.setView([lat, lng], 14);
+        if (nearLayer) nearLayer.remove();
+        nearLayer = L.layerGroup().addTo(lmap);
+        L.circleMarker([lat, lng], { radius: 7, color: '#0b0c0c', fillColor: '#fff', fillOpacity: 1 })
+          .addTo(nearLayer).bindPopup('You are here');
+        for (const u of r.units || []) {
+          const m = L.circleMarker([u.lat, u.lng], {
+            radius: 8, color: '#fff', weight: 1.5, fillColor: STATUS_COLOR[u.status], fillOpacity: 0.95,
+          }).addTo(nearLayer);
+          const label = u.status === 'verified' ? 'Location confirmed'
+            : u.status === 'crowd' ? 'Crowd-mapped'
+            : `Needs mapping${u.fixes ? ` — ${u.fixes}/3 fixes so far` : ''}`;
+          m.bindPopup(`<strong>${u.name}</strong><br />${u.puCode} · ${Math.round(u.distanceM)} m away<br />${label}`);
+          m.on('click', () => {
+            if (envelope) { envelope.remove(); envelope = null; }
+            if (u.status === 'approx' && u.approxRadiusM) {
+              envelope = L.circle([u.lat, u.lng], {
+                radius: u.approxRadiusM, color: '#f9a825', weight: 1, dashArray: '6 6', fillOpacity: 0.05,
+              }).addTo(lmap);
+            }
+            if (u.status !== 'verified') selectFromMap(u);
+          });
+        }
+        $('near-status').textContent = (r.units || []).length
+          ? `${r.units.length} unit(s) within 5 km. Positions marked orange are approximate — mapping them pins the real spot.`
+          : 'No units with a known or approximate position within 5 km — use the register browser below.';
+      }, () => { $('near-status').textContent = 'Location unavailable.'; }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    };
+
+    initMap();
+
+    (async () => {
+      await stats();
+      if (!token) { $('need-auth').hidden = false; return; }
+      $('picker').hidden = false;
+      fill($('sel-state'), await (await fetch('/api/register/states')).json(), '— select state —');
+    })();
+  </script>
+  <script src="tg.js?v=59"></script>
+  <script src="menu.js?v=59"></script>
+</body>
+</html>

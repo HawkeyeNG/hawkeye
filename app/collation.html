@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="Report EC8B/EC8C/EC8D collation results to Hawkeye — the announced ward, LGA and state totals, checked against polling-unit evidence." />
+  <title>Hawkeye — Report a Collation Result</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <style>
+    .vote-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .vote-row label { flex: 1; margin: 0; font-weight: 700; }
+    .vote-row input { width: 110px; margin: 0; }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Report a Collation Result" />
+  <meta property="og:description" content="Report EC8B/EC8C/EC8D collation results to Hawkeye — the announced ward, LGA and state totals, checked against polling-unit evidence." />
+  <meta property="og:url" content="https://hawkeye.com.ng/collation.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Collation watch</strong> — the announced totals, checked against polling-unit evidence.</div></div>
+
+  <main class="wrap">
+    <h1>Report a Collation Result</h1>
+    <p class="lede">At a ward (EC8B), LGA (EC8C) or state (EC8D) collation centre? Photograph the
+    announced collation form and enter its totals. Hawkeye automatically checks them against the
+    polling-unit sheets underneath — numbers that shrink on the way up get flagged publicly.</p>
+
+    <section id="need-auth" class="card" hidden>
+      <p>To report a collation result, register your device first.</p>
+      <a class="btn-link" href="observe.html?intent=observe">Register your device →</a>
+    </section>
+
+    <section id="form" hidden>
+      <div class="card">
+        <label for="sel-level">Collation level</label>
+        <select id="sel-level">
+          <option value="ward">Ward — form EC8B</option>
+          <option value="lga">Local Government — form EC8C</option>
+          <option value="state">State — form EC8D</option>
+        </select>
+        <label for="sel-contest">Election</label>
+        <select id="sel-contest"></select>
+        <label for="sel-state">State</label>
+        <select id="sel-state"><option value="">— select —</option></select>
+        <div id="lga-block"><label for="sel-lga">Local Government Area</label>
+          <select id="sel-lga" disabled><option value="">— select —</option></select></div>
+        <div id="ward-block"><label for="sel-ward">Ward</label>
+          <select id="sel-ward" disabled><option value="">— select —</option></select></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">1</span> Photograph the form and the venue</h2>
+        <p class="hint">Both photos are taken live and location-stamped — the collation form
+        (auto-scanned) and the collation centre itself.</p>
+        <div class="capture-slot">
+          <div class="slot-head"><div><strong id="form-label">Collation form</strong>
+            <small>The announced result form</small></div>
+            <span class="slot-status" id="status-sheet">Required</span></div>
+          <img id="preview-sheet" alt="" hidden />
+          <button id="btn-cam-sheet" class="secondary">Take photo</button>
+        </div>
+        <div class="capture-slot">
+          <div class="slot-head"><div><strong>Collation centre</strong>
+            <small>The venue or surroundings</small></div>
+            <span class="slot-status" id="status-venue">Required</span></div>
+          <img id="preview-venue" alt="" hidden />
+          <button id="btn-cam-venue" class="secondary">Take photo</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">2</span> Enter the announced totals</h2>
+        <div id="vote-inputs"></div>
+        <label for="form-serial">Form serial number <small>(optional)</small></label>
+        <input id="form-serial" type="text" autocomplete="off" />
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">3</span> Sign and submit</h2>
+        <p class="hint">Signed on this device, recorded permanently, and reconciled against the
+        polling-unit evidence in this area.</p>
+        <button id="btn-submit" disabled>Sign &amp; submit collation report</button>
+        <p id="status" class="status" role="status"></p>
+      </div>
+    </section>
+  </main>
+
+  <div id="camera-overlay" hidden>
+    <div class="camera-frame">
+      <p id="camera-title">Collation form</p>
+      <div class="video-wrap">
+        <video id="video" playsinline></video>
+        <canvas id="scan-canvas" hidden></canvas>
+      </div>
+      <p id="scan-hint" hidden></p>
+      <div class="camera-actions">
+        <button id="btn-cancel-camera" class="secondary">Cancel</button>
+        <button id="btn-capture">Capture</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a href="observe.html">Report a Result</a><a href="integrity.html">Election Integrity</a></nav>
+    <p>Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+  </div></footer>
+
+  <script src="device.js"></script>
+  <script src="scan.js"></script>
+  <script src="tg.js?v=59"></script>
+  <script src="menu.js?v=59"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const token = localStorage.getItem('hawkeye_token');
+    const FORM = { ward: 'EC8B', lga: 'EC8C', state: 'EC8D' };
+
+    // ---- keypair (same IndexedDB store the report page uses) ----
+    function idbOpen() {
+      return new Promise((res, rej) => {
+        const rq = indexedDB.open('hawkeye', 1);
+        rq.onupgradeneeded = () => rq.result.createObjectStore('kv');
+        rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
+      });
+    }
+    async function getKeys() {
+      const db = await idbOpen();
+      return new Promise((res, rej) => {
+        const rq = db.transaction('kv').objectStore('kv').get('keypair');
+        rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
+      });
+    }
+    async function sha256Hex(buf) {
+      const d = await crypto.subtle.digest('SHA-256', buf);
+      return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+    // MIRROR of backend canonicalCollationPayload — keep byte-identical.
+    const canonicalVotes = (votes) => votes
+      .map((v) => ({ party: String(v.party), count: Number(v.count) }))
+      .sort((a, b) => (a.party < b.party ? -1 : a.party > b.party ? 1 : 0));
+    function canonicalCollationPayload({ level, contest, state, lga, ward, votes, imageSha256, venueImageSha256, capturedAt, venueCapturedAt, lat, lng }) {
+      return JSON.stringify({
+        level, contest, state, lga: lga || '', ward: ward || '',
+        votes: canonicalVotes(votes), imageSha256, venueImageSha256,
+        capturedAt, venueCapturedAt, lat, lng,
+      });
+    }
+
+    // ---- pickers ----
+    const fill = (sel, items, ph) => { sel.innerHTML = `<option value="">${ph}</option>` + items.map((i) => `<option>${i}</option>`).join(''); sel.disabled = !items.length; };
+    function scopeUpdate() {
+      const lv = $('sel-level').value;
+      $('lga-block').style.display = lv === 'state' ? 'none' : '';
+      $('ward-block').style.display = lv === 'ward' ? '' : 'none';
+      $('form-label').textContent = `Collation form (${FORM[lv]})`;
+      updateSubmit();
+    }
+    $('sel-level').onchange = scopeUpdate;
+    $('sel-state').onchange = async () => {
+      fill($('sel-ward'), [], '— select —');
+      fill($('sel-lga'), await (await fetch('/api/register/lgas?state=' + encodeURIComponent($('sel-state').value))).json(), '— select LGA —');
+      updateSubmit();
+    };
+    $('sel-lga').onchange = async () => {
+      fill($('sel-ward'), await (await fetch(`/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`)).json(), '— select ward —');
+      updateSubmit();
+    };
+    $('sel-ward').onchange = updateSubmit;
+
+    // ---- camera (scanner for the form; plain capture for the venue) ----
+    let cameraStream = null, cameraTarget = null, capturing = false;
+    const shots = { sheet: null, venue: null };
+    function getFix() {
+      return new Promise((res) => navigator.geolocation.getCurrentPosition(
+        (p) => res(p.coords), () => res(null), { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }));
+    }
+    function closeCamera() {
+      if (window.DocScanner) DocScanner.stop();
+      if (cameraStream) { cameraStream.getTracks().forEach((t) => t.stop()); cameraStream = null; }
+      $('camera-overlay').hidden = true;
+    }
+    async function openCamera(target) {
+      cameraTarget = target;
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } }, audio: false });
+      } catch { return alert('Camera access is required — live photos only.'); }
+      $('camera-title').textContent = target === 'sheet' ? `Collation form (${FORM[$('sel-level').value]})` : 'Collation centre';
+      $('btn-capture').textContent = target === 'sheet' ? 'Capture Form' : 'Capture Venue';
+      $('camera-overlay').hidden = false;
+      const video = $('video');
+      video.srcObject = cameraStream;
+      await video.play();
+      if (target === 'sheet' && window.DocScanner) DocScanner.start(video, $('scan-canvas'), $('scan-hint'), doCapture);
+    }
+    async function doCapture() {
+      if (capturing || !cameraStream) return;
+      capturing = true;
+      try {
+        let blob;
+        if (cameraTarget === 'sheet' && window.DocScanner) {
+          const scan = await DocScanner.capture();
+          if (scan.warnings.length && !confirm(`${scan.warnings.join(' ')} Use this photo anyway?`)) { DocScanner.rearm(); return; }
+          blob = scan.blob;
+        } else {
+          const v = $('video');
+          const c = document.createElement('canvas');
+          c.width = v.videoWidth; c.height = v.videoHeight;
+          c.getContext('2d').drawImage(v, 0, 0);
+          blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.9));
+        }
+        const fix = await getFix();
+        if (!fix) { if (window.DocScanner) DocScanner.rearm(); return alert('No GPS fix — move to open sky and retake.'); }
+        shots[cameraTarget] = { blob, capturedAt: Date.now(), lat: fix.latitude, lng: fix.longitude, accuracy: fix.accuracy };
+        closeCamera();
+        const img = $(`preview-${cameraTarget}`);
+        img.src = URL.createObjectURL(blob); img.hidden = false;
+        $(`status-${cameraTarget}`).textContent = 'Captured ✓';
+        $(`btn-cam-${cameraTarget}`).textContent = 'Retake photo';
+        updateSubmit();
+      } finally { capturing = false; }
+    }
+    $('btn-cam-sheet').onclick = () => openCamera('sheet');
+    $('btn-cam-venue').onclick = () => openCamera('venue');
+    $('btn-cancel-camera').onclick = closeCamera;
+    $('btn-capture').onclick = doCapture;
+
+    function scopeOk() {
+      const lv = $('sel-level').value;
+      return $('sel-state').value && (lv === 'state' || $('sel-lga').value) && (lv !== 'ward' || $('sel-ward').value);
+    }
+    function updateSubmit() { $('btn-submit').disabled = !(shots.sheet && shots.venue && scopeOk()); }
+
+    // ---- submit ----
+    $('btn-submit').onclick = async () => {
+      $('btn-submit').disabled = true;
+      $('status').textContent = 'Signing and submitting…';
+      try {
+        const votes = [...document.querySelectorAll('#vote-inputs input')]
+          .map((i) => ({ party: i.dataset.party, count: Number(i.value || 0) }))
+          .filter((v) => Number.isInteger(v.count) && v.count >= 0);
+        const level = $('sel-level').value;
+        const scope = {
+          level, contest: $('sel-contest').value, state: $('sel-state').value,
+          lga: level === 'state' ? '' : $('sel-lga').value,
+          ward: level === 'ward' ? $('sel-ward').value : '',
+        };
+        const imageSha256 = await sha256Hex(await shots.sheet.blob.arrayBuffer());
+        const venueImageSha256 = await sha256Hex(await shots.venue.blob.arrayBuffer());
+        const payload = canonicalCollationPayload({
+          ...scope, votes, imageSha256, venueImageSha256,
+          capturedAt: shots.sheet.capturedAt, venueCapturedAt: shots.venue.capturedAt,
+          lat: shots.sheet.lat, lng: shots.sheet.lng,
+        });
+        const pair = await getKeys();
+        const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, pair.privateKey, new TextEncoder().encode(payload));
+        const fd = new FormData();
+        for (const [k, v] of Object.entries(scope)) fd.set(k, v);
+        fd.set('votes', JSON.stringify(votes));
+        fd.set('capturedAt', String(shots.sheet.capturedAt));
+        fd.set('venueCapturedAt', String(shots.venue.capturedAt));
+        fd.set('lat', String(shots.sheet.lat)); fd.set('lng', String(shots.sheet.lng));
+        fd.set('accuracy', String(shots.sheet.accuracy || ''));
+        if ($('form-serial').value.trim()) fd.set('formSerial', $('form-serial').value.trim());
+        fd.set('signature', btoa(String.fromCharCode(...new Uint8Array(sig))));
+        fd.set('photo', shots.sheet.blob, 'form.jpg');
+        fd.set('venuePhoto', shots.venue.blob, 'venue.jpg');
+        const r = await fetch('/api/collations', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() },
+          body: fd,
+        });
+        const b = await r.json().catch(() => ({}));
+        if (r.status === 201) {
+          $('status').textContent = `✅ ${b.form} report recorded and being reconciled against polling-unit evidence.`;
+          shots.sheet = shots.venue = null;
+        } else if (r.status === 401) {
+          localStorage.removeItem('hawkeye_token');
+          $('status').innerHTML = 'Session expired — <a href="observe.html?intent=observe">register your device again →</a>';
+          $('form').hidden = true; $('need-auth').hidden = false;
+          $('btn-submit').disabled = false;
+        } else {
+          const M = {
+            already_submitted: 'You already reported this collation.',
+            photo_not_fresh: 'Photos too old — retake both and submit immediately.',
+            duplicate_image: 'One of these photos was already submitted.',
+            bad_signature: 'Signature check failed — refresh and retry.',
+            invalid_votes: 'Check the totals — whole numbers only.',
+            unknown_scope: 'That state/LGA/ward combination is not on the register.',
+          };
+          $('status').textContent = M[b.error] || b.hint || b.error || 'Could not submit.';
+          $('btn-submit').disabled = false;
+        }
+      } catch (e) {
+        $('status').textContent = 'Could not submit — check your connection and retry.';
+        $('btn-submit').disabled = false;
+      }
+    };
+
+    // ---- boot ----
+    (async () => {
+      if (!token) { $('need-auth').hidden = false; return; }
+      $('form').hidden = false;
+      const [contests, states, parties] = await Promise.all([
+        fetch('/api/contests').then((r) => r.json()),
+        fetch('/api/register/states').then((r) => r.json()),
+        fetch('/api/parties').then((r) => r.json()),
+      ]);
+      $('sel-contest').innerHTML = contests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
+      fill($('sel-state'), states, '— select state —');
+      $('vote-inputs').innerHTML = parties.map((p) => `
+        <div class="vote-row"><label>${p.code}</label>
+        <input type="number" min="0" inputmode="numeric" placeholder="0" data-party="${p.code}" /></div>`).join('');
+      scopeUpdate();
+    })();
+  </script>
+</body>
+</html>

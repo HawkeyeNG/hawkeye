@@ -1,0 +1,105 @@
+# Harvest EXACT polling-unit GPS from INEC's public PU locator
+# (cvr.inecnigeria.org). Cascade (states->lgas->wards->pus) is an open JSON API;
+# the "directions" endpoint 302-redirects to a Google Maps link with the unit's
+# real lat,lng (no auth/CAPTCHA). Dropdown label prefixes rebuild our delimitation
+# pu_code SS-LL-WW-UUU. CONCURRENT: a thread pool fetches PU coords in parallel
+# (still polite — modest worker count, identifying UA). Resumable per ward.
+#   python3 scripts/fetch_inec_coords.py [firstState=1] [lastState=37] [workers=6]
+import os, re, sys, csv, json, time, threading, urllib.request, urllib.parse
+from concurrent.futures import ThreadPoolExecutor
+
+HOME = os.path.expanduser("~")
+OUT = os.path.join(HOME, "hawkeye/backend/storage/raw/inec_pu_coords.csv")
+DONE = OUT + ".wards_done"
+B = "https://cvr.inecnigeria.org"
+UA = "Hawkeye-Election-Monitor/1.0 (transparency project; info@hawkeye.com.ng)"
+HDRS = {"User-Agent": UA, "X-Requested-With": "XMLHttpRequest", "Referer": B + "/pu_locator/"}
+S0 = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+S1 = int(sys.argv[2]) if len(sys.argv) > 2 else 37
+WORKERS = int(sys.argv[3]) if len(sys.argv) > 3 else 6
+
+def get_json(path):
+    req = urllib.request.Request(B + path, headers=HDRS)
+    for _ in range(3):
+        try:
+            return json.loads(urllib.request.urlopen(req, timeout=25).read())
+        except Exception:
+            time.sleep(1.5)
+    return []
+
+def opts(d):
+    out = []
+    for row in d:
+        for k, v in row.items():
+            if k not in ("0", "selected"):
+                out.append((k, v.strip()))
+    return out
+
+PREFIX = re.compile(r"^\s*(\d+)")
+def code_of(label):
+    m = PREFIX.match(label)
+    return m.group(1).zfill(2) if m else None
+
+def coords(sid, lid, wid, pid):
+    body = urllib.parse.urlencode({
+        "_method": "POST", "data[Search][state_id]": sid,
+        "data[Search][local_government_id]": lid,
+        "data[Search][registration_area_id]": wid,
+        "data[Search][polling_unit_id]": pid,
+    }).encode()
+    req = urllib.request.Request(B + "/pu_locator/index", data=body,
+                                 headers={**HDRS, "Content-Type": "application/x-www-form-urlencoded"})
+    for _ in range(3):
+        try:
+            try:
+                txt = urllib.request.urlopen(req, timeout=25).read().decode(errors="replace")
+            except urllib.error.HTTPError as e:
+                txt = e.read().decode(errors="replace")
+            m = re.search(r"q=([-0-9.]+)%2C([-0-9.]+)", txt) or re.search(r"q=([-0-9.]+),([-0-9.]+)", txt)
+            return (float(m.group(1)), float(m.group(2))) if m else None
+        except Exception:
+            time.sleep(1.5)
+    return None
+
+lock = threading.Lock()
+done = set(open(DONE).read().split()) if os.path.exists(DONE) else set()
+new = not os.path.exists(OUT)
+out = open(OUT, "a", newline="", buffering=1); w = csv.writer(out)
+if new:
+    w.writerow(["pu_code", "lat", "lng"])
+donef = open(DONE, "a", buffering=1)
+total = [0]
+
+def do_pu(args):
+    sid, lid, wid, pid, code = args
+    c = coords(sid, lid, wid, pid)
+    if c and -1 < c[0] < 15 and 2 < c[1] < 15:
+        with lock:
+            w.writerow([code, round(c[0], 6), round(c[1], 6)]); total[0] += 1
+
+pool = ThreadPoolExecutor(max_workers=WORKERS)
+for sid in range(S0, S1 + 1):
+    scode = str(sid).zfill(2)
+    lgas = opts(get_json(f"/PublicApi/lgas/1/Search?data%5BSearch%5D%5Bstate_id%5D={sid}"))
+    if not lgas:
+        continue
+    for lid, llabel in lgas:
+        lcode = code_of(llabel)
+        wards = opts(get_json(f"/PublicApi/wards/1/Search?data%5BSearch%5D%5Blocal_government_id%5D={lid}"))
+        for wid, wlabel in wards:
+            key = f"{sid}-{lid}-{wid}"
+            if key in done:
+                continue
+            wcode = code_of(wlabel)
+            pus = opts(get_json(f"/PublicApi/pus/1/Search?data%5BSearch%5D%5Bregistration_area_id%5D={wid}"))
+            jobs = []
+            for pid, plabel in pus:
+                pcode = code_of(plabel)
+                if all((scode, lcode, wcode, pcode)):
+                    jobs.append((sid, lid, wid, pid, f"{scode}-{lcode}-{wcode}-{pcode.zfill(3)}"))
+            list(pool.map(do_pu, jobs))       # ward's PUs fetched in parallel
+            donef.write(key + "\n")
+        print(f"state {sid} lga {lcode} done · {total[0]} coords", flush=True)
+pool.shutdown()
+out.close(); donef.close()
+print(f"FINISHED states {S0}-{S1}: {total[0]} coords -> {OUT}")

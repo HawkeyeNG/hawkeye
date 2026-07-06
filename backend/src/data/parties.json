@@ -1,0 +1,22 @@
+[
+  { "code": "A", "name": "Accord" },
+  { "code": "AA", "name": "Action Alliance" },
+  { "code": "AAC", "name": "African Action Congress" },
+  { "code": "ADC", "name": "African Democratic Congress" },
+  { "code": "ADP", "name": "Action Democratic Party" },
+  { "code": "APC", "name": "All Progressives Congress" },
+  { "code": "APGA", "name": "All Progressives Grand Alliance" },
+  { "code": "APM", "name": "Allied Peoples Movement" },
+  { "code": "APP", "name": "Action Peoples Party" },
+  { "code": "BP", "name": "Boot Party" },
+  { "code": "DLA", "name": "Democratic Leadership Alliance" },
+  { "code": "LP", "name": "Labour Party" },
+  { "code": "NNPP", "name": "New Nigeria Peoples Party" },
+  { "code": "NRM", "name": "National Rescue Movement" },
+  { "code": "PDP", "name": "Peoples Democratic Party" },
+  { "code": "PRP", "name": "Peoples Redemption Party" },
+  { "code": "SDP", "name": "Social Democratic Party" },
+  { "code": "YP", "name": "Youth Party" },
+  { "code": "YPP", "name": "Young Progressives Party" },
+  { "code": "ZLP", "name": "Zenith Labour Party" }
+]

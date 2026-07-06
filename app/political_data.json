@@ -1,0 +1,186 @@
+{
+ "note": "Incumbent office-holders and their parties. Verify against INEC before relying on it.",
+ "president": {
+  "name": "President of Nigeria",
+  "party": "APC"
+ },
+ "governors": {
+  "Abia": "LP",
+  "Adamawa": "APC",
+  "Akwa Ibom": "APC",
+  "Anambra": "APGA",
+  "Bauchi": "PDP",
+  "Bayelsa": "APC",
+  "Benue": "APC",
+  "Borno": "APC",
+  "Cross River": "APC",
+  "Delta": "APC",
+  "Ebonyi": "APC",
+  "Edo": "APC",
+  "Ekiti": "APC",
+  "Enugu": "APC",
+  "Gombe": "APC",
+  "Imo": "APC",
+  "Jigawa": "APC",
+  "Kaduna": "APC",
+  "Kano": "APC",
+  "Katsina": "APC",
+  "Kebbi": "APC",
+  "Kogi": "APC",
+  "Kwara": "APC",
+  "Lagos": "APC",
+  "Nasarawa": "APC",
+  "Niger": "APC",
+  "Ogun": "APC",
+  "Ondo": "APC",
+  "Osun": "PDP",
+  "Oyo": "PDP",
+  "Plateau": "APC",
+  "Rivers": "APC",
+  "Sokoto": "APC",
+  "Taraba": "APC",
+  "Yobe": "APC",
+  "Zamfara": "APC",
+  "FCT": null
+ },
+ "upcoming": {
+  "note": "Next general election cycle. Exact INEC dates to be confirmed nearer the time.",
+  "elections": [
+   {
+    "office": "Presidential",
+    "seats": "1",
+    "when": "2027 general election",
+    "scope": "National"
+   },
+   {
+    "office": "Senate",
+    "seats": "109",
+    "when": "2027 general election",
+    "scope": "All senatorial districts"
+   },
+   {
+    "office": "House of Representatives",
+    "seats": "360",
+    "when": "2027 general election",
+    "scope": "All federal constituencies"
+   },
+   {
+    "office": "Governorship",
+    "seats": "28",
+    "when": "2027 general election",
+    "scope": "28 states (8 off-cycle states vote separately: Anambra, Bayelsa, Edo, Ekiti, Imo, Kogi, Ondo, Osun)"
+   },
+   {
+    "office": "State Houses of Assembly",
+    "seats": "~990",
+    "when": "2027 general election",
+    "scope": "All states"
+   }
+  ]
+ },
+ "composition": {
+  "asOf": "2026-07-06",
+  "note": "Current seat composition by party, compiled from public records (NASS/INEC declarations incl. defections). Vacant/undeclared seats make totals fall short of chamber size.",
+  "chambers": {
+   "senate": {
+    "label": "Senate",
+    "size": 109,
+    "total": 108,
+    "parties": {
+     "APC": 68,
+     "ADC": 9,
+     "PDP": 24,
+     "YPP": 1,
+     "NDC": 1,
+     "LP": 1,
+     "NNPP": 2,
+     "SDP": 2
+    }
+   },
+   "house": {
+    "label": "House of Representatives",
+    "size": 360,
+    "total": 325,
+    "parties": {
+     "LP": 37,
+     "APC": 172,
+     "PDP": 92,
+     "APGA": 2,
+     "YPP": 1,
+     "NNPP": 18,
+     "ADC": 1,
+     "SDP": 2
+    }
+   },
+   "governors": {
+    "label": "Governors",
+    "size": 36,
+    "total": 35,
+    "parties": {
+     "LP": 1,
+     "APC": 31,
+     "APGA": 1,
+     "APM": 2
+    }
+   },
+   "assembly": {
+    "label": "State Houses of Assembly",
+    "size": 993,
+    "total": 924,
+    "parties": {
+     "LP": 39,
+     "PDP": 260,
+     "YPP": 5,
+     "APC": 530,
+     "APGA": 20,
+     "SDP": 7,
+     "ADC": 34,
+     "NNPP": 29
+    }
+   },
+   "lga": {
+    "label": "LGA Chairmen",
+    "size": 774,
+    "total": 744,
+    "parties": {
+     "LP": 17,
+     "APC": 653,
+     "APGA": 21,
+     "PDP": 53
+    }
+   }
+  }
+ },
+ "race2027": {
+  "asOf": "2026-07-06",
+  "note": "Major declared candidates so far — the field can change until INEC closes nominations.",
+  "election": "Presidential · 2027 general election",
+  "candidates": [
+   {
+    "name": "Bola Ahmed Tinubu",
+    "party": "APC",
+    "initials": "BAT",
+    "line": "Incumbent president seeking a second term; APGA has endorsed the bid.",
+    "incumbent": true
+   },
+   {
+    "name": "Atiku Abubakar",
+    "party": "ADC",
+    "initials": "AA",
+    "line": "Former vice-president on a fourth presidential run; candidacy under court challenge."
+   },
+   {
+    "name": "Peter Obi",
+    "party": "NDC",
+    "initials": "PO",
+    "line": "Second presidential run, now on the NDC platform, backed by the Obidient movement."
+   },
+   {
+    "name": "Goodluck Jonathan",
+    "party": "PDP",
+    "initials": "GJ",
+    "line": "Former president attempting a return; nomination disputed within the party."
+   }
+  ]
+ }
+}

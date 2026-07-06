@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#00482b" />
+  <title>Hawkeye — OCR Training</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <style>
+    .sheet { width: 100%; border: 1px solid #dde4de; border-radius: 8px; }
+    .tokens { font-family: monospace; font-size: 0.85rem; background: #eef5f0; padding: 10px; border-radius: 6px; word-break: break-word; }
+    .pair { display: flex; gap: 8px; margin: 6px 0; }
+    .pair input { margin: 0; }
+    .pair input.party { width: 110px; text-transform: uppercase; }
+    .progress { font-weight: 700; }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — OCR Training" />
+  <meta property="og:description" content="Crowd-verified, tamper-evident monitoring of polling-unit results in Nigeria." />
+  <meta property="og:url" content="https://hawkeye.com.ng/train.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>OCR Training</strong> — teach the system to read result sheets.</div></div>
+
+  <main class="wrap">
+    <h1>OCR Training</h1>
+    <p class="lede">For each sheet: check what the system read, then enter the real party
+    counts from the image (non-zero rows only). Your answers become the calibration set.</p>
+    <p class="progress" id="progress"></p>
+
+    <section id="need-auth" class="card" hidden>
+      <p>You need a verified observer identity first.</p>
+      <a class="btn-link" href="observe.html">Verify your phone →</a>
+    </section>
+
+    <section id="work" hidden>
+      <div class="card">
+        <h2 id="title"></h2>
+        <img class="sheet" id="img" alt="EC8A sheet" />
+        <p class="hint">System read these digit tokens:</p>
+        <div class="tokens" id="tokens">running OCR…</div>
+      </div>
+      <div class="card">
+        <h2>Actual Counts</h2>
+        <p class="hint">Party code + votes, non-zero rows only (e.g. APC 341).</p>
+        <div id="pairs"></div>
+        <button id="btn-add" class="secondary">+ Add row</button>
+        <button id="btn-save">Save &amp; next sheet</button>
+        <button id="btn-skip" class="secondary">Skip</button>
+        <p id="msg" class="status"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap"><p>Training images are public IReV documents and practice sheets. Official results remain INEC's.</p></div></footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const token = localStorage.getItem('hawkeye_token');
+    let queue = [];
+    let cur = null;
+
+    function addPair(p = '', c = '') {
+      const d = document.createElement('div');
+      d.className = 'pair';
+      d.innerHTML = `<input class="party" placeholder="PARTY" value="${p}" /><input type="number" min="1" placeholder="votes" value="${c}" />`;
+      $('pairs').appendChild(d);
+    }
+
+    async function next() {
+      cur = queue.shift();
+      if (!cur) { $('work').hidden = true; $('progress').textContent += ' — all sheets labelled. 🎉'; return; }
+      $('work').hidden = false;
+      $('title').textContent = cur.key;
+      $('img').src = `/training/${cur.file}`;
+      $('pairs').innerHTML = ''; addPair(); addPair(); addPair();
+      $('tokens').textContent = 'running OCR…'; $('msg').textContent = '';
+      const r = await fetch(`/api/training/ocr/${cur.file}`, { headers: { authorization: `Bearer ${token}` } }).then((x) => x.json());
+      $('tokens').textContent = (r.tokens || []).join('  ') || '(nothing read)';
+    }
+
+    $('btn-add').onclick = () => addPair();
+    $('btn-skip').onclick = next;
+    $('btn-save').onclick = async () => {
+      const counts = {};
+      for (const d of $('pairs').children) {
+        const [p, c] = d.querySelectorAll('input');
+        if (p.value.trim() && Number(c.value) > 0) counts[p.value.trim()] = Number(c.value);
+      }
+      const r = await fetch('/api/training/label', {
+        method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ key: cur.key, counts }),
+      });
+      if (!r.ok) { $('msg').textContent = 'Save failed — are you verified?'; return; }
+      const j = await r.json();
+      $('progress').textContent = `${j.labelled} sheets labelled · ${queue.length} remaining`;
+      next();
+    };
+
+    (async () => {
+      if (!token) { $('need-auth').hidden = false; return; }
+      const d = await fetch('/api/training/items').then((r) => r.json());
+      queue = d.items.filter((i) => !i.labelled);
+      $('progress').textContent = `${d.labelled} sheets labelled · ${queue.length} remaining`;
+      next();
+    })();
+  </script>
+  <script src="menu.js?v=59"></script>
+</body>
+</html>

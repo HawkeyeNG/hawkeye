@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#00482b" />
+  <title>Hawkeye — National Results Leaderboard (Unofficial)</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <style>
+    .map-card svg { width: 100%; height: auto; display: block; }
+    /* Stears-style: regions awaiting reports are neutral grey; reporting regions green-tinted */
+    .state-shape { fill: #e9e9e7; stroke: #b7bcb7; stroke-width: 1; }
+    .state-shape.led { fill: #e2ecdf; stroke: #7a9486; }
+    .map-legend { display: flex; gap: 16px; align-items: center; font-size: 0.8rem; color: var(--muted); margin: 8px 0 0; }
+    .map-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .map-legend i { width: 13px; height: 13px; display: inline-block; border: 1px solid #b7bcb7; }
+    .badge-text { font-weight: 700; fill: #fff; font-size: 11px; text-anchor: middle; dominant-baseline: central; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e6e6e5; }
+    th { border-bottom: 2px solid var(--ink); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    td.num, th.num { text-align: right; }
+    .party-chip { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+    .party-chip img, .party-chip .dot { width: 22px; height: 22px; border-radius: 50%; object-fit: contain; }
+    .party-chip .dot { display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 0.6rem; font-weight: 700; }
+    .toolbar { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin-bottom: 4px; }
+    .toolbar label { margin: 0 0 4px; }
+    .toolbar select { width: auto; min-width: 260px; }
+    .unofficial {
+      background: #fbeaea; border-left: 6px solid var(--danger);
+      padding: 12px 14px; font-size: 0.92rem; margin: 16px 0;
+    }
+    .updated { color: var(--muted); font-size: 0.82rem; }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — National Results Leaderboard (Unofficial)" />
+  <meta property="og:description" content="Crowd-verified, tamper-evident monitoring of polling-unit results in Nigeria." />
+  <meta property="og:url" content="https://hawkeye.com.ng/results.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home">
+        <span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text">
+          <strong>HAWKEYE</strong>
+          <span>Independent Election Results Monitor</span>
+        </div>
+      </a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById(&quot;menu-panel&quot;);const open=m.hidden;m.hidden=!open;this.setAttribute(&quot;aria-expanded&quot;,String(open));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner">
+    <div class="wrap"><strong>Beta</strong> — this service is in public testing. Official results remain INEC's.</div>
+  </div>
+
+  <main class="wrap">
+    <h1>National leaderboard</h1>
+    <p class="unofficial"><strong>Tentative and unofficial.</strong> These are crowd-reported,
+    partially-covered tallies computed by Hawkeye's corroboration system. They are not —
+    and never will be — official election results, which only INEC declares.</p>
+
+    <div class="toolbar" id="follow">
+      <div>
+        <label for="sel-contest">Election</label>
+        <select id="sel-contest"><option value="">Loading elections…</option></select>
+      </div>
+      <select id="sel-scope" style="width:auto;min-width:200px"><option value="">Everywhere</option></select>
+      <button id="btn-follow" class="secondary" style="width:auto;margin:0">🔔 Follow</button>
+      <p class="updated" id="updated"></p>
+    </div>
+    <p id="follow-msg" class="hint"></p>
+
+    <div class="card map-card">
+      <h2 id="map-title">Leading party by state</h2>
+      <p class="hint">The leading party's emblem is shown on each state with reports.
+      Hover or tap a state for details.</p>
+      <div id="map"><div class="skel" style="height:320px"></div></div>
+      <p class="map-legend">
+        <span><i style="background:#e9e9e7"></i> Awaiting reports</span>
+        <span><i style="background:#e2ecdf"></i> Reporting — leader's emblem shown</span>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Party totals</h2>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Party</th><th class="num">Votes</th><th class="num">Share</th><th class="num" id="led-col">States led</th></tr>
+        </thead>
+        <tbody id="board"><tr><td colspan="5" class="meta">No reports yet.</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer class="gov-footer">
+    <div class="wrap">
+      <nav>
+        <a href="observe.html">Report a result</a>
+        <a href="results.html">Public results</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="political.html">Political data</a>
+      </nav>
+      <p>Party emblems are used for identification only. Auto-refreshes every 30 seconds.</p>
+    </div>
+  </footer>
+
+  <script>
+    const PARTY_COLORS = {
+      APC: '#2e7d32', PDP: '#c62828', LP: '#388e3c', NNPP: '#1565c0', APGA: '#f9a825',
+      SDP: '#5e35b1', ADC: '#00897b', YPP: '#ef6c00', PRP: '#8d6e63', ADP: '#455a64',
+      AAC: '#6a1b9a', A: '#00695c', AA: '#3e2723', APM: '#283593', APP: '#4e342e',
+      BP: '#37474f', NRM: '#827717', ZLP: '#00838f',
+    };
+    const color = (p) => PARTY_COLORS[p] || '#546e7a';
+    const norm = (s) => {
+      const n = String(s || '').toLowerCase().replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
+      return /fct|federal capital|abuja/.test(n) ? 'fct' : n;
+    };
+
+    let STATES = null;  // states_geo.json
+    let LGAS = null;    // lga_geo.json (State Assembly view)
+    let DGEO = null;    // district_geo.json — 109 merged senatorial districts
+    let CGEO = null;    // constituency_geo.json — federal constituencies
+    let LOGOS = {};
+
+    function badgeSvg(party, cx, cy, r = 13) {
+      if (LOGOS[party]) {
+        return `<image href="${LOGOS[party]}" x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}"></image>`;
+      }
+      return `<g><circle cx="${cx}" cy="${cy}" r="${r}" fill="${color(party)}" stroke="#fff" stroke-width="1.5"></circle>
+        <text class="badge-text" x="${cx}" y="${cy}">${party.slice(0, 4)}</text></g>`;
+    }
+
+    function renderMap(data) {
+      // Region label per map division: state, senatorial district, or federal constituency.
+      const byRegion = Object.fromEntries(data.regions.map((r) => [r.region, r]));
+      let shapes = '';
+      let badges = '';
+      let aria;
+
+      if (data.level === 'state') {
+        const byKey = Object.fromEntries(data.regions.map((r) => [norm(r.region), r]));
+        for (const st of STATES.states) {
+          const info = byKey[st.key];
+          const tip = info ? `${st.name}: ${info.leader} leads · ${info.unitsReporting} unit(s)` : `${st.name}: no reports yet`;
+          shapes += `<path class="state-shape${info ? ' led' : ''}" d="${st.path}"><title>${tip}</title></path>`;
+          if (info?.leader) badges += badgeSvg(info.leader, st.cx, st.cy);
+        }
+        aria = 'Map of Nigeria: leading party per state';
+      } else if (data.level === 'lga') {
+        // State Assembly: LGA polygons tinted by their STATE's leading party.
+        const byKey = Object.fromEntries(data.regions.map((r) => [norm(r.region), r]));
+        for (const lga of LGAS.lgas) {
+          const info = byKey[lga.key.split('|')[0]];
+          const led = info?.leader;
+          shapes += `<path d="${lga.path}" fill="${led ? color(led) : '#e9e9e7'}" fill-opacity="${led ? 0.85 : 1}" stroke="#b7bcb7" stroke-width="0.5" stroke-linejoin="round"><title>${info ? `${info.region}: ${led} leads` : `${lga.key.split('|')[1] || ''}: awaiting reports`}</title></path>`;
+        }
+        aria = 'Map of Nigeria: leading party per state (LGA view)';
+      } else {
+        // Senate / House of Reps: merged district (109) or constituency (355) shapes,
+        // rendered exactly like the presidential map (same class, hover, badges).
+        const GEO = data.level === 'senatorial' ? DGEO : CGEO;
+        const word = data.level === 'senatorial' ? 'senatorial district' : 'federal constituency';
+        // Paint these last so neighbours don't wrongly cut into them (SVG z-order).
+        const FRONT = ['Ogun West', 'Kaduna South', 'Kebbi Central', 'Ondo Central'];
+        const ordered = [...GEO.regions].sort((a, b) => FRONT.indexOf(a.name) - FRONT.indexOf(b.name));
+        for (const rg of ordered) {
+          const info = byRegion[rg.name];
+          const led = info?.leader;
+          const tip = info ? `${rg.name}: ${led} leads · ${info.unitsReporting} unit(s)` : `${rg.name}: no reports yet`;
+          shapes += `<path class="state-shape${led ? ' led' : ''}" fill-rule="evenodd" d="${rg.path}"><title>${tip}</title></path>`;
+          if (led) badges += badgeSvg(led, rg.cx, rg.cy, 10);
+        }
+        aria = `Map of Nigeria: leading party per ${word}`;
+      }
+      document.getElementById('map').innerHTML =
+        `<svg viewBox="${STATES.viewBox}" role="img" aria-label="${aria}">${shapes}${badges}</svg>`;
+    }
+
+    function renderBoard(data) {
+      const total = data.national.reduce((s, r) => s + r.votes, 0);
+      const ledCount = {};
+      for (const s of data.regions) if (s.leader) ledCount[s.leader] = (ledCount[s.leader] || 0) + 1;
+      const body = document.getElementById('board');
+      if (!data.national.length) {
+        body.innerHTML = '<tr><td colspan="5" class="meta">No reports yet for this election.</td></tr>';
+        return;
+      }
+      body.innerHTML = data.national.map((r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><span class="party-chip">${
+            LOGOS[r.party]
+              ? `<img src="${LOGOS[r.party]}" alt="" />`
+              : `<span class="dot" style="background:${color(r.party)}">${r.party.slice(0, 3)}</span>`
+          }${r.party}</span></td>
+          <td class="num">${r.votes.toLocaleString()}</td>
+          <td class="num">${total ? ((r.votes / total) * 100).toFixed(1) : 0}%</td>
+          <td class="num">${ledCount[r.party] || 0}</td>
+        </tr>`).join('');
+    }
+
+    const REGION_WORD = { state: 'state', lga: 'state', senatorial: 'senatorial district', federal: 'federal constituency' };
+
+    async function refresh() {
+      const contest = document.getElementById('sel-contest').value || 'PRES';
+      const data = await fetch(`/api/national/${contest}`).then((r) => r.json());
+      const word = REGION_WORD[data.level] || 'region';
+      // Populate the follow-scope picker with the regions for this contest.
+      const names = data.level === 'senatorial' ? DGEO.regions.map((r) => r.name)
+        : data.level === 'federal' ? CGEO.regions.map((r) => r.name)
+        : STATES.states.map((s) => s.name);
+      document.getElementById('sel-scope').innerHTML =
+        `<option value="">Everywhere</option>` + [...names].sort().map((n) => `<option>${n}</option>`).join('');
+      document.getElementById('map-title').textContent = `Leading party by ${word}`;
+      const plural = word.endsWith('y') ? `${word.slice(0, -1)}ies` : `${word}s`;
+      document.getElementById('led-col').textContent = `${plural[0].toUpperCase()}${plural.slice(1)} led`;
+      renderMap(data);
+      renderBoard(data);
+      document.getElementById('updated').textContent =
+        `${data.unitsReporting} unit(s) reporting · updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
+    }
+
+    (async () => {
+      const [states, lgas, dgeo, cgeo, logos, contests] = await Promise.all([
+        fetch('states_geo.json').then((r) => r.json()),
+        fetch('lga_geo.json').then((r) => r.json()),
+        fetch('district_geo.json').then((r) => r.json()),
+        fetch('constituency_geo.json').then((r) => r.json()),
+        fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
+        fetch('/api/contests').then((r) => r.json()),
+      ]);
+      STATES = states;
+      LGAS = lgas;
+      DGEO = dgeo;
+      CGEO = cgeo;
+      LOGOS = logos;
+      const sel = document.getElementById('sel-contest');
+      sel.innerHTML = contests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
+      sel.onchange = refresh;
+      await refresh();
+      setInterval(refresh, 30000);
+    })();
+
+    // Opt-in race-follow notifications (Telegram). Needs a verified observer token.
+    document.getElementById('btn-follow').onclick = async () => {
+      const token = localStorage.getItem('hawkeye_token');
+      const msg = document.getElementById('follow-msg');
+      if (!token) { msg.innerHTML = 'To follow a race, first <a href="observe.html">verify your phone</a>, then return here.'; return; }
+      const contest = document.getElementById('sel-contest').value;
+      const scope = document.getElementById('sel-scope').value;
+      const r = await fetch('/api/subscriptions', {
+        method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ contest, state: scope }),
+      });
+      msg.textContent = r.ok
+        ? `🔔 Following ${scope || 'everywhere'}. You'll get a Telegram message on every new report.`
+        : 'Could not set up following — make sure your phone is verified.';
+    };
+  </script>
+  <script src="tg.js?v=59"></script>
+  <script src="menu.js?v=59"></script>
+</body>
+</html>

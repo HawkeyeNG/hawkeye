@@ -1,0 +1,26 @@
+{
+ "tinubu": {
+  "file": "photos/candidates/tinubu.jpg",
+  "source": "https://en.wikipedia.org/wiki/Bola_Tinubu"
+ },
+ "atiku": {
+  "file": "photos/candidates/atiku.jpg",
+  "source": "https://en.wikipedia.org/wiki/Atiku_Abubakar"
+ },
+ "obi": {
+  "file": "photos/candidates/obi.jpg",
+  "source": "https://en.wikipedia.org/wiki/Peter_Obi"
+ },
+ "jonathan": {
+  "file": "photos/candidates/jonathan.jpg",
+  "source": "https://en.wikipedia.org/wiki/Goodluck_Jonathan"
+ },
+ "datti": {
+  "file": "photos/candidates/datti.jpg",
+  "source": "https://en.wikipedia.org/wiki/Yusuf_Datti_Baba-Ahmed"
+ },
+ "adebayo": {
+  "file": "photos/candidates/adebayo.jpg",
+  "source": "https://en.wikipedia.org/wiki/Adewole_Adebayo"
+ }
+}

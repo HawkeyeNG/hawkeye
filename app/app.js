@@ -648,3 +648,55 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
     show('screen-register');
   }
 })();
+
+// ---------- Telegram Mini App: OTP-free sign-in via verified contact share ----------
+// Inside Telegram, the phone number comes from Telegram itself (signed with the
+// bot token) — no SMS. Falls back to the OTP form on any failure.
+function armTelegramLogin() {
+  const tg = window.HawkeyeTG;
+  if (!tg || !tg.initData || $('btn-tg-login')) return;
+  const label = document.querySelector('label[for="auth-input"]');
+  if (!label) return;
+  const btn = document.createElement('button');
+  btn.id = 'btn-tg-login';
+  btn.type = 'button';
+  btn.textContent = '✈️ Continue with Telegram — no code needed';
+  btn.style.cssText = 'background:#2aabee;box-shadow:0 4px 14px rgba(42,171,238,.35);margin:0 0 4px';
+  const or = document.createElement('p');
+  or.className = 'hint';
+  or.style.cssText = 'text-align:center;margin:8px 0 2px';
+  or.textContent = '— or sign in with SMS —';
+  label.parentNode.insertBefore(btn, label);
+  label.parentNode.insertBefore(or, label);
+  btn.onclick = async () => {
+    btn.disabled = true;
+    btn.textContent = 'Waiting for Telegram…';
+    try {
+      const pair = await ensureKeys();
+      const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
+      const contact = await new Promise((resolve) => {
+        let done = false;
+        const finish = (v) => { if (!done) { done = true; resolve(v); } };
+        try { tg.requestContact((ok, resp) => finish(ok ? (resp || true) : null)); }
+        catch { finish(null); }
+        setTimeout(() => finish(null), 30000);
+      });
+      if (!contact) throw new Error('cancelled');
+      const contactResponse = typeof contact === 'string' ? contact : (contact.response || null);
+      const { status, body } = await api('/api/observers/telegram-verify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ initData: tg.initData, contactResponse, publicKeyJwk }),
+      });
+      if (status !== 200) throw new Error(body.error || 'failed');
+      localStorage.setItem('hawkeye_token', body.token);
+      afterVerified();
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '✈️ Continue with Telegram — no code needed';
+      alert('Telegram sign-in did not complete — you can use the SMS option below.');
+    }
+  };
+}
+if (window.HawkeyeTG) armTelegramLogin();
+document.addEventListener('hawkeye-tg-ready', armTelegramLogin);

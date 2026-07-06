@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#00482b" />
+  <title>Hawkeye — Political Data</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <style>
+    .map-card svg { width: 100%; height: auto; }
+    .st { stroke: #fff; stroke-width: 1; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #e6e6e5; }
+    .chip { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; }
+    .chip img, .chip .dot { width: 20px; height: 20px; border-radius: 50%; object-fit: contain; }
+    .chip .dot { display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 0.55rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; font-size: 0.85rem; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .legend i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+    /* 2027 race cards */
+    .cand-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 14px; margin-top: 10px; }
+    .cand { border: 1px solid var(--line); border-top: 4px solid var(--pc, #9aa7a0); border-radius: 12px; padding: 14px; background: #fff; }
+    .cand .row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .cand .av { width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--pc, #9aa7a0); color: #fff; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
+    .cand h3 { margin: 0; font-size: 1rem; }
+    .cand .pill { display: inline-block; font-size: 0.68rem; font-weight: 700; color: #fff; background: var(--pc, #9aa7a0); border-radius: 999px; padding: 2px 9px; margin-bottom: 3px; }
+    .cand p { margin: 0; font-size: 0.84rem; color: var(--muted); }
+    .cand .inc { font-size: 0.68rem; font-weight: 700; color: #8a6d00; background: #fdf3d7; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
+    /* seat-composition bars + donuts */
+    .comp-row { margin: 16px 0 4px; display: flex; gap: 16px; align-items: center; }
+    .comp-main { flex: 1; min-width: 0; }
+    .donut { width: 62px; height: 62px; flex: none; border-radius: 50%; position: relative; }
+    .donut::after { content: ''; position: absolute; inset: 15px; background: #fff; border-radius: 50%; }
+    @media (max-width: 560px) { .donut { display: none; } }
+    .comp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .comp-head strong { font-size: 0.97rem; }
+    .comp-head span { font-size: 0.78rem; color: var(--muted); }
+    .comp-bar { display: flex; height: 26px; border-radius: 7px; overflow: hidden; margin-top: 6px; background: #eef2ef; }
+    .comp-bar i { display: block; height: 100%; }
+    .comp-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 0.8rem; color: var(--muted); }
+    .comp-legend b { color: var(--ink); }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Political Data" />
+  <meta property="og:description" content="Crowd-verified, tamper-evident monitoring of polling-unit results in Nigeria." />
+  <meta property="og:url" content="https://hawkeye.com.ng/political.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Political Data</strong> — who currently holds power, going into the election.</div></div>
+
+  <main class="wrap">
+    <h1>Political Data</h1>
+    <p class="lede">The parties currently in power — the incumbents this election will confirm or
+    unseat. Governing party shown per state; hover for details.</p>
+    <p class="scope-note" id="prez"></p>
+    <p class="unofficial" id="provisional" style="background:#fff8e1;border-left:6px solid #f9a825;padding:10px;font-size:0.85rem"></p>
+
+    <div class="card">
+      <h2>The 2027 Presidential Race</h2>
+      <p class="hint" id="race-note"></p>
+      <div class="cand-grid" id="race"></div>
+    </div>
+
+    <div class="card">
+      <h2>Who Holds Power Now</h2>
+      <p class="hint" id="comp-note"></p>
+      <div id="composition"></div>
+    </div>
+
+    <div class="card map-card">
+      <h2>Governing Party By State</h2>
+      <div class="legend" id="legend"></div>
+      <div id="map"><p class="meta">Loading…</p></div>
+    </div>
+
+    <div class="card">
+      <h2>Incumbent Governors</h2>
+      <table><thead><tr><th>State</th><th>Governing Party</th></tr></thead><tbody id="tbl"></tbody></table>
+    </div>
+
+    <div class="card">
+      <h2>Upcoming Elections</h2>
+      <p class="hint" id="up-note"></p>
+      <div style="overflow-x:auto">
+        <table style="min-width:560px"><thead><tr><th>Office</th><th class="num">Seats</th><th>When</th><th>Scope</th></tr></thead><tbody id="up-tbl"></tbody></table>
+      </div>
+    </div>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap"><nav>
+    <a href="observe.html">Report a Result</a><a href="results.html">Public Results</a>
+    <a href="map-unit.html">Map a Polling Unit</a><a href="political.html">Political Data</a>
+  <a href="ledger.html">Verify the Ledger</a></nav><p>Incumbency data is provisional and community-maintained; verify against INEC. Official results remain INEC's.</p></div></footer>
+
+  <script>
+    const PC = { APC:'#2e7d32', PDP:'#c62828', LP:'#388e3c', NNPP:'#1565c0', APGA:'#f9a825', SDP:'#5e35b1', ADC:'#00897b', YPP:'#ef6c00', APM:'#283593', NDC:'#6a1b9a' };
+    const color = (p) => PC[p] || '#9aa7a0';
+    const norm = (s) => { const n = String(s||'').toLowerCase().replace(/[^a-z ]+/g,' ').replace(/\s+/g,' ').trim(); return /fct|federal capital|abuja/.test(n)?'fct':n; };
+    (async () => {
+      const [geo, data, logos] = await Promise.all([
+        fetch('states_geo.json').then(r=>r.json()),
+        fetch('political_data.json').then(r=>r.json()),
+        fetch('logos/manifest.json').then(r=>r.json()).catch(()=>({})),
+      ]);
+      const byKey = {}; for (const [st,p] of Object.entries(data.governors)) byKey[norm(st)] = { st, p };
+
+      // 2027 presidential race cards
+      if (data.race2027) {
+        document.getElementById('race-note').textContent =
+          `${data.race2027.election}. ${data.race2027.note} (as of ${data.race2027.asOf})`;
+        document.getElementById('race').innerHTML = data.race2027.candidates.map((c) => `
+          <div class="cand" style="--pc:${color(c.party)}">
+            <div class="row1"><span class="av">${c.initials}</span>
+              <div><span class="pill">${c.party}</span><h3>${c.name}${c.incumbent ? '<span class="inc">Incumbent</span>' : ''}</h3></div>
+            </div>
+            <p>${c.line}</p>
+          </div>`).join('');
+      }
+
+      // Seat composition — stacked bar + donut per chamber, party-colored,
+      // grey remainder = vacant/undeclared seats.
+      if (data.composition) {
+        document.getElementById('comp-note').textContent =
+          `${data.composition.note} (as of ${data.composition.asOf})`;
+        document.getElementById('composition').innerHTML =
+          Object.values(data.composition.chambers).map((ch) => {
+            const entries = Object.entries(ch.parties).sort((a, b) => b[1] - a[1]);
+            const seats = entries.reduce((s, [, n]) => s + n, 0);
+            const segs = entries.map(([p, n]) =>
+              `<i style="width:${(n / ch.size) * 100}%;background:${color(p)}" title="${p}: ${n}"></i>`).join('');
+            const legend = entries.slice(0, 6).map(([p, n]) => `<span><b>${p}</b> ${n}</span>`).join('')
+              + (entries.length > 6 ? `<span>+${entries.length - 6} more</span>` : '');
+            let acc = 0;
+            const stops = entries.map(([p, n]) => {
+              const from = (acc / ch.size) * 100; acc += n;
+              return `${color(p)} ${from}% ${(acc / ch.size) * 100}%`;
+            }).join(', ');
+            const donut = `<div class="donut" aria-hidden="true" style="background:conic-gradient(${stops}${acc < ch.size ? `, #eef2ef ${(acc / ch.size) * 100}% 100%` : ''})"></div>`;
+            return `<div class="comp-row">${donut}<div class="comp-main">
+              <div class="comp-head"><strong>${ch.label}</strong><span>${seats} of ${ch.size} seats declared</span></div>
+              <div class="comp-bar">${segs}</div>
+              <div class="comp-legend">${legend}</div>
+            </div></div>`;
+          }).join('');
+      }
+      document.getElementById('prez').textContent = `${data.president.name}: governing party ${data.president.party}`;
+      document.getElementById('provisional').textContent = data.note;
+
+      let s='', b='';
+      for (const st of geo.states) {
+        const g = byKey[st.key]; const p = g?.p;
+        s += `<path class="st" d="${st.path}" fill="${p?color(p):'#eef4f0'}" fill-opacity="${p?0.85:1}"><title>${st.name}: ${p||'—'}</title></path>`;
+        if (p && logos[p]) b += `<image href="${logos[p]}" x="${st.cx-11}" y="${st.cy-11}" width="22" height="22"/>`;
+      }
+      document.getElementById('map').innerHTML = `<svg viewBox="${geo.viewBox}" role="img" aria-label="Governing party by state">${s}${b}</svg>`;
+
+      const parties = [...new Set(Object.values(data.governors).filter(Boolean))];
+      document.getElementById('legend').innerHTML = parties.map(p=>`<span><i style="background:${color(p)}"></i>${p}</span>`).join('');
+
+      document.getElementById('tbl').innerHTML = Object.entries(data.governors).sort().map(([st,p])=>`
+        <tr><td>${st}</td><td>${p?`<span class="chip">${logos[p]?`<img src="${logos[p]}" alt="">`:`<span class="dot" style="background:${color(p)}">${p.slice(0,3)}</span>`}${p}</span>`:'—'}</td></tr>`).join('');
+
+      if (data.upcoming) {
+        document.getElementById('up-note').textContent = data.upcoming.note;
+        document.getElementById('up-tbl').innerHTML = data.upcoming.elections.map(e=>`
+          <tr><td><strong>${e.office}</strong></td><td class="num">${e.seats}</td><td>${e.when}</td><td>${e.scope}</td></tr>`).join('');
+      }
+    })();
+  </script>
+  <script src="tg.js?v=59"></script>
+  <script src="menu.js?v=59"></script>
+</body>
+</html>

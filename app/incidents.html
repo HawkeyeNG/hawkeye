@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="Report election-day incidents to Hawkeye — violence, ballot snatching, vote-buying and more, with photos or video." />
+  <title>Hawkeye — Report an Incident</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <style>
+    .feed-item { background: var(--card); border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
+    .feed-item .k { font-weight: 700; color: var(--green-dark); }
+    .feed-item .m { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .feed-item .m img, .feed-item .m video { width: 120px; height: 90px; object-fit: cover; border-radius: 6px; }
+    .empty { color: var(--muted); }
+    #preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    #preview img, #preview video { width: 80px; height: 64px; object-fit: cover; border-radius: 6px; }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Report an Incident" />
+  <meta property="og:description" content="Report election-day incidents to Hawkeye — violence, ballot snatching, vote-buying and more, with photos or video." />
+  <meta property="og:url" content="https://hawkeye.com.ng/incidents.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Your safety first</strong> — never put yourself at risk to capture evidence.</div></div>
+
+  <main class="wrap">
+    <h1>Report an Incident</h1>
+    <p class="lede">Witnessed violence, ballot snatching, vote-buying, voter intimidation or a BVAS
+    failure? Report it with photos, a short video, or a written account. Verified reports are
+    reviewed by our team and, once approved, appear in the public incidents feed below.</p>
+
+    <section id="need-auth" class="card" hidden>
+      <p>To report an incident, register your device first.</p>
+      <a class="btn-link" href="observe.html?intent=incident">Register your device →</a>
+    </section>
+
+    <section id="form-card" class="card" hidden>
+      <label for="kind">Type of incident</label>
+      <select id="kind"></select>
+
+      <label for="desc">What happened?</label>
+      <textarea id="desc" rows="4" placeholder="Describe the incident — where, when, who was involved."
+        style="width:100%;font-family:inherit;font-size:1rem;padding:10px;border:2px solid var(--border);border-radius:10px"></textarea>
+
+      <label for="media">Photos / video (optional, up to 4, 30 MB each)</label>
+      <input id="media" type="file" accept="image/*,video/*" multiple />
+      <div id="preview"></div>
+
+      <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:400">
+        <input type="checkbox" id="use-gps" checked style="width:auto" /> Attach my current location
+      </label>
+
+      <button id="btn-submit">Submit incident report</button>
+      <p id="status" class="status" role="status"></p>
+      <p class="hint">Reports are queued for human review before anything is ever published.
+      Nothing you submit is posted automatically.</p>
+    </section>
+
+    <section class="card">
+      <h2>Published incidents</h2>
+      <div id="feed"><div class="skel" style="height:16px;margin:8px 0"></div><div class="skel" style="height:16px;margin:8px 0;width:75%"></div></div>
+    </section>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a href="observe.html">Report a Result</a><a href="integrity.html">Election Integrity</a><a href="results.html">National Leaderboard</a></nav>
+    <p>Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+  </div></footer>
+
+  <script src="device.js"></script>
+  <script src="tg.js?v=59"></script>
+  <script src="menu.js?v=59"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const token = localStorage.getItem('hawkeye_token');
+    const KIND_LABEL = {
+      violence: 'Violence', ballot_snatching: 'Ballot snatching', vote_buying: 'Vote-buying',
+      intimidation: 'Voter intimidation', bvas_failure: 'BVAS failure', late_materials: 'Late materials',
+      obstruction: 'Obstruction of observers', other: 'Other irregularity',
+    };
+
+    $('media').onchange = () => {
+      $('preview').innerHTML = '';
+      for (const f of $('media').files) {
+        const url = URL.createObjectURL(f);
+        $('preview').insertAdjacentHTML('beforeend',
+          f.type.startsWith('video') ? `<video src="${url}" muted></video>` : `<img src="${url}" alt="" />`);
+      }
+    };
+
+    async function getPos() {
+      return new Promise((res) => navigator.geolocation.getCurrentPosition(
+        (p) => res(p.coords), () => res(null), { enableHighAccuracy: true, timeout: 10000 }));
+    }
+
+    $('btn-submit') && ($('btn-submit').onclick = async () => {
+      const kind = $('kind').value;
+      const desc = $('desc').value.trim();
+      const files = $('media').files;
+      if (!desc && !files.length) { $('status').textContent = 'Add a photo/video or describe what happened.'; return; }
+      $('btn-submit').disabled = true; $('status').textContent = 'Uploading…';
+      const fd = new FormData();
+      fd.set('kind', kind); fd.set('description', desc);
+      for (const f of files) fd.append('media', f);
+      if ($('use-gps').checked) {
+        const c = await getPos();
+        if (c) { fd.set('lat', c.latitude); fd.set('lng', c.longitude); }
+      }
+      const res = await fetch('/api/incidents', {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() },
+        body: fd,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 201) {
+        $('status').textContent = '✅ Received and under review. Thank you.';
+        $('desc').value = ''; $('media').value = ''; $('preview').innerHTML = '';
+      } else if (res.status === 401) {
+        localStorage.removeItem('hawkeye_token');
+        $('status').innerHTML = 'Session expired — <a href="observe.html?intent=incident">register your device again →</a>';
+        $('form-card').hidden = true; $('need-auth').hidden = false;
+      } else {
+        $('status').textContent = ({ invalid_kind: 'Choose an incident type.', empty_report: 'Add a photo/video or a description.' })[body.error] || 'Could not submit — try again.';
+      }
+      $('btn-submit').disabled = false;
+    });
+
+    async function loadFeed() {
+      const { incidents } = await fetch('/api/incidents').then((r) => r.json());
+      if (!incidents.length) { $('feed').innerHTML = '<p class="empty">No incidents have been published yet.</p>'; return; }
+      $('feed').innerHTML = incidents.map((i) => `
+        <div class="feed-item">
+          <span class="k">${KIND_LABEL[i.kind] || i.kind}</span>${i.state ? ` · ${i.state}` : ''}
+          <small style="color:var(--muted)"> · ${timeAgo(i.created_at)}</small>
+          ${i.description ? `<p>${i.description.replace(/</g, '&lt;')}</p>` : ''}
+          ${i.media.length ? `<div class="m">${i.media.map((m) => m.type === 'video'
+            ? `<video src="/uploads/${m.file}" controls muted></video>`
+            : `<img src="/uploads/${m.file}" alt="incident evidence" loading="lazy" />`).join('')}</div>` : ''}
+        </div>`).join('');
+    }
+
+    // Show the right panel immediately — never gate it behind a network call.
+    if (token) { $('form-card').hidden = false; } else { $('need-auth').hidden = false; }
+    loadFeed();
+    (async () => {
+      const kinds = await fetch('/api/incidents/kinds').then((r) => r.json()).catch(() => Object.keys(KIND_LABEL));
+      $('kind').innerHTML = kinds.map((k) => `<option value="${k}">${KIND_LABEL[k] || k}</option>`).join('');
+    })();
+  </script>
+</body>
+</html>

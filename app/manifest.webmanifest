@@ -1,0 +1,12 @@
+{
+  "name": "Hawkeye Election Monitor",
+  "short_name": "Hawkeye",
+  "description": "Crowd-verified polling unit results reporting",
+  "start_url": "/observe.html",
+  "display": "standalone",
+  "background_color": "#00482b",
+  "theme_color": "#00482b",
+  "icons": [
+    { "src": "logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

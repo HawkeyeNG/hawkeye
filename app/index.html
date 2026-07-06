@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00251a" />
+  <meta name="description" content="Hawkeye — independent, crowd-verified monitoring of polling unit results in Nigeria. Observe, follow live results, get alerts." />
+  <title>Hawkeye — Independent Election Results Monitor</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Independent Election Results Monitor" />
+  <meta property="og:description" content="Hawkeye — independent, crowd-verified monitoring of polling unit results in Nigeria. Observe, follow live results, get alerts." />
+  <meta property="og:url" content="https://hawkeye.com.ng/" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home">
+        <span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text">
+          <strong>HAWKEYE</strong>
+          <span>Independent Election Results Monitor</span>
+        </div>
+      </a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById(&quot;menu-panel&quot;);const open=m.hidden;m.hidden=!open;this.setAttribute(&quot;aria-expanded&quot;,String(open));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="hero-badge"><span class="live-dot"></span> Public beta — monitoring the 2027 general elections</p>
+        <h1>The count at your polling unit,<br /><em>witnessed and unchangeable.</em></h1>
+        <p class="hero-sub">Photograph, sign and publish the results announced at your polling unit.
+        Independent reports must agree before a count is trusted — and every report lives on a
+        public, tamper-evident ledger nobody can edit.</p>
+        <div class="hero-cta">
+          <a class="btn-accent" href="observe.html?intent=observe">Become an Observer</a>
+          <a class="btn-ghost" href="results.html">View Live Results</a>
+        </div>
+        <div class="hero-cta" style="margin-top: 14px">
+          <a class="btn-ghost" style="border: none; padding-left: 0" href="observe.html?intent=map">Map a Polling Unit →</a>
+          <a class="btn-ghost" style="border: none; padding-left: 0" href="results.html#follow">🔔 Subscribe to Alerts</a>
+        </div>
+      </div>
+      <div class="ledger-stack" id="ledger-stack" aria-hidden="true"></div>
+    </div>
+    <div class="stats-band">
+      <div class="wrap stats-row" id="stats-row">
+        <div><strong data-n="176846">0</strong><span>polling units on the register</span></div>
+        <div><strong id="stat-located" data-n="0">0</strong><span>units with a confirmed location</span></div>
+        <div><strong data-n="9307">0</strong><span>electoral wards mapped</span></div>
+        <div><strong>100%</strong><span>reports publicly verifiable</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how-sec">
+    <div class="wrap">
+      <p class="kicker reveal">How it works</p>
+      <h2 class="reveal">Three steps to a rig-proof record</h2>
+      <p class="sec-sub reveal">No training required. If you can take a photo, you can defend the vote at your polling unit.</p>
+      <div class="steps">
+        <div class="step reveal"><div class="num">1</div><h3>Witness the count</h3>
+          <p>Stay for the public counting after voting closes. Photograph the result sheet (EC8A) the moment it's announced.</p></div>
+        <div class="step reveal"><div class="num">2</div><h3>Sign &amp; submit</h3>
+          <p>Your report is cryptographically signed on your own phone with GPS and time — proof it came from that place, at that moment.</p></div>
+        <div class="step reveal"><div class="num">3</div><h3>Corroborate</h3>
+          <p>Counts only become trusted when independent observers at the same unit agree. One person can't fake it — that's the point.</p></div>
+      </div>
+      <p class="how-links" style="margin-top: 28px">
+        <a href="how.html">How Hawkeye works →</a>
+        <a href="guide.html">Observer Guide →</a>
+        <a href="faq.html">FAQ →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Why trust it -->
+  <section class="trust">
+    <div class="wrap trust-grid">
+      <div class="reveal">
+        <p class="kicker">Why trust it</p>
+        <h2>Built so nobody — including us — can quietly change a number</h2>
+        <p>Every report is chained to the one before it on a public ledger. Change anything and the
+        chain breaks visibly. Anyone can verify it — no permission needed.
+        <a class="link" style="color: var(--accent)" href="ledger.html">Verify the ledger yourself →</a></p>
+      </div>
+      <ul class="tick-list reveal">
+        <li>Tamper-evident hash-chain ledger, publicly auditable</li>
+        <li>Reports signed on the observer's device — keys never leave the phone</li>
+        <li>Independent corroboration required before a count is trusted</li>
+        <li>Phone numbers stored only as one-way hashes</li>
+        <li>Open evidence: photos, GPS and totals visible to everyone</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-band">
+    <div class="wrap reveal">
+      <h2>2027 is decided at the polling unit.<br />Be there. Be counted.</h2>
+      <p>Verification takes two minutes. All you need is a phone.</p>
+      <a class="btn-primary" href="observe.html?intent=observe">Become an Observer</a>
+    </div>
+  </section>
+
+  <footer class="gov-footer">
+    <div class="wrap">
+      <nav>
+        <a href="observe.html">Report a Result</a>
+        <a href="results.html">Public Results</a>
+        <a href="how.html">How It Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="political.html">Political Data</a>
+      </nav>
+      <p>Hawkeye is an independent transparency initiative. It does not declare election
+      results; the official results of any election remain those announced by the
+      Independent National Electoral Commission (INEC).</p>
+    </div>
+  </footer>
+
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+
+    // Live stats + count-up
+    const countUp = (el) => {
+      const target = +el.dataset.n || 0;
+      if (!target) { el.textContent = (0).toLocaleString(); return; }
+      const t0 = performance.now(), dur = 1200;
+      const tick = (t) => {
+        const p = Math.min(1, (t - t0) / dur), eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased).toLocaleString();
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+    fetch('/api/mapping/stats').then((r) => r.json()).then((s) => {
+      const el = document.getElementById('stat-located');
+      el.dataset.n = String(s.verified + s.crowdMapped);
+      document.querySelector('#stats-row div:first-child strong').dataset.n = String(s.total);
+    }).catch(() => {}).finally(() => {
+      document.querySelectorAll('#stats-row strong[data-n]').forEach(countUp);
+    });
+
+    // Ledger stack: latest real reports; sample preview until the first ones land.
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const CONTEST_NAMES = { PRES: 'Presidential', SEN: 'Senate', REP: 'House of Reps', GOV: 'Governorship', SHA: 'State Assembly' };
+    const lcard = (e, sample) => `
+      <div class="lcard">
+        <div class="row"><strong>PU ${esc(e.pu_code)} · ${CONTEST_NAMES[e.contest] || esc(e.contest)}</strong>
+          <span class="chip ${sample ? 'wait' : 'ok'}">${sample ? 'Sample preview' : '✓ On the ledger'}</span></div>
+        ${e.votes ? `<div class="votes">${e.votes.map((v) => `<span>${esc(v.party)} ${v.n}<i>votes</i></span>`).join('')}</div>` : ''}
+        <div class="hash">sha256: ${esc(String(e.entry_hash).slice(0, 6))}…${esc(String(e.entry_hash).slice(-4))} · ${sample ? 'first live reports appear here' : timeAgo(e.created_at)}</div>
+      </div>`;
+    const SAMPLES = [
+      { pu_code: '24-16-11-008', contest: 'PRES', entry_hash: '9f3ac1b04477e77b', votes: [{ party: 'APC', n: 214 }, { party: 'PDP', n: 188 }, { party: 'LP', n: 342 }] },
+      { pu_code: '05-08-03-014', contest: 'GOV', entry_hash: '41d9b09cd8fa2c1a', votes: [{ party: 'PDP', n: 301 }, { party: 'APC', n: 246 }, { party: 'NNPP', n: 71 }] },
+      { pu_code: '14-05-02-024', contest: 'SEN', entry_hash: 'c78e52aa11f090df', votes: [{ party: 'LP', n: 176 }, { party: 'APC', n: 158 }, { party: 'SDP', n: 44 }] },
+    ];
+    fetch('/api/ledger/entries').then((r) => r.json()).then((rows) => {
+      const last = rows.slice(-3).reverse();
+      document.getElementById('ledger-stack').innerHTML =
+        (last.length ? last.map((e) => lcard(e, false)) : SAMPLES.map((e) => lcard(e, true))).join('');
+    }).catch(() => {
+      document.getElementById('ledger-stack').innerHTML = SAMPLES.map((e) => lcard(e, true)).join('');
+    });
+
+    // Scroll reveal
+    const io = new IntersectionObserver((es) => es.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }), { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+  </script>
+  <script src="tg.js?v=59"></script>
+  <script src="menu.js?v=59"></script>
+</body>
+</html>

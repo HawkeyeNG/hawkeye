@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hawkeye — Election-Day Map Preview (mock data)</title>
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <style>.state-shape{fill:#eef4f0;stroke:#7a9486;stroke-width:1}.state-shape.led{fill:#e2ecdf}svg{width:100%;height:auto}</style>
+</head>
+<body>
+  <header class="gov-header"><div class="wrap brand-row"><a class="brand" href="index.html"><span class="crest">🦅</span><div class="brand-text"><strong>HAWKEYE</strong><span>Map Preview</span></div></a></div></header>
+  <main class="wrap">
+    <h1>Presidential Map — Election-Day Preview</h1>
+    <p class="unofficial" style="background:#fbeaea;border-left:6px solid #b3261e;padding:12px">MOCK DATA — random winners, for layout preview only. On election day each state fills with the leading party's official emblem as reports arrive.</p>
+    <div class="card"><div id="map">Loading…</div></div>
+    <button class="secondary" onclick="draw()">Randomise winners</button>
+  </main>
+  <script>
+    const PC={APC:'#2e7d32',PDP:'#c62828',LP:'#388e3c',NNPP:'#1565c0',APGA:'#f9a825',SDP:'#5e35b1',ADC:'#00897b',YPP:'#ef6c00'};
+    let GEO,LOGOS={};
+    function badge(p,x,y){return LOGOS[p]?`<image href="${LOGOS[p]}" x="${x-14}" y="${y-14}" width="28" height="28"/>`:`<g><circle cx="${x}" cy="${y}" r="14" fill="${PC[p]||'#546e7a'}" stroke="#fff"/><text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="9" font-weight="700">${p}</text></g>`;}
+    function draw(){
+      const pool=Object.keys(LOGOS).length?Object.keys(LOGOS):Object.keys(PC);
+      let s='',b='';
+      for(const st of GEO.states){const p=pool[Math.floor(Math.random()*pool.length)];
+        s+=`<path class="state-shape led" d="${st.path}"><title>${st.name}: ${p} leads</title></path>`;
+        b+=badge(p,st.cx,st.cy);}
+      document.getElementById('map').innerHTML=`<svg viewBox="${GEO.viewBox}">${s}${b}</svg>`;
+    }
+    (async()=>{[GEO,LOGOS]=await Promise.all([fetch('states_geo.json').then(r=>r.json()),fetch('logos/manifest.json').then(r=>r.json()).catch(()=>({}))]);draw();})();
+  </script>
+</body>
+</html>

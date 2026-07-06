@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#00482b" />
+  <title>Hawkeye — Verify the Ledger</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <style>
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e6e6e5; vertical-align: top; }
+    code { font-size: 0.75rem; word-break: break-all; }
+    .ok { color: var(--green); font-weight: 700; }
+    .bad { color: var(--danger); font-weight: 700; }
+    .status-box { padding: 14px; border-radius: 8px; background: #eef5f0; margin: 12px 0; }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Verify the Ledger" />
+  <meta property="og:description" content="Crowd-verified, tamper-evident monitoring of polling-unit results in Nigeria." />
+  <meta property="og:url" content="https://hawkeye.com.ng/ledger.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Public Audit</strong> — proof no report has been altered or deleted.</div></div>
+
+  <main class="wrap">
+    <h1>Verify the Ledger</h1>
+    <p class="lede">Every accepted report is chained by hash: each entry commits to all before it,
+    so changing or removing any past report breaks every later hash. This page lets
+    <strong>you</strong> recompute the whole chain in your own browser — you don't have to trust us.</p>
+
+    <div class="status-box" id="status"><div class="skel" style="height:18px;width:60%"></div></div>
+    <button id="btn-verify">🔒 Re-verify the entire chain in my browser</button>
+    <p id="client-result" class="status" role="status"></p>
+
+    <div class="card">
+      <h2>Ledger Entries</h2>
+      <p class="hint">Newest first. Each row's evidence photos are public, content-addressed files.</p>
+      <table><thead><tr><th>#</th><th>Recorded</th><th>Unit / Contest</th><th>Entry Hash</th><th>Evidence</th></tr></thead>
+        <tbody id="rows"></tbody></table>
+    </div>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap"><nav>
+    <a href="observe.html">Report a Result</a><a href="results.html">Public Results</a>
+    <a href="dashboard.html">Unit Reports Log</a><a href="political.html">Political Data</a>
+  <a href="ledger.html">Verify the Ledger</a></nav><p>The chain head can be anchored on a public blockchain, so not even the server operator can rewrite history unnoticed. Official results remain INEC's.</p></div></footer>
+
+  <script>
+    const GENESIS = '0'.repeat(64);
+    const sha256hex = async (str) => {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+    };
+    let ENTRIES = [];
+
+    (async () => {
+      const [verify, entries] = await Promise.all([
+        fetch('/api/ledger/verify').then((r) => r.json()),
+        fetch('/api/ledger/entries').then((r) => r.json()),
+      ]);
+      ENTRIES = entries;
+      document.getElementById('status').innerHTML = verify.ok
+        ? `<span class="ok">✔ Chain intact</span> — ${verify.entries} entries · head <code>${verify.head || GENESIS}</code>`
+        : `<span class="bad">✘ TAMPER DETECTED at entry ${verify.brokenAtId}</span>`;
+
+      document.getElementById('rows').innerHTML = [...entries].reverse().map((e) => `
+        <tr>
+          <td>${e.id}</td>
+          <td>${timeAgo(e.created_at)}</td>
+          <td>${e.pu_code}<br /><small>${e.contest}</small></td>
+          <td><code>${e.entry_hash.slice(0, 24)}…</code></td>
+          <td><a href="/uploads/${e.image_sha256}.jpg" target="_blank">sheet</a> · <a href="/uploads/${e.venue_image_sha256}.jpg" target="_blank">venue</a></td>
+        </tr>`).join('') || '<tr><td colspan="5" class="meta">No entries yet.</td></tr>';
+    })();
+
+    document.getElementById('btn-verify').onclick = async () => {
+      const out = document.getElementById('client-result');
+      out.textContent = 'Recomputing hashes locally…';
+      let prev = GENESIS;
+      for (const e of ENTRIES) {
+        if (e.prev_hash !== prev || (await sha256hex(prev + e.ledger_payload)) !== e.entry_hash) {
+          out.innerHTML = `<span class="bad">✘ Chain broken at entry ${e.id} — a report was altered or removed.</span>`;
+          return;
+        }
+        prev = e.entry_hash;
+      }
+      out.innerHTML = `<span class="ok">✔ Verified ${ENTRIES.length} entries in your browser. Head matches: <code>${prev}</code></span>`;
+    };
+  </script>
+  <script src="tg.js?v=59"></script>
+  <script src="menu.js?v=59"></script>
+</body>
+</html>

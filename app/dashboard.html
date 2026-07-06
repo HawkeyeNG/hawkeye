@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#00482b" />
+  <title>Hawkeye — Public Results Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="styles.css?v=59" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Public Results Dashboard" />
+  <meta property="og:description" content="Crowd-verified, tamper-evident monitoring of polling-unit results in Nigeria." />
+  <meta property="og:url" content="https://hawkeye.com.ng/dashboard.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home">
+        <span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text">
+          <strong>HAWKEYE</strong>
+          <span>Independent Election Results Monitor</span>
+        </div>
+      </a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById(&quot;menu-panel&quot;);const open=m.hidden;m.hidden=!open;this.setAttribute(&quot;aria-expanded&quot;,String(open));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner">
+    <div class="wrap"><strong>Beta</strong> — this service is in public testing. Official results remain INEC's.</div>
+  </div>
+
+  <main class="wrap">
+    <h1>Live polling unit reports</h1>
+    <p class="lede">Confidence is the share of independent observers reporting identical
+    numbers. Every report is cryptographically signed and permanently recorded on a
+    public, tamper-evident ledger.</p>
+    <p id="ledger-status" class="meta">Checking ledger integrity…</p>
+    <div id="results"><div class="skel" style="height:16px;margin:8px 0"></div><div class="skel" style="height:16px;margin:8px 0;width:80%"></div><div class="skel" style="height:16px;margin:8px 0;width:60%"></div></div>
+  </main>
+
+  <footer class="gov-footer">
+    <div class="wrap">
+      <nav>
+        <a href="observe.html">Report a result</a>
+        <a href="results.html">Public results</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="political.html">Political data</a>
+      </nav>
+      <p>Auto-refreshes every 30 seconds. Hawkeye is an independent transparency
+      initiative; the official results of any election remain those announced by the
+      Independent National Electoral Commission (INEC).</p>
+    </div>
+  </footer>
+
+  <script>
+    async function refresh() {
+      const [results, ledger] = await Promise.all([
+        fetch('/api/results').then((r) => r.json()),
+        fetch('/api/ledger/verify').then((r) => r.json()),
+      ]);
+
+      document.getElementById('ledger-status').innerHTML = ledger.ok
+        ? `<span class="ledger-ok">✔ Ledger intact</span> — ${ledger.entries} entries, head <code>${(ledger.head || '').slice(0, 16)}…</code>`
+        : `<span class="ledger-bad">✘ LEDGER TAMPERED (entry ${ledger.brokenAtId})</span>`;
+
+      const wrap = document.getElementById('results');
+      if (!results.length) {
+        wrap.innerHTML = '<p class="meta">No reports yet.</p>';
+        return;
+      }
+      wrap.innerHTML = results.map((r) => `
+        <section class="card result-card">
+          <strong>${r.name}</strong> <span class="meta">[${r.contest}] ${r.puCode} · ${r.ward || ''}, ${r.lga || ''}, ${r.state || ''}${
+            r.contest !== 'PRES' && r.scope ? ` · ${r.scope}` : ''
+          }</span>
+          <div class="bar ${r.status}"><div style="width:${r.confidence}%"></div></div>
+          <p>
+            <span class="status-${r.status}">${r.status.toUpperCase()}</span>
+            · ${r.confidence}% confidence
+            · ${r.matchingReports}/${r.totalReports} matching reports
+          </p>
+          <p class="meta">${
+            r.locationStatus === 'verified' ? '📍 location verified'
+            : r.locationStatus === 'provisional' ? `◌ crowd-confirmed location (${r.locationConfidence}% of reports agree)`
+            : `⚠ location unverified (${r.locationConfidence ?? 0}% GPS agreement)`
+          }${r.venueMatches > 0 ? ` · 🏫 ${r.venueMatches} venue photo pair${r.venueMatches > 1 ? 's' : ''} match` : ''}${
+            r.locationPlausibility === 'inconsistent' ? ' · ⚠ GPS reports contradict this unit’s expected area' : ''
+          }${r.locationScore != null ? ` · location evidence ${r.locationScore}/100` : ''}</p>
+          <p class="meta">${r.votes.filter((v) => v.count > 0).map((v) => `${v.party} ${v.count}`).join(' · ') || 'all zero'}</p>
+        </section>`).join('');
+    }
+    refresh();
+    setInterval(refresh, 30000);
+  </script>
+  <script src="tg.js?v=59"></script>
+  <script src="menu.js?v=59"></script>
+</body>
+</html>

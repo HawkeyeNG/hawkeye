@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hawkeye — Homepage redesign mockup (LOCAL, not deployed)</title>
+<style>
+  :root {
+    --green-950: #00251a; --green-900: #00331e; --green-800: #00482b; --green-700: #0a5c39;
+    --accent: #2ee59d; --gold: #f5c518; --ink: #14201a; --muted: #5b6b62;
+    --paper: #f7f8f6; --card: #ffffff; --line: #e3e8e4; --danger: #b3261e;
+    --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; color: var(--ink); background: var(--paper); line-height: 1.6; }
+  h1, h2, h3 { font-family: 'Lora', Georgia, serif; line-height: 1.15; }
+  a { text-decoration: none; color: inherit; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(0, 37, 26, 0.92); backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .nav-row { display: flex; align-items: center; gap: 28px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: #fff; }
+  .crest { font-size: 26px; }
+  .brand strong { font-family: 'Lora', serif; letter-spacing: 0.06em; font-size: 1.05rem; }
+  .brand span { display: block; font-size: 0.62rem; color: #9fbfae; letter-spacing: 0.04em; }
+  .nav-links { display: flex; gap: 22px; margin-left: auto; }
+  .nav-links a { color: #cfe2d6; font-size: 0.86rem; font-weight: 500; padding: 6px 2px; border-bottom: 2px solid transparent; }
+  .nav-links a:hover { color: #fff; border-bottom-color: var(--accent); }
+  .nav-cta { background: var(--accent); color: var(--green-950) !important; font-weight: 700; padding: 9px 18px !important; border-radius: 999px; border: none !important; }
+  .nav-cta:hover { filter: brightness(1.08); }
+
+  /* ---------- hero ---------- */
+  .hero {
+    background:
+      radial-gradient(1100px 480px at 78% -10%, rgba(46,229,157,0.16), transparent 60%),
+      radial-gradient(700px 420px at 8% 110%, rgba(245,197,24,0.10), transparent 55%),
+      linear-gradient(165deg, var(--green-950) 0%, var(--green-900) 55%, var(--green-800) 100%);
+    color: #fff; padding: 84px 0 0; overflow: hidden;
+  }
+  .hero-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 600;
+    color: #bfe9d4; background: rgba(46,229,157,0.12); border: 1px solid rgba(46,229,157,0.35);
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 22px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+  .hero h1 { font-size: clamp(2.1rem, 4.6vw, 3.4rem); font-weight: 700; margin-bottom: 20px; }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero-sub { color: #c4d8cc; font-size: 1.06rem; max-width: 34rem; margin-bottom: 32px; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 40px; }
+  .btn { padding: 14px 26px; border-radius: 10px; font-weight: 700; font-size: 0.95rem; transition: transform 0.12s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-solid { background: var(--accent); color: var(--green-950); box-shadow: 0 8px 24px rgba(46,229,157,0.35); }
+  .btn-line { border: 1.5px solid rgba(255,255,255,0.4); color: #fff; }
+  .btn-line:hover { border-color: #fff; background: rgba(255,255,255,0.06); }
+
+  /* hero visual: ledger card stack */
+  .ledger-stack { position: relative; min-height: 340px; }
+  .lcard {
+    position: absolute; width: 88%; background: #fff; color: var(--ink); border-radius: var(--radius);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35); padding: 18px 20px; font-size: 0.82rem;
+  }
+  .lcard .row { display: flex; justify-content: space-between; align-items: center; }
+  .lcard .hash { font-family: ui-monospace, monospace; font-size: 0.68rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 8px; }
+  .lcard .chip { font-size: 0.66rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+  .chip.ok { background: #e3f6ec; color: #0a6b40; }
+  .chip.wait { background: #fdf3d7; color: #8a6d00; }
+  .lcard:nth-child(1) { top: 0; left: 0; transform: rotate(-2deg); }
+  .lcard:nth-child(2) { top: 105px; left: 9%; transform: rotate(1.4deg); }
+  .lcard:nth-child(3) { top: 210px; left: 3%; transform: rotate(-0.8deg); }
+  .lcard .votes { display: flex; gap: 14px; margin-top: 10px; font-weight: 700; }
+  .lcard .votes span i { font-style: normal; font-size: 0.66rem; color: var(--muted); display: block; font-weight: 500; }
+
+  /* stats band inside hero bottom */
+  .stats-band {
+    margin-top: 64px; background: rgba(0,0,0,0.25); border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 26px 0;
+  }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; text-align: center; }
+  .stats-row strong { display: block; font-family: 'Lora', serif; font-size: 1.9rem; color: var(--accent); }
+  .stats-row span { font-size: 0.78rem; color: #a9c3b4; }
+
+  /* ---------- how it works ---------- */
+  section.how { padding: 84px 0; }
+  .kicker { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.72rem; font-weight: 700; color: var(--green-700); margin-bottom: 10px; }
+  section h2 { font-size: 2rem; margin-bottom: 14px; }
+  .sec-sub { color: var(--muted); max-width: 42rem; margin-bottom: 44px; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .step { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 24px; position: relative; }
+  .step .num {
+    width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--green-800), var(--green-700)); color: var(--accent);
+    font-family: 'Lora', serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 18px;
+  }
+  .step h3 { font-size: 1.12rem; margin-bottom: 8px; }
+  .step p { font-size: 0.9rem; color: var(--muted); }
+
+  /* ---------- trust strip ---------- */
+  .trust { background: var(--green-950); color: #fff; padding: 72px 0; }
+  .trust-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  .trust h2 { color: #fff; }
+  .trust p { color: #b8cfc1; font-size: 0.95rem; margin-bottom: 18px; }
+  .tick-list { list-style: none; }
+  .tick-list li { padding: 10px 0 10px 34px; position: relative; font-size: 0.93rem; color: #dcebe2; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .tick-list li::before { content: '✓'; position: absolute; left: 0; top: 9px; width: 22px; height: 22px; border-radius: 50%; background: rgba(46,229,157,0.15); color: var(--accent); font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
+
+  /* ---------- CTA band ---------- */
+  .cta-band { padding: 84px 0; text-align: center; background: linear-gradient(180deg, var(--paper), #edf2ee); }
+  .cta-band h2 { font-size: 2.1rem; margin-bottom: 12px; }
+  .cta-band p { color: var(--muted); margin-bottom: 30px; }
+  .cta-band .btn-solid { background: var(--green-800); color: #fff; box-shadow: 0 10px 30px rgba(0,72,43,0.3); }
+
+  footer { background: var(--green-950); color: #8fae9d; padding: 44px 0; font-size: 0.82rem; }
+  .foot-row { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  footer nav { display: flex; gap: 20px; flex-wrap: wrap; }
+  footer a { color: #cfe2d6; }
+  footer .legal { max-width: 46rem; margin-top: 18px; line-height: 1.7; }
+
+  @media (max-width: 900px) {
+    .nav-links { display: none; }
+    .hero-grid { grid-template-columns: 1fr; }
+    .ledger-stack { display: none; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .steps { grid-template-columns: 1fr; }
+    .trust-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav-row">
+    <a class="brand" href="#"><span class="crest">🦅</span>
+      <div><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+    <nav class="nav-links">
+      <a href="#">Results</a><a href="#">Integrity</a><a href="#">Map a Unit</a><a href="#">How It Works</a>
+      <a class="nav-cta" href="#">Become an Observer</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="badge"><span class="dot"></span> Public beta — monitoring the 2027 general elections</p>
+      <h1>The count at your polling unit, <em>witnessed and unchangeable.</em></h1>
+      <p class="hero-sub">Photograph, sign and publish the results announced at your polling unit.
+      Independent reports must agree before a count is trusted — and every report lives on a public,
+      tamper-evident ledger nobody can edit.</p>
+      <div class="cta-row">
+        <a class="btn btn-solid" href="#">Become an Observer</a>
+        <a class="btn btn-line" href="#">View Live Results</a>
+      </div>
+    </div>
+    <div class="ledger-stack" aria-hidden="true">
+      <div class="lcard">
+        <div class="row"><strong>PU 24-16-11-008 · Presidential</strong><span class="chip ok">✓ Corroborated ×3</span></div>
+        <div class="votes"><span>APC 214<i>votes</i></span><span>PDP 188<i>votes</i></span><span>LP 342<i>votes</i></span></div>
+        <div class="hash">sha256: 9f3ac1…e77b · block #48,211 · signed on device</div>
+      </div>
+      <div class="lcard">
+        <div class="row"><strong>PU 05-08-03-014 · Governorship</strong><span class="chip ok">✓ Corroborated ×2</span></div>
+        <div class="votes"><span>PDP 301<i>votes</i></span><span>APC 246<i>votes</i></span><span>NNPP 71<i>votes</i></span></div>
+        <div class="hash">sha256: 41d9b0…2c1a · block #48,209 · photo + GPS attached</div>
+      </div>
+      <div class="lcard">
+        <div class="row"><strong>PU 14-05-02-024 · Senate</strong><span class="chip wait">Awaiting 2nd report</span></div>
+        <div class="votes"><span>LP 176<i>votes</i></span><span>APC 158<i>votes</i></span><span>SDP 44<i>votes</i></span></div>
+        <div class="hash">sha256: c78e52…90df · block #48,204 · signed on device</div>
+      </div>
+    </div>
+  </div>
+  <div class="stats-band">
+    <div class="wrap stats-row">
+      <div><strong>176,846</strong><span>polling units on the register</span></div>
+      <div><strong>48,600+</strong><span>units with a confirmed location</span></div>
+      <div><strong>9,307</strong><span>electoral wards mapped</span></div>
+      <div><strong>100%</strong><span>reports publicly verifiable</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="wrap">
+    <p class="kicker">How it works</p>
+    <h2>Three steps to a rig-proof record</h2>
+    <p class="sec-sub">No training required. If you can take a photo, you can defend the vote at your polling unit.</p>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><h3>Witness the count</h3>
+        <p>Stay for the public counting after voting closes. Photograph the result sheet (EC8A) the moment it's announced.</p></div>
+      <div class="step"><div class="num">2</div><h3>Sign &amp; submit</h3>
+        <p>Your report is cryptographically signed on your own phone with GPS and time — proof it came from that place, at that moment.</p></div>
+      <div class="step"><div class="num">3</div><h3>Corroborate</h3>
+        <p>Counts only become trusted when independent observers at the same unit agree. One person can't fake it — that's the point.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="trust">
+  <div class="wrap trust-grid">
+    <div>
+      <p class="kicker" style="color: var(--accent)">Why trust it</p>
+      <h2>Built so nobody — including us — can quietly change a number</h2>
+      <p>Every report is chained to the one before it on a public ledger. Change anything and the
+      chain breaks visibly. Anyone can verify it, no permission needed.</p>
+    </div>
+    <ul class="tick-list">
+      <li>Tamper-evident hash-chain ledger, publicly auditable</li>
+      <li>Reports signed on the observer's device — keys never leave the phone</li>
+      <li>Independent corroboration required before a count is trusted</li>
+      <li>Phone numbers stored only as one-way hashes</li>
+      <li>Open evidence: photos, GPS and totals visible to everyone</li>
+    </ul>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="wrap">
+    <h2>2027 is decided at the polling unit.<br />Be there. Be counted.</h2>
+    <p>Verification takes two minutes. All you need is a phone.</p>
+    <a class="btn btn-solid" href="#">Become an Observer</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-row">
+      <nav><a href="#">Results</a><a href="#">Ledger</a><a href="#">Observer Guide</a><a href="#">FAQ</a><a href="#">Privacy</a><a href="#">Contact</a></nav>
+      <span>🦅 HAWKEYE</span>
+    </div>
+    <p class="legal">Hawkeye is an independent transparency initiative. It does not declare election
+    results; the official results of any election remain those announced by the Independent National
+    Electoral Commission (INEC).</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -3,3 +3,7 @@ backend/storage/
 .env
 *.log
 .DS_Store
+__pycache__/
+*.pyc
+.vscode/
+.claude/

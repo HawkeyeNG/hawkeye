@@ -14,7 +14,7 @@ import { integrityRouter } from './routes/integrity.js';
 import { incidentsRouter } from './routes/incidents.js';
 import { adminRouter } from './routes/admin.js';
 import { collationRouter } from './routes/collation.js';
-import { securityHeaders, makeLimiter } from './services/security.js';
+import { securityHeaders, makeLimiter, concurrencyLimit } from './services/security.js';
 import { runForensics, recheckCollations } from './services/integrity.js';
 import { runBackup } from './services/backup.js';
 import { irevScan } from './services/irev.js';
@@ -49,8 +49,10 @@ app.use('/api/observers/verify', makeLimiter({ windowMs: 600_000, max: 800, name
 app.use('/api/observers/resume', makeLimiter({ windowMs: 600_000, max: 1500, name: 'resume' }));
 app.use('/api/observers/telegram-verify', makeLimiter({ windowMs: 600_000, max: 800, name: 'tg-verify' }));
 app.use('/api/admin', makeLimiter({ windowMs: 600_000, max: 60, name: 'admin' })); // owner-only
-app.use('/api/submissions', makeLimiter({ windowMs: 600_000, max: 500, name: 'submissions' }));
-app.use('/api/incidents', makeLimiter({ windowMs: 600_000, max: 300, name: 'incidents' }));
+// Upload paths run sharp/OCR — cap concurrency so a burst can't exhaust the
+// shared host's CPU/RAM regardless of source IP spread.
+app.use('/api/submissions', concurrencyLimit(4, 'submissions'), makeLimiter({ windowMs: 600_000, max: 500, name: 'submissions' }));
+app.use('/api/incidents', concurrencyLimit(4, 'incidents'), makeLimiter({ windowMs: 600_000, max: 300, name: 'incidents' }));
 app.use('/api/mappings', makeLimiter({ windowMs: 600_000, max: 600, name: 'mappings' }));
 app.use('/api/collations', makeLimiter({ windowMs: 600_000, max: 300, name: 'collations' }));
 app.use('/api', makeLimiter({ windowMs: 600_000, max: 8000, name: 'api' }));
@@ -71,8 +73,18 @@ app.use('/api', collationRouter);
 // training sheet images (public IReV documents / self-shot practice sheets)
 app.use('/training', express.static(path.join(path.dirname(config.dbPath), 'training')));
 
-// Evidence photos are public audit artifacts — content-addressed, immutable.
-app.use('/uploads', express.static(config.uploadDir, { immutable: true, maxAge: '1y' }));
+// Evidence photos/videos are public audit artifacts — content-addressed,
+// immutable. Harden the responses: nosniff + a sandbox CSP so a polyglot
+// upload (a video that's also valid HTML/JS) can never execute as a document
+// on our origin; media still loads fine as an <img>/<video> resource.
+app.use('/uploads', express.static(config.uploadDir, {
+  immutable: true,
+  maxAge: '1y',
+  setHeaders: (res) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "sandbox; default-src 'none'");
+  },
+}));
 
 // Observer PWA + public dashboard.
 app.use(express.static(config.appDir));

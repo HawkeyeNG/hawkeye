@@ -1,6 +1,8 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { Router } from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
@@ -10,6 +12,26 @@ import { requireObserver } from './observers.js';
 import { notifyMaster, notifyChat, chatIdByHash } from '../services/notify.js';
 
 export const incidentsRouter = Router();
+
+// ffmpeg is optional (shared host may not have it) — detect once at boot.
+let FFMPEG = null;
+try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); FFMPEG = 'ffmpeg'; } catch { /* absent */ }
+
+// Re-mux a video to a clean MP4 (H.264/AAC), stripping metadata and any
+// container-embedded payload. Returns true on success, false to fall back.
+async function remuxVideo(inBuf, destPath) {
+  if (!FFMPEG) return false;
+  const tmp = path.join(os.tmpdir(), `hk_${crypto.randomBytes(8).toString('hex')}`);
+  try {
+    fs.writeFileSync(tmp, inBuf);
+    execFileSync(FFMPEG, [
+      '-y', '-i', tmp, '-map_metadata', '-1', '-movflags', '+faststart',
+      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
+      '-c:a', 'aac', '-b:a', '96k', destPath,
+    ], { stdio: 'ignore', timeout: 60_000 });
+    return fs.existsSync(destPath) && fs.statSync(destPath).size > 0;
+  } catch { return false; } finally { try { fs.unlinkSync(tmp); } catch { /* ignore */ } }
+}
 
 const incidentDir = path.join(config.uploadDir, 'incidents');
 fs.mkdirSync(incidentDir, { recursive: true });
@@ -67,8 +89,18 @@ incidentsRouter.post('/incidents', requireObserver, upload.array('media', 4), as
         return res.status(400).json({ error: 'invalid_media', hint: 'could not process image' });
       }
     }
+    const isVideo = real.startsWith('video');
+    // Transcode target is always .mp4 so ffmpeg's H.264/AAC output matches the
+    // container; without ffmpeg we keep the sniffed-safe original extension.
+    if (isVideo && FFMPEG) ext = 'mp4';
     const name = `${crypto.randomBytes(12).toString('hex')}.${ext}`;
-    fs.writeFileSync(path.join(incidentDir, name), buffer);
+    const dest = path.join(incidentDir, name);
+    if (isVideo) {
+      const remuxed = await remuxVideo(f.buffer, dest);
+      if (!remuxed) fs.writeFileSync(dest, buffer); // ffmpeg absent/failed → store sniffed original
+    } else {
+      fs.writeFileSync(dest, buffer);
+    }
     media.push({ file: `incidents/${name}`, type: real.startsWith('video') ? 'video' : 'image' });
   }
 

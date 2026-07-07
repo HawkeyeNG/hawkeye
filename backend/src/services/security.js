@@ -35,6 +35,25 @@ export function securityHeaders(_req, res, next) {
   next();
 }
 
+// Concurrency guard for CPU/RAM-heavy paths (image re-encode, OCR). Bounds how
+// many such requests run at once so a burst of large uploads can't exhaust the
+// shared host even if the per-IP rate limiter is bypassed (CGNAT / many IPs).
+export function concurrencyLimit(max, name = 'busy') {
+  let inFlight = 0;
+  return (req, res, next) => {
+    if (inFlight >= max) {
+      res.setHeader('Retry-After', '5');
+      return res.status(503).json({ error: 'server_busy', scope: name, retryAfterS: 5 });
+    }
+    inFlight++;
+    let done = false;
+    const release = () => { if (!done) { done = true; inFlight--; } };
+    res.on('finish', release);
+    res.on('close', release);
+    next();
+  };
+}
+
 // Fixed-window in-memory limiter. Adequate for a single-process host; swap for a
 // Redis store if the app ever runs multi-instance.
 export function makeLimiter({ windowMs, max, name }) {

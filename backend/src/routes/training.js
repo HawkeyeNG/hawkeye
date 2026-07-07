@@ -17,10 +17,25 @@ const dir = () => {
 const truthPath = () => path.join(dir(), 'truth.json');
 const readTruth = () => (fs.existsSync(truthPath()) ? JSON.parse(fs.readFileSync(truthPath(), 'utf8')) : {});
 
-trainingRouter.get('/training/items', (_req, res) => {
+// sets.json partitions sheets between labelling pages (train.html = set 1,
+// train2.html = set 2, …) so parallel labellers never see each other's queue.
+// Files absent from sets.json default to set 1.
+const readSets = () => {
+  try { return JSON.parse(fs.readFileSync(path.join(dir(), 'sets.json'), 'utf8')); } catch { return {}; }
+};
+
+trainingRouter.get('/training/items', (req, res) => {
   const truth = readTruth();
+  const sets = readSets();
+  const want = Number(req.query.set || 0); // 0 = all
   const items = fs.readdirSync(dir()).filter((f) => /\.(jpe?g|png)$/i.test(f))
-    .map((f) => ({ file: f, key: f.replace(/\.[^.]+$/, ''), labelled: Boolean(truth[f.replace(/\.[^.]+$/, '')]) }));
+    .map((f) => ({
+      file: f,
+      key: f.replace(/\.[^.]+$/, ''),
+      set: sets[f] || 1,
+      labelled: Boolean(truth[f.replace(/\.[^.]+$/, '')]),
+    }))
+    .filter((i) => !want || i.set === want);
   res.json({ items, labelled: Object.keys(truth).length });
 });
 

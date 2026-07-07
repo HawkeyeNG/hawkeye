@@ -15,6 +15,22 @@ export function phoneHash(phone) {
   return crypto.createHmac('sha256', config.phoneSalt).update(phone).digest('hex');
 }
 
+// Short-lived (7d), device-bound sessions. Auto-resume silently re-issues on the
+// saved device, so the short life is invisible to real users but shrinks the
+// window a leaked token is useful. `did` = truncated hash of the device id: a
+// token stolen and replayed from ANOTHER device fails the check in
+// requireObserver (enforced only where the client sends x-device-id — all write
+// paths do). Grandfathered tokens without `did` keep working until they expire.
+const didHash = (deviceId) =>
+  deviceId ? crypto.createHmac('sha256', config.jwtSecret).update(deviceId).digest('hex').slice(0, 24) : null;
+
+function issueToken(observerId, deviceId) {
+  const claims = { sub: String(observerId) };
+  const did = didHash(deviceId);
+  if (did) claims.did = did;
+  return jwt.sign(claims, config.jwtSecret, { expiresIn: '7d' });
+}
+
 // Nigerian mobile numbers only: 0803..., or +234803...
 export function normalizePhone(raw) {
   const p = String(raw || '').replace(/[\s\-()]/g, '');
@@ -108,7 +124,7 @@ observersRouter.post('/verify', (req, res) => {
   notifyMaster(`${isNew ? 'NEW' : 'repeat'} phone verified · observer #${observer.id} · ${hash.slice(0, 12)}…`);
   if (isNew) { try { noteRegistration(); } catch { /* informational only */ } }
 
-  const token = jwt.sign({ sub: String(observer.id) }, config.jwtSecret, { expiresIn: '30d' });
+  const token = issueToken(observer.id, deviceId);
   res.json({ ok: true, observerId: observer.id, token });
 });
 
@@ -172,7 +188,7 @@ observersRouter.post('/telegram-verify', (req, res) => {
   notifyMaster(`${isNew ? 'NEW' : 'repeat'} Telegram sign-in · observer #${observer.id} · ${hash.slice(0, 12)}…`);
   if (isNew) { try { noteRegistration(); } catch { /* informational only */ } }
 
-  const token = jwt.sign({ sub: String(observer.id) }, config.jwtSecret, { expiresIn: '30d' });
+  const token = issueToken(observer.id, deviceId);
   res.json({ ok: true, observerId: observer.id, token });
 });
 
@@ -188,7 +204,7 @@ observersRouter.post('/resume', (req, res) => {
   if (!observer || observer.status !== 'active' || observer.public_key_jwk !== JSON.stringify(jwk)) {
     return res.status(404).json({ error: 'not_recognized' });
   }
-  const token = jwt.sign({ sub: String(observer.id) }, config.jwtSecret, { expiresIn: '30d' });
+  const token = issueToken(observer.id, deviceId);
   res.json({ ok: true, observerId: observer.id, token });
 });
 
@@ -266,6 +282,16 @@ export function requireObserver(req, res, next) {
     const observer = db.prepare('SELECT * FROM observers WHERE id = ?').get(Number(payload.sub));
     if (!observer || observer.status !== 'active') {
       return res.status(401).json({ error: 'unknown_observer' });
+    }
+    // Device binding: if the token is device-bound AND the client sent its
+    // device id, they must match — a token replayed from another device fails.
+    // (Soft: calls that don't send x-device-id are unaffected; grandfathered
+    // tokens without `did` skip the check.)
+    if (payload.did) {
+      const sent = String(req.headers['x-device-id'] || '').slice(0, 64);
+      if (sent && didHash(sent) !== payload.did) {
+        return res.status(401).json({ error: 'device_mismatch' });
+      }
     }
     req.observer = observer;
     next();

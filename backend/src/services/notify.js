@@ -21,6 +21,18 @@ export function notifyChat(chatId, text) {
   if (chatId) tgSendMessage(chatId, text).catch(() => {});
 }
 
+// Alert everyone who saved this polling unit as theirs (Telegram-linked only).
+export function notifyUnitSavers(puCode, text) {
+  if (!puCode) return 0;
+  const rows = db.prepare(`
+    SELECT t.chat_id FROM saved_units s
+    JOIN observers o ON o.id = s.observer_id AND o.status = 'active'
+    JOIN telegram_links t ON t.phone_hash = o.phone_hash
+    WHERE s.pu_code = ?`).all(puCode);
+  for (const r of rows) notifyChat(r.chat_id, text);
+  return rows.length;
+}
+
 // Ping the master/owner about any activity. No-op unless MASTER_PHONE is set and
 // that number has linked its Telegram.
 export function notifyMaster(text) {

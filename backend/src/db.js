@@ -160,6 +160,13 @@ CREATE TABLE IF NOT EXISTS results (
 
 // Additive migrations for databases created before these columns existed.
 for (const ddl of [
+  // "My polling unit": one saved unit per observer; drives Telegram alerts for
+  // every result report / published incident at that unit.
+  `CREATE TABLE IF NOT EXISTS saved_units (
+     observer_id INTEGER PRIMARY KEY REFERENCES observers(id),
+     pu_code     TEXT NOT NULL,
+     created_at  INTEGER NOT NULL
+   )`,
   'ALTER TABLE polling_units ADD COLUMN senatorial TEXT',
   'ALTER TABLE polling_units ADD COLUMN federal_constituency TEXT',
   'ALTER TABLE polling_units ADD COLUMN approx_lat REAL',

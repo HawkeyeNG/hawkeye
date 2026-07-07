@@ -13,7 +13,7 @@ import { extractFeatures, matchFeatures } from '../services/scene.js';
 import { requireObserver } from './observers.js';
 import { contestScope, contestApplies } from '../services/scope.js';
 import { notifySubscribers } from './subscriptions.js';
-import { notifyChat, notifyMaster, chatIdByHash } from '../services/notify.js';
+import { notifyChat, notifyMaster, chatIdByHash, notifyUnitSavers } from '../services/notify.js';
 import { checkSubmission, checkResult } from '../services/integrity.js';
 import { ocrMatchCounts } from '../services/ocr.js';
 
@@ -303,6 +303,12 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
       db.prepare('UPDATE submissions SET ocr_matched = ?, ocr_total = ? WHERE id = ?')
         .run(ocr.matched, ocr.total, submissionId);
     }
+
+    // Alert everyone who saved this unit as theirs (best-effort, non-blocking).
+    try {
+      notifyUnitSavers(puCode,
+        `📋 New result report at your polling unit ${puCode} (${contest}).\nSee it: https://hawkeye.com.ng/dashboard.html`);
+    } catch { /* never block the submission */ }
 
     res.status(201).json({ ok: true, entryHash, locationVerified: Boolean(locationVerified), ocr, result });
   } catch (err) {

@@ -8,7 +8,7 @@ import path from 'node:path';
 import { Router } from 'express';
 import { db } from '../db.js';
 import { config } from '../config.js';
-import { notifyMaster } from '../services/notify.js';
+import { notifyMaster, notifyUnitSavers } from '../services/notify.js';
 import { runAnchor } from '../services/anchor.js';
 
 export const adminRouter = Router();
@@ -55,6 +55,13 @@ adminRouter.post('/admin/incidents/:id/publish', requireAdmin, async (req, res) 
   if (!inc) return res.status(404).json({ error: 'not_found' });
   db.prepare("UPDATE incidents SET status = 'published' WHERE id = ?").run(id);
   notifyMaster(`📣 incident #${id} published to the public feed`);
+  // Alert everyone who saved this unit as theirs.
+  try {
+    if (inc.pu_code) {
+      notifyUnitSavers(inc.pu_code,
+        `🚨 Incident report published for your polling unit ${inc.pu_code} (${inc.kind}).\nSee it: https://hawkeye.com.ng/incidents.html`);
+    }
+  } catch { /* best-effort */ }
   res.json({ ok: true, status: 'published' });
 });
 

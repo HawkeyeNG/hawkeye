@@ -192,6 +192,33 @@ observersRouter.post('/resume', (req, res) => {
   res.json({ ok: true, observerId: observer.id, token });
 });
 
+// "My polling unit": save the unit you'll observe. Saving subscribes you to
+// Telegram alerts for EVERYTHING at that unit — result reports as they land
+// and incidents once approved (distinct from following a race on results.html).
+observersRouter.get('/my-unit', requireObserver, (req, res) => {
+  const row = db.prepare(`
+    SELECT s.pu_code, p.name, p.ward, p.lga, p.state FROM saved_units s
+    LEFT JOIN polling_units p ON p.pu_code = s.pu_code
+    WHERE s.observer_id = ?`).get(req.observer.id);
+  res.json({ ok: true, unit: row || null });
+});
+
+observersRouter.post('/my-unit', requireObserver, (req, res) => {
+  const puCode = String(req.body?.puCode || '').trim();
+  const pu = db.prepare('SELECT pu_code, name, ward, lga, state FROM polling_units WHERE pu_code = ?').get(puCode);
+  if (!pu) return res.status(404).json({ error: 'unknown_unit' });
+  db.prepare('INSERT OR REPLACE INTO saved_units (observer_id, pu_code, created_at) VALUES (?, ?, ?)')
+    .run(req.observer.id, puCode, Date.now());
+  notifyChat(chatIdByHash(req.observer.phone_hash),
+    `⭐ Saved as your polling unit: ${pu.name} (${pu.pu_code})\n${pu.ward} ward, ${pu.lga}, ${pu.state}.\nYou'll get an alert here for every result report and approved incident at this unit.`);
+  res.json({ ok: true, unit: pu });
+});
+
+observersRouter.post('/my-unit/clear', requireObserver, (req, res) => {
+  db.prepare('DELETE FROM saved_units WHERE observer_id = ?').run(req.observer.id);
+  res.json({ ok: true });
+});
+
 // Self-serve identity deletion. Wipes everything revocable — signing key,
 // device binding, Telegram link, subscriptions, pending OTPs — and marks the
 // observer 'deleted'. The row itself (id + phone hash) is a permanent

@@ -132,29 +132,40 @@
       const files = $('media').files;
       if (!desc && !files.length) { $('status').textContent = 'Add a photo/video or describe what happened.'; return; }
       $('btn-submit').disabled = true; $('status').textContent = 'Uploading…';
-      const fd = new FormData();
-      fd.set('kind', kind); fd.set('description', desc);
-      for (const f of files) fd.append('media', f);
-      if ($('use-gps').checked) {
-        const c = await getPos();
-        if (c) { fd.set('lat', c.latitude); fd.set('lng', c.longitude); }
+      try {
+        const fd = new FormData();
+        fd.set('kind', kind); fd.set('description', desc);
+        for (const f of files) fd.append('media', f);
+        if ($('use-gps').checked) {
+          const c = await getPos();
+          if (c) { fd.set('lat', c.latitude); fd.set('lng', c.longitude); }
+        }
+        // Tie the incident to the reporter's saved polling unit so unit
+        // watchers can be alerted once it's approved.
+        try {
+          const mu = await fetch('/api/observers/my-unit', { headers: { authorization: `Bearer ${token}` } }).then((r) => r.json());
+          if (mu.unit?.pu_code) fd.set('puCode', mu.unit.pu_code);
+        } catch { /* optional */ }
+        const res = await fetch('/api/incidents', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() },
+          body: fd,
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 201) {
+          $('status').textContent = '✅ Submitted — your report is in the review queue. Once approved it appears on this page and everyone watching the affected polling unit gets a Telegram alert.';
+          $('desc').value = ''; $('media').value = ''; $('preview').innerHTML = '';
+        } else if (res.status === 401) {
+          localStorage.removeItem('hawkeye_token');
+          $('status').innerHTML = 'Session expired — <a href="observe.html?intent=incident">register your device again →</a>';
+          $('form-card').hidden = true; $('need-auth').hidden = false;
+        } else {
+          $('status').textContent = ({ invalid_kind: 'Choose an incident type.', empty_report: 'Add a photo/video or a description.' })[body.error] || `❌ Could not submit (${body.error || res.status}) — try again.`;
+        }
+      } catch {
+        $('status').textContent = '❌ Upload failed — check your connection and try again.';
       }
-      const res = await fetch('/api/incidents', {
-        method: 'POST',
-        headers: { authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() },
-        body: fd,
-      });
-      const body = await res.json().catch(() => ({}));
-      if (res.status === 201) {
-        $('status').textContent = '✅ Received and under review. Thank you.';
-        $('desc').value = ''; $('media').value = ''; $('preview').innerHTML = '';
-      } else if (res.status === 401) {
-        localStorage.removeItem('hawkeye_token');
-        $('status').innerHTML = 'Session expired — <a href="observe.html?intent=incident">register your device again →</a>';
-        $('form-card').hidden = true; $('need-auth').hidden = false;
-      } else {
-        $('status').textContent = ({ invalid_kind: 'Choose an incident type.', empty_report: 'Add a photo/video or a description.' })[body.error] || 'Could not submit — try again.';
-      }
+      $('status').scrollIntoView({ block: 'nearest' });
       $('btn-submit').disabled = false;
     });
 

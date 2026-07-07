@@ -180,6 +180,9 @@
       // Region label per map division: state, senatorial district, or federal constituency.
       const byRegion = Object.fromEntries(data.regions.map((r) => [r.region, r]));
       const leadersOf = (info) => (info?.leaders?.length ? info.leaders : (info?.leader ? [info.leader] : []));
+      const leadText = (L) => (L.length > 2 ? `${L.length}-way tie` : L.length === 2 ? `${L.join(' & ')} tied` : `${L[0]} leads`);
+      // 3-way+ ties: plain white fill, no flags (they wouldn't fit cleanly)
+      const tieStyle = (L) => (L.length > 2 ? ' style="fill:#fff"' : '');
       let shapes = '';
       let aria;
       let badgeR = 13;
@@ -190,9 +193,9 @@
           const info = byKey[st.key];
           const L = leadersOf(info);
           const tip = info
-            ? `${st.name}: ${L.length > 1 ? `${L.join(' & ')} tied` : `${L[0]} leads`} · ${info.unitsReporting} unit(s)`
+            ? `${st.name}: ${leadText(L)} · ${info.unitsReporting} unit(s)`
             : `${st.name}: no reports yet`;
-          shapes += `<path class="state-shape${info ? ' led' : ''}" data-leaders="${L.join(',')}" d="${st.path}"><title>${tip}</title></path>`;
+          shapes += `<path class="state-shape${info ? ' led' : ''}"${tieStyle(L)} data-leaders="${L.join(',')}" d="${st.path}"><title>${tip}</title></path>`;
         }
         aria = 'Map of Nigeria: leading party per state';
       } else if (data.level === 'lga') {
@@ -217,9 +220,9 @@
           const info = byRegion[rg.name];
           const L = leadersOf(info);
           const tip = info
-            ? `${rg.name}: ${L.length > 1 ? `${L.join(' & ')} tied` : `${L[0]} leads`} · ${info.unitsReporting} unit(s)`
+            ? `${rg.name}: ${leadText(L)} · ${info.unitsReporting} unit(s)`
             : `${rg.name}: no reports yet`;
-          shapes += `<path class="state-shape${L.length ? ' led' : ''}" data-leaders="${L.join(',')}" fill-rule="evenodd" d="${rg.path}"><title>${tip}</title></path>`;
+          shapes += `<path class="state-shape${L.length ? ' led' : ''}"${tieStyle(L)} data-leaders="${L.join(',')}" fill-rule="evenodd" d="${rg.path}"><title>${tip}</title></path>`;
         }
         aria = `Map of Nigeria: leading party per ${word}`;
       }
@@ -236,7 +239,7 @@
       let clipN = 0;
       for (const p of svg.querySelectorAll('path[data-leaders]')) {
         const L = (p.dataset.leaders || '').split(',').filter(Boolean);
-        if (!L.length) continue;
+        if (!L.length || L.length > 2) continue; // 3-way+ = white fill only
         const b = p.getBBox();
         const cx = b.x + b.width / 2;
         const cy = b.y + b.height / 2;

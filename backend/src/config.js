@@ -46,6 +46,8 @@ export const config = {
   smsProvider: process.env.SMS_PROVIDER || 'console',
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
   telegramBotUsername: process.env.TELEGRAM_BOT_USERNAME || '',
+  // command-bot experiments run on a separate test bot until promoted
+  telegramTestBotToken: process.env.TELEGRAM_TEST_BOT_TOKEN || '',
   // Master phone (owner): receives a Telegram ping for EVERY site activity
   // (verification/report/mapping/subscription). Must link its Telegram once,
   // like any observer, for the bot to reach it. Empty = disabled.
@@ -127,4 +129,9 @@ if (config.env === 'production') {
 // Shared secret Telegram echoes back on webhook calls (X-Telegram-Bot-Api-Secret-Token).
 config.telegramWebhookSecret = config.telegramBotToken
   ? crypto.createHmac('sha256', config.oracleSecret).update(config.telegramBotToken).digest('hex').slice(0, 32)
+  : '';
+// Test-bot secret is derived from the token ALONE (not oracleSecret) so the
+// local setup script can compute the same value the server expects.
+config.telegramTestWebhookSecret = config.telegramTestBotToken
+  ? crypto.createHmac('sha256', 'hawkeye-tg-test').update(config.telegramTestBotToken).digest('hex').slice(0, 32)
   : '';

@@ -3,8 +3,20 @@ import { db } from '../db.js';
 import { config } from '../config.js';
 import { tgSendMessage } from '../services/sms.js';
 import { phoneHash, normalizePhone } from './observers.js';
+import { handleTestUpdate } from '../services/bot.js';
 
 export const telegramRouter = Router();
+
+// Command-bot experiments (separate TEST bot; see services/bot.js). Promoted to
+// the production bot by pointing this handler at the prod token once proven.
+telegramRouter.post('/telegram/webhook-test', async (req, res) => {
+  if (!config.telegramTestWebhookSecret ||
+      req.headers['x-telegram-bot-api-secret-token'] !== config.telegramTestWebhookSecret) {
+    return res.status(403).end();
+  }
+  res.json({ ok: true }); // ack immediately; process best-effort
+  try { await handleTestUpdate(req.body || {}); } catch (e) { console.error('[tg-test]', e); }
+});
 
 // Telegram Bot webhook. Linking flow:
 //   1. app shows t.me/<bot>?start=<token> (token bound to the phone the observer typed)

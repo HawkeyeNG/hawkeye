@@ -167,6 +167,14 @@ for (const ddl of [
      pu_code     TEXT NOT NULL,
      created_at  INTEGER NOT NULL
    )`,
+  // Command-bot chat sessions (multi-step flows like the /incident quick tip).
+  `CREATE TABLE IF NOT EXISTS tg_sessions (
+     chat_id    INTEGER PRIMARY KEY,
+     flow       TEXT NOT NULL,
+     step       TEXT NOT NULL,
+     data_json  TEXT NOT NULL DEFAULT '{}',
+     updated_at INTEGER NOT NULL
+   )`,
   'ALTER TABLE polling_units ADD COLUMN senatorial TEXT',
   'ALTER TABLE polling_units ADD COLUMN federal_constituency TEXT',
   'ALTER TABLE polling_units ADD COLUMN approx_lat REAL',

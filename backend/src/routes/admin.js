@@ -33,7 +33,7 @@ adminRouter.post('/admin/auth', requireAdmin, (_req, res) => res.json({ ok: true
 // Manually record a ledger anchor now (admin-only).
 adminRouter.post('/admin/anchor', requireAdmin, async (req, res) => {
   try { res.json(await runAnchor(req.query.force === '1')); }
-  catch (e) { res.status(500).json({ error: e.message }); }
+  catch (e) { console.error('[admin/anchor]', e); res.status(500).json({ error: 'internal_error' }); }
 });
 
 adminRouter.get('/admin/incidents', requireAdmin, (req, res) => {

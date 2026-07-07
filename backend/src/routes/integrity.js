@@ -55,5 +55,5 @@ integrityRouter.post('/integrity/irev-scan', (_req, res) => {
 // Manual re-scan trigger (also runs on an interval in server.js).
 integrityRouter.post('/integrity/scan', (_req, res) => {
   try { runForensics(); res.json({ ok: true }); }
-  catch (e) { res.status(500).json({ error: e.message }); }
+  catch (e) { console.error('[integrity/scan]', e); res.status(500).json({ error: 'internal_error' }); }
 });

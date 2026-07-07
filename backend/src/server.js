@@ -85,6 +85,17 @@ app.use((req, res) => {
   res.status(404).json({ error: 'not_found' });
 });
 
+// Global error handler — MUST be last. Without it Express's default handler
+// leaks stack traces in the response body whenever NODE_ENV !== 'production'
+// (and the host pins NODE_ENV=development). This never leaks internals: the
+// real error is logged server-side, the client gets a generic message.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, _next) => {
+  console.error('[unhandled]', req.method, req.path, err);
+  if (res.headersSent) return;
+  res.status(err.status && err.status < 500 ? err.status : 500).json({ error: 'internal_error' });
+});
+
 app.listen(config.port, () => {
   console.log(`Hawkeye backend listening on http://0.0.0.0:${config.port} (${config.env})`);
   // Self-setup on hosts without shell access (register load runs in the background).

@@ -147,5 +147,31 @@
       location.href = 'observe.html?intent=observe';
     });
     panel.appendChild(a);
+
+    // Delete my ID — permanent, self-serve. Wipes key/device/Telegram link and
+    // marks the observer deleted server-side; ledger reports remain (permanence
+    // is the product) and re-registering the same number restores the same ID.
+    const del = document.createElement('a');
+    del.href = '#';
+    del.className = 'sign-out';
+    del.textContent = 'Delete my ID';
+    del.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!confirm('Delete your observer ID?\n\nYour signing key, device link, Telegram link and alert subscriptions are removed. Reports already on the public ledger stay (they are anonymous and permanent). Re-registering this number restores the same ID.')) return;
+      try {
+        await fetch('/api/observers/delete', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}` },
+        });
+      } catch { /* still clear locally */ }
+      localStorage.removeItem('hawkeye_token');
+      try {
+        const rq = indexedDB.open('hawkeye', 1);
+        rq.onsuccess = () => { try { rq.result.transaction('kv', 'readwrite').objectStore('kv').delete('keypair'); } catch { /* ignore */ } };
+      } catch { /* ignore */ }
+      alert('Your ID has been deleted.');
+      location.href = 'index.html';
+    });
+    panel.appendChild(del);
   }
 })();

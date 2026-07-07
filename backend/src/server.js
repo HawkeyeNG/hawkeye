@@ -20,6 +20,8 @@ import { runBackup } from './services/backup.js';
 import { irevScan } from './services/irev.js';
 import { runAnchor } from './services/anchor.js';
 import path from 'node:path';
+import fs from 'node:fs';
+import sharp from 'sharp';
 
 const app = express();
 app.set('trust proxy', true);
@@ -70,8 +72,30 @@ app.use('/api', integrityRouter);
 app.use('/api', incidentsRouter);
 app.use('/api', adminRouter);
 app.use('/api', collationRouter);
-// training sheet images (public IReV documents / self-shot practice sheets)
-app.use('/training', express.static(path.join(path.dirname(config.dbPath), 'training')));
+// Training sheet images: the originals are ~3-4 MB phone photos (3072x4096),
+// far more than a labeller's screen needs, so serving them raw made the page
+// crawl. Serve a cached ~1500px JPEG for VIEWING (built on first request, then
+// instant). The OCR endpoint still reads the full-res original, so scoring is
+// unaffected.
+const trainRoot = path.join(path.dirname(config.dbPath), 'training');
+const thumbRoot = path.join(trainRoot, '_view');
+app.get(/^\/training\/(.+\.(?:jpe?g|png))$/i, async (req, res, next) => {
+  const file = path.basename(req.params[0]);
+  const src = path.join(trainRoot, file);
+  if (!fs.existsSync(src)) return next();
+  const thumb = path.join(thumbRoot, file.replace(/\.[^.]+$/, '.jpg'));
+  try {
+    if (!fs.existsSync(thumb) || fs.statSync(thumb).mtimeMs < fs.statSync(src).mtimeMs) {
+      fs.mkdirSync(thumbRoot, { recursive: true });
+      await sharp(src).rotate().resize({ width: 1500, withoutEnlargement: true })
+        .jpeg({ quality: 76, mozjpeg: true }).toFile(thumb);
+    }
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+    return res.type('jpeg').sendFile(thumb);
+  } catch { return next(); } // fall through to the original on any failure
+});
+// truth.json / sets.json and any non-image path fall through to the raw files.
+app.use('/training', express.static(trainRoot));
 
 // Evidence photos/videos are public audit artifacts — content-addressed,
 // immutable. Harden the responses: nosniff + a sandbox CSP so a polyglot

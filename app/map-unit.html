@@ -106,7 +106,17 @@
       <p class="hint">Only do this while physically standing at the unit. Your GPS fix is
       recorded; nothing is published.</p>
       <button id="btn-gps">📍 Capture GPS at this unit</button>
+      <button id="btn-save-unit" class="secondary">⭐ Save as my polling unit</button>
+      <p class="hint">Saving subscribes you to Telegram alerts for every result report and
+      approved incident at this unit.</p>
       <p id="cap-status" class="status" role="status"></p>
+    </section>
+
+    <section id="my-unit-card" class="card" hidden>
+      <h2>My polling unit</h2>
+      <p id="my-unit-info" class="status"></p>
+      <p class="hint">You get a Telegram alert for everything reported at this unit.
+        <a id="btn-unsave" class="link" href="#">Stop watching</a></p>
     </section>
   </main>
 
@@ -283,10 +293,45 @@
 
     initMap();
 
+    // ---------- my polling unit (Telegram alerts for everything at this unit) ----------
+    async function showMyUnit() {
+      if (!token) return;
+      const { status, b } = await api('/api/observers/my-unit', {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (status !== 200 || !b.unit) { $('my-unit-card').hidden = true; return; }
+      const u = b.unit;
+      $('my-unit-info').textContent = `⭐ ${u.name || u.pu_code} (${u.pu_code})${u.ward ? ` · ${u.ward} ward, ${u.lga}, ${u.state}` : ''}`;
+      $('my-unit-card').hidden = false;
+    }
+
+    $('btn-save-unit').onclick = async () => {
+      if (!unit) return;
+      $('cap-status').textContent = 'Saving…';
+      const { status, b } = await api('/api/observers/my-unit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ puCode: unit.pu_code }),
+      });
+      $('cap-status').textContent = status === 200
+        ? `⭐ Saved — you'll get Telegram alerts for everything at ${unit.pu_code}.`
+        : (b.error === 'unknown_unit' ? 'Unit not on the register.' : 'Could not save — try again.');
+      showMyUnit();
+    };
+
+    $('btn-unsave').onclick = async (e) => {
+      e.preventDefault();
+      await api('/api/observers/my-unit/clear', {
+        method: 'POST', headers: { authorization: `Bearer ${token}` },
+      });
+      $('my-unit-card').hidden = true;
+    };
+
     (async () => {
       await stats();
       if (!token) { $('need-auth').hidden = false; return; }
       $('picker').hidden = false;
+      showMyUnit();
       fill($('sel-state'), await (await fetch('/api/register/states')).json(), '— select state —');
     })();
   </script>

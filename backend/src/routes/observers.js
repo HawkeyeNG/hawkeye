@@ -94,8 +94,9 @@ observersRouter.post('/verify', (req, res) => {
     // A fresh OTP proves control of the phone, so key rotation (new device / cleared
     // storage) is allowed. The observer row — and its one-report-per-unit history —
     // stays the same, so rotation never buys a second report. Bind this device so
-    // the SAME device can auto-resume later without another OTP.
-    db.prepare('UPDATE observers SET public_key_jwk = ?, device_id = ? WHERE id = ?')
+    // the SAME device can auto-resume later without another OTP. A previously
+    // deleted ID is resurrected here (same row, same history).
+    db.prepare("UPDATE observers SET public_key_jwk = ?, device_id = ?, status = 'active' WHERE id = ?")
       .run(jwkJson, deviceId, observer.id);
   }
 
@@ -156,7 +157,8 @@ observersRouter.post('/telegram-verify', (req, res) => {
     observer = db.prepare('SELECT * FROM observers WHERE id = ?').get(info.lastInsertRowid);
   } else {
     // Telegram's contact-share proves control of the phone, same as a fresh OTP.
-    db.prepare('UPDATE observers SET public_key_jwk = ?, device_id = ? WHERE id = ?')
+    // Also resurrects a previously deleted ID (same row, same history).
+    db.prepare("UPDATE observers SET public_key_jwk = ?, device_id = ?, status = 'active' WHERE id = ?")
       .run(jwkJson, deviceId, observer.id);
   }
 
@@ -188,6 +190,24 @@ observersRouter.post('/resume', (req, res) => {
   }
   const token = jwt.sign({ sub: String(observer.id) }, config.jwtSecret, { expiresIn: '30d' });
   res.json({ ok: true, observerId: observer.id, token });
+});
+
+// Self-serve identity deletion. Wipes everything revocable — signing key,
+// device binding, Telegram link, subscriptions, pending OTPs — and marks the
+// observer 'deleted'. The row itself (id + phone hash) is a permanent
+// tombstone: reports already on the public ledger stay (permanence is the
+// product), and re-registering the same phone resurrects the SAME observer id,
+// so deletion can never buy a second report at the same unit.
+observersRouter.post('/delete', requireObserver, (req, res) => {
+  const o = req.observer;
+  db.transaction(() => {
+    db.prepare("UPDATE observers SET status = 'deleted', public_key_jwk = '', device_id = NULL WHERE id = ?").run(o.id);
+    db.prepare('DELETE FROM telegram_links WHERE phone_hash = ?').run(o.phone_hash);
+    db.prepare('DELETE FROM subscriptions WHERE observer_id = ?').run(o.id);
+    db.prepare('DELETE FROM otps WHERE phone_hash = ?').run(o.phone_hash);
+  })();
+  notifyMaster(`observer #${o.id} deleted their ID (${o.phone_hash.slice(0, 12)}…)`);
+  res.json({ ok: true, deleted: true });
 });
 
 // One-off test-data reset (owner only, guarded by ADMIN_RESET_SECRET). Deletes

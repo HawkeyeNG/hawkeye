@@ -48,12 +48,19 @@ nationalRouter.get('/national/:contest', (req, res) => {
     updatedAt: Date.now(),
     unitsReporting: rows.length,
     national: Object.entries(national).map(([party, votes]) => ({ party, votes })).sort((a, b) => b.votes - a.votes),
-    regions: Object.entries(regions).map(([region, s]) => ({
-      region,
-      leader: Object.entries(s.votes).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null,
-      votes: s.votes,
-      unitsReporting: s.unitsReporting,
-      unitsVerified: s.unitsVerified,
-    })),
+    regions: Object.entries(regions).map(([region, s]) => {
+      const ranked = Object.entries(s.votes).sort((a, b) => b[1] - a[1]);
+      const top = ranked[0]?.[1];
+      // every party tied at the top (usually 1; >1 = exact tie — the map splits the shape)
+      const leaders = top === undefined ? [] : ranked.filter(([, v]) => v === top).map(([p]) => p);
+      return {
+        region,
+        leader: leaders[0] ?? null,
+        leaders,
+        votes: s.votes,
+        unitsReporting: s.unitsReporting,
+        unitsVerified: s.unitsVerified,
+      };
+    }),
   });
 });

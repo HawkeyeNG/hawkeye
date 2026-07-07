@@ -105,6 +105,10 @@
   <script src="menu.js?v=63"></script>
   <script>
     const $ = (id) => document.getElementById(id);
+    // Escape ALL HTML metacharacters (not just '<') so observer-supplied text is
+    // never interpretable as markup in any context.
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const token = localStorage.getItem('hawkeye_token');
     const KIND_LABEL = {
       violence: 'Violence', ballot_snatching: 'Ballot snatching', vote_buying: 'Vote-buying',
@@ -172,14 +176,15 @@
     async function loadFeed() {
       const { incidents } = await fetch('/api/incidents').then((r) => r.json());
       if (!incidents.length) { $('feed').innerHTML = '<p class="empty">No incidents have been published yet.</p>'; return; }
+      const safeFile = (f) => encodeURI(String(f)).replace(/"/g, '%22');
       $('feed').innerHTML = incidents.map((i) => `
         <div class="feed-item">
-          <span class="k">${KIND_LABEL[i.kind] || i.kind}</span>${i.state ? ` · ${i.state}` : ''}
-          <small style="color:var(--muted)"> · ${timeAgo(i.created_at)}</small>
-          ${i.description ? `<p>${i.description.replace(/</g, '&lt;')}</p>` : ''}
+          <span class="k">${esc(KIND_LABEL[i.kind] || i.kind)}</span>${i.state ? ` · ${esc(i.state)}` : ''}
+          <small style="color:var(--muted)"> · ${esc(timeAgo(i.created_at))}</small>
+          ${i.description ? `<p>${esc(i.description)}</p>` : ''}
           ${i.media.length ? `<div class="m">${i.media.map((m) => m.type === 'video'
-            ? `<video src="/uploads/${m.file}" controls muted></video>`
-            : `<img src="/uploads/${m.file}" alt="incident evidence" loading="lazy" />`).join('')}</div>` : ''}
+            ? `<video src="/uploads/${safeFile(m.file)}" controls muted></video>`
+            : `<img src="/uploads/${safeFile(m.file)}" alt="incident evidence" loading="lazy" />`).join('')}</div>` : ''}
         </div>`).join('');
     }
 
@@ -188,7 +193,7 @@
     loadFeed();
     (async () => {
       const kinds = await fetch('/api/incidents/kinds').then((r) => r.json()).catch(() => Object.keys(KIND_LABEL));
-      $('kind').innerHTML = kinds.map((k) => `<option value="${k}">${KIND_LABEL[k] || k}</option>`).join('');
+      $('kind').innerHTML = kinds.map((k) => `<option value="${esc(k)}">${esc(KIND_LABEL[k] || k)}</option>`).join('');
     })();
   </script>
 </body>

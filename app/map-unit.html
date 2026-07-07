@@ -12,7 +12,10 @@
        on flaky networks and inside the future Telegram webview. -->
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <style>
-    #lmap { height: 420px; border: 1px solid var(--border); }
+    /* position+z-index create a stacking context that CAPS Leaflet's internal
+       z-indexes (panes 400-700, controls 1000) so the map can't paint over the
+       sticky header (z-index 50) when the page scrolls. */
+    #lmap { height: 420px; border: 1px solid var(--border); position: relative; z-index: 0; }
     .map-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
     .map-tools input#ward-search { flex: 1; min-width: 170px; margin: 0; }
     .map-tools button { width: auto; margin: 0; }

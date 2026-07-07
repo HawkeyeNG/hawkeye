@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /review.html
 Disallow: /train.html
+Disallow: /train2.html
 Disallow: /preview.html
 Disallow: /api/
 

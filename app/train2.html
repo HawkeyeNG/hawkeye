@@ -5,7 +5,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#00482b" />
-  <title>Hawkeye — OCR Training</title>
+  <title>Hawkeye — OCR Training — Set 2 (Set 2)</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css?v=63" />
@@ -19,7 +19,7 @@
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
-  <meta property="og:title" content="Hawkeye — OCR Training" />
+  <meta property="og:title" content="Hawkeye — OCR Training — Set 2" />
   <meta property="og:description" content="Crowd-verified, tamper-evident monitoring of polling-unit results in Nigeria." />
   <meta property="og:url" content="https://hawkeye.com.ng/train.html" />
   <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
@@ -53,10 +53,10 @@
       </nav>
     </div>
   </header>
-  <div class="phase-banner"><div class="wrap"><strong>OCR Training</strong> — teach the system to read result sheets.</div></div>
+  <div class="phase-banner"><div class="wrap"><strong>OCR Training — Set 2</strong> — teach the system to read result sheets.</div></div>
 
   <main class="wrap">
-    <h1>OCR Training</h1>
+    <h1>OCR Training — Set 2</h1>
     <p class="lede">For each sheet: check what the system read, then enter the real party
     counts from the image (non-zero rows only). Your answers become the calibration set.</p>
     <p class="progress" id="progress"></p>
@@ -132,7 +132,7 @@
 
     (async () => {
       if (!token) { $('need-auth').hidden = false; return; }
-      const d = await fetch('/api/training/items?set=1').then((r) => r.json());
+      const d = await fetch('/api/training/items?set=2').then((r) => r.json());
       queue = d.items.filter((i) => !i.labelled);
       $('progress').textContent = `${d.labelled} sheets labelled · ${queue.length} remaining`;
       next();

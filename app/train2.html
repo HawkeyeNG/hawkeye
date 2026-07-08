@@ -61,6 +61,17 @@
     counts from the image (non-zero rows only). Your answers become the calibration set.</p>
     <p class="progress" id="progress"></p>
 
+    <section id="batch" class="card" hidden>
+      <h2>Your labelling batch</h2>
+      <p class="progress" id="mine"></p>
+      <p class="hint" id="avail"></p>
+      <div class="pair">
+        <input type="number" id="gen-count" min="1" placeholder="how many" style="width:130px" />
+        <button id="btn-gen">Generate batch</button>
+      </div>
+      <p id="gen-msg" class="status"></p>
+    </section>
+
     <section id="need-auth" class="card" hidden>
       <p>You need a verified observer identity first.</p>
       <a class="btn-link" href="observe.html">Verify your phone →</a>
@@ -90,8 +101,10 @@
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
+    const SET = 2;                      // this page's labelling set (train.html = 1)
     let queue = [];
     let cur = null;
+    let available = 0;
 
     function addPair(p = '', c = '') {
       const d = document.createElement('div');
@@ -100,9 +113,20 @@
       $('pairs').appendChild(d);
     }
 
+    const showAvail = () => { $('avail').textContent = `${available} sheet(s) available to claim.`; };
+    const setMine = (n) => { $('mine').textContent = `You have labelled ${n} sheet(s) all-time.`; };
+
+    async function loadQueue() {
+      const d = await fetch(`/api/training/items?set=${SET}`).then((r) => r.json());
+      queue = d.items.filter((i) => !i.labelled && (!cur || i.key !== cur.key));
+      available = d.available;
+      showAvail();
+      $('progress').textContent = `${d.labelled} sheets labelled in total · ${queue.length} in your queue`;
+    }
+
     async function next() {
       cur = queue.shift();
-      if (!cur) { $('work').hidden = true; $('progress').textContent += ' — all sheets labelled. 🎉'; return; }
+      if (!cur) { $('work').hidden = true; $('gen-msg').textContent = 'Queue empty — generate a fresh batch above.'; return; }
       $('work').hidden = false;
       $('title').textContent = cur.key;
       $('img').src = `/training/${cur.file}`;
@@ -111,6 +135,27 @@
       const r = await fetch(`/api/training/ocr/${cur.file}`, { headers: { authorization: `Bearer ${token}` } }).then((x) => x.json());
       $('tokens').textContent = (r.tokens || []).join('  ') || '(nothing read)';
     }
+
+    $('btn-gen').onclick = async () => {
+      const count = Number($('gen-count').value);
+      if (!Number.isInteger(count) || count < 1) { $('gen-msg').textContent = 'Enter a whole number ≥ 1.'; return; }
+      $('btn-gen').disabled = true; $('gen-msg').textContent = 'Claiming…';
+      const r = await fetch('/api/training/generate', {
+        method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ count, set: SET }),
+      });
+      const j = await r.json().catch(() => ({}));
+      $('btn-gen').disabled = false;
+      if (r.status === 400 && j.error === 'not_enough') {
+        available = j.available; showAvail();
+        $('gen-msg').textContent = `Only ${j.available} sheet(s) left — request that many or fewer.`;
+        return;
+      }
+      if (!r.ok) { $('gen-msg').textContent = 'Could not generate — are you verified?'; return; }
+      $('gen-msg').textContent = `Added ${j.claimed} sheet(s) to your queue.`;
+      await loadQueue();
+      if (!cur || $('work').hidden) next();
+    };
 
     $('btn-add').onclick = () => addPair();
     $('btn-skip').onclick = next;
@@ -126,15 +171,17 @@
       });
       if (!r.ok) { $('msg').textContent = 'Save failed — are you verified?'; return; }
       const j = await r.json();
-      $('progress').textContent = `${j.labelled} sheets labelled · ${queue.length} remaining`;
+      if (typeof j.mine === 'number') setMine(j.mine);
+      $('progress').textContent = `${j.labelled} sheets labelled in total · ${queue.length} in your queue`;
       next();
     };
 
     (async () => {
       if (!token) { $('need-auth').hidden = false; return; }
-      const d = await fetch('/api/training/items?set=2').then((r) => r.json());
-      queue = d.items.filter((i) => !i.labelled);
-      $('progress').textContent = `${d.labelled} sheets labelled · ${queue.length} remaining`;
+      $('batch').hidden = false;
+      await loadQueue();
+      const m = await fetch('/api/training/mine', { headers: { authorization: `Bearer ${token}` } }).then((x) => x.json()).catch(() => ({}));
+      setMine(m.mine || 0);
       next();
     })();
   </script>

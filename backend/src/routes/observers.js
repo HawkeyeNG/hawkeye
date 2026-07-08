@@ -273,6 +273,32 @@ observersRouter.post('/admin/reset', (req, res) => {
   res.json({ ok: true, deleted: counts, remainingObservers: remaining });
 });
 
+// Election go-live reset (owner only, guarded by the SAME ADMIN_RESET_SECRET).
+// Unlike /admin/reset above, this does NOT touch observers/pu_mappings/
+// subscriptions/telegram_links/polling_units — registered observers and mapped
+// units carry over so nobody has to re-register on election day. It clears only
+// report/result/discrepancy data, so the hash chain and the per-race Merkle
+// root both naturally rebuild from genesis on the next submission/anchor cycle
+// — no schema change needed (nextEntry/verifyChain/raceSubchains derive purely
+// from table contents). Past anchors/Rekor entries are left in place on purpose:
+// the next anchor cycle publishes a fresh genesis-head anchor to Rekor, which
+// becomes a permanent, public marker of exactly when test data ended and real
+// reporting began.
+observersRouter.post('/admin/reset-ledger', (req, res) => {
+  if (!config.adminResetSecret || req.body?.secret !== config.adminResetSecret) {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  const counts = {};
+  db.transaction(() => {
+    for (const t of ['venue_matches', 'submissions', 'collation_reports', 'results', 'discrepancies']) {
+      counts[t] = db.prepare(`SELECT COUNT(*) AS c FROM ${t}`).get().c;
+      db.exec(`DELETE FROM ${t}`);
+    }
+  })();
+  notifyMaster(`🗳️ LEDGER RESET — cleared ${counts.submissions} PU report(s), ${counts.collation_reports} collation report(s). Chain restarts at genesis; observers and unit mappings kept. Next anchor cycle publishes the reset to Rekor.`);
+  res.json({ ok: true, deleted: counts });
+});
+
 export function requireObserver(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;

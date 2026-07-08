@@ -61,6 +61,17 @@ visibly, for anyone who checks.
   already exists at a fixed log index and integrated time, so even total server
   compromise cannot silently "un-happen" recorded results. Anyone can list the
   anchors (`/api/anchors`) and confirm each against Rekor without our cooperation.
+- **Per-race paper trail (Merkle-batched anchors):** each anchor also derives a
+  **subchain per race** — a race being a specific contest at its deciding scope
+  (the presidential race, each of the 109 senatorial districts, each federal
+  constituency, each governorship, each state-assembly constituency — ~1,500 in
+  all). Every race's subchain head is a Merkle leaf, and the anchor publishes a
+  single **Merkle root** over all of them to Rekor — one transparency-log entry
+  regardless of race count. The root, plus each race's stored inclusion proof
+  (`/api/anchors/:id/races/:raceKey`), lets a **single disputed race** be verified
+  in isolation: fold the proof to the anchored root, confirm the root in Rekor —
+  no need to replay the other ~1,499 races or trust Hawkeye. This is the tribunal
+  paper trail: "here is exactly this contest's record, fixed at this timestamp."
 
 ### 3.2 Reports are signed on the observer's own device
 Each observer's phone generates a cryptographic key pair (ECDSA P-256) whose

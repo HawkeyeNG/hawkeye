@@ -26,32 +26,42 @@ const readTruth = () => readJson('truth.json');
 // A sheet is "claimed" once it has a set here; unclaimed sheets are the pool a
 // labeller draws a fresh batch from via POST /training/generate.
 const readSets = () => readJson('sets.json');
-// labellers.json maps sheet key -> observer id who labelled it, so each scorer's
-// running total is the number of DISTINCT sheets attributed to them (re-saving
-// the same sheet never double-counts).
-const readLabellers = () => readJson('labellers.json');
-const mineCount = (labellers, oid) => Object.values(labellers).filter((v) => v === oid).length;
+// dropped.json holds sheets a labeller skipped as unusable (blank / no data) —
+// permanently removed from every queue and from the claimable pool.
+const readDropped = () => readJson('dropped.json');
 
-// Unclaimed + unlabelled sheets — the reservoir a labeller can pull a batch from.
+// Per-page running tally. Seeded ONCE to the counts already labelled on each page
+// before this counter existed (2026-07-08); every new label bumps its page.
+const SEED_COUNTS = { 1: 142, 2: 100 };
+const readCounts = () => {
+  if (!fs.existsSync(jsonPath('train_counts.json'))) { writeJson('train_counts.json', SEED_COUNTS); return { ...SEED_COUNTS }; }
+  return readJson('train_counts.json');
+};
+const mineForSet = (set) => Number(readCounts()[set] || 0);
+
+// Unclaimed + unlabelled + not-dropped sheets — the reservoir for a fresh batch.
 const poolFiles = () => {
   const truth = readTruth();
   const sets = readSets();
-  return fs.readdirSync(dir()).filter((f) => isImage(f) && !sets[f] && !truth[keyOf(f)]);
+  const dropped = readDropped();
+  return fs.readdirSync(dir()).filter((f) => isImage(f) && !sets[f] && !truth[keyOf(f)] && !dropped[keyOf(f)]);
 };
 
 trainingRouter.get('/training/items', (req, res) => {
   const truth = readTruth();
   const sets = readSets();
+  const dropped = readDropped();
   const want = Number(req.query.set || 0); // 0 = all
   const items = fs.readdirSync(dir()).filter(isImage)
+    .filter((f) => !dropped[keyOf(f)])
     .map((f) => ({ file: f, key: keyOf(f), set: sets[f] || 0, labelled: Boolean(truth[keyOf(f)]) }))
     .filter((i) => !want || i.set === want);
   res.json({ items, labelled: Object.keys(truth).length, available: poolFiles().length });
 });
 
-// A labeller's own running total (distinct sheets they've labelled, all-time).
+// This page's running total (per set).
 trainingRouter.get('/training/mine', requireObserver, (req, res) => {
-  res.json({ mine: mineCount(readLabellers(), req.observer.id) });
+  res.json({ mine: mineForSet(Math.max(1, Math.floor(Number(req.query.set) || 1))) });
 });
 
 // Claim a fresh batch of `count` unclaimed sheets into `set` (this page's queue).
@@ -71,6 +81,16 @@ trainingRouter.post('/training/generate', requireObserver, (req, res) => {
   res.status(201).json({ claimed: claimed.length, remaining: pool.length - count });
 });
 
+// Skip a sheet as unusable (blank / no data) — drop it from every queue for good.
+trainingRouter.post('/training/skip', requireObserver, (req, res) => {
+  const key = String(req.body?.key || '').replace(/[^A-Za-z0-9_-]/g, '');
+  if (!key) return res.status(400).json({ error: 'bad_key' });
+  const dropped = readDropped();
+  dropped[key] = true;
+  writeJson('dropped.json', dropped);
+  res.status(201).json({ ok: true, available: poolFiles().length });
+});
+
 trainingRouter.get('/training/ocr/:file', requireObserver, async (req, res) => {
   const f = path.join(dir(), path.basename(req.params.file));
   if (!fs.existsSync(f)) return res.status(404).json({ error: 'not_found' });
@@ -81,6 +101,7 @@ trainingRouter.get('/training/ocr/:file', requireObserver, async (req, res) => {
 trainingRouter.post('/training/label', requireObserver, (req, res) => {
   const key = String(req.body?.key || '').replace(/[^A-Za-z0-9_-]/g, '');
   const counts = req.body?.counts;
+  const set = Math.max(1, Math.floor(Number(req.body?.set) || 1));
   if (!key || typeof counts !== 'object') return res.status(400).json({ error: 'bad_label' });
   const clean = {};
   for (const [p, c] of Object.entries(counts)) {
@@ -88,10 +109,10 @@ trainingRouter.post('/training/label', requireObserver, (req, res) => {
     if (Number.isInteger(n) && n > 0) clean[String(p).toUpperCase().slice(0, 6)] = n;
   }
   const truth = readTruth();
+  const isNew = !truth[key];              // re-saving a sheet never re-counts
   truth[key] = clean;
   writeJson('truth.json', truth);
-  const labellers = readLabellers();
-  labellers[key] = req.observer.id;   // attribute this sheet to the scorer
-  writeJson('labellers.json', labellers);
-  res.status(201).json({ ok: true, labelled: Object.keys(truth).length, mine: mineCount(labellers, req.observer.id) });
+  const tally = readCounts();
+  if (isNew) { tally[set] = Number(tally[set] || 0) + 1; writeJson('train_counts.json', tally); }
+  res.status(201).json({ ok: true, labelled: Object.keys(truth).length, mine: Number(tally[set] || 0) });
 });

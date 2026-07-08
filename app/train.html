@@ -158,7 +158,16 @@
     };
 
     $('btn-add').onclick = () => addPair();
-    $('btn-skip').onclick = next;
+    $('btn-skip').onclick = async () => {
+      if (cur) {
+        const r = await fetch('/api/training/skip', {
+          method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+          body: JSON.stringify({ key: cur.key }),
+        }).then((x) => x.json()).catch(() => ({}));
+        if (typeof r.available === 'number') { available = r.available; showAvail(); }
+      }
+      next();
+    };
     $('btn-save').onclick = async () => {
       const counts = {};
       for (const d of $('pairs').children) {
@@ -167,7 +176,7 @@
       }
       const r = await fetch('/api/training/label', {
         method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-        body: JSON.stringify({ key: cur.key, counts }),
+        body: JSON.stringify({ key: cur.key, counts, set: SET }),
       });
       if (!r.ok) { $('msg').textContent = 'Save failed — are you verified?'; return; }
       const j = await r.json();
@@ -180,7 +189,7 @@
       if (!token) { $('need-auth').hidden = false; return; }
       $('batch').hidden = false;
       await loadQueue();
-      const m = await fetch('/api/training/mine', { headers: { authorization: `Bearer ${token}` } }).then((x) => x.json()).catch(() => ({}));
+      const m = await fetch(`/api/training/mine?set=${SET}`, { headers: { authorization: `Bearer ${token}` } }).then((x) => x.json()).catch(() => ({}));
       setMine(m.mine || 0);
       next();
     })();

@@ -14,29 +14,61 @@ const dir = () => {
   fs.mkdirSync(d, { recursive: true });
   return d;
 };
-const truthPath = () => path.join(dir(), 'truth.json');
-const readTruth = () => (fs.existsSync(truthPath()) ? JSON.parse(fs.readFileSync(truthPath(), 'utf8')) : {});
+const isImage = (f) => /\.(jpe?g|png)$/i.test(f);
+const keyOf = (f) => f.replace(/\.[^.]+$/, '');
+const jsonPath = (name) => path.join(dir(), name);
+const readJson = (name) => { try { return JSON.parse(fs.readFileSync(jsonPath(name), 'utf8')); } catch { return {}; } };
+const writeJson = (name, obj) => fs.writeFileSync(jsonPath(name), JSON.stringify(obj, null, 1));
 
+const readTruth = () => readJson('truth.json');
 // sets.json partitions sheets between labelling pages (train.html = set 1,
 // train2.html = set 2, …) so parallel labellers never see each other's queue.
-// Files absent from sets.json default to set 1.
-const readSets = () => {
-  try { return JSON.parse(fs.readFileSync(path.join(dir(), 'sets.json'), 'utf8')); } catch { return {}; }
+// A sheet is "claimed" once it has a set here; unclaimed sheets are the pool a
+// labeller draws a fresh batch from via POST /training/generate.
+const readSets = () => readJson('sets.json');
+// labellers.json maps sheet key -> observer id who labelled it, so each scorer's
+// running total is the number of DISTINCT sheets attributed to them (re-saving
+// the same sheet never double-counts).
+const readLabellers = () => readJson('labellers.json');
+const mineCount = (labellers, oid) => Object.values(labellers).filter((v) => v === oid).length;
+
+// Unclaimed + unlabelled sheets — the reservoir a labeller can pull a batch from.
+const poolFiles = () => {
+  const truth = readTruth();
+  const sets = readSets();
+  return fs.readdirSync(dir()).filter((f) => isImage(f) && !sets[f] && !truth[keyOf(f)]);
 };
 
 trainingRouter.get('/training/items', (req, res) => {
   const truth = readTruth();
   const sets = readSets();
   const want = Number(req.query.set || 0); // 0 = all
-  const items = fs.readdirSync(dir()).filter((f) => /\.(jpe?g|png)$/i.test(f))
-    .map((f) => ({
-      file: f,
-      key: f.replace(/\.[^.]+$/, ''),
-      set: sets[f] || 1,
-      labelled: Boolean(truth[f.replace(/\.[^.]+$/, '')]),
-    }))
+  const items = fs.readdirSync(dir()).filter(isImage)
+    .map((f) => ({ file: f, key: keyOf(f), set: sets[f] || 0, labelled: Boolean(truth[keyOf(f)]) }))
     .filter((i) => !want || i.set === want);
-  res.json({ items, labelled: Object.keys(truth).length });
+  res.json({ items, labelled: Object.keys(truth).length, available: poolFiles().length });
+});
+
+// A labeller's own running total (distinct sheets they've labelled, all-time).
+trainingRouter.get('/training/mine', requireObserver, (req, res) => {
+  res.json({ mine: mineCount(readLabellers(), req.observer.id) });
+});
+
+// Claim a fresh batch of `count` unclaimed sheets into `set` (this page's queue).
+// Over-asking fails with the true number still available, so nothing is claimed.
+trainingRouter.post('/training/generate', requireObserver, (req, res) => {
+  const set = Math.max(1, Math.floor(Number(req.body?.set) || 1));
+  const count = Math.floor(Number(req.body?.count));
+  if (!Number.isInteger(count) || count < 1) return res.status(400).json({ error: 'bad_count' });
+  const pool = poolFiles();
+  if (count > pool.length) return res.status(400).json({ error: 'not_enough', available: pool.length });
+  // shuffle so a batch spans states/LGAs rather than one contiguous block
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const claimed = pool.slice(0, count);
+  const sets = readSets();
+  for (const f of claimed) sets[f] = set;
+  writeJson('sets.json', sets);
+  res.status(201).json({ claimed: claimed.length, remaining: pool.length - count });
 });
 
 trainingRouter.get('/training/ocr/:file', requireObserver, async (req, res) => {
@@ -57,6 +89,9 @@ trainingRouter.post('/training/label', requireObserver, (req, res) => {
   }
   const truth = readTruth();
   truth[key] = clean;
-  fs.writeFileSync(truthPath(), JSON.stringify(truth, null, 1));
-  res.status(201).json({ ok: true, labelled: Object.keys(truth).length });
+  writeJson('truth.json', truth);
+  const labellers = readLabellers();
+  labellers[key] = req.observer.id;   // attribute this sheet to the scorer
+  writeJson('labellers.json', labellers);
+  res.status(201).json({ ok: true, labelled: Object.keys(truth).length, mine: mineCount(labellers, req.observer.id) });
 });

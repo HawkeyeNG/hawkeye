@@ -148,9 +148,14 @@ Security you can't check is marketing. Hawkeye's is checkable:
    published ledger head with its Sigstore Rekor URL; fetch the Rekor entry
    yourself and confirm it was logged at that time in a log we don't operate. A
    rolled-back DB won't match.
-3. **Read the independent audit** — a third-party penetration test / security
+3. **Verify a single disputed race** — each anchor also carries a Merkle root over
+   every race's subchain. At `ledger.html`, or via
+   `/api/anchors/:id/races/:raceKey`, pull one race's head + inclusion proof, fold
+   it to that root in your browser, and confirm the root in Rekor — proving that
+   one contest's record in isolation, without replaying the rest or trusting us.
+4. **Read the independent audit** — a third-party penetration test / security
    audit report (in progress) is shareable even though the backend source is not.
-4. **Break it for a bounty** — a coordinated vulnerability-disclosure program
+5. **Break it for a bounty** — a coordinated vulnerability-disclosure program
    (`/.well-known/security.txt`, `SECURITY.md`) invites and rewards attacks.
 5. **Read the open client** — the trust-critical signing/verification code is
    client-side and open source (MIT, github.com/HawkeyeNG/hawkeye); the parts that

@@ -3,27 +3,27 @@ import { db } from '../db.js';
 import { config } from '../config.js';
 import { tgSendMessage } from '../services/sms.js';
 import { phoneHash, normalizePhone } from './observers.js';
-import { handleTestUpdate } from '../services/bot.js';
+import { handleUpdate } from '../services/bot.js';
 
 export const telegramRouter = Router();
 
-// Command-bot experiments (separate TEST bot; see services/bot.js). Promoted to
-// the production bot by pointing this handler at the prod token once proven.
+// Command bot on the separate TEST token (see services/bot.js).
 telegramRouter.post('/telegram/webhook-test', async (req, res) => {
   if (!config.telegramTestWebhookSecret ||
       req.headers['x-telegram-bot-api-secret-token'] !== config.telegramTestWebhookSecret) {
     return res.status(403).end();
   }
   res.json({ ok: true }); // ack immediately; process best-effort
-  try { await handleTestUpdate(req.body || {}); } catch (e) { console.error('[tg-test]', e); }
+  try { await handleUpdate(req.body || {}, config.telegramTestBotToken); } catch (e) { console.error('[tg-test]', e); }
 });
 
-// Telegram Bot webhook. Linking flow:
-//   1. app shows t.me/<bot>?start=<token> (token bound to the phone the observer typed)
-//   2. /start <token> -> bot asks the user to SHARE THEIR CONTACT (one tap;
-//      Telegram itself verifies the number belongs to that account)
-//   3. shared number matches the token's phone -> chat linked, pending OTP sent.
-// Codes for a linked phone are delivered directly with no extra steps.
+// PRODUCTION bot webhook. Does BOTH:
+//   • the OTP account-linking flow below (deep-link /start <token> + contact
+//     share), and
+//   • the full command bot (services/bot.js) for everything else — /report,
+//     /incident, /results, inline buttons, quick tips, etc.
+// The two linking cases are handled first; any other update is delegated to the
+// command handler with the production token.
 telegramRouter.post('/telegram/webhook', async (req, res) => {
   // Telegram echoes the secret we registered with setWebhook — reject the rest.
   if (req.headers['x-telegram-bot-api-secret-token'] !== config.telegramWebhookSecret) {
@@ -33,11 +33,15 @@ telegramRouter.post('/telegram/webhook', async (req, res) => {
 
   try {
     const msg = req.body?.message;
-    if (!msg?.chat?.id) return;
-    const chatId = msg.chat.id;
+    const chatId = msg?.chat?.id;
+    // Linking-specific paths take priority; everything else → command bot.
+    const startToken = chatId ? /^\/start (.+)$/.exec(msg.text || '')?.[1] : null;
+    if (!chatId || (!startToken && !msg.contact)) {
+      await handleUpdate(req.body || {}, config.telegramBotToken);
+      return;
+    }
 
     // Step 2: deep-link start
-    const startToken = /^\/start (.+)$/.exec(msg.text || '')?.[1];
     if (startToken) {
       const row = db.prepare('SELECT * FROM tg_link_tokens WHERE token = ?').get(startToken.trim());
       if (!row || row.expires_at < Date.now()) {
@@ -87,10 +91,6 @@ telegramRouter.post('/telegram/webhook', async (req, res) => {
         await tgSendMessage(chatId, 'Linked! Go back to the Hawkeye app and tap "Send verification code" again — it will arrive here.', { remove_keyboard: true });
       }
       return;
-    }
-
-    if (msg.text === '/start') {
-      await tgSendMessage(chatId, 'Open the Hawkeye app (hawkeye.com.ng), enter your phone number, and tap "Send verification code" — that gives you a personal link back to this bot.');
     }
   } catch (err) {
     console.error('[telegram]', err.message);

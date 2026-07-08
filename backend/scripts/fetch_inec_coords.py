@@ -76,6 +76,17 @@ def coords(sid, lid, wid, pid):
 
 lock = threading.Lock()
 done = set(open(DONE).read().split()) if os.path.exists(DONE) else set()
+# Robust resume: skip any pu_code already in the CSV. The delimitation code
+# (SS-LL-WW-UUU) is stable across runs, unlike the locator's internal ward ids —
+# so a re-run re-lists wards cheaply but never re-fetches a coord we already have.
+have = set()
+if os.path.exists(OUT):
+    with open(OUT, newline="") as _f:
+        _r = csv.reader(_f); next(_r, None)
+        for _row in _r:
+            if _row:
+                have.add(_row[0])
+print(f"resume: {len(have)} coords already in CSV, {len(done)} wards marked done", flush=True)
 new = not os.path.exists(OUT)
 out = open(OUT, "a", newline="", buffering=1); w = csv.writer(out)
 if new:
@@ -113,9 +124,10 @@ for sid in range(S0, S1 + 1):
                 pcode = code_of(plabel)
                 pname = name_of(plabel)
                 if all((scode, lcode, wcode, pcode)):
-                    jobs.append((sid, lid, wid, pid,
-                                 f"{scode}-{lcode}-{wcode}-{pcode.zfill(3)}",
-                                 scode, lgname, wname, pname))
+                    code = f"{scode}-{lcode}-{wcode}-{pcode.zfill(3)}"
+                    if code in have:
+                        continue          # already fetched — don't re-request
+                    jobs.append((sid, lid, wid, pid, code, scode, lgname, wname, pname))
             list(pool.map(do_pu, jobs))       # ward's PUs fetched in parallel
             donef.write(key + "\n")
         print(f"state {sid} lga {lcode} done · {total[0]} coords", flush=True)

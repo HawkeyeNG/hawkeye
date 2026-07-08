@@ -16,7 +16,8 @@ command bot. See the Security Whitepaper for the architecture.
 2. Assess the **anti-Sybil / anti-ballot-stuffing** controls and identify bypasses.
 3. Standard **web application penetration test** against OWASP ASVS L2.
 4. Review the **cryptographic protocol** (device key generation, signing, canonical
-   payloads, ledger construction, anchoring) for design and implementation flaws.
+   payloads, ledger construction, anchoring — including the per-race Merkle batching
+   and inclusion-proof verification) for design and implementation flaws.
 5. Assess **observer anonymity** — can a report be linked to a real identity?
 
 ## Scope

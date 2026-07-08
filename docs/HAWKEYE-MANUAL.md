@@ -89,7 +89,8 @@ buried in a tribunal exhibit months later.
   senatorial-district (109), and federal-constituency (358, ward-resolution)
   levels; vote-share and coverage charts.
 - **Unit Reports Log** — every report, with confidence from corroboration.
-- **Verify the Ledger** — one click re-verifies the full hash chain client-side.
+- **Verify the Ledger** — one click re-verifies the full hash chain client-side; a
+  "Verify a Single Race" panel folds one contest's Merkle proof to the anchored root.
 - **Election Integrity** — the public anomaly log.
 - **Report an Incident** — violence, vote-buying, BVAS failure; human-reviewed
   before publication.

@@ -36,7 +36,9 @@ const isFresh = (ts, now) =>
 submissionsRouter.post('/submissions', requireObserver, photoFields, async (req, res) => {
   try {
     const { puCode, votes: votesRaw, signature } = req.body;
-    const contest = String(req.body.contest || 'PRES');
+    // No PRES default — an omitted contest must be rejected, not silently booked
+    // as presidential (matches the client's mandatory "Select election" choice).
+    const contest = String(req.body.contest || '');
     if (!contestCodes.has(contest)) return res.status(400).json({ error: 'unknown_contest' });
     const lat = Number(req.body.lat);
     const lng = Number(req.body.lng);

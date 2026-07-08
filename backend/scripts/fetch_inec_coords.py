@@ -4,19 +4,29 @@
 # real lat,lng (no auth/CAPTCHA). Dropdown label prefixes rebuild our delimitation
 # pu_code SS-LL-WW-UUU. CONCURRENT: a thread pool fetches PU coords in parallel
 # (still polite — modest worker count, identifying UA). Resumable per ward.
-#   python3 scripts/fetch_inec_coords.py [firstState=1] [lastState=37] [workers=6]
+#   python3 scripts/fetch_inec_coords.py [firstState=1] [lastState=37] [workers=12]
+#
+# NAMED output: as well as the code+coords, we now keep the locator's LGA, ward
+# and polling-unit NAMES (the dropdown label text, minus its numeric prefix) plus
+# the numeric state code. Those names are what scripts/recover_units_by_name.js
+# uses to rescue the ~50k rows whose locator numbering has drifted from our
+# register's codes — a wrong number can't match, but the name still can.
 import os, re, sys, csv, json, time, threading, urllib.request, urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 
 HOME = os.path.expanduser("~")
-OUT = os.path.join(HOME, "hawkeye/backend/storage/raw/inec_pu_coords.csv")
+OUT = os.path.join(HOME, "hawkeye/backend/storage/raw/inec_pu_coords_named.csv")
 DONE = OUT + ".wards_done"
 B = "https://cvr.inecnigeria.org"
 UA = "Hawkeye-Election-Monitor/1.0 (transparency project; info@hawkeye.com.ng)"
 HDRS = {"User-Agent": UA, "X-Requested-With": "XMLHttpRequest", "Referer": B + "/pu_locator/"}
 S0 = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 S1 = int(sys.argv[2]) if len(sys.argv) > 2 else 37
-WORKERS = int(sys.argv[3]) if len(sys.argv) > 3 else 6
+# Workers: 12 is a good speed/politeness balance. You can push higher for a faster
+# crawl, but INEC's host may throttle or temp-block an IP that hammers it — and a
+# mid-crawl block costs more time than it saves. It's resumable per ward, so if you
+# do get blocked, just wait and re-run; finished wards are skipped.
+WORKERS = int(sys.argv[3]) if len(sys.argv) > 3 else 12
 
 def get_json(path):
     req = urllib.request.Request(B + path, headers=HDRS)
@@ -39,6 +49,9 @@ PREFIX = re.compile(r"^\s*(\d+)")
 def code_of(label):
     m = PREFIX.match(label)
     return m.group(1).zfill(2) if m else None
+
+def name_of(label):  # "12 - UTAGBA OGBE" -> "UTAGBA OGBE"
+    return re.sub(r"^\s*\d+\s*[-–]?\s*", "", label).strip()
 
 def coords(sid, lid, wid, pid):
     body = urllib.parse.urlencode({
@@ -66,16 +79,17 @@ done = set(open(DONE).read().split()) if os.path.exists(DONE) else set()
 new = not os.path.exists(OUT)
 out = open(OUT, "a", newline="", buffering=1); w = csv.writer(out)
 if new:
-    w.writerow(["pu_code", "lat", "lng"])
+    w.writerow(["pu_code", "lat", "lng", "state_code", "lga", "ward", "pu_name"])
 donef = open(DONE, "a", buffering=1)
 total = [0]
 
 def do_pu(args):
-    sid, lid, wid, pid, code = args
+    sid, lid, wid, pid, code, scode, lgname, wname, pname = args
     c = coords(sid, lid, wid, pid)
     if c and -1 < c[0] < 15 and 2 < c[1] < 15:
         with lock:
-            w.writerow([code, round(c[0], 6), round(c[1], 6)]); total[0] += 1
+            w.writerow([code, round(c[0], 6), round(c[1], 6), scode, lgname, wname, pname])
+            total[0] += 1
 
 pool = ThreadPoolExecutor(max_workers=WORKERS)
 for sid in range(S0, S1 + 1):
@@ -85,18 +99,23 @@ for sid in range(S0, S1 + 1):
         continue
     for lid, llabel in lgas:
         lcode = code_of(llabel)
+        lgname = name_of(llabel)
         wards = opts(get_json(f"/PublicApi/wards/1/Search?data%5BSearch%5D%5Blocal_government_id%5D={lid}"))
         for wid, wlabel in wards:
             key = f"{sid}-{lid}-{wid}"
             if key in done:
                 continue
             wcode = code_of(wlabel)
+            wname = name_of(wlabel)
             pus = opts(get_json(f"/PublicApi/pus/1/Search?data%5BSearch%5D%5Bregistration_area_id%5D={wid}"))
             jobs = []
             for pid, plabel in pus:
                 pcode = code_of(plabel)
+                pname = name_of(plabel)
                 if all((scode, lcode, wcode, pcode)):
-                    jobs.append((sid, lid, wid, pid, f"{scode}-{lcode}-{wcode}-{pcode.zfill(3)}"))
+                    jobs.append((sid, lid, wid, pid,
+                                 f"{scode}-{lcode}-{wcode}-{pcode.zfill(3)}",
+                                 scode, lgname, wname, pname))
             list(pool.map(do_pu, jobs))       # ward's PUs fetched in parallel
             donef.write(key + "\n")
         print(f"state {sid} lga {lcode} done · {total[0]} coords", flush=True)

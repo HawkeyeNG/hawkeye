@@ -34,3 +34,18 @@ export function contestScope(pu, contest) {
       return 'Presidential — national contest';
   }
 }
+
+// Canonical, compact key for the SPECIFIC race a submission belongs to — the
+// partition used for per-race subchains and Merkle-batched anchoring. Derived
+// from the unit (never the observer's claim), mirroring contestScope() above.
+// Returns null for a contest that does not exist at the unit (FCT GOV/SHA).
+export function raceKey(pu, contest) {
+  const st = pu.state || '?';
+  switch (contest) {
+    case 'GOV': return contestApplies(pu, 'GOV') ? `GOV|${st}` : null;
+    case 'SEN': return `SEN|${st}|${pu.senatorial || '_unknown'}`;
+    case 'REP': return `REP|${st}|${pu.federal_constituency || '_unknown'}`;
+    case 'SHA': return contestApplies(pu, 'SHA') ? `SHA|${st}|${pu.lga || '?'}` : null;
+    default:    return 'PRES';
+  }
+}

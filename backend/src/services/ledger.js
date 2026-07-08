@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { raceKey } from './scope.js';
 
 export const GENESIS_HASH = '0'.repeat(64);
 
@@ -26,4 +27,30 @@ export function verifyChain(db) {
     prev = row.entry_hash;
   }
   return { ok: true, entries: rows.length, head: prev };
+}
+
+// Derived per-race subchains for Merkle-batched anchoring. Each race =
+// (contest, resolved scope). Its head folds that race's global entry_hashes in
+// insertion order, so the subchain is pinned to the SAME entries as the global
+// chain — the two cannot disagree, and no extra columns are written on the hot
+// submission path (this is computed only at anchor time). Returns races sorted
+// by key so the Merkle leaf order is deterministic and reproducible by anyone.
+export function raceSubchains(db) {
+  const rows = db.prepare(`
+    SELECT s.contest, s.entry_hash,
+           p.state, p.senatorial, p.federal_constituency, p.lga
+    FROM submissions s JOIN polling_units p ON p.pu_code = s.pu_code
+    ORDER BY s.id`).all();
+  const byRace = new Map();
+  for (const r of rows) {
+    const key = raceKey(r, r.contest);
+    if (!key) continue; // contest not applicable at this unit
+    const cur = byRace.get(key) || { head: GENESIS_HASH, entries: 0 };
+    cur.head = sha256(cur.head + r.entry_hash);
+    cur.entries += 1;
+    byRace.set(key, cur);
+  }
+  return [...byRace.entries()]
+    .map(([k, v]) => ({ raceKey: k, head: v.head, entries: v.entries }))
+    .sort((a, b) => (a.raceKey < b.raceKey ? -1 : a.raceKey > b.raceKey ? 1 : 0));
 }

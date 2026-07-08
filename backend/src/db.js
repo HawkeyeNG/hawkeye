@@ -289,8 +289,29 @@ for (const ddl of [
      entries INTEGER NOT NULL,
      collation_entries INTEGER NOT NULL,
      tweet TEXT,
+     races_root TEXT,          -- Merkle root over every per-race subchain head this cycle
+     races_count INTEGER,      -- number of distinct races batched under races_root
      created_at INTEGER NOT NULL
    )`,
+  // Per-race subchains batched under an anchor's Merkle root. One row per race
+  // (contest+scope) — stores its subchain head plus the Merkle inclusion proof
+  // that ties that head to races_root (which is what Rekor timestamps). Lets a
+  // single disputed race be verified in isolation without replaying the whole
+  // ledger. See services/merkle.js + services/anchor.js.
+  `CREATE TABLE IF NOT EXISTS anchor_races (
+     anchor_id  INTEGER NOT NULL,
+     race_key   TEXT NOT NULL,     -- e.g. PRES | GOV|Kano | SEN|Kano|Kano Central
+     race_head  TEXT NOT NULL,     -- head of this race's subchain
+     entries    INTEGER NOT NULL,  -- submissions folded into race_head
+     leaf_index INTEGER NOT NULL,  -- position of this race's leaf in the Merkle tree
+     leaf_hash  TEXT NOT NULL,
+     proof_json TEXT NOT NULL,     -- [{hash,side}] audit path up to races_root
+     PRIMARY KEY (anchor_id, race_key)
+   )`,
+  'CREATE INDEX IF NOT EXISTS idx_anchor_races_key ON anchor_races(race_key)',
+  // Existing DBs: add the Merkle columns to a pre-existing anchors table.
+  'ALTER TABLE anchors ADD COLUMN races_root TEXT',
+  'ALTER TABLE anchors ADD COLUMN races_count INTEGER',
   // IReV cross-check: INEC's own uploaded EC8A per unit — doc URL found by walking
   // the IReV API, then OCR'd and compared against the crowd-reported counts.
   `CREATE TABLE IF NOT EXISTS irev_docs (

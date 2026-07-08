@@ -390,19 +390,23 @@ submissionsRouter.get('/ledger/entries', (_req, res) => {
 // cannot reproduce an entry that already exists at a fixed Rekor log index.
 submissionsRouter.get('/anchors', (_req, res) => {
   const rows = db.prepare(`
-    SELECT day, head_hash, collation_head, entries, collation_entries, created_at,
-           rekor_uuid, rekor_log_index, rekor_time, rekor_artifact
+    SELECT id, day, head_hash, collation_head, entries, collation_entries, created_at,
+           races_root, races_count, rekor_uuid, rekor_log_index, rekor_time, rekor_artifact
     FROM anchors ORDER BY id DESC`).all();
   res.json({
     publicKey: anchorPublicKey(),
     rekorBase: 'https://rekor.sigstore.dev/api/v1/log/entries',
     howToVerify: 'sha256(artifact) is signed by publicKey and logged in Sigstore Rekor at rekorLogIndex/rekorTime; fetch rekorUrl to confirm. A restored (rolled-back) database cannot reproduce these entries.',
+    howToVerifyRace: 'artifact embeds racesRoot, the Merkle root over every race this cycle. GET /api/anchors/:id/races/:raceKey returns that race\'s subchain head, leaf and Merkle proof; fold the proof (leaf; per step h = side===left ? sha256(step.hash+h) : sha256(h+step.hash)) up to racesRoot to verify ONE race in isolation — no need to replay the whole ledger.',
     anchors: rows.map((r) => ({
+      id: r.id,
       day: r.day,
       head: r.head_hash,
       entries: r.entries,
       collationHead: r.collation_head,
       collationEntries: r.collation_entries,
+      racesRoot: r.races_root,
+      racesCount: r.races_count,
       at: new Date(r.created_at).toISOString(),
       artifact: r.rekor_artifact,
       rekorUuid: r.rekor_uuid,
@@ -410,5 +414,40 @@ submissionsRouter.get('/anchors', (_req, res) => {
       rekorTime: r.rekor_time,
       rekorUrl: r.rekor_uuid ? `https://rekor.sigstore.dev/api/v1/log/entries/${r.rekor_uuid}` : null,
     })),
+  });
+});
+
+// Every race batched under one anchor's Merkle root (heads + entry counts).
+submissionsRouter.get('/anchors/:id/races', (req, res) => {
+  const a = db.prepare('SELECT races_root, races_count FROM anchors WHERE id = ?').get(req.params.id);
+  if (!a) return res.status(404).json({ error: 'no_such_anchor' });
+  const races = db.prepare(
+    'SELECT race_key, race_head, entries, leaf_index FROM anchor_races WHERE anchor_id = ? ORDER BY leaf_index')
+    .all(req.params.id);
+  return res.json({ racesRoot: a.races_root, racesCount: a.races_count, races });
+});
+
+// One race's dispute paper trail: its subchain head + Merkle inclusion proof up
+// to the anchor's racesRoot (which the Rekor artifact commits to). Anyone can
+// fold the proof and confirm this exact race was fixed at that anchor's time,
+// without trusting us and without replaying every other race.
+submissionsRouter.get('/anchors/:id/races/:raceKey', (req, res) => {
+  const a = db.prepare('SELECT races_root, rekor_uuid FROM anchors WHERE id = ?').get(req.params.id);
+  if (!a) return res.status(404).json({ error: 'no_such_anchor' });
+  const r = db.prepare(
+    'SELECT race_key, race_head, entries, leaf_index, leaf_hash, proof_json FROM anchor_races WHERE anchor_id = ? AND race_key = ?')
+    .get(req.params.id, req.params.raceKey);
+  if (!r) return res.status(404).json({ error: 'no_such_race' });
+  return res.json({
+    raceKey: r.race_key,
+    head: r.race_head,
+    entries: r.entries,
+    leafIndex: r.leaf_index,
+    leaf: r.leaf_hash,
+    leafFormula: `sha256("race|v1|" + raceKey + "|" + head + "|" + entries)`,
+    proof: JSON.parse(r.proof_json),
+    racesRoot: a.races_root,
+    rekorUrl: a.rekor_uuid ? `https://rekor.sigstore.dev/api/v1/log/entries/${a.rekor_uuid}` : null,
+    howToVerify: 'Recompute leaf via leafFormula; fold proof to racesRoot (per step h = side===left ? sha256(step.hash+h) : sha256(h+step.hash)); confirm racesRoot appears in the Rekor artifact at rekorUrl.',
   });
 });

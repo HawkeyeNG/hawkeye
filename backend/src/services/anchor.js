@@ -9,7 +9,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { db } from '../db.js';
 import { config } from '../config.js';
-import { verifyChain } from './ledger.js';
+import { verifyChain, raceSubchains } from './ledger.js';
+import { merkleRoot, merkleProof, raceLeaf } from './merkle.js';
 import { notifyMaster } from './notify.js';
 
 const REKOR = 'https://rekor.sigstore.dev';
@@ -63,28 +64,51 @@ export async function runAnchor(force = false) {
   const collHead = collLast?.entry_hash || '0'.repeat(64);
   const collCount = db.prepare('SELECT COUNT(*) AS c FROM collation_reports').get().c;
 
-  const last = db.prepare('SELECT head_hash, collation_head FROM anchors ORDER BY id DESC LIMIT 1').get();
-  if (!force && last && last.head_hash === chain.head && last.collation_head === collHead) {
+  // Per-race subchains → one Merkle root batching every race this cycle. A single
+  // Rekor entry thus timestamps all ~1,500 races at once, while each race keeps a
+  // compact inclusion proof (stored below) that verifies against this root alone.
+  const races = raceSubchains(db);
+  const leaves = races.map(raceLeaf);
+  const racesRoot = merkleRoot(leaves);
+
+  const last = db.prepare('SELECT head_hash, collation_head, races_root FROM anchors ORDER BY id DESC LIMIT 1').get();
+  if (!force && last && last.head_hash === chain.head && last.collation_head === collHead
+      && last.races_root === racesRoot) {
     return { skipped: 'unchanged' };
   }
 
   const day = new Date().toISOString().slice(0, 10);
   const now = Date.now();
   const info = db.prepare(`
-    INSERT INTO anchors (day, head_hash, collation_head, entries, collation_entries, tweet, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`)
-    .run(day, chain.head, collHead, chain.entries, collCount, null, now);
+    INSERT INTO anchors (day, head_hash, collation_head, entries, collation_entries, tweet, races_root, races_count, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(day, chain.head, collHead, chain.entries, collCount, null, racesRoot, races.length, now);
+  const anchorId = info.lastInsertRowid;
+
+  // Persist each race's subchain head + its Merkle inclusion proof so a single
+  // disputed race can be verified in isolation (GET /api/anchors/:id/races/:key).
+  const insRace = db.prepare(`
+    INSERT INTO anchor_races (anchor_id, race_key, race_head, entries, leaf_index, leaf_hash, proof_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`);
+  db.transaction(() => {
+    races.forEach((r, i) => {
+      insRace.run(anchorId, r.raceKey, r.head, r.entries, i, leaves[i],
+        JSON.stringify(merkleProof(leaves, i)));
+    });
+  })();
 
   // Canonical artifact the verifier reconstructs from /api/anchors and re-hashes.
+  // racesRoot binds the whole per-race batch into the one signed, Rekor-logged line.
   const artifact = `hawkeye-ledger-anchor|v1|day=${day}|head=${chain.head}|entries=${chain.entries}`
-    + `|collationHead=${collHead}|collationEntries=${collCount}|at=${new Date(now).toISOString()}`;
+    + `|collationHead=${collHead}|collationEntries=${collCount}`
+    + `|racesRoot=${racesRoot}|races=${races.length}|at=${new Date(now).toISOString()}`;
   const receipt = await publishToRekor(artifact);
   if (receipt) {
     db.prepare('UPDATE anchors SET rekor_uuid = ?, rekor_log_index = ?, rekor_time = ?, rekor_artifact = ? WHERE id = ?')
-      .run(receipt.uuid, receipt.logIndex, receipt.integratedTime, artifact, info.lastInsertRowid);
+      .run(receipt.uuid, receipt.logIndex, receipt.integratedTime, artifact, anchorId);
   }
 
-  notifyMaster(`⚓ ledger anchor — ${chain.entries} PU / ${collCount} collation entries · head ${chain.head.slice(0, 12)}…`
+  notifyMaster(`⚓ ledger anchor — ${chain.entries} PU / ${collCount} collation entries · ${races.length} races · head ${chain.head.slice(0, 12)}…`
     + (receipt ? ` · Rekor #${receipt.logIndex}` : ' · Rekor publish pending'));
-  return { anchored: true, entries: chain.entries, head: chain.head, rekor: receipt };
+  return { anchored: true, entries: chain.entries, head: chain.head, races: races.length, racesRoot, rekor: receipt };
 }

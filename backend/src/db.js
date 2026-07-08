@@ -175,6 +175,12 @@ for (const ddl of [
      data_json  TEXT NOT NULL DEFAULT '{}',
      updated_at INTEGER NOT NULL
    )`,
+  // External anchoring receipts (Sigstore Rekor public transparency log) — a log
+  // we do not control, so a rolled-back DB can't reproduce these entries.
+  'ALTER TABLE anchors ADD COLUMN rekor_uuid TEXT',
+  'ALTER TABLE anchors ADD COLUMN rekor_log_index INTEGER',
+  'ALTER TABLE anchors ADD COLUMN rekor_time INTEGER',
+  'ALTER TABLE anchors ADD COLUMN rekor_artifact TEXT',
   'ALTER TABLE polling_units ADD COLUMN senatorial TEXT',
   'ALTER TABLE polling_units ADD COLUMN federal_constituency TEXT',
   'ALTER TABLE polling_units ADD COLUMN approx_lat REAL',

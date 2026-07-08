@@ -16,6 +16,7 @@ import { notifySubscribers } from './subscriptions.js';
 import { notifyChat, notifyMaster, chatIdByHash, notifyUnitSavers } from '../services/notify.js';
 import { checkSubmission, checkResult } from '../services/integrity.js';
 import { ocrMatchCounts } from '../services/ocr.js';
+import { anchorPublicKey } from '../services/anchor.js';
 
 export const submissionsRouter = Router();
 
@@ -379,4 +380,35 @@ submissionsRouter.get('/ledger/entries', (_req, res) => {
            image_sha256, venue_image_sha256
     FROM submissions ORDER BY id`).all();
   res.json(rows);
+});
+
+// External anchors: each row is a ledger head published to the public Sigstore
+// Rekor transparency log (a log we don't control). ANYONE can independently
+// verify an anchor without us: (1) rebuild `artifact` from the row (or use the
+// stored one), (2) confirm sha256(artifact) matches, (3) fetch the Rekor entry
+// at `rekorUrl` and check it was logged at `rekorTime` — a rolled-back database
+// cannot reproduce an entry that already exists at a fixed Rekor log index.
+submissionsRouter.get('/anchors', (_req, res) => {
+  const rows = db.prepare(`
+    SELECT day, head_hash, collation_head, entries, collation_entries, created_at,
+           rekor_uuid, rekor_log_index, rekor_time, rekor_artifact
+    FROM anchors ORDER BY id DESC`).all();
+  res.json({
+    publicKey: anchorPublicKey(),
+    rekorBase: 'https://rekor.sigstore.dev/api/v1/log/entries',
+    howToVerify: 'sha256(artifact) is signed by publicKey and logged in Sigstore Rekor at rekorLogIndex/rekorTime; fetch rekorUrl to confirm. A restored (rolled-back) database cannot reproduce these entries.',
+    anchors: rows.map((r) => ({
+      day: r.day,
+      head: r.head_hash,
+      entries: r.entries,
+      collationHead: r.collation_head,
+      collationEntries: r.collation_entries,
+      at: new Date(r.created_at).toISOString(),
+      artifact: r.rekor_artifact,
+      rekorUuid: r.rekor_uuid,
+      rekorLogIndex: r.rekor_log_index,
+      rekorTime: r.rekor_time,
+      rekorUrl: r.rekor_uuid ? `https://rekor.sigstore.dev/api/v1/log/entries/${r.rekor_uuid}` : null,
+    })),
+  });
 });

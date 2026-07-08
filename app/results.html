@@ -348,7 +348,10 @@
       CGEO = cgeo;
       LOGOS = logos;
       const sel = document.getElementById('sel-contest');
-      sel.innerHTML = contests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
+      // Order by seat magnitude: Presidential > Governorship > Senate > Reps > State Assembly.
+      const ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
+      const ordered = [...contests].sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code));
+      sel.innerHTML = ordered.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
       sel.onchange = refresh;
       await refresh();
       setInterval(refresh, 30000);

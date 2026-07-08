@@ -101,6 +101,7 @@ async function api(path, opts = {}) {
 }
 function show(screenId) {
   for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== screenId;
+  window.scrollTo(0, 0); // each screen starts at the top, not the old scroll pos
 }
 let lastFix = null; // most recent successful GPS fix
 function getPosition() {

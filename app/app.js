@@ -179,8 +179,10 @@ function contestScope(u, contest) {
 }
 function updateScopeNotice() {
   if (!selectedPu) return;
-  $('contest-scope').textContent =
-    `You are reporting: ${contestScope(selectedPu, $('sel-contest').value || 'PRES')}`;
+  const contest = $('sel-contest').value;
+  $('contest-scope').textContent = contest
+    ? `You are reporting: ${contestScope(selectedPu, contest)}`
+    : 'Choose which election you are reporting before continuing.';
 }
 
 const TIER_LABEL = {
@@ -380,7 +382,7 @@ async function selectUnit(u) {
   if (logos === null) {
     logos = await fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({}));
   }
-  $('sel-contest').innerHTML = contests
+  $('sel-contest').innerHTML = '<option value="">— Select election —</option>' + contests
     .filter((c) => contestApplies(selectedPu, c.code))
     .map((c) => `<option value="${c.code}">${c.name}</option>`)
     .join('');
@@ -507,6 +509,11 @@ $('btn-capture').onclick = doCapture;
 // ---------- submit ----------
 $('btn-submit').onclick = async () => {
   if (!shots.sheet || !shots.venue || !selectedPu) return;
+  if (!$('sel-contest').value) {
+    $('submit-status').textContent = 'Select which election you are reporting.';
+    $('sel-contest').focus();
+    return;
+  }
   $('btn-submit').disabled = true;
   $('submit-status').textContent = 'Getting a fresh GPS fix…';
 
@@ -533,7 +540,7 @@ $('btn-submit').onclick = async () => {
   const pair = await ensureKeys();
   const imageSha256 = await sha256Hex(await shots.sheet.blob.arrayBuffer());
   const venueImageSha256 = await sha256Hex(await shots.venue.blob.arrayBuffer());
-  const contest = $('sel-contest').value || 'PRES';
+  const contest = $('sel-contest').value;
   const payload = canonicalPayload({
     puCode: selectedPu.pu_code,
     contest,

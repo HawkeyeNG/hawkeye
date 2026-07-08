@@ -55,9 +55,12 @@ visibly, for anyone who checks.
   entire chain **in the visitor's own browser**. No server cooperation required —
   a verifier who distrusts us entirely still gets a definitive yes/no.
 - **Rollback-resistant (external anchoring):** ledger heads are periodically
-  anchored to an external, immutable reference. A full database restore to an
-  earlier state would fail to match the published anchors — so even total server
-  compromise cannot silently "un-happen" recorded results.
+  signed and published to the **public Sigstore Rekor transparency log** — an
+  append-only Merkle log operated by a third party that Hawkeye does not control.
+  A full database restore to an earlier state cannot reproduce a Rekor entry that
+  already exists at a fixed log index and integrated time, so even total server
+  compromise cannot silently "un-happen" recorded results. Anyone can list the
+  anchors (`/api/anchors`) and confirm each against Rekor without our cooperation.
 
 ### 3.2 Reports are signed on the observer's own device
 Each observer's phone generates a cryptographic key pair (ECDSA P-256) whose
@@ -130,8 +133,10 @@ Security you can't check is marketing. Hawkeye's is checkable:
 
 1. **Verify the ledger yourself** — recompute the whole chain in your browser at
    `hawkeye.com.ng/ledger.html`.
-2. **Check the external anchors** — confirm published ledger heads against the
-   external reference; a rolled-back DB won't match.
+2. **Check the external anchors** — `hawkeye.com.ng/api/anchors` lists every
+   published ledger head with its Sigstore Rekor URL; fetch the Rekor entry
+   yourself and confirm it was logged at that time in a log we don't operate. A
+   rolled-back DB won't match.
 3. **Read the independent audit** — a third-party penetration test / security
    audit report (in progress) is shareable even though the backend source is not.
 4. **Break it for a bounty** — a coordinated vulnerability-disclosure program

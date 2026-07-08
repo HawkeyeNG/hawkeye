@@ -1,0 +1,7 @@
+# Hawkeye — coordinated vulnerability disclosure
+# https://securitytxt.org/
+Contact: mailto:security@hawkeye.com.ng
+Policy: https://hawkeye.com.ng/SECURITY.md
+Preferred-Languages: en
+Canonical: https://hawkeye.com.ng/.well-known/security.txt
+Expires: 2027-07-01T00:00:00.000Z

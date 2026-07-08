@@ -3,6 +3,7 @@
 # train.html can serve them for labelling. Also syncs the server truth.json
 # first (so already-labelled keys are excluded and never clobbered).
 set -e
+N=${1:-100}          # how many fresh sheets to upload (default 100)
 cd ~/hawkeye/backend
 U=$(grep '^GO54_USERNAME=' .env | cut -d= -f2- | awk '{print $1}')
 P=$(grep '^GO54_PASSWORD=' .env | sed -e 's/^GO54_PASSWORD=//' -e 's/[[:space:]]*$//' -e 's/[[:space:]]*#.*//')
@@ -16,7 +17,7 @@ curl -sk -u "$U:$P" "$B/CMD_FILE_MANAGER/hawkeye/backend/storage/training/truth.
 echo "server already has: $(wc -l < $W/server_files.txt) sheets"
 
 # candidate pool: local unlabelled (not in local truth.json, not already on server)
-python3 - "$D" $W <<'EOF'
+python3 - "$D" $W "$N" <<'EOF'
 import json, os, random, sys
 d, w = sys.argv[1], sys.argv[2]
 truth = set()
@@ -28,7 +29,7 @@ imgs = [f for f in os.listdir(d) if f.lower().endswith(('.jpg', '.jpeg', '.png')
 pool = [f for f in imgs if f.rsplit('.', 1)[0] not in truth and f not in server]
 random.seed(42)
 random.shuffle(pool)
-pick = pool[:100]
+pick = pool[:int(sys.argv[3])]
 open(os.path.join(w, 'picks.txt'), 'w').write('\n'.join(pick))
 print(f"pool={len(pool)} picked={len(pick)}")
 EOF

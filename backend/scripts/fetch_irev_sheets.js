@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 
 const electionId = process.argv[2];
 const stateId = process.argv[3];
@@ -28,8 +29,12 @@ outer: for (const lga of lgas.data || []) {
       try {
         const img = await fetch(url, { headers: H });
         if (!img.ok) continue;
-        const ext = (url.split('.').pop() || 'jpg').split('?')[0].slice(0, 4);
-        fs.writeFileSync(path.join(dir, `${(pu.pu_code || pu._id).replaceAll('/', '-')}.${ext}`), Buffer.from(await img.arrayBuffer()));
+        // Compress on download (max 1500px, q76 mozjpeg) — same size the viewer
+        // serves, so sheets are small on disk and fast to upload/label.
+        const raw = Buffer.from(await img.arrayBuffer());
+        let out = raw;
+        try { out = await sharp(raw).rotate().resize({ width: 1500, withoutEnlargement: true }).jpeg({ quality: 76, mozjpeg: true }).toBuffer(); } catch { /* keep raw on decode failure */ }
+        fs.writeFileSync(path.join(dir, `${(pu.pu_code || pu._id).replaceAll('/', '-')}.jpg`), out);
         saved++;
         process.stdout.write(`\r  saved ${saved}`);
         if (saved >= MAX) break outer;

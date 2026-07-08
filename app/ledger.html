@@ -65,6 +65,19 @@
     <p id="client-result" class="status" role="status"></p>
 
     <div class="card">
+      <h2>Verify a Single Race</h2>
+      <p class="hint">Every anchor batches every race (Presidential, each Senate/House/Governorship/State
+      Assembly race) into one Merkle root published to Rekor. Verify one race's paper trail here — folded
+      in your own browser — without replaying every other race or trusting us.</p>
+      <div id="race-anchor-info" class="meta">Loading latest anchor…</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0">
+        <select id="race-select"></select>
+        <button id="btn-verify-race">🔎 Verify this race</button>
+      </div>
+      <p id="race-result" class="status" role="status"></p>
+    </div>
+
+    <div class="card">
       <h2>Ledger Entries</h2>
       <p class="hint">Newest first. Each row's evidence photos are public, content-addressed files.</p>
       <table><thead><tr><th>#</th><th>Recorded</th><th>Unit / Contest</th><th>Entry Hash</th><th>Evidence</th></tr></thead>
@@ -118,6 +131,45 @@
         prev = e.entry_hash;
       }
       out.innerHTML = `<span class="ok">✔ Verified ${ENTRIES.length} entries in your browser. Head matches: <code>${prev}</code></span>`;
+    };
+
+    let LATEST_RACE_ANCHOR = null;
+    (async () => {
+      const info = document.getElementById('race-anchor-info');
+      const sel = document.getElementById('race-select');
+      const { anchors } = await fetch('/api/anchors').then((r) => r.json());
+      LATEST_RACE_ANCHOR = anchors.find((a) => a.racesRoot);
+      if (!LATEST_RACE_ANCHOR) {
+        info.textContent = 'No Merkle-batched anchor published yet.';
+        sel.disabled = true;
+        return;
+      }
+      info.innerHTML = `Anchor <strong>${LATEST_RACE_ANCHOR.day}</strong> · ${LATEST_RACE_ANCHOR.racesCount} race(s) · root <code>${LATEST_RACE_ANCHOR.racesRoot.slice(0, 20)}…</code> · <a href="${LATEST_RACE_ANCHOR.rekorUrl}" target="_blank" rel="noopener">Rekor entry ↗</a>`;
+      const { races } = await fetch(`/api/anchors/${LATEST_RACE_ANCHOR.id}/races`).then((r) => r.json());
+      sel.innerHTML = races.map((r) =>
+        `<option value="${encodeURIComponent(r.race_key)}">${r.race_key} (${r.entries} report${r.entries === 1 ? '' : 's'})</option>`,
+      ).join('') || '<option disabled>No races yet</option>';
+    })();
+
+    document.getElementById('btn-verify-race').onclick = async () => {
+      const out = document.getElementById('race-result');
+      if (!LATEST_RACE_ANCHOR) return;
+      const key = document.getElementById('race-select').value;
+      if (!key) { out.innerHTML = '<span class="bad">No race selected.</span>'; return; }
+      out.textContent = 'Fetching proof and folding locally…';
+      const d = await fetch(`/api/anchors/${LATEST_RACE_ANCHOR.id}/races/${key}`).then((r) => r.json());
+      if (d.error) { out.innerHTML = `<span class="bad">✘ ${d.error}</span>`; return; }
+      let h = await sha256hex(`race|v1|${d.raceKey}|${d.head}|${d.entries}`);
+      if (h !== d.leaf) {
+        out.innerHTML = '<span class="bad">✘ Leaf mismatch — the race head/count does not match the stored leaf.</span>';
+        return;
+      }
+      for (const step of d.proof) {
+        h = step.side === 'left' ? await sha256hex(step.hash + h) : await sha256hex(h + step.hash);
+      }
+      out.innerHTML = h === d.racesRoot
+        ? `<span class="ok">✔ "${d.raceKey}" verified</span> — ${d.entries} report(s), independently folds to the Rekor-anchored root. <a href="${d.rekorUrl}" target="_blank" rel="noopener">Confirm in Rekor ↗</a>`
+        : `<span class="bad">✘ Proof does not fold to the anchored root — this race's record may have been altered.</span>`;
     };
   </script>
   <script src="tg.js?v=63"></script>

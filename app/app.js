@@ -217,6 +217,14 @@ let pendingPhone = '';
 const AUTH_INTENT = new URLSearchParams(location.search).get('intent') || 'observe';
 const INTENT_LABEL = { observe: 'Become an Observer', map: 'Map a Polling Unit', incident: 'Report an Incident' };
 const INTENT_DEST = { map: 'map-unit.html', incident: 'incidents.html' };
+
+// Telegram hybrid /report handoff: PU + votes were chosen in chat; prefill and
+// jump straight to the live-capture screen (the photo + signature must happen here).
+const QP = new URLSearchParams(location.search);
+const PREFILL = (QP.get('pu') && QP.get('contest')) ? {
+  pu: QP.get('pu'), contest: QP.get('contest'),
+  votes: (() => { try { return JSON.parse(QP.get('votes') || '[]'); } catch { return []; } })(),
+} : null;
 function applyIntentCopy() {
   const label = INTENT_LABEL[AUTH_INTENT];
   if (!label) return;
@@ -414,6 +422,24 @@ async function selectUnit(u) {
   updateSubmitState();
   $('submit-status').textContent = '';
   show('screen-submit');
+}
+
+// Prefill the submit screen from a Telegram chat handoff, then let the observer
+// capture the live photos and sign as normal.
+async function applyPrefill() {
+  try {
+    const { body } = await api(`/api/register/unit?pu_code=${encodeURIComponent(PREFILL.pu)}`);
+    if (!body?.unit) { show('screen-locate'); return; }
+    await selectUnit(body.unit);
+    const sc = $('sel-contest');
+    if (sc && [...sc.options].some((o) => o.value === PREFILL.contest)) sc.value = PREFILL.contest;
+    updateScopeNotice();
+    for (const v of PREFILL.votes) {
+      const inp = document.querySelector(`#vote-inputs input[data-party="${v.party}"]`);
+      if (inp && Number.isFinite(+v.count)) inp.value = v.count;
+    }
+    $('submit-status').textContent = 'Prefilled from Telegram — now capture the sheet & venue photos to finish.';
+  } catch { show('screen-locate'); }
 }
 
 function updateSubmitState() {
@@ -653,7 +679,8 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
   if (!localStorage.getItem('hawkeye_token')) await tryResume();
   if (localStorage.getItem('hawkeye_token')) {
     // Already registered — honour the CTA intent instead of re-verifying.
-    if (INTENT_DEST[AUTH_INTENT]) location.href = INTENT_DEST[AUTH_INTENT];
+    if (PREFILL) applyPrefill();
+    else if (INTENT_DEST[AUTH_INTENT]) location.href = INTENT_DEST[AUTH_INTENT];
     else show('screen-locate');
   } else {
     applyIntentCopy();

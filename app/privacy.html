@@ -52,41 +52,48 @@
     <p class="lede">Hawkeye is built to protect the people who use it. This explains exactly what we
     collect, why, what becomes public, and what stays private.</p>
 
-    <h2>What we collect</h2>
-    <ul>
+    <div class="acc-wrap">
+    <details class="acc">
+      <summary>What we collect</summary>
+      <ul>
       <li><strong>Your phone number</strong> — stored only as a one-way cryptographic hash. We never keep or display the actual number; it exists so one number equals one observer identity.</li>
       <li><strong>Your reports</strong> — the counts you enter and two live photos (the result sheet and the venue), each stamped with the GPS location where it was taken.</li>
       <li><strong>A device fingerprint</strong> — a hash of your device's characteristics, to stop one phone from filing multiple reports for the same race.</li>
       <li><strong>Your Telegram link</strong> — if you verify or subscribe via Telegram, we store the chat ID so the bot can send your code and alerts. We never read your Telegram messages or contacts.</li>
     </ul>
-
-    <h2>What becomes public</h2>
-    <p>To be a credible transparency tool, the evidence must be open. Your submitted counts, photos
+    </details>
+    <details class="acc">
+      <summary>What becomes public</summary>
+      <p>To be a credible transparency tool, the evidence must be open. Your submitted counts, photos
     and their locations are published on a public, tamper-evident ledger and <strong>cannot be edited
     or deleted</strong> — that permanence is what makes them trustworthy. Your phone number is never
     part of this; reports are tied to an anonymous observer ID, not to you personally.
     Incident media is shown publicly <em>only after</em> human review.</p>
-
-    <h2>What stays private</h2>
-    <ul>
+    </details>
+    <details class="acc">
+      <summary>What stays private</summary>
+      <ul>
       <li>Your actual phone number (only the hash is stored).</li>
       <li>Your identity — reports are not publicly linked to your name or number.</li>
       <li>One-time codes, which expire within minutes and are deleted once used.</li>
     </ul>
-
-    <h2>What we never do</h2>
-    <ul>
+    </details>
+    <details class="acc">
+      <summary>What we never do</summary>
+      <ul>
       <li>We do not sell, rent or share your data with anyone.</li>
       <li>We run no advertising and no third-party trackers.</li>
       <li>We use no cookies — the app keeps only a sign-in token and keys in your browser's local storage, on your device.</li>
     </ul>
-
-    <h2>Security</h2>
-    <p>All traffic is encrypted (HTTPS). Phone numbers are HMAC-hashed, reports are signed on your own
+    </details>
+    <details class="acc">
+      <summary>Security</summary>
+      <p>All traffic is encrypted (HTTPS). Phone numbers are HMAC-hashed, reports are signed on your own
     device with a key that never leaves it, and access is rate-limited and bot-screened.</p>
-
-    <h2>Your rights</h2>
-    <p>You can delete your observer ID yourself at any time: open the menu while signed in and choose
+    </details>
+    <details class="acc">
+      <summary>Your rights</summary>
+      <p>You can delete your observer ID yourself at any time: open the menu while signed in and choose
     <strong>Delete my ID</strong>. This removes your signing key, device link, Telegram link and alert
     subscriptions. Two things remain, by design: public ledger entries (permanent and anonymous — that
     permanence is what makes them trustworthy) and the one-way hash of your number, kept so a deleted
@@ -96,6 +103,9 @@
 
     <p class="hint">Hawkeye is an independent transparency initiative and is not affiliated with INEC.
     Official results are those declared by INEC.</p>
+    </details>
+    </div>
+
   </main>
 
   <footer class="gov-footer"><div class="wrap">

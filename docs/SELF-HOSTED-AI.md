@@ -86,8 +86,12 @@ models on one unit; "just add internet."
   **failover** (redundancy + bigger models).
 - **Connectivity: Starlink** — kit ~$350–600 one-time; service ~$50–150/mo
   (Priority/Business tier for uptime; Nigeria pricing varies). Starlink is CGNAT,
-  so expose via **Cloudflare Tunnel** (free, no open ports/static IP). Add a small
-  **UPS** (~$150) for clean 24/7 power.
+  so expose via **Cloudflare Tunnel** (free, no open ports/static IP).
+- **Power: 1.5 kVA solar + lithium-battery system** (~$1,200–2,000 in Nigeria).
+  The Spark draws ~240 W (2 units + Starlink ≈ 600–700 W), so 1.5 kVA carries it
+  with headroom. It **replaces the UPS** (battery gives instant-ish backup) *and*
+  runs off-grid through outages — critical on Nigerian grid / election day.
+  Optional: a small online-UPS in front for surge protection.
 - Caveats: ARM64 (our native deps build fine); desktop-class memory bandwidth, so
   **sample** vision at election-day peak rather than scanning every sheet live.
 
@@ -118,6 +122,7 @@ change; only where they run does.
 - **Now:** $0 — free hosted tiers (Gemini/Groq/Mistral/OpenRouter) + optional
   local Ollama on an existing laptop.
 - **Intended (funded):** **2× NVIDIA DGX Spark** (~$3–4k ea → ~$6–8k) + **Starlink**
-  kit (~$350–600) + UPS (~$150) → **~$7,000–9,000** one-time for a redundant,
-  deplatform-proof, off-grid-capable box that self-hosts app + text AI + EC8A
-  vision. Ongoing: Starlink ~$50–150/mo. (See investor deck use-of-funds.)
+  kit (~$350–600) + **1.5 kVA solar+battery** (~$1,200–2,000) → **~$8,000–11,000**
+  one-time for a redundant, deplatform-proof, **off-grid** box that self-hosts app
+  + text AI + EC8A vision through grid + internet outages. Ongoing: Starlink
+  ~$50–150/mo. (See investor deck use-of-funds.)

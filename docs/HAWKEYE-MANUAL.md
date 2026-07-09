@@ -106,9 +106,15 @@ buried in a tribunal exhibit months later.
 - **AI results assistant** — a non-partisan, read-only natural-language layer over
   the public data (floating chat on the site + `/ask` in Telegram). It answers
   from the live tallies/coverage only, always marks figures unofficial, and never
-  declares winners. Off unless an `ANTHROPIC_API_KEY` is configured. Planned AI is
-  *advisory + explainable*: EC8A vision/forgery detection, statistical anomaly
-  flags, incident clustering — evidence for humans, never an automated verdict.
+  declares winners. Runs on free provider tiers (Gemini, with Groq/Mistral/
+  OpenRouter fallback); off unless a key is configured.
+- **AI integrity layer (live, advisory + explainable)** — every AI output is
+  evidence for humans, never an automated verdict: EC8A **vision** reads the sheet
+  and flags likely forgery/AI-generated images + count mismatches; **statistical
+  anomaly** detection (turnout/vote-share outliers, ward neighbour divergence,
+  Benford + round-number digit tests); and **incident triage + hotspot
+  clustering**. All flags land on the public Election-Integrity page with their
+  numbers shown.
 - **Races are labelled by cycle** ("2027 General Elections", with INEC dates —
   Presidential/National Assembly 16 Jan 2027, Governorship/State Assembly 6 Feb
   2027); a finished cycle archives to a per-race folder tree on the backend.

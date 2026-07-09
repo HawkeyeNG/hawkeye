@@ -116,10 +116,10 @@ not buried in a tribunal exhibit months later.
   never be used to mint a second identity and double-report.
 - **Roadmap — NIN 1-to-1:** national-ID verification will move anti-Sybil from
   "hard" to "cryptographically 1-to-1," the highest-leverage integrity upgrade.
-- **Roadmap — AI is advisory, never an arbiter.** Planned AI (EC8A vision/forgery
-  detection, statistical anomaly flags, incident clustering, a non-partisan
-  results assistant) only ever *surfaces evidence with its reasoning shown* for
-  humans to judge. It never declares a winner, never silently resolves a dispute,
+- **AI is advisory, never an arbiter (live).** EC8A vision (forgery / AI-image
+  flags + count read-back), statistical anomaly detection, incident triage +
+  hotspot clustering, and a non-partisan results assistant are deployed. Each only
+  *surfaces evidence with its reasoning shown* for humans to judge. It never declares a winner, never silently resolves a dispute,
   and never overrides the verifiable ledger — an unexplained "AI says fraud" would
   contradict the whole "verify, don't trust" model, so every AI output stays
   explainable and auditable.

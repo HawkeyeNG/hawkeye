@@ -82,22 +82,28 @@ export function checkResult({ pu, contest, result }) {
   }
 }
 
-// Cross-unit statistics. Cheap enough to run on an interval.
+// Cross-unit statistics. Cheap enough to run on an interval. Every flag carries
+// the numbers that triggered it — evidence with its reasoning shown, never a verdict.
 export function runForensics() {
   const rows = db.prepare(`
-    SELECT r.pu_code, r.contest, r.votes_json, p.registered_voters, p.state
-    FROM results r JOIN polling_units p ON p.pu_code = r.pu_code
-    WHERE p.registered_voters IS NOT NULL AND p.registered_voters > 0`).all();
-  // turnout per state -> flag units whose turnout is a strong high outlier
+    SELECT r.pu_code, r.contest, r.votes_json, p.registered_voters, p.state, p.lga, p.ward
+    FROM results r JOIN polling_units p ON p.pu_code = r.pu_code`).all();
+  const parsed = rows.map((r) => {
+    const votes = JSON.parse(r.votes_json);
+    const t = total(votes);
+    const top = votes.reduce((m, v) => (v.count > (m?.count || 0) ? v : m), null);
+    return { ...r, votes, t, top };
+  });
+
+  // 1) turnout per state -> flag units whose turnout is a strong high outlier
   const byState = {};
-  for (const r of rows) {
-    const t = total(JSON.parse(r.votes_json));
-    const turnout = t / r.registered_voters;
-    (byState[r.state] ||= []).push({ ...r, turnout });
+  for (const r of parsed) {
+    if (!r.registered_voters) continue;
+    (byState[r.state] ||= []).push({ ...r, turnout: r.t / r.registered_voters });
   }
   for (const [state, units] of Object.entries(byState)) {
     if (units.length < 5) continue;
-    const vals = units.map((u) => u.turnout).sort((a, b) => a - b);
+    const vals = units.map((u) => u.turnout);
     const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
     const sd = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length) || 1;
     for (const u of units) {
@@ -107,6 +113,91 @@ export function runForensics() {
           detail: { turnout: Math.round(u.turnout * 1000) / 10, stateMean: Math.round(mean * 1000) / 10, summary: `turnout ${Math.round(u.turnout * 100)}% vs ${state} avg ${Math.round(mean * 100)}%` },
         });
       }
+    }
+  }
+
+  // 2) winner-share outlier: a sizeable unit where the winner's share is a strong
+  // high outlier against the same state+contest distribution.
+  const shareGroups = {};
+  for (const r of parsed) {
+    if (r.t >= 100 && r.top) (shareGroups[`${r.state}|${r.contest}`] ||= []).push({ ...r, share: r.top.count / r.t });
+  }
+  for (const [key, units] of Object.entries(shareGroups)) {
+    if (units.length < 8) continue;
+    const vals = units.map((u) => u.share);
+    const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+    const sd = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length) || 1;
+    for (const u of units) {
+      if (u.share > mean + 2.5 * sd && u.share >= 0.9) {
+        logDiscrepancy({
+          type: 'vote_share_outlier', severity: 'medium', puCode: u.pu_code, contest: u.contest, state: u.state,
+          detail: {
+            party: u.top.party, share: Math.round(u.share * 1000) / 10, stateMean: Math.round(mean * 1000) / 10, n: units.length,
+            summary: `${u.top.party} ${Math.round(u.share * 100)}% of ${u.t} votes vs ${key.split('|')[0]} avg ${Math.round(mean * 100)}% (${units.length} units)`,
+          },
+        });
+      }
+    }
+  }
+
+  // 3) neighbour divergence: a unit voting wildly unlike the rest of its own ward.
+  const wards = {};
+  for (const r of parsed) {
+    if (r.t >= 50) (wards[`${r.state}|${r.lga}|${r.ward}|${r.contest}`] ||= []).push(r);
+  }
+  for (const [key, units] of Object.entries(wards)) {
+    if (units.length < 4) continue;
+    const partyTotals = {};
+    for (const u of units) for (const v of u.votes) partyTotals[v.party] = (partyTotals[v.party] || 0) + v.count;
+    const wardWinner = Object.entries(partyTotals).sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (!wardWinner) continue;
+    const shares = units.map((u) => ({ u, s: (u.votes.find((v) => v.party === wardWinner)?.count || 0) / u.t }));
+    for (const { u, s } of shares) {
+      const others = shares.filter((x) => x.u !== u).map((x) => x.s);
+      const om = others.reduce((a, b) => a + b, 0) / others.length;
+      if (Math.abs(s - om) >= 0.5) {
+        logDiscrepancy({
+          type: 'neighbour_divergence', severity: 'medium', puCode: u.pu_code, contest: u.contest, state: u.state,
+          detail: {
+            party: wardWinner, unitShare: Math.round(s * 1000) / 10, wardMean: Math.round(om * 1000) / 10, wardUnits: units.length,
+            summary: `${wardWinner} ${Math.round(s * 100)}% here vs ${Math.round(om * 100)}% average across ${units.length - 1} neighbouring unit(s) in the same ward`,
+          },
+        });
+      }
+    }
+  }
+
+  // 4) fabrication digit tests, per contest (needs volume to mean anything):
+  //    first-digit Benford + round-number (trailing 0/5) excess over all party counts.
+  const byContest = {};
+  for (const r of parsed) for (const v of r.votes) {
+    if (v.count >= 10) (byContest[r.contest] ||= []).push(v.count);
+  }
+  for (const [contest, counts] of Object.entries(byContest)) {
+    if (counts.length < 200) continue;
+    const first = new Array(10).fill(0);
+    let round = 0;
+    for (const c of counts) {
+      first[Number(String(c)[0])]++;
+      if (c % 10 === 0 || c % 10 === 5) round++;
+    }
+    const mad = [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce((s, d) => {
+      const obs = (first[d] / counts.length) * 100;
+      const exp = Math.log10(1 + 1 / d) * 100;
+      return s + Math.abs(obs - exp);
+    }, 0) / 9;
+    if (mad > 1.5) {
+      logDiscrepancy({
+        type: 'benford_deviation', severity: 'low', contest, puCode: `digits:${contest}`,
+        detail: { mad: Math.round(mad * 100) / 100, n: counts.length, summary: `first-digit distribution departs from Benford (MAD ${mad.toFixed(2)} > 1.5) over ${counts.length} counts — screening signal, not proof` },
+      });
+    }
+    const roundPct = (round / counts.length) * 100;
+    if (roundPct > 30) {
+      logDiscrepancy({
+        type: 'round_number_excess', severity: 'low', contest, puCode: `digits:${contest}`,
+        detail: { roundPct: Math.round(roundPct * 10) / 10, n: counts.length, summary: `${Math.round(roundPct)}% of counts end in 0 or 5 (expected ~20%) over ${counts.length} counts — screening signal, not proof` },
+      });
     }
   }
 }
@@ -286,16 +377,36 @@ export function collationSummary() {
   return { byLevel, flags };
 }
 
-// Benford last-digit distribution of winning-party counts — a spread that departs
-// sharply from uniform can indicate fabricated figures. Returns observed vs expected.
+// Digit-distribution screening. Last digit of winning counts should be ~uniform;
+// first digit of all counts should follow Benford's law. Departures are screening
+// signals (fabricated figures cluster on favourite digits), never proof.
 export function benfordSummary() {
   const rows = db.prepare('SELECT votes_json FROM results').all();
-  const counts = new Array(10).fill(0);
-  let n = 0;
+  const last = new Array(10).fill(0);
+  const first = new Array(10).fill(0);
+  let nLast = 0;
+  let nFirst = 0;
   for (const r of rows) {
     const votes = JSON.parse(r.votes_json);
     const top = votes.reduce((m, v) => (v.count > (m?.count || 0) ? v : m), null);
-    if (top && top.count >= 10) { counts[top.count % 10]++; n++; }
+    if (top && top.count >= 10) { last[top.count % 10]++; nLast++; }
+    for (const v of votes) if (v.count >= 10) { first[Number(String(v.count)[0])]++; nFirst++; }
   }
-  return { n, lastDigit: counts.map((c, d) => ({ digit: d, observed: c, expectedPct: 10 })) };
+  const firstDigit = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => ({
+    digit: d, observed: first[d],
+    expectedPct: Math.round(Math.log10(1 + 1 / d) * 1000) / 10,
+  }));
+  const mad = nFirst
+    ? firstDigit.reduce((s, e) => s + Math.abs((e.observed / nFirst) * 100 - e.expectedPct), 0) / 9
+    : 0;
+  const verdict = nFirst < 100 ? 'insufficient_data'
+    : mad < 0.6 ? 'close_conformity'
+    : mad < 1.2 ? 'acceptable_conformity'
+    : mad < 1.5 ? 'marginal_conformity'
+    : 'nonconformity';
+  return {
+    n: nLast, nFirst,
+    lastDigit: last.map((c, d) => ({ digit: d, observed: c, expectedPct: 10 })),
+    firstDigit, mad: Math.round(mad * 100) / 100, verdict,
+  };
 }

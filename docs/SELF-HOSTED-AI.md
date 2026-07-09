@@ -72,15 +72,31 @@ data-sharing** — pair a text brain (Qwen2.5/Phi-4) with Qwen2.5-VL for the eye
 The laptop must stay awake and connected while it serves. That's fine for dev and
 low traffic; for 24/7 public use, move to a physical server.
 
-## Physical server (backup, then primary)
+## Intended server: NVIDIA DGX Spark + Starlink (single-appliance)
 
-Hardware sizing and rough 2026 costs:
+The intended production/backup box is the **NVIDIA DGX Spark** — a self-contained
+AI appliance that hosts the *entire* Hawkeye stack (Node + DB) **and** the local
+models on one unit; "just add internet."
+
+- **GB10 Grace-Blackwell**, **128 GB unified memory**, ~1 PFLOP FP4, runs NVIDIA
+  DGX OS (Ubuntu / ARM64). ~**$3,000–4,000** each.
+- The 128 GB holds a **large text model (70B-class) + a Qwen2.5-VL vision model +
+  the app** at once — full text **and** EC8A vision self-hosted, $0/token.
+- **2 units:** link via ConnectX for ~200–405B models and/or run one as a hot
+  **failover** (redundancy + bigger models).
+- **Connectivity: Starlink** — kit ~$350–600 one-time; service ~$50–150/mo
+  (Priority/Business tier for uptime; Nigeria pricing varies). Starlink is CGNAT,
+  so expose via **Cloudflare Tunnel** (free, no open ports/static IP). Add a small
+  **UPS** (~$150) for clean 24/7 power.
+- Caveats: ARM64 (our native deps build fine); desktop-class memory bandwidth, so
+  **sample** vision at election-day peak rather than scanning every sheet live.
+
+Cheaper interim tiers if DGX Spark isn't yet in budget:
 
 | Tier | Spec | Runs | Approx. cost |
 |---|---|---|---|
-| Mini-PC | 32 GB RAM, mini GPU/NPU (e.g. Beelink/Minisforum) | app + DB + 3B model on CPU | $350–550 |
-| GPU inference box | RTX 4060/4070 16 GB, 32–64 GB RAM | 7–8B models comfortably, 3B fast | $1,500–2,500 |
-| Redundant server + UPS | used enterprise/tower + UPS + networking | app/DB failover, election-day resilience | $2,000–4,000 |
+| Mini-PC | 32 GB RAM | app + DB + 3B text model on CPU | $350–550 |
+| GPU box | RTX 4060/4070 16 GB | 7–8B text + Qwen2.5-VL 7B | $1,500–2,500 |
 
 **Roles:**
 - **On-prem AI** — the box hosts Ollama for the free local text AI (assistant,
@@ -101,6 +117,7 @@ change; only where they run does.
 
 - **Now:** $0 — free hosted tiers (Gemini/Groq/Mistral/OpenRouter) + optional
   local Ollama on an existing laptop.
-- **Hardware (funded):** one GPU inference box ≈ $1,500–2,500 + a redundant
-  app/DB server ≈ $2,000–4,000 + UPS/networking ≈ $300–500 → **~$4,000–7,000**
-  for resilient on-prem AI + backup infrastructure (see investor deck use-of-funds).
+- **Intended (funded):** **2× NVIDIA DGX Spark** (~$3–4k ea → ~$6–8k) + **Starlink**
+  kit (~$350–600) + UPS (~$150) → **~$7,000–9,000** one-time for a redundant,
+  deplatform-proof, off-grid-capable box that self-hosts app + text AI + EC8A
+  vision. Ongoing: Starlink ~$50–150/mo. (See investor deck use-of-funds.)

@@ -50,7 +50,52 @@ const SYSTEM = [
 ].join(' ');
 
 export async function askAssistant(question) {
-  if (!config.anthropicApiKey) return { error: 'assistant_unconfigured' };
+  if (config.anthropicApiKey) return askClaude(question);
+  if (config.assistantApiKey) return askOpenAICompat(question);
+  return { error: 'assistant_unconfigured' };
+}
+
+// ---- OpenAI-compatible providers (Gemini free tier by default; also Groq,
+// Mistral, OpenRouter — pick via ASSISTANT_API_BASE). Same tools, same rules.
+async function askOpenAICompat(question) {
+  const tools = TOOLS.map((t) => ({
+    type: 'function',
+    function: { name: t.name, description: t.description, parameters: t.input_schema },
+  }));
+  const messages = [
+    { role: 'system', content: SYSTEM },
+    { role: 'user', content: String(question || '').slice(0, 500) },
+  ];
+  for (let step = 0; step < 4; step++) {
+    let data;
+    try {
+      const res = await fetch(`${config.assistantApiBase}/chat/completions`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${config.assistantApiKey}` },
+        body: JSON.stringify({ model: config.assistantModel, max_tokens: 700, tools, messages }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (!res.ok) return { error: 'assistant_error' };
+      data = await res.json();
+    } catch { return { error: 'assistant_error' }; }
+    const m = data.choices?.[0]?.message;
+    if (!m) return { error: 'assistant_error' };
+    messages.push(m);
+    if (m.tool_calls?.length) {
+      for (const tc of m.tool_calls) {
+        let args = {};
+        try { args = JSON.parse(tc.function?.arguments || '{}'); } catch { /* empty */ }
+        const out = await runTool(tc.function?.name, args);
+        messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(out).slice(0, 4000) });
+      }
+      continue;
+    }
+    return { answer: (m.content || '').trim() || 'No answer available.' };
+  }
+  return { answer: 'That needed too many steps — try a more specific question.' };
+}
+
+async function askClaude(question) {
   const messages = [{ role: 'user', content: String(question || '').slice(0, 500) }];
   for (let step = 0; step < 4; step++) {
     let data;
@@ -82,4 +127,4 @@ export async function askAssistant(question) {
   return { answer: 'That needed too many steps — try a more specific question.' };
 }
 
-export const assistantEnabled = () => Boolean(config.anthropicApiKey);
+export const assistantEnabled = () => Boolean(config.anthropicApiKey || config.assistantApiKey);

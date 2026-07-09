@@ -63,9 +63,16 @@ export const config = {
   irevElectionId: process.env.IREV_ELECTION_ID || '',
   irevContest: process.env.IREV_CONTEST || 'PRES',
   termiiApiKey: process.env.TERMII_API_KEY || '',
-  // Natural-language results assistant (Claude). Feature is off until this is set.
+  // Natural-language results assistant. Two provider paths — set ONE:
+  //   ANTHROPIC_API_KEY                  -> Claude (paid, strongest)
+  //   ASSISTANT_API_KEY [+ _API_BASE]    -> any OpenAI-compatible provider; default
+  //     base is Google Gemini's free tier (also Groq/Mistral/OpenRouter by base URL).
+  // Feature is off until a key is set.
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
-  assistantModel: process.env.ASSISTANT_MODEL || 'claude-haiku-4-5-20251001',
+  assistantApiKey: process.env.ASSISTANT_API_KEY || '',
+  assistantApiBase: process.env.ASSISTANT_API_BASE || 'https://generativelanguage.googleapis.com/v1beta/openai',
+  assistantModel: process.env.ASSISTANT_MODEL
+    || (process.env.ANTHROPIC_API_KEY ? 'claude-haiku-4-5-20251001' : 'gemini-2.5-flash-lite'),
   termiiSenderId: process.env.TERMII_SENDER_ID || 'N-Alert',
   termiiChannel: process.env.TERMII_CHANNEL || 'dnd',
   termiiBaseUrl: process.env.TERMII_BASE_URL || 'https://api.ng.termii.com',

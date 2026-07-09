@@ -20,7 +20,30 @@
   --amber: #fdf6dd;
   --amber-border: #f5c518;
   --link: #0a6b40;
+  --input-border: #b9c4bd;
   --radius: 14px;
+  color-scheme: light;
+}
+/* Dark theme — NEUTRALS ONLY. Brand greens, hero/trust/footer gradients and the
+   amber banner are untouched; only the white surfaces flip. Declaring real dark
+   support also stops Chromium's "auto-dark" filter from dimming the whole site.
+   System preference applies unless the user forces a theme via the 🌓 toggle
+   (html[data-theme] set by menu.js). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #e7efe9; --muted: #9db1a5;
+    --bg: #0c1310; --card: #151f19;
+    --border: #2b3a31; --line: #223028; --input-border: #35463c;
+    --link: #57d9a1;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #e7efe9; --muted: #9db1a5;
+  --bg: #0c1310; --card: #151f19;
+  --border: #2b3a31; --line: #223028; --input-border: #35463c;
+  --link: #57d9a1;
+  color-scheme: dark;
 }
 /* Self-hosted type: Inter for UI/body, Lora serif for headings. */
 @font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
@@ -248,9 +271,10 @@ input, select {
   padding: 11px 13px;
   font-size: 1.02rem;
   font-family: inherit;
-  border: 1.5px solid #b9c4bd;
+  border: 1.5px solid var(--input-border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--card);
+  color: var(--ink);
 }
 input:hover, select:hover { border-color: var(--green-700); }
 input:focus, select:focus, button:focus, summary:focus, a:focus {
@@ -353,6 +377,12 @@ button.menu-btn {
   box-shadow: none;
 }
 button.menu-btn:hover { background: rgba(255, 255, 255, 0.12); filter: none; }
+button.theme-btn {
+  background: none; border: 1.5px solid rgba(255, 255, 255, 0.35); color: #fff;
+  border-radius: 9px; width: 36px; height: 36px; padding: 0; font-size: 1.05rem;
+  line-height: 1; cursor: pointer; margin: 0 10px 0 auto; box-shadow: none; display: inline-block;
+}
+button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); filter: none; }
 .menu-panel {
   position: absolute;
   right: 0;
@@ -361,7 +391,7 @@ button.menu-btn:hover { background: rgba(255, 255, 255, 0.12); filter: none; }
   max-height: calc(100dvh - 110px);
   overflow-y: auto;
   min-width: 254px;
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 12px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);

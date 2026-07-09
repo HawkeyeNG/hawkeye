@@ -12,11 +12,33 @@ models can't read result sheets.*
 | Results assistant (Q&A) | ⚠ marginal at 3B | needs light tool-use; Qwen2.5-3B is the best small pick, Llama-3.2-3B ok |
 | Translation (Hausa/Yoruba/Igbo/Pidgin) | ✅ | small models are fine, no tools |
 | Incident triage (kind/urgency/spam) | ✅ | short classify prompt, no tools |
-| EC8A vision (read sheet + forgery) | ❌ | keep on Gemini/hosted multimodal |
+| EC8A vision (read sheet + forgery) | ❌ tiny models · ✅ on a GPU server | needs a 7B+ vision-language model — see below |
 
-Recommended small models: **Qwen2.5 3B** (best instruction-following at this size)
-or **Llama 3.2 3B**; **Llama 3.2 1B** only for translation/triage, not the
-assistant.
+Recommended small **text** models: **Qwen2.5 3B** (best instruction-following at
+this size) or **Llama 3.2 3B**; **Llama 3.2 1B** only for translation/triage.
+
+### EC8A vision on a physical server (unlocks full self-hosting)
+
+Small text models (and Phi-4 14B, which is **text-only**) can't read result sheets.
+A GPU server can run an open **vision-language model (VLM)** that does:
+
+| VLM | VRAM | Notes |
+|---|---|---|
+| **Qwen2.5-VL 7B** | ~16 GB | best open pick for documents/handwritten tables; RTX 4060 Ti/4070 16 GB |
+| **Qwen2.5-VL 32B** | ~24–48 GB | stronger; RTX 3090/4090 24 GB (quantized) or 2×24 GB |
+| InternVL2.5-8B / MiniCPM-V 2.6 8B / Llama-3.2-Vision 11B | ~16–24 GB | solid alternatives |
+| Phi-4-multimodal 5.6B | ~8–12 GB | small, does vision, weaker on dense handwriting |
+
+Serve it OpenAI-compatibly (Ollama or vLLM) and point Hawkeye's vision at it — no
+code change, just env in the server `.env`:
+```
+VISION_API_BASE=https://<your-vlm-host>/v1
+VISION_API_KEY=ollama            # any non-empty value for a local server
+VISION_MODEL=qwen2.5-vl:7b
+```
+Vision falls back to Gemini automatically if the box is unavailable. Result:
+**both text AI and EC8A vision run self-hosted at $0/token with no free-tier
+data-sharing** — pair a text brain (Qwen2.5/Phi-4) with Qwen2.5-VL for the eyes.
 
 ## Laptop setup (start here)
 

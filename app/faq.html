@@ -8,11 +8,6 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css?v=63" />
-  <style>
-    details.faq { background: var(--card); border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 10px; }
-    details.faq summary { font-weight: 700; cursor: pointer; }
-    details.faq p { margin: 10px 0 0; font-size: 0.95rem; }
-  </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
   <meta property="og:title" content="Hawkeye — Frequently Asked Questions" />
@@ -52,67 +47,70 @@
 
   <main class="wrap">
     <h1>Frequently Asked Questions</h1>
+    <p class="lede">Tap any question to expand it.</p>
 
-    <details class="faq" open>
+    <div class="acc-wrap">
+    <details class="acc" open>
       <summary>Is Hawkeye official? Are these the real election results?</summary>
       <p>No. Hawkeye is an independent, community-run transparency initiative. The tallies shown
       here are crowd-verified evidence of what was announced at individual polling units — the
       official results of any election are only those declared by INEC.</p>
     </details>
-    <details class="faq">
+    <details class="acc">
       <summary>Who can be an observer?</summary>
       <p>Anyone with a Nigerian mobile number and a phone with a camera and GPS. Verify your
       number once, then report from the polling unit where you observe the count. No
       accreditation, membership or payment is involved.</p>
     </details>
-    <details class="faq">
+    <details class="acc">
       <summary>What happens to my phone number?</summary>
       <p>It is hashed (one-way scrambled) before storage and is never published or shared. It
       exists solely so that one number equals one observer identity.</p>
     </details>
-    <details class="faq">
+    <details class="acc">
       <summary>Why does verification use Telegram?</summary>
       <p>Telegram delivers your one-time code and later your race alerts free of charge. Open the
       bot link shown at sign-up, share your contact (it must match the number you typed), and the
       code arrives instantly.</p>
     </details>
-    <details class="faq">
+    <details class="acc">
       <summary>Why must photos be taken live? Can I upload from my gallery?</summary>
       <p>No gallery uploads, ever. Both photos — the EC8A results sheet and the venue — are
       captured in-app and GPS-stamped at the moment of capture. This is what makes a Hawkeye
       report hard to fake from somewhere else.</p>
     </details>
-    <details class="faq">
+    <details class="acc">
       <summary>Can a report be edited or deleted afterwards?</summary>
       <p>No. Every report is signed on the observer's device and chained onto a public,
       tamper-evident ledger. Anyone can re-verify the whole chain on the
       <a href="ledger.html">Verify the Ledger</a> page. If a report is wrong, the remedy is more
       independent reports — matching counts from separate observers outweigh a bad one.</p>
     </details>
-    <details class="faq">
+    <details class="acc">
       <summary>When is a count marked "verified"?</summary>
       <p>When independent observers at the same unit submit matching counts, corroborated by GPS
       clustering, venue-photo matching and machine-reading of the sheet itself. Until then a
       count stays visibly marked as reported or provisional.</p>
     </details>
-    <details class="faq">
+    <details class="acc">
       <summary>My polling unit doesn't appear near me. Why?</summary>
       <p>Most of Nigeria's 176,846 polling units have no published GPS location. You can still
       report — find your unit through the register browser (state → LGA → ward). Better still,
       <a href="map-unit.html">map your unit before election day</a> so it is geofenced on the day.</p>
     </details>
-    <details class="faq">
+    <details class="acc">
       <summary>Can one person submit multiple reports with different SIM cards?</summary>
       <p>Each device carries a fingerprint, and one device can report each race only once — no
       matter how many numbers are registered on it. Independent reports must come from genuinely
       different people on different phones.</p>
     </details>
-    <details class="faq">
+    <details class="acc">
       <summary>How do I get alerts for races I care about?</summary>
       <p>Verify your phone once, then on the <a href="results.html#follow">results page</a> choose
       an election and a state, district or constituency and press Follow. You'll get a Telegram
       message whenever new reports land.</p>
     </details>
+    </div>
   </main>
 
   <footer class="gov-footer">

@@ -9,12 +9,6 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css?v=63" />
-  <style>
-    .sys { background: var(--card); border: 1px solid var(--border); border-left: 5px solid var(--green); padding: 14px 16px; margin-bottom: 12px; }
-    .sys h3 { margin: 0 0 6px; font-size: 1rem; }
-    .sys p, .sys li { font-size: 0.95rem; }
-    .sys ul { margin: 6px 0 0; padding-left: 20px; }
-  </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
   <meta property="og:title" content="Hawkeye — How It Works" />
@@ -104,19 +98,21 @@
 
     <!-- The machinery -->
     <h2>The machinery underneath</h2>
+    <p class="lede">Tap each layer to see how it works.</p>
+    <div class="acc-wrap">
 
-    <div class="sys">
-      <h3>🪪 One person, one identity</h3>
+    <details class="acc">
+      <summary>🪪 One person, one identity</summary>
       <ul>
         <li>A verified phone number is one observer identity. Numbers are stored only as one-way
         hashes — never readable, never published.</li>
         <li>Every phone also carries a device fingerprint. One device can report each race
         <em>once</em>, no matter how many SIM cards or accounts it holds.</li>
       </ul>
-    </div>
+    </details>
 
-    <div class="sys">
-      <h3>📍 Location that proves itself</h3>
+    <details class="acc">
+      <summary>📍 Location that proves itself</summary>
       <ul>
         <li>Units with a confirmed location are <strong>geofenced</strong>: reports are only
         accepted from people standing there.</li>
@@ -128,10 +124,10 @@
         <li>Every unit also has an approximate area from open geographic data; reports or
         mapping fixes far outside it are rejected outright.</li>
       </ul>
-    </div>
+    </details>
 
-    <div class="sys">
-      <h3>📸 Evidence that can't be recycled</h3>
+    <details class="acc">
+      <summary>📸 Evidence that can't be recycled</summary>
       <ul>
         <li>Photos are captured live in the app — the EC8A sheet is auto-detected, flattened and
         quality-checked (blur/glare) like a document scanner.</li>
@@ -144,20 +140,20 @@
         <li>The typed counts are cross-checked against the digits machine-read from the sheet
         photograph itself.</li>
       </ul>
-    </div>
+    </details>
 
-    <div class="sys">
-      <h3>⛓️ A ledger nobody can quietly edit</h3>
+    <details class="acc">
+      <summary>⛓️ A ledger nobody can quietly edit</summary>
       <ul>
         <li>Each report is signed on the observer's phone with a key that never leaves it, then
         chained to the previous entry by cryptographic hash.</li>
         <li>Changing or removing any past entry breaks the chain publicly. Anyone can re-verify
         it in their browser on the <a href="ledger.html">Verify the Ledger</a> page.</li>
       </ul>
-    </div>
+    </details>
 
-    <div class="sys">
-      <h3>📊 From reports to the leaderboard</h3>
+    <details class="acc">
+      <summary>📊 From reports to the leaderboard</summary>
       <ul>
         <li>Matching counts from independent observers push a unit's confidence up; conflicting
         counts mark it <em>disputed</em> — visibly, never silently resolved.</li>
@@ -166,13 +162,14 @@
         <li>The <a href="results.html">national leaderboard</a> rolls verified units up per race,
         with grey regions still awaiting reports.</li>
       </ul>
-    </div>
+    </details>
 
-    <div class="sys">
-      <h3>🔔 Alerts</h3>
+    <details class="acc">
+      <summary>🔔 Alerts</summary>
       <p>Follow any race — everywhere, or a single state, district or constituency — and Hawkeye
       pings you on Telegram whenever new reports land. <a href="results.html#follow">Subscribe on
       the results page</a>.</p>
+    </details>
     </div>
 
     <p class="notice"><strong>What Hawkeye is not:</strong> Hawkeye does not declare winners and

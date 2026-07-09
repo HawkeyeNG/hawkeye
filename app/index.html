@@ -64,11 +64,11 @@
         <div class="hero-cta">
           <a class="btn-accent" href="observe.html?intent=observe">Become an Observer</a>
           <a class="btn-ghost" href="incidents.html">Report an Incident</a>
-          <button class="btn-ghost" id="install-cta" hidden type="button">⬇ Install the app</button>
+          <button class="btn-ghost" id="install-cta" hidden type="button">Install Web App</button>
         </div>
+        <p id="install-hint" hidden class="hint" style="margin: 10px 0 0"></p>
         <div class="hero-cta" style="margin-top: 14px">
           <a class="btn-ghost" style="border: none; padding-left: 0" href="results.html#follow">🔔 Subscribe to Alerts</a>
-          <span id="install-hint" hidden class="hint" style="padding-left: 0">On iPhone: tap <strong>Share → Add to Home Screen</strong> to install.</span>
         </div>
       </div>
       <div class="ledger-stack" id="ledger-stack" aria-hidden="true"></div>
@@ -212,20 +212,31 @@
       const btn = document.getElementById('install-cta');
       const hint = document.getElementById('install-hint');
       const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-      if (installed) return;
+      if (installed) return;              // already installed — no button
+      const ua = navigator.userAgent;
+      const isIOS = /iphone|ipad|ipod/i.test(ua) && !window.MSStream;
+      const isAndroid = /android/i.test(ua);
       let deferred = null;
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault(); deferred = e; btn.hidden = false;
-      });
+      // Chromium (desktop + Android) fires this when installable; stash for click.
+      window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; });
+      window.addEventListener('appinstalled', () => { btn.hidden = true; hint.hidden = true; });
+      btn.hidden = false;                 // always offer it (iOS/Android have no auto-prompt)
       btn.addEventListener('click', async () => {
-        if (!deferred) return;
-        deferred.prompt();
-        await deferred.userChoice;
-        deferred = null; btn.hidden = true;
+        if (deferred) {                   // native one-tap install
+          deferred.prompt();
+          const { outcome } = await deferred.userChoice;
+          deferred = null;
+          if (outcome === 'accepted') return;
+        }
+        // No native prompt available (iOS always; Android/Brave when suppressed) —
+        // show the manual steps for this platform, right below the button.
+        hint.innerHTML = isIOS
+          ? 'On iPhone: tap the <strong>Share</strong> icon, then <strong>Add to Home Screen</strong>.'
+          : isAndroid
+            ? 'On Android: open the browser <strong>⋮</strong> menu, then tap <strong>Install app</strong> / <strong>Add to Home screen</strong>.'
+            : 'Use the <strong>install</strong> icon in your browser’s address bar.';
+        hint.hidden = false;
       });
-      window.addEventListener('appinstalled', () => { btn.hidden = true; });
-      if (isIOS) hint.hidden = false;   // no programmatic install on iOS
     })();
   </script>
   <script src="tg.js?v=63"></script>

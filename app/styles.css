@@ -24,20 +24,10 @@
   --radius: 14px;
   color-scheme: light;
 }
-/* Dark theme — NEUTRALS ONLY. Brand greens, hero/trust/footer gradients and the
-   amber banner are untouched; only the white surfaces flip. Declaring real dark
-   support also stops Chromium's "auto-dark" filter from dimming the whole site.
-   System preference applies unless the user forces a theme via the 🌓 toggle
-   (html[data-theme] set by menu.js). */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ink: #e7efe9; --muted: #9db1a5;
-    --bg: #0c1310; --card: #151f19;
-    --border: #2b3a31; --line: #223028; --input-border: #35463c;
-    --link: #57d9a1;
-    color-scheme: dark;
-  }
-}
+/* Dark theme is OPT-IN ONLY via the header toggle (html[data-theme="dark"], set
+   by menu.js) — no prefers-color-scheme auto-switch, since it's inconsistent
+   across browsers. NEUTRALS ONLY: brand greens, hero/trust/footer gradients and
+   the amber banner are untouched; only the white surfaces flip. */
 :root[data-theme="dark"] {
   --ink: #e7efe9; --muted: #9db1a5;
   --bg: #0c1310; --card: #151f19;
@@ -391,8 +381,8 @@ button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.1
   max-height: calc(100dvh - 110px);
   overflow-y: auto;
   min-width: 254px;
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: #fff; /* always light — links are pinned dark, so keep it legible in dark mode too */
+  border: 1px solid #e3e8e4;
   border-radius: 12px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
   padding: 4px 0;
@@ -420,7 +410,7 @@ button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.1
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: #5b6b62;
   border-top: 1px solid #eef2ef;
 }
 .menu-group:first-child { border-top: none; }

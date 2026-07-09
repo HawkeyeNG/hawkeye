@@ -83,8 +83,7 @@
   if (btn && !document.querySelector('.theme-btn')) {
     const tb = document.createElement('button');
     tb.className = 'theme-btn';
-    const effective = () => document.documentElement.dataset.theme
-      || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const effective = () => document.documentElement.dataset.theme || 'light';
     const paint = () => { tb.textContent = effective() === 'dark' ? '☀️' : '🌙'; tb.setAttribute('aria-label', effective() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'); };
     tb.addEventListener('click', () => {
       const next = effective() === 'dark' ? 'light' : 'dark';
@@ -237,15 +236,17 @@
     const msgs = panel.querySelector('#hk-msgs');
     const add = (who, text) => { const d = document.createElement('div'); d.className = 'hk-b ' + (who === 'u' ? 'hk-u' : 'hk-a'); d.textContent = text; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d; };
     let greeted = false;
-    // On phones, freeze the page behind the popup so only the chat scrolls.
-    const lock = (on) => { if (innerWidth < 640) document.documentElement.style.overflow = on ? 'hidden' : ''; };
-    fab.onclick = () => {
+    const close = () => panel.classList.remove('open');
+    fab.onclick = (e) => {
+      e.stopPropagation();
       const open = panel.classList.toggle('open');
-      lock(open);
       if (open && !greeted) { greeted = true; add('a', 'Hi! Ask me about the crowd-reported results — a national tally, a polling unit, or how much of the country is mapped.'); }
-      if (open) panel.querySelector('#hk-in').focus({ preventScroll: true });
     };
-    panel.querySelector('#hk-x').onclick = () => { panel.classList.remove('open'); lock(false); };
+    panel.querySelector('#hk-x').onclick = close;
+    panel.addEventListener('click', (e) => e.stopPropagation());
+    // Close on outside click / Escape, just like the header dropdown.
+    document.addEventListener('click', () => { if (panel.classList.contains('open')) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
     panel.querySelector('#hk-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const inp = panel.querySelector('#hk-in'); const q = inp.value.trim(); if (!q) return;

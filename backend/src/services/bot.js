@@ -15,6 +15,7 @@ import sharp from 'sharp';
 import { db, partyCodes, contests } from '../db.js';
 import { config } from '../config.js';
 import { contestApplies } from './scope.js';
+import { askAssistant, assistantEnabled } from './assistant.js';
 
 const SITE = 'https://hawkeye.com.ng';
 const incidentDir = path.join(config.uploadDir, 'incidents');
@@ -71,6 +72,7 @@ const HELP = [
   '/mapunit — map / save your polling unit',
   '/ledger — verify the public ledger',
   '/results — live leaderboard snapshot',
+  '/ask — ask about the results in plain English',
   '/myunit — activity at your saved unit',
   '/whoami — your observer identity',
   '/cancel — abandon the current flow',
@@ -340,6 +342,15 @@ export async function handleUpdate(update, token) {
     return true;
   }
   if (text === '/results') { await cmdResults(token, chatId); return true; }
+  if (text === '/ask' || text.startsWith('/ask ')) {
+    const q = text.slice(4).trim();
+    if (!assistantEnabled()) { await send(token, chatId, 'The results assistant isn\'t switched on yet.'); return true; }
+    if (!q) { await send(token, chatId, 'Ask about the results, e.g. <code>/ask presidential tally so far</code> or <code>/ask how many units are mapped</code>.'); return true; }
+    await tgApi(token, 'sendChatAction', { chat_id: chatId, action: 'typing' });
+    const r = await askAssistant(q);
+    await send(token, chatId, `${r.answer || 'Assistant is unavailable right now.'}\n\n<i>Crowd-reported, unofficial. INEC declares official results.</i>`);
+    return true;
+  }
   if (text === '/myunit') { await cmdMyUnit(token, chatId); return true; }
   if (text === '/whoami') { await cmdWhoami(token, chatId); return true; }
 

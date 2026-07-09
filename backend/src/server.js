@@ -14,6 +14,7 @@ import { integrityRouter } from './routes/integrity.js';
 import { incidentsRouter } from './routes/incidents.js';
 import { adminRouter } from './routes/admin.js';
 import { collationRouter } from './routes/collation.js';
+import { assistantRouter } from './routes/assistant.js';
 import { securityHeaders, makeLimiter, concurrencyLimit } from './services/security.js';
 import { runForensics, recheckCollations } from './services/integrity.js';
 import { runBackup } from './services/backup.js';
@@ -57,6 +58,7 @@ app.use('/api/submissions', concurrencyLimit(4, 'submissions'), makeLimiter({ wi
 app.use('/api/incidents', concurrencyLimit(4, 'incidents'), makeLimiter({ windowMs: 600_000, max: 300, name: 'incidents' }));
 app.use('/api/mappings', makeLimiter({ windowMs: 600_000, max: 600, name: 'mappings' }));
 app.use('/api/collations', makeLimiter({ windowMs: 600_000, max: 300, name: 'collations' }));
+app.use('/api/assistant', concurrencyLimit(3, 'assistant'), makeLimiter({ windowMs: 600_000, max: 120, name: 'assistant' }));
 app.use('/api', makeLimiter({ windowMs: 600_000, max: 8000, name: 'api' }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'hawkeye', env: config.env }));
@@ -72,6 +74,7 @@ app.use('/api', integrityRouter);
 app.use('/api', incidentsRouter);
 app.use('/api', adminRouter);
 app.use('/api', collationRouter);
+app.use('/api', assistantRouter);
 // Training sheet images: the originals are ~3-4 MB phone photos (3072x4096),
 // far more than a labeller's screen needs, so serving them raw made the page
 // crawl. Serve a cached ~1500px JPEG for VIEWING (built on first request, then

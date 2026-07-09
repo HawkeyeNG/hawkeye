@@ -63,6 +63,9 @@ export const config = {
   irevElectionId: process.env.IREV_ELECTION_ID || '',
   irevContest: process.env.IREV_CONTEST || 'PRES',
   termiiApiKey: process.env.TERMII_API_KEY || '',
+  // Natural-language results assistant (Claude). Feature is off until this is set.
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+  assistantModel: process.env.ASSISTANT_MODEL || 'claude-haiku-4-5-20251001',
   termiiSenderId: process.env.TERMII_SENDER_ID || 'N-Alert',
   termiiChannel: process.env.TERMII_CHANNEL || 'dnd',
   termiiBaseUrl: process.env.TERMII_BASE_URL || 'https://api.ng.termii.com',

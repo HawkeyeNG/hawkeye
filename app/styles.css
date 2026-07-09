@@ -73,7 +73,7 @@ main.wrap { max-width: 840px; }
     radial-gradient(1100px 480px at 78% -10%, rgba(46, 229, 157, 0.16), transparent 60%),
     radial-gradient(700px 420px at 8% 110%, rgba(245, 197, 24, 0.10), transparent 55%),
     linear-gradient(165deg, var(--green-950) 0%, var(--green-darker) 55%, var(--green-dark) 100%);
-  color: #fff; padding: 60px 0 0; overflow: hidden;
+  color: #fff; padding: clamp(18px, 4.5vw, 60px) 0 0; overflow: hidden;
 }
 .hero-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; }
 .hero-badge, .badge {

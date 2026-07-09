@@ -114,7 +114,9 @@ buried in a tribunal exhibit months later.
   anomaly** detection (turnout/vote-share outliers, ward neighbour divergence,
   Benford + round-number digit tests); and **incident triage + hotspot
   clustering**. All flags land on the public Election-Integrity page with their
-  numbers shown.
+  numbers shown. The assistant replies in the user's language (English, Hausa,
+  Yoruba, Igbo, Nigerian Pidgin) and can point volunteers to under-covered states
+  via a live reporting-gaps view (also shown on the results page).
 - **Races are labelled by cycle** ("2027 General Elections", with INEC dates —
   Presidential/National Assembly 16 Jan 2027, Governorship/State Assembly 6 Feb
   2027); a finished cycle archives to a per-race folder tree on the backend.

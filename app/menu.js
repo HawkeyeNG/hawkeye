@@ -175,3 +175,59 @@
     panel.appendChild(del);
   }
 })();
+
+// Floating results assistant (bottom-right). Non-partisan, read-only; mounts only
+// where the server reports the feature is switched on. Skipped inside the Telegram
+// Mini App and on the private review console.
+(function () {
+  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) return;
+  if (/\/review\.html$/.test(location.pathname)) return;
+  fetch('/api/assistant/health').then((r) => r.json()).then((h) => { if (h && h.enabled) mount(); }).catch(() => {});
+
+  function mount() {
+    const css = `
+    #hk-fab{position:fixed;right:18px;bottom:18px;z-index:1200;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:var(--green,#008751);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+    #hk-fab:hover{filter:brightness(1.08)}
+    #hk-panel{position:fixed;right:18px;bottom:84px;z-index:1200;width:min(360px,calc(100vw - 36px));max-height:min(560px,calc(100vh - 120px));display:none;flex-direction:column;background:var(--card,#fff);border:1px solid var(--line,#dde4de);border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+    #hk-panel.open{display:flex}
+    #hk-head{background:var(--green-darker,#00331e);color:#fff;padding:13px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+    #hk-head button{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1}
+    #hk-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;font-size:.94rem;background:var(--bg,#f7f8f6)}
+    .hk-b{padding:9px 12px;border-radius:12px;max-width:85%;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+    .hk-u{align-self:flex-end;background:var(--green,#008751);color:#fff;border-bottom-right-radius:4px}
+    .hk-a{align-self:flex-start;background:var(--card,#fff);border:1px solid var(--line,#e3e8e4);color:var(--ink,#14201a);border-bottom-left-radius:4px}
+    #hk-form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line,#e3e8e4);background:var(--card,#fff)}
+    #hk-in{flex:1;border:1px solid var(--border,#dde4de);border-radius:10px;padding:9px 11px;font:inherit}
+    #hk-form button{background:var(--green,#008751);color:#fff;border:none;border-radius:10px;padding:0 14px;font-weight:700;cursor:pointer}
+    #hk-note{font-size:.72rem;color:var(--muted,#5b6b62);padding:0 14px 10px;background:var(--bg,#f7f8f6)}`;
+    const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+    const fab = document.createElement('button');
+    fab.id = 'hk-fab'; fab.setAttribute('aria-label', 'Ask Hawkeye about the results'); fab.textContent = '💬';
+    const panel = document.createElement('div'); panel.id = 'hk-panel';
+    panel.innerHTML = '<div id="hk-head"><span>Ask Hawkeye</span><button aria-label="Close" id="hk-x">×</button></div>'
+      + '<div id="hk-msgs"></div>'
+      + '<div id="hk-note">Crowd-reported, unofficial figures. INEC declares official results.</div>'
+      + '<form id="hk-form"><input id="hk-in" autocomplete="off" placeholder="e.g. presidential tally so far" /><button>Ask</button></form>';
+    document.body.append(fab, panel);
+    const msgs = panel.querySelector('#hk-msgs');
+    const add = (who, text) => { const d = document.createElement('div'); d.className = 'hk-b ' + (who === 'u' ? 'hk-u' : 'hk-a'); d.textContent = text; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d; };
+    let greeted = false;
+    fab.onclick = () => {
+      const open = panel.classList.toggle('open');
+      if (open && !greeted) { greeted = true; add('a', 'Hi! Ask me about the crowd-reported results — a national tally, a polling unit, or how much of the country is mapped.'); }
+      if (open) panel.querySelector('#hk-in').focus();
+    };
+    panel.querySelector('#hk-x').onclick = () => panel.classList.remove('open');
+    panel.querySelector('#hk-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const inp = panel.querySelector('#hk-in'); const q = inp.value.trim(); if (!q) return;
+      inp.value = ''; add('u', q); const t = add('a', '…');
+      try {
+        const r = await fetch('/api/assistant', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ question: q }) });
+        const j = await r.json().catch(() => ({}));
+        t.textContent = r.ok ? (j.answer || 'No answer.') : (r.status === 503 ? "The assistant isn't switched on yet." : 'Something went wrong — try again.');
+      } catch { t.textContent = 'Network error — try again.'; }
+      msgs.scrollTop = msgs.scrollHeight;
+    });
+  }
+})();

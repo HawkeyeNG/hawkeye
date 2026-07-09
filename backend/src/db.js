@@ -314,6 +314,8 @@ for (const ddl of [
   'ALTER TABLE anchors ADD COLUMN races_count INTEGER',
   // AI triage suggestion for the human reviewer (advisory only, never auto-acts).
   'ALTER TABLE incidents ADD COLUMN ai_json TEXT',
+  // Vision read of the EC8A sheet: {authentic, reason, counts} — advisory audit.
+  'ALTER TABLE submissions ADD COLUMN vision_json TEXT',
   // IReV cross-check: INEC's own uploaded EC8A per unit — doc URL found by walking
   // the IReV API, then OCR'd and compared against the crowd-reported counts.
   `CREATE TABLE IF NOT EXISTS irev_docs (

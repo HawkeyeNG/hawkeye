@@ -307,6 +307,10 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
         .run(ocr.matched, ocr.total, submissionId);
     }
 
+    // AI vision check of the EC8A sheet (count read-back + authenticity) — advisory,
+    // fire-and-forget so it never delays or blocks the submission response.
+    import('../services/vision.js').then((v) => v.analyzeSheet(sheet.buffer, { contest, votes, pu, submissionId })).catch(() => {});
+
     // Alert everyone who saved this unit as theirs (best-effort, non-blocking).
     try {
       notifyUnitSavers(puCode,

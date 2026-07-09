@@ -73,6 +73,10 @@ export const config = {
   assistantApiBase: process.env.ASSISTANT_API_BASE || 'https://generativelanguage.googleapis.com/v1beta/openai',
   assistantModel: process.env.ASSISTANT_MODEL
     || (process.env.ANTHROPIC_API_KEY ? 'claude-haiku-4-5-20251001' : 'gemini-2.5-flash-lite'),
+  // EC8A vision check (reads counts + judges authenticity). Best-effort, uses the
+  // free vision provider. Sample fraction of submissions to stay in free quota at
+  // election scale — 1 = every sheet, 0 = off.
+  visionSampleRate: num('VISION_SAMPLE_RATE', 1),
   termiiSenderId: process.env.TERMII_SENDER_ID || 'N-Alert',
   termiiChannel: process.env.TERMII_CHANNEL || 'dnd',
   termiiBaseUrl: process.env.TERMII_BASE_URL || 'https://api.ng.termii.com',

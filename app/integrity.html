@@ -97,9 +97,14 @@
     </div>
 
     <div class="card">
-      <h2>Benford last-digit test</h2>
-      <p class="hint">Distribution of the last digit of winning-party counts. A healthy spread sits
-      near the 10% line (dashed). Sharp departures can indicate fabricated figures. <span id="benford-n"></span></p>
+      <h2>Digit-distribution screening</h2>
+      <p class="hint">Fabricated figures cluster on favourite digits; genuine counts follow known
+      distributions. Departures are screening signals — never proof on their own. <span id="benford-n"></span></p>
+      <h3 style="margin:14px 0 2px;font-size:0.95rem">First digit — Benford's law <span id="benford-verdict" class="scope-note"></span></h3>
+      <p class="hint">First digit of every party count vs Benford's expected curve (dashed).</p>
+      <div class="benford" id="benford-first"></div>
+      <h3 style="margin:18px 0 2px;font-size:0.95rem">Last digit — uniformity</h3>
+      <p class="hint">Last digit of winning-party counts. A healthy spread sits near the 10% line (dashed).</p>
       <div class="benford" id="benford"></div>
     </div>
 
@@ -131,6 +136,9 @@
         <li><strong>Over-voting</strong> — more votes than registered voters at a unit (impossible).</li>
         <li><strong>Impossible turnout</strong> — turnout above ~95%, or a strong outlier vs. its state.</li>
         <li><strong>Single-party sweep</strong> — one party taking ≥98% of a sizeable unit.</li>
+        <li><strong>Vote-share outlier</strong> — a winner's share far above its own state's distribution for that race.</li>
+        <li><strong>Neighbour divergence</strong> — a unit voting wildly unlike the rest of its own ward (≥50-point gap).</li>
+        <li><strong>Digit tests</strong> — first-digit Benford deviation and excess round numbers (…0/…5) per contest; screening signals, not proof.</li>
         <li><strong>Duplicate form serial</strong> — the same EC8A serial reported at two units.</li>
         <li><strong>Conflicting counts</strong> — independent observers at one unit disagreeing.</li>
         <li><strong>Location inconsistency</strong> — a GPS cluster far from where a unit can be.</li>
@@ -194,15 +202,29 @@
 
     async function loadBenford() {
       const b = await fetch('/api/integrity/benford').then((r) => r.json());
-      $('benford-n').textContent = `Based on ${b.n} unit result(s).`;
-      const max = Math.max(1, ...b.lastDigit.map((d) => d.observed));
-      $('benford').innerHTML = b.lastDigit.map((d) => {
-        const h = Math.round((d.observed / max) * 100);
-        const expH = Math.round((b.n * 0.1 / max) * 100);
-        return `<div style="flex:1;text-align:center">
-          <div class="bar" style="height:${h}%"><div class="exp" style="bottom:${expH}%"></div></div>
-          <div class="lbl">${d.digit}</div></div>`;
-      }).join('');
+      $('benford-n').textContent = `Based on ${b.n} unit result(s), ${b.nFirst || 0} party count(s).`;
+      const bars = (items, n) => {
+        const max = Math.max(1, ...items.map((d) => d.observed));
+        return items.map((d) => {
+          const h = Math.round((d.observed / max) * 100);
+          const expH = Math.round(((n * d.expectedPct / 100) / max) * 100);
+          return `<div style="flex:1;text-align:center">
+            <div class="bar" style="height:${h}%"><div class="exp" style="bottom:${Math.min(expH, 100)}%"></div></div>
+            <div class="lbl">${d.digit}</div></div>`;
+        }).join('');
+      };
+      $('benford').innerHTML = bars(b.lastDigit, b.n);
+      if (b.firstDigit) {
+        $('benford-first').innerHTML = bars(b.firstDigit, b.nFirst);
+        const V = {
+          insufficient_data: 'needs ≥100 counts for a verdict',
+          close_conformity: `close conformity (MAD ${b.mad})`,
+          acceptable_conformity: `acceptable conformity (MAD ${b.mad})`,
+          marginal_conformity: `marginal conformity (MAD ${b.mad})`,
+          nonconformity: `⚠ departs from Benford (MAD ${b.mad})`,
+        };
+        $('benford-verdict').textContent = '— ' + (V[b.verdict] || '');
+      }
     }
 
     async function loadIrev() {

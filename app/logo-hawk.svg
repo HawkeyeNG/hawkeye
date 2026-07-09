@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Hawkeye hawk mark">
+  <path fill="#00331e" d="M58 84 L92 46 L106 64 L124 44 L138 60 L160 66 L204 90 L190 122 L172 106 L158 144 L130 182 L94 172 L58 130 Z"/>
+  <path fill="#001309" d="M160 66 L204 90 L190 122 L172 106 Z"/>
+  <path fill="#001309" d="M134 62 L180 78 L170 92 L130 76 Z"/>
+  <path fill="#2ee59d" d="M140 88 L170 96 L142 104 Z"/>
+  <rect x="128" y="74" width="54" height="38" rx="6" fill="#2ee59d" fill-opacity="0.12" stroke="#001309" stroke-width="4"/>
+  <line x1="128" y1="86" x2="58" y2="88" stroke="#001309" stroke-width="4" stroke-linecap="round"/>
+  <line x1="182" y1="90" x2="197" y2="93" stroke="#001309" stroke-width="4" stroke-linecap="round"/>
+  <line x1="136" y1="80" x2="151" y2="80" stroke="#9fffd9" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

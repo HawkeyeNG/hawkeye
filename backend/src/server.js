@@ -142,6 +142,7 @@ app.listen(config.port, () => {
   // Cross-unit statistical forensics: run shortly after boot, then hourly.
   const forensics = () => {
     try { runForensics(); recheckCollations(); } catch (e) { console.error('[forensics]', e.message); }
+    import('./services/triage.js').then((t) => t.scanIncidentClusters()).catch((e) => console.error('[clusters]', e.message));
   };
   setTimeout(forensics, 60_000);
   setInterval(forensics, 3_600_000);

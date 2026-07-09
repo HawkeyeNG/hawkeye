@@ -41,9 +41,12 @@ adminRouter.get('/admin/incidents', requireAdmin, (req, res) => {
   const status = String(req.query.status || 'pending');
   const rows = db.prepare(`
     SELECT i.id, i.observer_id, i.kind, i.description, i.media_json, i.lat, i.lng,
-           i.pu_code, i.state, i.status, i.created_at
+           i.pu_code, i.state, i.status, i.created_at, i.ai_json
     FROM incidents i WHERE i.status = ? ORDER BY i.created_at DESC LIMIT 200`).all(status)
-    .map((r) => ({ ...r, media: JSON.parse(r.media_json), media_json: undefined }));
+    .map((r) => ({
+      ...r, media: JSON.parse(r.media_json), media_json: undefined,
+      ai: r.ai_json ? JSON.parse(r.ai_json) : null, ai_json: undefined,
+    }));
   const counts = Object.fromEntries(
     db.prepare('SELECT status, COUNT(*) AS c FROM incidents GROUP BY status').all().map((r) => [r.status, r.c]),
   );

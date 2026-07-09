@@ -105,6 +105,7 @@
           <h3>${KIND[i.kind] || i.kind}</h3>
           <div class="meta">#${i.id} · observer ${i.observer_id ?? '—'}${i.state ? ' · ' + i.state : ''}${i.pu_code ? ' · ' + i.pu_code : ''}${gps} · ${new Date(i.created_at).toLocaleString()}</div>
           ${i.description ? `<p>${i.description.replace(/</g, '&lt;')}</p>` : '<p class="meta">(no text)</p>'}
+          ${i.ai ? `<div class="meta" style="border-left:3px solid #0a5c39;padding-left:8px">🤖 AI (advisory): ${(i.ai.summary || '').replace(/</g, '&lt;')} · kind: ${i.ai.kind}${i.ai.kind !== i.kind ? ' ⚠ differs' : ''} · urgency: ${i.ai.urgency} · spam: ${i.ai.spam}</div>` : ''}
           ${media ? `<div class="m">${media}</div>` : ''}
           ${acts}
         </div>`;

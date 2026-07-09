@@ -111,6 +111,7 @@ incidentsRouter.post('/incidents', requireObserver, upload.array('media', 4), as
       Number.isFinite(lat) ? lat : null, Number.isFinite(lng) ? lng : null,
       puCode, pu?.state || null, Date.now());
 
+  import('../services/triage.js').then((t) => t.triageIncident(info.lastInsertRowid)).catch(() => {});
   notifyMaster(`🆘 incident [${kind}] from observer #${req.observer.id}${pu?.state ? ' · ' + pu.state : ''} · ${media.length} file(s) · awaiting review (#${info.lastInsertRowid})`);
   notifyChat(chatIdByHash(req.observer.phone_hash), `🆘 Your incident report was received and is under review. Thank you for helping protect the vote.`);
   res.status(201).json({ ok: true, id: info.lastInsertRowid, status: 'pending' });

@@ -6,10 +6,19 @@ import { config } from '../config.js';
 
 const API = 'https://api.anthropic.com/v1/messages';
 
-// Internal read-only calls (the origin lock also guards localhost, so stamp it).
-function ownApi(p) {
+// Read-only lookups for the tools. Try localhost first (fast path), fall back to
+// the public URL — under Passenger the app may sit on a unix socket, not a TCP
+// port, so 127.0.0.1 isn't guaranteed. All endpoints here are public data.
+async function ownApi(p) {
   const headers = config.originAuthSecret ? { 'x-origin-auth': config.originAuthSecret } : {};
-  return fetch(`http://127.0.0.1:${config.port}${p}`, { headers }).then((r) => r.json());
+  try {
+    const r = await fetch(`http://127.0.0.1:${config.port}${p}`, { headers, signal: AbortSignal.timeout(4000) });
+    if (r.ok) return await r.json();
+    throw new Error('local ' + r.status);
+  } catch {
+    const r = await fetch(`https://hawkeye.com.ng${p}`, { signal: AbortSignal.timeout(15_000) });
+    return await r.json();
+  }
 }
 
 const TOOLS = [
@@ -49,15 +58,54 @@ const SYSTEM = [
   'Be concise and factual. If asked something outside election results/coverage, briefly redirect.',
 ].join(' ');
 
-export async function askAssistant(question) {
-  if (config.anthropicApiKey) return askClaude(question);
-  if (config.assistantApiKey) return askOpenAICompat(question);
-  return { error: 'assistant_unconfigured' };
+// Free-tier provider chain: first configured provider answers; a failure or an
+// exhausted quota (429/5xx) falls through to the next. All OpenAI-compatible.
+export function providerChain() {
+  const P = [];
+  if (config.assistantApiKey) {
+    const models = [...new Set([process.env.ASSISTANT_MODEL || 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'])];
+    for (const model of models) P.push({ name: `gemini:${model}`, base: config.assistantApiBase, key: config.assistantApiKey, model });
+  }
+  if (process.env.GROQ_API_KEY) P.push({ name: 'groq', base: 'https://api.groq.com/openai/v1', key: process.env.GROQ_API_KEY, model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile' });
+  if (process.env.MISTRAL_API_KEY) P.push({ name: 'mistral', base: 'https://api.mistral.ai/v1', key: process.env.MISTRAL_API_KEY, model: process.env.MISTRAL_MODEL || 'mistral-small-latest' });
+  if (process.env.OPENROUTER_API_KEY) P.push({ name: 'openrouter', base: 'https://openrouter.ai/api/v1', key: process.env.OPENROUTER_API_KEY, model: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct:free' });
+  return P;
 }
 
-// ---- OpenAI-compatible providers (Gemini free tier by default; also Groq,
-// Mistral, OpenRouter — pick via ASSISTANT_API_BASE). Same tools, same rules.
-async function askOpenAICompat(question) {
+// One OpenAI-format chat call against a specific provider. Throws on failure so
+// the chain can fall through. Exported for other AI features (triage etc.).
+export async function chatComplete(provider, messages, { tools = null, maxTokens = 700 } = {}) {
+  const body = { model: provider.model, max_tokens: maxTokens, messages };
+  if (tools) body.tools = tools;
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`${provider.base}/chat/completions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${provider.key}` },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (res.status >= 500 && attempt === 0) { await new Promise((r) => setTimeout(r, 2500)); continue; }
+    if (!res.ok) throw new Error(`${provider.name} ${res.status}`);
+    const data = await res.json();
+    const m = data.choices?.[0]?.message;
+    if (!m) throw new Error(`${provider.name} empty`);
+    return m;
+  }
+}
+
+export async function askAssistant(question, { debug = false } = {}) {
+  if (config.anthropicApiKey) return askClaude(question);
+  const chain = providerChain();
+  if (!chain.length) return { error: 'assistant_unconfigured' };
+  const errs = [];
+  for (const provider of chain) {
+    try { return await askOpenAICompat(provider, question); }
+    catch (e) { errs.push(e.message); console.error('[assistant]', e.message); }
+  }
+  return debug ? { error: 'assistant_error', detail: errs } : { error: 'assistant_error' };
+}
+
+async function askOpenAICompat(provider, question) {
   const tools = TOOLS.map((t) => ({
     type: 'function',
     function: { name: t.name, description: t.description, parameters: t.input_schema },
@@ -67,19 +115,7 @@ async function askOpenAICompat(question) {
     { role: 'user', content: String(question || '').slice(0, 500) },
   ];
   for (let step = 0; step < 4; step++) {
-    let data;
-    try {
-      const res = await fetch(`${config.assistantApiBase}/chat/completions`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: `Bearer ${config.assistantApiKey}` },
-        body: JSON.stringify({ model: config.assistantModel, max_tokens: 700, tools, messages }),
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (!res.ok) return { error: 'assistant_error' };
-      data = await res.json();
-    } catch { return { error: 'assistant_error' }; }
-    const m = data.choices?.[0]?.message;
-    if (!m) return { error: 'assistant_error' };
+    const m = await chatComplete(provider, messages, { tools });
     messages.push(m);
     if (m.tool_calls?.length) {
       for (const tc of m.tool_calls) {
@@ -127,4 +163,4 @@ async function askClaude(question) {
   return { answer: 'That needed too many steps — try a more specific question.' };
 }
 
-export const assistantEnabled = () => Boolean(config.anthropicApiKey || config.assistantApiKey);
+export const assistantEnabled = () => Boolean(config.anthropicApiKey || providerChain().length);

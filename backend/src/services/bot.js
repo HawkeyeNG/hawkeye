@@ -136,6 +136,8 @@ async function finishTip(token, chatId, s, text, photoFileId) {
     INSERT INTO incidents (observer_id, kind, description, media_json, lat, lng, pu_code, state, status, created_at)
     VALUES (?, ?, ?, ?, NULL, NULL, NULL, NULL, 'pending', ?)`)
     .run(o?.id ?? null, s.data.kind, `[telegram tip] ${description}`.trim(), JSON.stringify(media), Date.now());
+  const tipId = db.prepare('SELECT last_insert_rowid() AS id').get().id;
+  import('./triage.js').then((t) => t.triageIncident(tipId)).catch(() => {});
   session.clear(chatId);
   return send(token, chatId, '✅ Tip received and queued for human review. If approved it appears on the public incidents page. Thank you for protecting the vote.');
 }

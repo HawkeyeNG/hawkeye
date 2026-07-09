@@ -78,7 +78,7 @@ buried in a tribunal exhibit months later.
 | **Observer missions (domestic & international)** | Corroborated coverage at a scale no deployed mission can match, plus raw data access. |
 | **INEC itself** | An independent mirror that *confirms* clean results — credibility, not opposition. |
 | **Researchers** | A permanent public dataset of unit-level results with evidence attached. |
-| **Voters before election day** | Candidate tracker, seat-composition data, polling-unit locator (109,000+ units with verified GPS), and Telegram alerts for the races they care about. |
+| **Voters before election day** | Candidate tracker, seat-composition data, polling-unit locator (128,000+ units with verified GPS), and Telegram alerts for the races they care about. |
 
 ## 4. Feature tour
 
@@ -97,10 +97,18 @@ buried in a tribunal exhibit months later.
 - **Map a Polling Unit** — crowd-verify unit GPS before election day.
 - **2027 Candidates & Political Data** — declared candidates, incumbents,
   Senate/House/governorship composition.
-- **Telegram** — the whole app runs as a Telegram Mini App (@HawkeyeNGBot):
-  OTP-free sign-in via Telegram-verified phone, plus alert subscriptions.
-- **Built for election-day reality** — offline-capable PWA, self-hosted
-  assets, CGNAT-aware rate limits, works on low-end Android.
+- **Telegram** — the whole app runs as a Telegram Mini App + hybrid command bot
+  (@HawkeyeNGBot): OTP-free sign-in via Telegram-verified phone, alert
+  subscriptions, and a chat-native `/report` that collects the polling unit and
+  vote figures in chat, then hands off to the Mini App for the live photo +
+  on-device signature (gallery uploads stay impossible).
+- **Races are labelled by cycle** ("2027 General Elections", with INEC dates —
+  Presidential/National Assembly 16 Jan 2027, Governorship/State Assembly 6 Feb
+  2027); a finished cycle archives to a per-race folder tree on the backend.
+- **Built for election-day reality** — offline-capable, **one-tap installable**
+  PWA (installs to phone home screen / desktop taskbar; native iOS/Android apps
+  are on the roadmap), self-hosted assets, CGNAT-aware rate limits, works on
+  low-end Android.
 
 ## 5. Why this points at true democracy — and a future national voting system
 

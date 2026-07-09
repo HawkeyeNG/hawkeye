@@ -99,9 +99,16 @@ buried in a tribunal exhibit months later.
   Senate/House/governorship composition.
 - **Telegram** — the whole app runs as a Telegram Mini App + hybrid command bot
   (@HawkeyeNGBot): OTP-free sign-in via Telegram-verified phone, alert
-  subscriptions, and a chat-native `/report` that collects the polling unit and
-  vote figures in chat, then hands off to the Mini App for the live photo +
-  on-device signature (gallery uploads stay impossible).
+  subscriptions, a chat-native `/report` that collects the polling unit
+  (browse-by-state selector or PU code) and vote figures in chat, then hands off
+  to the Mini App for the live photo + on-device signature (gallery uploads stay
+  impossible), and `/ask` — the results assistant in chat.
+- **AI results assistant** — a non-partisan, read-only natural-language layer over
+  the public data (floating chat on the site + `/ask` in Telegram). It answers
+  from the live tallies/coverage only, always marks figures unofficial, and never
+  declares winners. Off unless an `ANTHROPIC_API_KEY` is configured. Planned AI is
+  *advisory + explainable*: EC8A vision/forgery detection, statistical anomaly
+  flags, incident clustering — evidence for humans, never an automated verdict.
 - **Races are labelled by cycle** ("2027 General Elections", with INEC dates —
   Presidential/National Assembly 16 Jan 2027, Governorship/State Assembly 6 Feb
   2027); a finished cycle archives to a per-race folder tree on the backend.

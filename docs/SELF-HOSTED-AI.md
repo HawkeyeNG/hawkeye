@@ -5,6 +5,27 @@ per-token, and where on-prem infrastructure fits as backup/primary hosting. The
 EC8A **vision** check stays on a hosted multimodal model (Gemini) — small local
 models can't read result sheets.*
 
+## Current live wiring (2026-07-09)
+
+- **Text AI is self-hosted TODAY**: the production assistant runs on a laptop —
+  Ollama serving **qwen2.5:3b**, exposed through an **ngrok static domain**
+  (`... --host-header=localhost:11434 --url=<your-static>.ngrok-free.dev` — the
+  host-header rewrite is required or Ollama 403s; the `--url` flag pins the URL so
+  it survives restarts). Server env: `ASSISTANT_API_BASE=<tunnel>/v1`,
+  `ASSISTANT_API_KEY=ollama`, `ASSISTANT_MODEL=qwen2.5:3b`.
+- **The laptop + tunnel must be online** for the local model; when either is down
+  the chain falls back automatically per question: **Groq → Mistral → OpenRouter**
+  (keys live on the server). No downtime, just hosted free-tier answers.
+- **Gemini is dedicated to EC8A vision** via `VISION_API_*` — local 3B models
+  can't read result sheets.
+- **This is exactly why the DGX Spark matters**: the laptop setup proves the
+  architecture but is fragile (must stay awake, consumer tunnel, 3B-class brain).
+  The Spark replaces it with a 24/7 appliance running a **70B text model + a
+  Qwen2.5-VL vision model** — removing the last hosted dependency (Gemini) and the
+  free-tier data-sharing caveat entirely. Until then, prefer a **named Cloudflare
+  Tunnel** over ngrok for a permanently stable URL on our own domain
+  (e.g. `ai.hawkeye.com.ng`).
+
 ## What can run locally
 
 | Task | Local model works? | Notes |

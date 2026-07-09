@@ -8,13 +8,6 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css?v=63" />
-  <style>
-    .guide-step { background: var(--card); border: 1px solid var(--border); border-left: 5px solid var(--green); padding: 14px 16px; margin-bottom: 12px; }
-    .guide-step h3 { margin: 0 0 6px; font-size: 1rem; }
-    .guide-step p, .guide-step li { font-size: 0.95rem; }
-    .guide-step ul { margin: 6px 0 0; padding-left: 20px; }
-    .warn { border-left-color: var(--danger); }
-  </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
   <meta property="og:title" content="Hawkeye — Observer Guide" />
@@ -58,54 +51,59 @@
     polling unit.</p>
 
     <h2>Before election day</h2>
-    <div class="guide-step">
-      <h3>1. Verify your phone</h3>
+    <div class="acc-wrap">
+    <details class="acc">
+      <summary><span class="acc-num">1</span> Verify your phone</summary>
       <p>On the <a href="observe.html">report page</a>, enter your Nigerian mobile number and
       confirm the one-time code sent to you on Telegram. Do this days ahead — not in the queue.</p>
-    </div>
-    <div class="guide-step">
-      <h3>2. Map your polling unit</h3>
+    </details>
+    <details class="acc">
+      <summary><span class="acc-num">2</span> Map your polling unit</summary>
       <p>Visit your unit, open <a href="map-unit.html">Map a Polling Unit</a>, and capture its GPS
       position while standing there. Once a few people do this, the unit is geofenced for
       election day — reports for it can then only come from people actually present.</p>
-    </div>
-    <div class="guide-step">
-      <h3>3. Do a dry run</h3>
+    </details>
+    <details class="acc">
+      <summary><span class="acc-num">3</span> Do a dry run</summary>
       <p>Open the report page once on Wi-Fi so the app is cached to your phone, grant camera and
       location permission, and make sure your battery plan for the day includes the evening count.</p>
+    </details>
     </div>
 
     <h2>On election day</h2>
-    <div class="guide-step">
-      <h3>4. Stay for the count</h3>
+    <div class="acc-wrap">
+    <details class="acc">
+      <summary><span class="acc-num">4</span> Stay for the count</summary>
       <p>Voting ends, then the presiding officer counts ballots publicly and fills in the EC8A
       result sheet for each election. This — the announcement — is the moment that matters.</p>
-    </div>
-    <div class="guide-step">
-      <h3>5. Photograph the EC8A sheet</h3>
+    </details>
+    <details class="acc">
+      <summary><span class="acc-num">5</span> Photograph the EC8A sheet</summary>
       <ul>
         <li>Point the camera at the whole sheet — the scanner outlines it and captures
         automatically when steady.</li>
         <li>Good light, no glare, no fingers over the figures column.</li>
         <li>If the app warns the photo is blurry or washed out, retake it.</li>
       </ul>
-    </div>
-    <div class="guide-step">
-      <h3>6. Photograph the venue</h3>
+    </details>
+    <details class="acc">
+      <summary><span class="acc-num">6</span> Photograph the venue</summary>
       <p>A separate photo of the polling unit itself — the building, banner or surroundings.
       This lets the system confirm different observers stood at the same place.</p>
-    </div>
-    <div class="guide-step">
-      <h3>7. Enter the counts and submit immediately</h3>
+    </details>
+    <details class="acc">
+      <summary><span class="acc-num">7</span> Enter the counts and submit immediately</summary>
       <p>Type each party's announced figure exactly, then sign and submit while still at the
       unit. Photos expire if you wait, and your GPS must match where the photos were taken.
       Several elections may be counted at your unit the same day — submit one report per
       election, each with its own photos.</p>
+    </details>
     </div>
 
     <h2>The rules that keep reports honest</h2>
-    <div class="guide-step warn">
-      <h3>Hard rules — the app enforces these</h3>
+    <div class="acc-wrap">
+    <details class="acc">
+      <summary>Hard rules — the app enforces these</summary>
       <ul>
         <li>Live photos only; no gallery uploads, no screenshots.</li>
         <li>One report per election per polling unit per observer — and one per election per
@@ -113,11 +111,13 @@
         <li>Reports are permanent. Nothing can be edited or deleted after signing.</li>
         <li>Geofenced units only accept reports from people standing there.</li>
       </ul>
+    </details>
     </div>
 
     <h2>If something goes wrong</h2>
-    <div class="guide-step">
-      <h3>Troubleshooting</h3>
+    <div class="acc-wrap">
+    <details class="acc">
+      <summary>Troubleshooting</summary>
       <ul>
         <li><strong>GPS too weak</strong> — step into open sky, away from roofing, and retry.</li>
         <li><strong>No Telegram code</strong> — reopen the bot link and share your contact; the
@@ -126,6 +126,7 @@
         <li><strong>Session expired</strong> — verify your phone again; your identity and
         history are preserved.</li>
       </ul>
+    </details>
     </div>
 
     <p><a class="btn-link" href="observe.html">Ready? Verify your phone →</a></p>

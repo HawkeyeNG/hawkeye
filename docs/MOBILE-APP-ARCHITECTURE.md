@@ -4,6 +4,8 @@
 backend, add native camera / secure-key / push, and ship to both stores without a
 ground-up rewrite. Status: design only — not yet built.*
 
+> **Rendered version:** https://claude.ai/code/artifact/68f470eb-8060-42b0-86f5-d4e7213dc12e
+
 ## 1. Guiding principle — wrap, don't rewrite
 
 Hawkeye is already a PWA (installable today) whose trust model lives in the

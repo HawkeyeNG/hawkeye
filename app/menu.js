@@ -225,7 +225,8 @@
       try {
         const r = await fetch('/api/assistant', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ question: q }) });
         const j = await r.json().catch(() => ({}));
-        t.textContent = r.ok ? (j.answer || 'No answer.') : (r.status === 503 ? "The assistant isn't switched on yet." : 'Something went wrong — try again.');
+        t.textContent = j.answer
+          || (j.error === 'assistant_unconfigured' ? "The assistant isn't switched on yet." : 'Something went wrong — try again.');
       } catch { t.textContent = 'Network error — try again.'; }
       msgs.scrollTop = msgs.scrollHeight;
     });

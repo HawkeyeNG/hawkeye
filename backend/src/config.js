@@ -77,6 +77,12 @@ export const config = {
   // free vision provider. Sample fraction of submissions to stay in free quota at
   // election scale — 1 = every sheet, 0 = off.
   visionSampleRate: num('VISION_SAMPLE_RATE', 1),
+  // Dedicated vision provider (OpenAI-compatible). Set these to point EC8A vision
+  // at a self-hosted VLM (e.g. Qwen2.5-VL via Ollama/vLLM); if unset, vision falls
+  // back to the Gemini provider. Lets on-prem replace the hosted model with no code.
+  visionApiKey: process.env.VISION_API_KEY || '',
+  visionApiBase: process.env.VISION_API_BASE || '',
+  visionModel: process.env.VISION_MODEL || 'qwen2.5-vl',
   termiiSenderId: process.env.TERMII_SENDER_ID || 'N-Alert',
   termiiChannel: process.env.TERMII_CHANNEL || 'dnd',
   termiiBaseUrl: process.env.TERMII_BASE_URL || 'https://api.ng.termii.com',

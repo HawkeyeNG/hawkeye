@@ -12,7 +12,10 @@ import { logDiscrepancy } from './integrity.js';
 
 export async function analyzeSheet(jpegBuffer, { contest, votes, pu, submissionId }) {
   if (config.visionSampleRate <= 0 || Math.random() > config.visionSampleRate) return;
-  const providers = providerChain().filter((p) => p.name.startsWith('gemini')); // vision-capable
+  // Prefer a dedicated (self-hosted) VLM if configured, else the Gemini provider.
+  const providers = [];
+  if (config.visionApiKey && config.visionApiBase) providers.push({ name: 'vision', base: config.visionApiBase, key: config.visionApiKey, model: config.visionModel });
+  providers.push(...providerChain().filter((p) => p.name.startsWith('gemini')));
   if (!providers.length) return;
 
   const typed = votes.filter((v) => v.count > 0).map((v) => `${v.party}=${v.count}`).join(', ');

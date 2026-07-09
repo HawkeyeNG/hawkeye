@@ -67,6 +67,14 @@ pollingUnitsRouter.get('/register/units', (req, res) => {
   res.json({ units });
 });
 
+// Single unit by code — used by the Telegram hybrid /report handoff to prefill
+// the Mini App (chat collects PU + votes; the app does live capture + signing).
+pollingUnitsRouter.get('/register/unit', (req, res) => {
+  const u = db.prepare('SELECT * FROM polling_units WHERE pu_code = ?').get(String(req.query.pu_code || '').trim());
+  if (!u) return res.status(404).json({ error: 'unknown_unit' });
+  res.json({ unit: { ...u, locationTier: tierOf(u) } });
+});
+
 // Register size vs geofence coverage — how much of the country is reportable, by tier.
 pollingUnitsRouter.get('/coverage', (_req, res) => {
   const total = db.prepare('SELECT COUNT(*) AS c FROM polling_units').get().c;

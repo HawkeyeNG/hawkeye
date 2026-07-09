@@ -125,6 +125,12 @@
       <div id="glance" class="glance"><p class="meta">Charts appear as soon as reports arrive.</p></div>
     </div>
 
+    <div class="card" id="gaps-card" hidden>
+      <h2>Help cover these states</h2>
+      <p class="hint">No crowd report has landed here yet for this election. If you're voting or observing in one of these states, you can be the first. <a href="observe.html?intent=observe">Become an observer →</a></p>
+      <div id="gaps" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+    </div>
+
     <div class="card">
       <h2>Party totals</h2>
       <table>
@@ -313,8 +319,20 @@
         <div><p class="hint" style="margin:0 0 6px">Most-reporting ${word}s (units)</p>${bars}</div>`;
     }
 
+    async function loadGaps(contest) {
+      try {
+        const g = await fetch(`/api/coverage/gaps?contest=${contest}`).then((r) => r.json());
+        const card = document.getElementById('gaps-card');
+        if (!g.missing || !g.missing.length) { card.hidden = true; return; }
+        document.getElementById('gaps').innerHTML = g.missing.map((s) =>
+          `<span style="font-size:.85rem;padding:5px 11px;border-radius:999px;background:#eef5f0;border:1px solid #d7e1d9;color:#0a5c39">${s}</span>`).join('');
+        card.hidden = false;
+      } catch { /* non-critical */ }
+    }
+
     async function refresh() {
       const contest = document.getElementById('sel-contest').value || 'PRES';
+      loadGaps(contest);
       const data = await fetch(`/api/national/${contest}`).then((r) => r.json());
       const word = REGION_WORD[data.level] || 'region';
       // Populate the follow-scope picker with the regions for this contest.

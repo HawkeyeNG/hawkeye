@@ -71,8 +71,14 @@ const SYSTEM = [
 export function providerChain() {
   const P = [];
   if (config.assistantApiKey) {
-    const models = [...new Set([process.env.ASSISTANT_MODEL || 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'])];
-    for (const model of models) P.push({ name: `gemini:${model}`, base: config.assistantApiBase, key: config.assistantApiKey, model });
+    // Gemini free tier gets a model-fallback list; any other OpenAI-compatible
+    // base (a self-hosted Ollama box, etc.) uses ASSISTANT_MODEL as-is.
+    const isGemini = /generativelanguage\.googleapis\.com/.test(config.assistantApiBase);
+    const models = isGemini
+      ? [...new Set([process.env.ASSISTANT_MODEL || 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'])]
+      : [process.env.ASSISTANT_MODEL || 'llama3.2'];
+    const label = isGemini ? 'gemini' : 'assistant';
+    for (const model of models) P.push({ name: `${label}:${model}`, base: config.assistantApiBase, key: config.assistantApiKey, model });
   }
   if (process.env.GROQ_API_KEY) P.push({ name: 'groq', base: 'https://api.groq.com/openai/v1', key: process.env.GROQ_API_KEY, model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile' });
   if (process.env.MISTRAL_API_KEY) P.push({ name: 'mistral', base: 'https://api.mistral.ai/v1', key: process.env.MISTRAL_API_KEY, model: process.env.MISTRAL_MODEL || 'mistral-small-latest' });

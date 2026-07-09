@@ -75,6 +75,10 @@ Rejected alternatives:
   - The ledger + Rekor anchoring are storage-agnostic and port unchanged.
 - This is a *scale* migration, decoupled from the mobile build — the app ships
   against GO54 first and points at the scaled backend later by base-URL swap.
+- **On-prem option:** a self-owned physical server can host the full stack as a
+  hot backup (or eventually the primary), co-located with a local Ollama box for
+  free on-prem text AI — independence from any single host, can't be deplatformed.
+  Setup + hardware costs: [Self-Hosted AI](SELF-HOSTED-AI.md).
 
 ## 5. App Store (Apple) implications
 

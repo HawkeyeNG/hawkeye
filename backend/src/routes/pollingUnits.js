@@ -75,6 +75,19 @@ pollingUnitsRouter.get('/register/unit', (req, res) => {
   res.json({ unit: { ...u, locationTier: tierOf(u) } });
 });
 
+// Reporting gaps: states with NO crowd report yet for a contest — where observers
+// are still needed. Drives the "help cover these" nudge and the assistant tool.
+pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
+  const contest = String(req.query.contest || 'PRES').toUpperCase();
+  const all = db.prepare('SELECT DISTINCT state FROM polling_units ORDER BY state').all().map((r) => r.state);
+  const reported = new Set(
+    db.prepare(`SELECT DISTINCT p.state AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ?`)
+      .all(contest).map((r) => r.s),
+  );
+  const missing = all.filter((s) => !reported.has(s));
+  res.json({ contest, statesTotal: all.length, statesReported: reported.size, missing });
+});
+
 // Register size vs geofence coverage — how much of the country is reportable, by tier.
 pollingUnitsRouter.get('/coverage', (_req, res) => {
   const total = db.prepare('SELECT COUNT(*) AS c FROM polling_units').get().c;

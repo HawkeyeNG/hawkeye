@@ -37,6 +37,11 @@ const TOOLS = [
     description: 'Look up one polling unit by its code, e.g. 25-01-05-012 (state-LGA-ward-unit).',
     input_schema: { type: 'object', properties: { pu_code: { type: 'string' } }, required: ['pu_code'] },
   },
+  {
+    name: 'coverage_gaps',
+    description: 'Which states have NO crowd reports yet for a contest (PRES,SEN,REP,GOV,SHA) — where observers are still needed.',
+    input_schema: { type: 'object', properties: { contest: { type: 'string' } }, required: ['contest'] },
+  },
 ];
 
 async function runTool(name, input) {
@@ -44,6 +49,7 @@ async function runTool(name, input) {
     if (name === 'national_results') return await ownApi('/api/national/' + encodeURIComponent(String(input.contest || 'PRES').toUpperCase()));
     if (name === 'coverage') return await ownApi('/api/coverage');
     if (name === 'polling_unit') return await ownApi('/api/register/unit?pu_code=' + encodeURIComponent(String(input.pu_code || '')));
+    if (name === 'coverage_gaps') return await ownApi('/api/coverage/gaps?contest=' + encodeURIComponent(String(input.contest || 'PRES').toUpperCase()));
   } catch { return { error: 'lookup_failed' }; }
   return { error: 'unknown_tool' };
 }
@@ -56,6 +62,8 @@ const SYSTEM = [
   'Always make clear that figures are crowd-reported and unofficial. Never predict or declare a',
   'winner, never give partisan or campaign commentary, never speculate beyond the numbers.',
   'Be concise and factual. If asked something outside election results/coverage, briefly redirect.',
+  'Reply in the SAME language the user wrote in — support English, Hausa, Yoruba, Igbo and Nigerian Pidgin.',
+  'When someone asks how to help or where coverage is thin, use coverage_gaps and point them to under-covered states.',
 ].join(' ');
 
 // Free-tier provider chain: first configured provider answers; a failure or an

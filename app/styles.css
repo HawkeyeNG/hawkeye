@@ -429,12 +429,13 @@ button.menu-btn:hover { background: rgba(255, 255, 255, 0.12); filter: none; }
   text-align: center;
   padding: 12px;
   margin: 8px 0;
-  background: #2aabee;
+  background: var(--green);
   color: #fff;
   font-weight: 700;
   border-radius: 10px;
   text-decoration: none;
 }
+.btn-link:hover { filter: brightness(1.08); }
 .party-mark.mono {
   display: inline-flex; align-items: center; justify-content: center;
   background: #546e7a; color: #fff; font-size: 0.6rem; font-weight: 700;

@@ -158,10 +158,50 @@ function startReport(token, chatId) {
       LEFT JOIN polling_units p ON p.pu_code = s.pu_code WHERE s.observer_id = ?`).get(o.id);
     if (su) kb.push([{ text: `⭐ ${su.name || su.pu_code}`, callback_data: 'rep:usesaved' }]);
   }
+  kb.push([{ text: '🔎 Browse by state → unit', callback_data: 'rp:browse' }]);
   return send(token, chatId,
-    '📋 Report a polling-unit result.\n\nWhich unit? Send its <b>PU code</b> (e.g. <code>25-01-05-012</code>) — /mapunit shows yours if unsure.'
-    + (kb.length ? '\n\nOr tap your saved unit:' : ''),
-    kb.length ? { reply_markup: { inline_keyboard: kb } } : {});
+    '📋 Report a polling-unit result.\n\nWhich unit? Tap <b>Browse</b> to pick it from a list, or send its <b>PU code</b> (e.g. <code>25-01-05-012</code>) — /mapunit shows yours if unsure.'
+    + (kb.length > 1 ? '\n\nYour saved unit:' : ''),
+    { reply_markup: { inline_keyboard: kb } });
+}
+
+// Register-browse keyboards. A tall grid scrolls in the chat, so most lists show
+// in full; pagination kicks in only for very long ones (big wards).
+const editKb = (token, chatId, msgId, text, kb) =>
+  tgApi(token, 'editMessageText', { chat_id: chatId, message_id: msgId, text, parse_mode: 'HTML', reply_markup: kb });
+const reg = (path) => ownApi(path);
+function pagedKb(items, sel, nav, pageNo) {
+  const PAGE = 30, start = pageNo * PAGE, slice = items.slice(start, start + PAGE), rows = [];
+  for (let i = 0; i < slice.length; i += 2) {
+    const row = [];
+    for (let j = i; j < i + 2 && j < slice.length; j++) {
+      const abs = start + j, t = items[abs];
+      row.push({ text: t.length > 26 ? t.slice(0, 25) + '…' : t, callback_data: `${sel}:${abs}` });
+    }
+    rows.push(row);
+  }
+  const tp = Math.ceil(items.length / PAGE);
+  if (tp > 1) {
+    const n = [];
+    if (pageNo > 0) n.push({ text: '◀', callback_data: `${nav}:${pageNo - 1}` });
+    n.push({ text: `${pageNo + 1}/${tp}`, callback_data: 'rp:noop' });
+    if (pageNo < tp - 1) n.push({ text: '▶', callback_data: `${nav}:${pageNo + 1}` });
+    rows.push(n);
+  }
+  return { inline_keyboard: rows };
+}
+function puKb(units, pageNo) {
+  const PAGE = 8, start = pageNo * PAGE, slice = units.slice(start, start + PAGE);
+  const rows = slice.map((u) => [{ text: (u.name || u.pu_code).slice(0, 48), callback_data: `rp:pu:${u.pu_code}` }]);
+  const tp = Math.ceil(units.length / PAGE);
+  if (tp > 1) {
+    const n = [];
+    if (pageNo > 0) n.push({ text: '◀', callback_data: `rp:pup:${pageNo - 1}` });
+    n.push({ text: `${pageNo + 1}/${tp}`, callback_data: 'rp:noop' });
+    if (pageNo < tp - 1) n.push({ text: '▶', callback_data: `rp:pup:${pageNo + 1}` });
+    rows.push(n);
+  }
+  return { inline_keyboard: rows };
 }
 
 async function reportSetPu(token, chatId, code) {
@@ -225,6 +265,51 @@ export async function handleUpdate(update, token) {
       }
       return true;
     }
+    // ---- browse cascade: state -> LGA -> ward -> unit, all editing one message ----
+    const msgId = cb.message.message_id;
+    const bData = () => (session.get(chatId) || { data: {} }).data;
+    if (cb.data === 'rp:noop') return true;
+    if (cb.data === 'rp:browse') {
+      session.set(chatId, 'report', 'browse', {});
+      await editKb(token, chatId, msgId, 'Pick a <b>state</b>:', pagedKb(await reg('/api/register/states'), 'rp:st', 'rp:stp', 0));
+      return true;
+    }
+    let m = /^rp:stp:(\d+)$/.exec(cb.data);
+    if (m) { await editKb(token, chatId, msgId, 'Pick a <b>state</b>:', pagedKb(await reg('/api/register/states'), 'rp:st', 'rp:stp', +m[1])); return true; }
+    m = /^rp:st:(\d+)$/.exec(cb.data);
+    if (m) {
+      const state = (await reg('/api/register/states'))[+m[1]];
+      session.set(chatId, 'report', 'browse', { ...bData(), bState: state });
+      const lgas = await reg('/api/register/lgas?state=' + encodeURIComponent(state));
+      await editKb(token, chatId, msgId, `State: <b>${state}</b>\nPick an <b>LGA</b>:`, pagedKb(lgas, 'rp:lg', 'rp:lgp', 0));
+      return true;
+    }
+    m = /^rp:lgp:(\d+)$/.exec(cb.data);
+    if (m) { const d = bData(); await editKb(token, chatId, msgId, `State: <b>${d.bState}</b>\nPick an <b>LGA</b>:`, pagedKb(await reg('/api/register/lgas?state=' + encodeURIComponent(d.bState)), 'rp:lg', 'rp:lgp', +m[1])); return true; }
+    m = /^rp:lg:(\d+)$/.exec(cb.data);
+    if (m) {
+      const d = bData();
+      const lga = (await reg('/api/register/lgas?state=' + encodeURIComponent(d.bState)))[+m[1]];
+      session.set(chatId, 'report', 'browse', { ...d, bLga: lga });
+      const wards = await reg(`/api/register/wards?state=${encodeURIComponent(d.bState)}&lga=${encodeURIComponent(lga)}`);
+      await editKb(token, chatId, msgId, `${d.bState} · <b>${lga}</b>\nPick a <b>ward</b>:`, pagedKb(wards, 'rp:wd', 'rp:wdp', 0));
+      return true;
+    }
+    m = /^rp:wdp:(\d+)$/.exec(cb.data);
+    if (m) { const d = bData(); await editKb(token, chatId, msgId, `${d.bState} · <b>${d.bLga}</b>\nPick a <b>ward</b>:`, pagedKb(await reg(`/api/register/wards?state=${encodeURIComponent(d.bState)}&lga=${encodeURIComponent(d.bLga)}`), 'rp:wd', 'rp:wdp', +m[1])); return true; }
+    m = /^rp:wd:(\d+)$/.exec(cb.data);
+    if (m) {
+      const d = bData();
+      const ward = (await reg(`/api/register/wards?state=${encodeURIComponent(d.bState)}&lga=${encodeURIComponent(d.bLga)}`))[+m[1]];
+      session.set(chatId, 'report', 'browse', { ...d, bWard: ward });
+      const { units } = await reg(`/api/register/units?state=${encodeURIComponent(d.bState)}&lga=${encodeURIComponent(d.bLga)}&ward=${encodeURIComponent(ward)}`);
+      await editKb(token, chatId, msgId, `${d.bLga} · <b>${ward}</b> ward\nPick your <b>polling unit</b>:`, puKb(units, 0));
+      return true;
+    }
+    m = /^rp:pup:(\d+)$/.exec(cb.data);
+    if (m) { const d = bData(); const { units } = await reg(`/api/register/units?state=${encodeURIComponent(d.bState)}&lga=${encodeURIComponent(d.bLga)}&ward=${encodeURIComponent(d.bWard)}`); await editKb(token, chatId, msgId, `${d.bLga} · <b>${d.bWard}</b> ward\nPick your <b>polling unit</b>:`, puKb(units, +m[1])); return true; }
+    m = /^rp:pu:(.+)$/.exec(cb.data);
+    if (m) { await reportSetPu(token, chatId, m[1]); return true; }
     const kind = /^tip:kind:(\w+)$/.exec(cb.data || '')?.[1];
     if (kind && KIND_LABEL[kind]) {
       session.set(chatId, 'tip', 'content', { kind });

@@ -181,8 +181,12 @@ function contestScope(u, contest) {
 function updateScopeNotice() {
   if (!selectedPu) return;
   const contest = $('sel-contest').value;
+  const c = contests.find((x) => x.code === contest);
+  const when = c?.date
+    ? ` · ${new Date(c.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
+    : '';
   $('contest-scope').textContent = contest
-    ? `You are reporting: ${contestScope(selectedPu, contest)}`
+    ? `You are reporting: ${contestScope(selectedPu, contest)}${c?.election ? ` — ${c.election}${when}` : ''}`
     : 'Choose which election you are reporting before continuing.';
 }
 

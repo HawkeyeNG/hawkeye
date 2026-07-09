@@ -6,10 +6,11 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Router } from 'express';
-import { db } from '../db.js';
+import { db, contests } from '../db.js';
 import { config } from '../config.js';
 import { notifyMaster, notifyUnitSavers } from '../services/notify.js';
 import { runAnchor } from '../services/anchor.js';
+import { raceKey, contestScope } from '../services/scope.js';
 
 export const adminRouter = Router();
 
@@ -99,6 +100,60 @@ adminRouter.post('/admin/coords/load', requireAdmin, async (req, res) => {
   const total = db.prepare('SELECT COUNT(*) AS c FROM polling_units').get().c;
   notifyMaster(`📍 coords loaded: ${attached} attached (${unmatched} unmatched, ${invalid} invalid) — ${geocoded}/${total} geocoded`);
   res.json({ ok: true, attached, unmatched, invalid, geocoded, total });
+});
+
+// Archive a finished election cycle to a browsable folder tree:
+//   storage/elections/<election>/<race-type>/<race>/results.json
+// One folder per election (e.g. 2027-general-elections), a subfolder per race
+// type (presidential, senate, ...), a folder per specific race (raceKey-derived),
+// each holding the race's consensus results, every underlying signed submission
+// (with its ledger hashes), and the latest anchor for provenance. Idempotent —
+// re-running overwrites with current data.
+adminRouter.post('/admin/archive-election', requireAdmin, (req, res) => {
+  const slug = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const election = String(req.body?.election || contests[0]?.election || 'election');
+  const root = path.join(path.dirname(config.dbPath), 'elections', slug(election));
+  const typeName = Object.fromEntries(contests.map((c) => [c.code, c.name]));
+  const dateOf = Object.fromEntries(contests.map((c) => [c.code, c.date || null]));
+  const byRace = new Map();
+  const bucket = (pu, contest) => {
+    const key = raceKey(pu, contest);
+    if (!key) return null;
+    let b = byRace.get(key);
+    if (!b) { b = { contest, scope: contestScope(pu, contest), results: [], submissions: [] }; byRace.set(key, b); }
+    return b;
+  };
+  const P = 'p.state, p.senatorial, p.federal_constituency, p.lga';
+  for (const r of db.prepare(`SELECT r.*, ${P} FROM results r JOIN polling_units p ON p.pu_code = r.pu_code`).all()) {
+    const b = bucket(r, r.contest);
+    if (b) b.results.push({ pu_code: r.pu_code, votes: JSON.parse(r.votes_json), confidence: r.confidence, status: r.status, location_status: r.location_status });
+  }
+  for (const s of db.prepare(`SELECT s.*, ${P} FROM submissions s JOIN polling_units p ON p.pu_code = s.pu_code`).all()) {
+    const b = bucket(s, s.contest);
+    if (b) b.submissions.push({ id: s.id, pu_code: s.pu_code, observer_id: s.observer_id, votes: JSON.parse(s.votes_json), image_sha256: s.image_sha256, venue_image_sha256: s.venue_image_sha256, prev_hash: s.prev_hash, entry_hash: s.entry_hash, created_at: s.created_at });
+  }
+  const a = db.prepare('SELECT * FROM anchors ORDER BY id DESC LIMIT 1').get() || {};
+  const anchor = { head: a.head_hash || null, racesRoot: a.races_root ?? null, rekorLogIndex: a.rekor_log_index ?? null, rekorUuid: a.rekor_uuid ?? null };
+  let files = 0;
+  for (const [key, b] of byRace) {
+    const race = key === 'PRES' ? 'national' : slug(key.split('|').slice(1).join(' '));
+    const dir = path.join(root, slug(typeName[b.contest] || b.contest), race);
+    fs.mkdirSync(dir, { recursive: true });
+    const totals = {};
+    for (const r of b.results) for (const v of r.votes) totals[v.party] = (totals[v.party] || 0) + v.count;
+    fs.writeFileSync(path.join(dir, 'results.json'), JSON.stringify({
+      election, contest: b.contest, contestName: typeName[b.contest] || b.contest,
+      electionDate: dateOf[b.contest], raceKey: key, scope: b.scope, totals,
+      unitsReporting: b.results.length, results: b.results, submissions: b.submissions,
+      anchor, archivedAt: new Date().toISOString(),
+    }, null, 1));
+    files++;
+  }
+  fs.mkdirSync(root, { recursive: true });
+  fs.writeFileSync(path.join(root, 'index.json'), JSON.stringify(
+    { election, races: files, generatedAt: new Date().toISOString(), anchor }, null, 1));
+  notifyMaster(`🗃️ election archived: ${election} — ${files} race folder(s)`);
+  res.json({ ok: true, election, races: files });
 });
 
 // Pull an already-published incident back off the public feed (test posts,

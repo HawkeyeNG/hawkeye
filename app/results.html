@@ -7,7 +7,7 @@
   <title>Hawkeye — National Results Leaderboard (Unofficial)</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=88" />
+  <link rel="stylesheet" href="styles.css?v=90" />
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
     /* Stears-style: regions awaiting reports are neutral grey; reporting regions green-tinted */
@@ -30,7 +30,7 @@
     .toolbar label { margin: 0 0 4px; }
     .toolbar select { width: auto; min-width: 260px; }
     .unofficial {
-      background: #fbeaea; border-left: 6px solid var(--danger);
+      background: var(--tint-danger); border-left: 6px solid var(--danger);
       padding: 12px 14px; font-size: 0.92rem; margin: 16px 0;
     }
     .updated { color: var(--muted); font-size: 0.82rem; }
@@ -38,10 +38,10 @@
     .glance { display: grid; grid-template-columns: 200px 1fr; gap: 26px; align-items: center; }
     @media (max-width: 620px) { .glance { grid-template-columns: 1fr; } }
     .gdonut { width: 170px; height: 170px; border-radius: 50%; position: relative; margin: 0 auto; }
-    .gdonut::after { content: attr(data-label); position: absolute; inset: 38px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.72rem; color: var(--muted); padding: 12px; }
+    .gdonut::after { content: attr(data-label); position: absolute; inset: 38px; background: var(--card); border-radius: 50%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.72rem; color: var(--muted); padding: 12px; }
     .gbar-row { display: grid; grid-template-columns: 110px 1fr 46px; gap: 8px; align-items: center; font-size: 0.82rem; margin: 5px 0; }
     .gbar-row .tr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .gbar { height: 14px; border-radius: 999px; background: #eef2ef; overflow: hidden; }
+    .gbar { height: 14px; border-radius: 999px; background: var(--code-bg); overflow: hidden; }
     .gbar > i { display: block; height: 100%; background: var(--green); border-radius: 999px; }
     .gbar-row b { text-align: right; font-size: 0.78rem; }
     .glegend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8rem; color: var(--muted); margin-top: 8px; justify-content: center; }
@@ -76,6 +76,7 @@
         <a href="dashboard.html">Unit Reports Log</a>
         <a href="ledger.html">Verify the Ledger</a>
         <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
         <a href="map-unit.html">Map a Polling Unit</a>
         <a href="incidents.html">Report an Incident</a>
         <a href="candidates.html">2027 Candidates</a>
@@ -325,7 +326,7 @@
         const card = document.getElementById('gaps-card');
         if (!g.missing || !g.missing.length) { card.hidden = true; return; }
         document.getElementById('gaps').innerHTML = g.missing.map((s) =>
-          `<span style="font-size:.85rem;padding:5px 11px;border-radius:999px;background:#eef5f0;border:1px solid #d7e1d9;color:#0a5c39">${s}</span>`).join('');
+          `<span style="font-size:.85rem;padding:5px 11px;border-radius:999px;background:var(--tint);border:1px solid var(--border);color:var(--link)">${s}</span>`).join('');
         card.hidden = false;
       } catch { /* non-critical */ }
     }
@@ -391,7 +392,7 @@
         : 'Could not set up following — make sure your phone is verified.';
     };
   </script>
-  <script src="tg.js?v=88"></script>
-  <script src="menu.js?v=88"></script>
+  <script src="tg.js?v=90"></script>
+  <script src="menu.js?v=90"></script>
 </body>
 </html>

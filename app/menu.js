@@ -54,7 +54,7 @@
   // "Take part" is hidden on desktop (≥900px) — its links live in the header there.
   const GROUPS = [
     ['Take part', ['observe.html', 'collation.html', 'incidents.html', 'map-unit.html'], 'tp'],
-    ['Trust & verify', ['ledger.html', 'integrity.html']],
+    ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html']],
     ['Live data', ['results.html', 'dashboard.html', 'candidates.html', 'political.html']],
   ];
   if (panel && !panel.querySelector('.menu-group')) {

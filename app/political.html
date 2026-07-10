@@ -7,7 +7,7 @@
   <title>Hawkeye — Political Data</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=88" />
+  <link rel="stylesheet" href="styles.css?v=90" />
   <style>
     .map-card svg { width: 100%; height: auto; }
     .st { stroke: #fff; stroke-width: 1; }
@@ -21,7 +21,7 @@
     .legend i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
     /* 2027 race cards */
     .cand-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 14px; margin-top: 10px; }
-    .cand { border: 1px solid var(--line); border-top: 4px solid var(--pc, #9aa7a0); border-radius: 12px; padding: 14px; background: #fff; }
+    .cand { border: 1px solid var(--line); border-top: 4px solid var(--pc, #9aa7a0); border-radius: 12px; padding: 14px; background: var(--card); }
     .cand .row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .cand .av { width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--pc, #9aa7a0); color: #fff; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
     .cand h3 { margin: 0; font-size: 1rem; }
@@ -32,12 +32,12 @@
     .comp-row { margin: 16px 0 4px; display: flex; gap: 16px; align-items: center; }
     .comp-main { flex: 1; min-width: 0; }
     .donut { width: 62px; height: 62px; flex: none; border-radius: 50%; position: relative; }
-    .donut::after { content: ''; position: absolute; inset: 15px; background: #fff; border-radius: 50%; }
+    .donut::after { content: ''; position: absolute; inset: 15px; background: var(--card); border-radius: 50%; }
     @media (max-width: 560px) { .donut { display: none; } }
     .comp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
     .comp-head strong { font-size: 0.97rem; }
     .comp-head span { font-size: 0.78rem; color: var(--muted); }
-    .comp-bar { display: flex; height: 26px; border-radius: 7px; overflow: hidden; margin-top: 6px; background: #eef2ef; }
+    .comp-bar { display: flex; height: 26px; border-radius: 7px; overflow: hidden; margin-top: 6px; background: var(--code-bg); }
     .comp-bar i { display: block; height: 100%; }
     .comp-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 0.8rem; color: var(--muted); }
     .comp-legend b { color: var(--ink); }
@@ -66,6 +66,7 @@
         <a href="dashboard.html">Unit Reports Log</a>
         <a href="ledger.html">Verify the Ledger</a>
         <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
         <a href="map-unit.html">Map a Polling Unit</a>
         <a href="incidents.html">Report an Incident</a>
         <a href="candidates.html">2027 Candidates</a>
@@ -85,7 +86,7 @@
     <p class="lede">The parties currently in power — the incumbents this election will confirm or
     unseat. Governing party shown per state; hover for details.</p>
     <p class="scope-note" id="prez"></p>
-    <p class="unofficial" id="provisional" style="background:#fff8e1;border-left:6px solid #f9a825;padding:10px;font-size:0.85rem"></p>
+    <p class="unofficial" id="provisional" style="background:#fff8e1;border-left:6px solid #f9a825;padding:10px;font-size:0.85rem;color:#5f4200"></p>
 
     <div class="card">
       <h2>The 2027 Presidential Race</h2>
@@ -208,7 +209,7 @@
       }
     })();
   </script>
-  <script src="tg.js?v=88"></script>
-  <script src="menu.js?v=88"></script>
+  <script src="tg.js?v=90"></script>
+  <script src="menu.js?v=90"></script>
 </body>
 </html>

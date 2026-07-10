@@ -8,7 +8,7 @@
   <title>Hawkeye — Election Integrity</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=88" />
+  <link rel="stylesheet" href="styles.css?v=90" />
   <style>
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
     .stat { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--green); padding: 14px; }
@@ -24,9 +24,9 @@
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e6e6e5; vertical-align: top; }
     th { border-bottom: 2px solid var(--ink); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
     .sev { font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; white-space: nowrap; }
-    .sev.high { background: #fbeaea; color: var(--danger); }
-    .sev.medium { background: #fff3e0; color: #b45309; }
-    .sev.low { background: #eef5f0; color: var(--green-dark); }
+    .sev.high { background: var(--tint-danger); color: var(--danger); }
+    .sev.medium { background: var(--tint-warn); color: #b45309; }
+    .sev.low { background: var(--tint); color: var(--link); }
     .type-tag { font-weight: 700; }
     .benford { display: flex; align-items: flex-end; gap: 6px; height: 120px; margin-top: 10px; }
     .benford .bar { flex: 1; background: var(--green); position: relative; min-height: 2px; }
@@ -58,6 +58,7 @@
         <a href="dashboard.html">Unit Reports Log</a>
         <a href="ledger.html">Verify the Ledger</a>
         <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
         <a href="map-unit.html">Map a Polling Unit</a>
         <a href="incidents.html">Report an Incident</a>
         <a href="candidates.html">2027 Candidates</a>
@@ -154,8 +155,8 @@
     <p>Automated flags aid scrutiny; they are not proof of fraud. Official results remain INEC's.</p>
   </div></footer>
 
-  <script src="tg.js?v=88"></script>
-  <script src="menu.js?v=88"></script>
+  <script src="tg.js?v=90"></script>
+  <script src="menu.js?v=90"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const TYPE_LABEL = {

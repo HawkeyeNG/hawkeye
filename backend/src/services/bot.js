@@ -228,7 +228,7 @@ function pagedKb(items, sel, nav, pageNo) {
   return { inline_keyboard: rows };
 }
 function puKb(units, pageNo) {
-  const PAGE = 8, start = pageNo * PAGE, slice = units.slice(start, start + PAGE);
+  const PAGE = 15, start = pageNo * PAGE, slice = units.slice(start, start + PAGE);
   const rows = slice.map((u) => [{ text: (u.name || u.pu_code).slice(0, 48), callback_data: `rp:pu:${u.pu_code}` }]);
   const tp = Math.ceil(units.length / PAGE);
   if (tp > 1) {

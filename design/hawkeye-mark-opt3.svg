@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 32 400 392">
+  <g>
+    <rect x="64"  y="136" width="352" height="48"  rx="4" fill="#13221B"/>
+    <rect x="80"  y="184" width="320" height="216" rx="4" fill="#13221B"/>
+    <rect x="208" y="56"  width="64"  height="104" rx="6"  fill="#008751"/>
+    <path d="M224 100 l12 12 l22 -26" fill="none" stroke="#F5F3EC" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="184" y="152" width="112" height="16" rx="8" fill="#F5F3EC"/>
+    <rect x="208" y="152" width="64"  height="16" fill="#008751"/>
+    
+    <g>
+    <clipPath id="eyeL"><path d="M114 278 L 222 306 Q 158 342 114 278 Z"/></clipPath>
+    <path d="M114 278 L 222 306 Q 158 342 114 278 Z" fill="#F5F3EC"/>
+    <g clip-path="url(#eyeL)">
+      <circle cx="178" cy="304" r="17" fill="#008751"/>
+      <circle cx="178" cy="304" r="8"  fill="#13221B"/>
+      <circle cx="183" cy="299" r="3.2" fill="#F5F3EC"/>
+    </g>
+  </g>
+    <g transform="translate(480,0) scale(-1,1)">
+    <clipPath id="eyeR"><path d="M114 278 L 222 306 Q 158 342 114 278 Z"/></clipPath>
+    <path d="M114 278 L 222 306 Q 158 342 114 278 Z" fill="#F5F3EC"/>
+    <g clip-path="url(#eyeR)">
+      <circle cx="178" cy="304" r="17" fill="#008751"/>
+      <circle cx="178" cy="304" r="8"  fill="#13221B"/>
+      <circle cx="183" cy="299" r="3.2" fill="#F5F3EC"/>
+    </g>
+  </g>
+  </g></svg>

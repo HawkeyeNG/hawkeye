@@ -70,6 +70,30 @@ function markHawk(fg, accent, bg) {
     <path d="M226 254 Q 240 247 254 254 Q 257 282 243 302 Q 240 310 236 301 Q 225 278 226 254 Z" fill="${LGREEN}"/>`);
 }
 
+// ---- option 3: hawk EYES inside the box — no bird, just the glare ----------
+// The box itself watches. Two almond raptor eyes under heavy angled brows that
+// knit down toward the center; green irises, box-colored pupils, a pinprick
+// glint. Nothing else — the menace is in the geometry, not in ornament.
+function hawkEye(mirror, fg, accent, bg) {
+  // Hooded raptor eye: the upper lid IS the brow — one straight slash from the
+  // high outer corner down to the low inner corner, curved lower lid, iris
+  // clipped under the hood. Left eye drawn; mirror=true flips around x=240.
+  const id = mirror ? 'eyeR' : 'eyeL';
+  const g = mirror ? `<g transform="translate(480,0) scale(-1,1)">` : '<g>';
+  return `${g}
+    <clipPath id="${id}"><path d="M114 278 L 222 306 Q 158 342 114 278 Z"/></clipPath>
+    <path d="M114 278 L 222 306 Q 158 342 114 278 Z" fill="${bg}"/>
+    <g clip-path="url(#${id})">
+      <circle cx="178" cy="304" r="17" fill="${accent}"/>
+      <circle cx="178" cy="304" r="8"  fill="${fg}"/>
+      <circle cx="183" cy="299" r="3.2" fill="${bg}"/>
+    </g>
+  </g>`;
+}
+const markEyes = (fg, accent, bg) => box(fg, accent, bg, `
+    ${hawkEye(false, fg, accent, bg)}
+    ${hawkEye(true, fg, accent, bg)}`);
+
 // ---- presentation sheet -----------------------------------------------------
 const mono = `font-family="Geist Mono"`;
 const tile = (x, label, fgTile, m) => `
@@ -127,6 +151,16 @@ async function emit(mark, tag, fig, sub, construction) {
     .png().toFile(path.join(OUT, `hawkeye-mark-sheet-${tag}.png`));
 }
 
+const conEyes = `${conBase}
+    <circle cx="328" cy="413" r="66"/>
+    <circle cx="472" cy="413" r="66"/>
+    <line x1="274" y1="536" x2="274" y2="552"/>
+    <line x1="382" y1="536" x2="382" y2="552"/>
+    <line x1="274" y1="546" x2="382" y2="546"/>
+  </g>
+  <text x="328" y="572" ${mono} font-size="8" letter-spacing="1.5" fill="${INK}" fill-opacity="0.5" text-anchor="middle">108</text>`;
+
 await emit(markBinos, 'opt1', 'FIG. 01 — THE WITNESS SEAL', 'BALLOT × BINOCULAR', conBinos);
 await emit(markHawk, 'opt2', 'FIG. 02 — THE WITNESS SEAL', 'BALLOT × HAWK', conHawk);
+await emit(markEyes, 'opt3', 'FIG. 03 — THE WITNESS SEAL', 'BALLOT × HAWK EYES', conEyes);
 console.log('done', OUT);

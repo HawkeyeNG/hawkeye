@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="The Hawkeye Public Docket — flagged results re-verified by the crowd, on the public record." />
+  <title>Hawkeye — Public Docket</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css?v=88" />
+  <style>
+    .case { background: var(--card); border: 1px solid var(--border); border-left: 5px solid var(--danger); padding: 14px; margin: 10px 0; display: block; color: inherit; text-decoration: none; }
+    .case:hover { border-color: var(--green); }
+    .case.upheld { border-left-color: #7a1f1f; }
+    .case.cleared { border-left-color: var(--green); }
+    .case.unresolved { border-left-color: #b45309; }
+    .case h3 { margin: 0 0 4px; font-size: 1rem; }
+    .case .meta { font-size: 0.82rem; color: var(--muted); }
+    .chipst { font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; white-space: nowrap; }
+    .chipst.open { background: #fbeaea; color: var(--danger); }
+    .chipst.upheld { background: #7a1f1f; color: #fff; }
+    .chipst.cleared { background: #e8f5ee; color: var(--green-dark); }
+    .chipst.unresolved { background: #fff3e0; color: #b45309; }
+    .tallybar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: #eee; margin-top: 8px; }
+    .tallybar i { display: block; }
+    .row-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+    .empty { color: var(--muted); padding: 24px; text-align: center; }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Public Docket" />
+  <meta property="og:description" content="Flagged results re-verified by the crowd, on the public record." />
+  <meta property="og:url" content="https://hawkeye.com.ng/docket.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="candidates.html">2027 Candidates</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Public Docket</strong> — flagged results, judged by the crowd. Nobody at Hawkeye decides.</div></div>
+
+  <main class="wrap">
+    <h1>Public Docket</h1>
+    <p class="lede">When automated checks flag a result, the flag never decides anything — it opens a
+    <strong>case</strong>. Every case is published here with its full evidence, and verified observers
+    worldwide judge it by answering factual questions. Quorum and a supermajority resolve it, every
+    verdict is on the public record, and the whole docket is anchored to a public transparency log.</p>
+    <p class="hint" id="rule"></p>
+    <div id="list"><div class="skel" style="height:60px;margin:8px 0"></div></div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const AGO = (t) => new Date(t).toLocaleString();
+    fetch('/api/docket').then((r) => r.json()).then((d) => {
+      $('rule').textContent = `Resolution rule: ${d.rule}`;
+      if (!d.cases.length) { $('list').innerHTML = '<div class="empty">No cases — no results are currently in dispute.</div>'; return; }
+      $('list').innerHTML = d.cases.map((c) => {
+        const t = c.tally, tot = Math.max(1, t.total);
+        return `<a class="case ${c.status}" href="case.html?id=${c.id}">
+          <div class="row-top"><h3>${c.name || c.puCode} — ${c.contest}</h3>
+            <span class="chipst ${c.status}">${c.status.toUpperCase()}</span></div>
+          <div class="meta">${c.ward || ''} ward, ${c.lga || ''}, ${c.state || ''} · opened ${AGO(c.openedAt)}
+            · ${c.status === 'open' ? 'closes ' + AGO(c.closesAt) : 'resolved ' + AGO(c.resolvedAt || c.closesAt)}
+            · ${t.total} verdict(s)</div>
+          <div class="tallybar" title="fraudulent ${t.fraudulent} / legit ${t.legit} / inconclusive ${t.inconclusive}">
+            <i style="width:${(t.fraudulent / tot) * 100}%;background:var(--danger)"></i>
+            <i style="width:${(t.legit / tot) * 100}%;background:var(--green)"></i>
+            <i style="width:${(t.inconclusive / tot) * 100}%;background:#b45309"></i>
+          </div></a>`;
+      }).join('');
+    }).catch(() => { $('list').innerHTML = '<div class="empty">Could not load the docket — try again shortly.</div>'; });
+  </script>
+  <script src="menu.js?v=88"></script>
+</body>
+</html>

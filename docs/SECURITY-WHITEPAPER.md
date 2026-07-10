@@ -101,6 +101,19 @@ registered voters, impossible turnout, conflicting counts, collation-vs-unit
 mismatches, form-serial and Benford-style outliers — logged openly within minutes,
 not buried in a tribunal exhibit months later.
 
+### 3.6 Crowd arbitration — flags never decide, and neither do we
+A flag (AI or statistical) immediately marks the result **disputed** everywhere
+it appears and excludes it from headline tallies — but no flag, and no Hawkeye
+staffer, ever strikes a result. After the election, every still-open flag becomes
+a **public case**: the full evidence (photos, counts, AI reasoning, ledger proof)
+is republished for the world, and **verified observers judge it** by answering
+structured factual questions — one signed verdict per person, every verdict
+public, resolution by quorum and supermajority under a published rule. Upheld →
+the result is permanently struck, its whole story preserved; cleared → the badge
+lifts, and the false flag stays on record too. The docket runs on its own
+append-only hash chain, folded into the same external anchors (§3.1) — the
+arbitration is exactly as tamper-evident as the results it judges.
+
 ---
 
 ## 4. Identity, anonymity & anti-Sybil

@@ -241,12 +241,15 @@ function puKb(units, pageNo) {
   return { inline_keyboard: rows };
 }
 
-async function reportSetPu(token, chatId, code) {
+// msgId set → we came from the browse cascade: replace the PU list in place
+// (same one-message flow as every earlier step) instead of stacking a new message.
+async function reportSetPu(token, chatId, code, msgId = null) {
   const pu = puByCode(code);
   if (!pu) { await send(token, chatId, 'No unit with that code. Send a valid PU code like <code>25-01-05-012</code>, or /cancel.'); return; }
   session.set(chatId, 'report', 'contest', { pu: pu.pu_code, puName: `${esc(pu.name)} (${pu.pu_code})`, state: pu.state });
-  await send(token, chatId, `Unit: <b>${esc(pu.name)}</b>\n${esc(pu.ward)} ward, ${esc(pu.lga)}, ${esc(pu.state)}.\n\nWhich election?`,
-    { reply_markup: contestKeyboard(pu) });
+  const text = `Unit: <b>${esc(pu.name)}</b>\n${esc(pu.ward)} ward, ${esc(pu.lga)}, ${esc(pu.state)}.\n\nWhich election?`;
+  if (msgId) await editKb(token, chatId, msgId, text, contestKeyboard(pu));
+  else await send(token, chatId, text, { reply_markup: contestKeyboard(pu) });
 }
 
 function parseVotes(text) {
@@ -308,6 +311,13 @@ export async function handleUpdate(update, token) {
     if (cb.data === 'rp:noop') return true;
     if (cb.data === 'rp:browse') {
       session.set(chatId, 'report', 'browse', {});
+      // Clear any lingering custom reply keyboard (e.g. the share-phone one) so the
+      // cascade gets the full chat height. A keyboard can only be removed by sending
+      // a message carrying remove_keyboard, so send-and-delete a throwaway one.
+      // (The phone's own typing keyboard is out of a bot's reach — Telegram closes
+      // it when the user taps the list.)
+      const tmp = await tgApi(token, 'sendMessage', { chat_id: chatId, text: '🔎', reply_markup: { remove_keyboard: true } });
+      if (tmp?.ok) tgApi(token, 'deleteMessage', { chat_id: chatId, message_id: tmp.result.message_id });
       await editKb(token, chatId, msgId, 'Pick a <b>state</b>:', pagedKb(regStates(), 'rp:st', 'rp:stp', 0));
       return true;
     }
@@ -346,7 +356,7 @@ export async function handleUpdate(update, token) {
     m = /^rp:pup:(\d+)$/.exec(cb.data);
     if (m) { const d = bData(); await editKb(token, chatId, msgId, `${esc(d.bLga)} · <b>${esc(d.bWard)}</b> ward\nPick your <b>polling unit</b>:`, puKb(regUnits(d.bState, d.bLga, d.bWard), +m[1])); return true; }
     m = /^rp:pu:(.+)$/.exec(cb.data);
-    if (m) { await reportSetPu(token, chatId, m[1]); return true; }
+    if (m) { await reportSetPu(token, chatId, m[1], msgId); return true; }
     const kind = /^tip:kind:(\w+)$/.exec(cb.data || '')?.[1];
     if (kind && KIND_LABEL[kind]) {
       session.set(chatId, 'tip', 'content', { kind });

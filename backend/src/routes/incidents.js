@@ -26,7 +26,10 @@ async function remuxVideo(inBuf, destPath) {
     fs.writeFileSync(tmp, inBuf);
     execFileSync(FFMPEG, [
       '-y', '-i', tmp, '-map_metadata', '-1', '-movflags', '+faststart',
-      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
+      // downscale to <=720p long edge (keeps aspect, never upscales) + a leaner CRF —
+      // incident clips are evidence, not cinema; this roughly halves election-day storage.
+      '-vf', "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",
+      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28',
       '-c:a', 'aac', '-b:a', '96k', destPath,
     ], { stdio: 'ignore', timeout: 60_000 });
     return fs.existsSync(destPath) && fs.statSync(destPath).size > 0;
@@ -83,7 +86,9 @@ incidentsRouter.post('/incidents', requireObserver, upload.array('media', 4), as
       // Re-encode every image: strips EXIF (incl. the REPORTER's GPS — a safety
       // issue if the photo is later published) and neutralizes malformed files.
       try {
-        buffer = await sharp(f.buffer, { failOn: 'error' }).rotate().jpeg({ quality: 88 }).toBuffer();
+        buffer = await sharp(f.buffer, { failOn: 'error' }).rotate()
+          .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: 82 }).toBuffer();
         ext = 'jpg';
       } catch {
         return res.status(400).json({ error: 'invalid_media', hint: 'could not process image' });

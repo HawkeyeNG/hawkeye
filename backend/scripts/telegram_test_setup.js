@@ -29,6 +29,8 @@ console.log('commands:', (await api('setMyCommands', { commands: [
   { command: 'results', description: 'Live leaderboard snapshot' },
   { command: 'myunit', description: 'Activity at your saved unit' },
   { command: 'whoami', description: 'Your observer identity' },
+  { command: 'ask', description: 'Ask about the results in plain English' },
+  { command: 'cancel', description: 'Abandon the current flow' },
   { command: 'help', description: 'All commands' },
 ] })).ok);
 

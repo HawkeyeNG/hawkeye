@@ -31,6 +31,16 @@ function tgApi(token, method, payload) {
 const send = (token, chatId, text, extra = {}) =>
   tgApi(token, 'sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', ...extra });
 
+// HTML-escape dynamic values before dropping them into a parse_mode:'HTML' message.
+// INEC polling-unit/ward names routinely contain "&" (e.g. "...School & Health
+// Centre") — unescaped, Telegram rejects the whole message with an entity-parse
+// error. tgApi() only catches network-level failures, so that rejection (HTTP 200,
+// body {ok:false}) was silently swallowed: the button's tap-loading spinner
+// answered and vanished (answerCallbackQuery fires unconditionally) while the
+// edit/send it was waiting on never actually posted — exactly the "loading box
+// disappears and nothing happens" symptom on the browse-by-state → unit flow.
+const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 const webAppBtn = (text, page) => ({ text, web_app: { url: `${SITE}/${page}` } });
 
 const KIND_LABEL = {
@@ -57,11 +67,10 @@ function linkedObserver(chatId) {
     WHERE t.chat_id = ? AND o.status = 'active'`).get(chatId);
 }
 
-// Internal API call (the origin lock also guards localhost, so stamp the header).
-function ownApi(p) {
-  const headers = config.originAuthSecret ? { 'x-origin-auth': config.originAuthSecret } : {};
-  return fetch(`http://127.0.0.1:${config.port}${p}`, { headers }).then((r) => r.json());
-}
+// NOTE: no localhost self-fetch here. Under Passenger the app listens on
+// Passenger's socket, NOT config.port, so fetch('http://127.0.0.1:<port>/…')
+// never connects in production — anything the bot needs from its own data must
+// query the DB directly (we're in the same process as the API anyway).
 
 const HELP = [
   '<b>Hawkeye</b> — the count, witnessed and unchangeable.',
@@ -80,12 +89,17 @@ const HELP = [
 
 async function cmdResults(token, chatId) {
   try {
-    const d = await ownApi('/api/national/PRES');
-    if (!d.unitsReporting) return send(token, chatId, 'No reports yet for the presidential race. Be the first: /report');
-    const total = d.national.reduce((s, r) => s + r.votes, 0);
-    const rows = d.national.slice(0, 6).map((r, i) =>
+    const units = db.prepare("SELECT votes_json FROM results WHERE contest = 'PRES'").all();
+    if (!units.length) return send(token, chatId, 'No reports yet for the presidential race. Be the first: /report');
+    const nat = {};
+    for (const u of units) {
+      for (const v of JSON.parse(u.votes_json)) if (v.count) nat[v.party] = (nat[v.party] || 0) + v.count;
+    }
+    const ranked = Object.entries(nat).map(([party, votes]) => ({ party, votes })).sort((a, b) => b.votes - a.votes);
+    const total = ranked.reduce((s, r) => s + r.votes, 0);
+    const rows = ranked.slice(0, 6).map((r, i) =>
       `${i + 1}. <b>${r.party}</b> — ${r.votes.toLocaleString()} (${total ? ((r.votes / total) * 100).toFixed(1) : 0}%)`);
-    return send(token, chatId, `📊 <b>Presidential — crowd tally (unofficial)</b>\n${d.unitsReporting} unit(s) reporting\n\n${rows.join('\n')}\n\nFull maps: ${SITE}/results.html`);
+    return send(token, chatId, `📊 <b>Presidential — crowd tally (unofficial)</b>\n${units.length} unit(s) reporting\n\n${rows.join('\n')}\n\nFull maps: ${SITE}/results.html`);
   } catch { return send(token, chatId, 'Could not fetch results right now — try again shortly.'); }
 }
 
@@ -116,7 +130,9 @@ async function saveTelegramPhoto(token, fileId) {
   const buf = Buffer.from(await (await fetch(
     `https://api.telegram.org/file/bot${token}/${fp}`)).arrayBuffer());
   // same hygiene as the web incident route: re-encode, strip EXIF/GPS
-  const jpeg = await sharp(buf, { failOn: 'error' }).rotate().jpeg({ quality: 88 }).toBuffer();
+  const jpeg = await sharp(buf, { failOn: 'error' }).rotate()
+    .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 82 }).toBuffer();
   const name = `${crypto.randomBytes(12).toString('hex')}.jpg`;
   fs.writeFileSync(path.join(incidentDir, name), jpeg);
   return { file: `incidents/${name}`, type: 'image' };
@@ -171,9 +187,26 @@ function startReport(token, chatId) {
 
 // Register-browse keyboards. A tall grid scrolls in the chat, so most lists show
 // in full; pagination kicks in only for very long ones (big wards).
-const editKb = (token, chatId, msgId, text, kb) =>
-  tgApi(token, 'editMessageText', { chat_id: chatId, message_id: msgId, text, parse_mode: 'HTML', reply_markup: kb });
-const reg = (path) => ownApi(path);
+async function editKb(token, chatId, msgId, text, kb) {
+  const r = await tgApi(token, 'editMessageText', { chat_id: chatId, message_id: msgId, text, parse_mode: 'HTML', reply_markup: kb });
+  if (!r?.ok) {
+    // Never leave the cascade silently stuck on the previous screen — log why,
+    // then post the next step as a fresh message instead of an edit.
+    console.error('[bot-browse] editMessageText failed:', r?.description || 'no response');
+    return send(token, chatId, text, { reply_markup: kb });
+  }
+  return r;
+}
+// Register browse data — straight from the DB (same queries as the public
+// /api/register/* endpoints; see the no-self-fetch note near the top).
+const regStates = () =>
+  db.prepare('SELECT DISTINCT state FROM polling_units ORDER BY state').all().map((r) => r.state);
+const regLgas = (state) =>
+  db.prepare('SELECT DISTINCT lga FROM polling_units WHERE state = ? ORDER BY lga').all(state).map((r) => r.lga);
+const regWards = (state, lga) =>
+  db.prepare('SELECT DISTINCT ward FROM polling_units WHERE state = ? AND lga = ? ORDER BY ward').all(state, lga).map((r) => r.ward);
+const regUnits = (state, lga, ward) =>
+  db.prepare('SELECT pu_code, name FROM polling_units WHERE state = ? AND lga = ? AND ward = ? ORDER BY pu_code').all(state, lga, ward);
 function pagedKb(items, sel, nav, pageNo) {
   const PAGE = 30, start = pageNo * PAGE, slice = items.slice(start, start + PAGE), rows = [];
   for (let i = 0; i < slice.length; i += 2) {
@@ -211,8 +244,8 @@ function puKb(units, pageNo) {
 async function reportSetPu(token, chatId, code) {
   const pu = puByCode(code);
   if (!pu) { await send(token, chatId, 'No unit with that code. Send a valid PU code like <code>25-01-05-012</code>, or /cancel.'); return; }
-  session.set(chatId, 'report', 'contest', { pu: pu.pu_code, puName: `${pu.name} (${pu.pu_code})`, state: pu.state });
-  await send(token, chatId, `Unit: <b>${pu.name}</b>\n${pu.ward} ward, ${pu.lga}, ${pu.state}.\n\nWhich election?`,
+  session.set(chatId, 'report', 'contest', { pu: pu.pu_code, puName: `${esc(pu.name)} (${pu.pu_code})`, state: pu.state });
+  await send(token, chatId, `Unit: <b>${esc(pu.name)}</b>\n${esc(pu.ward)} ward, ${esc(pu.lga)}, ${esc(pu.state)}.\n\nWhich election?`,
     { reply_markup: contestKeyboard(pu) });
 }
 
@@ -275,43 +308,43 @@ export async function handleUpdate(update, token) {
     if (cb.data === 'rp:noop') return true;
     if (cb.data === 'rp:browse') {
       session.set(chatId, 'report', 'browse', {});
-      await editKb(token, chatId, msgId, 'Pick a <b>state</b>:', pagedKb(await reg('/api/register/states'), 'rp:st', 'rp:stp', 0));
+      await editKb(token, chatId, msgId, 'Pick a <b>state</b>:', pagedKb(regStates(), 'rp:st', 'rp:stp', 0));
       return true;
     }
     let m = /^rp:stp:(\d+)$/.exec(cb.data);
-    if (m) { await editKb(token, chatId, msgId, 'Pick a <b>state</b>:', pagedKb(await reg('/api/register/states'), 'rp:st', 'rp:stp', +m[1])); return true; }
+    if (m) { await editKb(token, chatId, msgId, 'Pick a <b>state</b>:', pagedKb(regStates(), 'rp:st', 'rp:stp', +m[1])); return true; }
     m = /^rp:st:(\d+)$/.exec(cb.data);
     if (m) {
-      const state = (await reg('/api/register/states'))[+m[1]];
+      const state = regStates()[+m[1]];
       session.set(chatId, 'report', 'browse', { ...bData(), bState: state });
-      const lgas = await reg('/api/register/lgas?state=' + encodeURIComponent(state));
-      await editKb(token, chatId, msgId, `State: <b>${state}</b>\nPick an <b>LGA</b>:`, pagedKb(lgas, 'rp:lg', 'rp:lgp', 0));
+      const lgas = regLgas(state);
+      await editKb(token, chatId, msgId, `State: <b>${esc(state)}</b>\nPick an <b>LGA</b>:`, pagedKb(lgas, 'rp:lg', 'rp:lgp', 0));
       return true;
     }
     m = /^rp:lgp:(\d+)$/.exec(cb.data);
-    if (m) { const d = bData(); await editKb(token, chatId, msgId, `State: <b>${d.bState}</b>\nPick an <b>LGA</b>:`, pagedKb(await reg('/api/register/lgas?state=' + encodeURIComponent(d.bState)), 'rp:lg', 'rp:lgp', +m[1])); return true; }
+    if (m) { const d = bData(); await editKb(token, chatId, msgId, `State: <b>${esc(d.bState)}</b>\nPick an <b>LGA</b>:`, pagedKb(regLgas(d.bState), 'rp:lg', 'rp:lgp', +m[1])); return true; }
     m = /^rp:lg:(\d+)$/.exec(cb.data);
     if (m) {
       const d = bData();
-      const lga = (await reg('/api/register/lgas?state=' + encodeURIComponent(d.bState)))[+m[1]];
+      const lga = regLgas(d.bState)[+m[1]];
       session.set(chatId, 'report', 'browse', { ...d, bLga: lga });
-      const wards = await reg(`/api/register/wards?state=${encodeURIComponent(d.bState)}&lga=${encodeURIComponent(lga)}`);
-      await editKb(token, chatId, msgId, `${d.bState} · <b>${lga}</b>\nPick a <b>ward</b>:`, pagedKb(wards, 'rp:wd', 'rp:wdp', 0));
+      const wards = regWards(d.bState, lga);
+      await editKb(token, chatId, msgId, `${esc(d.bState)} · <b>${esc(lga)}</b>\nPick a <b>ward</b>:`, pagedKb(wards, 'rp:wd', 'rp:wdp', 0));
       return true;
     }
     m = /^rp:wdp:(\d+)$/.exec(cb.data);
-    if (m) { const d = bData(); await editKb(token, chatId, msgId, `${d.bState} · <b>${d.bLga}</b>\nPick a <b>ward</b>:`, pagedKb(await reg(`/api/register/wards?state=${encodeURIComponent(d.bState)}&lga=${encodeURIComponent(d.bLga)}`), 'rp:wd', 'rp:wdp', +m[1])); return true; }
+    if (m) { const d = bData(); await editKb(token, chatId, msgId, `${esc(d.bState)} · <b>${esc(d.bLga)}</b>\nPick a <b>ward</b>:`, pagedKb(regWards(d.bState, d.bLga), 'rp:wd', 'rp:wdp', +m[1])); return true; }
     m = /^rp:wd:(\d+)$/.exec(cb.data);
     if (m) {
       const d = bData();
-      const ward = (await reg(`/api/register/wards?state=${encodeURIComponent(d.bState)}&lga=${encodeURIComponent(d.bLga)}`))[+m[1]];
+      const ward = regWards(d.bState, d.bLga)[+m[1]];
       session.set(chatId, 'report', 'browse', { ...d, bWard: ward });
-      const { units } = await reg(`/api/register/units?state=${encodeURIComponent(d.bState)}&lga=${encodeURIComponent(d.bLga)}&ward=${encodeURIComponent(ward)}`);
-      await editKb(token, chatId, msgId, `${d.bLga} · <b>${ward}</b> ward\nPick your <b>polling unit</b>:`, puKb(units, 0));
+      const units = regUnits(d.bState, d.bLga, ward);
+      await editKb(token, chatId, msgId, `${esc(d.bLga)} · <b>${esc(ward)}</b> ward\nPick your <b>polling unit</b>:`, puKb(units, 0));
       return true;
     }
     m = /^rp:pup:(\d+)$/.exec(cb.data);
-    if (m) { const d = bData(); const { units } = await reg(`/api/register/units?state=${encodeURIComponent(d.bState)}&lga=${encodeURIComponent(d.bLga)}&ward=${encodeURIComponent(d.bWard)}`); await editKb(token, chatId, msgId, `${d.bLga} · <b>${d.bWard}</b> ward\nPick your <b>polling unit</b>:`, puKb(units, +m[1])); return true; }
+    if (m) { const d = bData(); await editKb(token, chatId, msgId, `${esc(d.bLga)} · <b>${esc(d.bWard)}</b> ward\nPick your <b>polling unit</b>:`, puKb(regUnits(d.bState, d.bLga, d.bWard), +m[1])); return true; }
     m = /^rp:pu:(.+)$/.exec(cb.data);
     if (m) { await reportSetPu(token, chatId, m[1]); return true; }
     const kind = /^tip:kind:(\w+)$/.exec(cb.data || '')?.[1];

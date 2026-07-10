@@ -17,7 +17,11 @@ if (!KEY) { console.error('set VISION_API_KEY'); process.exit(1); }
 
 const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'storage', 'training');
 const truth = JSON.parse(fs.readFileSync(path.join(dir, 'truth.json'), 'utf8'));
-const CKPT = '/tmp/vision_score.json';
+// Durable checkpoint (NOT /tmp): survives reboots so a sheet already sent to the
+// vision API is never re-sent (and never re-charged) on a later run. storage/ is
+// gitignored, so this stays a local artifact. Override with SCORE_CKPT if needed.
+const CKPT = process.env.SCORE_CKPT || path.join(dir, 'vision_scored.json');
+const LIMIT = Number(process.env.SCORE_LIMIT || 100); // sample the first N sheets by default
 const done = fs.existsSync(CKPT) ? JSON.parse(fs.readFileSync(CKPT, 'utf8')) : {};
 
 const imgFor = (k) => ['jpg', 'jpeg', 'png'].map((e) => path.join(dir, `${k}.${e}`)).find(fs.existsSync);
@@ -42,7 +46,7 @@ async function readSheet(file) {
   return m ? JSON.parse(m[0]).counts || [] : [];
 }
 
-const keys = Object.keys(truth).filter((k) => imgFor(k));
+const keys = Object.keys(truth).filter((k) => imgFor(k)).slice(0, LIMIT);
 let i = 0;
 for (const k of keys) {
   i++;
@@ -65,6 +69,6 @@ for (const k of keys) {
   await new Promise((r) => setTimeout(r, DELAY));
 }
 
-const rows = Object.values(done);
+const rows = keys.filter((k) => done[k]).map((k) => done[k]); // report over the sampled window only
 const s = rows.reduce((a, r) => a + r.strict, 0), v = rows.reduce((a, r) => a + r.value, 0), t = rows.reduce((a, r) => a + r.total, 0);
 if (t) console.log(`\nVISION OVERALL (${rows.length} sheets): party+count ${s}/${t} (${(s / t * 100).toFixed(1)}%) · value-present ${v}/${t} (${(v / t * 100).toFixed(1)}%)`);

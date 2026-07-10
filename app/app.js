@@ -494,6 +494,28 @@ $('btn-cam-venue').onclick = () => startCapture('venue');
 $('btn-cancel-camera').onclick = closeCamera;
 
 let capturing = false;
+// Downscale + recompress a freshly captured photo BEFORE it is hashed, signed and
+// uploaded — so the compressed bytes are exactly what the observer signs, the server
+// stores, and the ledger content-addresses (integrity stays intact; see submissions.js
+// where image_sha256 = sha256 of these bytes). Phone cameras hand us 3–8 MB full-res
+// JPEGs; an EC8A sheet stays fully legible at ~1600 px (our own OCR downsizes to 1600 px
+// wide anyway), cutting each photo to a few hundred KB. Any failure returns the original
+// blob unchanged — compression must never block a capture.
+async function compressCapture(blob, maxDim, quality) {
+  try {
+    const bmp = await createImageBitmap(blob);
+    const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * scale);
+    const h = Math.round(bmp.height * scale);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+    bmp.close?.();
+    const out = await new Promise((r) => c.toBlob(r, 'image/jpeg', quality));
+    return out && out.size < blob.size ? out : blob;
+  } catch { return blob; }
+}
+
 async function doCapture() {
   if (capturing || !cameraStream) return;
   capturing = true;
@@ -514,6 +536,10 @@ async function doCapture() {
       canvas.getContext('2d').drawImage(video, 0, 0);
       blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
     }
+    // Compress here — before the blob is hashed/signed/uploaded — so content-addressing
+    // commits the same bytes the server stores. Sheet kept crisper (1600 px / q0.8) for
+    // count legibility; venue photo smaller (1280 px / q0.72).
+    blob = await compressCapture(blob, cameraTarget === 'sheet' ? 1600 : 1280, cameraTarget === 'sheet' ? 0.8 : 0.72);
     const fix = await getCaptureFix();
     if (!fix) {
       if (cameraTarget === 'sheet' && window.DocScanner) DocScanner.rearm();

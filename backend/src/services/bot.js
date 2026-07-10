@@ -89,17 +89,21 @@ const HELP = [
 
 async function cmdResults(token, chatId) {
   try {
-    const units = db.prepare("SELECT votes_json FROM results WHERE contest = 'PRES'").all();
+    const units = db.prepare("SELECT votes_json, disputed FROM results WHERE contest = 'PRES'").all();
     if (!units.length) return send(token, chatId, 'No reports yet for the presidential race. Be the first: /report');
+    const clean = units.filter((u) => !u.disputed);
     const nat = {};
-    for (const u of units) {
+    for (const u of clean) {
       for (const v of JSON.parse(u.votes_json)) if (v.count) nat[v.party] = (nat[v.party] || 0) + v.count;
     }
     const ranked = Object.entries(nat).map(([party, votes]) => ({ party, votes })).sort((a, b) => b.votes - a.votes);
     const total = ranked.reduce((s, r) => s + r.votes, 0);
     const rows = ranked.slice(0, 6).map((r, i) =>
       `${i + 1}. <b>${r.party}</b> — ${r.votes.toLocaleString()} (${total ? ((r.votes / total) * 100).toFixed(1) : 0}%)`);
-    return send(token, chatId, `📊 <b>Presidential — crowd tally (unofficial)</b>\n${units.length} unit(s) reporting\n\n${rows.join('\n')}\n\nFull maps: ${SITE}/results.html`);
+    const disputedNote = units.length - clean.length
+      ? `\n⚖️ ${units.length - clean.length} result(s) in dispute — excluded pending crowd review: ${SITE}/docket.html`
+      : '';
+    return send(token, chatId, `📊 <b>Presidential — crowd tally (unofficial)</b>\n${clean.length} unit(s) reporting\n\n${rows.join('\n')}${disputedNote}\n\nFull maps: ${SITE}/results.html`);
   } catch { return send(token, chatId, 'Could not fetch results right now — try again shortly.'); }
 }
 

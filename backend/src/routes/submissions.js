@@ -327,6 +327,7 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
 const resultShape = (r) => ({
   puCode: r.pu_code,
   contest: r.contest,
+  disputed: Boolean(r.disputed), // open flag / open or upheld case — see /api/docket
   votes: JSON.parse(r.votes_json),
   confidence: r.confidence,
   matchingReports: r.matching_reports,

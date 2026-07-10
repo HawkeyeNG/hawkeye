@@ -15,6 +15,11 @@ export function logDiscrepancy({ type, severity = 'medium', puCode = null, conte
     .run(type, severity, puCode, contest, state, submissionId, JSON.stringify(detail), Date.now());
   if (info.changes) {
     notifyMaster(`${SEV_ICON[severity] || '⚠️'} discrepancy [${type}] ${puCode || ''} ${contest || ''} — ${detail.summary || ''}`);
+    // High-severity flags go straight onto the docket chain and mark the result
+    // disputed from this moment (crowd arbitration — docs/CROWD-ARBITRATION.md).
+    import('./docket.js')
+      .then((d) => d.onFlag({ id: info.lastInsertRowid, type, severity, puCode, contest, detail }))
+      .catch((e) => console.error('[docket]', e.message));
   }
   return info.changes > 0;
 }

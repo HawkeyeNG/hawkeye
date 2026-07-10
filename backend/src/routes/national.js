@@ -24,13 +24,18 @@ nationalRouter.get('/national/:contest', (req, res) => {
   const { level, col } = LEVEL[contest] || LEVEL.PRES;
 
   const rows = db.prepare(`
-    SELECT r.votes_json, r.status, p.${col} AS region
+    SELECT r.votes_json, r.status, r.disputed, p.${col} AS region
     FROM results r JOIN polling_units p ON p.pu_code = r.pu_code
     WHERE r.contest = ?`).all(contest);
 
   const national = {};
   const regions = {};
+  let inDispute = 0;
   for (const row of rows) {
+    // Disputed results (open high-severity flag / open or upheld case) are
+    // excluded from the headline tally — shown separately and judged by the
+    // crowd on the public docket (docs/CROWD-ARBITRATION.md).
+    if (row.disputed) { inDispute++; continue; }
     const key = row.region || 'Unknown';
     regions[key] ??= { votes: {}, unitsReporting: 0, unitsVerified: 0 };
     regions[key].unitsReporting++;
@@ -46,7 +51,8 @@ nationalRouter.get('/national/:contest', (req, res) => {
     contest,
     level,
     updatedAt: Date.now(),
-    unitsReporting: rows.length,
+    unitsReporting: rows.length - inDispute,
+    inDispute,
     national: Object.entries(national).map(([party, votes]) => ({ party, votes })).sort((a, b) => b.votes - a.votes),
     regions: Object.entries(regions).map(([region, s]) => {
       const ranked = Object.entries(s.votes).sort((a, b) => b[1] - a[1]);

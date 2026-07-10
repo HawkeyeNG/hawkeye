@@ -37,6 +37,23 @@ adminRouter.post('/admin/anchor', requireAdmin, async (req, res) => {
   catch (e) { console.error('[admin/anchor]', e); res.status(500).json({ error: 'internal_error' }); }
 });
 
+// Open the public docket: every result still carrying an open high-severity flag
+// becomes a crowd-arbitration case (run after the election window closes).
+adminRouter.post('/admin/docket/open', requireAdmin, async (req, res) => {
+  try {
+    const d = await import('../services/docket.js');
+    res.json(d.openCases(Number(req.query.windowDays) || undefined));
+  } catch (e) { console.error('[admin/docket]', e); res.status(500).json({ error: 'internal_error' }); }
+});
+
+// Force the resolution pass now (normally runs on its interval).
+adminRouter.post('/admin/docket/resolve', requireAdmin, async (_req, res) => {
+  try {
+    const d = await import('../services/docket.js');
+    res.json(d.resolveDueCases());
+  } catch (e) { console.error('[admin/docket]', e); res.status(500).json({ error: 'internal_error' }); }
+});
+
 adminRouter.get('/admin/incidents', requireAdmin, (req, res) => {
   const status = String(req.query.status || 'pending');
   const rows = db.prepare(`

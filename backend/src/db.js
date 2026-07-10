@@ -177,6 +177,7 @@ for (const ddl of [
    )`,
   // External anchoring receipts (Sigstore Rekor public transparency log) — a log
   // we do not control, so a rolled-back DB can't reproduce these entries.
+  'ALTER TABLE anchors ADD COLUMN docket_head TEXT',
   'ALTER TABLE anchors ADD COLUMN rekor_uuid TEXT',
   'ALTER TABLE anchors ADD COLUMN rekor_log_index INTEGER',
   'ALTER TABLE anchors ADD COLUMN rekor_time INTEGER',
@@ -221,6 +222,45 @@ for (const ddl of [
   'CREATE INDEX IF NOT EXISTS idx_disc_type ON discrepancies(type)',
   // De-dupe key so the same anomaly isn't logged twice on re-scan.
   'CREATE UNIQUE INDEX IF NOT EXISTS idx_disc_uni ON discrepancies(type, pu_code, contest)',
+  // Crowd arbitration (docs/CROWD-ARBITRATION.md). A result carrying an open
+  // high-severity flag is marked disputed everywhere it appears and excluded
+  // from headline tallies; after the election each open flag becomes a public
+  // CASE the verified crowd re-verifies. status: open|upheld|cleared|unresolved.
+  'ALTER TABLE results ADD COLUMN disputed INTEGER NOT NULL DEFAULT 0',
+  `CREATE TABLE IF NOT EXISTS cases (
+     id          INTEGER PRIMARY KEY,
+     pu_code     TEXT NOT NULL,
+     contest     TEXT NOT NULL,
+     flag_ids    TEXT NOT NULL DEFAULT '[]',
+     status      TEXT NOT NULL DEFAULT 'open',
+     opened_at   INTEGER NOT NULL,
+     closes_at   INTEGER NOT NULL,
+     resolved_at INTEGER,
+     UNIQUE (pu_code, contest)
+   )`,
+  // One signed verdict per verified identity per case. verdict is COMPUTED from
+  // the structured answers by the published rule — never chosen directly.
+  `CREATE TABLE IF NOT EXISTS verdicts (
+     id           INTEGER PRIMARY KEY,
+     case_id      INTEGER NOT NULL REFERENCES cases(id),
+     observer_id  INTEGER NOT NULL REFERENCES observers(id),
+     device_id    TEXT,
+     answers_json TEXT NOT NULL,
+     verdict      TEXT NOT NULL,
+     created_at   INTEGER NOT NULL,
+     UNIQUE (case_id, observer_id)
+   )`,
+  // The docket's own append-only hash chain: flag events, case openings and
+  // resolutions. Separate from the submissions chain (public verifiers of that
+  // chain expect submissions only); its head is folded into the Rekor artifact.
+  `CREATE TABLE IF NOT EXISTS docket_ledger (
+     id         INTEGER PRIMARY KEY,
+     kind       TEXT NOT NULL,
+     payload    TEXT NOT NULL,
+     prev_hash  TEXT NOT NULL,
+     entry_hash TEXT NOT NULL,
+     created_at INTEGER NOT NULL
+   )`,
   // Observer incident reports (violence, ballot snatching, etc.). Media files are
   // stored under uploads/incidents/. Published only after human review (status).
   `CREATE TABLE IF NOT EXISTS incidents (

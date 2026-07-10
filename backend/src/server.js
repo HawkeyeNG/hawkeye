@@ -15,6 +15,8 @@ import { incidentsRouter } from './routes/incidents.js';
 import { adminRouter } from './routes/admin.js';
 import { collationRouter } from './routes/collation.js';
 import { assistantRouter } from './routes/assistant.js';
+import { docketRouter } from './routes/docket.js';
+import { resolveDueCases } from './services/docket.js';
 import { securityHeaders, makeLimiter, concurrencyLimit } from './services/security.js';
 import { runForensics, recheckCollations } from './services/integrity.js';
 import { runBackup } from './services/backup.js';
@@ -75,6 +77,7 @@ app.use('/api', incidentsRouter);
 app.use('/api', adminRouter);
 app.use('/api', collationRouter);
 app.use('/api', assistantRouter);
+app.use('/api', docketRouter);
 // Training sheet images: the originals are ~3-4 MB phone photos (3072x4096),
 // far more than a labeller's screen needs, so serving them raw made the page
 // crawl. Serve a cached ~1500px JPEG for VIEWING (built on first request, then
@@ -159,6 +162,11 @@ app.listen(config.port, () => {
   const anchor = () => runAnchor().catch((e) => console.error('[anchor]', e.message));
   setTimeout(anchor, 240_000);
   setInterval(anchor, 24 * 3_600_000);
+  // Crowd-arbitration resolution pass: cases past their review window resolve
+  // mechanically (quorum + supermajority — services/docket.js).
+  const docket = () => { try { resolveDueCases(); } catch (e) { console.error('[docket]', e.message); } };
+  setTimeout(docket, 300_000);
+  setInterval(docket, 3_600_000);
   console.log(
     'NOTE: camera + GPS in the PWA need a secure context — use http://localhost, or an HTTPS tunnel for phones.',
   );

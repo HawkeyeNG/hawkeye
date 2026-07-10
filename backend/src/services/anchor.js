@@ -70,19 +70,23 @@ export async function runAnchor(force = false) {
   const races = raceSubchains(db);
   const leaves = races.map(raceLeaf);
   const racesRoot = merkleRoot(leaves);
+  // Crowd-arbitration chain head (flags, case openings, verdicts, resolutions) —
+  // anchored alongside the results so the arbitration is equally rollback-proof.
+  const { docketHead } = await import('./docket.js');
+  const dHead = docketHead();
 
-  const last = db.prepare('SELECT head_hash, collation_head, races_root FROM anchors ORDER BY id DESC LIMIT 1').get();
+  const last = db.prepare('SELECT head_hash, collation_head, races_root, docket_head FROM anchors ORDER BY id DESC LIMIT 1').get();
   if (!force && last && last.head_hash === chain.head && last.collation_head === collHead
-      && last.races_root === racesRoot) {
+      && last.races_root === racesRoot && last.docket_head === dHead) {
     return { skipped: 'unchanged' };
   }
 
   const day = new Date().toISOString().slice(0, 10);
   const now = Date.now();
   const info = db.prepare(`
-    INSERT INTO anchors (day, head_hash, collation_head, entries, collation_entries, tweet, races_root, races_count, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(day, chain.head, collHead, chain.entries, collCount, null, racesRoot, races.length, now);
+    INSERT INTO anchors (day, head_hash, collation_head, entries, collation_entries, tweet, races_root, races_count, docket_head, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(day, chain.head, collHead, chain.entries, collCount, null, racesRoot, races.length, dHead, now);
   const anchorId = info.lastInsertRowid;
 
   // Persist each race's subchain head + its Merkle inclusion proof so a single
@@ -101,7 +105,7 @@ export async function runAnchor(force = false) {
   // racesRoot binds the whole per-race batch into the one signed, Rekor-logged line.
   const artifact = `hawkeye-ledger-anchor|v1|day=${day}|head=${chain.head}|entries=${chain.entries}`
     + `|collationHead=${collHead}|collationEntries=${collCount}`
-    + `|racesRoot=${racesRoot}|races=${races.length}|at=${new Date(now).toISOString()}`;
+    + `|racesRoot=${racesRoot}|races=${races.length}|docketHead=${dHead}|at=${new Date(now).toISOString()}`;
   const receipt = await publishToRekor(artifact);
   if (receipt) {
     db.prepare('UPDATE anchors SET rekor_uuid = ?, rekor_log_index = ?, rekor_time = ?, rekor_artifact = ? WHERE id = ?')

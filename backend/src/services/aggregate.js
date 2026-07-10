@@ -116,11 +116,26 @@ export function recomputeResult(db, puCode, contest = 'PRES') {
   }
   if (status === 'verified' && locationStatus === 'unverified') status = 'reported';
 
+  // --- crowd-arbitration dispute axis (docs/CROWD-ARBITRATION.md) ---
+  // An open high-severity flag, an open case, or a crowd-UPHELD case marks the
+  // result disputed: badged everywhere, excluded from headline tallies, barred
+  // from 'verified'. A crowd-CLEARED case lifts it (its flags get resolved).
+  const disputed =
+    db.prepare(`
+      SELECT 1 FROM discrepancies
+      WHERE pu_code = ? AND contest = ? AND severity = 'high' AND status = 'open' LIMIT 1`)
+      .get(puCode, contest)
+    || db.prepare(
+      "SELECT 1 FROM cases WHERE pu_code = ? AND contest = ? AND status IN ('open','upheld','unresolved') LIMIT 1")
+      .get(puCode, contest)
+      ? 1 : 0;
+  if (disputed && status === 'verified') status = 'reported';
+
   db.prepare(`
     INSERT INTO results
       (pu_code, contest, votes_json, confidence, matching_reports, total_reports, status,
-       location_status, location_confidence, location_plausibility, location_score, venue_matches, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       location_status, location_confidence, location_plausibility, location_score, venue_matches, disputed, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(pu_code, contest) DO UPDATE SET
       votes_json = excluded.votes_json,
       confidence = excluded.confidence,
@@ -132,10 +147,11 @@ export function recomputeResult(db, puCode, contest = 'PRES') {
       location_plausibility = excluded.location_plausibility,
       location_score = excluded.location_score,
       venue_matches = excluded.venue_matches,
+      disputed = excluded.disputed,
       updated_at = excluded.updated_at`)
     .run(
       puCode, contest, top.votesJson, confidence, top.count, rows.length, status,
-      locationStatus, locationConfidence, locationPlausibility, locationScore, venueMatches, Date.now(),
+      locationStatus, locationConfidence, locationPlausibility, locationScore, venueMatches, disputed, Date.now(),
     );
 
   return {
@@ -151,5 +167,6 @@ export function recomputeResult(db, puCode, contest = 'PRES') {
     locationPlausibility,
     locationScore,
     venueMatches,
+    disputed: Boolean(disputed),
   };
 }

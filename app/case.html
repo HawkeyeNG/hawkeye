@@ -70,6 +70,7 @@
       <div class="tallybar" id="tallybar"></div>
       <p class="note" id="tallytext"></p>
       <div id="judge"></div>
+      <div id="notes"></div>
     </div>
   </main>
 
@@ -114,6 +115,11 @@
         ${s.ocr ? `<p class="note">OCR: ${s.ocr.matched}/${s.ocr.total} typed counts found on the sheet.</p>` : ''}
         <p class="mono">ledger entry ${s.entryHash} — re-verify the whole chain on <a href="ledger.html">the ledger page</a>.</p>`).join('<hr>');
       tally(c.tally);
+      const noted = (c.verdicts || []).filter((v) => v.comment);
+      $('notes').innerHTML = noted.length
+        ? '<h3>What jurors noted</h3>' + noted.map((v) =>
+          `<p class="note">“${esc(v.comment)}” — observer #${v.observer}, judged <b>${esc(v.verdict)}</b>, ${new Date(v.at).toLocaleString()}</p>`).join('')
+        : '';
       judgeUi(c);
     }
 
@@ -129,16 +135,23 @@
         <label><input type="radio" name="${name}" value="yes"> Yes</label>
         <label><input type="radio" name="${name}" value="no"> No</label>
         <label><input type="radio" name="${name}" value="unsure"> Can't tell</label></div>`;
+      // One question PER flag — each can be wrong (or right) in its own way.
+      const flagQs = c.flags.map((f, i) =>
+        q(`flag_${f.id}`, `3${c.flags.length > 1 ? String.fromCharCode(97 + i) : ''}. This result was flagged: <em>“${esc(f.detail.summary || f.type)}”</em>. Looking at the evidence yourself, is that specific reason correct?`)).join('');
       $('judge').innerHTML =
         q('sheet', '1. Is the photographed sheet an official INEC EC8A result form?')
         + q('counts', '2. Do the figures written on the sheet match the reported counts above?')
-        + q('flag', '3. This result was flagged for the reason shown at the top of this page. Looking at the evidence yourself, is that reason correct?')
+        + flagQs
+        + '<div class="q"><p>Optional note — what did you see? (public, max 280 chars)</p>'
+        + '<textarea id="comment" maxlength="280" rows="2" placeholder="e.g. the INEC stamp is missing; figures column reads 108 not 180"></textarea></div>'
         + '<button id="cast">Cast my verdict</button><p class="note" id="msg"></p>'
-        + '<p class="note">Your answers compute the verdict by a published rule — you never pick a side directly.</p>';
+        + '<p class="note">Your answers compute the verdict by a published rule — you never pick a side directly. Notes are public but never counted.</p>';
       $('cast').onclick = async () => {
         const val = (n) => document.querySelector(`input[name="${n}"]:checked`)?.value;
-        const body = { sheet: val('sheet'), counts: val('counts'), flag: val('flag') };
-        if (!body.sheet || !body.counts || !body.flag) { $('msg').textContent = 'Answer all three questions.'; return; }
+        const flags = {};
+        for (const f of c.flags) { flags[f.id] = val(`flag_${f.id}`); }
+        const body = { sheet: val('sheet'), counts: val('counts'), flags, comment: $('comment').value.trim() };
+        if (!body.sheet || !body.counts || Object.values(flags).some((v) => !v)) { $('msg').textContent = 'Answer every question.'; return; }
         $('cast').disabled = true;
         const r = await fetch(`/api/docket/${qid}/verdict`, {
           method: 'POST',

@@ -139,6 +139,7 @@ not buried in a tribunal exhibit months later.
 | Direct-origin attacks | **Origin lock** — only traffic bearing a secret header injected by our Cloudflare edge reaches the origin; direct-IP scans get 403 |
 | Info leakage | Global error handler returns generic errors; no stack traces to clients |
 | Admin abuse | Timing-safe secret comparison, alert on failed attempts, rate-limited, IP-gateable |
+| Deplatforming / single-host failure | Provider-portable AI (base-URL swap) and a planned **self-owned on-prem appliance** (NVIDIA DGX Spark + Starlink + solar) that can host the full stack + local models off-grid — availability independent of any one cloud, ISP, or grid |
 
 Full detail is maintained in an internal remediation log and is available to
 auditors under NDA.
@@ -164,7 +165,7 @@ Security you can't check is marketing. Hawkeye's is checkable:
    audit report (in progress) is shareable even though the backend source is not.
 5. **Break it for a bounty** — a coordinated vulnerability-disclosure program
    (`/.well-known/security.txt`, `SECURITY.md`) invites and rewards attacks.
-5. **Read the open client** — the trust-critical signing/verification code is
+6. **Read the open client** — the trust-critical signing/verification code is
    client-side and open source (MIT, github.com/HawkeyeNG/hawkeye); the parts that
    matter for trust are the parts you can already inspect.
 

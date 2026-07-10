@@ -66,13 +66,16 @@ export function openCases(windowDays = WINDOW_DAYS) {
   return { opened, total: flagged.length };
 }
 
-// Published verdict rule — computed from the structured answers, never chosen:
-//   sheet not authentic OR figures don't match  -> fraudulent
-//   authentic AND figures match AND flag unsupported -> legit
-//   anything else -> inconclusive
+// Published verdict rule — computed from the structured answers, never chosen.
+// `flags` = one yes/no/unsure PER flag on the case (each may be wrong differently):
+//   sheet not authentic OR figures don't match          -> fraudulent
+//   authentic AND figures match AND EVERY flag rejected -> legit
+//   anything else                                       -> inconclusive
 export function computeVerdict(a) {
   if (a.sheet === 'no' || a.counts === 'no') return 'fraudulent';
-  if (a.sheet === 'yes' && a.counts === 'yes' && a.flag === 'no') return 'legit';
+  const flagAnswers = Object.values(a.flags || {});
+  if (a.sheet === 'yes' && a.counts === 'yes'
+      && flagAnswers.length && flagAnswers.every((v) => v === 'no')) return 'legit';
   return 'inconclusive';
 }
 

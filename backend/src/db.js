@@ -253,6 +253,9 @@ for (const ddl of [
   // The docket's own append-only hash chain: flag events, case openings and
   // resolutions. Separate from the submissions chain (public verifiers of that
   // chain expect submissions only); its head is folded into the Rekor artifact.
+  // Optional short public note a juror attaches to their verdict (advisory
+  // texture for tribunals — never counted toward the tally).
+  'ALTER TABLE verdicts ADD COLUMN comment TEXT',
   `CREATE TABLE IF NOT EXISTS docket_ledger (
      id         INTEGER PRIMARY KEY,
      kind       TEXT NOT NULL,

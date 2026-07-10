@@ -11,7 +11,8 @@ import { computeVerdict, verdictTally, docketHead, appendDocket, QUORUM, SUPERMA
 export const docketRouter = Router();
 
 const RULE = 'verdict computed from answers: sheet=no OR counts=no -> fraudulent; '
-  + 'sheet=yes AND counts=yes AND flag=no -> legit; otherwise inconclusive. '
+  + 'sheet=yes AND counts=yes AND EVERY flag answered no (all reasons rejected) -> legit; '
+  + 'otherwise inconclusive. Comments are public but never counted. '
   + `Resolution: >=${QUORUM} verdicts AND >=${Math.round(SUPERMAJORITY * 100)}% supermajority.`;
 
 const caseShape = (c) => ({
@@ -52,10 +53,17 @@ docketRouter.get('/docket/:id', (req, res) => {
     SELECT id, votes_json, image_path, venue_image_path, image_sha256, venue_image_sha256,
            captured_at, location_verified, ocr_matched, ocr_total, vision_json, entry_hash, created_at
     FROM submissions WHERE pu_code = ? AND contest = ? ORDER BY id`).all(c.pu_code, c.contest);
+  // Every verdict is public — including the optional comment — so the jury
+  // itself stays auditable (anonymous observer ids, never names).
+  const verdicts = db.prepare(`
+    SELECT observer_id, answers_json, verdict, comment, created_at
+    FROM verdicts WHERE case_id = ? ORDER BY id DESC LIMIT 500`).all(c.id)
+    .map((v) => ({ observer: v.observer_id, answers: JSON.parse(v.answers_json), verdict: v.verdict, comment: v.comment, at: v.created_at }));
   res.json({
     ...caseShape(c),
     unit: { name: c.name, ward: c.ward, lga: c.lga, state: c.state, registeredVoters: c.registered_voters },
     flags,
+    verdicts,
     rule: RULE,
     submissions: subs.map((s) => ({
       id: s.id,
@@ -86,25 +94,35 @@ docketRouter.post('/docket/:id/verdict', requireObserver, (req, res) => {
   if (!c) return res.status(404).json({ error: 'no_such_case' });
   if (c.status !== 'open' || c.closes_at <= Date.now()) return res.status(400).json({ error: 'case_closed' });
   const ok = new Set(['yes', 'no', 'unsure']);
+  // One answer per flag on the case — each flag can be wrong (or right) in its
+  // own way, so they are judged individually, never as a blob.
+  const flagIds = JSON.parse(c.flag_ids);
+  const flagAnswers = {};
+  for (const id of flagIds) {
+    const v = String(req.body?.flags?.[id] || '');
+    if (!ok.has(v)) return res.status(400).json({ error: 'bad_answers', hint: `answer yes|no|unsure for every flag (missing flag ${id})` });
+    flagAnswers[id] = v;
+  }
   const answers = {
     sheet: String(req.body?.sheet || ''),
     counts: String(req.body?.counts || ''),
-    flag: String(req.body?.flag || ''),
+    flags: flagAnswers,
   };
-  if (!ok.has(answers.sheet) || !ok.has(answers.counts) || !ok.has(answers.flag)) {
-    return res.status(400).json({ error: 'bad_answers', hint: 'each of sheet/counts/flag must be yes|no|unsure' });
+  if (!ok.has(answers.sheet) || !ok.has(answers.counts)) {
+    return res.status(400).json({ error: 'bad_answers', hint: 'sheet and counts must be yes|no|unsure' });
   }
+  const comment = String(req.body?.comment || '').trim().slice(0, 280) || null;
   const verdict = computeVerdict(answers);
   const deviceId = String(req.headers['x-device-id'] || '').slice(0, 64) || null;
   try {
     db.prepare(`
-      INSERT INTO verdicts (case_id, observer_id, device_id, answers_json, verdict, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)`)
-      .run(c.id, req.observer.id, deviceId, JSON.stringify(answers), verdict, Date.now());
+      INSERT INTO verdicts (case_id, observer_id, device_id, answers_json, verdict, comment, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      .run(c.id, req.observer.id, deviceId, JSON.stringify(answers), verdict, comment, Date.now());
   } catch {
     return res.status(409).json({ error: 'already_judged' });
   }
-  appendDocket('verdict', { caseId: c.id, observer: req.observer.id, answers, verdict });
+  appendDocket('verdict', { caseId: c.id, observer: req.observer.id, answers, verdict, comment });
   res.status(201).json({ ok: true, verdict, tally: verdictTally(c.id) });
 });
 

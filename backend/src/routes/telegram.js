@@ -53,8 +53,12 @@ telegramRouter.post('/telegram/webhook', async (req, res) => {
         chatId,
         'Welcome to Hawkeye. Tap the button below to share your phone number — this confirms the number you entered in the app is really yours.',
         {
+          // request_contact only exists on reply keyboards (inline buttons can't
+          // share contacts), so it can't sit above the text pane. is_persistent
+          // keeps it on screen whenever the typing keyboard is closed, instead of
+          // vanishing for good the first time the input is tapped.
           keyboard: [[{ text: '✅ Share my phone number', request_contact: true }]],
-          one_time_keyboard: true,
+          is_persistent: true,
           resize_keyboard: true,
         },
       );

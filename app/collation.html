@@ -8,7 +8,7 @@
   <title>Hawkeye — Report a Collation Result</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=88" />
+  <link rel="stylesheet" href="styles.css?v=90" />
   <style>
     .vote-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
     .vote-row label { flex: 1; margin: 0; font-weight: 700; }
@@ -38,6 +38,7 @@
         <a href="dashboard.html">Unit Reports Log</a>
         <a href="ledger.html">Verify the Ledger</a>
         <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
         <a href="map-unit.html">Map a Polling Unit</a>
         <a href="incidents.html">Report an Incident</a>
         <a href="candidates.html">2027 Candidates</a>
@@ -134,14 +135,15 @@
   </div>
 
   <footer class="gov-footer"><div class="wrap">
-    <nav><a href="observe.html">Report a Result</a><a href="integrity.html">Election Integrity</a></nav>
+    <nav><a href="observe.html">Report a Result</a><a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a></nav>
     <p>Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
   </div></footer>
 
   <script src="device.js"></script>
   <script src="scan.js"></script>
-  <script src="tg.js?v=88"></script>
-  <script src="menu.js?v=88"></script>
+  <script src="tg.js?v=90"></script>
+  <script src="menu.js?v=90"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');

@@ -8,14 +8,14 @@
   <title>Hawkeye — Case File</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=88" />
+  <link rel="stylesheet" href="styles.css?v=90" />
   <style>
     .chipst { font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; }
-    .chipst.open { background: #fbeaea; color: var(--danger); }
+    .chipst.open { background: var(--tint-danger); color: var(--danger); }
     .chipst.upheld { background: #7a1f1f; color: #fff; }
-    .chipst.cleared { background: #e8f5ee; color: var(--green-dark); }
-    .chipst.unresolved { background: #fff3e0; color: #b45309; }
-    .flag { background: #fbeaea; border-left: 4px solid var(--danger); padding: 10px 12px; margin: 8px 0; font-size: 0.9rem; }
+    .chipst.cleared { background: var(--tint-ok); color: var(--link); }
+    .chipst.unresolved { background: var(--tint-warn); color: #b45309; }
+    .flag { background: var(--tint-danger); border-left: 4px solid var(--danger); padding: 10px 12px; margin: 8px 0; font-size: 0.9rem; }
     .flag b { text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.03em; }
     .ev { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
     .ev a img { width: 100%; border: 1px solid var(--border); display: block; }
@@ -132,7 +132,7 @@
       $('judge').innerHTML =
         q('sheet', '1. Is the photographed sheet an official INEC EC8A result form?')
         + q('counts', '2. Do the figures written on the sheet match the reported counts above?')
-        + q('flag', '3. Does the evidence support the flag raised on this result?')
+        + q('flag', '3. This result was flagged for the reason shown at the top of this page. Looking at the evidence yourself, is that reason correct?')
         + '<button id="cast">Cast my verdict</button><p class="note" id="msg"></p>'
         + '<p class="note">Your answers compute the verdict by a published rule — you never pick a side directly.</p>';
       $('cast').onclick = async () => {
@@ -151,6 +151,6 @@
     }
     load();
   </script>
-  <script src="menu.js?v=88"></script>
+  <script src="menu.js?v=90"></script>
 </body>
 </html>

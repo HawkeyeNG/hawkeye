@@ -8,10 +8,10 @@
   <title>Hawkeye — Report an Incident</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=88" />
+  <link rel="stylesheet" href="styles.css?v=90" />
   <style>
     .feed-item { background: var(--card); border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
-    .feed-item .k { font-weight: 700; color: var(--green-dark); }
+    .feed-item .k { font-weight: 700; color: var(--link); }
     .feed-item .m { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
     .feed-item .m img, .feed-item .m video { width: 120px; height: 90px; object-fit: cover; border-radius: 6px; }
     .empty { color: var(--muted); }
@@ -42,6 +42,7 @@
         <a href="dashboard.html">Unit Reports Log</a>
         <a href="ledger.html">Verify the Ledger</a>
         <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
         <a href="map-unit.html">Map a Polling Unit</a>
         <a href="incidents.html">Report an Incident</a>
         <a href="candidates.html">2027 Candidates</a>
@@ -96,13 +97,14 @@
   </main>
 
   <footer class="gov-footer"><div class="wrap">
-    <nav><a href="observe.html">Report a Result</a><a href="integrity.html">Election Integrity</a><a href="results.html">National Leaderboard</a></nav>
+    <nav><a href="observe.html">Report a Result</a><a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a><a href="results.html">National Leaderboard</a></nav>
     <p>Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
   </div></footer>
 
   <script src="device.js"></script>
-  <script src="tg.js?v=88"></script>
-  <script src="menu.js?v=88"></script>
+  <script src="tg.js?v=90"></script>
+  <script src="menu.js?v=90"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     // Escape ALL HTML metacharacters (not just '<') so observer-supplied text is

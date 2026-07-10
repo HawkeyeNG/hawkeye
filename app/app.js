@@ -635,13 +635,22 @@ $('btn-submit').onclick = async () => {
   form.set('venuePhoto', shots.venue.blob, 'venue.jpg');
 
   $('submit-status').textContent = 'Submitting…';
-  const { status, body } = await api('/api/submissions', {
+  const post = () => api('/api/submissions', {
     method: 'POST',
     headers: { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}` },
     body: form,
   });
-  if (status === 401 && (body.error === 'missing_token' || body.error === 'invalid_token')) {
-    $('submit-status').textContent = 'Session expired — verify your phone again.';
+  let { status, body } = await post();
+  // ANY 401 (expired, unknown observer after a server reset, device mismatch…)
+  // = dead session. Silently re-mint via resume and retry the same submission
+  // once; only if that fails does the user get sent back to verification.
+  if (status === 401) {
+    localStorage.removeItem('hawkeye_token');
+    $('submit-status').textContent = 'Refreshing your session…';
+    if (await tryResume()) ({ status, body } = await post());
+  }
+  if (status === 401) {
+    $('submit-status').textContent = 'Session expired — verify your phone again to submit.';
     resetAuthPane();
     show('screen-register');
     return;
@@ -679,6 +688,18 @@ $('btn-another').onclick = () => {
   show('screen-locate');
 };
 
+// A token can LOOK signed-in long after it died (7-day JWT expiry, or the
+// observer row changing server-side). Check the expiry locally so we refresh
+// BEFORE the user builds a whole report on a dead session.
+function tokenFresh() {
+  const t = localStorage.getItem('hawkeye_token');
+  if (!t) return false;
+  try {
+    const { exp } = JSON.parse(atob(t.split('.')[1]));
+    return exp * 1000 > Date.now() + 60_000;
+  } catch { return false; }
+}
+
 // This device may already belong to a verified observer (identity saved on the
 // server). If so, silently mint a fresh token — no repeat sign-up on your own phone.
 async function tryResume() {
@@ -702,7 +723,12 @@ async function tryResume() {
 $('sel-contest').onchange = updateScopeNotice;
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 (async () => {
-  if (!localStorage.getItem('hawkeye_token')) await tryResume();
+  // Expired/corrupt tokens are dropped BEFORE deciding which screen to show —
+  // never let a dead session masquerade as signed-in (resume re-mints silently).
+  if (!tokenFresh()) {
+    localStorage.removeItem('hawkeye_token');
+    await tryResume();
+  }
   if (localStorage.getItem('hawkeye_token')) {
     // Already registered — honour the CTA intent instead of re-verifying.
     if (PREFILL) applyPrefill();

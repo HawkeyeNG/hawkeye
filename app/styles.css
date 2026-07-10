@@ -22,6 +22,15 @@
   --link: #0a6b40;
   --input-border: #b9c4bd;
   --radius: 14px;
+  /* Tinted surfaces — ALWAYS use these (never raw hex) so dark mode can flip
+     them. tint = light green wash, code-bg = hash/token blocks, tint-danger/
+     warn/ok = severity washes, surface = card-like solid (was #fff). */
+  --tint: #eef5f0;
+  --code-bg: #eef2ef;
+  --tint-danger: #fbeaea;
+  --tint-warn: #fff3e0;
+  --tint-ok: #e8f5ee;
+  --surface: #ffffff;
   color-scheme: light;
 }
 /* Dark theme is OPT-IN ONLY via the header toggle (html[data-theme="dark"], set
@@ -33,6 +42,12 @@
   --bg: #0c1310; --card: #151f19;
   --border: #2b3a31; --line: #223028; --input-border: #35463c;
   --link: #57d9a1;
+  --tint: #1b2a21;
+  --code-bg: #1a2622;
+  --tint-danger: #331d1d;
+  --tint-warn: #302517;
+  --tint-ok: #16281e;
+  --surface: #151f19;
   color-scheme: dark;
 }
 /* Self-hosted type: Inter for UI/body, Lora serif for headings. */
@@ -215,7 +230,7 @@ h2 { font-size: 1.18rem; margin: 0 0 8px; display: flex; align-items: center; ga
 .hint { color: var(--muted); font-size: 0.88rem; }
 .status { font-weight: 700; font-size: 0.95rem; }
 .link { color: var(--link); font-weight: 700; }
-code { word-break: break-all; font-size: 0.72rem; background: #eef2ef; border-radius: 4px; padding: 2px 5px; }
+code { word-break: break-all; font-size: 0.72rem; background: var(--code-bg); border-radius: 4px; padding: 2px 5px; }
 
 .step-no {
   display: inline-flex; align-items: center; justify-content: center;
@@ -299,19 +314,19 @@ button:disabled {
   filter: none;
 }
 button.secondary {
-  color: var(--green-dark);
-  background: #fff;
-  border: 1.5px solid var(--green-dark);
+  color: var(--link);
+  background: var(--surface);
+  border: 1.5px solid var(--link);
   box-shadow: none;
 }
-button.secondary:hover { background: #eef5f0; filter: none; }
+button.secondary:hover { background: var(--tint); filter: none; }
 
 /* ---------- option lists (polling units) ---------- */
 .option-list { margin-top: 8px; }
 .pu-option {
   text-align: left;
   color: var(--ink);
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-left: 5px solid var(--green);
   border-radius: 10px;
@@ -319,8 +334,8 @@ button.secondary:hover { background: #eef5f0; filter: none; }
   font-weight: 400;
   margin: 10px 0 0;
 }
-.pu-option:hover { background: #f6faf8; filter: none; }
-.pu-option strong { color: var(--green-dark); }
+.pu-option:hover { background: var(--tint); filter: none; }
+.pu-option strong { color: var(--link); }
 .pu-option small { color: var(--muted); }
 
 details summary { cursor: pointer; font-weight: 700; color: var(--link); }
@@ -387,7 +402,9 @@ button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.1
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
   padding: 4px 0;
   z-index: 80;
-  overflow: hidden;
+  /* NOTE: no `overflow: hidden` here — it silently kills the overflow-y:auto
+     above and CLIPS long menus with no scrollbar (the "menu too short" bug). */
+  overflow-x: hidden;
 }
 .menu-panel[hidden] { display: none; }
 .menu-panel .sign-out { color: var(--danger) !important; font-weight: 700; }
@@ -436,7 +453,7 @@ button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.1
 
 .scope-note:empty { display: none; }
 .scope-note {
-  background: #eef5f0;
+  background: var(--tint);
   border-left: 4px solid var(--green);
   border-radius: 0 8px 8px 0;
   padding: 10px 12px;
@@ -473,7 +490,7 @@ button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.1
   transform: rotate(-45deg); transition: transform .22s ease; }
 .acc[open] > summary::after { transform: rotate(45deg); }
 .acc > summary:hover { background: rgba(0, 135, 81, 0.05); }
-.acc[open] > summary { color: var(--green-darker); background: rgba(0, 135, 81, 0.04); }
+.acc[open] > summary { color: var(--link); background: rgba(0, 135, 81, 0.04); }
 .acc > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
 .acc-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
   flex: none; border-radius: 50%; background: var(--green); color: #fff; font-size: 0.82rem; font-weight: 700; }
@@ -555,9 +572,9 @@ button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.1
 .bar > div { height: 100%; background: var(--green); }
 .bar.disputed > div { background: var(--danger); }
 .meta { color: var(--muted); font-size: 0.85rem; }
-.ledger-ok { color: var(--green-dark); font-weight: 700; }
+.ledger-ok { color: var(--link); font-weight: 700; }
 .ledger-bad { color: var(--danger); font-weight: 700; }
-.status-verified { color: var(--green-dark); }
+.status-verified { color: var(--link); }
 .status-disputed { color: var(--danger); }
 .status-reported { color: var(--muted); }
 

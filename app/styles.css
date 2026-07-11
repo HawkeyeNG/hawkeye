@@ -662,3 +662,27 @@ a.bell-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
   border-radius: 8px; background: var(--danger); color: #fff; font-size: 0.56rem;
   font-weight: 700; display: flex; align-items: center; justify-content: center;
 }
+
+/* Report chooser — bottom action sheet opened by the tab bar's center CTA. */
+.report-sheet { position: fixed; inset: 0; z-index: 120; }
+.report-sheet[hidden] { display: none; }
+.rs-backdrop { position: absolute; inset: 0; background: rgba(10, 18, 14, 0.55); }
+.rs-panel {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: var(--card); border-radius: 18px 18px 0 0;
+  padding: 8px 16px calc(18px + env(safe-area-inset-bottom));
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.3);
+  animation: rs-up 0.18s ease-out;
+}
+@keyframes rs-up { from { transform: translateY(30%); opacity: 0.6; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .rs-panel { animation: none; } }
+.rs-grab { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 6px auto 10px; }
+.rs-panel h3 { margin: 0 0 10px; font-size: 1.05rem; }
+.rs-opt {
+  display: flex; align-items: center; gap: 14px; padding: 13px 10px;
+  text-decoration: none; color: var(--ink); border-top: 1px solid var(--line);
+}
+.rs-opt svg { width: 26px; height: 26px; flex: none; color: var(--green); }
+.rs-opt strong { display: block; font-size: 0.98rem; }
+.rs-opt small { color: var(--muted); font-size: 0.8rem; }
+.rs-opt:active { background: var(--tint); }

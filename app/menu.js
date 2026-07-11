@@ -95,6 +95,24 @@
     btn.parentNode.insertBefore(tb, btn);
   }
 
+  // Notifications bell (in-app feed). Shows an unread badge when signed in;
+  // tapping opens notifications.html. Not on the notifications page itself.
+  if (btn && !document.querySelector('.bell-btn') && !/notifications\.html/.test(location.pathname)) {
+    const a = document.createElement('a');
+    a.className = 'bell-btn';
+    a.href = 'notifications.html';
+    a.setAttribute('aria-label', 'Notifications');
+    a.innerHTML = '🔔<span class="bell-dot" hidden></span>';
+    btn.parentNode.insertBefore(a, document.querySelector('.theme-btn') || btn);
+    const tok = localStorage.getItem('hawkeye_token');
+    if (tok) {
+      fetch('/api/notifications', { headers: { authorization: 'Bearer ' + tok } })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d && d.unread > 0) { const dot = a.querySelector('.bell-dot'); dot.textContent = d.unread > 9 ? '9+' : d.unread; dot.hidden = false; } })
+        .catch(() => {});
+    }
+  }
+
   // Mascot trial: swap the emoji crest for the hawk mark on every page from
   // one place (pages keep the emoji as a no-JS fallback).
   for (const c of document.querySelectorAll('.crest')) {

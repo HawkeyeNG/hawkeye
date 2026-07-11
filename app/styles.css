@@ -398,6 +398,17 @@ button.theme-btn {
   line-height: 1; cursor: pointer; margin: 0 10px 0 auto; box-shadow: none; display: inline-block;
 }
 button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); filter: none; }
+a.bell-btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; margin: 0 4px 0 0; border-radius: 9px;
+  border: 1.5px solid rgba(255, 255, 255, 0.35); text-decoration: none; font-size: 1.05rem;
+}
+a.bell-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
+.bell-dot {
+  position: absolute; top: -6px; right: -6px; min-width: 17px; height: 17px; padding: 0 4px;
+  border-radius: 999px; background: var(--danger); color: #fff; font-size: 0.62rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; line-height: 1;
+}
 .menu-panel {
   position: absolute;
   right: 0;

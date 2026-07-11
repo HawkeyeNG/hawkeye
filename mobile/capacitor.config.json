@@ -1,0 +1,12 @@
+{
+  "appId": "ng.com.hawkeye.observer",
+  "appName": "Hawkeye",
+  "webDir": "../app",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "CapacitorHttp": { "enabled": true },
+    "PushNotifications": { "presentationOptions": ["badge", "sound", "alert"] }
+  }
+}

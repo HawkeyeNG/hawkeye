@@ -420,6 +420,8 @@ submissionsRouter.get('/anchors', (_req, res) => {
       rekorLogIndex: r.rekor_log_index,
       rekorTime: r.rekor_time,
       rekorUrl: r.rekor_uuid ? `https://rekor.sigstore.dev/api/v1/log/entries/${r.rekor_uuid}` : null,
+      // human-readable viewer (the rekorUrl above is the raw API for verifiers)
+      rekorSearchUrl: r.rekor_log_index != null ? `https://search.sigstore.dev/?logIndex=${r.rekor_log_index}` : null,
     })),
   });
 });
@@ -439,7 +441,7 @@ submissionsRouter.get('/anchors/:id/races', (req, res) => {
 // fold the proof and confirm this exact race was fixed at that anchor's time,
 // without trusting us and without replaying every other race.
 submissionsRouter.get('/anchors/:id/races/:raceKey', (req, res) => {
-  const a = db.prepare('SELECT races_root, rekor_uuid FROM anchors WHERE id = ?').get(req.params.id);
+  const a = db.prepare('SELECT races_root, rekor_uuid, rekor_log_index FROM anchors WHERE id = ?').get(req.params.id);
   if (!a) return res.status(404).json({ error: 'no_such_anchor' });
   const r = db.prepare(
     'SELECT race_key, race_head, entries, leaf_index, leaf_hash, proof_json FROM anchor_races WHERE anchor_id = ? AND race_key = ?')
@@ -455,6 +457,7 @@ submissionsRouter.get('/anchors/:id/races/:raceKey', (req, res) => {
     proof: JSON.parse(r.proof_json),
     racesRoot: a.races_root,
     rekorUrl: a.rekor_uuid ? `https://rekor.sigstore.dev/api/v1/log/entries/${a.rekor_uuid}` : null,
+    rekorSearchUrl: a.rekor_log_index != null ? `https://search.sigstore.dev/?logIndex=${a.rekor_log_index}` : null,
     howToVerify: 'Recompute leaf via leafFormula; fold proof to racesRoot (per step h = side===left ? sha256(step.hash+h) : sha256(h+step.hash)); confirm racesRoot appears in the Rekor artifact at rekorUrl.',
   });
 });

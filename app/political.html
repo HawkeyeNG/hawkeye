@@ -7,7 +7,7 @@
   <title>Hawkeye — Political Data</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=90" />
+  <link rel="stylesheet" href="styles.css?v=91" />
   <style>
     .map-card svg { width: 100%; height: auto; }
     .st { stroke: #fff; stroke-width: 1; }
@@ -41,6 +41,10 @@
     .comp-bar i { display: block; height: 100%; }
     .comp-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 0.8rem; color: var(--muted); }
     .comp-legend b { color: var(--ink); }
+    /* pc-dark-override: party colors stay on borders; text falls back to ink in dark */
+    /* pc-dark-override2: inline party-colored text (tables) also falls back */
+    :root[data-theme="dark"] td > span[style] { color: var(--ink) !important; }
+    :root[data-theme="dark"] .cand em, :root[data-theme="dark"] .minor em { color: var(--ink); }
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -209,7 +213,7 @@
       }
     })();
   </script>
-  <script src="tg.js?v=90"></script>
-  <script src="menu.js?v=90"></script>
+  <script src="tg.js?v=91"></script>
+  <script src="menu.js?v=91"></script>
 </body>
 </html>

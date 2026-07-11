@@ -265,6 +265,19 @@ for (const ddl of [
      created_at  INTEGER NOT NULL
    )`,
   'CREATE INDEX IF NOT EXISTS idx_push_observer ON device_push_tokens(observer_id)',
+  // In-app notification feed (one row per observer per event). See
+  // services/notifications.js; surfaced on notifications.html + the header bell.
+  `CREATE TABLE IF NOT EXISTS notifications (
+     id          INTEGER PRIMARY KEY,
+     observer_id INTEGER NOT NULL REFERENCES observers(id),
+     kind        TEXT NOT NULL DEFAULT 'info',
+     title       TEXT NOT NULL,
+     body        TEXT,
+     url         TEXT,
+     read        INTEGER NOT NULL DEFAULT 0,
+     created_at  INTEGER NOT NULL
+   )`,
+  'CREATE INDEX IF NOT EXISTS idx_notif_observer ON notifications(observer_id, read, id)',
   `CREATE TABLE IF NOT EXISTS docket_ledger (
      id         INTEGER PRIMARY KEY,
      kind       TEXT NOT NULL,

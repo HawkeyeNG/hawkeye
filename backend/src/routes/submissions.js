@@ -311,17 +311,27 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // fire-and-forget so it never delays or blocks the submission response.
     import('../services/vision.js').then((v) => v.analyzeSheet(sheet.buffer, { contest, votes, pu, submissionId })).catch(() => {});
 
-    // Alert everyone who saved this unit as theirs (best-effort, non-blocking) —
-    // Telegram + native push, whichever channels they have.
+    // In-app notification centre (persisted) + native push, for the reporter and
+    // for everyone who saved this unit. Telegram fan-out is kept for savers who
+    // linked it. All best-effort — never block the submission.
+    import('../services/notifications.js').then((n) => {
+      n.pushNote(req.observer.id, {
+        kind: 'report',
+        title: 'Report recorded',
+        body: `${pu.name} (${puCode}) · ${contestLabel} — status ${result?.status || 'reported'}. It is on the public ledger.`,
+        url: 'https://hawkeye.com.ng/dashboard.html',
+      });
+      n.noteUnitSavers(puCode, {
+        kind: 'unit',
+        title: 'New report at your unit',
+        body: `${pu.name} (${puCode}) · ${contest}`,
+        url: 'https://hawkeye.com.ng/dashboard.html',
+      });
+    }).catch(() => {});
     try {
       notifyUnitSavers(puCode,
         `📋 New result report at your polling unit ${puCode} (${contest}).\nSee it: https://hawkeye.com.ng/dashboard.html`);
     } catch { /* never block the submission */ }
-    import('../services/push.js').then((p) => p.pushUnitSavers(puCode, {
-      title: 'New report at your unit',
-      body: `${puCode} · ${contest}`,
-      data: { url: 'https://hawkeye.com.ng/dashboard.html' },
-    })).catch(() => {});
 
     res.status(201).json({ ok: true, entryHash, locationVerified: Boolean(locationVerified), ocr, result });
   } catch (err) {

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="Your Hawkeye notifications — reports at your saved units, status updates, and alerts." />
+  <title>Hawkeye — Notifications</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=94" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css?v=94" />
+  <script src="native.js?v=94"></script>
+  <style>
+    .n { display: flex; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 8px 0; color: inherit; text-decoration: none; }
+    .n.unread { border-left: 4px solid var(--green); }
+    .n .ic { font-size: 1.2rem; flex: none; }
+    .n h3 { margin: 0 0 2px; font-size: 0.96rem; }
+    .n p { margin: 0; font-size: 0.87rem; color: var(--muted); }
+    .n time { font-size: 0.74rem; color: var(--muted); }
+    .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 6px 0 10px; }
+    .top button { margin: 0; width: auto; }
+    .empty { color: var(--muted); padding: 28px; text-align: center; }
+  </style>
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html" aria-label="Hawkeye home"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="top">
+      <h1 style="margin:0">Notifications</h1>
+      <button class="secondary" id="mark-all" hidden>Mark all read</button>
+    </div>
+    <div id="list"><p class="empty">Loading…</p></div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const token = localStorage.getItem('hawkeye_token');
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const ICON = { report: '🦅', unit: '📋', incident: '🆘', case: '⚖️', info: '🔔' };
+    const ago = (t) => {
+      const s = (Date.now() - t) / 1000;
+      if (s < 60) return 'just now';
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+      return new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' });
+    };
+
+    async function load() {
+      if (!token) {
+        $('list').innerHTML = '<p class="empty">Sign in to see your notifications. <a href="observe.html?intent=observe">Become an observer →</a></p>';
+        return;
+      }
+      const d = await fetch('/api/notifications', { headers: { authorization: 'Bearer ' + token } })
+        .then((r) => (r.ok ? r.json() : { items: [] })).catch(() => ({ items: [] }));
+      if (!d.items.length) { $('list').innerHTML = '<p class="empty">No notifications yet. You’ll see reports at your saved units and status updates here.</p>'; return; }
+      $('mark-all').hidden = d.unread === 0;
+      $('list').innerHTML = d.items.map((n) => {
+        const inner = `<span class="ic">${ICON[n.kind] || ICON.info}</span>
+          <div><h3>${esc(n.title)}</h3>${n.body ? `<p>${esc(n.body)}</p>` : ''}
+          <time>${ago(n.created_at)}</time></div>`;
+        return n.url
+          ? `<a class="n ${n.read ? '' : 'unread'}" href="${esc(n.url)}">${inner}</a>`
+          : `<div class="n ${n.read ? '' : 'unread'}">${inner}</div>`;
+      }).join('');
+      // Opening the page marks everything read.
+      if (d.unread > 0) {
+        fetch('/api/notifications/read', {
+          method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+          body: JSON.stringify({ all: true }),
+        }).catch(() => {});
+      }
+    }
+    $('mark-all').onclick = () => {
+      fetch('/api/notifications/read', {
+        method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+        body: JSON.stringify({ all: true }),
+      }).then(() => load()).catch(() => {});
+    };
+    load();
+  </script>
+  <script src="menu.js?v=94"></script>
+</body>
+</html>

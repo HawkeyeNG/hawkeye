@@ -1,7 +1,7 @@
 // Minimal service worker: cache the app shell so the observer app opens instantly
 // on flaky election-day networks. API calls always hit the network.
-const CACHE = 'hawkeye-v94'; // bump on any shell change so installed clients refresh
-const SHELL = ['/', '/index.html', '/observe.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/app.js', '/scan.js', '/device.js', '/menu.js?v=94', '/tg.js?v=94', '/styles.css?v=94', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/candidates.html', '/political.html', '/privacy.html', '/og-image.png', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2', '/fonts/lora-600.woff2', '/fonts/lora-700.woff2', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css'];
+const CACHE = 'hawkeye-v95'; // bump on any shell change so installed clients refresh
+const SHELL = ['/', '/index.html', '/observe.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/app.js', '/scan.js', '/device.js', '/menu.js?v=95', '/tg.js?v=95', '/styles.css?v=95', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/candidates.html', '/political.html', '/privacy.html', '/og-image.png', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2', '/fonts/lora-600.woff2', '/fonts/lora-700.woff2', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));

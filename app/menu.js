@@ -113,6 +113,40 @@
     }
   }
 
+  // Bottom tab bar (mobile app pattern) — one raised center action, 5 slots,
+  // consistent on every page. CSS hides it on desktop (header nav covers that).
+  if (!document.querySelector('.tabbar')) {
+    const page = (location.pathname.replace(/^.*\//, '') || 'index.html');
+    const ic = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+    const TABS = [
+      { href: 'index.html', label: 'Home', icon: '<path d="M3 11 12 4l9 7"/><path d="M5 10v9h5v-6h4v6h5v-9"/>' },
+      { href: 'results.html', label: 'Results', icon: '<path d="M4 20V4"/><path d="M4 20h16"/><rect x="7" y="12" width="3" height="5"/><rect x="12" y="8" width="3" height="9"/><rect x="17" y="14" width="3" height="3"/>' },
+      { href: 'observe.html', label: 'Report', cta: true, icon: '<circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/>' },
+      { href: 'notifications.html', label: 'Alerts', bell: true, icon: '<path d="M6 9a6 6 0 1 1 12 0c0 4.5 2 5.5 2 5.5H4S6 13.5 6 9"/><path d="M10 20a2 2 0 0 0 4 0"/>' },
+      { href: '#more', label: 'More', more: true, icon: '<path d="M4 6h16M4 12h16M4 18h16"/>' },
+    ];
+    const isOn = (h) => h.replace(/#.*/, '') === page;
+    const nav = document.createElement('nav');
+    nav.className = 'tabbar';
+    nav.setAttribute('aria-label', 'Primary');
+    nav.innerHTML = TABS.map((t) => `<a class="tab${t.cta ? ' tab-cta' : ''}${isOn(t.href) ? ' on' : ''}" href="${t.href}"${t.more ? ' data-more="1"' : ''}>`
+      + `<span class="ti">${t.bell ? '<span class="tab-dot" hidden></span>' : ''}${ic(t.icon)}</span><span class="tl">${t.label}</span></a>`).join('');
+    document.body.appendChild(nav);
+    document.body.classList.add('has-tabbar');
+    nav.querySelector('[data-more]').addEventListener('click', (e) => {
+      e.preventDefault();
+      const p = document.getElementById('menu-panel');
+      if (p) { p.hidden = !p.hidden; document.querySelector('.menu-btn')?.setAttribute('aria-expanded', String(!p.hidden)); }
+    });
+    const tk = localStorage.getItem('hawkeye_token');
+    if (tk && !/notifications\.html/.test(location.pathname)) {
+      fetch('/api/notifications', { headers: { authorization: 'Bearer ' + tk } })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d && d.unread > 0) { const dot = nav.querySelector('.tab-dot'); if (dot) { dot.textContent = d.unread > 9 ? '9+' : d.unread; dot.hidden = false; } } })
+        .catch(() => {});
+    }
+  }
+
   // Mascot trial: swap the emoji crest for the hawk mark on every page from
   // one place (pages keep the emoji as a no-JS fallback).
   for (const c of document.querySelectorAll('.crest')) {

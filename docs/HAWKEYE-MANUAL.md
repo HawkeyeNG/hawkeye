@@ -68,6 +68,17 @@ discrepancies, form-serial anomalies, and Benford-style outlier scans. Flags
 are for scrutiny, not verdicts — but they are public within minutes, not
 buried in a tribunal exhibit months later.
 
+### 2.6 Crowd arbitration — the Public Docket
+A high-severity flag marks the result **disputed**: badged everywhere, excluded
+from headline tallies. After the election every open flag becomes a public
+**case** (docket.html) with its full evidence — photos, counts, AI reasoning,
+ledger proof. Verified observers judge each flag individually by answering
+factual questions (one signed verdict per person, optional public note);
+quorum (50) plus a ⅔ supermajority resolves the case mechanically. Upheld →
+struck forever; cleared → the badge lifts and the false flag stays on record.
+Openings, verdicts and resolutions ride their own hash chain, folded into the
+same external anchors. Nobody at Hawkeye decides.
+
 ## 3. Use-cases
 
 | Who | What Hawkeye gives them |
@@ -92,6 +103,7 @@ buried in a tribunal exhibit months later.
 - **Verify the Ledger** — one click re-verifies the full hash chain client-side; a
   "Verify a Single Race" panel folds one contest's Merkle proof to the anchored root.
 - **Election Integrity** — the public anomaly log.
+- **Public Docket** — flagged results on trial before the crowd (docket.html).
 - **Report an Incident** — violence, vote-buying, BVAS failure; human-reviewed
   before publication.
 - **Map a Polling Unit** — crowd-verify unit GPS before election day.

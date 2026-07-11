@@ -43,8 +43,13 @@ Scaffold wires the plugins (camera, geolocation, preferences, network, push).
 The capability seams in `app/native.js` (`window.HAWKEYE.capabilities`) are the
 integration points for the next phase, per architecture §3:
 
-- [ ] Camera → native capture-only plugin (**must keep** compress → hash → sign →
-      upload order; the ledger content-addresses the compressed bytes).
+- [x] **Camera → native capture-only** (`app/native.js` `capturePhoto()` via the
+      Camera plugin, source `CAMERA`, no gallery; `app.js` routes the capture
+      buttons to it in the shell and runs the **same** `finalizeShot` tail, so
+      compress → hash → sign → upload is byte-for-byte identical to web).
+      Android CAMERA permission is merged in by the plugin. **iOS:** after
+      `cap add ios`, add `NSCameraUsageDescription` +
+      `NSLocationWhenInUseUsageDescription` to `ios/App/App/Info.plist`.
 - [ ] Signing key → iOS Keychain / Android Keystore (Secure Enclave / TEE).
 - [ ] Push → FCM (Android) / APNs (iOS); backend `device_push_tokens` + send helper.
 - [ ] Offline outbox → queue signed reports, flush on reconnect (idempotent on

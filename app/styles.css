@@ -31,6 +31,8 @@
   --tint-warn: #fff3e0;
   --tint-ok: #e8f5ee;
   --surface: #ffffff;
+  --text-danger: #b3261e;
+  --text-warn: #7a4506;
   color-scheme: light;
 }
 /* Dark theme is OPT-IN ONLY via the header toggle (html[data-theme="dark"], set
@@ -48,6 +50,8 @@
   --tint-warn: #302517;
   --tint-ok: #16281e;
   --surface: #151f19;
+  --text-danger: #ff9d94;
+  --text-warn: #e8b07a;
   color-scheme: dark;
 }
 /* Self-hosted type: Inter for UI/body, Lora serif for headings. */
@@ -137,7 +141,7 @@ main.wrap { max-width: 840px; }
 .lcard .hash { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.66rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 8px; }
 .lcard .chip { flex: none; font-size: 0.64rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
 .chip.ok { background: #e3f6ec; color: #0a6b40; }
-.chip.wait { background: #fdf3d7; color: #8a6d00; }
+.chip.wait { background: #fdf3d7; color: #6b5500; }
 .lcard .votes { display: flex; gap: 14px; margin-top: 9px; font-weight: 700; }
 .lcard .votes span i { font-style: normal; font-size: 0.64rem; color: var(--muted); display: block; font-weight: 500; }
 .lcard:nth-child(1) { top: 0; left: 0; transform: rotate(-2deg); }
@@ -215,7 +219,7 @@ section.how-sec h2 { font-size: 1.9rem; margin: 0 0 12px; }
 .role-icon { font-size: 1.6rem; }
 .role-card h3 { margin: 8px 0 6px; font-size: 1.05rem; }
 .role-card p { margin: 0 0 10px; font-size: 0.9rem; color: var(--muted); }
-.role-go { color: var(--green); font-weight: 700; font-size: 0.92rem; }
+.role-go { color: var(--link); font-weight: 700; font-size: 0.92rem; }
 .how-steps { padding-left: 20px; display: grid; gap: 10px; font-size: 0.95rem; }
 .how-links { display: flex; gap: 18px; flex-wrap: wrap; }
 .how-links a { color: var(--link); font-weight: 700; }

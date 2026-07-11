@@ -8,7 +8,7 @@
   <title>Hawkeye — Election Integrity</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=91" />
+  <link rel="stylesheet" href="styles.css?v=92" />
   <style>
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
     .stat { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--green); padding: 14px; }
@@ -24,8 +24,8 @@
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e6e6e5; vertical-align: top; }
     th { border-bottom: 2px solid var(--ink); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
     .sev { font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; white-space: nowrap; }
-    .sev.high { background: var(--tint-danger); color: var(--danger); }
-    .sev.medium { background: var(--tint-warn); color: #b45309; }
+    .sev.high { background: var(--tint-danger); color: var(--text-danger); }
+    .sev.medium { background: var(--tint-warn); color: var(--text-warn); }
     .sev.low { background: var(--tint); color: var(--link); }
     .type-tag { font-weight: 700; }
     .benford { display: flex; align-items: flex-end; gap: 6px; height: 120px; margin-top: 10px; }
@@ -88,8 +88,8 @@
         <span class="chip" data-sev="high">🚩 High</span>
         <span class="chip" data-sev="medium">⚠️ Medium</span>
         <span class="chip" data-sev="low">ℹ️ Low</span>
-        <select id="type-filter"><option value="">All types</option></select>
-        <select id="state-filter"><option value="">All states</option></select>
+        <select id="type-filter" aria-label="Filter by discrepancy type"><option value="">All types</option></select>
+        <select id="state-filter" aria-label="Filter by state"><option value="">All states</option></select>
       </div>
       <table>
         <thead><tr><th>Severity</th><th>Type</th><th>Polling unit</th><th>Detail</th><th>When</th></tr></thead>
@@ -155,8 +155,8 @@
     <p>Automated flags aid scrutiny; they are not proof of fraud. Official results remain INEC's.</p>
   </div></footer>
 
-  <script src="tg.js?v=91"></script>
-  <script src="menu.js?v=91"></script>
+  <script src="tg.js?v=92"></script>
+  <script src="menu.js?v=92"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const TYPE_LABEL = {

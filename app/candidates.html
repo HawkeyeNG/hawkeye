@@ -8,16 +8,17 @@
   <title>Hawkeye — 2027 Candidates</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=91" />
+  <link rel="stylesheet" href="styles.css?v=92" />
   <style>
     .cand-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 10px; }
     .cand { border: 1px solid var(--line); border-top: 4px solid var(--pc, #9aa7a0); border-radius: 12px; padding: 16px; background: var(--card); }
     .cand .row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .cand .av { width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--pc, #9aa7a0); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
     .cand h3 { margin: 0; font-size: 1.02rem; }
-    .cand .pill { display: inline-block; font-size: 0.68rem; font-weight: 700; color: #fff; background: var(--pc, #9aa7a0); border-radius: 999px; padding: 2px 9px; margin-bottom: 3px; }
+    .cand .pill { display: inline-block; font-size: 0.68rem; font-weight: 700; color: var(--ink); background: var(--tint); border-radius: 999px; padding: 2px 9px; margin-bottom: 3px; }
+    .cand .pill::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--pc, #9aa7a0); margin-right: 5px; }
     .cand p { margin: 0 0 8px; font-size: 0.85rem; color: var(--muted); }
-    .cand .inc { font-size: 0.68rem; font-weight: 700; color: #8a6d00; background: #fdf3d7; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
+    .cand .inc { font-size: 0.68rem; font-weight: 700; color: #6b5500; background: #fdf3d7; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
     .cand dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0; font-size: 0.78rem; }
     .cand dt { color: var(--muted); font-weight: 600; }
     .cand dd { margin: 0; }
@@ -27,7 +28,7 @@
     .minor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 12px; margin-top: 10px; }
     .minor { border: 1px solid var(--line); border-left: 4px solid var(--pc, #9aa7a0); border-radius: 10px; padding: 12px 14px; background: var(--card); }
     .minor strong { display: block; font-size: 0.92rem; }
-    .minor em { font-style: normal; font-size: 0.74rem; font-weight: 700; color: var(--pc, #5b6b62); }
+    .minor em { font-style: normal; font-size: 0.74rem; font-weight: 700; color: var(--muted); }
     .minor span { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
     /* pc-dark-override: party colors stay on borders; text falls back to ink in dark */
     /* pc-dark-override2: inline party-colored text (tables) also falls back */
@@ -138,7 +139,7 @@
         </div>`).join('');
       document.getElementById('compare').innerHTML = r.candidates.map((c) => `
         <tr><td><strong>${c.name}</strong></td>
-        <td>${flag(c.party)}<span style="color:${color(c.party)};font-weight:700">${c.party}</span></td>
+        <td>${flag(c.party)}<span style="font-weight:700">${c.party}</span></td>
         <td>${c.home || '—'}</td><td>${c.bids || '—'}</td><td>${c.status || '—'}</td></tr>`).join('');
       document.getElementById('minors').innerHTML = (r.minors || []).map((m) => `
         <div class="minor" style="--pc:${color(m.party)}">
@@ -152,7 +153,7 @@
       }
     })();
   </script>
-  <script src="tg.js?v=91"></script>
-  <script src="menu.js?v=91"></script>
+  <script src="tg.js?v=92"></script>
+  <script src="menu.js?v=92"></script>
 </body>
 </html>

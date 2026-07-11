@@ -90,4 +90,37 @@
     };
     document.addEventListener('DOMContentLoaded', () => setTimeout(() => window.HAWKEYE.initPush().catch(() => {}), 1500));
   }
+
+  // ---- geolocation: route navigator.geolocation through the native plugin ----
+  // The system WebView denies web geolocation unless the OS runtime permission is
+  // granted; the plugin requests it properly. Patching getCurrentPosition means
+  // the existing app.js code (getCaptureFix / getPosition) works unchanged.
+  const Geo = Cap.Plugins && Cap.Plugins.Geolocation;
+  if (Geo && navigator.geolocation) {
+    window.HAWKEYE.capabilities.geolocation = true;
+    const gerr = (code, message) => ({ code, message, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 });
+    navigator.geolocation.getCurrentPosition = function (success, error, options) {
+      (async () => {
+        try {
+          let perm = await Geo.checkPermissions();
+          if (perm.location !== 'granted' && perm.coarseLocation !== 'granted') perm = await Geo.requestPermissions();
+          if (perm.location !== 'granted' && perm.coarseLocation !== 'granted') { if (error) error(gerr(1, 'Location permission denied')); return; }
+          const pos = await Geo.getCurrentPosition({
+            enableHighAccuracy: !(options && options.enableHighAccuracy === false),
+            timeout: (options && options.timeout) || 15000,
+            maximumAge: (options && options.maximumAge) || 0,
+          });
+          success({ coords: pos.coords, timestamp: pos.timestamp });
+        } catch (e) { if (error) error(gerr(2, String((e && e.message) || e))); }
+      })();
+    };
+  }
+
+  // The PWA "Install Web App" prompt is meaningless inside the installed app.
+  document.addEventListener('DOMContentLoaded', () => {
+    for (const id of ['install-cta', 'install-hint']) {
+      const el = document.getElementById(id);
+      if (el) el.hidden = true;
+    }
+  });
 })();

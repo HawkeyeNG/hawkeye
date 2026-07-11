@@ -64,6 +64,10 @@
 
 * { box-sizing: border-box; }
 html { background: var(--bg); scroll-behavior: smooth; }
+/* Pin the chrome: no horizontal page scroll (overflow-x: clip kills sideways
+   panning WITHOUT breaking position:sticky, unlike hidden), and no rubber-band
+   overscroll bounce pulling the header/footer away from the viewport edges. */
+html, body { overflow-x: clip; overscroll-behavior: none; }
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;

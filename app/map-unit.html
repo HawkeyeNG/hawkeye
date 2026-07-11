@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#00482b" />
   <meta name="description" content="Map your polling unit before election day so results reported there can be location-verified." />
   <title>Hawkeye — Map a Polling Unit</title>
-  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=93" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=92" />
+  <link rel="stylesheet" href="styles.css?v=93" />
   <!-- Leaflet self-hosted (vendor/leaflet) — CDN was a single point of failure
        on flaky networks and inside the future Telegram webview. -->
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
@@ -341,7 +341,7 @@
       fill($('sel-state'), await (await fetch('/api/register/states')).json(), '— select state —');
     })();
   </script>
-  <script src="tg.js?v=92"></script>
-  <script src="menu.js?v=92"></script>
+  <script src="tg.js?v=93"></script>
+  <script src="menu.js?v=93"></script>
 </body>
 </html>

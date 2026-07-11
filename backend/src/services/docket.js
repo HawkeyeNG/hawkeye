@@ -60,6 +60,11 @@ export function openCases(windowDays = WINDOW_DAYS) {
       const id = info.lastInsertRowid;
       appendDocket('case_open', { caseId: id, puCode: f.pu_code, contest: f.contest, flagIds: f.ids, closesAt: closes });
       recomputeResult(db, f.pu_code, f.contest);
+      import('./notifications.js').then((n) => n.noteUnitSavers(f.pu_code, {
+        kind: 'case', title: 'A result at your unit is in dispute',
+        body: `${f.pu_code} · ${f.contest} — open for crowd review. Judge the evidence.`,
+        url: `https://hawkeye.com.ng/case.html?id=${id}`,
+      })).catch(() => {});
     }
   }
   if (opened) notifyMaster(`⚖️ docket: ${opened} case(s) opened for public review`);
@@ -85,6 +90,18 @@ export function verdictTally(caseId) {
   const t = { legit: 0, fraudulent: 0, inconclusive: 0, total: 0 };
   for (const r of rows) { t[r.verdict] = r.c; t.total += r.c; }
   return t;
+}
+
+// On resolution, notify everyone who judged the case (distinct jurors) plus the
+// unit's savers, deduped so nobody gets it twice.
+function noteVoters(n, caseId, puCode, note) {
+  const seen = new Set();
+  for (const { observer_id } of db.prepare('SELECT DISTINCT observer_id FROM verdicts WHERE case_id = ?').all(caseId)) {
+    if (!seen.has(observer_id)) { seen.add(observer_id); n.pushNote(observer_id, note); }
+  }
+  for (const { observer_id } of db.prepare("SELECT DISTINCT s.observer_id FROM saved_units s JOIN observers o ON o.id = s.observer_id AND o.status = 'active' WHERE s.pu_code = ?").all(puCode)) {
+    if (!seen.has(observer_id)) { seen.add(observer_id); n.pushNote(observer_id, note); }
+  }
 }
 
 // Mechanical resolution, run on an interval. Quorum + supermajority on a
@@ -113,6 +130,12 @@ export function resolveDueCases() {
     appendDocket('resolution', { caseId: c.id, puCode: c.pu_code, contest: c.contest, outcome, tally: t });
     recomputeResult(db, c.pu_code, c.contest);
     notifyMaster(`⚖️ case #${c.id} ${c.pu_code} ${c.contest}: ${outcome} (${t.fraudulent}F/${t.legit}L/${t.inconclusive}I of ${t.total})`);
+    const say = { upheld: 'struck by the crowd (fraud upheld)', cleared: 'cleared by the crowd', unresolved: 'left unresolved (no quorum)' }[outcome] || outcome;
+    import('./notifications.js').then((n) => noteVoters(n, c.id, c.pu_code, {
+      kind: 'case', title: 'A case you judged is resolved',
+      body: `${c.pu_code} · ${c.contest} — ${say}.`,
+      url: `https://hawkeye.com.ng/case.html?id=${c.id}`,
+    })).catch(() => {});
     resolved++;
   }
   return { resolved };

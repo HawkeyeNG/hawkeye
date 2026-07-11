@@ -77,7 +77,20 @@ adminRouter.post('/admin/incidents/:id/publish', requireAdmin, async (req, res) 
   if (!inc) return res.status(404).json({ error: 'not_found' });
   db.prepare("UPDATE incidents SET status = 'published' WHERE id = ?").run(id);
   notifyMaster(`📣 incident #${id} published to the public feed`);
-  // Alert everyone who saved this unit as theirs.
+  // In-app feed + push: the reporter ("your report is live") and saved-unit
+  // watchers; Telegram fan-out kept for savers who linked it.
+  import('../services/notifications.js').then((n) => {
+    if (inc.observer_id) n.pushNote(inc.observer_id, {
+      kind: 'incident', title: 'Your incident report is live',
+      body: `${inc.kind}${inc.pu_code ? ' · ' + inc.pu_code : ''} — approved and published.`,
+      url: 'https://hawkeye.com.ng/incidents.html',
+    });
+    if (inc.pu_code) n.noteUnitSavers(inc.pu_code, {
+      kind: 'incident', title: 'Incident published at your unit',
+      body: `${inc.pu_code} · ${inc.kind}`,
+      url: 'https://hawkeye.com.ng/incidents.html',
+    });
+  }).catch(() => {});
   try {
     if (inc.pu_code) {
       notifyUnitSavers(inc.pu_code,

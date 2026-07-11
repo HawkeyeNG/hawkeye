@@ -489,8 +489,8 @@ async function startCapture(target) {
   }
 }
 
-$('btn-cam-sheet').onclick = () => startCapture('sheet');
-$('btn-cam-venue').onclick = () => startCapture('venue');
+$('btn-cam-sheet').onclick = () => (useNativeCam() ? nativeCapture('sheet') : startCapture('sheet'));
+$('btn-cam-venue').onclick = () => (useNativeCam() ? nativeCapture('venue') : startCapture('venue'));
 $('btn-cancel-camera').onclick = closeCamera;
 
 let capturing = false;
@@ -516,6 +516,26 @@ async function compressCapture(blob, maxDim, quality) {
   } catch { return blob; }
 }
 
+// Shared capture tail for BOTH the web overlay and the native camera: compress
+// FIRST (before hash/sign/upload — content-addressing commits these exact bytes),
+// require a GPS fix, then store + preview. Sheet kept crisper (1600 px / q0.8);
+// venue smaller (1280 px / q0.72). Returns false if the GPS fix failed.
+async function finalizeShot(target, blob) {
+  blob = await compressCapture(blob, target === 'sheet' ? 1600 : 1280, target === 'sheet' ? 0.8 : 0.72);
+  const fix = await getCaptureFix();
+  if (!fix) {
+    alert('No GPS fix — photos must be location-stamped. Move to open sky and retake.');
+    return false;
+  }
+  shots[target] = { blob, capturedAt: Date.now(), lat: fix.coords.latitude, lng: fix.coords.longitude };
+  const img = $(`preview-${target}`);
+  img.src = URL.createObjectURL(blob);
+  img.hidden = false;
+  $(`btn-cam-${target}`).textContent = 'Retake photo';
+  updateSubmitState();
+  return true;
+}
+
 async function doCapture() {
   if (capturing || !cameraStream) return;
   capturing = true;
@@ -536,32 +556,33 @@ async function doCapture() {
       canvas.getContext('2d').drawImage(video, 0, 0);
       blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
     }
-    // Compress here — before the blob is hashed/signed/uploaded — so content-addressing
-    // commits the same bytes the server stores. Sheet kept crisper (1600 px / q0.8) for
-    // count legibility; venue photo smaller (1280 px / q0.72).
-    blob = await compressCapture(blob, cameraTarget === 'sheet' ? 1600 : 1280, cameraTarget === 'sheet' ? 0.8 : 0.72);
-    const fix = await getCaptureFix();
-    if (!fix) {
-      if (cameraTarget === 'sheet' && window.DocScanner) DocScanner.rearm();
-      return alert('No GPS fix — photos must be location-stamped. Move to open sky and retake.');
-    }
-    shots[cameraTarget] = {
-      blob,
-      capturedAt: Date.now(),
-      lat: fix.coords.latitude,
-      lng: fix.coords.longitude,
-    };
+    const ok = await finalizeShot(cameraTarget, blob);
+    if (!ok) { if (cameraTarget === 'sheet' && window.DocScanner) DocScanner.rearm(); return; }
     closeCamera();
-    const img = $(`preview-${cameraTarget}`);
-    img.src = URL.createObjectURL(blob);
-    img.hidden = false;
-    $(`btn-cam-${cameraTarget}`).textContent = 'Retake photo';
-    updateSubmitState();
   } finally {
     capturing = false;
   }
 }
 $('btn-capture').onclick = doCapture;
+
+// Native shell: the OS camera (capture-only, no gallery) replaces the getUserMedia
+// overlay entirely — tapping the capture button invokes it directly. Same
+// finalizeShot tail, so the integrity pipeline is identical to web.
+const useNativeCam = () => Boolean(window.HAWKEYE && window.HAWKEYE.native
+  && window.HAWKEYE.capabilities && window.HAWKEYE.capabilities.camera);
+async function nativeCapture(target) {
+  if (capturing) return;
+  capturing = true;
+  cameraTarget = target;
+  try {
+    let blob;
+    try { blob = await window.HAWKEYE.capturePhoto(); }
+    catch { return; } // user cancelled / dismissed the OS camera
+    await finalizeShot(target, blob);
+  } finally {
+    capturing = false;
+  }
+}
 
 // ---------- submit ----------
 $('btn-submit').onclick = async () => {

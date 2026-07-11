@@ -33,9 +33,31 @@
     if (n.nodeType === 1) { fixEl(n); scan(n); }
   }))).observe(document.documentElement, { childList: true, subtree: true });
 
-  // Native capability seams — the observe flow (app.js) can call these when
-  // present, keeping the compress → hash → sign → upload order intact. Filled
-  // out per docs/MOBILE-APP-ARCHITECTURE.md §3 in the next phase (camera plugin,
-  // Keychain/Keystore-backed signing key, FCM/APNs push, offline outbox).
-  window.HAWKEYE.capabilities = { camera: false, secureKey: false, push: false };
+  // Native capability seams — app.js calls these when present, keeping the
+  // compress → hash → sign → upload order intact (architecture §3).
+  const Camera = Cap.Plugins && Cap.Plugins.Camera;
+  window.HAWKEYE.capabilities = { camera: !!Camera, secureKey: false, push: false };
+
+  if (Camera) {
+    // A LIVE camera capture (source CAMERA — never gallery/prompt) returned as a
+    // JPEG Blob. app.js then compresses → hashes → signs → uploads it exactly as
+    // on web, so content-addressing and the whole integrity model are unchanged.
+    // The OS camera is inherently live-only, which satisfies "no gallery" more
+    // strongly than the web getUserMedia path.
+    window.HAWKEYE.capturePhoto = async function capturePhoto() {
+      const photo = await Camera.getPhoto({
+        source: 'CAMERA',
+        resultType: 'base64',
+        quality: 92,
+        allowEditing: false,
+        saveToGallery: false,
+        correctOrientation: true,
+        webUseInput: false,
+      });
+      const bin = atob(photo.base64String);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new Blob([bytes], { type: 'image/' + (photo.format || 'jpeg') });
+    };
+  }
 })();

@@ -8,3 +8,5 @@ __pycache__/
 .vscode/
 .claude/
 tmp/
+audit/reports/
+audit/node_modules/

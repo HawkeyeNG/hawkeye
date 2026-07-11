@@ -53,8 +53,17 @@ if (!fs.existsSync(dir)) { console.error('put EC8A photos in storage/training/ f
 const truthPath = path.join(dir, 'truth.json');
 const truth = fs.existsSync(truthPath) ? JSON.parse(fs.readFileSync(truthPath, 'utf8')) : {};
 
+// QA gate: labels APPROVED in the review console are the ML set. Defaults to
+// approved-only once any approvals exist; --all scores every label regardless.
+const ALL = process.argv.includes('--all');
+let approved = {};
+try { approved = JSON.parse(fs.readFileSync(path.join(dir, 'approved.json'), 'utf8')); } catch { /* none yet */ }
+const gated = !ALL && Object.keys(approved).length > 0;
+if (gated) console.log(`QA gate: scoring ${Object.keys(approved).length} APPROVED label(s) only (pass --all to include unreviewed)`);
+
 const imgs = fs.readdirSync(dir).filter((f) => /\.(jpe?g|png)$/i.test(f))
-  .filter((f) => !LABELED_ONLY || truth[f.replace(/\.[^.]+$/, '')]);
+  .filter((f) => !LABELED_ONLY || truth[f.replace(/\.[^.]+$/, '')])
+  .filter((f) => !LABELED_ONLY || !gated || approved[f.replace(/\.[^.]+$/, '')]);
 if (!imgs.length) { console.error('no images in storage/training/'); process.exit(1); }
 
 let scoredImgs = 0, matchedSum = 0, totalSum = 0;

@@ -46,7 +46,14 @@ async function readSheet(file) {
   return m ? JSON.parse(m[0]).counts || [] : [];
 }
 
-const keys = Object.keys(truth).filter((k) => imgFor(k)).slice(0, LIMIT);
+// QA gate: same rule as ocr_calibrate — approved-only once approvals exist.
+const ALL = process.argv.includes('--all');
+let approved = {};
+try { approved = JSON.parse(fs.readFileSync(path.join(dir, 'approved.json'), 'utf8')); } catch { /* none yet */ }
+const gated = !ALL && Object.keys(approved).length > 0;
+if (gated) console.log(`QA gate: scoring APPROVED labels only (${Object.keys(approved).length}; pass --all to include unreviewed)`);
+
+const keys = Object.keys(truth).filter((k) => imgFor(k) && (!gated || approved[k])).slice(0, LIMIT);
 let i = 0;
 for (const k of keys) {
   i++;

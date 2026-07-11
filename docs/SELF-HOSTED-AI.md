@@ -108,7 +108,7 @@ models on one unit; "just add internet."
 - **Connectivity: Starlink** — kit ~$350–600 one-time; service ~$50–150/mo
   (Priority/Business tier for uptime; Nigeria pricing varies). Starlink is CGNAT,
   so expose via **Cloudflare Tunnel** (free, no open ports/static IP).
-- **Power: 3 kVA solar system** (~$4,000–6,000 installed in Nigeria): 3 kVA
+- **Power: 3.5 kVA solar system** (~$4,000–6,000 installed in Nigeria): 3.5 kVA
   pure-sine inverter + **~3.5 kWp panels** + **10 kWh LiFePO₄** battery. The
   two-Spark + Starlink + networking load is ~600 W continuous (≈14.4 kWh/day);
   3.5 kWp generates ~15–16 kWh/day at Nigerian sun hours and the battery gives
@@ -145,7 +145,7 @@ change; only where they run does.
   local Ollama on an existing laptop.
 - **Intended (funded, sized for 1M users — see [SCALE-1M](SCALE-1M.md)):**
   **2× NVIDIA DGX Spark** (~$8k) + **Starlink** kit + 12 mo service (~$1.2k) +
-  **3 kVA / 3.5 kWp / 10 kWh solar** (~$5k) + networking/spares (~$1k) →
+  **3.5 kVA / 3.5 kWp / 10 kWh solar** (~$5k) + networking/spares (~$1k) →
   **~$16,000–19,000** one-time for a redundant, deplatform-proof, off-grid
   failover cluster (Spark A: app + Postgres + 2 TB media mirror; Spark B: AI
   inference + warm standby). A Mac Studio (M3/M4 Ultra, 256 GB) is a valid

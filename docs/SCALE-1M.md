@@ -71,7 +71,7 @@ Continuous load: 2× Spark ≈ 480 W + Starlink ~75 W + router/switch ~50 W ≈
 
 | Component | Size | Why |
 |---|---|---|
-| Inverter | **3 kVA** (pure sine) | ~50% loading headroom; 1.5 kVA was sized for one Spark |
+| Inverter | **3.5 kVA** (pure sine) | comfortable loading headroom (~800 W peak load); 1.5 kVA was sized for one Spark |
 | Panels | **~3.5 kWp** | Nigeria ≈ 4.5–5 peak sun hours → ~15–16 kWh/day |
 | Battery | **10 kWh LiFePO₄** | ≥14 h overnight/outage autonomy |
 | Nigeria cost | **$4,000–6,000** installed | replaces UPS entirely |
@@ -79,7 +79,7 @@ Continuous load: 2× Spark ≈ 480 W + Starlink ~75 W + router/switch ~50 W ≈
 ## 6. Budget deltas (decks updated accordingly)
 
 - On-prem line: ~$11k → **~$16,000–19,000** one-time
-  (2× Spark $8k · 3 kVA/3.5 kWp/10 kWh solar $5k · Starlink kit + 12 mo service
+  (2× Spark $8k · 3.5 kVA/3.5 kWp/10 kWh solar $5k · Starlink kit + 12 mo service
   $1.2k · networking/spares $1k · contingency).
 - New opex line: **cloud $500–1,500/mo during election windows**, <$300/mo off-peak.
 - Everything ships against GO54 today and re-points by base-URL swap; the

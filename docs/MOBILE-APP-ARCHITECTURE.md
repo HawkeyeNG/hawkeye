@@ -79,7 +79,7 @@ Rejected alternatives:
   - The ledger + Rekor anchoring are storage-agnostic and port unchanged.
 - This is a *scale* migration, decoupled from the mobile build — the app ships
   against GO54 first and points at the scaled backend later by base-URL swap.
-- **On-prem option (intended: 2× NVIDIA DGX Spark + Starlink + 3 kVA solar):**
+- **On-prem option (intended: 2× NVIDIA DGX Spark + Starlink + 3.5 kVA solar):**
   a self-owned failover cluster sized for 1M users — Spark A hosts app +
   Postgres + a 2 TB media mirror, Spark B hosts the local text + EC8A-vision
   models and stands warm for A — on Starlink via Cloudflare Tunnel; off-grid,

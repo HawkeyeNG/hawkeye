@@ -152,7 +152,7 @@ arbitration is exactly as tamper-evident as the results it judges.
 | Direct-origin attacks | **Origin lock** — only traffic bearing a secret header injected by our Cloudflare edge reaches the origin; direct-IP scans get 403 |
 | Info leakage | Global error handler returns generic errors; no stack traces to clients |
 | Admin abuse | Timing-safe secret comparison, alert on failed attempts, rate-limited, IP-gateable |
-| Deplatforming / single-host failure | Provider-portable AI (base-URL swap) and a planned **self-owned failover cluster** (2× NVIDIA DGX Spark + Starlink + 3 kVA solar, sized to back up 1M users) that can host the full stack + local models off-grid — availability independent of any one cloud, ISP, or grid |
+| Deplatforming / single-host failure | Provider-portable AI (base-URL swap) and a planned **self-owned failover cluster** (2× NVIDIA DGX Spark + Starlink + 3.5 kVA solar, sized to back up 1M users) that can host the full stack + local models off-grid — availability independent of any one cloud, ISP, or grid |
 
 Full detail is maintained in an internal remediation log and is available to
 auditors under NDA.

@@ -27,6 +27,12 @@
     .social { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
     #login { max-width: 380px; }
     .empty { color: var(--muted); padding: 20px; text-align: center; }
+    .lab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+    .lab { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .lab img { width: 100%; height: 170px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); display: block; }
+    .lab .key { font-family: monospace; font-size: 0.74rem; color: var(--muted); margin: 6px 0 3px; }
+    .lab .counts { font-size: 0.86rem; font-weight: 600; word-break: break-word; }
+    .lab .counts em { font-style: normal; color: var(--muted); font-weight: 400; }
   </style>
 </head>
 <body>
@@ -56,6 +62,17 @@
         <span class="tab" data-s="_logout" style="margin-left:auto">Lock 🔒</span>
       </div>
       <div id="list"><p class="empty">Loading…</p></div>
+
+      <h1 style="margin-top:34px">Label review</h1>
+      <p class="meta">Spot-check the counts each scorer typed against the sheet itself (tap a photo for full size).</p>
+      <div class="tabs" id="set-tabs">
+        <span class="tab on" data-set="3">Derek <b id="s3"></b></span>
+        <span class="tab" data-set="4">Davina <b id="s4"></b></span>
+        <span class="tab" data-set="1">Set 1 <b id="s1"></b></span>
+        <span class="tab" data-set="2">Set 2 <b id="s2"></b></span>
+      </div>
+      <p class="meta" id="lab-summary"></p>
+      <div id="lab-list"><p class="empty">Loading…</p></div>
     </section>
   </main>
 
@@ -76,7 +93,7 @@
       if (r.ok) {
         sessionStorage.setItem('hawkeye_admin', secret);
         $('login').hidden = true; $('console').hidden = false;
-        load();
+        load(); loadLabels();
       } else {
         $('login-status').textContent = r.status === 403 ? 'Console is disabled (no passphrase set on server).' : 'Wrong passphrase.';
       }
@@ -119,6 +136,47 @@
       load();
     };
 
+    // ---- label review: truth.json (labels) x sets.json (who claimed what) ----
+    let labSet = '3';
+    async function loadLabels() {
+      const bust = `?t=${Date.now()}`;
+      const [truth, sets, dropped] = await Promise.all([
+        fetch('/training/truth.json' + bust).then((r) => r.json()).catch(() => ({})),
+        fetch('/training/sets.json' + bust).then((r) => r.json()).catch(() => ({})),
+        fetch('/training/dropped.json' + bust).then((r) => r.json()).catch(() => ({})),
+      ]);
+      const bySet = {};
+      for (const [file, s] of Object.entries(sets)) (bySet[s] = bySet[s] || []).push(file);
+      for (const s of ['1', '2', '3', '4']) {
+        const files = bySet[s] || [];
+        const done = files.filter((f) => truth[f.replace(/\.[^.]+$/, '')]).length;
+        const el = $('s' + s); if (el) el.textContent = `${done}/${files.length}`;
+      }
+      const files = bySet[labSet] || [];
+      const rows = [];
+      let done = 0, skipped = 0;
+      for (const f of files) {
+        const key = f.replace(/\.[^.]+$/, '');
+        if (dropped[key]) { skipped++; continue; }
+        const t = truth[key];
+        if (!t) continue;
+        done++;
+        const counts = Object.entries(t).map(([p, n]) => `${p} ${n}`).join(', ') || '<em>all zero</em>';
+        rows.push(`<div class="lab"><a href="/training/${f}" target="_blank" rel="noopener">
+          <img loading="lazy" src="/training/${f}" alt="sheet ${key}"></a>
+          <div class="key">${key}</div><div class="counts">${counts}</div></div>`);
+      }
+      $('lab-summary').textContent =
+        `${done} labeled · ${skipped} skipped as unusable · ${files.length - done - skipped} still in queue (of ${files.length} claimed)`;
+      $('lab-list').innerHTML = rows.length ? `<div class="lab-grid">${rows.join('')}</div>` : '<p class="empty">No labeled sheets in this set yet.</p>';
+    }
+    $('set-tabs').addEventListener('click', (e) => {
+      const t = e.target.closest('.tab'); if (!t) return;
+      labSet = t.dataset.set;
+      document.querySelectorAll('#set-tabs .tab').forEach((x) => x.classList.toggle('on', x === t));
+      loadLabels();
+    });
+
     function logout() { sessionStorage.removeItem('hawkeye_admin'); location.reload(); }
     $('tabs').addEventListener('click', (e) => {
       const t = e.target.closest('.tab'); if (!t) return;
@@ -128,7 +186,7 @@
       load();
     });
 
-    if (secret) { $('login').hidden = true; $('console').hidden = false; load(); }
+    if (secret) { $('login').hidden = true; $('console').hidden = false; load(); loadLabels(); }
   </script>
 </body>
 </html>

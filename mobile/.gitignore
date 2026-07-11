@@ -1,0 +1,6 @@
+# Capacitor generates these from config + ../app on `npx cap add`/`sync`
+node_modules/
+android/
+ios/
+.gradle/
+*.log

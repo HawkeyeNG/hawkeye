@@ -129,7 +129,7 @@
     const nav = document.createElement('nav');
     nav.className = 'tabbar';
     nav.setAttribute('aria-label', 'Primary');
-    nav.innerHTML = TABS.map((t) => `<a class="tab${t.cta ? ' tab-cta' : ''}${isOn(t.href) ? ' on' : ''}" href="${t.href}"${t.more ? ' data-more="1"' : ''}>`
+    nav.innerHTML = TABS.map((t) => `<a class="tab${t.cta ? ' tab-cta' : ''}${isOn(t.href) ? ' on' : ''}" href="${t.href}"${t.more ? ' data-more="1"' : ''}${t.cta ? ' data-report="1"' : ''}>`
       + `<span class="ti">${t.bell ? '<span class="tab-dot" hidden></span>' : ''}${ic(t.icon)}</span><span class="tl">${t.label}</span></a>`).join('');
     document.body.appendChild(nav);
     document.body.classList.add('has-tabbar');
@@ -138,6 +138,25 @@
       const p = document.getElementById('menu-panel');
       if (p) { p.hidden = !p.hidden; document.querySelector('.menu-btn')?.setAttribute('aria-expanded', String(!p.hidden)); }
     });
+
+    // Report is a chooser, not a page: bottom action sheet -> Result / Incident.
+    const sheet = document.createElement('div');
+    sheet.className = 'report-sheet';
+    sheet.hidden = true;
+    sheet.innerHTML = `<div class="rs-backdrop"></div><div class="rs-panel" role="dialog" aria-label="What are you reporting?">
+      <div class="rs-grab"></div><h3>What are you reporting?</h3>
+      <a class="rs-opt" href="observe.html?intent=observe">${ic('<circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/>')}
+        <span><strong>Polling-unit result</strong><small>Photograph the EC8A sheet and enter the counts</small></span></a>
+      <a class="rs-opt" href="incidents.html">${ic('<path d="M12 3 2.5 20h19z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.5"/>')}
+        <span><strong>Incident</strong><small>Violence, vote-buying, BVAS failure, obstruction…</small></span></a>
+      <a class="rs-opt" href="collation.html">${ic('<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>')}
+        <span><strong>Collation result</strong><small>Ward, LGA or state collation (EC8B/C/D)</small></span></a>
+    </div>`;
+    document.body.appendChild(sheet);
+    const openSheet = (o) => { sheet.hidden = !o; document.body.style.overflow = o ? 'hidden' : ''; };
+    nav.querySelector('[data-report]').addEventListener('click', (e) => { e.preventDefault(); openSheet(true); });
+    sheet.querySelector('.rs-backdrop').addEventListener('click', () => openSheet(false));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) openSheet(false); });
     const tk = localStorage.getItem('hawkeye_token');
     if (tk && !/notifications\.html/.test(location.pathname)) {
       fetch('/api/notifications', { headers: { authorization: 'Bearer ' + tk } })

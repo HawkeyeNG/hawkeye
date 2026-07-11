@@ -7,7 +7,7 @@
   <title>Hawkeye — Political Data</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=91" />
+  <link rel="stylesheet" href="styles.css?v=92" />
   <style>
     .map-card svg { width: 100%; height: auto; }
     .st { stroke: #fff; stroke-width: 1; }
@@ -25,9 +25,10 @@
     .cand .row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .cand .av { width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--pc, #9aa7a0); color: #fff; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
     .cand h3 { margin: 0; font-size: 1rem; }
-    .cand .pill { display: inline-block; font-size: 0.68rem; font-weight: 700; color: #fff; background: var(--pc, #9aa7a0); border-radius: 999px; padding: 2px 9px; margin-bottom: 3px; }
+    .cand .pill { display: inline-block; font-size: 0.68rem; font-weight: 700; color: var(--ink); background: var(--tint); border-radius: 999px; padding: 2px 9px; margin-bottom: 3px; }
+    .cand .pill::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--pc, #9aa7a0); margin-right: 5px; }
     .cand p { margin: 0; font-size: 0.84rem; color: var(--muted); }
-    .cand .inc { font-size: 0.68rem; font-weight: 700; color: #8a6d00; background: #fdf3d7; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
+    .cand .inc { font-size: 0.68rem; font-weight: 700; color: #6b5500; background: #fdf3d7; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
     /* seat-composition bars + donuts */
     .comp-row { margin: 16px 0 4px; display: flex; gap: 16px; align-items: center; }
     .comp-main { flex: 1; min-width: 0; }
@@ -213,7 +214,7 @@
       }
     })();
   </script>
-  <script src="tg.js?v=91"></script>
-  <script src="menu.js?v=91"></script>
+  <script src="tg.js?v=92"></script>
+  <script src="menu.js?v=92"></script>
 </body>
 </html>

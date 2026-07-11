@@ -661,7 +661,27 @@ $('btn-submit').onclick = async () => {
     headers: { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}` },
     body: form,
   });
-  let { status, body } = await post();
+  let status, body;
+  try {
+    ({ status, body } = await post());
+  } catch {
+    // Network failure. The report is already signed over its exact bytes, so in
+    // the app we queue it and flush on reconnect (offline outbox); on the web we
+    // just ask the user to retry.
+    if (window.HAWKEYE && window.HAWKEYE.native && window.HawkeyeOutbox) {
+      const fields = {};
+      for (const [k, v] of form.entries()) if (typeof v === 'string') fields[k] = v;
+      try { await window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob }); } catch { /* ignore */ }
+      shots.sheet = null; shots.venue = null;
+      alert('Saved offline — your signed report will send automatically when you are back online.');
+      show('screen-locate');
+      $('btn-submit').disabled = false;
+      return;
+    }
+    $('submit-status').textContent = 'You appear to be offline — check your connection and try again.';
+    $('btn-submit').disabled = false;
+    return;
+  }
   // ANY 401 (expired, unknown observer after a server reset, device mismatch…)
   // = dead session. Silently re-mint via resume and retry the same submission
   // once; only if that fails does the user get sent back to verification.

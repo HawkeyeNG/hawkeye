@@ -60,4 +60,34 @@
       return new Blob([bytes], { type: 'image/' + (photo.format || 'jpeg') });
     };
   }
+
+  // ---- native push (FCM/APNs) --------------------------------------------
+  const Push = Cap.Plugins && Cap.Plugins.PushNotifications;
+  window.HAWKEYE.capabilities.push = !!Push;
+  if (Push) {
+    // Register this device's token against the signed-in observer so the backend
+    // can push "new report at your saved unit" etc. Only runs once the observer
+    // has a session; a tap on a notification with a data.url deep-links there.
+    window.HAWKEYE.initPush = async function initPush() {
+      if (!localStorage.getItem('hawkeye_token')) return;
+      let perm = await Push.checkPermissions();
+      if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') perm = await Push.requestPermissions();
+      if (perm.receive !== 'granted') return;
+      Push.addListener('registration', (t) => {
+        const jwt = localStorage.getItem('hawkeye_token');
+        if (!jwt) return;
+        origFetch(BASE + '/api/push/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', authorization: 'Bearer ' + jwt },
+          body: JSON.stringify({ token: t.value, platform: Cap.getPlatform() }),
+        }).catch(() => {});
+      });
+      Push.addListener('pushNotificationActionPerformed', (ev) => {
+        const url = ev && ev.notification && ev.notification.data && ev.notification.data.url;
+        if (url) location.href = url;
+      });
+      await Push.register();
+    };
+    document.addEventListener('DOMContentLoaded', () => setTimeout(() => window.HAWKEYE.initPush().catch(() => {}), 1500));
+  }
 })();

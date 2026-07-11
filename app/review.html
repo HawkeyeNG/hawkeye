@@ -33,6 +33,10 @@
     .lab .key { font-family: monospace; font-size: 0.74rem; color: var(--muted); margin: 6px 0 3px; }
     .lab .counts { font-size: 0.86rem; font-weight: 600; word-break: break-word; }
     .lab .counts em { font-style: normal; color: var(--muted); font-weight: 400; }
+    .lab.ok { border-color: var(--green); }
+    .lab .qa { display: flex; gap: 8px; margin-top: 8px; }
+    .lab .qa button { margin: 0; width: auto; flex: 1; padding: 7px 0; font-size: 0.84rem; }
+    .lab .okchip { font-size: 0.76rem; font-weight: 700; color: var(--link); }
   </style>
 </head>
 <body>
@@ -140,10 +144,11 @@
     let labSet = '3';
     async function loadLabels() {
       const bust = `?t=${Date.now()}`;
-      const [truth, sets, dropped] = await Promise.all([
+      const [truth, sets, dropped, approved] = await Promise.all([
         fetch('/training/truth.json' + bust).then((r) => r.json()).catch(() => ({})),
         fetch('/training/sets.json' + bust).then((r) => r.json()).catch(() => ({})),
         fetch('/training/dropped.json' + bust).then((r) => r.json()).catch(() => ({})),
+        fetch('/training/approved.json' + bust).then((r) => r.json()).catch(() => ({})),
       ]);
       const bySet = {};
       for (const [file, s] of Object.entries(sets)) (bySet[s] = bySet[s] || []).push(file);
@@ -154,22 +159,40 @@
       }
       const files = bySet[labSet] || [];
       const rows = [];
-      let done = 0, skipped = 0;
+      let done = 0, skipped = 0, ok = 0;
       for (const f of files) {
         const key = f.replace(/\.[^.]+$/, '');
         if (dropped[key]) { skipped++; continue; }
         const t = truth[key];
         if (!t) continue;
         done++;
+        const isOk = Boolean(approved[key]);
+        if (isOk) ok++;
         const counts = Object.entries(t).map(([p, n]) => `${p} ${n}`).join(', ') || '<em>all zero</em>';
-        rows.push(`<div class="lab"><a href="/training/${f}" target="_blank" rel="noopener">
+        const qa = isOk
+          ? `<div class="qa"><span class="okchip">✓ Approved for ML</span>
+             <button class="btn-reject" onclick="qa('${key}','deny')">Deny</button></div>`
+          : `<div class="qa"><button onclick="qa('${key}','approve')">Approve</button>
+             <button class="btn-reject" onclick="qa('${key}','deny')">Deny</button></div>`;
+        rows.push(`<div class="lab${isOk ? ' ok' : ''}"><a href="/training/${f}" target="_blank" rel="noopener">
           <img loading="lazy" src="/training/${f}" alt="sheet ${key}"></a>
-          <div class="key">${key}</div><div class="counts">${counts}</div></div>`);
+          <div class="key">${key}</div><div class="counts">${counts}</div>${qa}</div>`);
       }
       $('lab-summary').textContent =
-        `${done} labeled · ${skipped} skipped as unusable · ${files.length - done - skipped} still in queue (of ${files.length} claimed)`;
+        `${done} labeled (${ok} approved for ML) · ${skipped} skipped as unusable · ${files.length - done - skipped} still in queue (of ${files.length} claimed)`;
       $('lab-list').innerHTML = rows.length ? `<div class="lab-grid">${rows.join('')}</div>` : '<p class="empty">No labeled sheets in this set yet.</p>';
     }
+    window.qa = async (key, action) => {
+      if (action === 'deny' && !confirm('Deny this label? It is deleted and the sheet returns to the open pool for re-labeling.')) return;
+      const r = await fetch(`/api/training/${action}`, {
+        method: 'POST',
+        headers: { ...hdr(), 'content-type': 'application/json' },
+        body: JSON.stringify({ key }),
+      });
+      if (r.status === 401) { logout(); return; }
+      loadLabels();
+    };
+
     $('set-tabs').addEventListener('click', (e) => {
       const t = e.target.closest('.tab'); if (!t) return;
       labSet = t.dataset.set;

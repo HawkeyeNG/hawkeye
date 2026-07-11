@@ -54,6 +54,10 @@ Rejected alternatives:
 - **Camera → native.** Replace the `getUserMedia` overlay with the native camera
   plugin configured **camera-source only** (no gallery), keeping live-capture +
   GPS-stamp + expiry. Better reliability on low-end Android than WebView cameras.
+  **Integrity constraint:** the web client now compresses captures (sheet 1600 px /
+  venue 1280 px) *before* hashing and signing — the native pipeline must keep the
+  same order (compress → hash → sign → upload), because the ledger content-addresses
+  the compressed bytes.
 - **Push → FCM/APNs** for "my polling unit" and race alerts, complementing (not
   replacing) the existing Telegram alerts. Backend adds a `device_push_tokens`
   table + a send helper; everything else reuses the existing notify path.
@@ -124,3 +128,26 @@ Rejected alternatives:
 Ledger format, Rekor anchoring, per-race Merkle proofs, phone-hash identity,
 JWT device binding, geofence, incident review, Telegram bot — **all unchanged**.
 The mobile app is a stronger *shell* around the same verifiable core.
+
+## 9. Since v1 (2026-07-11) — rides into the app for free
+
+Because the app wraps the same `app/` bundle, everything shipped since the first
+draft carries over with zero mobile work:
+
+- **Crowd arbitration (Public Docket)** — docket.html / case.html become app
+  screens as-is: disputed results excluded from tallies, per-flag signed verdicts,
+  juror notes, docket hash chain in the Rekor anchor. Push (§3) should add a
+  "case opened / case resolved" notification type.
+- **Client-side capture compression** before hash/sign (see §3 camera constraint).
+- **Session auto-resume** — stale JWTs are detected at boot and silently re-minted
+  via the device key; any 401 retries once after resume. App relaunches never
+  strand a signed-in observer.
+- **Theme tokens + dark mode** — the token system (0 serious axe violations,
+  both themes) is the app's theming for free.
+- **Election-cycle labeling** — contests carry the cycle label ("Hawkeye Mock
+  Election" now, "2027 General Elections" at go-live); Rekor anchors are
+  self-describing, so test and real records can never be confused.
+- **Brand mascot** — the hawk-and-ballot mark is the favicon/header crest on web;
+  for the app it becomes the **app icon + splash** (masters:
+  `design/hawk-mascot.png`, regenerate via `design/make_mascot_assets.mjs`;
+  stores need 1024 px — regenerate from source, don't upscale).

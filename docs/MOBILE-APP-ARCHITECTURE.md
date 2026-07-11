@@ -79,11 +79,12 @@ Rejected alternatives:
   - The ledger + Rekor anchoring are storage-agnostic and port unchanged.
 - This is a *scale* migration, decoupled from the mobile build — the app ships
   against GO54 first and points at the scaled backend later by base-URL swap.
-- **On-prem option (intended: NVIDIA DGX Spark + Starlink):** a self-owned DGX
-  Spark appliance (128 GB unified memory) hosts the full stack **and** the local
-  text + EC8A-vision models on one box, on Starlink via Cloudflare Tunnel — hot
-  backup now, potential primary at scale; off-grid-capable, can't be deplatformed.
-  Setup + costs: [Self-Hosted AI](SELF-HOSTED-AI.md).
+- **On-prem option (intended: 2× NVIDIA DGX Spark + Starlink + 3 kVA solar):**
+  a self-owned failover cluster sized for 1M users — Spark A hosts app +
+  Postgres + a 2 TB media mirror, Spark B hosts the local text + EC8A-vision
+  models and stands warm for A — on Starlink via Cloudflare Tunnel; off-grid,
+  can't be deplatformed. Full sizing: [SCALE-1M](SCALE-1M.md); setup:
+  [Self-Hosted AI](SELF-HOSTED-AI.md).
 
 ## 5. App Store (Apple) implications
 

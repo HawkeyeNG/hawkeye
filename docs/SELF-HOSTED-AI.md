@@ -108,11 +108,12 @@ models on one unit; "just add internet."
 - **Connectivity: Starlink** — kit ~$350–600 one-time; service ~$50–150/mo
   (Priority/Business tier for uptime; Nigeria pricing varies). Starlink is CGNAT,
   so expose via **Cloudflare Tunnel** (free, no open ports/static IP).
-- **Power: 1.5 kVA solar + lithium-battery system** (~$1,200–2,000 in Nigeria).
-  The Spark draws ~240 W (2 units + Starlink ≈ 600–700 W), so 1.5 kVA carries it
-  with headroom. It **replaces the UPS** (battery gives instant-ish backup) *and*
-  runs off-grid through outages — critical on Nigerian grid / election day.
-  Optional: a small online-UPS in front for surge protection.
+- **Power: 3 kVA solar system** (~$4,000–6,000 installed in Nigeria): 3 kVA
+  pure-sine inverter + **~3.5 kWp panels** + **10 kWh LiFePO₄** battery. The
+  two-Spark + Starlink + networking load is ~600 W continuous (≈14.4 kWh/day);
+  3.5 kWp generates ~15–16 kWh/day at Nigerian sun hours and the battery gives
+  ≥14 h autonomy — true 24/7 off-grid, replaces the UPS entirely. (A 1.5 kVA
+  system only carries ONE Spark; sized up for the two-box failover cluster.)
 - Caveats: ARM64 (our native deps build fine); desktop-class memory bandwidth, so
   **sample** vision at election-day peak rather than scanning every sheet live.
 
@@ -142,8 +143,12 @@ change; only where they run does.
 
 - **Now:** $0 — free hosted tiers (Gemini/Groq/Mistral/OpenRouter) + optional
   local Ollama on an existing laptop.
-- **Intended (funded):** **2× NVIDIA DGX Spark** (~$3–4k ea → ~$6–8k) + **Starlink**
-  kit (~$350–600) + **1.5 kVA solar+battery** (~$1,200–2,000) → **~$8,000–11,000**
-  one-time for a redundant, deplatform-proof, **off-grid** box that self-hosts app
-  + text AI + EC8A vision through grid + internet outages. Ongoing: Starlink
-  ~$50–150/mo. (See investor deck use-of-funds.)
+- **Intended (funded, sized for 1M users — see [SCALE-1M](SCALE-1M.md)):**
+  **2× NVIDIA DGX Spark** (~$8k) + **Starlink** kit + 12 mo service (~$1.2k) +
+  **3 kVA / 3.5 kWp / 10 kWh solar** (~$5k) + networking/spares (~$1k) →
+  **~$16,000–19,000** one-time for a redundant, deplatform-proof, off-grid
+  failover cluster (Spark A: app + Postgres + 2 TB media mirror; Spark B: AI
+  inference + warm standby). A Mac Studio (M3/M4 Ultra, 256 GB) is a valid
+  substitute for the inference box only — faster LLM bandwidth, weaker Linux
+  server posture. Cloud primary opex: $500–1,500/mo in election windows.
+  Ongoing: Starlink ~$50–150/mo. (See investor deck use-of-funds.)

@@ -256,6 +256,15 @@ for (const ddl of [
   // Optional short public note a juror attaches to their verdict (advisory
   // texture for tribunals — never counted toward the tally).
   'ALTER TABLE verdicts ADD COLUMN comment TEXT',
+  // Native push tokens (mobile app). One row per device token, tied to the
+  // observer that registered it; platform gates FCM (android) vs APNs (ios).
+  `CREATE TABLE IF NOT EXISTS device_push_tokens (
+     token       TEXT PRIMARY KEY,
+     observer_id INTEGER NOT NULL REFERENCES observers(id),
+     platform    TEXT NOT NULL,
+     created_at  INTEGER NOT NULL
+   )`,
+  'CREATE INDEX IF NOT EXISTS idx_push_observer ON device_push_tokens(observer_id)',
   `CREATE TABLE IF NOT EXISTS docket_ledger (
      id         INTEGER PRIMARY KEY,
      kind       TEXT NOT NULL,

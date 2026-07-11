@@ -51,9 +51,17 @@ integration points for the next phase, per architecture §3:
       `cap add ios`, add `NSCameraUsageDescription` +
       `NSLocationWhenInUseUsageDescription` to `ios/App/App/Info.plist`.
 - [ ] Signing key → iOS Keychain / Android Keystore (Secure Enclave / TEE).
-- [ ] Push → FCM (Android) / APNs (iOS); backend `device_push_tokens` + send helper.
-- [ ] Offline outbox → queue signed reports, flush on reconnect (idempotent on
-      `entry_hash`).
+      **Deferred until the APK is tested** (owner's call).
+- [x] **Push → FCM** (Android). `app/native.js` `initPush()` registers the device
+      token to the signed-in observer via `POST /api/push/register`; backend
+      `services/push.js` (FCM v1, **credential-gated** — no-op without
+      `FCM_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY`) fans "new report at your unit"
+      out to `device_push_tokens`. **APNs (iOS) is stubbed** — add when the iOS
+      build exists. To enable: create a Firebase project, drop
+      `android/app/google-services.json`, set the three `FCM_*` server env vars.
+- [x] **Offline outbox** (`app/outbox.js`). A signed report that fails to send
+      (offline) is queued in IndexedDB and auto-flushed on reconnect; idempotent
+      (server 409 duplicate == success). App-shell only. Loaded on `observe.html`.
 
 ## App identity
 

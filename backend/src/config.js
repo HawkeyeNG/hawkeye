@@ -57,6 +57,12 @@ export const config = {
   // Passphrase for the owner-only review/publish console (review.html). Empty =
   // console API disabled (returns 403).
   adminConsoleSecret: process.env.ADMIN_CONSOLE_SECRET || '',
+  // FCM (Android push) service-account credentials. All three unset = push
+  // disabled (send is a silent no-op; the app still works). PRIVATE_KEY keeps
+  // its literal \n escapes in .env; push.js unescapes them.
+  fcmProjectId: process.env.FCM_PROJECT_ID || '',
+  fcmClientEmail: process.env.FCM_CLIENT_EMAIL || '',
+  fcmPrivateKey: process.env.FCM_PRIVATE_KEY || '',
   // IReV cross-check: the IReV _id of the election being monitored (from
   // GET /api/v1/elections on the IReV API) and which of our contests it maps to.
   // Empty election id = feature idle. Set both when INEC opens the election.

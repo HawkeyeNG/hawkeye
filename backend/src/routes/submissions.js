@@ -311,11 +311,17 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // fire-and-forget so it never delays or blocks the submission response.
     import('../services/vision.js').then((v) => v.analyzeSheet(sheet.buffer, { contest, votes, pu, submissionId })).catch(() => {});
 
-    // Alert everyone who saved this unit as theirs (best-effort, non-blocking).
+    // Alert everyone who saved this unit as theirs (best-effort, non-blocking) —
+    // Telegram + native push, whichever channels they have.
     try {
       notifyUnitSavers(puCode,
         `📋 New result report at your polling unit ${puCode} (${contest}).\nSee it: https://hawkeye.com.ng/dashboard.html`);
     } catch { /* never block the submission */ }
+    import('../services/push.js').then((p) => p.pushUnitSavers(puCode, {
+      title: 'New report at your unit',
+      body: `${puCode} · ${contest}`,
+      data: { url: 'https://hawkeye.com.ng/dashboard.html' },
+    })).catch(() => {});
 
     res.status(201).json({ ok: true, entryHash, locationVerified: Boolean(locationVerified), ocr, result });
   } catch (err) {

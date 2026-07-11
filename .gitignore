@@ -10,3 +10,5 @@ __pycache__/
 tmp/
 audit/reports/
 audit/node_modules/
+audit/C:*
+audit/lighthouse.*

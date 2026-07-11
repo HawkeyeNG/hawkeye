@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Hawkeye</string>
+    <string name="title_activity_main">Hawkeye</string>
+    <string name="package_name">ng.com.hawkeye.observer</string>
+    <string name="custom_url_scheme">ng.com.hawkeye.observer</string>
+</resources>

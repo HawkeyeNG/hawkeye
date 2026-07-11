@@ -290,7 +290,9 @@ observersRouter.post('/admin/reset-ledger', (req, res) => {
   }
   const counts = {};
   db.transaction(() => {
-    for (const t of ['venue_matches', 'submissions', 'collation_reports', 'results', 'discrepancies']) {
+    // crowd-arbitration tables (cases/verdicts/docket chain) reset with the
+    // cycle too — a new election starts with an empty docket at genesis.
+    for (const t of ['venue_matches', 'submissions', 'collation_reports', 'results', 'discrepancies', 'verdicts', 'cases', 'docket_ledger']) {
       counts[t] = db.prepare(`SELECT COUNT(*) AS c FROM ${t}`).get().c;
       db.exec(`DELETE FROM ${t}`);
     }

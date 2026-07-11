@@ -103,7 +103,11 @@ export async function runAnchor(force = false) {
 
   // Canonical artifact the verifier reconstructs from /api/anchors and re-hashes.
   // racesRoot binds the whole per-race batch into the one signed, Rekor-logged line.
-  const artifact = `hawkeye-ledger-anchor|v1|day=${day}|head=${chain.head}|entries=${chain.entries}`
+  // The election label rides in every Rekor entry so anchors are self-describing
+  // forever — a mock/test cycle can never be mistaken for the real 2027 record.
+  const { contests } = await import('../db.js');
+  const electionLabel = contests[0]?.election || 'unlabelled';
+  const artifact = `hawkeye-ledger-anchor|v1|election=${electionLabel}|day=${day}|head=${chain.head}|entries=${chain.entries}`
     + `|collationHead=${collHead}|collationEntries=${collCount}`
     + `|racesRoot=${racesRoot}|races=${races.length}|docketHead=${dHead}|at=${new Date(now).toISOString()}`;
   const receipt = await publishToRekor(artifact);

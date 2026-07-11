@@ -1,7 +1,7 @@
 [
-  { "code": "PRES", "name": "Presidential", "election": "2027 General Elections", "date": "2027-01-16" },
-  { "code": "SEN", "name": "Senate (National Assembly)", "election": "2027 General Elections", "date": "2027-01-16" },
-  { "code": "REP", "name": "House of Representatives", "election": "2027 General Elections", "date": "2027-01-16" },
-  { "code": "GOV", "name": "Governorship", "election": "2027 General Elections", "date": "2027-02-06" },
-  { "code": "SHA", "name": "State House of Assembly", "election": "2027 General Elections", "date": "2027-02-06" }
+  { "code": "PRES", "name": "Presidential", "election": "Hawkeye Mock Election", "date": null },
+  { "code": "SEN", "name": "Senate (National Assembly)", "election": "Hawkeye Mock Election", "date": null },
+  { "code": "REP", "name": "House of Representatives", "election": "Hawkeye Mock Election", "date": null },
+  { "code": "GOV", "name": "Governorship", "election": "Hawkeye Mock Election", "date": null },
+  { "code": "SHA", "name": "State House of Assembly", "election": "Hawkeye Mock Election", "date": null }
 ]

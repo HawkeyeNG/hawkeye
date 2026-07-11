@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { config } from '../config.js';
 import { ocrMatchCounts } from '../services/ocr.js';
 import { requireObserver } from './observers.js';
+import { requireAdmin } from './admin.js';
 
 // Human-in-the-loop OCR training: sheets in storage/training/ are shown on
 // train.html with the OCR's predicted digit tokens; a verified observer confirms
@@ -115,4 +116,33 @@ trainingRouter.post('/training/label', requireObserver, (req, res) => {
   const tally = readCounts();
   if (isNew) { tally[set] = Number(tally[set] || 0) + 1; writeJson('train_counts.json', tally); }
   res.status(201).json({ ok: true, labelled: Object.keys(truth).length, mine: Number(tally[set] || 0) });
+});
+
+// ---- label QA (owner-only, from the review console) ------------------------
+// approved.json is the quality gate: only APPROVED labels feed ML training/
+// benchmarks. Denying a label deletes it and unclaims the sheet, so it returns
+// to the open pool for fresh re-labeling by anyone.
+trainingRouter.post('/training/approve', requireAdmin, (req, res) => {
+  const key = String(req.body?.key || '').replace(/[^A-Za-z0-9_-]/g, '');
+  if (!key || !readTruth()[key]) return res.status(400).json({ error: 'not_labelled' });
+  const approved = readJson('approved.json');
+  approved[key] = true;
+  writeJson('approved.json', approved);
+  res.status(201).json({ ok: true, approved: Object.keys(approved).length });
+});
+
+trainingRouter.post('/training/deny', requireAdmin, (req, res) => {
+  const key = String(req.body?.key || '').replace(/[^A-Za-z0-9_-]/g, '');
+  if (!key) return res.status(400).json({ error: 'bad_key' });
+  const truth = readTruth();
+  if (!truth[key]) return res.status(400).json({ error: 'not_labelled' });
+  delete truth[key];
+  writeJson('truth.json', truth);
+  const approved = readJson('approved.json');
+  delete approved[key];
+  writeJson('approved.json', approved);
+  const sets = readSets();
+  for (const f of Object.keys(sets)) if (keyOf(f) === key) delete sets[f];
+  writeJson('sets.json', sets);
+  res.status(201).json({ ok: true, pool: poolFiles().length });
 });

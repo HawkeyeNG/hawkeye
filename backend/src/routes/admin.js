@@ -15,7 +15,8 @@ import { raceKey, contestScope } from '../services/scope.js';
 export const adminRouter = Router();
 
 // Constant-time secret check; disabled entirely if no secret is configured.
-function requireAdmin(req, res, next) {
+// Exported for other routers with owner-only actions (e.g. label QA in training).
+export function requireAdmin(req, res, next) {
   const secret = config.adminConsoleSecret;
   const given = String(req.headers['x-admin-secret'] || '');
   if (!secret) return res.status(403).json({ error: 'console_disabled' });

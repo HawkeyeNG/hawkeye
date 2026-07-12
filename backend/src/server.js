@@ -18,6 +18,7 @@ import { assistantRouter } from './routes/assistant.js';
 import { docketRouter } from './routes/docket.js';
 import { pushRouter } from './routes/push.js';
 import { notificationsRouter } from './routes/notifications.js';
+import { tiktokRouter } from './routes/tiktok.js';
 import { resolveDueCases } from './services/docket.js';
 import { securityHeaders, makeLimiter, concurrencyLimit } from './services/security.js';
 import { runForensics, recheckCollations } from './services/integrity.js';
@@ -82,6 +83,7 @@ app.use('/api', assistantRouter);
 app.use('/api', docketRouter);
 app.use('/api', pushRouter);
 app.use('/api', notificationsRouter);
+app.use('/api', tiktokRouter);
 // Training sheet images: the originals are ~3-4 MB phone photos (3072x4096),
 // far more than a labeller's screen needs, so serving them raw made the page
 // crawl. Serve a cached ~1500px JPEG for VIEWING (built on first request, then

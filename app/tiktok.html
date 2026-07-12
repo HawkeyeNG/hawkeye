@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Hawkeye — TikTok Poster (admin)</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
+  <link rel="stylesheet" href="styles.css?v=102" />
+  <style>
+    .box { max-width: 640px; }
+    label { display: block; font-weight: 700; margin: 12px 0 4px; }
+    input, textarea, select { width: 100%; }
+    .status { padding: 10px 12px; border-radius: 8px; margin: 10px 0; font-weight: 600; }
+    .status.ok { background: var(--tint-ok); color: var(--link); }
+    .status.bad { background: var(--tint-danger); color: var(--text-danger); }
+    .status.info { background: var(--tint); }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.85rem; word-break: break-all; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <header class="gov-header"><div class="wrap brand-row">
+    <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
+      <div class="brand-text"><strong>HAWKEYE</strong><span>TikTok Poster (admin)</span></div></a>
+  </div></header>
+
+  <main class="wrap box">
+    <h1>Post to TikTok</h1>
+    <p class="hint">Owner-only. Publishes a video to Hawkeye's own official TikTok account via the
+    Content Posting API. Before the app is audited, TikTok only allows <strong>SELF_ONLY</strong>
+    (private) posts and the video URL's domain must be verified in the developer portal.</p>
+
+    <label for="secret">Admin passphrase</label>
+    <div class="row"><input id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
+      <button id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
+
+    <div id="conn" class="status info">Checking connection…</div>
+    <button id="connect" class="secondary" style="width:auto">🔗 Connect / re-connect TikTok</button>
+
+    <hr style="margin:20px 0" />
+
+    <label for="title">Caption</label>
+    <textarea id="title" rows="3" placeholder="e.g. How to verify a Hawkeye result on the public ledger — hawkeye.com.ng">How to verify a polling-unit result on Hawkeye's public ledger. Independent. Tamper-evident. hawkeye.com.ng</textarea>
+    <label for="video">Video URL (public MP4, hawkeye.com.ng domain)</label>
+    <input id="video" type="url" placeholder="https://hawkeye.com.ng/media/demo.mp4" />
+    <label for="privacy">Privacy</label>
+    <select id="privacy">
+      <option value="SELF_ONLY">SELF_ONLY (required before audit)</option>
+      <option value="PUBLIC_TO_EVERYONE">PUBLIC_TO_EVERYONE (after audit)</option>
+    </select>
+    <button id="post" style="margin-top:14px">Post to TikTok</button>
+    <div id="result"></div>
+  </main>
+
+  <script src="native.js?v=100"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const secret = () => localStorage.getItem('hawkeye_admin') || '';
+    const hdr = () => ({ 'x-admin-secret': secret(), 'content-type': 'application/json' });
+    const setStatus = (el, cls, msg) => { el.className = 'status ' + cls; el.textContent = msg; };
+
+    $('save-secret').onclick = () => { localStorage.setItem('hawkeye_admin', $('secret').value.trim()); refresh(); };
+    $('secret').value = secret();
+    $('connect').onclick = () => { window.location.href = '/api/tiktok/auth'; };
+
+    async function refresh() {
+      const c = $('conn');
+      if (!secret()) return setStatus(c, 'info', 'Enter the admin passphrase to check connection.');
+      try {
+        const r = await fetch('/api/tiktok/status', { headers: hdr() });
+        if (r.status === 401) return setStatus(c, 'bad', 'Wrong passphrase.');
+        const d = await r.json();
+        if (!d.enabled) return setStatus(c, 'bad', 'TikTok not configured on the server (TIKTOK_CLIENT_KEY / SECRET missing).');
+        if (d.connected) setStatus(c, 'ok', `Connected ✓  open_id ${d.open_id || '—'} · scope ${d.scope || '—'} · token expires ${d.expires_at ? new Date(d.expires_at).toLocaleString() : '—'}`);
+        else setStatus(c, 'info', 'Server configured, but no account connected yet — click Connect.');
+      } catch { setStatus(c, 'bad', 'Could not reach the server.'); }
+    }
+
+    $('post').onclick = async () => {
+      const res = $('result');
+      if (!secret()) return setStatus(res, 'bad', 'Enter the admin passphrase first.');
+      setStatus(res, 'info', 'Posting…');
+      try {
+        const r = await fetch('/api/tiktok/post', {
+          method: 'POST', headers: hdr(),
+          body: JSON.stringify({ title: $('title').value, videoUrl: $('video').value, privacy: $('privacy').value }),
+        });
+        const d = await r.json();
+        if (!r.ok) return setStatus(res, 'bad', 'Error: ' + (d.error || r.status));
+        setStatus(res, 'ok', 'Submitted ✓ publish_id: ' + d.publishId + ' — polling status…');
+        poll(d.publishId, res);
+      } catch (e) { setStatus(res, 'bad', 'Failed: ' + e.message); }
+    };
+
+    async function poll(id, el, n = 0) {
+      if (n > 20) return;
+      try {
+        const d = await fetch('/api/tiktok/post/' + encodeURIComponent(id), { headers: hdr() }).then((x) => x.json());
+        const st = d.status || d.publish_status || JSON.stringify(d).slice(0, 80);
+        el.innerHTML = `<div class="status ${/FAIL/i.test(st) ? 'bad' : 'ok'}">publish_id <span class="mono">${id}</span><br>status: <strong>${st}</strong></div>`;
+        if (!/PUBLISH_COMPLETE|FAIL/i.test(st)) setTimeout(() => poll(id, el, n + 1), 3000);
+      } catch { /* stop */ }
+    }
+
+    (new URLSearchParams(location.search).get('connected')) && setStatus($('result'), 'ok', 'TikTok account connected ✓');
+    const err = new URLSearchParams(location.search).get('error');
+    if (err) setStatus($('result'), 'bad', 'OAuth error: ' + err);
+    refresh();
+  </script>
+</body>
+</html>

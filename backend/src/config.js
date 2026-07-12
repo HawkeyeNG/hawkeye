@@ -70,6 +70,12 @@ export const config = {
   // FCM (Android push) service-account credentials. All three unset = push
   // disabled (send is a silent no-op; the app still works). PRIVATE_KEY keeps
   // its literal \n escapes in .env; push.js unescapes them.
+  // TikTok Content Posting API (post Hawkeye's own videos). Credential-gated:
+  // the routes no-op until a client key/secret from the TikTok developer app are
+  // set. Redirect URI must exactly match the one registered in the TikTok portal.
+  tiktokClientKey: process.env.TIKTOK_CLIENT_KEY || '',
+  tiktokClientSecret: process.env.TIKTOK_CLIENT_SECRET || '',
+  tiktokRedirectUri: process.env.TIKTOK_REDIRECT_URI || 'https://hawkeye.com.ng/api/tiktok/callback',
   fcmProjectId: process.env.FCM_PROJECT_ID || '',
   fcmClientEmail: process.env.FCM_CLIENT_EMAIL || '',
   fcmPrivateKey: process.env.FCM_PRIVATE_KEY || '',

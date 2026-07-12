@@ -4,6 +4,7 @@ Disallow: /review.html
 Disallow: /train.html
 Disallow: /train2.html
 Disallow: /preview.html
+Disallow: /tiktok.html
 Disallow: /api/
 
 Sitemap: https://hawkeye.com.ng/sitemap.xml

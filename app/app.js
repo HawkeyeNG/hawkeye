@@ -418,6 +418,9 @@ async function selectUnit(u) {
   window.HAWKEYE && (window.HAWKEYE.sheetOcr = null);
   const oldHint = document.getElementById('ocr-hint');
   if (oldHint) oldHint.remove();
+  // Warm up the web OCR engine now (~6 MB one-time download) so the read-back
+  // is seconds, not half a minute, by the time the sheet is captured.
+  try { tessReady(); } catch { /* best-effort */ }
   for (const t of ['sheet', 'venue']) {
     $(`preview-${t}`).hidden = true;
     $(`btn-cam-${t}`).textContent = 'Take photo';
@@ -500,25 +503,39 @@ $('btn-cam-venue').onclick = () => (useNativeCam() ? nativeCapture('venue') : st
 // loaded on first sheet capture so pages stay light). Dispatches the same
 // 'hawkeye-sheet-ocr' event, so the autofill path below is shared verbatim.
 let tessWorker = null;
-async function webOcrSheet(blob) {
-  if (window.HAWKEYE && window.HAWKEYE.native) return; // app shell: ML Kit already handles this
-  try {
-    if (!window.Tesseract) {
-      await new Promise((res, rej) => {
-        const s = document.createElement('script');
-        s.src = 'vendor/tesseract/tesseract.min.js';
-        s.onload = res;
-        s.onerror = rej;
-        document.head.appendChild(s);
-      });
-    }
-    if (!tessWorker) {
+let tessWorkerP = null;
+// Load + init once (~6 MB of WASM/model on first use — the slow part). Called
+// early from selectUnit so the download runs while the observer is still
+// filling in counts, not after they capture.
+function tessReady() {
+  if (window.HAWKEYE && window.HAWKEYE.native) return null;
+  if (!tessWorkerP) {
+    tessWorkerP = (async () => {
+      if (!window.Tesseract) {
+        await new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'vendor/tesseract/tesseract.min.js';
+          s.onload = res;
+          s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      }
       tessWorker = await Tesseract.createWorker('eng', 1, {
         workerPath: 'vendor/tesseract/worker.min.js',
         corePath: 'vendor/tesseract',
         langPath: 'vendor/tesseract',
       });
-    }
+      return tessWorker;
+    })();
+    tessWorkerP.catch(() => { tessWorkerP = null; }); // allow retry after a failed download
+  }
+  return tessWorkerP;
+}
+async function webOcrSheet(blob) {
+  if (window.HAWKEYE && window.HAWKEYE.native) return; // app shell: ML Kit already handles this
+  try {
+    ocrHint('📖 Reading the numbers off your sheet photo… you can keep going — this fills in below when done.');
+    await tessReady();
     const { data } = await tessWorker.recognize(blob, {}, { text: true, blocks: true });
     const lines = [];
     for (const b of data.blocks || []) {
@@ -531,9 +548,12 @@ async function webOcrSheet(blob) {
     }
     const text = data.text || '';
     const tokens = text.match(/\d+/g) || [];
-    if (!tokens.length) return;
+    if (!tokens.length) { ocrHint('📖 Could not read numbers off the photo — enter the counts from your sheet.'); return; }
     window.dispatchEvent(new CustomEvent('hawkeye-sheet-ocr', { detail: { text, tokens, lines, at: Date.now() } }));
-  } catch { /* read-back is best-effort — never blocks capture */ }
+  } catch {
+    // best-effort — never blocks capture, but don't leave "reading…" up forever
+    try { ocrHint('📖 Could not read the photo here — enter the counts from your sheet.'); } catch { /* no inputs yet */ }
+  }
 }
 
 // On-device OCR read-back — AUTO-FILLS each party's count by

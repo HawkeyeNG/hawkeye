@@ -45,10 +45,21 @@ export async function analyzeSheet(jpegBuffer, { contest, votes, pu, submissionI
 
   try { db.prepare('UPDATE submissions SET vision_json = ? WHERE id = ?').run(JSON.stringify(out).slice(0, 4000), submissionId); } catch { /* column optional */ }
 
-  if (out.authentic === 'no') {
+  // A genuine EC8A should read as authentic="yes". Anything else is surfaced:
+  // "no" (fake/edited/not a sheet) is high; "unclear" (can't confirm it's a real
+  // sheet — e.g. the photo isn't a sheet at all, or is too poor to tell) is
+  // medium. Only an explicit "yes" passes silently — the previous code flagged
+  // "no" only, so a non-sheet photo the model hedged as "unclear" slipped through.
+  if (out.authentic !== 'yes') {
+    const bad = out.authentic === 'no';
     logDiscrepancy({
-      type: 'sheet_authenticity', severity: 'high', puCode: pu.pu_code, contest, state: pu.state, submissionId,
-      detail: { reason: String(out.reason || '').slice(0, 160), summary: `AI vision flags this sheet image as likely not a genuine EC8A — ${String(out.reason || 'see review').slice(0, 120)}` },
+      type: 'sheet_authenticity', severity: bad ? 'high' : 'medium', puCode: pu.pu_code, contest, state: pu.state, submissionId,
+      detail: {
+        authentic: out.authentic || 'unclear', reason: String(out.reason || '').slice(0, 160),
+        summary: bad
+          ? `AI vision flags this image as likely not a genuine EC8A — ${String(out.reason || 'see review').slice(0, 120)}`
+          : `AI vision could not confirm this image is a genuine EC8A result sheet — ${String(out.reason || 'needs human review').slice(0, 120)}`,
+      },
     });
   }
 

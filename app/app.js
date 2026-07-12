@@ -416,6 +416,8 @@ async function selectUnit(u) {
   shots.sheet = null;
   shots.venue = null;
   window.HAWKEYE && (window.HAWKEYE.sheetOcr = null);
+  const oldHint = document.getElementById('ocr-hint');
+  if (oldHint) oldHint.remove();
   for (const t of ['sheet', 'venue']) {
     $(`preview-${t}`).hidden = true;
     $(`btn-cam-${t}`).textContent = 'Take photo';
@@ -493,12 +495,13 @@ async function startCapture(target) {
 $('btn-cam-sheet').onclick = () => (useNativeCam() ? nativeCapture('sheet') : startCapture('sheet'));
 $('btn-cam-venue').onclick = () => (useNativeCam() ? nativeCapture('venue') : startCapture('venue'));
 
-// On-device OCR read-back (app shell only) — ADVISORY hint under the count
-// inputs so the observer can cross-check what they type against what the
-// device read off the sheet. Never auto-fills, never blocks.
-window.addEventListener('hawkeye-sheet-ocr', (e) => {
+// On-device OCR read-back (app shell only) — AUTO-FILLS each party's count by
+// matching its code to a line on the sheet photo. Suggestions only: filled
+// inputs are highlighted, editing one clears the mark, and any still-marked
+// values must be confirmed by the observer before the report submits. The
+// server-side vision read remains the authoritative cross-check.
+function ocrHint(msg) {
   const wrap = $('vote-inputs');
-  if (!wrap || !e.detail || !e.detail.tokens || !e.detail.tokens.length) return;
   let hint = document.getElementById('ocr-hint');
   if (!hint) {
     hint = document.createElement('p');
@@ -506,7 +509,45 @@ window.addEventListener('hawkeye-sheet-ocr', (e) => {
     hint.className = 'hint';
     wrap.parentNode.insertBefore(hint, wrap);
   }
-  hint.textContent = `📖 Numbers read off your sheet photo (advisory — verify yourself): ${e.detail.tokens.slice(0, 30).join(', ')}`;
+  hint.textContent = msg;
+}
+window.addEventListener('hawkeye-sheet-ocr', (e) => {
+  const wrap = $('vote-inputs');
+  const d = e.detail;
+  if (!wrap || !d || !d.tokens || !d.tokens.length) return;
+  const lines = d.lines || [];
+  const filled = [];
+  for (const input of wrap.querySelectorAll('input[data-party]')) {
+    // Only fill empty inputs or ones we filled from a previous shot — never
+    // overwrite a number the observer typed themselves.
+    if (input.value !== '' && !input.classList.contains('ocr-filled')) continue;
+    const code = input.dataset.party;
+    const re = new RegExp(`(^|[^A-Z0-9])${code}([^A-Z0-9]|$)`, 'i');
+    const row = lines.find((l) => re.test(l.text));
+    if (!row) continue;
+    // Count on the same line ("APC 120"), else — table layouts — the nearest
+    // digits-only line to the right in the same visual row.
+    let m = row.text.match(/(\d{1,6})\s*$/);
+    let val = m && m[1];
+    if (val == null) {
+      const midY = (row.top + row.bottom) / 2;
+      const cands = lines.filter((l) => /^\d{1,6}$/.test(l.text.trim())
+        && l.left > row.left && l.top <= midY && l.bottom >= midY);
+      cands.sort((a, b) => a.left - b.left);
+      if (cands.length) val = cands[0].text.trim();
+    }
+    if (val == null) continue;
+    input.value = String(parseInt(val, 10));
+    input.classList.add('ocr-filled');
+    filled.push(code);
+  }
+  ocrHint(filled.length
+    ? `✨ ${filled.length} count${filled.length === 1 ? '' : 's'} auto-filled from your sheet photo (highlighted) — check each against the sheet and edit anything that's off.`
+    : `📖 Numbers read off your sheet photo (verify yourself): ${d.tokens.slice(0, 30).join(', ')}`);
+});
+// Editing a highlighted input = the observer verified/corrected it.
+$('vote-inputs').addEventListener('input', (e) => {
+  if (e.target && e.target.classList) e.target.classList.remove('ocr-filled');
 });
 $('btn-cancel-camera').onclick = closeCamera;
 
@@ -607,6 +648,12 @@ $('btn-submit').onclick = async () => {
   if (!$('sel-contest').value) {
     $('submit-status').textContent = 'Select which election you are reporting.';
     $('sel-contest').focus();
+    return;
+  }
+  const auto = [...document.querySelectorAll('#vote-inputs input.ocr-filled')]
+    .map((i) => `${i.dataset.party}: ${i.value || 0}`);
+  if (auto.length && !confirm(`These counts were auto-filled from your sheet photo — confirm they match the sheet:\n\n${auto.join('\n')}\n\nSubmit with these numbers?`)) {
+    $('submit-status').textContent = 'Check the highlighted counts against your sheet, then submit again.';
     return;
   }
   $('btn-submit').disabled = true;

@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #00251a;
+    font-family: 'Helvetica Neue', Arial, sans-serif; color: #fff; }
+  .stage { position: relative; width: 1080px; height: 1920px;
+    background: radial-gradient(120% 80% at 50% 0%, #0a4632 0%, #00251a 60%); }
+  .brand { position: absolute; top: 90px; left: 0; right: 0; text-align: center; }
+  .brand img { width: 150px; height: 150px; }
+  .brand .name { font-size: 60px; font-weight: 800; letter-spacing: 4px; margin-top: 8px; }
+  .brand .sub { font-size: 27px; color: #9fd3b6; margin-top: 4px; letter-spacing: 1px; }
+  .slides { position: absolute; top: 640px; left: 90px; right: 90px; height: 900px; }
+  .slide { position: absolute; inset: 0; opacity: 0; text-align: center;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    animation: show 12s infinite; }
+  .slide .big { font-size: 78px; font-weight: 800; line-height: 1.15; }
+  .slide .big .g { color: #6fe3a5; }
+  .slide .small { font-size: 36px; color: #cfe6d9; margin-top: 26px; line-height: 1.4; max-width: 860px; }
+  .chip { display: inline-flex; align-items: center; gap: 14px; margin-top: 40px;
+    background: rgba(111,227,165,0.14); border: 2px solid #6fe3a5; color: #6fe3a5;
+    padding: 16px 30px; border-radius: 999px; font-size: 34px; font-weight: 700; }
+  .dot { width: 20px; height: 20px; border-radius: 50%; background: #6fe3a5; }
+  .s1 { animation-delay: 0s; } .s2 { animation-delay: 3s; }
+  .s3 { animation-delay: 6s; } .s4 { animation-delay: 9s; }
+  @keyframes show { 0% { opacity: 0; transform: translateY(30px); }
+    4% { opacity: 1; transform: none; } 21% { opacity: 1; transform: none; }
+    25% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 0; } }
+  .foot { position: absolute; bottom: 120px; left: 0; right: 0; text-align: center;
+    font-size: 44px; font-weight: 800; color: #fff; letter-spacing: 1px; }
+  .foot .u { color: #6fe3a5; }
+  .bar { position: absolute; bottom: 0; left: 0; height: 10px; background: #6fe3a5; width: 0; animation: fill 12s linear forwards; }
+  @keyframes fill { to { width: 1080px; } }
+</style></head>
+<body>
+  <div class="stage">
+    <div class="brand"><img src="LOGO" alt="" /><div class="name">HAWKEYE</div>
+      <div class="sub">INDEPENDENT ELECTION RESULTS MONITOR</div></div>
+    <div class="slides">
+      <div class="slide s1"><div class="big">Nigeria's results,<br><span class="g">verified by the people.</span></div>
+        <div class="small">Crowd-reported. Nonpartisan. Unofficial — INEC declares the official result.</div></div>
+      <div class="slide s2"><div class="big">Every result <span class="g">signed</span><br>on your own phone.</div>
+        <div class="small">Photographed at the polling unit, cryptographically signed, GPS-stamped.</div></div>
+      <div class="slide s3"><div class="big"><span class="g">Chain intact.</span><br>Nothing can be altered.</div>
+        <div class="small">Every report is hash-chained and anchored to a public transparency log.</div>
+        <div class="chip"><span class="dot"></span>Anyone can verify it — in their own browser</div></div>
+      <div class="slide s4"><div class="big">See it. Verify it.<br><span class="g">Trust the record.</span></div>
+        <div class="chip"><span class="dot"></span>hawkeye.com.ng</div></div>
+    </div>
+    <div class="foot">hawkeye.com.ng</div>
+    <div class="bar"></div>
+  </div>
+</body></html>

@@ -48,16 +48,24 @@
     return (await origFetch(src)).blob();
   };
 
-  // On-device OCR of the captured sheet — ADVISORY ONLY. Runs in the background
-  // after capture; app.js can show the read-back as a hint. Never blocks capture
-  // and never replaces the server-side vision read.
+  // On-device OCR of the captured sheet. Runs in the background after capture;
+  // app.js uses the line geometry to auto-fill counts (observer must confirm
+  // before submitting). Never blocks capture and never replaces the
+  // server-side vision read.
   async function ocrSheet(path) {
     if (!TextRec) return;
     try {
       const r = await TextRec.processImage({ path });
       const text = (r && r.text) || '';
       const tokens = text.match(/\d+/g) || [];
-      window.HAWKEYE.sheetOcr = { text, tokens, at: Date.now() };
+      const lines = [];
+      for (const b of (r && r.blocks) || []) {
+        for (const ln of b.lines || []) {
+          const bb = ln.boundingBox || {};
+          lines.push({ text: ln.text || '', left: bb.left || 0, top: bb.top || 0, bottom: bb.bottom || 0 });
+        }
+      }
+      window.HAWKEYE.sheetOcr = { text, tokens, lines, at: Date.now() };
       window.dispatchEvent(new CustomEvent('hawkeye-sheet-ocr', { detail: window.HAWKEYE.sheetOcr }));
     } catch { /* advisory — ignore */ }
   }

@@ -364,6 +364,8 @@ details[open] summary { margin-bottom: 6px; }
 }
 .vote-row span small { color: var(--muted); }
 .vote-row input { width: 110px; margin: 0; text-align: right; }
+/* Count auto-filled from the sheet photo (app OCR) — cleared once edited. */
+.vote-row input.ocr-filled { border-color: #1a7f37; background: var(--tint-ok); }
 .party-label { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .party-label small { color: var(--muted); }
 .party-mark {

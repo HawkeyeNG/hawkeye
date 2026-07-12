@@ -411,6 +411,9 @@ a.bell-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
   border-radius: 999px; background: var(--danger); color: #fff; font-size: 0.62rem; font-weight: 700;
   display: flex; align-items: center; justify-content: center; line-height: 1;
 }
+/* display:flex above beats the [hidden] UA rule — restore it or the unread
+   dot shows even with zero notifications. Same for the tab-bar dot. */
+.bell-dot[hidden], .tabbar .tab-dot[hidden] { display: none; }
 .menu-panel {
   position: absolute;
   right: 0;
@@ -642,9 +645,11 @@ a.bell-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
     box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.07);
   }
   body.has-tabbar { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
-  a.bell-btn { display: none; }                      /* the Alerts tab replaces it */
-  .gov-footer { display: none; }                     /* footer links live in "More" */
-  #hk-fab { bottom: calc(78px + env(safe-area-inset-bottom)) !important; }
+  /* Only when the tab bar actually exists (native app) — mobile WEB keeps the
+     normal header bell + footer. */
+  body.has-tabbar a.bell-btn { display: none; }      /* the Alerts tab replaces it */
+  body.has-tabbar .gov-footer { display: none; }     /* footer links live in "More" */
+  body.has-tabbar #hk-fab { bottom: calc(78px + env(safe-area-inset-bottom)) !important; }
 }
 .tabbar .tab {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;

@@ -1,9 +1,9 @@
 // Minimal service worker: cache the app shell so the observer app opens instantly
 // on flaky election-day networks. API calls always hit the network.
-const CACHE = 'hawkeye-v96'; // bump on any shell change so installed clients refresh
+const CACHE = 'hawkeye-v97'; // bump on any shell change so installed clients refresh
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
-const SHELL = ['/', '/index.html', '/observe.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/app.js', '/scan.js', '/device.js', '/menu.js?v=95', '/tg.js?v=95', '/styles.css?v=95', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/candidates.html', '/political.html', '/privacy.html', '/og-image.png', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2', '/fonts/lora-600.woff2', '/fonts/lora-700.woff2', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css'];
+const SHELL = ['/', '/index.html', '/observe.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/app.js', '/scan.js', '/device.js', '/menu.js?v=97', '/tg.js?v=95', '/styles.css?v=97', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/candidates.html', '/political.html', '/privacy.html', '/og-image.png', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2', '/fonts/lora-600.woff2', '/fonts/lora-700.woff2', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));

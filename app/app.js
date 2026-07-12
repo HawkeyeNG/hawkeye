@@ -158,8 +158,11 @@ const explain = (body) => body.hint || ERRORS[body.error] || body.error || 'Some
 // Mirror of backend/src/services/scope.js — the polling unit determines the race.
 // The FCT has an appointed minister: no governorship, no state assembly.
 const stateLabel = (s) => (s === 'FCT' ? 'the FCT' : `${s} State`);
-const contestApplies = (u, contest) =>
-  !(u.state === 'FCT' && (contest === 'GOV' || contest === 'SHA'));
+// `states` (optional) = a single-state election's allowlist (e.g. Osun 2026
+// pilot); absent/empty ⇒ nationwide. Mirror of backend scope.js.
+const contestApplies = (u, contest, states) =>
+  !(u.state === 'FCT' && (contest === 'GOV' || contest === 'SHA'))
+  && (!states || !states.length || states.includes(u.state));
 function contestScope(u, contest) {
   switch (contest) {
     case 'SEN':
@@ -396,7 +399,7 @@ async function selectUnit(u) {
     logos = await fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({}));
   }
   $('sel-contest').innerHTML = '<option value="">— Select election —</option>' + contests
-    .filter((c) => contestApplies(selectedPu, c.code))
+    .filter((c) => contestApplies(selectedPu, c.code, c.states))
     .map((c) => `<option value="${c.code}">${c.name}</option>`)
     .join('');
   updateScopeNotice();

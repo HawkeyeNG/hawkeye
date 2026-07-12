@@ -98,8 +98,10 @@ eyes of everyone else present.
 ### 3.5 Automated integrity screening
 Every result is run through public statistical tripwires — over-voting vs
 registered voters, impossible turnout, conflicting counts, collation-vs-unit
-mismatches, form-serial and Benford-style outliers — logged openly within minutes,
-not buried in a tribunal exhibit months later.
+mismatches, form-serial and Benford-style outliers, and **sheet-provenance
+mismatches** (the result sheet's own printed state / polling-unit vs the unit it
+was filed under) — logged openly within minutes, not buried in a tribunal exhibit
+months later.
 
 ### 3.6 Crowd arbitration — flags never decide, and neither do we
 A flag (AI or statistical) immediately marks the result **disputed** everywhere
@@ -130,9 +132,14 @@ arbitration is exactly as tamper-evident as the results it judges.
 - **Roadmap — NIN 1-to-1:** national-ID verification will move anti-Sybil from
   "hard" to "cryptographically 1-to-1," the highest-leverage integrity upgrade.
 - **AI is advisory, never an arbiter (live).** EC8A vision (forgery / AI-image
-  flags + count read-back), statistical anomaly detection, incident triage +
-  hotspot clustering, and a non-partisan results assistant are deployed. Each only
-  *surfaces evidence with its reasoning shown* for humans to judge. It never declares a winner, never silently resolves a dispute,
+  flags, count read-back cross-checked against the typed counts, and
+  sheet-provenance checks that flag a sheet whose printed state / polling-unit
+  doesn't match where it was filed), statistical anomaly detection, incident
+  triage + hotspot clustering, and a non-partisan results assistant are deployed.
+  Observers also get an on-device OCR read-back at capture that pre-fills counts
+  for confirmation but never auto-submits. Each only *surfaces evidence with its
+  reasoning shown* for humans to judge. It never declares a winner, never silently
+  resolves a dispute,
   and never overrides the verifiable ledger — an unexplained "AI says fraud" would
   contradict the whole "verify, don't trust" model, so every AI output stays
   explainable and auditable.

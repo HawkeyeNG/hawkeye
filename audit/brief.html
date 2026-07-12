@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  @page { size: A4; margin: 14mm 14mm 12mm; }
+  * { box-sizing: border-box; }
+  :root {
+    --ink: #12211a; --green: #00482b; --accent: #008751; --paper: #fff;
+    --muted: #566b60; --tint: #eef4f0; --line: #d8e2db;
+  }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: var(--ink); font-size: 10.5pt; line-height: 1.45; }
+  h1, h2, h3, .brand strong, .sans { font-family: 'Helvetica Neue', Arial, sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  .head { display: flex; align-items: center; gap: 14px; border-bottom: 3px solid var(--green); padding-bottom: 10px; }
+  .head .logo { width: 46px; height: 46px; }
+  .brand strong { font-size: 17pt; letter-spacing: .5px; color: var(--green); display: block; line-height: 1; }
+  .brand span { font-size: 9pt; color: var(--muted); }
+  .head .links { margin-left: auto; text-align: right; font-size: 8.5pt; color: var(--muted); line-height: 1.5; }
+  .lede { font-size: 12pt; line-height: 1.5; margin: 12px 0 4px; }
+  .lede b { color: var(--green); }
+  h2 { font-size: 11pt; color: var(--green); text-transform: uppercase; letter-spacing: .6px; margin: 16px 0 5px; border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+  p { margin: 5px 0; }
+  ul { margin: 5px 0; padding-left: 16px; }
+  li { margin: 3px 0; }
+  .grid { display: flex; gap: 14px; }
+  .grid > div { flex: 1; }
+  .shot { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin-top: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .shot img { width: 100%; display: block; }
+  .cap { font-size: 8.5pt; color: var(--muted); font-style: italic; margin-top: 4px; text-align: center; }
+  .stats { display: flex; gap: 10px; margin: 8px 0; }
+  .stat { flex: 1; background: var(--tint); border-radius: 6px; padding: 8px 10px; text-align: center; }
+  .stat b { display: block; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 15pt; color: var(--green); line-height: 1.1; }
+  .stat span { font-size: 8pt; color: var(--muted); }
+  .ask { background: var(--tint); border-left: 4px solid var(--accent); padding: 9px 12px; border-radius: 0 6px 6px 0; margin-top: 6px; }
+  .foot { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 7px; font-size: 8.5pt; color: var(--muted); display: flex; justify-content: space-between; }
+  .tag { display: inline-block; background: var(--green); color: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 7.5pt; padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <img class="logo" src="LOGO" alt="" />
+    <div class="brand">
+      <strong>HAWKEYE</strong>
+      <span>Independent Election Results Monitor · <span class="tag">Nigeria 2027</span></span>
+    </div>
+    <div class="links">
+      hawkeye.com.ng<br />github.com/HawkeyeNG/hawkeye<br />security@hawkeye.com.ng
+    </div>
+  </div>
+
+  <p class="lede">Hawkeye lets ordinary Nigerians photograph, cryptographically sign, and permanently
+  publish the result announced at their polling unit — creating an <b>independent, tamper-evident public
+  record before those results can be altered on the way to collation</b>. Open source (MIT), mobile-first,
+  and built so that no single actor — not the state, not a party, not even the Hawkeye team — can quietly rewrite a result.</p>
+
+  <h2>The problem</h2>
+  <p>Nigerian elections are most vulnerable in the gap between the polling unit — where votes are counted
+  publicly — and collation, where result sheets have historically been altered, swapped, or lost with no
+  independent record to compare against. In 2023 the failure of INEC's official results portal (IReV) on
+  election night collapsed public trust in the official channel and fueled disinformation on every side.
+  There is no widely trusted, citizen-driven, independently verifiable record of the unit-level count. Hawkeye creates one.</p>
+
+  <h2>How it works — verify, don't trust</h2>
+  <div class="grid">
+    <div>
+      <ul>
+        <li><b>Signed on the citizen's own device.</b> Each report is signed with an ECDSA-P256 key that never leaves the phone — the server cannot forge one.</li>
+        <li><b>Hash-chain ledger.</b> Every report commits to all before it; anyone recomputes the whole chain <i>in their own browser</i>.</li>
+        <li><b>External anchoring.</b> Ledger heads are published daily to Sigstore's public Rekor transparency log, which we don't control — a database rollback is detectable by anyone.</li>
+      </ul>
+    </div>
+    <div>
+      <ul>
+        <li><b>Per-race Merkle proofs.</b> Any one of ~1,500 contests is verifiable in isolation for a tribunal, without replaying the rest.</li>
+        <li><b>Corroboration + AI screening.</b> Counts trusted only on independent agreement; advisory AI flags forgeries, provenance and anomalies — never decides.</li>
+        <li><b>Crowd arbitration.</b> Flagged results are re-judged publicly by verified observers under a published quorum rule — on their own anchored chain.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="shot"><img src="SHOT" alt="Hawkeye public ledger verification" /></div>
+  <p class="cap">Live public-audit page: anyone recomputes the entire hash chain in-browser and checks each ledger head against Sigstore Rekor — no trust in Hawkeye required.</p>
+
+  <h2>Traction &amp; readiness</h2>
+  <div class="stats">
+    <div class="stat"><b>176,846</b><span>polling units mapped</span></div>
+    <div class="stat"><b>128,000+</b><span>units with verified GPS</span></div>
+    <div class="stat"><b>9,307</b><span>electoral wards mapped</span></div>
+    <div class="stat"><b>Live</b><span>public beta + Rekor anchoring</span></div>
+  </div>
+  <p>Working ledger with client-side verification, live external anchoring, national leaderboard with
+  ward-resolution maps, native Android app with on-device capture/OCR, Telegram bots, incident reporting,
+  and the crowd-arbitration Public Docket — all deployed today. Independent security and usability audits
+  are already requested through OTF's Security Lab and UX &amp; Discovery Lab.</p>
+
+  <h2>What funding enables · the ask</h2>
+  <div class="ask">
+    <b>Technology development toward Nigeria's February 2027 general elections.</b> Funding scales observer
+    onboarding and multilingual training (Hausa/Yoruba/Igbo/Pidgin) with civil-society partners
+    (in discussion: YIAGA Africa, TMG, VoteWatch), funds field operations through election day, hardens the
+    system against the security/usability findings, and stands up censorship-resistant self-hosted
+    infrastructure (self-owned compute + Starlink + solar) so the service survives grid and internet outages.
+    Self-funded to date. Hard, immovable deadline: <b>February 2027</b>.
+  </div>
+
+  <div class="foot">
+    <span>Non-partisan · Hawkeye never declares results — INEC does; Hawkeye produces verifiable evidence.</span>
+    <span>hawkeye.com.ng</span>
+  </div>
+</body>
+</html>

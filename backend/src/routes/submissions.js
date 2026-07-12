@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Router } from 'express';
 import multer from 'multer';
-import { db, partyCodes, contestCodes } from '../db.js';
+import { db, partyCodes, contestCodes, contests } from '../db.js';
 import { config } from '../config.js';
 import { haversineM, makeLocationProof } from '../services/geo.js';
 import { sha256Hex, dhashHex, hammingDistance } from '../services/images.js';
@@ -78,7 +78,7 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
 
     const pu = db.prepare('SELECT * FROM polling_units WHERE pu_code = ?').get(puCode);
     if (!pu) return res.status(404).json({ error: 'unknown_polling_unit' });
-    if (!contestApplies(pu, contest)) {
+    if (!contestApplies(pu, contest, contests.find((c) => c.code === contest)?.states)) {
       return res.status(400).json({ error: 'contest_not_applicable' });
     }
 

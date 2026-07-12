@@ -8,8 +8,12 @@ const stateLabel = (s) => (s === 'FCT' ? 'the FCT' : `${s} State`);
 
 // The FCT is administered by an appointed minister — no governorship, no state
 // assembly. Those contests simply do not exist for FCT units.
-export const contestApplies = (pu, contest) =>
-  !(pu.state === 'FCT' && (contest === 'GOV' || contest === 'SHA'));
+// `states` (optional) is a contest's allowlist of state names — used by
+// single-state elections (e.g. the Osun 2026 governorship pilot) so only units
+// in those states can file. Absent/empty ⇒ nationwide, i.e. current behaviour.
+export const contestApplies = (pu, contest, states) =>
+  !(pu.state === 'FCT' && (contest === 'GOV' || contest === 'SHA'))
+  && (!states || !states.length || states.includes(pu.state));
 
 export function contestScope(pu, contest) {
   switch (contest) {

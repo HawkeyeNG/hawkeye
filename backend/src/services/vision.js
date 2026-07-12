@@ -25,6 +25,7 @@ export async function analyzeSheet(jpegBuffer, { contest, votes, pu, submissionI
     'Set authentic="no" if it looks like a screenshot, is digitally edited, appears AI-generated, or is not an EC8A form at all; "unclear" if you cannot tell.',
     'For state and puCode, read them off the sheet header itself; leave them empty rather than guess.',
     'For counts, read the score recorded for each party you can clearly read (integers only); omit any you cannot read. Do not guess.',
+    'IMPORTANT — corrections are common on EC8A sheets: a figure may be crossed out / struck through with the final figure written beside, above or after it. Read ONLY the final uncrossed figure. NEVER join crossed-out digits onto the final figure (a crossed-out 375 followed by a final 7 is 7, not 3757). If you cannot tell which figure is final, omit that party entirely.',
     `For reference only, the observer typed: ${typed || '(none)'}.`,
   ].join('\n');
   const content = [

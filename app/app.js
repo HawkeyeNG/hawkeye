@@ -495,7 +495,48 @@ async function startCapture(target) {
 $('btn-cam-sheet').onclick = () => (useNativeCam() ? nativeCapture('sheet') : startCapture('sheet'));
 $('btn-cam-venue').onclick = () => (useNativeCam() ? nativeCapture('venue') : startCapture('venue'));
 
-// On-device OCR read-back (app shell only) — AUTO-FILLS each party's count by
+// Web OCR — gives the browser the same sheet read-back the app shell gets from
+// ML Kit, via Tesseract.js (WASM, self-hosted under vendor/tesseract, lazy-
+// loaded on first sheet capture so pages stay light). Dispatches the same
+// 'hawkeye-sheet-ocr' event, so the autofill path below is shared verbatim.
+let tessWorker = null;
+async function webOcrSheet(blob) {
+  if (window.HAWKEYE && window.HAWKEYE.native) return; // app shell: ML Kit already handles this
+  try {
+    if (!window.Tesseract) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'vendor/tesseract/tesseract.min.js';
+        s.onload = res;
+        s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+    if (!tessWorker) {
+      tessWorker = await Tesseract.createWorker('eng', 1, {
+        workerPath: 'vendor/tesseract/worker.min.js',
+        corePath: 'vendor/tesseract',
+        langPath: 'vendor/tesseract',
+      });
+    }
+    const { data } = await tessWorker.recognize(blob, {}, { text: true, blocks: true });
+    const lines = [];
+    for (const b of data.blocks || []) {
+      for (const p of b.paragraphs || []) {
+        for (const ln of p.lines || []) {
+          const bb = ln.bbox || {};
+          lines.push({ text: (ln.text || '').trim(), left: bb.x0 || 0, top: bb.y0 || 0, bottom: bb.y1 || 0 });
+        }
+      }
+    }
+    const text = data.text || '';
+    const tokens = text.match(/\d+/g) || [];
+    if (!tokens.length) return;
+    window.dispatchEvent(new CustomEvent('hawkeye-sheet-ocr', { detail: { text, tokens, lines, at: Date.now() } }));
+  } catch { /* read-back is best-effort — never blocks capture */ }
+}
+
+// On-device OCR read-back — AUTO-FILLS each party's count by
 // matching its code to a line on the sheet photo. Suggestions only: filled
 // inputs are highlighted, editing one clears the mark, and any still-marked
 // values must be confirmed by the observer before the report submits. The
@@ -525,11 +566,18 @@ window.addEventListener('hawkeye-sheet-ocr', (e) => {
     const re = new RegExp(`(^|[^A-Z0-9])${code}([^A-Z0-9]|$)`, 'i');
     const row = lines.find((l) => re.test(l.text));
     if (!row) continue;
-    // Count on the same line ("APC 120"), else — table layouts — the nearest
-    // digits-only line to the right in the same visual row.
-    let m = row.text.match(/(\d{1,6})\s*$/);
-    let val = m && m[1];
+    // First number AFTER the code in the same line (EC8A: the FIGURES column
+    // follows the party name; anything before the code is the serial number).
+    // Tolerate the classic O→0 misread next to digits, nothing riskier —
+    // better to leave a count blank than to suggest a wrong one.
+    const ex = re.exec(row.text);
+    const after = row.text.slice(ex.index + ex[0].length)
+      .replace(/[Oo](?=\d)/g, '0').replace(/(?<=\d)[Oo]/g, '0');
+    let m = after.match(/\d{1,6}/);
+    let val = m && m[0];
     if (val == null) {
+      // Table layouts (ML Kit): the count is a separate digits-only line to
+      // the right in the same visual row.
       const midY = (row.top + row.bottom) / 2;
       const cands = lines.filter((l) => /^\d{1,6}$/.test(l.text.trim())
         && l.left > row.left && l.top <= midY && l.bottom >= midY);
@@ -586,6 +634,7 @@ async function finalizeShot(target, blob) {
     return false;
   }
   shots[target] = { blob, capturedAt: Date.now(), lat: fix.coords.latitude, lng: fix.coords.longitude };
+  if (target === 'sheet') webOcrSheet(blob); // fire-and-forget read-back (no-op in the app shell — ML Kit covers it there)
   const img = $(`preview-${target}`);
   img.src = URL.createObjectURL(blob);
   img.hidden = false;

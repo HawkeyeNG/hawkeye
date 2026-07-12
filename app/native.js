@@ -9,6 +9,10 @@
   window.HAWKEYE = { native, apiBase: native ? BASE : '' };
   if (!native) return; // ---- web path ends here; nothing below runs in a browser ----
 
+  // Mark the document early so CSS can strip web-only UI (e.g. the PWA install
+  // CTA) with no race against page scripts.
+  document.documentElement.classList.add('native-app');
+
   // There is no same-origin server in the shell, so leading-slash URLs must
   // point at the real API host. CapacitorHttp (enabled in capacitor.config)
   // makes fetch use native HTTP, so this is cross-origin-safe (no CORS wall);

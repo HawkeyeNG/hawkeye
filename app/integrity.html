@@ -21,7 +21,12 @@
     .chip { border: 1px solid var(--border); background: var(--card); padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 0.85rem; font-weight: 700; }
     .chip.on { background: var(--green); color: #fff; border-color: var(--green); }
     .filters select { width: auto; min-width: 150px; margin: 0; }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .table-wrap table { min-width: 560px; }
+    /* Inline verdict after the Benford heading — must NOT use the block
+       .scope-note box (that green rectangle overlapped the heading on mobile). */
+    .verdict-tag { font-weight: 400; font-size: 0.8rem; color: var(--muted); white-space: normal; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e6e6e5; vertical-align: top; }
     th { border-bottom: 2px solid var(--ink); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
     .sev { font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; white-space: nowrap; }
@@ -48,7 +53,7 @@
 <body>
   <header class="gov-header">
     <div class="wrap brand-row">
-      <a class="brand" href="index.html" aria-label="Hawkeye home"><span class="crest" aria-hidden="true">🦅</span>
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
         <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
       <button class="menu-btn" aria-label="Menu" aria-expanded="false"
         onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
@@ -92,17 +97,19 @@
         <select id="type-filter" aria-label="Filter by discrepancy type"><option value="">All types</option></select>
         <select id="state-filter" aria-label="Filter by state"><option value="">All states</option></select>
       </div>
+      <div class="table-wrap">
       <table>
         <thead><tr><th>Severity</th><th>Type</th><th>Polling unit</th><th>Detail</th><th>When</th></tr></thead>
         <tbody id="rows"><tr><td colspan="5"><div class="skel" style="height:14px;margin:6px 0"></div><div class="skel" style="height:14px;margin:6px 0;width:70%"></div></td></tr></tbody>
       </table>
+      </div>
     </div>
 
     <div class="card">
       <h2>Digit-distribution screening</h2>
       <p class="hint">Fabricated figures cluster on favourite digits; genuine counts follow known
       distributions. Departures are screening signals — never proof on their own. <span id="benford-n"></span></p>
-      <h3 style="margin:14px 0 2px;font-size:0.95rem">First digit — Benford's law <span id="benford-verdict" class="scope-note"></span></h3>
+      <h3 style="margin:14px 0 2px;font-size:0.95rem">First digit — Benford's law <span id="benford-verdict" class="verdict-tag"></span></h3>
       <p class="hint">First digit of every party count vs Benford's expected curve (dashed).</p>
       <div class="benford" id="benford-first"></div>
       <h3 style="margin:18px 0 2px;font-size:0.95rem">Last digit — uniformity</h3>

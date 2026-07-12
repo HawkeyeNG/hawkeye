@@ -20,9 +20,19 @@ function num(name, fallback) {
   return v === undefined || v === '' ? fallback : Number(v);
 }
 
+const bool = (name, fallback) => {
+  const v = process.env[name];
+  return v === undefined || v === '' ? fallback : /^(1|true|yes|on)$/i.test(v);
+};
+
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: num('PORT', 8430),
+  // Open a crowd-arbitration case the moment a high-severity flag lands, instead
+  // of waiting for the post-election batch (openCases). Auto-on for mock/test
+  // elections so arbitration is demonstrable live; off by default for the real
+  // general election, where disputes are batched after polls close.
+  docketAutoOpenCases: bool('DOCKET_AUTO_OPEN_CASES', false),
 
   dbPath: process.env.DB_PATH || path.join(backendRoot, 'storage', 'hawkeye.db'),
   uploadDir: process.env.UPLOAD_DIR || path.join(backendRoot, 'storage', 'uploads'),

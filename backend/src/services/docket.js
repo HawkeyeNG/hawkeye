@@ -4,9 +4,17 @@
 // hash chain (docket_ledger), whose head is folded into the Rekor anchor — the
 // arbitration is as rollback-proof as the results it judges.
 import crypto from 'node:crypto';
-import { db } from '../db.js';
+import { db, contests } from '../db.js';
+import { config } from '../config.js';
 import { recomputeResult } from './aggregate.js';
 import { notifyMaster } from './notify.js';
+
+// Live arbitration is enabled explicitly (DOCKET_AUTO_OPEN_CASES) or implicitly
+// whenever the active election is a mock/test run — so a demo/pilot exercises the
+// full flag → case → verdict path immediately, while the real general election
+// keeps disputes batched until after polls close.
+const autoOpenCases = () =>
+  config.docketAutoOpenCases || /\b(mock|test)\b/i.test(contests[0]?.election || '');
 
 const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
 const GENESIS = '0'.repeat(64);
@@ -38,6 +46,34 @@ export function onFlag({ id, type, severity, puCode, contest, detail }) {
   if (severity !== 'high' || !puCode || !contest) return;
   appendDocket('flag', { flagId: id, type, puCode, contest, summary: detail?.summary || '' });
   try { recomputeResult(db, puCode, contest); } catch { /* result may not exist yet */ }
+  if (autoOpenCases()) { try { openCaseFor(puCode, contest); } catch { /* best-effort */ } }
+}
+
+// Open ONE arbitration case for a (unit, contest) that carries open high flags —
+// the single-case path used both by live auto-open (onFlag) and the post-election
+// batch (openCases). Idempotent: INSERT OR IGNORE means a second flag on a unit
+// that's already in dispute won't open a duplicate case.
+export function openCaseFor(puCode, contest, windowDays = WINDOW_DAYS) {
+  const flags = db.prepare(
+    `SELECT id FROM discrepancies WHERE severity = 'high' AND status = 'open' AND pu_code = ? AND contest = ?`,
+  ).all(puCode, contest);
+  if (!flags.length) return null;
+  const now = Date.now();
+  const closes = now + windowDays * 86_400_000;
+  const info = db.prepare(
+    `INSERT OR IGNORE INTO cases (pu_code, contest, flag_ids, status, opened_at, closes_at) VALUES (?, ?, ?, 'open', ?, ?)`,
+  ).run(puCode, contest, JSON.stringify(flags.map((f) => f.id)), now, closes);
+  if (!info.changes) return null;
+  const caseId = info.lastInsertRowid;
+  appendDocket('case_open', { caseId, puCode, contest, flagIds: flags.map((f) => f.id).join(','), closesAt: closes });
+  recomputeResult(db, puCode, contest);
+  import('./notifications.js').then((n) => n.noteUnitSavers(puCode, {
+    kind: 'case', title: 'A result at your unit is in dispute',
+    body: `${puCode} · ${contest} — open for crowd review. Judge the evidence.`,
+    url: `https://hawkeye.com.ng/case.html?id=${caseId}`,
+  })).catch(() => {});
+  notifyMaster(`⚖️ docket: case #${caseId} opened for ${puCode} ${contest}`);
+  return caseId;
 }
 
 // After the election: every (unit, contest) still carrying an open high-severity

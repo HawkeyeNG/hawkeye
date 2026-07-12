@@ -38,13 +38,50 @@
   const Camera = Cap.Plugins && Cap.Plugins.Camera;
   window.HAWKEYE.capabilities = { camera: !!Camera, secureKey: false, push: false };
 
+  const DocScan = Cap.Plugins && Cap.Plugins.DocumentScanner;   // ML Kit doc scanner
+  const TextRec = Cap.Plugins && Cap.Plugins.TextRecognition;   // ML Kit on-device OCR
+  window.HAWKEYE.capabilities.docScanner = !!DocScan;
+  window.HAWKEYE.capabilities.ocr = !!TextRec;
+
+  const pathToBlob = async (p) => {
+    const src = Cap.convertFileSrc ? Cap.convertFileSrc(p) : p;
+    return (await origFetch(src)).blob();
+  };
+
+  // On-device OCR of the captured sheet — ADVISORY ONLY. Runs in the background
+  // after capture; app.js can show the read-back as a hint. Never blocks capture
+  // and never replaces the server-side vision read.
+  async function ocrSheet(path) {
+    if (!TextRec) return;
+    try {
+      const r = await TextRec.processImage({ path });
+      const text = (r && r.text) || '';
+      const tokens = text.match(/\d+/g) || [];
+      window.HAWKEYE.sheetOcr = { text, tokens, at: Date.now() };
+      window.dispatchEvent(new CustomEvent('hawkeye-sheet-ocr', { detail: window.HAWKEYE.sheetOcr }));
+    } catch { /* advisory — ignore */ }
+  }
+
   if (Camera) {
-    // A LIVE camera capture (source CAMERA — never gallery/prompt) returned as a
-    // JPEG Blob. app.js then compresses → hashes → signs → uploads it exactly as
-    // on web, so content-addressing and the whole integrity model are unchanged.
-    // The OS camera is inherently live-only, which satisfies "no gallery" more
-    // strongly than the web getUserMedia path.
-    window.HAWKEYE.capturePhoto = async function capturePhoto() {
+    // LIVE capture only — never gallery. The SHEET goes through the ML Kit
+    // document scanner (live edge detection, auto-capture, perspective
+    // correction — on-device); the VENUE uses the plain OS camera. Both return
+    // a JPEG Blob that app.js compresses → hashes → signs → uploads exactly as
+    // on web, so content-addressing and the integrity model are unchanged.
+    window.HAWKEYE.capturePhoto = async function capturePhoto(target) {
+      if (target === 'sheet' && DocScan) {
+        const r = await DocScan.scanDocument({
+          galleryImportAllowed: false,
+          pageLimit: 1,
+          resultFormats: 'JPEG',
+          scannerMode: 'FULL',
+        });
+        const imgs = (r && (r.scannedImages || (r.result && r.result.scannedImages))) || [];
+        if (!imgs.length) throw new Error('cancelled');
+        const path = imgs[0].path || imgs[0];
+        ocrSheet(path); // fire-and-forget advisory read
+        return pathToBlob(path);
+      }
       const photo = await Camera.getPhoto({
         source: 'CAMERA',
         resultType: 'base64',

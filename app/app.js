@@ -415,6 +415,7 @@ async function selectUnit(u) {
   }
   shots.sheet = null;
   shots.venue = null;
+  window.HAWKEYE && (window.HAWKEYE.sheetOcr = null);
   for (const t of ['sheet', 'venue']) {
     $(`preview-${t}`).hidden = true;
     $(`btn-cam-${t}`).textContent = 'Take photo';
@@ -491,6 +492,22 @@ async function startCapture(target) {
 
 $('btn-cam-sheet').onclick = () => (useNativeCam() ? nativeCapture('sheet') : startCapture('sheet'));
 $('btn-cam-venue').onclick = () => (useNativeCam() ? nativeCapture('venue') : startCapture('venue'));
+
+// On-device OCR read-back (app shell only) — ADVISORY hint under the count
+// inputs so the observer can cross-check what they type against what the
+// device read off the sheet. Never auto-fills, never blocks.
+window.addEventListener('hawkeye-sheet-ocr', (e) => {
+  const wrap = $('vote-inputs');
+  if (!wrap || !e.detail || !e.detail.tokens || !e.detail.tokens.length) return;
+  let hint = document.getElementById('ocr-hint');
+  if (!hint) {
+    hint = document.createElement('p');
+    hint.id = 'ocr-hint';
+    hint.className = 'hint';
+    wrap.parentNode.insertBefore(hint, wrap);
+  }
+  hint.textContent = `📖 Numbers read off your sheet photo (advisory — verify yourself): ${e.detail.tokens.slice(0, 30).join(', ')}`;
+});
 $('btn-cancel-camera').onclick = closeCamera;
 
 let capturing = false;
@@ -576,7 +593,7 @@ async function nativeCapture(target) {
   cameraTarget = target;
   try {
     let blob;
-    try { blob = await window.HAWKEYE.capturePhoto(); }
+    try { blob = await window.HAWKEYE.capturePhoto(target); }
     catch { return; } // user cancelled / dismissed the OS camera
     await finalizeShot(target, blob);
   } finally {

@@ -19,3 +19,9 @@ project(':capacitor-preferences').projectDir = new File('../node_modules/@capaci
 
 include ':capacitor-push-notifications'
 project(':capacitor-push-notifications').projectDir = new File('../node_modules/@capacitor/push-notifications/android')
+
+include ':capacitor-mlkit-document-scanner'
+project(':capacitor-mlkit-document-scanner').projectDir = new File('../node_modules/@capacitor-mlkit/document-scanner/android')
+
+include ':capacitor-mlkit-text-recognition'
+project(':capacitor-mlkit-text-recognition').projectDir = new File('../node_modules/@capacitor-mlkit/text-recognition/android')

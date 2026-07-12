@@ -8,7 +8,7 @@
   <title>Hawkeye — National Results Leaderboard (Unofficial)</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=95" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=95" />
+  <link rel="stylesheet" href="styles.css?v=97" />
   <script src="native.js?v=95"></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
@@ -17,6 +17,7 @@
     .state-shape.led { fill: #e2ecdf; stroke: #7a9486; }
     /* hover highlight on every region (tie tints are pointer-transparent) */
     .map-card svg path:not(.tie-fill):hover { filter: brightness(0.9); cursor: pointer; }
+    .map-card svg path.sel { stroke: var(--green); stroke-width: 2; }
     .map-legend { display: flex; gap: 16px; align-items: center; font-size: 0.8rem; color: var(--muted); margin: 8px 0 0; }
     .map-legend span { display: inline-flex; align-items: center; gap: 6px; }
     .map-legend i { width: 13px; height: 13px; display: inline-block; border: 1px solid #b7bcb7; }
@@ -117,6 +118,7 @@
       <p class="hint">The leading party's emblem is shown on each state with reports.
       Hover or tap a state for details.</p>
       <div id="map"><div class="skel" style="height:320px"></div></div>
+      <p id="map-info" class="hint" aria-live="polite" hidden></p>
       <p class="map-legend">
         <span><i style="background:#e9e9e7"></i> Awaiting reports</span>
         <span><i style="background:#e2ecdf"></i> Reporting — leader's emblem shown</span>
@@ -379,6 +381,21 @@
     })();
 
     // Opt-in race-follow notifications (Telegram). Needs a verified observer token.
+    // Tap/click a region for its details — <title> tooltips are hover-only, so
+    // touch users had no way in. Delegated: survives every map re-render.
+    document.getElementById('map').addEventListener('click', (e) => {
+      const p = e.target.closest('path');
+      if (!p || p.classList.contains('tie-fill')) return;
+      const t = p.querySelector('title');
+      if (!t) return;
+      const prev = document.querySelector('#map path.sel');
+      if (prev) prev.classList.remove('sel');
+      p.classList.add('sel');
+      const info = document.getElementById('map-info');
+      info.textContent = '📍 ' + t.textContent;
+      info.hidden = false;
+    });
+
     document.getElementById('btn-follow').onclick = async () => {
       const token = localStorage.getItem('hawkeye_token');
       const msg = document.getElementById('follow-msg');
@@ -395,6 +412,6 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=95"></script>
+  <script src="menu.js?v=97"></script>
 </body>
 </html>

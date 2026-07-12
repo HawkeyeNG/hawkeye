@@ -114,8 +114,9 @@
   }
 
   // Bottom tab bar (mobile app pattern) — one raised center action, 5 slots,
-  // consistent on every page. CSS hides it on desktop (header nav covers that).
-  if (!document.querySelector('.tabbar')) {
+  // consistent on every page. NATIVE SHELL ONLY: the web (even mobile web)
+  // keeps its header nav/bell/footer — the bar is an app affordance.
+  if (window.HAWKEYE && window.HAWKEYE.native && !document.querySelector('.tabbar')) {
     const page = (location.pathname.replace(/^.*\//, '') || 'index.html');
     const ic = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
     const TABS = [

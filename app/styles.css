@@ -91,6 +91,10 @@ main.wrap { max-width: 840px; }
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   color: #fff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  /* Edge-to-edge apps (Android 15+, notched phones) draw under the status bar —
+     extend the green header up into that inset so time/battery sit on green and
+     content isn't clipped. env() is 0 on browsers without an inset, so no-op there. */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 .brand-row { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; padding-bottom: 12px; position: relative; }
 .brand { display: flex; align-items: center; gap: 11px; }

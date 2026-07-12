@@ -170,7 +170,7 @@
   // Mascot trial: swap the emoji crest for the hawk mark on every page from
   // one place (pages keep the emoji as a no-JS fallback).
   for (const c of document.querySelectorAll('.crest')) {
-    c.innerHTML = '<img src="logo.svg?v=93" alt="" style="width:36px;height:36px;display:block" />';
+    c.innerHTML = '<img src="logo-crest.svg?v=98" alt="" style="width:36px;height:36px;display:block" />';
   }
 
   // Accessibility: skip-to-content link, first in the tab order.

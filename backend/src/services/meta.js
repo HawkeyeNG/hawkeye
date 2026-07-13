@@ -53,6 +53,18 @@ export async function metaStatus() {
   return s;
 }
 
+// Diagnostic: which IG-link field is populated + what scopes the token has. The
+// Content Publishing API needs `instagram_business_account` (not the newer
+// `connected_instagram_account`) and `instagram_basic`+`instagram_content_publish`.
+export async function metaDiag() {
+  const out = {};
+  try { out.page = await graph(config.metaPageId, { fields: 'name,instagram_business_account,connected_instagram_account' }, 'GET'); }
+  catch (e) { out.pageError = String(e.message || e); }
+  try { out.permissions = (await graph('me/permissions', {}, 'GET')).data; }
+  catch (e) { out.permError = String(e.message || e); }
+  return out;
+}
+
 // Facebook Page. text/link -> /feed ; image -> /photos ; video -> /videos.
 export async function postFacebook({ message = '', mediaUrl = '', mediaType = 'text', link = '' }) {
   if (!config.metaPageId) throw new Error('no_page_id');

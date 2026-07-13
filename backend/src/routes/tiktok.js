@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 import { Router } from 'express';
 import multer from 'multer';
 import { requireAdmin } from './admin.js';
-import { tiktokEnabled, authUrl, exchangeCode, tiktokStatus, directPostFile, postStatus } from '../services/tiktok.js';
+import { tiktokEnabled, authUrl, exchangeCode, tiktokStatus, directPostFile, postStatus, creatorInfoRaw } from '../services/tiktok.js';
 
 export const tiktokRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 300 * 1024 * 1024 } });
@@ -38,6 +38,13 @@ tiktokRouter.get('/tiktok/callback', async (req, res) => {
 });
 
 tiktokRouter.get('/tiktok/status', requireAdmin, (_req, res) => res.json(tiktokStatus()));
+
+// Diagnostic: raw creator_info — shows the account's eligibility, allowed privacy
+// options, and any TikTok error code (the real reason a Direct Post is refused).
+tiktokRouter.get('/tiktok/creator-info', requireAdmin, async (_req, res) => {
+  if (!tiktokEnabled()) return res.status(503).json({ error: 'not_configured' });
+  try { res.json(await creatorInfoRaw()); } catch (e) { res.status(400).json({ error: String(e.message || e) }); }
+});
 
 // FILE_UPLOAD — the admin uploads the video file (multipart); the server pushes
 // the bytes to TikTok. No domain verification needed.

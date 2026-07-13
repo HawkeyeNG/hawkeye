@@ -37,7 +37,11 @@
       <button id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
 
     <div id="conn" class="status info">Checking connection…</div>
-    <button id="connect" class="secondary" style="width:auto">🔗 Connect / re-connect TikTok</button>
+    <div class="row">
+      <button id="connect" class="secondary" style="width:auto">🔗 Connect / re-connect TikTok</button>
+      <button id="check" class="secondary" style="width:auto">🩺 Check account (diagnostics)</button>
+    </div>
+    <pre id="diag" class="mono" style="white-space:pre-wrap;background:var(--tint);padding:10px;border-radius:8px" hidden></pre>
 
     <hr style="margin:20px 0" />
 
@@ -64,6 +68,13 @@
     $('save-secret').onclick = () => { localStorage.setItem('hawkeye_admin', $('secret').value.trim()); refresh(); };
     $('secret').value = secret();
     $('connect').onclick = () => { window.location.href = '/api/tiktok/auth'; };
+    $('check').onclick = async () => {
+      const d = $('diag'); d.hidden = false; d.textContent = 'Querying TikTok creator_info…';
+      try {
+        const r = await fetch('/api/tiktok/creator-info', { headers: hdr() });
+        d.textContent = JSON.stringify(await r.json(), null, 2);
+      } catch (e) { d.textContent = 'Failed: ' + e.message; }
+    };
 
     async function refresh() {
       const c = $('conn');

@@ -90,15 +90,18 @@ const CHUNK = 10 * 1024 * 1024; // 10 MB
 // TikTok Direct Post COMPLIANCE: you must query creator_info first and post with a
 // privacy level the creator actually allows — skipping this returns the generic
 // "review our integration guidelines" error. Returns the allowed privacy options.
-export async function creatorInfo() {
+export async function creatorInfoRaw() {
   const token = await accessToken();
   const r = await fetch(CREATOR, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json; charset=UTF-8' },
     body: '{}',
   });
-  const j = await r.json();
-  if (j.error && j.error.code && j.error.code !== 'ok') throw new Error(j.error.message || j.error.code);
+  return r.json(); // full { data, error } — surfaced by the diagnostic route
+}
+export async function creatorInfo() {
+  const j = await creatorInfoRaw();
+  if (j.error && j.error.code && j.error.code !== 'ok') throw new Error(`${j.error.code}: ${j.error.message || ''}`);
   return j.data || {};
 }
 
@@ -131,7 +134,7 @@ export async function directPostFile({ title, buffer, privacy = 'SELF_ONLY', mim
   const j = await initRes.json();
   const publishId = j.data && j.data.publish_id;
   const uploadUrl = j.data && j.data.upload_url;
-  if (!publishId || !uploadUrl) throw new Error((j.error && (j.error.message || j.error.code)) || 'post_init_failed');
+  if (!publishId || !uploadUrl) throw new Error(j.error ? `${j.error.code}: ${j.error.message || ''}` : 'post_init_failed');
 
   for (let i = 0; i < totalChunks; i++) {
     const start = i * chunkSize;

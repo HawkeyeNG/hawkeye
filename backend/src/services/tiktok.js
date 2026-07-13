@@ -8,6 +8,7 @@ import { config } from '../config.js';
 
 const AUTH = 'https://www.tiktok.com/v2/auth/authorize/';
 const TOKEN = 'https://open.tiktokapis.com/v2/oauth/token/';
+const CREATOR = 'https://open.tiktokapis.com/v2/post/publish/creator_info/query/';
 const INIT = 'https://open.tiktokapis.com/v2/post/publish/video/init/';
 const STATUS = 'https://open.tiktokapis.com/v2/post/publish/status/fetch/';
 const SCOPE = 'video.publish';
@@ -85,6 +86,22 @@ async function accessToken() {
 // returns publish_id + upload_url, then we PUT the video (one chunk if <64MB, else
 // 10MB chunks) with a Content-Range per chunk.
 const CHUNK = 10 * 1024 * 1024; // 10 MB
+
+// TikTok Direct Post COMPLIANCE: you must query creator_info first and post with a
+// privacy level the creator actually allows — skipping this returns the generic
+// "review our integration guidelines" error. Returns the allowed privacy options.
+export async function creatorInfo() {
+  const token = await accessToken();
+  const r = await fetch(CREATOR, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json; charset=UTF-8' },
+    body: '{}',
+  });
+  const j = await r.json();
+  if (j.error && j.error.code && j.error.code !== 'ok') throw new Error(j.error.message || j.error.code);
+  return j.data || {};
+}
+
 export async function directPostFile({ title, buffer, privacy = 'SELF_ONLY', mime = 'video/mp4' }) {
   const token = await accessToken();
   const size = buffer.length;
@@ -94,11 +111,20 @@ export async function directPostFile({ title, buffer, privacy = 'SELF_ONLY', mim
   const chunkSize = single ? size : CHUNK;
   const totalChunks = single ? 1 : Math.ceil(size / chunkSize);
 
+  // Mandatory pre-post compliance query; honour the creator's allowed privacy set
+  // (unaudited/sandbox apps are limited to SELF_ONLY).
+  const info = await creatorInfo();
+  const allowed = info.privacy_level_options || [];
+  let privacyLevel = privacy;
+  if (allowed.length && !allowed.includes(privacyLevel)) {
+    privacyLevel = allowed.includes('SELF_ONLY') ? 'SELF_ONLY' : allowed[0];
+  }
+
   const initRes = await fetch(INIT, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json; charset=UTF-8' },
     body: JSON.stringify({
-      post_info: { title: String(title || '').slice(0, 2200), privacy_level: privacy, disable_comment: false, disable_duet: false, disable_stitch: false },
+      post_info: { title: String(title || '').slice(0, 2200), privacy_level: privacyLevel, disable_comment: false, disable_duet: false, disable_stitch: false },
       source_info: { source: 'FILE_UPLOAD', video_size: size, chunk_size: chunkSize, total_chunk_count: totalChunks },
     }),
   });

@@ -13,6 +13,19 @@ const base = () => `https://graph.facebook.com/${config.metaGraphVersion}`;
 
 export const metaEnabled = () => Boolean(config.metaPageToken && (config.metaPageId || config.metaIgUserId));
 
+// Resolve the Instagram Business user id. Prefer an explicit META_IG_USER_ID; else
+// auto-derive it from the Page's linked instagram_business_account (cached). This
+// is the correct IG id — NOT the Facebook Page id, which is a common mix-up.
+let cachedIgId = null;
+export async function resolveIgId() {
+  if (config.metaIgUserId) return config.metaIgUserId;
+  if (cachedIgId) return cachedIgId;
+  if (!config.metaPageId) return null;
+  const j = await graph(config.metaPageId, { fields: 'instagram_business_account' }, 'GET');
+  cachedIgId = (j.instagram_business_account && j.instagram_business_account.id) || null;
+  return cachedIgId;
+}
+
 async function graph(path, params, method = 'POST') {
   const body = new URLSearchParams({ ...params, access_token: config.metaPageToken });
   const url = `${base()}/${path}`;
@@ -31,7 +44,10 @@ export async function metaStatus() {
     // Live probe: confirm the token resolves the Page + linked IG account.
     const j = await graph(config.metaPageId || 'me', { fields: 'name,instagram_business_account' }, 'GET');
     s.pageName = j.name;
-    s.igLinked = Boolean(j.instagram_business_account);
+    const igId = (j.instagram_business_account && j.instagram_business_account.id) || null;
+    s.igLinked = Boolean(igId);
+    s.igUserId = config.metaIgUserId || igId; // auto-derived if not set explicitly
+    if (igId) cachedIgId = igId;
     s.ok = true;
   } catch (e) { s.ok = false; s.error = String(e.message || e); }
   return s;
@@ -55,12 +71,13 @@ export async function postFacebook({ message = '', mediaUrl = '', mediaType = 't
 // Instagram Business — 2 steps: create media container, then publish. Video/Reels
 // containers process asynchronously, so poll status_code until FINISHED first.
 export async function postInstagram({ caption = '', mediaUrl = '', mediaType = 'image' }) {
-  if (!config.metaIgUserId) throw new Error('no_ig_user_id');
+  const igId = await resolveIgId();
+  if (!igId) throw new Error('instagram_not_linked_to_page');
   if (!mediaUrl) throw new Error('media_url_required');
   const params = mediaType === 'video'
     ? { media_type: 'REELS', video_url: mediaUrl, caption }
     : { image_url: mediaUrl, caption };
-  const container = await graph(`${config.metaIgUserId}/media`, params);
+  const container = await graph(`${igId}/media`, params);
   const creationId = container.id;
   if (!creationId) throw new Error('container_failed');
 
@@ -73,6 +90,6 @@ export async function postInstagram({ caption = '', mediaUrl = '', mediaType = '
       if (i === 29) throw new Error('ig_container_timeout');
     }
   }
-  const pub = await graph(`${config.metaIgUserId}/media_publish`, { creation_id: creationId });
+  const pub = await graph(`${igId}/media_publish`, { creation_id: creationId });
   return { ig: { id: pub.id || null, creationId } };
 }

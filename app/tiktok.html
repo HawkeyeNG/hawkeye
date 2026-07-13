@@ -43,8 +43,8 @@
 
     <label for="title">Caption</label>
     <textarea id="title" rows="3" placeholder="e.g. How to verify a Hawkeye result on the public ledger — hawkeye.com.ng">How to verify a polling-unit result on Hawkeye's public ledger. Independent. Tamper-evident. hawkeye.com.ng</textarea>
-    <label for="video">Video URL (public MP4, hawkeye.com.ng domain)</label>
-    <input id="video" type="url" value="https://hawkeye.com.ng/media/demo.mp4" placeholder="https://hawkeye.com.ng/media/demo.mp4" />
+    <label for="video">Video file (MP4/MOV — uploaded straight to TikTok, no domain verification needed)</label>
+    <input id="video" type="file" accept="video/mp4,video/quicktime" />
     <label for="privacy">Privacy</label>
     <select id="privacy">
       <option value="SELF_ONLY">SELF_ONLY (required before audit)</option>
@@ -81,11 +81,16 @@
     $('post').onclick = async () => {
       const res = $('result');
       if (!secret()) return setStatus(res, 'bad', 'Enter the admin passphrase first.');
-      setStatus(res, 'info', 'Posting…');
+      const file = $('video').files && $('video').files[0];
+      if (!file) return setStatus(res, 'bad', 'Choose a video file first.');
+      setStatus(res, 'info', 'Uploading to TikTok…');
       try {
+        const fd = new FormData();
+        fd.set('title', $('title').value);
+        fd.set('privacy', $('privacy').value);
+        fd.set('video', file, file.name);
         const r = await fetch('/api/tiktok/post', {
-          method: 'POST', headers: hdr(),
-          body: JSON.stringify({ title: $('title').value, videoUrl: $('video').value, privacy: $('privacy').value }),
+          method: 'POST', headers: { 'x-admin-secret': secret() }, body: fd,
         });
         const d = await r.json();
         if (!r.ok) return setStatus(res, 'bad', 'Error: ' + (d.error || r.status));

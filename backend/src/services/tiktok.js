@@ -79,21 +79,49 @@ async function accessToken() {
   return j.access_token;
 }
 
-// Step 3 — Direct Post a video by public URL. In sandbox / before audit, TikTok
-// requires privacy_level SELF_ONLY and a verified pull-URL domain (hawkeye.com.ng).
-export async function directPostFromUrl({ title, videoUrl, privacy = 'SELF_ONLY' }) {
+// Step 3 — Direct Post a video by UPLOADING THE FILE (FILE_UPLOAD). This needs no
+// domain verification (unlike PULL_FROM_URL) — our server sends the bytes straight
+// to TikTok. Before audit, TikTok requires privacy_level SELF_ONLY. Flow: init
+// returns publish_id + upload_url, then we PUT the video (one chunk if <64MB, else
+// 10MB chunks) with a Content-Range per chunk.
+const CHUNK = 10 * 1024 * 1024; // 10 MB
+export async function directPostFile({ title, buffer, privacy = 'SELF_ONLY', mime = 'video/mp4' }) {
   const token = await accessToken();
-  const r = await fetch(INIT, {
+  const size = buffer.length;
+  if (!size) throw new Error('empty_video');
+  // A video under 64MB may be sent as a single chunk; otherwise split into 10MB chunks.
+  const single = size < 64 * 1024 * 1024;
+  const chunkSize = single ? size : CHUNK;
+  const totalChunks = single ? 1 : Math.ceil(size / chunkSize);
+
+  const initRes = await fetch(INIT, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json; charset=UTF-8' },
     body: JSON.stringify({
       post_info: { title: String(title || '').slice(0, 2200), privacy_level: privacy, disable_comment: false, disable_duet: false, disable_stitch: false },
-      source_info: { source: 'PULL_FROM_URL', video_url: videoUrl },
+      source_info: { source: 'FILE_UPLOAD', video_size: size, chunk_size: chunkSize, total_chunk_count: totalChunks },
     }),
   });
-  const j = await r.json();
+  const j = await initRes.json();
   const publishId = j.data && j.data.publish_id;
-  if (!publishId) throw new Error((j.error && (j.error.message || j.error.code)) || 'post_init_failed');
+  const uploadUrl = j.data && j.data.upload_url;
+  if (!publishId || !uploadUrl) throw new Error((j.error && (j.error.message || j.error.code)) || 'post_init_failed');
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * chunkSize;
+    const end = Math.min(start + chunkSize, size) - 1;
+    const part = buffer.subarray(start, end + 1);
+    const put = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'content-type': mime,
+        'content-length': String(part.length),
+        'content-range': `bytes ${start}-${end}/${size}`,
+      },
+      body: part,
+    });
+    if (put.status >= 300) throw new Error(`chunk_upload_failed_${put.status}`);
+  }
   return { publishId };
 }
 

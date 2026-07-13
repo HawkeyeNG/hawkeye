@@ -4,10 +4,12 @@
 // message until TikTok credentials are configured.
 import crypto from 'node:crypto';
 import { Router } from 'express';
+import multer from 'multer';
 import { requireAdmin } from './admin.js';
-import { tiktokEnabled, authUrl, exchangeCode, tiktokStatus, directPostFromUrl, postStatus } from '../services/tiktok.js';
+import { tiktokEnabled, authUrl, exchangeCode, tiktokStatus, directPostFile, postStatus } from '../services/tiktok.js';
 
 export const tiktokRouter = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 300 * 1024 * 1024 } });
 
 // Short-lived OAuth state tokens (CSRF), kept in memory.
 const states = new Map();
@@ -37,12 +39,14 @@ tiktokRouter.get('/tiktok/callback', async (req, res) => {
 
 tiktokRouter.get('/tiktok/status', requireAdmin, (_req, res) => res.json(tiktokStatus()));
 
-tiktokRouter.post('/tiktok/post', requireAdmin, async (req, res) => {
+// FILE_UPLOAD — the admin uploads the video file (multipart); the server pushes
+// the bytes to TikTok. No domain verification needed.
+tiktokRouter.post('/tiktok/post', requireAdmin, upload.single('video'), async (req, res) => {
   if (!tiktokEnabled()) return res.status(503).json({ error: 'not_configured' });
-  const { title, videoUrl, privacy } = req.body || {};
-  if (!videoUrl) return res.status(400).json({ error: 'video_url_required' });
+  const { title, privacy } = req.body || {};
+  if (!req.file || !req.file.buffer) return res.status(400).json({ error: 'video_file_required' });
   try {
-    const out = await directPostFromUrl({ title, videoUrl, privacy });
+    const out = await directPostFile({ title, buffer: req.file.buffer, privacy, mime: req.file.mimetype || 'video/mp4' });
     res.json({ ok: true, ...out });
   } catch (e) {
     res.status(400).json({ error: String(e.message || e) });

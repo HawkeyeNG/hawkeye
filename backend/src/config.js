@@ -85,6 +85,13 @@ export const config = {
   metaPageToken: process.env.META_PAGE_TOKEN || '',
   metaIgUserId: process.env.META_IG_USER_ID || '',
   metaGraphVersion: process.env.META_GRAPH_VERSION || 'v21.0',
+  // X (Twitter) — post to Hawkeye's own account via OAuth 1.0a user context. The
+  // four creds come from the X developer portal (your own account's Access Token
+  // & Secret + the app's API Key/Secret) — no interactive OAuth. Free tier is $0.
+  xApiKey: process.env.X_API_KEY || '',
+  xApiSecret: process.env.X_API_SECRET || '',
+  xAccessToken: process.env.X_ACCESS_TOKEN || '',
+  xAccessSecret: process.env.X_ACCESS_SECRET || '',
   fcmProjectId: process.env.FCM_PROJECT_ID || '',
   fcmClientEmail: process.env.FCM_CLIENT_EMAIL || '',
   fcmPrivateKey: process.env.FCM_PRIVATE_KEY || '',

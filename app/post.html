@@ -47,6 +47,7 @@
         <button id="tt-check" class="secondary" style="width:auto;margin:0">🩺 Diagnostics</button>
       </div></div>
     <div id="plat-meta" class="plat"><b>Meta (Facebook + Instagram)</b><span class="muted" id="meta-state">…</span></div>
+    <div id="plat-x" class="plat"><b>X (Twitter)</b><span class="muted" id="x-state">…</span> <span class="muted">— text only for now</span></div>
     <pre id="diag" class="mono status info" hidden></pre>
 
     <hr style="margin:18px 0" />
@@ -56,6 +57,7 @@
       <label><input type="checkbox" id="t-tiktok" checked /> TikTok</label>
       <label><input type="checkbox" id="t-facebook" checked /> Facebook</label>
       <label><input type="checkbox" id="t-instagram" checked /> Instagram</label>
+      <label><input type="checkbox" id="t-x" checked /> X</label>
     </div>
 
     <label for="caption">Caption</label>
@@ -103,13 +105,16 @@
         $('meta-state').textContent = !m.enabled ? 'not configured on server'
           : (m.ok ? `Page "${m.pageName || m.pageId}" ✓ · Instagram ${m.igLinked ? 'linked (' + (m.igUserId || '') + ')' : 'not linked yet'}`
                   : ('token set but check failed: ' + (m.error || '')));
-      } catch { $('tt-state').textContent = $('meta-state').textContent = 'server unreachable'; }
+        const x = d.x || {};
+        $('x-state').textContent = !x.enabled ? 'not configured on server'
+          : (x.ok ? `connected ✓ @${x.username || ''}` : ('creds set but auth failed: ' + (x.error || '')));
+      } catch { $('tt-state').textContent = $('meta-state').textContent = $('x-state').textContent = 'server unreachable'; }
     }
 
     $('post').onclick = async () => {
       const res = $('result');
       if (!secret()) return setStatus(res, 'bad', 'Enter the admin passphrase first.');
-      const targets = ['tiktok', 'facebook', 'instagram'].filter((t) => $('t-' + t).checked);
+      const targets = ['tiktok', 'facebook', 'instagram', 'x'].filter((t) => $('t-' + t).checked);
       if (!targets.length) return setStatus(res, 'bad', 'Pick at least one channel.');
       setStatus(res, 'info', 'Posting… (video may take up to a minute)');
       try {
@@ -123,6 +128,7 @@
           line('TikTok', d.tiktok, d.tiktokError),
           line('Facebook', d.facebook, d.facebookError),
           line('Instagram', d.instagram, d.instagramError),
+          line('X', d.x, d.xError),
         ].filter(Boolean);
         setStatus(res, d.ok ? 'ok' : 'bad', parts.join('   ·   ') || ('Error: ' + (d.error || r.status)));
       } catch (e) { setStatus(res, 'bad', 'Failed: ' + e.message); }

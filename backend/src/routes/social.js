@@ -49,7 +49,7 @@ socialRouter.post('/social/post', requireAdmin, async (req, res) => {
   if (targets.includes('x')) {
     try {
       if (!xEnabled()) throw new Error('not_configured');
-      out.x = await postX({ text: caption }); // text-only for now; caption carries the link
+      out.x = await postX({ text: caption, mediaUrl, mediaType });
     } catch (e) { out.xError = String(e.message || e); }
   }
 

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Hawkeye — Meta Poster (admin)</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
+  <link rel="stylesheet" href="styles.css?v=102" />
+  <style>
+    .box { max-width: 640px; }
+    label { display: block; font-weight: 700; margin: 12px 0 4px; }
+    input, textarea, select { width: 100%; }
+    .status { padding: 10px 12px; border-radius: 8px; margin: 10px 0; font-weight: 600; }
+    .status.ok { background: var(--tint-ok); color: var(--link); }
+    .status.bad { background: var(--tint-danger); color: var(--text-danger); }
+    .status.info { background: var(--tint); }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.85rem; word-break: break-all; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .targets label { display: inline-flex; gap: 6px; align-items: center; font-weight: 600; margin: 0 14px 0 0; }
+    .targets input { width: auto; }
+  </style>
+</head>
+<body>
+  <header class="gov-header"><div class="wrap brand-row">
+    <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
+      <div class="brand-text"><strong>HAWKEYE</strong><span>Meta Poster (admin)</span></div></a>
+  </div></header>
+
+  <main class="wrap box">
+    <h1>Post to Instagram &amp; Facebook</h1>
+    <p class="hint">Owner-only. Publishes Hawkeye's own content to its Facebook Page and/or Instagram
+    Business account via the Graph API. Media must be a public URL on hawkeye.com.ng (Instagram has no
+    file upload). Text-only posts go to the Facebook Page only.</p>
+
+    <label for="secret">Admin passphrase</label>
+    <div class="row"><input id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
+      <button id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
+
+    <div id="conn" class="status info">Checking connection…</div>
+
+    <hr style="margin:20px 0" />
+
+    <label>Post to</label>
+    <div class="targets">
+      <label><input type="checkbox" id="t-fb" checked /> Facebook Page</label>
+      <label><input type="checkbox" id="t-ig" checked /> Instagram</label>
+    </div>
+
+    <label for="caption">Caption / message</label>
+    <textarea id="caption" rows="3">Verify any polling-unit result yourself on Hawkeye's public, tamper-evident ledger. Independent. Nonpartisan. hawkeye.com.ng</textarea>
+
+    <label for="mtype">Media type</label>
+    <select id="mtype">
+      <option value="video">Video / Reel</option>
+      <option value="image">Image</option>
+      <option value="text">Text only (Facebook only)</option>
+    </select>
+
+    <label for="media">Media URL (public, hawkeye.com.ng)</label>
+    <input id="media" type="url" value="https://hawkeye.com.ng/media/demo.mp4" placeholder="https://hawkeye.com.ng/media/…" />
+
+    <label for="link">Link (optional, Facebook text posts)</label>
+    <input id="link" type="url" placeholder="https://hawkeye.com.ng/" />
+
+    <button id="post" style="margin-top:14px">Post</button>
+    <div id="result"></div>
+  </main>
+
+  <script src="native.js?v=100"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const secret = () => localStorage.getItem('hawkeye_admin') || '';
+    const hdr = () => ({ 'x-admin-secret': secret(), 'content-type': 'application/json' });
+    const setStatus = (el, cls, msg) => { el.className = 'status ' + cls; el.textContent = msg; };
+
+    $('save-secret').onclick = () => { localStorage.setItem('hawkeye_admin', $('secret').value.trim()); refresh(); };
+    $('secret').value = secret();
+
+    async function refresh() {
+      const c = $('conn');
+      if (!secret()) return setStatus(c, 'info', 'Enter the admin passphrase to check connection.');
+      try {
+        const r = await fetch('/api/meta/status', { headers: hdr() });
+        if (r.status === 401) return setStatus(c, 'bad', 'Wrong passphrase.');
+        const d = await r.json();
+        if (!d.enabled) return setStatus(c, 'bad', 'Meta not configured on the server (META_PAGE_TOKEN / META_PAGE_ID missing).');
+        if (d.ok) setStatus(c, 'ok', `Connected ✓ Page "${d.pageName || d.pageId}" · Instagram ${d.igLinked ? 'linked' : 'NOT linked'} (${d.igUserId || '—'})`);
+        else setStatus(c, 'bad', 'Token set but Graph check failed: ' + (d.error || 'unknown'));
+      } catch { setStatus(c, 'bad', 'Could not reach the server.'); }
+    }
+
+    $('post').onclick = async () => {
+      const res = $('result');
+      if (!secret()) return setStatus(res, 'bad', 'Enter the admin passphrase first.');
+      const fb = $('t-fb').checked, ig = $('t-ig').checked;
+      if (!fb && !ig) return setStatus(res, 'bad', 'Pick at least one target.');
+      const target = fb && ig ? 'both' : (fb ? 'fb' : 'ig');
+      setStatus(res, 'info', 'Posting… (video may take up to a minute to process)');
+      try {
+        const r = await fetch('/api/meta/post', {
+          method: 'POST', headers: hdr(),
+          body: JSON.stringify({ target, caption: $('caption').value, mediaUrl: $('media').value, mediaType: $('mtype').value, link: $('link').value }),
+        });
+        const d = await r.json();
+        const parts = [];
+        if (d.fb) parts.push('Facebook ✓ id ' + d.fb.id);
+        if (d.fbError) parts.push('Facebook ✗ ' + d.fbError);
+        if (d.ig) parts.push('Instagram ✓ id ' + d.ig.id);
+        if (d.igError) parts.push('Instagram ✗ ' + d.igError);
+        setStatus(res, d.ok ? 'ok' : 'bad', parts.join('  ·  ') || ('Error: ' + (d.error || r.status)));
+      } catch (e) { setStatus(res, 'bad', 'Failed: ' + e.message); }
+    };
+    refresh();
+  </script>
+</body>
+</html>

@@ -76,6 +76,15 @@ export const config = {
   tiktokClientKey: process.env.TIKTOK_CLIENT_KEY || '',
   tiktokClientSecret: process.env.TIKTOK_CLIENT_SECRET || '',
   tiktokRedirectUri: process.env.TIKTOK_REDIRECT_URI || 'https://hawkeye.com.ng/api/tiktok/callback',
+  // Meta Graph API — post Hawkeye's own content to its Facebook Page + Instagram
+  // Business account. Credential-gated: no-op until a Page token is set. The Page
+  // token (derived from a long-lived user token) is effectively non-expiring.
+  metaAppId: process.env.META_APP_ID || '',
+  metaAppSecret: process.env.META_APP_SECRET || '',
+  metaPageId: process.env.META_PAGE_ID || '',
+  metaPageToken: process.env.META_PAGE_TOKEN || '',
+  metaIgUserId: process.env.META_IG_USER_ID || '',
+  metaGraphVersion: process.env.META_GRAPH_VERSION || 'v21.0',
   fcmProjectId: process.env.FCM_PROJECT_ID || '',
   fcmClientEmail: process.env.FCM_CLIENT_EMAIL || '',
   fcmPrivateKey: process.env.FCM_PRIVATE_KEY || '',

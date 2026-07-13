@@ -1,0 +1,53 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { width: 100vw; height: 100vh; overflow: hidden;
+    font-family: 'Helvetica Neue', Arial, sans-serif; color: #fff; }
+  .stage { position: relative; width: 100vw; height: 100vh;
+    background: radial-gradient(130% 120% at 12% 25%, #0a4632 0%, #00281c 55%, #001912 100%); }
+  /* faint ledger/hash motif — ties to the tamper-evident identity */
+  .motif { position: absolute; inset: 0; opacity: 0.05; overflow: hidden;
+    font-family: ui-monospace, 'Courier New', monospace; font-size: 20px; line-height: 1.9;
+    color: #6fe3a5; letter-spacing: 2px; white-space: pre; padding: 20px 30px; }
+  .glow { position: absolute; right: -8%; top: -30%; width: 55%; height: 160%;
+    background: radial-gradient(circle, rgba(111,227,165,0.16), transparent 62%); }
+  .wrap { position: absolute; inset: 0; display: flex; align-items: center; gap: 4.2vw; padding: 0 5.5vw; }
+  .mascot { width: 20vh; height: 20vh; min-width: 130px; flex: none;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.45)); }
+  .txt { flex: 1; min-width: 0; }
+  .name { font-size: 8.6vh; font-weight: 800; letter-spacing: 3px; line-height: 1; }
+  .sub { font-size: 3.0vh; color: #9fd3b6; letter-spacing: 3px; margin-top: 0.6vh; font-weight: 600; }
+  .tag { font-size: 4.0vh; font-weight: 700; margin-top: 2.4vh; line-height: 1.2; }
+  .tag .g { color: #6fe3a5; }
+  .chips { display: flex; gap: 1.2vw; margin-top: 2.6vh; flex-wrap: wrap; }
+  .chip { border: 2px solid #6fe3a5; color: #6fe3a5; border-radius: 999px;
+    padding: 0.9vh 1.6vw; font-size: 2.5vh; font-weight: 700; white-space: nowrap; }
+  .url { position: absolute; right: 5.5vw; bottom: 5vh; font-size: 3.0vh; font-weight: 800; color: #fff; }
+  .url .g { color: #6fe3a5; }
+  .bar { position: absolute; left: 0; bottom: 0; width: 100vw; height: 1.2vh; background: #6fe3a5; }
+</style></head>
+<body>
+  <div class="stage">
+    <div class="motif" id="motif"></div>
+    <div class="glow"></div>
+    <div class="wrap">
+      <img class="mascot" src="LOGO" alt="" />
+      <div class="txt">
+        <div class="name">HAWKEYE</div>
+        <div class="sub">INDEPENDENT ELECTION RESULTS MONITOR</div>
+        <div class="tag">Nigeria's results — <span class="g">signed, published, verifiable.</span></div>
+        <div class="chips"><span class="chip">Tamper-evident</span><span class="chip">Nonpartisan</span><span class="chip">Open-source</span></div>
+      </div>
+    </div>
+    <div class="url">hawkeye<span class="g">.com.ng</span></div>
+    <div class="bar"></div>
+  </div>
+  <script>
+    // fill the motif with faint hash-like rows
+    const hex = '0123456789abcdef';
+    const rnd = (n) => Array.from({length:n}, () => hex[Math.floor(Math.random()*16)]).join('');
+    let s = '';
+    for (let i=0;i<14;i++) s += rnd(90) + '\n';
+    document.getElementById('motif').textContent = s;
+  </script>
+</body></html>

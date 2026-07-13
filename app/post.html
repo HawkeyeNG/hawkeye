@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Hawkeye — Social Poster (admin)</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
+  <link rel="stylesheet" href="styles.css?v=102" />
+  <style>
+    .box { max-width: 680px; }
+    label { display: block; font-weight: 700; margin: 12px 0 4px; }
+    input, textarea, select { width: 100%; }
+    .status { padding: 9px 12px; border-radius: 8px; margin: 8px 0; font-weight: 600; font-size: 0.9rem; }
+    .status.ok { background: var(--tint-ok); color: var(--link); }
+    .status.bad { background: var(--tint-danger); color: var(--text-danger); }
+    .status.info { background: var(--tint); }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.82rem; word-break: break-all; white-space: pre-wrap; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .targets label { display: inline-flex; gap: 7px; align-items: center; font-weight: 600; margin: 0 16px 0 0; }
+    .targets input { width: auto; }
+    .plat { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+    .plat b { display: block; }
+    .muted { color: var(--muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <header class="gov-header"><div class="wrap brand-row">
+    <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
+      <div class="brand-text"><strong>HAWKEYE</strong><span>Social Poster (admin)</span></div></a>
+  </div></header>
+
+  <main class="wrap box">
+    <h1>Post to all channels</h1>
+    <p class="hint">Owner-only. One caption + one public media URL fans out to TikTok, the Facebook Page,
+    and Instagram. Media must be a public hawkeye.com.ng URL. Instagram needs media (no text-only);
+    TikTok needs a <strong>video</strong> and (until audited) the account must be private.</p>
+
+    <label for="secret">Admin passphrase</label>
+    <div class="row"><input id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
+      <button id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
+
+    <div id="plat-tt" class="plat"><b>TikTok</b><span class="muted" id="tt-state">…</span>
+      <div class="row" style="margin-top:6px">
+        <button id="tt-connect" class="secondary" style="width:auto;margin:0">🔗 Connect</button>
+        <button id="tt-check" class="secondary" style="width:auto;margin:0">🩺 Diagnostics</button>
+      </div></div>
+    <div id="plat-meta" class="plat"><b>Meta (Facebook + Instagram)</b><span class="muted" id="meta-state">…</span></div>
+    <pre id="diag" class="mono status info" hidden></pre>
+
+    <hr style="margin:18px 0" />
+
+    <label>Post to</label>
+    <div class="targets">
+      <label><input type="checkbox" id="t-tiktok" checked /> TikTok</label>
+      <label><input type="checkbox" id="t-facebook" checked /> Facebook</label>
+      <label><input type="checkbox" id="t-instagram" checked /> Instagram</label>
+    </div>
+
+    <label for="caption">Caption</label>
+    <textarea id="caption" rows="3">Verify any polling-unit result yourself on Hawkeye's public, tamper-evident ledger. Independent. Nonpartisan. hawkeye.com.ng</textarea>
+
+    <label for="mtype">Media type</label>
+    <select id="mtype">
+      <option value="video">Video / Reel</option>
+      <option value="image">Image</option>
+      <option value="text">Text only (Facebook only)</option>
+    </select>
+    <label for="media">Media URL (public, hawkeye.com.ng)</label>
+    <input id="media" type="url" value="https://hawkeye.com.ng/media/demo.mp4" placeholder="https://hawkeye.com.ng/media/…" />
+
+    <button id="post" style="margin-top:14px">Post to selected</button>
+    <div id="result"></div>
+  </main>
+
+  <script src="native.js?v=100"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const secret = () => localStorage.getItem('hawkeye_admin') || '';
+    const hdr = () => ({ 'x-admin-secret': secret(), 'content-type': 'application/json' });
+    const setStatus = (el, cls, msg) => { el.className = 'status ' + cls; el.textContent = msg; el.hidden = false; };
+
+    $('save-secret').onclick = () => { localStorage.setItem('hawkeye_admin', $('secret').value.trim()); refresh(); };
+    $('secret').value = secret();
+    $('tt-connect').onclick = () => { window.location.href = '/api/tiktok/auth'; };
+    $('tt-check').onclick = async () => {
+      const d = $('diag'); d.hidden = false; d.className = 'mono status info'; d.textContent = 'Querying TikTok creator_info…';
+      try { d.textContent = JSON.stringify(await (await fetch('/api/tiktok/creator-info', { headers: hdr() })).json(), null, 2); }
+      catch (e) { d.textContent = 'Failed: ' + e.message; }
+    };
+
+    async function refresh() {
+      if (!secret()) { $('tt-state').textContent = 'enter passphrase'; $('meta-state').textContent = 'enter passphrase'; return; }
+      try {
+        const r = await fetch('/api/social/status', { headers: hdr() });
+        if (r.status === 401) { $('tt-state').textContent = 'wrong passphrase'; return; }
+        const d = await r.json();
+        const tt = d.tiktok || {};
+        $('tt-state').textContent = !tt.enabled ? 'not configured on server'
+          : (tt.connected ? `connected ✓ (open_id ${tt.open_id || '—'})` : 'configured — click Connect');
+        const m = d.meta || {};
+        $('meta-state').textContent = !m.enabled ? 'not configured on server'
+          : (m.ok ? `Page "${m.pageName || m.pageId}" ✓ · Instagram ${m.igLinked ? 'linked (' + (m.igUserId || '') + ')' : 'not linked yet'}`
+                  : ('token set but check failed: ' + (m.error || '')));
+      } catch { $('tt-state').textContent = $('meta-state').textContent = 'server unreachable'; }
+    }
+
+    $('post').onclick = async () => {
+      const res = $('result');
+      if (!secret()) return setStatus(res, 'bad', 'Enter the admin passphrase first.');
+      const targets = ['tiktok', 'facebook', 'instagram'].filter((t) => $('t-' + t).checked);
+      if (!targets.length) return setStatus(res, 'bad', 'Pick at least one channel.');
+      setStatus(res, 'info', 'Posting… (video may take up to a minute)');
+      try {
+        const r = await fetch('/api/social/post', {
+          method: 'POST', headers: hdr(),
+          body: JSON.stringify({ targets, caption: $('caption').value, mediaUrl: $('media').value, mediaType: $('mtype').value }),
+        });
+        const d = await r.json();
+        const line = (name, ok, err) => ok ? `${name} ✓ ${ok.id || ok.publishId || ''}` : (err ? `${name} ✗ ${err}` : '');
+        const parts = [
+          line('TikTok', d.tiktok, d.tiktokError),
+          line('Facebook', d.facebook, d.facebookError),
+          line('Instagram', d.instagram, d.instagramError),
+        ].filter(Boolean);
+        setStatus(res, d.ok ? 'ok' : 'bad', parts.join('   ·   ') || ('Error: ' + (d.error || r.status)));
+      } catch (e) { setStatus(res, 'bad', 'Failed: ' + e.message); }
+    };
+
+    (new URLSearchParams(location.search).get('connected')) && setTimeout(() => setStatus($('result'), 'ok', 'TikTok connected ✓'), 100);
+    refresh();
+  </script>
+</body>
+</html>

@@ -154,6 +154,17 @@ export async function directPostFile({ title, buffer, privacy = 'SELF_ONLY', mim
   return { publishId };
 }
 
+// Convenience for the unified poster: fetch a public media URL server-side, then
+// push the bytes (FILE_UPLOAD). Lets one shared media-URL input drive TikTok
+// (bytes) and Meta (URL) alike — still no domain verification.
+export async function directPostByUrl({ title, url, privacy = 'SELF_ONLY' }) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`fetch_video_${r.status}`);
+  const buffer = Buffer.from(await r.arrayBuffer());
+  const mime = r.headers.get('content-type') || 'video/mp4';
+  return directPostFile({ title, buffer, privacy, mime });
+}
+
 export async function postStatus(publishId) {
   const token = await accessToken();
   const r = await fetch(STATUS, {

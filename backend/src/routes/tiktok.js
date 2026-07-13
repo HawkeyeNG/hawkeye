@@ -26,14 +26,14 @@ tiktokRouter.get('/tiktok/auth', (_req, res) => {
 // OAuth redirect target — exchange the code and store the token.
 tiktokRouter.get('/tiktok/callback', async (req, res) => {
   const { code, state, error } = req.query;
-  if (error) return res.redirect('/tiktok.html?error=' + encodeURIComponent(String(error)));
-  if (!code || !state || !states.has(String(state))) return res.redirect('/tiktok.html?error=bad_state');
+  if (error) return res.redirect('/post.html?error=' + encodeURIComponent(String(error)));
+  if (!code || !state || !states.has(String(state))) return res.redirect('/post.html?error=bad_state');
   states.delete(String(state));
   try {
     await exchangeCode(String(code));
-    res.redirect('/tiktok.html?connected=1');
+    res.redirect('/post.html?connected=1');
   } catch (e) {
-    res.redirect('/tiktok.html?error=' + encodeURIComponent(String(e.message || e)));
+    res.redirect('/post.html?error=' + encodeURIComponent(String(e.message || e)));
   }
 });
 

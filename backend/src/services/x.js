@@ -55,7 +55,7 @@ async function uploadMedia(buffer, mime) {
   const initR = await fetch(UPLOAD, { method: 'POST', headers: { authorization: authHeader('POST', UPLOAD, initP), 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(initP) });
   const initJ = await initR.json();
   const mediaId = initJ.media_id_string;
-  if (!mediaId) throw new Error('x_media_init: ' + JSON.stringify(initJ).slice(0, 160));
+  if (!mediaId) throw new Error(`INIT ${initR.status}: ${JSON.stringify(initJ).slice(0, 300)}`);
 
   const CH = 4 * 1024 * 1024;
   for (let i = 0, seg = 0; i < buffer.length; i += CH, seg++) {
@@ -64,12 +64,14 @@ async function uploadMedia(buffer, mime) {
     fd.append('command', 'APPEND'); fd.append('media_id', mediaId); fd.append('segment_index', String(seg));
     fd.append('media', new Blob([chunk]), 'chunk');
     const ap = await fetch(UPLOAD, { method: 'POST', headers: { authorization: authHeader('POST', UPLOAD, {}) }, body: fd });
-    if (ap.status >= 300) throw new Error(`x_media_append_${ap.status}`);
+    if (ap.status >= 300) throw new Error(`APPEND ${ap.status}: ${(await ap.text()).slice(0, 200)}`);
   }
 
   const finP = { command: 'FINALIZE', media_id: mediaId };
   const finR = await fetch(UPLOAD, { method: 'POST', headers: { authorization: authHeader('POST', UPLOAD, finP), 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(finP) });
-  let info = (await finR.json()).processing_info;
+  const finJ = await finR.json();
+  if (finJ.errors) throw new Error(`FINALIZE ${finR.status}: ${JSON.stringify(finJ.errors).slice(0, 200)}`);
+  let info = finJ.processing_info;
   for (let n = 0; info && (info.state === 'pending' || info.state === 'in_progress') && n < 30; n++) {
     await sleep((info.check_after_secs || 2) * 1000);
     const stP = { command: 'STATUS', media_id: mediaId };
@@ -98,6 +100,6 @@ export async function postX({ text, mediaUrl = '', mediaType = 'text' }) {
     body: JSON.stringify(mediaIds ? { text: body, media: { media_ids: mediaIds } } : { text: body }),
   });
   const j = await r.json();
-  if (!r.ok || !j.data) throw new Error(j.detail || (j.errors && JSON.stringify(j.errors)) || `x_post_${r.status}`);
+  if (!r.ok || !j.data) throw new Error(`TWEET ${r.status}: ${JSON.stringify(j).slice(0, 300)}`);
   return { id: j.data.id };
 }

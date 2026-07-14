@@ -27,7 +27,7 @@
     /* Inline verdict after the Benford heading — must NOT use the block
        .scope-note box (that green rectangle overlapped the heading on mobile). */
     .verdict-tag { font-weight: 400; font-size: 0.8rem; color: var(--muted); white-space: normal; }
-    .morebtn { background: none; border: 0; color: var(--link); font-weight: 700; cursor: pointer; padding: 0 2px; font-size: 0.85rem; text-decoration: underline; }
+    .morebtn { color: var(--link); font-weight: 700; text-decoration: underline; white-space: nowrap; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e6e6e5; vertical-align: top; }
     th { border-bottom: 2px solid var(--ink); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
     .sev { font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; white-space: nowrap; }
@@ -213,10 +213,11 @@
       const N = 120;
       if (s.length <= N) return esc(s);
       const short = s.slice(0, N).replace(/\s+\S*$/, '');
-      return `<span class="clip">${esc(short)}… <button type="button" class="morebtn">more</button></span><span class="full" hidden>${esc(s)} <button type="button" class="morebtn">less</button></span>`;
+      return `<span class="clip">${esc(short)}…&nbsp;<a href="#" class="morebtn">more</a></span><span class="full" hidden>${esc(s)}&nbsp;<a href="#" class="morebtn">less</a></span>`;
     }
     document.getElementById('rows').addEventListener('click', (e) => {
       if (!e.target.classList.contains('morebtn')) return;
+      e.preventDefault();
       const cell = e.target.closest('td');
       cell.querySelector('.clip').hidden = !cell.querySelector('.clip').hidden;
       cell.querySelector('.full').hidden = !cell.querySelector('.full').hidden;

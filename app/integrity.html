@@ -134,27 +134,51 @@
       <p id="collation-status" class="scope-note">Loading…</p>
     </div>
 
-    <div class="card">
-      <h2>What we check</h2>
-      <ul>
-        <li><strong>INEC IReV mismatch</strong> — the crowd's counts don't appear on INEC's own uploaded sheet for that unit.</li>
-        <li><strong>Collation undercount</strong> — a ward/LGA/state form showing less for a party than its covered polling units alone add up to.</li>
-        <li><strong>Collation mismatch</strong> — every unit in the scope is verified, yet the form's totals still differ.</li>
-        <li><strong>Collation chain undercount</strong> — an LGA/state form showing less than the collation forms directly under it.</li>
-        <li><strong>Conflicting collation reports</strong> — observers at the same collation centre reporting different totals.</li>
-        <li><strong>Over-voting</strong> — more votes than registered voters at a unit (impossible).</li>
-        <li><strong>Impossible turnout</strong> — turnout above ~95%, or a strong outlier vs. its state.</li>
-        <li><strong>Single-party sweep</strong> — one party taking ≥98% of a sizeable unit.</li>
-        <li><strong>Vote-share outlier</strong> — a winner's share far above its own state's distribution for that race.</li>
-        <li><strong>Neighbour divergence</strong> — a unit voting wildly unlike the rest of its own ward (≥50-point gap).</li>
-        <li><strong>Digit tests</strong> — first-digit Benford deviation and excess round numbers (…0/…5) per contest; screening signals, not proof.</li>
-        <li><strong>Sheet authenticity (AI vision)</strong> — the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.</li>
-        <li><strong>Vision count mismatch</strong> — an AI read of the sheet photo disagreeing with the observer's typed counts.</li>
-        <li><strong>Incident hotspot</strong> — several incident reports of the same kind in one state within a short window.</li>
-        <li><strong>Duplicate form serial</strong> — the same EC8A serial reported at two units.</li>
-        <li><strong>Conflicting counts</strong> — independent observers at one unit disagreeing.</li>
-        <li><strong>Location inconsistency</strong> — a GPS cluster far from where a unit can be.</li>
-      </ul>
+    <h2>What we check</h2>
+    <p class="hint">Every result is run through these automated checks. Expand a group to see each one.</p>
+    <div class="acc-wrap">
+      <details class="acc" open>
+        <summary>Against INEC &amp; collation records</summary>
+        <ul>
+          <li><strong>INEC IReV mismatch</strong> — the crowd's counts don't appear on INEC's own uploaded sheet for that unit.</li>
+          <li><strong>Collation undercount</strong> — a ward/LGA/state form showing less for a party than its covered polling units alone add up to.</li>
+          <li><strong>Collation mismatch</strong> — every unit in the scope is verified, yet the form's totals still differ.</li>
+          <li><strong>Collation chain undercount</strong> — an LGA/state form showing less than the collation forms directly under it.</li>
+          <li><strong>Conflicting collation reports</strong> — observers at the same collation centre reporting different totals.</li>
+        </ul>
+      </details>
+      <details class="acc">
+        <summary>Statistical tripwires</summary>
+        <ul>
+          <li><strong>Over-voting</strong> — more votes than registered voters at a unit (impossible).</li>
+          <li><strong>Impossible turnout</strong> — turnout above ~95%, or a strong outlier vs. its state.</li>
+          <li><strong>Single-party sweep</strong> — one party taking ≥98% of a sizeable unit.</li>
+          <li><strong>Vote-share outlier</strong> — a winner's share far above its own state's distribution for that race.</li>
+          <li><strong>Neighbour divergence</strong> — a unit voting wildly unlike the rest of its own ward (≥50-point gap).</li>
+          <li><strong>Digit tests</strong> — first-digit Benford deviation and excess round numbers (…0/…5) per contest; screening signals, not proof.</li>
+        </ul>
+      </details>
+      <details class="acc">
+        <summary>AI vision on the result sheet</summary>
+        <ul>
+          <li><strong>Sheet authenticity</strong> — the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.</li>
+          <li><strong>Vision count mismatch</strong> — an AI read of the sheet photo disagreeing with the observer's typed counts.</li>
+        </ul>
+      </details>
+      <details class="acc">
+        <summary>Provenance &amp; duplicates</summary>
+        <ul>
+          <li><strong>Duplicate form serial</strong> — the same EC8A serial reported at two units.</li>
+          <li><strong>Conflicting counts</strong> — independent observers at one unit disagreeing.</li>
+          <li><strong>Location inconsistency</strong> — a GPS cluster far from where a unit can be.</li>
+        </ul>
+      </details>
+      <details class="acc">
+        <summary>Incident patterns</summary>
+        <ul>
+          <li><strong>Incident hotspot</strong> — several incident reports of the same kind in one state within a short window.</li>
+        </ul>
+      </details>
     </div>
   </main>
 

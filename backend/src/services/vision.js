@@ -58,7 +58,7 @@ export async function analyzeSheet(jpegBuffer, { contest, votes, pu, submissionI
   };
   if (out.authentic !== 'yes') {
     const bad = out.authentic === 'no';
-    const reason = clip(out.reason || (bad ? 'see review' : 'needs human review'), 220);
+    const reason = clip(out.reason || (bad ? 'see review' : 'needs human review'), 400);
     logDiscrepancy({
       type: 'sheet_authenticity', severity: bad ? 'high' : 'medium', puCode: pu.pu_code, contest, state: pu.state, submissionId,
       detail: {

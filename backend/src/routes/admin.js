@@ -32,6 +32,32 @@ export function requireAdmin(req, res, next) {
 // Lightweight auth probe for the login screen.
 adminRouter.post('/admin/auth', requireAdmin, (_req, res) => res.json({ ok: true }));
 
+// One-off/idempotent repair: rebuild sheet_authenticity discrepancy summaries
+// from the fullest available reason (vision_json > detail.reason), so old rows
+// truncated mid-word (e.g. "…a photograph of a c") read cleanly.
+adminRouter.post('/admin/integrity/repair-summaries', requireAdmin, (_req, res) => {
+  const clip = (s, n) => { s = String(s || '').trim(); return s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, '').replace(/[.,;:]$/, '') + '…'; };
+  const rows = db.prepare("SELECT id, submission_id, detail FROM discrepancies WHERE type = 'sheet_authenticity'").all();
+  let fixed = 0;
+  for (const r of rows) {
+    let det; try { det = JSON.parse(r.detail); } catch { continue; }
+    let reason = det.reason || '';
+    if (r.submission_id) {
+      try { const vj = db.prepare('SELECT vision_json FROM submissions WHERE id = ?').get(r.submission_id);
+        if (vj && vj.vision_json) { const v = JSON.parse(vj.vision_json); if (v.reason) reason = v.reason; } } catch { /* keep detail.reason */ }
+    }
+    reason = clip(reason, 400);
+    const bad = det.authentic === 'no';
+    det.reason = reason;
+    det.summary = bad
+      ? `AI vision flags this image as likely not a genuine EC8A — ${reason}`
+      : `AI vision could not confirm this image is a genuine EC8A result sheet — ${reason}`;
+    db.prepare('UPDATE discrepancies SET detail = ? WHERE id = ?').run(JSON.stringify(det), r.id);
+    fixed++;
+  }
+  res.json({ ok: true, fixed });
+});
+
 // Manually record a ledger anchor now (admin-only).
 adminRouter.post('/admin/anchor', requireAdmin, async (req, res) => {
   try { res.json(await runAnchor(req.query.force === '1')); }

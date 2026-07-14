@@ -50,15 +50,22 @@ export async function analyzeSheet(jpegBuffer, { contest, votes, pu, submissionI
   // sheet — e.g. the photo isn't a sheet at all, or is too poor to tell) is
   // medium. Only an explicit "yes" passes silently — the previous code flagged
   // "no" only, so a non-sheet photo the model hedged as "unclear" slipped through.
+  // Truncate on a word boundary with an ellipsis, so a summary never ends
+  // mid-word (e.g. "…a photograph of a c" instead of "…a chair and a table").
+  const clip = (s, n) => {
+    s = String(s || '').trim();
+    return s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, '').replace(/[.,;:]$/, '') + '…';
+  };
   if (out.authentic !== 'yes') {
     const bad = out.authentic === 'no';
+    const reason = clip(out.reason || (bad ? 'see review' : 'needs human review'), 220);
     logDiscrepancy({
       type: 'sheet_authenticity', severity: bad ? 'high' : 'medium', puCode: pu.pu_code, contest, state: pu.state, submissionId,
       detail: {
-        authentic: out.authentic || 'unclear', reason: String(out.reason || '').slice(0, 160),
+        authentic: out.authentic || 'unclear', reason,
         summary: bad
-          ? `AI vision flags this image as likely not a genuine EC8A — ${String(out.reason || 'see review').slice(0, 120)}`
-          : `AI vision could not confirm this image is a genuine EC8A result sheet — ${String(out.reason || 'needs human review').slice(0, 120)}`,
+          ? `AI vision flags this image as likely not a genuine EC8A — ${reason}`
+          : `AI vision could not confirm this image is a genuine EC8A result sheet — ${reason}`,
       },
     });
   }

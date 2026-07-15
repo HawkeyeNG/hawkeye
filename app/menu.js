@@ -198,7 +198,8 @@
   if (foot) {
     foot.innerHTML = '<a href="about.html">About</a><a href="how.html">How Hawkeye Works</a>'
       + '<a href="privacy.html">Privacy Policy</a><a href="faq.html">FAQ</a>'
-      + '<a href="guide.html">Observer Guide</a>';
+      + '<a href="guide.html">Observer Guide</a>'
+      + (localStorage.getItem('hawkeye_token') ? '<a href="profile.html">My Profile</a>' : '');
   }
 
   // Every visible "INEC" mention links to the commission's site. Runs over

@@ -253,7 +253,27 @@ function resetAuthPane() {
   $('btn-auth').textContent = 'Request OTP';
   $('otp-hint').textContent = '';
   $('auth-reset').hidden = true;
+  if ($('pw-link')) $('pw-link').hidden = false;
 }
+
+// Password sign-in (no OTP): flips the same pane to password entry. Wrong/unset
+// password errors point back at the OTP flow — OTP is always the recovery path.
+if ($('pw-link')) $('pw-link').onclick = (e) => {
+  e.preventDefault();
+  const input = $('auth-input');
+  const phone = input.value.trim();
+  if (!phone) { $('otp-hint').textContent = 'Enter your phone number first, then tap this link.'; return; }
+  pendingPhone = phone;
+  authMode = 'password';
+  input.value = '';
+  input.type = 'password';
+  input.inputMode = 'text';
+  input.placeholder = 'Enter your password';
+  $('btn-auth').textContent = 'Sign in';
+  $('pw-link').hidden = true;
+  $('auth-reset').hidden = false;
+  $('otp-hint').textContent = '';
+};
 
 $('btn-auth').onclick = async () => {
   const input = $('auth-input');
@@ -274,6 +294,7 @@ $('btn-auth').onclick = async () => {
     input.inputMode = 'numeric';
     $('btn-auth').textContent = 'Verify OTP';
     $('auth-reset').hidden = false;
+    if ($('pw-link')) $('pw-link').hidden = true;
     if (body.telegramLink) {
       // The bot can only message a user who has opened it, so send them straight
       // there. In the chat they tap Start → Share contact, and the bot replies
@@ -295,10 +316,14 @@ $('btn-auth').onclick = async () => {
 
   const pair = await ensureKeys();
   const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
-  const { status, body } = await api('/api/observers/verify', {
+  const endpoint = authMode === 'password' ? '/api/observers/login' : '/api/observers/verify';
+  const payload = authMode === 'password'
+    ? { phone: pendingPhone, password: input.value, publicKeyJwk }
+    : { phone: pendingPhone, otp: input.value.trim(), publicKeyJwk };
+  const { status, body } = await api(endpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ phone: pendingPhone, otp: input.value.trim(), publicKeyJwk }),
+    body: JSON.stringify(payload),
   });
   if (status !== 200) return alert(explain(body));
   localStorage.setItem('hawkeye_token', body.token);

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="Your Hawkeye observer profile — identity hash, saved polling unit, followed races, past reports, and password." />
+  <title>Hawkeye — My Profile</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css?v=102" />
+  <script src="native.js?v=100"></script>
+  <style>
+    .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
+    .pcard h2 { margin: 0 0 10px; font-size: 1.02rem; }
+    .kv { display: flex; gap: 8px; margin: 6px 0; font-size: 0.92rem; flex-wrap: wrap; }
+    .kv b { flex: none; min-width: 110px; font-weight: 600; }
+    .hashbox { font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; word-break: break-all; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+    .copy { margin: 6px 0 0; width: auto; padding: 6px 12px; font-size: 0.82rem; }
+    .item { border-bottom: 1px solid var(--border); padding: 8px 0; font-size: 0.9rem; }
+    .item:last-child { border-bottom: none; }
+    .item .sub { color: var(--muted); font-size: 0.8rem; }
+    .tag { display: inline-block; font-size: 0.72rem; border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; margin: 0 4px 4px 0; }
+    .tag.ok { color: var(--green); border-color: var(--green); }
+    .empty { color: var(--muted); font-size: 0.88rem; }
+    .danger { border-color: #b3341f55; }
+    .danger button { background: #B3341F; }
+    input[type="password"] { width: 100%; box-sizing: border-box; }
+    #pw-msg { min-height: 1.2em; }
+    .signout { width: auto; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Unit Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>My Profile</h1>
+    <div id="signed-out" hidden>
+      <p class="empty">You're not signed in. <a href="observe.html">Sign in or register</a> to see your profile.</p>
+    </div>
+    <div id="profile" hidden>
+
+      <div class="pcard">
+        <h2>Identity</h2>
+        <div class="kv"><b>Observer ID</b><span id="p-id"></span></div>
+        <div class="kv"><b>Member since</b><span id="p-since"></span></div>
+        <div class="kv" style="display:block"><b>Identity hash</b>
+          <p class="hint" style="margin:4px 0 6px">Your phone number is never stored or shown — this one-way hash is your public identity on the ledger.</p>
+          <div class="hashbox" id="p-hash"></div>
+          <button class="secondary copy" id="btn-copy">Copy hash</button>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <h2>Password</h2>
+        <p class="hint" id="pw-state"></p>
+        <div id="pw-current-wrap" hidden>
+          <label for="pw-current">Current password</label>
+          <input id="pw-current" type="password" autocomplete="current-password" />
+        </div>
+        <label for="pw-new">New password <span class="hint">(min 8 characters)</span></label>
+        <input id="pw-new" type="password" autocomplete="new-password" />
+        <p class="hint" id="pw-msg"></p>
+        <button id="btn-pw">Set password</button>
+        <p class="hint">Forgot your current password? Sign in again with an OTP on <a href="observe.html">the report page</a> — then you can set a new one here without it.</p>
+      </div>
+
+      <div class="pcard">
+        <h2>My polling unit</h2>
+        <div id="p-unit" class="empty">None saved.</div>
+        <p class="hint">Save or change it from <a href="observe.html">the report page</a> — you'll get alerts for every report at your unit.</p>
+      </div>
+
+      <div class="pcard">
+        <h2>Followed races</h2>
+        <div id="p-subs" class="empty">None yet — follow a race from the <a href="results.html">leaderboard</a>.</div>
+      </div>
+
+      <div class="pcard">
+        <h2>My result reports</h2>
+        <div id="p-reports" class="empty">No result reports yet.</div>
+      </div>
+
+      <div class="pcard">
+        <h2>My collation reports</h2>
+        <div id="p-collation" class="empty">No collation reports yet.</div>
+      </div>
+
+      <div class="pcard">
+        <h2>My incident reports</h2>
+        <div id="p-incidents" class="empty">No incident reports yet.</div>
+      </div>
+
+      <div class="pcard">
+        <h2>Session</h2>
+        <button class="secondary signout" id="btn-signout">Sign out on this device</button>
+      </div>
+
+      <div class="pcard danger">
+        <h2>Delete my identity</h2>
+        <p class="hint">Wipes your signing key, device binding, Telegram link and subscriptions, and deactivates your ID.
+        Reports already on the public ledger are permanent and stay. Re-registering the same phone restores the same ID.</p>
+        <button id="btn-delete">Delete my observer identity</button>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const dt = (t) => new Date(t).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' });
+    const token = () => localStorage.getItem('hawkeye_token');
+    let hasPassword = false;
+
+    async function api(path, opts = {}) {
+      opts.headers = { ...(opts.headers || {}), authorization: 'Bearer ' + token() };
+      if (window.getDeviceId) opts.headers['x-device-id'] = await getDeviceId();
+      const res = await fetch(path, opts);
+      const body = await res.json().catch(() => ({}));
+      return { status: res.status, body };
+    }
+
+    function renderList(el, rows, fn) {
+      if (!rows || !rows.length) return;
+      el.classList.remove('empty');
+      el.innerHTML = rows.map(fn).join('');
+    }
+
+    async function load() {
+      if (!token()) { $('signed-out').hidden = false; return; }
+      const { status, body } = await api('/api/observers/me');
+      if (status !== 200) { localStorage.removeItem('hawkeye_token'); $('signed-out').hidden = false; return; }
+      $('profile').hidden = false;
+
+      $('p-id').textContent = '#' + body.observerId;
+      $('p-since').textContent = dt(body.createdAt);
+      $('p-hash').textContent = body.identityHash;
+      hasPassword = body.hasPassword;
+      $('pw-state').textContent = hasPassword
+        ? 'You have a password — you can sign in on any device without an OTP.'
+        : 'No password yet. Set one to sign in on new devices without waiting for an OTP.';
+      $('pw-current-wrap').hidden = !hasPassword;
+      $('btn-pw').textContent = hasPassword ? 'Change password' : 'Set password';
+
+      if (body.unit) {
+        $('p-unit').classList.remove('empty');
+        $('p-unit').innerHTML = `<strong>${esc(body.unit.name || body.unit.pu_code)}</strong><div class="sub">${esc(body.unit.pu_code)} · ${esc(body.unit.ward || '')} ward, ${esc(body.unit.lga || '')}, ${esc(body.unit.state || '')}</div>`;
+      }
+      renderList($('p-subs'), body.subscriptions, (s) =>
+        `<span class="tag ok">${esc(s.contest)}${s.state ? ' · ' + esc(s.state) : ''}</span>`);
+      renderList($('p-reports'), body.reports, (r) =>
+        `<div class="item"><strong>${esc(r.name || r.pu_code)}</strong> · ${esc(r.contest)}
+         <div class="sub">${esc(r.pu_code)} · ${esc(r.lga || '')}, ${esc(r.state || '')} · ${dt(r.created_at)} ·
+         ledger <span title="${esc(r.entry_hash)}">${esc(String(r.entry_hash).slice(0, 12))}…</span></div></div>`);
+      renderList($('p-collation'), body.collation, (c) =>
+        `<div class="item"><strong>${esc(c.level.toUpperCase())}</strong> · ${esc(c.contest)}
+         <div class="sub">${esc([c.ward, c.lga, c.state].filter(Boolean).join(', '))} · ${dt(c.created_at)}</div></div>`);
+      renderList($('p-incidents'), body.incidents, (i) =>
+        `<div class="item"><strong>${esc(i.kind)}</strong> <span class="tag">${esc(i.status)}</span>
+         <div class="sub">${esc([i.pu_code, i.state].filter(Boolean).join(' · ') || 'no location')} · ${dt(i.created_at)}</div></div>`);
+    }
+
+    $('btn-copy').onclick = () => {
+      navigator.clipboard.writeText($('p-hash').textContent)
+        .then(() => { $('btn-copy').textContent = 'Copied ✓'; setTimeout(() => ($('btn-copy').textContent = 'Copy hash'), 1500); })
+        .catch(() => {});
+    };
+
+    $('btn-pw').onclick = async () => {
+      const pw = $('pw-new').value;
+      $('pw-msg').textContent = '';
+      if (pw.length < 8) { $('pw-msg').textContent = 'Use at least 8 characters.'; return; }
+      const payload = { password: pw };
+      if (hasPassword) payload.currentPassword = $('pw-current').value;
+      const { status, body } = await api('/api/observers/set-password', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
+      });
+      if (status !== 200) { $('pw-msg').textContent = body.hint || body.error || 'Failed.'; return; }
+      $('pw-msg').textContent = hasPassword ? 'Password changed ✓' : 'Password set ✓ — you can now sign in with it on any device.';
+      $('pw-new').value = ''; $('pw-current').value = '';
+      hasPassword = true;
+      $('pw-current-wrap').hidden = false;
+      $('btn-pw').textContent = 'Change password';
+      $('pw-state').textContent = 'You have a password — you can sign in on any device without an OTP.';
+    };
+
+    $('btn-signout').onclick = () => { localStorage.removeItem('hawkeye_token'); location.href = 'index.html'; };
+
+    $('btn-delete').onclick = async () => {
+      if (!confirm('Delete your observer identity? Your key, device binding, Telegram link and subscriptions are wiped. Ledger reports stay (they are public and permanent).')) return;
+      const { status } = await api('/api/observers/delete', { method: 'POST' });
+      if (status === 200) { localStorage.removeItem('hawkeye_token'); alert('Identity deleted.'); location.href = 'index.html'; }
+      else alert('Could not delete — try again.');
+    };
+
+    load();
+  </script>
+  <script src="device.js"></script>
+  <script src="menu.js?v=99"></script>
+</body>
+</html>

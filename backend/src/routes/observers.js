@@ -381,7 +381,7 @@ observersRouter.post('/admin/reset', (req, res) => {
   }
   const counts = {};
   db.transaction(() => {
-    for (const t of ['venue_matches', 'submissions', 'results', 'pu_mappings', 'subscriptions', 'tg_link_tokens', 'telegram_links', 'device_push_tokens', 'notifications', 'otps', 'observers']) {
+    for (const t of ['venue_matches', 'verdicts', 'cases', 'docket_ledger', 'discrepancies', 'collation_reports', 'incidents', 'submissions', 'results', 'pu_mappings', 'saved_units', 'subscriptions', 'tg_link_tokens', 'telegram_links', 'device_push_tokens', 'notifications', 'otps', 'observers']) {
       counts[t] = db.prepare(`SELECT COUNT(*) AS c FROM ${t}`).get().c;
       db.exec(`DELETE FROM ${t}`);
     }

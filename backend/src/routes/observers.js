@@ -24,11 +24,44 @@ export function phoneHash(phone) {
 const didHash = (deviceId) =>
   deviceId ? crypto.createHmac('sha256', config.jwtSecret).update(deviceId).digest('hex').slice(0, 24) : null;
 
-function issueToken(observerId, deviceId) {
+function issueToken(observerId, deviceId, via) {
   const claims = { sub: String(observerId) };
   const did = didHash(deviceId);
   if (did) claims.did = did;
+  // `via` records HOW this session was proven ('otp' | 'tg' | 'pw' | 'resume').
+  // A fresh otp/tg session doubles as the password-reset path in /set-password.
+  if (via) claims.via = via;
   return jwt.sign(claims, config.jwtSecret, { expiresIn: '7d' });
+}
+
+// --- Optional password sign-in ------------------------------------------------
+// Lets an observer sign in on a NEW device without an OTP round-trip. scrypt
+// (dependency-free), per-user salt, timing-safe compare. OTP/Telegram remain the
+// recovery path, so a forgotten password never locks anyone out.
+function hashPassword(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return salt + ':' + crypto.scryptSync(pw, salt, 32).toString('hex');
+}
+function verifyPassword(pw, stored) {
+  const [salt, hex] = String(stored || '').split(':');
+  if (!salt || !hex) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(hex, 'hex'), crypto.scryptSync(pw, salt, 32));
+  } catch {
+    return false;
+  }
+}
+// 10 wrong passwords per phone per hour locks the PASSWORD path only — the OTP
+// path stays open (it's also the recovery route, and it proves phone control).
+const pwFails = new Map();
+function pwLocked(hash) {
+  const rec = pwFails.get(hash);
+  return !!rec && rec.count >= 10 && Date.now() - rec.first < 3600_000;
+}
+function notePwFail(hash) {
+  const rec = pwFails.get(hash);
+  if (!rec || Date.now() - rec.first > 3600_000) pwFails.set(hash, { first: Date.now(), count: 1 });
+  else rec.count += 1;
 }
 
 // Nigerian mobile numbers only: 0803..., or +234803...
@@ -124,7 +157,7 @@ observersRouter.post('/verify', (req, res) => {
   notifyMaster(`${isNew ? 'NEW' : 'repeat'} phone verified · observer #${observer.id} · ${hash.slice(0, 12)}…`);
   if (isNew) { try { noteRegistration(); } catch { /* informational only */ } }
 
-  const token = issueToken(observer.id, deviceId);
+  const token = issueToken(observer.id, deviceId, 'otp');
   res.json({ ok: true, observerId: observer.id, token });
 });
 
@@ -188,7 +221,7 @@ observersRouter.post('/telegram-verify', (req, res) => {
   notifyMaster(`${isNew ? 'NEW' : 'repeat'} Telegram sign-in · observer #${observer.id} · ${hash.slice(0, 12)}…`);
   if (isNew) { try { noteRegistration(); } catch { /* informational only */ } }
 
-  const token = issueToken(observer.id, deviceId);
+  const token = issueToken(observer.id, deviceId, 'tg');
   res.json({ ok: true, observerId: observer.id, token });
 });
 
@@ -204,8 +237,94 @@ observersRouter.post('/resume', (req, res) => {
   if (!observer || observer.status !== 'active' || observer.public_key_jwk !== JSON.stringify(jwk)) {
     return res.status(404).json({ error: 'not_recognized' });
   }
-  const token = issueToken(observer.id, deviceId);
+  const token = issueToken(observer.id, deviceId, 'resume');
   res.json({ ok: true, observerId: observer.id, token });
+});
+
+// Password sign-in: phone + password on ANY device — no OTP. Success is treated
+// exactly like a fresh OTP verify: the signing key rotates to this device and it
+// becomes the auto-resume device. Deleted/OTP-only accounts are pointed at OTP.
+observersRouter.post('/login', (req, res) => {
+  const phone = normalizePhone(req.body?.phone);
+  const password = String(req.body?.password || '');
+  const jwk = req.body?.publicKeyJwk;
+  if (!phone) return res.status(400).json({ error: 'invalid_phone' });
+  if (!validatePublicKeyJwk(jwk)) return res.status(400).json({ error: 'invalid_public_key' });
+
+  const hash = phoneHash(phone);
+  if (pwLocked(hash)) {
+    return res.status(429).json({ error: 'too_many_attempts', hint: 'Too many wrong passwords. Wait an hour, or sign in with an OTP instead.' });
+  }
+  const observer = db.prepare('SELECT * FROM observers WHERE phone_hash = ?').get(hash);
+  if (!observer || observer.status !== 'active' || !observer.password_hash) {
+    return res.status(401).json({ error: 'password_login_unavailable', hint: 'No password on this account — sign in with an OTP, then set one on your profile.' });
+  }
+  if (!verifyPassword(password, observer.password_hash)) {
+    notePwFail(hash);
+    return res.status(401).json({ error: 'wrong_password', hint: 'Wrong password. Forgot it? Sign in with an OTP to reset.' });
+  }
+  pwFails.delete(hash);
+
+  const deviceId = String(req.headers['x-device-id'] || '').slice(0, 64) || null;
+  db.prepare('UPDATE observers SET public_key_jwk = ?, device_id = ? WHERE id = ?')
+    .run(JSON.stringify(jwk), deviceId, observer.id);
+  // Password ≠ phone proof, so tell the owner a password sign-in happened.
+  notifyChat(chatIdByHash(hash),
+    `🔑 Password sign-in to your Hawkeye ID (observer #${observer.id}). If this wasn't you, sign in with an OTP and change your password.`);
+
+  const token = issueToken(observer.id, deviceId, 'pw');
+  res.json({ ok: true, observerId: observer.id, token });
+});
+
+// Set or change the password. Changing an existing one needs the current
+// password — unless this session was minted by a fresh OTP/Telegram phone proof
+// within 15 min (that IS the forgot-password reset path).
+observersRouter.post('/set-password', requireObserver, (req, res) => {
+  const pw = String(req.body?.password || '');
+  if (pw.length < 8) return res.status(400).json({ error: 'password_too_short', hint: 'Use at least 8 characters.' });
+  if (pw.length > 200) return res.status(400).json({ error: 'password_too_long' });
+  const o = req.observer;
+  if (o.password_hash) {
+    const fresh = (req.auth?.via === 'otp' || req.auth?.via === 'tg')
+      && req.auth.iat * 1000 > Date.now() - 900_000;
+    if (!fresh && !verifyPassword(String(req.body?.currentPassword || ''), o.password_hash)) {
+      return res.status(401).json({ error: 'current_password_wrong', hint: 'Enter your current password — or sign in with an OTP first to reset it.' });
+    }
+  }
+  db.prepare('UPDATE observers SET password_hash = ? WHERE id = ?').run(hashPassword(pw), o.id);
+  notifyChat(chatIdByHash(o.phone_hash),
+    `🔒 Your Hawkeye password was ${o.password_hash ? 'changed' : 'set'}. If this wasn't you, sign in with an OTP and change it.`);
+  res.json({ ok: true });
+});
+
+// Observer profile: identity, saved unit, followed races, and everything this
+// observer has reported (PU results, collation reports, incidents).
+observersRouter.get('/me', requireObserver, (req, res) => {
+  const o = req.observer;
+  const unit = db.prepare(`
+    SELECT s.pu_code, p.name, p.ward, p.lga, p.state FROM saved_units s
+    LEFT JOIN polling_units p ON p.pu_code = s.pu_code
+    WHERE s.observer_id = ?`).get(o.id) || null;
+  const subscriptions = db.prepare(
+    'SELECT contest, state FROM subscriptions WHERE observer_id = ? ORDER BY created_at DESC').all(o.id);
+  const reports = db.prepare(`
+    SELECT s.pu_code, s.contest, s.created_at, s.entry_hash, p.name, p.lga, p.state
+    FROM submissions s LEFT JOIN polling_units p ON p.pu_code = s.pu_code
+    WHERE s.observer_id = ? ORDER BY s.created_at DESC LIMIT 50`).all(o.id);
+  const collation = db.prepare(`
+    SELECT contest, level, state, lga, ward, created_at
+    FROM collation_reports WHERE observer_id = ? ORDER BY created_at DESC LIMIT 50`).all(o.id);
+  const incidents = db.prepare(`
+    SELECT id, kind, status, pu_code, state, created_at
+    FROM incidents WHERE observer_id = ? ORDER BY created_at DESC LIMIT 50`).all(o.id);
+  res.json({
+    ok: true,
+    observerId: o.id,
+    identityHash: o.phone_hash,
+    createdAt: o.created_at,
+    hasPassword: !!o.password_hash,
+    unit, subscriptions, reports, collation, incidents,
+  });
 });
 
 // "My polling unit": save the unit you'll observe. Saving subscribes you to
@@ -244,7 +363,7 @@ observersRouter.post('/my-unit/clear', requireObserver, (req, res) => {
 observersRouter.post('/delete', requireObserver, (req, res) => {
   const o = req.observer;
   db.transaction(() => {
-    db.prepare("UPDATE observers SET status = 'deleted', public_key_jwk = '', device_id = NULL WHERE id = ?").run(o.id);
+    db.prepare("UPDATE observers SET status = 'deleted', public_key_jwk = '', device_id = NULL, password_hash = NULL WHERE id = ?").run(o.id);
     db.prepare('DELETE FROM telegram_links WHERE phone_hash = ?').run(o.phone_hash);
     db.prepare('DELETE FROM subscriptions WHERE observer_id = ?').run(o.id);
     db.prepare('DELETE FROM otps WHERE phone_hash = ?').run(o.phone_hash);
@@ -322,6 +441,7 @@ export function requireObserver(req, res, next) {
       }
     }
     req.observer = observer;
+    req.auth = payload; // exposes `via` + `iat` (set-password uses these for the OTP-reset path)
     next();
   } catch {
     return res.status(401).json({ error: 'invalid_token' });

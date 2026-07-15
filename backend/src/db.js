@@ -200,6 +200,9 @@ for (const ddl of [
   // device fingerprint (client-computed, sha256): anti-sybil — logged everywhere,
   // enforced one-per-contest on submissions (a phone is at ONE polling unit).
   'ALTER TABLE observers ADD COLUMN device_id TEXT',
+  // Optional password (scrypt salt:hash) — sign in on a NEW device without OTP;
+  // OTP remains the reset path. NULL = OTP-only account.
+  'ALTER TABLE observers ADD COLUMN password_hash TEXT',
   'ALTER TABLE submissions ADD COLUMN device_id TEXT',
   'ALTER TABLE pu_mappings ADD COLUMN device_id TEXT',
   // Optional EC8A form serial number (observer-typed) — reused/duplicate serials

@@ -235,7 +235,10 @@ observersRouter.post('/resume', (req, res) => {
   if (!validatePublicKeyJwk(jwk)) return res.status(400).json({ error: 'invalid_public_key' });
   const observer = db.prepare('SELECT * FROM observers WHERE device_id = ?').get(deviceId);
   if (!observer || observer.status !== 'active' || observer.public_key_jwk !== JSON.stringify(jwk)) {
-    return res.status(404).json({ error: 'not_recognized' });
+    // 200, not 404: an unknown device is the NORMAL first-visit case, and a 4xx
+    // here logs a console error on every fresh visitor. Old clients treat
+    // "no token" the same as a non-200, so this is backward-compatible.
+    return res.json({ ok: false, recognized: false });
   }
   const token = issueToken(observer.id, deviceId, 'resume');
   res.json({ ok: true, observerId: observer.id, token });

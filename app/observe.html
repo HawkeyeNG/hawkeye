@@ -68,6 +68,16 @@
         <label for="auth-input">Nigerian mobile number</label>
         <input id="auth-input" type="tel" inputmode="tel" placeholder="e.g. 0803 123 4567" autocomplete="tel" />
         <p id="otp-hint" class="hint"></p>
+        <div id="pw-opt" hidden>
+          <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;cursor:pointer">
+            <input id="pw-opt-check" type="checkbox" style="width:auto;margin:3px 0 0" />
+            <span>Also create a password <small>(optional)</small> — sign in on any device later without waiting for a code</span>
+          </label>
+          <div id="pw-opt-field" hidden>
+            <label for="pw-opt-input">Choose a password <small>(min 8 characters)</small></label>
+            <input id="pw-opt-input" type="password" autocomplete="new-password" />
+          </div>
+        </div>
         <button id="btn-auth">Request OTP</button>
         <p class="hint"><a id="pw-link" href="#">Have a password? Sign in without OTP</a></p>
         <p class="hint"><a id="auth-reset" href="#" hidden>← Use a different number</a></p>
@@ -208,6 +218,6 @@
   <script src="outbox.js"></script>
   <script src="app.js"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=99"></script>
+  <script src="menu.js?v=100"></script>
 </body>
 </html>

@@ -10,7 +10,53 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css?v=103" />
+  <script>
+    // Signed-in observers get the Observer Home instead of the landing page.
+    // Class set before first paint so neither view flashes; a dead token is
+    // detected after /me and flips back to the landing.
+    if (localStorage.getItem('hawkeye_token')) document.documentElement.classList.add('obs-home');
+  </script>
   <script src="native.js?v=100"></script>
+  <style>
+    /* ---- Observer Home (signed-in index) ---- */
+    .home-obs { display: none; }
+    .obs-home .home-obs { display: block; }
+    .obs-home .hero, .obs-home .how-sec, .obs-home .trust, .obs-home .cta-band { display: none; }
+
+    .home-hero { background: linear-gradient(160deg, var(--green-950, #00251a), #00482b); color: #fff; padding: 26px 0 20px; }
+    .home-hero h1 { margin: 0 0 2px; font-size: 1.45rem; line-height: 1.25; }
+    .home-hero .sub { color: rgba(255, 255, 255, 0.75); font-size: 0.9rem; margin: 0; }
+    .home-hero .unit-chip { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 999px; padding: 6px 14px; font-size: 0.84rem; color: #fff; text-decoration: none; }
+    .home-hero .unit-chip:hover { background: rgba(255, 255, 255, 0.2); }
+
+    .qa-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 18px 0 6px; }
+    @media (min-width: 700px) { .qa-grid { grid-template-columns: repeat(4, 1fr); } }
+    .qa { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; color: inherit; text-decoration: none; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+    .qa:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09); }
+    .qa svg { width: 26px; height: 26px; stroke: var(--green); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .qa strong { font-size: 0.93rem; }
+    .qa small { color: var(--muted); font-size: 0.76rem; line-height: 1.35; }
+    .qa.primary { background: var(--green); border-color: var(--green); color: #fff; }
+    .qa.primary svg { stroke: #2EE59D; }
+    .qa.primary small { color: rgba(255, 255, 255, 0.75); }
+
+    .home-cols { display: grid; gap: 14px; margin: 8px 0 20px; }
+    @media (min-width: 900px) { .home-cols { grid-template-columns: 1.2fr 1fr; align-items: start; } }
+    .home-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .home-card h2 { margin: 0 0 10px; font-size: 1rem; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .home-card h2 a { font-size: 0.8rem; font-weight: 600; }
+    .mystats { display: flex; gap: 0; margin-top: 4px; }
+    .mystats div { flex: 1; text-align: center; padding: 8px 4px; }
+    .mystats div + div { border-left: 1px solid var(--border); }
+    .mystats strong { display: block; font-size: 1.35rem; color: var(--green); font-variant-numeric: tabular-nums; }
+    .mystats span { font-size: 0.72rem; color: var(--muted); }
+    .alert-line { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 0.87rem; text-decoration: none; color: inherit; }
+    .alert-line:first-of-type { border-top: none; }
+    .alert-line .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex: none; }
+    .alert-line time { margin-left: auto; color: var(--muted); font-size: 0.74rem; flex: none; }
+    .home-empty { color: var(--muted); font-size: 0.85rem; padding: 6px 0; }
+    #home-ledger .lcard { margin-bottom: 10px; }
+  </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
   <meta property="og:title" content="Hawkeye — Independent Election Results Monitor" />
@@ -53,6 +99,54 @@
       </nav>
     </div>
   </header>
+
+  <!-- Observer Home: what signed-in users see instead of the landing page -->
+  <div class="home-obs">
+    <section class="home-hero">
+      <div class="wrap">
+        <h1 id="home-greet">Welcome back</h1>
+        <p class="sub" id="home-sub">Your polling unit is your post — here's today's picture.</p>
+        <a class="unit-chip" id="home-unit-chip" href="map-unit.html">📍 No polling unit saved yet — save yours</a>
+      </div>
+    </section>
+    <main class="wrap">
+      <div class="qa-grid">
+        <a class="qa primary" href="observe.html?intent=observe">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/></svg>
+          <strong>Report a Result</strong><small>Photograph the EC8A sheet at your unit</small></a>
+        <a class="qa" href="incidents.html">
+          <svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.5"/></svg>
+          <strong>Report an Incident</strong><small>Violence, vote-buying, BVAS failure…</small></a>
+        <a class="qa" href="collation.html">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+          <strong>Collation Result</strong><small>Ward, LGA or state collation (EC8B/C/D)</small></a>
+        <a class="qa" href="map-unit.html">
+          <svg viewBox="0 0 24 24"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          <strong>My Polling Unit</strong><small>Save or map your unit for alerts</small></a>
+      </div>
+
+      <div class="home-cols">
+        <div>
+          <div class="home-card">
+            <h2>Latest alerts <a href="notifications.html">All alerts →</a></h2>
+            <div id="home-alerts"><p class="home-empty">Loading…</p></div>
+          </div>
+          <div class="home-card" style="margin-top: 14px">
+            <h2>My activity <a href="profile.html">My Profile →</a></h2>
+            <div class="mystats">
+              <div><strong id="ms-reports">0</strong><span>result reports</span></div>
+              <div><strong id="ms-incidents">0</strong><span>incidents</span></div>
+              <div><strong id="ms-races">0</strong><span>races followed</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="home-card">
+          <h2>Live on the ledger <a href="dashboard.html">All reports →</a></h2>
+          <div id="home-ledger"><p class="home-empty">No reports on the ledger yet — yours could be first.</p></div>
+        </div>
+      </div>
+    </main>
+  </div>
 
   <!-- Hero -->
   <section class="hero">
@@ -201,6 +295,45 @@
     }).catch(() => {
       document.getElementById('ledger-stack').innerHTML = SAMPLES.map((e) => lcard(e, true)).join('');
     });
+
+    // ---- Observer Home (signed-in) ----
+    (async function () {
+      if (!document.documentElement.classList.contains('obs-home')) return;
+      const tok = localStorage.getItem('hawkeye_token');
+      const auth = { authorization: 'Bearer ' + tok };
+      const me = await fetch('/api/observers/me', { headers: auth })
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      if (!me) {
+        // Dead session: show the landing page instead (and drop the token so
+        // the rest of the app agrees we're signed out).
+        localStorage.removeItem('hawkeye_token');
+        document.documentElement.classList.remove('obs-home');
+        return;
+      }
+      document.getElementById('home-greet').textContent = 'Welcome back, Observer #' + me.observerId;
+      if (me.unit) {
+        const u = me.unit;
+        const chip = document.getElementById('home-unit-chip');
+        chip.textContent = `📍 ${u.name || u.pu_code} · ${u.lga || ''}${u.state ? ', ' + u.state : ''}`;
+        document.getElementById('home-sub').textContent = 'Alerts are on for your unit — you\'ll hear the moment anything is reported there.';
+      }
+      document.getElementById('ms-reports').textContent = (me.reports || []).length + (me.collation || []).length;
+      document.getElementById('ms-incidents').textContent = (me.incidents || []).length;
+      document.getElementById('ms-races').textContent = (me.subscriptions || []).length;
+
+      fetch('/api/notifications', { headers: auth }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+        const box = document.getElementById('home-alerts');
+        if (!d || !d.items || !d.items.length) { box.innerHTML = '<p class="home-empty">Nothing yet — reports at your saved unit and status updates land here.</p>'; return; }
+        box.innerHTML = d.items.slice(0, 4).map((n) => `
+          <a class="alert-line" href="${esc(n.url || 'notifications.html')}">${n.read ? '' : '<span class="dot"></span>'}
+            <span>${esc(n.title)}</span><time>${timeAgo(n.created_at)}</time></a>`).join('');
+      }).catch(() => {});
+
+      fetch('/api/ledger/entries').then((r) => r.json()).then((rows) => {
+        const last = rows.slice(-3).reverse();
+        if (last.length) document.getElementById('home-ledger').innerHTML = last.map((e) => lcard(e, false)).join('');
+      }).catch(() => {});
+    })();
 
     // Scroll reveal
     const io = new IntersectionObserver((es) => es.forEach((e) => {

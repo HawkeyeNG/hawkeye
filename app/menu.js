@@ -136,6 +136,9 @@
     document.body.classList.add('has-tabbar');
     nav.querySelector('[data-more]').addEventListener('click', (e) => {
       e.preventDefault();
+      // stopPropagation: the document-level closeIfOutside handler treats this
+      // click as "outside the panel" and would instantly re-close what we open.
+      e.stopPropagation();
       const p = document.getElementById('menu-panel');
       if (p) { p.hidden = !p.hidden; document.querySelector('.menu-btn')?.setAttribute('aria-expanded', String(!p.hidden)); }
     });

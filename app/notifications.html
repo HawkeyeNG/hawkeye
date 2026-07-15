@@ -8,7 +8,7 @@
   <title>Hawkeye — Notifications</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=102" />
+  <link rel="stylesheet" href="styles.css?v=103" />
   <script src="native.js?v=100"></script>
   <style>
     .n { display: flex; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 8px 0; color: inherit; text-decoration: none; }
@@ -69,7 +69,15 @@
         return;
       }
       const d = await fetch('/api/notifications', { headers: { authorization: 'Bearer ' + token } })
-        .then((r) => (r.ok ? r.json() : { items: [] })).catch(() => ({ items: [] }));
+        .then((r) => (r.status === 401 ? { dead: true } : r.ok ? r.json() : { items: [] }))
+        .catch(() => ({ items: [] }));
+      if (d.dead) {
+        // Stale/revoked session (e.g. after an identity reset): don't pretend
+        // "no notifications" — clear it and point at sign-in.
+        localStorage.removeItem('hawkeye_token');
+        $('list').innerHTML = '<p class="empty">Your session has expired. <a href="observe.html?intent=observe">Sign in again →</a></p>';
+        return;
+      }
       if (!d.items.length) { $('list').innerHTML = '<p class="empty">No notifications yet. You’ll see reports at your saved units and status updates here.</p>'; return; }
       $('mark-all').hidden = d.unread === 0;
       $('list').innerHTML = d.items.map((n) => {
@@ -96,6 +104,6 @@
     };
     load();
   </script>
-  <script src="menu.js?v=100"></script>
+  <script src="menu.js?v=101"></script>
 </body>
 </html>

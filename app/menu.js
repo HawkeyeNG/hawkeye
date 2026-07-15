@@ -239,7 +239,11 @@
   // Sign out — shown only when signed in. Clears the token AND the device key so
   // auto-resume can't silently sign back in; sends the user to a fresh sign-up.
   if (panel && localStorage.getItem('hawkeye_token') && !panel.querySelector('.sign-out')) {
-    // My Profile — identity hash, saved unit, past reports, password, delete-ID.
+    // Dashboard (Observer Home on index.html) + My Profile — signed-in only.
+    const dash = document.createElement('a');
+    dash.href = 'index.html';
+    dash.textContent = 'Dashboard';
+    panel.appendChild(dash);
     const prof = document.createElement('a');
     prof.href = 'profile.html';
     prof.textContent = 'My Profile';

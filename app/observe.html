@@ -67,6 +67,10 @@
       <div class="card">
         <label for="auth-input">Nigerian mobile number</label>
         <input id="auth-input" type="tel" inputmode="tel" placeholder="e.g. 0803 123 4567" autocomplete="tel" />
+        <div id="pw-signin-wrap" hidden>
+          <label for="pw-signin-input">Password</label>
+          <input id="pw-signin-input" type="password" placeholder="Your password" autocomplete="current-password" />
+        </div>
         <p id="otp-hint" class="hint"></p>
         <div id="pw-opt" hidden>
           <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;cursor:pointer">
@@ -216,8 +220,8 @@
   <script src="device.js"></script>
   <script src="scan.js"></script>
   <script src="outbox.js"></script>
-  <script src="app.js?v=110"></script>
+  <script src="app.js?v=111"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=101"></script>
+  <script src="menu.js?v=102"></script>
 </body>
 </html>

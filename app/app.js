@@ -217,7 +217,8 @@ let pendingPhone = '';
 
 // Why the user is registering, from the CTA (?intent=observe|map|incident).
 // Drives the verification heading and where we send them once verified.
-const AUTH_INTENT = new URLSearchParams(location.search).get('intent') || 'observe';
+const RAW_INTENT = new URLSearchParams(location.search).get('intent'); // null = plain sign-in
+const AUTH_INTENT = RAW_INTENT || 'observe';
 const INTENT_LABEL = { observe: 'Become an Observer', map: 'Map a Polling Unit', incident: 'Report an Incident' };
 const INTENT_DEST = { map: 'map-unit.html', incident: 'incidents.html' };
 
@@ -239,7 +240,10 @@ function applyIntentCopy() {
 }
 function afterVerified() {
   if (INTENT_DEST[AUTH_INTENT]) { location.href = INTENT_DEST[AUTH_INTENT]; return; }
-  show('screen-locate');
+  // Explicit report intent (?intent=observe) continues into the report flow;
+  // a plain sign-in lands on the Observer Home dashboard.
+  if (RAW_INTENT === 'observe') { show('screen-locate'); return; }
+  location.href = 'index.html';
 }
 
 function resetAuthPane() {
@@ -253,7 +257,14 @@ function resetAuthPane() {
   $('btn-auth').textContent = 'Request OTP';
   $('otp-hint').textContent = '';
   $('auth-reset').hidden = true;
-  if ($('pw-link')) $('pw-link').hidden = false;
+  if ($('pw-link')) {
+    $('pw-link').hidden = false;
+    $('pw-link').textContent = 'Have a password? Sign in without OTP';
+  }
+  if ($('pw-signin-wrap')) {
+    $('pw-signin-wrap').hidden = true;
+    $('pw-signin-input').value = '';
+  }
   if ($('pw-opt')) {
     $('pw-opt').hidden = true;
     $('pw-opt-check').checked = false;
@@ -269,22 +280,17 @@ if ($('pw-opt-check')) $('pw-opt-check').onchange = () => {
   if (!$('pw-opt-check').checked) $('pw-opt-input').value = '';
 };
 
-// Password sign-in (no OTP): flips the same pane to password entry. Wrong/unset
-// password errors point back at the OTP flow — OTP is always the recovery path.
+// Password sign-in (no OTP): reveals a password field UNDER the phone field so
+// both are entered in one go; the same link toggles back to the OTP flow.
+// Wrong/unset password errors point at OTP — it's always the recovery path.
 if ($('pw-link')) $('pw-link').onclick = (e) => {
   e.preventDefault();
-  const input = $('auth-input');
-  const phone = input.value.trim();
-  if (!phone) { $('otp-hint').textContent = 'Enter your phone number first, then tap this link.'; return; }
-  pendingPhone = phone;
-  authMode = 'password';
-  input.value = '';
-  input.type = 'password';
-  input.inputMode = 'text';
-  input.placeholder = 'Enter your password';
-  $('btn-auth').textContent = 'Sign in';
-  $('pw-link').hidden = true;
-  $('auth-reset').hidden = false;
+  const toPw = authMode !== 'password';
+  authMode = toPw ? 'password' : 'phone';
+  $('pw-signin-wrap').hidden = !toPw;
+  if (!toPw) $('pw-signin-input').value = '';
+  $('btn-auth').textContent = toPw ? 'Sign In' : 'Request OTP';
+  $('pw-link').textContent = toPw ? 'Sign in with OTP' : 'Have a password? Sign in without OTP';
   $('otp-hint').textContent = '';
 };
 
@@ -333,11 +339,16 @@ $('btn-auth').onclick = async () => {
   const optPw = wantsPw ? $('pw-opt-input').value : '';
   if (wantsPw && optPw.length < 8) return alert('Your password needs at least 8 characters (or untick the box to skip it).');
 
+  if (authMode === 'password') {
+    if (!input.value.trim()) return alert('Enter your phone number.');
+    if (!$('pw-signin-input').value) return alert('Enter your password.');
+  }
+
   const pair = await ensureKeys();
   const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
   const endpoint = authMode === 'password' ? '/api/observers/login' : '/api/observers/verify';
   const payload = authMode === 'password'
-    ? { phone: pendingPhone, password: input.value, publicKeyJwk }
+    ? { phone: input.value.trim(), password: $('pw-signin-input').value, publicKeyJwk }
     : { phone: pendingPhone, otp: input.value.trim(), publicKeyJwk };
   const { status, body } = await api(endpoint, {
     method: 'POST',

@@ -212,7 +212,9 @@
     const skip = /^(A|SCRIPT|STYLE|TITLE|TEXTAREA|INPUT|SELECT|OPTION|CODE)$/;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode: (n) => (/\bINEC\b/.test(n.nodeValue) && n.parentElement && !skip.test(n.parentElement.tagName)
-        && !n.parentElement.closest('a, svg')) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+        // summary/button/label: injecting a link INSIDE another interactive
+        // element is a WCAG nested-interactive violation (axe, integrity.html).
+        && !n.parentElement.closest('a, svg, summary, button, label')) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
     });
     const nodes = [];
     while (walker.nextNode()) nodes.push(walker.currentNode);

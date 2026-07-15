@@ -254,7 +254,20 @@ function resetAuthPane() {
   $('otp-hint').textContent = '';
   $('auth-reset').hidden = true;
   if ($('pw-link')) $('pw-link').hidden = false;
+  if ($('pw-opt')) {
+    $('pw-opt').hidden = true;
+    $('pw-opt-check').checked = false;
+    $('pw-opt-field').hidden = true;
+    $('pw-opt-input').value = '';
+  }
 }
+
+// Optional password at sign-up: checkbox reveals the field; applied right after
+// a successful OTP verify (fresh phone proof, so no current password needed).
+if ($('pw-opt-check')) $('pw-opt-check').onchange = () => {
+  $('pw-opt-field').hidden = !$('pw-opt-check').checked;
+  if (!$('pw-opt-check').checked) $('pw-opt-input').value = '';
+};
 
 // Password sign-in (no OTP): flips the same pane to password entry. Wrong/unset
 // password errors point back at the OTP flow — OTP is always the recovery path.
@@ -295,6 +308,7 @@ $('btn-auth').onclick = async () => {
     $('btn-auth').textContent = 'Verify OTP';
     $('auth-reset').hidden = false;
     if ($('pw-link')) $('pw-link').hidden = true;
+    if ($('pw-opt')) $('pw-opt').hidden = false;
     if (body.telegramLink) {
       // The bot can only message a user who has opened it, so send them straight
       // there. In the chat they tap Start → Share contact, and the bot replies
@@ -314,6 +328,11 @@ $('btn-auth').onclick = async () => {
     return;
   }
 
+  // Optional sign-up password: validate BEFORE burning the OTP attempt.
+  const wantsPw = authMode !== 'password' && $('pw-opt-check') && $('pw-opt-check').checked;
+  const optPw = wantsPw ? $('pw-opt-input').value : '';
+  if (wantsPw && optPw.length < 8) return alert('Your password needs at least 8 characters (or untick the box to skip it).');
+
   const pair = await ensureKeys();
   const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
   const endpoint = authMode === 'password' ? '/api/observers/login' : '/api/observers/verify';
@@ -327,6 +346,14 @@ $('btn-auth').onclick = async () => {
   });
   if (status !== 200) return alert(explain(body));
   localStorage.setItem('hawkeye_token', body.token);
+  if (wantsPw) {
+    const r = await api('/api/observers/set-password', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${body.token}` },
+      body: JSON.stringify({ password: optPw }),
+    });
+    if (r.status !== 200) alert('Signed in, but the password could not be set (' + explain(r.body) + '). You can set one any time on My Profile.');
+  }
   resetAuthPane();
   afterVerified();
 };

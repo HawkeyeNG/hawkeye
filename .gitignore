@@ -12,3 +12,15 @@ audit/reports/
 audit/node_modules/
 audit/C:*
 audit/lighthouse.*
+
+# private: funding, strategy, ops docs — local only (removed from tracking 2026-07-15)
+Pitch/
+Hawkeye.txt
+docs/*-APPLICATION.md
+docs/FUNDING-SOURCES.md
+docs/OTF-*
+docs/OSUN-2026-PILOT.md
+docs/PROJECT-SHIELD-VS-CLOUDFLARE.md
+docs/cloudflare-rules.md
+docs/META-SETUP.txt
+docs/TIKTOK-SETUP.txt

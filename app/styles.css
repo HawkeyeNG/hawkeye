@@ -659,6 +659,13 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
     box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.07);
   }
   body.has-tabbar { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+  /* Keep the ☰ dropdown's scroll area ABOVE the tab bar: without this its tail
+     renders behind the bar and the last items (My Profile / Sign out) are
+     unreachable even when scrolled to the end. */
+  body.has-tabbar .menu-panel {
+    max-height: calc(100vh - 180px - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 180px - env(safe-area-inset-bottom));
+  }
   /* Only when the tab bar actually exists (native app) — mobile WEB keeps the
      normal header bell + footer. */
   body.has-tabbar a.bell-btn { display: none; }      /* the Alerts tab replaces it */

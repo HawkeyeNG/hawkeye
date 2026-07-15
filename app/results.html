@@ -8,7 +8,7 @@
   <title>Hawkeye — National Results Leaderboard (Unofficial)</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=103" />
+  <link rel="stylesheet" href="styles.css?v=104" />
   <script src="native.js?v=100"></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
@@ -22,7 +22,9 @@
     .map-legend span { display: inline-flex; align-items: center; gap: 6px; }
     .map-legend i { width: 13px; height: 13px; display: inline-block; border: 1px solid #b7bcb7; }
     .badge-text { font-weight: 700; fill: #fff; font-size: 11px; text-anchor: middle; dominant-baseline: central; }
+    .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    table th { white-space: nowrap; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e6e6e5; }
     th { border-bottom: 2px solid var(--ink); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
     td.num, th.num { text-align: right; }
@@ -138,12 +140,14 @@
 
     <div class="card">
       <h2>Party totals</h2>
-      <table>
-        <thead>
-          <tr><th>#</th><th>Party</th><th class="num">Votes</th><th class="num">Share</th><th class="num" id="led-col">States led</th></tr>
-        </thead>
-        <tbody id="board"><tr><td colspan="5" class="meta">No reports yet.</td></tr></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Party</th><th class="num">Votes</th><th class="num">Share</th><th class="num" id="led-col">States&nbsp;led</th></tr>
+          </thead>
+          <tbody id="board"><tr><td colspan="5" class="meta">No reports yet.</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </main>
 
@@ -352,8 +356,9 @@
       renderMap(data);
       renderBoard(data);
       renderGlance(data, word);
-      document.getElementById('updated').textContent =
-        `${data.unitsReporting} unit(s) reporting · updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
+      document.getElementById('updated').textContent = data.unitsReporting > 0
+        ? `${data.unitsReporting} unit(s) reporting · updated ${new Date(data.updatedAt).toLocaleTimeString()}`
+        : `No reports yet · updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
     }
 
     (async () => {
@@ -412,6 +417,6 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=103"></script>
+  <script src="menu.js?v=104"></script>
 </body>
 </html>

@@ -400,8 +400,9 @@ button.menu-btn {
 button.menu-btn:hover { background: rgba(255, 255, 255, 0.12); filter: none; }
 button.theme-btn {
   background: none; border: 1.5px solid rgba(255, 255, 255, 0.35); color: #fff;
-  border-radius: 9px; width: 36px; height: 36px; padding: 0; font-size: 1.05rem;
-  line-height: 1; cursor: pointer; margin: 0 10px 0 auto; box-shadow: none; display: inline-block;
+  border-radius: 9px; width: 36px; height: 36px; padding: 0;
+  line-height: 1; cursor: pointer; margin: 0 10px 0 auto; box-shadow: none;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); filter: none; }
 a.bell-btn {

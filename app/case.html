@@ -8,7 +8,7 @@
   <title>Hawkeye — Case File</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=103" />
+  <link rel="stylesheet" href="styles.css?v=104" />
   <script src="native.js?v=100"></script>
   <style>
     .chipst { font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; }
@@ -94,7 +94,13 @@
 
     async function load() {
       const c = await fetch(`/api/docket/${qid}`).then((r) => r.json());
-      if (c.error) { $('title').textContent = 'Case not found'; return; }
+      if (c.error) {
+        $('title').textContent = 'Case not found';
+        $('meta').textContent = 'This case doesn’t exist, or the link is out of date.';
+        // Hide the empty Evidence / Verdict skeleton cards on the not-found path.
+        for (const el of document.querySelectorAll('.card')) el.hidden = true;
+        return;
+      }
       CASE = c;
       $('title').innerHTML = `Case #${c.id} — ${esc(c.unit.name)} <span class="chipst ${c.status}">${c.status.toUpperCase()}</span>`;
       $('meta').textContent = `${c.contest} · ${c.unit.ward} ward, ${c.unit.lga}, ${c.unit.state}`
@@ -165,6 +171,6 @@
     }
     load();
   </script>
-  <script src="menu.js?v=103"></script>
+  <script src="menu.js?v=104"></script>
 </body>
 </html>

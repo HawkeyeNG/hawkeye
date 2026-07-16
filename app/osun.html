@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00251a" />
+  <meta name="description" content="Osun State Governorship Election 2026 — the candidates, parties and key facts. Hawkeye's live pilot election." />
+  <title>Hawkeye — Osun 2026 Governorship</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css?v=104" />
+  <script src="native.js?v=100"></script>
+  <style>
+    .statbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 8px; }
+    .statbar .s { flex: 1 1 120px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+    .statbar .n { font-weight: 700; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+    .statbar .l { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+    .ctxnote { background: var(--tint, #eef4f0); border-left: 4px solid var(--green); border-radius: 0 10px 10px 0; padding: 12px 15px; font-size: 0.9rem; margin: 8px 0 4px; }
+    .cand-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 10px; }
+    .cand { border: 1px solid var(--line); border-top: 4px solid var(--pc, #9aa7a0); border-radius: 12px; padding: 16px; background: var(--card); }
+    .cand .row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .cand .av { width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--pc, #9aa7a0); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .cand h3 { margin: 0; font-size: 1.02rem; }
+    .cand .pill { display: inline-block; font-size: 0.68rem; font-weight: 700; color: var(--ink); background: var(--tint); border-radius: 999px; padding: 2px 9px; margin-bottom: 3px; }
+    .cand .pill::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--pc, #9aa7a0); margin-right: 5px; }
+    .cand p { margin: 0 0 8px; font-size: 0.85rem; color: var(--muted); }
+    .cand .inc { font-size: 0.68rem; font-weight: 700; color: #6b5500; background: #fdf3d7; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
+    .cand dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0; font-size: 0.78rem; }
+    .cand dt { color: var(--muted); font-weight: 600; }
+    .cand dd { margin: 0; }
+    .ballot { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-top: 10px; }
+    .b { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-left: 4px solid var(--pc, #9aa7a0); border-radius: 10px; padding: 10px 12px; background: var(--card); }
+    .b .flag { width: 26px; height: 26px; flex: none; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--line); }
+    .b .fallback { width: 26px; height: 26px; flex: none; border-radius: 50%; background: var(--pc, #9aa7a0); color: #fff; font-size: 0.62rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .b strong { font-size: 0.9rem; display: block; }
+    .b span { font-size: 0.73rem; color: var(--muted); }
+    .absence { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
+    .cta-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 6px; }
+    :root[data-theme="dark"] .ctxnote { background: #12251b; }
+    :root[data-theme="dark"] .b span, :root[data-theme="dark"] .cand .pill { color: var(--ink); }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Osun 2026 Governorship" />
+  <meta property="og:description" content="Osun State Governorship Election 2026 — candidates, parties and key facts. Hawkeye's live pilot election." />
+  <meta property="og:url" content="https://hawkeye.com.ng/osun.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Public Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="candidates.html">2027 Candidates</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Osun 2026</strong> — Hawkeye's first live pilot election. We monitor and publish; official results remain INEC's.</div></div>
+
+  <main class="wrap">
+    <h1 id="title">Osun State Governorship — 2026</h1>
+    <p class="lede" id="sub"></p>
+
+    <div class="statbar" id="statbar"></div>
+
+    <div class="ctxnote" id="ctx"></div>
+
+    <h2 style="margin-top:26px">Front-runners</h2>
+    <p class="hint">The most-covered candidates, in alphabetical order by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.</p>
+    <div class="cand-grid" id="front"></div>
+
+    <h2 style="margin-top:26px">Full ballot — all <span id="nballot">14</span> candidates</h2>
+    <div class="ballot" id="ballot"></div>
+    <p class="absence" id="absence"></p>
+
+    <div class="cta-row">
+      <a class="btn-accent" href="observe.html?intent=observe">Become an Observer</a>
+      <a class="btn-ghost" style="border-color:var(--green);color:var(--green)" href="results.html">Live Results</a>
+    </div>
+    <p class="hint" id="credit"></p>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a href="observe.html">Report a Result</a><a href="results.html">Live Results</a><a href="how.html">How It Works</a><a href="candidates.html">2027 Candidates</a><a href="faq.html">FAQ</a></nav>
+    <p>Candidate information is compiled from public declarations and INEC's published list, and may lag announcements. Hawkeye is nonpartisan and does not endorse any candidate. Official candidate lists and results are INEC's.</p>
+  </div></footer>
+
+  <script>
+    // Party colours — every code that can appear on the Osun ballot.
+    const PC = { A:'#00838f', APC:'#2e7d32', ADC:'#00897b', AA:'#3e2723', AAC:'#6d4c41',
+      ADP:'#455a64', APGA:'#f9a825', APM:'#283593', APP:'#ef6c00', BP:'#37474f',
+      NNPP:'#1565c0', PRP:'#827717', YPP:'#c2185b', ZLP:'#5e35b1', PDP:'#c62828', LP:'#388e3c' };
+    const color = (p) => PC[p] || '#9aa7a0';
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+
+    (async () => {
+      const [data, LOGOS] = await Promise.all([
+        fetch('political_data.json').then((r) => r.json()),
+        fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
+      ]);
+      const r = data.raceOsun2026;
+      if (!r) { document.getElementById('ctx').textContent = 'Race data unavailable.'; return; }
+
+      const dateStr = new Date(r.date + 'T00:00:00').toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('sub').textContent = `${r.office} · ${dateStr}.`;
+      document.title = `Hawkeye — ${r.office} 2026`;
+
+      document.getElementById('statbar').innerHTML = [
+        ['15 Aug 2026', 'Election day'],
+        [r.stats.candidates, 'Candidates on the ballot'],
+        [r.stats.lgas, 'Local Government Areas'],
+        ['~' + r.stats.pollingUnits.toLocaleString(), 'Polling units'],
+      ].map(([n, l]) => `<div class="s"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('');
+
+      document.getElementById('ctx').textContent = r.incumbentNote;
+
+      const flag = (p) => LOGOS[p]
+        ? `<img class="flag" src="${LOGOS[p]}" alt="${esc(p)} logo" loading="lazy" onerror="this.outerHTML='<span class=&quot;fallback&quot;>${esc(p)}</span>'">`
+        : `<span class="fallback">${esc(p)}</span>`;
+      const flagInline = (p, sz = 14) => LOGOS[p]
+        ? `<img src="${LOGOS[p]}" alt="" style="width:${sz}px;height:${sz}px;border-radius:50%;object-fit:contain;background:#fff;vertical-align:-2px;margin-right:4px">` : '';
+
+      document.getElementById('front').innerHTML = r.candidates.map((c) => `
+        <div class="cand" style="--pc:${color(c.party)}">
+          <div class="row1"><span class="av">${esc(c.initials || '')}</span>
+            <div><span class="pill">${flagInline(c.party, 13)}${esc(c.party)}</span>
+              <h3>${esc(c.name)}${c.incumbent ? '<span class="inc">Incumbent</span>' : ''}</h3></div></div>
+          <p>${esc(c.line)}</p>
+          <dl><dt>Home base</dt><dd>${esc(c.home || '—')}</dd>
+              <dt>Bid</dt><dd>${esc(c.bids || '—')}</dd>
+              <dt>Status</dt><dd>${esc(c.status || '—')}</dd></dl>
+        </div>`).join('');
+
+      // Full ballot = front-runners + others, sorted alphabetically by party code for balance.
+      const all = [...r.candidates, ...r.others].sort((a, b) => a.party.localeCompare(b.party));
+      document.getElementById('nballot').textContent = all.length;
+      document.getElementById('ballot').innerHTML = all.map((c) => `
+        <div class="b" style="--pc:${color(c.party)}">${flag(c.party)}
+          <div><strong>${esc(c.name)}</strong><span>${esc(c.party)}${c.incumbent ? ' · incumbent' : ''}</span></div></div>`).join('');
+
+      document.getElementById('absence').textContent = r.notableAbsence || '';
+      document.getElementById('credit').textContent = `${r.note} (as of ${r.asOf}).`;
+    })();
+  </script>
+  <script src="tg.js?v=95"></script>
+  <script src="menu.js?v=104"></script>
+</body>
+</html>

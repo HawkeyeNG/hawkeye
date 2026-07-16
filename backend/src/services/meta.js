@@ -58,6 +58,11 @@ export async function metaStatus() {
 // `connected_instagram_account`) and `instagram_basic`+`instagram_content_publish`.
 export async function metaDiag() {
   const out = {};
+  // What does the token resolve to? (Page id+name for a Page token; a user for a
+  // user token.) Diagnoses "wrong token type / wrong page" without exposing it.
+  try { out.me = await graph('me', { fields: 'id,name' }, 'GET'); }
+  catch (e) { out.meError = String(e.message || e); }
+  out.configuredPageId = config.metaPageId || null;
   try { out.page = await graph(config.metaPageId, { fields: 'name,instagram_business_account,connected_instagram_account' }, 'GET'); }
   catch (e) { out.pageError = String(e.message || e); }
   try { out.permissions = (await graph('me/permissions', {}, 'GET')).data; }

@@ -153,8 +153,8 @@
  },
  "race2027": {
   "asOf": "2026-07-06",
-  "note": "Declared candidates so far \u2014 the field can change until INEC closes nominations (expected 11 July 2026).",
-  "election": "Presidential \u00b7 2027 general election",
+  "note": "Declared candidates so far — the field can change until INEC closes nominations (expected 11 July 2026).",
+  "election": "Presidential · 2027 general election",
   "candidates": [
    {
     "name": "Bola Ahmed Tinubu",
@@ -163,7 +163,7 @@
     "line": "Incumbent president seeking a second term; APGA has endorsed the bid.",
     "incumbent": true,
     "home": "Lagos (South-West)",
-    "bids": "2nd bid \u2014 incumbent",
+    "bids": "2nd bid — incumbent",
     "status": "Nominee; APGA endorsement",
     "photo": "photos/candidates/tinubu.jpg"
    },
@@ -183,7 +183,7 @@
     "initials": "PO",
     "line": "Second presidential run, candidacy depends on court ruling reinstating NDC.",
     "home": "Anambra (South-East)",
-    "bids": "2nd bid \u2014 placed 3rd in 2023",
+    "bids": "2nd bid — placed 3rd in 2023",
     "status": "NDC status pending court ruling",
     "photo": "photos/candidates/obi.jpg"
    },
@@ -193,7 +193,7 @@
     "initials": "GJ",
     "line": "Former president attempting a return; nomination disputed within the party.",
     "home": "Bayelsa (South-South)",
-    "bids": "Return bid \u2014 president 2010\u20132015",
+    "bids": "Return bid — president 2010–2015",
     "status": "Nomination disputed by Wike faction",
     "photo": "photos/candidates/jonathan.jpg"
    }
@@ -202,7 +202,7 @@
    {
     "name": "Seyi Makinde",
     "party": "APM",
-    "meta": "Sitting Governor, Oyo \u2014 defected from PDP May 2026"
+    "meta": "Sitting Governor, Oyo — defected from PDP May 2026"
    },
    {
     "name": "Yusuf Datti Baba-Ahmed",
@@ -248,5 +248,95 @@
    }
   ],
   "photoCredit": "Portraits via Wikipedia / Wikimedia Commons"
+ },
+ "raceOsun2026": {
+  "asOf": "2026-07-16",
+  "office": "Governor of Osun State",
+  "election": "Osun State Governorship Election 2026",
+  "date": "2026-08-15",
+  "note": "INEC's final list of 14 candidates. Compiled from public records — verify against INEC; official results are INEC's.",
+  "stats": {
+   "lgas": 30,
+   "pollingUnits": 3760,
+   "candidates": 14
+  },
+  "incumbentNote": "Gov. Ademola Adeleke is seeking a second term. Elected in 2022 on the PDP, he is contesting this election on the Accord Party ticket after a PDP nomination dispute — and the PDP fielded no candidate.",
+  "candidates": [
+   {
+    "name": "Ademola Adeleke",
+    "party": "A",
+    "initials": "AA",
+    "incumbent": true,
+    "home": "Ede (Osun West)",
+    "line": "Incumbent governor seeking a second term; contesting on Accord after leaving the PDP.",
+    "bids": "2nd bid — incumbent",
+    "status": "Nominee (Accord)"
+   },
+   {
+    "name": "Bola Oyebamiji",
+    "party": "APC",
+    "initials": "BO",
+    "home": "Osun State",
+    "line": "APC nominee; Managing Director/CEO of the National Inland Waterways Authority (NIWA).",
+    "bids": "1st gubernatorial bid",
+    "status": "Nominee (APC)"
+   },
+   {
+    "name": "Najeem Salam",
+    "party": "ADC",
+    "initials": "NS",
+    "home": "Osun State",
+    "line": "ADC nominee; former Speaker of the Osun State House of Assembly.",
+    "bids": "1st gubernatorial bid",
+    "status": "Nominee (ADC)"
+   }
+  ],
+  "others": [
+   {
+    "name": "Farinloye Olarenwaju",
+    "party": "AA"
+   },
+   {
+    "name": "Esan Olajide",
+    "party": "AAC"
+   },
+   {
+    "name": "Adeagbo Opawoye",
+    "party": "ADP"
+   },
+   {
+    "name": "Adesina Adeyemi-Doro",
+    "party": "APGA"
+   },
+   {
+    "name": "Adewale Adebayo",
+    "party": "APM"
+   },
+   {
+    "name": "Clement Adesuyi",
+    "party": "APP"
+   },
+   {
+    "name": "Masilo Adeleke",
+    "party": "BP"
+   },
+   {
+    "name": "Taofeek Adeleke",
+    "party": "NNPP"
+   },
+   {
+    "name": "Saliu Oyelami",
+    "party": "PRP"
+   },
+   {
+    "name": "Ogunsakin Olalekan",
+    "party": "YPP"
+   },
+   {
+    "name": "Adefemi Adesuyi",
+    "party": "ZLP"
+   }
+  ],
+  "notableAbsence": "The Peoples Democratic Party (PDP) did not field a candidate."
  }
 }

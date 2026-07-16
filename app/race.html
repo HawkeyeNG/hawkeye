@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#00251a" />
-  <meta name="description" content="Osun State Governorship Election 2026 — the candidates, parties and key facts. Hawkeye's live pilot election." />
-  <title>Hawkeye — Osun 2026 Governorship</title>
+  <meta name="description" content="Election race — candidates, parties and key facts. Hawkeye, independent and nonpartisan." />
+  <title>Hawkeye — Race</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css?v=104" />
@@ -13,12 +13,9 @@
   <script src="native.js?v=100"></script>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
-  <meta property="og:title" content="Hawkeye — Osun 2026 Governorship" />
-  <meta property="og:description" content="Osun State Governorship Election 2026 — candidates, parties and key facts. Hawkeye's live pilot election." />
-  <meta property="og:url" content="https://hawkeye.com.ng/osun.html" />
+  <meta property="og:title" content="Hawkeye — Election Race" />
+  <meta property="og:url" content="https://hawkeye.com.ng/race.html" />
   <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 </head>
 <body>
@@ -48,23 +45,28 @@
       </nav>
     </div>
   </header>
-  <div class="phase-banner"><div class="wrap"><strong>Osun 2026</strong> — Hawkeye's first live pilot election. We monitor and publish; official results remain INEC's.</div></div>
+  <div class="phase-banner"><div class="wrap"><strong>Hawkeye</strong> — we monitor and publish; official results remain INEC's.</div></div>
 
   <main class="wrap" id="race-main"><p class="hint">Loading race…</p></main>
 
   <footer class="gov-footer"><div class="wrap">
     <nav><a href="observe.html">Report a Result</a><a href="results.html">Live Results</a><a href="how.html">How It Works</a><a href="candidates.html">2027 Candidates</a><a href="faq.html">FAQ</a></nav>
-    <p>Candidate information is compiled from public declarations and INEC's published list, and may lag announcements. Hawkeye is nonpartisan and does not endorse any candidate. Official candidate lists and results are INEC's.</p>
+    <p>Candidate information is compiled from public declarations and INEC's published lists, and may lag announcements. Hawkeye is nonpartisan and does not endorse any candidate. Official candidate lists and results are INEC's.</p>
   </div></footer>
 
   <script src="race.js?v=1"></script>
   <script>
+    // Generic race page: ?race=<key> selects the race object in political_data.json
+    // (default: the active Osun pilot). Any future race = add data + link here,
+    // no new HTML file needed. Compare table auto-shows for races that carry `minors`.
     (async () => {
+      const key = new URLSearchParams(location.search).get('race') || 'raceOsun2026';
       const [data, LOGOS] = await Promise.all([
         fetch('political_data.json').then((r) => r.json()),
         fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
       ]);
-      window.mountRace(document.getElementById('race-main'), data.raceOsun2026, LOGOS, { compare: false });
+      const race = data[key];
+      window.mountRace(document.getElementById('race-main'), race, LOGOS, { compare: !!(race && race.minors) });
     })();
   </script>
   <script src="tg.js?v=95"></script>

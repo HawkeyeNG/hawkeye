@@ -55,9 +55,17 @@
   const GROUPS = [
     ['Take part', ['observe.html', 'collation.html', 'incidents.html', 'map-unit.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html']],
-    ['Live data', ['results.html', 'dashboard.html', 'candidates.html', 'political.html']],
+    ['Live data', ['osun.html', 'results.html', 'dashboard.html', 'candidates.html', 'political.html']],
   ];
   if (panel && !panel.querySelector('.menu-group')) {
+    // Osun 2026 is the active pilot race — inject it once so it appears in the
+    // menu on every page without editing each page's static link list.
+    if (!panel.querySelector('a[href="osun.html"]')) {
+      const o = document.createElement('a');
+      o.href = 'osun.html';
+      o.textContent = 'Osun 2026';
+      panel.appendChild(o);
+    }
     const links = new Map([...panel.querySelectorAll('a')].map((a) => [a.getAttribute('href'), a]));
     for (const [label, hrefs, tp] of GROUPS) {
       const members = hrefs.map((h) => links.get(h)).filter(Boolean);

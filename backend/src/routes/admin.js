@@ -162,6 +162,38 @@ adminRouter.post('/admin/coords/load', requireAdmin, async (req, res) => {
   res.json({ ok: true, attached, unmatched, invalid, geocoded, total });
 });
 
+// Clear a unit's CROWD-derived location (tier-2 fix written by aggregate.js from
+// clustered observer GPS). Use when a fix is wrong — e.g. a test report mapped a
+// unit to the wrong place. Deliberately narrow:
+//   - never touches lat/lng (official/verified coords)
+//   - refuses units whose crowd fix is bulk 'geocoded' data (GRID3 envelopes)
+//   - also drops any pu_mappings fixes for the unit, so it can't re-promote
+// The unit falls back to 'unmapped' (or its approx envelope) until re-mapped.
+adminRouter.post('/admin/coords/clear-crowd', requireAdmin, (req, res) => {
+  const puCode = String(req.body?.puCode || '').trim();
+  const pu = db.prepare('SELECT pu_code, name, crowd_lat, crowd_lng, crowd_reports, coords_source FROM polling_units WHERE pu_code = ?').get(puCode);
+  if (!pu) return res.status(404).json({ error: 'unknown_polling_unit' });
+  if (pu.coords_source === 'geocoded') {
+    return res.status(409).json({ error: 'geocoded_not_crowd', hint: 'This unit’s crowd coords are bulk geocoded data, not an observer fix.' });
+  }
+  if (pu.crowd_lat == null && pu.coords_source !== 'crowd_mapped') {
+    return res.json({ ok: true, alreadyClear: true, unit: pu.name });
+  }
+  const before = { crowd_lat: pu.crowd_lat, crowd_lng: pu.crowd_lng, crowd_reports: pu.crowd_reports, coords_source: pu.coords_source };
+  let droppedFixes = 0;
+  db.transaction(() => {
+    droppedFixes = db.prepare('DELETE FROM pu_mappings WHERE pu_code = ?').run(puCode).changes;
+    db.prepare(`UPDATE polling_units
+       SET crowd_lat = NULL, crowd_lng = NULL, crowd_reports = 0, -- NOT NULL DEFAULT 0
+           lat = CASE WHEN coords_source = 'crowd_mapped' THEN NULL ELSE lat END,
+           lng = CASE WHEN coords_source = 'crowd_mapped' THEN NULL ELSE lng END,
+           coords_source = CASE WHEN coords_source = 'crowd_mapped' THEN NULL ELSE coords_source END
+       WHERE pu_code = ?`).run(puCode);
+  })();
+  notifyMaster(`📍 crowd fix CLEARED for ${pu.name} (${puCode}) — was ${before.crowd_lat},${before.crowd_lng} (${before.crowd_reports} report(s)); ${droppedFixes} mapping fix(es) dropped`);
+  res.json({ ok: true, unit: pu.name, puCode, before, droppedFixes });
+});
+
 // Archive a finished election cycle to a browsable folder tree:
 //   storage/elections/<election>/<race-type>/<race>/results.json
 // One folder per election (e.g. 2027-general-elections), a subfolder per race

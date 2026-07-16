@@ -390,6 +390,11 @@ observersRouter.post('/admin/reset', (req, res) => {
     }
     // release any crowd-mapped coordinates back to unlocated
     db.prepare("UPDATE polling_units SET lat = NULL, lng = NULL, coords_source = NULL WHERE coords_source = 'crowd_mapped'").run();
+    // ...and the tier-2 crowd fixes aggregate.js derives from submission GPS.
+    // Without this they outlive the reports that produced them (a wiped test
+    // report left a unit permanently mis-located). Bulk 'geocoded' envelopes are
+    // NOT observer data — leave those alone.
+    db.prepare('UPDATE polling_units SET crowd_lat = NULL, crowd_lng = NULL, crowd_reports = 0 WHERE coords_source IS NULL AND crowd_lat IS NOT NULL').run();
   })();
   const remaining = db.prepare('SELECT COUNT(*) AS c FROM observers').get().c;
   res.json({ ok: true, deleted: counts, remainingObservers: remaining });

@@ -1,0 +1,42 @@
+/* Shared styles for race pages (race.html / osun.html / candidates.html),
+   rendered by race.js. Party colour comes through --pc on each element. */
+.race-statbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 8px; }
+.race-statbar .s { flex: 1 1 120px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.race-statbar .n { font-weight: 700; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.race-statbar .l { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+.race-ctx { background: var(--tint, #eef4f0); border-left: 4px solid var(--green); border-radius: 0 10px 10px 0; padding: 12px 15px; font-size: 0.9rem; margin: 8px 0 4px; }
+:root[data-theme="dark"] .race-ctx { background: #12251b; }
+
+.cand-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 10px; }
+.cand { border: 1px solid var(--line); border-top: 4px solid var(--pc, #9aa7a0); border-radius: 12px; padding: 16px; background: var(--card); }
+.cand .row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.cand .av { width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--pc, #9aa7a0); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.cand .av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.cand h3 { margin: 0; font-size: 1.02rem; }
+.cand .pill { display: inline-block; font-size: 0.68rem; font-weight: 700; color: var(--ink); background: var(--tint); border-radius: 999px; padding: 2px 9px; margin-bottom: 3px; }
+.cand .pill::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--pc, #9aa7a0); margin-right: 5px; }
+.cand p { margin: 0 0 8px; font-size: 0.85rem; color: var(--muted); }
+.cand .inc { font-size: 0.68rem; font-weight: 700; color: #6b5500; background: #fdf3d7; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
+.cand dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0; font-size: 0.78rem; }
+.cand dt { color: var(--muted); font-weight: 600; }
+.cand dd { margin: 0; }
+:root[data-theme="dark"] .cand .pill { color: var(--ink); }
+
+.race-compare { overflow-x: auto; }
+.race-compare table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.race-compare th, .race-compare td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+.race-compare th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 2px solid var(--ink); }
+:root[data-theme="dark"] .race-compare td > span[style] { color: var(--ink) !important; }
+
+/* Full-ballot / minor-candidate grid */
+.ballot { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-top: 10px; }
+.b { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-left: 4px solid var(--pc, #9aa7a0); border-radius: 10px; padding: 10px 12px; background: var(--card); }
+.b .flag { width: 26px; height: 26px; flex: none; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--line); }
+.b .fallback { width: 26px; height: 26px; flex: none; border-radius: 50%; background: var(--pc, #9aa7a0); color: #fff; font-size: 0.62rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.b strong { font-size: 0.9rem; display: block; }
+.b span { font-size: 0.73rem; color: var(--muted); }
+:root[data-theme="dark"] .b span { color: var(--ink); }
+
+.race-absence { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
+.race-cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 6px; }

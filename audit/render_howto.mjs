@@ -391,44 +391,35 @@ const want = process.argv[2];
 const jobs = CLIPS.filter((c) => !want || c.slug === want);
 if (!jobs.length) { console.error('no clip matches', want); process.exit(1); }
 
-// Playwright's recording starts before the page's first paint, leaving a white
-// head of a few frames. Measure it (first frame darker than YAVG 100 — the
-// stage bg is near-black green) and trim it in the mp4 conversion.
-function whiteHead(webm) {
-  const meta = '/tmp/howto_ss_meta.txt';
-  execFileSync(FFMPEG, ['-y', '-i', webm, '-t', '3', '-vf', `signalstats,metadata=print:file=${meta}`, '-f', 'null', '-'], { stdio: 'ignore' });
-  // Each frame prints a pts_time line followed by a BLOCK of stat lines
-  // (YMIN, YLOW, YAVG, ...) — pair YAVG with the last-seen pts_time.
-  const lines = fs.readFileSync(meta, 'utf8').split('\n');
-  let cur = 0;
-  for (const line of lines) {
-    const m = line.match(/pts_time:([\d.]+)/);
-    if (m) { cur = parseFloat(m[1]); continue; }
-    const y = line.match(/YAVG=([\d.]+)/);
-    if (y && parseFloat(y[1]) < 100) return cur;
-  }
-  return 0; // never went dark (shouldn't happen) — trim nothing
-}
+// Deterministic rendering: Playwright's wall-clock recordVideo lags ~2s at
+// startup (stretching the first slide) and starts before first paint (white
+// head). Instead we pause every CSS animation, step currentTime frame-by-frame
+// at 30fps, screenshot each frame, and assemble with ffmpeg — every step gets
+// exactly its authored duration.
+const FPS = 30;
 
 const b = await chromium.launch();
 for (const c of jobs) {
   const total = totalOf(c);
   const htmlPath = path.join(OUTDIR, `${c.slug}.html`);
   fs.writeFileSync(htmlPath, clipHTML(c));
-  const ctx = await b.newContext({ viewport: { width: 1080, height: 1920 }, recordVideo: { dir: OUTDIR, size: { width: 1080, height: 1920 } } });
-  const p = await ctx.newPage();
+  const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
   await p.goto('file://' + htmlPath, { waitUntil: 'networkidle' });
-  await p.waitForTimeout((total + 0.4) * 1000);
-  await ctx.close();
-  const webm = fs.readdirSync(OUTDIR).filter((f) => f.endsWith('.webm')).map((f) => path.join(OUTDIR, f))
-    .sort((a, z) => fs.statSync(z).mtimeMs - fs.statSync(a).mtimeMs)[0];
+  await p.evaluate(() => document.getAnimations({ subtree: true }).forEach((a) => a.pause()));
+  const framesDir = path.join(OUTDIR, `frames-${c.slug}`);
+  fs.rmSync(framesDir, { recursive: true, force: true });
+  fs.mkdirSync(framesDir, { recursive: true });
+  const nFrames = Math.round(total * FPS);
+  for (let i = 0; i < nFrames; i++) {
+    await p.evaluate((ms) => document.getAnimations({ subtree: true }).forEach((a) => { a.currentTime = ms; }), (i * 1000) / FPS);
+    await p.screenshot({ path: path.join(framesDir, `f${String(i).padStart(5, '0')}.png`) });
+  }
+  await p.close();
   const mp4Dl = path.join(DL, `hawkeye-howto-${c.slug}.mp4`);
   const mp4Repo = path.join(OUTDIR, `${c.slug}.mp4`);
-  const head = whiteHead(webm);
   execFileSync(FFMPEG, [
-    '-y', '-i', webm,
+    '-y', '-framerate', String(FPS), '-i', path.join(framesDir, 'f%05d.png'),
     '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100',
-    '-ss', String(head.toFixed(3)), '-t', String(total.toFixed(2)), '-r', '30',
     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-preset', 'medium', '-crf', '20',
     '-c:a', 'aac', '-b:a', '128k', '-shortest', '-movflags', '+faststart',
     mp4Repo,
@@ -436,7 +427,7 @@ for (const c of jobs) {
   fs.copyFileSync(mp4Repo, mp4Dl);
   // poster frame ~ first step for QA
   execFileSync(FFMPEG, ['-y', '-ss', String(INTRO + STEP * 0.5), '-i', mp4Repo, '-frames:v', '1', path.join(OUTDIR, `${c.slug}.jpg`)], { stdio: 'ignore' });
-  fs.rmSync(webm, { force: true });
+  fs.rmSync(framesDir, { recursive: true, force: true });
   const kb = Math.round(fs.statSync(mp4Repo).size / 1024);
   console.log(`OK ${c.slug}  ${total.toFixed(1)}s  ${kb}KB  -> ${mp4Dl}`);
 }

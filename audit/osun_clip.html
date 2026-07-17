@@ -1,0 +1,66 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #00251a;
+    font-family: 'Helvetica Neue', Arial, sans-serif; color: #fff; }
+  .stage { position: relative; width: 1080px; height: 1920px;
+    background: radial-gradient(120% 80% at 50% 0%, #0a4632 0%, #00251a 60%); }
+  .brand { position: absolute; top: 90px; left: 0; right: 0; text-align: center; }
+  .brand img { width: 150px; height: 150px; }
+  .brand .name { font-size: 60px; font-weight: 800; letter-spacing: 4px; margin-top: 8px; }
+  .brand .sub { font-size: 27px; color: #9fd3b6; margin-top: 4px; letter-spacing: 1px; }
+  .date-chip { display: inline-flex; align-items: center; gap: 14px; margin-top: 26px;
+    background: rgba(111,227,165,0.14); border: 2px solid #6fe3a5; color: #6fe3a5;
+    padding: 14px 30px; border-radius: 999px; font-size: 32px; font-weight: 800; letter-spacing: 2px; }
+  .slides { position: absolute; top: 660px; left: 90px; right: 90px; height: 900px; }
+  .slide { position: absolute; inset: 0; opacity: 0; text-align: center;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    animation: show 22.8s forwards; }
+  .slide .big { font-size: 78px; font-weight: 800; line-height: 1.15; }
+  .slide .big .g { color: #6fe3a5; }
+  .slide .small { font-size: 36px; color: #cfe6d9; margin-top: 26px; line-height: 1.4; max-width: 860px; }
+  .chip { display: inline-flex; align-items: center; gap: 14px; margin-top: 40px;
+    background: rgba(111,227,165,0.14); border: 2px solid #6fe3a5; color: #6fe3a5;
+    padding: 16px 30px; border-radius: 999px; font-size: 34px; font-weight: 700; }
+  .dot { width: 20px; height: 20px; border-radius: 50%; background: #6fe3a5; }
+  .s1 { animation-delay: 0s; } .s2 { animation-delay: 3.8s; } .s3 { animation-delay: 7.6s; }
+  .s4 { animation-delay: 11.4s; } .s5 { animation-delay: 15.2s; } .s6 { animation-delay: 19s; }
+  .s6 { animation-name: showLast; } /* final CTA fades in and STAYS — makes the tail static so end-trim is safe */
+  @keyframes show { 0% { opacity: 0; transform: translateY(30px); }
+    3% { opacity: 1; transform: none; } 14% { opacity: 1; transform: none; }
+    16.7% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 0; } }
+  @keyframes showLast { 0% { opacity: 0; transform: translateY(30px); }
+    3% { opacity: 1; transform: none; } 100% { opacity: 1; transform: none; } }
+  .foot { position: absolute; bottom: 120px; left: 0; right: 0; text-align: center;
+    font-size: 44px; font-weight: 800; color: #fff; letter-spacing: 1px; }
+  .foot .u { color: #6fe3a5; }
+  .fine { position: absolute; bottom: 62px; left: 0; right: 0; text-align: center;
+    font-size: 24px; color: #9fd3b6; }
+  .bar { position: absolute; bottom: 0; left: 0; height: 10px; background: #6fe3a5; width: 0; animation: fill 22.8s linear forwards; }
+  @keyframes fill { to { width: 1080px; } }
+</style></head>
+<body>
+  <div class="stage">
+    <div class="brand"><img src="LOGO" alt="" /><div class="name">HAWKEYE</div>
+      <div class="sub">INDEPENDENT ELECTION RESULTS MONITOR</div>
+      <div class="date-chip">OSUN DECIDES · 15 AUGUST 2026</div></div>
+    <div class="slides">
+      <div class="slide s1"><div class="big">The count at your unit<br><span class="g">is read out in public.</span></div>
+        <div class="small">Every polling unit in Osun announces its result out loud, on the spot.</div></div>
+      <div class="slide s2"><div class="big">What happens to it<br>after that <span class="g">isn't public.</span></div>
+        <div class="small">Results travel through ward, LGA and state collation — out of sight.</div></div>
+      <div class="slide s3"><div class="big">So <span class="g">photograph it.</span><br>Sign it. Seal it.</div>
+        <div class="small">Captured live at your unit, signed on your own phone, chained to a public tamper-evident ledger.</div></div>
+      <div class="slide s4"><div class="big"><span class="g">Numbers that change</span><br>on the way up get flagged.</div>
+        <div class="small">Every collation total is checked against the polling-unit sheets underneath — publicly.</div></div>
+      <div class="slide s5"><div class="big">Osun, <span class="g">verify your<br>own election.</span></div>
+        <div class="chip"><span class="dot"></span>hawkeye.com.ng</div></div>
+      <div class="slide s6"><div class="big">Become an <span class="g">observer.</span></div>
+        <div class="small">Sign up free at hawkeye.com.ng — it takes under a minute.<br>All you need is your phone.</div>
+        <div class="chip"><span class="dot"></span>Sign up · hawkeye.com.ng</div></div>
+    </div>
+    <div class="foot">hawkeye.com.ng</div>
+    <div class="fine">Independent · Nonpartisan · Unofficial — INEC declares the official result.</div>
+    <div class="bar"></div>
+  </div>
+</body></html>

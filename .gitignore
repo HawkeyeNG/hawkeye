@@ -20,7 +20,11 @@ docs/*-APPLICATION.md
 docs/FUNDING-SOURCES.md
 docs/OTF-*
 docs/OSUN-2026-PILOT.md
+docs/OSUN-SOCIAL-CAMPAIGN.md
 docs/PROJECT-SHIELD-VS-CLOUDFLARE.md
 docs/cloudflare-rules.md
 docs/META-SETUP.txt
 docs/TIKTOK-SETUP.txt
+
+# rendered video masters/QA frames — large, regenerable (node render_howto.mjs)
+audit/howto/out/

@@ -2,7 +2,7 @@
 // Owner-only (admin secret). No OAuth flow: the Page token is supplied via env.
 import { Router } from 'express';
 import { requireAdmin } from './admin.js';
-import { metaEnabled, metaStatus, postFacebook, postInstagram, metaDiag } from '../services/meta.js';
+import { metaEnabled, metaStatus, postFacebook, postInstagram, metaDiag, exchangeAndStorePageToken } from '../services/meta.js';
 
 export const metaRouter = Router();
 
@@ -13,6 +13,15 @@ metaRouter.get('/meta/status', requireAdmin, async (_req, res) => {
 metaRouter.get('/meta/diag', requireAdmin, async (_req, res) => {
   if (!metaEnabled()) return res.status(503).json({ error: 'not_configured' });
   try { res.json(await metaDiag()); } catch (e) { res.status(400).json({ error: String(e.message || e) }); }
+});
+
+// One-time durable-token setup. body: { userToken, appSecret? } — paste a
+// short-lived USER token from Graph API Explorer; server exchanges it for a
+// long-lived token, derives the non-expiring Page token, and stores it.
+metaRouter.post('/meta/exchange', requireAdmin, async (req, res) => {
+  const { userToken = '', appSecret = '' } = req.body || {};
+  try { res.json(await exchangeAndStorePageToken(userToken.trim(), appSecret.trim())); }
+  catch (e) { res.status(400).json({ error: String(e.message || e) }); }
 });
 
 // body: { target: 'fb'|'ig'|'both', caption, mediaUrl, mediaType: 'text'|'image'|'video', link }

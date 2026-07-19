@@ -11,7 +11,7 @@ const TOKEN = 'https://open.tiktokapis.com/v2/oauth/token/';
 const CREATOR = 'https://open.tiktokapis.com/v2/post/publish/creator_info/query/';
 const INIT = 'https://open.tiktokapis.com/v2/post/publish/video/init/';
 const STATUS = 'https://open.tiktokapis.com/v2/post/publish/status/fetch/';
-const SCOPE = 'video.publish';
+const SCOPE = 'user.info.basic,video.publish,video.upload';
 
 export const tiktokEnabled = () => Boolean(config.tiktokClientKey && config.tiktokClientSecret);
 
@@ -23,6 +23,9 @@ export function authUrl(state) {
     response_type: 'code',
     redirect_uri: config.tiktokRedirectUri,
     state,
+    // Always show the consent screen (skip silent re-auth) — the app-review
+    // demo video must visibly show the user authorizing each scope.
+    disable_auto_auth: '1',
   });
   return `${AUTH}?${q.toString()}`;
 }
@@ -127,7 +130,9 @@ export async function directPostFile({ title, buffer, privacy = 'SELF_ONLY', mim
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json; charset=UTF-8' },
     body: JSON.stringify({
-      post_info: { title: String(title || '').slice(0, 2200), privacy_level: privacyLevel, disable_comment: false, disable_duet: false, disable_stitch: false },
+      // video_cover_timestamp_ms: use a frame where the title card is fully
+      // visible as the cover/thumbnail (frame 0 of our clips is a bare gradient).
+      post_info: { title: String(title || '').slice(0, 2200), privacy_level: privacyLevel, disable_comment: false, disable_duet: false, disable_stitch: false, video_cover_timestamp_ms: 1500 },
       source_info: { source: 'FILE_UPLOAD', video_size: size, chunk_size: chunkSize, total_chunk_count: totalChunks },
     }),
   });
@@ -163,6 +168,71 @@ export async function directPostByUrl({ title, url, privacy = 'SELF_ONLY' }) {
   const buffer = Buffer.from(await r.arrayBuffer());
   const mime = r.headers.get('content-type') || 'video/mp4';
   return directPostFile({ title, buffer, privacy, mime });
+}
+
+// Upload to TikTok DRAFTS (video.upload scope) — the inbox endpoint. The video
+// lands in the creator's TikTok inbox to finish and post in-app; no post_info,
+// so no privacy/creator_info gymnastics. Same FILE_UPLOAD chunk protocol.
+const INBOX_INIT = 'https://open.tiktokapis.com/v2/post/publish/inbox/video/init/';
+
+export async function draftUploadFile({ buffer, mime = 'video/mp4' }) {
+  const token = await accessToken();
+  const size = buffer.length;
+  if (!size) throw new Error('empty_video');
+  const single = size < 64 * 1024 * 1024;
+  const chunkSize = single ? size : CHUNK;
+  const totalChunks = single ? 1 : Math.ceil(size / chunkSize);
+
+  const initRes = await fetch(INBOX_INIT, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify({
+      source_info: { source: 'FILE_UPLOAD', video_size: size, chunk_size: chunkSize, total_chunk_count: totalChunks },
+    }),
+  });
+  const j = await initRes.json();
+  const publishId = j.data && j.data.publish_id;
+  const uploadUrl = j.data && j.data.upload_url;
+  if (!publishId || !uploadUrl) throw new Error(j.error ? `${j.error.code}: ${j.error.message || ''}` : 'draft_init_failed');
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * chunkSize;
+    const end = Math.min(start + chunkSize, size) - 1;
+    const part = buffer.subarray(start, end + 1);
+    const put = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'content-type': mime,
+        'content-length': String(part.length),
+        'content-range': `bytes ${start}-${end}/${size}`,
+      },
+      body: part,
+    });
+    if (put.status >= 300) throw new Error(`chunk_upload_failed_${put.status}`);
+  }
+  return { publishId };
+}
+
+export async function draftUploadByUrl({ url }) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`fetch_video_${r.status}`);
+  const buffer = Buffer.from(await r.arrayBuffer());
+  const mime = r.headers.get('content-type') || 'video/mp4';
+  return draftUploadFile({ buffer, mime });
+}
+
+// user.info.basic — read the connected creator's profile (display name/avatar).
+// Surfaced on post.html so the Login Kit scope is visibly demonstrated.
+export async function tiktokUserInfo() {
+  try {
+    const token = await accessToken();
+    const r = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,avatar_url', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const j = await r.json();
+    const u = (j.data && j.data.user) || {};
+    return { displayName: u.display_name || null, avatarUrl: u.avatar_url || null };
+  } catch { return {}; }
 }
 
 export async function postStatus(publishId) {

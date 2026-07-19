@@ -8,10 +8,22 @@
 // hawkeye.com.ng/media/. Meta's fetcher is `facebookexternalhit`, which is NOT in
 // the Cloudflare AI-bot block, so this works with bot protection left on.
 import { config } from '../config.js';
+import { db } from '../db.js';
 
 const base = () => `https://graph.facebook.com/${config.metaGraphVersion}`;
 
-export const metaEnabled = () => Boolean(config.metaPageToken && (config.metaPageId || config.metaIgUserId));
+// Durable Page token: prefer one stored in social_tokens (provider='meta_page',
+// obtained via the long-lived exchange — effectively non-expiring) over the
+// static .env META_PAGE_TOKEN. Lets us refresh the token without an .env edit.
+function storedPageToken() {
+  try {
+    const row = db.prepare("SELECT access_token FROM social_tokens WHERE provider = 'meta_page'").get();
+    return (row && row.access_token) || '';
+  } catch { return ''; }
+}
+export const pageToken = () => storedPageToken() || config.metaPageToken;
+
+export const metaEnabled = () => Boolean(pageToken() && (config.metaPageId || config.metaIgUserId));
 
 // Resolve the Instagram Business user id. Prefer an explicit META_IG_USER_ID; else
 // auto-derive it from the Page's linked instagram_business_account (cached). This
@@ -27,7 +39,7 @@ export async function resolveIgId() {
 }
 
 async function graph(path, params, method = 'POST') {
-  const body = new URLSearchParams({ ...params, access_token: config.metaPageToken });
+  const body = new URLSearchParams({ ...params, access_token: pageToken() });
   const url = `${base()}/${path}`;
   const r = method === 'GET'
     ? await fetch(`${url}?${body.toString()}`)
@@ -35,6 +47,42 @@ async function graph(path, params, method = 'POST') {
   const j = await r.json();
   if (j.error) throw new Error(`${j.error.code || ''}${j.error.error_subcode ? '/' + j.error.error_subcode : ''}: ${j.error.message || 'graph_error'}`);
   return j;
+}
+
+// One-time durable-token setup. Paste a SHORT-LIVED USER token from Graph API
+// Explorer (NOT a Page token). We: (1) exchange it for a ~60-day long-lived USER
+// token, (2) read me/accounts to pull the Page token for META_PAGE_ID — a Page
+// token derived from a long-lived user token does not expire — (3) store it in
+// social_tokens so it survives restarts and overrides the stale .env token.
+export async function exchangeAndStorePageToken(userToken, appSecretOverride) {
+  const appId = config.metaAppId;
+  const appSecret = appSecretOverride || config.metaAppSecret;
+  if (!appId || !appSecret) throw new Error('missing_app_id_or_secret');
+  if (!userToken) throw new Error('missing_user_token');
+  if (!config.metaPageId) throw new Error('missing_page_id');
+
+  // 1. short user token -> long-lived (~60d) user token
+  const exUrl = `${base()}/oauth/access_token?` + new URLSearchParams({
+    grant_type: 'fb_exchange_token', client_id: appId, client_secret: appSecret, fb_exchange_token: userToken,
+  });
+  const exJson = await (await fetch(exUrl)).json();
+  if (exJson.error || !exJson.access_token) throw new Error(`exchange_failed: ${exJson.error ? exJson.error.message : 'no_token'}`);
+  const longUser = exJson.access_token;
+
+  // 2. list Pages with the long-lived user token; find our Page's token
+  const accUrl = `${base()}/me/accounts?` + new URLSearchParams({ fields: 'name,id,access_token', access_token: longUser });
+  const accJson = await (await fetch(accUrl)).json();
+  if (accJson.error) throw new Error(`accounts_failed: ${accJson.error.message}`);
+  const page = (accJson.data || []).find((p) => String(p.id) === String(config.metaPageId));
+  if (!page || !page.access_token) throw new Error(`page_not_in_accounts: ${config.metaPageId} — this user is not an admin of that Page`);
+
+  // 3. persist the durable Page token
+  const now = Date.now();
+  db.prepare(`INSERT INTO social_tokens (provider, access_token, updated_at)
+     VALUES ('meta_page', @a, @u)
+     ON CONFLICT(provider) DO UPDATE SET access_token=@a, updated_at=@u`).run({ a: page.access_token, u: now });
+  cachedIgId = null; // re-derive IG on next call with the fresh token
+  return { pageId: page.id, pageName: page.name, tokenStored: true };
 }
 
 export async function metaStatus() {

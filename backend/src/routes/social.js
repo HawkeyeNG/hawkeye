@@ -5,18 +5,19 @@
 // audited); Meta posts from the URL directly.
 import { Router } from 'express';
 import { requireAdmin } from './admin.js';
-import { tiktokEnabled, tiktokStatus, directPostByUrl } from '../services/tiktok.js';
+import { tiktokEnabled, tiktokStatus, directPostByUrl, draftUploadByUrl, tiktokUserInfo } from '../services/tiktok.js';
 import { metaEnabled, metaStatus, postFacebook, postInstagram } from '../services/meta.js';
 import { xEnabled, xStatus, postX } from '../services/x.js';
 
 export const socialRouter = Router();
 
 socialRouter.get('/social/status', requireAdmin, async (_req, res) => {
-  const [meta, x] = await Promise.all([
+  const [meta, x, ttUser] = await Promise.all([
     metaStatus().catch((e) => ({ error: String(e.message || e) })),
     xStatus().catch((e) => ({ error: String(e.message || e) })),
+    tiktokUserInfo(),
   ]);
-  res.json({ tiktok: tiktokStatus(), meta, x });
+  res.json({ tiktok: { ...tiktokStatus(), ...ttUser }, meta, x });
 });
 
 // body: { targets: ['tiktok','facebook','instagram'], caption, mediaUrl, mediaType }
@@ -32,6 +33,15 @@ socialRouter.post('/social/post', requireAdmin, async (req, res) => {
       if (!mediaUrl) throw new Error('media_url_required');
       out.tiktok = await directPostByUrl({ title: caption, url: mediaUrl });
     } catch (e) { out.tiktokError = String(e.message || e); }
+  }
+  // Upload to the creator's TikTok DRAFTS (video.upload) — finish and post in-app.
+  if (targets.includes('tiktok-draft')) {
+    try {
+      if (!tiktokEnabled()) throw new Error('not_configured');
+      if (mediaType !== 'video') throw new Error('tiktok_requires_video');
+      if (!mediaUrl) throw new Error('media_url_required');
+      out.tiktokDraft = await draftUploadByUrl({ url: mediaUrl });
+    } catch (e) { out.tiktokDraftError = String(e.message || e); }
   }
   if (targets.includes('facebook')) {
     try {

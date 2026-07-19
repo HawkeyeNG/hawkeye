@@ -46,7 +46,13 @@
         <button id="tt-connect" class="secondary" style="width:auto;margin:0">🔗 Connect</button>
         <button id="tt-check" class="secondary" style="width:auto;margin:0">🩺 Diagnostics</button>
       </div></div>
-    <div id="plat-meta" class="plat"><b>Meta (Facebook + Instagram)</b><span class="muted" id="meta-state">…</span></div>
+    <div id="plat-meta" class="plat"><b>Meta (Facebook + Instagram)</b><span class="muted" id="meta-state">…</span>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input id="fb-usertoken" type="text" placeholder="Paste short-lived USER token (Graph Explorer)" style="flex:1;min-width:240px" />
+        <button id="fb-exchange" class="secondary" style="width:auto;margin:0">🔑 Exchange &amp; store</button>
+      </div>
+      <p class="hint" style="margin:4px 0 0">One-time: turns a short USER token into a durable Page token (no more expiry).</p>
+    </div>
     <div id="plat-x" class="plat"><b>X (Twitter)</b><span class="muted" id="x-state">…</span></div>
     <pre id="diag" class="mono status info" hidden></pre>
 
@@ -55,6 +61,7 @@
     <label>Post to</label>
     <div class="targets">
       <label><input type="checkbox" id="t-tiktok" checked /> TikTok</label>
+      <label><input type="checkbox" id="t-tiktok-draft" /> TikTok (drafts)</label>
       <label><input type="checkbox" id="t-facebook" checked /> Facebook</label>
       <label><input type="checkbox" id="t-instagram" checked /> Instagram</label>
       <label><input type="checkbox" id="t-x" checked /> X</label>
@@ -86,6 +93,17 @@
     $('save-secret').onclick = () => { localStorage.setItem('hawkeye_admin', $('secret').value.trim()); refresh(); };
     $('secret').value = secret();
     $('tt-connect').onclick = () => { window.location.href = '/api/tiktok/auth'; };
+    $('fb-exchange').onclick = async () => {
+      const ut = $('fb-usertoken').value.trim();
+      if (!ut) return setStatus($('result'), 'bad', 'Paste a short-lived USER token first.');
+      setStatus($('result'), 'info', 'Exchanging for a durable Page token…');
+      try {
+        const r = await fetch('/api/meta/exchange', { method: 'POST', headers: { ...hdr(), 'content-type': 'application/json' }, body: JSON.stringify({ userToken: ut }) });
+        const d = await r.json();
+        if (d.tokenStored) { $('fb-usertoken').value = ''; setStatus($('result'), 'ok', `Durable token stored for ${d.pageName} ✓ — reloading status`); refresh(); }
+        else setStatus($('result'), 'bad', 'Exchange failed: ' + (d.error || 'unknown'));
+      } catch (e) { setStatus($('result'), 'bad', 'Exchange error: ' + e.message); }
+    };
     $('tt-check').onclick = async () => {
       const d = $('diag'); d.hidden = false; d.className = 'mono status info'; d.textContent = 'Querying TikTok creator_info…';
       try { d.textContent = JSON.stringify(await (await fetch('/api/tiktok/creator-info', { headers: hdr() })).json(), null, 2); }
@@ -100,7 +118,9 @@
         const d = await r.json();
         const tt = d.tiktok || {};
         $('tt-state').textContent = !tt.enabled ? 'not configured on server'
-          : (tt.connected ? `connected ✓ (open_id ${tt.open_id || '—'})` : 'configured — click Connect');
+          : (tt.connected
+            ? `connected ✓ ${tt.displayName ? `as ${tt.displayName} ` : ''}(open_id ${tt.open_id || '—'})`
+            : 'configured — click Connect');
         const m = d.meta || {};
         $('meta-state').textContent = !m.enabled ? 'not configured on server'
           : (m.ok ? `Page "${m.pageName || m.pageId}" ✓ · Instagram ${m.igLinked ? 'linked (' + (m.igUserId || '') + ')' : 'not linked yet'}`
@@ -114,7 +134,7 @@
     $('post').onclick = async () => {
       const res = $('result');
       if (!secret()) return setStatus(res, 'bad', 'Enter the admin passphrase first.');
-      const targets = ['tiktok', 'facebook', 'instagram', 'x'].filter((t) => $('t-' + t).checked);
+      const targets = ['tiktok', 'tiktok-draft', 'facebook', 'instagram', 'x'].filter((t) => $('t-' + t).checked);
       if (!targets.length) return setStatus(res, 'bad', 'Pick at least one channel.');
       setStatus(res, 'info', 'Posting… (video may take up to a minute)');
       try {
@@ -126,6 +146,7 @@
         const line = (name, ok, err) => ok ? `${name} ✓ ${ok.id || ok.publishId || ''}` : (err ? `${name} ✗ ${err}` : '');
         const parts = [
           line('TikTok', d.tiktok, d.tiktokError),
+          line('TikTok drafts', d.tiktokDraft, d.tiktokDraftError),
           line('Facebook', d.facebook, d.facebookError),
           line('Instagram', d.instagram, d.instagramError),
           line('X', d.x, d.xError),

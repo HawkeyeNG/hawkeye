@@ -313,7 +313,12 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
 
 // How the code was delivered — shared by the first send and "Resend code".
 function renderOtpSent(body) {
-  if (body.telegramLink) {
+  if (body.viaSms) {
+    // SMS went out (Termii fallback) — Telegram link is a quiet alternative,
+    // never auto-launched.
+    $('otp-hint').innerHTML = `<span>Code sent by SMS — check your messages.</span>${body.telegramLink
+      ? ` <a class="btn-link" href="${body.telegramLink}" target="_blank" rel="noopener">Prefer Telegram? Get the code there instead</a>` : ''}`;
+  } else if (body.telegramLink) {
     // The bot can only message a user who has opened it, so send them straight
     // there. In the chat they tap Start → Share contact, and the bot replies
     // with the code immediately (future codes then arrive automatically).

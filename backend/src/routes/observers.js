@@ -106,7 +106,12 @@ observersRouter.post('/register', async (req, res) => {
   if (!sent.ok) return res.status(502).json({ error: 'sms_send_failed' });
 
   const body = { ok: true };
-  if (config.smsProvider === 'telegram') body.viaTelegram = true;
+  if (sent.viaSms) {
+    // Termii fallback delivered by SMS; the optional Telegram link is offered
+    // as an alternative, not auto-launched.
+    body.viaSms = true;
+    if (sent.telegramLink) body.telegramLink = sent.telegramLink;
+  } else if (config.smsProvider === 'telegram') body.viaTelegram = true;
   // The code is only ever echoed back on the dev console provider.
   if (config.env !== 'production' && config.smsProvider === 'console') body.devOtp = code;
   res.json(body);

@@ -21,12 +21,22 @@ export async function sendOtp(phone, code, phoneHash) {
       return { ok: await sendTermii(phone, message) };
     case 'telegram': {
       const link = db.prepare('SELECT chat_id FROM telegram_links WHERE phone_hash = ?').get(phoneHash);
-      if (link) return { ok: await tgSendMessage(link.chat_id, message) };
-      // not linked yet — issue a one-time deep-link token for the bot
+      if (link) {
+        if (await tgSendMessage(link.chat_id, message)) return { ok: true };
+        // Telegram hiccup (blocked bot, 429, outage) — SMS keeps them moving.
+        if (config.termiiApiKey && await sendTermii(phone, message)) return { ok: true, viaSms: true };
+        return { ok: false };
+      }
+      // Not linked yet. A user without Telegram must still get a code, so when
+      // Termii is configured the code goes out by SMS immediately and the bot
+      // deep link rides along as the free/instant alternative (no auto-launch
+      // client-side when viaSms is set). Without Termii, the link is the only path.
       const token = crypto.randomBytes(12).toString('base64url');
       db.prepare('INSERT INTO tg_link_tokens (token, phone_hash, expires_at) VALUES (?, ?, ?)')
         .run(token, phoneHash, Date.now() + config.otpTtlS * 1000);
-      return { ok: false, telegramLink: `https://t.me/${config.telegramBotUsername}?start=${token}` };
+      const telegramLink = `https://t.me/${config.telegramBotUsername}?start=${token}`;
+      if (config.termiiApiKey && await sendTermii(phone, message)) return { ok: true, viaSms: true, telegramLink };
+      return { ok: false, telegramLink };
     }
     default:
       console.error(`[sms] unknown SMS_PROVIDER: ${config.smsProvider}`);

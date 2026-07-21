@@ -248,6 +248,41 @@ adminRouter.post('/admin/archive-election', requireAdmin, (req, res) => {
   res.json({ ok: true, election, races: files });
 });
 
+// One-time pre-election reset: wipe the finished (mock) election cycle so every
+// chain — submissions ledger, collation ledger, docket ledger, anchors — starts
+// again at genesis for the new election. Archive first (/admin/archive-election);
+// this endpoint does NOT archive. Keeps observers, devices, polling units,
+// mapping fixes, Telegram links, subscriptions and saved units. Deletes the
+// evidence photos belonging to the wiped rows. Requires an explicit confirm
+// phrase so a stray call can't destroy live-election data.
+adminRouter.post('/admin/reset-election', requireAdmin, (req, res) => {
+  if (String(req.body?.confirm || '') !== 'RESET LEDGER') {
+    return res.status(400).json({ error: 'confirm_required', hint: "body.confirm must be 'RESET LEDGER'" });
+  }
+  const tables = ['venue_matches', 'discrepancies', 'verdicts', 'cases', 'docket_ledger',
+    'results', 'submissions', 'collation_reports', 'anchor_races', 'anchors',
+    'incidents', 'notifications'];
+  const counts = {};
+  db.transaction(() => {
+    for (const t of tables) counts[t] = db.prepare(`DELETE FROM ${t}`).run().changes;
+  })();
+  // Evidence photos: flat <sha>.jpg for submissions/collations + incidents/ media.
+  let filesRemoved = 0;
+  try {
+    for (const f of fs.readdirSync(config.uploadDir)) {
+      if (f.endsWith('.jpg')) { fs.rmSync(path.join(config.uploadDir, f), { force: true }); filesRemoved++; }
+    }
+    const incDir = path.join(config.uploadDir, 'incidents');
+    if (fs.existsSync(incDir)) {
+      filesRemoved += fs.readdirSync(incDir).length;
+      fs.rmSync(incDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(incDir, { recursive: true });
+  } catch (err) { console.error('[admin:reset]', err.message); }
+  notifyMaster(`🧹 election reset — all chains back to genesis. Rows: ${JSON.stringify(counts)}; ${filesRemoved} photo(s) removed`);
+  res.json({ ok: true, counts, filesRemoved });
+});
+
 // Pull an already-published incident back off the public feed (test posts,
 // moderation reversals). Kept separate from reject so it's an explicit act.
 adminRouter.post('/admin/incidents/:id/unpublish', requireAdmin, (req, res) => {

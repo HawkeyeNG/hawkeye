@@ -137,7 +137,11 @@ async function getCaptureFix() {
 const ERRORS = {
   outside_geofence: 'You are too far from this polling unit to report it.',
   too_far_from_unit: 'You are too far from this polling unit — report only while standing there.',
-  sms_send_failed: 'Could not send the SMS code — check the number and try again.',
+  sms_send_failed: 'Could not deliver your code just now — wait a minute and tap Resend code.',
+  otp_incorrect: 'That code is not right — check it and try again.',
+  otp_expired: 'That code has expired — tap "Resend code" to get a fresh one.',
+  too_many_attempts: 'Too many wrong tries — tap "Resend code" and enter the fresh code.',
+  too_many_requests: 'Too many requests from your connection — wait a few minutes and try again.',
   gps_accuracy_too_low: 'GPS signal too weak — move to open sky and retry.',
   photo_not_fresh: 'Photos too old — capture them again and submit immediately.',
   photo_required: 'The result sheet photo is missing.',
@@ -251,9 +255,10 @@ function applyIntentCopy() {
 }
 function afterVerified() {
   if (INTENT_DEST[AUTH_INTENT]) { location.href = INTENT_DEST[AUTH_INTENT]; return; }
-  // Explicit report intent (?intent=observe) continues into the report flow;
-  // a plain sign-in lands on the Observer Home dashboard.
-  if (RAW_INTENT === 'observe') { show('screen-locate'); return; }
+  // Default intent is 'observe' (AUTH_INTENT), so a fresh verification on this
+  // page continues into the report flow even when a shared/og link dropped the
+  // ?intent=observe param — matching the signed-in boot path below.
+  if (AUTH_INTENT === 'observe') { show('screen-locate'); return; }
   location.href = 'index.html';
 }
 
@@ -268,6 +273,7 @@ function resetAuthPane() {
   $('btn-auth').textContent = 'Request OTP';
   $('otp-hint').textContent = '';
   $('auth-reset').hidden = true;
+  if ($('otp-resend')) $('otp-resend').hidden = true;
   if ($('pw-link')) {
     $('pw-link').hidden = false;
     $('pw-link').textContent = 'Have a password? Sign in without OTP';
@@ -305,8 +311,50 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   $('otp-hint').textContent = '';
 };
 
+// How the code was delivered — shared by the first send and "Resend code".
+function renderOtpSent(body) {
+  if (body.telegramLink) {
+    // The bot can only message a user who has opened it, so send them straight
+    // there. In the chat they tap Start → Share contact, and the bot replies
+    // with the code immediately (future codes then arrive automatically).
+    $('otp-hint').innerHTML =
+      `<a class="btn-link" id="tg-open" href="${body.telegramLink}" target="_blank" rel="noopener">📨 Open the Telegram bot to get your code</a>
+       <span>You'll be taken to our Telegram bot. Tap <strong>Start</strong>, then <strong>Share my phone number</strong> — your code appears in the chat instantly. Come back here and enter it below.</span>`;
+    // Auto-launch the bot (a fresh gesture-linked anchor click dodges popup blockers).
+    $('tg-open').click();
+  } else if (body.viaTelegram) {
+    $('otp-hint').textContent = 'Code sent to your Telegram.';
+  } else {
+    $('otp-hint').textContent = body.devOtp
+      ? `DEV MODE — your code is ${body.devOtp}`
+      : 'Code sent by SMS.';
+  }
+}
+
+// A code that never arrived or expired is recoverable in place — the server
+// happily re-issues on a fresh /register call for the same number.
+if ($('otp-resend')) $('otp-resend').onclick = async (e) => {
+  e.preventDefault();
+  $('otp-hint').textContent = 'Sending a fresh code…';
+  try {
+    const { status, body } = await api('/api/observers/register', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ phone: pendingPhone }),
+    });
+    if (status !== 200) { $('otp-hint').textContent = explain(body); return; }
+    renderOtpSent(body);
+  } catch {
+    $('otp-hint').textContent = 'Network problem — check your connection and tap Resend code again.';
+  }
+};
+
 $('btn-auth').onclick = async () => {
   const input = $('auth-input');
+  const btn = $('btn-auth');
+  if (btn.disabled) return;
+  btn.disabled = true; // busy state — no double-sends that self-invalidate codes
+  try {
 
   if (authMode === 'phone') {
     const phone = input.value.trim();
@@ -324,24 +372,10 @@ $('btn-auth').onclick = async () => {
     input.inputMode = 'numeric';
     $('btn-auth').textContent = 'Verify OTP';
     $('auth-reset').hidden = false;
+    if ($('otp-resend')) $('otp-resend').hidden = false;
     if ($('pw-link')) $('pw-link').hidden = true;
     if ($('pw-opt')) $('pw-opt').hidden = false;
-    if (body.telegramLink) {
-      // The bot can only message a user who has opened it, so send them straight
-      // there. In the chat they tap Start → Share contact, and the bot replies
-      // with the code immediately (future codes then arrive automatically).
-      $('otp-hint').innerHTML =
-        `<a class="btn-link" id="tg-open" href="${body.telegramLink}" target="_blank" rel="noopener">📨 Open the Telegram bot to get your code</a>
-         <span>You'll be taken to our Telegram bot. Tap <strong>Start</strong>, then <strong>Share my phone number</strong> — your code appears in the chat instantly. Come back here and enter it below.</span>`;
-      // Auto-launch the bot (a fresh gesture-linked anchor click dodges popup blockers).
-      $('tg-open').click();
-    } else if (body.viaTelegram) {
-      $('otp-hint').textContent = 'Code sent to your Telegram.';
-    } else {
-      $('otp-hint').textContent = body.devOtp
-        ? `DEV MODE — your code is ${body.devOtp}`
-        : 'Code sent by SMS.';
-    }
+    renderOtpSent(body);
     return;
   }
 
@@ -378,6 +412,12 @@ $('btn-auth').onclick = async () => {
   }
   resetAuthPane();
   afterVerified();
+
+  } catch {
+    alert('Network problem — check your connection and try again.');
+  } finally {
+    $('btn-auth').disabled = false;
+  }
 };
 
 $('auth-reset').onclick = (e) => {
@@ -393,7 +433,7 @@ $('btn-locate').onclick = async () => {
   try {
     pos = await getPosition();
   } catch {
-    $('locate-status').textContent = 'Location denied or unavailable. Hawkeye cannot work without it.';
+    $('locate-status').textContent = 'Location denied or unavailable — Hawkeye cannot work without it. If you denied it, allow Location for this site (tap the padlock/ⓘ icon by the address bar → Permissions) and try again.';
     return;
   }
   const { latitude: lat, longitude: lng, accuracy } = pos.coords;
@@ -557,7 +597,7 @@ async function startCapture(target) {
       audio: false,
     });
   } catch {
-    return alert('Camera access is required — Hawkeye only accepts live photos.');
+    return alert('Camera access is required — Hawkeye only accepts live photos. If you denied it, allow Camera for this site (tap the padlock/ⓘ icon by the address bar → Permissions) and try again.');
   }
   $('camera-title').textContent = TARGET_LABELS[target].title;
   $('btn-capture').textContent = TARGET_LABELS[target].action;
@@ -669,7 +709,12 @@ window.addEventListener('hawkeye-sheet-ocr', (e) => {
     // better to leave a count blank than to suggest a wrong one.
     const ex = re.exec(row.text);
     const after = row.text.slice(ex.index + ex[0].length)
-      .replace(/[Oo](?=\d)/g, '0').replace(/(?<=\d)[Oo]/g, '0');
+      // No lookbehind — a (?<=…) regex LITERAL is a parse-time SyntaxError on
+      // Safari/WebKit < 16.4, which would blank the whole page. Two passes of
+      // the capture-group form cover consecutive O misreads ("1OO" → "100").
+      .replace(/[Oo](?=\d)/g, '0')
+      .replace(/(\d)[Oo]/g, (_, d) => `${d}0`)
+      .replace(/(\d)[Oo]/g, (_, d) => `${d}0`);
     let m = after.match(/\d{1,6}/);
     let val = m && m[0];
     if (val == null) {
@@ -982,7 +1027,9 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
   // never let a dead session masquerade as signed-in (resume re-mints silently).
   if (!tokenFresh()) {
     localStorage.removeItem('hawkeye_token');
-    await tryResume();
+    // Don't hold first paint hostage to a stalled network — after 6s show the
+    // register pane anyway (a late resume still lands the token silently).
+    await Promise.race([tryResume().catch(() => {}), new Promise((r) => setTimeout(r, 6000))]);
   }
   if (localStorage.getItem('hawkeye_token')) {
     // Already registered — honour the CTA intent instead of re-verifying.

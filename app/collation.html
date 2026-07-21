@@ -263,7 +263,21 @@
       const lv = $('sel-level').value;
       return $('sel-state').value && (lv === 'state' || $('sel-lga').value) && (lv !== 'ward' || $('sel-ward').value);
     }
-    function updateSubmit() { $('btn-submit').disabled = !(shots.sheet && shots.venue && scopeOk()); }
+    // A scheduled election (server sends open:false + opensAt until poll-open
+    // on election day) cannot be reported early.
+    let CONTESTS = [];
+    const contestClosed = () => {
+      const c = CONTESTS.find((x) => x.code === $('sel-contest').value);
+      return Boolean(c && c.open === false);
+    };
+    function updateSubmit() {
+      const closed = contestClosed();
+      $('btn-submit').disabled = !(shots.sheet && shots.venue && scopeOk()) || closed;
+      const c = CONTESTS.find((x) => x.code === $('sel-contest').value);
+      if (closed && c?.opensAt) {
+        $('status').textContent = `Collation reporting opens when polls open — ${new Date(c.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}.`;
+      }
+    }
 
     // ---- submit ----
     $('btn-submit').onclick = async () => {
@@ -321,6 +335,7 @@
             bad_signature: 'Signature check failed — refresh and retry.',
             invalid_votes: 'Check the totals — whole numbers only.',
             unknown_scope: 'That state/LGA/ward combination is not on the register.',
+            reporting_not_open: 'Collation reporting opens on election day, when polls open. Come back then.',
           };
           $('status').textContent = M[b.error] || b.hint || b.error || 'Could not submit.';
           $('btn-submit').disabled = false;
@@ -340,7 +355,9 @@
         fetch('/api/register/states').then((r) => r.json()),
         fetch('/api/parties').then((r) => r.json()),
       ]);
+      CONTESTS = contests;
       $('sel-contest').innerHTML = contests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
+      $('sel-contest').onchange = updateSubmit;
       fill($('sel-state'), states, '— select state —');
       $('vote-inputs').innerHTML = parties.map((p) => `
         <div class="vote-row"><label>${p.code}</label>

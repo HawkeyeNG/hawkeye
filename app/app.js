@@ -152,6 +152,7 @@ const ERRORS = {
   invalid_votes: 'Check the counts — whole numbers only.',
   device_already_reported_race: 'This device has already reported this election — one report per race per device.',
   device_too_fast: 'This device just submitted a report — wait a few minutes and try again.',
+  reporting_not_open: 'Result reporting opens on election day, when polls open. Come back then.',
 };
 const explain = (body) => body.hint || ERRORS[body.error] || body.error || 'Something went wrong.';
 
@@ -181,6 +182,12 @@ function contestScope(u, contest) {
       return 'Presidential — national contest';
   }
 }
+// A scheduled election (server sends open:false + opensAt until poll-open on
+// election day) cannot be reported early — submit stays disabled with a notice.
+const selectedContestClosed = () => {
+  const c = contests.find((x) => x.code === $('sel-contest').value);
+  return Boolean(c && c.open === false);
+};
 function updateScopeNotice() {
   if (!selectedPu) return;
   const contest = $('sel-contest').value;
@@ -188,9 +195,13 @@ function updateScopeNotice() {
   const when = c?.date
     ? ` · ${new Date(c.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
     : '';
+  const notYet = c && c.open === false && c.opensAt
+    ? ` Result reporting opens when polls open — ${new Date(c.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}.`
+    : '';
   $('contest-scope').textContent = contest
-    ? `You are reporting: ${contestScope(selectedPu, contest)}${c?.election ? ` — ${c.election}${when}` : ''}`
+    ? `You are reporting: ${contestScope(selectedPu, contest)}${c?.election ? ` — ${c.election}${when}` : ''}.${notYet}`
     : 'Choose which election you are reporting before continuing.';
+  updateSubmitState();
 }
 
 const TIER_LABEL = {
@@ -520,7 +531,7 @@ function updateSubmitState() {
     badge.textContent = shots[t] ? 'Captured ✓' : 'Required';
     badge.classList.toggle('done', Boolean(shots[t]));
   }
-  $('btn-submit').disabled = !(shots.sheet && shots.venue);
+  $('btn-submit').disabled = !(shots.sheet && shots.venue) || selectedContestClosed();
 }
 
 // ---------- camera (live capture only; overlay opens per slot) ----------
@@ -783,6 +794,10 @@ $('btn-submit').onclick = async () => {
   if (!$('sel-contest').value) {
     $('submit-status').textContent = 'Select which election you are reporting.';
     $('sel-contest').focus();
+    return;
+  }
+  if (selectedContestClosed()) {
+    $('submit-status').textContent = ERRORS.reporting_not_open;
     return;
   }
   const auto = [...document.querySelectorAll('#vote-inputs input.ocr-filled')]

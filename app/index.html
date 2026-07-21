@@ -279,14 +279,16 @@
     const lcard = (e, sample) => `
       <div class="lcard">
         <div class="row"><strong>PU ${esc(e.pu_code)} · ${CONTEST_NAMES[e.contest] || esc(e.contest)}</strong>
-          <span class="chip ${sample ? 'wait' : 'ok'}">${sample ? 'Sample preview' : '✓ On the ledger'}</span></div>
+          <span class="chip ${sample ? 'wait' : 'ok'}">${sample ? 'Sample — not real data' : '✓ On the ledger'}</span></div>
         ${e.votes ? `<div class="votes">${e.votes.map((v) => `<span>${esc(v.party)} ${v.n}<i>votes</i></span>`).join('')}</div>` : ''}
         <div class="hash">sha256: ${esc(String(e.entry_hash).slice(0, 6))}…${esc(String(e.entry_hash).slice(-4))} · ${sample ? 'first live reports appear here' : timeAgo(e.created_at)}</div>
       </div>`;
+    // Fictional party labels on purpose — real party names next to invented
+    // counts screenshot badly in a charged election, even labelled "Sample".
     const SAMPLES = [
-      { pu_code: '24-16-11-008', contest: 'PRES', entry_hash: '9f3ac1b04477e77b', votes: [{ party: 'APC', n: 214 }, { party: 'PDP', n: 188 }, { party: 'LP', n: 342 }] },
-      { pu_code: '05-08-03-014', contest: 'GOV', entry_hash: '41d9b09cd8fa2c1a', votes: [{ party: 'PDP', n: 301 }, { party: 'APC', n: 246 }, { party: 'NNPP', n: 71 }] },
-      { pu_code: '14-05-02-024', contest: 'SEN', entry_hash: 'c78e52aa11f090df', votes: [{ party: 'LP', n: 176 }, { party: 'APC', n: 158 }, { party: 'SDP', n: 44 }] },
+      { pu_code: '24-16-11-008', contest: 'PRES', entry_hash: '9f3ac1b04477e77b', votes: [{ party: 'Party A', n: 214 }, { party: 'Party B', n: 188 }, { party: 'Party C', n: 342 }] },
+      { pu_code: '05-08-03-014', contest: 'GOV', entry_hash: '41d9b09cd8fa2c1a', votes: [{ party: 'Party A', n: 301 }, { party: 'Party B', n: 246 }, { party: 'Party C', n: 71 }] },
+      { pu_code: '14-05-02-024', contest: 'SEN', entry_hash: 'c78e52aa11f090df', votes: [{ party: 'Party A', n: 176 }, { party: 'Party B', n: 158 }, { party: 'Party C', n: 44 }] },
     ];
     fetch('/api/ledger/entries').then((r) => r.json()).then((rows) => {
       const last = rows.slice(-3).reverse();

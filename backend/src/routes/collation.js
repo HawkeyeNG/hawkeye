@@ -7,8 +7,9 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { Router } from 'express';
 import multer from 'multer';
-import { db, contestCodes, partyCodes } from '../db.js';
+import { db, contestCodes, partyCodes, contests } from '../db.js';
 import { config } from '../config.js';
+import { reportingOpen, reportingOpensAt } from '../services/scope.js';
 import { sha256Hex } from '../services/images.js';
 import { canonicalCollationPayload, canonicalVotes, verifyObserverSignature } from '../services/signatures.js';
 import { checkCollation } from '../services/integrity.js';
@@ -40,6 +41,12 @@ collationRouter.post('/collations', requireObserver, photoFields, async (req, re
     const ward = String(req.body.ward || '').trim() || null;
     if (!LEVELS.has(level)) return res.status(400).json({ error: 'invalid_level' });
     if (!contestCodes.has(contest)) return res.status(400).json({ error: 'unknown_contest' });
+    // Scheduled elections accept collation reports only from poll-open on
+    // election day (same gate as PU submissions).
+    const contestDef = contests.find((c) => c.code === contest);
+    if (!reportingOpen(contestDef)) {
+      return res.status(403).json({ error: 'reporting_not_open', opensAt: reportingOpensAt(contestDef) });
+    }
     if (!state || (level !== 'state' && !lga) || (level === 'ward' && !ward)) {
       return res.status(400).json({ error: 'scope_required' });
     }

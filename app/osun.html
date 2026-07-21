@@ -53,18 +53,18 @@
   <main class="wrap" id="race-main"><p class="hint">Loading race…</p></main>
 
   <footer class="gov-footer"><div class="wrap">
-    <nav><a href="observe.html">Report a Result</a><a href="results.html">Live Results</a><a href="how.html">How It Works</a><a href="candidates.html">2027 Candidates</a><a href="faq.html">FAQ</a></nav>
+    <nav><a href="observe.html">Report a Result</a><a href="results.html?contest=GOV&amp;scope=Osun">Live Results</a><a href="how.html">How It Works</a><a href="candidates.html">2027 Candidates</a><a href="faq.html">FAQ</a></nav>
     <p>Candidate information is compiled from public declarations and INEC's published list, and may lag announcements. Hawkeye is nonpartisan and does not endorse any candidate. Official candidate lists and results are INEC's.</p>
   </div></footer>
 
-  <script src="race.js?v=1"></script>
+  <script src="race.js?v=2"></script>
   <script>
     (async () => {
       const [data, LOGOS] = await Promise.all([
         fetch('political_data.json').then((r) => r.json()),
         fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
       ]);
-      window.mountRace(document.getElementById('race-main'), data.raceOsun2026, LOGOS, { compare: false });
+      window.mountRace(document.getElementById('race-main'), data.raceOsun2026, LOGOS, { compare: false, resultsHref: 'results.html?contest=GOV&scope=Osun' });
     })();
   </script>
   <script src="tg.js?v=95"></script>

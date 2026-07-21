@@ -95,10 +95,11 @@
 
     if (race.notableAbsence) parts.push(`<p class="race-absence">${esc(race.notableAbsence)}</p>`);
 
-    // Calls to action
+    // Calls to action. resultsHref lets a race page deep-link its own board
+    // (e.g. Osun -> results.html?contest=GOV&scope=Osun preselects the race).
     parts.push(`<div class="race-cta">
       <a class="btn-accent" href="observe.html?intent=observe">Become an Observer</a>
-      <a class="btn-ghost" style="border-color:var(--green);color:var(--green)" href="results.html">Live Results</a></div>`);
+      <a class="btn-ghost" style="border-color:var(--green);color:var(--green)" href="${esc(opts.resultsHref || 'results.html')}">Live Results</a></div>`);
 
     const credit = [race.note ? `${race.note}` : '', race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit || ''].filter(Boolean).join(' ');
     if (credit) parts.push(`<p class="hint">${esc(credit)}</p>`);

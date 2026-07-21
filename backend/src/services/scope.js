@@ -43,6 +43,16 @@ export function contestScope(pu, contest) {
 // partition used for per-race subchains and Merkle-batched anchoring. Derived
 // from the unit (never the observer's claim), mirroring contestScope() above.
 // Returns null for a contest that does not exist at the unit (FCT GOV/SHA).
+// A contest with a scheduled election `date` accepts result/collation reports
+// only from poll-open on election day — 08:30 WAT (INEC accreditation/voting
+// start). Dateless contests (mock elections) are always open. Returns the ISO
+// opening instant, or null for always-open.
+export const reportingOpensAt = (c) => (c && c.date ? `${c.date}T08:30:00+01:00` : null);
+export const reportingOpen = (c) => {
+  const at = reportingOpensAt(c);
+  return !at || Date.now() >= Date.parse(at);
+};
+
 export function raceKey(pu, contest) {
   const st = pu.state || '?';
   switch (contest) {

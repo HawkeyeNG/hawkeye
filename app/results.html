@@ -381,7 +381,17 @@
       const ordered = [...contests].sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code));
       sel.innerHTML = ordered.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
       sel.onchange = refresh;
+      // Deep-link preselect (e.g. results.html?contest=GOV&scope=Osun from the
+      // Osun race page): pick the race before the first load, and the region
+      // scope after refresh() has populated the scope options.
+      const QP = new URLSearchParams(location.search);
+      if (QP.get('contest') && ordered.some((c) => c.code === QP.get('contest'))) sel.value = QP.get('contest');
       await refresh();
+      const wantScope = QP.get('scope');
+      if (wantScope) {
+        const ss = document.getElementById('sel-scope');
+        if ([...ss.options].some((o) => o.value === wantScope)) ss.value = wantScope;
+      }
       setInterval(refresh, 30000);
     })();
 

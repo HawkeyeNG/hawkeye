@@ -1,7 +1,3 @@
 [
-  { "code": "PRES", "name": "Presidential", "election": "Hawkeye Mock Election", "date": null },
-  { "code": "SEN", "name": "Senate (National Assembly)", "election": "Hawkeye Mock Election", "date": null },
-  { "code": "REP", "name": "House of Representatives", "election": "Hawkeye Mock Election", "date": null },
-  { "code": "GOV", "name": "Governorship", "election": "Hawkeye Mock Election", "date": null },
-  { "code": "SHA", "name": "State House of Assembly", "election": "Hawkeye Mock Election", "date": null }
+  { "code": "GOV", "name": "Governorship", "election": "Osun State Governorship Election 2026", "date": "2026-08-15", "states": ["Osun"] }
 ]

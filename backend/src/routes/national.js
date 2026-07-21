@@ -1,9 +1,14 @@
 import { Router } from 'express';
 import { db, contests, contestCodes } from '../db.js';
+import { reportingOpen, reportingOpensAt } from '../services/scope.js';
 
 export const nationalRouter = Router();
 
-nationalRouter.get('/contests', (_req, res) => res.json(contests));
+// `open`/`opensAt` are computed per request so the client can grey out result
+// reporting for a scheduled election that hasn't reached poll-open yet.
+nationalRouter.get('/contests', (_req, res) => res.json(
+  contests.map((c) => ({ ...c, open: reportingOpen(c), opensAt: reportingOpensAt(c) })),
+));
 
 // Which region a contest divides into, and the polling_units column that keys it.
 const LEVEL = {

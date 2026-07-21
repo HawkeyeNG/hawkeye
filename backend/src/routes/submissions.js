@@ -11,7 +11,7 @@ import { nextEntry, verifyChain } from '../services/ledger.js';
 import { recomputeResult } from '../services/aggregate.js';
 import { extractFeatures, matchFeatures } from '../services/scene.js';
 import { requireObserver } from './observers.js';
-import { contestScope, contestApplies } from '../services/scope.js';
+import { contestScope, contestApplies, reportingOpen, reportingOpensAt } from '../services/scope.js';
 import { notifySubscribers } from './subscriptions.js';
 import { notifyChat, notifyMaster, chatIdByHash, notifyUnitSavers } from '../services/notify.js';
 import { checkSubmission, checkResult } from '../services/integrity.js';
@@ -40,6 +40,12 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // as presidential (matches the client's mandatory "Select election" choice).
     const contest = String(req.body.contest || '');
     if (!contestCodes.has(contest)) return res.status(400).json({ error: 'unknown_contest' });
+    // A scheduled election accepts result reports only from poll-open on
+    // election day — no early filings while the ad campaign runs pre-election.
+    const contestDef = contests.find((c) => c.code === contest);
+    if (!reportingOpen(contestDef)) {
+      return res.status(403).json({ error: 'reporting_not_open', opensAt: reportingOpensAt(contestDef) });
+    }
     const lat = Number(req.body.lat);
     const lng = Number(req.body.lng);
     const accuracy = Number(req.body.accuracy);
@@ -78,7 +84,7 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
 
     const pu = db.prepare('SELECT * FROM polling_units WHERE pu_code = ?').get(puCode);
     if (!pu) return res.status(404).json({ error: 'unknown_polling_unit' });
-    if (!contestApplies(pu, contest, contests.find((c) => c.code === contest)?.states)) {
+    if (!contestApplies(pu, contest, contestDef?.states)) {
       return res.status(400).json({ error: 'contest_not_applicable' });
     }
 

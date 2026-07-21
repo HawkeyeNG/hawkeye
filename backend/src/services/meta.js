@@ -54,8 +54,8 @@ async function graph(path, params, method = 'POST') {
 // token, (2) read me/accounts to pull the Page token for META_PAGE_ID — a Page
 // token derived from a long-lived user token does not expire — (3) store it in
 // social_tokens so it survives restarts and overrides the stale .env token.
-export async function exchangeAndStorePageToken(userToken, appSecretOverride) {
-  const appId = config.metaAppId;
+export async function exchangeAndStorePageToken(userToken, appSecretOverride, appIdOverride) {
+  const appId = appIdOverride || config.metaAppId;
   const appSecret = appSecretOverride || config.metaAppSecret;
   if (!appId || !appSecret) throw new Error('missing_app_id_or_secret');
   if (!userToken) throw new Error('missing_user_token');
@@ -106,6 +106,17 @@ export async function metaStatus() {
 // `connected_instagram_account`) and `instagram_basic`+`instagram_content_publish`.
 export async function metaDiag() {
   const out = {};
+  // Which token are we actually using, and when was it stored? Tells us whether
+  // the last exchange wrote a new token, and its source (DB vs .env).
+  const tk = pageToken();
+  let stored = null;
+  try { stored = db.prepare("SELECT updated_at FROM social_tokens WHERE provider = 'meta_page'").get(); } catch {}
+  out.tokenInfo = {
+    source: storedPageToken() ? 'db(meta_page)' : (config.metaPageToken ? 'env' : 'none'),
+    length: tk ? tk.length : 0,
+    tail: tk ? tk.slice(-6) : null,
+    dbStoredAt: stored && stored.updated_at ? new Date(stored.updated_at).toISOString() : null,
+  };
   // What does the token resolve to? (Page id+name for a Page token; a user for a
   // user token.) Diagnoses "wrong token type / wrong page" without exposing it.
   try { out.me = await graph('me', { fields: 'id,name' }, 'GET'); }

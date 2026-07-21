@@ -19,8 +19,8 @@ metaRouter.get('/meta/diag', requireAdmin, async (_req, res) => {
 // short-lived USER token from Graph API Explorer; server exchanges it for a
 // long-lived token, derives the non-expiring Page token, and stores it.
 metaRouter.post('/meta/exchange', requireAdmin, async (req, res) => {
-  const { userToken = '', appSecret = '' } = req.body || {};
-  try { res.json(await exchangeAndStorePageToken(userToken.trim(), appSecret.trim())); }
+  const { userToken = '', appSecret = '', appId = '' } = req.body || {};
+  try { res.json(await exchangeAndStorePageToken(userToken.trim(), appSecret.trim(), appId.trim())); }
   catch (e) { res.status(400).json({ error: String(e.message || e) }); }
 });
 

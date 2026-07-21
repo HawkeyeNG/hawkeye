@@ -48,10 +48,14 @@
       </div></div>
     <div id="plat-meta" class="plat"><b>Meta (Facebook + Instagram)</b><span class="muted" id="meta-state">…</span>
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <input id="fb-usertoken" type="text" placeholder="Paste short-lived USER token (Graph Explorer)" style="flex:1;min-width:240px" />
+        <input id="fb-usertoken" type="text" placeholder="Short-lived USER token (Graph Explorer)" style="flex:1;min-width:240px" />
         <button id="fb-exchange" class="secondary" style="width:auto;margin:0">🔑 Exchange &amp; store</button>
       </div>
-      <p class="hint" style="margin:4px 0 0">One-time: turns a short USER token into a durable Page token (no more expiry).</p>
+      <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+        <input id="fb-appid" type="text" placeholder="App ID" style="flex:1;min-width:140px" />
+        <input id="fb-appsecret" type="password" placeholder="App Secret" style="flex:1;min-width:140px" />
+      </div>
+      <p class="hint" style="margin:4px 0 0">One-time: turns a short USER token into a durable Page token (no more expiry). App ID/Secret from developers.facebook.com → your app → Settings → Basic.</p>
     </div>
     <div id="plat-x" class="plat"><b>X (Twitter)</b><span class="muted" id="x-state">…</span></div>
     <pre id="diag" class="mono status info" hidden></pre>
@@ -98,7 +102,7 @@
       if (!ut) return setStatus($('result'), 'bad', 'Paste a short-lived USER token first.');
       setStatus($('result'), 'info', 'Exchanging for a durable Page token…');
       try {
-        const r = await fetch('/api/meta/exchange', { method: 'POST', headers: { ...hdr(), 'content-type': 'application/json' }, body: JSON.stringify({ userToken: ut }) });
+        const r = await fetch('/api/meta/exchange', { method: 'POST', headers: { ...hdr(), 'content-type': 'application/json' }, body: JSON.stringify({ userToken: ut, appId: $('fb-appid').value.trim(), appSecret: $('fb-appsecret').value.trim() }) });
         const d = await r.json();
         if (d.tokenStored) { $('fb-usertoken').value = ''; setStatus($('result'), 'ok', `Durable token stored for ${d.pageName} ✓ — reloading status`); refresh(); }
         else setStatus($('result'), 'bad', 'Exchange failed: ' + (d.error || 'unknown'));

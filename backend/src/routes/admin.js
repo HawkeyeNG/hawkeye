@@ -248,6 +248,23 @@ adminRouter.post('/admin/archive-election', requireAdmin, (req, res) => {
   res.json({ ok: true, election, races: files });
 });
 
+// OTP-delivery diagnostics: which provider the RUNNING process sees and whether
+// the Termii key it holds is accepted (live balance probe — no SMS is sent).
+adminRouter.get('/admin/otp-diag', requireAdmin, async (_req, res) => {
+  const key = config.termiiApiKey;
+  const out = { provider: config.smsProvider, termiiKeySet: Boolean(key), termiiKeyTail: key ? key.slice(-6) : null, termiiBaseUrl: config.termiiBaseUrl };
+  if (key) {
+    try {
+      const r = await fetch(`${config.termiiBaseUrl}/api/get-balance?api_key=${encodeURIComponent(key)}`);
+      const b = await r.json().catch(() => ({}));
+      out.termiiKeyValid = r.ok && b.balance !== undefined;
+      out.termiiBalance = b.balance ?? b.message ?? null;
+      out.termiiCurrency = b.currency || null;
+    } catch (e) { out.termiiKeyValid = false; out.termiiBalance = String(e.message || e); }
+  }
+  res.json(out);
+});
+
 // One-time pre-election reset: wipe the finished (mock) election cycle so every
 // chain — submissions ledger, collation ledger, docket ledger, anchors — starts
 // again at genesis for the new election. Archive first (/admin/archive-election);

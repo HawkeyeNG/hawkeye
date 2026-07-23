@@ -98,7 +98,9 @@ observersRouter.post('/register', async (req, res) => {
     ON CONFLICT(phone_hash) DO UPDATE SET code = excluded.code, expires_at = excluded.expires_at, attempts = 0`)
     .run(hash, code, Date.now() + config.otpTtlS * 1000);
 
-  const sent = await sendOtp(phone, code, hash);
+  // 'telegram' | 'sms' — the delivery choice made on the sign-up form.
+  const channel = ['telegram', 'sms'].includes(req.body?.channel) ? req.body.channel : '';
+  const sent = await sendOtp(phone, code, hash, channel);
   if (!sent.ok && sent.telegramLink) {
     // Not an error: the observer must open the bot once to link their Telegram.
     return res.json({ ok: true, telegramLink: sent.telegramLink });

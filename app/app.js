@@ -274,6 +274,12 @@ function resetAuthPane() {
   $('otp-hint').textContent = '';
   $('auth-reset').hidden = true;
   if ($('otp-resend')) $('otp-resend').hidden = true;
+  if ($('otp-phone')) $('otp-phone').hidden = true;
+  if ($('channel-pick')) {
+    $('channel-pick').hidden = false;
+    for (const r of document.querySelectorAll('input[name="otp-channel"]')) r.checked = false;
+  }
+  pendingChannel = '';
   if ($('pw-link')) {
     $('pw-link').hidden = false;
     $('pw-link').textContent = 'Have a password? Sign in without OTP';
@@ -306,17 +312,32 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   authMode = toPw ? 'password' : 'phone';
   $('pw-signin-wrap').hidden = !toPw;
   if (!toPw) $('pw-signin-input').value = '';
+  if ($('channel-pick')) $('channel-pick').hidden = toPw; // password sign-in sends no code
   $('btn-auth').textContent = toPw ? 'Sign In' : 'Request OTP';
   $('pw-link').textContent = toPw ? 'Sign in with OTP' : 'Have a password? Sign in without OTP';
   $('otp-hint').textContent = '';
 };
 
+// The delivery channel picked on the form ('telegram' | 'sms'); remembered for
+// "Resend code". Radios are required — no silent default.
+const pickedChannel = () => document.querySelector('input[name="otp-channel"]:checked')?.value || '';
+let pendingChannel = '';
+
+// Keep the entered number visible while the pane is in OTP mode — a typo should
+// be obvious the whole time they wait, not only in the flipped input.
+function showOtpPhone() {
+  const el = $('otp-phone');
+  if (!el) return;
+  el.innerHTML = `Code requested for <strong>${pendingPhone.replace(/</g, '&lt;')}</strong> — wrong number? Use “← Use a different number” below.`;
+  el.hidden = false;
+}
+
 // How the code was delivered — shared by the first send and "Resend code".
 function renderOtpSent(body) {
   if (body.viaSms) {
-    // SMS went out (Termii fallback) — Telegram link is a quiet alternative,
-    // never auto-launched.
-    $('otp-hint').innerHTML = `<span>Code sent by SMS — check your messages.</span>${body.telegramLink
+    // SMS went out — Telegram link (if any) is a quiet alternative, never
+    // auto-launched.
+    $('otp-hint').innerHTML = `<span>Code sent by SMS to <strong>${pendingPhone.replace(/</g, '&lt;')}</strong> — check your messages.</span>${body.telegramLink
       ? ` <a class="btn-link" href="${body.telegramLink}" target="_blank" rel="noopener">Prefer Telegram? Get the code there instead</a>` : ''}`;
   } else if (body.telegramLink) {
     // The bot can only message a user who has opened it, so send them straight
@@ -328,12 +349,13 @@ function renderOtpSent(body) {
     // Auto-launch the bot (a fresh gesture-linked anchor click dodges popup blockers).
     $('tg-open').click();
   } else if (body.viaTelegram) {
-    $('otp-hint').textContent = 'Code sent to your Telegram.';
+    $('otp-hint').textContent = `Code sent to your Telegram (for ${pendingPhone}).`;
   } else {
     $('otp-hint').textContent = body.devOtp
       ? `DEV MODE — your code is ${body.devOtp}`
-      : 'Code sent by SMS.';
+      : `Code sent by SMS to ${pendingPhone}.`;
   }
+  showOtpPhone();
 }
 
 // A code that never arrived or expired is recoverable in place — the server
@@ -345,7 +367,7 @@ if ($('otp-resend')) $('otp-resend').onclick = async (e) => {
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ phone: pendingPhone }),
+      body: JSON.stringify({ phone: pendingPhone, channel: pendingChannel }),
     });
     if (status !== 200) { $('otp-hint').textContent = explain(body); return; }
     renderOtpSent(body);
@@ -363,14 +385,17 @@ $('btn-auth').onclick = async () => {
 
   if (authMode === 'phone') {
     const phone = input.value.trim();
+    const channel = pickedChannel();
+    if (!channel) return alert('Choose where to receive your code — Telegram or SMS.');
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ phone, channel }),
     });
     if (status !== 200) return alert(explain(body));
     // same pane flips to OTP entry
     pendingPhone = phone;
+    pendingChannel = channel;
     authMode = 'otp';
     input.value = '';
     input.placeholder = 'Enter OTP';
@@ -380,6 +405,7 @@ $('btn-auth').onclick = async () => {
     if ($('otp-resend')) $('otp-resend').hidden = false;
     if ($('pw-link')) $('pw-link').hidden = true;
     if ($('pw-opt')) $('pw-opt').hidden = false;
+    if ($('channel-pick')) $('channel-pick').hidden = true;
     renderOtpSent(body);
     return;
   }

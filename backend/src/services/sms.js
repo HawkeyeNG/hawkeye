@@ -12,7 +12,9 @@ import { db } from '../db.js';
 //              once the shared number matches, codes arrive in that chat.
 // Returns { ok } — or { ok: false, telegramLink } when the observer still needs
 // to link their Telegram account (not an error; the app shows the link).
-export async function sendOtp(phone, code, phoneHash) {
+// `channel` is the USER'S delivery choice from the sign-up form ('telegram' |
+// 'sms'); empty = legacy clients, auto behaviour.
+export async function sendOtp(phone, code, phoneHash, channel = '') {
   const message = `Hawkeye code: ${code}. Expires in ${Math.round(config.otpTtlS / 60)} min. Never share it.`;
   switch (config.smsProvider) {
     case 'console':
@@ -23,6 +25,11 @@ export async function sendOtp(phone, code, phoneHash) {
     case 'bulksms':
       return { ok: await sendBulkSmsNg(phone, message) };
     case 'telegram': {
+      // Explicit SMS choice: straight to SMS, no Telegram involvement.
+      if (channel === 'sms') {
+        if (await sendFallbackSms(phone, message)) return { ok: true, viaSms: true };
+        return { ok: false };
+      }
       const link = db.prepare('SELECT chat_id FROM telegram_links WHERE phone_hash = ?').get(phoneHash);
       if (link) {
         if (await tgSendMessage(link.chat_id, message)) return { ok: true };
@@ -30,15 +37,17 @@ export async function sendOtp(phone, code, phoneHash) {
         if (await sendFallbackSms(phone, message)) return { ok: true, viaSms: true };
         return { ok: false };
       }
-      // Not linked yet. A user without Telegram must still get a code, so when
-      // an SMS provider is configured the code goes out by SMS immediately and
-      // the bot deep link rides along as the free/instant alternative (no
-      // auto-launch client-side when viaSms is set). Without one, the link is
-      // the only path.
+      // Not linked yet — issue a one-time deep-link token for the bot.
       const token = crypto.randomBytes(12).toString('base64url');
       db.prepare('INSERT INTO tg_link_tokens (token, phone_hash, expires_at) VALUES (?, ?, ?)')
         .run(token, phoneHash, Date.now() + config.otpTtlS * 1000);
       const telegramLink = `https://t.me/${config.telegramBotUsername}?start=${token}`;
+      if (channel === 'telegram') {
+        // Explicit Telegram choice: the bot link IS the delivery path — no SMS.
+        return { ok: false, telegramLink };
+      }
+      // Legacy clients with no channel choice: SMS out immediately when a
+      // provider is configured, bot link rides along as the free alternative.
       if (await sendFallbackSms(phone, message)) return { ok: true, viaSms: true, telegramLink };
       return { ok: false, telegramLink };
     }

@@ -217,8 +217,36 @@
       + (localStorage.getItem('hawkeye_token') ? '<a href="profile.html">My Profile</a>' : '');
   }
 
-  // Every visible "INEC" mention links to the commission's site. Runs over
-  // static text now and once more after async content settles.
+  // Social bar in the footer — one source of truth, every page. Each icon renders
+  // only when its `url` is a real link, so no dead/placeholder links ever ship.
+  // Fill the four URLs below with the official Hawkeye account links.
+  const SOCIAL = [
+    { name: 'TikTok',    url: '', svg: '<path d="M15.5 3c.3 2.3 1.9 3.9 4.5 4.1v2.7c-1.6.1-3.1-.4-4.5-1.3v6.1a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v2.8a2.8 2.8 0 1 0 2 2.7V3z" fill="currentColor" stroke="none"/>' },
+    { name: 'Instagram', url: '', svg: '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.7"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>' },
+    { name: 'X',         url: '', svg: '<path d="M4 4l6.9 8.4L4.3 20H7l5.1-5.7L16.6 20H20l-7.2-8.8L19.4 4H16.8l-4.6 5.2L8.2 4z" fill="currentColor" stroke="none"/>' },
+    { name: 'Facebook',  url: '', svg: '<path d="M13.8 21v-8h2.2l.33-2.6H13.8V8.7c0-.75.23-1.26 1.3-1.26h1.4V5.1c-.24-.03-1.07-.1-2.03-.1-2.02 0-3.4 1.23-3.4 3.5v1.9H8.9V13h2.17v8z" fill="currentColor" stroke="none"/>' },
+  ];
+  const shownSocial = SOCIAL.filter((s) => s.url);
+  const footWrap = document.querySelector('.gov-footer .wrap');
+  if (shownSocial.length && footWrap && !footWrap.querySelector('.social-row')) {
+    const row = document.createElement('div');
+    row.className = 'social-row';
+    row.innerHTML = shownSocial.map((s) => `<a href="${s.url}" target="_blank" rel="noopener me" aria-label="Hawkeye on ${s.name}" title="Hawkeye on ${s.name}"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${s.svg}</svg></a>`).join('');
+    footWrap.insertBefore(row, footWrap.querySelector('nav') || footWrap.firstChild);
+    if (!document.getElementById('social-row-css')) {
+      const st = document.createElement('style');
+      st.id = 'social-row-css';
+      st.textContent = '.gov-footer .social-row{display:flex;gap:12px;justify-content:center;margin:0 0 14px}'
+        + '.gov-footer .social-row a{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;border:1px solid var(--border,#dde4de);color:var(--muted,#5b6b62);margin:0;transition:color .15s,border-color .15s}'
+        + '.gov-footer .social-row a:hover{color:var(--green,#008751);border-color:var(--green,#008751)}';
+      document.head.appendChild(st);
+    }
+  }
+
+  // "INEC" is linked to the commission's site ONLY inside the footer — never in
+  // body copy (a link on every mention read as endorsement/affiliation and
+  // cluttered the prose). Runs over the footer now and once more after async
+  // content settles.
   const INEC_URL = 'https://www.inecnigeria.org';
   function linkInec(root) {
     const skip = /^(A|SCRIPT|STYLE|TITLE|TEXTAREA|INPUT|SELECT|OPTION|CODE)$/;
@@ -247,8 +275,9 @@
       n.parentNode.replaceChild(frag, n);
     }
   }
-  linkInec(document.body);
-  setTimeout(() => linkInec(document.body), 2500);
+  const linkInecFooters = () => document.querySelectorAll('.gov-footer').forEach((f) => linkInec(f));
+  linkInecFooters();
+  setTimeout(linkInecFooters, 2500);
 
   // Sign out — shown only when signed in. Clears the token AND the device key so
   // auto-resume can't silently sign back in; sends the user to a fresh sign-up.

@@ -124,6 +124,12 @@ export const config = {
   termiiSenderId: process.env.TERMII_SENDER_ID || 'N-Alert',
   termiiChannel: process.env.TERMII_CHANNEL || 'dnd',
   termiiBaseUrl: process.env.TERMII_BASE_URL || 'https://api.ng.termii.com',
+  // BulkSMSNigeria (bulksmsnigeria.com) — SMS OTP provider. Preferred over
+  // Termii when both are configured. Gateway 'otp' is their OTP route (reaches
+  // DND-listed numbers, which most Nigerian SIMs are).
+  bulksmsNgApiToken: process.env.BULKSMS_NG_API_TOKEN || '',
+  bulksmsNgSenderId: process.env.BULKSMS_NG_SENDER_ID || 'Hawkeye',
+  bulksmsNgGateway: process.env.BULKSMS_NG_GATEWAY || 'otp',
 
   geofenceRadiusM: num('GEOFENCE_RADIUS_M', 200),
   maxGpsAccuracyM: num('MAX_GPS_ACCURACY_M', 100),
@@ -178,6 +184,9 @@ if (config.env === 'production') {
   }
   if (config.smsProvider === 'termii' && !config.termiiApiKey) {
     throw new Error('TERMII_API_KEY must be set when SMS_PROVIDER=termii');
+  }
+  if (config.smsProvider === 'bulksms' && !config.bulksmsNgApiToken) {
+    throw new Error('BULKSMS_NG_API_TOKEN must be set when SMS_PROVIDER=bulksms');
   }
   if (config.smsProvider === 'telegram' && !config.telegramBotToken) {
     throw new Error('TELEGRAM_BOT_TOKEN must be set when SMS_PROVIDER=telegram');

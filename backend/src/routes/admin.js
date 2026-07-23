@@ -251,7 +251,7 @@ adminRouter.post('/admin/archive-election', requireAdmin, (req, res) => {
 // OTP-delivery diagnostics: which provider/keys the RUNNING process sees and
 // whether the SMS token is accepted (live balance probe — no SMS is sent).
 adminRouter.get('/admin/otp-diag', requireAdmin, async (_req, res) => {
-  const out = { provider: config.smsProvider, bulksmsTokenSet: Boolean(config.bulksmsNgApiToken), termiiKeySet: Boolean(config.termiiApiKey) };
+  const out = { provider: config.smsProvider, bulksmsTokenSet: Boolean(config.bulksmsNgApiToken), sendchampKeySet: Boolean(config.sendchampApiKey), termiiKeySet: Boolean(config.termiiApiKey) };
   if (config.bulksmsNgApiToken) {
     try {
       const r = await fetch('https://www.bulksmsnigeria.com/api/v2/balance', {
@@ -261,6 +261,16 @@ adminRouter.get('/admin/otp-diag', requireAdmin, async (_req, res) => {
       out.bulksmsTokenValid = r.ok && Boolean(b.balance || b?.data?.status === 'success');
       out.bulksmsBalance = b?.balance?.total_balance ?? b?.data?.message ?? b?.message ?? null;
     } catch (e) { out.bulksmsTokenValid = false; out.bulksmsBalance = String(e.message || e); }
+  }
+  if (config.sendchampApiKey) {
+    try {
+      const r = await fetch('https://api.sendchamp.com/api/v1/wallet/wallet_balance', {
+        headers: { accept: 'application/json', authorization: `Bearer ${config.sendchampApiKey}` },
+      });
+      const b = await r.json().catch(() => ({}));
+      out.sendchampKeyValid = r.ok && (b.status === 'success' || b.status === 200 || b.code === 200);
+      out.sendchampBalance = b?.data?.wallet_balance ?? b?.data?.balance ?? b?.message ?? null;
+    } catch (e) { out.sendchampKeyValid = false; out.sendchampBalance = String(e.message || e); }
   }
   res.json(out);
 });

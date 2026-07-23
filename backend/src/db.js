@@ -177,6 +177,10 @@ for (const ddl of [
    )`,
   // External anchoring receipts (Sigstore Rekor public transparency log) — a log
   // we do not control, so a rolled-back DB can't reproduce these entries.
+  // WhatsApp OTPs are generated/delivered by Sendchamp's Verification API (a
+  // Meta-approved template is required for business-initiated WhatsApp) — this
+  // stores their reference so /verify can confirm against it.
+  'ALTER TABLE otps ADD COLUMN sc_reference TEXT',
   'ALTER TABLE anchors ADD COLUMN docket_head TEXT',
   'ALTER TABLE anchors ADD COLUMN rekor_uuid TEXT',
   'ALTER TABLE anchors ADD COLUMN rekor_log_index INTEGER',

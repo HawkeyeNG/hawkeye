@@ -334,7 +334,9 @@ function showOtpPhone() {
 
 // How the code was delivered — shared by the first send and "Resend code".
 function renderOtpSent(body) {
-  if (body.viaSms) {
+  if (body.viaWhatsapp) {
+    $('otp-hint').innerHTML = `Code sent to WhatsApp on <strong>${pendingPhone.replace(/</g, '&lt;')}</strong> — check your WhatsApp messages.`;
+  } else if (body.viaSms) {
     // SMS went out — Telegram link (if any) is a quiet alternative, never
     // auto-launched.
     $('otp-hint').innerHTML = `<span>Code sent by SMS to <strong>${pendingPhone.replace(/</g, '&lt;')}</strong> — check your messages.</span>${body.telegramLink
@@ -386,7 +388,7 @@ $('btn-auth').onclick = async () => {
   if (authMode === 'phone') {
     const phone = input.value.trim();
     const channel = pickedChannel();
-    if (!channel) return alert('Choose where to receive your code — Telegram or SMS.');
+    if (!channel) return alert('Choose where to receive your code — Telegram, SMS or WhatsApp.');
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

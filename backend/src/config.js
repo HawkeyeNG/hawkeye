@@ -130,6 +130,11 @@ export const config = {
   bulksmsNgApiToken: process.env.BULKSMS_NG_API_TOKEN || '',
   bulksmsNgSenderId: process.env.BULKSMS_NG_SENDER_ID || 'Hawkeye',
   bulksmsNgGateway: process.env.BULKSMS_NG_GATEWAY || 'otp',
+  // Sendchamp — WhatsApp OTP channel via their Verification API (they generate
+  // and deliver the code through a Meta-approved template; we confirm against
+  // their reference). Empty key = WhatsApp option simply doesn't function.
+  sendchampApiKey: process.env.SENDCHAMP_API_KEY || '',
+  sendchampSender: process.env.SENDCHAMP_SENDER || 'Sendchamp',
 
   geofenceRadiusM: num('GEOFENCE_RADIUS_M', 200),
   maxGpsAccuracyM: num('MAX_GPS_ACCURACY_M', 100),

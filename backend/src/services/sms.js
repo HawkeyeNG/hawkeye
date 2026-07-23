@@ -16,6 +16,18 @@ import { db } from '../db.js';
 // 'sms'); empty = legacy clients, auto behaviour.
 export async function sendOtp(phone, code, phoneHash, channel = '') {
   const message = `Hawkeye code: ${code}. Expires in ${Math.round(config.otpTtlS / 60)} min. Never share it.`;
+  // WhatsApp rides Sendchamp's Verification API regardless of smsProvider:
+  // Sendchamp generates + delivers the code via its Meta-approved template and
+  // we keep their reference for /verify (our own `code` is unused on this path).
+  if (channel === 'whatsapp') {
+    if (config.sendchampApiKey) {
+      const reference = await createWhatsappOtp(phone);
+      if (reference) return { ok: true, viaWhatsapp: true, scReference: reference };
+    }
+    // WhatsApp unavailable/failed — SMS keeps them moving.
+    if (await sendFallbackSms(phone, message)) return { ok: true, viaSms: true };
+    return { ok: false };
+  }
   switch (config.smsProvider) {
     case 'console':
       console.log(`[sms:console] ${phone}: ${message}`);
@@ -63,6 +75,58 @@ async function sendFallbackSms(phone, message) {
   if (config.bulksmsNgApiToken && await sendBulkSmsNg(phone, message)) return true;
   if (config.termiiApiKey && await sendTermii(phone, message)) return true;
   return false;
+}
+
+// Sendchamp Verification API — create sends the OTP over WhatsApp and returns
+// a reference; confirm checks a submitted code against that reference. Their
+// status field has appeared as both a string and a number, so accept either.
+const SC_HEADERS = () => ({ 'content-type': 'application/json', accept: 'application/json', authorization: `Bearer ${config.sendchampApiKey}` });
+const scOk = (res, body) => res.ok && (body.status === 'success' || body.status === 200 || body.code === 200);
+
+async function createWhatsappOtp(phone) {
+  try {
+    const res = await fetch('https://api.sendchamp.com/api/v1/verification/create', {
+      method: 'POST',
+      headers: SC_HEADERS(),
+      body: JSON.stringify({
+        channel: 'whatsapp',
+        sender: config.sendchampSender,
+        token_type: 'numeric',
+        token_length: 6,
+        expiration_time: Math.max(1, Math.round(config.otpTtlS / 60)),
+        customer_mobile_number: phone.replace('+', ''),
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    const reference = body?.data?.reference || body?.data?.id || null;
+    if (!scOk(res, body) || !reference) {
+      console.error('[sms:whatsapp] create failed', res.status, JSON.stringify(body).slice(0, 300));
+      return null;
+    }
+    return String(reference);
+  } catch (err) {
+    console.error('[sms:whatsapp]', err.message);
+    return null;
+  }
+}
+
+export async function confirmWhatsappOtp(reference, code) {
+  try {
+    const res = await fetch('https://api.sendchamp.com/api/v1/verification/confirm', {
+      method: 'POST',
+      headers: SC_HEADERS(),
+      body: JSON.stringify({ verification_reference: reference, verification_code: code }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!scOk(res, body)) {
+      console.error('[sms:whatsapp] confirm rejected', res.status, JSON.stringify(body).slice(0, 300));
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[sms:whatsapp]', err.message);
+    return false;
+  }
 }
 
 async function sendBulkSmsNg(phone, sms) {

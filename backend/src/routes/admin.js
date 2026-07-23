@@ -248,21 +248,33 @@ adminRouter.post('/admin/archive-election', requireAdmin, (req, res) => {
   res.json({ ok: true, election, races: files });
 });
 
-// OTP-delivery diagnostics: which provider the RUNNING process sees and whether
-// the Termii key it holds is accepted (live balance probe — no SMS is sent).
+// OTP-delivery diagnostics: which provider/keys the RUNNING process sees and
+// whether the SMS token is accepted (live balance probe — no SMS is sent).
 adminRouter.get('/admin/otp-diag', requireAdmin, async (_req, res) => {
-  const key = config.termiiApiKey;
-  const out = { provider: config.smsProvider, termiiKeySet: Boolean(key), termiiKeyTail: key ? key.slice(-6) : null, termiiBaseUrl: config.termiiBaseUrl };
-  if (key) {
+  const out = { provider: config.smsProvider, bulksmsTokenSet: Boolean(config.bulksmsNgApiToken), termiiKeySet: Boolean(config.termiiApiKey) };
+  if (config.bulksmsNgApiToken) {
     try {
-      const r = await fetch(`${config.termiiBaseUrl}/api/get-balance?api_key=${encodeURIComponent(key)}`);
+      const r = await fetch('https://www.bulksmsnigeria.com/api/v2/balance', {
+        headers: { authorization: `Bearer ${config.bulksmsNgApiToken}` },
+      });
       const b = await r.json().catch(() => ({}));
-      out.termiiKeyValid = r.ok && b.balance !== undefined;
-      out.termiiBalance = b.balance ?? b.message ?? null;
-      out.termiiCurrency = b.currency || null;
-    } catch (e) { out.termiiKeyValid = false; out.termiiBalance = String(e.message || e); }
+      out.bulksmsTokenValid = r.ok && Boolean(b.balance || b?.data?.status === 'success');
+      out.bulksmsBalance = b?.balance?.total_balance ?? b?.data?.message ?? b?.message ?? null;
+    } catch (e) { out.bulksmsTokenValid = false; out.bulksmsBalance = String(e.message || e); }
   }
   res.json(out);
+});
+
+// Unlink a phone from its Telegram chat so OTP delivery for it falls back to
+// SMS — used to test the SMS path with an already-linked number. The observer
+// account itself is untouched; opening the bot again relinks in one tap.
+adminRouter.post('/admin/unlink-telegram', requireAdmin, async (req, res) => {
+  const { normalizePhone, phoneHash } = await import('./observers.js');
+  const phone = normalizePhone(String(req.body?.phone || ''));
+  if (!phone) return res.status(400).json({ error: 'invalid_phone' });
+  const info = db.prepare('DELETE FROM telegram_links WHERE phone_hash = ?').run(phoneHash(phone));
+  notifyMaster(`🔗 Telegram unlinked for ${phone.slice(0, 7)}… (${info.changes} link(s) removed)`);
+  res.json({ ok: true, removed: info.changes });
 });
 
 // One-time pre-election reset: wipe the finished (mock) election cycle so every

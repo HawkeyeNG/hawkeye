@@ -262,16 +262,11 @@ adminRouter.get('/admin/otp-diag', requireAdmin, async (_req, res) => {
       out.bulksmsBalance = b?.balance?.total_balance ?? b?.data?.message ?? b?.message ?? null;
     } catch (e) { out.bulksmsTokenValid = false; out.bulksmsBalance = String(e.message || e); }
   }
-  if (config.sendchampApiKey) {
-    try {
-      const r = await fetch('https://api.sendchamp.com/api/v1/wallet/wallet_balance', {
-        headers: { accept: 'application/json', authorization: `Bearer ${config.sendchampApiKey}` },
-      });
-      const b = await r.json().catch(() => ({}));
-      out.sendchampKeyValid = r.ok && (b.status === 'success' || b.status === 200 || b.code === 200);
-      out.sendchampBalance = b?.data?.wallet_balance ?? b?.data?.balance ?? b?.message ?? null;
-    } catch (e) { out.sendchampKeyValid = false; out.sendchampBalance = String(e.message || e); }
-  }
+  // No harmless Sendchamp validity probe exists: their wallet endpoint rejects
+  // the public access key that verification/create happily accepts, and create
+  // says "Invalid Access Key" for malformed bodies even with a valid key. Key
+  // validity is only provable by a real verification send (confirmed working
+  // 2026-07-23).
   res.json(out);
 });
 

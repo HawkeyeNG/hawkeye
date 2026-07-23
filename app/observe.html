@@ -67,6 +67,18 @@
       <div class="card">
         <label for="auth-input">Nigerian mobile number</label>
         <input id="auth-input" type="tel" inputmode="tel" placeholder="e.g. 0803 123 4567" autocomplete="tel" />
+        <p id="otp-phone" class="hint" hidden></p>
+        <fieldset id="channel-pick" style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:10px 0">
+          <legend style="font-size:.85rem;font-weight:700;padding:0 6px">Where should your code go?</legend>
+          <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
+            <input type="radio" name="otp-channel" value="telegram" style="width:auto;margin:0" />
+            <span>Telegram <small>(free — codes arrive in our bot chat)</small></span>
+          </label>
+          <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
+            <input type="radio" name="otp-channel" value="sms" style="width:auto;margin:0" />
+            <span>SMS <small>(text message to the number above)</small></span>
+          </label>
+        </fieldset>
         <div id="pw-signin-wrap" hidden>
           <label for="pw-signin-input">Password</label>
           <input id="pw-signin-input" type="password" placeholder="Your password" autocomplete="current-password" />
@@ -221,7 +233,7 @@
   <script src="device.js" defer></script>
   <script src="scan.js" defer></script>
   <script src="outbox.js" defer></script>
-  <script src="app.js?v=114" defer></script>
+  <script src="app.js?v=115" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="menu.js?v=106" defer></script>
 </body>

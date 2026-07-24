@@ -249,7 +249,7 @@ function applyIntentCopy() {
   if (!label) return;
   const note = $('intent-note');
   if (note) {
-    note.textContent = `To ${label}, register your device below.`;
+    note.textContent = `To ${label}, verify your phone below.`;
     note.hidden = false;
   }
 }
@@ -328,7 +328,7 @@ let pendingChannel = '';
 function showOtpPhone() {
   const el = $('otp-phone');
   if (!el) return;
-  el.innerHTML = `Code requested for <strong>${pendingPhone.replace(/</g, '&lt;')}</strong> — wrong number? Use “← Use a different number” below.`;
+  el.innerHTML = `For <strong>${pendingPhone.replace(/</g, '&lt;')}</strong> — wrong? Tap “← Use a different number”.`;
   el.hidden = false;
 }
 
@@ -347,7 +347,7 @@ function renderOtpSent(body) {
     // with the code immediately (future codes then arrive automatically).
     $('otp-hint').innerHTML =
       `<a class="btn-link" id="tg-open" href="${body.telegramLink}" target="_blank" rel="noopener">📨 Open the Telegram bot to get your code</a>
-       <span>You'll be taken to our Telegram bot. Tap <strong>Start</strong>, then <strong>Share my phone number</strong> — your code appears in the chat instantly. Come back here and enter it below.</span>`;
+       <span>In the bot: tap <strong>Start</strong> → <strong>Share my phone number</strong>. Then enter your code below.</span>`;
     // Auto-launch the bot (a fresh gesture-linked anchor click dodges popup blockers).
     $('tg-open').click();
   } else if (body.viaTelegram) {

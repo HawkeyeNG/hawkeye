@@ -61,26 +61,25 @@
     <!-- 1. Registration -->
     <section id="screen-register" hidden>
       <p id="intent-note" class="notice" hidden></p>
-      <h1 id="register-title">Register your device</h1>
-      <p class="lede">One verified phone number equals one observer identity. Your number is
-      never stored in readable form and is never published.</p>
+      <h1 id="register-title">Verify your phone</h1>
+      <p class="lede">One number, one observer. Your number is never published.</p>
       <div class="card">
         <label for="auth-input">Nigerian mobile number</label>
         <input id="auth-input" type="tel" inputmode="tel" placeholder="e.g. 0803 123 4567" autocomplete="tel" />
         <p id="otp-phone" class="hint" hidden></p>
         <fieldset id="channel-pick" style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:10px 0">
-          <legend style="font-size:.85rem;font-weight:700;padding:0 6px">Where should your code go?</legend>
+          <legend style="font-size:.85rem;font-weight:700;padding:0 6px">Get your code by</legend>
           <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
             <input type="radio" name="otp-channel" value="telegram" style="width:auto;margin:0" />
-            <span>Telegram <small>(free — codes arrive in our bot chat)</small></span>
+            <span>Telegram <small>(free)</small></span>
           </label>
           <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
             <input type="radio" name="otp-channel" value="whatsapp" style="width:auto;margin:0" />
-            <span>WhatsApp <small>(message to the number above)</small></span>
+            <span>WhatsApp</span>
           </label>
           <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
             <input type="radio" name="otp-channel" value="sms" style="width:auto;margin:0" />
-            <span>SMS <small>(text message to the number above)</small></span>
+            <span>SMS</span>
           </label>
         </fieldset>
         <div id="pw-signin-wrap" hidden>
@@ -91,7 +90,7 @@
         <div id="pw-opt" hidden>
           <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;cursor:pointer">
             <input id="pw-opt-check" type="checkbox" style="width:auto;margin:3px 0 0" />
-            <span>Also create a password <small>(optional)</small> — sign in on any device later without waiting for a code</span>
+            <span>Add a password <small>(optional)</small> — sign in later without codes</span>
           </label>
           <div id="pw-opt-field" hidden>
             <label for="pw-opt-input">Choose a password <small>(min 8 characters)</small></label>
@@ -108,8 +107,7 @@
     <!-- 2. Locate -->
     <section id="screen-locate" hidden>
       <h1>Find your polling unit</h1>
-      <p class="lede">Units with a verified or crowd-confirmed location appear automatically
-      when you are standing near them.</p>
+      <p class="lede">Stand at your polling unit — nearby units appear automatically.</p>
       <div class="card">
         <button id="btn-locate">Find polling units near me</button>
         <p id="locate-status" class="status" role="status"></p>
@@ -117,9 +115,8 @@
       </div>
       <details id="browse-block" class="card">
         <summary>Can't see your unit? Browse the register</summary>
-        <p class="hint">Your unit may not have a verified location yet. You can still report —
-        your GPS position is recorded with the report and it stays marked
-        “location unverified” until independent reports from the same place confirm it.</p>
+        <p class="hint">No verified location yet? You can still report — your GPS is recorded
+        and the unit stays “location unverified” until other reports confirm it.</p>
         <label for="sel-state">State</label>
         <select id="sel-state"><option value="">— select —</option></select>
         <label for="sel-lga">Local Government Area</label>
@@ -139,15 +136,13 @@
         <label for="sel-contest">Election being reported</label>
         <select id="sel-contest"></select>
         <p id="contest-scope" class="scope-note"></p>
-        <p class="hint">Several elections may be counted at this unit today. Submit one
-        report per election — each needs its own photographs of that election's
-        results sheet.</p>
+        <p class="hint">One report per election — each needs photos of its own results sheet.</p>
       </div>
 
       <div class="card">
         <h2><span class="step-no">1</span> Photograph the evidence</h2>
-        <p class="hint">Both photographs must be taken live, here at the polling unit.
-        Gallery uploads are not possible. Each photo is time- and location-stamped.</p>
+        <p class="hint">Photos are taken live at the unit — no gallery uploads. Each is
+        time- and location-stamped.</p>
 
         <div class="capture-slot" id="slot-sheet">
           <div class="slot-head">
@@ -183,8 +178,8 @@
 
       <div class="card">
         <h2><span class="step-no">3</span> Sign and submit</h2>
-        <p class="hint">Your report is signed on this device and recorded permanently on a
-        public, tamper-evident ledger. It cannot be edited or withdrawn.</p>
+        <p class="hint">Signed on this device, recorded permanently on the public
+        tamper-evident ledger — it cannot be edited or withdrawn.</p>
         <button id="btn-submit" disabled>Sign &amp; submit report</button>
         <p id="submit-status" class="status" role="status"></p>
       </div>
@@ -237,7 +232,7 @@
   <script src="device.js" defer></script>
   <script src="scan.js" defer></script>
   <script src="outbox.js" defer></script>
-  <script src="app.js?v=116" defer></script>
+  <script src="app.js?v=117" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="menu.js?v=106" defer></script>
 </body>

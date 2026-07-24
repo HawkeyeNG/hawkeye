@@ -135,6 +135,10 @@ export const config = {
   // their reference). Empty key = WhatsApp option simply doesn't function.
   sendchampApiKey: process.env.SENDCHAMP_API_KEY || '',
   sendchampSender: process.env.SENDCHAMP_SENDER || 'Sendchamp',
+  // Which SMS provider leads the OTP chain: 'sendchamp' | 'bulksms'. Nigerian
+  // sender-ID approval is per-provider and asynchronous — point this at
+  // whichever provider currently has an APPROVED sender, no code change needed.
+  smsPrimary: process.env.SMS_PRIMARY || 'sendchamp',
 
   geofenceRadiusM: num('GEOFENCE_RADIUS_M', 200),
   maxGpsAccuracyM: num('MAX_GPS_ACCURACY_M', 100),

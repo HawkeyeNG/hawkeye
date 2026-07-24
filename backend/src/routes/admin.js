@@ -251,7 +251,7 @@ adminRouter.post('/admin/archive-election', requireAdmin, (req, res) => {
 // OTP-delivery diagnostics: which provider/keys the RUNNING process sees and
 // whether the SMS token is accepted (live balance probe — no SMS is sent).
 adminRouter.get('/admin/otp-diag', requireAdmin, async (_req, res) => {
-  const out = { provider: config.smsProvider, bulksmsTokenSet: Boolean(config.bulksmsNgApiToken), sendchampKeySet: Boolean(config.sendchampApiKey), termiiKeySet: Boolean(config.termiiApiKey) };
+  const out = { provider: config.smsProvider, smsPrimary: config.smsPrimary, bulksmsSender: config.bulksmsNgSenderId, bulksmsTokenSet: Boolean(config.bulksmsNgApiToken), sendchampKeySet: Boolean(config.sendchampApiKey), termiiKeySet: Boolean(config.termiiApiKey) };
   if (config.bulksmsNgApiToken) {
     try {
       const r = await fetch('https://www.bulksmsnigeria.com/api/v2/balance', {

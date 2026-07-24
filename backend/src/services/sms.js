@@ -71,18 +71,26 @@ export async function sendOtp(phone, code, phoneHash, channel = '') {
   }
 }
 
-// SMS delivery in priority order: Sendchamp Verification (SMS) is PRIMARY —
-// BulkSMSNigeria's route proved undeliverable to some live Nigerian SIMs, while
-// Sendchamp delivers — then BulkSMSNigeria, then legacy Termii. Sendchamp
-// generates its own code and returns a reference (confirmed in /verify against
-// sc_reference); BulkSMS and Termii send our local `message`. A provider with no
-// key configured is skipped. Returns { ok, scReference? }.
+// SMS delivery chain. Order is config-driven (SMS_PRIMARY): Nigerian carriers
+// silently drop SMS from unapproved sender IDs, and sender approval is
+// per-provider and asynchronous — so the chain leads with whichever provider
+// currently has an APPROVED sender. Sendchamp generates its own code and
+// returns a reference (confirmed in /verify against sc_reference); BulkSMS and
+// Termii send our local `message`. A provider with no key configured is
+// skipped. Returns { ok, scReference? }.
 async function sendSms(phone, message) {
-  if (config.sendchampApiKey) {
+  const viaSendchamp = async () => {
+    if (!config.sendchampApiKey) return null;
     const ref = await createScOtp(phone, 'sms');
-    if (ref) return { ok: true, scReference: ref };
+    return ref ? { ok: true, scReference: ref } : null;
+  };
+  const viaBulksms = async () =>
+    (config.bulksmsNgApiToken && await sendBulkSmsNg(phone, message)) ? { ok: true } : null;
+  const order = config.smsPrimary === 'bulksms' ? [viaBulksms, viaSendchamp] : [viaSendchamp, viaBulksms];
+  for (const attempt of order) {
+    const r = await attempt();
+    if (r) return r;
   }
-  if (config.bulksmsNgApiToken && await sendBulkSmsNg(phone, message)) return { ok: true };
   if (config.termiiApiKey && await sendTermii(phone, message)) return { ok: true };
   return { ok: false };
 }

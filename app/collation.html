@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#00482b" />
-  <meta name="description" content="Report EC8B/EC8C/EC8D collation results to Hawkeye — the announced ward, LGA and state totals, checked against polling-unit evidence." />
+  <meta name="description" content="Report ward, LGA and state collation results to Hawkeye — announced totals, checked against polling-unit evidence." />
   <title>Hawkeye — Report a Collation Result</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -18,7 +18,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
   <meta property="og:title" content="Hawkeye — Report a Collation Result" />
-  <meta property="og:description" content="Report EC8B/EC8C/EC8D collation results to Hawkeye — the announced ward, LGA and state totals, checked against polling-unit evidence." />
+  <meta property="og:description" content="Report ward, LGA and state collation results to Hawkeye — announced totals, checked against polling-unit evidence." />
   <meta property="og:url" content="https://hawkeye.com.ng/collation.html" />
   <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
   <meta property="og:image:width" content="1200" />
@@ -85,8 +85,7 @@
 
       <div class="card">
         <h2><span class="step-no">1</span> Photograph the form and the venue</h2>
-        <p class="hint">Both photos are taken live and location-stamped — the collation form
-        (auto-scanned) and the collation centre itself.</p>
+        <p class="hint">Both photos are taken live and location-stamped.</p>
         <div class="capture-slot">
           <div class="slot-head"><div><strong id="form-label">Collation form</strong>
             <small>The announced result form</small></div>
@@ -112,8 +111,7 @@
 
       <div class="card">
         <h2><span class="step-no">3</span> Sign and submit</h2>
-        <p class="hint">Signed on this device, recorded permanently, and reconciled against the
-        polling-unit evidence in this area.</p>
+        <p class="hint">Signed on this device, recorded permanently, and checked against polling-unit evidence in this area.</p>
         <button id="btn-submit" disabled>Sign &amp; submit collation report</button>
         <p id="status" class="status" role="status"></p>
       </div>
@@ -320,7 +318,7 @@
         });
         const b = await r.json().catch(() => ({}));
         if (r.status === 201) {
-          $('status').textContent = `✅ ${b.form} report recorded and being reconciled against polling-unit evidence.`;
+          $('status').textContent = `✅ ${b.form} report recorded and being checked against polling-unit evidence.`;
           shots.sheet = shots.venue = null;
         } else if (r.status === 401) {
           localStorage.removeItem('hawkeye_token');

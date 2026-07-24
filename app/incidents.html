@@ -61,8 +61,7 @@
   <main class="wrap">
     <h1>Report an Incident</h1>
     <p class="lede">Witnessed violence, ballot snatching, vote-buying, voter intimidation or a BVAS
-    failure? Report it with photos, a short video, or a written account. Verified reports are
-    reviewed by our team and, once approved, appear in the public incidents feed below.</p>
+    failure? Report it with photos, a short video, or a written account. Our team reviews every report — approved ones appear in the public feed below.</p>
 
     <section id="need-auth" class="card" hidden>
       <p>To report an incident, register your device first.</p>
@@ -85,10 +84,9 @@
         <input type="checkbox" id="use-gps" checked style="width:auto" /> Attach my current location
       </label>
 
-      <button id="btn-submit">Submit incident report</button>
+      <button id="btn-submit">Submit report</button>
       <p id="status" class="status" role="status"></p>
-      <p class="hint">Reports are queued for human review before anything is ever published.
-      Nothing you submit is posted automatically.</p>
+      <p class="hint">A human reviews every report before anything is published.</p>
     </section>
 
     <section class="card">
@@ -160,7 +158,7 @@
         });
         const body = await res.json().catch(() => ({}));
         if (res.status === 201) {
-          $('status').textContent = '✅ Submitted — your report is in the review queue. Once approved it appears on this page and everyone watching the affected polling unit gets a Telegram alert.';
+          $('status').textContent = '✅ Submitted for review. Once approved it appears here and watchers of this polling unit get a Telegram alert.';
           $('desc').value = ''; $('media').value = ''; $('preview').innerHTML = '';
         } else if (res.status === 401) {
           localStorage.removeItem('hawkeye_token');

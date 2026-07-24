@@ -42,8 +42,8 @@
     if (race.stats) {
       const cells = [];
       if (race.date) cells.push([new Date(race.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }), 'Election day']);
-      if (race.stats.candidates != null) cells.push([race.stats.candidates, 'Candidates on the ballot']);
-      if (race.stats.lgas != null) cells.push([race.stats.lgas, 'Local Government Areas']);
+      if (race.stats.candidates != null) cells.push([race.stats.candidates, 'Candidates']);
+      if (race.stats.lgas != null) cells.push([race.stats.lgas, 'LGAs']);
       if (race.stats.pollingUnits != null) cells.push(['~' + Number(race.stats.pollingUnits).toLocaleString(), 'Polling units']);
       parts.push(`<div class="race-statbar">${cells.map(([n, l]) => `<div class="s"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('')}</div>`);
     }
@@ -81,7 +81,7 @@
     if (secondary && secondary.length) {
       if (race.others) {
         const all = [...race.candidates, ...race.others].sort((a, b) => a.party.localeCompare(b.party));
-        parts.push(`<h2 style="margin-top:26px">Full ballot — all ${all.length} candidates</h2>`);
+        parts.push(`<h2 style="margin-top:26px">Full ballot — ${all.length} candidates</h2>`);
         parts.push(`<div class="ballot">${all.map((c) => `
           <div class="b" style="--pc:${color(c.party)}">${flagIcon(c.party)}
             <div><strong>${esc(c.name)}</strong><span>${esc(c.party)}${c.incumbent ? ' · incumbent' : ''}</span></div></div>`).join('')}</div>`);
@@ -99,7 +99,7 @@
     // (e.g. Osun -> results.html?contest=GOV&scope=Osun preselects the race).
     parts.push(`<div class="race-cta">
       <a class="btn-accent" href="observe.html?intent=observe">Become an Observer</a>
-      <a class="btn-ghost" style="border-color:var(--green);color:var(--green)" href="${esc(opts.resultsHref || 'results.html')}">Live Results</a></div>`);
+      <a class="btn-ghost" style="border-color:var(--green);color:var(--green)" href="${esc(opts.resultsHref || 'results.html')}">See Live Results</a></div>`);
 
     const credit = [race.note ? `${race.note}` : '', race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit || ''].filter(Boolean).join(' ');
     if (credit) parts.push(`<p class="hint">${esc(credit)}</p>`);

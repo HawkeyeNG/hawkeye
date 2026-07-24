@@ -69,15 +69,14 @@
 
   <main class="wrap">
     <h1>Map a Polling Unit</h1>
-    <p class="lede">Most units have no verified location yet, so they can't be geofenced.
+    <p class="lede">Most polling units have no confirmed location yet, so results from them can't be location-checked.
     Standing <strong>at a polling unit</strong>, capture its GPS position. When a few
     independent people map the same unit, its location is confirmed for election day.</p>
     <p id="stats" class="scope-note"></p>
 
     <section class="card">
       <h2>Polling unit map &amp; locator</h2>
-      <p class="hint">Search a ward to jump to it, switch on ward boundaries, or show the polling
-      units near you. Tap an orange unit to map it.</p>
+      <p class="hint">Search your ward or tap 📍 Near me, then tap an orange unit to map it.</p>
       <div class="map-tools">
         <input id="ward-search" type="text" placeholder="Search a ward or LGA…" />
         <button id="btn-search" class="secondary">Find</button>
@@ -114,8 +113,7 @@
       recorded; nothing is published.</p>
       <button id="btn-gps">📍 Capture GPS at this unit</button>
       <button id="btn-save-unit" class="secondary">⭐ Save as my polling unit</button>
-      <p class="hint">Saving subscribes you to Telegram alerts for every result report and
-      approved incident at this unit.</p>
+      <p class="hint">Save to get Telegram alerts for every result and approved incident at this unit.</p>
       <p id="cap-status" class="status" role="status"></p>
     </section>
 
@@ -195,7 +193,7 @@
       if (lmap) return lmap;
       if (typeof L === 'undefined') { // library failed to load — degrade, don't crash
         document.getElementById('lmap').innerHTML =
-          '<p class="hint" style="padding:14px">Map library failed to load — check your connection and refresh. The register browser below still works.</p>';
+          '<p class="hint" style="padding:14px">Map failed to load — check your connection and refresh. You can still pick your unit below.</p>';
         return null;
       }
       lmap = L.map('lmap', { preferCanvas: true }).setView([9.05, 7.5], 6); // Nigeria
@@ -294,7 +292,7 @@
         }
         $('near-status').textContent = (r.units || []).length
           ? `${r.units.length} unit(s) within 5 km. Positions marked orange are approximate — mapping them pins the real spot.`
-          : 'No units with a known or approximate position within 5 km — use the register browser below.';
+          : 'No units found within 5 km — pick your state, LGA and ward below instead.';
       }, () => { $('near-status').textContent = 'Location unavailable.'; }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     };
 

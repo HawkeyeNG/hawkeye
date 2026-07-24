@@ -282,6 +282,33 @@ adminRouter.post('/admin/unlink-telegram', requireAdmin, async (req, res) => {
   res.json({ ok: true, removed: info.changes });
 });
 
+// Forget a phone entirely (test accounts): deletes the observer row, Telegram
+// link, pending OTPs and deep-link tokens so the number can run a genuinely
+// fresh sign-up. Refuses if the observer has ANY reports — this is a
+// test-hygiene tool, not an account-deletion path (profile.html has that).
+adminRouter.post('/admin/forget-phone', requireAdmin, async (req, res) => {
+  const { normalizePhone, phoneHash } = await import('./observers.js');
+  const phone = normalizePhone(String(req.body?.phone || ''));
+  if (!phone) return res.status(400).json({ error: 'invalid_phone' });
+  const hash = phoneHash(phone);
+  const obs = db.prepare('SELECT id FROM observers WHERE phone_hash = ?').get(hash);
+  if (obs) {
+    const refs = ['submissions', 'collation_reports', 'incidents']
+      .map((t) => db.prepare(`SELECT COUNT(*) c FROM ${t} WHERE observer_id = ?`).get(obs.id).c)
+      .reduce((a, b) => a + b, 0);
+    if (refs > 0) return res.status(409).json({ error: 'observer_has_reports', reports: refs });
+  }
+  const out = {};
+  db.transaction(() => {
+    out.telegramLinks = db.prepare('DELETE FROM telegram_links WHERE phone_hash = ?').run(hash).changes;
+    out.otps = db.prepare('DELETE FROM otps WHERE phone_hash = ?').run(hash).changes;
+    out.linkTokens = db.prepare('DELETE FROM tg_link_tokens WHERE phone_hash = ?').run(hash).changes;
+    out.observer = obs ? db.prepare('DELETE FROM observers WHERE id = ?').run(obs.id).changes : 0;
+  })();
+  notifyMaster(`🧽 phone forgotten (test hygiene): ${phone.slice(0, 7)}… ${JSON.stringify(out)}`);
+  res.json({ ok: true, ...out });
+});
+
 // One-time pre-election reset: wipe the finished (mock) election cycle so every
 // chain — submissions ledger, collation ledger, docket ledger, anchors — starts
 // again at genesis for the new election. Archive first (/admin/archive-election);

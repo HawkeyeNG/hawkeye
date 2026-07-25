@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="Practise reporting a polling-unit result on Hawkeye — a safe run-through for new observers. Nothing here is published." />
+  <title>Hawkeye — Practice Run</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css?v=104" />
+  <script src="native.js?v=100"></script>
+  <style>
+    .prac-banner { background: #fff4d6; border-left: 6px solid #f9a825; padding: 12px 14px; border-radius: 8px; margin: 0 0 16px; font-size: 0.92rem; }
+    .prac-tag { display: inline-block; background: #f9a825; color: #3a2c00; font-weight: 800; font-size: 0.68rem; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 999px; vertical-align: middle; margin-left: 8px; }
+    .vote-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .vote-row label { flex: 1; margin: 0; font-weight: 700; }
+    .vote-row .swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; margin-right: 8px; vertical-align: -1px; }
+    .vote-row input { width: 120px; margin: 0; }
+    .step-done { color: var(--green); font-weight: 700; }
+    #camera-overlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+    #camera-overlay video { max-width: 100%; max-height: 70vh; }
+    .camera-frame { text-align: center; color: #fff; padding: 12px; width: 100%; max-width: 520px; }
+    .camera-actions { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">National Leaderboard</a>
+        <a href="dashboard.html">Public Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Practice mode</strong> — a safe run-through. Nothing here is published, counted, or added to the ledger.</div></div>
+
+  <main class="wrap" id="main">
+    <section id="closed" hidden>
+      <h1>Practice is closed right now</h1>
+      <p class="lede">The practice election has ended. A fresh practice run will reopen after the
+      Osun election so you can prepare for the 2027 general elections. In the meantime you can
+      <a href="how.html">read how Hawkeye works</a> or <a href="observe.html?intent=observe">become an observer</a>.</p>
+    </section>
+
+    <section id="flow" hidden>
+      <h1 id="prac-title">Practice run <span class="prac-tag">PRACTICE</span></h1>
+      <p class="lede" id="prac-sub"></p>
+
+      <div class="prac-banner">This is a <strong>practice run</strong> — a safe way to learn the exact steps
+      before election day. Nothing you enter here is published, counted, or added to the public ledger.</div>
+
+      <div class="card">
+        <strong id="prac-unit-name">Practice Polling Unit</strong>
+        <p class="hint" id="prac-unit-scope"></p>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">1</span> Photograph the evidence</h2>
+        <p class="hint">On election day you take two live photos here — the results sheet and the venue.
+        Try it now (or tap “Use a sample” if you’d rather skip the camera in practice).</p>
+        <div class="capture-slot">
+          <div class="slot-head"><div><strong>Results sheet (EC8A)</strong><small>The announced results form</small></div>
+            <span class="slot-status" id="status-sheet">Required</span></div>
+          <img id="preview-sheet" alt="" hidden style="max-width:100%;border-radius:8px;margin:8px 0" />
+          <div class="row"><button id="btn-cam-sheet" class="secondary" style="width:auto">Take photo</button>
+            <button id="btn-skip-sheet" class="btn-link" style="width:auto">Use a sample</button></div>
+        </div>
+        <div class="capture-slot">
+          <div class="slot-head"><div><strong>Polling venue</strong><small>The building or surroundings</small></div>
+            <span class="slot-status" id="status-venue">Required</span></div>
+          <img id="preview-venue" alt="" hidden style="max-width:100%;border-radius:8px;margin:8px 0" />
+          <div class="row"><button id="btn-cam-venue" class="secondary" style="width:auto">Take photo</button>
+            <button id="btn-skip-venue" class="btn-link" style="width:auto">Use a sample</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">2</span> Enter the announced counts</h2>
+        <p class="hint">Type the number of votes each party was announced to have at the unit.</p>
+        <div id="vote-inputs"></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">3</span> Sign &amp; submit</h2>
+        <p class="hint">On election day your report is signed on your phone and added to the public,
+        tamper-evident ledger. Here it just completes the practice.</p>
+        <button id="btn-submit" disabled>Sign &amp; submit (practice)</button>
+        <p id="submit-status" class="status" role="status"></p>
+      </div>
+    </section>
+
+    <section id="done" hidden>
+      <div class="confirm-panel">
+        <h1>✅ Practice complete!</h1>
+        <p>Nicely done — that’s exactly how you report a result on election day.</p>
+      </div>
+      <div class="card">
+        <p><strong>This was practice — nothing was published.</strong> On election day, your real report
+        is signed on your phone and permanently recorded on Hawkeye’s public, tamper-evident ledger.</p>
+        <p class="hint">Practice ledger entry: <code id="entry-hash"></code></p>
+      </div>
+      <div class="race-cta">
+        <a class="btn-accent" href="observe.html?intent=observe">Become an Observer →</a>
+        <button id="btn-again" class="btn-ghost" style="border-color:var(--green);color:var(--green);width:auto">Practise again</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="camera-overlay" hidden>
+    <div class="camera-frame">
+      <p id="camera-title">Results sheet (EC8A)</p>
+      <video id="video" playsinline></video>
+      <div class="camera-actions">
+        <button id="btn-cancel-camera" class="secondary" style="width:auto">Cancel</button>
+        <button id="btn-capture" style="width:auto">Capture</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav></nav>
+    <p>Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+  </div></footer>
+
+  <script src="practice.js?v=1"></script>
+  <script src="tg.js?v=95"></script>
+  <script src="menu.js?v=107"></script>
+</body>
+</html>

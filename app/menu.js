@@ -53,7 +53,7 @@
   const FOOTER_ONLY = ['about.html', 'how.html', 'privacy.html', 'faq.html', 'guide.html'];
   // "Take part" is hidden on desktop (≥900px) — its links live in the header there.
   const GROUPS = [
-    ['Take part', ['observe.html', 'collation.html', 'incidents.html', 'map-unit.html'], 'tp'],
+    ['Take part', ['observe.html', 'collation.html', 'incidents.html', 'map-unit.html', 'practice.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html']],
     ['Live data', ['osun.html', 'results.html', 'dashboard.html', 'candidates.html', 'political.html']],
   ];
@@ -65,6 +65,14 @@
       o.href = 'osun.html';
       o.textContent = 'Osun 2026';
       panel.appendChild(o);
+    }
+    // Practice run — injected everywhere (like Osun) so new users can find it
+    // without editing every page's static list.
+    if (!panel.querySelector('a[href="practice.html"]')) {
+      const pr = document.createElement('a');
+      pr.href = 'practice.html';
+      pr.textContent = 'Practice Run';
+      panel.appendChild(pr);
     }
     const links = new Map([...panel.querySelectorAll('a')].map((a) => [a.getAttribute('href'), a]));
     for (const [label, hrefs, tp] of GROUPS) {

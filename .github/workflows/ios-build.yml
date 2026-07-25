@@ -32,14 +32,20 @@ jobs:
         # regressed APIs the official plugins still use, breaking every SPM build
         # (ionic-team/capacitor#8333 — e.g. push-notifications
         # "CAPPluginCall has no member 'reject'"). Force the CocoaPods template.
-        run: npx cap add ios --packagemanager CocoaPods
-      - name: Ensure CocoaPods workspace
+        # cap add runs pod install internally, which fails because the ML Kit pods
+        # (GoogleMLKit 8) need a higher iOS target than Capacitor's default 14.0 —
+        # tolerate it; we bump the target and re-pod in the next step.
+        run: |
+          npx cap add ios --packagemanager CocoaPods || true
+          test -f ios/App/Podfile || { echo "Podfile was not generated"; exit 1; }
+      - name: Bump iOS deployment target + pod install
         working-directory: mobile
         run: |
           set -x
-          if [ -f ios/App/Podfile ] && [ ! -d ios/App/App.xcworkspace ]; then
-            (cd ios/App && pod install --repo-update)
-          fi
+          # GoogleMLKit 8 (via @capacitor-mlkit/*) requires iOS >= 15.5; use 16.0.
+          sed -i '' "s/^platform :ios.*/platform :ios, '16.0'/" ios/App/Podfile
+          grep -n "platform :ios" ios/App/Podfile
+          (cd ios/App && pod install --repo-update)
           find ios -maxdepth 2 -name '*.xcworkspace' -print
       - name: Unsigned compile (simulator)
         working-directory: mobile
@@ -49,7 +55,7 @@ jobs:
           echo "Building workspace: $WS"
           xcodebuild -workspace "$WS" -scheme App -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO build
+            IPHONEOS_DEPLOYMENT_TARGET=16.0 CODE_SIGNING_ALLOWED=NO build
 
 # ---------------------------------------------------------------------------
 # ENABLE AFTER APPLE DEVELOPER PROGRAM ENROLLMENT ($99/yr)

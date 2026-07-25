@@ -132,8 +132,19 @@
   }
 
   // ---- native push (FCM/APNs) --------------------------------------------
-  const Push = Cap.Plugins && Cap.Plugins.PushNotifications;
+  // DISABLED until Firebase is configured. Without mobile/android/app/
+  // google-services.json, Firebase is never initialised, so Push.register()
+  // throws a native "Default FirebaseApp is not initialized" exception the
+  // instant the user grants the notification permission — and because the
+  // session token then persists, initPush() re-runs on every launch and
+  // crash-loops the app. In-app notifications (the header bell + the
+  // /api/notifications feed) are web-based and unaffected.
+  // TO ENABLE: add google-services.json (Firebase console -> Android app,
+  // package ng.com.hawkeye.observer), set PUSH_ENABLED = true, rebuild.
+  const PUSH_ENABLED = false;
+  const Push = PUSH_ENABLED && Cap.Plugins && Cap.Plugins.PushNotifications;
   window.HAWKEYE.capabilities.push = !!Push;
+  window.HAWKEYE.initPush = async () => {}; // safe no-op unless enabled below
   if (Push) {
     // Register this device's token against the signed-in observer so the backend
     // can push "new report at your saved unit" etc. Only runs once the observer

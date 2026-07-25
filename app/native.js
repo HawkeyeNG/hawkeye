@@ -80,19 +80,40 @@
     // correction — on-device); the VENUE uses the plain OS camera. Both return
     // a JPEG Blob that app.js compresses → hashes → signs → uploads exactly as
     // on web, so content-addressing and the integrity model are unchanged.
+    // Google's ML Kit document scanner is delivered as an ON-DEMAND Google Play
+    // Services module — it is NOT bundled in the APK and must be installed once
+    // before the first scan, or scanDocument() fails and the sheet capture
+    // appears to do nothing (no edge detection). Ensure it up front.
+    async function ensureDocModule() {
+      try {
+        const a = await DocScan.isGoogleDocumentScannerModuleAvailable();
+        if (a && a.available === false) await DocScan.installGoogleDocumentScannerModule();
+      } catch { /* fall through — scanDocument surfaces the real error, handled below */ }
+    }
     window.HAWKEYE.capturePhoto = async function capturePhoto(target) {
       if (target === 'sheet' && DocScan) {
-        const r = await DocScan.scanDocument({
-          galleryImportAllowed: false,
-          pageLimit: 1,
-          resultFormats: 'JPEG',
-          scannerMode: 'FULL',
-        });
-        const imgs = (r && (r.scannedImages || (r.result && r.result.scannedImages))) || [];
-        if (!imgs.length) throw new Error('cancelled');
-        const path = imgs[0].path || imgs[0];
-        ocrSheet(path); // fire-and-forget advisory read
-        return pathToBlob(path);
+        try {
+          await ensureDocModule();
+          const r = await DocScan.scanDocument({
+            galleryImportAllowed: false,
+            pageLimit: 1,
+            resultFormats: 'JPEG',
+            scannerMode: 'FULL',
+          });
+          const imgs = (r && (r.scannedImages || (r.result && r.result.scannedImages))) || [];
+          if (imgs.length) {
+            const path = imgs[0].path || imgs[0];
+            ocrSheet(path); // fire-and-forget advisory read
+            return pathToBlob(path);
+          }
+          throw new Error('cancelled'); // scanner returned nothing = user backed out
+        } catch (e) {
+          // A genuine user-cancel aborts; anything else (module unavailable, no
+          // Play Services, scan error) falls through to the plain camera so the
+          // capture button never dead-ends — the server-side vision read still runs.
+          if (/cancel/i.test(String((e && e.message) || ''))) throw e;
+          console.warn('[docscan] unavailable — using plain camera:', (e && e.message) || e);
+        }
       }
       const photo = await Camera.getPhoto({
         source: 'CAMERA',

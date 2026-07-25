@@ -17,9 +17,12 @@ on:
 
 jobs:
   compile:
-    runs-on: macos-15   # Xcode 16 — Capacitor 8's iOS pods (e.g. IONCameraLib) need it; macos-14 ships Xcode 15.4
+    runs-on: macos-26   # newest image. Ionic's prebuilt XCFrameworks (e.g. IONGeolocationLib) are compiled with Swift 6.2.3 and reject older compilers (macos-15's Xcode 16.4 = Swift 6.1.2).
     steps:
       - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable   # newest Xcode on the image (Swift >= 6.2.3)
       - uses: actions/setup-node@v4
         with:
           node-version: '22'   # Capacitor 8 CLI requires Node >=22

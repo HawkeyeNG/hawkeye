@@ -139,9 +139,10 @@
   // session token then persists, initPush() re-runs on every launch and
   // crash-loops the app. In-app notifications (the header bell + the
   // /api/notifications feed) are web-based and unaffected.
-  // TO ENABLE: add google-services.json (Firebase console -> Android app,
-  // package ng.com.hawkeye.observer), set PUSH_ENABLED = true, rebuild.
-  const PUSH_ENABLED = false;
+  // ENABLED 2026-07-25: Firebase project "hawkeye-bd27d" configured —
+  // google-services.json is in the Android project and the server holds the
+  // matching FCM service account, so Push.register() initialises cleanly.
+  const PUSH_ENABLED = true;
   const Push = PUSH_ENABLED && Cap.Plugins && Cap.Plugins.PushNotifications;
   window.HAWKEYE.capabilities.push = !!Push;
   window.HAWKEYE.initPush = async () => {}; // safe no-op unless enabled below

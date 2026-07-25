@@ -1,0 +1,109 @@
+// Practice / mock-election sandbox — a self-contained teaching flow. It never
+// calls the real /api/submissions, never signs, never touches the ledger. The
+// only network calls are GET /api/practice (config) and POST /api/practice/submit
+// (writes to the disposable practice_submissions table). No sign-in required.
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const shots = { sheet: false, venue: false };
+  let PARTIES = [];
+
+  function refreshSubmit() {
+    $('btn-submit').disabled = !(shots.sheet && shots.venue);
+  }
+  function markSlot(slot) {
+    shots[slot] = true;
+    const badge = $(`status-${slot}`);
+    badge.textContent = 'Captured ✓';
+    badge.classList.add('done');
+    refreshSubmit();
+  }
+
+  // ---- lightweight camera (practice only; no GPS, no upload) ----
+  let stream = null; let target = null;
+  async function openCamera(which) {
+    target = which;
+    $('camera-title').textContent = which === 'sheet' ? 'Results sheet (EC8A)' : 'Polling venue';
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } catch {
+      // No camera / denied — in practice that's fine, just mark it done.
+      alert('No camera available — using a sample photo for practice.');
+      markSlot(which);
+      return;
+    }
+    $('camera-overlay').hidden = false;
+    const v = $('video'); v.srcObject = stream; await v.play();
+  }
+  function closeCamera() {
+    if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
+    $('camera-overlay').hidden = true;
+  }
+  function capture() {
+    const v = $('video');
+    const c = document.createElement('canvas');
+    c.width = v.videoWidth || 640; c.height = v.videoHeight || 480;
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    const img = $(`preview-${target}`);
+    img.src = c.toDataURL('image/jpeg', 0.6); img.hidden = false;
+    markSlot(target);
+    closeCamera();
+  }
+  $('btn-cam-sheet').onclick = () => openCamera('sheet');
+  $('btn-cam-venue').onclick = () => openCamera('venue');
+  $('btn-skip-sheet').onclick = (e) => { e.preventDefault(); markSlot('sheet'); };
+  $('btn-skip-venue').onclick = (e) => { e.preventDefault(); markSlot('venue'); };
+  $('btn-capture').onclick = capture;
+  $('btn-cancel-camera').onclick = closeCamera;
+
+  // ---- submit ----
+  $('btn-submit').onclick = async () => {
+    const votes = [...document.querySelectorAll('#vote-inputs input')]
+      .map((i) => ({ party: i.dataset.party, count: Number(i.value || 0) }))
+      .filter((v) => Number.isInteger(v.count) && v.count >= 0);
+    $('btn-submit').disabled = true;
+    $('submit-status').textContent = 'Recording your practice run…';
+    try {
+      const r = await fetch('/api/practice/submit', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ votes, puName: $('prac-unit-name').textContent }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.ok) {
+        $('submit-status').textContent = d.error === 'practice_closed'
+          ? 'Practice has just closed — refresh the page.' : 'Something went wrong — try again.';
+        $('btn-submit').disabled = false;
+        return;
+      }
+      $('entry-hash').textContent = d.entryHash || '';
+      $('flow').hidden = true;
+      $('done').hidden = false;
+      window.scrollTo(0, 0);
+    } catch {
+      $('submit-status').textContent = 'Network problem — check your connection and try again.';
+      $('btn-submit').disabled = false;
+    }
+  };
+  $('btn-again').onclick = () => location.reload();
+
+  // ---- boot ----
+  (async () => {
+    let cfg;
+    try { cfg = await fetch('/api/practice').then((r) => r.json()); }
+    catch { cfg = { active: false }; }
+    if (!cfg.active) { $('closed').hidden = false; return; }
+
+    PARTIES = cfg.parties || [];
+    $('prac-title').firstChild.textContent = `${cfg.name} `;
+    $('prac-sub').textContent = `${cfg.office} — a practice contest. ${cfg.note || ''}`;
+    const u = cfg.unit || {};
+    $('prac-unit-name').textContent = u.name || 'Practice Polling Unit';
+    $('prac-unit-scope').textContent = [u.ward, u.lga, u.state].filter(Boolean).join(', ');
+    $('vote-inputs').innerHTML = PARTIES.map((p) => `
+      <div class="vote-row">
+        <label><span class="swatch" style="background:${esc(p.color || '#888')}"></span>${esc(p.code)}</label>
+        <input type="number" min="0" inputmode="numeric" placeholder="0" data-party="${esc(p.code)}" />
+      </div>`).join('');
+    $('flow').hidden = false;
+  })();
+})();

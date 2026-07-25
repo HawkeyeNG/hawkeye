@@ -21,6 +21,7 @@ import { notificationsRouter } from './routes/notifications.js';
 import { tiktokRouter } from './routes/tiktok.js';
 import { metaRouter } from './routes/meta.js';
 import { socialRouter } from './routes/social.js';
+import { practiceRouter } from './routes/practice.js';
 import { resolveDueCases } from './services/docket.js';
 import { securityHeaders, makeLimiter, concurrencyLimit } from './services/security.js';
 import { runForensics, recheckCollations } from './services/integrity.js';
@@ -88,6 +89,7 @@ app.use('/api', notificationsRouter);
 app.use('/api', tiktokRouter);
 app.use('/api', metaRouter);
 app.use('/api', socialRouter);
+app.use('/api', practiceRouter);
 // Training sheet images: the originals are ~3-4 MB phone photos (3072x4096),
 // far more than a labeller's screen needs, so serving them raw made the page
 // crawl. Serve a cached ~1500px JPEG for VIEWING (built on first request, then
@@ -177,6 +179,16 @@ app.listen(config.port, () => {
   const docket = () => { try { resolveDueCases(); } catch (e) { console.error('[docket]', e.message); } };
   setTimeout(docket, 300_000);
   setInterval(docket, 3_600_000);
+  // Practice sandbox: drop all practice runs once the election's autoDeleteAt
+  // passes (a day before Osun). Runs on boot and hourly so it clears itself.
+  const purgePractice = () => {
+    import('./db.js').then(({ purgePracticeIfExpired }) => {
+      const n = purgePracticeIfExpired();
+      if (n) console.log(`[practice] window closed — purged ${n} practice run(s)`);
+    }).catch(() => {});
+  };
+  purgePractice();
+  setInterval(purgePractice, 3_600_000);
   console.log(
     'NOTE: camera + GPS in the PWA need a secure context — use http://localhost, or an HTTPS tunnel for phones.',
   );

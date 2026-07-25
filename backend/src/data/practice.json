@@ -1,0 +1,13 @@
+{
+  "name": "Hawkeye Practice Election",
+  "office": "Practice Governorship",
+  "note": "A safe sandbox to learn the reporting flow. Nothing here is published, counted, or added to the public ledger.",
+  "autoDeleteAt": "2026-08-14T00:00:00+01:00",
+  "unit": { "code": "PRACTICE-PU-001", "name": "Practice Polling Unit", "ward": "Demo Ward", "lga": "Demo LGA", "state": "Practice" },
+  "parties": [
+    { "code": "Party A", "color": "#2e7d32" },
+    { "code": "Party B", "color": "#1565c0" },
+    { "code": "Party C", "color": "#c62828" },
+    { "code": "Party D", "color": "#f9a825" }
+  ]
+}

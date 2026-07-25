@@ -181,6 +181,17 @@ for (const ddl of [
   // Meta-approved template is required for business-initiated WhatsApp) — this
   // stores their reference so /verify can confirm against it.
   'ALTER TABLE otps ADD COLUMN sc_reference TEXT',
+  // Practice/mock-election sandbox — a DISPOSABLE store for new-user practice
+  // runs. Deliberately isolated: nothing reads this into results, the ledger,
+  // anchoring, the leaderboard, the docket or the dashboard. Auto-deleted on a
+  // configured date (see practice.json). No FK to observers (practice needs no
+  // sign-in), no evidence stored.
+  `CREATE TABLE IF NOT EXISTS practice_submissions (
+     id         INTEGER PRIMARY KEY,
+     pu_name    TEXT,
+     votes_json TEXT NOT NULL,
+     created_at INTEGER NOT NULL
+   )`,
   'ALTER TABLE anchors ADD COLUMN docket_head TEXT',
   'ALTER TABLE anchors ADD COLUMN rekor_uuid TEXT',
   'ALTER TABLE anchors ADD COLUMN rekor_log_index INTEGER',
@@ -440,3 +451,22 @@ export const contests = JSON.parse(
   fs.readFileSync(path.join(config.dataDir, 'contests.json'), 'utf8'),
 );
 export const contestCodes = new Set(contests.map((c) => c.code));
+
+// Practice/mock election (sandbox for new users). Optional file — absent or
+// past its autoDeleteAt ⇒ no practice election is offered. Kept ENTIRELY
+// separate from `contests` so it can never leak into raceKey/anchoring/the
+// leaderboard. Reopen after Osun by editing autoDeleteAt (and name) here.
+export const practiceElection = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(config.dataDir, 'practice.json'), 'utf8'));
+  } catch { return null; }
+})();
+export const practiceActive = () =>
+  Boolean(practiceElection && Date.now() < Date.parse(practiceElection.autoDeleteAt));
+// Drop practice rows once the window closes (called on boot + on a timer).
+export function purgePracticeIfExpired() {
+  if (practiceElection && !practiceActive()) {
+    try { return db.prepare('DELETE FROM practice_submissions').run().changes; } catch { return 0; }
+  }
+  return 0;
+}

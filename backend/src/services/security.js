@@ -24,8 +24,22 @@ const CSP = [
   "frame-ancestors 'self' https://web.telegram.org",
 ].join('; ');
 
-export function securityHeaders(_req, res, next) {
-  res.setHeader('Content-Security-Policy', CSP);
+// OpenCV.js needs JS eval() to initialise. Instead of granting 'unsafe-eval'
+// sitewide, we run OpenCV inside scan-worker.js (a DOM-less Web Worker) and
+// give ONLY that worker its own CSP with 'unsafe-eval'. A worker has no DOM,
+// cookie or token access, so eval there can't be turned into a page XSS. The
+// page's CSP above stays strict.
+const WORKER_CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+].join('; ');
+
+export function securityHeaders(req, res, next) {
+  const isScanWorker = /\/scan-worker\.js$/.test(req.path || '');
+  res.setHeader('Content-Security-Policy', isScanWorker ? WORKER_CSP : CSP);
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');

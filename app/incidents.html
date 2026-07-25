@@ -18,6 +18,13 @@
     .empty { color: var(--muted); }
     #preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
     #preview img, #preview video { width: 80px; height: 64px; object-fit: cover; border-radius: 6px; }
+    .thumb { position: relative; display: inline-flex; }
+    .thumb .rm { position: absolute; top: -7px; right: -7px; width: 22px; height: 22px; margin: 0; padding: 0;
+      border-radius: 50%; background: #c0392b; color: #fff; border: 2px solid var(--surface); box-shadow: none;
+      font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+    #media-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+    #media-actions #btn-camera { width: auto; margin: 0; }
+    #media-actions #media { flex: 1; min-width: 0; }
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -77,7 +84,10 @@
         style="width:100%;font-family:inherit;font-size:1rem;padding:10px;border:2px solid var(--border);border-radius:10px"></textarea>
 
       <label for="media">Photos / video (optional, up to 4, 30 MB each)</label>
-      <input id="media" type="file" accept="image/*,video/*" multiple />
+      <div id="media-actions">
+        <button type="button" id="btn-camera" class="secondary" hidden>📷 Take a photo</button>
+        <input id="media" type="file" accept="image/*,video/*" multiple />
+      </div>
       <div id="preview"></div>
 
       <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:400">
@@ -117,14 +127,60 @@
       obstruction: 'Obstruction of observers', other: 'Other irregularity',
     };
 
-    $('media').onchange = () => {
+    // Attachments accumulate in one in-memory list so photos taken with the
+    // native camera (APK) and files picked from the gallery coexist. On mobile
+    // web the OS file picker already offers the camera; inside the Capacitor
+    // WebView a bare file input can only reach the gallery, so the app shows a
+    // dedicated camera button (wired below) that routes through the native
+    // Camera plugin — the same seam the result/venue capture uses.
+    const MAX_FILES = 4, MAX_BYTES = 30 * 1024 * 1024;
+    const attachments = [];
+
+    function syncCap() {
+      const full = attachments.length >= MAX_FILES;
+      $('media').disabled = full;
+      if ($('btn-camera')) $('btn-camera').disabled = full;
+    }
+    function renderPreview() {
       $('preview').innerHTML = '';
-      for (const f of $('media').files) {
+      attachments.forEach((f, i) => {
         const url = URL.createObjectURL(f);
-        $('preview').insertAdjacentHTML('beforeend',
-          f.type.startsWith('video') ? `<video src="${url}" muted></video>` : `<img src="${url}" alt="" />`);
+        const cell = document.createElement('div');
+        cell.className = 'thumb';
+        cell.innerHTML = (f.type.startsWith('video') ? `<video src="${url}" muted></video>` : `<img src="${url}" alt="" />`)
+          + `<button type="button" class="rm" data-i="${i}" aria-label="Remove">✕</button>`;
+        $('preview').appendChild(cell);
+      });
+      syncCap();
+    }
+    function addFiles(list) {
+      for (const f of list) {
+        if (attachments.length >= MAX_FILES) { $('status').textContent = `You can attach up to ${MAX_FILES} files.`; break; }
+        if (f.size > MAX_BYTES) { $('status').textContent = 'Each file must be under 30 MB.'; continue; }
+        attachments.push(f);
       }
+      renderPreview();
+    }
+    $('media').onchange = () => { addFiles($('media').files); $('media').value = ''; };
+    $('preview').onclick = (e) => {
+      const b = e.target.closest('.rm');
+      if (!b) return;
+      attachments.splice(Number(b.dataset.i), 1);
+      renderPreview();
     };
+    // Native app only: a bare file input can't open the camera in the WebView,
+    // so add an explicit capture button backed by the OS camera (one still/tap).
+    if (window.HAWKEYE && window.HAWKEYE.native && window.HAWKEYE.capabilities
+        && window.HAWKEYE.capabilities.camera && window.HAWKEYE.capturePhoto) {
+      $('btn-camera').hidden = false;
+      $('btn-camera').onclick = async () => {
+        if (attachments.length >= MAX_FILES) { $('status').textContent = `You can attach up to ${MAX_FILES} files.`; return; }
+        try {
+          const blob = await window.HAWKEYE.capturePhoto('venue'); // 'venue' = plain OS camera, no doc-scan
+          if (blob) addFiles([new File([blob], `photo-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })]);
+        } catch { /* user backed out of the camera */ }
+      };
+    }
 
     async function getPos() {
       return new Promise((res) => navigator.geolocation.getCurrentPosition(
@@ -134,7 +190,7 @@
     $('btn-submit') && ($('btn-submit').onclick = async () => {
       const kind = $('kind').value;
       const desc = $('desc').value.trim();
-      const files = $('media').files;
+      const files = attachments;
       if (!desc && !files.length) { $('status').textContent = 'Add a photo/video or describe what happened.'; return; }
       $('btn-submit').disabled = true; $('status').textContent = 'Uploading…';
       try {
@@ -159,7 +215,7 @@
         const body = await res.json().catch(() => ({}));
         if (res.status === 201) {
           $('status').textContent = '✅ Submitted for review. Once approved it appears here and watchers of this polling unit get a Telegram alert.';
-          $('desc').value = ''; $('media').value = ''; $('preview').innerHTML = '';
+          $('desc').value = ''; attachments.length = 0; renderPreview();
         } else if (res.status === 401) {
           localStorage.removeItem('hawkeye_token');
           $('status').innerHTML = 'Session expired — <a href="observe.html?intent=incident">register your device again →</a>';

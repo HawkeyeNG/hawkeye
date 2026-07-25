@@ -11,19 +11,28 @@
  * as before — scanning never blocks a submission.
  */
 window.DocScanner = (() => {
-  const PROC_W = 320; // detection runs on a downscaled copy of the frame
-  const STABLE_NEEDED = 8; // ~1.2 s of steady corners -> auto-capture
-  const MOVE_TOL = 14; // corner jitter tolerance, video px
+  const PROC_W = 400; // detection runs on a downscaled copy (bigger = steadier corners)
+  const STABLE_NEEDED = 5; // ~0.8 s of steady corners -> auto-capture
 
   let video = null, canvas = null, hint = null, onAuto = null;
-  let timer = null, quad = null, stable = 0, fired = false;
+  let timer = null, quad = null, lastRaw = null, stable = 0, fired = false;
   let worker = null, workerDead = false, awaitingDetect = false;
   const procBuf = document.createElement('canvas'); // reused downscale target
+
+  // Corner jitter tolerance scales with frame size — detection runs at PROC_W and
+  // is upscaled ~6x, so a fixed 14px was far too tight (1px of detection wobble
+  // became ~18px here and reset "hold steady" every frame). ~3.5% of the frame
+  // width absorbs that upscale jitter and normal hand tremor.
+  const moveTol = () => Math.max(18, (video ? video.videoWidth : 640) * 0.035);
+  // Exponential smoothing so the outline (and the corners we capture with) don't
+  // twitch frame-to-frame.
+  const smooth = (prev, next, a = 0.5) =>
+    (!prev ? next : next.map((p, i) => ({ x: prev[i].x + (p.x - prev[i].x) * a, y: prev[i].y + (p.y - prev[i].y) * a })));
 
   function makeWorker() {
     if (worker || workerDead) return worker;
     try {
-      worker = new Worker('/scan-worker.js');
+      worker = new Worker('/scan-worker.js?v=3');
     } catch { workerDead = true; return null; }
     worker.onerror = () => { workerDead = true; if (hint) hint.textContent = 'Auto-detect unavailable — frame the sheet and capture manually'; };
     worker.onmessage = (e) => {
@@ -62,15 +71,24 @@ window.DocScanner = (() => {
       worker.removeEventListener('message', onMsg);
       awaitingDetect = false;
       const q = upscale(e.data.quad, vw / w, vh / h);
-      if (q && quad && q.every((p, i) => Math.hypot(p.x - quad[i].x, p.y - quad[i].y) < MOVE_TOL)) stable++;
-      else stable = q ? 1 : 0;
-      quad = q;
+      if (q) {
+        // Steady if every corner moved less than the frame-relative tolerance.
+        const steady = lastRaw && q.every((p, i) => Math.hypot(p.x - lastRaw[i].x, p.y - lastRaw[i].y) < moveTol());
+        stable = steady ? stable + 1 : 1;
+        lastRaw = q;
+        quad = smooth(quad, q); // smoothed corners drive the outline + capture
+      } else {
+        // Brief detection dropouts (a flicker, a shadow) shouldn't wipe progress.
+        stable = Math.max(0, stable - 2);
+        lastRaw = null;
+        if (stable === 0) quad = null;
+      }
       draw();
       if (hint) {
-        hint.textContent = !q ? 'Point the camera at the whole EC8A sheet'
+        hint.textContent = !quad ? 'Point the camera at the whole EC8A sheet'
           : stable >= STABLE_NEEDED ? 'Sheet detected — capturing…' : 'Sheet found — hold steady';
       }
-      if (q && stable >= STABLE_NEEDED && !fired && onAuto) { fired = true; onAuto(); }
+      if (quad && stable >= STABLE_NEEDED && !fired && onAuto) { fired = true; onAuto(); }
     };
     worker.addEventListener('message', onMsg);
     worker.postMessage({ type: 'detect', buf: id.data.buffer, w, h }, [id.data.buffer]);
@@ -140,23 +158,28 @@ window.DocScanner = (() => {
     return { blob, scanned: false, warnings: [] };
   };
 
-  // Grab a full-res frame; if a quad is locked, warp + quality-check it in the
-  // worker. Any failure falls back to the raw frame.
+  // Grab the full-res frame and DETECT the sheet on that captured frame, then
+  // warp — exactly what Adobe Scan / CamScanner do. Manual capture no longer
+  // depends on the live overlay holding a quad at the tap instant: whether the
+  // observer waited for auto-capture or pressed the button, we re-find the sheet
+  // in the shot and flatten it. Any failure falls back to the raw frame.
   async function capture() {
     if (!video) return { blob: null, scanned: false, warnings: [] };
-    if (workerDead || !worker || !quad) return rawFrame();
+    if (workerDead || !worker) return rawFrame();
     const vw = video.videoWidth, vh = video.videoHeight;
     const id = frameImageData(vw, vh);
-    const warped = await new Promise((resolve) => {
-      const to = setTimeout(() => { worker.removeEventListener('message', onMsg); resolve(null); }, 8000);
+    const res = await new Promise((resolve) => {
+      const to = setTimeout(() => { worker.removeEventListener('message', onMsg); resolve(null); }, 10000);
       const onMsg = (e) => {
-        if (!e.data || e.data.type !== 'warped') return;
+        if (!e.data || e.data.type !== 'captured') return;
         clearTimeout(to); worker.removeEventListener('message', onMsg); resolve(e.data);
       };
       worker.addEventListener('message', onMsg);
-      worker.postMessage({ type: 'warp', buf: id.data.buffer, w: vw, h: vh, quad }, [id.data.buffer]);
+      // Pass the live smoothed quad as a hint; the worker re-detects on the
+      // full-res frame and falls back to this hint if its own detect misses.
+      worker.postMessage({ type: 'capture', buf: id.data.buffer, w: vw, h: vh, hintQuad: quad }, [id.data.buffer]);
     }).catch(() => null);
-    if (warped && warped.blob) return { blob: warped.blob, scanned: true, warnings: warped.warnings || [] };
+    if (res && res.blob) return { blob: res.blob, scanned: res.scanned, warnings: res.warnings || [] };
     return rawFrame();
   }
 

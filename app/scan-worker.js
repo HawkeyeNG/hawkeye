@@ -50,7 +50,16 @@ function detect(cv, id) {
   try {
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
-    cv.Canny(gray, edges, 50, 150);
+    // Adapt the Canny thresholds to the image instead of hard-coding 50/150 —
+    // Otsu picks the level that best separates the sheet from its background, so
+    // detection survives dim rooms, shadows and low-contrast paper-on-desk.
+    let hiT = 150;
+    try {
+      const tmp = new cv.Mat();
+      hiT = cv.threshold(gray, tmp, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
+      tmp.delete();
+    } catch { hiT = 150; }
+    cv.Canny(gray, edges, Math.max(10, hiT * 0.5), Math.max(50, hiT));
     const k = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
     cv.dilate(edges, edges, k);
     k.delete();
@@ -126,6 +135,40 @@ self.onmessage = async (e) => {
       self.postMessage({ type: 'warped', blob, scanned: true, warnings: r.warnings });
     } catch {
       self.postMessage({ type: 'warped', blob: null, scanned: false, warnings: [] });
+    }
+  } else if (msg.type === 'capture') {
+    // Full-res frame in. Re-DETECT the sheet on this captured frame (downscaled
+    // for speed) and warp — so a manual capture flattens/crops reliably even if
+    // the live overlay had lost the quad at the tap moment. Falls back to the
+    // live hint quad, then to the raw frame.
+    try {
+      const full = imageData(msg.buf, msg.w, msg.h);
+      const PW = Math.min(600, msg.w);
+      const s = PW / msg.w;
+      const dw = PW, dh = Math.max(1, Math.round(msg.h * s));
+      const big = new OffscreenCanvas(msg.w, msg.h);
+      big.getContext('2d').putImageData(full, 0, 0);
+      const small = new OffscreenCanvas(dw, dh);
+      const sg = small.getContext('2d');
+      sg.drawImage(big, 0, 0, dw, dh);
+      let detected = null;
+      try { detected = detect(cv, sg.getImageData(0, 0, dw, dh)); } catch { detected = null; }
+      const quad = detected ? detected.map((p) => ({ x: p.x / s, y: p.y / s }))
+        : (Array.isArray(msg.hintQuad) ? msg.hintQuad : null);
+      if (quad) {
+        const r = warp(cv, full, quad);
+        const oc = new OffscreenCanvas(r.W, r.H);
+        oc.getContext('2d').putImageData(r.imageData, 0, 0);
+        const blob = await oc.convertToBlob({ type: 'image/jpeg', quality: 0.92 });
+        self.postMessage({ type: 'captured', blob, scanned: true, warnings: r.warnings });
+      } else {
+        const oc = new OffscreenCanvas(msg.w, msg.h);
+        oc.getContext('2d').putImageData(full, 0, 0);
+        const blob = await oc.convertToBlob({ type: 'image/jpeg', quality: 0.92 });
+        self.postMessage({ type: 'captured', blob, scanned: false, warnings: [] });
+      }
+    } catch {
+      self.postMessage({ type: 'captured', blob: null, scanned: false, warnings: [] });
     }
   } else if (msg.type === 'preload') {
     self.postMessage({ type: 'ready' });

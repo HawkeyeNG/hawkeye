@@ -26,21 +26,36 @@ jobs:
       - name: Install JS deps
         working-directory: mobile
         run: npm ci
-      - name: Add iOS platform + sync web assets
+      - name: Add iOS platform
         working-directory: mobile
-        run: npx cap add ios          # generates ios/, runs pod install
+        run: npx cap add ios          # generates ios/App + Podfile, runs cap sync
+      - name: Ensure CocoaPods workspace
+        working-directory: mobile
+        run: |
+          set -x
+          find ios -maxdepth 3 \( -name '*.xcworkspace' -o -name '*.xcodeproj' -o -name 'Podfile' \) -print
+          # cap add normally runs pod install; force it if the workspace is absent
+          if [ -f ios/App/Podfile ] && [ ! -d ios/App/App.xcworkspace ]; then
+            (cd ios/App && pod install --repo-update)
+          fi
+          find ios -maxdepth 3 -name '*.xcworkspace' -print
       - name: Unsigned compile (simulator)
         working-directory: mobile
         run: |
           set -o pipefail
-          xcodebuild \
-            -workspace ios/App/App.xcworkspace \
-            -scheme App \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO \
-            build
+          WS=$(find ios -maxdepth 3 -name '*.xcworkspace' | head -1)
+          if [ -n "$WS" ]; then
+            echo "Building workspace: $WS"
+            xcodebuild -workspace "$WS" -scheme App -configuration Debug \
+              -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+              CODE_SIGNING_ALLOWED=NO build
+          else
+            PROJ=$(find ios -maxdepth 3 -name '*.xcodeproj' | head -1)
+            echo "No workspace found; building project: $PROJ"
+            xcodebuild -project "$PROJ" -scheme App -configuration Debug \
+              -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+              CODE_SIGNING_ALLOWED=NO build
+          fi
 
 # ---------------------------------------------------------------------------
 # ENABLE AFTER APPLE DEVELOPER PROGRAM ENROLLMENT ($99/yr)

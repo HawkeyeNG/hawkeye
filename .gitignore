@@ -44,3 +44,6 @@ videos/veo-test/
 videos/broll-candidates/
 audit/vo/
 audit/howto/out/
+
+# Firebase Android config — API key lives in the shipped APK + recovery backup, kept out of the public repo
+mobile/android/app/google-services.json

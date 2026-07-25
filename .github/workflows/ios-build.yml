@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'   # Capacitor 8 CLI requires Node >=22
       - name: Install JS deps
         working-directory: mobile
         run: npm ci

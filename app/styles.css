@@ -165,9 +165,23 @@ main.wrap { max-width: 840px; }
   .hero-fold .stats-band { padding: 16px 0; }
   .hero-fold .stats-row strong { font-size: 1.45rem; }
 }
+/* Shorter laptop viewports. The sample ledger cards STAY — they're the clearest
+   explanation of what Hawkeye produces, and a 1366x768 screen minus browser
+   chrome lands right under 740px, so hiding them here blanked the visual on very
+   ordinary PCs. Compress the stack instead of dropping it. */
 @media (min-width: 901px) and (max-height: 740px) {
-  .hero-fold .ledger-stack { display: none; }   /* text + CTAs win the space */
-  .hero-fold .hero-grid { grid-template-columns: 1fr; max-width: 44rem; }
+  .hero-fold { padding-top: 12px; }
+  .hero.hero-fold h1 { font-size: clamp(1.65rem, 2.9vw, 2.15rem); margin-bottom: 11px; }
+  .hero-fold .hero-badge { margin-bottom: 10px; }
+  .hero-fold .hero-sub { margin-bottom: 15px; font-size: 0.95rem; }
+  .hero-fold .hero-grid { gap: 30px; }
+  .hero-fold .ledger-stack { min-height: 226px; }
+  .hero-fold .lcard { padding: 11px 13px; font-size: 0.72rem; }
+  .hero-fold .lcard:nth-child(2) { top: 74px; }
+  .hero-fold .lcard:nth-child(3) { top: 148px; }
+  .hero-fold .stats-band { padding: 12px 0; }
+  .hero-fold .stats-row strong { font-size: 1.25rem; }
+  .hero-fold .stats-row span { font-size: 0.7rem; }
 }
 .hero-signin { margin: 16px 0 0; font-size: 0.92rem; color: #a9c3b4; }
 .hero-signin a { color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }

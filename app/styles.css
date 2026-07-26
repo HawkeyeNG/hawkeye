@@ -33,7 +33,13 @@
   --surface: #ffffff;
   --text-danger: #b3261e;
   --text-warn: #7a4506;
-  color-scheme: light;
+  /* "only light", not "light": plain `light` still lets a user agent apply its
+     OWN automatic dark treatment (Chrome's "auto dark mode for web contents",
+     Android WebView algorithmic darkening), which repainted the site to match
+     system dark and made the header toggle look broken — our CSS never follows
+     prefers-color-scheme at all. `only` is the standards opt-out that keeps
+     rendering in OUR hands; [data-theme="dark"] below flips it to `only dark`. */
+  color-scheme: only light;
 }
 /* Dark theme is OPT-IN ONLY via the header toggle (html[data-theme="dark"], set
    by menu.js) — no prefers-color-scheme auto-switch, since it's inconsistent
@@ -52,7 +58,7 @@
   --surface: #151f19;
   --text-danger: #ff9d94;
   --text-warn: #e8b07a;
-  color-scheme: dark;
+  color-scheme: only dark;   /* see the "only light" note above */
 }
 /* Self-hosted type: Inter for UI/body, Lora serif for headings. */
 @font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }

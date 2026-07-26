@@ -50,12 +50,22 @@
   // the page's own links so page HTML stays a flat, JS-free fallback list.
   // Footer-only pages: not in the ☰ menu (menu stays short); the canonical
   // footer below carries them on every page.
-  const FOOTER_ONLY = ['about.html', 'how.html', 'privacy.html', 'faq.html', 'guide.html'];
+  // On the WEB these live in the footer only, keeping the ☰ menu short. But the
+  // app HIDES the footer (body.has-tabbar .gov-footer), and the "More" tab just
+  // opens this same panel — so in the shell they had NO entry point at all.
+  // "Privacy & Data" being unreachable is also a Play listing problem. Keep them
+  // in the panel (under "Learn & about") whenever the footer isn't carrying them.
+  const FOOTER_ONLY_HREFS = ['about.html', 'how.html', 'privacy.html', 'faq.html', 'guide.html'];
+  const footerCarriesThem = !(window.HAWKEYE && window.HAWKEYE.native);
+  const FOOTER_ONLY = footerCarriesThem ? FOOTER_ONLY_HREFS : [];
   // "Take part" is hidden on desktop (≥900px) — its links live in the header there.
   const GROUPS = [
     ['Take part', ['observe.html', 'collation.html', 'incidents.html', 'map-unit.html', 'practice.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html']],
     ['Live data', ['osun.html', 'results.html', 'dashboard.html', 'candidates.html', 'political.html']],
+    // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
+    // aren't in the panel, the group finds no members and is skipped.
+    ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'privacy.html']],
   ];
   if (panel && !panel.querySelector('.menu-group')) {
     // Osun 2026 is the active pilot race — inject it once so it appears in the
@@ -144,9 +154,14 @@
       return;
     }
     if (bell) bell.remove();
+    // The app's welcome screen already carries full-width Create account / Sign in
+    // buttons — a second small one in the header is just noise there.
+    const onAppWelcome = !!(window.HAWKEYE && window.HAWKEYE.native)
+      && /^\/(index\.html)?$/.test(location.pathname);
     // No sign-in button ON the sign-in page, and not in the Telegram Mini App
     // (auth there is the Telegram identity, not our OTP flow).
-    if (signin || /observe\.html/.test(location.pathname) || document.documentElement.classList.contains('tg-app')) return;
+    if (signin || onAppWelcome || /observe\.html/.test(location.pathname)
+      || document.documentElement.classList.contains('tg-app')) return;
     const s = document.createElement('a');
     s.className = 'signin-btn';
     s.href = 'observe.html?intent=signin';   // password-first, lands on the dashboard
@@ -342,6 +357,12 @@
     if (p) {
       const present = !!p.querySelector('.auth-only');
       if (signedIn && !present) {
+        // Section label, so the account links read as a group instead of three
+        // orphans dangling under "Live data".
+        const gl = document.createElement('div');
+        gl.className = 'menu-group auth-only';
+        gl.textContent = 'Your account';
+        p.appendChild(gl);
         const add = (href, text, cls) => {
           const a = document.createElement('a');
           a.href = href;
@@ -413,11 +434,27 @@
     const avail = window.innerHeight - top - barH - 12; // 12px breathing room
     p.style.maxHeight = Math.max(160, Math.round(avail)) + 'px';
     p.style.overflowY = 'auto';
+    markScrollCue(p);
+  }
+  // "There's more below" cue. A styled scrollbar alone isn't enough on touch,
+  // where scrollbars are invisible until you already scroll — so a sticky fade at
+  // the bottom edge shows whenever the list is cut off, and clears at the end.
+  function markScrollCue(p) {
+    if (!p.querySelector('.menu-fade')) {
+      const f = document.createElement('div');
+      f.className = 'menu-fade';
+      f.setAttribute('aria-hidden', 'true');   // decorative: never announced
+      p.appendChild(f);
+    }
+    const more = p.scrollHeight - p.clientHeight > 4;
+    p.classList.toggle('is-scrollable', more);
+    p.classList.toggle('at-end', more && p.scrollTop + p.clientHeight >= p.scrollHeight - 4);
   }
   if (panel) {
     // Every page toggles the panel via its own inline onclick (and the More tab),
     // so observe the attribute instead of hooking each trigger.
     new MutationObserver(() => sizeMenuPanel()).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+    panel.addEventListener('scroll', () => markScrollCue(panel), { passive: true });
     addEventListener('resize', sizeMenuPanel);
     addEventListener('orientationchange', () => setTimeout(sizeMenuPanel, 150));
   }

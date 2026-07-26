@@ -22,13 +22,14 @@ const VIEWPORTS = [
   { name: 'laptop-1440', width: 1440, height: 900, mobile: false },
 ];
 
-async function openLanding(page) {
+async function openPage(page, url) {
   await stubApi(page);
-  await page.addInitScript(() => localStorage.clear());   // always the signed-out landing
-  await page.goto('/index.html', { waitUntil: 'load' });
+  await page.addInitScript(() => localStorage.clear());   // always the signed-out view
+  await page.goto(url, { waitUntil: 'load' });
   await freezeMotion(page);
   await waitForChromeVars(page);
 }
+const openLanding = (page) => openPage(page, '/index.html');
 
 test.describe('landing hero fits one screen', () => {
   for (const vp of VIEWPORTS) {
@@ -99,9 +100,14 @@ test.describe('header controls', () => {
 });
 
 test.describe('menu panel', () => {
+  // NOT the landing page: #menu-panel lives inside .gov-header, and in the app the
+  // welcome screen deliberately hides that header — so on index.html the panel is
+  // hidden and every measurement reads 0 (which is how this test first failed,
+  // passing its tab-bar check spuriously against zeros). results.html keeps its
+  // header and tab bar in the shell, which is where the menu actually gets used.
   test('fits above the app tab bar, targets >= 44px, cue shows when cut off', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await openLanding(page);
+    await openPage(page, '/results.html');
     await simulateNativeShell(page, 66);
     await page.evaluate(() => { document.getElementById('menu-panel').hidden = false; });
     await page.waitForTimeout(350);
@@ -110,15 +116,26 @@ test.describe('menu panel', () => {
       const p = document.getElementById('menu-panel');
       const links = [...p.querySelectorAll('a')];
       const fade = p.querySelector('.menu-fade');
+      // Derive the limit from the bar that is ACTUALLY shown, so this stays true
+      // on any page/shell rather than assuming a 66px bar exists.
+      const bar = document.querySelector('.tabbar');
+      const barH = bar && getComputedStyle(bar).display !== 'none'
+        ? Math.round(bar.getBoundingClientRect().height) : 0;
       return {
+        panelVisible: getComputedStyle(p).display !== 'none' && p.getBoundingClientRect().height > 0,
+        barH,
         bottom: Math.round(p.getBoundingClientRect().bottom),
-        limit: window.innerHeight - 66,
+        limit: window.innerHeight - barH,
         minTarget: Math.min(...links.map((a) => Math.round(a.getBoundingClientRect().height))),
         scrollable: p.classList.contains('is-scrollable'),
         fadeShown: fade ? getComputedStyle(fade).display !== 'none' : false,
         groups: [...p.querySelectorAll('.menu-group')].map((g) => g.textContent.trim()),
       };
     });
+    // Guard against the zero-measurement trap: if the panel is hidden, every
+    // assertion below would pass meaninglessly.
+    expect(m.panelVisible, 'the menu panel must actually be rendered to measure it').toBe(true);
+    expect(m.barH, 'the simulated tab bar should be present on this page').toBeGreaterThan(0);
     expect(m.bottom, 'panel must not run under the tab bar').toBeLessThanOrEqual(m.limit);
     expect(m.minTarget, 'WCAG 2.5.5 touch target').toBeGreaterThanOrEqual(44);
     expect(m.groups.length, 'menu should be grouped, not a flat list').toBeGreaterThanOrEqual(3);
@@ -128,7 +145,7 @@ test.describe('menu panel', () => {
 
   test('scroll cue clears at the end of the list', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 640 });   // force a cut-off list
-    await openLanding(page);
+    await openPage(page, '/results.html');
     await page.evaluate(() => { document.getElementById('menu-panel').hidden = false; });
     await page.waitForTimeout(300);
     const res = await page.evaluate(async () => {

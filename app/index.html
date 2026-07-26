@@ -9,12 +9,15 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=110" />
+  <link rel="stylesheet" href="styles.css?v=111" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
     // detected after /me and flips back to the landing.
     if (localStorage.getItem('hawkeye_token')) document.documentElement.classList.add('obs-home');
+    // Marks THIS page so the app's welcome screen can hide the header and tab bar
+    // without stripping them from every other page in the shell.
+    document.documentElement.classList.add('is-landing');
   </script>
   <script src="native.js?v=103"></script>
   <style>
@@ -157,14 +160,8 @@
       <span class="aw-mark"><img src="logo-crest.svg?v=98" alt="" width="62" height="62" /></span>
       <h1 id="aw-title">Hawkeye</h1>
       <p class="aw-tag">Independent election results monitor</p>
-      <ul class="aw-points">
-        <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/></svg>
-          Photograph the result sheet at your polling unit</li>
-        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-          Signed on your phone, with GPS and time</li>
-        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
-          Published to a public ledger anyone can audit</li>
-      </ul>
+      <!-- No feature bullets: anyone who installed the app already knows what it
+           does, and the screen reads as a clean auth step without them. -->
       <div class="aw-actions">
         <a class="btn-accent" href="observe.html?intent=observe">Create an account</a>
         <a class="btn-ghost" href="observe.html?intent=signin">Sign in</a>
@@ -412,6 +409,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=112"></script>
+  <script src="menu.js?v=113"></script>
 </body>
 </html>

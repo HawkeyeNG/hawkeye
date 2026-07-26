@@ -47,3 +47,8 @@ audit/howto/out/
 
 # Firebase Android config — API key lives in the shipped APK + recovery backup, kept out of the public repo
 mobile/android/app/google-services.json
+
+# Playwright UI-guard deps + local run output (CI installs from the lockfile)
+tests/ui/node_modules/
+tests/ui/report/
+tests/ui/test-results/

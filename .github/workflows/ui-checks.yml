@@ -1,0 +1,79 @@
+name: UI checks (layout budgets + visual regression)
+
+# Guards the front end against the regressions we've actually shipped: a hero
+# that overflows the fold, a control inheriting the UA's default link blue, the
+# menu panel running under the app tab bar, the service-worker precache bloating
+# back past its budget, and pages losing their only route in the APK.
+#
+# Runs against app/ served statically with every /api/** call stubbed, so it
+# never depends on the live site or the backend.
+
+on:
+  push:
+    paths:
+      - 'app/**'
+      - 'tests/ui/**'
+      - '.github/workflows/ui-checks.yml'
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'tests/ui/**'
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: 'Regenerate visual baselines and upload them as an artifact (commit them afterwards)'
+        type: boolean
+        default: false
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install test deps
+        working-directory: tests/ui
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: tests/ui
+        run: npx playwright install --with-deps chromium
+
+      # Fast, browser-free guards first: budgets, pins, reachability. If the
+      # precache has bloated or a pin is stale, fail here in ~2s.
+      - name: Budget + reachability guards
+        working-directory: tests/ui
+        run: npx playwright test budget.spec.js
+
+      - name: Layout, contrast, theme and visual regression
+        if: ${{ inputs.update_snapshots != true }}
+        working-directory: tests/ui
+        run: npx playwright test layout.spec.js
+
+      - name: Regenerate visual baselines
+        if: ${{ inputs.update_snapshots == true }}
+        working-directory: tests/ui
+        run: npx playwright test layout.spec.js --update-snapshots
+
+      - name: Upload regenerated baselines
+        if: ${{ inputs.update_snapshots == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines
+          path: tests/ui/**/*-snapshots/**
+          if-no-files-found: warn
+
+      - name: Upload report (always, incl. diffs on failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            tests/ui/report
+            tests/ui/test-results
+          retention-days: 14
+          if-no-files-found: ignore

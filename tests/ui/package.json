@@ -1,0 +1,12 @@
+{
+  "name": "hawkeye-ui-checks",
+  "private": true,
+  "description": "CI guards for the Hawkeye front end: layout budgets, asset budgets, link reachability, contrast and visual regression.",
+  "scripts": {
+    "test": "playwright test",
+    "update-snapshots": "playwright test --update-snapshots"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.50.1"
+  }
+}

@@ -236,6 +236,11 @@ const RAW_INTENT = new URLSearchParams(location.search).get('intent'); // null =
 const AUTH_INTENT = RAW_INTENT || 'observe';
 const INTENT_LABEL = { observe: 'Become an Observer', map: 'Map a Polling Unit', incident: 'Report an Incident' };
 const INTENT_DEST = { map: 'map-unit.html', incident: 'incidents.html' };
+// 'signin' = a RETURNING observer from the header/hero link. It opens straight in
+// password mode and lands on index.html (their dashboard) once authenticated —
+// afterVerified() already routes every non-'observe' intent there, so returning
+// users no longer get dropped into the report flow's unit picker.
+const IS_SIGNIN = AUTH_INTENT === 'signin';
 
 // Telegram hybrid /report handoff: PU + votes were chosen in chat; prefill and
 // jump straight to the live-capture screen (the photo + signature must happen here).
@@ -253,6 +258,24 @@ function applyIntentCopy() {
     note.hidden = false;
   }
 }
+// Sign-in mode (?intent=signin): password field up front for returning observers,
+// OTP still one tap away via #pw-link, and a "Sign up" escape hatch so someone
+// without an account isn't stranded on a password field. Re-applied by
+// resetAuthPane so "use a different number" doesn't silently become sign-up.
+function applySignInMode() {
+  if (!IS_SIGNIN) return;
+  authMode = 'password';
+  const title = $('register-title');
+  if (title) title.textContent = 'Sign in';
+  const note = $('intent-note');
+  if (note) note.hidden = true;
+  if ($('pw-signin-wrap')) $('pw-signin-wrap').hidden = false;
+  if ($('channel-pick')) $('channel-pick').hidden = true;   // password sign-in sends no code
+  $('btn-auth').textContent = 'Sign In';
+  if ($('pw-link')) $('pw-link').textContent = 'Sign in with a one-time code instead';
+  if ($('signup-line')) $('signup-line').hidden = false;
+}
+
 function afterVerified() {
   if (INTENT_DEST[AUTH_INTENT]) { location.href = INTENT_DEST[AUTH_INTENT]; return; }
   // Default intent is 'observe' (AUTH_INTENT), so a fresh verification on this
@@ -294,6 +317,7 @@ function resetAuthPane() {
     $('pw-opt-field').hidden = true;
     $('pw-opt-input').value = '';
   }
+  applySignInMode();   // keep a sign-in visit in sign-in mode after a reset
 }
 
 // Optional password at sign-up: checkbox reveals the field; applied right after
@@ -1069,9 +1093,13 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
     // Already registered — honour the CTA intent instead of re-verifying.
     if (PREFILL) applyPrefill();
     else if (INTENT_DEST[AUTH_INTENT]) location.href = INTENT_DEST[AUTH_INTENT];
+    // Following "Sign in" while already signed in means "take me to my account",
+    // not "start a report" — send them to the dashboard.
+    else if (IS_SIGNIN) location.href = 'index.html';
     else show('screen-locate');
   } else {
     applyIntentCopy();
+    applySignInMode();
     show('screen-register');
   }
 })();

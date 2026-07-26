@@ -13,6 +13,12 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Hawkeye theming is opt-in via the in-app header toggle (styles.css
+             [data-theme="dark"]); the CSS never follows prefers-color-scheme. With
+             a DayNight theme the WebView would algorithmically darken the page to
+             match system dark, which overrode that toggle and made it look broken.
+             Opt the view hierarchy out of force-dark so the toggle is authoritative. -->
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 
 

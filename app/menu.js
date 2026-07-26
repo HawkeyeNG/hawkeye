@@ -149,7 +149,7 @@
     if (signin || /observe\.html/.test(location.pathname) || document.documentElement.classList.contains('tg-app')) return;
     const s = document.createElement('a');
     s.className = 'signin-btn';
-    s.href = 'observe.html?intent=observe';
+    s.href = 'observe.html?intent=signin';   // password-first, lands on the dashboard
     s.textContent = 'Sign in';
     btn.parentNode.insertBefore(s, slot());
   }

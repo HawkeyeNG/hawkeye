@@ -1,6 +1,6 @@
 // Minimal service worker: cache the app shell so the observer app opens instantly
 // on flaky election-day networks. API calls always hit the network.
-const CACHE = 'hawkeye-v128'; // bump on any shell change so installed clients refresh
+const CACHE = 'hawkeye-v129'; // bump on any shell change so installed clients refresh
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every
@@ -18,6 +18,11 @@ const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html'
 const LAZY = ['/opencv.js', '/nga_wards.geojson', '/states_geo.json', '/lga_geo.json',
   '/district_geo.json', '/constituency_geo.json', '/political_data.json',
   '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/og-image.png'];
+
+// Opened ONCE per worker lifetime. The global caches.match() searches every
+// cache in the origin, and re-opening the cache on each request adds latency to
+// the path that has to be fastest — the navigation a user just tapped.
+const cacheP = caches.open(CACHE);
 
 self.addEventListener('install', (e) => {
   // skipWaiting: without it a NEW worker sits waiting while the OLD one keeps
@@ -49,7 +54,7 @@ self.addEventListener('fetch', (e) => {
     // Opt-in heavies (opencv ~13 MB, ward polygons ~5 MB, map GeoJSON, Leaflet):
     // fetched only when a page actually asks for them, then cached so repeat
     // visits and toggles are instant.
-    e.respondWith(caches.open(CACHE).then(async (c) => {
+    e.respondWith(cacheP.then(async (c) => {
       const hit = await c.match(e.request);
       if (hit) return hit;
       const res = await fetch(e.request);
@@ -58,13 +63,10 @@ self.addEventListener('fetch', (e) => {
     }));
     return;
   }
-  if (e.request.mode === 'navigate') {
-    // Page loads ignore the query string, so deep links (observe.html?intent=
-    // incident, ?ref=…) hit the cached page instead of going to the network.
-    // Documents ONLY — versioned assets must match exactly or a ?v= bump could
-    // be served from the previous build.
-    e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request)));
-    return;
-  }
-  e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request)));
+  // Navigations ignore the query string, so deep links (observe.html?intent=
+  // incident, ?ref=…) hit the cached page instead of going to the network.
+  // Documents ONLY — versioned assets must match exactly or a ?v= bump could be
+  // served from the previous build.
+  const opts = e.request.mode === 'navigate' ? { ignoreSearch: true } : undefined;
+  e.respondWith(cacheP.then((c) => c.match(e.request, opts)).then((hit) => hit || fetch(e.request)));
 });

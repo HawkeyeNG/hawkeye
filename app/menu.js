@@ -287,34 +287,92 @@
   linkInecFooters();
   setTimeout(linkInecFooters, 2500);
 
-  // Sign out — shown only when signed in. Clears the token AND the device key so
-  // auto-resume can't silently sign back in; sends the user to a fresh sign-up.
-  if (panel && localStorage.getItem('hawkeye_token') && !panel.querySelector('.sign-out')) {
-    // Dashboard (Observer Home on index.html) + My Profile — signed-in only.
-    const dash = document.createElement('a');
-    dash.href = 'index.html';
-    dash.textContent = 'Dashboard';
-    panel.appendChild(dash);
-    const prof = document.createElement('a');
-    prof.href = 'profile.html';
-    prof.textContent = 'My Profile';
-    panel.appendChild(prof);
+  // Signed-in menu items. Sign-in happens WITHOUT a page load (the OTP pane on
+  // observe.html just flips screens), so this has to be re-runnable rather than a
+  // one-shot at script time — otherwise the menu keeps showing the signed-out
+  // links until the user manually refreshes. Idempotent in both directions:
+  // adds the links when a token appears, strips them when it goes away.
+  function syncAuthMenu() {
+    const signedIn = !!localStorage.getItem('hawkeye_token');
+    const p = document.getElementById('menu-panel');
+    if (p) {
+      const present = !!p.querySelector('.auth-only');
+      if (signedIn && !present) {
+        const add = (href, text, cls) => {
+          const a = document.createElement('a');
+          a.href = href;
+          a.textContent = text;
+          a.className = 'auth-only' + (cls ? ' ' + cls : '');
+          p.appendChild(a);
+          return a;
+        };
+        // Dashboard (Observer Home on index.html) + My Profile — signed-in only.
+        add('index.html', 'Dashboard');
+        add('profile.html', 'My Profile');
+        // Sign out clears the token AND the device key so auto-resume can't
+        // silently sign back in; sends the user to a fresh sign-up.
+        add('#', 'Sign out', 'sign-out').addEventListener('click', (e) => {
+          e.preventDefault();
+          localStorage.removeItem('hawkeye_token');
+          try {
+            const rq = indexedDB.open('hawkeye', 1);
+            rq.onsuccess = () => { try { rq.result.transaction('kv', 'readwrite').objectStore('kv').delete('keypair'); } catch { /* ignore */ } };
+          } catch { /* ignore */ }
+          location.href = 'observe.html?intent=observe';
+        });
+        // ("Delete my ID" moved into profile.html — one authoritative place.)
+      } else if (!signedIn && present) {
+        p.querySelectorAll('.auth-only').forEach((n) => n.remove());
+      }
+    }
+    // Footer "My Profile" follows the same state.
+    const fnav = document.querySelector('.gov-footer nav');
+    if (fnav) {
+      const link = fnav.querySelector('a[href="profile.html"]');
+      if (signedIn && !link) {
+        const a = document.createElement('a');
+        a.href = 'profile.html';
+        a.textContent = 'My Profile';
+        fnav.appendChild(a);
+      } else if (!signedIn && link) { link.remove(); }
+    }
+  }
+  syncAuthMenu();
 
-    const a = document.createElement('a');
-    a.href = '#';
-    a.className = 'sign-out';
-    a.textContent = 'Sign out';
-    a.addEventListener('click', (e) => {
-      e.preventDefault();
-      localStorage.removeItem('hawkeye_token');
-      try {
-        const rq = indexedDB.open('hawkeye', 1);
-        rq.onsuccess = () => { try { rq.result.transaction('kv', 'readwrite').objectStore('kv').delete('keypair'); } catch { /* ignore */ } };
-      } catch { /* ignore */ }
-      location.href = 'observe.html?intent=observe';
-    });
-    panel.appendChild(a);
-    // ("Delete my ID" moved into profile.html — one authoritative place.)
+  // A dozen call sites across app.js and the pages set/clear hawkeye_token.
+  // Wrapping the two mutators once catches all of them (and any added later)
+  // instead of sprinkling refresh calls everywhere. `storage` covers other tabs.
+  try {
+    const ls = window.localStorage;
+    const set = ls.setItem.bind(ls);
+    const del = ls.removeItem.bind(ls);
+    ls.setItem = (k, v) => { set(k, v); if (k === 'hawkeye_token') syncAuthMenu(); };
+    ls.removeItem = (k) => { del(k); if (k === 'hawkeye_token') syncAuthMenu(); };
+  } catch { /* non-fatal: menu still syncs on next page load */ }
+  window.addEventListener('storage', (e) => { if (!e.key || e.key === 'hawkeye_token') syncAuthMenu(); });
+
+  // Size the ☰ dropdown to the space that ACTUALLY exists. The old CSS used a
+  // fixed `100dvh - 180px`, which assumed a header height and ignored
+  // env(safe-area-inset-top) — inside the APK the edge-to-edge header sits lower,
+  // so the panel ran past the bottom tab bar and its last items (My Profile /
+  // Sign out) were unreachable. Measuring the panel's real top and the real tab
+  // bar height fixes it on any device, header size or inset.
+  function sizeMenuPanel() {
+    const p = document.getElementById('menu-panel');
+    if (!p || p.hidden) return;
+    const bar = document.querySelector('.tabbar');
+    const barH = bar && getComputedStyle(bar).display !== 'none' ? bar.getBoundingClientRect().height : 0;
+    const top = p.getBoundingClientRect().top;
+    const avail = window.innerHeight - top - barH - 12; // 12px breathing room
+    p.style.maxHeight = Math.max(160, Math.round(avail)) + 'px';
+    p.style.overflowY = 'auto';
+  }
+  if (panel) {
+    // Every page toggles the panel via its own inline onclick (and the More tab),
+    // so observe the attribute instead of hooking each trigger.
+    new MutationObserver(() => sizeMenuPanel()).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+    addEventListener('resize', sizeMenuPanel);
+    addEventListener('orientationchange', () => setTimeout(sizeMenuPanel, 150));
   }
 })();
 

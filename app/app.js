@@ -318,8 +318,9 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   $('otp-hint').textContent = '';
 };
 
-// The delivery channel picked on the form ('telegram' | 'sms'); remembered for
-// "Resend code". Radios are required — no silent default.
+// The delivery channel picked on the form ('telegram' | 'whatsapp'; 'sms' is
+// retired until a sender ID is approved); remembered for "Resend code". Radios
+// are required — no silent default.
 const pickedChannel = () => document.querySelector('input[name="otp-channel"]:checked')?.value || '';
 let pendingChannel = '';
 
@@ -388,7 +389,7 @@ $('btn-auth').onclick = async () => {
   if (authMode === 'phone') {
     const phone = input.value.trim();
     const channel = pickedChannel();
-    if (!channel) return alert('Choose where to receive your code — Telegram, SMS or WhatsApp.');
+    if (!channel) return alert('Choose where to receive your code — WhatsApp or Telegram.');
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

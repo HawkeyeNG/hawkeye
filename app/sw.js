@@ -1,9 +1,9 @@
 // Minimal service worker: cache the app shell so the observer app opens instantly
 // on flaky election-day networks. API calls always hit the network.
-const CACHE = 'hawkeye-v126'; // bump on any shell change so installed clients refresh
+const CACHE = 'hawkeye-v127'; // bump on any shell change so installed clients refresh
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
-const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/practice.html', '/practice.js?v=1', '/race.html', '/race.js?v=3', '/race.css?v=1', '/political_data.json', '/app.js?v=117', '/scan.js?v=3', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=107', '/tg.js?v=95', '/styles.css?v=104', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/candidates.html', '/political.html', '/privacy.html', '/og-image.png', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2', '/fonts/lora-600.woff2', '/fonts/lora-700.woff2', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css'];
+const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/practice.html', '/practice.js?v=1', '/race.html', '/race.js?v=3', '/race.css?v=1', '/political_data.json', '/app.js?v=118', '/scan.js?v=3', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=107', '/tg.js?v=95', '/styles.css?v=104', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/candidates.html', '/political.html', '/privacy.html', '/og-image.png', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2', '/fonts/lora-600.woff2', '/fonts/lora-700.woff2', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css'];
 
 self.addEventListener('install', (e) => {
   // skipWaiting: without it a NEW worker sits waiting while the OLD one keeps

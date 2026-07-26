@@ -19,6 +19,25 @@ import { db } from '../db.js';
 // 'sms' | 'whatsapp'); empty = legacy clients, auto behaviour.
 export async function sendOtp(phone, code, phoneHash, channel = '') {
   const message = `Hawkeye code: ${code}. Expires in ${Math.round(config.otpTtlS / 60)} min. Never share it.`;
+  // SMS is gated behind config.smsOtpEnabled (see config.js): with no approved
+  // Nigerian sender ID, SMS silently fails to deliver, which looks like a broken
+  // sign-up. While it's off, an explicit 'sms' choice — including from clients
+  // still serving a cached form that offers it — is served over WhatsApp instead,
+  // and every internal SMS fallback below is skipped. The response flags
+  // (viaWhatsapp / viaSms) tell the UI which path actually delivered, so the
+  // "check your WhatsApp" vs "check your messages" hint stays truthful.
+  const smsOn = config.smsOtpEnabled;
+  if (!smsOn && channel === 'sms') channel = 'whatsapp';
+  // WhatsApp first, then SMS only if enabled — used wherever a primary path fails.
+  const fallback = async () => {
+    if (config.sendchampApiKey) {
+      const reference = await createScOtp(phone, 'whatsapp');
+      if (reference) return { ok: true, viaWhatsapp: true, scReference: reference };
+    }
+    if (!smsOn) return { ok: false };
+    const s = await sendSms(phone, message);
+    return s.ok ? { ok: true, viaSms: true, scReference: s.scReference } : { ok: false };
+  };
   // WhatsApp rides Sendchamp's Verification API (Meta-approved template) —
   // Sendchamp generates + delivers the code and returns a reference we confirm
   // against. On failure it drops to the SMS chain.
@@ -27,6 +46,7 @@ export async function sendOtp(phone, code, phoneHash, channel = '') {
       const reference = await createScOtp(phone, 'whatsapp');
       if (reference) return { ok: true, viaWhatsapp: true, scReference: reference };
     }
+    if (!smsOn) return { ok: false };
     const s = await sendSms(phone, message);
     return s.ok ? { ok: true, viaSms: true, scReference: s.scReference } : { ok: false };
   }
@@ -34,10 +54,12 @@ export async function sendOtp(phone, code, phoneHash, channel = '') {
     case 'console':
       console.log(`[sms:console] ${phone}: ${message}`);
       return { ok: true };
+    // Direct single-provider modes still obey the master switch, so setting
+    // SMS_PROVIDER=bulksms|termii can't quietly resurrect undeliverable SMS.
     case 'termii':
-      return { ok: await sendTermii(phone, message) };
+      return smsOn ? { ok: await sendTermii(phone, message) } : { ok: false };
     case 'bulksms':
-      return { ok: await sendBulkSmsNg(phone, message) };
+      return smsOn ? { ok: await sendBulkSmsNg(phone, message) } : { ok: false };
     case 'telegram': {
       // Explicit SMS choice: straight to the SMS chain, no Telegram involvement.
       if (channel === 'sms') {
@@ -47,9 +69,9 @@ export async function sendOtp(phone, code, phoneHash, channel = '') {
       const link = db.prepare('SELECT chat_id FROM telegram_links WHERE phone_hash = ?').get(phoneHash);
       if (link) {
         if (await tgSendMessage(link.chat_id, message)) return { ok: true };
-        // Telegram hiccup (blocked bot, 429, outage) — SMS keeps them moving.
-        const s = await sendSms(phone, message);
-        return s.ok ? { ok: true, viaSms: true, scReference: s.scReference } : { ok: false };
+        // Telegram hiccup (blocked bot, 429, outage) — WhatsApp (then SMS, if
+        // enabled) keeps them moving.
+        return fallback();
       }
       // Not linked yet — issue a one-time deep-link token for the bot.
       const token = crypto.randomBytes(12).toString('base64url');
@@ -62,8 +84,8 @@ export async function sendOtp(phone, code, phoneHash, channel = '') {
       }
       // Legacy clients with no channel choice: SMS out immediately when a
       // provider is configured, bot link rides along as the free alternative.
-      const s = await sendSms(phone, message);
-      return s.ok ? { ok: true, viaSms: true, scReference: s.scReference, telegramLink } : { ok: false, telegramLink };
+      const f = await fallback();
+      return f.ok ? { ...f, telegramLink } : { ok: false, telegramLink };
     }
     default:
       console.error(`[sms] unknown SMS_PROVIDER: ${config.smsProvider}`);

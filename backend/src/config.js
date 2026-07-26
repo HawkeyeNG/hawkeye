@@ -139,6 +139,14 @@ export const config = {
   // sender-ID approval is per-provider and asynchronous — point this at
   // whichever provider currently has an APPROVED sender, no code change needed.
   smsPrimary: process.env.SMS_PRIMARY || 'sendchamp',
+  // MASTER SWITCH for the SMS OTP channel. OFF by default: Nigerian carriers
+  // silently drop SMS from unapproved sender IDs, and sender-ID approval is a
+  // multi-week queue (Sendchamp quoted up to 3 weeks; BulkSMS force-routes every
+  // request through its 'direct-refund' gateway and never delivered in live
+  // tests). Until a sender is APPROVED, OTP is WhatsApp + Telegram only — most
+  // Nigerian users have WhatsApp. Flip to SMS_OTP_ENABLED=true (plus the right
+  // SMS_PRIMARY) the day approval lands; no code change, no redeploy of app/.
+  smsOtpEnabled: (process.env.SMS_OTP_ENABLED || '').toLowerCase() === 'true',
 
   geofenceRadiusM: num('GEOFENCE_RADIUS_M', 200),
   maxGpsAccuracyM: num('MAX_GPS_ACCURACY_M', 100),

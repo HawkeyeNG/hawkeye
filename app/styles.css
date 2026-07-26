@@ -99,6 +99,19 @@ main.wrap { max-width: 840px; }
 .brand-row { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; padding-bottom: 12px; position: relative; }
 .brand { display: flex; align-items: center; gap: 11px; }
 .crest { font-size: 1.8rem; line-height: 1; }
+/* menu.js swaps the 🦅 emoji for the real crest SVG. That artwork is drawn in
+   dark greens (it was made for light backgrounds), so on the dark green header it
+   read as a muddy blob — give it a light plate so the mark actually reads. */
+.gov-header .crest:has(img) {
+  width: 34px; height: 34px; border-radius: 50%; background: #f4f8f5;
+  display: inline-flex; align-items: center; justify-content: center;
+  overflow: hidden; flex: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.gov-header .crest img { width: 30px; height: 30px; display: block; }
+/* The global `button` rule is display:block/width:100%, which made the optional
+   PWA install prompt look like a primary action inside the fold. Keep it compact
+   and clearly secondary. */
+.hero-fold #install-cta { display: inline-block; width: auto; margin: 0; padding: 9px 15px; font-size: 0.85rem; box-shadow: none; }
 .brand-text { display: flex; flex-direction: column; }
 .brand-text strong { font-family: 'Lora', Georgia, serif; font-size: 1.08rem; letter-spacing: 0.07em; }
 .brand-text span { font-size: 0.68rem; color: #9fbfae; letter-spacing: 0.03em; }
@@ -116,6 +129,49 @@ main.wrap { max-width: 840px; }
   color: #fff; padding: clamp(18px, 4.5vw, 60px) 0 0; overflow: hidden;
 }
 .hero-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; }
+
+/* ONE-SCREEN LANDING HERO (.hero-fold, index.html only — other pages reuse
+   .hero without this). The first tile must land exactly on the fold: no dead
+   space on desktop, nothing cut off on a phone. --hdr-h / --bar-h are measured
+   and set by menu.js (real header height incl. safe-area inset, real tab-bar
+   height in the APK), because both vary per device and a magic number was what
+   broke the ☰ panel earlier. svh (not vh) so mobile browser chrome doesn't push
+   the stats band under the fold. */
+.hero-fold {
+  min-height: calc(100svh - var(--hdr-h, 85px) - var(--bar-h, 0px));
+  min-height: calc(100dvh - var(--hdr-h, 85px) - var(--bar-h, 0px));
+  display: flex; flex-direction: column;
+}
+.hero-fold .hero-grid { flex: 1; align-content: center; }
+/* margin-top:auto pins the stats band to the bottom of the fold, so the hero
+   breathes on tall screens instead of leaving a gap under it. */
+.hero-fold .stats-band { margin-top: auto; }
+/* Quiet returning-observer entry: deliberately NOT a third button — it must not
+   compete with "Become an Observer" for first-time visitors. */
+/* Short viewports (the common 1366x768 / 1280x800 / 1440x900 laptop lids, and
+   landscape phones): min-height alone can't help when the CONTENT is taller than
+   the fold, so compress the type, the card stack and the stats band until it
+   fits. Without this, 1280x800 overflowed by 25px. */
+@media (min-width: 901px) and (max-height: 900px) {
+  .hero-fold { padding-top: clamp(14px, 2.4vh, 34px); }
+  /* .hero.hero-fold, not .hero-fold: `.hero h1` further down the file has equal
+     specificity and would win on source order (media queries add none). */
+  .hero.hero-fold h1 { font-size: clamp(1.8rem, 3.3vw, 2.6rem); margin-bottom: 14px; }
+  .hero-fold .hero-badge { margin-bottom: 14px; }
+  .hero-fold .hero-sub { margin-bottom: 20px; font-size: 1rem; }
+  .hero-fold .ledger-stack { min-height: 286px; }
+  .hero-fold .lcard:nth-child(2) { top: 92px; }
+  .hero-fold .lcard:nth-child(3) { top: 184px; }
+  .hero-fold .stats-band { padding: 16px 0; }
+  .hero-fold .stats-row strong { font-size: 1.45rem; }
+}
+@media (min-width: 901px) and (max-height: 740px) {
+  .hero-fold .ledger-stack { display: none; }   /* text + CTAs win the space */
+  .hero-fold .hero-grid { grid-template-columns: 1fr; max-width: 44rem; }
+}
+.hero-signin { margin: 16px 0 0; font-size: 0.92rem; color: #a9c3b4; }
+.hero-signin a { color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.hero-signin a:hover { color: var(--accent); }
 .hero-badge, .badge {
   display: inline-flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 600;
   color: #bfe9d4; background: rgba(46, 229, 157, 0.12); border: 1px solid rgba(46, 229, 157, 0.35);
@@ -405,6 +461,26 @@ button.theme-btn {
   display: inline-flex; align-items: center; justify-content: center;
 }
 button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); filter: none; }
+/* The bell is an <a>, so it was inheriting the UA's default link blue
+   (rgb(0,0,238)) on a dark green header — effectively invisible. Match the
+   theme button: white, same 36px bordered box, same hover. */
+a.bell-btn {
+  background: none; border: 1.5px solid rgba(255, 255, 255, 0.35); color: #fff;
+  border-radius: 9px; width: 36px; height: 36px; padding: 0;
+  line-height: 1; margin: 0 10px 0 0; box-shadow: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  position: relative; text-decoration: none; flex: none;
+}
+a.bell-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
+/* Returning-observer sign-in in the header — takes the bell's slot while signed
+   out (a notifications bell is meaningless before there's an account). */
+a.signin-btn {
+  border: 1.5px solid rgba(255, 255, 255, 0.45); color: #fff; background: none;
+  border-radius: 9px; padding: 8px 14px; margin: 0 10px 0 0;
+  font-weight: 700; font-size: 0.85rem; text-decoration: none; white-space: nowrap; flex: none;
+}
+a.signin-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
+@media (max-width: 420px) { a.signin-btn { padding: 8px 11px; font-size: 0.8rem; } }
 a.bell-btn {
   position: relative; display: inline-flex; align-items: center; justify-content: center;
   width: 36px; height: 36px; margin: 0 10px 0 auto; border-radius: 9px;
@@ -643,6 +719,38 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
   .hero-grid { grid-template-columns: 1fr; }
   .ledger-stack { display: none; }
   .stats-row { grid-template-columns: repeat(2, 1fr); }
+  /* Tighten the fold on phones: the hero overflowed by ~200px, and the stats
+     band alone was 211px of that (52px margin + 24px padding + 1.8rem figures). */
+  /* A little top slack so the fold still clears the APK's bottom tab bar (with
+     --bar-h applied the content was landing 2px over). */
+  .hero-fold { padding-top: 12px; }
+  .hero-fold .hero-badge { margin-bottom: 12px; font-size: 0.72rem; padding: 5px 11px; }
+  .hero-fold .hero-sub { margin-bottom: 18px; font-size: 0.97rem; }
+  .hero-fold .stats-band { padding: 14px 0; }
+  .hero-fold .stats-row { gap: 10px 14px; }
+  .hero-fold .stats-row strong { font-size: 1.3rem; }
+  .hero-fold .stats-row span { font-size: 0.7rem; line-height: 1.25; display: block; }
+}
+/* Short phones (360x640-class budget Androids — a big share of the Nigerian
+   audience). Available height there is ~555px and the full hero wants ~719px, so
+   trim by PRIORITY rather than shrinking everything into mush: the badge goes,
+   type tightens, and the stats band keeps only the two figures that actually
+   carry weight (register size, and 100% verifiable) instead of four cramped ones
+   — one of the dropped figures reads "0" until reports land anyway. */
+@media (max-width: 900px) and (max-height: 720px) {
+  .hero-fold .hero-badge { display: none; }
+  .hero.hero-fold h1 { font-size: 1.62rem; margin-bottom: 10px; }
+  .hero-fold .hero-sub { font-size: 0.89rem; margin-bottom: 14px; }
+  .hero-fold .hero-cta { gap: 9px; }
+  .hero-fold .hero-cta .btn-accent,
+  .hero-fold .hero-cta .btn-ghost { padding: 11px 15px; font-size: 0.88rem; }
+  .hero-fold .hero-signin { margin-top: 11px; font-size: 0.85rem; }
+  .hero-fold .stats-band { padding: 10px 0; }
+  .hero-fold .stats-row { gap: 4px 12px; }
+  .hero-fold .stats-row > div:nth-child(2),
+  .hero-fold .stats-row > div:nth-child(3) { display: none; }
+  .hero-fold .stats-row strong { font-size: 1.12rem; }
+  .hero-fold .stats-row span { font-size: 0.66rem; }
   .steps { grid-template-columns: 1fr; }
   .trust-grid { grid-template-columns: 1fr; }
 }

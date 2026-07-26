@@ -102,6 +102,11 @@ async function api(path, opts = {}) {
 function show(screenId) {
   for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== screenId;
   window.scrollTo(0, 0); // each screen starts at the top, not the old scroll pos
+  // Mark the auth step so the app can strip its chrome: nothing in the shell
+  // should be reachable before sign-in, and a header/tab bar around a sign-in
+  // form makes it look like a web page rather than an app screen. Scoped to the
+  // register screen only — the report flow that follows still needs navigation.
+  document.documentElement.classList.toggle('auth-screen', screenId === 'screen-register');
 }
 let lastFix = null; // most recent successful GPS fix
 function getPosition() {
@@ -274,6 +279,8 @@ function applySignInMode() {
   $('btn-auth').textContent = 'Sign In';
   if ($('pw-link')) $('pw-link').textContent = 'Sign in with a one-time code instead';
   if ($('signup-line')) $('signup-line').hidden = false;
+  // A returning observer doesn't need the practice pitch — it belongs on sign-up.
+  if ($('starter-card')) $('starter-card').hidden = true;
 }
 
 function afterVerified() {

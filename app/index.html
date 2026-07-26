@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=105" />
+  <link rel="stylesheet" href="styles.css?v=106" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -106,7 +106,7 @@
       <div class="wrap">
         <h1 id="home-greet">Welcome back</h1>
         <p class="sub" id="home-sub">Your polling unit is your post — here's today's picture.</p>
-        <a class="unit-chip" id="home-unit-chip" href="map-unit.html">📍 Save your polling unit</a>
+        <a class="unit-chip" id="home-unit-chip" href="map-unit.html"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Save your polling unit</a>
       </div>
     </section>
     <main class="wrap">
@@ -148,8 +148,8 @@
     </main>
   </div>
 
-  <!-- Hero -->
-  <section class="hero">
+  <!-- Hero — .hero-fold sizes this tile to exactly one screen (see styles.css) -->
+  <section class="hero hero-fold">
     <div class="wrap hero-grid">
       <div>
         <p class="hero-badge"><span class="live-dot"></span> Public beta — monitoring the 2027 general elections</p>
@@ -161,15 +161,18 @@
           <a class="btn-accent" href="observe.html?intent=observe">Become an Observer</a>
           <a class="btn-ghost" href="incidents.html">Report an Incident</a>
         </div>
-        <div class="hero-cta" style="margin-top: 10px">
-          <a class="btn-ghost" style="border: none; padding-left: 0" href="practice.html">🎓 New here? Try a practice run</a>
-        </div>
+        <!-- Returning observers: one quiet line, not a third button — it must not
+             compete with the primary CTA for first-time visitors. -->
+        <p class="hero-signin">Already an observer? <a href="observe.html?intent=observe">Sign in</a></p>
+        <!-- The emoji "🎓 practice run" and "🔔 Get Alerts" rows were removed: five
+             stacked calls-to-action diluted the primary one, the emoji made the
+             page read like sticky notes, and together they pushed the fold ~200px
+             past a phone screen. Practice lives in the ☰ menu, the sign-up page
+             and the how-it-works section; Alerts live on results.html and (once
+             signed in) the header bell. -->
         <div class="hero-cta" style="margin-top: 14px; flex-direction: column; align-items: flex-start; gap: 8px">
           <p id="install-hint" hidden class="hint" style="margin: 0"></p>
           <button class="btn-ghost" id="install-cta" hidden type="button">Install Web App</button>
-        </div>
-        <div class="hero-cta" style="margin-top: 14px">
-          <a class="btn-ghost" style="border: none; padding-left: 0" href="results.html#follow">🔔 Get Alerts</a>
         </div>
       </div>
       <div class="ledger-stack" id="ledger-stack" aria-hidden="true"></div>
@@ -382,6 +385,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=108"></script>
+  <script src="menu.js?v=109"></script>
 </body>
 </html>

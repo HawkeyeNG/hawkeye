@@ -115,23 +115,67 @@
     btn.parentNode.insertBefore(tb, btn);
   }
 
-  // Notifications bell (in-app feed). Shows an unread badge when signed in;
-  // tapping opens notifications.html. Not on the notifications page itself.
-  if (btn && !document.querySelector('.bell-btn') && !/notifications\.html/.test(location.pathname)) {
-    const a = document.createElement('a');
-    a.className = 'bell-btn';
-    a.href = 'notifications.html';
-    a.setAttribute('aria-label', 'Notifications');
-    a.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 4.5 2 5.5 2 5.5H4S6 13.5 6 9"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="bell-dot" hidden></span>';
-    btn.parentNode.insertBefore(a, document.querySelector('.theme-btn') || btn);
-    const tok = localStorage.getItem('hawkeye_token');
-    if (tok) {
-      fetch('/api/notifications', { headers: { authorization: 'Bearer ' + tok } })
+  // Header slot, one control, state-dependent (called by syncAuthMenu below):
+  //   signed in  -> notifications bell + unread badge
+  //   signed out -> "Sign in" for returning observers
+  // A bell is meaningless before an account exists, and a first-time visitor has
+  // no idea what it does — so the slot shows the thing that's actually useful.
+  function headerAuthControl() {
+    if (!btn) return;
+    const slot = () => document.querySelector('.theme-btn') || btn;
+    const signedIn = !!localStorage.getItem('hawkeye_token');
+    const onNotifs = /notifications\.html/.test(location.pathname);
+    const bell = document.querySelector('.bell-btn');
+    const signin = document.querySelector('.signin-btn');
+
+    if (signedIn) {
+      if (signin) signin.remove();
+      if (bell || onNotifs) return;
+      const a = document.createElement('a');
+      a.className = 'bell-btn';
+      a.href = 'notifications.html';
+      a.setAttribute('aria-label', 'Notifications');
+      a.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 4.5 2 5.5 2 5.5H4S6 13.5 6 9"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="bell-dot" hidden></span>';
+      btn.parentNode.insertBefore(a, slot());
+      fetch('/api/notifications', { headers: { authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') } })
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => { if (d && d.unread > 0) { const dot = a.querySelector('.bell-dot'); dot.textContent = d.unread > 9 ? '9+' : d.unread; dot.hidden = false; } })
         .catch(() => {});
+      return;
     }
+    if (bell) bell.remove();
+    // No sign-in button ON the sign-in page, and not in the Telegram Mini App
+    // (auth there is the Telegram identity, not our OTP flow).
+    if (signin || /observe\.html/.test(location.pathname) || document.documentElement.classList.contains('tg-app')) return;
+    const s = document.createElement('a');
+    s.className = 'signin-btn';
+    s.href = 'observe.html?intent=observe';
+    s.textContent = 'Sign in';
+    btn.parentNode.insertBefore(s, slot());
   }
+
+  // The ☰ dropdown's height and the one-screen hero both need REAL measurements,
+  // not magic numbers: the header grows by env(safe-area-inset-top) in the APK and
+  // the tab bar only exists there. Publish both as CSS vars for styles.css.
+  function publishChromeVars() {
+    const hdr = document.querySelector('.gov-header');
+    const bar = document.querySelector('.tabbar');
+    const barShown = bar && getComputedStyle(bar).display !== 'none';
+    const r = document.documentElement.style;
+    if (hdr) r.setProperty('--hdr-h', Math.round(hdr.getBoundingClientRect().height) + 'px');
+    r.setProperty('--bar-h', barShown ? Math.round(bar.getBoundingClientRect().height) + 'px' : '0px');
+  }
+  publishChromeVars();
+  addEventListener('resize', publishChromeVars);
+  addEventListener('orientationchange', () => setTimeout(publishChromeVars, 150));
+
+  // The 🦅 emoji crest renders as a different glyph on every platform (and reads
+  // like a sticky note next to the wordmark). Swap in the real crest once, here,
+  // so all pages get it without touching 25 files.
+  document.querySelectorAll('.crest').forEach((c) => {
+    if (!/[\u{1F300}-\u{1FAFF}]/u.test(c.textContent)) return;
+    c.innerHTML = '<img src="logo-crest.svg?v=98" alt="" width="30" height="30" style="display:block" />';
+  });
 
   // Bottom tab bar (mobile app pattern) — one raised center action, 5 slots,
   // consistent on every page. NATIVE SHELL ONLY: the web (even mobile web)
@@ -336,6 +380,9 @@
         fnav.appendChild(a);
       } else if (!signedIn && link) { link.remove(); }
     }
+    // Header slot follows the same state (bell when signed in, Sign in when not).
+    headerAuthControl();
+    publishChromeVars();
   }
   syncAuthMenu();
 
@@ -382,6 +429,11 @@
 (function () {
   if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) return;
   if (/\/review\.html$/.test(location.pathname)) return;
+  // Not over the landing fold for first-time visitors: the hero is now sized to
+  // exactly one screen, and the FAB sat on top of the stats band, covering
+  // "reports publicly verifiable". Signed-in users see Observer Home there (real
+  // data to ask about), so they still get it.
+  if (/^\/(index\.html)?$/.test(location.pathname) && !localStorage.getItem('hawkeye_token')) return;
   fetch('/api/assistant/health').then((r) => r.json()).then((h) => { if (h && h.enabled) mount(); }).catch(() => {});
 
   function mount() {
@@ -402,7 +454,10 @@
     #hk-note{font-size:.72rem;color:var(--muted,#5b6b62);padding:0 14px 10px;background:var(--bg,#f7f8f6)}`;
     const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     const fab = document.createElement('button');
-    fab.id = 'hk-fab'; fab.setAttribute('aria-label', 'Ask Hawkeye about the results'); fab.textContent = '💬';
+    fab.id = 'hk-fab'; fab.setAttribute('aria-label', 'Ask Hawkeye about the results');
+    // SVG, not the 💬 emoji: the emoji rendered differently on every platform and
+    // read like a sticky note next to otherwise line-art iconography.
+    fab.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 9 9 0 0 1-3.8-.8L3 21l1.9-4.6A8.2 8.2 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg>';
     const panel = document.createElement('div'); panel.id = 'hk-panel';
     panel.innerHTML = '<div id="hk-head"><span>Ask Hawkeye</span><button aria-label="Close" id="hk-x">×</button></div>'
       + '<div id="hk-msgs"></div>'

@@ -170,7 +170,7 @@ test.describe('theme', () => {
 });
 
 test.describe('app welcome screen (native shell)', () => {
-  test('replaces the marketing landing and fits above the tab bar', async ({ page }) => {
+  test('owns the whole window: no header, no tab bar, fits one screen', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openLanding(page);
     await simulateNativeShell(page, 66);
@@ -178,32 +178,86 @@ test.describe('app welcome screen (native shell)', () => {
       const aw = document.querySelector('.app-welcome');
       const r = aw.getBoundingClientRect();
       const btns = [...aw.querySelectorAll('.aw-actions a')];
+      const gone = (s) => { const e = document.querySelector(s); return !e || getComputedStyle(e).display === 'none'; };
       return {
         welcomeShown: getComputedStyle(aw).display !== 'none',
-        heroHidden: getComputedStyle(document.querySelector('.hero')).display === 'none',
+        heroHidden: gone('.hero'),
+        headerHidden: gone('.gov-header'),
+        tabBarHidden: gone('.tabbar'),
         bottom: Math.round(r.bottom),
-        limit: window.innerHeight - 66,
+        viewport: window.innerHeight,
         labels: btns.map((b) => b.textContent.trim()),
         minBtn: Math.min(...btns.map((b) => Math.round(b.getBoundingClientRect().height))),
+        // The feature bullets were removed on purpose — app users already know
+        // what the app does, so the screen stays a clean auth step.
+        hasFeatureBullets: !!aw.querySelector('.aw-points'),
       };
     });
     expect(m.welcomeShown).toBe(true);
     expect(m.heroHidden, 'the web marketing hero must be hidden in the app').toBe(true);
-    expect(m.bottom, 'welcome screen must clear the tab bar').toBeLessThanOrEqual(m.limit);
+    expect(m.headerHidden, 'welcome screen must not show the site header').toBe(true);
+    expect(m.tabBarHidden, 'welcome screen must not show the bottom tab bar').toBe(true);
+    expect(m.hasFeatureBullets, 'welcome screen should stay copy-light').toBe(false);
+    expect(m.bottom, 'welcome screen must fit one screen').toBeLessThanOrEqual(m.viewport + 1);
     expect(m.labels.join(' | ')).toMatch(/Create an account.*Sign in/);
     expect(m.minBtn, 'WCAG 2.5.5 touch target').toBeGreaterThanOrEqual(44);
   });
 });
 
+test.describe('show/hide password', () => {
+  test('every password field gets an accessible reveal toggle', async ({ page }) => {
+    await stubApi(page);
+    await page.goto('/observe.html?intent=signin', { waitUntil: 'load' });
+    await freezeMotion(page);
+    const m = await page.evaluate(() => {
+      const input = document.getElementById('pw-signin-input');
+      const btn = input.parentElement.querySelector('.pw-eye');
+      const before = input.type;
+      btn.click();
+      const afterFirst = { type: input.type, pressed: btn.getAttribute('aria-pressed'), label: btn.getAttribute('aria-label') };
+      btn.click();
+      return {
+        wrapped: input.parentElement.classList.contains('pw-wrap'),
+        buttonType: btn.type,               // must be "button", never submit
+        before,
+        afterFirst,
+        afterSecond: { type: input.type, pressed: btn.getAttribute('aria-pressed') },
+        size: [Math.round(btn.getBoundingClientRect().width), Math.round(btn.getBoundingClientRect().height)],
+        fieldsWithToggle: document.querySelectorAll('.pw-wrap .pw-eye').length,
+      };
+    });
+    expect(m.wrapped).toBe(true);
+    expect(m.buttonType, 'must not submit the form').toBe('button');
+    expect(m.before).toBe('password');
+    expect(m.afterFirst.type, 'first tap reveals').toBe('text');
+    expect(m.afterFirst.pressed).toBe('true');
+    expect(m.afterFirst.label).toMatch(/hide/i);
+    expect(m.afterSecond.type, 'second tap hides again').toBe('password');
+    expect(m.afterSecond.pressed).toBe('false');
+    expect(Math.min(...m.size), 'WCAG 2.5.5 touch target').toBeGreaterThanOrEqual(44);
+    expect(m.fieldsWithToggle, 'both password fields on this page').toBeGreaterThanOrEqual(2);
+  });
+});
+
 test.describe('visual regression', () => {
-  // Baselines must be generated on the runner (fonts/GPU differ locally) — run
-  // the workflow with update_snapshots=true once and commit what it uploads.
+  // Baselines must be generated ON the runner (fonts and GPU differ from a dev
+  // machine). Until they're committed these SKIP rather than fail: a missing
+  // baseline is a setup step, not a regression, and a red build for it trains
+  // people to ignore red. Generate with the workflow's update_snapshots input.
+  const fs = require('fs');
+  const path = require('path');
+  const SNAP_DIR = path.join(__dirname, 'layout.spec.js-snapshots');
   const shots = [
     { name: 'landing-phone', width: 390, height: 844 },
     { name: 'landing-laptop', width: 1366, height: 768 },
   ];
   for (const s of shots) {
-    test(s.name, async ({ page }) => {
+    test(s.name, async ({ page }, testInfo) => {
+      const baseline = path.join(SNAP_DIR, `${s.name}-${testInfo.project.name}-linux.png`);
+      const updating = testInfo.config.updateSnapshots === 'all' || testInfo.config.updateSnapshots === 'changed';
+      test.skip(!updating && !fs.existsSync(baseline),
+        'No committed baseline yet — run the UI checks workflow with update_snapshots=true, '
+        + 'then commit tests/ui/layout.spec.js-snapshots/.');
       await page.setViewportSize({ width: s.width, height: s.height });
       await openLanding(page);
       await expect(page).toHaveScreenshot(`${s.name}.png`, {

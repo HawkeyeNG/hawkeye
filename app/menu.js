@@ -460,6 +460,58 @@
   }
 })();
 
+// ---- show/hide password ----------------------------------------------------
+// Applied to EVERY password field on the site from one place (sign-in, the
+// optional sign-up password, profile change-password, and the admin consoles) —
+// 10 inputs across 7 pages, so doing it per-page would guarantee drift. Typing a
+// password blind on a phone keyboard is the single most common cause of a failed
+// sign-in, and the toggle is a real button with aria-pressed rather than an icon
+// glued to the input, so it works with a keyboard and a screen reader.
+(function () {
+  const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.1A9.7 9.7 0 0 1 12 5.5c6.4 0 10 6.5 10 6.5a17 17 0 0 1-2.5 3.3M6.4 8A17 17 0 0 0 2 12s3.6 6.5 10 6.5a9.4 9.4 0 0 0 3.3-.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+
+  function attach(input) {
+    if (input.dataset.pwToggle) return;
+    input.dataset.pwToggle = '1';
+    const wrap = document.createElement('div');
+    wrap.className = 'pw-wrap';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    const b = document.createElement('button');
+    b.type = 'button';                 // never submit the surrounding form
+    b.className = 'pw-eye';
+    b.tabIndex = 0;
+    b.setAttribute('aria-label', 'Show password');
+    b.setAttribute('aria-pressed', 'false');
+    b.innerHTML = EYE;
+    b.addEventListener('click', () => {
+      const reveal = input.type === 'password';
+      input.type = reveal ? 'text' : 'password';
+      b.innerHTML = reveal ? EYE_OFF : EYE;
+      b.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+      b.setAttribute('aria-pressed', String(reveal));
+      // Keep the caret where it was; don't yank the page around on mobile.
+      try { input.focus({ preventScroll: true }); } catch { /* ignore */ }
+    });
+    wrap.appendChild(b);
+  }
+
+  let queued = false;
+  const scan = () => {
+    queued = false;
+    document.querySelectorAll('input[type="password"]').forEach(attach);
+  };
+  scan();
+  // Some fields only appear later (the optional sign-up password reveals on a
+  // checkbox). attach() is idempotent, so re-scanning settles immediately.
+  new MutationObserver(() => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(scan);
+  }).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
 // Floating results assistant (bottom-right). Non-partisan, read-only; mounts only
 // where the server reports the feature is switched on. Skipped inside the Telegram
 // Mini App and on the private review console.

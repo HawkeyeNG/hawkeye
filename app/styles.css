@@ -208,6 +208,15 @@ main.wrap { max-width: 840px; }
 .native-app:not(.obs-home) .how-sec,
 .native-app:not(.obs-home) .trust,
 .native-app:not(.obs-home) .cta-band { display: none; }
+/* No header and no tab bar on the welcome screen — a standard app welcome/auth
+   screen owns the whole window, and both are redundant when the screen itself
+   carries Create account / Sign in. Scoped with .is-landing (set by index.html)
+   so every OTHER page in the shell keeps its header and tabs. With both hidden
+   menu.js measures --hdr-h/--bar-h as 0, so the screen fills the viewport. */
+.native-app.is-landing:not(.obs-home) .gov-header,
+.native-app.is-landing:not(.obs-home) .tabbar,
+.native-app.is-landing:not(.obs-home) .phase-banner { display: none; }
+
 .aw-inner { width: min(30rem, 100% - 40px); margin: 0 auto; }
 /* The crest artwork is dark-drawn, so it needs a light plate on the gradient —
    same treatment as the header mark. */
@@ -464,6 +473,24 @@ button.secondary {
   box-shadow: none;
 }
 button.secondary:hover { background: var(--tint); filter: none; }
+
+/* ---------- show/hide password (wrapper + button built by menu.js) ---------- */
+.pw-wrap { position: relative; display: block; }
+/* Room for the button so long passwords never slide under it. */
+.pw-wrap input { padding-right: 52px; }
+.pw-eye {
+  position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+  width: 44px; height: 44px;                /* WCAG 2.5.5 touch target */
+  margin: 0; padding: 0; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; box-shadow: none; border-radius: 8px;
+  color: var(--muted); cursor: pointer;
+}
+/* The global `button` rule is a full-width green block — neutralise its hover too. */
+.pw-eye:hover { color: var(--ink); background: rgba(0, 0, 0, 0.05); filter: none; transform: translateY(-50%); }
+.pw-eye:active { transform: translateY(-50%); box-shadow: none; }
+.pw-eye:focus-visible { outline: 2px solid var(--link); outline-offset: 1px; }
+.pw-eye svg { width: 20px; height: 20px; display: block; }
+:root[data-theme="dark"] .pw-eye:hover { background: rgba(255, 255, 255, 0.08); }
 
 /* ---------- option lists (polling units) ---------- */
 .option-list { margin-top: 8px; }

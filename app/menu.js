@@ -383,7 +383,10 @@
             const rq = indexedDB.open('hawkeye', 1);
             rq.onsuccess = () => { try { rq.result.transaction('kv', 'readwrite').objectStore('kv').delete('keypair'); } catch { /* ignore */ } };
           } catch { /* ignore */ }
-          location.href = 'observe.html?intent=observe';
+          // Sign out lands on index.html, NOT the sign-in form: in the app that's
+          // the welcome screen and on the web it's the landing page. Dropping a
+          // signed-out user straight onto a password field reads like an error.
+          location.href = 'index.html';
         });
         // ("Delete my ID" moved into profile.html — one authoritative place.)
       } else if (!signedIn && present) {

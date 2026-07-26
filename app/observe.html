@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=111" />
+  <link rel="stylesheet" href="styles.css?v=112" />
   <script src="native.js?v=103"></script>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -63,7 +63,25 @@
       <p id="intent-note" class="notice" hidden></p>
       <h1 id="register-title">Verify your phone</h1>
       <p class="lede">One number, one observer. Your number is never published.</p>
-      <p class="notice">New to Hawkeye? <a href="practice.html">Try a practice run first</a> — no sign-up needed.</p>
+      <!-- App-only escape hatch: the shell hides the header on this screen, so
+           without this there'd be no way back to the welcome screen. -->
+      <a class="auth-back" href="index.html">&larr; Back</a>
+      <!-- Practice: a proper card instead of a tinted sentence. Hidden in
+           sign-in mode (returning observers don't need it). -->
+      <a class="starter-card" id="starter-card" href="practice.html">
+        <span class="sc-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3 3 7.5l9 4.5 9-4.5L12 3z"/><path d="M3 7.5v6l9 4.5 9-4.5v-6"/><path d="M7.5 16.5V21"/>
+          </svg>
+        </span>
+        <span class="sc-text">
+          <strong>New to Hawkeye?</strong>
+          <small>Run a practice election first — no sign-up, and nothing you enter is published.</small>
+        </span>
+        <span class="sc-go" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </span>
+      </a>
       <div class="card">
         <label for="auth-input">Nigerian mobile number</label>
         <input id="auth-input" type="tel" inputmode="tel" placeholder="e.g. 0803 123 4567" autocomplete="tel" />
@@ -244,8 +262,8 @@
   <script src="device.js" defer></script>
   <script src="scan.js?v=3" defer></script>
   <script src="outbox.js" defer></script>
-  <script src="app.js?v=119" defer></script>
+  <script src="app.js?v=120" defer></script>
   <script src="tg.js?v=95" defer></script>
-  <script src="menu.js?v=113" defer></script>
+  <script src="menu.js?v=114" defer></script>
 </body>
 </html>

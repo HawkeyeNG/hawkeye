@@ -474,6 +474,48 @@ button.secondary {
 }
 button.secondary:hover { background: var(--tint); filter: none; }
 
+/* ---------- app auth screen (observe.html, native shell, register step) -------
+   Nothing in the shell should be reachable before sign-in, and a header + tab bar
+   wrapped around a sign-in form reads as a web page rather than an app screen.
+   app.js puts .auth-screen on <html> only while the register step is showing, so
+   the report flow that follows keeps its navigation. */
+.native-app.auth-screen .gov-header,
+.native-app.auth-screen .tabbar,
+.native-app.auth-screen .gov-footer,
+.native-app.auth-screen .phase-banner { display: none; }
+/* Header gone: restore breathing room and clear the status-bar inset. */
+.native-app.auth-screen main { padding-top: calc(20px + env(safe-area-inset-top)); }
+.auth-back { display: none; }
+.native-app.auth-screen .auth-back {
+  display: inline-block; margin: 0 0 14px; color: var(--link);
+  font-weight: 700; font-size: 0.9rem; text-decoration: none;
+  padding: 8px 0;                       /* keeps the tap area comfortable */
+}
+
+/* ---------- "new here?" starter card (sign-up step) ---------- */
+.starter-card {
+  display: grid; grid-template-columns: 40px 1fr 18px; align-items: center; gap: 12px;
+  margin: 14px 0 18px; padding: 13px 14px;
+  background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--green);
+  border-radius: 12px; text-decoration: none; color: inherit;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.starter-card:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); border-color: var(--green); }
+/* display:grid above beats the UA [hidden] rule — restore it, or app.js hiding
+   this in sign-in mode would do nothing (same trap as .bell-dot). */
+.starter-card[hidden] { display: none; }
+.sc-icon {
+  width: 40px; height: 40px; border-radius: 11px; background: var(--tint);
+  display: flex; align-items: center; justify-content: center; color: var(--green);
+}
+.sc-icon svg { width: 21px; height: 21px; }
+.sc-text { display: block; min-width: 0; }
+.sc-text strong { display: block; font-size: 0.95rem; line-height: 1.3; }
+.sc-text small { display: block; margin-top: 2px; color: var(--muted); font-size: 0.79rem; line-height: 1.35; }
+.sc-go { color: var(--muted); display: flex; }
+.sc-go svg { width: 18px; height: 18px; }
+.starter-card:hover .sc-go { color: var(--green); }
+
 /* ---------- show/hide password (wrapper + button built by menu.js) ---------- */
 .pw-wrap { position: relative; display: block; }
 /* Room for the button so long passwords never slide under it. */

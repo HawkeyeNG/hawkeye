@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=109" />
+  <link rel="stylesheet" href="styles.css?v=110" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -147,6 +147,33 @@
       </div>
     </main>
   </div>
+
+  <!-- APP-ONLY welcome screen. The web landing has to sell Hawkeye to a stranger;
+       someone who installed the app already decided, so this is a straight
+       welcome + auth screen in the standard app shape. Shown only for
+       html.native-app when signed out; CSS hides the marketing sections then. -->
+  <section class="app-welcome" aria-labelledby="aw-title">
+    <div class="aw-inner">
+      <span class="aw-mark"><img src="logo-crest.svg?v=98" alt="" width="62" height="62" /></span>
+      <h1 id="aw-title">Hawkeye</h1>
+      <p class="aw-tag">Independent election results monitor</p>
+      <ul class="aw-points">
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/></svg>
+          Photograph the result sheet at your polling unit</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          Signed on your phone, with GPS and time</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+          Published to a public ledger anyone can audit</li>
+      </ul>
+      <div class="aw-actions">
+        <a class="btn-accent" href="observe.html?intent=observe">Create an account</a>
+        <a class="btn-ghost" href="observe.html?intent=signin">Sign in</a>
+      </div>
+      <p class="aw-alt"><a href="practice.html">Try a practice run first</a></p>
+      <p class="aw-fine">Not affiliated with INEC or any political party.
+        Official results remain INEC's.</p>
+    </div>
+  </section>
 
   <!-- Hero — .hero-fold sizes this tile to exactly one screen (see styles.css) -->
   <section class="hero hero-fold">
@@ -385,6 +412,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=110"></script>
+  <script src="menu.js?v=112"></script>
 </body>
 </html>

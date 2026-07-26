@@ -189,6 +189,60 @@ main.wrap { max-width: 840px; }
   .hero-fold .stats-row strong { font-size: 1.25rem; }
   .hero-fold .stats-row span { font-size: 0.7rem; }
 }
+/* ---------- APP-ONLY welcome screen (index.html, native shell, signed out) ----
+   Web visitors get the marketing landing; app users already installed, so they
+   get a conventional welcome + auth screen instead. One screen, no scrolling,
+   sized off the SAME measured chrome vars as .hero-fold. */
+.app-welcome { display: none; }
+.native-app:not(.obs-home) .app-welcome {
+  display: flex; align-items: center; justify-content: center;
+  min-height: calc(100svh - var(--hdr-h, 85px) - var(--bar-h, 0px));
+  padding: 18px 0 22px; text-align: center; color: #fff;
+  background:
+    radial-gradient(760px 380px at 50% -12%, rgba(46, 229, 157, 0.18), transparent 62%),
+    linear-gradient(168deg, var(--green-950) 0%, var(--green-darker) 58%, var(--green-dark) 100%);
+}
+/* In the app the marketing page is noise — hide it so the welcome screen is the
+   whole first run. (.obs-home already hides these for signed-in users.) */
+.native-app:not(.obs-home) .hero,
+.native-app:not(.obs-home) .how-sec,
+.native-app:not(.obs-home) .trust,
+.native-app:not(.obs-home) .cta-band { display: none; }
+.aw-inner { width: min(30rem, 100% - 40px); margin: 0 auto; }
+/* The crest artwork is dark-drawn, so it needs a light plate on the gradient —
+   same treatment as the header mark. */
+.aw-mark {
+  width: 78px; height: 78px; border-radius: 22px; background: #f4f8f5;
+  display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+}
+.app-welcome h1 { font-size: 2rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+.aw-tag { margin: 0 0 20px; color: #bfe9d4; font-size: 0.95rem; }
+.aw-points { list-style: none; margin: 0 0 24px; padding: 0; text-align: left; display: grid; gap: 11px; }
+.aw-points li {
+  display: grid; grid-template-columns: 22px 1fr; gap: 11px; align-items: start;
+  font-size: 0.92rem; line-height: 1.35; color: #dbeee4;
+}
+.aw-points svg { width: 20px; height: 20px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; margin-top: 1px; }
+/* Full-width stacked buttons: the standard app auth shape, and it keeps both
+   targets well above the 44px minimum. */
+.aw-actions { display: grid; gap: 10px; }
+.aw-actions a { display: block; width: 100%; padding: 14px 18px; font-size: 1rem; }
+.aw-alt { margin: 16px 0 0; font-size: 0.9rem; }
+.aw-alt a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.aw-fine { margin: 18px 0 0; font-size: 0.74rem; line-height: 1.4; color: #9ec0ad; }
+/* Short phones: trim the supporting copy, never the buttons. */
+@media (max-height: 700px) {
+  .native-app:not(.obs-home) .app-welcome { padding: 10px 0 14px; }
+  .aw-mark { width: 60px; height: 60px; border-radius: 17px; margin-bottom: 10px; }
+  .aw-mark img { width: 48px; height: 48px; }
+  .app-welcome h1 { font-size: 1.7rem; }
+  .aw-tag { margin-bottom: 14px; font-size: 0.88rem; }
+  .aw-points { gap: 8px; margin-bottom: 18px; }
+  .aw-points li { font-size: 0.86rem; }
+  .aw-fine { margin-top: 12px; }
+}
+
 .hero-signin { margin: 16px 0 0; font-size: 0.92rem; color: #a9c3b4; }
 .hero-signin a { color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .hero-signin a:hover { color: var(--accent); }
@@ -545,6 +599,30 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 }
 .menu-panel[hidden] { display: none; }
 .menu-panel .sign-out { color: var(--danger) !important; font-weight: 700; }
+/* Keep the scrollbar VISIBLE rather than overlay-hidden, so a cut-off list is
+   obvious at a glance (the menu holds up to ~19 items). */
+.menu-panel { scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, 0.3) transparent; }
+.menu-panel::-webkit-scrollbar { width: 9px; }
+.menu-panel::-webkit-scrollbar-track { background: transparent; }
+.menu-panel::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.26); border-radius: 9px;
+  border: 2px solid transparent; background-clip: content-box;
+}
+.menu-panel::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.42); background-clip: content-box; }
+:root[data-theme="dark"] .menu-panel { scrollbar-color: rgba(255, 255, 255, 0.32) transparent; }
+:root[data-theme="dark"] .menu-panel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.28); background-clip: content-box; }
+/* Sticky bottom fade (menu.js adds the element + toggles the classes): the cue
+   that carries on touch, where scrollbars stay hidden until you scroll.
+   Negative margin so it overlays the last row instead of adding height. */
+.menu-fade {
+  position: sticky; bottom: -1px; height: 28px; margin-top: -28px;
+  pointer-events: none; display: none;
+  background: linear-gradient(to top, var(--card) 12%, rgba(255, 255, 255, 0) 100%);
+}
+.menu-panel.is-scrollable:not(.at-end) .menu-fade { display: block; }
+/* The fade div is the panel's last child, so :last-child no longer matches the
+   final link — restore its borderless bottom edge. */
+.menu-panel a:last-of-type { border-bottom: none; }
 
 /* Desktop quick-nav (built by menu.js); the ☰ still holds the full menu. */
 .desktop-primary { display: none; }

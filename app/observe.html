@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=112" />
+  <link rel="stylesheet" href="styles.css?v=113" />
   <script src="native.js?v=103"></script>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -60,12 +60,15 @@
   <main class="wrap">
     <!-- 1. Registration -->
     <section id="screen-register" hidden>
-      <p id="intent-note" class="notice" hidden></p>
+      <!-- First element on the screen: the app hides the header here, so this is
+           the only way back to the welcome screen. A real button, not a text
+           link — it's navigation, not an aside. -->
+      <a class="auth-back" href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        Back
+      </a>
       <h1 id="register-title">Verify your phone</h1>
       <p class="lede">One number, one observer. Your number is never published.</p>
-      <!-- App-only escape hatch: the shell hides the header on this screen, so
-           without this there'd be no way back to the welcome screen. -->
-      <a class="auth-back" href="index.html">&larr; Back</a>
       <!-- Practice: a proper card instead of a tinted sentence. Hidden in
            sign-in mode (returning observers don't need it). -->
       <a class="starter-card" id="starter-card" href="practice.html">
@@ -262,8 +265,8 @@
   <script src="device.js" defer></script>
   <script src="scan.js?v=3" defer></script>
   <script src="outbox.js" defer></script>
-  <script src="app.js?v=120" defer></script>
+  <script src="app.js?v=121" defer></script>
   <script src="tg.js?v=95" defer></script>
-  <script src="menu.js?v=114" defer></script>
+  <script src="menu.js?v=115" defer></script>
 </body>
 </html>

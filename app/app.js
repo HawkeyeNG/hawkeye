@@ -268,13 +268,33 @@ function applySignInMode() {
   authMode = 'password';
   const title = $('register-title');
   if (title) title.textContent = 'Sign in';
+  // "One number, one observer" is a sign-UP promise; a returning observer has
+  // already made it.
+  const lede = $('register-lede');
+  if (lede) lede.textContent = 'Welcome back — sign in to your observer account.';
   if ($('pw-signin-wrap')) $('pw-signin-wrap').hidden = false;
   if ($('channel-pick')) $('channel-pick').hidden = true;   // password sign-in sends no code
   $('btn-auth').textContent = 'Sign In';
-  if ($('pw-link')) $('pw-link').textContent = 'Sign in with a one-time code instead';
+  if ($('pw-link')) {
+    $('pw-link').hidden = false;                            // OTP fallback, sign-in only
+    $('pw-link').textContent = 'Sign in with a one-time code instead';
+  }
+  if ($('signin-line')) $('signin-line').hidden = true;     // they ARE on sign-in
   if ($('signup-line')) $('signup-line').hidden = false;
+  if ($('pw-opt')) $('pw-opt').hidden = true;               // creating one is a sign-up job
   // A returning observer doesn't need the practice pitch — it belongs on sign-up.
   if ($('starter-card')) $('starter-card').hidden = true;
+}
+// Sign-up mode (everything that isn't ?intent=signin). Mirror image of the above:
+// no "have a password?" toggle (a new observer can't have one), a link across to
+// sign-in instead, and the create-a-password option offered up front rather than
+// only appearing once a code has been sent.
+function applySignUpMode() {
+  if (IS_SIGNIN) return;
+  if ($('pw-link')) $('pw-link').hidden = true;
+  if ($('signup-line')) $('signup-line').hidden = true;
+  if ($('signin-line')) $('signin-line').hidden = false;
+  if ($('pw-opt')) $('pw-opt').hidden = false;
 }
 
 function afterVerified() {
@@ -304,20 +324,18 @@ function resetAuthPane() {
     for (const r of document.querySelectorAll('input[name="otp-channel"]')) r.checked = false;
   }
   pendingChannel = '';
-  if ($('pw-link')) {
-    $('pw-link').hidden = false;
-    $('pw-link').textContent = 'Have a password? Sign in without OTP';
-  }
   if ($('pw-signin-wrap')) {
     $('pw-signin-wrap').hidden = true;
     $('pw-signin-input').value = '';
   }
   if ($('pw-opt')) {
-    $('pw-opt').hidden = true;
     $('pw-opt-check').checked = false;
     $('pw-opt-field').hidden = true;
     $('pw-opt-input').value = '';
   }
+  // Whichever mode this visit is in owns the links and the password controls —
+  // exactly one of these two does anything.
+  applySignUpMode();
   applySignInMode();   // keep a sign-in visit in sign-in mode after a reset
 }
 
@@ -328,9 +346,9 @@ if ($('pw-opt-check')) $('pw-opt-check').onchange = () => {
   if (!$('pw-opt-check').checked) $('pw-opt-input').value = '';
 };
 
-// Password sign-in (no OTP): reveals a password field UNDER the phone field so
-// both are entered in one go; the same link toggles back to the OTP flow.
-// Wrong/unset password errors point at OTP — it's always the recovery path.
+// SIGN-IN ONLY (the link is hidden on sign-up): flips between the password field
+// and the OTP flow in place, so a forgotten password never dead-ends — OTP is
+// always the recovery path, and wrong/unset password errors point at it.
 if ($('pw-link')) $('pw-link').onclick = (e) => {
   e.preventDefault();
   const toPw = authMode !== 'password';
@@ -339,7 +357,7 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   if (!toPw) $('pw-signin-input').value = '';
   if ($('channel-pick')) $('channel-pick').hidden = toPw; // password sign-in sends no code
   $('btn-auth').textContent = toPw ? 'Sign In' : 'Request OTP';
-  $('pw-link').textContent = toPw ? 'Sign in with OTP' : 'Have a password? Sign in without OTP';
+  $('pw-link').textContent = toPw ? 'Sign in with a one-time code instead' : 'Sign in with your password instead';
   $('otp-hint').textContent = '';
 };
 
@@ -431,7 +449,11 @@ $('btn-auth').onclick = async () => {
     $('btn-auth').textContent = 'Verify OTP';
     $('auth-reset').hidden = false;
     if ($('otp-resend')) $('otp-resend').hidden = false;
+    // A code is in flight — every "go somewhere else to sign in" link is noise
+    // now. The create-a-password option stays (it applies on verify).
     if ($('pw-link')) $('pw-link').hidden = true;
+    if ($('signin-line')) $('signin-line').hidden = true;
+    if ($('signup-line')) $('signup-line').hidden = true;
     if ($('pw-opt')) $('pw-opt').hidden = false;
     if ($('channel-pick')) $('channel-pick').hidden = true;
     renderOtpSent(body);
@@ -1100,6 +1122,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
     else show('screen-locate');
   } else {
     applyIntentCopy();
+    applySignUpMode();
     applySignInMode();
     show('screen-register');
   }

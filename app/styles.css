@@ -474,29 +474,56 @@ button.secondary {
 }
 button.secondary:hover { background: var(--tint); filter: none; }
 
-/* ---------- app auth screen (observe.html, native shell, register step) -------
-   Nothing in the shell should be reachable before sign-in, and a header + tab bar
-   wrapped around a sign-in form reads as a web page rather than an app screen.
+/* ---------- auth screen (observe.html register step) — APP AND WEB ------------
+   Nothing in the product should be reachable before sign-in, and a header + nav
+   + footer wrapped around a sign-in form is just clutter on a page with exactly
+   one job. Deliberately identical on both sides: the app screen was the clean
+   one, so the web page was brought to it rather than the other way round.
    app.js puts .auth-screen on <html> only while the register step is showing, so
    the report flow that follows keeps its navigation. */
-.native-app.auth-screen .gov-header,
-.native-app.auth-screen .tabbar,
-.native-app.auth-screen .gov-footer,
-.native-app.auth-screen .phase-banner { display: none; }
+.auth-screen .gov-header,
+.auth-screen .tabbar,
+.auth-screen .gov-footer,
+.auth-screen .phase-banner { display: none; }
 /* Header gone: restore breathing room and clear the status-bar inset. */
-.native-app.auth-screen main { padding-top: calc(20px + env(safe-area-inset-top)); }
+.auth-screen main { padding-top: calc(20px + env(safe-area-inset-top)); }
+/* Desktop: a one-field form stretched across 1440px reads as a broken page. */
+.auth-screen main.wrap { max-width: 480px; }
+@media (min-width: 900px) { .auth-screen main { padding-top: min(7vh, 56px); } }
+
+/* Back (left) + wordmark (right). The wordmark only exists because the header is
+   gone — a stranger asked for their phone number must be able to see whose site
+   this is without scrolling. */
+.auth-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 18px; }
+.auth-brand {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: 'Lora', Georgia, serif; font-weight: 700; font-size: 0.95rem;
+  letter-spacing: 0.07em; color: var(--ink);
+}
+.auth-brand img { display: block; width: 26px; height: 26px; }
 .auth-back { display: none; }
 /* A real button, sitting above everything else on the auth screen. */
-.native-app.auth-screen .auth-back {
+.auth-screen .auth-back {
   display: inline-flex; align-items: center; gap: 6px;
-  margin: 0 0 18px; padding: 9px 15px 9px 11px;
+  margin: 0; padding: 9px 15px 9px 11px;
   min-height: 44px;                     /* WCAG 2.5.5 */
   background: var(--card); color: var(--ink);
   border: 1px solid var(--border); border-radius: 10px;
   font-weight: 700; font-size: 0.9rem; text-decoration: none;
 }
-.native-app.auth-screen .auth-back:hover { background: var(--tint); border-color: var(--green); }
+.auth-screen .auth-back:hover { background: var(--tint); border-color: var(--green); }
 .auth-back svg { width: 17px; height: 17px; }
+
+/* The line under the primary button ("Have an account? Sign in" / "Sign up" /
+   the OTP fallback) is a real destination, not a footnote — centre it and give
+   the link enough weight to be tappable and findable. */
+.auth-alt { margin: 14px 0 0; text-align: center; font-size: 0.87rem; }
+.auth-alt a { font-weight: 700; text-decoration: none; border-bottom: 1px solid currentColor; }
+.auth-alt a:hover { color: var(--green); }
+/* Breathing room around the create-a-password option, which now sits between the
+   delivery choice and the button rather than appearing after a code is sent. */
+#pw-opt { margin: 14px 0 6px; }
+#pw-opt-field { margin-top: 8px; }
 
 /* ---------- "new here?" starter card (sign-up step) ---------- */
 .starter-card {

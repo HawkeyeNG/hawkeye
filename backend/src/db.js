@@ -411,6 +411,25 @@ for (const ddl of [
      checked_at  INTEGER,
      PRIMARY KEY (pu_code, election_id)
    )`,
+  // User-facing "report this content" flags (Play UGC policy / App Store 1.2:
+  // users must be able to flag objectionable published content in-app). One row
+  // per flag; kind = incident|result. Anyone may file (observer_id nullable —
+  // a signed-out reader can still object); handled in the owner console
+  // (review.html) by publish/reject or observer suspension. Distinct from
+  // `discrepancies`, which are AUTOMATED integrity findings.
+  `CREATE TABLE IF NOT EXISTS content_flags (
+     id          INTEGER PRIMARY KEY,
+     kind        TEXT NOT NULL,            -- incident | result
+     target_id   INTEGER NOT NULL,         -- incidents.id / submissions.id
+     reason      TEXT NOT NULL,            -- abuse | false | privacy | other
+     detail      TEXT,
+     observer_id INTEGER,
+     ip_hash     TEXT,
+     status      TEXT NOT NULL DEFAULT 'open',  -- open | resolved | dismissed
+     created_at  INTEGER NOT NULL
+   )`,
+  'CREATE INDEX IF NOT EXISTS idx_flags_status ON content_flags(status, id)',
+  'CREATE UNIQUE INDEX IF NOT EXISTS idx_flags_dedupe ON content_flags(kind, target_id, ip_hash)',
   // FCT is an acronym — repair rows title-cased to "Fct" before the loader fix.
   "UPDATE polling_units SET state = 'FCT' WHERE state = 'Fct'",
   "UPDATE polling_units SET senatorial = REPLACE(senatorial, 'Fct', 'FCT') WHERE senatorial LIKE '%Fct%'",

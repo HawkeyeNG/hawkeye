@@ -133,6 +133,55 @@ adminRouter.post('/admin/incidents/:id/reject', requireAdmin, (req, res) => {
   res.json({ ok: true, status: 'rejected' });
 });
 
+// ---- User content-flag queue (POST /api/flags feeds it). Resolving a flag
+// records the decision; actual content action stays explicit: unpublish for
+// incidents (back to 'pending', off the public feed), or observer suspension
+// via /admin/observers/:id/suspend below. Nothing is ever hard-deleted — the
+// ledger/audit model forbids it, and flags themselves are part of the record.
+adminRouter.get('/admin/flags', requireAdmin, (req, res) => {
+  const status = String(req.query.status || 'open');
+  const rows = db.prepare(`
+    SELECT f.*, CASE f.kind WHEN 'incident' THEN i.description ELSE s.votes_json END AS target_preview,
+           i.status AS incident_status
+    FROM content_flags f
+    LEFT JOIN incidents i ON f.kind = 'incident' AND i.id = f.target_id
+    LEFT JOIN submissions s ON f.kind = 'result' AND s.id = f.target_id
+    WHERE f.status = ? ORDER BY f.id DESC LIMIT 200`).all(status);
+  res.json({ flags: rows });
+});
+
+adminRouter.post('/admin/flags/:id/resolve', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const action = String(req.body?.action || 'dismiss'); // dismiss | resolve
+  const status = action === 'resolve' ? 'resolved' : 'dismissed';
+  const info = db.prepare("UPDATE content_flags SET status = ? WHERE id = ? AND status = 'open'").run(status, id);
+  if (!info.changes) return res.status(404).json({ error: 'not_found_or_closed' });
+  res.json({ ok: true, status });
+});
+
+// Take a published incident back off the public feed (flag upheld). Returns it
+// to 'pending' rather than 'rejected' so the owner can re-review or re-publish.
+adminRouter.post('/admin/incidents/:id/unpublish', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const info = db.prepare("UPDATE incidents SET status = 'pending' WHERE id = ? AND status = 'published'").run(id);
+  if (!info.changes) return res.status(404).json({ error: 'not_published' });
+  notifyMaster(`📤 incident #${id} UNPUBLISHED (content flag upheld)`);
+  res.json({ ok: true, status: 'pending' });
+});
+
+// Suspend/reinstate an observer. requireObserver already refuses any
+// status != 'active', so suspension blocks every authenticated action
+// (submissions, incidents, docket votes) with no further changes.
+adminRouter.post('/admin/observers/:id/status', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const status = String(req.body?.status || '');
+  if (!['active', 'suspended'].includes(status)) return res.status(400).json({ error: 'bad_status' });
+  const info = db.prepare('UPDATE observers SET status = ? WHERE id = ?').run(status, id);
+  if (!info.changes) return res.status(404).json({ error: 'not_found' });
+  notifyMaster(`⛔ observer #${id} status → ${status}`);
+  res.json({ ok: true, status });
+});
+
 // Bulk-attach PU coordinates from a CSV already uploaded to storage/raw
 // (same logic + Nigeria-bbox gate as scripts/attach_coordinates.js — this is
 // the no-SSH path for loading the INEC locator crawl on the server).

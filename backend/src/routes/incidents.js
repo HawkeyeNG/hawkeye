@@ -4,6 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { Router } from 'express';
+import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import sharp from 'sharp';
 import { db } from '../db.js';
@@ -132,3 +133,57 @@ incidentsRouter.get('/incidents', (_req, res) => {
 });
 
 incidentsRouter.get('/incidents/kinds', (_req, res) => res.json([...KINDS]));
+
+// ---- "Report this content" (store UGC compliance: Play UGC policy, App Store
+// Guideline 1.2). Any reader — signed in or not — can flag a published incident
+// or a unit result they believe is abusive, false, or privacy-violating. Flags
+// go to the owner console's queue and ping the master chat; they never remove
+// content automatically (takedown stays a human decision, consistent with the
+// pre-publication moderation model).
+const FLAG_KINDS = new Set(['incident', 'result']);
+const FLAG_REASONS = new Set(['abuse', 'false', 'privacy', 'other']);
+// Same-source dedupe without storing raw IPs: salted hash, unique-indexed per
+// (kind, target). jwtSecret as salt keeps the hash stable across restarts.
+const flagIpHash = (ip) =>
+  crypto.createHash('sha256').update(config.jwtSecret + '|flag|' + String(ip || '')).digest('hex').slice(0, 32);
+
+incidentsRouter.post('/flags', (req, res) => {
+  const kind = String(req.body?.kind || '').trim();
+  const targetId = Number(req.body?.targetId);
+  const reason = String(req.body?.reason || '').trim();
+  const detail = String(req.body?.detail || '').trim().slice(0, 500) || null;
+  if (!FLAG_KINDS.has(kind) || !Number.isInteger(targetId) || targetId <= 0) {
+    return res.status(400).json({ error: 'invalid_target' });
+  }
+  if (!FLAG_REASONS.has(reason)) return res.status(400).json({ error: 'invalid_reason' });
+
+  // The target must be real and public — otherwise the endpoint becomes a
+  // probe for unpublished queue ids.
+  const exists = kind === 'incident'
+    ? db.prepare("SELECT id FROM incidents WHERE id = ? AND status = 'published'").get(targetId)
+    : db.prepare('SELECT id FROM submissions WHERE id = ?').get(targetId);
+  if (!exists) return res.status(404).json({ error: 'not_found' });
+
+  // Optional observer attribution (better signal for repeat-abuse patterns),
+  // but never required — flagging must not demand an account.
+  let observerId = null;
+  const header = req.headers.authorization || '';
+  if (header.startsWith('Bearer ')) {
+    try {
+      observerId = Number(jwt.verify(header.slice(7), config.jwtSecret).sub) || null;
+    } catch { /* anonymous is fine */ }
+  }
+
+  try {
+    db.prepare(`
+      INSERT INTO content_flags (kind, target_id, reason, detail, observer_id, ip_hash, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      .run(kind, targetId, reason, detail, observerId, flagIpHash(req.ip), Date.now());
+  } catch {
+    // UNIQUE(kind, target_id, ip_hash) — same reader re-flagging the same item.
+    return res.json({ ok: true, status: 'already_reported' });
+  }
+  const open = db.prepare("SELECT COUNT(*) c FROM content_flags WHERE status = 'open'").get().c;
+  notifyMaster(`🚩 content flag: ${kind} #${targetId} · ${reason}${detail ? ' · "' + detail.slice(0, 80) + '"' : ''} · ${open} open flag(s)`);
+  res.status(201).json({ ok: true, status: 'received' });
+});

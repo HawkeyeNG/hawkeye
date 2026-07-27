@@ -15,6 +15,15 @@
     .feed-item .k { font-weight: 700; color: var(--link); }
     .feed-item .m { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
     .feed-item .m img, .feed-item .m video { width: 120px; height: 90px; object-fit: cover; border-radius: 6px; }
+    /* Quiet by design: present on every card (store UGC rules) without
+       competing with the content itself. Still a 44px target. */
+    .flag-btn {
+      display: inline-block; margin-top: 8px; padding: 10px 12px; min-height: 44px;
+      background: none; border: none; box-shadow: none; width: auto;
+      color: var(--muted); font-size: 0.78rem; font-weight: 600; cursor: pointer;
+    }
+    .flag-btn:hover { color: var(--link); background: none; filter: none; }
+    .flag-btn:disabled { color: var(--green); opacity: 1; }
     .empty { color: var(--muted); }
     #preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
     #preview img, #preview video { width: 80px; height: 64px; object-fit: cover; border-radius: 6px; }
@@ -243,7 +252,32 @@
           ${i.media.length ? `<div class="m">${i.media.map((m) => m.type === 'video'
             ? `<video src="/uploads/${safeFile(m.file)}" controls muted></video>`
             : `<img src="/uploads/${safeFile(m.file)}" alt="incident evidence" loading="lazy" />`).join('')}</div>` : ''}
+          <button type="button" class="flag-btn" data-flag="${i.id}">⚑ Report this content</button>
         </div>`).join('');
+      // Store-policy requirement (Play UGC / App Store 1.2): every piece of
+      // published user content carries an in-app way to object to it.
+      for (const b of document.querySelectorAll('[data-flag]')) b.onclick = () => flagContent(Number(b.dataset.flag), b);
+    }
+
+    async function flagContent(id, btn) {
+      const reason = prompt(
+        'Report this content — why?\n1 Abusive or harmful\n2 False or misleading\n3 Privacy violation\n4 Other\n\nEnter 1-4:');
+      if (!reason) return;
+      const map = { 1: 'abuse', 2: 'false', 3: 'privacy', 4: 'other' };
+      if (!map[reason.trim()]) return alert('Enter a number from 1 to 4.');
+      const detail = prompt('Add any detail (optional):') || '';
+      try {
+        const r = await fetch('/api/flags', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) },
+          body: JSON.stringify({ kind: 'incident', targetId: id, reason: map[reason.trim()], detail: detail.slice(0, 500) }),
+        });
+        if (!r.ok) throw new Error();
+        btn.textContent = '✓ Reported — our team will review';
+        btn.disabled = true;
+      } catch {
+        alert('Could not send the report — check your connection and try again.');
+      }
     }
 
     // Show the right panel immediately — never gate it behind a network call.

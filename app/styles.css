@@ -240,6 +240,10 @@ main.wrap { max-width: 840px; }
 .aw-alt { margin: 16px 0 0; font-size: 0.9rem; }
 .aw-alt a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 .aw-fine { margin: 18px 0 0; font-size: 0.74rem; line-height: 1.4; color: #9ec0ad; }
+/* Same tone as .aw-fine on purpose: this sits at the LIGHT end of the welcome
+   gradient (#00482b), where a dimmer green only reached 4.0:1. Set apart by size,
+   not colour. */
+.aw-copy { margin: 8px 0 0; font-size: 0.7rem; color: #9ec0ad; }
 /* Short phones: trim the supporting copy, never the buttons. */
 @media (max-height: 700px) {
   .native-app:not(.obs-home) .app-welcome { padding: 10px 0 14px; }
@@ -250,6 +254,7 @@ main.wrap { max-width: 840px; }
   .aw-points { gap: 8px; margin-bottom: 18px; }
   .aw-points li { font-size: 0.86rem; }
   .aw-fine { margin-top: 12px; }
+  .aw-copy { margin-top: 6px; }
 }
 
 .hero-signin { margin: 16px 0 0; font-size: 0.92rem; color: #a9c3b4; }
@@ -767,6 +772,13 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 }
 .menu-panel a:last-child { border-bottom: none; }
 .menu-panel a:hover { background: #eef5f0; }
+/* Copyright inside the menu — added by menu.js only on pages with no visible
+   footer to carry it (every screen in the app, plus a few standalone web pages). */
+.menu-copy {
+  margin: 0; padding: 12px 16px 14px;
+  border-top: 1px solid #eef2ef;
+  font-size: 0.72rem; color: #5b6b62;
+}
 
 .scope-note:empty { display: none; }
 .scope-note {
@@ -907,6 +919,13 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 .gov-footer nav { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 12px; }
 .gov-footer a { color: #cfe2d6; font-weight: 600; text-decoration: none; }
 .gov-footer a:hover { color: #fff; text-decoration: underline; }
+/* Ownership line: quieter than the INEC disclaimer above it, and set off by a
+   hairline so it reads as the legal foot of the page rather than more prose. */
+.gov-footer .copyright {
+  margin: 16px 0 0; padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.76rem; color: #7d9c8b;
+}
 
 /* ---------- Telegram Mini App mode (html.tg-app set by tg.js) ---------- */
 .tg-app .gov-header { position: static; }

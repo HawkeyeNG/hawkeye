@@ -104,6 +104,21 @@
     }
   }
 
+  // Ownership notice. The web footer carries it on the 25 pages that have one;
+  // everywhere else — every screen in the native shell (the tab bar replaces the
+  // footer) and the handful of standalone web pages built without one — the menu
+  // is the only site-wide surface left, so it picks the line up. Same test as
+  // FOOTER_ONLY above, for the same reason.
+  if (panel && !panel.querySelector('.menu-copy')) {
+    const footerShowsIt = footerCarriesThem && !!document.querySelector('.gov-footer');
+    if (!footerShowsIt) {
+      const c = document.createElement('p');
+      c.className = 'menu-copy';
+      c.textContent = '© 2026 IniXien, LLC. All rights reserved.';
+      panel.appendChild(c);
+    }
+  }
+
   // Light/dark toggle beside the hamburger. Toggles from the EFFECTIVE mode and
   // persists; greens are identical in both — only neutral surfaces change.
   if (btn && !document.querySelector('.theme-btn')) {

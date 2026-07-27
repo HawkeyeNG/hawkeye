@@ -526,6 +526,9 @@
   // "reports publicly verifiable". Signed-in users see Observer Home there (real
   // data to ask about), so they still get it.
   if (/^\/(index\.html)?$/.test(location.pathname) && !localStorage.getItem('hawkeye_token')) return;
+  // Never on the sign-up/sign-in flow: that screen is deliberately chrome-free in
+  // the app, and a floating chat bubble over an auth form is noise everywhere.
+  if (/observe\.html$/.test(location.pathname)) return;
   fetch('/api/assistant/health').then((r) => r.json()).then((h) => { if (h && h.enabled) mount(); }).catch(() => {});
 
   function mount() {

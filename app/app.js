@@ -254,15 +254,11 @@ const PREFILL = (QP.get('pu') && QP.get('contest')) ? {
   pu: QP.get('pu'), contest: QP.get('contest'),
   votes: (() => { try { return JSON.parse(QP.get('votes') || '[]'); } catch { return []; } })(),
 } : null;
-function applyIntentCopy() {
-  const label = INTENT_LABEL[AUTH_INTENT];
-  if (!label) return;
-  const note = $('intent-note');
-  if (note) {
-    note.textContent = `To ${label}, verify your phone below.`;
-    note.hidden = false;
-  }
-}
+// The "To Become an Observer, verify your phone below." banner is gone: the
+// heading and lede already say it, and a tinted notice above them made the
+// sign-up screen look cluttered. Kept as a no-op so the intent plumbing (which
+// still drives the destination after verifying) doesn't need unpicking.
+function applyIntentCopy() { /* intentionally empty — see note above */ }
 // Sign-in mode (?intent=signin): password field up front for returning observers,
 // OTP still one tap away via #pw-link, and a "Sign up" escape hatch so someone
 // without an account isn't stranded on a password field. Re-applied by
@@ -272,8 +268,6 @@ function applySignInMode() {
   authMode = 'password';
   const title = $('register-title');
   if (title) title.textContent = 'Sign in';
-  const note = $('intent-note');
-  if (note) note.hidden = true;
   if ($('pw-signin-wrap')) $('pw-signin-wrap').hidden = false;
   if ($('channel-pick')) $('channel-pick').hidden = true;   // password sign-in sends no code
   $('btn-auth').textContent = 'Sign In';

@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=113" />
+  <link rel="stylesheet" href="styles.css?v=114" />
   <script src="native.js?v=103"></script>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -60,15 +60,20 @@
   <main class="wrap">
     <!-- 1. Registration -->
     <section id="screen-register" hidden>
-      <!-- First element on the screen: the app hides the header here, so this is
-           the only way back to the welcome screen. A real button, not a text
-           link — it's navigation, not an aside. -->
-      <a class="auth-back" href="index.html">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
-        Back
-      </a>
+      <!-- Top of the screen. The site header is hidden here on BOTH app and web
+           (nothing in the product is reachable before sign-in), so this row
+           carries the only two things that must survive: the way back, and
+           enough branding that a stranger typing their phone number knows whose
+           site they're on. Back is a real button — it's navigation, not an aside. -->
+      <div class="auth-top">
+        <a class="auth-back" href="index.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+          Back
+        </a>
+        <span class="auth-brand"><img src="logo-crest.svg?v=98" alt="" width="26" height="26" />HAWKEYE</span>
+      </div>
       <h1 id="register-title">Verify your phone</h1>
-      <p class="lede">One number, one observer. Your number is never published.</p>
+      <p class="lede" id="register-lede">One number, one observer. Your number is never published.</p>
       <!-- Practice: a proper card instead of a tinted sentence. Hidden in
            sign-in mode (returning observers don't need it). -->
       <a class="starter-card" id="starter-card" href="practice.html">
@@ -115,22 +120,33 @@
           <input id="pw-signin-input" type="password" placeholder="Your password" autocomplete="current-password" />
         </div>
         <p id="otp-hint" class="hint"></p>
+        <!-- Sign-up only (app.js reveals it): a first-time observer has no
+             password to "have", so what belongs on this page is CREATING one.
+             Applied straight after the OTP verifies — fresh phone proof, so no
+             current password is needed. -->
         <div id="pw-opt" hidden>
           <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;cursor:pointer">
             <input id="pw-opt-check" type="checkbox" style="width:auto;margin:3px 0 0" />
-            <span>Add a password <small>(optional)</small> — sign in later without codes</span>
+            <span>Create a password <small>(optional)</small> — sign in later without a code</span>
           </label>
           <div id="pw-opt-field" hidden>
-            <label for="pw-opt-input">Choose a password <small>(min 8 characters)</small></label>
+            <label for="pw-opt-input">Your password <small>(min 8 characters)</small></label>
             <input id="pw-opt-input" type="password" autocomplete="new-password" />
           </div>
         </div>
         <button id="btn-auth">Request OTP</button>
-        <p class="hint"><a id="pw-link" href="#">Have a password? Sign in without OTP</a></p>
-        <!-- Shown only in sign-in mode (?intent=signin): sends new users into the
-             normal OTP registration instead of leaving them stuck on a password
-             field for an account they don't have yet. -->
-        <p class="hint" id="signup-line" hidden>Don't have an account?
+        <!-- Sign-up mode: the only link that makes sense under "Request OTP" is
+             the way OVER to sign-in — someone signing up for the first time
+             cannot already have a password. -->
+        <p class="hint auth-alt" id="signin-line">Have an account?
+          <a href="observe.html?intent=signin">Sign in</a></p>
+        <!-- Sign-in mode only (?intent=signin): OTP is always the recovery path
+             when the password is forgotten, so it stays one tap away in place. -->
+        <p class="hint auth-alt"><a id="pw-link" href="#" hidden>Sign in with a one-time code instead</a></p>
+        <!-- Sign-in mode only: sends new users into the normal OTP registration
+             instead of leaving them stuck on a password field for an account
+             they don't have yet. -->
+        <p class="hint auth-alt" id="signup-line" hidden>Don't have an account?
           <a href="observe.html?intent=observe">Sign up</a></p>
         <p class="hint"><a id="otp-resend" href="#" hidden>Resend code</a></p>
         <p class="hint"><a id="auth-reset" href="#" hidden>← Use a different number</a></p>
@@ -265,7 +281,7 @@
   <script src="device.js" defer></script>
   <script src="scan.js?v=3" defer></script>
   <script src="outbox.js" defer></script>
-  <script src="app.js?v=121" defer></script>
+  <script src="app.js?v=123" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="menu.js?v=115" defer></script>
 </body>

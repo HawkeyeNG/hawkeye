@@ -486,11 +486,17 @@ button.secondary:hover { background: var(--tint); filter: none; }
 /* Header gone: restore breathing room and clear the status-bar inset. */
 .native-app.auth-screen main { padding-top: calc(20px + env(safe-area-inset-top)); }
 .auth-back { display: none; }
+/* A real button, sitting above everything else on the auth screen. */
 .native-app.auth-screen .auth-back {
-  display: inline-block; margin: 0 0 14px; color: var(--link);
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 0 0 18px; padding: 9px 15px 9px 11px;
+  min-height: 44px;                     /* WCAG 2.5.5 */
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--border); border-radius: 10px;
   font-weight: 700; font-size: 0.9rem; text-decoration: none;
-  padding: 8px 0;                       /* keeps the tap area comfortable */
 }
+.native-app.auth-screen .auth-back:hover { background: var(--tint); border-color: var(--green); }
+.auth-back svg { width: 17px; height: 17px; }
 
 /* ---------- "new here?" starter card (sign-up step) ---------- */
 .starter-card {

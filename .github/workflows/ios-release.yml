@@ -1,0 +1,219 @@
+name: iOS release (archive → TestFlight)
+
+# Signed App Store build of the Hawkeye iOS app, from the shared app/ bundle via
+# Capacitor, on a GitHub-hosted macOS runner. No Mac needed locally.
+#
+# This is the SIGNED sibling of ios-build.yml (which only proves the project
+# compiles, unsigned, and needs no Apple account). Everything in the toolchain
+# section below was derived the hard way across seven failed runs — do not
+# "simplify" any of it without re-testing:
+#   * Node 22            — Capacitor 8 CLI requires >=22
+#   * CocoaPods, not SPM — Cap 8's SPM core regressed APIs the official plugins
+#                          still call (ionic-team/capacitor#8333)
+#   * iOS target 16.0    — GoogleMLKit 8 (via @capacitor-mlkit/*) needs >=15.5
+#   * macos-26 + latest  — Ionic ships ION* XCFrameworks built with Swift 6.2.3;
+#     Xcode                older toolchains refuse them
+#
+# TRIGGER: manual only. `upload: false` archives and leaves the .ipa as an
+# artifact (a safe dry run once the certs land); `upload: true` sends it to
+# TestFlight. Nothing here ever publishes to the App Store — release to users
+# stays a human action in App Store Connect.
+#
+# REQUIRED SECRETS (Settings → Secrets and variables → Actions):
+#   BUILD_CERTIFICATE_BASE64     base64 of the Apple Distribution .p12
+#   P12_PASSWORD                 password used when exporting that .p12
+#   PROVISIONING_PROFILE_BASE64  base64 of the App Store provisioning profile
+#   KEYCHAIN_PASSWORD            any random string (throwaway keychain)
+#   APPSTORE_KEY_ID              App Store Connect API key id
+#   APPSTORE_ISSUER_ID           App Store Connect issuer id
+#   APPSTORE_PRIVATE_KEY         contents of the .p8 (BEGIN PRIVATE KEY … )
+#   APPLE_TEAM_ID                10-char team id, e.g. AB12CD34EF
+# To create the .p12/.profile base64 on any Mac:
+#   base64 -i dist.p12 | pbcopy   /   base64 -i profile.mobileprovision | pbcopy
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: 'Upload the build to TestFlight (off = archive + artifact only)'
+        type: boolean
+        default: false
+      build_number:
+        description: 'CFBundleVersion to stamp (must be higher than the last upload)'
+        type: string
+        default: '1'
+
+jobs:
+  archive:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # ---- fail fast on missing secrets, before spending 20 minutes building
+      - name: Check signing secrets are present
+        env:
+          CERT: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          PROFILE: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          missing=0
+          for v in CERT PROFILE TEAM; do
+            if [ -z "${!v}" ]; then echo "::error::secret $v is not set"; missing=1; fi
+          done
+          [ "$missing" = 0 ] || exit 1
+
+      - name: Install JS deps
+        working-directory: mobile
+        run: npm ci
+
+      # ---- signing material into a throwaway keychain that dies with the runner
+      - name: Import certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERT_PATH=$RUNNER_TEMP/build_certificate.p12
+          PROFILE_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERT_PATH"
+          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$P12_PASSWORD" -A \
+            -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          # Let codesign use the key without an interactive prompt.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          # Xcode 16+ reads profiles from here; the older ~/Library/MobileDevice
+          # path still works, so install to both and let Xcode pick.
+          mkdir -p ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID raw -)
+          NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
+          cp "$PROFILE_PATH" ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/"$UUID".mobileprovision
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
+          echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "Imported profile '$NAME' ($UUID)"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+      - name: Add iOS platform (CocoaPods)
+        working-directory: mobile
+        run: |
+          npx cap add ios --packagemanager CocoaPods || true
+          test -f ios/App/Podfile || { echo "::error::Podfile was not generated"; exit 1; }
+
+      - name: Bump deployment target + pod install
+        working-directory: mobile
+        run: |
+          set -x
+          sed -i '' "s/^platform :ios.*/platform :ios, '16.0'/" ios/App/Podfile
+          (cd ios/App && pod install --repo-update)
+
+      # Marketing version comes from the Android build so the two platforms never
+      # drift; build number is the workflow input (App Store Connect rejects a
+      # re-used CFBundleVersion).
+      - name: Stamp version and build number
+        working-directory: mobile
+        run: |
+          set -euo pipefail
+          VERSION=$(grep -m1 'versionName' android/app/build.gradle | sed 's/[^"]*"\([^"]*\)".*/\1/')
+          BUILD='${{ inputs.build_number }}'
+          echo "Marketing version $VERSION, build $BUILD"
+          plutil -replace CFBundleShortVersionString -string "$VERSION" ios/App/App/Info.plist
+          plutil -replace CFBundleVersion -string "$BUILD" ios/App/App/Info.plist
+
+      - name: Write export options
+        working-directory: mobile
+        run: |
+          cat > ios/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>uploadSymbols</key><true/>
+            <key>provisioningProfiles</key><dict>
+              <key>ng.com.hawkeye.observer</key><string>${PROFILE_NAME}</string>
+            </dict>
+          </dict></plist>
+          PLIST
+          cat ios/ExportOptions.plist
+
+      - name: Archive
+        working-directory: mobile
+        run: |
+          set -euo pipefail -o pipefail
+          WS=$(find ios -maxdepth 2 -name '*.xcworkspace' | head -1)
+          xcodebuild -workspace "$WS" -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Hawkeye.xcarchive" \
+            IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            DEVELOPMENT_TEAM='${{ secrets.APPLE_TEAM_ID }}' \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            CODE_SIGN_STYLE=Manual \
+            archive
+
+      - name: Export .ipa
+        working-directory: mobile
+        run: |
+          set -euo pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Hawkeye.xcarchive" \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/export"
+          ls -la "$RUNNER_TEMP/export"
+
+      - name: Upload .ipa as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hawkeye-ios-ipa
+          path: ${{ runner.temp }}/export/*.ipa
+          retention-days: 14
+          if-no-files-found: error
+
+      # Only when explicitly asked. Uploading to TestFlight is outward-facing:
+      # it makes the build visible to Apple and to any internal testers.
+      - name: Upload to TestFlight
+        if: ${{ inputs.upload == true }}
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/private_keys
+          echo -n "$APPSTORE_PRIVATE_KEY" > ~/private_keys/AuthKey_${APPSTORE_KEY_ID}.p8
+          IPA=$(find "$RUNNER_TEMP/export" -name '*.ipa' | head -1)
+          xcrun altool --validate-app -f "$IPA" -t ios \
+            --apiKey "$APPSTORE_KEY_ID" --apiIssuer "$APPSTORE_ISSUER_ID"
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$APPSTORE_KEY_ID" --apiIssuer "$APPSTORE_ISSUER_ID"
+
+      # Keychains live in RUNNER_TEMP and die with the runner, but be explicit —
+      # a leaked signing identity is the worst thing this workflow could do.
+      - name: Clean up keychain and profiles
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" || true
+          rm -f ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision || true
+          rm -f ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision || true
+          rm -rf ~/private_keys || true

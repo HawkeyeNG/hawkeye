@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import type { Shot } from '@/lib/submit';
+import { getSubmitFix } from '@/lib/location';
 import { BRAND } from '@/lib/api';
 
 /**
@@ -18,15 +19,23 @@ import { BRAND } from '@/lib/api';
  * must look at the shot before it counts — a blurry EC8A is worthless
  * evidence — and it makes each step transition explicit instead of instant.
  *
- * GPS acquisition never hangs: last-known fix first (the previous capture
- * step usually left a seconds-old one), then a 15s High attempt, then a 10s
- * Balanced attempt, then a clear error with the option to retry or cancel.
- * Cancel is NEVER disabled.
+ * GPS acquisition never hangs — bounded tiers live in lib/location. A failed
+ * fix is a clear error with retry; Cancel is NEVER disabled.
  */
 export type Media = Shot & { type: 'image' | 'video' };
 
-const VIDEO_MAX_S = 30;
-const VIDEO_MAX_BYTES = 25 * 1024 * 1024; // server caps 30MB/file, edge 33MB/body
+/**
+ * Video compression happens AT THE ENCODER, not by cutting recordings short:
+ * CameraView pins 720p and VIDEO_BITRATE caps the encoder, so length is bought
+ * with efficiency instead of quality. 2 Mbps video + AAC audio ≈ 2.13 Mbit/s
+ * → 90s ≈ 24MB, inside the 25MB stop and the server's 30MB/file cap.
+ * Dev-build era (with push notifications): react-native-compressor for
+ * WhatsApp-grade H.265 re-encode (minutes of video), and Google ML Kit for
+ * on-device doc-scan/OCR of result sheets.
+ */
+const VIDEO_MAX_S = 90;
+const VIDEO_BITRATE = 2_000_000;
+const VIDEO_MAX_BYTES = 25 * 1024 * 1024; // hard stop; edge rejects >33MB bodies
 
 type Props = {
   title: string;
@@ -38,32 +47,12 @@ type Props = {
   onCancel: () => void;
 };
 
-function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
-  return Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), ms))]);
-}
-
-/** Fast, bounded fix: last-known (≤60s old) → High (15s) → Balanced (10s). */
-async function getFix(): Promise<{ lat: number; lng: number } | null> {
+/** Shared bounded GPS (lib/location): photo/video stamps use the accurate tier. */
+const getFix = async (): Promise<{ lat: number; lng: number } | null> => {
   const perm = await Location.requestForegroundPermissionsAsync();
   if (!perm.granted) return null;
-  try {
-    const last = await Location.getLastKnownPositionAsync({ maxAge: 60_000 });
-    if (last) return { lat: last.coords.latitude, lng: last.coords.longitude };
-  } catch {
-    /* fall through to live fixes */
-  }
-  const high = await withTimeout(
-    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
-    15_000,
-  ).catch(() => null);
-  if (high) return { lat: high.coords.latitude, lng: high.coords.longitude };
-  const balanced = await withTimeout(
-    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-    10_000,
-  ).catch(() => null);
-  if (balanced) return { lat: balanced.coords.latitude, lng: balanced.coords.longitude };
-  return null;
-}
+  return getSubmitFix();
+};
 
 export function CaptureCamera({ title, hint, allowVideo, frameGuide, onCapture, onCancel }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
@@ -235,7 +224,14 @@ export function CaptureCamera({ title, hint, allowVideo, frameGuide, onCapture, 
   // ---- live camera -------------------------------------------------------
   return (
     <View className="flex-1 bg-black">
-      <CameraView ref={cam} style={{ flex: 1 }} facing="back" mode={mode} videoQuality="720p" />
+      <CameraView
+        ref={cam}
+        style={{ flex: 1 }}
+        facing="back"
+        mode={mode}
+        videoQuality="720p"
+        videoBitrate={VIDEO_BITRATE}
+      />
 
       {frameGuide && mode === 'picture' ? (
         <View pointerEvents="none" className="absolute inset-0 items-center justify-center">

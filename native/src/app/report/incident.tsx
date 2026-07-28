@@ -1,7 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useMemo, useState } from 'react';
@@ -21,6 +20,7 @@ import { CaptureCamera, type Media } from '@/components/capture-camera';
 import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
+import { getQuickFix } from '@/lib/location';
 
 /** Kind codes from /api/incidents/kinds, with observer-facing labels. */
 const KINDS: { code: string; label: string; icon: keyof typeof Feather.glyphMap }[] = [
@@ -62,18 +62,12 @@ export default function ReportIncident() {
       const form = new FormData();
       form.append('kind', kind);
       if (description.trim()) form.append('description', description.trim().slice(0, 2000));
-      // GPS is optional for incidents — attach it when permitted, silently skip otherwise.
-      try {
-        const perm = await Location.getForegroundPermissionsAsync();
-        if (perm.granted) {
-          const fix = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          });
-          form.append('lat', String(fix.coords.latitude));
-          form.append('lng', String(fix.coords.longitude));
-        }
-      } catch {
-        /* no fix — still a valid report */
+      // GPS is optional for incidents — a bounded quick fix (≤8s), never a stall.
+      // An urgent report must not wait on a satellite lock indoors.
+      const fix = await getQuickFix();
+      if (fix) {
+        form.append('lat', String(fix.lat));
+        form.append('lng', String(fix.lng));
       }
       media.forEach((m, i) =>
         form.append(
@@ -85,27 +79,38 @@ export default function ReportIncident() {
           } as unknown as Blob,
         ),
       );
-      const res = await fetch('https://hawkeye.com.ng/api/incidents', {
-        method: 'POST',
-        headers: { authorization: `Bearer ${token}`, 'x-device-id': id.deviceId },
-        body: form,
-      });
+      const post = () =>
+        fetch('https://hawkeye.com.ng/api/incidents', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${token}`, 'x-device-id': id.deviceId },
+          body: form,
+        });
+      // One silent retry: a reset connection on Nigerian mobile networks is a
+      // transient, not a verdict. (Server-side dedupe is not a concern here —
+      // a retried incident that DID land twice just shows twice in the queue.)
+      let res: Response;
+      try {
+        res = await post();
+      } catch {
+        setLine('Connection dropped — retrying…');
+        res = await post();
+      }
       const body = (await res.json().catch(() => ({}))) as { ok?: boolean; id?: number; error?: string; hint?: string };
       if (res.ok && body.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDoneId(body.id ?? 0);
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        // Always name the failure: a code the user can read back beats a shrug.
+        const code = body.error ?? `HTTP ${res.status}`;
         setLine(
           body.error === 'empty_report' ? 'Add a photo, video or a description.'
           : body.error === 'invalid_media' ? (body.hint ?? 'One file could not be processed — retake it.')
-          : body.hint ?? 'Submission failed — try again.',
+          : `${body.hint ?? 'Submission failed — try again.'} (${code})`,
         );
       }
     } catch {
-      // A thrown fetch mid-upload is usually a reset connection: weak network,
-      // or a file past the server's 30MB cap (why video is capped at 720p/25MB).
-      setLine('Upload failed — nothing was sent. On weak network, try fewer or shorter clips.');
+      setLine('Upload failed twice — nothing was sent. Check your connection and retry.');
     } finally {
       setBusy(false);
     }
@@ -135,7 +140,7 @@ export default function ReportIncident() {
     return (
       <CaptureCamera
         title="Capture evidence"
-        hint="Photo, or switch to video (up to 30s). Stay safe — distance first."
+        hint="Photo, or switch to video (up to 90s). Stay safe — distance first."
         allowVideo
         onCapture={(m) => {
           setMedia((arr) => [...arr, m].slice(0, MAX_MEDIA));

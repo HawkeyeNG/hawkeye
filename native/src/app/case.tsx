@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ReportContent } from '@/components/report-content';
 import { StatusChip, TallyBar, type Tally } from '@/components/tally';
 import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -327,6 +328,9 @@ export default function CaseScreen() {
                 Re-verify the whole chain →
               </Text>
             </Pressable>
+            {/* Published observer photos are user content: App Store 1.2 and
+                Play's UGC policy both require a way to object to them. */}
+            <ReportContent kind="result" targetId={s.id} label="Report this evidence" />
           </View>
         ))}
 

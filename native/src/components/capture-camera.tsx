@@ -289,8 +289,10 @@ export function CaptureCamera({
         </View>
       </View>
 
+      {/* Sits directly above the Photo/Video selector: at the top of the screen
+          it collided with the front-camera cutout and read poorly. */}
       {recording ? (
-        <View className="absolute inset-x-0 top-40 items-center">
+        <View className="absolute inset-x-0 bottom-48 items-center">
           <View className="flex-row items-center rounded-full bg-red-600 px-4 py-2">
             <View className="mr-2 h-2.5 w-2.5 rounded-full bg-white" />
             <Text className="text-base font-bold tabular-nums text-white">

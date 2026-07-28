@@ -20,7 +20,7 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
   {
     title: 'Trust & verify',
     items: [
-      { label: 'Verify the Ledger', href: 'ledger.html', icon: 'shield' },
+      { label: 'Verify the Ledger', href: 'native:/ledger', icon: 'shield' },
       { label: 'Election Integrity', href: 'integrity.html', icon: 'activity' },
       { label: 'Public Docket', href: 'docket.html', icon: 'file-text' },
     ],

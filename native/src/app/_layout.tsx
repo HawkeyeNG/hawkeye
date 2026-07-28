@@ -27,6 +27,7 @@ export default function RootLayout() {
           <Stack.Screen name="report/incident" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="report/collation" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="map-unit" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="ledger" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="practice" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>

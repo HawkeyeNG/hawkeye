@@ -33,9 +33,22 @@ export type Media = Shot & { type: 'image' | 'video' };
  * WhatsApp-grade H.265 re-encode (minutes of video), and Google ML Kit for
  * on-device doc-scan/OCR of result sheets.
  */
-const VIDEO_MAX_S = 90;
+// react-native-compressor exists only in the dev client, not Expo Go — probe
+// once. With it, recordings are re-encoded H.265 after capture, so the length
+// cap doubles; without it the encoder cap is the only thing keeping 90s ≈ 24MB
+// under the edge's 33MB body limit, so the old cap stays.
+let VideoCompressor: { compress: (uri: string, opts: object) => Promise<string> } | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  VideoCompressor = (require('react-native-compressor') as typeof import('react-native-compressor'))
+    .Video;
+} catch {
+  VideoCompressor = null;
+}
+
+const VIDEO_MAX_S = VideoCompressor ? 180 : 90;
 const VIDEO_BITRATE = 2_000_000;
-const VIDEO_MAX_BYTES = 25 * 1024 * 1024; // hard stop; edge rejects >33MB bodies
+const VIDEO_MAX_BYTES = 25 * 1024 * 1024; // pre-compress stop; edge rejects >33MB bodies
 
 type Props = {
   title: string;
@@ -223,8 +236,18 @@ export function CaptureCamera({
         setBusy(false);
         return;
       }
+      let uri = video.uri;
+      if (VideoCompressor) {
+        setLine('Compressing…');
+        try {
+          uri = await VideoCompressor.compress(video.uri, { compressionMethod: 'auto' });
+        } catch {
+          uri = video.uri; // a failed compress must never lose the recording
+        }
+        if (cancelled.current) return;
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      onCapture({ uri: video.uri, capturedAt: Date.now(), ...fix, type: 'video' });
+      onCapture({ uri, capturedAt: Date.now(), ...fix, type: 'video' });
     } catch {
       setRecording(false);
       setLine('Recording failed — try again.');

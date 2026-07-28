@@ -23,6 +23,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="sign-in" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="welcome" options={{ animation: 'fade' }} />
           <Stack.Screen name="report/result" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="report/incident" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="report/collation" options={{ presentation: 'fullScreenModal' }} />

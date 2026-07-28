@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { requestOtp, verifyOtp, type RegisterResult } from '@/lib/auth';
+import { passwordLogin, requestOtp, verifyOtp, type RegisterResult } from '@/lib/auth';
 import { BRAND } from '@/lib/api';
 
 type Channel = 'whatsapp' | 'sms' | 'telegram';
@@ -31,10 +31,11 @@ type Channel = 'whatsapp' | 'sms' | 'telegram';
  * phone step with the error line, so nothing is lost.
  */
 export default function SignIn() {
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [step, setStep] = useState<'phone' | 'otp' | 'password'>('phone');
   const [phone, setPhone] = useState('');
   const [channel, setChannel] = useState<Channel>('whatsapp');
   const [otp, setOtp] = useState('');
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const [tgLink, setTgLink] = useState<string | null>(null);
@@ -114,6 +115,26 @@ export default function SignIn() {
     }
   };
 
+  const onPasswordLogin = async () => {
+    setBusy(true);
+    setLine(null);
+    try {
+      const r = await passwordLogin(phone.trim(), password);
+      if (r.ok) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        router.back();
+        return;
+      }
+      // The server's hints are user-ready copy (wrong password / no password
+      // on this account / rate-limited) — show them verbatim.
+      setLine(r.hint ?? 'Sign-in failed — try again.');
+    } catch {
+      setLine('Network error — try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const CHANNELS: { key: Channel; label: string }[] = [
     { key: 'whatsapp', label: 'WhatsApp' },
     { key: 'sms', label: 'SMS' },
@@ -186,6 +207,70 @@ export default function SignIn() {
                   <Text className="text-base font-bold text-hawk-gold">Request code</Text>
                 )}
               </Pressable>
+              <Pressable
+                className="mt-4 items-center"
+                onPress={() => {
+                  setLine(null);
+                  setStep('password');
+                }}
+              >
+                <Text className="text-sm font-semibold text-hawk-leaf">
+                  Sign in with a password instead
+                </Text>
+              </Pressable>
+            </>
+          ) : step === 'password' ? (
+            <>
+              <Text className="text-2xl font-bold text-hawk-ink">Password sign-in</Text>
+              <Text className="pb-4 pt-1 text-sm text-neutral-600">
+                Phone number and password — no code needed.
+              </Text>
+              <TextInput
+                className="rounded-2xl bg-white px-4 py-4 text-lg text-hawk-ink"
+                placeholder="0803 123 4567"
+                placeholderTextColor="#9db5a7"
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={setPhone}
+                editable={!busy}
+              />
+              <TextInput
+                className="mt-3 rounded-2xl bg-white px-4 py-4 text-lg text-hawk-ink"
+                placeholder="Password"
+                placeholderTextColor="#9db5a7"
+                secureTextEntry
+                autoFocus
+                value={password}
+                onChangeText={setPassword}
+                editable={!busy}
+                onSubmitEditing={onPasswordLogin}
+              />
+              <Pressable
+                disabled={busy || phone.trim().length < 10 || password.length < 8}
+                onPress={onPasswordLogin}
+                className={`mt-5 items-center rounded-2xl py-4 ${
+                  busy || phone.trim().length < 10 || password.length < 8
+                    ? 'bg-neutral-300'
+                    : 'bg-hawk-green active:opacity-80'
+                }`}
+              >
+                {busy ? (
+                  <ActivityIndicator color={BRAND.gold} />
+                ) : (
+                  <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
+                )}
+              </Pressable>
+              <Pressable
+                className="mt-4 items-center"
+                onPress={() => {
+                  setLine(null);
+                  setStep('phone');
+                }}
+              >
+                <Text className="text-sm font-semibold text-hawk-leaf">
+                  Forgot it? Sign in with a code instead
+                </Text>
+              </Pressable>
             </>
           ) : (
             <>
@@ -230,7 +315,7 @@ export default function SignIn() {
             </>
           )}
 
-          {step === 'phone' && line ? (
+          {step !== 'otp' && line ? (
             <Text className="pt-3 text-sm text-amber-800">{line}</Text>
           ) : null}
           {tgLink ? (

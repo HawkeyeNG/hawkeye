@@ -478,9 +478,7 @@ export default function ReportResult() {
             </View>
             {/* Optional serial — parity with the PWA's #sheet-serial input.
                 Sits immediately above the submit CTA so it cannot be missed. */}
-            <Text className="pb-1.5 text-sm font-bold text-hawk-leaf">
-              Sheet serial number <Text className="font-normal text-neutral-500">(optional)</Text>
-            </Text>
+            <Prompt>Enter the sheet serial number (optional)</Prompt>
             <TextInput
               className="mb-3 rounded-2xl bg-white px-4 py-3 text-base text-hawk-ink"
               placeholder="Printed on the EC8A, if visible"

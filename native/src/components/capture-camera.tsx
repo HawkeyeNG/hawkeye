@@ -289,10 +289,14 @@ export function CaptureCamera({
         </View>
       </View>
 
-      {/* Bottom-right, mirroring Cancel on the left so the shutter stays the
-          visual centre. Top-of-screen placements fought the camera cutout. */}
+      {/* Centred above the Photo/Video selector, cap ABOVE the counter so the
+          eye reads limit-then-elapsed. right-anchored placements landed over
+          Cancel; top-anchored ones fought the camera cutout. */}
       {recording ? (
-        <View className="absolute right-6" style={{ bottom: 56 }}>
+        <View className="absolute inset-x-0 items-center" style={{ bottom: 188 }}>
+          <Text className="pb-1 text-[10px] font-semibold text-neutral-300">
+            max {VIDEO_MAX_S}s
+          </Text>
           <View className="flex-row items-center rounded-full bg-red-600 px-3 py-1.5">
             <View className="mr-1.5 h-2 w-2 rounded-full bg-white" />
             <Text className="text-sm font-bold text-white">
@@ -300,9 +304,6 @@ export function CaptureCamera({
               {String(elapsed % 60).padStart(2, '0')}
             </Text>
           </View>
-          <Text className="pt-0.5 text-center text-[10px] font-semibold text-neutral-300">
-            max {VIDEO_MAX_S}s
-          </Text>
         </View>
       ) : null}
 

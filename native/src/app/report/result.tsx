@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CaptureCamera } from '@/components/capture-camera';
+import { NoElection } from '@/components/no-election';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -312,26 +313,7 @@ export default function ReportResult() {
             {stateSel && !covered ? (
               <>
                 <Crumb label={stateSel} onPress={() => setStateSel(null)} />
-                <View className="rounded-2xl bg-white px-4 py-5">
-                  <Text className="text-base font-bold text-hawk-ink">
-                    No active election in {stateSel}
-                  </Text>
-                  <Text className="pt-1 text-sm text-neutral-600">
-                    {contest
-                      ? `Hawkeye is currently covering the ${contest.election}. Result reporting opens for other states when their elections are scheduled.`
-                      : 'No election is currently open for reporting.'}
-                  </Text>
-                  <Text className="pt-2 text-sm text-neutral-600">
-                    You can still map polling units anywhere in Nigeria — that work counts
-                    before any election is called.
-                  </Text>
-                  <Pressable
-                    className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
-                    onPress={() => router.replace('/map-unit')}
-                  >
-                    <Text className="text-base font-bold text-hawk-gold">Map a polling unit</Text>
-                  </Pressable>
-                </View>
+                <NoElection state={stateSel} contest={contest} />
               </>
             ) : null}
 

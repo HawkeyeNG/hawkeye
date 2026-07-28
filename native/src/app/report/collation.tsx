@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CaptureCamera } from '@/components/capture-camera';
+import { NoElection } from '@/components/no-election';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -88,17 +89,19 @@ export default function ReportCollation() {
       .catch(() => {});
   }, [contest, stateSel, lgaSel]);
 
+  /** Is the chosen state inside the active contest? Drives the
+   *  "no active election here" answer instead of hiding the state. */
+  const covered = !!contest && !!stateSel && contest.states.includes(stateSel);
+
   /** Scope completeness mirrors the server rule exactly. */
   const scopeReady =
     !!contest &&
     !!level &&
     !!stateSel &&
+    covered &&
     (level === 'state' || !!lgaSel) &&
     (level !== 'ward' || !!wardSel);
 
-  /** Is the chosen state inside the active contest? Drives the
-   *  "no active election here" answer instead of hiding the state. */
-  const covered = !!contest && !!stateSel && contest.states.includes(stateSel);
 
   // -- photos ---------------------------------------------------------------
   const [sheet, setSheet] = useState<Shot | null>(null);
@@ -355,16 +358,7 @@ export default function ReportCollation() {
             {level && stateSel && !covered ? (
               <>
                 <Crumb label={stateSel} onPress={() => setStateSel(null)} />
-                <View className="rounded-2xl bg-white px-4 py-5">
-                  <Text className="text-base font-bold text-hawk-ink">
-                    No active election in {stateSel}
-                  </Text>
-                  <Text className="pt-1 text-sm text-neutral-600">
-                    {contest
-                      ? `Hawkeye is currently covering the ${contest.election}.`
-                      : 'No election is currently open for reporting.'}
-                  </Text>
-                </View>
+                <NoElection state={stateSel} contest={contest} />
               </>
             ) : null}
 

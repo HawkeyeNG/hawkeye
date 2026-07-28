@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import type BottomSheet from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
-import { Tabs } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import { useRef } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 
@@ -93,7 +93,11 @@ export default function TabsLayout() {
         ref={sheetRef}
         onAction={(a) => {
           sheetRef.current?.close();
-          // Capture flows land in the next milestone; the shell proves the pattern.
+          if (a === 'result') {
+            router.push('/report/result');
+            return;
+          }
+          // Incident + collation flows land next; the result flow proves the pattern.
           Alert.alert(
             'Coming to the native app',
             `The ${a} flow is being rebuilt natively. Use the current app for live reporting.`,

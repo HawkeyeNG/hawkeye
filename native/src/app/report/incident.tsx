@@ -233,7 +233,7 @@ export default function ReportIncident() {
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
-        <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
           <Prompt>Select what happened</Prompt>
           <View className="flex-row flex-wrap">
             {KINDS.map((k) => (
@@ -318,12 +318,19 @@ export default function ReportIncident() {
             before publication; your phone number is never attached.
           </Text>
 
-          {line ? <Text className="pt-3 text-sm font-semibold text-amber-800">{line}</Text> : null}
+        </ScrollView>
 
+        {/* Pinned below the scroll: the kind grid, evidence thumbnails and the
+            description box all grow above it, so the one committing action would
+            otherwise sit off-screen — and an incident is filed one-handed, under
+            time pressure. The status line rides in the footer too, so a failed
+            attempt doesn't push the retry button further away. */}
+        <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          {line ? <Text className="pb-2 text-sm font-semibold text-amber-800">{line}</Text> : null}
           <Pressable
             disabled={!canSubmit || busy}
             onPress={onSubmit}
-            className={`mt-4 items-center rounded-2xl py-4 ${
+            className={`items-center rounded-2xl py-4 ${
               canSubmit && !busy ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'
             }`}
           >
@@ -333,7 +340,7 @@ export default function ReportIncident() {
               <Text className="text-base font-bold text-hawk-gold">Submit incident report</Text>
             )}
           </Pressable>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

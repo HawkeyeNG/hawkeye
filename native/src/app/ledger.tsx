@@ -353,20 +353,6 @@ export default function Ledger() {
                 );
               })}
             </View>
-            <Pressable
-              disabled={!raceSel || raceBusy}
-              onPress={verifyRace}
-              className={`mt-1 items-center rounded-2xl py-3.5 ${
-                !raceSel || raceBusy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
-              }`}
-            >
-              {raceBusy ? (
-                <ActivityIndicator color={BRAND.gold} />
-              ) : (
-                <Text className="text-base font-bold text-hawk-gold">Verify this race</Text>
-              )}
-            </Pressable>
-            {raceOut ? <Result ok={raceOut.ok} text={raceOut.text} link={raceOut.link} /> : null}
           </View>
         ) : !loading && !loadErr ? (
           <Text className="pt-3 text-sm text-neutral-500">
@@ -402,7 +388,7 @@ export default function Ledger() {
         data={rows}
         keyExtractor={(e) => String(e.id)}
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: raceSel ? 16 : 32 }}
         ListEmptyComponent={
           loading || loadErr ? null : (
             <Text className="px-4 pt-2 text-sm text-neutral-500">
@@ -441,6 +427,30 @@ export default function Ledger() {
           </View>
         )}
       />
+
+      {/* Pinned once a race is picked: the chips sit in the list header, and a
+          national run carries ~1,500 of them, so the action they feed would be
+          scrolled far above the entries by the time it is wanted. The verdict
+          rides down with it — a proof that fails to fold is retried from this
+          same button, and it must stay in sight to be read. */}
+      {raceSel ? (
+        <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          {raceOut ? <Result ok={raceOut.ok} text={raceOut.text} link={raceOut.link} /> : null}
+          <Pressable
+            disabled={!raceSel || raceBusy}
+            onPress={verifyRace}
+            className={`mt-1 items-center rounded-2xl py-3.5 ${
+              !raceSel || raceBusy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+            }`}
+          >
+            {raceBusy ? (
+              <ActivityIndicator color={BRAND.gold} />
+            ) : (
+              <Text className="text-base font-bold text-hawk-gold">Verify this race</Text>
+            )}
+          </Pressable>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }

@@ -287,7 +287,7 @@ export default function Practice() {
       >
         {step === 'votes' ? (
           <ScrollView
-            contentContainerClassName="px-4 pb-8 pt-4"
+            contentContainerClassName="px-4 pb-4 pt-4"
             keyboardShouldPersistTaps="handled"
           >
             <View className="mb-3 rounded-2xl bg-hawk-green px-5 py-4">
@@ -319,10 +319,17 @@ export default function Practice() {
                 />
               </View>
             ))}
+          </ScrollView>
+        ) : null}
+
+        {/* Pinned, like the real flow's votes step: practice teaches the shape of
+            election day, so the shape has to be the same one. */}
+        {step === 'votes' ? (
+          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
             <Pressable
               disabled={votes.length === 0}
               onPress={() => setStep('review')}
-              className={`mt-3 items-center rounded-2xl py-4 ${
+              className={`items-center rounded-2xl py-4 ${
                 votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'
               }`}
             >
@@ -331,11 +338,11 @@ export default function Practice() {
             <Pressable className="mt-3 items-center" onPress={() => setStep('venue')}>
               <Text className="text-sm font-semibold text-hawk-leaf">‹ Back to photos</Text>
             </Pressable>
-          </ScrollView>
+          </View>
         ) : null}
 
         {step === 'review' ? (
-          <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
+          <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
             <Text className="pb-3 text-xl font-bold text-hawk-ink">Confirm and send</Text>
             <View className="mb-3 rounded-2xl bg-white px-4 py-3">
               <Text className="text-base font-semibold text-hawk-ink">{cfg.unit?.name}</Text>
@@ -389,8 +396,17 @@ export default function Practice() {
               key and files it on the public ledger. Here it just completes the practice — nothing
               is published or counted.
             </Text>
+          </ScrollView>
+        ) : null}
+
+        {/* Pinned CTA — the review grows with every party contesting, plus two
+            photo slots and the serial field, so the send button must never sit
+            below the fold. The failure line rides with it: a retry is pressed
+            here, not wherever the scroll happens to have landed. */}
+        {step === 'review' ? (
+          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
             {line ? (
-              <Text className="pb-3 text-sm font-semibold text-amber-800">{line}</Text>
+              <Text className="pb-2 text-sm font-semibold text-amber-800">{line}</Text>
             ) : null}
             <Pressable
               disabled={busy}
@@ -414,11 +430,11 @@ export default function Practice() {
             >
               <Text className="text-sm font-semibold text-hawk-leaf">‹ Back to votes</Text>
             </Pressable>
-          </ScrollView>
+          </View>
         ) : null}
 
         {step === 'done' && done ? (
-          <ScrollView contentContainerClassName="flex-1 items-center justify-center px-8">
+          <View className="flex-1 items-center justify-center px-8">
             <View className="h-16 w-16 items-center justify-center rounded-full bg-hawk-green">
               <Feather name="check" size={28} color={BRAND.gold} />
             </View>
@@ -444,7 +460,7 @@ export default function Practice() {
             <Pressable className="mt-1 w-full items-center py-2" onPress={() => router.back()}>
               <Text className="text-sm text-neutral-500">Done</Text>
             </Pressable>
-          </ScrollView>
+          </View>
         ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PasswordField } from '@/components/password-field';
 import { passwordLogin, requestOtp, verifyOtp, type RegisterResult } from '@/lib/auth';
 import { BRAND } from '@/lib/api';
 
@@ -100,7 +101,7 @@ export default function SignIn() {
       const r = await verifyOtp(phone.trim(), otp.trim());
       if (r.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.back();
+        router.replace('/(tabs)');
         return;
       }
       setLine(
@@ -122,7 +123,7 @@ export default function SignIn() {
       const r = await passwordLogin(phone.trim(), password);
       if (r.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.back();
+        router.replace('/(tabs)');
         return;
       }
       // The server's hints are user-ready copy (wrong password / no password
@@ -234,17 +235,17 @@ export default function SignIn() {
                 onChangeText={setPhone}
                 editable={!busy}
               />
-              <TextInput
-                className="mt-3 rounded-2xl bg-white px-4 py-4 text-lg text-hawk-ink"
-                placeholder="Password"
-                placeholderTextColor="#9db5a7"
-                secureTextEntry
-                autoFocus
-                value={password}
-                onChangeText={setPassword}
-                editable={!busy}
-                onSubmitEditing={onPasswordLogin}
-              />
+              <View className="pt-3">
+                <PasswordField
+                  placeholder="Password"
+                  autoFocus
+                  value={password}
+                  onChangeText={setPassword}
+                  editable={!busy}
+                  onSubmitEditing={onPasswordLogin}
+                  textContentType="password"
+                />
+              </View>
               <Pressable
                 disabled={busy || phone.trim().length < 10 || password.length < 8}
                 onPress={onPasswordLogin}

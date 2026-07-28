@@ -3,11 +3,11 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Crumb, Prompt } from '@/components/wizard';
-import { api, BRAND, type Contest } from '@/lib/api';
+import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import { getSubmitFix } from '@/lib/location';
@@ -36,7 +36,6 @@ const REG = 'https://hawkeye.com.ng/api/register';
  */
 export default function MapUnit() {
   const auth = useAuth();
-  const [contest, setContest] = useState<Contest | null>(null);
   const [states, setStates] = useState<string[]>([]);
   const [stateSel, setStateSel] = useState<string | null>(null);
   const [lgas, setLgas] = useState<string[]>([]);
@@ -50,50 +49,52 @@ export default function MapUnit() {
   const [line, setLine] = useState<string | null>(null);
   const [done, setDone] = useState<{ title: string; line: string } | null>(null);
 
+  // NO contest filter: mapping is election-independent and nationwide. Passing
+  // a contest narrows the register to that race's states (today: Osun only),
+  // which made the whole rest of the country unmappable for no reason.
   useEffect(() => {
-    api
-      .contests()
-      .then((cs) => {
-        const c = cs[0] ?? null;
-        setContest(c);
-        if (c?.states.length === 1) setStateSel(c.states[0]);
-        else if (c) api.states(c.code).then(setStates).catch(() => {});
-      })
+    fetch(`${REG}/states`)
+      .then((r) => r.json())
+      .then(setStates)
       .catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (!contest || !stateSel) return;
-    fetch(`${REG}/lgas?contest=${contest.code}&state=${encodeURIComponent(stateSel)}`)
+    if (!stateSel) return;
+    fetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
       .then((r) => r.json())
       .then(setLgas)
       .catch(() => {});
-  }, [contest, stateSel]);
+  }, [stateSel]);
 
   useEffect(() => {
-    if (!contest || !stateSel || !lgaSel) return;
-    fetch(
-      `${REG}/wards?contest=${contest.code}&state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`,
-    )
+    if (!stateSel || !lgaSel) return;
+    fetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
       .then((r) => r.json())
       .then(setWards)
       .catch(() => {});
-  }, [contest, stateSel, lgaSel]);
+  }, [stateSel, lgaSel]);
 
   useEffect(() => {
-    if (!contest || !stateSel || !lgaSel || !wardSel) return;
+    if (!stateSel || !lgaSel || !wardSel) return;
     fetch(
-      `${REG}/units?contest=${contest.code}&state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}&ward=${encodeURIComponent(wardSel)}`,
+      `${REG}/units?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}&ward=${encodeURIComponent(wardSel)}`,
     )
       .then((r) => r.json())
       .then((d) => setUnits(d.units ?? []))
       .catch(() => {});
-  }, [contest, stateSel, lgaSel, wardSel]);
+  }, [stateSel, lgaSel, wardSel]);
 
   // Backing out must drop the selection, or the CTA stays live for a hidden unit.
   useEffect(() => {
     setUnit(null);
   }, [stateSel, lgaSel, wardSel]);
+
+  /** Errors go to a modal: inline text below a long unit list is never seen. */
+  const fail = (msg: string) => {
+    setLine(msg);
+    Alert.alert('Could not record the fix', msg);
+  };
 
   const onSubmit = async () => {
     if (!unit) return;
@@ -102,7 +103,7 @@ export default function MapUnit() {
     try {
       const fix = await getSubmitFix();
       if (!fix) {
-        setLine('No GPS fix — turn location on, step outside, and retry.');
+        fail('No GPS fix — turn location on, step outside, and retry.');
         setBusy(false);
         return;
       }
@@ -148,7 +149,7 @@ export default function MapUnit() {
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       const code = body.error ?? `http_${res.status}`;
-      setLine(
+      fail(
         code === 'gps_accuracy_too_low'
           ? `GPS accuracy too low (needs ${body.maxAccuracyM ?? 100}m or better) — step into the open and retry.`
           : code === 'too_far_from_unit'
@@ -158,7 +159,7 @@ export default function MapUnit() {
               : `Could not record the fix. (${code} / HTTP ${res.status})`,
       );
     } catch (e) {
-      setLine(`Could not record the fix. (${e instanceof Error ? e.message : String(e)})`);
+      fail(`Could not record the fix. (${e instanceof Error ? e.message : String(e)})`);
     } finally {
       setBusy(false);
     }
@@ -230,7 +231,7 @@ export default function MapUnit() {
           unit becomes location-verified — and every result reported there can be proven.
         </Text>
 
-        {states.length > 1 && !stateSel ? (
+        {!stateSel ? (
           <>
             <Prompt>Select the state</Prompt>
             <View className="flex-row flex-wrap">

@@ -50,17 +50,14 @@ export default function ReportResult() {
   const [unit, setUnit] = useState<Unit | null>(null);
 
   useEffect(() => {
-    api.contests().then((cs) => {
-      const c = cs[0] ?? null;
-      setContest(c);
-      if (c) {
-        if (c.states.length === 1) {
-          setStateSel(c.states[0]);
-        } else {
-          api.states(c.code).then(setStates).catch(() => {});
-        }
-      }
-    }).catch(() => {});
+    // Every state is listed, not just the active contest's. Hiding the rest
+    // of the country made the app look broken outside Osun; an observer should
+    // be told "no election here yet", not shown an empty world.
+    api.contests().then((cs) => setContest(cs[0] ?? null)).catch(() => {});
+    fetch('https://hawkeye.com.ng/api/register/states')
+      .then((r) => r.json())
+      .then(setStates)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -87,6 +84,10 @@ export default function ReportResult() {
   useEffect(() => {
     setUnit(null);
   }, [stateSel, lgaSel, wardSel]);
+
+  /** Is the chosen state inside the active contest? Drives the
+   *  "no active election here" answer instead of hiding the state. */
+  const covered = !!contest && !!stateSel && contest.states.includes(stateSel);
 
   // -- steps 2/3: photos ----------------------------------------------------
   const [sheet, setSheet] = useState<Shot | null>(null);
@@ -301,15 +302,42 @@ export default function ReportResult() {
             </Text>
             <Text className="pb-4 text-sm text-neutral-600">Pick your polling unit.</Text>
 
-            {states.length > 1 && !stateSel ? (
+            {!stateSel ? (
               <>
                 <Prompt>Select your state</Prompt>
                 <View className="flex-row flex-wrap">{states.map((s) => <Chip key={s} label={s} onPress={() => setStateSel(s)} />)}</View>
               </>
             ) : null}
 
-            {stateSel && !lgaSel ? (
+            {stateSel && !covered ? (
               <>
+                <Crumb label={stateSel} onPress={() => setStateSel(null)} />
+                <View className="rounded-2xl bg-white px-4 py-5">
+                  <Text className="text-base font-bold text-hawk-ink">
+                    No active election in {stateSel}
+                  </Text>
+                  <Text className="pt-1 text-sm text-neutral-600">
+                    {contest
+                      ? `Hawkeye is currently covering the ${contest.election}. Result reporting opens for other states when their elections are scheduled.`
+                      : 'No election is currently open for reporting.'}
+                  </Text>
+                  <Text className="pt-2 text-sm text-neutral-600">
+                    You can still map polling units anywhere in Nigeria — that work counts
+                    before any election is called.
+                  </Text>
+                  <Pressable
+                    className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
+                    onPress={() => router.replace('/map-unit')}
+                  >
+                    <Text className="text-base font-bold text-hawk-gold">Map a polling unit</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : null}
+
+            {stateSel && covered && !lgaSel ? (
+              <>
+                <Crumb label={stateSel} onPress={() => setStateSel(null)} />
                 <Prompt>Select your LGA</Prompt>
                 <View className="flex-row flex-wrap">{lgas.map((l) => <Chip key={l} label={l} onPress={() => setLgaSel(l)} />)}</View>
               </>

@@ -22,6 +22,7 @@ import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import { getQuickFix } from '@/lib/location';
+import { filePart } from '@/lib/submit';
 
 /** Kind codes from /api/incidents/kinds, with observer-facing labels. */
 const KINDS: { code: string; label: string; icon: keyof typeof Feather.glyphMap }[] = [
@@ -112,11 +113,11 @@ export default function ReportIncident() {
         media.forEach((m, i) =>
           form.append(
             'media',
-            {
-              uri: m.uri,
-              name: m.type === 'video' ? `clip${i}.mp4` : `photo${i}.jpg`,
-              type: m.type === 'video' ? 'video/mp4' : 'image/jpeg',
-            } as unknown as Blob,
+            filePart(
+              m.uri,
+              m.type === 'video' ? `clip${i}.mp4` : `photo${i}.jpg`,
+              m.type === 'video' ? 'video/mp4' : 'image/jpeg',
+            ),
           ),
         );
         return form;

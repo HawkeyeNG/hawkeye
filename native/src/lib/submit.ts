@@ -69,6 +69,24 @@ export async function sha256HexOfFile(uri: string): Promise<string> {
   return toHex(sha256(new Uint8Array(buf)));
 }
 
+/**
+ * A multipart part that Expo's fetch actually accepts.
+ *
+ * SDK 54+ replaced RN's FormData handling with a spec-compliant converter
+ * (expo/src/winter/fetch/convertFormData.ts). It takes a string, a real Blob,
+ * or an object exposing bytes() — and throws "Unsupported FormDataPart
+ * implementation" for the legacy React Native {uri, name, type} shape that
+ * every older tutorial still teaches. name/type here become the part's
+ * filename and content-type headers.
+ */
+export function filePart(uri: string, name: string, type: string) {
+  return {
+    name,
+    type,
+    bytes: async (): Promise<Uint8Array> => new Uint8Array(await new File(uri).arrayBuffer()),
+  } as unknown as Blob;
+}
+
 export type Shot = {
   uri: string;
   capturedAt: number;
@@ -166,9 +184,8 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   form.append('venueLng', String(input.venue.lng));
   form.append('signature', signature);
   if (input.sheetSerial) form.append('sheetSerial', input.sheetSerial);
-  // RN FormData file entries: {uri, name, type}
-  form.append('photo', { uri: input.sheet.uri, name: 'ec8a.jpg', type: 'image/jpeg' } as unknown as Blob);
-  form.append('venuePhoto', { uri: input.venue.uri, name: 'venue.jpg', type: 'image/jpeg' } as unknown as Blob);
+  form.append('photo', filePart(input.sheet.uri, 'ec8a.jpg', 'image/jpeg'));
+  form.append('venuePhoto', filePart(input.venue.uri, 'venue.jpg', 'image/jpeg'));
 
   try {
     const res = await fetch(`${BASE}/api/submissions`, {

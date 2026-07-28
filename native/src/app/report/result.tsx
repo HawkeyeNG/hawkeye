@@ -112,13 +112,21 @@ export default function ReportResult() {
     [counts],
   );
 
+  /**
+   * Filter only — the ORDER IS FIXED while typing.
+   *
+   * Sorting entered parties to the top re-ordered the list on every keystroke,
+   * which tore the focused input out from under the observer: the first digit
+   * jumped the row away and a two-digit tally became impossible to enter.
+   * Ranking belongs on the review step, which already sorts by count.
+   */
   const filteredParties = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const withVotes = new Set(Object.keys(counts).filter((k) => counts[k].trim() !== ''));
-    return parties
-      .filter((p) => withVotes.has(p.code) || !q || p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q))
-      .sort((a, b) => Number(withVotes.has(b.code)) - Number(withVotes.has(a.code)));
-  }, [parties, search, counts]);
+    if (!q) return parties;
+    return parties.filter(
+      (p) => p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q),
+    );
+  }, [parties, search]);
 
   // -- step 5: review + submit ---------------------------------------------
   const [busy, setBusy] = useState(false);
@@ -204,6 +212,12 @@ export default function ReportResult() {
           isSheet
             ? 'Fit the EC8A inside the frame. Every figure must be readable.'
             : 'Step back and capture the polling unit itself — building, banner, crowd.'
+        }
+        confirmTitle={isSheet ? 'Check the result sheet' : 'Check the venue photo'}
+        confirmHint={
+          isSheet
+            ? 'Is every figure readable? Blurry photos cannot back a report.'
+            : 'Is the polling unit itself visible — the building, banner or crowd? This photo proves you were there.'
         }
         onCapture={(shot) => {
           if (isSheet) {
@@ -301,34 +315,58 @@ export default function ReportResult() {
                 <Pressable onPress={() => setWardSel(null)}>
                   <Text className="pb-2 text-sm font-semibold text-hawk-leaf">‹ {wardSel}</Text>
                 </Pressable>
-                {units.map((u) => (
-                  <Pressable
-                    key={u.pu_code}
-                    className={`mb-2 rounded-2xl px-4 py-3 ${unit?.pu_code === u.pu_code ? 'bg-hawk-green' : 'bg-white'}`}
-                    onPress={() => setUnit(u)}
-                  >
-                    <Text className={`text-base font-semibold ${unit?.pu_code === u.pu_code ? 'text-white' : 'text-hawk-ink'}`}>
-                      {u.name}
-                    </Text>
-                    <Text className={`text-xs ${unit?.pu_code === u.pu_code ? 'text-emerald-100' : 'text-neutral-500'}`}>
-                      {u.pu_code} · {u.ward}, {u.lga}
-                    </Text>
-                  </Pressable>
-                ))}
+                {units.map((u) => {
+                  const on = unit?.pu_code === u.pu_code;
+                  return (
+                    <Pressable
+                      key={u.pu_code}
+                      className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+                      onPress={() => setUnit(u)}
+                    >
+                      <View className="flex-1 pr-2">
+                        <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-hawk-ink'}`}>
+                          {u.name}
+                        </Text>
+                        <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-neutral-500'}`}>
+                          {u.pu_code} · {u.ward}, {u.lga}
+                        </Text>
+                      </View>
+                      {/* Inline Continue on the chosen row: in a long ward the
+                          footer CTA can sit far below the unit you just tapped. */}
+                      {on ? (
+                        <Pressable
+                          className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
+                          onPress={() => setStep('sheet')}
+                        >
+                          <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
+                          <Feather name="arrow-right" size={14} color={BRAND.ink} />
+                        </Pressable>
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
                 {units.length === 0 ? (
                   <Text className="pt-2 text-sm text-neutral-500">No units in the register for this ward yet.</Text>
                 ) : null}
               </>
             ) : null}
+          </ScrollView>
+        ) : null}
 
+        {/* Pinned CTA — a ward can list dozens of units, so the primary action
+            must never be somewhere below the fold. */}
+        {step === 'unit' && unit ? (
+          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+            <Text className="pb-2 text-xs text-neutral-500" numberOfLines={1}>
+              Selected: {unit.name}
+            </Text>
             <Pressable
-              disabled={!unit}
               onPress={() => setStep('sheet')}
-              className={`mt-4 items-center rounded-2xl py-4 ${unit ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'}`}
+              className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
             >
               <Text className="text-base font-bold text-hawk-gold">Continue to photos</Text>
             </Pressable>
-          </ScrollView>
+          </View>
         ) : null}
 
         {step === 'votes' ? (

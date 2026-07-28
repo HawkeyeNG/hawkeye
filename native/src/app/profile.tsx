@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { PasswordField } from '@/components/password-field';
 import { BRAND } from '@/lib/api';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
@@ -122,6 +123,8 @@ export default function Profile() {
   const [refreshing, setRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<'signout' | 'delete' | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   // --- password modal ------------------------------------------------------
   const [pwOpen, setPwOpen] = useState(false);
@@ -263,31 +266,24 @@ export default function Profile() {
   };
 
   const doSignOut = async () => {
+    setConfirmBusy(true);
     await signOut();
+    setConfirmBusy(false);
+    setConfirm(null);
     router.replace('/welcome');
   };
 
-  const confirmDelete = () => {
-    Alert.alert(
-      'Delete your observer identity?',
-      'Your signing key, device binding, Telegram link and subscriptions are wiped. Reports already on the public ledger are permanent and stay. Re-registering the same phone restores the same ID.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const { status } = await authed('/api/observers/delete', { method: 'POST' });
-            if (status === 200) {
-              await signOut();
-              router.replace('/welcome');
-            } else {
-              Alert.alert('Could not delete', `Try again. (HTTP ${status})`);
-            }
-          },
-        },
-      ],
-    );
+  const doDelete = async () => {
+    setConfirmBusy(true);
+    const { status } = await authed('/api/observers/delete', { method: 'POST' });
+    setConfirmBusy(false);
+    setConfirm(null);
+    if (status === 200) {
+      await signOut();
+      router.replace('/welcome');
+    } else {
+      Alert.alert('Could not delete', `Try again. (HTTP ${status})`);
+    }
   };
 
   if (auth.status !== 'signedIn') {
@@ -485,7 +481,7 @@ export default function Profile() {
             {/* Sign out ABOVE delete — leaving is routine, deleting is not. */}
             <Pressable
               className="mt-5 flex-row items-center justify-center rounded-2xl bg-white py-3.5 active:opacity-70"
-              onPress={doSignOut}
+              onPress={() => setConfirm('signout')}
             >
               <Feather name="log-out" size={16} color={BRAND.leaf} />
               <Text className="pl-2 text-base font-bold text-hawk-leaf">Sign out</Text>
@@ -493,7 +489,7 @@ export default function Profile() {
 
             <Pressable
               className="mt-3 flex-row items-center justify-center rounded-2xl bg-red-50 py-3.5 active:opacity-70"
-              onPress={confirmDelete}
+              onPress={() => setConfirm('delete')}
             >
               <Feather name="trash-2" size={16} color="#b91c1c" />
               <Text className="pl-2 text-base font-bold text-red-700">Delete my identity</Text>
@@ -504,6 +500,29 @@ export default function Profile() {
           </>
         )}
       </ScrollView>
+
+      <ConfirmSheet
+        visible={confirm === 'signout'}
+        icon="log-out"
+        title="Sign out?"
+        body="You'll need your phone number and a code — or your password — to sign back in on this device. Nothing you have reported is affected."
+        confirmLabel="Sign out"
+        busy={confirmBusy}
+        onConfirm={doSignOut}
+        onCancel={() => setConfirm(null)}
+      />
+
+      <ConfirmSheet
+        visible={confirm === 'delete'}
+        icon="trash-2"
+        danger
+        title="Delete your observer identity?"
+        body="This wipes your signing key, device binding, Telegram link and subscriptions, and deactivates your ID. Reports already on the public ledger are permanent and stay. Re-registering the same phone restores the same ID."
+        confirmLabel="Delete my identity"
+        busy={confirmBusy}
+        onConfirm={doDelete}
+        onCancel={() => setConfirm(null)}
+      />
 
       {/* Password modal — change, or reset via OTP without leaving it. */}
       <Modal visible={pwOpen} animationType="slide" transparent onRequestClose={() => setPwOpen(false)}>

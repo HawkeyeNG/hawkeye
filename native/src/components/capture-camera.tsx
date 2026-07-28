@@ -48,6 +48,10 @@ type Props = {
   confirmHint?: string;
   onCapture: (media: Media) => void;
   onCancel: () => void;
+  /** Practice only: proceed without a GPS fix instead of blocking on it. */
+  requireFix?: boolean;
+  /** Optional third control beside Cancel (practice's "Use a sample"). */
+  extraAction?: { label: string; onPress: () => void };
 };
 
 /** Shared bounded GPS (lib/location): photo/video stamps use the accurate tier. */
@@ -66,6 +70,8 @@ export function CaptureCamera({
   confirmHint = 'Is every figure readable? Blurry photos cannot back a report.',
   onCapture,
   onCancel,
+  requireFix = true,
+  extraAction,
 }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMic] = useMicrophonePermissions();
@@ -115,6 +121,13 @@ export function CaptureCamera({
         <Pressable className="mt-5 rounded-2xl bg-hawk-gold px-6 py-3" onPress={requestPermission}>
           <Text className="text-base font-bold text-hawk-ink">Allow camera</Text>
         </Pressable>
+        {/* A denied camera must not dead-end a flow that has an escape (the
+            PWA rule: no camera -> use a sample). */}
+        {extraAction ? (
+          <Pressable className="mt-4" onPress={extraAction.onPress}>
+            <Text className="text-sm font-bold text-hawk-gold">{extraAction.label}</Text>
+          </Pressable>
+        ) : null}
         <Pressable className="mt-3" onPress={cancel}>
           <Text className="text-sm text-neutral-400">Cancel</Text>
         </Pressable>
@@ -162,7 +175,7 @@ export function CaptureCamera({
     setLine('Confirming your location…');
     const fix = await fixRef.current;
     if (cancelled.current || g !== gen.current) return; // user retook/cancelled meanwhile
-    if (!fix) {
+    if (!fix && requireFix) {
       setBusy(false);
       setFixState('failed');
       return;
@@ -170,7 +183,12 @@ export function CaptureCamera({
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setPreview(null);
     setBusy(false);
-    onCapture({ uri: preview.uri, capturedAt: preview.capturedAt, ...fix, type: 'image' });
+    onCapture({
+      uri: preview.uri,
+      capturedAt: preview.capturedAt,
+      ...(fix ?? { lat: 0, lng: 0 }),
+      type: 'image',
+    });
   };
 
   const toggleVideo = async () => {
@@ -348,7 +366,15 @@ export function CaptureCamera({
             />
           )}
         </Pressable>
-        <View style={{ width: 48 }} />
+        {extraAction ? (
+          <Pressable hitSlop={12} onPress={extraAction.onPress} style={{ maxWidth: 96 }}>
+            <Text className="text-right text-sm font-semibold text-hawk-gold">
+              {extraAction.label}
+            </Text>
+          </Pressable>
+        ) : (
+          <View style={{ width: 48 }} />
+        )}
       </View>
     </View>
   );

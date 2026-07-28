@@ -21,8 +21,8 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
     title: 'Trust & verify',
     items: [
       { label: 'Verify the Ledger', href: 'native:/ledger', icon: 'shield' },
-      { label: 'Election Integrity', href: 'integrity.html', icon: 'activity' },
-      { label: 'Public Docket', href: 'docket.html', icon: 'file-text' },
+      { label: 'Election Integrity', href: 'native:/integrity', icon: 'activity' },
+      { label: 'Public Docket', href: 'native:/docket', icon: 'file-text' },
     ],
   },
   {

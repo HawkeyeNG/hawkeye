@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { authedGet, signOut, useAuth } from '@/lib/auth';
 import { BRAND } from '@/lib/api';
 
@@ -31,6 +32,7 @@ export default function Alerts() {
   const auth = useAuth();
   const [items, setItems] = useState<Notification[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [confirmOut, setConfirmOut] = useState(false);
 
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn') return;
@@ -48,10 +50,23 @@ export default function Alerts() {
 
   return (
     <SafeAreaView className="flex-1 bg-hawk-mist" edges={['top']}>
+      <ConfirmSheet
+        visible={confirmOut}
+        icon="log-out"
+        title="Sign out?"
+        body="You'll need your phone number and a code — or your password — to sign back in on this device. Nothing you have reported is affected."
+        confirmLabel="Sign out"
+        onConfirm={async () => {
+          setConfirmOut(false);
+          await signOut();
+          router.replace('/welcome');
+        }}
+        onCancel={() => setConfirmOut(false)}
+      />
       <View className="flex-row items-center justify-between px-4 pb-2 pt-4">
         <Text className="text-2xl font-bold text-hawk-ink">Alerts</Text>
         {auth.status === 'signedIn' ? (
-          <Pressable hitSlop={8} onPress={signOut}>
+          <Pressable hitSlop={8} onPress={() => setConfirmOut(true)}>
             <Text className="text-sm font-semibold text-hawk-leaf">
               Observer #{auth.observerId} · Sign out
             </Text>

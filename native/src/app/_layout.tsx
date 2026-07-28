@@ -32,6 +32,11 @@ export default function RootLayout() {
           <Stack.Screen name="integrity" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="docket" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="case" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="osun" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="candidates" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="political" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="profile" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="page" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="practice" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>

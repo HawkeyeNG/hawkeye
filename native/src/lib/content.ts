@@ -262,24 +262,24 @@ export const PAGES: Record<string, Page> = {
     blocks: [
       {
         kind: 'lede',
-        text: 'An independent, nonpartisan transparency platform that lets ordinary Nigerians document, verify and publish the results announced at their polling units — so anyone can check the numbers.',
+        text: 'An independent, nonpartisan record of what was announced at each polling unit — documented, verified and published by ordinary Nigerians.',
       },
       { kind: 'label', text: 'Why it exists' },
       {
         kind: 'para',
-        text: 'Elections are won and lost at the polling unit, and then at collation. When results can be altered on the way up, trust collapses. Hawkeye puts a network of independent witnesses on the ground: every report is photographed, signed on the observer’s own phone, and recorded on a public, tamper-evident ledger.',
+        text: 'Elections are won at the polling unit, then at collation. When numbers can change on the way up, trust collapses. So every report is photographed, signed on the observer’s own phone, and chained on a public ledger.',
       },
       { kind: 'label', text: 'What we are not' },
       {
         kind: 'callout',
         icon: 'alert-circle',
         title: 'Hawkeye does not declare winners',
-        body: 'Its tallies are not official results. It is a public, independent record of what was announced, built to aid scrutiny. Official results are declared by INEC. Hawkeye is not affiliated with INEC, any political party, candidate or campaign.',
+        body: 'Its tallies are not official results — those come only from INEC. It is a record built to aid scrutiny, unaffiliated with INEC, any party, candidate or campaign.',
       },
       { kind: 'label', text: 'Who runs it' },
       {
         kind: 'para',
-        text: 'Hawkeye is built and operated by IniXien, LLC. The platform, its software and its content are © 2026 IniXien, LLC. Reports submitted by observers, and the public ledger they form, remain open for anyone to read and verify.',
+        text: 'Built and operated by IniXien, LLC (© 2026). Observers’ reports, and the ledger they form, stay open for anyone to read and verify.',
       },
       {
         kind: 'actions',
@@ -332,7 +332,7 @@ export const PAGES: Record<string, Page> = {
     blocks: [
       {
         kind: 'lede',
-        text: 'Hawkeye is built to protect the people who use it. This is exactly what we collect, why, what becomes public, and what stays private.',
+        text: 'Built to protect the people who use it. Exactly what we keep, what becomes public, and what never leaves your phone.',
       },
       { kind: 'label', text: 'What we collect' },
       {
@@ -340,30 +340,32 @@ export const PAGES: Record<string, Page> = {
         items: [
           {
             icon: 'hash',
-            title: 'Your phone number — as a hash',
+            title: 'Your number — as a hash',
             points: [
-              'Stored only as a one-way cryptographic hash. We never keep or display the actual number; it exists so one number equals one observer identity.',
+              'One-way, never reversible. We cannot see it, show it, or hand it over.',
+              'It exists so one number equals one observer.',
             ],
           },
           {
             icon: 'file-text',
             title: 'Your reports',
             points: [
-              'The counts you enter and two live photos (the result sheet and the venue), each stamped with the GPS location where it was taken.',
+              'The counts, two live photos, and where each was taken.',
             ],
           },
           {
             icon: 'smartphone',
             title: 'A device fingerprint',
             points: [
-              "A hash of your device's characteristics, to stop one phone filing multiple reports for the same race.",
+              'Hashed, so one phone cannot report the same race twice.',
             ],
           },
           {
             icon: 'send',
             title: 'Your Telegram link',
             points: [
-              'If you verify or subscribe via Telegram, we store the chat ID so the bot can send your code and alerts. We never read your Telegram messages or contacts.',
+              'The chat ID only, so the bot can reach you.',
+              'We never read your messages or contacts.',
             ],
           },
         ],
@@ -374,9 +376,9 @@ export const PAGES: Record<string, Page> = {
         tone: 'public',
         title: 'Public, by design',
         items: [
-          'Your submitted counts, photos and their locations — published on a tamper-evident ledger and never edited or deleted. That permanence is what makes them trustworthy.',
-          'Reports are tied to an anonymous observer ID, never to you personally.',
-          'Incident media is shown publicly only after human review.',
+          'Your counts, photos and their locations — on a tamper-evident ledger, never edited or deleted. That permanence is what makes them worth anything.',
+          'Tied to an anonymous observer ID, never to you.',
+          'Incident media appears only after human review.',
         ],
       },
       {
@@ -384,9 +386,9 @@ export const PAGES: Record<string, Page> = {
         tone: 'private',
         title: 'Never published',
         items: [
-          'Your actual phone number — only the hash is stored.',
-          'Your identity — reports are not publicly linked to your name or number.',
-          'One-time codes, which expire within minutes and are deleted once used.',
+          'Your actual number — only the hash exists.',
+          'Your identity — no report is linked to your name or number.',
+          'One-time codes — they expire in minutes and are deleted on use.',
         ],
       },
       { kind: 'label', text: 'What we never do' },
@@ -394,9 +396,9 @@ export const PAGES: Record<string, Page> = {
         kind: 'rules',
         tone: 'never',
         items: [
-          'We do not sell, rent or share your data with anyone.',
-          'We run no advertising and no third-party trackers.',
-          'We use no tracking cookies — the app keeps only a sign-in token and your keys, on your device.',
+          'Sell, rent or share your data.',
+          'Run ads or third-party trackers.',
+          'Use tracking cookies — only a sign-in token and your keys, kept on your device.',
         ],
       },
       {

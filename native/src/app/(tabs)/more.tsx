@@ -4,6 +4,8 @@ import * as WebBrowser from 'expo-web-browser';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SocialRow } from '@/components/social-row';
+
 /**
  * More — the menu.js panel groups, carried over 1:1. Until each page is
  * rebuilt natively, entries open the live site in an in-app browser tab,
@@ -78,7 +80,11 @@ export default function More() {
             </View>
           </View>
         ))}
-        <Text className="pt-4 text-center text-xs text-neutral-400">
+        <Text className="pb-2 pt-5 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+          Find Hawkeye
+        </Text>
+        <SocialRow />
+        <Text className="pt-5 text-center text-xs text-neutral-400">
           © IniXien, LLC · Hawkeye is independent. It does not declare results; all
           official results are announced by INEC.
         </Text>

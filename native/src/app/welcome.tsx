@@ -1,10 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BRAND } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 
 const POINTS: { icon: keyof typeof Feather.glyphMap; text: string }[] = [
   { icon: 'camera', text: 'Photograph the result sheet where it was announced' },
@@ -20,6 +22,13 @@ const POINTS: { icon: keyof typeof Feather.glyphMap; text: string }[] = [
  * buttons exist because arrivals look for their own door — they just share it.
  */
 export default function Welcome() {
+  const auth = useAuth();
+  // A signed-in session must never sit on the door: resuming into welcome (or
+  // signing in from it) would otherwise offer sign-in again, forever.
+  useEffect(() => {
+    if (auth.status === 'signedIn') router.replace('/(tabs)');
+  }, [auth.status]);
+
   return (
     <SafeAreaView className="flex-1 bg-hawk-green">
       <View className="flex-1 items-center justify-center px-8">

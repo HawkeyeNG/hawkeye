@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PasswordField } from '@/components/password-field';
 import { BRAND } from '@/lib/api';
 import { requestOtp, signOut, useAuth, verifyOtp } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -127,6 +128,7 @@ export default function Profile() {
   const [pwMode, setPwMode] = useState<PwMode>('change');
   const [pwCurrent, setPwCurrent] = useState('');
   const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
   const [resetPhone, setResetPhone] = useState('');
   const [resetOtp, setResetOtp] = useState('');
   const [pwMsg, setPwMsg] = useState<string | null>(null);
@@ -155,6 +157,7 @@ export default function Profile() {
     setPwMode('change');
     setPwCurrent('');
     setPwNew('');
+    setPwConfirm('');
     setResetPhone('');
     setResetOtp('');
     setPwMsg(null);
@@ -164,6 +167,12 @@ export default function Profile() {
   const savePassword = async (withCurrent: boolean) => {
     if (pwNew.length < 8) {
       setPwMsg('Use at least 8 characters.');
+      return;
+    }
+    // Typed twice: a typo in a blind field would otherwise lock this account
+    // out of its own password path until an OTP reset.
+    if (pwNew !== pwConfirm) {
+      setPwMsg('The two new passwords do not match.');
       return;
     }
     setPwBusy(true);
@@ -183,6 +192,9 @@ export default function Profile() {
         return;
       }
       setMe((m) => (m ? { ...m, hasPassword: true } : m));
+      setPwNew('');
+      setPwConfirm('');
+      setPwCurrent('');
       setPwOpen(false);
       Alert.alert(
         'Password saved',
@@ -508,23 +520,30 @@ export default function Profile() {
                   A password lets you sign in on any device without waiting for a code.
                 </Text>
                 {me?.hasPassword ? (
-                  <TextInput
-                    value={pwCurrent}
-                    onChangeText={setPwCurrent}
-                    secureTextEntry
-                    placeholder="Current password"
-                    placeholderTextColor="#9ca3af"
-                    className="mb-2 rounded-2xl bg-white px-4 py-3.5 text-base text-hawk-ink"
-                  />
+                  <View className="mb-2">
+                    <PasswordField
+                      value={pwCurrent}
+                      onChangeText={setPwCurrent}
+                      placeholder="Current password"
+                      textContentType="password"
+                    />
+                  </View>
                 ) : null}
-                <TextInput
+                <PasswordField
                   value={pwNew}
                   onChangeText={setPwNew}
-                  secureTextEntry
                   placeholder="New password (min 8 characters)"
-                  placeholderTextColor="#9ca3af"
-                  className="rounded-2xl bg-white px-4 py-3.5 text-base text-hawk-ink"
+                  textContentType="newPassword"
                 />
+                <View className="pt-2">
+                  <PasswordField
+                    value={pwConfirm}
+                    onChangeText={setPwConfirm}
+                    placeholder="Repeat new password"
+                    textContentType="newPassword"
+                    onSubmitEditing={() => savePassword(true)}
+                  />
+                </View>
                 {pwMsg ? (
                   <Text className="pt-2 text-sm font-semibold text-amber-800">{pwMsg}</Text>
                 ) : null}
@@ -627,14 +646,21 @@ export default function Profile() {
                 <Text className="pb-3 text-sm text-neutral-600">
                   Verified — now choose your new password.
                 </Text>
-                <TextInput
+                <PasswordField
                   value={pwNew}
                   onChangeText={setPwNew}
-                  secureTextEntry
                   placeholder="New password (min 8 characters)"
-                  placeholderTextColor="#9ca3af"
-                  className="rounded-2xl bg-white px-4 py-3.5 text-base text-hawk-ink"
+                  textContentType="newPassword"
                 />
+                <View className="pt-2">
+                  <PasswordField
+                    value={pwConfirm}
+                    onChangeText={setPwConfirm}
+                    placeholder="Repeat new password"
+                    textContentType="newPassword"
+                    onSubmitEditing={() => savePassword(false)}
+                  />
+                </View>
                 {pwMsg ? (
                   <Text className="pt-2 text-sm font-semibold text-amber-800">{pwMsg}</Text>
                 ) : null}

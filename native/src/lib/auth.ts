@@ -10,6 +10,7 @@ import { getIdentity } from '@/lib/identity';
 const BASE = 'https://hawkeye.com.ng';
 const K_TOKEN = 'hawkeye.auth.token';
 const K_OBSERVER = 'hawkeye.auth.observer';
+const K_OPTED_OUT = 'hawkeye.auth.optedOut';
 
 export type AuthState = {
   status: 'loading' | 'signedOut' | 'signedIn';
@@ -71,6 +72,7 @@ export async function verifyOtp(phone: string, otp: string): Promise<{ ok: boole
   if (r.ok && r.token && r.observerId) {
     await SecureStore.setItemAsync(K_TOKEN, r.token);
     await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
+    await SecureStore.deleteItemAsync(K_OPTED_OUT);
     set({ status: 'signedIn', observerId: r.observerId, token: r.token });
     return { ok: true };
   }
@@ -95,6 +97,7 @@ export async function passwordLogin(
   if (r.ok && r.token && r.observerId) {
     await SecureStore.setItemAsync(K_TOKEN, r.token);
     await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
+    await SecureStore.deleteItemAsync(K_OPTED_OUT);
     set({ status: 'signedIn', observerId: r.observerId, token: r.token });
     return { ok: true };
   }
@@ -108,6 +111,10 @@ export async function bootstrapAuth(): Promise<void> {
     const observer = await SecureStore.getItemAsync(K_OBSERVER);
     if (token && observer) {
       set({ status: 'signedIn', observerId: Number(observer), token });
+      return;
+    }
+    if (await SecureStore.getItemAsync(K_OPTED_OUT)) {
+      set({ status: 'signedOut', observerId: null, token: null });
       return;
     }
     const id = await getIdentity();
@@ -130,6 +137,9 @@ export async function bootstrapAuth(): Promise<void> {
 export async function signOut(): Promise<void> {
   await SecureStore.deleteItemAsync(K_TOKEN);
   await SecureStore.deleteItemAsync(K_OBSERVER);
+  // Silent device-resume would sign this person straight back in on the next
+  // launch, which makes an explicit sign-out look broken. Remember the choice.
+  await SecureStore.setItemAsync(K_OPTED_OUT, '1');
   set({ status: 'signedOut', observerId: null, token: null });
 }
 

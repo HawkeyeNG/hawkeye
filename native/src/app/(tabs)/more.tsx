@@ -29,7 +29,7 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
     title: 'Live data',
     items: [
       { label: 'Osun 2026', href: 'osun.html', icon: 'trending-up' },
-      { label: 'Public Reports Log', href: 'dashboard.html', icon: 'list' },
+      { label: 'Public Reports Log', href: 'native:/reports-log', icon: 'list' },
       { label: '2027 Candidates', href: 'candidates.html', icon: 'users' },
       { label: 'Political Data', href: 'political.html', icon: 'pie-chart' },
     ],

@@ -342,7 +342,7 @@
   "blocks": [
    {
     "type": "text",
-    "text": "Hawkeye is an independent, nonpartisan transparency platform that lets ordinary Nigerians document, verify and publish the results announced at their polling units — so anyone can check the numbers."
+    "text": "An independent, nonpartisan record of what was announced at each polling unit — documented, verified and published by ordinary Nigerians."
    },
    {
     "type": "heading",
@@ -350,7 +350,7 @@
    },
    {
     "type": "text",
-    "text": "Elections are won and lost at the polling unit and then at collation. When results can be altered on the way up, trust collapses. Hawkeye puts a network of independent witnesses on the ground: every report is photographed, signed on the observer's own phone, and recorded on a public, tamper-evident ledger. A count is only trusted when independent observers at the same place agree — backed by GPS, matching venue photos and automatic reading of the sheet."
+    "text": "Elections are won at the polling unit, then at collation. When numbers can change on the way up, trust collapses. So every report here is photographed, signed on the observer's own phone and chained on a public ledger — and a count is trusted only when independent observers at the same place agree, backed by GPS and matching venue photos."
    },
    {
     "type": "heading",
@@ -358,7 +358,7 @@
    },
    {
     "type": "text",
-    "text": "Hawkeye does not declare winners and its tallies are not official results. It is a public, independent record of what was announced, built to aid scrutiny. The official results of any election are those declared by the Independent National Electoral Commission (INEC). Hawkeye is not affiliated with INEC, any political party, candidate or campaign."
+    "text": "Hawkeye does not declare winners, and its tallies are not official results — those come only from INEC. It is a record built to aid scrutiny, unaffiliated with INEC, any party, candidate or campaign."
    },
    {
     "type": "heading",
@@ -366,7 +366,7 @@
    },
    {
     "type": "text",
-    "text": "Hawkeye is built and operated by IniXien, LLC. The platform, its software and its content are &copy; 2026 IniXien, LLC. Reports submitted by observers, and the public ledger they form, remain open for anyone to read and verify."
+    "text": "Built and operated by IniXien, LLC (&copy; 2026). Observers' reports, and the ledger they form, stay open for anyone to read and verify."
    },
    {
     "type": "heading",
@@ -411,10 +411,10 @@
    {
     "type": "list",
     "items": [
-     "Your phone number — stored only as a one-way cryptographic hash. We never keep or display the actual number; it exists so one number equals one observer identity.",
-     "Your reports — the counts you enter and two live photos (the result sheet and the venue), each stamped with the GPS location where it was taken.",
-     "A device fingerprint — a hash of your device's characteristics, to stop one phone from filing multiple reports for the same race.",
-     "Your Telegram link — if you verify or subscribe via Telegram, we store the chat ID so the bot can send your code and alerts. We never read your Telegram messages or contacts."
+     "Your number — as a hash. One-way, never reversible. We cannot see it, show it, or hand it over; it exists so one number equals one observer.",
+     "Your reports — the counts, two live photos, and where each was taken.",
+     "A device fingerprint — hashed, so one phone cannot report the same race twice.",
+     "Your Telegram link — the chat ID only, so the bot can reach you. We never read your messages or contacts."
     ]
    },
    {
@@ -423,7 +423,7 @@
    },
    {
     "type": "text",
-    "text": "To be a credible transparency tool, the evidence must be open. Your submitted counts, photos and their locations are published on a public, tamper-evident ledger and cannot be edited or deleted — that permanence is what makes them trustworthy. Your phone number is never part of this; reports are tied to an anonymous observer ID, not to you personally. Incident media is shown publicly only after human review."
+    "text": "Your counts, photos and their locations go on a public ledger and cannot be edited or deleted — that permanence is what makes them worth anything. They are tied to an anonymous observer ID, never to you. Incident media appears only after human review."
    },
    {
     "type": "heading",
@@ -432,9 +432,9 @@
    {
     "type": "list",
     "items": [
-     "Your actual phone number (only the hash is stored).",
-     "Your identity — reports are not publicly linked to your name or number.",
-     "One-time codes, which expire within minutes and are deleted once used."
+     "Your actual number — only the hash exists.",
+     "Your identity — no report is linked to your name or number.",
+     "One-time codes — they expire in minutes and are deleted on use."
     ]
    },
    {
@@ -444,9 +444,9 @@
    {
     "type": "list",
     "items": [
-     "We do not sell, rent or share your data with anyone.",
-     "We run no advertising and no third-party trackers.",
-     "We use no cookies — the app keeps only a sign-in token and keys in your browser's local storage, on your device."
+     "Sell, rent or share your data.",
+     "Run ads or third-party trackers.",
+     "Use cookies — only a sign-in token and your keys, kept on your device."
     ]
    },
    {

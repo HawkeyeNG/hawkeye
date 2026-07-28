@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ContentBlock, QuestionRow, SectionLabel } from '@/components/content-kit';
+import { SocialRow } from '@/components/social-row';
 import { BRAND } from '@/lib/api';
 import { PAGES } from '@/lib/content';
 import RAW from '@/lib/pages.json';
@@ -186,6 +187,10 @@ export default function StaticPage() {
             ))}
           </>
         ) : null}
+
+        {/* Every explainer page ends the same way: where to find Hawkeye. */}
+        <SectionLabel text="Find Hawkeye" />
+        <SocialRow />
       </ScrollView>
     </SafeAreaView>
   );

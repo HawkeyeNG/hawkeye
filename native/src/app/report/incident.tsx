@@ -59,31 +59,37 @@ export default function ReportIncident() {
     try {
       const id = await getIdentity();
       const token = await SecureStore.getItemAsync('hawkeye.auth.token');
-      const form = new FormData();
-      form.append('kind', kind);
-      if (description.trim()) form.append('description', description.trim().slice(0, 2000));
       // GPS is optional for incidents — a bounded quick fix (≤8s), never a stall.
       // An urgent report must not wait on a satellite lock indoors.
       const fix = await getQuickFix();
-      if (fix) {
-        form.append('lat', String(fix.lat));
-        form.append('lng', String(fix.lng));
-      }
-      media.forEach((m, i) =>
-        form.append(
-          'media',
-          {
-            uri: m.uri,
-            name: m.type === 'video' ? `clip${i}.mp4` : `photo${i}.jpg`,
-            type: m.type === 'video' ? 'video/mp4' : 'image/jpeg',
-          } as unknown as Blob,
-        ),
-      );
+      // Fresh FormData PER ATTEMPT: on Android a body whose file parts were
+      // already streamed by a failed attempt cannot be replayed — reusing it
+      // makes the retry throw instantly and masks the original error.
+      const buildForm = () => {
+        const form = new FormData();
+        form.append('kind', kind);
+        if (description.trim()) form.append('description', description.trim().slice(0, 2000));
+        if (fix) {
+          form.append('lat', String(fix.lat));
+          form.append('lng', String(fix.lng));
+        }
+        media.forEach((m, i) =>
+          form.append(
+            'media',
+            {
+              uri: m.uri,
+              name: m.type === 'video' ? `clip${i}.mp4` : `photo${i}.jpg`,
+              type: m.type === 'video' ? 'video/mp4' : 'image/jpeg',
+            } as unknown as Blob,
+          ),
+        );
+        return form;
+      };
       const post = () =>
         fetch('https://hawkeye.com.ng/api/incidents', {
           method: 'POST',
           headers: { authorization: `Bearer ${token}`, 'x-device-id': id.deviceId },
-          body: form,
+          body: buildForm(),
         });
       // One silent retry: a reset connection on Nigerian mobile networks is a
       // transient, not a verdict. (Server-side dedupe is not a concern here —
@@ -109,8 +115,11 @@ export default function ReportIncident() {
           : `${body.hint ?? 'Submission failed — try again.'} (${code})`,
         );
       }
-    } catch {
-      setLine('Upload failed twice — nothing was sent. Check your connection and retry.');
+    } catch (e) {
+      // Name the exception — "Network request failed" vs a JS error are very
+      // different diagnoses, and the generic line hid which one we had.
+      const msg = e instanceof Error ? e.message : String(e);
+      setLine(`Upload failed twice — nothing was sent. (${msg})`);
     } finally {
       setBusy(false);
     }

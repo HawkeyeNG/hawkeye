@@ -66,6 +66,11 @@ export function CaptureCamera({ title, hint, allowVideo, frameGuide, onCapture, 
   const cam = useRef<CameraView>(null);
   const fixRef = useRef<Promise<{ lat: number; lng: number } | null> | null>(null);
   const cancelled = useRef(false);
+  // Generation counter: Retake/Cancel bump it, and any in-flight confirmation
+  // (Use photo waiting on GPS) aborts when its generation is stale. Without
+  // this, a pending confirmation fired onCapture AFTER the user hit Retake —
+  // silently advancing the flow to the next step under their feet.
+  const gen = useRef(0);
   useEffect(() => () => void (cancelled.current = true), []);
 
   const cancel = () => {
@@ -117,18 +122,29 @@ export function CaptureCamera({ title, hint, allowVideo, frameGuide, onCapture, 
     }
   };
 
+  const retake = () => {
+    gen.current++; // abort any pending confirmation before it can fire onCapture
+    setPreview(null);
+    setLine(null);
+    setBusy(false);
+    setFixState('pending');
+  };
+
   const usePhoto = async () => {
     if (!preview || busy) return;
+    const g = gen.current;
     setBusy(true);
     setLine('Confirming your location…');
     const fix = await fixRef.current;
-    if (cancelled.current) return;
+    if (cancelled.current || g !== gen.current) return; // user retook/cancelled meanwhile
     if (!fix) {
       setBusy(false);
       setFixState('failed');
       return;
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setPreview(null);
+    setBusy(false);
     onCapture({ uri: preview.uri, capturedAt: preview.capturedAt, ...fix, type: 'image' });
   };
 
@@ -181,20 +197,15 @@ export function CaptureCamera({ title, hint, allowVideo, frameGuide, onCapture, 
         <View className="absolute inset-x-0 top-0 px-5 pt-14">
           <Text className="text-lg font-bold text-white">Check the photo</Text>
           <Text className="pt-1 text-sm text-neutral-300">
-            {fixState === 'failed'
-              ? 'No GPS fix — move near a window or outside, then retry.'
-              : 'Is every figure readable? Blurry photos cannot back a report.'}
+            {busy
+              ? 'Confirming your location — a few seconds…'
+              : fixState === 'failed'
+                ? 'No GPS fix — move near a window or outside, then retry.'
+                : 'Is every figure readable? Blurry photos cannot back a report.'}
           </Text>
         </View>
         <View className="absolute inset-x-0 bottom-0 flex-row items-center justify-between px-6 pb-12">
-          <Pressable
-            className="rounded-2xl bg-white/15 px-6 py-3.5"
-            onPress={() => {
-              setPreview(null);
-              setLine(null);
-              setBusy(false);
-            }}
-          >
+          <Pressable className="rounded-2xl bg-white/15 px-6 py-3.5" onPress={retake}>
             <Text className="text-base font-semibold text-white">Retake</Text>
           </Pressable>
           {fixState === 'failed' ? (

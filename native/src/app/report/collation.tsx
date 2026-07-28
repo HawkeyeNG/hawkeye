@@ -413,7 +413,7 @@ export default function ReportCollation() {
         ) : null}
 
         {step === 'votes' ? (
-          <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
+          <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-1 text-xl font-bold text-hawk-ink">Collated totals</Text>
             <Text className="pb-3 text-sm text-neutral-600">
               Copy the figures exactly as announced. Leave blank for parties not listed.
@@ -460,18 +460,25 @@ export default function ReportCollation() {
                 />
               </View>
             ))}
-            <Pressable
-              disabled={votes.length === 0}
-              onPress={() => setStep('review')}
-              className={`mt-3 items-center rounded-2xl py-4 ${votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'}`}
-            >
-              <Text className="text-base font-bold text-hawk-gold">Review report</Text>
-            </Pressable>
           </ScrollView>
         ) : null}
 
+        {/* Pinned: the party list runs to 30 rows, so at the end of the scroll
+            this sits far below whichever party was just typed into. */}
+        {step === 'votes' ? (
+          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+            <Pressable
+              disabled={votes.length === 0}
+              onPress={() => setStep('review')}
+              className={`items-center rounded-2xl py-4 ${votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'}`}
+            >
+              <Text className="text-base font-bold text-hawk-gold">Review report</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {step === 'review' ? (
-          <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
+          <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
             <Text className="pb-3 text-xl font-bold text-hawk-ink">Confirm and send</Text>
             <View className="mb-3 rounded-2xl bg-white px-4 py-3">
               <Text className="text-base font-semibold text-hawk-ink">
@@ -532,8 +539,16 @@ export default function ReportCollation() {
               onChangeText={setFormSerial}
               editable={!busy}
             />
+          </ScrollView>
+        ) : null}
+
+        {/* Pinned: the summary above grows with the vote list, and a failed
+            submit ("No GPS fix…") is retried from here — the status line rides
+            with the button so retrying never means scrolling back down. */}
+        {step === 'review' ? (
+          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
             {line ? (
-              <Text className="pb-3 text-sm font-semibold text-amber-800">{line}</Text>
+              <Text className="pb-2 text-sm font-semibold text-amber-800">{line}</Text>
             ) : null}
             <Pressable
               disabled={busy}
@@ -553,7 +568,7 @@ export default function ReportCollation() {
             >
               <Text className="text-sm font-semibold text-hawk-leaf">‹ Back to totals</Text>
             </Pressable>
-          </ScrollView>
+          </View>
         ) : null}
 
         {step === 'done' ? (

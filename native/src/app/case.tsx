@@ -226,6 +226,9 @@ export default function CaseScreen() {
   );
 
   const noted = (c.verdicts ?? []).filter((v) => v.comment);
+  // Only the questionnaire branch gets a pinned action; the other branches offer
+  // text or a sign-in invitation, which belong with the record they explain.
+  const canJudge = c.status === 'open' && auth.status === 'signedIn' && !mine?.verdict;
 
   return (
     <SafeAreaView className="flex-1 bg-hawk-mist">
@@ -243,7 +246,7 @@ export default function CaseScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerClassName="px-4 pb-10 pt-3">
+      <ScrollView contentContainerClassName={`px-4 pt-3 ${canJudge ? 'pb-4' : 'pb-10'}`}>
         <Text className="text-xl font-bold text-hawk-ink">{c.unit.name}</Text>
         <Text className="pt-1 text-xs text-neutral-500">
           {c.contest} · {c.unit.ward} ward, {c.unit.lga}, {c.unit.state}
@@ -390,28 +393,11 @@ export default function CaseScreen() {
               <View className="mt-1 rounded-xl bg-hawk-mist px-3 py-2">
                 <TextInputBox value={comment} onChange={setComment} />
               </View>
-
-              <Pressable
-                disabled={busy}
-                onPress={cast}
-                className={`mt-3 items-center rounded-2xl py-3.5 ${
-                  busy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
-                }`}
-              >
-                {busy ? (
-                  <ActivityIndicator color={BRAND.gold} />
-                ) : (
-                  <Text className="text-base font-bold text-hawk-gold">Cast my verdict</Text>
-                )}
-              </Pressable>
-              <Text className="pt-2 text-xs text-neutral-500">
-                Your answers compute the verdict by a published rule — you never pick a side
-                directly. Notes are public but never counted.
-              </Text>
             </>
           )}
 
-          {msg ? (
+          {/* While judging, the footer carries this line instead — see below. */}
+          {msg && !canJudge ? (
             <Text className="pt-2 text-sm font-semibold text-hawk-leaf">{msg}</Text>
           ) : null}
         </View>
@@ -436,6 +422,34 @@ export default function CaseScreen() {
           </Text>
         ) : null}
       </ScrollView>
+
+      {/* Cast sits under every flag, two 128px photos and a vote list per
+          submission, and a 3+ question form — in the scroll it starts offscreen
+          and drifts further down with each extra submission. Pinned, it stays
+          reachable, and msg rides with it so a rejected attempt ("Answer every
+          question.") doesn't push the retry away. */}
+      {canJudge ? (
+        <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          {msg ? <Text className="pb-2 text-sm font-semibold text-hawk-leaf">{msg}</Text> : null}
+          <Pressable
+            disabled={busy}
+            onPress={cast}
+            className={`items-center rounded-2xl py-3.5 ${
+              busy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+            }`}
+          >
+            {busy ? (
+              <ActivityIndicator color={BRAND.gold} />
+            ) : (
+              <Text className="text-base font-bold text-hawk-gold">Cast my verdict</Text>
+            )}
+          </Pressable>
+          <Text className="pt-2 text-xs text-neutral-500">
+            Your answers compute the verdict by a published rule — you never pick a side directly.
+            Notes are public but never counted.
+          </Text>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }

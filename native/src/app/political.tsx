@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PartyMark } from '@/components/race';
 import { BRAND } from '@/lib/api';
-import { loadPolitical, partyColor, type Political } from '@/lib/political';
+import { loadPolitical, partyColor, partyName, type Political } from '@/lib/political';
 
 /**
  * Political Data — who holds power now: the incumbents this election confirms
@@ -74,7 +74,7 @@ export default function PoliticalData() {
                   <Text className="text-xs text-neutral-500">
                     Governing party:{' '}
                     <Text style={{ color: partyColor(d.president.party) }}>
-                      {d.president.party}
+                      {partyName(d.president.party)}
                     </Text>
                   </Text>
                 </View>
@@ -158,7 +158,7 @@ export default function PoliticalData() {
                         className="flex-1 pl-2 text-sm font-bold"
                         style={{ color: partyColor(party) }}
                       >
-                        {party}
+                        {partyName(party)}
                       </Text>
                       <Text className="text-xs font-semibold text-neutral-500">
                         {sts.length} {sts.length === 1 ? 'state' : 'states'}

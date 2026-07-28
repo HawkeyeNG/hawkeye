@@ -373,13 +373,34 @@ observersRouter.get('/me', requireObserver, (req, res) => {
   const incidents = db.prepare(`
     SELECT id, kind, status, pu_code, state, created_at
     FROM incidents WHERE observer_id = ? ORDER BY created_at DESC LIMIT 50`).all(o.id);
+  // Units this observer helped locate. Explicit GPS fixes from Map-a-Polling-Unit,
+  // plus units where their own report passed location verification — the
+  // aggregate already counts that as evidence of the unit's position, so the
+  // profile credits it too. `confirmed` reflects the unit's current state, not
+  // this observer's fix alone.
+  const mappings = db.prepare(`
+    SELECT m.pu_code, m.created_at, p.name, p.ward, p.lga, p.state,
+           p.crowd_reports, p.coords_source,
+           'fix' AS source
+    FROM pu_mappings m LEFT JOIN polling_units p ON p.pu_code = m.pu_code
+    WHERE m.observer_id = ?
+    UNION
+    SELECT s.pu_code, MIN(s.created_at) AS created_at, p.name, p.ward, p.lga, p.state,
+           p.crowd_reports, p.coords_source,
+           'report' AS source
+    FROM submissions s LEFT JOIN polling_units p ON p.pu_code = s.pu_code
+    WHERE s.observer_id = ? AND s.location_verified = 1
+      AND s.pu_code NOT IN (SELECT pu_code FROM pu_mappings WHERE observer_id = ?)
+    GROUP BY s.pu_code
+    ORDER BY created_at DESC LIMIT 50`).all(o.id, o.id, o.id)
+    .map((m) => ({ ...m, confirmed: !!m.coords_source && m.coords_source !== 'sample' }));
   res.json({
     ok: true,
     observerId: o.id,
     identityHash: o.phone_hash,
     createdAt: o.created_at,
     hasPassword: !!o.password_hash,
-    unit, subscriptions, reports, collation, incidents,
+    unit, subscriptions, reports, collation, incidents, mappings,
   });
 });
 

@@ -51,6 +51,17 @@ type Me = {
     created_at: number;
   }[];
   incidents?: { kind: string; status: string; pu_code?: string; state?: string; created_at: number }[];
+  mappings?: {
+    pu_code: string;
+    name?: string;
+    ward?: string;
+    lga?: string;
+    state?: string;
+    created_at: number;
+    source: 'fix' | 'report';
+    confirmed: boolean;
+    crowd_reports?: number;
+  }[];
 };
 
 const dt = (t: number) =>
@@ -310,6 +321,7 @@ export default function Profile() {
     { key: 'reports', icon: 'file-text', label: 'Result reports', count: me?.reports?.length ?? 0 },
     { key: 'collation', icon: 'layers', label: 'Collation reports', count: me?.collation?.length ?? 0 },
     { key: 'incidents', icon: 'alert-triangle', label: 'Incident reports', count: me?.incidents?.length ?? 0 },
+    { key: 'mappings', icon: 'map-pin', label: 'Units mapped', count: me?.mappings?.length ?? 0 },
   ];
 
   return (
@@ -457,6 +469,22 @@ export default function Profile() {
                           <Text className="text-[11px] text-neutral-500">
                             {[c.ward, c.lga, c.state].filter(Boolean).join(', ')} ·{' '}
                             {dt(c.created_at)}
+                          </Text>
+                        </View>
+                      ))
+                    : null}
+                  {openSection === 'mappings' && a.key === 'mappings'
+                    ? me.mappings?.map((m, j) => (
+                        <View key={j} className="border-t border-hawk-mist px-4 py-2.5">
+                          <Text className="text-sm font-semibold text-hawk-ink">
+                            {m.name || m.pu_code}
+                          </Text>
+                          <Text className="text-[11px] text-neutral-500">
+                            {[m.ward, m.lga, m.state].filter(Boolean).join(', ')} · {dt(m.created_at)}
+                          </Text>
+                          <Text className="pt-0.5 text-[11px] font-semibold text-hawk-leaf">
+                            {m.confirmed ? 'Located ✓' : `${m.crowd_reports ?? 0} fix(es) so far`}
+                            {m.source === 'report' ? ' · via your verified report' : ''}
                           </Text>
                         </View>
                       ))

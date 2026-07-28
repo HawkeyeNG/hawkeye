@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CaptureCamera } from '@/components/capture-camera';
+import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getSubmitFix } from '@/lib/location';
@@ -138,6 +139,8 @@ export default function ReportCollation() {
   }, [parties, search]);
 
   // -- submit ---------------------------------------------------------------
+  /** Optional collation-form serial, mirroring the PWA field. */
+  const [formSerial, setFormSerial] = useState('');
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const [done, setDone] = useState({ title: '', line: '' });
@@ -164,6 +167,7 @@ export default function ReportCollation() {
         sheet,
         venue,
         fix,
+        formSerial: formSerial.trim() || undefined,
       });
       if (r.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -304,36 +308,42 @@ export default function ReportCollation() {
               Which collation are you reporting?
             </Text>
 
-            {LEVELS.map((l) => (
-              <Pressable
-                key={l.key}
+            {/* PROGRESSIVE DISCLOSURE: exactly one stage is on screen at a
+                time. Stacking all of them made new options open below the fold
+                with nothing to signal they existed. Completed stages collapse
+                to a Crumb, which is also how you go back. */}
+            {!level ? (
+              <>
+                <Prompt>Select the collation level</Prompt>
+                {LEVELS.map((l) => (
+                  <Pressable
+                    key={l.key}
+                    onPress={() => {
+                      setLevel(l.key);
+                      setLgaSel(null);
+                      setWardSel(null);
+                    }}
+                    className="mb-2 rounded-2xl bg-white px-4 py-3 active:opacity-80"
+                  >
+                    <Text className="text-base font-semibold text-hawk-ink">{l.label}</Text>
+                    <Text className="text-xs text-neutral-500">{l.sub}</Text>
+                  </Pressable>
+                ))}
+              </>
+            ) : (
+              <Crumb
+                label={LEVELS.find((l) => l.key === level)!.label}
                 onPress={() => {
-                  setLevel(l.key);
-                  if (l.key === 'state') {
-                    setLgaSel(null);
-                    setWardSel(null);
-                  } else if (l.key === 'lga') {
-                    setWardSel(null);
-                  }
+                  setLevel(null);
+                  setLgaSel(null);
+                  setWardSel(null);
                 }}
-                className={`mb-2 rounded-2xl px-4 py-3 ${level === l.key ? 'bg-hawk-green' : 'bg-white'}`}
-              >
-                <Text
-                  className={`text-base font-semibold ${level === l.key ? 'text-white' : 'text-hawk-ink'}`}
-                >
-                  {l.label}
-                </Text>
-                <Text
-                  className={`text-xs ${level === l.key ? 'text-emerald-100' : 'text-neutral-500'}`}
-                >
-                  {l.sub}
-                </Text>
-              </Pressable>
-            ))}
+              />
+            )}
 
             {level && states.length > 1 && !stateSel ? (
               <>
-                <Text className="pb-2 pt-3 text-sm font-semibold text-neutral-500">State</Text>
+                <Prompt>Select the state</Prompt>
                 <View className="flex-row flex-wrap">
                   {states.map((s) => (
                     <Chip key={s} label={s} onPress={() => setStateSel(s)} />
@@ -342,30 +352,34 @@ export default function ReportCollation() {
               </>
             ) : null}
 
-            {level && level !== 'state' && stateSel ? (
+            {level && level !== 'state' && stateSel && !lgaSel ? (
               <>
-                <Text className="pb-2 pt-3 text-sm font-semibold text-neutral-500">
-                  LGA — {stateSel}
-                </Text>
+                <Prompt>Select the LGA</Prompt>
                 <View className="flex-row flex-wrap">
                   {lgas.map((l) => (
-                    <Chip key={l} label={l} on={lgaSel === l} onPress={() => setLgaSel(l)} />
+                    <Chip key={l} label={l} onPress={() => setLgaSel(l)} />
                   ))}
                 </View>
               </>
             ) : null}
 
-            {level === 'ward' && lgaSel ? (
+            {level && level !== 'state' && lgaSel ? (
+              <Crumb label={lgaSel} onPress={() => setLgaSel(null)} />
+            ) : null}
+
+            {level === 'ward' && lgaSel && !wardSel ? (
               <>
-                <Text className="pb-2 pt-3 text-sm font-semibold text-neutral-500">
-                  Ward — {lgaSel}
-                </Text>
+                <Prompt>Select the ward</Prompt>
                 <View className="flex-row flex-wrap">
                   {wards.map((w) => (
-                    <Chip key={w} label={w} on={wardSel === w} onPress={() => setWardSel(w)} />
+                    <Chip key={w} label={w} onPress={() => setWardSel(w)} />
                   ))}
                 </View>
               </>
+            ) : null}
+
+            {level === 'ward' && wardSel ? (
+              <Crumb label={wardSel} onPress={() => setWardSel(null)} />
             ) : null}
           </ScrollView>
         ) : null}
@@ -497,6 +511,19 @@ export default function ReportCollation() {
                   </View>
                 ))}
             </View>
+            {/* Optional form serial — parity with the PWA's collation field. */}
+            <Text className="pb-1.5 text-sm font-bold text-hawk-leaf">
+              Form serial number <Text className="font-normal text-neutral-500">(optional)</Text>
+            </Text>
+            <TextInput
+              className="mb-3 rounded-2xl bg-white px-4 py-3 text-base text-hawk-ink"
+              placeholder="Printed on the collation form, if visible"
+              placeholderTextColor="#9db5a7"
+              autoCapitalize="characters"
+              value={formSerial}
+              onChangeText={setFormSerial}
+              editable={!busy}
+            />
             {line ? (
               <Text className="pb-3 text-sm font-semibold text-amber-800">{line}</Text>
             ) : null}

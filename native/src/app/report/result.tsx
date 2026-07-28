@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CaptureCamera } from '@/components/capture-camera';
+import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getSubmitFix } from '@/lib/location';
@@ -80,6 +81,13 @@ export default function ReportResult() {
       .then((r) => r.json()).then((d) => setUnits(d.units ?? [])).catch(() => {});
   }, [contest, stateSel, lgaSel, wardSel]);
 
+  // Backing out of a ward/LGA must drop the chosen unit, or the pinned Continue
+  // stays live for a unit that is no longer on screen — offering to proceed with
+  // a selection the observer believes they abandoned.
+  useEffect(() => {
+    setUnit(null);
+  }, [stateSel, lgaSel, wardSel]);
+
   // -- steps 2/3: photos ----------------------------------------------------
   const [sheet, setSheet] = useState<Shot | null>(null);
   const [venue, setVenue] = useState<Shot | null>(null);
@@ -129,6 +137,8 @@ export default function ReportResult() {
   }, [parties, search]);
 
   // -- step 5: review + submit ---------------------------------------------
+  /** Optional EC8A serial, mirroring the PWA's #sheet-serial field. */
+  const [sheetSerial, setSheetSerial] = useState('');
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const [done, setDone] = useState<{ title: string; line: string }>({ title: '', line: '' });
@@ -154,6 +164,7 @@ export default function ReportResult() {
         sheet,
         venue,
         fix,
+        sheetSerial: sheetSerial.trim() || undefined,
       });
       if (r.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -291,30 +302,31 @@ export default function ReportResult() {
             <Text className="pb-4 text-sm text-neutral-600">Pick your polling unit.</Text>
 
             {states.length > 1 && !stateSel ? (
-              <View className="flex-row flex-wrap">{states.map((s) => <Chip key={s} label={s} onPress={() => setStateSel(s)} />)}</View>
+              <>
+                <Prompt>Select your state</Prompt>
+                <View className="flex-row flex-wrap">{states.map((s) => <Chip key={s} label={s} onPress={() => setStateSel(s)} />)}</View>
+              </>
             ) : null}
 
             {stateSel && !lgaSel ? (
               <>
-                <Text className="pb-2 text-sm font-semibold text-neutral-500">LGA — {stateSel}</Text>
+                <Prompt>Select your LGA</Prompt>
                 <View className="flex-row flex-wrap">{lgas.map((l) => <Chip key={l} label={l} onPress={() => setLgaSel(l)} />)}</View>
               </>
             ) : null}
 
             {lgaSel && !wardSel ? (
               <>
-                <Pressable onPress={() => setLgaSel(null)}>
-                  <Text className="pb-2 text-sm font-semibold text-hawk-leaf">‹ {lgaSel}</Text>
-                </Pressable>
+                <Crumb label={lgaSel} onPress={() => setLgaSel(null)} />
+                <Prompt>Select your ward</Prompt>
                 <View className="flex-row flex-wrap">{wards.map((w) => <Chip key={w} label={w} onPress={() => setWardSel(w)} />)}</View>
               </>
             ) : null}
 
             {wardSel ? (
               <>
-                <Pressable onPress={() => setWardSel(null)}>
-                  <Text className="pb-2 text-sm font-semibold text-hawk-leaf">‹ {wardSel}</Text>
-                </Pressable>
+                <Crumb label={`${lgaSel} · ${wardSel}`} onPress={() => setWardSel(null)} />
+                <Prompt>Select your polling unit</Prompt>
                 {units.map((u) => {
                   const on = unit?.pu_code === u.pu_code;
                   return (
@@ -464,6 +476,20 @@ export default function ReportResult() {
                   </View>
                 ))}
             </View>
+            {/* Optional serial — parity with the PWA's #sheet-serial input.
+                Sits immediately above the submit CTA so it cannot be missed. */}
+            <Text className="pb-1.5 text-sm font-bold text-hawk-leaf">
+              Sheet serial number <Text className="font-normal text-neutral-500">(optional)</Text>
+            </Text>
+            <TextInput
+              className="mb-3 rounded-2xl bg-white px-4 py-3 text-base text-hawk-ink"
+              placeholder="Printed on the EC8A, if visible"
+              placeholderTextColor="#9db5a7"
+              autoCapitalize="characters"
+              value={sheetSerial}
+              onChangeText={setSheetSerial}
+              editable={!busy}
+            />
             <Text className="pb-3 text-xs text-neutral-500">
               Submitting takes a GPS fix at your position, signs the report with this device's
               key, and files it for review. Your number is never attached — only your observer ID.

@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CaptureCamera, type Media } from '@/components/capture-camera';
+import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -233,7 +234,7 @@ export default function ReportIncident() {
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
         <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
-          <Text className="pb-2 text-sm font-semibold text-neutral-500">What happened?</Text>
+          <Prompt>Select what happened</Prompt>
           <View className="flex-row flex-wrap">
             {KINDS.map((k) => (
               <Pressable
@@ -259,7 +260,9 @@ export default function ReportIncident() {
             ))}
           </View>
 
-          <Text className="pb-2 pt-3 text-sm font-semibold text-neutral-500">Evidence</Text>
+          <View className="pt-3">
+            <Prompt>Add evidence, or describe it below</Prompt>
+          </View>
           <View className="flex-row flex-wrap">
             {media.map((m, i) => (
               <View key={m.uri} className="mb-2 mr-2 overflow-hidden rounded-xl bg-white">

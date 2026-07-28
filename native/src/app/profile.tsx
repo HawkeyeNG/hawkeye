@@ -20,7 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PasswordField } from '@/components/password-field';
 import { BRAND } from '@/lib/api';
-import { requestOtp, signOut, useAuth, verifyOtp } from '@/lib/auth';
+import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -133,6 +133,8 @@ export default function Profile() {
   const [resetOtp, setResetOtp] = useState('');
   const [pwMsg, setPwMsg] = useState<string | null>(null);
   const [pwBusy, setPwBusy] = useState(false);
+  /** Only a verified OTP for THIS account's number may open the reset step. */
+  const [resetProven, setResetProven] = useState(false);
 
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn') return;
@@ -160,11 +162,18 @@ export default function Profile() {
     setPwConfirm('');
     setResetPhone('');
     setResetOtp('');
+    setResetProven(false);
     setPwMsg(null);
     setPwOpen(true);
   };
 
   const savePassword = async (withCurrent: boolean) => {
+    // Belt and braces: the reset step is only rendered after a proven OTP, but
+    // never let a stale mode reach the server without one.
+    if (!withCurrent && !resetProven) {
+      setPwMsg('Verify the code sent to your number first.');
+      return;
+    }
     if (pwNew.length < 8) {
       setPwMsg('Use at least 8 characters.');
       return;
@@ -227,17 +236,23 @@ export default function Profile() {
     setPwBusy(true);
     setPwMsg(null);
     try {
-      // Verifying re-issues this session as a fresh OTP session, which is what
-      // lets the next step set a password without the old one.
-      const r = await verifyOtp(resetPhone.trim(), resetOtp.trim());
+      // verifyOwner, never verifyOtp: the server refuses any number that isn't
+      // this observer's, so a mistyped (or someone else's) number can neither
+      // reset this password nor drag the session onto another identity.
+      const r = await verifyOwner(resetPhone.trim(), resetOtp.trim());
       if (r.ok) {
+        setResetProven(true);
         setPwMode('reset-new');
         setPwMsg(null);
       } else {
         setPwMsg(
-          r.error === 'otp_incorrect'
-            ? 'Wrong code — check and retry.'
-            : r.hint ?? 'Verification failed — try again.',
+          r.error === 'not_your_number'
+            ? "That number isn't the one registered to this observer ID."
+            : r.error === 'otp_incorrect'
+              ? 'Wrong code — check and retry.'
+              : r.error === 'otp_expired'
+                ? 'Code expired — send a new one.'
+                : r.hint ?? 'Verification failed — try again.',
         );
       }
     } catch {
@@ -579,8 +594,9 @@ export default function Profile() {
             {pwMode === 'reset-phone' ? (
               <>
                 <Text className="pb-3 text-sm text-neutral-600">
-                  We&apos;ll send a code to the number on this account to prove it&apos;s you — then
-                  you set a new password, no old one needed.
+                  Enter the number registered to this observer ID. Requesting a code changes
+                  nothing on its own — your password only changes after you enter the code and
+                  choose a new one.
                 </Text>
                 <TextInput
                   value={resetPhone}

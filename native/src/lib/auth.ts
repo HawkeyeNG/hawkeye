@@ -104,6 +104,34 @@ export async function passwordLogin(
   return { ok: false, error: r.error, hint: r.hint };
 }
 
+/**
+ * Prove the phone number ON THIS ACCOUNT — the in-app password-reset step.
+ *
+ * Deliberately NOT verifyOtp: that one is the sign-in path, and it would create
+ * or switch to whatever identity the typed number belongs to, rotating this
+ * device's signing key with it. This endpoint refuses any number that isn't the
+ * signed-in observer's, and only refreshes their own session so /set-password
+ * will accept a new password without the old one.
+ */
+export async function verifyOwner(
+  phone: string,
+  otp: string,
+): Promise<{ ok: boolean; error?: string; hint?: string }> {
+  if (!state.token) return { ok: false, error: 'not_signed_in' };
+  const id = await getIdentity();
+  const r = await post<{ ok?: boolean; token?: string; observerId?: number; error?: string; hint?: string }>(
+    '/api/observers/verify-owner',
+    { phone, otp },
+    { authorization: `Bearer ${state.token}`, 'x-device-id': id.deviceId },
+  );
+  if (r.ok && r.token) {
+    await SecureStore.setItemAsync(K_TOKEN, r.token);
+    set({ ...state, status: 'signedIn', token: r.token });
+    return { ok: true };
+  }
+  return { ok: false, error: r.error, hint: r.hint };
+}
+
 /** App-start session restore: stored token first, then silent device resume. */
 export async function bootstrapAuth(): Promise<void> {
   try {

@@ -1,7 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -19,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CaptureCamera } from '@/components/capture-camera';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { getSubmitFix } from '@/lib/location';
 import { submitResult, type Shot, type Vote } from '@/lib/submit';
 
 type Unit = { pu_code: string; name: string; ward: string; lga: string; state: string };
@@ -121,13 +121,14 @@ export default function ReportResult() {
     setBusy(true);
     setLine('Getting your location…');
     try {
-      const perm = await Location.requestForegroundPermissionsAsync();
-      if (!perm.granted) {
-        setLine('Location is required to file a report.');
+      // Bounded, accuracy-aware fix — the server rejects accuracy >100m, and an
+      // unbounded High wait indoors can hang the submit button indefinitely.
+      const fix = await getSubmitFix();
+      if (!fix) {
+        setLine('No GPS fix — location must be on. Move near a window and retry.');
         setBusy(false);
         return;
       }
-      const fix = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       setLine('Signing and submitting…');
       const r = await submitResult({
         puCode: unit.pu_code,
@@ -135,11 +136,7 @@ export default function ReportResult() {
         votes,
         sheet,
         venue,
-        fix: {
-          lat: fix.coords.latitude,
-          lng: fix.coords.longitude,
-          accuracy: fix.coords.accuracy ?? 999,
-        },
+        fix,
       });
       if (r.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

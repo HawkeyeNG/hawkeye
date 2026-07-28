@@ -67,6 +67,26 @@ jobs:
           path: tests/ui/**/*-snapshots/**
           if-no-files-found: warn
 
+      # Whole-product sweep: every page, phone + desktop, reporting console
+      # errors, dead requests, horizontal overflow, contrast failures, tap
+      # targets, missing labels/alt, duplicate ids and axe violations. It is a
+      # REPORT, not a gate — it never fails the build, so it can run on every
+      # push without blocking, and you read the artifact before shipping.
+      - name: Full UI audit (report only)
+        if: ${{ inputs.update_snapshots != true }}
+        continue-on-error: true
+        working-directory: tests/ui
+        run: npx playwright test audit.spec.js --reporter=list
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-audit
+          path: tests/ui/audit-report.json
+          retention-days: 14
+          if-no-files-found: ignore
+
       - name: Upload report (always, incl. diffs on failure)
         if: always()
         uses: actions/upload-artifact@v4

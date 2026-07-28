@@ -369,37 +369,39 @@ let pendingChannel = '';
 
 // Keep the entered number visible while the pane is in OTP mode — a typo should
 // be obvious the whole time they wait, not only in the flipped input.
+// The number used to be echoed in a SECOND line that also told people to tap
+// "← Use a different number" — a link already sitting right below it. Three
+// stacked sentences for one fact. The number now appears once, in the sent
+// confirmation, and the existing link is the escape hatch.
 function showOtpPhone() {
   const el = $('otp-phone');
-  if (!el) return;
-  el.innerHTML = `For <strong>${pendingPhone.replace(/</g, '&lt;')}</strong> — wrong? Tap “← Use a different number”.`;
-  el.hidden = false;
+  if (el) el.hidden = true;
 }
 
 // How the code was delivered — shared by the first send and "Resend code".
+// ONE line. The user needs a single fact — where the code went — and the number
+// so they can spot a typo. Everything else (how to check WhatsApp, how to change
+// the number) is either obvious or already a control on screen.
 function renderOtpSent(body) {
-  if (body.viaWhatsapp) {
-    $('otp-hint').innerHTML = `Code sent to WhatsApp on <strong>${pendingPhone.replace(/</g, '&lt;')}</strong> — check your WhatsApp messages.`;
+  const to = `<strong>${pendingPhone.replace(/</g, '&lt;')}</strong>`;
+  const hint = $('otp-hint');
+  if (body.devOtp) {
+    hint.textContent = `DEV MODE — your code is ${body.devOtp}`;
+  } else if (body.viaWhatsapp) {
+    hint.innerHTML = `Code sent on WhatsApp to ${to}.`;
   } else if (body.viaSms) {
-    // SMS went out — Telegram link (if any) is a quiet alternative, never
-    // auto-launched.
-    $('otp-hint').innerHTML = `<span>Code sent by SMS to <strong>${pendingPhone.replace(/</g, '&lt;')}</strong> — check your messages.</span>${body.telegramLink
-      ? ` <a class="btn-link" href="${body.telegramLink}" target="_blank" rel="noopener">Prefer Telegram? Get the code there instead</a>` : ''}`;
+    // Telegram stays a quiet alternative on its own line, never auto-launched.
+    hint.innerHTML = `Code sent by SMS to ${to}.${body.telegramLink
+      ? ` <a class="btn-link" href="${body.telegramLink}" target="_blank" rel="noopener">Use Telegram instead</a>` : ''}`;
   } else if (body.telegramLink) {
-    // The bot can only message a user who has opened it, so send them straight
-    // there. In the chat they tap Start → Share contact, and the bot replies
-    // with the code immediately (future codes then arrive automatically).
-    $('otp-hint').innerHTML =
-      `<a class="btn-link" id="tg-open" href="${body.telegramLink}" target="_blank" rel="noopener">📨 Open the Telegram bot to get your code</a>
-       <span>In the bot: tap <strong>Start</strong> → <strong>Share my phone number</strong>. Then enter your code below.</span>`;
-    // Auto-launch the bot (a fresh gesture-linked anchor click dodges popup blockers).
-    $('tg-open').click();
+    // The bot can only message someone who has opened it, so we send them
+    // straight there; the two taps inside the bot are the whole instruction.
+    hint.innerHTML = `<a class="btn-link" id="tg-open" href="${body.telegramLink}" target="_blank" rel="noopener">Open Telegram</a> — tap <strong>Start</strong>, then <strong>Share my phone number</strong>.`;
+    $('tg-open').click(); // fresh gesture-linked click dodges popup blockers
   } else if (body.viaTelegram) {
-    $('otp-hint').textContent = `Code sent to your Telegram (for ${pendingPhone}).`;
+    hint.innerHTML = `Code sent on Telegram to ${to}.`;
   } else {
-    $('otp-hint').textContent = body.devOtp
-      ? `DEV MODE — your code is ${body.devOtp}`
-      : `Code sent by SMS to ${pendingPhone}.`;
+    hint.innerHTML = `Code sent to ${to}.`;
   }
   showOtpPhone();
 }

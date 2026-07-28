@@ -77,6 +77,30 @@ export async function verifyOtp(phone: string, otp: string): Promise<{ ok: boole
   return { ok: false, error: r.error, hint: r.hint };
 }
 
+/**
+ * Password sign-in — phone + password on any device, no OTP. The server treats
+ * success exactly like a fresh OTP verify: the signing key rotates to this
+ * device. Its 401 hints are user-ready copy; surface them verbatim.
+ */
+export async function passwordLogin(
+  phone: string,
+  password: string,
+): Promise<{ ok: boolean; error?: string; hint?: string }> {
+  const id = await getIdentity();
+  const r = await post<{ ok?: boolean; observerId?: number; token?: string; error?: string; hint?: string }>(
+    '/api/observers/login',
+    { phone, password, publicKeyJwk: id.publicKeyJwk },
+    { 'x-device-id': id.deviceId },
+  );
+  if (r.ok && r.token && r.observerId) {
+    await SecureStore.setItemAsync(K_TOKEN, r.token);
+    await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
+    set({ status: 'signedIn', observerId: r.observerId, token: r.token });
+    return { ok: true };
+  }
+  return { ok: false, error: r.error, hint: r.hint };
+}
+
 /** App-start session restore: stored token first, then silent device resume. */
 export async function bootstrapAuth(): Promise<void> {
   try {

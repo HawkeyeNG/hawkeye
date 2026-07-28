@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -22,6 +22,13 @@ type Channel = 'whatsapp' | 'sms' | 'telegram';
 /**
  * OTP sign-in — the native twin of observe.html's auth step, keeping the
  * copy discipline the web flow settled on: one concise line per state.
+ *
+ * The step transition is OPTIMISTIC: tapping "Request code" flips to the OTP
+ * screen immediately and the send resolves in the background ("Sending…" →
+ * "Code sent on WhatsApp…"). Gating the transition on the network made the
+ * button spin for the whole server round-trip, which reads as a slow app —
+ * the one thing this rewrite exists to avoid. On failure we return to the
+ * phone step with the error line, so nothing is lost.
  */
 export default function SignIn() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -33,6 +40,12 @@ export default function SignIn() {
   const [tgLink, setTgLink] = useState<string | null>(null);
   const otpRef = useRef<TextInput>(null);
 
+  // Warm the server while the user is still typing: the shared host parks the
+  // Node worker when idle and the first request pays a ~5s boot. Fire-and-forget.
+  useEffect(() => {
+    fetch('https://hawkeye.com.ng/api/health').catch(() => {});
+  }, []);
+
   const sentLine = (r: RegisterResult) => {
     if (r.devOtp) return `DEV MODE — your code is ${r.devOtp}`;
     if (r.viaWhatsapp) return `Code sent on WhatsApp to ${phone}.`;
@@ -41,27 +54,29 @@ export default function SignIn() {
     return `Code sent to ${phone}.`;
   };
 
-  const onRequest = async () => {
-    setBusy(true);
-    setLine(null);
+  const onRequest = () => {
+    setLine(`Sending code to ${phone.trim()}…`);
     setTgLink(null);
-    try {
-      const r = await requestOtp(phone.trim(), channel);
-      if (r.telegramLink && !r.viaSms) {
-        setTgLink(r.telegramLink);
-        setLine('Open Telegram, tap Start, then Share my phone number.');
-      } else if (r.ok) {
-        setLine(sentLine(r));
-        setStep('otp');
-        setTimeout(() => otpRef.current?.focus(), 250);
-      } else {
-        setLine(r.hint ?? 'Could not send a code — check the number.');
-      }
-    } catch {
-      setLine('Network error — try again.');
-    } finally {
-      setBusy(false);
-    }
+    setStep('otp');
+    setTimeout(() => otpRef.current?.focus(), 250);
+    requestOtp(phone.trim(), channel)
+      .then((r) => {
+        if (r.telegramLink && !r.viaSms) {
+          // Telegram needs a one-time bot link — that UI lives on the phone step.
+          setStep('phone');
+          setTgLink(r.telegramLink);
+          setLine('Open Telegram, tap Start, then Share my phone number.');
+        } else if (r.ok) {
+          setLine(sentLine(r));
+        } else {
+          setStep('phone');
+          setLine(r.hint ?? 'Could not send a code — check the number.');
+        }
+      })
+      .catch(() => {
+        setStep('phone');
+        setLine('Network error — try again.');
+      });
   };
 
   const onVerify = async () => {

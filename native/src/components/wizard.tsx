@@ -23,16 +23,20 @@ export function Prompt({ children }: { children: ReactNode }) {
   );
 }
 
-/** A completed stage: shows the choice, tapping it returns to that stage. */
+/**
+ * A completed stage: shows the choice, tapping it returns to that stage.
+ * Sized as a real target (44px tall) rather than a thin chip — going back is a
+ * primary action in a cascading picker, not an afterthought.
+ */
 export function Crumb({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
-      className="mb-1 flex-row items-center self-start rounded-full bg-white px-3 py-1.5 active:opacity-70"
+      className="mb-2 flex-row items-center self-start rounded-2xl bg-white px-4 py-3 active:opacity-70"
     >
-      <Feather name="arrow-left" size={12} color={BRAND.leaf} />
-      <Text className="pl-1.5 text-xs font-semibold text-hawk-leaf">{label}</Text>
-      <Text className="pl-1.5 text-xs text-neutral-400">change</Text>
+      <Feather name="arrow-left" size={15} color={BRAND.leaf} />
+      <Text className="pl-2 text-sm font-bold text-hawk-leaf">{label}</Text>
+      <Text className="pl-2 text-xs font-semibold text-neutral-400">change</Text>
     </Pressable>
   );
 }

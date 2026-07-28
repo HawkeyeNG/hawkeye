@@ -297,6 +297,41 @@ observersRouter.post('/login', (req, res) => {
   res.json({ ok: true, observerId: observer.id, token });
 });
 
+// Prove the phone number on THIS account, for an in-app password reset.
+// Unlike /verify (the sign-in path) this never creates an observer, never
+// rotates the signing key and never re-binds the device: it only confirms the
+// caller's own number and re-issues their token as a fresh `otp` session, which
+// is what lets /set-password below skip the current password.
+observersRouter.post('/verify-owner', requireObserver, async (req, res) => {
+  const phone = normalizePhone(req.body?.phone);
+  const otp = String(req.body?.otp || '');
+  if (!phone) return res.status(400).json({ error: 'invalid_phone' });
+
+  const hash = phoneHash(phone);
+  // Checked BEFORE the code, so a wrong number can neither consume nor
+  // brute-force another account's OTP.
+  if (hash !== req.observer.phone_hash) {
+    return res.status(403).json({
+      error: 'not_your_number',
+      hint: "That number isn't the one registered to this observer ID.",
+    });
+  }
+  const row = db.prepare('SELECT * FROM otps WHERE phone_hash = ?').get(hash);
+  if (!row || row.expires_at < Date.now()) return res.status(400).json({ error: 'otp_expired' });
+  if (row.attempts >= 5) return res.status(429).json({ error: 'too_many_attempts' });
+  const codeOk = row.sc_reference ? await confirmScOtp(row.sc_reference, otp) : row.code === otp;
+  if (!codeOk) {
+    db.prepare('UPDATE otps SET attempts = attempts + 1 WHERE phone_hash = ?').run(hash);
+    return res.status(400).json({ error: 'otp_incorrect' });
+  }
+  db.prepare('DELETE FROM otps WHERE phone_hash = ?').run(hash);
+
+  const deviceId = String(req.headers['x-device-id'] || '').slice(0, 64) || null;
+  notifyChat(chatIdByHash(hash),
+    `🔑 A password reset was authorised on your Hawkeye ID (observer #${req.observer.id}). If this wasn't you, change your password now.`);
+  res.json({ ok: true, observerId: req.observer.id, token: issueToken(req.observer.id, deviceId, 'otp') });
+});
+
 // Set or change the password. Changing an existing one needs the current
 // password — unless this session was minted by a fresh OTP/Telegram phone proof
 // within 15 min (that IS the forgot-password reset path).

@@ -38,7 +38,16 @@ export default function SignIn() {
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const [tgLink, setTgLink] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
   const otpRef = useRef<TextInput>(null);
+
+  // Resend cooldown — protects the backend's OTP rate limit from tap-spam and
+  // gives the first send a fair chance to arrive (NG SMS can take ~30s).
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((c) => c - 1), 1000);
+    return () => clearInterval(t);
+  }, [cooldown > 0]);
 
   // Warm the server while the user is still typing: the shared host parks the
   // Node worker when idle and the first request pays a ~5s boot. Fire-and-forget.
@@ -54,11 +63,9 @@ export default function SignIn() {
     return `Code sent to ${phone}.`;
   };
 
-  const onRequest = () => {
-    setLine(`Sending code to ${phone.trim()}…`);
-    setTgLink(null);
-    setStep('otp');
-    setTimeout(() => otpRef.current?.focus(), 250);
+  const send = (verb: string) => {
+    setLine(`${verb} code to ${phone.trim()}…`);
+    setCooldown(30);
     requestOtp(phone.trim(), channel)
       .then((r) => {
         if (r.telegramLink && !r.viaSms) {
@@ -77,6 +84,13 @@ export default function SignIn() {
         setStep('phone');
         setLine('Network error — try again.');
       });
+  };
+
+  const onRequest = () => {
+    setTgLink(null);
+    setStep('otp');
+    setTimeout(() => otpRef.current?.focus(), 250);
+    send('Sending');
   };
 
   const onVerify = async () => {
@@ -201,9 +215,18 @@ export default function SignIn() {
                   <Text className="text-base font-bold text-hawk-gold">Verify</Text>
                 )}
               </Pressable>
-              <Pressable className="mt-4 items-center" onPress={() => setStep('phone')}>
-                <Text className="text-sm font-semibold text-hawk-leaf">Use a different number</Text>
-              </Pressable>
+              <View className="mt-4 flex-row items-center justify-center gap-6">
+                <Pressable disabled={cooldown > 0} onPress={() => send('Re-sending')}>
+                  <Text
+                    className={`text-sm font-semibold ${cooldown > 0 ? 'text-neutral-400' : 'text-hawk-leaf'}`}
+                  >
+                    {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => setStep('phone')}>
+                  <Text className="text-sm font-semibold text-hawk-leaf">Use a different number</Text>
+                </Pressable>
+              </View>
             </>
           )}
 

@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
+import { readSheet, type SheetRead } from '@/lib/ocr';
 import type { Shot } from '@/lib/submit';
 import { getSubmitFix } from '@/lib/location';
 import { BRAND } from '@/lib/api';
@@ -22,7 +23,7 @@ import { BRAND } from '@/lib/api';
  * GPS acquisition never hangs — bounded tiers live in lib/location. A failed
  * fix is a clear error with retry; Cancel is NEVER disabled.
  */
-export type Media = Shot & { type: 'image' | 'video' };
+export type Media = Shot & { type: 'image' | 'video'; read?: SheetRead | null };
 
 /**
  * Video compression happens AT THE ENCODER, not by cutting recordings short:
@@ -63,6 +64,10 @@ type Props = {
   onCancel: () => void;
   /** Practice only: proceed without a GPS fix instead of blocking on it. */
   requireFix?: boolean;
+  /** Run on-device text recognition over the shot (the result-sheet step).
+   *  Party codes let it propose the figures it reads. */
+  readDocument?: boolean;
+  partyCodes?: string[];
   /** Optional third control beside Cancel (practice's "Use a sample"). */
   extraAction?: { label: string; onPress: () => void };
 };
@@ -84,6 +89,8 @@ export function CaptureCamera({
   onCapture,
   onCancel,
   requireFix = true,
+  readDocument,
+  partyCodes,
   extraAction,
 }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
@@ -94,6 +101,8 @@ export function CaptureCamera({
   const [line, setLine] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ uri: string; capturedAt: number } | null>(null);
   const [fixState, setFixState] = useState<'pending' | 'ok' | 'failed'>('pending');
+  /** Result of on-device recognition on the current preview. */
+  const [read, setRead] = useState<SheetRead | null | undefined>(undefined);
   const [elapsed, setElapsed] = useState(0);
   const cam = useRef<CameraView>(null);
   const fixRef = useRef<Promise<{ lat: number; lng: number } | null> | null>(null);
@@ -176,10 +185,25 @@ export function CaptureCamera({
   const retake = () => {
     gen.current++; // abort any pending confirmation before it can fire onCapture
     setPreview(null);
+    setRead(undefined);
     setLine(null);
     setBusy(false);
     setFixState('pending');
   };
+
+  // Recognise the sheet while the observer is still looking at it, so the
+  // verdict arrives before they commit — not after the upload.
+  useEffect(() => {
+    if (!readDocument || !preview) return;
+    let live = true;
+    const g = gen.current;
+    readSheet(preview.uri, partyCodes ?? []).then((r) => {
+      if (live && g === gen.current) setRead(r);
+    });
+    return () => {
+      live = false;
+    };
+  }, [readDocument, preview, partyCodes]);
 
   const usePhoto = async () => {
     if (!preview || busy) return;
@@ -201,6 +225,7 @@ export function CaptureCamera({
       capturedAt: preview.capturedAt,
       ...(fix ?? { lat: 0, lng: 0 }),
       type: 'image',
+      read,
     });
   };
 
@@ -272,6 +297,28 @@ export function CaptureCamera({
                   ? 'No GPS fix — move near a window or outside, then retry.'
                   : confirmHint}
             </Text>
+            {/* On-device read of the sheet — a warning while it can still be
+                acted on. Never blocks: the server re-reads the upload anyway. */}
+            {readDocument && read !== undefined ? (
+              <View className="flex-row items-center pt-2">
+                <Feather
+                  name={read && read.numericLines >= 3 ? 'check-circle' : 'alert-triangle'}
+                  size={13}
+                  color={read && read.numericLines >= 3 ? '#6ee7b7' : '#fcd34d'}
+                />
+                <Text className="pl-1.5 text-xs text-neutral-200">
+                  {read === null
+                    ? 'Could not read this sheet on-device — send it anyway if it looks clear.'
+                    : read.numericLines >= 3
+                      ? `Readable — ${read.numericLines} lines with figures${
+                          Object.keys(read.counts).length
+                            ? `, ${Object.keys(read.counts).length} party total(s) recognised`
+                            : ''
+                        }.`
+                      : 'Little text detected — check focus and glare, then retake.'}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
         <View className="absolute inset-x-0 bottom-0 flex-row items-center justify-between px-6 pb-12">

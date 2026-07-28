@@ -92,6 +92,9 @@ export default function ReportResult() {
 
   // -- steps 2/3: photos ----------------------------------------------------
   const [sheet, setSheet] = useState<Shot | null>(null);
+  /** Party codes the on-device read proposed, so the UI can say which
+   *  figures came off the sheet rather than from the observer. */
+  const [readCodes, setReadCodes] = useState<string[]>([]);
   const [venue, setVenue] = useState<Shot | null>(null);
   /** True while re-shooting a single photo from the review step. */
   const [retaking, setRetaking] = useState(false);
@@ -103,7 +106,7 @@ export default function ReportResult() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    if (step === 'votes' && parties.length === 0) {
+    if ((step === 'votes' || step === 'sheet') && parties.length === 0) {
       api.parties().then(setParties).catch(() => {});
       // Official INEC emblems (same manifest the web app uses) — several party
       // names read alike; the emblem is how observers actually recognise them.
@@ -232,9 +235,25 @@ export default function ReportResult() {
             ? 'Is every figure readable? Blurry photos cannot back a report.'
             : 'Is the polling unit itself visible — the building, banner or crowd? This photo proves you were there.'
         }
+        readDocument={isSheet}
+        partyCodes={parties.map((p) => p.code)}
         onCapture={(shot) => {
           if (isSheet) {
             setSheet(shot);
+            // Propose what the sheet said; never overwrite anything already
+            // typed, and leave every field editable.
+            const proposed = shot.read?.counts ?? {};
+            const codes = Object.keys(proposed);
+            if (codes.length) {
+              setCounts((c) => {
+                const next = { ...c };
+                for (const [code, n] of Object.entries(proposed)) {
+                  if (!next[code]) next[code] = String(n);
+                }
+                return next;
+              });
+              setReadCodes(codes);
+            }
             setStep(retaking ? 'review' : 'venue');
           } else {
             setVenue(shot);
@@ -425,6 +444,11 @@ export default function ReportResult() {
                   <Text className="text-base font-semibold text-hawk-ink">{p.code}</Text>
                   <Text className="text-xs text-neutral-500" numberOfLines={1}>{p.name}</Text>
                 </View>
+                {readCodes.includes(p.code) ? (
+                  <View className="mr-2 rounded-full bg-hawk-mist px-2 py-0.5">
+                    <Text className="text-[9px] font-bold text-hawk-leaf">FROM SHEET</Text>
+                  </View>
+                ) : null}
                 <TextInput
                   className="w-24 rounded-xl bg-hawk-mist px-3 py-2 text-center text-lg font-bold text-hawk-ink"
                   placeholder="0"

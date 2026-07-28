@@ -43,6 +43,9 @@ type Props = {
   allowVideo?: boolean;
   /** Show a document framing guide (result-sheet step). */
   frameGuide?: boolean;
+  /** Question asked on the preview-confirm screen — must match what was shot. */
+  confirmTitle?: string;
+  confirmHint?: string;
   onCapture: (media: Media) => void;
   onCancel: () => void;
 };
@@ -54,7 +57,16 @@ const getFix = async (): Promise<{ lat: number; lng: number } | null> => {
   return getSubmitFix();
 };
 
-export function CaptureCamera({ title, hint, allowVideo, frameGuide, onCapture, onCancel }: Props) {
+export function CaptureCamera({
+  title,
+  hint,
+  allowVideo,
+  frameGuide,
+  confirmTitle = 'Check the photo',
+  confirmHint = 'Is every figure readable? Blurry photos cannot back a report.',
+  onCapture,
+  onCancel,
+}: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMic] = useMicrophonePermissions();
   const [mode, setMode] = useState<'picture' | 'video'>('picture');
@@ -194,15 +206,19 @@ export function CaptureCamera({ title, hint, allowVideo, frameGuide, onCapture, 
     return (
       <View className="flex-1 bg-black">
         <Image source={{ uri: preview.uri }} style={{ flex: 1 }} contentFit="contain" />
-        <View className="absolute inset-x-0 top-0 px-5 pt-14">
-          <Text className="text-lg font-bold text-white">Check the photo</Text>
-          <Text className="pt-1 text-sm text-neutral-300">
-            {busy
-              ? 'Confirming your location — a few seconds…'
-              : fixState === 'failed'
-                ? 'No GPS fix — move near a window or outside, then retry.'
-                : 'Is every figure readable? Blurry photos cannot back a report.'}
-          </Text>
+        {/* Scrim card: white-on-photo is unreadable against a bright result
+            sheet — this text is an instruction, so it must always win. */}
+        <View className="absolute inset-x-0 top-0 px-4 pt-14">
+          <View className="rounded-2xl bg-black/75 px-4 py-3">
+            <Text className="text-lg font-bold text-white">{confirmTitle}</Text>
+            <Text className="pt-1 text-sm text-neutral-200">
+              {busy
+                ? 'Confirming your location — a few seconds…'
+                : fixState === 'failed'
+                  ? 'No GPS fix — move near a window or outside, then retry.'
+                  : confirmHint}
+            </Text>
+          </View>
         </View>
         <View className="absolute inset-x-0 bottom-0 flex-row items-center justify-between px-6 pb-12">
           <Pressable className="rounded-2xl bg-white/15 px-6 py-3.5" onPress={retake}>
@@ -253,9 +269,11 @@ export function CaptureCamera({ title, hint, allowVideo, frameGuide, onCapture, 
         </View>
       ) : null}
 
-      <View className="absolute inset-x-0 top-0 px-5 pt-14">
-        <Text className="text-lg font-bold text-white">{title}</Text>
-        <Text className="pt-1 text-sm text-neutral-300">{line ?? hint}</Text>
+      <View className="absolute inset-x-0 top-0 px-4 pt-14">
+        <View className="rounded-2xl bg-black/70 px-4 py-3">
+          <Text className="text-lg font-bold text-white">{title}</Text>
+          <Text className="pt-1 text-sm text-neutral-200">{line ?? hint}</Text>
+        </View>
       </View>
 
       {allowVideo ? (

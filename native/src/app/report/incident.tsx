@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useMemo, useState } from 'react';
@@ -51,6 +52,41 @@ export default function ReportIncident() {
     () => !!kind && (description.trim().length > 0 || media.length > 0),
     [kind, description, media],
   );
+
+  /**
+   * Gallery/files picker — parity with the PWA's
+   * <input type="file" accept="image/*,video/*" multiple>. Evidence often
+   * already exists on the phone (filmed before opening Hawkeye, or received
+   * from someone at the unit), so camera-only would lose real reports.
+   *
+   * Unlike result submissions, incidents carry NO photo-location coherence
+   * requirement server-side — GPS is an optional stamp on the report itself —
+   * so a library file is a legitimate source here. Result sheets stay
+   * camera-only by design.
+   */
+  const pickFromLibrary = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      setLine('Allow photo access to attach files from your device.');
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_MEDIA - media.length,
+      quality: 0.7,
+      videoMaxDuration: 90,
+    });
+    if (res.canceled) return;
+    const picked: Media[] = res.assets.map((a) => ({
+      uri: a.uri,
+      capturedAt: Date.now(),
+      lat: 0,
+      lng: 0,
+      type: a.type === 'video' ? 'video' : 'image',
+    }));
+    setMedia((arr) => [...arr, ...picked].slice(0, MAX_MEDIA));
+  };
 
   const onSubmit = async () => {
     if (!kind) return;
@@ -242,13 +278,22 @@ export default function ReportIncident() {
               </View>
             ))}
             {media.length < MAX_MEDIA ? (
-              <Pressable
-                className="mb-2 h-[76px] w-[76px] items-center justify-center rounded-xl border-2 border-dashed border-hawk-leaf bg-white"
-                onPress={() => setCamera(true)}
-              >
-                <Feather name="camera" size={20} color={BRAND.leaf} />
-                <Text className="pt-1 text-[10px] font-semibold text-hawk-leaf">Add</Text>
-              </Pressable>
+              <>
+                <Pressable
+                  className="mb-2 mr-2 h-[76px] w-[76px] items-center justify-center rounded-xl border-2 border-dashed border-hawk-leaf bg-white"
+                  onPress={() => setCamera(true)}
+                >
+                  <Feather name="camera" size={20} color={BRAND.leaf} />
+                  <Text className="pt-1 text-[10px] font-semibold text-hawk-leaf">Camera</Text>
+                </Pressable>
+                <Pressable
+                  className="mb-2 h-[76px] w-[76px] items-center justify-center rounded-xl border-2 border-dashed border-hawk-leaf bg-white"
+                  onPress={pickFromLibrary}
+                >
+                  <Feather name="image" size={20} color={BRAND.leaf} />
+                  <Text className="pt-1 text-[10px] font-semibold text-hawk-leaf">Upload</Text>
+                </Pressable>
+              </>
             ) : null}
           </View>
 

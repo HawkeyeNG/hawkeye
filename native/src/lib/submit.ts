@@ -7,9 +7,10 @@
  * Same key order, same code-unit sort, plain JSON.stringify.
  */
 import { sha256 } from '@noble/hashes/sha2.js';
+import { File } from 'expo-file-system';
+import * as SecureStore from 'expo-secure-store';
 
 import { getIdentity } from '@/lib/identity';
-import * as SecureStore from 'expo-secure-store';
 
 const BASE = 'https://hawkeye.com.ng';
 
@@ -55,10 +56,16 @@ export function canonicalPayload(p: {
 
 const toHex = (u8: Uint8Array) => Array.from(u8, (b) => b.toString(16).padStart(2, '0')).join('');
 
-/** sha256 of a photo file's bytes, hex — matches the server's sha256Hex(buffer). */
+/**
+ * sha256 of a photo file's bytes, hex — matches the server's sha256Hex(buffer).
+ *
+ * Reads through expo-file-system, NOT fetch(). On Android, fetch() against a
+ * file:// URI rejects with "Network request failed" — which is exactly how this
+ * surfaced: the throw happened here, before any upload, and the caller's catch
+ * reported a network error for a submission that never left the device.
+ */
 export async function sha256HexOfFile(uri: string): Promise<string> {
-  const res = await fetch(uri);
-  const buf = await res.arrayBuffer();
+  const buf = await new File(uri).arrayBuffer();
   return toHex(sha256(new Uint8Array(buf)));
 }
 
@@ -111,8 +118,21 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   const token = await SecureStore.getItemAsync('hawkeye.auth.token');
   if (!token) return { ok: false, error: 'not_signed_in', message: 'Sign in first.' };
 
-  const imageSha256 = await sha256HexOfFile(input.sheet.uri);
-  const venueImageSha256 = await sha256HexOfFile(input.venue.uri);
+  // Reading and hashing happen BEFORE the network. Failures here were being
+  // reported as "network error" — name the stage so the next failure is
+  // diagnosable from the screen instead of by guesswork.
+  let imageSha256: string;
+  let venueImageSha256: string;
+  try {
+    imageSha256 = await sha256HexOfFile(input.sheet.uri);
+    venueImageSha256 = await sha256HexOfFile(input.venue.uri);
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'photo_read_failed',
+      message: `Could not read the captured photos — retake them. (${e instanceof Error ? e.message : String(e)})`,
+    };
+  }
 
   const payload = canonicalPayload({
     puCode: input.puCode,
@@ -156,6 +176,9 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
       headers: { authorization: `Bearer ${token}`, 'x-device-id': id.deviceId },
       body: form,
     });
+    if (res.status === 401) {
+      return { ok: false, error: 'session_expired', message: 'Session expired — sign in again.' };
+    }
     const body = (await res.json().catch(() => ({}))) as {
       ok?: boolean;
       submissionId?: number;
@@ -175,7 +198,11 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
       message = `Too soon after the last report — retry in ${body.retryAfterS}s.`;
     }
     return { ok: false, error: code, message };
-  } catch {
-    return { ok: false, error: 'network', message: 'Network error — your report was NOT sent. Retry.' };
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'network',
+      message: `Upload failed — your report was NOT sent. Retry. (${e instanceof Error ? e.message : String(e)})`,
+    };
   }
 }

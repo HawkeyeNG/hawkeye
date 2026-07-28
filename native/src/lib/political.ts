@@ -72,9 +72,17 @@ const PC: Record<string, string> = {
   AA: '#3e2723',
   BOOT: '#37474f',
   Accord: '#00838f',
+  /** INEC's ballot code for Accord — political_data uses it for Osun. */
+  A: '#00838f',
 };
 
 export const partyColor = (p: string) => PC[p] || '#9aa7a0';
+
+/** Ballot codes that are not the party's common name. */
+const PARTY_NAME: Record<string, string> = { A: 'Accord' };
+
+/** Display label for a party code — "A" alone tells a reader nothing. */
+export const partyName = (p: string) => (PARTY_NAME[p] ? `${PARTY_NAME[p]} (${p})` : p);
 
 let cache: Promise<{ data: Political; logos: Record<string, string> }> | null = null;
 

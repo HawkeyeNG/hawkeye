@@ -22,6 +22,9 @@ const ACTIONS: { key: ReportAction; label: string; sub: string; icon: keyof type
   { key: 'collation', label: 'Report a Collation', sub: 'Ward or LGA collation announcement', icon: 'layers' },
 ];
 
+/** Module-level so the array identity is stable across renders. */
+const SNAP_POINTS = ['42%'];
+
 export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
   { onAction },
   ref,
@@ -39,7 +42,14 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
     <BottomSheet
       ref={ref}
       index={-1}
-      snapPoints={['42%']}
+      snapPoints={SNAP_POINTS}
+      // enableDynamicSizing defaults to TRUE in v5: with a BottomSheetView the
+      // sheet measures its content on mount and settles at that height BEFORE
+      // honouring index={-1}, which is why it appeared half-open on every
+      // reload without anyone touching the camera button. Explicit snap points
+      // make dynamic sizing redundant anyway.
+      enableDynamicSizing={false}
+      animateOnMount={false}
       enablePanDownToClose
       backdropComponent={backdrop}
       handleIndicatorStyle={{ backgroundColor: '#9db5a7' }}

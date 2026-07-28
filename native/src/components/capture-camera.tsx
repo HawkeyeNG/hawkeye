@@ -75,6 +75,7 @@ export function CaptureCamera({
   const [line, setLine] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ uri: string; capturedAt: number } | null>(null);
   const [fixState, setFixState] = useState<'pending' | 'ok' | 'failed'>('pending');
+  const [elapsed, setElapsed] = useState(0);
   const cam = useRef<CameraView>(null);
   const fixRef = useRef<Promise<{ lat: number; lng: number } | null> | null>(null);
   const cancelled = useRef(false);
@@ -84,6 +85,18 @@ export function CaptureCamera({
   // silently advancing the flow to the next step under their feet.
   const gen = useRef(0);
   useEffect(() => () => void (cancelled.current = true), []);
+
+  // Live elapsed counter while recording — an observer filming under pressure
+  // needs to see time passing and how close the 90s cap is, not guess.
+  useEffect(() => {
+    if (!recording) {
+      setElapsed(0);
+      return;
+    }
+    const started = Date.now();
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 250);
+    return () => clearInterval(t);
+  }, [recording]);
 
   const cancel = () => {
     cancelled.current = true;
@@ -275,6 +288,22 @@ export function CaptureCamera({
           <Text className="pt-1 text-sm text-neutral-200">{line ?? hint}</Text>
         </View>
       </View>
+
+      {recording ? (
+        <View className="absolute inset-x-0 top-40 items-center">
+          <View className="flex-row items-center rounded-full bg-red-600 px-4 py-2">
+            <View className="mr-2 h-2.5 w-2.5 rounded-full bg-white" />
+            <Text className="text-base font-bold tabular-nums text-white">
+              {String(Math.floor(elapsed / 60)).padStart(2, '0')}:
+              {String(elapsed % 60).padStart(2, '0')}
+            </Text>
+            <Text className="pl-2 text-xs font-semibold text-red-100">
+              / {String(Math.floor(VIDEO_MAX_S / 60)).padStart(2, '0')}:
+              {String(VIDEO_MAX_S % 60).padStart(2, '0')}
+            </Text>
+          </View>
+        </View>
+      ) : null}
 
       {allowVideo ? (
         <View className="absolute inset-x-0 bottom-36 flex-row justify-center gap-2">

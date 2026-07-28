@@ -83,15 +83,24 @@ export default function ReportResult() {
   // -- steps 2/3: photos ----------------------------------------------------
   const [sheet, setSheet] = useState<Shot | null>(null);
   const [venue, setVenue] = useState<Shot | null>(null);
+  /** True while re-shooting a single photo from the review step. */
+  const [retaking, setRetaking] = useState(false);
 
   // -- step 4: votes --------------------------------------------------------
   const [parties, setParties] = useState<Party[]>([]);
+  const [logos, setLogos] = useState<Record<string, string>>({});
   const [counts, setCounts] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (step === 'votes' && parties.length === 0) {
       api.parties().then(setParties).catch(() => {});
+      // Official INEC emblems (same manifest the web app uses) — several party
+      // names read alike; the emblem is how observers actually recognise them.
+      fetch('https://hawkeye.com.ng/logos/manifest.json')
+        .then((r) => r.json())
+        .then(setLogos)
+        .catch(() => {});
     }
   }, [step, parties.length]);
 
@@ -186,6 +195,9 @@ export default function ReportResult() {
     const isSheet = step === 'sheet';
     return (
       <CaptureCamera
+        // Fresh mount per step: without the key, the venue step inherits the
+        // sheet step's internal preview/busy state (same element position).
+        key={step}
         title={isSheet ? 'Photo 1 of 2 — the result sheet' : 'Photo 2 of 2 — the surroundings'}
         frameGuide={isSheet}
         hint={
@@ -196,13 +208,21 @@ export default function ReportResult() {
         onCapture={(shot) => {
           if (isSheet) {
             setSheet(shot);
-            setStep('venue');
+            setStep(retaking ? 'review' : 'venue');
           } else {
             setVenue(shot);
-            setStep('votes');
+            setStep(retaking ? 'review' : 'votes');
+          }
+          setRetaking(false);
+        }}
+        onCancel={() => {
+          if (retaking) {
+            setRetaking(false);
+            setStep('review');
+          } else {
+            setStep(isSheet ? 'unit' : 'sheet');
           }
         }}
-        onCancel={() => setStep(isSheet ? 'unit' : 'sheet')}
       />
     );
   }
@@ -326,6 +346,21 @@ export default function ReportResult() {
             />
             {filteredParties.slice(0, 30).map((p) => (
               <View key={p.code} className="mb-2 flex-row items-center rounded-2xl bg-white px-4 py-2">
+                {logos[p.code] ? (
+                  <Image
+                    source={{ uri: `https://hawkeye.com.ng/${logos[p.code]}` }}
+                    style={{ width: 30, height: 30, borderRadius: 6, marginRight: 10 }}
+                    contentFit="contain"
+                    cachePolicy="disk"
+                  />
+                ) : (
+                  <View
+                    className="mr-2.5 items-center justify-center rounded-md bg-hawk-mist"
+                    style={{ width: 30, height: 30 }}
+                  >
+                    <Text className="text-[10px] font-bold text-hawk-leaf">{p.code.slice(0, 3)}</Text>
+                  </View>
+                )}
                 <View className="flex-1 pr-2">
                   <Text className="text-base font-semibold text-hawk-ink">{p.code}</Text>
                   <Text className="text-xs text-neutral-500" numberOfLines={1}>{p.name}</Text>
@@ -360,12 +395,23 @@ export default function ReportResult() {
             <View className="mb-3 flex-row gap-3">
               {[sheet, venue].map((s, i) =>
                 s ? (
-                  <View key={i} className="flex-1 overflow-hidden rounded-2xl bg-white">
+                  <Pressable
+                    key={i}
+                    disabled={busy}
+                    className="flex-1 overflow-hidden rounded-2xl bg-white active:opacity-80"
+                    onPress={() => {
+                      setRetaking(true);
+                      setStep(i === 0 ? 'sheet' : 'venue');
+                    }}
+                  >
                     <Image source={{ uri: s.uri }} style={{ width: '100%', height: 110 }} contentFit="cover" />
-                    <Text className="px-3 py-2 text-xs font-semibold text-neutral-500">
-                      {i === 0 ? 'Result sheet' : 'Venue'}
-                    </Text>
-                  </View>
+                    <View className="flex-row items-center justify-between px-3 py-2">
+                      <Text className="text-xs font-semibold text-neutral-500">
+                        {i === 0 ? 'Result sheet' : 'Venue'}
+                      </Text>
+                      <Text className="text-xs font-bold text-hawk-leaf">Retake</Text>
+                    </View>
+                  </Pressable>
                 ) : null,
               )}
             </View>

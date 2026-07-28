@@ -103,7 +103,9 @@ export default function ReportIncident() {
         );
       }
     } catch {
-      setLine('Network error — nothing was sent. Retry.');
+      // A thrown fetch mid-upload is usually a reset connection: weak network,
+      // or a file past the server's 30MB cap (why video is capped at 720p/25MB).
+      setLine('Upload failed — nothing was sent. On weak network, try fewer or shorter clips.');
     } finally {
       setBusy(false);
     }

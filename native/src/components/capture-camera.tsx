@@ -1,41 +1,89 @@
 import { Feather } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
 import * as Location from 'expo-location';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import type { Shot } from '@/lib/submit';
 import { BRAND } from '@/lib/api';
 
 /**
- * In-app capture with a GPS stamp taken at shutter time — the property the
+ * In-app capture with a GPS stamp taken at capture time — the property the
  * backend checks (photo-location coherence): every photo carries the fix of
  * where it was actually taken, so gallery imports can't back a submission.
  *
- * With `allowVideo` a Photo|Video toggle appears (incident evidence). Video
- * records up to VIDEO_MAX_S seconds, tap the red button again to stop.
+ * Photos go through a PREVIEW-CONFIRM step (Use photo / Retake): an observer
+ * must look at the shot before it counts — a blurry EC8A is worthless
+ * evidence — and it makes each step transition explicit instead of instant.
+ *
+ * GPS acquisition never hangs: last-known fix first (the previous capture
+ * step usually left a seconds-old one), then a 15s High attempt, then a 10s
+ * Balanced attempt, then a clear error with the option to retry or cancel.
+ * Cancel is NEVER disabled.
  */
 export type Media = Shot & { type: 'image' | 'video' };
 
 const VIDEO_MAX_S = 30;
+const VIDEO_MAX_BYTES = 25 * 1024 * 1024; // server caps 30MB/file, edge 33MB/body
 
 type Props = {
   title: string;
   hint: string;
   allowVideo?: boolean;
+  /** Show a document framing guide (result-sheet step). */
+  frameGuide?: boolean;
   onCapture: (media: Media) => void;
   onCancel: () => void;
 };
 
-export function CaptureCamera({ title, hint, allowVideo, onCapture, onCancel }: Props) {
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), ms))]);
+}
+
+/** Fast, bounded fix: last-known (≤60s old) → High (15s) → Balanced (10s). */
+async function getFix(): Promise<{ lat: number; lng: number } | null> {
+  const perm = await Location.requestForegroundPermissionsAsync();
+  if (!perm.granted) return null;
+  try {
+    const last = await Location.getLastKnownPositionAsync({ maxAge: 60_000 });
+    if (last) return { lat: last.coords.latitude, lng: last.coords.longitude };
+  } catch {
+    /* fall through to live fixes */
+  }
+  const high = await withTimeout(
+    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+    15_000,
+  ).catch(() => null);
+  if (high) return { lat: high.coords.latitude, lng: high.coords.longitude };
+  const balanced = await withTimeout(
+    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+    10_000,
+  ).catch(() => null);
+  if (balanced) return { lat: balanced.coords.latitude, lng: balanced.coords.longitude };
+  return null;
+}
+
+export function CaptureCamera({ title, hint, allowVideo, frameGuide, onCapture, onCancel }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMic] = useMicrophonePermissions();
   const [mode, setMode] = useState<'picture' | 'video'>('picture');
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const [line, setLine] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ uri: string; capturedAt: number } | null>(null);
+  const [fixState, setFixState] = useState<'pending' | 'ok' | 'failed'>('pending');
   const cam = useRef<CameraView>(null);
+  const fixRef = useRef<Promise<{ lat: number; lng: number } | null> | null>(null);
+  const cancelled = useRef(false);
+  useEffect(() => () => void (cancelled.current = true), []);
+
+  const cancel = () => {
+    cancelled.current = true;
+    if (recording) cam.current?.stopRecording();
+    onCancel();
+  };
 
   if (!permission) return <View className="flex-1 bg-black" />;
   if (!permission.granted) {
@@ -48,17 +96,19 @@ export function CaptureCamera({ title, hint, allowVideo, onCapture, onCancel }: 
         <Pressable className="mt-5 rounded-2xl bg-hawk-gold px-6 py-3" onPress={requestPermission}>
           <Text className="text-base font-bold text-hawk-ink">Allow camera</Text>
         </Pressable>
-        <Pressable className="mt-3" onPress={onCancel}>
+        <Pressable className="mt-3" onPress={cancel}>
           <Text className="text-sm text-neutral-400">Cancel</Text>
         </Pressable>
       </View>
     );
   }
 
-  const getFix = async () => {
-    const perm = await Location.requestForegroundPermissionsAsync();
-    if (!perm.granted) return null;
-    return Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+  const startFix = () => {
+    setFixState('pending');
+    fixRef.current = getFix().then((f) => {
+      if (!cancelled.current) setFixState(f ? 'ok' : 'failed');
+      return f;
+    });
   };
 
   const shootPhoto = async () => {
@@ -66,26 +116,31 @@ export function CaptureCamera({ title, hint, allowVideo, onCapture, onCancel }: 
     setBusy(true);
     setLine('Hold still…');
     try {
-      const photo = await cam.current!.takePictureAsync({ quality: 0.8 });
-      setLine('Getting your location…');
-      const fix = await getFix();
-      if (!fix) {
-        setLine('Location is required — evidence must prove where it was taken.');
-        setBusy(false);
-        return;
-      }
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      onCapture({
-        uri: photo.uri,
-        capturedAt: Date.now(),
-        lat: fix.coords.latitude,
-        lng: fix.coords.longitude,
-        type: 'image',
-      });
+      const photo = await cam.current!.takePictureAsync({ quality: 0.7 });
+      if (cancelled.current) return;
+      startFix(); // resolve GPS while the observer reviews the shot
+      setPreview({ uri: photo.uri, capturedAt: Date.now() });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {
       setLine('Capture failed — try again.');
+    } finally {
       setBusy(false);
     }
+  };
+
+  const usePhoto = async () => {
+    if (!preview || busy) return;
+    setBusy(true);
+    setLine('Confirming your location…');
+    const fix = await fixRef.current;
+    if (cancelled.current) return;
+    if (!fix) {
+      setBusy(false);
+      setFixState('failed');
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onCapture({ uri: preview.uri, capturedAt: preview.capturedAt, ...fix, type: 'image' });
   };
 
   const toggleVideo = async () => {
@@ -105,25 +160,23 @@ export function CaptureCamera({ title, hint, allowVideo, onCapture, onCancel }: 
     setRecording(true);
     setLine(`Recording — up to ${VIDEO_MAX_S}s. Tap again to stop.`);
     try {
-      // Grab the fix while recording runs; both resolve before onCapture.
       const fixP = getFix();
-      const video = await cam.current!.recordAsync({ maxDuration: VIDEO_MAX_S });
+      const video = await cam.current!.recordAsync({
+        maxDuration: VIDEO_MAX_S,
+        maxFileSize: VIDEO_MAX_BYTES,
+      });
       setRecording(false);
+      if (cancelled.current) return;
       setLine('Saving…');
       const fix = await fixP;
+      if (cancelled.current) return;
       if (!video?.uri || !fix) {
-        setLine(fix ? 'Recording failed — try again.' : 'Location is required for evidence.');
+        setLine(fix ? 'Recording failed — try again.' : 'No GPS fix — move near a window and retry.');
         setBusy(false);
         return;
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      onCapture({
-        uri: video.uri,
-        capturedAt: Date.now(),
-        lat: fix.coords.latitude,
-        lng: fix.coords.longitude,
-        type: 'video',
-      });
+      onCapture({ uri: video.uri, capturedAt: Date.now(), ...fix, type: 'video' });
     } catch {
       setRecording(false);
       setLine('Recording failed — try again.');
@@ -131,9 +184,68 @@ export function CaptureCamera({ title, hint, allowVideo, onCapture, onCancel }: 
     }
   };
 
+  // ---- photo preview-confirm --------------------------------------------
+  if (preview) {
+    return (
+      <View className="flex-1 bg-black">
+        <Image source={{ uri: preview.uri }} style={{ flex: 1 }} contentFit="contain" />
+        <View className="absolute inset-x-0 top-0 px-5 pt-14">
+          <Text className="text-lg font-bold text-white">Check the photo</Text>
+          <Text className="pt-1 text-sm text-neutral-300">
+            {fixState === 'failed'
+              ? 'No GPS fix — move near a window or outside, then retry.'
+              : 'Is every figure readable? Blurry photos cannot back a report.'}
+          </Text>
+        </View>
+        <View className="absolute inset-x-0 bottom-0 flex-row items-center justify-between px-6 pb-12">
+          <Pressable
+            className="rounded-2xl bg-white/15 px-6 py-3.5"
+            onPress={() => {
+              setPreview(null);
+              setLine(null);
+              setBusy(false);
+            }}
+          >
+            <Text className="text-base font-semibold text-white">Retake</Text>
+          </Pressable>
+          {fixState === 'failed' ? (
+            <Pressable
+              className="rounded-2xl bg-hawk-gold px-6 py-3.5"
+              onPress={() => {
+                startFix();
+                usePhoto();
+              }}
+            >
+              <Text className="text-base font-bold text-hawk-ink">Retry GPS</Text>
+            </Pressable>
+          ) : (
+            <Pressable className="rounded-2xl bg-hawk-gold px-6 py-3.5" onPress={usePhoto} disabled={busy}>
+              {busy ? (
+                <ActivityIndicator color={BRAND.ink} />
+              ) : (
+                <Text className="text-base font-bold text-hawk-ink">Use photo</Text>
+              )}
+            </Pressable>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // ---- live camera -------------------------------------------------------
   return (
     <View className="flex-1 bg-black">
-      <CameraView ref={cam} style={{ flex: 1 }} facing="back" mode={mode} />
+      <CameraView ref={cam} style={{ flex: 1 }} facing="back" mode={mode} videoQuality="720p" />
+
+      {frameGuide && mode === 'picture' ? (
+        <View pointerEvents="none" className="absolute inset-0 items-center justify-center">
+          <View
+            className="rounded-2xl border-2 border-dashed border-hawk-gold/80"
+            style={{ width: '82%', height: '62%' }}
+          />
+        </View>
+      ) : null}
+
       <View className="absolute inset-x-0 top-0 px-5 pt-14">
         <Text className="text-lg font-bold text-white">{title}</Text>
         <Text className="pt-1 text-sm text-neutral-300">{line ?? hint}</Text>
@@ -157,7 +269,8 @@ export function CaptureCamera({ title, hint, allowVideo, onCapture, onCancel }: 
       ) : null}
 
       <View className="absolute inset-x-0 bottom-0 flex-row items-center justify-between px-8 pb-12">
-        <Pressable hitSlop={12} onPress={onCancel} disabled={busy && !recording}>
+        {/* Cancel is never disabled — a stuck capture must always have an exit. */}
+        <Pressable hitSlop={12} onPress={cancel}>
           <Text className="text-base font-semibold text-white">Cancel</Text>
         </Pressable>
         <Pressable

@@ -189,10 +189,11 @@ export default function ReportResult() {
     const isSheet = step === 'sheet';
     return (
       <CaptureCamera
-        title={isSheet ? 'Photograph the result sheet' : 'Photograph the surroundings'}
+        title={isSheet ? 'Photo 1 of 2 — the result sheet' : 'Photo 2 of 2 — the surroundings'}
+        frameGuide={isSheet}
         hint={
           isSheet
-            ? 'Fill the frame with the EC8A form. Every figure must be readable.'
+            ? 'Fit the EC8A inside the frame. Every figure must be readable.'
             : 'Step back and capture the polling unit itself — building, banner, crowd.'
         }
         onCapture={(shot) => {

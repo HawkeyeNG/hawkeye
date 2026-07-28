@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,7 +13,7 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
   {
     title: 'Take part',
     items: [
-      { label: 'Practice Run', href: 'practice.html', icon: 'play-circle' },
+      { label: 'Practice Run', href: 'native:/practice', icon: 'play-circle' },
       { label: 'Map a Polling Unit', href: 'map-unit.html', icon: 'map-pin' },
     ],
   },
@@ -63,7 +64,9 @@ export default function More() {
                     i > 0 ? 'border-t border-hawk-mist' : ''
                   }`}
                   onPress={() =>
-                    WebBrowser.openBrowserAsync(`https://hawkeye.com.ng/${it.href}`)
+                    it.href.startsWith('native:')
+                      ? router.push(it.href.slice(7) as never)
+                      : WebBrowser.openBrowserAsync(`https://hawkeye.com.ng/${it.href}`)
                   }
                 >
                   <Feather name={it.icon} size={17} color="#0b6b3a" />

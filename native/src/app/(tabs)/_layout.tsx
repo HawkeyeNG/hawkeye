@@ -97,6 +97,10 @@ export default function TabsLayout() {
             router.push('/report/result');
             return;
           }
+          if (a === 'incident') {
+            router.push('/report/incident');
+            return;
+          }
           // Incident + collation flows land next; the result flow proves the pattern.
           Alert.alert(
             'Coming to the native app',

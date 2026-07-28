@@ -136,10 +136,12 @@ export default function SignIn() {
     }
   };
 
+  // Preference order: WhatsApp first (free, near-instant, most reach here),
+  // Telegram next, SMS last — it costs per message and is the slowest in NG.
   const CHANNELS: { key: Channel; label: string }[] = [
     { key: 'whatsapp', label: 'WhatsApp' },
-    { key: 'sms', label: 'SMS' },
     { key: 'telegram', label: 'Telegram' },
+    { key: 'sms', label: 'SMS' },
   ];
 
   return (

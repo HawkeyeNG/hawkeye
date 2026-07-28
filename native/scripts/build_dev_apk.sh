@@ -7,6 +7,10 @@ set -e
 export JAVA_HOME="$HOME/android/jdk21"
 export ANDROID_HOME="$HOME/android/sdk"
 export PATH="$JAVA_HOME/bin:$PATH"
+# This host preloads Datadog's APM injector system-wide, attaching a java agent
+# to every JVM. Its -Xshare warning lands on the stderr of AGP's CMake configure
+# task, and AGP fails any task that writes to stderr.
+export DD_TRACE_ENABLED=false DD_PROFILING_ENABLED=false DD_INJECTION_ENABLED=false
 
 cd "$HOME/hawkeye/native"
 # Keep the generated project in sync with app.json / plugin changes.
@@ -15,7 +19,7 @@ npx expo prebuild --platform android --no-install 2>&1 | tail -3
 cd android
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 chmod +x ./gradlew
-./gradlew --no-daemon --console=plain assembleDebug 2>&1 | tail -20
+./gradlew --no-daemon --console=plain -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" assembleDebug 2>&1 | tail -20
 
 APK="app/build/outputs/apk/debug/app-debug.apk"
 if [ -f "$APK" ]; then

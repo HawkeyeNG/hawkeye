@@ -2,6 +2,11 @@
 // Crops known "IN FIGURES" cells from two ground-truth sheets and runs
 // microsoft TrOCR (small, handwritten) via transformers.js.
 //   node scripts/trocr_probe.js
+// DEPENDENCY: @xenova/transformers is deliberately NOT in backend/package.json.
+// The host panel's "Run NPM Install" installs devDependencies too, so listing it
+// there put a vulnerable tree (protobufjs 6.11.6, a second sharp 0.32.6) on the
+// production server. Install it ad hoc when you actually calibrate:
+//   cd backend && npm i --no-save @xenova/transformers
 import sharp from 'sharp';
 import { pipeline } from '@xenova/transformers';
 

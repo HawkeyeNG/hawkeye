@@ -1,0 +1,210 @@
+import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { requestOtp, verifyOtp, type RegisterResult } from '@/lib/auth';
+import { BRAND } from '@/lib/api';
+
+type Channel = 'whatsapp' | 'sms' | 'telegram';
+
+/**
+ * OTP sign-in — the native twin of observe.html's auth step, keeping the
+ * copy discipline the web flow settled on: one concise line per state.
+ */
+export default function SignIn() {
+  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [phone, setPhone] = useState('');
+  const [channel, setChannel] = useState<Channel>('whatsapp');
+  const [otp, setOtp] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [line, setLine] = useState<string | null>(null);
+  const [tgLink, setTgLink] = useState<string | null>(null);
+  const otpRef = useRef<TextInput>(null);
+
+  const sentLine = (r: RegisterResult) => {
+    if (r.devOtp) return `DEV MODE — your code is ${r.devOtp}`;
+    if (r.viaWhatsapp) return `Code sent on WhatsApp to ${phone}.`;
+    if (r.viaSms) return `Code sent by SMS to ${phone}.`;
+    if (r.viaTelegram) return `Code sent on Telegram to ${phone}.`;
+    return `Code sent to ${phone}.`;
+  };
+
+  const onRequest = async () => {
+    setBusy(true);
+    setLine(null);
+    setTgLink(null);
+    try {
+      const r = await requestOtp(phone.trim(), channel);
+      if (r.telegramLink && !r.viaSms) {
+        setTgLink(r.telegramLink);
+        setLine('Open Telegram, tap Start, then Share my phone number.');
+      } else if (r.ok) {
+        setLine(sentLine(r));
+        setStep('otp');
+        setTimeout(() => otpRef.current?.focus(), 250);
+      } else {
+        setLine(r.hint ?? 'Could not send a code — check the number.');
+      }
+    } catch {
+      setLine('Network error — try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onVerify = async () => {
+    setBusy(true);
+    try {
+      const r = await verifyOtp(phone.trim(), otp.trim());
+      if (r.ok) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        router.back();
+        return;
+      }
+      setLine(
+        r.error === 'otp_incorrect' ? 'Wrong code — check and retry.'
+        : r.error === 'otp_expired' ? 'Code expired — request a new one.'
+        : r.hint ?? 'Verification failed — try again.',
+      );
+    } catch {
+      setLine('Network error — try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const CHANNELS: { key: Channel; label: string }[] = [
+    { key: 'whatsapp', label: 'WhatsApp' },
+    { key: 'sms', label: 'SMS' },
+    { key: 'telegram', label: 'Telegram' },
+  ];
+
+  return (
+    <SafeAreaView className="flex-1 bg-hawk-mist">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1"
+      >
+        <View className="flex-row items-center px-4 pt-2">
+          <Pressable
+            hitSlop={12}
+            onPress={() => router.back()}
+            className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          >
+            <Feather name="x" size={18} color={BRAND.ink} />
+          </Pressable>
+          <Text className="pl-3 text-lg font-bold text-hawk-ink">Sign in</Text>
+        </View>
+
+        <View className="px-5 pt-6">
+          {step === 'phone' ? (
+            <>
+              <Text className="text-2xl font-bold text-hawk-ink">Your phone number</Text>
+              <Text className="pb-4 pt-1 text-sm text-neutral-600">
+                One code verifies you. Your number is never stored — only a one-way hash.
+              </Text>
+              <TextInput
+                className="rounded-2xl bg-white px-4 py-4 text-lg text-hawk-ink"
+                placeholder="0803 123 4567"
+                placeholderTextColor="#9db5a7"
+                keyboardType="phone-pad"
+                autoFocus
+                value={phone}
+                onChangeText={setPhone}
+                editable={!busy}
+              />
+              <View className="flex-row gap-2 pt-3">
+                {CHANNELS.map((c) => (
+                  <Pressable
+                    key={c.key}
+                    onPress={() => setChannel(c.key)}
+                    className={`rounded-full px-4 py-2 ${
+                      channel === c.key ? 'bg-hawk-green' : 'bg-white'
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm font-semibold ${
+                        channel === c.key ? 'text-hawk-gold' : 'text-neutral-600'
+                      }`}
+                    >
+                      {c.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Pressable
+                disabled={busy || phone.trim().length < 10}
+                onPress={onRequest}
+                className={`mt-5 items-center rounded-2xl py-4 ${
+                  busy || phone.trim().length < 10 ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+                }`}
+              >
+                {busy ? (
+                  <ActivityIndicator color={BRAND.gold} />
+                ) : (
+                  <Text className="text-base font-bold text-hawk-gold">Request code</Text>
+                )}
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text className="text-2xl font-bold text-hawk-ink">Enter the code</Text>
+              <Text className="pb-4 pt-1 text-sm text-neutral-600">{line}</Text>
+              <TextInput
+                ref={otpRef}
+                className="rounded-2xl bg-white px-4 py-4 text-center text-2xl font-bold tracking-[8px] text-hawk-ink"
+                placeholder="······"
+                placeholderTextColor="#9db5a7"
+                keyboardType="number-pad"
+                maxLength={6}
+                value={otp}
+                onChangeText={setOtp}
+                editable={!busy}
+              />
+              <Pressable
+                disabled={busy || otp.trim().length < 6}
+                onPress={onVerify}
+                className={`mt-5 items-center rounded-2xl py-4 ${
+                  busy || otp.trim().length < 6 ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+                }`}
+              >
+                {busy ? (
+                  <ActivityIndicator color={BRAND.gold} />
+                ) : (
+                  <Text className="text-base font-bold text-hawk-gold">Verify</Text>
+                )}
+              </Pressable>
+              <Pressable className="mt-4 items-center" onPress={() => setStep('phone')}>
+                <Text className="text-sm font-semibold text-hawk-leaf">Use a different number</Text>
+              </Pressable>
+            </>
+          )}
+
+          {step === 'phone' && line ? (
+            <Text className="pt-3 text-sm text-amber-800">{line}</Text>
+          ) : null}
+          {tgLink ? (
+            <Pressable
+              className="mt-3 items-center rounded-2xl bg-white py-3"
+              onPress={() => WebBrowser.openBrowserAsync(tgLink)}
+            >
+              <Text className="text-base font-semibold text-hawk-leaf">Open Telegram</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}

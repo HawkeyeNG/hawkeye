@@ -14,7 +14,7 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
     title: 'Take part',
     items: [
       { label: 'Practice Run', href: 'native:/practice', icon: 'play-circle' },
-      { label: 'Map a Polling Unit', href: 'map-unit.html', icon: 'map-pin' },
+      { label: 'Map a Polling Unit', href: 'native:/map-unit', icon: 'map-pin' },
     ],
   },
   {

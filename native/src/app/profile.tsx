@@ -338,7 +338,7 @@ export default function Profile() {
       </View>
 
       <ScrollView
-        contentContainerClassName="px-4 pb-10 pt-3"
+        contentContainerClassName="px-4 pb-4 pt-3"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -506,17 +506,10 @@ export default function Profile() {
               ))}
             </View>
 
-            {/* Sign out ABOVE delete — leaving is routine, deleting is not. */}
+            {/* Delete stays in the scroll, below everything — deleting is not
+                routine, and it should stay the harder of the two to reach. */}
             <Pressable
-              className="mt-5 flex-row items-center justify-center rounded-2xl bg-white py-3.5 active:opacity-70"
-              onPress={() => setConfirm('signout')}
-            >
-              <Feather name="log-out" size={16} color={BRAND.leaf} />
-              <Text className="pl-2 text-base font-bold text-hawk-leaf">Sign out</Text>
-            </Pressable>
-
-            <Pressable
-              className="mt-3 flex-row items-center justify-center rounded-2xl bg-red-50 py-3.5 active:opacity-70"
+              className="mt-5 flex-row items-center justify-center rounded-2xl bg-red-50 py-3.5 active:opacity-70"
               onPress={() => setConfirm('delete')}
             >
               <Feather name="trash-2" size={16} color="#b91c1c" />
@@ -528,6 +521,21 @@ export default function Profile() {
           </>
         )}
       </ScrollView>
+
+      {/* Sign out is pinned below the scroll: the four activity accordions
+          expand on tap and push everything under them off-screen, so the one
+          routine control here has to stay reachable regardless. */}
+      {me && !err ? (
+        <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <Pressable
+            className="flex-row items-center justify-center rounded-2xl bg-white py-3.5 active:opacity-70"
+            onPress={() => setConfirm('signout')}
+          >
+            <Feather name="log-out" size={16} color={BRAND.leaf} />
+            <Text className="pl-2 text-base font-bold text-hawk-leaf">Sign out</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <ConfirmSheet
         visible={confirm === 'signout'}

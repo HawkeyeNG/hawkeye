@@ -392,7 +392,7 @@ export default function ReportResult() {
         ) : null}
 
         {step === 'votes' ? (
-          <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
+          <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-1 text-xl font-bold text-hawk-ink">Votes per party</Text>
             <Text className="pb-3 text-sm text-neutral-600">
               Copy the figures exactly as written on the sheet. Leave blank for parties not listed.
@@ -435,18 +435,25 @@ export default function ReportResult() {
                 />
               </View>
             ))}
-            <Pressable
-              disabled={votes.length === 0}
-              onPress={() => setStep('review')}
-              className={`mt-3 items-center rounded-2xl py-4 ${votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'}`}
-            >
-              <Text className="text-base font-bold text-hawk-gold">Review report</Text>
-            </Pressable>
           </ScrollView>
         ) : null}
 
+        {/* Pinned CTA — up to 30 party rows scroll above this, so the way out of
+            the tally must not sit below the last figure the observer typed. */}
+        {step === 'votes' ? (
+          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+            <Pressable
+              disabled={votes.length === 0}
+              onPress={() => setStep('review')}
+              className={`items-center rounded-2xl py-4 ${votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'}`}
+            >
+              <Text className="text-base font-bold text-hawk-gold">Review report</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {step === 'review' ? (
-          <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
+          <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
             <Text className="pb-3 text-xl font-bold text-hawk-ink">Confirm and send</Text>
             <View className="mb-3 rounded-2xl bg-white px-4 py-3">
               <Text className="text-base font-semibold text-hawk-ink">{unit?.name}</Text>
@@ -502,7 +509,15 @@ export default function ReportResult() {
               Submitting takes a GPS fix at your position, signs the report with this device's
               key, and files it for review. Your number is never attached — only your observer ID.
             </Text>
-            {line ? <Text className="pb-3 text-sm font-semibold text-amber-800">{line}</Text> : null}
+          </ScrollView>
+        ) : null}
+
+        {/* Pinned CTA — the summary above grows a row per party, and the status
+            line rides with the button: on a failed submit the retry must stay
+            under the observer's thumb, not be pushed further down the scroll. */}
+        {step === 'review' ? (
+          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+            {line ? <Text className="pb-2 text-sm font-semibold text-amber-800">{line}</Text> : null}
             <Pressable
               disabled={busy}
               onPress={onSubmit}
@@ -515,7 +530,7 @@ export default function ReportResult() {
             <Pressable className="mt-3 items-center" onPress={() => setStep('votes')} disabled={busy}>
               <Text className="text-sm font-semibold text-hawk-leaf">‹ Back to votes</Text>
             </Pressable>
-          </ScrollView>
+          </View>
         ) : null}
 
         {step === 'done' ? (

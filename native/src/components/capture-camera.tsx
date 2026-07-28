@@ -289,25 +289,20 @@ export function CaptureCamera({
         </View>
       </View>
 
-      {/* Explicit offset, not a utility class: this sits just above the
-          Photo/Video selector (bottom-36 = 144px, ~30px tall). At the top of
-          the screen it collided with the front-camera cutout. */}
+      {/* Bottom-right, mirroring Cancel on the left so the shutter stays the
+          visual centre. Top-of-screen placements fought the camera cutout. */}
       {recording ? (
-        <View
-          className="absolute inset-x-0 items-center"
-          style={{ bottom: 188 }}
-        >
-          <View className="flex-row items-center rounded-full bg-red-600 px-4 py-2">
-            <View className="mr-2 h-2.5 w-2.5 rounded-full bg-white" />
-            <Text className="text-base font-bold tabular-nums text-white">
+        <View className="absolute right-6" style={{ bottom: 56 }}>
+          <View className="flex-row items-center rounded-full bg-red-600 px-3 py-1.5">
+            <View className="mr-1.5 h-2 w-2 rounded-full bg-white" />
+            <Text className="text-sm font-bold text-white">
               {String(Math.floor(elapsed / 60)).padStart(2, '0')}:
               {String(elapsed % 60).padStart(2, '0')}
             </Text>
-            <Text className="pl-2 text-xs font-semibold text-red-100">
-              / {String(Math.floor(VIDEO_MAX_S / 60)).padStart(2, '0')}:
-              {String(VIDEO_MAX_S % 60).padStart(2, '0')}
-            </Text>
           </View>
+          <Text className="pt-0.5 text-center text-[10px] font-semibold text-neutral-300">
+            max {VIDEO_MAX_S}s
+          </Text>
         </View>
       ) : null}
 

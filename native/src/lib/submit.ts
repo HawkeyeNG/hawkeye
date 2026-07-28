@@ -163,6 +163,7 @@ export type CollationInput = {
 
 /** Human line per backend error code — same tone as the web flow's one-liners. */
 const ERRORS: Record<string, string> = {
+  internal_error: 'The server rejected the report while saving it. Nothing was recorded.',
   invalid_level: 'Choose whether this is a ward, LGA or state collation.',
   scope_required: 'Select the full scope for this collation level.',
   unknown_scope: 'That scope is not in the register.',
@@ -357,7 +358,9 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
     return {
       ok: false,
       error: code,
-      message: ERRORS[code] ?? body.hint ?? 'Submission failed — try again.',
+      // Always append the code + HTTP status. A bare "Submission failed" cost
+      // a full device round-trip to diagnose; the screen must name the fault.
+      message: `${ERRORS[code] ?? body.hint ?? 'Submission failed — try again.'} (${code} / HTTP ${res.status})`,
     };
   } catch (e) {
     return {

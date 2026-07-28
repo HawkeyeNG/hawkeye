@@ -3,7 +3,7 @@ import type BottomSheet from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { router, Tabs } from 'expo-router';
 import { useRef } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { ReportSheet } from '@/components/report-sheet';
 import { BRAND } from '@/lib/api';
@@ -101,11 +101,7 @@ export default function TabsLayout() {
             router.push('/report/incident');
             return;
           }
-          // Incident + collation flows land next; the result flow proves the pattern.
-          Alert.alert(
-            'Coming to the native app',
-            `The ${a} flow is being rebuilt natively. Use the current app for live reporting.`,
-          );
+          router.push('/report/collation');
         }}
       />
     </View>

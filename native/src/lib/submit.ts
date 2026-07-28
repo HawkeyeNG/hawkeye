@@ -16,6 +16,8 @@ const BASE = 'https://hawkeye.com.ng';
 
 export type Vote = { party: string; count: number };
 
+export type CollationLevel = 'ward' | 'lga' | 'state';
+
 export function canonicalVotes(votes: Vote[]): Vote[] {
   return votes
     .map((v) => ({ party: String(v.party), count: Number(v.count) }))
@@ -87,6 +89,43 @@ export function filePart(uri: string, name: string, type: string) {
   } as unknown as Blob;
 }
 
+/**
+ * Collation payload — mirrors backend canonicalCollationPayload.
+ * lga/ward fall back to '' (not null/undefined): the server writes
+ * `lga: lga || ''`, so a state-level report must sign empty strings or the
+ * signature will not reconstruct. Verified byte-identical against the backend
+ * function for both a ward-level and a state-level (null lga/ward) case.
+ */
+export function canonicalCollationPayload(p: {
+  level: CollationLevel;
+  contest: string;
+  state: string;
+  lga: string | null;
+  ward: string | null;
+  votes: Vote[];
+  imageSha256: string;
+  venueImageSha256: string;
+  capturedAt: number;
+  venueCapturedAt: number;
+  lat: number;
+  lng: number;
+}): string {
+  return JSON.stringify({
+    level: p.level,
+    contest: p.contest,
+    state: p.state,
+    lga: p.lga || '',
+    ward: p.ward || '',
+    votes: canonicalVotes(p.votes),
+    imageSha256: p.imageSha256,
+    venueImageSha256: p.venueImageSha256,
+    capturedAt: p.capturedAt,
+    venueCapturedAt: p.venueCapturedAt,
+    lat: p.lat,
+    lng: p.lng,
+  });
+}
+
 export type Shot = {
   uri: string;
   capturedAt: number;
@@ -109,8 +148,24 @@ export type SubmitResult =
   | { ok: true; submissionId?: number }
   | { ok: false; error: string; message: string };
 
+export type CollationInput = {
+  level: CollationLevel;
+  contest: string;
+  state: string;
+  lga: string | null;
+  ward: string | null;
+  votes: Vote[];
+  sheet: Shot;
+  venue: Shot;
+  fix: { lat: number; lng: number; accuracy: number };
+  formSerial?: string;
+};
+
 /** Human line per backend error code — same tone as the web flow's one-liners. */
 const ERRORS: Record<string, string> = {
+  invalid_level: 'Choose whether this is a ward, LGA or state collation.',
+  scope_required: 'Select the full scope for this collation level.',
+  unknown_scope: 'That scope is not in the register.',
   reporting_not_open: 'Reporting opens on election day — this was a full dry run, nothing was filed.',
   outside_geofence: 'You are too far from this polling unit to report it.',
   too_far_from_unit: 'You are too far from this polling unit to report it.',
@@ -215,6 +270,95 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
       message = `Too soon after the last report — retry in ${body.retryAfterS}s.`;
     }
     return { ok: false, error: code, message };
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'network',
+      message: `Upload failed — your report was NOT sent. Retry. (${e instanceof Error ? e.message : String(e)})`,
+    };
+  }
+}
+
+/**
+ * Submit a collation report (ward / LGA / state announcement).
+ *
+ * Same evidence discipline as a unit result — two in-app photos, GPS and the
+ * observer's signature — but scoped to an administrative level rather than a
+ * polling unit, so there is no geofence and no per-unit dedupe.
+ */
+export async function submitCollation(input: CollationInput): Promise<SubmitResult> {
+  const id = await getIdentity();
+  const token = await SecureStore.getItemAsync('hawkeye.auth.token');
+  if (!token) return { ok: false, error: 'not_signed_in', message: 'Sign in first.' };
+
+  let imageSha256: string;
+  let venueImageSha256: string;
+  try {
+    imageSha256 = await sha256HexOfFile(input.sheet.uri);
+    venueImageSha256 = await sha256HexOfFile(input.venue.uri);
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'photo_read_failed',
+      message: `Could not read the captured photos — retake them. (${e instanceof Error ? e.message : String(e)})`,
+    };
+  }
+
+  const payload = canonicalCollationPayload({
+    level: input.level,
+    contest: input.contest,
+    state: input.state,
+    lga: input.lga,
+    ward: input.ward,
+    votes: input.votes,
+    imageSha256,
+    venueImageSha256,
+    capturedAt: input.sheet.capturedAt,
+    venueCapturedAt: input.venue.capturedAt,
+    lat: input.fix.lat,
+    lng: input.fix.lng,
+  });
+  const signature = id.sign(payload);
+
+  const form = new FormData();
+  form.append('level', input.level);
+  form.append('contest', input.contest);
+  form.append('state', input.state);
+  if (input.lga) form.append('lga', input.lga);
+  if (input.ward) form.append('ward', input.ward);
+  form.append('votes', JSON.stringify(canonicalVotes(input.votes)));
+  form.append('lat', String(input.fix.lat));
+  form.append('lng', String(input.fix.lng));
+  form.append('accuracy', String(input.fix.accuracy));
+  form.append('capturedAt', String(input.sheet.capturedAt));
+  form.append('venueCapturedAt', String(input.venue.capturedAt));
+  form.append('signature', signature);
+  if (input.formSerial) form.append('formSerial', input.formSerial);
+  form.append('photo', filePart(input.sheet.uri, 'collation.jpg', 'image/jpeg'));
+  form.append('venuePhoto', filePart(input.venue.uri, 'venue.jpg', 'image/jpeg'));
+
+  try {
+    const res = await fetch(`${BASE}/api/collations`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'x-device-id': id.deviceId },
+      body: form,
+    });
+    if (res.status === 401) {
+      return { ok: false, error: 'session_expired', message: 'Session expired — sign in again.' };
+    }
+    const body = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      id?: number;
+      error?: string;
+      hint?: string;
+    };
+    if (res.ok && body.ok !== false) return { ok: true, submissionId: body.id };
+    const code = body.error ?? `http_${res.status}`;
+    return {
+      ok: false,
+      error: code,
+      message: ERRORS[code] ?? body.hint ?? 'Submission failed — try again.',
+    };
   } catch (e) {
     return {
       ok: false,

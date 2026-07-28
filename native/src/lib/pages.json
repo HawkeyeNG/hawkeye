@@ -1,0 +1,474 @@
+{
+ "how": {
+  "title": "How Hawkeye Works",
+  "blocks": [
+   {
+    "type": "text",
+    "text": "Hawkeye turns thousands of ordinary phones into a network of independent witnesses. No single report is trusted on its own — trust is earned when separate people, provably at the same place, say the same thing."
+   },
+   {
+    "type": "heading",
+    "text": "Choose how you take part"
+   },
+   {
+    "type": "heading",
+    "text": "Observe your polling unit"
+   },
+   {
+    "type": "text",
+    "text": "Verify your phone, then photograph the announced EC8A results sheet and the venue on election day. Your report is signed on your device and recorded permanently."
+   },
+   {
+    "type": "heading",
+    "text": "Follow races & get alerts"
+   },
+   {
+    "type": "text",
+    "text": "Watch the national leaderboard live, and subscribe to Telegram alerts for the presidential race, your state, senatorial district or constituency."
+   },
+   {
+    "type": "heading",
+    "text": "Map your unit before election day"
+   },
+   {
+    "type": "text",
+    "text": "Most polling units have no verified GPS location. Stand at yours and pin it before the vote."
+   },
+   {
+    "type": "heading",
+    "text": "How a report becomes trusted"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Photograph the evidence. Two live photos — the EC8A results sheet and the venue — each GPS-stamped the moment it is taken. Gallery uploads are impossible.",
+     "Sign on your device. The counts, photo fingerprints and location are signed with a key that never leaves your phone, then chained onto a public ledger. Nothing can be edited or quietly deleted afterwards.",
+     "Independent agreement. A count is only marked verified when separate observers at the same unit report matching numbers — backed by GPS, matching venue photos, and the digits read from the sheet itself."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "The machinery underneath"
+   },
+   {
+    "type": "text",
+    "text": "Tap each layer to see how it works."
+   },
+   {
+    "type": "heading",
+    "text": "🪪 One person, one identity"
+   },
+   {
+    "type": "list",
+    "items": [
+     "A verified phone number is one observer identity. Numbers are stored only as one-way hashes — never readable, never published.",
+     "Every phone also carries a device fingerprint. One device can report each race once, no matter how many SIM cards or accounts it holds."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "📍 Location that proves itself"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Units with a confirmed location are geofenced: reports are only accepted from people standing there.",
+     "Units without one accept reports, but the count stays visibly \"location-unverified\" until at least three independent observers' GPS positions cluster at the same spot.",
+     "Before election day, volunteers crowd-map units the same way — three agreeing fixes confirm a unit's location in advance.",
+     "Every unit also has an approximate area from open geographic data; reports or mapping fixes far outside it are rejected outright."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "📸 Evidence that can't be recycled"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Photos are captured live in the app — the EC8A sheet is auto-detected, flattened and quality-checked (blur/glare) like a document scanner.",
+     "Each photo is GPS-stamped at capture; the sheet, venue and submission positions must all agree, and photos expire within minutes.",
+     "Re-submitting someone else's photo — or a near-identical copy — is detected and rejected by image fingerprinting.",
+     "Venue photos from different observers are feature-matched to confirm they stood at the same physical place.",
+     "The typed counts are cross-checked against the digits machine-read from the sheet photograph itself."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "⛓️ A ledger nobody can quietly edit"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Each report is signed on the observer's phone with a key that never leaves it, then chained to the previous entry by cryptographic hash.",
+     "Changing or removing any past entry breaks the chain publicly. Anyone can re-verify it in their browser on the Verify the Ledger page."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "📊 From reports to the leaderboard"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Matching counts from independent observers push a unit's confidence up; conflicting counts mark it disputed — visibly, never silently resolved.",
+     "Each report is tagged to its races automatically — state, senatorial district and federal constituency come from the official register.",
+     "The national leaderboard rolls verified units up per race, with grey regions still awaiting reports."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "🔔 Alerts"
+   },
+   {
+    "type": "text",
+    "text": "Follow any race — everywhere, or a single state, district or constituency — and Hawkeye pings you on Telegram whenever new reports land. Subscribe on the results page."
+   },
+   {
+    "type": "text",
+    "text": "What Hawkeye is not: Hawkeye does not declare winners and its tallies are not official results. It is a public, independent evidence record of what was announced at polling units. Official results are those declared by INEC."
+   },
+   {
+    "type": "text",
+    "text": "Become an observer → Read the Observer Guide → FAQ →"
+   }
+  ]
+ },
+ "guide": {
+  "title": "Observer Guide",
+  "blocks": [
+   {
+    "type": "text",
+    "text": "Everything you need to do — before, during and after the count at your polling unit."
+   },
+   {
+    "type": "heading",
+    "text": "Before election day"
+   },
+   {
+    "type": "heading",
+    "text": "1 Verify your phone"
+   },
+   {
+    "type": "text",
+    "text": "On the report page, enter your Nigerian mobile number and confirm the one-time code sent to you on Telegram. Do this days ahead — not in the queue."
+   },
+   {
+    "type": "heading",
+    "text": "2 Map your polling unit"
+   },
+   {
+    "type": "text",
+    "text": "Visit your unit, open Map a Polling Unit, and capture its GPS position while standing there. Once a few people do this, the unit is geofenced for election day — only people actually there can report it."
+   },
+   {
+    "type": "heading",
+    "text": "3 Do a dry run"
+   },
+   {
+    "type": "text",
+    "text": "Open the report page once on Wi-Fi so it saves to your phone, grant camera and location permission, and charge enough to last through the evening count."
+   },
+   {
+    "type": "heading",
+    "text": "On election day"
+   },
+   {
+    "type": "heading",
+    "text": "4 Stay for the count"
+   },
+   {
+    "type": "text",
+    "text": "Voting ends, then the presiding officer counts ballots publicly and fills in the EC8A result sheet for each election. This — the announcement — is the moment that matters."
+   },
+   {
+    "type": "heading",
+    "text": "5 Photograph the EC8A sheet"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Point the camera at the whole sheet — the scanner outlines it and captures automatically when steady.",
+     "Good light, no glare, no fingers over the figures column.",
+     "If the app warns the photo is blurry or washed out, retake it."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "6 Photograph the venue"
+   },
+   {
+    "type": "text",
+    "text": "Take a separate photo of the polling unit — the building, banner or surroundings. This lets the system confirm different observers stood at the same place."
+   },
+   {
+    "type": "heading",
+    "text": "7 Enter the counts and submit immediately"
+   },
+   {
+    "type": "text",
+    "text": "Type each party's announced figure exactly, then sign and submit while still at the unit. Photos expire if you wait, and your GPS must match where the photos were taken. Several elections may be counted at your unit the same day — submit one report per election, each with its own photos."
+   },
+   {
+    "type": "heading",
+    "text": "The rules that keep reports honest"
+   },
+   {
+    "type": "heading",
+    "text": "Hard rules — the app enforces these"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Live photos only; no gallery uploads, no screenshots.",
+     "One report per election per polling unit per observer — and one per election per device, regardless of how many SIMs it holds.",
+     "Reports are permanent. Nothing can be edited or deleted after signing.",
+     "Geofenced units only accept reports from people standing there."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "If something goes wrong"
+   },
+   {
+    "type": "heading",
+    "text": "Troubleshooting"
+   },
+   {
+    "type": "list",
+    "items": [
+     "GPS too weak — step into open sky, away from roofing, and retry.",
+     "No Telegram code — reopen the bot link and share your contact; the number must match the one you typed.",
+     "\"Photos too old\" — retake both photos and submit straight away.",
+     "Session expired — verify your phone again; your identity and history are preserved."
+    ]
+   },
+   {
+    "type": "text",
+    "text": "Ready? Verify your phone →"
+   }
+  ]
+ },
+ "faq": {
+  "title": "FAQ",
+  "blocks": [
+   {
+    "type": "text",
+    "text": "Tap any question to expand it."
+   },
+   {
+    "type": "heading",
+    "text": "Is Hawkeye official? Are these the real election results?"
+   },
+   {
+    "type": "text",
+    "text": "No. Hawkeye is an independent, community-run transparency initiative. The tallies shown here are crowd-verified evidence of what was announced at individual polling units — the official results of any election are only those declared by INEC."
+   },
+   {
+    "type": "heading",
+    "text": "Who can be an observer?"
+   },
+   {
+    "type": "text",
+    "text": "Anyone with a Nigerian mobile number and a phone with a camera and GPS. Verify your number once, then report from the polling unit where you observe the count. No accreditation, membership or payment needed."
+   },
+   {
+    "type": "heading",
+    "text": "What happens to my phone number?"
+   },
+   {
+    "type": "text",
+    "text": "It is hashed (one-way scrambled) before storage and is never published or shared. It exists solely so one number equals one observer."
+   },
+   {
+    "type": "heading",
+    "text": "Why does verification use Telegram?"
+   },
+   {
+    "type": "text",
+    "text": "Telegram delivers your one-time code and later your race alerts free of charge. Open the bot link shown at sign-up, share your contact (it must match the number you typed), and the code arrives instantly."
+   },
+   {
+    "type": "heading",
+    "text": "Why must photos be taken live? Can I upload from my gallery?"
+   },
+   {
+    "type": "text",
+    "text": "No gallery uploads, ever. Both photos — the EC8A results sheet and the venue — are captured in-app and GPS-stamped on the spot. This is what makes a Hawkeye report hard to fake from somewhere else."
+   },
+   {
+    "type": "heading",
+    "text": "Can a report be edited or deleted afterwards?"
+   },
+   {
+    "type": "text",
+    "text": "No. Every report is signed on the observer's device and chained onto a public, tamper-evident ledger. Anyone can re-verify the whole chain on the Verify the Ledger page. If a report is wrong, the remedy is more independent reports — matching counts from separate observers outweigh a bad one."
+   },
+   {
+    "type": "heading",
+    "text": "When is a count marked \"verified\"?"
+   },
+   {
+    "type": "text",
+    "text": "When independent observers at the same unit submit matching counts — backed by GPS, matching venue photos and automatic reading of the sheet. Until then a count stays visibly marked as reported or provisional."
+   },
+   {
+    "type": "heading",
+    "text": "My polling unit doesn't appear near me. Why?"
+   },
+   {
+    "type": "text",
+    "text": "Most of Nigeria's 176,846 polling units have no published GPS location. You can still report — find your unit through the register browser (state → LGA → ward). Better still, map your unit before election day so it is geofenced on the day."
+   },
+   {
+    "type": "heading",
+    "text": "Can one person submit multiple reports with different SIM cards?"
+   },
+   {
+    "type": "text",
+    "text": "Each device carries a fingerprint, and one device can report each race only once — no matter how many numbers are registered on it. Independent reports must come from genuinely different people on different phones."
+   },
+   {
+    "type": "heading",
+    "text": "How do I get alerts for races I care about?"
+   },
+   {
+    "type": "text",
+    "text": "Verify your phone once, then on the results page choose an election and a state, district or constituency and press Follow. You'll get a Telegram message whenever new reports land."
+   }
+  ]
+ },
+ "about": {
+  "title": "About & Contact",
+  "blocks": [
+   {
+    "type": "text",
+    "text": "Hawkeye is an independent, nonpartisan transparency platform that lets ordinary Nigerians document, verify and publish the results announced at their polling units — so anyone can check the numbers."
+   },
+   {
+    "type": "heading",
+    "text": "Why it exists"
+   },
+   {
+    "type": "text",
+    "text": "Elections are won and lost at the polling unit and then at collation. When results can be altered on the way up, trust collapses. Hawkeye puts a network of independent witnesses on the ground: every report is photographed, signed on the observer's own phone, and recorded on a public, tamper-evident ledger. A count is only trusted when independent observers at the same place agree — backed by GPS, matching venue photos and automatic reading of the sheet."
+   },
+   {
+    "type": "heading",
+    "text": "What we are — and are not"
+   },
+   {
+    "type": "text",
+    "text": "Hawkeye does not declare winners and its tallies are not official results. It is a public, independent record of what was announced, built to aid scrutiny. The official results of any election are those declared by the Independent National Electoral Commission (INEC). Hawkeye is not affiliated with INEC, any political party, candidate or campaign."
+   },
+   {
+    "type": "heading",
+    "text": "Who runs Hawkeye"
+   },
+   {
+    "type": "text",
+    "text": "Hawkeye is built and operated by IniXien, LLC. The platform, its software and its content are &copy; 2026 IniXien, LLC. Reports submitted by observers, and the public ledger they form, remain open for anyone to read and verify."
+   },
+   {
+    "type": "heading",
+    "text": "Take part"
+   },
+   {
+    "type": "text",
+    "text": "Become an observer →"
+   },
+   {
+    "type": "text",
+    "text": "How it works →Observer guide →Privacy & data →"
+   },
+   {
+    "type": "heading",
+    "text": "Contact"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Email: info@hawkeye.com.ng",
+     "Telegram: @HawkEyeNGBot"
+    ]
+   },
+   {
+    "type": "text",
+    "text": "For data access or deletion requests, see our Privacy & Data page."
+   }
+  ]
+ },
+ "privacy": {
+  "title": "Privacy & Data",
+  "blocks": [
+   {
+    "type": "text",
+    "text": "Hawkeye is built to protect the people who use it. This explains exactly what we collect, why, what becomes public, and what stays private."
+   },
+   {
+    "type": "heading",
+    "text": "What we collect"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Your phone number — stored only as a one-way cryptographic hash. We never keep or display the actual number; it exists so one number equals one observer identity.",
+     "Your reports — the counts you enter and two live photos (the result sheet and the venue), each stamped with the GPS location where it was taken.",
+     "A device fingerprint — a hash of your device's characteristics, to stop one phone from filing multiple reports for the same race.",
+     "Your Telegram link — if you verify or subscribe via Telegram, we store the chat ID so the bot can send your code and alerts. We never read your Telegram messages or contacts."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "What becomes public"
+   },
+   {
+    "type": "text",
+    "text": "To be a credible transparency tool, the evidence must be open. Your submitted counts, photos and their locations are published on a public, tamper-evident ledger and cannot be edited or deleted — that permanence is what makes them trustworthy. Your phone number is never part of this; reports are tied to an anonymous observer ID, not to you personally. Incident media is shown publicly only after human review."
+   },
+   {
+    "type": "heading",
+    "text": "What stays private"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Your actual phone number (only the hash is stored).",
+     "Your identity — reports are not publicly linked to your name or number.",
+     "One-time codes, which expire within minutes and are deleted once used."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "What we never do"
+   },
+   {
+    "type": "list",
+    "items": [
+     "We do not sell, rent or share your data with anyone.",
+     "We run no advertising and no third-party trackers.",
+     "We use no cookies — the app keeps only a sign-in token and keys in your browser's local storage, on your device."
+    ]
+   },
+   {
+    "type": "heading",
+    "text": "Security"
+   },
+   {
+    "type": "text",
+    "text": "All traffic is encrypted (HTTPS). Phone numbers are HMAC-hashed, reports are signed on your own device with a key that never leaves it, and access is rate-limited and bot-screened."
+   },
+   {
+    "type": "heading",
+    "text": "Your rights"
+   },
+   {
+    "type": "text",
+    "text": "You can delete your observer ID yourself at any time: open the menu while signed in and choose Delete my ID. This removes your signing key, device link, Telegram link and alert subscriptions. Two things remain, by design: public ledger entries (permanent and anonymous — that permanence is what makes them trustworthy) and the one-way hash of your number, kept so a deleted identity can't be reused to file duplicate reports. Re-registering the same number restores your original observer ID. Other Nigeria Data Protection Act requests: info@hawkeye.com.ng."
+   },
+   {
+    "type": "text",
+    "text": "Hawkeye is an independent transparency initiative and is not affiliated with INEC. Official results are those declared by INEC."
+   }
+  ]
+ }
+}

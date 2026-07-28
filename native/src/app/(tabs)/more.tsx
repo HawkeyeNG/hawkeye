@@ -13,6 +13,7 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
   {
     title: 'Take part',
     items: [
+      { label: 'My Profile', href: 'native:/profile', icon: 'user' },
       { label: 'Practice Run', href: 'native:/practice', icon: 'play-circle' },
       { label: 'Map a Polling Unit', href: 'native:/map-unit', icon: 'map-pin' },
     ],
@@ -28,20 +29,20 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
   {
     title: 'Live data',
     items: [
-      { label: 'Osun 2026', href: 'osun.html', icon: 'trending-up' },
+      { label: 'Osun 2026', href: 'native:/osun', icon: 'trending-up' },
       { label: 'Public Reports Log', href: 'native:/reports-log', icon: 'list' },
-      { label: '2027 Candidates', href: 'candidates.html', icon: 'users' },
-      { label: 'Political Data', href: 'political.html', icon: 'pie-chart' },
+      { label: '2027 Candidates', href: 'native:/candidates', icon: 'users' },
+      { label: 'Political Data', href: 'native:/political', icon: 'pie-chart' },
     ],
   },
   {
     title: 'Learn & about',
     items: [
-      { label: 'How Hawkeye Works', href: 'how.html', icon: 'help-circle' },
-      { label: 'Observer Guide', href: 'guide.html', icon: 'book-open' },
-      { label: 'FAQ', href: 'faq.html', icon: 'message-circle' },
-      { label: 'About & Contact', href: 'about.html', icon: 'info' },
-      { label: 'Privacy & Data', href: 'privacy.html', icon: 'lock' },
+      { label: 'How Hawkeye Works', href: 'native:/page?slug=how', icon: 'help-circle' },
+      { label: 'Observer Guide', href: 'native:/page?slug=guide', icon: 'book-open' },
+      { label: 'FAQ', href: 'native:/page?slug=faq', icon: 'message-circle' },
+      { label: 'About & Contact', href: 'native:/page?slug=about', icon: 'info' },
+      { label: 'Privacy & Data', href: 'native:/page?slug=privacy', icon: 'lock' },
     ],
   },
 ];

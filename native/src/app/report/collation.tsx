@@ -63,14 +63,10 @@ export default function ReportCollation() {
   const [wardSel, setWardSel] = useState<string | null>(null);
 
   useEffect(() => {
-    api
-      .contests()
-      .then((cs) => {
-        const c = cs[0] ?? null;
-        setContest(c);
-        if (c?.states.length === 1) setStateSel(c.states[0]);
-        else if (c) api.states(c.code).then(setStates).catch(() => {});
-      })
+    api.contests().then((cs) => setContest(cs[0] ?? null)).catch(() => {});
+    fetch(`${REG}/states`)
+      .then((r) => r.json())
+      .then(setStates)
       .catch(() => {});
   }, []);
 
@@ -99,6 +95,10 @@ export default function ReportCollation() {
     !!stateSel &&
     (level === 'state' || !!lgaSel) &&
     (level !== 'ward' || !!wardSel);
+
+  /** Is the chosen state inside the active contest? Drives the
+   *  "no active election here" answer instead of hiding the state. */
+  const covered = !!contest && !!stateSel && contest.states.includes(stateSel);
 
   // -- photos ---------------------------------------------------------------
   const [sheet, setSheet] = useState<Shot | null>(null);
@@ -341,7 +341,7 @@ export default function ReportCollation() {
               />
             )}
 
-            {level && states.length > 1 && !stateSel ? (
+            {level && !stateSel ? (
               <>
                 <Prompt>Select the state</Prompt>
                 <View className="flex-row flex-wrap">
@@ -352,7 +352,23 @@ export default function ReportCollation() {
               </>
             ) : null}
 
-            {level && level !== 'state' && stateSel && !lgaSel ? (
+            {level && stateSel && !covered ? (
+              <>
+                <Crumb label={stateSel} onPress={() => setStateSel(null)} />
+                <View className="rounded-2xl bg-white px-4 py-5">
+                  <Text className="text-base font-bold text-hawk-ink">
+                    No active election in {stateSel}
+                  </Text>
+                  <Text className="pt-1 text-sm text-neutral-600">
+                    {contest
+                      ? `Hawkeye is currently covering the ${contest.election}.`
+                      : 'No election is currently open for reporting.'}
+                  </Text>
+                </View>
+              </>
+            ) : null}
+
+            {level && covered && level !== 'state' && stateSel && !lgaSel ? (
               <>
                 <Prompt>Select the LGA</Prompt>
                 <View className="flex-row flex-wrap">
@@ -363,7 +379,7 @@ export default function ReportCollation() {
               </>
             ) : null}
 
-            {level && level !== 'state' && lgaSel ? (
+            {level && covered && level !== 'state' && lgaSel ? (
               <Crumb label={lgaSel} onPress={() => setLgaSel(null)} />
             ) : null}
 

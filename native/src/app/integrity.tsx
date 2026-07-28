@@ -1,0 +1,534 @@
+import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { BRAND } from '@/lib/api';
+
+const BASE = 'https://hawkeye.com.ng';
+const REFRESH_MS = 30_000;
+
+type Summary = {
+  total: number;
+  unitsFlagged: number;
+  reports: number;
+  bySeverity: { severity: string; c: number }[];
+  byType: { type: string; severity: string; c: number }[];
+};
+
+type Discrepancy = {
+  id: number;
+  type: string;
+  severity: 'high' | 'medium' | 'low';
+  pu_code: string | null;
+  pu_name: string | null;
+  contest: string | null;
+  state: string | null;
+  detail: { summary?: string; reason?: string; docUrl?: string };
+  created_at: number;
+};
+
+type Digit = { digit: number; observed: number; expectedPct: number };
+type Benford = {
+  n: number;
+  nFirst: number;
+  lastDigit: Digit[];
+  firstDigit?: Digit[];
+  mad: number;
+  verdict: string;
+};
+
+type Irev = { electionId?: string | null; counts?: Record<string, number> };
+type CollationStat = { byLevel?: Record<string, number>; flags?: Record<string, number> };
+
+const TYPE_LABEL: Record<string, string> = {
+  over_voting: 'Over-voting',
+  high_turnout: 'Impossible turnout',
+  turnout_outlier: 'Turnout outlier',
+  single_party_sweep: 'Single-party sweep',
+  duplicate_serial: 'Duplicate serial',
+  disputed_counts: 'Conflicting counts',
+  location_inconsistent: 'Location inconsistent',
+  irev_mismatch: 'INEC IReV mismatch',
+  collation_undercount: 'Collation undercount',
+  collation_disputed: 'Conflicting collation reports',
+  collation_mismatch: 'Collation mismatch (full coverage)',
+  collation_chain_undercount: 'Collation chain undercount',
+  collation_ocr_mismatch: 'Collation form OCR mismatch',
+  signup_burst: 'Signup burst (informational)',
+};
+
+const VERDICT_TEXT: Record<string, (mad: number) => string> = {
+  insufficient_data: () => 'needs ≥100 counts for a verdict',
+  close_conformity: (m) => `close conformity (MAD ${m})`,
+  acceptable_conformity: (m) => `acceptable conformity (MAD ${m})`,
+  marginal_conformity: (m) => `marginal conformity (MAD ${m})`,
+  nonconformity: (m) => `⚠ departs from Benford (MAD ${m})`,
+};
+
+/** The checklist from integrity.html — what an automated flag can even mean. */
+const CHECKS: { title: string; items: [string, string][] }[] = [
+  {
+    title: 'Against INEC & collation records',
+    items: [
+      ['INEC IReV mismatch', "the crowd's counts don't appear on INEC's own uploaded sheet for that unit."],
+      ['Collation undercount', 'a ward/LGA/state form showing less for a party than its covered polling units alone add up to.'],
+      ['Collation mismatch', "every unit in the scope is verified, yet the form's totals still differ."],
+      ['Collation chain undercount', 'an LGA/state form showing less than the collation forms directly under it.'],
+      ['Conflicting collation reports', 'observers at the same collation centre reporting different totals.'],
+    ],
+  },
+  {
+    title: 'Statistical tripwires',
+    items: [
+      ['Over-voting', 'more votes than registered voters at a unit (impossible).'],
+      ['Impossible turnout', 'turnout above ~95%, or a strong outlier vs. its state.'],
+      ['Single-party sweep', 'one party taking ≥98% of a sizeable unit.'],
+      ['Vote-share outlier', "a winner's share far above its own state's distribution for that race."],
+      ['Neighbour divergence', 'a unit voting wildly unlike the rest of its own ward (≥50-point gap).'],
+      ['Digit tests', 'first-digit Benford deviation and excess round numbers (…0/…5) per contest; screening signals, not proof.'],
+    ],
+  },
+  {
+    title: 'AI vision on the result sheet',
+    items: [
+      ['Sheet authenticity', 'the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.'],
+      ['Vision count mismatch', "an AI read of the sheet photo disagreeing with the observer's typed counts."],
+    ],
+  },
+  {
+    title: 'Provenance & duplicates',
+    items: [
+      ['Duplicate form serial', 'the same EC8A serial reported at two units.'],
+      ['Conflicting counts', 'independent observers at one unit disagreeing.'],
+      ['Location inconsistency', 'a GPS cluster far from where a unit can be.'],
+    ],
+  },
+  {
+    title: 'Incident patterns',
+    items: [
+      ['Incident hotspot', 'several incident reports of the same kind in one state within a short window.'],
+    ],
+  },
+];
+
+async function jget<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, { headers: { accept: 'application/json' } });
+  if (!res.ok) throw new Error(`${path} → HTTP ${res.status}`);
+  return (await res.json()) as T;
+}
+
+const SEV_COLOR: Record<string, string> = {
+  high: 'bg-red-100 text-red-700',
+  medium: 'bg-amber-100 text-amber-800',
+  low: 'bg-neutral-100 text-neutral-600',
+};
+
+function timeAgo(ts: number) {
+  const d = new Date(ts);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
+
+/** One digit column: observed bar, with the expected level drawn across it. */
+function DigitBars({ items, n }: { items: Digit[]; n: number }) {
+  const max = Math.max(1, ...items.map((d) => d.observed));
+  return (
+    <View className="mt-2 h-28 flex-row items-end">
+      {items.map((d) => {
+        const h = Math.round((d.observed / max) * 100);
+        const exp = Math.min(100, Math.round((((n * d.expectedPct) / 100) / max) * 100));
+        return (
+          <View key={d.digit} className="flex-1 items-center">
+            <View className="h-24 w-full justify-end px-0.5">
+              <View className="relative w-full" style={{ height: `${Math.max(h, 1)}%` }}>
+                <View className="h-full w-full rounded-t bg-hawk-green" />
+              </View>
+              <View
+                className="absolute left-0 right-0 h-0.5 bg-amber-500/70"
+                style={{ bottom: `${exp}%` }}
+              />
+            </View>
+            <Text className="pt-1 text-[10px] text-neutral-500">{d.digit}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/**
+ * Election Integrity — native twin of app/integrity.html.
+ *
+ * Automated checks run over every crowd-reported result and everything that
+ * looks wrong is published here, flags and all. The framing matters as much as
+ * the data: these are signals for scrutiny, never verdicts — a flag opens a
+ * case in the Public Docket, where people (not the algorithm) decide.
+ */
+export default function Integrity() {
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [rows, setRows] = useState<Discrepancy[] | null>(null);
+  const [benford, setBenford] = useState<Benford | null>(null);
+  const [irev, setIrev] = useState<Irev | null>(null);
+  const [coll, setColl] = useState<CollationStat | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const [sev, setSev] = useState('');
+  const [type, setType] = useState('');
+  const [stateSel, setStateSel] = useState('');
+  const [states, setStates] = useState<string[]>([]);
+  const [open, setOpen] = useState<Record<number, boolean>>({ 0: true });
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadRows = useCallback(async () => {
+    const qs = new URLSearchParams();
+    if (sev) qs.set('severity', sev);
+    if (type) qs.set('type', type);
+    if (stateSel) qs.set('state', stateSel);
+    const d = await jget<{ discrepancies: Discrepancy[] }>(
+      `/api/integrity/discrepancies?${qs.toString()}`,
+    );
+    setRows(d.discrepancies);
+    // The state filter can only offer states that actually appear in the log.
+    setStates((prev) => {
+      const seen = new Set([...prev, ...d.discrepancies.map((x) => x.state).filter(Boolean)]);
+      return [...seen].sort() as string[];
+    });
+  }, [sev, type, stateSel]);
+
+  const loadAll = useCallback(async () => {
+    try {
+      const [s, b, i, c] = await Promise.all([
+        jget<Summary>('/api/integrity/summary'),
+        jget<Benford>('/api/integrity/benford'),
+        jget<Irev>('/api/integrity/irev'),
+        jget<CollationStat>('/api/integrity/collation'),
+      ]);
+      setSummary(s);
+      setBenford(b);
+      setIrev(i);
+      setColl(c);
+      await loadRows();
+      setErr(null);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  }, [loadRows]);
+
+  useEffect(() => {
+    loadAll();
+    const t = setInterval(loadAll, REFRESH_MS);
+    return () => clearInterval(t);
+  }, [loadAll]);
+
+  useEffect(() => {
+    loadRows().catch(() => {});
+  }, [loadRows]);
+
+  const bySev = Object.fromEntries((summary?.bySeverity ?? []).map((r) => [r.severity, r.c]));
+  const types = [...new Set((summary?.byType ?? []).map((r) => r.type))];
+
+  const Stat = ({ n, label, tone }: { n: number | string; label: string; tone?: string }) => (
+    <View className="mb-2 mr-2 min-w-[30%] flex-1 rounded-2xl bg-white px-3 py-3">
+      <Text className={`text-xl font-bold ${tone ?? 'text-hawk-ink'}`}>{n}</Text>
+      <Text className="text-[11px] text-neutral-500">{label}</Text>
+    </View>
+  );
+
+  const Chip = ({
+    label,
+    on,
+    onPress,
+  }: {
+    label: string;
+    on: boolean;
+    onPress: () => void;
+  }) => (
+    <Pressable
+      onPress={onPress}
+      className={`mb-2 mr-2 rounded-full px-3.5 py-2 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+    >
+      <Text className={`text-xs font-semibold ${on ? 'text-hawk-gold' : 'text-neutral-600'}`}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+
+  const irevLine = !irev
+    ? 'Loading…'
+    : !irev.electionId
+      ? 'Waiting for INEC to open the election on IReV — the check activates automatically once configured.'
+      : (() => {
+          const c = irev.counts ?? {};
+          const total = Object.values(c).reduce((s, n) => s + n, 0);
+          return `Checked ${total} unit(s): ${c.consistent || 0} consistent · ${c.mismatch || 0} mismatched · ${c.inconclusive || 0} inconclusive · ${c.no_doc || 0} not yet on IReV.`;
+        })();
+
+  const collLine = (() => {
+    if (!coll) return 'Loading…';
+    const b = coll.byLevel ?? {};
+    const f = coll.flags ?? {};
+    const total = (b.ward || 0) + (b.lga || 0) + (b.state || 0);
+    return total
+      ? `${total} collation report(s): ${b.ward || 0} ward · ${b.lga || 0} LGA · ${b.state || 0} state — ${f.collation_undercount || 0} undercount flag(s), ${f.collation_disputed || 0} disputed.`
+      : 'No collation reports yet — they arrive on election night as results move up the ladder.';
+  })();
+
+  return (
+    <SafeAreaView className="flex-1 bg-hawk-mist">
+      <View className="flex-row items-center px-4 pt-2">
+        <Pressable
+          hitSlop={12}
+          onPress={() => router.back()}
+          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+        >
+          <Feather name="x" size={18} color={BRAND.ink} />
+        </Pressable>
+        <Text className="pl-3 text-lg font-bold text-hawk-ink">Election Integrity</Text>
+      </View>
+
+      <ScrollView
+        contentContainerClassName="px-4 pb-10 pt-3"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            tintColor={BRAND.leaf}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await loadAll();
+              setRefreshing(false);
+            }}
+          />
+        }
+      >
+        <View className="mb-3 rounded-xl bg-amber-100 px-3 py-2">
+          <Text className="text-xs font-semibold text-amber-900">
+            Beta — anomalies are automated flags for scrutiny, not verdicts. Official results
+            remain INEC&apos;s.
+          </Text>
+        </View>
+
+        <Text className="pb-3 text-sm text-neutral-600">
+          Every crowd-reported result is run through automated integrity checks. Anything that
+          looks wrong is logged here in the open — over-voting, impossible turnout, forged form
+          serials, conflicting counts and statistical outliers.
+        </Text>
+
+        {err ? (
+          <Text className="pb-2 text-sm font-semibold text-amber-800">
+            Could not refresh. ({err})
+          </Text>
+        ) : null}
+
+        <View className="flex-row flex-wrap">
+          <Stat n={bySev.high || 0} label="High-severity flags" tone="text-red-700" />
+          <Stat n={bySev.medium || 0} label="Medium flags" tone="text-amber-700" />
+          <Stat n={bySev.low || 0} label="Low flags" />
+          <Stat n={summary?.unitsFlagged ?? 0} label="Units flagged" />
+          <Stat n={(summary?.reports ?? 0).toLocaleString()} label="Reports screened" />
+        </View>
+
+        {/* Detected discrepancies */}
+        <Text className="pb-2 pt-3 text-base font-bold text-hawk-ink">Detected discrepancies</Text>
+        <View className="flex-row flex-wrap">
+          {[
+            ['', 'All'],
+            ['high', '🚩 High'],
+            ['medium', '⚠️ Medium'],
+            ['low', 'ℹ️ Low'],
+          ].map(([k, label]) => (
+            <Chip key={k || 'all'} label={label} on={sev === k} onPress={() => setSev(k)} />
+          ))}
+        </View>
+        {types.length ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-1">
+            <Chip label="All types" on={!type} onPress={() => setType('')} />
+            {types.map((t) => (
+              <Chip
+                key={t}
+                label={TYPE_LABEL[t] || t}
+                on={type === t}
+                onPress={() => setType(type === t ? '' : t)}
+              />
+            ))}
+          </ScrollView>
+        ) : null}
+        {states.length ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-1">
+            <Chip label="All states" on={!stateSel} onPress={() => setStateSel('')} />
+            {states.map((s) => (
+              <Chip
+                key={s}
+                label={s}
+                on={stateSel === s}
+                onPress={() => setStateSel(stateSel === s ? '' : s)}
+              />
+            ))}
+          </ScrollView>
+        ) : null}
+
+        {rows === null ? (
+          <ActivityIndicator className="py-4" color={BRAND.leaf} />
+        ) : rows.length === 0 ? (
+          <Text className="py-3 text-sm text-neutral-500">
+            No discrepancies match — nothing flagged yet. 🎉
+          </Text>
+        ) : (
+          rows.map((d) => {
+            const summaryText = d.detail.summary || '';
+            const long = summaryText.length > 120;
+            const show = expanded[d.id] || !long;
+            return (
+              <View key={d.id} className="mb-2 rounded-2xl bg-white px-4 py-3">
+                <View className="flex-row items-center">
+                  <View className={`rounded-full px-2 py-0.5 ${SEV_COLOR[d.severity] ?? ''}`}>
+                    <Text className="text-[10px] font-bold">{d.severity.toUpperCase()}</Text>
+                  </View>
+                  <Text className="flex-1 pl-2 text-sm font-bold text-hawk-ink">
+                    {TYPE_LABEL[d.type] || d.type}
+                  </Text>
+                  <Text className="text-[11px] text-neutral-400">{timeAgo(d.created_at)}</Text>
+                </View>
+                <Text className="pt-1 text-sm text-hawk-ink">
+                  {d.pu_name ? d.pu_name : d.state || '—'}
+                </Text>
+                {d.pu_code ? (
+                  <Text className="text-[11px] text-neutral-500">
+                    {d.pu_code}
+                    {d.state ? ` · ${d.state}` : ''}
+                  </Text>
+                ) : null}
+                {summaryText ? (
+                  <Text className="pt-1.5 text-sm text-neutral-700">
+                    {show ? summaryText : `${summaryText.slice(0, 120).replace(/\s+\S*$/, '')}…`}
+                    {d.contest ? ` (${d.contest})` : ''}
+                  </Text>
+                ) : null}
+                {long ? (
+                  <Pressable onPress={() => setExpanded((e) => ({ ...e, [d.id]: !e[d.id] }))}>
+                    <Text className="pt-1 text-xs font-bold text-hawk-leaf">
+                      {show ? 'less' : 'more'}
+                    </Text>
+                  </Pressable>
+                ) : null}
+                {d.detail.docUrl ? (
+                  <Pressable
+                    className="pt-1.5"
+                    onPress={() => WebBrowser.openBrowserAsync(d.detail.docUrl!)}
+                  >
+                    <Text className="text-xs font-bold text-hawk-leaf">
+                      View INEC&apos;s sheet ↗
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            );
+          })
+        )}
+
+        {/* Digit-distribution screening */}
+        <Text className="pb-1 pt-4 text-base font-bold text-hawk-ink">
+          Digit-distribution screening
+        </Text>
+        <Text className="pb-2 text-sm text-neutral-600">
+          Fabricated figures cluster on favourite digits; genuine counts follow known
+          distributions. Departures are screening signals — never proof on their own.
+          {benford ? ` Based on ${benford.n} unit result(s), ${benford.nFirst || 0} party count(s).` : ''}
+        </Text>
+        <View className="rounded-2xl bg-white px-4 py-4">
+          <Text className="text-sm font-bold text-hawk-ink">
+            First digit — Benford&apos;s law{' '}
+            <Text className="text-xs font-semibold text-neutral-500">
+              {benford && VERDICT_TEXT[benford.verdict]
+                ? `— ${VERDICT_TEXT[benford.verdict](benford.mad)}`
+                : ''}
+            </Text>
+          </Text>
+          <Text className="pt-0.5 text-xs text-neutral-500">
+            First digit of every party count vs Benford&apos;s expected curve (amber line).
+          </Text>
+          {benford?.firstDigit ? (
+            <DigitBars items={benford.firstDigit} n={benford.nFirst} />
+          ) : (
+            <Text className="pt-2 text-xs text-neutral-400">No counts yet.</Text>
+          )}
+
+          <Text className="pt-4 text-sm font-bold text-hawk-ink">Last digit — uniformity</Text>
+          <Text className="pt-0.5 text-xs text-neutral-500">
+            Last digit of winning-party counts. A healthy spread sits near the 10% line.
+          </Text>
+          {benford?.lastDigit?.length ? (
+            <DigitBars items={benford.lastDigit} n={benford.n} />
+          ) : (
+            <Text className="pt-2 text-xs text-neutral-400">No counts yet.</Text>
+          )}
+        </View>
+
+        {/* Cross-checks */}
+        <Text className="pb-1 pt-4 text-base font-bold text-hawk-ink">INEC IReV cross-check</Text>
+        <Text className="pb-2 text-sm text-neutral-600">
+          Each crowd-reported count is compared against the EC8A sheet INEC itself uploads to its
+          Results Viewing portal for the same polling unit — INEC&apos;s own evidence checked
+          against the crowd&apos;s.
+        </Text>
+        <View className="rounded-2xl bg-white px-4 py-3">
+          <Text className="text-sm text-neutral-700">{irevLine}</Text>
+        </View>
+
+        <Text className="pb-1 pt-4 text-base font-bold text-hawk-ink">
+          Collation reconciliation (EC8B/C/D)
+        </Text>
+        <Text className="pb-2 text-sm text-neutral-600">
+          Announced ward, LGA and state totals are checked against the polling-unit sheets
+          underneath them. A collated figure can never be less than the sum of the covered units
+          alone — when it is, that is proof of subtraction.
+        </Text>
+        <View className="rounded-2xl bg-white px-4 py-3">
+          <Text className="text-sm text-neutral-700">{collLine}</Text>
+          <Pressable className="pt-2" onPress={() => router.push('/report/collation')}>
+            <Text className="text-sm font-bold text-hawk-leaf">Report a collation result →</Text>
+          </Pressable>
+        </View>
+
+        {/* What we check */}
+        <Text className="pb-1 pt-4 text-base font-bold text-hawk-ink">What we check</Text>
+        <Text className="pb-2 text-sm text-neutral-600">
+          Every result is run through these automated checks. Tap a group to see each one.
+        </Text>
+        <View className="overflow-hidden rounded-2xl bg-white">
+          {CHECKS.map((g, i) => (
+            <View key={g.title} className={i > 0 ? 'border-t border-hawk-mist' : ''}>
+              <Pressable
+                className="flex-row items-center px-4 py-3.5 active:bg-hawk-mist"
+                onPress={() => setOpen((o) => ({ ...o, [i]: !o[i] }))}
+              >
+                <Text className="flex-1 text-sm font-bold text-hawk-ink">{g.title}</Text>
+                <Feather name={open[i] ? 'chevron-up' : 'chevron-down'} size={16} color="#9db5a7" />
+              </Pressable>
+              {open[i]
+                ? g.items.map(([name, what]) => (
+                    <View key={name} className="px-4 pb-3">
+                      <Text className="text-sm text-neutral-700">
+                        <Text className="font-bold text-hawk-ink">{name}</Text> — {what}
+                      </Text>
+                    </View>
+                  ))
+                : null}
+            </View>
+          ))}
+        </View>
+
+        <Text className="pt-4 text-center text-xs text-neutral-400">
+          Automated flags aid scrutiny; they are not proof of fraud. Official results remain
+          INEC&apos;s.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}

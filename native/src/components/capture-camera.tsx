@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { readSheet, type SheetRead } from '@/lib/ocr';
+import { scanSheet, scannerAvailable } from '@/lib/scan';
 import type { Shot } from '@/lib/submit';
 import { getSubmitFix } from '@/lib/location';
 import { BRAND } from '@/lib/api';
@@ -180,6 +181,33 @@ export function CaptureCamera({
       if (!cancelled.current) setFixState(f ? 'ok' : 'failed');
       return f;
     });
+  };
+
+  /**
+   * Hand off to ML Kit's document scanner, then re-enter our own confirm step
+   * with the cropped result. The GPS fix starts BEFORE the scanner opens: the
+   * scanner is a separate activity, and the fix has to belong to the moment
+   * the observer was standing at the sheet, not to whenever they came back.
+   */
+  const scanDoc = async () => {
+    if (busy) return;
+    setBusy(true);
+    setLine('Opening scanner…');
+    startFix();
+    const out = await scanSheet();
+    if (cancelled.current) return;
+    setBusy(false);
+    if (out.ok) {
+      setPreview({ uri: out.uri, capturedAt: Date.now() });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      return;
+    }
+    // Cancelled is a choice, not a fault — say nothing and leave the camera up.
+    setLine(
+      out.reason === 'cancelled'
+        ? null
+        : 'Scanner unavailable — frame the sheet and shoot it directly.',
+    );
   };
 
   const shootPhoto = async () => {
@@ -376,7 +404,12 @@ export function CaptureCamera({
       <View className="absolute inset-x-0 top-0 px-4 pt-14">
         <View className="rounded-2xl bg-black/70 px-4 py-3">
           <Text className="text-lg font-bold text-white">{title}</Text>
-          <Text className="pt-1 text-sm text-neutral-200">{line ?? hint}</Text>
+          <Text className="pt-1 text-sm text-neutral-200">
+            {line ??
+              (readDocument && scannerAvailable()
+                ? `${hint} Tap Scan sheet to auto-crop it.`
+                : hint)}
+          </Text>
         </View>
       </View>
 
@@ -412,6 +445,22 @@ export function CaptureCamera({
               </Text>
             </Pressable>
           ))}
+        </View>
+      ) : null}
+
+      {/* Document steps lead with the scanner: it finds the sheet's edges and
+          returns a flat, cropped page. The plain shutter stays underneath for
+          anyone who would rather just take the photo. */}
+      {readDocument && scannerAvailable() && !recording ? (
+        <View className="absolute inset-x-0 items-center" style={{ bottom: 132 }}>
+          <Pressable
+            disabled={busy}
+            onPress={scanDoc}
+            className="flex-row items-center rounded-full bg-hawk-gold px-5 py-2.5 active:opacity-80"
+          >
+            <Feather name="crop" size={15} color={BRAND.ink} />
+            <Text className="pl-2 text-sm font-bold text-hawk-ink">Scan sheet</Text>
+          </Pressable>
         </View>
       ) : null}
 

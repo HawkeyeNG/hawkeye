@@ -1,10 +1,18 @@
 import { Router } from 'express';
 import { requireObserver } from './observers.js';
-import { registerPushToken } from '../services/push.js';
+import { requireAdmin } from './admin.js';
+import { registerPushToken, checkPushCredentials } from '../services/push.js';
 
 // Mobile shell registers its FCM/APNs device token here after sign-in so the
 // backend can push "new report at your saved unit" etc. to that observer.
 export const pushRouter = Router();
+
+// Owner-only: does the FCM service account actually work? Admin-gated rather
+// than public because it reaches out to Google's token endpoint — cached for an
+// hour, but not something to leave open to anonymous callers.
+pushRouter.get('/push/health', requireAdmin, async (_req, res) => {
+  res.json(await checkPushCredentials());
+});
 
 pushRouter.post('/push/register', requireObserver, (req, res) => {
   const token = String(req.body?.token || '').trim();

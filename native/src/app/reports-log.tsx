@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -120,15 +119,15 @@ export default function ReportsLog() {
           <Text className="flex-1 text-sm text-muted">Checking ledger integrity…</Text>
         ) : ledger.ok ? (
           <>
-            <Feather name="shield" size={16} color={BRAND.leaf} />
-            <Text className="flex-1 pl-2 text-sm font-semibold text-hawk-leaf">
+            <Feather name="shield" size={16} color={ui.tint.good.ink} />
+            <Text className="flex-1 pl-2 text-sm font-semibold text-good-ink">
               Ledger intact — {ledger.entries} {ledger.entries === 1 ? 'entry' : 'entries'}
             </Text>
           </>
         ) : (
           <>
-            <Feather name="alert-triangle" size={16} color="#b91c1c" />
-            <Text className="flex-1 pl-2 text-sm font-semibold text-red-700">
+            <Feather name="alert-triangle" size={16} color={ui.tint.bad.ink} />
+            <Text className="flex-1 pl-2 text-sm font-semibold text-bad-ink">
               Ledger tampered (entry {ledger.brokenAtId})
             </Text>
           </>
@@ -137,7 +136,7 @@ export default function ReportsLog() {
       </Pressable>
 
       {err ? (
-        <Text className="pt-2 text-sm font-semibold text-amber-800">
+        <Text className="pt-2 text-sm font-semibold text-warn-ink">
           Could not refresh. ({err})
         </Text>
       ) : null}
@@ -163,11 +162,11 @@ export default function ReportsLog() {
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingBottom: 32 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={BRAND.leaf} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ui.tint.good.ink} />
         }
         ListEmptyComponent={
           rows === null ? (
-            <ActivityIndicator className="pt-6" color={BRAND.leaf} />
+            <ActivityIndicator className="pt-6" color={ui.tint.good.ink} />
           ) : (
             <Text className="px-4 pt-2 text-sm text-muted">
               No reports yet — this fills up as observers submit from polling units.
@@ -185,15 +184,18 @@ export default function ReportsLog() {
                 {r.contest !== 'PRES' && r.scope ? ` · ${r.scope}` : ''}
               </Text>
 
+              {/* The filled segment reads against bg-surface in BOTH themes, so
+                  it is an *-ink, not the brand green — bg-hawk-green on the dark
+                  surface was a bar you could not see move. */}
               <View className="mt-2 h-2 overflow-hidden rounded-full bg-surface">
                 <View
-                  className={`h-full ${bad ? 'bg-red-600' : 'bg-hawk-green'}`}
+                  className={`h-full ${bad ? 'bg-bad-ink' : 'bg-good-ink'}`}
                   style={{ width: `${Math.max(0, Math.min(100, r.confidence))}%` }}
                 />
               </View>
 
               <Text className="pt-1.5 text-sm text-ink">
-                <Text className={`font-bold ${bad ? 'text-red-700' : 'text-hawk-leaf'}`}>
+                <Text className={`font-bold ${bad ? 'text-bad-ink' : 'text-good-ink'}`}>
                   {r.status.toUpperCase()}
                 </Text>
                 {` · ${r.confidence}% confidence · ${r.matchingReports}/${r.totalReports} matching reports`}

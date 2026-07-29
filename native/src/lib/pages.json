@@ -24,7 +24,7 @@
    },
    {
     "type": "text",
-    "text": "Watch the national leaderboard live, and subscribe to Telegram alerts for the presidential race, your state, senatorial district or constituency."
+    "text": "Watch the leaderboard live, and subscribe to Telegram alerts for the presidential race, your state, senatorial district or constituency."
    },
    {
     "type": "heading",
@@ -112,7 +112,7 @@
     "items": [
      "Matching counts from independent observers push a unit's confidence up; conflicting counts mark it disputed — visibly, never silently resolved.",
      "Each report is tagged to its races automatically — state, senatorial district and federal constituency come from the official register.",
-     "The national leaderboard rolls verified units up per race, with grey regions still awaiting reports."
+     "The leaderboard rolls verified units up per race, with grey regions still awaiting reports."
     ]
    },
    {

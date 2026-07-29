@@ -96,7 +96,7 @@ same external anchors. Nobody at Hawkeye decides.
 - **Report a Result** — guided capture: verify phone (SMS OTP, or one-tap
   inside Telegram), geofence to your unit, photograph the EC8A, enter counts
   (OCR cross-checks the photo), sign and submit.
-- **National Leaderboard** — live tallies with leading-party maps at state,
+- **Leaderboard** — live tallies with leading-party maps at state,
   senatorial-district (109), and federal-constituency (358, ward-resolution)
   levels; vote-share and coverage charts.
 - **Unit Reports Log** — every report, with confidence from corroboration.

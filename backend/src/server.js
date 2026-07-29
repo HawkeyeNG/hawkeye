@@ -1,5 +1,5 @@
 import express from 'express';
-import { config } from './config.js';
+import { config, envFileStatus } from './config.js';
 import { db } from './db.js';
 import { bootstrapData } from './services/register.js';
 import { observersRouter } from './routes/observers.js';
@@ -28,6 +28,7 @@ import { runForensics, recheckCollations } from './services/integrity.js';
 import { runBackup } from './services/backup.js';
 import { irevScan } from './services/irev.js';
 import { runAnchor } from './services/anchor.js';
+import { pushConfigured } from './services/push.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import sharp from 'sharp';
@@ -69,7 +70,21 @@ app.use('/api/collations', makeLimiter({ windowMs: 600_000, max: 300, name: 'col
 app.use('/api/assistant', concurrencyLimit(3, 'assistant'), makeLimiter({ windowMs: 600_000, max: 120, name: 'assistant' }));
 app.use('/api', makeLimiter({ windowMs: 600_000, max: 8000, name: 'api' }));
 
-app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'hawkeye', env: config.env }));
+// `push` says only whether the three FCM env vars are present — a boolean, no
+// secret. It exists so "did my .env actually land" is answerable without a
+// deploy log. Whether the credential WORKS is /api/push/health (owner-only).
+app.get('/api/health', (_req, res) =>
+  res.json({
+    ok: true,
+    service: 'hawkeye',
+    env: config.env,
+    push: pushConfigured(),
+    // Kept after the APP_ENV hunt that added it: a .env that silently fails to
+    // load is indistinguishable from one whose values simply lost to the real
+    // environment, and config.js swallows the error by design. One boolean here
+    // turns "why is my config being ignored" into a single curl. No values.
+    envFile: envFileStatus.loaded,
+  }));
 app.use('/api/observers', observersRouter);
 app.use('/api', pollingUnitsRouter);
 app.use('/api', submissionsRouter);

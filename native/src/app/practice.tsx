@@ -165,7 +165,7 @@ export default function Practice() {
   if (!cfg) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-surface">
-        <ActivityIndicator color={BRAND.leaf} />
+        <ActivityIndicator color={ui.tint.good.ink} />
       </SafeAreaView>
     );
   }
@@ -173,9 +173,9 @@ export default function Practice() {
   if (!cfg.active) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
-        <Feather name="moon" size={28} color={BRAND.leaf} />
+        <Feather name="moon" size={28} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
-          Practice is closed
+          Practice Is Closed
         </Text>
         <Text className="pt-1 text-center text-sm text-muted">
           A fresh practice run reopens after the current election, so you can prepare for the next
@@ -271,13 +271,13 @@ export default function Practice() {
         />
       ) : (
         <View className="h-[110px] items-center justify-center bg-surface">
-          <Feather name="image" size={20} color={BRAND.leaf} />
+          <Feather name="image" size={20} color={ui.tint.good.ink} />
           <Text className="pt-1 text-[11px] font-semibold text-muted">Sample used</Text>
         </View>
       )}
       <View className="flex-row items-center justify-between px-3 py-2">
         <Text className="text-xs font-semibold text-muted">{label}</Text>
-        <Text className="text-xs font-bold text-hawk-leaf">{shot ? 'Retake' : 'Take photo'}</Text>
+        <Text className="text-xs font-bold text-good-ink">{shot ? 'Retake' : 'Take photo'}</Text>
       </View>
     </Pressable>
   );
@@ -292,9 +292,11 @@ export default function Practice() {
         >
           <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Practice run</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Practice Run</Text>
+        {/* bg-hawk-gold is a fixed brand surface: its label must be the fixed
+            hawk ink, since text-ink flips near-white and dies in the gold. */}
         <View className="ml-2 rounded-full bg-hawk-gold px-2 py-0.5">
-          <Text className="text-[10px] font-bold text-ink">PRACTICE</Text>
+          <Text className="text-[10px] font-bold text-hawk-ink">PRACTICE</Text>
         </View>
         <View className="flex-1" />
         {/* The step opens straight into the scanner, so past runs need a door
@@ -307,8 +309,8 @@ export default function Practice() {
           }}
           className="h-9 flex-row items-center rounded-full bg-card px-3 active:opacity-70"
         >
-          <Feather name="clock" size={15} color={BRAND.leaf} />
-          <Text className="pl-1.5 text-xs font-bold text-hawk-leaf">
+          <Feather name="clock" size={15} color={ui.tint.good.ink} />
+          <Text className="pl-1.5 text-xs font-bold text-good-ink">
             {history?.length ? `${history.length} past` : 'Past runs'}
           </Text>
         </Pressable>
@@ -321,10 +323,12 @@ export default function Practice() {
             const on = i <= idx;
             return (
               <View key={s.key} className="mr-1 flex-1">
-                <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-card'}`} />
+                {/* good-ink, not hawk-leaf: #0b6b3a on the dark surface is a
+                    2.5:1 bar nobody can see it move. */}
+                <View className={`h-1.5 rounded-full ${on ? 'bg-good-ink' : 'bg-card'}`} />
                 <Text
                   className={`pt-1 text-center text-[10px] font-semibold ${
-                    on ? 'text-hawk-leaf' : 'text-faint'
+                    on ? 'text-good-ink' : 'text-faint'
                   }`}
                 >
                   {s.label}
@@ -344,7 +348,7 @@ export default function Practice() {
         <View className="flex-1 justify-end bg-black/40">
           <View className="max-h-[70%] rounded-t-3xl bg-surface px-5 pb-8 pt-5">
             <View className="flex-row items-center pb-2">
-              <Text className="flex-1 text-lg font-bold text-ink">Your practice runs</Text>
+              <Text className="flex-1 text-lg font-bold text-ink">Your Practice Runs</Text>
               <Pressable
                 hitSlop={12}
                 onPress={() => setShowHistory(false)}
@@ -359,7 +363,7 @@ export default function Practice() {
             </Text>
             <ScrollView>
               {history === null ? (
-                <ActivityIndicator color={BRAND.leaf} />
+                <ActivityIndicator color={ui.tint.good.ink} />
               ) : history.length === 0 ? (
                 <Text className="pb-4 text-sm text-muted">
                   No practice runs yet on this phone.
@@ -419,7 +423,7 @@ export default function Practice() {
                 <TextInput
                   className="w-24 rounded-xl bg-surface px-3 py-2 text-center text-lg font-bold text-ink"
                   placeholder="0"
-                  placeholderTextColor="#9db5a7"
+                  placeholderTextColor={ui.faint}
                   keyboardType="number-pad"
                   value={counts[p.code] ?? ''}
                   onChangeText={(t) =>
@@ -445,14 +449,14 @@ export default function Practice() {
               <Text className="text-base font-bold text-hawk-gold">Review</Text>
             </Pressable>
             <Pressable className="mt-3 items-center" onPress={() => setStep('venue')}>
-              <Text className="text-sm font-semibold text-hawk-leaf">‹ Back to photos</Text>
+              <Text className="text-sm font-semibold text-good-ink">‹ Back to photos</Text>
             </Pressable>
           </View>
         ) : null}
 
         {step === 'review' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
-            <Text className="pb-3 text-xl font-bold text-ink">Confirm and send</Text>
+            <Text className="pb-3 text-xl font-bold text-ink">Confirm and Send</Text>
             <View className="mb-3 rounded-2xl bg-card px-4 py-3">
               <Text className="text-base font-semibold text-ink">{cfg.unit?.name}</Text>
               <Text className="text-xs text-muted">
@@ -494,7 +498,7 @@ export default function Practice() {
             <TextInput
               className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Printed on the EC8A, if visible"
-              placeholderTextColor="#9db5a7"
+              placeholderTextColor={ui.faint}
               autoCapitalize="characters"
               value={sheetSerial}
               onChangeText={setSheetSerial}
@@ -515,7 +519,7 @@ export default function Practice() {
         {step === 'review' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             {line ? (
-              <Text className="pb-2 text-sm font-semibold text-amber-800">{line}</Text>
+              <Text className="pb-2 text-sm font-semibold text-warn-ink">{line}</Text>
             ) : null}
             <Pressable
               disabled={busy}
@@ -537,7 +541,7 @@ export default function Practice() {
               onPress={() => setStep('votes')}
               disabled={busy}
             >
-              <Text className="text-sm font-semibold text-hawk-leaf">‹ Back to votes</Text>
+              <Text className="text-sm font-semibold text-good-ink">‹ Back to votes</Text>
             </Pressable>
           </View>
         ) : null}
@@ -548,7 +552,7 @@ export default function Practice() {
               <Feather name="check" size={28} color={BRAND.gold} />
             </View>
             <Text className="pt-4 text-center text-lg font-bold text-ink">
-              Practice complete
+              Practice Complete
             </Text>
             <Text className="pt-2 text-center text-sm text-muted">
               That is exactly how you report a result on election day — except then it is signed,
@@ -564,7 +568,7 @@ export default function Practice() {
               <Text className="text-base font-bold text-hawk-gold">Report a real result</Text>
             </Pressable>
             <Pressable className="mt-3 w-full items-center py-2" onPress={restart}>
-              <Text className="text-sm font-semibold text-hawk-leaf">Practise again</Text>
+              <Text className="text-sm font-semibold text-good-ink">Practise again</Text>
             </Pressable>
             <Pressable className="mt-1 w-full items-center py-2" onPress={() => router.back()}>
               <Text className="text-sm text-muted">Done</Text>

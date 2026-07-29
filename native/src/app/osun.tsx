@@ -5,7 +5,6 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RaceView } from '@/components/race';
-import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { loadPolitical, type Race } from '@/lib/political';
 
@@ -45,9 +44,9 @@ export default function Osun() {
           </Text>
         </View>
         {err ? (
-          <Text className="text-sm font-semibold text-amber-800">Could not load. ({err})</Text>
+          <Text className="text-sm font-semibold text-warn-ink">Could not load. ({err})</Text>
         ) : !race ? (
-          <ActivityIndicator className="pt-6" color={BRAND.leaf} />
+          <ActivityIndicator className="pt-6" color={ui.tint.good.ink} />
         ) : (
           <RaceView race={race} logos={logos} />
         )}

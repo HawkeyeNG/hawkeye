@@ -175,9 +175,9 @@ export default function CaseScreen() {
   if (err || (c && c.error)) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
-        <Feather name="file-text" size={26} color={BRAND.leaf} />
+        <Feather name="file-text" size={26} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
-          Case not found
+          Case Not Found
         </Text>
         <Text className="pt-1 text-center text-sm text-muted">
           This case doesn&apos;t exist, or the link is out of date. ({c?.error ?? err})
@@ -195,7 +195,7 @@ export default function CaseScreen() {
   if (!c) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-surface">
-        <ActivityIndicator color={BRAND.leaf} />
+        <ActivityIndicator color={ui.tint.good.ink} />
       </SafeAreaView>
     );
   }
@@ -259,8 +259,8 @@ export default function CaseScreen() {
         </Text>
 
         {c.flags.map((f) => (
-          <View key={f.id} className="mt-3 rounded-2xl bg-amber-50 px-4 py-3">
-            <Text className="text-sm font-bold text-amber-900">{f.type}</Text>
+          <View key={f.id} className="mt-3 rounded-2xl bg-warn px-4 py-3">
+            <Text className="text-sm font-bold text-warn-ink">{f.type}</Text>
             <Text className="pt-0.5 text-sm text-ink">{f.detail.summary ?? ''}</Text>
             {f.detail.reason ? (
               <Text className="pt-1 text-xs text-muted">{f.detail.reason}</Text>
@@ -329,7 +329,7 @@ export default function CaseScreen() {
               <Text className="font-mono text-[10px] text-faint">
                 ledger entry {s.entryHash.slice(0, 32)}…
               </Text>
-              <Text className="pt-0.5 text-xs font-bold text-hawk-leaf">
+              <Text className="pt-0.5 text-xs font-bold text-good-ink">
                 Re-verify the whole chain →
               </Text>
             </Pressable>
@@ -339,7 +339,7 @@ export default function CaseScreen() {
           </View>
         ))}
 
-        <Text className="pb-1 pt-3 text-base font-bold text-ink">The crowd&apos;s verdict</Text>
+        <Text className="pb-1 pt-3 text-base font-bold text-ink">The Crowd&apos;s Verdict</Text>
         <View className="rounded-2xl bg-card px-4 py-4">
           <TallyBar t={c.tally} />
           <Text className="pt-2 text-sm text-ink">
@@ -400,13 +400,13 @@ export default function CaseScreen() {
 
           {/* While judging, the footer carries this line instead — see below. */}
           {msg && !canJudge ? (
-            <Text className="pt-2 text-sm font-semibold text-hawk-leaf">{msg}</Text>
+            <Text className="pt-2 text-sm font-semibold text-good-ink">{msg}</Text>
           ) : null}
         </View>
 
         {noted.length ? (
           <>
-            <Text className="pb-1 pt-4 text-base font-bold text-ink">What jurors noted</Text>
+            <Text className="pb-1 pt-4 text-base font-bold text-ink">What Jurors Noted</Text>
             {noted.map((v, i) => (
               <View key={i} className="mb-2 rounded-2xl bg-card px-4 py-3">
                 <Text className="text-sm italic text-ink">“{v.comment}”</Text>
@@ -432,7 +432,7 @@ export default function CaseScreen() {
           question.") doesn't push the retry away. */}
       {canJudge ? (
         <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
-          {msg ? <Text className="pb-2 text-sm font-semibold text-hawk-leaf">{msg}</Text> : null}
+          {msg ? <Text className="pb-2 text-sm font-semibold text-good-ink">{msg}</Text> : null}
           <Pressable
             disabled={busy}
             onPress={cast}
@@ -457,6 +457,7 @@ export default function CaseScreen() {
 }
 
 function TextInputBox({ value, onChange }: { value: string; onChange: (s: string) => void }) {
+  const ui = useUi();
   return (
     <TextInput
       value={value}
@@ -464,7 +465,7 @@ function TextInputBox({ value, onChange }: { value: string; onChange: (s: string
       multiline
       maxLength={280}
       placeholder="e.g. the INEC stamp is missing; figures column reads 108 not 180"
-      placeholderTextColor="#9ca3af"
+      placeholderTextColor={ui.faint}
       className="min-h-[56px] text-sm text-ink"
     />
   );

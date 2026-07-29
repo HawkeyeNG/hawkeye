@@ -363,7 +363,7 @@ await t('delete identity kills the session server-side', async () => {
 section('page health');
 
 const PAGES = [
-  ['/index.html', /witnessed and unchangeable/i], ['/results.html', /National leaderboard/i],
+  ['/index.html', /witnessed and unchangeable/i], ['/results.html', /Leaderboard/i],
   ['/dashboard.html', /Live polling unit reports/i], ['/ledger.html', /Verify the Ledger/i],
   ['/integrity.html', /Election Integrity/i], ['/docket.html', /Public Docket/i],
   ['/incidents.html', /Report an Incident/i], ['/collation.html', /Collation/i],

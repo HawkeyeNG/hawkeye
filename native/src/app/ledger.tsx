@@ -2,15 +2,25 @@ import { Feather } from '@expo/vector-icons';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { utf8ToBytes } from '@noble/hashes/utils.js';
 import { FlashList } from '@shopify/flash-list';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  Text,
+  UIManager,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SectionLabel } from '@/components/content-kit';
 import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
-import { useUi } from '@/lib/theme';
+import { useUi, type Tone } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 const GENESIS = '0'.repeat(64);
@@ -52,6 +62,114 @@ type RaceProof = {
   error?: string;
 };
 
+/** Tinted surfaces that follow the theme. A verdict card must never be a
+ *  hardcoded bg-emerald-50 / bg-red-50 — those stay pale in dark mode while the
+ *  text on them goes near-white, which is how this screen shipped unreadable. */
+const TINT: Record<Tone, { bg: string; text: string }> = {
+  good: { bg: 'bg-good', text: 'text-good-ink' },
+  bad: { bg: 'bg-bad', text: 'text-bad-ink' },
+  warn: { bg: 'bg-warn', text: 'text-warn-ink' },
+};
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+const animate = () =>
+  LayoutAnimation.configureNext(LayoutAnimation.create(180, 'easeInEaseOut', 'opacity'));
+
+/**
+ * Detail, folded away — and every fold starts CLOSED. The screen leads with
+ * numbers; the cryptography behind them is here for whoever wants it, but a
+ * panel that opens itself puts the paragraphs back in front of the result.
+ */
+function Fold({ title, body }: { title: string; body: string[] }) {
+  const ui = useUi();
+  const [open, setOpen] = useState(false);
+  return (
+    <View className="mt-2 overflow-hidden rounded-2xl bg-card">
+      <Pressable
+        className="flex-row items-center px-4 py-3.5 active:bg-surface"
+        onPress={() => {
+          animate();
+          Haptics.selectionAsync();
+          setOpen((o) => !o);
+        }}
+      >
+        <Text className="flex-1 pr-2 text-[15px] font-semibold text-ink">{title}</Text>
+        <Feather name={open ? 'minus' : 'plus'} size={16} color={ui.tint.good.ink} />
+      </Pressable>
+      {open
+        ? body.map((p, i) => (
+            <Text key={i} className="px-4 pb-3 text-sm leading-5 text-muted">
+              {p}
+            </Text>
+          ))
+        : null}
+    </View>
+  );
+}
+
+/** A verdict card. Tinted through the semantic tokens, so the tint darkens with
+ *  the theme instead of leaving pale-on-pale text in dark mode. */
+function Result({ ok, text, link }: { ok: boolean; text: string; link?: string }) {
+  const ui = useUi();
+  return (
+    <View className={`mt-2 rounded-2xl px-4 py-3 ${ok ? 'bg-good' : 'bg-bad'}`}>
+      <View className="flex-row items-start">
+        <Feather
+          name={ok ? 'check-circle' : 'alert-triangle'}
+          size={16}
+          color={ok ? ui.tint.good.ink : ui.tint.bad.ink}
+          style={{ marginTop: 1 }}
+        />
+        <Text
+          className={`flex-1 pl-2 text-sm font-semibold ${ok ? 'text-good-ink' : 'text-bad-ink'}`}
+        >
+          {text}
+        </Text>
+      </View>
+      {link ? (
+        <Pressable className="pt-2" onPress={() => WebBrowser.openBrowserAsync(link)}>
+          <Text className="text-sm font-bold text-good-ink">Confirm in Rekor ↗</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+/** A number and what it counts. Tinted when it carries a verdict. */
+function Stat({
+  value,
+  label,
+  tone,
+  tight,
+}: {
+  value: string;
+  label: string;
+  tone?: Tone;
+  tight?: boolean;
+}) {
+  return (
+    <View
+      className={`mb-2 mr-2 min-w-[44%] flex-1 rounded-2xl px-3.5 py-3 ${
+        tone ? TINT[tone].bg : 'bg-card'
+      }`}
+    >
+      <Text
+        className={`${tight ? 'text-base' : 'text-xl'} font-bold ${
+          tone ? TINT[tone].text : 'text-ink'
+        }`}
+      >
+        {value}
+      </Text>
+      <Text className="pt-1 text-[10px] font-bold uppercase tracking-[1px] text-muted">
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 const hex = (s: string) =>
   Array.from(sha256(utf8ToBytes(s)), (b) => b.toString(16).padStart(2, '0')).join('');
 
@@ -84,6 +202,10 @@ async function jget<T>(path: string): Promise<T> {
  * own verdict is shown, but the observer can recompute the entire chain
  * locally and, separately, fold one race's Merkle proof up to a root that is
  * published in Sigstore's public Rekor log. Neither check trusts Hawkeye.
+ *
+ * Shaped as a dashboard: what the two checks compute goes into stat tiles at
+ * the top, one sentence says what "verified" means, and the cryptography sits
+ * in collapsed folds. The reader who only wants the verdict never scrolls.
  */
 export default function Ledger() {
   const ui = useUi();
@@ -218,79 +340,57 @@ export default function Ledger() {
 
   const rows = useMemo(() => [...entries].reverse(), [entries]);
 
-  const Result = ({ ok, text, link }: { ok: boolean; text: string; link?: string }) => (
-    <View className={`mt-2 rounded-2xl px-4 py-3 ${ok ? 'bg-emerald-50' : 'bg-red-50'}`}>
-      <View className="flex-row items-start">
-        <Feather
-          name={ok ? 'check-circle' : 'alert-triangle'}
-          size={16}
-          color={ok ? BRAND.leaf : '#b91c1c'}
-        />
-        <Text
-          className={`flex-1 pl-2 text-sm font-semibold ${ok ? 'text-hawk-leaf' : 'text-red-700'}`}
-        >
-          {text}
-        </Text>
-      </View>
-      {link ? (
-        <Pressable className="pt-2" onPress={() => WebBrowser.openBrowserAsync(link)}>
-          <Text className="text-sm font-bold text-hawk-leaf">Confirm in Rekor ↗</Text>
-        </Pressable>
-      ) : null}
-    </View>
-  );
+  // The on-device check, as a tile: nothing run yet, counting, or a verdict.
+  const local: { value: string; tone?: Tone; tight?: boolean } = progress
+    ? { value: `${progress.done}/${progress.total}`, tight: true }
+    : chain
+      ? chain.ok
+        ? { value: 'Verified', tone: 'good' }
+        : { value: 'Broken', tone: 'bad' }
+      : { value: 'Not run' };
 
   const header = (
     <View className="px-4 pb-2 pt-3">
-      <Text className="pb-3 text-sm text-muted">
-        Every accepted report is chained by hash: each entry commits to all before it, so
-        changing or removing any past report breaks every later hash. You can recompute the
-        whole chain here — you don&apos;t have to trust us.
+      {loading ? (
+        <ActivityIndicator className="py-8" color={ui.tint.good.ink} />
+      ) : loadErr ? (
+        <View className="rounded-2xl bg-bad px-4 py-4">
+          <Text className="text-sm font-semibold text-bad-ink">
+            Could not load the ledger. ({loadErr})
+          </Text>
+          <Pressable
+            className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
+            onPress={load}
+          >
+            <Text className="text-base font-bold text-hawk-gold">Retry</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View className="flex-row flex-wrap">
+          <Stat value={(verify?.entries ?? 0).toLocaleString()} label="Entries chained" />
+          {/* A missing verdict is not a failing one — never colour it red. */}
+          <Stat
+            value={!verify ? '—' : verify.ok ? 'Intact' : `Broken at #${verify.brokenAtId ?? '?'}`}
+            label="Server check"
+            tone={!verify ? undefined : verify.ok ? 'good' : 'bad'}
+            tight={!!verify && !verify.ok}
+          />
+          <Stat value={local.value} label="On this phone" tone={local.tone} tight={local.tight} />
+          <Stat value={anchor?.day ?? 'None yet'} label="Last anchor" tight />
+        </View>
+      )}
+
+      {/* The one sentence the screen's credibility rests on. */}
+      <Text className="pt-1 text-sm leading-5 text-muted">
+        Verified means your phone recomputed every hash itself and got the same head we publish —
+        so no report has been altered or removed.
       </Text>
 
-      {/* The server's own verdict — shown, but never the thing you rely on. */}
-      <View className="rounded-2xl bg-card px-4 py-4">
-        {loading ? (
-          <ActivityIndicator color={BRAND.leaf} />
-        ) : loadErr ? (
-          <>
-            <Text className="text-sm font-semibold text-red-700">
-              Could not load the ledger. ({loadErr})
-            </Text>
-            <Pressable
-              className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
-              onPress={load}
-            >
-              <Text className="text-base font-bold text-hawk-gold">Retry</Text>
-            </Pressable>
-          </>
-        ) : verify?.ok ? (
-          <>
-            <View className="flex-row items-center">
-              <Feather name="shield" size={18} color={BRAND.leaf} />
-              <Text className="pl-2 text-base font-bold text-hawk-leaf">Chain intact</Text>
-            </View>
-            <Text className="pt-1 text-sm text-muted">
-              {verify.entries} {verify.entries === 1 ? 'entry' : 'entries'} · server says the head is
-            </Text>
-            <Text className="pt-1 font-mono text-xs text-muted">
-              {verify.head || GENESIS}
-            </Text>
-          </>
-        ) : (
-          <View className="flex-row items-center">
-            <Feather name="alert-triangle" size={18} color="#b91c1c" />
-            <Text className="pl-2 text-base font-bold text-red-700">
-              Tamper detected at entry {verify?.brokenAtId}
-            </Text>
-          </View>
-        )}
-      </View>
-
+      <SectionLabel text="Chain" />
       <Pressable
         disabled={loading || !!progress || !!loadErr}
         onPress={verifyChain}
-        className={`mt-3 items-center rounded-2xl py-4 ${
+        className={`items-center rounded-2xl py-4 ${
           loading || progress || loadErr ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
         }`}
       >
@@ -299,39 +399,48 @@ export default function Ledger() {
             Recomputing… {progress.done}/{progress.total}
           </Text>
         ) : (
-          <Text className="text-base font-bold text-hawk-gold">
-            Re-verify the entire chain on this phone
-          </Text>
+          <Text className="text-base font-bold text-hawk-gold">Re-verify on this phone</Text>
         )}
       </Pressable>
       {chain ? <Result ok={chain.ok} text={chain.text} /> : null}
 
-      {/* Single-race proof: verify one contest without replaying the whole chain. */}
-      <View className="mt-4 rounded-2xl bg-card px-4 py-4">
-        <Text className="text-base font-bold text-ink">Verify a single race</Text>
-        <Text className="pt-1 text-sm text-muted">
-          Each anchor batches every race into one Merkle root published to Sigstore&apos;s public
-          Rekor log. Check one race&apos;s paper trail here — folded on your phone — without
-          replaying every other race.
-        </Text>
+      {/* The server's own head — shown so it can be compared, never relied on. */}
+      {verify ? (
+        <View className="mt-2 rounded-2xl bg-card px-4 py-3">
+          <Text className="text-[10px] font-bold uppercase tracking-[1px] text-faint">
+            Server head
+          </Text>
+          <Text numberOfLines={1} className="pt-1 font-mono text-xs text-muted">
+            {verify.head || GENESIS}
+          </Text>
+        </View>
+      ) : null}
 
+      <Fold
+        title="How the Chain Is Checked"
+        body={[
+          'Each entry stores the hash of the one before it, so altering any past report breaks every hash after it.',
+        ]}
+      />
+
+      {/* Single-race proof: verify one contest without replaying the whole chain. */}
+      <SectionLabel text="Single-Race Proof" />
+      <View className="rounded-2xl bg-card px-4 py-4">
         {anchor ? (
           <Pressable
-            className="pt-2"
             onPress={() => WebBrowser.openBrowserAsync(anchor.rekorSearchUrl || anchor.rekorUrl)}
           >
             <Text className="text-xs text-muted">
-              Anchor <Text className="font-bold text-ink">{anchor.day}</Text> ·{' '}
-              {anchor.racesCount} race(s) · root{' '}
+              <Text className="font-bold text-ink">{anchor.racesCount}</Text> race(s) · root{' '}
               {(anchor.racesRoot || GENESIS).slice(0, 16)}…{'  '}
-              <Text className="font-bold text-hawk-leaf">View in Rekor ↗</Text>
+              <Text className="font-bold text-good-ink">View in Rekor ↗</Text>
             </Text>
           </Pressable>
         ) : null}
 
         {races.length ? (
           <View className="pt-3">
-            <Prompt>Select a race to verify</Prompt>
+            <Prompt>Select a race</Prompt>
             <View className="flex-row flex-wrap">
               {races.map((r) => {
                 const on = raceSel === r.race_key;
@@ -357,16 +466,22 @@ export default function Ledger() {
             </View>
           </View>
         ) : !loading && !loadErr ? (
-          <Text className="pt-3 text-sm text-muted">
-            No race has been batched into an anchor yet — anchors start carrying race roots once
-            reporting opens.
+          <Text className={`${anchor ? 'pt-3 ' : ''}text-sm text-muted`}>
+            No race is anchored yet — race roots start on reporting day.
           </Text>
         ) : null}
       </View>
 
-      <Text className="pb-2 pt-5 text-base font-bold text-ink">Ledger entries</Text>
+      <Fold
+        title="What a Single-Race Proof Shows"
+        body={[
+          "Each anchor folds every race into one Merkle root published to Sigstore's Rekor log, which we cannot rewrite. Your phone folds one race's proof up to that root, without replaying the others.",
+        ]}
+      />
+
+      <SectionLabel text="Ledger Entries" />
       <Text className="pb-2 text-sm text-muted">
-        Newest first. Every row&apos;s evidence photos are public, content-addressed files.
+        Newest first. Each photo&apos;s filename is its own hash.
       </Text>
     </View>
   );
@@ -394,7 +509,7 @@ export default function Ledger() {
         ListEmptyComponent={
           loading || loadErr ? null : (
             <Text className="px-4 pt-2 text-sm text-muted">
-              No entries yet — nothing has been reported into the chain.
+              Nothing reported into the chain yet.
             </Text>
           )
         }
@@ -415,7 +530,7 @@ export default function Ledger() {
                   WebBrowser.openBrowserAsync(`${BASE}/uploads/${item.image_sha256}.jpg`)
                 }
               >
-                <Text className="text-sm font-bold text-hawk-leaf">Sheet photo</Text>
+                <Text className="text-sm font-bold text-good-ink">Sheet photo</Text>
               </Pressable>
               <Pressable
                 className="pl-4"
@@ -423,7 +538,7 @@ export default function Ledger() {
                   WebBrowser.openBrowserAsync(`${BASE}/uploads/${item.venue_image_sha256}.jpg`)
                 }
               >
-                <Text className="text-sm font-bold text-hawk-leaf">Venue photo</Text>
+                <Text className="text-sm font-bold text-good-ink">Venue photo</Text>
               </Pressable>
             </View>
           </View>

@@ -18,7 +18,11 @@ type Gaps = { contest: string; statesTotal: number; statesReported: number; miss
 type Sub = { contest: string; state?: string };
 
 /**
- * Results — the national leaderboard, native twin of results.html.
+ * The Leaderboard — native twin of results.html, which calls itself that in its
+ * nav and its <h1>. The screen title matches the website word for word so that
+ * "open the Leaderboard" points at something an observer can actually find; the
+ * tab bar keeps the shorter "Results" because five tabs share one row and the
+ * longer word truncates there.
  *
  * Two things here are not decoration. The board refreshes on a stated cadence
  * and says when it last did, because a stale tally that looks live is worse
@@ -186,7 +190,7 @@ export default function Results() {
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="px-4 pb-2 pt-4">
-        <Text className="text-2xl font-bold text-ink">Results</Text>
+        <Text className="text-2xl font-bold text-ink">Leaderboard</Text>
         <Text className="text-sm text-muted">
           {contest?.election ?? 'Loading…'} · {data?.unitsReporting ?? 0} unit(s) reporting
           {updatedAt

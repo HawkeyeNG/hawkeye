@@ -7,10 +7,18 @@ const backendRoot = path.resolve(__dirname, '..');
 
 // Load backend/.env regardless of how the process was started (npm, Passenger,
 // systemd). Real environment variables take precedence over the file.
+//
+// envFileStatus records WHY, because this failing is invisible: the catch below
+// swallows everything, and a .env that never loads looks identical to one whose
+// values simply lost to the real environment. Surfaced as booleans on
+// /api/health so a misconfigured deploy is diagnosable without shell access.
+const envPath = path.join(backendRoot, '.env');
+export const envFileStatus = { path: envPath, loaded: false, error: null };
 try {
-  process.loadEnvFile(path.join(backendRoot, '.env'));
-} catch {
-  /* no .env — dev defaults apply */
+  process.loadEnvFile(envPath);
+  envFileStatus.loaded = true;
+} catch (e) {
+  envFileStatus.error = e?.code || e?.name || 'load_failed';
 }
 
 const DEV_DEFAULT = 'dev-only-change-me';
@@ -26,7 +34,22 @@ const bool = (name, fallback) => {
 };
 
 export const config = {
-  env: process.env.NODE_ENV || 'development',
+  // APP_ENV first, NODE_ENV only as a fallback.
+  //
+  // The shared host runs us under CloudLinux's Node.js Selector, which injects
+  // its own NODE_ENV from the app's "Application mode" dropdown — that beats
+  // anything .env says, so NODE_ENV here was pinned to 'development' and the
+  // production guards below (real JWT_SECRET / ORACLE_SECRET / PHONE_SALT, a
+  // real SMS provider) were silently switched OFF on the live server.
+  //
+  // Those assertions are the whole point: an election backend running on
+  // jwtSecret = 'dev-only-change-me' would forge any observer session, and
+  // nothing would have said so. APP_ENV lets .env assert the security posture
+  // without asking the host to change how it runs the process — which is the
+  // right split anyway. Express keeps reading NODE_ENV for its own behaviour;
+  // that only affects view caching (unused) and its default error handler,
+  // which server.js overrides precisely so nothing leaks either way.
+  env: process.env.APP_ENV || process.env.NODE_ENV || 'development',
   port: num('PORT', 8430),
   // Open a crowd-arbitration case the moment a high-severity flag lands, instead
   // of waiting for the post-election batch (openCases). Auto-on for mock/test

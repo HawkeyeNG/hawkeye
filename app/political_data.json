@@ -115,12 +115,13 @@
    "governors": {
     "label": "Governors",
     "size": 36,
-    "total": 35,
+    "total": 36,
     "parties": {
      "LP": 1,
      "APC": 31,
      "APGA": 1,
-     "APM": 2
+     "PDP": 2,
+     "A": 1
     }
    },
    "assembly": {

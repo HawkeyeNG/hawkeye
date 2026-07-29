@@ -16,7 +16,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ContentBlock, QuestionRow, SectionLabel } from '@/components/content-kit';
 import { SocialRow } from '@/components/social-row';
-import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { PAGES } from '@/lib/content';
 import RAW from '@/lib/pages.json';
@@ -129,7 +128,7 @@ export default function StaticPage() {
               })
             }
           >
-            <Feather name="share-2" size={16} color={BRAND.leaf} />
+            <Feather name="share-2" size={16} color={ui.tint.good.ink} />
           </Pressable>
         </View>
 
@@ -163,7 +162,7 @@ export default function StaticPage() {
         contentContainerClassName="px-4 pb-12 pt-3"
       >
         <Animated.View style={{ opacity: heroFade }}>
-          <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-hawk-leaf">
+          <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-good-ink">
             {kicker}
           </Text>
           <Text className="pt-1 text-3xl font-bold leading-9 text-ink">{title}</Text>

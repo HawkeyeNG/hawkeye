@@ -331,7 +331,7 @@ const coverage = await api('/api/coverage');
 console.log('  coverage:', JSON.stringify(coverage.body));
 const natl = await api('/api/national/PRES');
 console.log('  national PRES:', JSON.stringify(natl.body.national), 'states:', natl.body.states.length);
-expect('national leaderboard aggregates votes and state leaders',
+expect('leaderboard aggregates votes and state leaders',
   natl.body.national.length > 0 && natl.body.states.every((s) => s.leader));
 const ledger = await api('/api/ledger/verify');
 console.log('  ledger:', JSON.stringify(ledger.body));

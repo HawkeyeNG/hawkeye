@@ -15,6 +15,23 @@ module.exports = {
         faint: "rgb(var(--faint) / <alpha-value>)",
         line: "rgb(var(--line) / <alpha-value>)",
         disabled: "rgb(var(--disabled) / <alpha-value>)",
+        // Tinted surfaces. bg-good / bg-bad / bg-warn darken with the theme, so
+        // text-ink stays legible on them; text-good-ink / text-bad-ink /
+        // text-warn-ink are the heading + icon colours that go on that tint.
+        // Never reach for bg-emerald-50 / bg-red-50 / bg-amber-50 again — those
+        // stay pale in dark mode and the body copy on them disappears.
+        good: {
+          DEFAULT: "rgb(var(--good) / <alpha-value>)",
+          ink: "rgb(var(--good-ink) / <alpha-value>)",
+        },
+        bad: {
+          DEFAULT: "rgb(var(--bad) / <alpha-value>)",
+          ink: "rgb(var(--bad-ink) / <alpha-value>)",
+        },
+        warn: {
+          DEFAULT: "rgb(var(--warn) / <alpha-value>)",
+          ink: "rgb(var(--warn-ink) / <alpha-value>)",
+        },
         hawk: {
           green: "#004225",
           leaf: "#0b6b3a",

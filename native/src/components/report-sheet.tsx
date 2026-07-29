@@ -54,8 +54,13 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
       animateOnMount={false}
       enablePanDownToClose
       backdropComponent={backdrop}
-      handleIndicatorStyle={{ backgroundColor: '#9db5a7' }}
-      backgroundStyle={{ backgroundColor: '#ffffff', borderRadius: 24 }}
+      // @gorhom/bottom-sheet styles through objects, not classNames, so the
+      // theme has to be read in JS. A hardcoded white here left the sheet pale
+      // in dark mode while its title (text-ink) went near-white on top of it —
+      // an invisible "Report" heading. The handle follows too: a light grab bar
+      // on a light sheet is just as lost as a dark one on a dark sheet.
+      handleIndicatorStyle={{ backgroundColor: ui.faint }}
+      backgroundStyle={{ backgroundColor: ui.card, borderRadius: 24 }}
     >
       <BottomSheetView style={{ paddingBottom: insets.bottom + 12 }}>
         <Text className="px-5 pb-1 pt-1 text-lg font-bold text-ink">Report</Text>

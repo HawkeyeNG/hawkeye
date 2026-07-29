@@ -121,7 +121,7 @@ export default function Incidents() {
         >
           <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Published incidents</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Published Incidents</Text>
       </View>
 
       <FlashList
@@ -130,11 +130,11 @@ export default function Incidents() {
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingBottom: 16 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={BRAND.leaf} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ui.tint.good.ink} />
         }
         ListEmptyComponent={
           rows === null && !err ? (
-            <ActivityIndicator className="pt-8" color={BRAND.leaf} />
+            <ActivityIndicator className="pt-8" color={ui.tint.good.ink} />
           ) : err ? (
             <View className="mx-4 mt-3 items-center rounded-2xl bg-card px-6 py-10">
               <Feather name="wifi-off" size={26} color={ui.faint} />
@@ -147,7 +147,7 @@ export default function Incidents() {
             </View>
           ) : (
             <View className="mx-4 mt-3 items-center rounded-2xl bg-card px-6 py-10">
-              <Feather name="check-circle" size={26} color={BRAND.leaf} />
+              <Feather name="check-circle" size={26} color={ui.tint.good.ink} />
               <Text className="pt-3 text-base font-semibold text-ink">
                 No incidents published yet
               </Text>
@@ -165,7 +165,7 @@ export default function Incidents() {
             <View className="mx-4 mb-2 rounded-2xl bg-card px-4 py-3">
               <View className="flex-row items-center">
                 <View className="rounded-full bg-surface px-2.5 py-1">
-                  <Text className="text-[10px] font-bold uppercase tracking-wide text-hawk-leaf">
+                  <Text className="text-[10px] font-bold uppercase tracking-wide text-good-ink">
                     {KIND_LABEL[i.kind] ?? i.kind}
                   </Text>
                 </View>

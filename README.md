@@ -180,7 +180,7 @@ evidence score) pools every report at the unit regardless of contest. Update
 `contests.json` against INEC's official timetable, and extend it with per-party
 candidate names once nominations are formally announced.
 
-### National leaderboard (`/results.html`)
+### Leaderboard (`/results.html`)
 
 Tentative, explicitly-unofficial national tallies per contest: an SVG map of
 Nigeria (self-built from GRID3 state boundaries — `scripts/fetch_states_geo.js`)

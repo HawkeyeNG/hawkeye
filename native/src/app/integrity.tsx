@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -72,7 +71,7 @@ const VERDICT_TEXT: Record<string, (mad: number) => string> = {
 /** The checklist from integrity.html — what an automated flag can even mean. */
 const CHECKS: { title: string; items: [string, string][] }[] = [
   {
-    title: 'Against INEC & collation records',
+    title: 'Against INEC & Collation Records',
     items: [
       ['INEC IReV mismatch', "the crowd's counts don't appear on INEC's own uploaded sheet for that unit."],
       ['Collation undercount', 'a ward/LGA/state form showing less for a party than its covered polling units alone add up to.'],
@@ -82,7 +81,7 @@ const CHECKS: { title: string; items: [string, string][] }[] = [
     ],
   },
   {
-    title: 'Statistical tripwires',
+    title: 'Statistical Tripwires',
     items: [
       ['Over-voting', 'more votes than registered voters at a unit (impossible).'],
       ['Impossible turnout', 'turnout above ~95%, or a strong outlier vs. its state.'],
@@ -93,14 +92,14 @@ const CHECKS: { title: string; items: [string, string][] }[] = [
     ],
   },
   {
-    title: 'AI vision on the result sheet',
+    title: 'AI Vision on the Result Sheet',
     items: [
       ['Sheet authenticity', 'the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.'],
       ['Vision count mismatch', "an AI read of the sheet photo disagreeing with the observer's typed counts."],
     ],
   },
   {
-    title: 'Provenance & duplicates',
+    title: 'Provenance & Duplicates',
     items: [
       ['Duplicate form serial', 'the same EC8A serial reported at two units.'],
       ['Conflicting counts', 'independent observers at one unit disagreeing.'],
@@ -108,7 +107,7 @@ const CHECKS: { title: string; items: [string, string][] }[] = [
     ],
   },
   {
-    title: 'Incident patterns',
+    title: 'Incident Patterns',
     items: [
       ['Incident hotspot', 'several incident reports of the same kind in one state within a short window.'],
     ],
@@ -121,10 +120,18 @@ async function jget<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-const SEV_COLOR: Record<string, string> = {
-  high: 'bg-red-100 text-red-700',
-  medium: 'bg-amber-100 text-amber-800',
-  low: 'bg-line text-muted',
+/**
+ * Severity chip. Split into bg + text because React Native does not inherit a
+ * colour class from a wrapping View onto the Text inside it — a single
+ * "bg-x text-y" string on the View silently drops the foreground and the label
+ * falls back to black, which on a dark tint is invisible. The tints themselves
+ * are the semantic tokens, so the chip darkens with the theme instead of
+ * staying pale under near-white text.
+ */
+const SEV_COLOR: Record<string, { bg: string; text: string }> = {
+  high: { bg: 'bg-bad', text: 'text-bad-ink' },
+  medium: { bg: 'bg-warn', text: 'text-warn-ink' },
+  low: { bg: 'bg-line', text: 'text-muted' },
 };
 
 function timeAgo(ts: number) {
@@ -148,10 +155,12 @@ function DigitBars({ items, n }: { items: Digit[]; n: number }) {
           <View key={d.digit} className="flex-1 items-center">
             <View className="h-24 w-full justify-end px-0.5">
               <View className="relative w-full" style={{ height: `${Math.max(h, 1)}%` }}>
-                <View className="h-full w-full rounded-t bg-hawk-green" />
+                {/* bg-hawk-green is 1.4:1 on the dark card — the bars vanished.
+                    good-ink is the same green in light mode and lifts in dark. */}
+                <View className="h-full w-full rounded-t bg-good-ink" />
               </View>
               <View
-                className="absolute left-0 right-0 h-0.5 bg-amber-500/70"
+                className="absolute left-0 right-0 h-0.5 bg-warn-ink/80"
                 style={{ bottom: `${exp}%` }}
               />
             </View>
@@ -184,7 +193,11 @@ export default function Integrity() {
   const [type, setType] = useState('');
   const [stateSel, setStateSel] = useState('');
   const [states, setStates] = useState<string[]>([]);
-  const [open, setOpen] = useState<Record<number, boolean>>({ 0: true });
+  // Every "What We Check" group starts collapsed. Seeding this with { 0: true }
+  // auto-opened "Against INEC & Collation Records" on load, which buried the
+  // dashboard under a list nobody asked to see. Nothing in the render depends on
+  // a panel being open — open[i] is read as a plain truthy check.
+  const [open, setOpen] = useState<Record<number, boolean>>({});
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [refreshing, setRefreshing] = useState(false);
 
@@ -300,7 +313,7 @@ export default function Integrity() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            tintColor={BRAND.leaf}
+            tintColor={ui.tint.good.ink}
             onRefresh={async () => {
               setRefreshing(true);
               await loadAll();
@@ -309,8 +322,8 @@ export default function Integrity() {
           />
         }
       >
-        <View className="mb-3 rounded-xl bg-amber-100 px-3 py-2">
-          <Text className="text-xs font-semibold text-amber-900">
+        <View className="mb-3 rounded-xl bg-warn px-3 py-2">
+          <Text className="text-xs font-semibold text-warn-ink">
             Beta — anomalies are automated flags for scrutiny, not verdicts. Official results
             remain INEC&apos;s.
           </Text>
@@ -323,21 +336,21 @@ export default function Integrity() {
         </Text>
 
         {err ? (
-          <Text className="pb-2 text-sm font-semibold text-amber-800">
+          <Text className="pb-2 text-sm font-semibold text-warn-ink">
             Could not refresh. ({err})
           </Text>
         ) : null}
 
         <View className="flex-row flex-wrap">
-          <Stat n={bySev.high || 0} label="High-severity flags" tone="text-red-700" />
-          <Stat n={bySev.medium || 0} label="Medium flags" tone="text-amber-700" />
+          <Stat n={bySev.high || 0} label="High-severity flags" tone="text-bad-ink" />
+          <Stat n={bySev.medium || 0} label="Medium flags" tone="text-warn-ink" />
           <Stat n={bySev.low || 0} label="Low flags" />
           <Stat n={summary?.unitsFlagged ?? 0} label="Units flagged" />
           <Stat n={(summary?.reports ?? 0).toLocaleString()} label="Reports screened" />
         </View>
 
         {/* Detected discrepancies */}
-        <Text className="pb-2 pt-3 text-base font-bold text-ink">Detected discrepancies</Text>
+        <Text className="pb-2 pt-3 text-base font-bold text-ink">Detected Discrepancies</Text>
         <View className="flex-row flex-wrap">
           {[
             ['', 'All'],
@@ -376,7 +389,7 @@ export default function Integrity() {
         ) : null}
 
         {rows === null ? (
-          <ActivityIndicator className="py-4" color={BRAND.leaf} />
+          <ActivityIndicator className="py-4" color={ui.tint.good.ink} />
         ) : rows.length === 0 ? (
           <Text className="py-3 text-sm text-muted">
             No discrepancies match — nothing flagged yet. 🎉
@@ -389,8 +402,14 @@ export default function Integrity() {
             return (
               <View key={d.id} className="mb-2 rounded-2xl bg-card px-4 py-3">
                 <View className="flex-row items-center">
-                  <View className={`rounded-full px-2 py-0.5 ${SEV_COLOR[d.severity] ?? ''}`}>
-                    <Text className="text-[10px] font-bold">{d.severity.toUpperCase()}</Text>
+                  <View
+                    className={`rounded-full px-2 py-0.5 ${(SEV_COLOR[d.severity] ?? SEV_COLOR.low).bg}`}
+                  >
+                    <Text
+                      className={`text-[10px] font-bold ${(SEV_COLOR[d.severity] ?? SEV_COLOR.low).text}`}
+                    >
+                      {d.severity.toUpperCase()}
+                    </Text>
                   </View>
                   <Text className="flex-1 pl-2 text-sm font-bold text-ink">
                     {TYPE_LABEL[d.type] || d.type}
@@ -414,7 +433,7 @@ export default function Integrity() {
                 ) : null}
                 {long ? (
                   <Pressable onPress={() => setExpanded((e) => ({ ...e, [d.id]: !e[d.id] }))}>
-                    <Text className="pt-1 text-xs font-bold text-hawk-leaf">
+                    <Text className="pt-1 text-xs font-bold text-good-ink">
                       {show ? 'less' : 'more'}
                     </Text>
                   </Pressable>
@@ -424,7 +443,7 @@ export default function Integrity() {
                     className="pt-1.5"
                     onPress={() => WebBrowser.openBrowserAsync(d.detail.docUrl!)}
                   >
-                    <Text className="text-xs font-bold text-hawk-leaf">
+                    <Text className="text-xs font-bold text-good-ink">
                       View INEC&apos;s sheet ↗
                     </Text>
                   </Pressable>
@@ -436,7 +455,7 @@ export default function Integrity() {
 
         {/* Digit-distribution screening */}
         <Text className="pb-1 pt-4 text-base font-bold text-ink">
-          Digit-distribution screening
+          Digit-Distribution Screening
         </Text>
         <Text className="pb-2 text-sm text-muted">
           Fabricated figures cluster on favourite digits; genuine counts follow known
@@ -445,7 +464,7 @@ export default function Integrity() {
         </Text>
         <View className="rounded-2xl bg-card px-4 py-4">
           <Text className="text-sm font-bold text-ink">
-            First digit — Benford&apos;s law{' '}
+            First Digit — Benford&apos;s Law{' '}
             <Text className="text-xs font-semibold text-muted">
               {benford && VERDICT_TEXT[benford.verdict]
                 ? `— ${VERDICT_TEXT[benford.verdict](benford.mad)}`
@@ -461,7 +480,7 @@ export default function Integrity() {
             <Text className="pt-2 text-xs text-faint">No counts yet.</Text>
           )}
 
-          <Text className="pt-4 text-sm font-bold text-ink">Last digit — uniformity</Text>
+          <Text className="pt-4 text-sm font-bold text-ink">Last Digit — Uniformity</Text>
           <Text className="pt-0.5 text-xs text-muted">
             Last digit of winning-party counts. A healthy spread sits near the 10% line.
           </Text>
@@ -473,7 +492,7 @@ export default function Integrity() {
         </View>
 
         {/* Cross-checks */}
-        <Text className="pb-1 pt-4 text-base font-bold text-ink">INEC IReV cross-check</Text>
+        <Text className="pb-1 pt-4 text-base font-bold text-ink">INEC IReV Cross-Check</Text>
         <Text className="pb-2 text-sm text-muted">
           Each crowd-reported count is compared against the EC8A sheet INEC itself uploads to its
           Results Viewing portal for the same polling unit — INEC&apos;s own evidence checked
@@ -484,7 +503,7 @@ export default function Integrity() {
         </View>
 
         <Text className="pb-1 pt-4 text-base font-bold text-ink">
-          Collation reconciliation (EC8B/C/D)
+          Collation Reconciliation (EC8B/C/D)
         </Text>
         <Text className="pb-2 text-sm text-muted">
           Announced ward, LGA and state totals are checked against the polling-unit sheets
@@ -494,12 +513,12 @@ export default function Integrity() {
         <View className="rounded-2xl bg-card px-4 py-3">
           <Text className="text-sm text-ink">{collLine}</Text>
           <Pressable className="pt-2" onPress={() => router.push('/report/collation')}>
-            <Text className="text-sm font-bold text-hawk-leaf">Report a collation result →</Text>
+            <Text className="text-sm font-bold text-good-ink">Report a collation result →</Text>
           </Pressable>
         </View>
 
         {/* What we check */}
-        <Text className="pb-1 pt-4 text-base font-bold text-ink">What we check</Text>
+        <Text className="pb-1 pt-4 text-base font-bold text-ink">What We Check</Text>
         <Text className="pb-2 text-sm text-muted">
           Every result is run through these automated checks. Tap a group to see each one.
         </Text>

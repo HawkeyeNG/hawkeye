@@ -39,7 +39,7 @@ WHAT YOU CAN DO
 • Report an incident — violence, ballot snatching, vote-buying, voter
   intimidation, BVAS failures and more, with an optional photo or short video.
   A human reviews every incident before it is published.
-• Follow a live, national leaderboard aggregated from citizen reports.
+• Follow a live leaderboard aggregated from citizen reports.
 • Verify the public ledger — every published record is anchored to an
   independent transparency log, so entries cannot be quietly altered after the
   fact.
@@ -160,7 +160,7 @@ policy. (This is not third-party "sharing"; it is user-published content.)
 
 Capture from the app at a phone viewport (e.g. 1080×1920). Suggested set:
 1. Home / hero.
-2. National leaderboard (results.html).
+2. Leaderboard (results.html).
 3. Report a result — the capture/scan screen.
 4. Report an incident (incidents.html).
 5. Verify the ledger (ledger.html).

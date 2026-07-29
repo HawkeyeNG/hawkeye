@@ -9,6 +9,40 @@ import { config } from '../config.js';
 
 const FCM_ENABLED = Boolean(config.fcmProjectId && config.fcmClientEmail && config.fcmPrivateKey);
 
+/** Are the three FCM service-account vars present? Booleans only — safe to
+ *  surface publicly, and it answers "did my .env land" without a deploy log. */
+export const pushConfigured = () => FCM_ENABLED;
+
+/**
+ * Prove the credential actually WORKS, without pushing anything to anyone.
+ *
+ * Present-and-parseable are different questions, and the gap between them is
+ * where this fails in practice: FCM_PRIVATE_KEY must carry literal \n escapes
+ * (fcmAccessToken un-escapes them below), so a key pasted with real newlines is
+ * truncated at the first break and every send dies on signature validation.
+ * Without this check that surfaces only when a real observer misses a real
+ * alert. Minting an access token exercises the whole chain — key parses, JWT
+ * signs, Google accepts the grant — and the result is cached for an hour, so
+ * calling it is nearly free.
+ */
+export async function checkPushCredentials() {
+  if (!FCM_ENABLED) {
+    const missing = [
+      !config.fcmProjectId && 'FCM_PROJECT_ID',
+      !config.fcmClientEmail && 'FCM_CLIENT_EMAIL',
+      !config.fcmPrivateKey && 'FCM_PRIVATE_KEY',
+    ].filter(Boolean);
+    return { configured: false, ok: false, missing };
+  }
+  try {
+    await fcmAccessToken();
+    return { configured: true, ok: true, projectId: config.fcmProjectId };
+  } catch (e) {
+    // Coarse reason only — never echo the key or Google's raw payload.
+    return { configured: true, ok: false, reason: e?.message || 'fcm_oauth_failed' };
+  }
+}
+
 export function registerPushToken(observerId, token, platform) {
   if (!token) return;
   db.prepare(`

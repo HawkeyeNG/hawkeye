@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 
-import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 /**
  * Password input with a reveal toggle.
@@ -29,13 +29,14 @@ export function PasswordField({
   onSubmitEditing?: () => void;
   textContentType?: TextInputProps['textContentType'];
 }) {
+  const ui = useUi();
   const [shown, setShown] = useState(false);
   return (
     <View className="flex-row items-center rounded-2xl bg-card pr-2">
       <TextInput
         className="flex-1 px-4 py-3.5 text-base text-ink"
         placeholder={placeholder}
-        placeholderTextColor="#9db5a7"
+        placeholderTextColor={ui.faint}
         secureTextEntry={!shown}
         autoCapitalize="none"
         autoCorrect={false}
@@ -53,7 +54,7 @@ export function PasswordField({
         onPress={() => setShown((s) => !s)}
         accessibilityLabel={shown ? 'Hide password' : 'Show password'}
       >
-        <Feather name={shown ? 'eye-off' : 'eye'} size={17} color={BRAND.leaf} />
+        <Feather name={shown ? 'eye-off' : 'eye'} size={17} color={ui.tint.good.ink} />
       </Pressable>
     </View>
   );

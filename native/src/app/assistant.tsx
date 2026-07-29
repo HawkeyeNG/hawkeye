@@ -163,9 +163,12 @@ export default function Assistant() {
             <Text className="text-sm text-ink">{GREETING}</Text>
           </View>
 
+          {/* An assistant bubble that happens to carry bad news, so it is still
+              a bubble: bg-warn darkens with the theme and text-ink reads on it.
+              bg-amber-50 stayed pale while --ink went near-white on top of it. */}
           {off ? (
-            <View className="mb-2 max-w-[88%] self-start rounded-2xl rounded-bl-md bg-amber-50 px-4 py-3">
-              <Text className="text-sm text-amber-900">
+            <View className="mb-2 max-w-[88%] self-start rounded-2xl rounded-bl-md bg-warn px-4 py-3">
+              <Text className="text-sm text-ink">
                 The assistant isn&apos;t switched on yet. The results, docket and coverage screens
                 carry the same figures it would read from.
               </Text>
@@ -183,7 +186,7 @@ export default function Assistant() {
                   onPress={() => setQ(s)}
                   className="mb-2 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-80"
                 >
-                  <Feather name="message-circle" size={14} color={BRAND.leaf} />
+                  <Feather name="message-circle" size={14} color={ui.tint.good.ink} />
                   <Text className="flex-1 pl-2.5 text-sm text-ink">{s}</Text>
                   <Feather name="arrow-up-right" size={14} color={ui.faint} />
                 </Pressable>
@@ -202,7 +205,7 @@ export default function Assistant() {
                 </View>
               ) : busy && t.id === turns[turns.length - 1]?.id ? (
                 <View className="mb-2 flex-row items-center self-start rounded-2xl rounded-bl-md bg-card px-4 py-3">
-                  <ActivityIndicator size="small" color={BRAND.leaf} />
+                  <ActivityIndicator size="small" color={ui.tint.good.ink} />
                   <Text className="pl-2 text-sm text-muted">Reading the reports…</Text>
                 </View>
               ) : (
@@ -220,13 +223,13 @@ export default function Assistant() {
             limit, so the composer is the one thing that must never scroll — and
             the failure line rides with it so a retry never drifts off-screen. */}
         <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
-          {err ? <Text className="pb-2 text-sm font-semibold text-amber-800">{err}</Text> : null}
+          {err ? <Text className="pb-2 text-sm font-semibold text-warn-ink">{err}</Text> : null}
 
           <View className="flex-row items-end">
             <TextInput
               className="mr-2 max-h-28 flex-1 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder={off ? 'The assistant is switched off' : 'Ask about the results…'}
-              placeholderTextColor="#9db5a7"
+              placeholderTextColor={ui.faint}
               editable={!off}
               multiline
               maxLength={MAX_Q}

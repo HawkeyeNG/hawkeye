@@ -86,8 +86,12 @@ export function ReportContent({
         className="flex-row items-center pt-2 active:opacity-70"
         onPress={() => setOpen(true)}
       >
-        <Feather name={sent ? 'check' : 'flag'} size={13} color={sent ? BRAND.leaf : '#9db5a7'} />
-        <Text className={`pl-1.5 text-xs ${sent ? 'font-bold text-hawk-leaf' : 'text-faint'}`}>
+        <Feather
+          name={sent ? 'check' : 'flag'}
+          size={13}
+          color={sent ? ui.tint.good.ink : ui.faint}
+        />
+        <Text className={`pl-1.5 text-xs ${sent ? 'font-bold text-good-ink' : 'text-faint'}`}>
           {sent ? 'Reported — our team will review' : label}
         </Text>
       </Pressable>
@@ -99,7 +103,7 @@ export function ReportContent({
         >
           <View className="rounded-t-3xl bg-surface px-5 pb-8 pt-5">
             <View className="flex-row items-center pb-3">
-              <Text className="flex-1 text-lg font-bold text-ink">Report this content</Text>
+              <Text className="flex-1 text-lg font-bold text-ink">Report This Content</Text>
               <Pressable
                 hitSlop={12}
                 onPress={() => setOpen(false)}
@@ -123,7 +127,7 @@ export function ReportContent({
                 <Feather
                   name={reason === r.key ? 'check-circle' : 'circle'}
                   size={16}
-                  color={reason === r.key ? BRAND.gold : '#9db5a7'}
+                  color={reason === r.key ? BRAND.gold : ui.faint}
                 />
                 <Text
                   className={`pl-3 text-base ${
@@ -141,11 +145,11 @@ export function ReportContent({
               multiline
               maxLength={500}
               placeholder="Add any detail (optional)"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={ui.faint}
               className="min-h-[64px] rounded-2xl bg-card px-4 py-3 text-sm text-ink"
             />
             {msg ? (
-              <Text className="pt-2 text-sm font-semibold text-amber-800">{msg}</Text>
+              <Text className="pt-2 text-sm font-semibold text-warn-ink">{msg}</Text>
             ) : null}
 
             <Pressable

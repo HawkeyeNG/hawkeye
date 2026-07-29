@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "381988132033",
+    "project_id": "hawkeye-bd27d",
+    "storage_bucket": "hawkeye-bd27d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:381988132033:android:11dcc7fe0d74479e7e3040",
+        "android_client_info": {
+          "package_name": "ng.com.hawkeye.observer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAapbYrUqRtPxSdc7npimUMDsrldFPxoGA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:381988132033:android:1e04cb6286986dee7e3040",
+        "android_client_info": {
+          "package_name": "ng.com.hawkeye.observer.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAapbYrUqRtPxSdc7npimUMDsrldFPxoGA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

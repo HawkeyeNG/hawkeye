@@ -24,6 +24,9 @@ export function PartyMark({
       </View>
     );
   }
+  // The white disc stays white in both themes on purpose: party emblems are
+  // transparent PNGs drawn in their own colours and several are dark-on-nothing,
+  // so a themed backdrop would swallow them. It reads as a badge, not a surface.
   return (
     <Image
       source={{ uri: url }}
@@ -59,7 +62,7 @@ function CandidateCard({ c, logos }: { c: Candidate; logos: Record<string, strin
             </Text>
             {c.incumbent ? (
               <View className="ml-2 rounded-full bg-surface px-2 py-0.5">
-                <Text className="text-[9px] font-bold text-hawk-leaf">INCUMBENT</Text>
+                <Text className="text-[9px] font-bold text-good-ink">INCUMBENT</Text>
               </View>
             ) : null}
           </View>

@@ -11,7 +11,6 @@ import { scanSheet, scannerAvailable } from '@/lib/scan';
 import type { Shot } from '@/lib/submit';
 import { getSubmitFix } from '@/lib/location';
 import { BRAND } from '@/lib/api';
-import { useUi } from '@/lib/theme';
 
 /**
  * In-app capture with a GPS stamp taken at capture time — the property the
@@ -74,6 +73,19 @@ type Props = {
   extraAction?: { label: string; onPress: () => void };
 };
 
+/**
+ * Who owns a document step's screen.
+ *
+ * 'scanning'    — the scanner is up, or about to be. NO camera preview is
+ *                 mounted: mounting <CameraView> and opening the scanner over
+ *                 it is what made the camera flash for a split second first.
+ * 'unavailable' — this build has no scanner module at all (Expo Go).
+ * 'failed'      — the scanner module exists but would not start; lib/scan.ts
+ *                 documents why, and a retry is worth offering.
+ * null          — not a document step; the plain camera is the point.
+ */
+type ScanState = 'scanning' | 'unavailable' | 'failed' | null;
+
 /** Shared bounded GPS (lib/location): photo/video stamps use the accurate tier. */
 const getFix = async (): Promise<{ lat: number; lng: number } | null> => {
   const perm = await Location.requestForegroundPermissionsAsync();
@@ -95,7 +107,6 @@ export function CaptureCamera({
   partyCodes,
   extraAction,
 }: Props) {
-  const ui = useUi();
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMic] = useMicrophonePermissions();
   const [mode, setMode] = useState<'picture' | 'video'>('picture');
@@ -104,9 +115,15 @@ export function CaptureCamera({
   const [line, setLine] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ uri: string; capturedAt: number } | null>(null);
   const [fixState, setFixState] = useState<'pending' | 'ok' | 'failed'>('pending');
-  /** Set once the scanner has actually failed; only then is the plain
-   *  camera a legitimate surface for a document step. */
-  const [scannerFailed, setScannerFailed] = useState(false);
+  /**
+   * Decided at MOUNT, not in an effect: an effect runs after the first paint,
+   * so any camera mounted meanwhile is a frame the observer actually sees.
+   * A document step therefore starts owned by the scanner, and only a genuine
+   * failure ever hands the screen to the plain camera.
+   */
+  const [scanState, setScanState] = useState<ScanState>(() =>
+    readDocument ? (scannerAvailable() ? 'scanning' : 'unavailable') : null,
+  );
   /** Result of on-device recognition on the current preview. */
   const [read, setRead] = useState<SheetRead | null | undefined>(undefined);
   const [elapsed, setElapsed] = useState(0);
@@ -120,6 +137,11 @@ export function CaptureCamera({
   const gen = useRef(0);
   /** The auto-open fires once per capture step, never after a cancel. */
   const autoScanned = useRef(false);
+  // Re-entry guard for the scanner, as a ref rather than `busy`: retake() clears
+  // busy and calls scanDoc in the same tick, so the value scanDoc closes over is
+  // the stale `true` — it would bail, leaving the step on its placeholder with
+  // nothing but Cancel.
+  const scanning = useRef(false);
   /** Lets the mount effect call scanDoc, which is declared below it. */
   const scanDocRef = useRef<(() => Promise<void>) | null>(null);
   useEffect(() => () => void (cancelled.current = true), []);
@@ -181,7 +203,7 @@ export function CaptureCamera({
           Hawkeye needs the camera to capture evidence in-app.
         </Text>
         <Pressable className="mt-5 rounded-2xl bg-hawk-gold px-6 py-3" onPress={requestPermission}>
-          <Text className="text-base font-bold text-ink">Allow camera</Text>
+          <Text className="text-base font-bold text-hawk-ink">Allow camera</Text>
         </Pressable>
         {/* A denied camera must not dead-end a flow that has an escape (the
             PWA rule: no camera -> use a sample). */}
@@ -190,8 +212,10 @@ export function CaptureCamera({
             <Text className="text-sm font-bold text-hawk-gold">{extraAction.label}</Text>
           </Pressable>
         ) : null}
+        {/* Fixed neutral, not text-faint: this screen is always black, and
+            --faint follows the theme down to #6e8076 (2.5:1 on black). */}
         <Pressable className="mt-3" onPress={cancel}>
-          <Text className="text-sm text-faint">Cancel</Text>
+          <Text className="text-sm text-neutral-300">Cancel</Text>
         </Pressable>
       </View>
     );
@@ -212,11 +236,15 @@ export function CaptureCamera({
    * the observer was standing at the sheet, not to whenever they came back.
    */
   const scanDoc = async () => {
-    if (busy) return;
+    if (scanning.current) return;
+    scanning.current = true;
     setBusy(true);
-    setLine('Opening scanner…');
+    setLine(null);
+    // Takes the screen back from the fallback camera on "Try scanner again".
+    setScanState('scanning');
     startFix();
     const out = await scanSheet();
+    scanning.current = false;
     if (cancelled.current) return;
     setBusy(false);
     if (out.ok) {
@@ -231,11 +259,15 @@ export function CaptureCamera({
       cancel();
       return;
     }
-    // Only a real failure exposes the plain camera — and it says why.
-    setScannerFailed(true);
-    setLine('Scanner unavailable on this phone — frame the sheet and shoot it directly.');
+    // Only a real failure exposes the plain camera, and it says which of the two
+    // failures this was — silently downgrading the tool hides that the sheet is
+    // about to be sent as an uncropped photo.
+    setScanState(out.reason);
   };
 
+  // Assigned here, BELOW the permission gate, which is why the auto-open effect
+  // waits for `permission.granted` rather than firing on mount — and why no
+  // branch that expects the scanner may return above this line.
   scanDocRef.current = scanDoc;
 
   const shootPhoto = async () => {
@@ -259,18 +291,14 @@ export function CaptureCamera({
     gen.current++; // abort any pending confirmation before it can fire onCapture
     setPreview(null);
     setRead(undefined);
-    // Retaking a document means scanning it again, not falling back to the raw
-    // camera — the crop is the point.
-    if (readDocument && scannerAvailable() && !scannerFailed) {
-      setLine(null);
-      setBusy(false);
-      setFixState('pending');
-      void scanDocRef.current?.();
-      return;
-    }
     setLine(null);
     setBusy(false);
     setFixState('pending');
+    // Retaking a document means scanning it again, not falling back to the raw
+    // camera — the crop is the point. 'scanning' is exactly "the scanner still
+    // owns this step": a preview only ever hid it, a failure would have replaced
+    // it, so no separate flag is needed to tell those apart.
+    if (scanState === 'scanning') void scanDocRef.current?.();
   };
 
   const usePhoto = async () => {
@@ -370,7 +398,7 @@ export function CaptureCamera({
                 server re-reads the upload regardless. */}
             {readDocument ? (
               read === undefined ? (
-                <View className="mt-2 flex-row items-center rounded-xl bg-card/10 px-3 py-2">
+                <View className="mt-2 flex-row items-center rounded-xl bg-white/10 px-3 py-2">
                   <ActivityIndicator size="small" color="#fcd34d" />
                   <Text className="pl-2 text-xs font-semibold text-neutral-200">
                     Reading the sheet…
@@ -415,7 +443,10 @@ export function CaptureCamera({
           </View>
         </View>
         <View className="absolute inset-x-0 bottom-0 flex-row items-center justify-between px-6 pb-12">
-          <Pressable className="rounded-2xl bg-card/15 px-6 py-3.5" onPress={retake}>
+          {/* The camera chrome is always dark, so its scrims are fixed white at
+              low alpha — bg-card/15 turned into a near-invisible dark-on-dark
+              plate once --card followed the theme. */}
+          <Pressable className="rounded-2xl bg-white/15 px-6 py-3.5" onPress={retake}>
             <Text className="text-base font-semibold text-white">Retake</Text>
           </Pressable>
           {fixState === 'failed' ? (
@@ -426,14 +457,17 @@ export function CaptureCamera({
                 usePhoto();
               }}
             >
-              <Text className="text-base font-bold text-ink">Retry GPS</Text>
+              <Text className="text-base font-bold text-hawk-ink">Retry GPS</Text>
             </Pressable>
           ) : (
             <Pressable className="rounded-2xl bg-hawk-gold px-6 py-3.5" onPress={usePhoto} disabled={busy}>
+              {/* bg-hawk-gold is a fixed brand surface, so its label must be the
+                  fixed hawk ink — text-ink flips to near-white on the dark theme
+                  and vanishes into the gold (1.6:1). */}
               {busy ? (
-                <ActivityIndicator color={ui.ink} />
+                <ActivityIndicator color={BRAND.ink} />
               ) : (
-                <Text className="text-base font-bold text-ink">Use photo</Text>
+                <Text className="text-base font-bold text-hawk-ink">Use photo</Text>
               )}
             </Pressable>
           )}
@@ -441,6 +475,36 @@ export function CaptureCamera({
       </View>
     );
   }
+
+  // ---- scanner holding screen --------------------------------------------
+  // The one thing a document step shows until the scanner is up. Deliberately
+  // NOT a camera: the scanner runs in its own activity, so anything we mount
+  // underneath is a frame the observer sees flash and then lose.
+  if (scanState === 'scanning') {
+    return (
+      <View className="flex-1 items-center justify-center bg-black px-10">
+        <Feather name="crop" size={30} color={BRAND.gold} />
+        <Text className="pt-4 text-center text-lg font-bold text-white">{title}</Text>
+        <Text className="pt-2 text-center text-sm text-neutral-300">Opening scanner…</Text>
+        <View className="pt-7">
+          <ActivityIndicator color={BRAND.gold} />
+        </View>
+        {/* The scanner is another app's activity — if it never comes back, this
+            is the only way out. Same rule as the shutter screen's Cancel. */}
+        <Pressable className="mt-12" hitSlop={12} onPress={cancel}>
+          <Text className="text-base font-semibold text-white">Cancel</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  /** Why the observer is looking at a plain camera on a step that wanted a scan. */
+  const scanNote =
+    scanState === 'unavailable'
+      ? 'This build has no document scanner, so the sheet will be a plain photo. Fill the frame and keep it flat.'
+      : scanState === 'failed'
+        ? 'The scanner could not start — Google Play services downloads it the first time it runs, so it needs a connection once. Taking a plain photo instead.'
+        : null;
 
   // ---- live camera -------------------------------------------------------
   return (
@@ -466,12 +530,17 @@ export function CaptureCamera({
       <View className="absolute inset-x-0 top-0 px-4 pt-14">
         <View className="rounded-2xl bg-black/70 px-4 py-3">
           <Text className="text-lg font-bold text-white">{title}</Text>
-          <Text className="pt-1 text-sm text-neutral-200">
-            {line ??
-              (readDocument && scannerFailed
-                ? `${hint} The scanner could not start, so this is a plain photo.`
-                : hint)}
-          </Text>
+          <Text className="pt-1 text-sm text-neutral-200">{line ?? hint}</Text>
+          {/* Never degrade silently: an uncropped photo is weaker evidence than
+              a scan, so say the scanner is out and say which failure it was.
+              'unavailable' is a build without the module — retrying cannot help
+              — while 'failed' is Play services not having fetched it yet, which
+              a connection and a second tap usually fixes. */}
+          {scanNote ? (
+            <View className="mt-2 rounded-xl bg-amber-400/15 px-3 py-2">
+              <Text className="text-xs font-semibold text-amber-200">{scanNote}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
 
@@ -480,11 +549,13 @@ export function CaptureCamera({
           Cancel; top-anchored ones fought the camera cutout. */}
       {recording ? (
         <View className="absolute inset-x-0 items-center" style={{ bottom: 188 }}>
-          <Text className="pb-1 text-[10px] font-semibold text-faint">
+          {/* Both fixed: the camera chrome is always dark, so text-faint and
+              bg-card (the recording dot) both went dark-on-dark with the theme. */}
+          <Text className="pb-1 text-[10px] font-semibold text-neutral-300">
             max {VIDEO_MAX_S}s
           </Text>
           <View className="flex-row items-center rounded-full bg-red-600 px-3 py-1.5">
-            <View className="mr-1.5 h-2 w-2 rounded-full bg-card" />
+            <View className="mr-1.5 h-2 w-2 rounded-full bg-white" />
             <Text className="text-sm font-bold text-white">
               {String(Math.floor(elapsed / 60)).padStart(2, '0')}:
               {String(elapsed % 60).padStart(2, '0')}
@@ -502,7 +573,7 @@ export function CaptureCamera({
               onPress={() => setMode(m)}
               className={`rounded-full px-4 py-1.5 ${mode === m ? 'bg-hawk-gold' : 'bg-black/50'}`}
             >
-              <Text className={`text-xs font-bold ${mode === m ? 'text-ink' : 'text-white'}`}>
+              <Text className={`text-xs font-bold ${mode === m ? 'text-hawk-ink' : 'text-white'}`}>
                 {m === 'picture' ? 'Photo' : 'Video'}
               </Text>
             </Pressable>
@@ -510,18 +581,20 @@ export function CaptureCamera({
         </View>
       ) : null}
 
-      {/* Document steps lead with the scanner: it finds the sheet's edges and
-          returns a flat, cropped page. The plain shutter stays underneath for
-          anyone who would rather just take the photo. */}
-      {readDocument && scannerAvailable() && !recording && scannerFailed ? (
+      {/* Offered only for 'failed', where a second attempt is a real chance —
+          the module is installed on demand, so the retry that follows a
+          reconnect is the one that works. A build with no scanner at all gets
+          the explanation and no button, because a control that cannot succeed
+          is the hand-waving this replaces. */}
+      {scanState === 'failed' && !recording ? (
         <View className="absolute inset-x-0 items-center" style={{ bottom: 132 }}>
           <Pressable
             disabled={busy}
             onPress={scanDoc}
             className="flex-row items-center rounded-full bg-hawk-gold px-5 py-2.5 active:opacity-80"
           >
-            <Feather name="crop" size={15} color={ui.ink} />
-            <Text className="pl-2 text-sm font-bold text-ink">Scan again</Text>
+            <Feather name="crop" size={15} color={BRAND.ink} />
+            <Text className="pl-2 text-sm font-bold text-hawk-ink">Try scanner again</Text>
           </Pressable>
         </View>
       ) : null}

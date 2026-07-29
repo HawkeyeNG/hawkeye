@@ -5,7 +5,6 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PartyMark } from '@/components/race';
-import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { loadPolitical, partyColor, partyName, type Political } from '@/lib/political';
 
@@ -63,9 +62,9 @@ export default function PoliticalData() {
         </Text>
 
         {err ? (
-          <Text className="text-sm font-semibold text-amber-800">Could not load. ({err})</Text>
+          <Text className="text-sm font-semibold text-warn-ink">Could not load. ({err})</Text>
         ) : !d ? (
-          <ActivityIndicator className="pt-6" color={BRAND.leaf} />
+          <ActivityIndicator className="pt-6" color={ui.tint.good.ink} />
         ) : (
           <>
             {d.president ? (
@@ -87,9 +86,9 @@ export default function PoliticalData() {
               className="mt-3 flex-row items-center rounded-2xl bg-card px-4 py-3.5 active:opacity-80"
               onPress={() => router.push('/candidates')}
             >
-              <Feather name="users" size={17} color={BRAND.leaf} />
+              <Feather name="users" size={17} color={ui.tint.good.ink} />
               <Text className="flex-1 pl-3 text-sm font-semibold text-ink">
-                The 2027 presidential race — full profiles
+                The 2027 Presidential Race — Full Profiles
               </Text>
               <Feather name="chevron-right" size={16} color={ui.faint} />
             </Pressable>
@@ -192,7 +191,7 @@ export default function PoliticalData() {
                     >
                       <View className="flex-row items-baseline">
                         <Text className="flex-1 text-sm font-bold text-ink">{e.office}</Text>
-                        <Text className="text-xs font-semibold text-hawk-leaf">
+                        <Text className="text-xs font-semibold text-good-ink">
                           {e.seats} seat(s)
                         </Text>
                       </View>

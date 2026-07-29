@@ -6,7 +6,7 @@ import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api, BRAND, type Contest, type IntegritySummary } from '@/lib/api';
-import { useUi } from '@/lib/theme';
+import { useUi, type Tone } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;
@@ -35,11 +35,24 @@ type Item = {
   href?: string;
 };
 
-const KIND: Record<Kind, { icon: keyof typeof Feather.glyphMap; tone: string }> = {
-  report: { icon: 'file-text', tone: 'bg-emerald-100' },
-  incident: { icon: 'alert-triangle', tone: 'bg-amber-100' },
-  flag: { icon: 'flag', tone: 'bg-red-100' },
-  case: { icon: 'shield', tone: 'bg-neutral-200' },
+/**
+ * The disc behind each row's icon. `tone` names a semantic tint that darkens
+ * with the theme (bg-emerald-100 / bg-red-100 / bg-neutral-200 stayed pale in
+ * dark mode and the icon on them vanished); `null` is the neutral disc, which
+ * is just the screen background one step back from the card. The icon colour is
+ * a prop, so it comes from useUi().tint — the JS twin of the same tokens.
+ */
+const KIND: Record<Kind, { icon: keyof typeof Feather.glyphMap; tone: Tone | null }> = {
+  report: { icon: 'file-text', tone: 'good' },
+  incident: { icon: 'alert-triangle', tone: 'warn' },
+  flag: { icon: 'flag', tone: 'bad' },
+  case: { icon: 'shield', tone: null },
+};
+
+const TINT: Record<Tone, string> = {
+  good: 'bg-good',
+  bad: 'bg-bad',
+  warn: 'bg-warn',
 };
 
 const FILTERS: { key: Kind | 'all'; label: string }[] = [
@@ -199,8 +212,8 @@ export default function Home() {
       </Text>
 
       {error ? (
-        <View className="mb-3 rounded-2xl bg-amber-100 px-4 py-3">
-          <Text className="text-sm text-amber-900">{error}</Text>
+        <View className="mb-3 rounded-2xl bg-warn px-4 py-3">
+          <Text className="text-sm text-ink">{error}</Text>
         </View>
       ) : null}
 
@@ -239,14 +252,14 @@ export default function Home() {
           onPress={() => router.push('/reports-log')}
         >
           <Text className="text-2xl font-bold text-ink">{integrity?.reports ?? '—'}</Text>
-          <Text className="text-xs text-muted">Accepted reports</Text>
+          <Text className="text-xs text-muted">Accepted Reports</Text>
         </Pressable>
         <Pressable
           className="flex-1 rounded-2xl bg-card px-4 py-4 active:opacity-80"
           onPress={() => router.push('/integrity')}
         >
           <Text className="text-2xl font-bold text-ink">{integrity?.unitsFlagged ?? '—'}</Text>
-          <Text className="text-xs text-muted">Units flagged</Text>
+          <Text className="text-xs text-muted">Units Flagged</Text>
         </Pressable>
       </View>
 
@@ -285,7 +298,7 @@ export default function Home() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            tintColor={BRAND.leaf}
+            tintColor={ui.tint.good.ink}
             onRefresh={async () => {
               setRefreshing(true);
               await load();
@@ -295,7 +308,7 @@ export default function Home() {
         }
         ListEmptyComponent={
           items === null ? (
-            <ActivityIndicator className="pt-6" color={BRAND.leaf} />
+            <ActivityIndicator className="pt-6" color={ui.tint.good.ink} />
           ) : (
             <View className="px-4 pt-2">
               <Text className="text-sm text-muted">
@@ -313,8 +326,8 @@ export default function Home() {
               className="mx-4 mb-2 flex-row items-start rounded-2xl bg-card px-4 py-3 active:opacity-80"
               onPress={() => (item.href ? router.push(item.href as never) : undefined)}
             >
-              <View className={`mt-0.5 rounded-full p-1.5 ${k.tone}`}>
-                <Feather name={k.icon} size={12} color={ui.ink} />
+              <View className={`mt-0.5 rounded-full p-1.5 ${k.tone ? TINT[k.tone] : 'bg-surface'}`}>
+                <Feather name={k.icon} size={12} color={k.tone ? ui.tint[k.tone].ink : ui.muted} />
               </View>
               <View className="flex-1 pl-3">
                 <Text className="text-sm font-bold capitalize text-ink">{item.title}</Text>

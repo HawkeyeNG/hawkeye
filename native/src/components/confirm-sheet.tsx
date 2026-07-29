@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Modal, Pressable, Text, View } from 'react-native';
 
-import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 /**
  * Two-step confirmation as an in-app sheet rather than a system Alert.
@@ -32,6 +32,7 @@ export function ConfirmSheet({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const ui = useUi();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
       <View className="flex-1 justify-end bg-black/40">
@@ -39,10 +40,14 @@ export function ConfirmSheet({
           <View className="flex-row items-center pb-2">
             <View
               className={`h-10 w-10 items-center justify-center rounded-2xl ${
-                danger ? 'bg-red-100' : 'bg-card'
+                danger ? 'bg-bad' : 'bg-card'
               }`}
             >
-              <Feather name={icon} size={19} color={danger ? '#b91c1c' : BRAND.leaf} />
+              <Feather
+                name={icon}
+                size={19}
+                color={danger ? ui.tint.bad.ink : ui.tint.good.ink}
+              />
             </View>
             <Text className="flex-1 pl-3 text-lg font-bold text-ink">{title}</Text>
           </View>

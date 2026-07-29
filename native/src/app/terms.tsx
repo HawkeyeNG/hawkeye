@@ -16,7 +16,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ContentBlock, SectionLabel } from '@/components/content-kit';
 import { SocialRow } from '@/components/social-row';
-import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import type { Page } from '@/lib/content';
 
@@ -36,13 +35,17 @@ import type { Page } from '@/lib/content';
 const TERMS: Page = {
   title: 'Terms of Service',
   kicker: 'Last updated 13 July 2026',
-  sections: ['What Hawkeye is', 'Acceptable use', 'Your content', 'The legal part', 'Contact'],
+  // These strings are rendered twice: ALL-CAPS as the in-page SectionLabel, and
+  // as-is on the jump chips in the header — so they carry Title Case for the
+  // chips' sake. Each must stay byte-identical to its 'label' block below; the
+  // scroll anchors are keyed by the text itself.
+  sections: ['What Hawkeye Is', 'Acceptable Use', 'Your Content', 'The Legal Part', 'Contact'],
   blocks: [
     {
       kind: 'lede',
       text: 'Hawkeye is a free, independent, nonpartisan election-transparency tool. By using the website, mobile app, or any Hawkeye service, you agree to these terms.',
     },
-    { kind: 'label', text: 'What Hawkeye is' },
+    { kind: 'label', text: 'What Hawkeye Is' },
     {
       kind: 'para',
       text: 'Hawkeye lets citizens photograph, sign, and publish the results announced at their polling unit to an independent, tamper-evident public record.',
@@ -50,14 +53,14 @@ const TERMS: Page = {
     {
       kind: 'callout',
       icon: 'alert-circle',
-      title: 'Official results are INEC’s alone',
+      title: 'Official Results Are INEC’s Alone',
       body: 'Hawkeye is not affiliated with, endorsed by, or acting on behalf of INEC, any government body, or any political party. It produces crowd-reported evidence for public scrutiny; it does not, and cannot, declare a winner.',
     },
-    { kind: 'label', text: 'Acceptable use' },
+    { kind: 'label', text: 'Acceptable Use' },
     {
       kind: 'rules',
       tone: 'enforced',
-      title: 'What is asked of you',
+      title: 'What Is Asked of You',
       items: [
         'Submit only truthful reports of what you genuinely witnessed at a polling unit.',
         'One verified phone number is one observer identity.',
@@ -67,7 +70,7 @@ const TERMS: Page = {
     {
       kind: 'rules',
       tone: 'never',
-      title: 'What is not allowed',
+      title: 'What Is Not Allowed',
       items: [
         'Fabricating, altering or misrepresenting results, photos or locations.',
         'Creating multiple identities, evading anti-fraud controls, or filing duplicate or automated reports.',
@@ -75,11 +78,11 @@ const TERMS: Page = {
         'Disrupting, overloading, reverse-engineering, or gaining unauthorised access to the service.',
       ],
     },
-    { kind: 'label', text: 'Your content' },
+    { kind: 'label', text: 'Your Content' },
     {
       kind: 'rules',
       tone: 'public',
-      title: 'Published, permanently',
+      title: 'Published, Permanently',
       items: [
         'Your counts, photos and their locations go onto a public, tamper-evident ledger and, by design, cannot be edited or deleted — that permanence is what makes them trustworthy.',
         'Your phone number is never published.',
@@ -101,14 +104,14 @@ const TERMS: Page = {
         },
       ],
     },
-    { kind: 'label', text: 'The legal part' },
+    { kind: 'label', text: 'The Legal Part' },
     { kind: 'para', text: 'Tap a clause to read it in full.' },
     {
       kind: 'layers',
       items: [
         {
           icon: 'share-2',
-          title: 'Social media & third-party platforms',
+          title: 'Social Media & Third-Party Platforms',
           points: [
             'Hawkeye may publish its own public-service content — election-integrity explainers, result summaries — to its official accounts on platforms such as TikTok, Instagram and Facebook, using those platforms’ official APIs.',
             'Such posts are made only from Hawkeye’s own accounts and are subject to the respective platform’s terms.',
@@ -117,7 +120,7 @@ const TERMS: Page = {
         },
         {
           icon: 'alert-triangle',
-          title: 'No warranty',
+          title: 'No Warranty',
           points: [
             'Hawkeye is provided “as is”, without warranties of any kind.',
             'Crowd-reported data is partial and unofficial and may contain errors; it is offered for transparency and scrutiny, not as a definitive count.',
@@ -126,14 +129,14 @@ const TERMS: Page = {
         },
         {
           icon: 'shield-off',
-          title: 'Limitation of liability',
+          title: 'Limitation of Liability',
           points: [
             'To the maximum extent permitted by law, Hawkeye and its operators are not liable for any indirect, incidental, or consequential damages arising from your use of, or inability to use, the service, or from reliance on any crowd-reported data.',
           ],
         },
         {
           icon: 'refresh-cw',
-          title: 'Changes to these terms',
+          title: 'Changes to These Terms',
           points: [
             'We may update these terms; continued use after changes constitutes acceptance.',
             'These terms are governed by the laws of the Federal Republic of Nigeria.',
@@ -220,7 +223,7 @@ export default function Terms() {
               })
             }
           >
-            <Feather name="share-2" size={16} color={BRAND.leaf} />
+            <Feather name="share-2" size={16} color={ui.tint.good.ink} />
           </Pressable>
         </View>
 
@@ -252,7 +255,7 @@ export default function Terms() {
         contentContainerClassName="px-4 pb-12 pt-3"
       >
         <Animated.View style={{ opacity: heroFade }}>
-          <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-hawk-leaf">
+          <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-good-ink">
             {kicker}
           </Text>
           <Text className="pt-1 text-3xl font-bold leading-9 text-ink">{title}</Text>

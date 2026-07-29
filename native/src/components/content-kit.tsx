@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { LayoutAnimation, Linking, Platform, Pressable, Text, UIManager, View } from 'react-native';
 
 import { BRAND } from '@/lib/api';
-import { useUi } from '@/lib/theme';
+import { useUi, type Tone } from '@/lib/theme';
 import type { Block, Icon } from '@/lib/content';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -18,7 +18,6 @@ const animate = () =>
   LayoutAnimation.configureNext(LayoutAnimation.create(180, 'easeInEaseOut', 'opacity'));
 
 export function SectionLabel({ text }: { text: string }) {
-  const ui = useUi();
   return (
     <Text className="pb-2 pt-6 text-[11px] font-bold uppercase tracking-[1.5px] text-faint">
       {text}
@@ -39,20 +38,26 @@ function ActionCard({
   cta: string;
   href: string;
 }) {
+  const ui = useUi();
   return (
     <Pressable
       className="mb-2 flex-row rounded-2xl bg-card p-4 active:opacity-80"
       onPress={() => router.push(href as never)}
     >
       <View className="h-11 w-11 items-center justify-center rounded-2xl bg-surface">
-        <Feather name={icon} size={19} color={BRAND.leaf} />
+        <Feather name={icon} size={19} color={ui.tint.good.ink} />
       </View>
       <View className="flex-1 pl-3.5">
         <Text className="text-base font-bold text-ink">{title}</Text>
         <Text className="pt-1 text-sm leading-5 text-muted">{body}</Text>
         <View className="flex-row items-center pt-2">
-          <Text className="text-sm font-bold text-hawk-leaf">{cta}</Text>
-          <Feather name="arrow-right" size={13} color={BRAND.leaf} style={{ marginLeft: 4 }} />
+          <Text className="text-sm font-bold text-good-ink">{cta}</Text>
+          <Feather
+            name="arrow-right"
+            size={13}
+            color={ui.tint.good.ink}
+            style={{ marginLeft: 4 }}
+          />
         </View>
       </View>
     </Pressable>
@@ -83,7 +88,7 @@ function Steps({
             <Text className="pt-1 text-sm leading-5 text-muted">{s.body}</Text>
             {s.bullets?.map((b) => (
               <View key={b} className="flex-row pt-1.5">
-                <View className="mt-2 h-1 w-1 rounded-full bg-hawk-leaf" />
+                <View className="mt-2 h-1 w-1 rounded-full bg-good-ink" />
                 <Text className="flex-1 pl-2 text-sm leading-5 text-muted">{b}</Text>
               </View>
             ))}
@@ -108,7 +113,7 @@ function Layer({ icon, title, points }: { icon: Icon; title: string; points: str
         }}
       >
         <View className="h-9 w-9 items-center justify-center rounded-xl bg-surface">
-          <Feather name={icon} size={16} color={BRAND.leaf} />
+          <Feather name={icon} size={16} color={ui.tint.good.ink} />
         </View>
         <Text className="flex-1 pl-3 text-base font-semibold text-ink">{title}</Text>
         <Feather name={open ? 'chevron-up' : 'chevron-down'} size={16} color={ui.faint} />
@@ -117,7 +122,7 @@ function Layer({ icon, title, points }: { icon: Icon; title: string; points: str
         <View className="px-4 pb-3">
           {points.map((p) => (
             <View key={p} className="flex-row pt-2">
-              <View className="mt-2 h-1.5 w-1.5 rounded-full bg-hawk-leaf" />
+              <View className="mt-2 h-1.5 w-1.5 rounded-full bg-good-ink" />
               <Text className="flex-1 pl-2.5 text-sm leading-5 text-muted">{p}</Text>
             </View>
           ))}
@@ -127,21 +132,43 @@ function Layer({ icon, title, points }: { icon: Icon; title: string; points: str
   );
 }
 
-const TONE: Record<string, { icon: Icon; color: string; bg: string; text: string }> = {
-  enforced: { icon: 'check-circle', color: '#0b6b3a', bg: 'bg-emerald-50', text: 'text-hawk-leaf' },
-  never: { icon: 'x-circle', color: '#b91c1c', bg: 'bg-red-50', text: 'text-red-700' },
-  private: { icon: 'lock', color: '#0b6b3a', bg: 'bg-emerald-50', text: 'text-hawk-leaf' },
-  public: { icon: 'globe', color: '#b45309', bg: 'bg-amber-50', text: 'text-amber-800' },
+/**
+ * A rule list is a tinted card. The tint used to be a hardcoded bg-emerald-50 /
+ * bg-red-50 / bg-amber-50 with a fixed hex heading, which is why these cards
+ * stayed pale in dark mode while the body copy set in text-ink went near-white
+ * on top of them — the Terms screen was unreadable. Tone now names a semantic
+ * pair (bg-good/text-good-ink …) that darkens with the theme, and the icon,
+ * which takes a colour PROP rather than a class, reads the same pair off
+ * useUi().tint.
+ */
+const TONE: Record<string, { icon: Icon; tone: Tone }> = {
+  enforced: { icon: 'check-circle', tone: 'good' },
+  never: { icon: 'x-circle', tone: 'bad' },
+  private: { icon: 'lock', tone: 'good' },
+  public: { icon: 'globe', tone: 'warn' },
+};
+
+const TINT: Record<Tone, { bg: string; text: string }> = {
+  good: { bg: 'bg-good', text: 'text-good-ink' },
+  bad: { bg: 'bg-bad', text: 'text-bad-ink' },
+  warn: { bg: 'bg-warn', text: 'text-warn-ink' },
 };
 
 function Rules({ tone, title, items }: { tone: string; title?: string; items: string[] }) {
+  const ui = useUi();
   const t = TONE[tone] ?? TONE.enforced;
+  const tint = TINT[t.tone];
   return (
-    <View className={`mb-2 rounded-2xl ${t.bg} px-4 py-3.5`}>
-      {title ? <Text className={`pb-1 text-sm font-bold ${t.text}`}>{title}</Text> : null}
+    <View className={`mb-2 rounded-2xl ${tint.bg} px-4 py-3.5`}>
+      {title ? <Text className={`pb-1 text-sm font-bold ${tint.text}`}>{title}</Text> : null}
       {items.map((it) => (
         <View key={it} className="flex-row pt-2">
-          <Feather name={t.icon} size={15} color={t.color} style={{ marginTop: 2 }} />
+          <Feather
+            name={t.icon}
+            size={15}
+            color={ui.tint[t.tone].ink}
+            style={{ marginTop: 2 }}
+          />
           <Text className="flex-1 pl-2.5 text-sm leading-5 text-ink">{it}</Text>
         </View>
       ))}
@@ -174,7 +201,7 @@ function Contacts({ items }: { items: { icon: Icon; label: string; value: string
           }`}
           onPress={() => Linking.openURL(c.url)}
         >
-          <Feather name={c.icon} size={17} color={BRAND.leaf} />
+          <Feather name={c.icon} size={17} color={ui.tint.good.ink} />
           <View className="flex-1 pl-3">
             <Text className="text-[11px] font-semibold uppercase tracking-wide text-faint">
               {c.label}
@@ -228,6 +255,7 @@ export function ContentBlock({ block }: { block: Block }) {
 
 /** Q/A accordion — used by the FAQ, which is already question-shaped. */
 export function QuestionRow({ q, a }: { q: string; a: string[] }) {
+  const ui = useUi();
   const [open, setOpen] = useState(false);
   return (
     <View className="mb-2 overflow-hidden rounded-2xl bg-card">
@@ -240,7 +268,7 @@ export function QuestionRow({ q, a }: { q: string; a: string[] }) {
         }}
       >
         <Text className="flex-1 pr-2 text-[15px] font-semibold text-ink">{q}</Text>
-        <Feather name={open ? 'minus' : 'plus'} size={16} color={BRAND.leaf} />
+        <Feather name={open ? 'minus' : 'plus'} size={16} color={ui.tint.good.ink} />
       </Pressable>
       {open
         ? a.map((p, i) => (

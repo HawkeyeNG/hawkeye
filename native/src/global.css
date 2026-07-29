@@ -13,6 +13,20 @@
   --faint: 141 156 147;        /* tertiary text, icons               */
   --line: 226 236 230;         /* hairlines, dividers                */
   --disabled: 212 212 212;     /* dead buttons                       */
+
+  /* Tinted surfaces — a card that carries a verdict. These exist because a
+     hardcoded bg-emerald-50 / bg-red-50 / bg-amber-50 does NOT flip with the
+     theme: the tint stayed pale while --ink went near-white on top of it, which
+     is the grey-on-cream unreadability the dark pass shipped with. Pale in
+     light, deep and desaturated in dark, so text-ink reads on both.
+     Each has an *-ink partner: the heading/icon colour that sits ON that tint
+     (and reads on --card / --surface too, for standalone warning text). */
+  --good: 223 242 232;         /* affirmative / enforced / private   */
+  --good-ink: 11 107 58;
+  --bad: 254 233 232;          /* prohibition / danger / fraudulent  */
+  --bad-ink: 185 28 28;
+  --warn: 254 243 220;         /* caution / public / open            */
+  --warn-ink: 180 83 9;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,6 +38,17 @@
     --faint: 110 128 118;
     --line: 32 56 43;
     --disabled: 48 62 54;
+
+    /* Deep tints, not pale ones — the card darkens with the theme so --ink
+       (232 242 236) stays light-on-dark. Measured against --ink: good 11.4:1,
+       bad 13.3:1, warn 11.6:1. The inks are the light end of each hue so a
+       heading still separates from its own tint (7.6:1 / 8.0:1 / 9.2:1). */
+    --good: 16 56 36;
+    --good-ink: 110 219 160;
+    --bad: 66 24 26;
+    --bad-ink: 252 165 165;
+    --warn: 64 44 12;
+    --warn-ink: 252 211 77;
   }
 }
 

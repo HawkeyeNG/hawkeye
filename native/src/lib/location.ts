@@ -7,6 +7,19 @@ import * as Location from 'expo-location';
 
 export type Fix = { lat: number; lng: number; accuracy: number };
 
+/**
+ * How far "near me" reaches when discovering polling units, in metres.
+ *
+ * One number, shared by the screens that ask and the map that draws the ring,
+ * so the circle on screen is the same circle the query used. When the two drift
+ * apart the map stops being evidence: an observer sees empty space inside the
+ * ring and concludes there is no unit nearby, when really the lookup searched a
+ * different area than the one it drew.
+ *
+ * 800m is a walkable radius in a dense ward without pulling in the next one.
+ */
+export const DISCOVERY_RADIUS_M = 800;
+
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
   return Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), ms))]);
 }

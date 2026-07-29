@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 
@@ -54,8 +54,14 @@ export function loadStatesGeo(): Promise<Geo> {
 /** Shape of the box before we know it — keeps the placeholder from jumping. */
 const FALLBACK_ASPECT = 800 / 660;
 
-/** Unfilled land: a state the caller had nothing to say about. Exported so a
- *  legend can show the same grey the map actually painted. */
+/**
+ * Unfilled land: a state the caller had nothing to say about — the light-theme
+ * value, exported so a legend can show the grey the map painted.
+ *
+ * Prefer `useUi().noData`, which is this colour on the light theme and a dark
+ * one on the dark theme; a module constant cannot follow the OS. A legend still
+ * hardcoding this will show a pale swatch beside a dark map.
+ */
 export const NO_DATA_FILL = '#e9eeea';
 
 export type NigeriaMapProps = {
@@ -65,7 +71,7 @@ export type NigeriaMapProps = {
   onPress?: (state: string) => void;
   /** Outlined and drawn last so neighbours can't clip the highlight. */
   selected?: string | null;
-  /** Fill for states absent from `fills`. */
+  /** Fill for states absent from `fills`. Defaults to the theme's `noData`. */
   emptyFill?: string;
   accessibilityLabel?: string;
 };
@@ -83,9 +89,11 @@ export function NigeriaMap({
   fills,
   onPress,
   selected,
-  emptyFill = NO_DATA_FILL,
+  emptyFill,
   accessibilityLabel = 'Map of Nigeria by state',
 }: NigeriaMapProps) {
+  const ui = useUi();
+  const empty = emptyFill ?? ui.noData;
   const [geo, setGeo] = useState<Geo | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [width, setWidth] = useState(0);
@@ -137,7 +145,7 @@ export function NigeriaMap({
         className="items-center justify-center rounded-2xl bg-card px-6 py-10"
         style={{ width: '100%' }}
       >
-        <Text className="text-sm font-semibold text-amber-800">Map unavailable</Text>
+        <Text className="text-sm font-semibold text-warn-ink">Map Unavailable</Text>
         <Text className="pt-1 text-center text-xs text-muted">
           {err ?? `states_geo.json → unusable viewBox "${geo?.viewBox}"`}
         </Text>
@@ -154,7 +162,7 @@ export function NigeriaMap({
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
     >
       {!geo || !box || width <= 0 ? (
-        <ActivityIndicator color={BRAND.leaf} />
+        <ActivityIndicator color={ui.tint.good.ink} />
       ) : (
         <Svg
           width={width}
@@ -169,9 +177,9 @@ export function NigeriaMap({
               <Path
                 key={s.key}
                 d={s.path}
-                fill={fill ?? emptyFill}
+                fill={fill ?? empty}
                 fillOpacity={fill ? 0.9 : 1}
-                stroke={sel ? BRAND.green : '#b7bcb7'}
+                stroke={sel ? ui.tint.good.ink : ui.mapLine}
                 strokeWidth={sel ? 3 : 1}
                 strokeLinejoin="round"
                 onPress={onPress ? () => onPress(s.name) : undefined}

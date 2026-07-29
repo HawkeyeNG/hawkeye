@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AskFab } from '@/components/ask-fab';
 import { bootstrapAuth } from '@/lib/auth';
 import { usePushNotifications } from '@/lib/push';
 
@@ -98,6 +99,10 @@ export default function RootLayout() {
           <Stack.Screen name="assistant" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="map" options={{ presentation: 'fullScreenModal' }} />
         </Stack>
+        {/* After the Stack, so it draws over every screen and the tab bar. One
+            instance for the whole app: mounted per-screen it would forget where
+            it was dragged to the moment anyone navigated. */}
+        <AskFab />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

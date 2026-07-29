@@ -125,7 +125,7 @@ export default function Alerts() {
         <Text className="text-2xl font-bold text-ink">Alerts</Text>
         {auth.status === 'signedIn' ? (
           <Pressable hitSlop={8} onPress={() => setConfirmOut(true)}>
-            <Text className="text-sm font-semibold text-hawk-leaf">
+            <Text className="text-sm font-semibold text-good-ink">
               Observer #{auth.observerId} · Sign out
             </Text>
           </Pressable>
@@ -134,7 +134,7 @@ export default function Alerts() {
 
       {auth.status !== 'signedIn' ? (
         <View className="mx-4 mt-4 items-center rounded-2xl bg-card px-6 py-10">
-          <Feather name="bell" size={28} color={BRAND.leaf} />
+          <Feather name="bell" size={28} color={ui.tint.good.ink} />
           <Text className="pt-3 text-base font-semibold text-ink">Sign in to get alerts</Text>
           <Text className="pt-1 text-center text-sm text-muted">
             Race updates, docket cases and replies to your reports arrive here.
@@ -155,13 +155,13 @@ export default function Alerts() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor={BRAND.leaf}
+                tintColor={ui.tint.good.ink}
               />
             }
             contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 12 }}
             ListEmptyComponent={
               items === null && !err ? (
-                <ActivityIndicator className="pt-8" color={BRAND.leaf} />
+                <ActivityIndicator className="pt-8" color={ui.tint.good.ink} />
               ) : err ? (
                 <View className="mt-4 items-center rounded-2xl bg-card px-6 py-10">
                   <Feather name="wifi-off" size={26} color={ui.faint} />
@@ -184,8 +184,10 @@ export default function Alerts() {
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => open(item)}
+                // Unread carries a tinted card, so the tint has to darken with
+                // the theme — bg-emerald-50 stayed pale and swallowed text-ink.
                 className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 active:opacity-80 ${
-                  item.read ? 'bg-card' : 'bg-emerald-50'
+                  item.read ? 'bg-card' : 'bg-good'
                 }`}
               >
                 <View className="flex-1 pr-2">

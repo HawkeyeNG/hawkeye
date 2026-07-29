@@ -2,16 +2,29 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// Aliased because this screen's own component is called MapUnit; two things
+// under one name here would be a trap rather than a coincidence.
+import {
+  TIER_COLOR,
+  TIER_LABEL,
+  UnitMap,
+  envelopeText,
+  mapAvailable,
+  toTier,
+  type MapEnvelope,
+  type MapUnit as MarkerUnit,
+  type UnitTier,
+} from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
-import { getQuickFix, getSubmitFix } from '@/lib/location';
+import { DISCOVERY_RADIUS_M, getQuickFix, getSubmitFix, type Fix } from '@/lib/location';
 
 type Unit = {
   pu_code: string;
@@ -24,6 +37,50 @@ type Unit = {
   /** GPS discovery only (/api/polling-units, /api/mapping/nearby). */
   locationTier?: string;
   distanceM?: number;
+  /** Coalesced at discovery, because the two lookups spell coordinates
+   *  differently and neither spelling is what the map wants. Absent on the
+   *  register-browse path — a unit found by name has nowhere to be drawn. */
+  mapLat?: number;
+  mapLng?: number;
+  /**
+   * The area a unit with no confirmed position is known to sit somewhere
+   * inside — carrying its OWN centre, never inheriting the drawn point above.
+   *
+   * In the register those are DIFFERENT PLACES. `mapLat/mapLng` come from `lat`
+   * or `crowd_lat` — somewhere a person actually stood — while the envelope is
+   * a GRID3 ward-scale box centred on `approx_lat/approx_lng`, a median 2,533m
+   * from the crowd point, 10km at p90 and 145km at worst, with radii averaging
+   * 2.8km. Pairing one row's point with the other's radius (which is what
+   * reading two columns off the same register row did) asserts an area centred
+   * on a place the envelope makes no claim about, and inside a map framed to
+   * ~1km it drew a full-bleed amber wash over every pin.
+   *
+   * Set ONLY where the drawn point IS this envelope's centre — in practice, a
+   * /api/mapping/nearby row whose `status` is `approx`. This is the circle the
+   * observer is being asked to collapse.
+   */
+  envelope?: MapEnvelope;
+  /**
+   * The envelope's SIZE only, for a unit whose pin is a crowd fix rather than
+   * the envelope centre — so there is a number to say but nothing to draw.
+   *
+   * Deliberately not a MapEnvelope: it has no centre, precisely so it cannot
+   * be handed to the map. It exists because withholding the size entirely left
+   * this screen mute about the 109,507 geocoded units while report/result.tsx
+   * stated their radius, and two screens describing one unit differently is
+   * the failure this whole area keeps producing.
+   */
+  areaOnlyM?: number;
+};
+
+/** /api/polling-units hands back whole register rows, so its coordinates arrive
+ *  raw: verified ones in lat/lng, crowd medians in crowd_lat/crowd_lng. */
+type LocatedRow = Unit & {
+  lat?: number | null;
+  lng?: number | null;
+  crowd_lat?: number | null;
+  crowd_lng?: number | null;
+  approx_radius_m?: number | null;
 };
 
 /** /api/observers/my-unit LEFT JOINs the register, so every field but the code may be null. */
@@ -37,30 +94,218 @@ type SavedUnit = {
 
 type Stats = { total: number; verified: number; crowdMapped: number; unitsWithFixes: number };
 
-/** /api/mapping/nearby's row shape — camelCase and thinner than a register row. */
+/** /api/mapping/nearby's row shape — camelCase and thinner than a register row.
+ *  Its lat/lng are already coalesced server-side (verified, else the envelope
+ *  centre), and approxRadiusM is non-null exactly when they are the latter. */
 type NearbyRow = {
   puCode: string;
   name: string;
   ward: string;
+  lat: number;
+  lng: number;
   distanceM: number;
   status: 'verified' | 'crowd' | 'approx';
+  approxRadiusM: number | null;
   fixes: number;
 };
 
 const BASE = 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
 
-/** How far /api/mapping/nearby is asked to look. You are standing at the unit;
- *  the slack is for GRID3 envelopes, which can sit a few hundred metres out. */
-const NEARBY_RADIUS_M = 1000;
+/** Rows kept from the merged lookup. Same cap as report/result.tsx, so the two
+ *  screens truncate one shared list in the same place. */
+const MAX_NEARBY = 12;
 
-const TIER: Record<string, string> = {
-  verified: '📍 already located',
-  crowd: '◌ crowd-confirmed location',
-  geocoded: '◌ located from map data (unconfirmed)',
-  approx: '⚠ approximate position only — needs mapping',
-  unmapped: '⚠ not yet located',
+/**
+ * How far /api/polling-units actually looks — used only until it says so itself.
+ *
+ * That endpoint does NOT search the discovery radius: it measures against the
+ * SUBMISSION geofence (backend/src/config.js `geofenceRadiusM`, 200m), while
+ * /api/mapping/nearby honours the radiusM we ask for (800m). Two different
+ * windows behind one button, so no single number can describe the search —
+ * which is why the copy below names both, and why the response's own `radiusM`
+ * is preferred over this mirror whenever it arrives.
+ */
+const REGISTER_RADIUS_M = 200;
+
+/**
+ * Its row cap. NOT on the wire — `.slice(0, 8)` server-side — so a full answer
+ * is indistinguishable from a truncated one and has to be treated as truncated.
+ */
+const REGISTER_MAX_ROWS = 8;
+
+/**
+ * What the two lookups covered on the last run, so the screen can describe the
+ * area it really searched instead of the area it drew.
+ *
+ * Same shape, and below the same sentences, as report/result.tsx. The two
+ * screens run the identical pair of lookups over the identical register, and an
+ * observer who is told two different things about the same circle on two
+ * screens has been given a reason to believe neither.
+ */
+type Searched = {
+  /** Radius /api/polling-units filtered at, or null if it never answered. */
+  registerM: number | null;
+  /** Radius /api/mapping/nearby was asked for, or null if it never answered. */
+  envelopeM: number | null;
+  /** The register lookup came back full, so nearer units may be missing. */
+  capped: boolean;
 };
+
+/**
+ * What the ring on the map is, in words, given what actually answered.
+ *
+ * The ring can only ever be one circle, and the two lookups search two
+ * different ones — 800m for units with a GRID3 area, 200m for units an observer
+ * has already placed. Drawing the wider and leaving it unlabelled reads as
+ * "everything in here was checked", which is false for the 7,652 units only the
+ * narrow lookup can see. So the ring is named.
+ */
+const ringLine = (s: Searched): string | null => {
+  if (s.envelopeM != null && s.registerM != null) {
+    return `The ring is the ${s.envelopeM}m searched for units with a mapped area. Units already placed by observers come from a separate ${s.registerM}m lookup — so the ring is not a claim that everything inside it was checked.`;
+  }
+  if (s.envelopeM != null) {
+    return `The ring is the ${s.envelopeM}m searched for units with a mapped area. The lookup that finds units placed by observers did not answer, so those are missing.`;
+  }
+  if (s.registerM != null) {
+    return `The ring is the ${s.registerM}m the register lookup searched. The wider search for units with a mapped area did not answer.`;
+  }
+  return null;
+};
+
+/** The same honesty for an empty answer: name the circles that were searched,
+ *  rather than the one that was drawn. */
+const nothingFoundLine = (s: Searched): string => {
+  if (s.envelopeM != null && s.registerM != null) {
+    return `No polling unit found. Hawkeye searched ${s.registerM}m around you for units observers have already placed, and ${s.envelopeM}m for units known only by their mapped area — browse the register below to find yours by name.`;
+  }
+  if (s.envelopeM != null) {
+    return `No polling unit with a mapped area within ${s.envelopeM}m of you, and the lookup that finds units placed by observers did not answer — browse the register below to find yours by name.`;
+  }
+  if (s.registerM != null) {
+    return `No polling unit within ${s.registerM}m of you, and the wider search for units with a mapped area did not answer — browse the register below to find yours by name.`;
+  }
+  return 'Could not look up nearby units — browse the register below to find yours by name.';
+};
+
+/**
+ * A list row's tier: the map's three, plus the one state the map cannot draw.
+ *
+ * `unmapped` is deliberately NOT folded into `approx` the way toTier() folds it.
+ * That fold is right for the map — an approx unit still has an envelope to draw
+ * — and wrong here: a unit with no position at all cannot appear on the map, and
+ * it is the single population this screen exists to fix. Flattening it would
+ * hide exactly the units most in need of a fix.
+ */
+type RowTier = UnitTier | 'unmapped';
+
+/**
+ * THE row vocabulary. The three map tiers are the legend's own phrases, imported
+ * rather than re-typed, because the legend and the rows a few pixels under it
+ * grading the same unit in different words is what made an observer distrust
+ * both. (This screen used to caption a geocoded unit "located from map data"
+ * one line below a legend calling it "Approximate area".)
+ */
+const ROW_LABEL: Record<RowTier, string> = {
+  ...TIER_LABEL,
+  unmapped: 'Not located yet',
+};
+
+/**
+ * Which tier a row is drawn as.
+ *
+ * Both endpoints behind this screen stamp `locationTier` on every row they
+ * return (backend/src/routes/pollingUnits.js `tierOf`, and /mapping/nearby's
+ * `status`), so the register-column fallback below is for locally-built rows
+ * only. It reads those columns the way the backend does rather than treating
+ * any source at all as verified — `geocoded` in particular is a name match
+ * against map data that nobody has stood at, and claiming it as located is the
+ * overstatement this screen is meant to correct.
+ *
+ * `crowd_mapped` is checked FIRST, ahead of the server's own tier, and only for
+ * that one value. /api/polling-units and /api/register/units share a `tierOf()`
+ * that grades any row holding `lat` as `verified` — including the crowd
+ * promotions THIS screen creates, since POST /api/mappings writes the clustered
+ * median into `lat` alongside `coords_source = 'crowd_mapped'`
+ * (backend/src/routes/mapping.js). /api/mapping/nearby reads coords_source and
+ * calls the same row `crowd`, and report/result.tsx shows it that way. Without
+ * this line an observer is told "this unit is now crowd-confirmed", sees it go
+ * green and "Verified location" here, and blue and "Crowd-confirmed location"
+ * on the reporting screen. Zero rows are crowd_mapped today; every promotion
+ * after launch is one, and the browse path has no /mapping/nearby row to be
+ * corrected by.
+ */
+const rowTier = (u: Unit): RowTier => {
+  // Ahead of locationTier, and the old fallback copy of this test below is gone
+  // with it — leaving a second, unreachable one would read as a disagreement
+  // about which check owns this value.
+  if (u.coords_source === 'crowd_mapped') return 'crowd';
+  if (u.locationTier) return u.locationTier === 'unmapped' ? 'unmapped' : toTier(u.locationTier);
+  if (u.coords_source === 'geocoded') return 'approx';
+  if (u.coords_source && u.coords_source !== 'sample') return 'verified';
+  return 'unmapped';
+};
+
+/**
+ * What the tier alone does not say, in the same shape report/result.tsx uses for
+ * its nearby rows. An approx unit's envelope is the fact that matters — it is
+ * the area one fix collapses — and elsewhere the count of fixes that already
+ * agreed. `crowd_reports` is only ever written alongside a crowd coordinate
+ * (backend/src/services/aggregate.js), so it never contradicts the tier here.
+ *
+ * This line now carries envelopes the map deliberately refuses to draw. Real
+ * radii average 2.8km against an 800m search, and a circle with no visible edge
+ * is a wash rather than a shape (see the ENVELOPE RULE in components/unit-map),
+ * so for most approx units these words are the only statement of the number.
+ *
+ * The wording comes from components/unit-map's own envelopeText() rather than
+ * being spelled again here. Both screens describe the same envelope for the same
+ * unit, and a local Math.round against the other's toLocaleString printed one
+ * 1200m envelope as "~1200m" here and "~1,200m" there — two renderings of one
+ * fact, which is exactly the drift the shared vocabulary above exists to stop.
+ */
+const tierDetail = (u: Unit, tier: RowTier) =>
+  tier === 'approx' && u.envelope
+    ? envelopeText(u.envelope.radiusM)
+    : // Same sentence for a unit whose pin is a crowd fix: the size is known,
+      // the centre is elsewhere, so it is stated rather than drawn. Silence
+      // here was what made this screen and report/result.tsx contradict each
+      // other on the geocoded units.
+      tier === 'approx' && u.areaOnlyM
+      ? envelopeText(u.areaOnlyM)
+      : u.crowd_reports
+        ? ` · ${u.crowd_reports} observer fix(es)`
+        : '';
+
+/** Tailwind's emerald-100 — the colour a row's sub-text already switches to on
+ *  the selected (hawk-green) row, so the dot matches the line it sits in. */
+const SELECTED_SUB = '#d1fae5';
+
+/**
+ * A row's tier as the very colour the map draws that unit in, so a row and its
+ * pin can never disagree. The white keyline is there for the reason the map's
+ * own pins carry one: it is the only edge that survives both the pale card and
+ * the dark green of a selected row.
+ *
+ * `unmapped` is hollow on purpose. It has no tier colour because it has no pin
+ * — the map cannot place it at all — and an empty ring is the honest glyph for
+ * "nothing here yet". Amber is already taken by "approximate, still needs
+ * mapping", and red is not in the palette: none of these states is an error.
+ */
+function TierDot({ tier, on }: { tier: RowTier; on: boolean }) {
+  const ui = useUi();
+  return (
+    <View
+      className="mr-1.5 h-2.5 w-2.5 rounded-full"
+      style={
+        tier === 'unmapped'
+          ? { borderWidth: 1.5, borderColor: on ? SELECTED_SUB : ui.faint }
+          : { backgroundColor: TIER_COLOR[tier], borderWidth: 1, borderColor: '#ffffff' }
+      }
+    />
+  );
+}
 
 const num = (v: number) => v.toLocaleString();
 
@@ -101,8 +346,14 @@ export default function MapUnit() {
   const [saving, setSaving] = useState(false);
 
   const [nearby, setNearby] = useState<Unit[]>([]);
+  /** Kept after the lookup so the map has something to centre and size on. */
+  const [fix, setFix] = useState<Fix | null>(null);
   const [nearBusy, setNearBusy] = useState(false);
   const [nearLine, setNearLine] = useState<string | null>(null);
+  /** What the last run actually searched — the map ring, the empty state and
+   *  the truncation note are all read off this rather than off the radius the
+   *  screen would like to have searched. */
+  const [searched, setSearched] = useState<Searched | null>(null);
   const [browse, setBrowse] = useState(false);
 
   const [busy, setBusy] = useState(false);
@@ -175,6 +426,47 @@ export default function MapUnit() {
   }, [stateSel, lgaSel, wardSel]);
 
   /**
+   * The map draws exactly the list below it, never its own query — the two
+   * disagreeing is the one failure mode that would make an observer distrust
+   * both. Units without a coordinate are dropped rather than guessed at.
+   */
+  const mapUnits = useMemo<MarkerUnit[]>(() => {
+    const drawn: MarkerUnit[] = [];
+    for (const u of nearby) {
+      // Same rowTier() the list rows are labelled from, so a pin and the row
+      // under it cannot be graded by two different rules — and an unmapped unit
+      // is dropped rather than drawn at a guessed point, which is the one thing
+      // a map that exists to collect positions must never do.
+      const tier = rowTier(u);
+      if (u.mapLat == null || u.mapLng == null || tier === 'unmapped') continue;
+      drawn.push({
+        puCode: u.pu_code,
+        name: u.name,
+        lat: u.mapLat,
+        lng: u.mapLng,
+        tier,
+        // Passed whole or not at all. It is only ever set where the point above
+        // IS its centre, so the map can draw it about itself without having to
+        // trust that this screen paired the two honestly.
+        envelope: u.envelope,
+      });
+    }
+    return drawn;
+  }, [nearby]);
+
+  /** True once anything on the map is an area rather than a point — the case
+   *  this screen exists for, and the only one worth explaining. */
+  const anyApprox = mapUnits.some((u) => u.tier === 'approx');
+
+  /**
+   * The circle to draw. Normally the envelope search, the wider of the two and
+   * so the one that frames every result — but if only the register lookup
+   * answered, the ring drops to what IT searched rather than standing at four
+   * times the radius anything was actually queried at.
+   */
+  const ringM = searched?.envelopeM ?? searched?.registerM ?? DISCOVERY_RADIUS_M;
+
+  /**
    * GPS discovery — the primary path, as on the web. An observer standing at
    * their unit knows where they are, not how their ward is spelled in the
    * register, and the drill-down is four taps deep before it shows a unit.
@@ -185,10 +477,22 @@ export default function MapUnit() {
    * at an unmapped unit an empty list. /mapping/nearby also returns units
    * placed only by a GRID3 approx envelope, which is the population this
    * screen exists to fix, but it carries no LGA and cannot replace the first.
+   *
+   * THE TWO SEARCH DIFFERENT AREAS, and nothing on screen may pretend otherwise.
+   * /polling-units measures against the submission geofence (200m) and returns
+   * at most eight rows; /mapping/nearby honours DISCOVERY_RADIUS_M (800m) and
+   * returns up to 200. So an empty result is never "there is no unit within
+   * 800m of you" — a crowd-located unit 300m away is outside the only lookup
+   * that can see it. Both numbers are named in the copy for that reason.
    */
   const findNearby = async () => {
     setNearBusy(true);
     setNearby([]);
+    // A stale fix would leave the map drawing a ring around where the observer
+    // used to be, which is worse than drawing no ring at all — and a stale
+    // scope would caption that ring with the last run's numbers.
+    setFix(null);
+    setSearched(null);
     setNearLine('Getting your location…');
     try {
       // Quick fix, not the submit-grade one: this only shortlists candidates.
@@ -201,37 +505,119 @@ export default function MapUnit() {
         setBrowse(true);
         return;
       }
+      setFix(fix);
       setNearLine(`Location fixed (±${Math.round(fix.accuracy)}m). Looking up units around you…`);
 
       const [located, envelope] = await Promise.all([
-        fetch(`${BASE}/api/polling-units?lat=${fix.lat}&lng=${fix.lng}`),
+        fetch(`${BASE}/api/polling-units?lat=${fix.lat}&lng=${fix.lng}`).catch(() => null),
+        // The endpoint would default to 5km. DISCOVERY_RADIUS_M is what the map
+        // below draws, and a ring that is not the area actually searched turns
+        // the map from evidence into decoration.
         fetch(
-          `${BASE}/api/mapping/nearby?lat=${fix.lat}&lng=${fix.lng}&radiusM=${NEARBY_RADIUS_M}`,
+          `${BASE}/api/mapping/nearby?lat=${fix.lat}&lng=${fix.lng}&radiusM=${DISCOVERY_RADIUS_M}`,
         ).catch(() => null),
       ]);
 
-      const body = (await located.json().catch(() => ({}))) as {
-        radiusM?: number;
-        units?: Unit[];
-        error?: string;
-      };
-      if (!located.ok) {
+      // Either lookup may fail alone; only losing both is fatal. Each sees a
+      // population the other cannot — and this screen's whole reason to exist
+      // is the envelope-only units, so a register outage must not take them
+      // down with it. What was and was not searched is then said out loud.
+      if (!located?.ok && !envelope?.ok) {
+        const status = located?.status ?? envelope?.status;
         setNearLine(
-          `Could not look up nearby units — browse the register below. (${body.error ?? 'lookup_failed'} / HTTP ${located.status})`,
+          `Could not look up nearby units — browse the register below. (lookup_failed${status ? ` / HTTP ${status}` : ''})`,
         );
         setBrowse(true);
         return;
       }
 
-      const extra =
-        envelope && envelope.ok
-          ? (((await envelope.json().catch(() => ({}))) as { units?: NearbyRow[] }).units ?? [])
-          : [];
+      const body: { radiusM?: number; units?: LocatedRow[] } = located?.ok
+        ? await located.json().catch(() => ({}))
+        : {};
+      const extra = envelope?.ok
+        ? (((await envelope.json().catch(() => ({}))) as { units?: NearbyRow[] }).units ?? [])
+        : [];
+
+      /**
+       * Recorded BEFORE the merge, because afterwards the two populations are
+       * indistinguishable and every sentence about "within Xm" needs to know
+       * which circle it means. The register lookup reports the radius it used,
+       * so that beats the local mirror; a lookup that did not answer
+       * contributes no radius rather than its intended one, since nothing
+       * inside it was searched at all.
+       */
+      const scope: Searched = {
+        registerM: located?.ok
+          ? Number.isFinite(body.radiusM)
+            ? Number(body.radiusM)
+            : REGISTER_RADIUS_M
+          : null,
+        envelopeM: envelope?.ok ? DISCOVERY_RADIUS_M : null,
+        // A full answer and a truncated one look identical on the wire, so a
+        // full one is treated as truncated.
+        capped: (body.units?.length ?? 0) >= REGISTER_MAX_ROWS,
+      };
+      setSearched(scope);
 
       const merged = new Map<string, Unit>();
-      for (const u of body.units ?? []) merged.set(u.pu_code, u);
+      for (const u of body.units ?? []) {
+        // A unit here is listed because it holds a coordinate, but which column
+        // that is depends on how it was located; the map only cares that there
+        // is one. Nullish, not `||`, so a genuine 0 is not thrown away.
+        const uLat = u.lat ?? u.crowd_lat;
+        const uLng = u.lng ?? u.crowd_lng;
+        merged.set(u.pu_code, {
+          ...u,
+          mapLat: uLat ?? undefined,
+          mapLng: uLng ?? undefined,
+          // NO ENVELOPE, deliberately, even though `approx_radius_m` is right
+          // there on the row. A unit reaches this list by holding `lat` or
+          // `crowd_lat`, so the point above is one of those — and the envelope
+          // is centred on `approx_lat/approx_lng`, a median 2.5km away. The
+          // radius describes that other place, not this pin.
+          //
+          // The SIZE still matters though, so it is kept in a field that can
+          // never be drawn. Withholding it entirely left this screen saying
+          // only "record a fix here to confirm it" for all 109,507 geocoded
+          // units, while report/result named the radius and explained the
+          // offset centre — the same unit described in contradictory terms on
+          // two screens. Never assign this to MapUnit.envelope.
+          areaOnlyM:
+            u.lat == null && (u.approx_radius_m ?? 0) > 0 ? (u.approx_radius_m as number) : undefined,
+        });
+      }
       for (const n of extra) {
-        if (merged.has(n.puCode)) continue;
+        const seed = merged.get(n.puCode);
+        if (seed) {
+          // The register row wins on everything it knows — state, LGA,
+          // coords_source, and the position both screens draw. Only the TIER is
+          // taken from here, and only when the two rows describe the SAME
+          // POINT: /mapping/nearby draws `lat ?? approx_lat` while the register
+          // row draws `lat ?? crowd_lat`, and those coincide exactly when
+          // `status` is not 'approx'. When it IS approx, this row is grading a
+          // GRID3 box a median 2.5km from the fix above — a different place,
+          // whose tier belongs to it and not to the pin we are drawing, which
+          // its crowd position has already superseded.
+          if (n.status !== 'approx') {
+            /**
+             * `fixes` comes across too, and it has to: `crowd_reports` on the
+             * register row is written only by aggregate.js, which runs inside
+             * `if (pu.lat == null)`. The moment THIS screen promotes a unit
+             * (mapping.js sets lat + coords_source='crowd_mapped') that branch
+             * is false forever, so the column freezes at 0 while
+             * /api/mapping/nearby's `fixes` is a live COUNT over pu_mappings.
+             * Leaving the stale column made this screen show no fix count on
+             * the very unit it had just crowd-confirmed, while report/result
+             * showed the real one — same unit, two stories.
+             */
+            merged.set(n.puCode, {
+              ...seed,
+              locationTier: n.status,
+              crowd_reports: n.fixes || seed.crowd_reports,
+            });
+          }
+          continue;
+        }
         merged.set(n.puCode, {
           pu_code: n.puCode,
           name: n.name,
@@ -241,21 +627,36 @@ export default function MapUnit() {
           crowd_reports: n.fixes,
           locationTier: n.status,
           distanceM: n.distanceM,
+          mapLat: n.lat,
+          mapLng: n.lng,
+          // Here — and only here — the drawn point IS the envelope's centre:
+          // the endpoint coalesces to approx_lat/approx_lng when `lat` is null,
+          // which is exactly when it reports `approx` and fills approxRadiusM.
+          // So the two are one fact and may travel together.
+          envelope:
+            n.status === 'approx' && n.approxRadiusM && n.approxRadiusM > 0
+              ? { lat: n.lat, lng: n.lng, radiusM: n.approxRadiusM }
+              : undefined,
         });
       }
-      const found = [...merged.values()]
-        .sort((a, b) => (a.distanceM ?? 0) - (b.distanceM ?? 0))
-        .slice(0, 12);
+      const all = [...merged.values()].sort((a, b) => (a.distanceM ?? 0) - (b.distanceM ?? 0));
+      const found = all.slice(0, MAX_NEARBY);
 
       setNearby(found);
       if (found.length === 0) {
-        setNearLine(
-          `No polling unit with a known position within ${NEARBY_RADIUS_M}m of you — browse the register below to find it by name.`,
-        );
+        // NOT "within 800m": the units only /api/polling-units can see were
+        // searched at 200m, so one radius in this sentence would be a positive
+        // claim about a circle nothing ever looked in — and would send an
+        // observer hunting for a unit the app never asked about.
+        setNearLine(nothingFoundLine(scope));
         setBrowse(true);
         return;
       }
-      setNearLine('Tap the unit you are standing at:');
+      setNearLine(
+        all.length > found.length
+          ? `Tap the unit you are standing at — the ${found.length} closest of the ${all.length} found:`
+          : 'Tap the unit you are standing at:',
+      );
     } catch (e) {
       setNearLine(
         `Could not look up nearby units — browse the register below. (${e instanceof Error ? e.message : String(e)})`,
@@ -449,21 +850,9 @@ export default function MapUnit() {
     </Pressable>
   );
 
-  /** One sub-line for a unit row, whichever of the three paths found it. */
-  const unitSub = (u: Unit) => {
-    const tier = u.locationTier
-      ? (TIER[u.locationTier] ?? TIER.unmapped)
-      : u.coords_source && u.coords_source !== 'sample'
-        ? `${TIER.verified} (${u.coords_source})`
-        : u.crowd_reports
-          ? `◌ ${u.crowd_reports} fix(es) so far`
-          : TIER.unmapped;
-    const where = u.distanceM != null ? `${u.pu_code} · ${u.distanceM}m away` : u.pu_code;
-    return `${where} · ${tier}`;
-  };
-
   const UnitRow = ({ u }: { u: Unit }) => {
     const on = unit?.pu_code === u.pu_code;
+    const tier = rowTier(u);
     return (
       <Pressable
         onPress={() => setUnit(u)}
@@ -474,8 +863,18 @@ export default function MapUnit() {
             {u.name}
           </Text>
           <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
-            {unitSub(u)}
+            {u.distanceM != null ? `${u.pu_code} · ${u.distanceM}m away` : u.pu_code}
           </Text>
+          {/* The tier gets its own line beside its dot rather than trailing the
+              code on one: this is the line the map above is read against, and a
+              wrap would otherwise orphan the dot from the words it colours. */}
+          <View className="flex-row items-center pt-0.5">
+            <TierDot tier={tier} on={on} />
+            <Text className={`flex-1 text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
+              {ROW_LABEL[tier]}
+              {tierDetail(u, tier)}
+            </Text>
+          </View>
         </View>
         {saved?.pu_code === u.pu_code ? (
           <Feather name="star" size={16} color={on ? BRAND.gold : BRAND.leaf} />
@@ -485,6 +884,25 @@ export default function MapUnit() {
   };
 
   const pct = stats && stats.total ? (stats.verified / stats.total) * 100 : 0;
+
+  /** Envelope radius of the selected unit, when it has one — i.e. when the unit
+   *  is known as an area rather than a point. Read off the envelope itself, so
+   *  it can only ever be the radius of the thing the pin is standing in.
+   *
+   *  Kept a NUMBER, not a formatted string: the footer below tests it for
+   *  truthiness, and a rounded-to-"0" radius must fall through to the plainer
+   *  sentence rather than promise an area of nothing. Grouping is applied where
+   *  it is printed. */
+  const envelopeM =
+    unit && rowTier(unit) === 'approx' && unit.envelope
+      ? Math.round(unit.envelope.radiusM)
+      : null;
+
+  /** The selected unit has no position at all — and we were actually told so.
+   *  The saved-unit card above builds a Unit with no tier of its own (/my-unit
+   *  reports none), and a unit must never be captioned as unlocated merely
+   *  because this screen does not know. */
+  const selUnlocated = unit != null && !!unit.locationTier && rowTier(unit) === 'unmapped';
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
@@ -590,8 +1008,80 @@ export default function MapUnit() {
           )}
         </Pressable>
 
+        {/* text-warn-ink, not amber-800: this line sits on bg-surface, and the
+            fixed amber failed contrast on the light surface and vanished into
+            the dark one. The semantic token is the pair that is legible in both. */}
         {nearLine ? (
-          <Text className="pt-3 text-sm font-semibold text-amber-800">{nearLine}</Text>
+          <Text className="pt-3 text-sm font-semibold text-warn-ink">{nearLine}</Text>
+        ) : null}
+
+        {/* The register lookup returns at most eight rows and does not say
+            whether it had more. In a dense ward the unit the observer is
+            standing at can be the ninth — and the list above would look
+            complete. Said once, only when the answer came back full. */}
+        {searched?.capped && nearby.length ? (
+          <Text className="pt-1 text-xs text-muted">
+            Units already placed by observers are looked up {REGISTER_MAX_ROWS} at a time within{' '}
+            {searched.registerM}m, and that limit was reached — if yours is not listed, browse the
+            register below.
+          </Text>
+        ) : null}
+
+        {/* Under the status line, over the list: the map answers the one
+            question the list cannot — which of these am I actually standing
+            at. It is drawn even when nothing was found, because an empty ring
+            is a claim about the specific circle that was searched, where an
+            empty list is just a shrug.
+            Kept a little under the component's own default height: this screen
+            carries a coverage card and a saved-unit card above the map and a
+            two-button footer below it, so the map earns its space but does not
+            take the first list rows with it.
+
+            Gated on `searched` as well as on the fix, and that pairing is the
+            point: the ring is only honest while something can say what it is.
+            When BOTH lookups fail the fix has already been stored but no scope
+            ever was, so the map would draw an 800m ring off `ringM`'s default —
+            a circle nothing was ever searched in — while ringLine(), guarded on
+            the same missing scope, printed nothing to name it. An unlabelled
+            ring reads as "everything in here was checked", which is the one
+            claim this screen must never make by accident. No scope, no map: the
+            failure line above already says the lookup died, and the register
+            browser below is the way out. report/result.tsx runs the identical
+            pair of lookups and takes the identical gate. */}
+        {fix && searched && mapAvailable() ? (
+          <View className="pt-3">
+            <UnitMap
+              center={{ lat: fix.lat, lng: fix.lng }}
+              accuracyM={fix.accuracy}
+              units={mapUnits}
+              selected={unit?.pu_code}
+              onSelect={(code) => {
+                const u = nearby.find((x) => x.pu_code === code);
+                if (u) setUnit(u);
+              }}
+              radiusM={ringM}
+              height={264}
+            />
+            {/* An unlabelled ring is read as "everything in here was checked",
+                and that is false: the units this screen most needs to reach are
+                found by a lookup that only searched 200m of it. The ring is
+                therefore named rather than merely drawn. */}
+            {searched && ringLine(searched) ? (
+              <Text className="pt-2 text-xs leading-4 text-muted">{ringLine(searched)}</Text>
+            ) : null}
+            {/* Describes the DOT, not the circle. Most envelopes are too large
+                to have a visible edge (2.8km average against an 800m search) and
+                are deliberately not drawn at all, so copy that promised a circle
+                was captioning something the observer could not see. */}
+            {anyApprox ? (
+              <Text className="pt-1 text-xs leading-4 text-muted">
+                An amber dot is a unit whose position is known only to an approximate area —
+                sometimes a whole estate. That area is outlined when it is small enough to fit on
+                the map, and its size is given on the row where we have it. Walking to it and
+                recording one fix is what turns the area into a point.
+              </Text>
+            ) : null}
+          </View>
         ) : null}
 
         {nearby.length ? (
@@ -670,8 +1160,19 @@ export default function MapUnit() {
 
       {unit ? (
         <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
-          <Text className="pb-2 text-xs text-muted" numberOfLines={1}>
-            Selected: {unit.name}
+          {/* An unlocated unit is known only as an area — one the map outlines
+              when it is small enough to fit and leaves to these words when it is
+              not. Naming its size here is what makes the CTA below read as
+              "collapse this to where I am standing" rather than a generic
+              submit, and it is the only statement of the number for the large
+              majority of envelopes, which the map does not draw. */}
+          <Text className="pb-2 text-xs leading-4 text-muted">
+            Selected: <Text className="font-semibold text-ink">{unit.name}</Text>
+            {envelopeM
+              ? ` — its position is known only to within ${envelopeM.toLocaleString()}m. Your fix replaces that whole area with a point.`
+              : selUnlocated
+                ? ' — it has no recorded position at all, which is why it has no pin on the map. Your fix is what puts it there.'
+                : ' — record a fix here to confirm it.'}
           </Text>
 
           {/* The star commits server-side state of its own, so it belongs in the
@@ -715,7 +1216,7 @@ export default function MapUnit() {
           </Pressable>
 
           {line ? (
-            <Text className="pt-3 text-sm font-semibold text-amber-800">{line}</Text>
+            <Text className="pt-3 text-sm font-semibold text-warn-ink">{line}</Text>
           ) : null}
         </View>
       ) : null}

@@ -20,7 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { PasswordField } from '@/components/password-field';
-import { BRAND } from '@/lib/api';
+import { api, BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -135,13 +135,16 @@ function Row({
         first ? '' : 'border-t border-line'
       }`}
     >
-      <Feather name={icon} size={17} color={BRAND.leaf} />
+      <Feather name={icon} size={17} color={ui.tint.good.ink} />
       <View className="flex-1 pl-3">
         <Text className="text-base text-ink">{label}</Text>
         {sub}
       </View>
+      {/* muted, not faint: this column carries the row's actual value
+          ("Change" / "None saved"), and --faint is only ~3:1 on --card in
+          either theme. faint stays for timestamps and chevrons. */}
       {value ? (
-        <Text className="max-w-[45%] pr-1 text-right text-sm text-faint" numberOfLines={1}>
+        <Text className="max-w-[45%] pr-1 text-right text-sm text-muted" numberOfLines={1}>
           {value}
         </Text>
       ) : null}
@@ -172,6 +175,9 @@ export default function Profile() {
    *  anyone to sign in, so they arrive from their own endpoint. */
   const [practice, setPractice] = useState<PracticeRun[]>([]);
   const [confirmBusy, setConfirmBusy] = useState(false);
+  /** Contest code -> human name, from the same public /api/contests every other
+   *  screen reads. Everything the profile shows carries only the code. */
+  const [races, setRaces] = useState<Record<string, string>>({});
 
   // --- password modal ------------------------------------------------------
   const [pwOpen, setPwOpen] = useState(false);
@@ -213,6 +219,15 @@ export default function Profile() {
       )
       .then((d) => setPractice(d?.runs ?? []))
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    api
+      .contests()
+      .then((list) => setRaces(Object.fromEntries(list.map((c) => [c.code, c.name]))))
+      .catch(() => {
+        /* names are a courtesy — the rows fall back to the raw code */
+      });
   }, []);
 
   const openPw = () => {
@@ -346,7 +361,7 @@ export default function Profile() {
   if (auth.status !== 'signedIn') {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
-        <Feather name="user" size={28} color={BRAND.leaf} />
+        <Feather name="user" size={28} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to see your profile
         </Text>
@@ -366,12 +381,19 @@ export default function Profile() {
   const savedUnit = me?.unit ?? null;
   const savedUnitWhere = savedUnit ? unitWhere(savedUnit) : '';
 
+  /**
+   * Subscriptions, reports and collations all arrive tagged with the backend's
+   * contest code — "GOV" on its own told nobody which election it meant. The
+   * code only stands in while /api/contests is in flight or unreachable.
+   */
+  const raceName = (code: string) => races[code] ?? code;
+
   const acts: { key: string; icon: keyof typeof Feather.glyphMap; label: string; count: number }[] = [
-    { key: 'reports', icon: 'file-text', label: 'Result reports', count: me?.reports?.length ?? 0 },
-    { key: 'collation', icon: 'layers', label: 'Collation reports', count: me?.collation?.length ?? 0 },
-    { key: 'incidents', icon: 'alert-triangle', label: 'Incident reports', count: me?.incidents?.length ?? 0 },
-    { key: 'mappings', icon: 'map-pin', label: 'Units mapped', count: me?.mappings?.length ?? 0 },
-    { key: 'practice', icon: 'play-circle', label: 'Practice runs', count: practice.length },
+    { key: 'reports', icon: 'file-text', label: 'Result Reports', count: me?.reports?.length ?? 0 },
+    { key: 'collation', icon: 'layers', label: 'Collation Reports', count: me?.collation?.length ?? 0 },
+    { key: 'incidents', icon: 'alert-triangle', label: 'Incident Reports', count: me?.incidents?.length ?? 0 },
+    { key: 'mappings', icon: 'map-pin', label: 'Units Mapped', count: me?.mappings?.length ?? 0 },
+    { key: 'practice', icon: 'play-circle', label: 'Practice Runs', count: practice.length },
   ];
 
   return (
@@ -392,7 +414,7 @@ export default function Profile() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            tintColor={BRAND.leaf}
+            tintColor={ui.tint.good.ink}
             onRefresh={async () => {
               setRefreshing(true);
               await load();
@@ -402,15 +424,17 @@ export default function Profile() {
         }
       >
         {err ? (
-          <Text className="pt-2 text-sm font-semibold text-amber-800">{err}</Text>
+          <Text className="pt-2 text-sm font-semibold text-warn-ink">{err}</Text>
         ) : !me ? (
-          <ActivityIndicator className="pt-8" color={BRAND.leaf} />
+          <ActivityIndicator className="pt-8" color={ui.tint.good.ink} />
         ) : (
           <>
-            {/* Hero identity card */}
+            {/* Hero identity card. bg-hawk-green is a fixed brand surface, so
+                every scrim on it is fixed white at low alpha — bg-card/10 went
+                dark-on-dark and disappeared once --card followed the theme. */}
             <View className="rounded-2xl bg-hawk-green px-5 py-5">
               <View className="flex-row items-center">
-                <View className="h-14 w-14 items-center justify-center rounded-full bg-card/10">
+                <View className="h-14 w-14 items-center justify-center rounded-full bg-white/10">
                   <Feather name="user" size={24} color={BRAND.gold} />
                 </View>
                 <View className="pl-4">
@@ -419,7 +443,7 @@ export default function Profile() {
                 </View>
               </View>
               <Pressable
-                className="mt-4 flex-row items-center rounded-xl bg-card/10 px-3 py-2.5 active:opacity-70"
+                className="mt-4 flex-row items-center rounded-xl bg-white/10 px-3 py-2.5 active:opacity-70"
                 onPress={async () => {
                   await Clipboard.setStringAsync(me.identityHash);
                   setCopied(true);
@@ -451,7 +475,7 @@ export default function Profile() {
               />
               <Row
                 icon="map-pin"
-                label="My polling unit"
+                label="My Polling Unit"
                 // Right-hand column only carries the empty state; a saved unit
                 // needs its whole identification, which lives in `sub`.
                 value={savedUnit ? undefined : 'None saved'}
@@ -476,17 +500,30 @@ export default function Profile() {
                 onPress={() => router.push('/map-unit')}
               />
             </View>
+            {/* Headed, not bare: these chips used to float under the account
+                card as naked codes, and read as noise rather than as the
+                alerts the observer had switched on. */}
             {me.subscriptions?.length ? (
-              <View className="flex-row flex-wrap pt-3">
-                {me.subscriptions.map((s, i) => (
-                  <View key={i} className="mb-2 mr-2 rounded-full bg-card px-3 py-1.5">
-                    <Text className="text-xs font-semibold text-hawk-leaf">
-                      {s.contest}
-                      {s.state ? ` · ${s.state}` : ''}
-                    </Text>
+              <>
+                <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
+                  Races you follow
+                </Text>
+                <View className="rounded-2xl bg-card px-4 pb-1.5 pt-3.5">
+                  <Text className="text-xs text-muted">
+                    You get an alert on every new report from these races.
+                  </Text>
+                  <View className="flex-row flex-wrap pt-2.5">
+                    {me.subscriptions.map((s, i) => (
+                      <View key={i} className="mb-2 mr-2 rounded-full bg-surface px-3 py-1.5">
+                        <Text className="text-xs font-semibold text-good-ink">
+                          {raceName(s.contest)}
+                          {s.state ? ` — ${s.state}` : ''}
+                        </Text>
+                      </View>
+                    ))}
                   </View>
-                ))}
-              </View>
+                </View>
+              </>
             ) : null}
 
             {/* Activity */}
@@ -502,10 +539,10 @@ export default function Profile() {
                     }`}
                     onPress={() => setOpenSection((o) => (o === a.key ? null : a.key))}
                   >
-                    <Feather name={a.icon} size={17} color={BRAND.leaf} />
+                    <Feather name={a.icon} size={17} color={ui.tint.good.ink} />
                     <Text className="flex-1 pl-3 text-base text-ink">{a.label}</Text>
                     <View className="mr-2 min-w-[24px] items-center rounded-full bg-surface px-2 py-0.5">
-                      <Text className="text-xs font-bold text-hawk-leaf">{a.count}</Text>
+                      <Text className="text-xs font-bold text-good-ink">{a.count}</Text>
                     </View>
                     <Feather
                       name={openSection === a.key ? 'chevron-up' : 'chevron-down'}
@@ -514,13 +551,13 @@ export default function Profile() {
                     />
                   </Pressable>
                   {openSection === a.key && a.count === 0 ? (
-                    <Text className="px-4 pb-3 text-sm text-faint">Nothing yet.</Text>
+                    <Text className="px-4 pb-3 text-sm text-muted">Nothing yet.</Text>
                   ) : null}
                   {openSection === 'reports' && a.key === 'reports'
                     ? me.reports?.map((r, j) => (
                         <View key={j} className="border-t border-line px-4 py-2.5">
                           <Text className="text-sm font-semibold text-ink">
-                            {r.name || r.pu_code} · {r.contest}
+                            {r.name || r.pu_code} · {raceName(r.contest)}
                           </Text>
                           <Text className="text-[11px] text-muted">
                             {[r.lga, r.state].filter(Boolean).join(', ')} · {dt(r.created_at)} ·{' '}
@@ -533,7 +570,7 @@ export default function Profile() {
                     ? me.collation?.map((c, j) => (
                         <View key={j} className="border-t border-line px-4 py-2.5">
                           <Text className="text-sm font-semibold text-ink">
-                            {c.level.toUpperCase()} · {c.contest}
+                            {c.level.toUpperCase()} · {raceName(c.contest)}
                           </Text>
                           <Text className="text-[11px] text-muted">
                             {[c.ward, c.lga, c.state].filter(Boolean).join(', ')} ·{' '}
@@ -570,7 +607,7 @@ export default function Profile() {
                           <Text className="text-[11px] text-muted">
                             {[m.ward, m.lga, m.state].filter(Boolean).join(', ')} · {dt(m.created_at)}
                           </Text>
-                          <Text className="pt-0.5 text-[11px] font-semibold text-hawk-leaf">
+                          <Text className="pt-0.5 text-[11px] font-semibold text-good-ink">
                             {m.confirmed ? 'Located ✓' : `${m.crowd_reports ?? 0} fix(es) so far`}
                             {m.source === 'report' ? ' · via your verified report' : ''}
                           </Text>
@@ -597,11 +634,11 @@ export default function Profile() {
             {/* Delete stays in the scroll, below everything — deleting is not
                 routine, and it should stay the harder of the two to reach. */}
             <Pressable
-              className="mt-5 flex-row items-center justify-center rounded-2xl bg-red-50 py-3.5 active:opacity-70"
+              className="mt-5 flex-row items-center justify-center rounded-2xl bg-bad py-3.5 active:opacity-70"
               onPress={() => setConfirm('delete')}
             >
-              <Feather name="trash-2" size={16} color="#b91c1c" />
-              <Text className="pl-2 text-base font-bold text-red-700">Delete my identity</Text>
+              <Feather name="trash-2" size={16} color={ui.tint.bad.ink} />
+              <Text className="pl-2 text-base font-bold text-bad-ink">Delete my identity</Text>
             </Pressable>
             <Text className="pt-2 text-center text-[11px] text-faint">
               Deleting wipes your key and subscriptions. Ledger reports are public and permanent.
@@ -619,8 +656,8 @@ export default function Profile() {
             className="flex-row items-center justify-center rounded-2xl bg-card py-3.5 active:opacity-70"
             onPress={() => setConfirm('signout')}
           >
-            <Feather name="log-out" size={16} color={BRAND.leaf} />
-            <Text className="pl-2 text-base font-bold text-hawk-leaf">Sign out</Text>
+            <Feather name="log-out" size={16} color={ui.tint.good.ink} />
+            <Text className="pl-2 text-base font-bold text-good-ink">Sign out</Text>
           </Pressable>
         </View>
       ) : null}
@@ -659,9 +696,9 @@ export default function Profile() {
               <Text className="flex-1 text-lg font-bold text-ink">
                 {pwMode === 'change'
                   ? me?.hasPassword
-                    ? 'Change password'
-                    : 'Set a password'
-                  : 'Reset password'}
+                    ? 'Change Password'
+                    : 'Set a Password'
+                  : 'Reset Password'}
               </Text>
               <Pressable
                 hitSlop={12}
@@ -703,7 +740,7 @@ export default function Profile() {
                   />
                 </View>
                 {pwMsg ? (
-                  <Text className="pt-2 text-sm font-semibold text-amber-800">{pwMsg}</Text>
+                  <Text className="pt-2 text-sm font-semibold text-warn-ink">{pwMsg}</Text>
                 ) : null}
                 <Pressable
                   disabled={pwBusy}
@@ -726,7 +763,7 @@ export default function Profile() {
                       setPwMode('reset-phone');
                     }}
                   >
-                    <Text className="text-sm font-semibold text-hawk-leaf">
+                    <Text className="text-sm font-semibold text-good-ink">
                       Forgot your current password?
                     </Text>
                   </Pressable>
@@ -746,11 +783,11 @@ export default function Profile() {
                   onChangeText={setResetPhone}
                   keyboardType="phone-pad"
                   placeholder="Your phone number"
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor={ui.faint}
                   className="rounded-2xl bg-card px-4 py-3.5 text-base text-ink"
                 />
                 {pwMsg ? (
-                  <Text className="pt-2 text-sm font-semibold text-amber-800">{pwMsg}</Text>
+                  <Text className="pt-2 text-sm font-semibold text-warn-ink">{pwMsg}</Text>
                 ) : null}
                 <Pressable
                   disabled={pwBusy || resetPhone.trim().length < 10}
@@ -779,7 +816,7 @@ export default function Profile() {
                   keyboardType="number-pad"
                   maxLength={6}
                   placeholder="······"
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor={ui.faint}
                   className="rounded-2xl bg-card px-4 py-3.5 text-center text-2xl font-bold tracking-[8px] text-ink"
                 />
                 <Pressable
@@ -821,7 +858,7 @@ export default function Profile() {
                   />
                 </View>
                 {pwMsg ? (
-                  <Text className="pt-2 text-sm font-semibold text-amber-800">{pwMsg}</Text>
+                  <Text className="pt-2 text-sm font-semibold text-warn-ink">{pwMsg}</Text>
                 ) : null}
                 <Pressable
                   disabled={pwBusy}

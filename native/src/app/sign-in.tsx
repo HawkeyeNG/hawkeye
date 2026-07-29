@@ -160,20 +160,20 @@ export default function SignIn() {
           >
             <Feather name="x" size={18} color={ui.ink} />
           </Pressable>
-          <Text className="pl-3 text-lg font-bold text-ink">Sign in</Text>
+          <Text className="pl-3 text-lg font-bold text-ink">Sign In</Text>
         </View>
 
         <View className="px-5 pt-6">
           {step === 'phone' ? (
             <>
-              <Text className="text-2xl font-bold text-ink">Your phone number</Text>
+              <Text className="text-2xl font-bold text-ink">Your Phone Number</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">
                 One code verifies you. Your number is never stored — only a one-way hash.
               </Text>
               <TextInput
                 className="rounded-2xl bg-card px-4 py-4 text-lg text-ink"
                 placeholder="0803 123 4567"
-                placeholderTextColor="#9db5a7"
+                placeholderTextColor={ui.faint}
                 keyboardType="phone-pad"
                 autoFocus
                 value={phone}
@@ -219,21 +219,21 @@ export default function SignIn() {
                   setStep('password');
                 }}
               >
-                <Text className="text-sm font-semibold text-hawk-leaf">
+                <Text className="text-sm font-semibold text-good-ink">
                   Sign in with a password instead
                 </Text>
               </Pressable>
             </>
           ) : step === 'password' ? (
             <>
-              <Text className="text-2xl font-bold text-ink">Password sign-in</Text>
+              <Text className="text-2xl font-bold text-ink">Password Sign-In</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">
                 Phone number and password — no code needed.
               </Text>
               <TextInput
                 className="rounded-2xl bg-card px-4 py-4 text-lg text-ink"
                 placeholder="0803 123 4567"
-                placeholderTextColor="#9db5a7"
+                placeholderTextColor={ui.faint}
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={setPhone}
@@ -272,20 +272,20 @@ export default function SignIn() {
                   setStep('phone');
                 }}
               >
-                <Text className="text-sm font-semibold text-hawk-leaf">
+                <Text className="text-sm font-semibold text-good-ink">
                   Forgot it? Sign in with a code instead
                 </Text>
               </Pressable>
             </>
           ) : (
             <>
-              <Text className="text-2xl font-bold text-ink">Enter the code</Text>
+              <Text className="text-2xl font-bold text-ink">Enter the Code</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">{line}</Text>
               <TextInput
                 ref={otpRef}
                 className="rounded-2xl bg-card px-4 py-4 text-center text-2xl font-bold tracking-[8px] text-ink"
                 placeholder="······"
-                placeholderTextColor="#9db5a7"
+                placeholderTextColor={ui.faint}
                 keyboardType="number-pad"
                 maxLength={6}
                 value={otp}
@@ -308,27 +308,27 @@ export default function SignIn() {
               <View className="mt-4 flex-row items-center justify-center gap-6">
                 <Pressable disabled={cooldown > 0} onPress={() => send('Re-sending')}>
                   <Text
-                    className={`text-sm font-semibold ${cooldown > 0 ? 'text-faint' : 'text-hawk-leaf'}`}
+                    className={`text-sm font-semibold ${cooldown > 0 ? 'text-faint' : 'text-good-ink'}`}
                   >
                     {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
                   </Text>
                 </Pressable>
                 <Pressable onPress={() => setStep('phone')}>
-                  <Text className="text-sm font-semibold text-hawk-leaf">Use a different number</Text>
+                  <Text className="text-sm font-semibold text-good-ink">Use a different number</Text>
                 </Pressable>
               </View>
             </>
           )}
 
           {step !== 'otp' && line ? (
-            <Text className="pt-3 text-sm text-amber-800">{line}</Text>
+            <Text className="pt-3 text-sm text-warn-ink">{line}</Text>
           ) : null}
           {tgLink ? (
             <Pressable
               className="mt-3 items-center rounded-2xl bg-card py-3"
               onPress={() => WebBrowser.openBrowserAsync(tgLink)}
             >
-              <Text className="text-base font-semibold text-hawk-leaf">Open Telegram</Text>
+              <Text className="text-base font-semibold text-good-ink">Open Telegram</Text>
             </Pressable>
           ) : null}
         </View>

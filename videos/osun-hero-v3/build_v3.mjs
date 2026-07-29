@@ -28,7 +28,7 @@ const ok = (t, sub) => `<div class="ph-ok"><span class="ph-okmark"></span><b>${e
 const phone = (screenHTML, id) => `<div class="heroPhone" id="${id}"><div class="phone"><div class="phone-notch"></div>${screenHTML}</div></div>`;
 
 // The five real screens
-const SCR_LEADER = scr('National Leaderboard', h1('Live results') + card(results([['Party A', '41,203'], ['Party B', '33,881'], ['Party C', '12,406']])) + fine('Placeholder parties. Unofficial — INEC declares the official result.'));
+const SCR_LEADER = scr('Leaderboard', h1('Live results') + card(results([['Party A', '41,203'], ['Party B', '33,881'], ['Party C', '12,406']])) + fine('Placeholder parties. Unofficial — INEC declares the official result.'));
 const SCR_EC8A = scr('Evidence 1 of 2', h1('Photograph the EC8A sheet') + cam('EC8A') + fine('Live photo only — no gallery uploads, no screenshots.'));
 const SCR_SIGN = scr('Sign & submit', h1('Sign on your device') + card(fine('Counts, photo fingerprints and location are signed with a key that never leaves your phone.') + btn('Sign & submit report')));
 const SCR_DONE = scr('Done', ok('Report recorded', 'Chained to the public ledger.') + card(fine('Marked verified once separate observers at your unit report matching figures.')));

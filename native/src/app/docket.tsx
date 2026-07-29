@@ -6,7 +6,6 @@ import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { StatusChip, TallyBar, type Tally } from '@/components/tally';
-import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -61,8 +60,8 @@ export default function Docket() {
 
   const header = (
     <View className="px-4 pb-2 pt-3">
-      <View className="mb-3 rounded-xl bg-amber-100 px-3 py-2">
-        <Text className="text-xs font-semibold text-amber-900">
+      <View className="mb-3 rounded-xl bg-warn px-3 py-2">
+        <Text className="text-xs font-semibold text-warn-ink">
           Public Docket — flagged results, judged by the crowd. Nobody at Hawkeye decides.
         </Text>
       </View>
@@ -77,7 +76,7 @@ export default function Docket() {
         <Text className="pt-2 text-xs text-muted">Resolution rule: {rule}</Text>
       ) : null}
       {err ? (
-        <Text className="pt-2 text-sm font-semibold text-amber-800">
+        <Text className="pt-2 text-sm font-semibold text-warn-ink">
           Could not load the docket. ({err})
         </Text>
       ) : null}
@@ -105,7 +104,7 @@ export default function Docket() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            tintColor={BRAND.leaf}
+            tintColor={ui.tint.good.ink}
             onRefresh={async () => {
               setRefreshing(true);
               await load();
@@ -115,7 +114,7 @@ export default function Docket() {
         }
         ListEmptyComponent={
           cases === null ? (
-            err ? null : <ActivityIndicator className="pt-6" color={BRAND.leaf} />
+            err ? null : <ActivityIndicator className="pt-6" color={ui.tint.good.ink} />
           ) : (
             <Text className="px-4 pt-2 text-center text-sm text-muted">
               No cases — no results are currently in dispute.

@@ -13,9 +13,32 @@
  * probed like the compressor and the recogniser. Callers fall back to the
  * in-app camera when it is missing, and the flow is otherwise identical:
  * the same GPS stamp, the same preview-confirm, the same OCR verdict.
+ *
+ * WHY A SCAN CAN FAIL — the honest answer, because "the scanner failed" is
+ * otherwise indistinguishable from blaming the observer's photography.
+ *
+ * We do not ship the scanner. `GmsDocumentScanner` is an `OptionalModuleApi`:
+ * its UI, its edge-detection models and its cropping logic all live in Google
+ * Play services and are fetched ON DEMAND the first time an app asks for them.
+ * `getStartScanIntent()` therefore rejects on a phone with no Play services, on
+ * one whose Play services is too old to serve the module, and on genuine first
+ * use with no connection — the module simply is not on the device yet. None of
+ * those are about the sheet, the lighting or the lens, and a retry once the
+ * phone is online is the actual fix.
+ *
+ * And it cannot be pre-fetched at install time, which is the obvious fix and
+ * does not exist here. ML Kit's install-time hint
+ * (`<meta-data android:name="com.google.mlkit.vision.DEPENDENCIES">`) only
+ * accepts the tokens `OptionalModuleUtils` in com.google.mlkit:common maps, and
+ * that table — barcode, barcode_ui, ocr, ica, custom_ica, face, langid,
+ * nlclassifier, smart_reply, tflite_dynamite — has no entry for the document
+ * scanner, even though the modules it would name (mlkit.docscan.*) are in the
+ * same class. So the runtime retry below IS the mitigation, not a placeholder
+ * for one. Re-check that table before adding a manifest token: guessing one
+ * would also collide with the barcode_ui value expo-camera already declares.
  */
 
-type ScanResult = { scannedImages?: string[]; status?: string };
+type ScanResult = { scannedImages?: string[]; status?: 'success' | 'cancel' | string };
 type Scanner = {
   scanDocument: (opts: {
     croppedImageQuality?: number;
@@ -56,10 +79,17 @@ export async function scanSheet(): Promise<ScanOutcome> {
       maxNumDocuments: 1,
       responseType: 'imageFilePath',
     });
+    // Backing out reports itself explicitly, so read the status rather than
+    // inferring a cancel from an empty array: a 'success' that carried no image
+    // is a genuine failure, and callers treat cancel as "leave the step", so
+    // guessing wrong closes the whole capture instead of offering the camera.
+    if (res?.status === 'cancel') return { ok: false, reason: 'cancelled' };
     const uri = res?.scannedImages?.[0];
-    if (!uri) return { ok: false, reason: 'cancelled' };
+    if (!uri) return { ok: false, reason: 'failed' };
     return { ok: true, uri: uri.startsWith('file://') ? uri : `file://${uri}` };
   } catch {
+    // getStartScanIntent() rejected: the Play services module is absent or
+    // could not be fetched — see the failure note at the top of this file.
     return { ok: false, reason: 'failed' };
   }
 }

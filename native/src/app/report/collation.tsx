@@ -289,7 +289,7 @@ export default function ReportCollation() {
         setQueued(false);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
-          title: 'Collation filed',
+          title: 'Collation Filed',
           line: 'It is on the public record and being checked against the polling-unit reports it should sum to.',
         });
         setStep('done');
@@ -302,7 +302,7 @@ export default function ReportCollation() {
         setQueued(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
-          title: 'Saved on this phone',
+          title: 'Saved on This Phone',
           line: 'It will send when you have signal. The report is already signed, so it files exactly as you left it — keep the app installed and it goes on its own.',
         });
         setStep('done');
@@ -311,7 +311,7 @@ export default function ReportCollation() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setReceipt({});
         setQueued(false);
-        setDone({ title: 'Dry run complete', line: r.message });
+        setDone({ title: 'Dry Run Complete', line: r.message });
         setStep('done');
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -330,7 +330,7 @@ export default function ReportCollation() {
   if (auth.status !== 'signedIn') {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
-        <Feather name="lock" size={28} color={BRAND.leaf} />
+        <Feather name="lock" size={28} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to report a collation
         </Text>
@@ -412,7 +412,7 @@ export default function ReportCollation() {
         >
           <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Report a collation</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Report a Collation</Text>
       </View>
 
       {step !== 'done' ? (
@@ -422,9 +422,11 @@ export default function ReportCollation() {
             const on = i <= idx;
             return (
               <View key={s.key} className="mr-1 flex-1">
-                <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-card'}`} />
+                {/* good-ink, not hawk-leaf: #0b6b3a on the dark surface is a
+                    2.5:1 bar nobody can see it move. */}
+                <View className={`h-1.5 rounded-full ${on ? 'bg-good-ink' : 'bg-card'}`} />
                 <Text
-                  className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-hawk-leaf' : 'text-faint'}`}
+                  className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-good-ink' : 'text-faint'}`}
                 >
                   {s.label}
                 </Text>
@@ -574,7 +576,7 @@ export default function ReportCollation() {
                   </Text>
                   {c.open === false ? (
                     <Text
-                      className={`pt-1 text-xs font-semibold ${on ? 'text-hawk-gold' : 'text-amber-800'}`}
+                      className={`pt-1 text-xs font-semibold ${on ? 'text-hawk-gold' : 'text-warn-ink'}`}
                     >
                       {opensLine(c)}
                     </Text>
@@ -588,7 +590,7 @@ export default function ReportCollation() {
         {step === 'contest' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             {closed && contest ? (
-              <Text className="pb-2 text-sm font-semibold text-amber-800">{opensLine(contest)}</Text>
+              <Text className="pb-2 text-sm font-semibold text-warn-ink">{opensLine(contest)}</Text>
             ) : null}
             <Pressable
               disabled={!contest}
@@ -602,14 +604,14 @@ export default function ReportCollation() {
 
         {step === 'votes' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
-            <Text className="pb-1 text-xl font-bold text-ink">Collated totals</Text>
+            <Text className="pb-1 text-xl font-bold text-ink">Collated Totals</Text>
             <Text className="pb-3 text-sm text-muted">
               Copy the figures exactly as announced. Leave blank for parties not listed.
             </Text>
             <TextInput
               className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Search party (APC, PDP, LP…)"
-              placeholderTextColor="#9db5a7"
+              placeholderTextColor={ui.faint}
               value={search}
               onChangeText={setSearch}
             />
@@ -627,7 +629,7 @@ export default function ReportCollation() {
                     className="mr-2.5 items-center justify-center rounded-md bg-surface"
                     style={{ width: 30, height: 30 }}
                   >
-                    <Text className="text-[10px] font-bold text-hawk-leaf">{p.code.slice(0, 3)}</Text>
+                    <Text className="text-[10px] font-bold text-good-ink">{p.code.slice(0, 3)}</Text>
                   </View>
                 )}
                 <View className="flex-1 pr-2">
@@ -639,7 +641,7 @@ export default function ReportCollation() {
                 <TextInput
                   className="w-24 rounded-xl bg-surface px-3 py-2 text-center text-lg font-bold text-ink"
                   placeholder="0"
-                  placeholderTextColor="#9db5a7"
+                  placeholderTextColor={ui.faint}
                   keyboardType="number-pad"
                   value={counts[p.code] ?? ''}
                   onChangeText={(t) =>
@@ -667,14 +669,14 @@ export default function ReportCollation() {
 
         {step === 'review' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
-            <Text className="pb-3 text-xl font-bold text-ink">Confirm and send</Text>
+            <Text className="pb-3 text-xl font-bold text-ink">Confirm and Send</Text>
             <View className="mb-3 rounded-2xl bg-card px-4 py-3">
               <Text className="text-base font-semibold text-ink">
                 {levelDef?.label} collation · {levelDef?.form}
               </Text>
               <Text className="text-xs text-muted">{scopeLine}</Text>
               {contest ? (
-                <Text className="pt-0.5 text-xs font-semibold text-hawk-leaf">{contest.name}</Text>
+                <Text className="pt-0.5 text-xs font-semibold text-good-ink">{contest.name}</Text>
               ) : null}
             </View>
             <View className="mb-3 flex-row gap-3">
@@ -698,7 +700,7 @@ export default function ReportCollation() {
                       <Text className="text-xs font-semibold text-muted">
                         {i === 0 ? 'Collation form' : 'Venue'}
                       </Text>
-                      <Text className="text-xs font-bold text-hawk-leaf">Retake</Text>
+                      <Text className="text-xs font-bold text-good-ink">Retake</Text>
                     </View>
                   </Pressable>
                 ) : null,
@@ -719,7 +721,7 @@ export default function ReportCollation() {
             <TextInput
               className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Printed on the collation form, if visible"
-              placeholderTextColor="#9db5a7"
+              placeholderTextColor={ui.faint}
               autoCapitalize="characters"
               value={formSerial}
               onChangeText={setFormSerial}
@@ -737,13 +739,13 @@ export default function ReportCollation() {
                 finding that out after two photos and a full tally is the failure
                 this replaces. */}
             {closed && contest ? (
-              <Text className="pb-2 text-sm font-semibold text-amber-800">
+              <Text className="pb-2 text-sm font-semibold text-warn-ink">
                 {opensLine(contest)} Nothing can be filed before then — your work stays here until
                 you reopen this screen on election day.
               </Text>
             ) : null}
             {line ? (
-              <Text className="pb-2 text-sm font-semibold text-amber-800">{line}</Text>
+              <Text className="pb-2 text-sm font-semibold text-warn-ink">{line}</Text>
             ) : null}
             <Pressable
               disabled={busy || closed}
@@ -763,7 +765,7 @@ export default function ReportCollation() {
               onPress={() => setStep('votes')}
               disabled={busy}
             >
-              <Text className="text-sm font-semibold text-hawk-leaf">‹ Back to totals</Text>
+              <Text className="text-sm font-semibold text-good-ink">‹ Back to totals</Text>
             </Pressable>
           </View>
         ) : null}
@@ -771,10 +773,17 @@ export default function ReportCollation() {
         {step === 'done' ? (
           <ScrollView contentContainerClassName="px-6 pb-4 pt-8">
             <View className="items-center">
+              {/* The waiting ending gets the warn tint + its own ink: gold on
+                  amber-600 was ~1.8:1, and the tint follows the theme so the
+                  disc darkens instead of staying a pale chip on a dark screen. */}
               <View
-                className={`h-16 w-16 items-center justify-center rounded-full ${queued ? 'bg-amber-600' : 'bg-hawk-green'}`}
+                className={`h-16 w-16 items-center justify-center rounded-full ${queued ? 'bg-warn' : 'bg-hawk-green'}`}
               >
-                <Feather name={queued ? 'clock' : 'check'} size={28} color={BRAND.gold} />
+                <Feather
+                  name={queued ? 'clock' : 'check'}
+                  size={28}
+                  color={queued ? ui.tint.warn.ink : BRAND.gold}
+                />
               </View>
               <Text className="pt-4 text-center text-lg font-bold text-ink">{done.title}</Text>
               <Text className="pt-2 text-center text-sm text-muted">{done.line}</Text>
@@ -790,8 +799,10 @@ export default function ReportCollation() {
                 <Text className="text-[11px] font-bold uppercase tracking-wider text-hawk-gold">
                   Ledger entry
                 </Text>
+                {/* Fixed white scrim: the card underneath is the fixed brand
+                    green, so bg-card/10 went dark-on-dark with the theme. */}
                 <Pressable
-                  className="mt-2 flex-row items-center rounded-xl bg-card/10 px-3 py-2.5 active:opacity-70"
+                  className="mt-2 flex-row items-center rounded-xl bg-white/10 px-3 py-2.5 active:opacity-70"
                   onPress={async () => {
                     await Clipboard.setStringAsync(receipt.entryHash!);
                     setCopied(true);
@@ -817,7 +828,7 @@ export default function ReportCollation() {
               <View className="flex-row items-center justify-between py-1.5">
                 <Text className="text-sm text-muted">Status</Text>
                 <Text
-                  className={`text-sm font-bold ${queued ? 'text-amber-800' : receipt.entryHash ? 'text-hawk-leaf' : 'text-muted'}`}
+                  className={`text-sm font-bold ${queued ? 'text-warn-ink' : receipt.entryHash ? 'text-good-ink' : 'text-muted'}`}
                 >
                   {queued ? 'WAITING TO SEND' : receipt.entryHash ? 'RECORDED' : 'NOT FILED'}
                 </Text>
@@ -864,7 +875,7 @@ export default function ReportCollation() {
                 publicly. replace, not push — the finished flow should not sit under
                 the page the observer went to check. */}
             <Pressable className="items-center pb-3" onPress={() => router.replace('/integrity')}>
-              <Text className="text-sm font-semibold text-hawk-leaf">
+              <Text className="text-sm font-semibold text-good-ink">
                 {receipt.entryHash
                   ? 'See how collated figures are checked ›'
                   : 'See the integrity checks ›'}

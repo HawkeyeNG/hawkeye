@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -18,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
 import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
+import { getIdentity } from '@/lib/identity';
 import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -32,6 +34,17 @@ type PracticeConfig = {
 };
 
 type Step = 'sheet' | 'venue' | 'votes' | 'review' | 'done';
+
+/** A past run on this device — practice has no sign-in, so the device is the
+ *  only identity it has. */
+type PracticeRun = {
+  id: number;
+  pu_name?: string;
+  pu_code?: string;
+  entry_hash: string;
+  created_at: number;
+  votes: { party: string; count: number }[];
+};
 
 const STEPS: { key: Step; label: string }[] = [
   { key: 'sheet', label: 'Sheet' },
@@ -68,6 +81,23 @@ export default function Practice() {
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const [done, setDone] = useState<{ entryHash: string } | null>(null);
+  const [history, setHistory] = useState<PracticeRun[] | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const loadHistory = () => {
+    getIdentity()
+      .then((id) =>
+        fetch(`${BASE}/api/practice/mine`, { headers: { 'x-device-id': id.deviceId } }).then((r) =>
+          r.ok ? (r.json() as Promise<{ runs: PracticeRun[] }>) : null,
+        ),
+      )
+      .then((d) => setHistory(d?.runs ?? []))
+      .catch(() => setHistory([]));
+  };
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
 
   useEffect(() => {
     fetch(`${BASE}/api/practice`)
@@ -88,9 +118,12 @@ export default function Practice() {
     setBusy(true);
     setLine(null);
     try {
+      const ident = await getIdentity();
       const res = await fetch(`${BASE}/api/practice/submit`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        // The device id is what makes this run appear in "past runs" later —
+        // practice never asks anyone to sign in.
+        headers: { 'content-type': 'application/json', 'x-device-id': ident.deviceId },
         body: JSON.stringify({ votes, puName: cfg?.unit?.name }),
       });
       const body = (await res.json().catch(() => ({}))) as {
@@ -102,6 +135,7 @@ export default function Practice() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({ entryHash: body.entryHash });
         setStep('done');
+        loadHistory();
       } else {
         setLine(
           body.error === 'practice_closed'
@@ -262,6 +296,22 @@ export default function Practice() {
         <View className="ml-2 rounded-full bg-hawk-gold px-2 py-0.5">
           <Text className="text-[10px] font-bold text-ink">PRACTICE</Text>
         </View>
+        <View className="flex-1" />
+        {/* The step opens straight into the scanner, so past runs need a door
+            that exists before that. */}
+        <Pressable
+          hitSlop={12}
+          onPress={() => {
+            loadHistory();
+            setShowHistory(true);
+          }}
+          className="h-9 flex-row items-center rounded-full bg-card px-3 active:opacity-70"
+        >
+          <Feather name="clock" size={15} color={BRAND.leaf} />
+          <Text className="pl-1.5 text-xs font-bold text-hawk-leaf">
+            {history?.length ? `${history.length} past` : 'Past runs'}
+          </Text>
+        </Pressable>
       </View>
 
       {step !== 'done' ? (
@@ -284,6 +334,61 @@ export default function Practice() {
           })}
         </View>
       ) : null}
+
+      <Modal
+        visible={showHistory}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowHistory(false)}
+      >
+        <View className="flex-1 justify-end bg-black/40">
+          <View className="max-h-[70%] rounded-t-3xl bg-surface px-5 pb-8 pt-5">
+            <View className="flex-row items-center pb-2">
+              <Text className="flex-1 text-lg font-bold text-ink">Your practice runs</Text>
+              <Pressable
+                hitSlop={12}
+                onPress={() => setShowHistory(false)}
+                className="h-8 w-8 items-center justify-center rounded-full bg-card"
+              >
+                <Feather name="x" size={16} color={ui.ink} />
+              </Pressable>
+            </View>
+            <Text className="pb-3 text-xs text-muted">
+              Kept per device — practice never asks you to sign in. These sit on the practice
+              chain, never the public ledger.
+            </Text>
+            <ScrollView>
+              {history === null ? (
+                <ActivityIndicator color={BRAND.leaf} />
+              ) : history.length === 0 ? (
+                <Text className="pb-4 text-sm text-muted">
+                  No practice runs yet on this phone.
+                </Text>
+              ) : (
+                history.map((r) => (
+                  <View key={r.id} className="mb-2 rounded-2xl bg-card px-4 py-3">
+                    <Text className="text-sm font-semibold text-ink">
+                      {r.pu_name || r.pu_code || 'Practice polling unit'}
+                    </Text>
+                    <Text className="pt-0.5 text-xs text-muted">
+                      {r.votes
+                        .filter((v) => v.count > 0)
+                        .map((v) => `${v.party} ${v.count}`)
+                        .join(' · ') || 'all zero'}
+                    </Text>
+                    <Text className="pt-1 text-[11px] text-faint">
+                      {new Date(r.created_at).toLocaleString()}
+                    </Text>
+                    <Text className="pt-0.5 font-mono text-[10px] text-faint">
+                      {String(r.entry_hash).slice(0, 24)}…
+                    </Text>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

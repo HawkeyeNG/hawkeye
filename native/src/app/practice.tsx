@@ -181,6 +181,8 @@ export default function Practice() {
             : 'Step back and capture the polling unit itself — building, banner, crowd.'
         }
         confirmTitle={isSheet ? 'Check the result sheet' : 'Check the venue photo'}
+        readDocument={isSheet}
+        partyCodes={(cfg.parties ?? []).map((p) => p.code)}
         confirmHint={
           isSheet
             ? 'Is every figure readable? On election day a blurry photo cannot back a report.'

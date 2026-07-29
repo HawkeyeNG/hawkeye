@@ -228,6 +228,8 @@ export default function ReportCollation() {
             : 'Step back and capture the collation centre — building, banner, officials.'
         }
         confirmTitle={isSheet ? 'Check the form' : 'Check the venue photo'}
+        readDocument={isSheet}
+        partyCodes={parties.map((p) => p.code)}
         confirmHint={
           isSheet
             ? 'Is every figure readable? Blurry photos cannot back a report.'

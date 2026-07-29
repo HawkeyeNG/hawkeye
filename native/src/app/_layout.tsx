@@ -1,16 +1,64 @@
 import 'react-native-gesture-handler';
 import '../global.css';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { Pressable, ScrollView, Text, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { bootstrapAuth } from '@/lib/auth';
 import { usePushNotifications } from '@/lib/push';
 
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * expo-router renders this instead of unmounting the app when a screen throws.
+ *
+ * Without it one bad render took the whole app down and it did not come back —
+ * unacceptable for someone standing at a polling unit with a sheet in hand. The
+ * error text is shown rather than swallowed: it is the only diagnostic anyone
+ * has out in the field.
+ */
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Promise<void> }) {
+  return (
+    <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#e8f2ec' }}>
+        <StatusBar style="dark" />
+        <ScrollView contentContainerStyle={{ padding: 24, flexGrow: 1, justifyContent: 'center' }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: '#10221a' }}>
+            This screen hit a problem
+          </Text>
+          <Text style={{ paddingTop: 8, fontSize: 14, color: '#4b5563', lineHeight: 20 }}>
+            Nothing you have already sent is affected, and anything saved offline is still
+            queued. Try again, or go back and take another route.
+          </Text>
+          <View
+            style={{ marginTop: 16, borderRadius: 12, backgroundColor: '#fff', padding: 12 }}
+          >
+            <Text style={{ fontFamily: 'monospace', fontSize: 11, color: '#6b7280' }}>
+              {error?.message ?? String(error)}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => retry()}
+            style={{
+              marginTop: 20,
+              alignItems: 'center',
+              borderRadius: 16,
+              backgroundColor: '#004225',
+              paddingVertical: 14,
+            }}
+          >
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#f5b301' }}>Try again</Text>
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
+    </SafeAreaProvider>
+  );
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -24,6 +72,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         <AnimatedSplashOverlay />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />

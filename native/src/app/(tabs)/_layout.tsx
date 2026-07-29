@@ -7,6 +7,7 @@ import { Pressable, View } from 'react-native';
 
 import { ReportSheet } from '@/components/report-sheet';
 import { BRAND } from '@/lib/api';
+import { useUnread } from '@/lib/push';
 
 /**
  * Five-tab shell — the native twin of the web app's tab bar (app/menu.js):
@@ -15,6 +16,8 @@ import { BRAND } from '@/lib/api';
  */
 export default function TabsLayout() {
   const sheetRef = useRef<BottomSheet>(null);
+  /** Unread alerts, kept live by usePushNotifications() in the root layout. */
+  const unread = useUnread();
 
   return (
     <View style={{ flex: 1 }}>
@@ -77,6 +80,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="alerts"
           options={{
+            tabBarBadge: unread || undefined,
             title: 'Alerts',
             tabBarIcon: ({ color, size }) => <Feather name="bell" size={size} color={color} />,
           }}

@@ -126,6 +126,23 @@ export function CaptureCamera({
     return () => clearInterval(t);
   }, [recording]);
 
+  // Recognise the sheet while the observer is still looking at it, so the
+  // verdict arrives before they commit — not after the upload. MUST live above
+  // the permission early-returns with the other hooks: the first render exits
+  // at the permission gate, and a hook that only mounts after permission is
+  // granted is "rendered more hooks than during the previous render".
+  useEffect(() => {
+    if (!readDocument || !preview) return;
+    let live = true;
+    const g = gen.current;
+    readSheet(preview.uri, partyCodes ?? []).then((r) => {
+      if (live && g === gen.current) setRead(r);
+    });
+    return () => {
+      live = false;
+    };
+  }, [readDocument, preview, partyCodes]);
+
   const cancel = () => {
     cancelled.current = true;
     if (recording) cam.current?.stopRecording();
@@ -190,20 +207,6 @@ export function CaptureCamera({
     setBusy(false);
     setFixState('pending');
   };
-
-  // Recognise the sheet while the observer is still looking at it, so the
-  // verdict arrives before they commit — not after the upload.
-  useEffect(() => {
-    if (!readDocument || !preview) return;
-    let live = true;
-    const g = gen.current;
-    readSheet(preview.uri, partyCodes ?? []).then((r) => {
-      if (live && g === gen.current) setRead(r);
-    });
-    return () => {
-      live = false;
-    };
-  }, [readDocument, preview, partyCodes]);
 
   const usePhoto = async () => {
     if (!preview || busy) return;

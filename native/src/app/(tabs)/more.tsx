@@ -26,6 +26,7 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
       { label: 'Verify the Ledger', href: 'native:/ledger', icon: 'shield' },
       { label: 'Election Integrity', href: 'native:/integrity', icon: 'activity' },
       { label: 'Public Docket', href: 'native:/docket', icon: 'file-text' },
+      { label: 'Incident Reports', href: 'native:/incidents', icon: 'alert-triangle' },
     ],
   },
   {
@@ -40,11 +41,13 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
   {
     title: 'Learn & about',
     items: [
+      { label: 'Ask Hawkeye', href: 'native:/assistant', icon: 'message-square' },
       { label: 'How Hawkeye Works', href: 'native:/page?slug=how', icon: 'help-circle' },
       { label: 'Observer Guide', href: 'native:/page?slug=guide', icon: 'book-open' },
       { label: 'FAQ', href: 'native:/page?slug=faq', icon: 'message-circle' },
       { label: 'About & Contact', href: 'native:/page?slug=about', icon: 'info' },
       { label: 'Privacy & Data', href: 'native:/page?slug=privacy', icon: 'lock' },
+      { label: 'Terms of Service', href: 'native:/terms', icon: 'file-text' },
     ],
   },
 ];

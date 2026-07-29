@@ -20,6 +20,11 @@ import { anchorPublicKey } from '../services/anchor.js';
 
 export const submissionsRouter = Router();
 
+// This router writes sheet/venue photos straight into uploadDir, so it owns that
+// invariant itself rather than inheriting it from another module's import-time
+// side effect. Idempotent: a recursive mkdir on an existing directory is a no-op.
+fs.mkdirSync(config.uploadDir, { recursive: true });
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024 },

@@ -8,11 +8,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { bootstrapAuth } from '@/lib/auth';
+import { usePushNotifications } from '@/lib/push';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  // Registers the device once signed in, routes a notification tap to the screen
+  // it is about, and keeps the unread badge honest. One place, so nothing
+  // double-registers.
+  usePushNotifications();
   useEffect(() => {
     bootstrapAuth();
   }, []);
@@ -39,6 +44,10 @@ export default function RootLayout() {
           <Stack.Screen name="profile" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="page" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="practice" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="incidents" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="terms" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="assistant" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="map" options={{ presentation: 'fullScreenModal' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

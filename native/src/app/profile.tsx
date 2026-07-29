@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -67,6 +67,16 @@ type Me = {
 const dt = (t: number) =>
   new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
 
+/**
+ * The saved unit's full identification, as the web profile prints it:
+ * code · ward, LGA, state. The code is dropped when it is already standing in
+ * as the headline — a register row with no name would otherwise repeat itself.
+ */
+const unitWhere = (u: NonNullable<Me['unit']>) => {
+  const where = [u.ward ? `${u.ward} ward` : null, u.lga, u.state].filter(Boolean).join(', ');
+  return [u.name ? u.pu_code : null, where].filter(Boolean).join(' · ');
+};
+
 async function authed(path: string, init: RequestInit = {}) {
   const token = await SecureStore.getItemAsync('hawkeye.auth.token');
   const id = await getIdentity();
@@ -82,11 +92,17 @@ async function authed(path: string, init: RequestInit = {}) {
   return { status: res.status, body };
 }
 
-/** Settings-style row: icon, label, value/badge, chevron when it navigates. */
+/**
+ * Settings-style row: icon, label, value/badge, chevron when it navigates.
+ * `sub` stacks under the label for rows whose value is too long to survive
+ * the right-hand column's one truncated line (a polling unit's full
+ * identification, say).
+ */
 function Row({
   icon,
   label,
   value,
+  sub,
   onPress,
   chevron,
   first,
@@ -94,6 +110,7 @@ function Row({
   icon: keyof typeof Feather.glyphMap;
   label: string;
   value?: string;
+  sub?: ReactNode;
   onPress?: () => void;
   chevron?: boolean;
   first?: boolean;
@@ -107,7 +124,10 @@ function Row({
       }`}
     >
       <Feather name={icon} size={17} color={BRAND.leaf} />
-      <Text className="flex-1 pl-3 text-base text-hawk-ink">{label}</Text>
+      <View className="flex-1 pl-3">
+        <Text className="text-base text-hawk-ink">{label}</Text>
+        {sub}
+      </View>
       {value ? (
         <Text className="max-w-[45%] pr-1 text-right text-sm text-neutral-400" numberOfLines={1}>
           {value}
@@ -317,6 +337,9 @@ export default function Profile() {
     );
   }
 
+  const savedUnit = me?.unit ?? null;
+  const savedUnitWhere = savedUnit ? unitWhere(savedUnit) : '';
+
   const acts: { key: string; icon: keyof typeof Feather.glyphMap; label: string; count: number }[] = [
     { key: 'reports', icon: 'file-text', label: 'Result reports', count: me?.reports?.length ?? 0 },
     { key: 'collation', icon: 'layers', label: 'Collation reports', count: me?.collation?.length ?? 0 },
@@ -402,7 +425,26 @@ export default function Profile() {
               <Row
                 icon="map-pin"
                 label="My polling unit"
-                value={me.unit ? me.unit.name || me.unit.pu_code : 'None saved'}
+                // Right-hand column only carries the empty state; a saved unit
+                // needs its whole identification, which lives in `sub`.
+                value={savedUnit ? undefined : 'None saved'}
+                sub={
+                  savedUnit ? (
+                    <>
+                      <Text
+                        className="pt-0.5 text-sm font-semibold text-hawk-ink"
+                        numberOfLines={2}
+                      >
+                        {savedUnit.name || savedUnit.pu_code}
+                      </Text>
+                      {savedUnitWhere ? (
+                        <Text className="text-[11px] text-neutral-500" numberOfLines={2}>
+                          {savedUnitWhere}
+                        </Text>
+                      ) : null}
+                    </>
+                  ) : null
+                }
                 chevron
                 onPress={() => router.push('/map-unit')}
               />

@@ -10,9 +10,12 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { File } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 
+import { bootstrapAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
+import { queueJob, type JobFile } from '@/lib/outbox';
 
 const BASE = 'https://hawkeye.com.ng';
+const K_TOKEN = 'hawkeye.auth.token';
 
 export type Vote = { party: string; count: number };
 
@@ -144,9 +147,57 @@ export type SubmitInput = {
   sheetSerial?: string;
 };
 
+/**
+ * The unit's aggregate as the server recomputed it with this report included —
+ * how many other observers agree, and how well the location holds up.
+ */
+export type ResultSummary = {
+  status?: string;
+  confidence?: number;
+  matchingReports?: number;
+  totalReports?: number;
+  locationStatus?: string;
+  locationConfidence?: number;
+  locationPlausibility?: 'consistent' | 'inconsistent' | null;
+  locationScore?: number;
+  venueMatches?: number;
+  disputed?: boolean;
+  votes?: Vote[];
+  scope?: string;
+};
+
+/**
+ * What the server hands back on a successful submission.
+ *
+ * All of this used to be parsed and thrown away. The entry hash is the
+ * observer's receipt — the only handle that finds their own report in the
+ * public ledger afterwards — and the agreement figures are what let the done
+ * screen say something truer than "submitted".
+ *
+ * The aggregate is spread flat AND kept whole under `result`: a receipt card
+ * reads `r.status`, anything that wants the server's object untouched reads
+ * `r.result`.
+ */
+export type Receipt = ResultSummary & {
+  entryHash?: string;
+  locationVerified?: boolean;
+  ocr?: { matched: number; total: number } | null;
+  result?: ResultSummary | null;
+  /** Set on the placeholder receipt for a report still sitting in the outbox. */
+  queued?: boolean;
+};
+
 export type SubmitResult =
-  | { ok: true; submissionId?: number }
-  | { ok: false; error: string; message: string };
+  | ({ ok: true; queued?: false; submissionId?: number } & Receipt)
+  /**
+   * Held in the offline outbox — captured, signed and safe on disk, just not
+   * delivered yet. Deliberately NOT ok:true: a screen that has not been taught
+   * about the queue would otherwise tell the observer their report is on the
+   * public ledger while it is still sitting on the phone. As ok:false the worst
+   * an untaught screen does is show `message`, which is honest either way.
+   */
+  | { ok: false; queued: true; error: 'queued_offline'; message: string }
+  | { ok: false; queued?: false; error: string; message: string };
 
 export type CollationInput = {
   level: CollationLevel;
@@ -187,9 +238,90 @@ const ERRORS: Record<string, string> = {
   unknown_contest: 'Select which election you are reporting.',
 };
 
+const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+/**
+ * Recover a session the server has just rejected, without signing anyone out.
+ *
+ * bootstrapAuth returns the STORED token first, so clearing it is precisely
+ * what makes it fall through to the silent device-resume that mints a new one.
+ * Not signOut(): that also sets the opted-out flag, which suppresses the resume
+ * entirely and would strand a signed-in observer holding a signed report.
+ *
+ * Returns the fresh token, or null if the device could not be resumed.
+ */
+export async function remintSession(): Promise<string | null> {
+  const stale = await SecureStore.getItemAsync(K_TOKEN);
+  await SecureStore.deleteItemAsync(K_TOKEN);
+  await bootstrapAuth();
+  const fresh = await SecureStore.getItemAsync(K_TOKEN);
+  return fresh && fresh !== stale ? fresh : null;
+}
+
+/**
+ * POST a report with one silent session recovery.
+ *
+ * The form is rebuilt per attempt: a FormData whose file parts have already
+ * been streamed cannot be replayed, so reusing it makes the retry throw
+ * instantly and hides the 401 that caused it.
+ */
+async function deliver(
+  path: string,
+  buildForm: () => FormData,
+  token: string,
+  deviceId: string,
+): Promise<Response> {
+  const go = (t: string) =>
+    fetch(`${BASE}${path}`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${t}`, 'x-device-id': deviceId },
+      body: buildForm(),
+    });
+  const res = await go(token);
+  if (res.status !== 401) return res;
+  // A session can expire between opening the app at dawn and the close of poll.
+  // The report is already signed and still valid — re-mint and retry once
+  // rather than making the observer sign in with the sheet already gone.
+  const fresh = await remintSession();
+  return fresh ? go(fresh) : res;
+}
+
+/**
+ * Hand a signed report to the offline outbox.
+ *
+ * Everything retryable ends up here. The photos, the GPS fix and the signature
+ * cannot be reproduced once the observer walks away from the unit, and the
+ * server dedupes the resend on image hash — so keeping it costs nothing and
+ * discarding it costs the report.
+ */
+async function handOff(
+  kind: 'result' | 'collation',
+  body: Record<string, string>,
+  files: JobFile[],
+  label: string,
+  why: string,
+  lead = 'Saved on this phone — your signed report will send itself as soon as the network allows.',
+): Promise<SubmitResult> {
+  try {
+    await queueJob({ kind, body, files, label });
+    return {
+      ok: false,
+      queued: true,
+      error: 'queued_offline',
+      message: `${lead} (${why})`,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'queue_failed',
+      message: `Upload failed and the report could not be saved — stay on this screen and retry. (${why} / ${errText(e)})`,
+    };
+  }
+}
+
 export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   const id = await getIdentity();
-  const token = await SecureStore.getItemAsync('hawkeye.auth.token');
+  const token = await SecureStore.getItemAsync(K_TOKEN);
   if (!token) return { ok: false, error: 'not_signed_in', message: 'Sign in first.' };
 
   // Reading and hashing happen BEFORE the network. Failures here were being
@@ -204,7 +336,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     return {
       ok: false,
       error: 'photo_read_failed',
-      message: `Could not read the captured photos — retake them. (${e instanceof Error ? e.message : String(e)})`,
+      message: `Could not read the captured photos — retake them. (${errText(e)})`,
     };
   }
 
@@ -225,59 +357,94 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   });
   const signature = id.sign(payload);
 
-  const form = new FormData();
-  form.append('puCode', input.puCode);
-  form.append('contest', input.contest);
-  form.append('votes', JSON.stringify(canonicalVotes(input.votes)));
-  form.append('lat', String(input.fix.lat));
-  form.append('lng', String(input.fix.lng));
-  form.append('accuracy', String(input.fix.accuracy));
-  form.append('capturedAt', String(input.sheet.capturedAt));
-  form.append('venueCapturedAt', String(input.venue.capturedAt));
-  form.append('sheetLat', String(input.sheet.lat));
-  form.append('sheetLng', String(input.sheet.lng));
-  form.append('venueLat', String(input.venue.lat));
-  form.append('venueLng', String(input.venue.lng));
-  form.append('signature', signature);
-  if (input.sheetSerial) form.append('sheetSerial', input.sheetSerial);
-  form.append('photo', filePart(input.sheet.uri, 'ec8a.jpg', 'image/jpeg'));
-  form.append('venuePhoto', filePart(input.venue.uri, 'venue.jpg', 'image/jpeg'));
+  // Fields and files kept apart from the FormData: the same pair feeds a live
+  // attempt and, if that fails, the outbox job that replays it later.
+  const fields: Record<string, string> = {
+    puCode: input.puCode,
+    contest: input.contest,
+    votes: JSON.stringify(canonicalVotes(input.votes)),
+    lat: String(input.fix.lat),
+    lng: String(input.fix.lng),
+    accuracy: String(input.fix.accuracy),
+    capturedAt: String(input.sheet.capturedAt),
+    venueCapturedAt: String(input.venue.capturedAt),
+    sheetLat: String(input.sheet.lat),
+    sheetLng: String(input.sheet.lng),
+    venueLat: String(input.venue.lat),
+    venueLng: String(input.venue.lng),
+    signature,
+    ...(input.sheetSerial ? { sheetSerial: input.sheetSerial } : {}),
+  };
+  // The outbox copies these files verbatim, so the hashes above — and therefore
+  // the signature — still describe the bytes that eventually reach the server.
+  const files: JobFile[] = [
+    { field: 'photo', uri: input.sheet.uri, name: 'ec8a.jpg', type: 'image/jpeg' },
+    { field: 'venuePhoto', uri: input.venue.uri, name: 'venue.jpg', type: 'image/jpeg' },
+  ];
+  const buildForm = () => {
+    const form = new FormData();
+    for (const [k, v] of Object.entries(fields)) form.append(k, v);
+    for (const f of files) form.append(f.field, filePart(f.uri, f.name, f.type));
+    return form;
+  };
+  const label = `Result · ${input.puCode} · ${input.contest}`;
 
+  let res: Response;
   try {
-    const res = await fetch(`${BASE}/api/submissions`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'x-device-id': id.deviceId },
-      body: form,
-    });
-    if (res.status === 401) {
-      return { ok: false, error: 'session_expired', message: 'Session expired — sign in again.' };
-    }
-    const body = (await res.json().catch(() => ({}))) as {
-      ok?: boolean;
-      submissionId?: number;
-      error?: string;
-      hint?: string;
-      distanceM?: number;
-      allowedM?: number;
-      retryAfterS?: number;
-    };
-    if (res.ok && body.ok !== false) return { ok: true, submissionId: body.submissionId };
-    const code = body.error ?? `http_${res.status}`;
-    let message = ERRORS[code] ?? body.hint ?? 'Submission failed — try again.';
-    if (code === 'outside_geofence' && body.distanceM) {
-      message = `You are ${body.distanceM}m from this unit (allowed: ${body.allowedM}m).`;
-    }
-    if (code === 'device_too_fast' && body.retryAfterS) {
-      message = `Too soon after the last report — retry in ${body.retryAfterS}s.`;
-    }
-    return { ok: false, error: code, message };
+    res = await deliver('/api/submissions', buildForm, token, id.deviceId);
   } catch (e) {
+    return handOff('result', fields, files, label, `network: ${errText(e)}`);
+  }
+
+  // Still 401 after deliver() tried to re-mint the session. Queue it anyway:
+  // bootstrapAuth has just flipped the auth store to signed-out, which swaps
+  // this screen for the sign-in guard and takes the photos with it. The job is
+  // signed and complete, and the outbox waits for a token before each attempt.
+  if (res.status === 401) {
+    return handOff(
+      'result',
+      fields,
+      files,
+      label,
+      'session expired / HTTP 401',
+      'Signed out — your signed report is saved on this phone and will send itself once you sign in again.',
+    );
+  }
+  // The report is fine, the server is not. Exactly the class the outbox retries,
+  // so queue it instead of making the observer stand at the unit and retry.
+  if (res.status >= 500 || res.status === 429) {
+    return handOff('result', fields, files, label, `HTTP ${res.status}`);
+  }
+
+  const body = (await res.json().catch(() => ({}))) as {
+    ok?: boolean;
+    submissionId?: number;
+    error?: string;
+    hint?: string;
+    distanceM?: number;
+    allowedM?: number;
+    retryAfterS?: number;
+  } & Receipt;
+  if (res.ok && body.ok !== false) {
     return {
-      ok: false,
-      error: 'network',
-      message: `Upload failed — your report was NOT sent. Retry. (${e instanceof Error ? e.message : String(e)})`,
+      ok: true,
+      ...(body.result ?? {}),
+      submissionId: body.submissionId,
+      entryHash: body.entryHash,
+      locationVerified: body.locationVerified,
+      ocr: body.ocr,
+      result: body.result,
     };
   }
+  const code = body.error ?? `http_${res.status}`;
+  let message = ERRORS[code] ?? body.hint ?? 'Submission failed — try again.';
+  if (code === 'outside_geofence' && body.distanceM) {
+    message = `You are ${body.distanceM}m from this unit (allowed: ${body.allowedM}m).`;
+  }
+  if (code === 'device_too_fast' && body.retryAfterS) {
+    message = `Too soon after the last report — retry in ${body.retryAfterS}s.`;
+  }
+  return { ok: false, error: code, message: `${message} (${code} / HTTP ${res.status})` };
 }
 
 /**
@@ -289,7 +456,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
  */
 export async function submitCollation(input: CollationInput): Promise<SubmitResult> {
   const id = await getIdentity();
-  const token = await SecureStore.getItemAsync('hawkeye.auth.token');
+  const token = await SecureStore.getItemAsync(K_TOKEN);
   if (!token) return { ok: false, error: 'not_signed_in', message: 'Sign in first.' };
 
   let imageSha256: string;
@@ -301,7 +468,7 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
     return {
       ok: false,
       error: 'photo_read_failed',
-      message: `Could not read the captured photos — retake them. (${e instanceof Error ? e.message : String(e)})`,
+      message: `Could not read the captured photos — retake them. (${errText(e)})`,
     };
   }
 
@@ -321,52 +488,69 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
   });
   const signature = id.sign(payload);
 
-  const form = new FormData();
-  form.append('level', input.level);
-  form.append('contest', input.contest);
-  form.append('state', input.state);
-  if (input.lga) form.append('lga', input.lga);
-  if (input.ward) form.append('ward', input.ward);
-  form.append('votes', JSON.stringify(canonicalVotes(input.votes)));
-  form.append('lat', String(input.fix.lat));
-  form.append('lng', String(input.fix.lng));
-  form.append('accuracy', String(input.fix.accuracy));
-  form.append('capturedAt', String(input.sheet.capturedAt));
-  form.append('venueCapturedAt', String(input.venue.capturedAt));
-  form.append('signature', signature);
-  if (input.formSerial) form.append('formSerial', input.formSerial);
-  form.append('photo', filePart(input.sheet.uri, 'collation.jpg', 'image/jpeg'));
-  form.append('venuePhoto', filePart(input.venue.uri, 'venue.jpg', 'image/jpeg'));
+  const fields: Record<string, string> = {
+    level: input.level,
+    contest: input.contest,
+    state: input.state,
+    ...(input.lga ? { lga: input.lga } : {}),
+    ...(input.ward ? { ward: input.ward } : {}),
+    votes: JSON.stringify(canonicalVotes(input.votes)),
+    lat: String(input.fix.lat),
+    lng: String(input.fix.lng),
+    accuracy: String(input.fix.accuracy),
+    capturedAt: String(input.sheet.capturedAt),
+    venueCapturedAt: String(input.venue.capturedAt),
+    signature,
+    ...(input.formSerial ? { formSerial: input.formSerial } : {}),
+  };
+  const files: JobFile[] = [
+    { field: 'photo', uri: input.sheet.uri, name: 'collation.jpg', type: 'image/jpeg' },
+    { field: 'venuePhoto', uri: input.venue.uri, name: 'venue.jpg', type: 'image/jpeg' },
+  ];
+  const buildForm = () => {
+    const form = new FormData();
+    for (const [k, v] of Object.entries(fields)) form.append(k, v);
+    for (const f of files) form.append(f.field, filePart(f.uri, f.name, f.type));
+    return form;
+  };
+  const label = `${input.level} collation · ${input.ward || input.lga || input.state} · ${input.contest}`;
 
+  let res: Response;
   try {
-    const res = await fetch(`${BASE}/api/collations`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'x-device-id': id.deviceId },
-      body: form,
-    });
-    if (res.status === 401) {
-      return { ok: false, error: 'session_expired', message: 'Session expired — sign in again.' };
-    }
-    const body = (await res.json().catch(() => ({}))) as {
-      ok?: boolean;
-      id?: number;
-      error?: string;
-      hint?: string;
-    };
-    if (res.ok && body.ok !== false) return { ok: true, submissionId: body.id };
-    const code = body.error ?? `http_${res.status}`;
-    return {
-      ok: false,
-      error: code,
-      // Always append the code + HTTP status. A bare "Submission failed" cost
-      // a full device round-trip to diagnose; the screen must name the fault.
-      message: `${ERRORS[code] ?? body.hint ?? 'Submission failed — try again.'} (${code} / HTTP ${res.status})`,
-    };
+    res = await deliver('/api/collations', buildForm, token, id.deviceId);
   } catch (e) {
-    return {
-      ok: false,
-      error: 'network',
-      message: `Upload failed — your report was NOT sent. Retry. (${e instanceof Error ? e.message : String(e)})`,
-    };
+    return handOff('collation', fields, files, label, `network: ${errText(e)}`);
   }
+
+  if (res.status === 401) {
+    return handOff(
+      'collation',
+      fields,
+      files,
+      label,
+      'session expired / HTTP 401',
+      'Signed out — your signed report is saved on this phone and will send itself once you sign in again.',
+    );
+  }
+  if (res.status >= 500 || res.status === 429) {
+    return handOff('collation', fields, files, label, `HTTP ${res.status}`);
+  }
+
+  const body = (await res.json().catch(() => ({}))) as {
+    ok?: boolean;
+    id?: number;
+    error?: string;
+    hint?: string;
+  } & Receipt;
+  if (res.ok && body.ok !== false) {
+    return { ok: true, submissionId: body.id, entryHash: body.entryHash };
+  }
+  const code = body.error ?? `http_${res.status}`;
+  return {
+    ok: false,
+    error: code,
+    // Always append the code + HTTP status. A bare "Submission failed" cost
+    // a full device round-trip to diagnose; the screen must name the fault.
+    message: `${ERRORS[code] ?? body.hint ?? 'Submission failed — try again.'} (${code} / HTTP ${res.status})`,
+  };
 }

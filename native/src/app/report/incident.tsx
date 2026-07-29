@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -20,9 +20,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
 import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
+import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import { getQuickFix } from '@/lib/location';
+import { queueJob } from '@/lib/outbox';
 import { filePart } from '@/lib/submit';
 
 /** Kind codes from /api/incidents/kinds, with observer-facing labels. */
@@ -39,6 +40,10 @@ const KINDS: { code: string; label: string; icon: keyof typeof Feather.glyphMap 
 
 const MAX_MEDIA = 4;
 
+/** The reporter's saved unit. `name` is nullable — the server LEFT JOINs the
+ *  register, so a saved code that is no longer listed comes back bare. */
+type MyUnit = { pu_code: string; name: string | null };
+
 /** Report an incident — kind, evidence (photo/video), description, GPS. */
 export default function ReportIncident() {
   const auth = useAuth();
@@ -46,14 +51,47 @@ export default function ReportIncident() {
   const [description, setDescription] = useState('');
   const [media, setMedia] = useState<Media[]>([]);
   const [camera, setCamera] = useState(false);
+  const [useGps, setUseGps] = useState(true);
+  const [unit, setUnit] = useState<MyUnit | null>(null);
+  /** Tells "this observer saved no unit" apart from "we never got an answer". */
+  const [unitKnown, setUnitKnown] = useState(false);
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
-  const [doneId, setDoneId] = useState<number | null>(null);
+  const [done, setDone] = useState<{ title: string; line: string; icon: 'check' | 'clock' } | null>(
+    null,
+  );
 
   const canSubmit = useMemo(
     () => !!kind && (description.trim().length > 0 || media.length > 0),
     [kind, description, media],
   );
+
+  /**
+   * The report has to carry the reporter's saved polling unit: the server reads
+   * `puCode` off the form and derives the incident's state from it, so without
+   * it the row lands with pu_code AND state null — watchers of that unit are
+   * never alerted and the incident shows stateless on the public feed.
+   *
+   * Resolved on mount rather than at submit (where the PWA does it) because a
+   * report queued offline still has to carry the code, and by the time the
+   * outbox drains there is no screen left to ask from.
+   */
+  useEffect(() => {
+    if (auth.status !== 'signedIn') return;
+    let live = true;
+    authedGet<{ unit: MyUnit | null }>('/api/observers/my-unit')
+      .then((r) => {
+        if (!live) return;
+        setUnit(r.unit ?? null);
+        setUnitKnown(true);
+      })
+      .catch(() => {
+        // Optional routing field — a lookup failure must never block reporting.
+      });
+    return () => {
+      live = false;
+    };
+  }, [auth.status]);
 
   /**
    * Gallery/files picker — parity with the PWA's
@@ -98,29 +136,45 @@ export default function ReportIncident() {
       const id = await getIdentity();
       const token = await SecureStore.getItemAsync('hawkeye.auth.token');
       // GPS is optional for incidents — a bounded quick fix (≤8s), never a stall.
-      // An urgent report must not wait on a satellite lock indoors.
-      const fix = await getQuickFix();
+      // An urgent report must not wait on a satellite lock indoors. Skipped
+      // outright when the stamp is switched off: someone reporting the people
+      // standing next to them has a real reason not to pin themselves to a map.
+      const fix = useGps ? await getQuickFix() : null;
+      // Only re-asked when the mount lookup never landed, and bounded — an
+      // optional routing field must not hold up the report that carries it.
+      let puCode = unit?.pu_code ?? null;
+      if (!unitKnown) {
+        puCode = await Promise.race([
+          authedGet<{ unit: MyUnit | null }>('/api/observers/my-unit').then(
+            (r) => r.unit?.pu_code ?? null,
+          ),
+          new Promise<null>((r) => setTimeout(() => r(null), 4_000)),
+        ]).catch(() => null);
+      }
+
+      // One description of the body, shared by the live POST and the queued
+      // copy, so what the outbox eventually sends is what this attempt built.
+      const fields: Record<string, string> = { kind };
+      if (description.trim()) fields.description = description.trim().slice(0, 2000);
+      if (fix) {
+        fields.lat = String(fix.lat);
+        fields.lng = String(fix.lng);
+      }
+      if (puCode) fields.puCode = puCode;
+      const files = media.map((m, i) => ({
+        field: 'media',
+        uri: m.uri,
+        name: m.type === 'video' ? `clip${i}.mp4` : `photo${i}.jpg`,
+        type: m.type === 'video' ? 'video/mp4' : 'image/jpeg',
+      }));
+
       // Fresh FormData PER ATTEMPT: on Android a body whose file parts were
       // already streamed by a failed attempt cannot be replayed — reusing it
       // makes the retry throw instantly and masks the original error.
       const buildForm = () => {
         const form = new FormData();
-        form.append('kind', kind);
-        if (description.trim()) form.append('description', description.trim().slice(0, 2000));
-        if (fix) {
-          form.append('lat', String(fix.lat));
-          form.append('lng', String(fix.lng));
-        }
-        media.forEach((m, i) =>
-          form.append(
-            'media',
-            filePart(
-              m.uri,
-              m.type === 'video' ? `clip${i}.mp4` : `photo${i}.jpg`,
-              m.type === 'video' ? 'video/mp4' : 'image/jpeg',
-            ),
-          ),
-        );
+        for (const [k, v] of Object.entries(fields)) form.append(k, v);
+        for (const f of files) form.append(f.field, filePart(f.uri, f.name, f.type));
         return form;
       };
       const post = () =>
@@ -132,17 +186,52 @@ export default function ReportIncident() {
       // One silent retry: a reset connection on Nigerian mobile networks is a
       // transient, not a verdict. (Server-side dedupe is not a concern here —
       // a retried incident that DID land twice just shows twice in the queue.)
-      let res: Response;
+      let res: Response | null = null;
       try {
         res = await post();
       } catch {
         setLine('Connection dropped — retrying…');
-        res = await post();
+        try {
+          res = await post();
+        } catch {
+          res = null;
+        }
+      }
+      if (!res) {
+        // Both attempts threw, so nothing reached the server — hand the report
+        // to the outbox instead of asking someone in the middle of an incident
+        // to hold the screen open until the network returns. Queued ONLY on
+        // this path: a request that came back with an HTTP answer WAS received,
+        // and replaying it would file the same incident twice.
+        try {
+          await queueJob({
+            kind: 'incident',
+            body: fields,
+            files,
+            label: `Incident — ${KINDS.find((k) => k.code === kind)?.label ?? kind}`,
+          });
+        } catch (e) {
+          setLine(
+            `Upload failed and the report could not be saved for later — nothing was sent. (${e instanceof Error ? e.message : String(e)})`,
+          );
+          return;
+        }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setDone({
+          title: 'Saved to send later',
+          icon: 'clock',
+          line: 'No connection right now. Your report and its evidence are stored on this phone and go out on their own once you are back online — you can close the app.',
+        });
+        return;
       }
       const body = (await res.json().catch(() => ({}))) as { ok?: boolean; id?: number; error?: string; hint?: string };
       if (res.ok && body.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setDoneId(body.id ?? 0);
+        setDone({
+          title: 'Incident reported',
+          icon: 'check',
+          line: 'Your report is under review. If accepted, it appears on the public incident log — your identity stays your observer ID only.',
+        });
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         // Always name the failure: a code the user can read back beats a shrug.
@@ -154,10 +243,12 @@ export default function ReportIncident() {
         );
       }
     } catch (e) {
-      // Name the exception — "Network request failed" vs a JS error are very
-      // different diagnoses, and the generic line hid which one we had.
+      // Getting here means the upload itself did NOT fail (that path queues) —
+      // identity, the token read or the GPS/unit lookup threw. Name the
+      // exception: "Network request failed" and a JS error are very different
+      // diagnoses, and the generic line hid which one we had.
       const msg = e instanceof Error ? e.message : String(e);
-      setLine(`Upload failed twice — nothing was sent. (${msg})`);
+      setLine(`Could not prepare the report — nothing was sent. (${msg})`);
     } finally {
       setBusy(false);
     }
@@ -198,17 +289,16 @@ export default function ReportIncident() {
     );
   }
 
-  if (doneId !== null) {
+  if (done) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist px-8">
         <View className="h-16 w-16 items-center justify-center rounded-full bg-hawk-green">
-          <Feather name="check" size={28} color={BRAND.gold} />
+          {/* A tick on a queued report would claim a delivery that has not
+              happened — the icon has to tell the two outcomes apart. */}
+          <Feather name={done.icon} size={28} color={BRAND.gold} />
         </View>
-        <Text className="pt-4 text-center text-lg font-bold text-hawk-ink">Incident reported</Text>
-        <Text className="pt-2 text-center text-sm text-neutral-600">
-          Your report is under review. If accepted, it appears on the public incident log —
-          your identity stays your observer ID only.
-        </Text>
+        <Text className="pt-4 text-center text-lg font-bold text-hawk-ink">{done.title}</Text>
+        <Text className="pt-2 text-center text-sm text-neutral-600">{done.line}</Text>
         <Pressable
           className="mt-6 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
           onPress={() => router.back()}
@@ -312,6 +402,40 @@ export default function ReportIncident() {
             value={description}
             onChangeText={setDescription}
           />
+
+          {/* Location is opt-OUT, matching the PWA's checked-by-default box. The
+              stamp helps a reviewer place the report, but an observer standing
+              among the people they are reporting has a real reason to withhold
+              it, and that choice has to be on screen before they commit. */}
+          <Pressable
+            onPress={() => setUseGps((v) => !v)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: useGps }}
+            className="mt-3 flex-row items-center rounded-2xl bg-white px-4 py-3 active:opacity-80"
+          >
+            <Feather
+              name={useGps ? 'check-square' : 'square'}
+              size={19}
+              color={useGps ? BRAND.leaf : '#9db5a7'}
+            />
+            <View className="flex-1 pl-3">
+              <Text className="text-sm font-semibold text-hawk-ink">
+                Attach my current location
+              </Text>
+              <Text className="text-xs text-neutral-500">
+                {useGps
+                  ? 'Helps reviewers place the incident. Coordinates are never published.'
+                  : 'No coordinates will be attached to this report.'}
+              </Text>
+            </View>
+          </Pressable>
+
+          {unit ? (
+            <Text className="pt-2 text-xs text-neutral-500">
+              Filed under {unit.name ?? unit.pu_code} ({unit.pu_code}) — your saved polling unit.
+              Watchers there are alerted once a reviewer approves it.
+            </Text>
+          ) : null}
 
           <Text className="pt-3 text-xs text-neutral-500">
             Your safety first: never confront anyone to get footage. Reports are reviewed

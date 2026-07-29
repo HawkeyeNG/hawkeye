@@ -18,6 +18,12 @@ import { requireObserver } from './observers.js';
 import { notifyChat, notifyMaster, chatIdByHash } from '../services/notify.js';
 
 export const collationRouter = Router();
+
+// Same as the PU router: this one writes its photos straight into uploadDir, so it
+// ensures the directory itself instead of depending on another module having been
+// imported first. Idempotent — recursive mkdir on an existing directory is a no-op.
+fs.mkdirSync(config.uploadDir, { recursive: true });
+
 const LEVELS = new Set(['ward', 'lga', 'state']);
 const FORM = { ward: 'EC8B', lga: 'EC8C', state: 'EC8D' };
 const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');

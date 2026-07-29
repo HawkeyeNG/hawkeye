@@ -1,10 +1,12 @@
 import { Feather } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -21,25 +23,58 @@ import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getSubmitFix } from '@/lib/location';
-import { submitCollation, type CollationLevel, type Shot, type Vote } from '@/lib/submit';
+import { submitCollation, type CollationLevel, type Receipt, type Shot, type Vote } from '@/lib/submit';
 
-type Step = 'scope' | 'sheet' | 'venue' | 'votes' | 'review' | 'done';
+const BASE = 'https://hawkeye.com.ng';
+const REG = `${BASE}/api/register`;
+
+type Step = 'scope' | 'contest' | 'sheet' | 'venue' | 'votes' | 'review' | 'done';
 
 const STEPS: { key: Step; label: string }[] = [
   { key: 'scope', label: 'Scope' },
+  { key: 'contest', label: 'Race' },
   { key: 'sheet', label: 'Form' },
   { key: 'venue', label: 'Venue' },
   { key: 'votes', label: 'Votes' },
   { key: 'review', label: 'Send' },
 ];
 
-const LEVELS: { key: CollationLevel; label: string; sub: string }[] = [
-  { key: 'ward', label: 'Ward', sub: 'Ward collation centre (EC8B)' },
-  { key: 'lga', label: 'LGA', sub: 'Local government collation (EC8C)' },
-  { key: 'state', label: 'State', sub: 'State collation (EC8D)' },
+const LEVELS: { key: CollationLevel; label: string; form: string; sub: string }[] = [
+  { key: 'ward', label: 'Ward', form: 'EC8B', sub: 'Ward collation centre (EC8B)' },
+  { key: 'lga', label: 'LGA', form: 'EC8C', sub: 'Local government collation (EC8C)' },
+  { key: 'state', label: 'State', form: 'EC8D', sub: 'State collation (EC8D)' },
 ];
 
-const REG = 'https://hawkeye.com.ng/api/register';
+/**
+ * Mirror of backend/src/services/scope.js (and app.js's contestApplies): the
+ * state decides which races exist there. The FCT has an appointed minister — no
+ * governorship, no state assembly — and a single-state election carries a
+ * `states` allowlist; absent or empty means nationwide.
+ */
+const contestApplies = (state: string, c: Contest) =>
+  !(state === 'FCT' && (c.code === 'GOV' || c.code === 'SHA')) &&
+  (!c.states || c.states.length === 0 || c.states.includes(state));
+
+const racesIn = (state: string, contests: Contest[]) =>
+  contests.filter((c) => contestApplies(state, c));
+
+/**
+ * A scheduled election opens at poll-open on election day (the server sends
+ * open:false + opensAt until then). Naming the instant is the whole point: an
+ * observer who is told "not open" without a time comes back at random.
+ */
+function opensLine(c: Contest): string {
+  if (!c.opensAt) return 'Reporting has not opened for this election yet.';
+  const d = new Date(c.opensAt);
+  if (Number.isNaN(d.getTime())) return `Reporting opens ${c.opensAt}.`;
+  return `Reporting opens ${d.toLocaleString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: 'numeric',
+    minute: '2-digit',
+  })}.`;
+}
 
 /**
  * Report a collation — the announcement made at a ward/LGA/state centre.
@@ -54,6 +89,7 @@ export default function ReportCollation() {
   const [step, setStep] = useState<Step>('scope');
 
   // -- scope ---------------------------------------------------------------
+  const [contests, setContests] = useState<Contest[]>([]);
   const [contest, setContest] = useState<Contest | null>(null);
   const [level, setLevel] = useState<CollationLevel | null>(null);
   const [states, setStates] = useState<string[]>([]);
@@ -64,44 +100,108 @@ export default function ReportCollation() {
   const [wardSel, setWardSel] = useState<string | null>(null);
 
   useEffect(() => {
-    api.contests().then((cs) => setContest(cs[0] ?? null)).catch(() => {});
+    // Every state is listed, not just the covered ones — an observer outside the
+    // active election should be told "nothing here yet", not shown an empty world.
+    api.contests().then(setContests).catch(() => {});
     fetch(`${REG}/states`)
       .then((r) => r.json())
       .then(setStates)
       .catch(() => {});
   }, []);
 
+  // No contest filter on the register drill: the server ignores the parameter
+  // (pollingUnits.js selects on state/lga/ward alone), and passing it meant the
+  // whole picker sat dead until /api/contests resolved. The race is chosen from
+  // the scope further down, which is the direction the scope rule runs anyway.
   useEffect(() => {
-    if (!contest || !stateSel) return;
-    fetch(`${REG}/lgas?contest=${contest.code}&state=${encodeURIComponent(stateSel)}`)
+    if (!stateSel) return;
+    fetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
       .then((r) => r.json())
       .then(setLgas)
       .catch(() => {});
-  }, [contest, stateSel]);
+  }, [stateSel]);
 
   useEffect(() => {
-    if (!contest || !stateSel || !lgaSel) return;
-    fetch(
-      `${REG}/wards?contest=${contest.code}&state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`,
-    )
+    if (!stateSel || !lgaSel) return;
+    fetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
       .then((r) => r.json())
       .then(setWards)
       .catch(() => {});
-  }, [contest, stateSel, lgaSel]);
+  }, [stateSel, lgaSel]);
 
-  /** Is the chosen state inside the active contest? Drives the
+  /** Is any race running in the chosen state? Drives the
    *  "no active election here" answer instead of hiding the state. */
-  const covered = !!contest && !!stateSel && contest.states.includes(stateSel);
+  const covered = !!stateSel && racesIn(stateSel, contests).length > 0;
+
+  /** The races that exist in the chosen state — the contest step's whole content. */
+  const applicable = useMemo(
+    () => (stateSel ? racesIn(stateSel, contests) : []),
+    [stateSel, contests],
+  );
+
+  /** The race step is real only when there is a choice to make. */
+  const steps = useMemo(
+    () => STEPS.filter((s) => s.key !== 'contest' || applicable.length > 1),
+    [applicable.length],
+  );
 
   /** Scope completeness mirrors the server rule exactly. */
   const scopeReady =
-    !!contest &&
     !!level &&
     !!stateSel &&
     covered &&
     (level === 'state' || !!lgaSel) &&
     (level !== 'ward' || !!wardSel);
 
+  const scopeLine = [wardSel, lgaSel, stateSel].filter(Boolean).join(', ');
+  const levelDef = LEVELS.find((l) => l.key === level) ?? null;
+
+  /**
+   * The state determines the race, so the contest step is built here rather than
+   * up front — and skipped entirely when the state has exactly one race, which
+   * is every state outside the FCT during a single-race election.
+   */
+  const continueFromScope = () => {
+    if (!stateSel) return;
+    if (contests.length === 0) {
+      Alert.alert(
+        'Election list not loaded',
+        'Hawkeye could not load which elections are running — check your connection and reopen this screen. (no /api/contests response)',
+      );
+      return;
+    }
+    const races = racesIn(stateSel, contests);
+    if (races.length === 0) {
+      Alert.alert(
+        `No active election in ${stateSel}`,
+        `Hawkeye is covering the ${contests[0].election}. No collation is open for reporting in ${stateSel} yet — but you can still map polling units anywhere in Nigeria.`,
+      );
+      return;
+    }
+    if (races.length === 1) {
+      setContest(races[0]);
+      setStep('sheet');
+      return;
+    }
+    setStep('contest');
+  };
+
+  /**
+   * Choosing a state pre-picks its race when there is only one, and drops any
+   * race chosen under the previous state: the contest is derived from the scope,
+   * so it must never outlive it. Backing out to a different state otherwise left
+   * the pinned Continue live for a contest that does not run where the observer
+   * is now reporting from.
+   *
+   * Done here rather than in an effect on stateSel because /api/contests may
+   * still be in flight — continueFromScope re-derives the race at press time,
+   * which is the moment it actually has to be right.
+   */
+  const chooseState = (s: string | null) => {
+    setStateSel(s);
+    const races = s ? racesIn(s, contests) : [];
+    setContest(races.length === 1 ? races[0] : null);
+  };
 
   // -- photos ---------------------------------------------------------------
   const [sheet, setSheet] = useState<Shot | null>(null);
@@ -117,7 +217,7 @@ export default function ReportCollation() {
   useEffect(() => {
     if (step === 'votes' && parties.length === 0) {
       api.parties().then(setParties).catch(() => {});
-      fetch('https://hawkeye.com.ng/logos/manifest.json')
+      fetch(`${BASE}/logos/manifest.json`)
         .then((r) => r.json())
         .then(setLogos)
         .catch(() => {});
@@ -131,6 +231,9 @@ export default function ReportCollation() {
         .map(([party, v]) => ({ party, count: Number(v) })),
     [counts],
   );
+
+  /** Highest first — the ranking the review and the receipt are both checked against. */
+  const rankedVotes = useMemo(() => votes.slice().sort((a, b) => b.count - a.count), [votes]);
 
   // Filter only — order stays fixed while typing (reordering steals focus).
   const filteredParties = useMemo(() => {
@@ -147,9 +250,16 @@ export default function ReportCollation() {
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const [done, setDone] = useState({ title: '', line: '' });
+  const [receipt, setReceipt] = useState<Receipt>({});
+  /** Held in the offline outbox rather than delivered — a different ending. */
+  const [queued, setQueued] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  /** Nothing can be filed before poll-open; the server enforces it either way. */
+  const closed = contest?.open === false;
 
   const onSubmit = async () => {
-    if (!contest || !level || !stateSel || !sheet || !venue) return;
+    if (!contest || !level || !stateSel || !sheet || !venue || closed) return;
     setBusy(true);
     setLine('Getting your location…');
     try {
@@ -173,22 +283,42 @@ export default function ReportCollation() {
         formSerial: formSerial.trim() || undefined,
       });
       if (r.ok) {
+        setReceipt(r);
+        setQueued(false);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
           title: 'Collation filed',
-          line: 'It is queued for review and will appear on the public log.',
+          line: 'It is on the public record and being checked against the polling-unit reports it should sum to.',
+        });
+        setStep('done');
+      } else if (r.queued) {
+        // Say what actually happened. "Collation filed" over a report still
+        // sitting in the outbox is the one lie this app cannot tell — so this
+        // ending has its own icon, its own words, and no entry hash to show,
+        // because there is no ledger entry yet.
+        setReceipt({});
+        setQueued(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setDone({
+          title: 'Saved on this phone',
+          line: 'It will send when you have signal. The report is already signed, so it files exactly as you left it — keep the app installed and it goes on its own.',
         });
         setStep('done');
       } else if (r.error === 'reporting_not_open') {
+        // The flow worked end-to-end; only the election-day gate stopped it.
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setReceipt({});
+        setQueued(false);
         setDone({ title: 'Dry run complete', line: r.message });
         setStep('done');
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setLine(r.message);
       }
-    } catch {
-      setLine('Something went wrong — nothing was sent. Retry.');
+    } catch (e) {
+      setLine(
+        `Something went wrong — nothing was sent. Retry. (${e instanceof Error ? e.message : String(e)})`,
+      );
     } finally {
       setBusy(false);
     }
@@ -249,8 +379,10 @@ export default function ReportCollation() {
           if (retaking) {
             setRetaking(false);
             setStep('review');
+          } else if (isSheet) {
+            setStep(applicable.length > 1 ? 'contest' : 'scope');
           } else {
-            setStep(isSheet ? 'scope' : 'sheet');
+            setStep('sheet');
           }
         }}
       />
@@ -283,8 +415,8 @@ export default function ReportCollation() {
 
       {step !== 'done' ? (
         <View className="flex-row px-4 pt-3">
-          {STEPS.map((s, i) => {
-            const idx = STEPS.findIndex((x) => x.key === step);
+          {steps.map((s, i) => {
+            const idx = steps.findIndex((x) => x.key === step);
             const on = i <= idx;
             return (
               <View key={s.key} className="mr-1 flex-1">
@@ -307,7 +439,7 @@ export default function ReportCollation() {
         {step === 'scope' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             <Text className="pb-1 text-xl font-bold text-hawk-ink">
-              {contest ? contest.election : 'Loading election…'}
+              {contests.length ? contests[0].election : 'Loading election…'}
             </Text>
             <Text className="pb-4 text-sm text-neutral-600">
               Which collation are you reporting?
@@ -337,7 +469,7 @@ export default function ReportCollation() {
               </>
             ) : (
               <Crumb
-                label={LEVELS.find((l) => l.key === level)!.label}
+                label={levelDef!.label}
                 onPress={() => {
                   setLevel(null);
                   setLgaSel(null);
@@ -351,7 +483,7 @@ export default function ReportCollation() {
                 <Prompt>Select the state</Prompt>
                 <View className="flex-row flex-wrap">
                   {states.map((s) => (
-                    <Chip key={s} label={s} onPress={() => setStateSel(s)} />
+                    <Chip key={s} label={s} onPress={() => chooseState(s)} />
                   ))}
                 </View>
               </>
@@ -359,8 +491,8 @@ export default function ReportCollation() {
 
             {level && stateSel && !covered ? (
               <>
-                <Crumb label={stateSel} onPress={() => setStateSel(null)} />
-                <NoElection state={stateSel} contest={contest} />
+                <Crumb label={stateSel} onPress={() => chooseState(null)} />
+                <NoElection state={stateSel} contest={contests[0] ?? null} />
               </>
             ) : null}
 
@@ -406,8 +538,60 @@ export default function ReportCollation() {
                   : `Ward collation — ${wardSel}, ${lgaSel}`}
             </Text>
             <Pressable
-              onPress={() => setStep('sheet')}
+              onPress={continueFromScope}
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
+            >
+              <Text className="text-base font-bold text-hawk-gold">
+                {applicable.length > 1 ? 'Continue — choose the race' : 'Continue to photos'}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {step === 'contest' ? (
+          <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
+            <Crumb label={scopeLine} onPress={() => setStep('scope')} />
+            <Prompt>Which election are you reporting?</Prompt>
+            <Text className="pb-3 text-sm text-neutral-600">
+              A collation centre announces every race on the same day. Only the ones that run in{' '}
+              {stateSel} are listed — report each one separately.
+            </Text>
+            {applicable.map((c) => {
+              const on = contest?.code === c.code;
+              return (
+                <Pressable
+                  key={c.code}
+                  onPress={() => setContest(c)}
+                  className={`mb-2 rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+                >
+                  <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-hawk-ink'}`}>
+                    {c.name}
+                  </Text>
+                  <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-neutral-500'}`}>
+                    {c.election}
+                  </Text>
+                  {c.open === false ? (
+                    <Text
+                      className={`pt-1 text-xs font-semibold ${on ? 'text-hawk-gold' : 'text-amber-800'}`}
+                    >
+                      {opensLine(c)}
+                    </Text>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : null}
+
+        {step === 'contest' ? (
+          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+            {closed && contest ? (
+              <Text className="pb-2 text-sm font-semibold text-amber-800">{opensLine(contest)}</Text>
+            ) : null}
+            <Pressable
+              disabled={!contest}
+              onPress={() => setStep('sheet')}
+              className={`items-center rounded-2xl py-4 ${contest ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'}`}
             >
               <Text className="text-base font-bold text-hawk-gold">Continue to photos</Text>
             </Pressable>
@@ -431,7 +615,7 @@ export default function ReportCollation() {
               <View key={p.code} className="mb-2 flex-row items-center rounded-2xl bg-white px-4 py-2">
                 {logos[p.code] ? (
                   <Image
-                    source={{ uri: `https://hawkeye.com.ng/${logos[p.code]}` }}
+                    source={{ uri: `${BASE}/${logos[p.code]}` }}
                     style={{ width: 30, height: 30, borderRadius: 6, marginRight: 10 }}
                     contentFit="contain"
                     cachePolicy="disk"
@@ -484,11 +668,12 @@ export default function ReportCollation() {
             <Text className="pb-3 text-xl font-bold text-hawk-ink">Confirm and send</Text>
             <View className="mb-3 rounded-2xl bg-white px-4 py-3">
               <Text className="text-base font-semibold text-hawk-ink">
-                {LEVELS.find((l) => l.key === level)?.label} collation
+                {levelDef?.label} collation · {levelDef?.form}
               </Text>
-              <Text className="text-xs text-neutral-500">
-                {[wardSel, lgaSel, stateSel].filter(Boolean).join(', ')}
-              </Text>
+              <Text className="text-xs text-neutral-500">{scopeLine}</Text>
+              {contest ? (
+                <Text className="pt-0.5 text-xs font-semibold text-hawk-leaf">{contest.name}</Text>
+              ) : null}
             </View>
             <View className="mb-3 flex-row gap-3">
               {[sheet, venue].map((s, i) =>
@@ -518,17 +703,14 @@ export default function ReportCollation() {
               )}
             </View>
             <View className="mb-3 rounded-2xl bg-white px-4 py-2">
-              {votes
-                .slice()
-                .sort((a, b) => b.count - a.count)
-                .map((v) => (
-                  <View key={v.party} className="flex-row justify-between py-1.5">
-                    <Text className="text-base font-semibold text-hawk-ink">{v.party}</Text>
-                    <Text className="text-base font-bold text-hawk-ink">
-                      {v.count.toLocaleString()}
-                    </Text>
-                  </View>
-                ))}
+              {rankedVotes.map((v) => (
+                <View key={v.party} className="flex-row justify-between py-1.5">
+                  <Text className="text-base font-semibold text-hawk-ink">{v.party}</Text>
+                  <Text className="text-base font-bold text-hawk-ink">
+                    {v.count.toLocaleString()}
+                  </Text>
+                </View>
+              ))}
             </View>
             {/* Optional form serial — parity with the PWA's collation field. */}
             <Prompt>Enter the form serial number (optional)</Prompt>
@@ -549,18 +731,29 @@ export default function ReportCollation() {
             with the button so retrying never means scrolling back down. */}
         {step === 'review' ? (
           <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+            {/* Say when, not just no. The server refuses early reports anyway;
+                finding that out after two photos and a full tally is the failure
+                this replaces. */}
+            {closed && contest ? (
+              <Text className="pb-2 text-sm font-semibold text-amber-800">
+                {opensLine(contest)} Nothing can be filed before then — your work stays here until
+                you reopen this screen on election day.
+              </Text>
+            ) : null}
             {line ? (
               <Text className="pb-2 text-sm font-semibold text-amber-800">{line}</Text>
             ) : null}
             <Pressable
-              disabled={busy}
+              disabled={busy || closed}
               onPress={onSubmit}
-              className={`items-center rounded-2xl py-4 ${busy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'}`}
+              className={`items-center rounded-2xl py-4 ${busy || closed ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'}`}
             >
               {busy ? (
                 <ActivityIndicator color={BRAND.gold} />
               ) : (
-                <Text className="text-base font-bold text-hawk-gold">Sign &amp; submit</Text>
+                <Text className="text-base font-bold text-hawk-gold">
+                  {closed ? 'Reporting not open yet' : 'Sign & submit'}
+                </Text>
               )}
             </Pressable>
             <Pressable
@@ -574,14 +767,109 @@ export default function ReportCollation() {
         ) : null}
 
         {step === 'done' ? (
-          <View className="flex-1 items-center justify-center px-8">
-            <View className="h-16 w-16 items-center justify-center rounded-full bg-hawk-green">
-              <Feather name="check" size={28} color={BRAND.gold} />
+          <ScrollView contentContainerClassName="px-6 pb-4 pt-8">
+            <View className="items-center">
+              <View
+                className={`h-16 w-16 items-center justify-center rounded-full ${queued ? 'bg-amber-600' : 'bg-hawk-green'}`}
+              >
+                <Feather name={queued ? 'clock' : 'check'} size={28} color={BRAND.gold} />
+              </View>
+              <Text className="pt-4 text-center text-lg font-bold text-hawk-ink">{done.title}</Text>
+              <Text className="pt-2 text-center text-sm text-neutral-600">{done.line}</Text>
             </View>
-            <Text className="pt-4 text-center text-lg font-bold text-hawk-ink">{done.title}</Text>
-            <Text className="pt-2 text-center text-sm text-neutral-600">{done.line}</Text>
+
+            {/* THE RECEIPT. Until now the observer handed over evidence and got a
+                sentence back. The entry hash is their copy of the record: it is
+                what makes the ledger checkable by the person who filed it.
+                Collations carry their own hash chain, so this is the only handle
+                that finds this report again. */}
+            {receipt.entryHash ? (
+              <View className="mt-6 rounded-2xl bg-hawk-green px-4 py-4">
+                <Text className="text-[11px] font-bold uppercase tracking-wider text-hawk-gold">
+                  Ledger entry
+                </Text>
+                <Pressable
+                  className="mt-2 flex-row items-center rounded-xl bg-white/10 px-3 py-2.5 active:opacity-70"
+                  onPress={async () => {
+                    await Clipboard.setStringAsync(receipt.entryHash!);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }}
+                >
+                  <Text className="flex-1 pr-2 font-mono text-[11px] text-emerald-100" numberOfLines={1}>
+                    {receipt.entryHash}
+                  </Text>
+                  <Feather name={copied ? 'check' : 'copy'} size={15} color={BRAND.gold} />
+                </Pressable>
+                <Text className="pt-2 text-[11px] text-emerald-200/80">
+                  {copied ? 'Copied.' : 'Tap to copy.'} This fingerprint is how you prove your report
+                  is in the public ledger and has not been altered.
+                </Text>
+              </View>
+            ) : null}
+
+            {/* What was filed, in the observer's own figures. The collation route
+                answers with the entry hash alone — no consensus or OCR block like
+                a unit result — so the receipt states the record itself. */}
+            <View className="mt-3 rounded-2xl bg-white px-4 py-2">
+              <View className="flex-row items-center justify-between py-1.5">
+                <Text className="text-sm text-neutral-500">Status</Text>
+                <Text
+                  className={`text-sm font-bold ${queued ? 'text-amber-800' : receipt.entryHash ? 'text-hawk-leaf' : 'text-neutral-500'}`}
+                >
+                  {queued ? 'WAITING TO SEND' : receipt.entryHash ? 'RECORDED' : 'NOT FILED'}
+                </Text>
+              </View>
+              <View className="flex-row items-center justify-between py-1.5">
+                <Text className="text-sm text-neutral-500">Form</Text>
+                <Text className="text-sm font-bold text-hawk-ink">
+                  {levelDef?.form} · {levelDef?.label} collation
+                </Text>
+              </View>
+              <View className="flex-row items-center justify-between py-1.5">
+                <Text className="pr-3 text-sm text-neutral-500">Scope</Text>
+                <Text className="flex-1 text-right text-sm font-bold text-hawk-ink">{scopeLine}</Text>
+              </View>
+              {contest ? (
+                <View className="flex-row items-center justify-between py-1.5">
+                  <Text className="pr-3 text-sm text-neutral-500">Election</Text>
+                  <Text className="flex-1 text-right text-sm font-bold text-hawk-ink">
+                    {contest.name}
+                  </Text>
+                </View>
+              ) : null}
+              <View className="mt-1 border-t border-black/5 pt-2">
+                <Text className="pb-1 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                  Totals you reported
+                </Text>
+                {rankedVotes.map((v) => (
+                  <View key={v.party} className="flex-row items-center justify-between py-1">
+                    <Text className="text-sm font-semibold text-hawk-ink">{v.party}</Text>
+                    <Text className="text-sm font-bold text-hawk-ink">
+                      {v.count.toLocaleString()}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+        ) : null}
+
+        {step === 'done' ? (
+          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+            {/* Integrity, not the results log: a collation is cross-checked against
+                the unit sheets underneath it, and that comparison is what surfaces
+                publicly. replace, not push — the finished flow should not sit under
+                the page the observer went to check. */}
+            <Pressable className="items-center pb-3" onPress={() => router.replace('/integrity')}>
+              <Text className="text-sm font-semibold text-hawk-leaf">
+                {receipt.entryHash
+                  ? 'See how collated figures are checked ›'
+                  : 'See the integrity checks ›'}
+              </Text>
+            </Pressable>
             <Pressable
-              className="mt-6 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
+              className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
               onPress={() => router.back()}
             >
               <Text className="text-base font-bold text-hawk-gold">Done</Text>

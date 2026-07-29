@@ -192,6 +192,16 @@ for (const ddl of [
      votes_json TEXT NOT NULL,
      created_at INTEGER NOT NULL
    )`,
+  // Practice runs are hash-chained too — same rule as the real ledger
+  // (sha256(prev + payload)) on a SEPARATE chain with its own genesis, so a
+  // practice run teaches what a ledger entry is without ever touching the
+  // public one. This chain is never anchored to Rekor and never batched into a
+  // Merkle root; that is the whole point of it being a different chain.
+  'ALTER TABLE practice_submissions ADD COLUMN pu_code TEXT',
+  'ALTER TABLE practice_submissions ADD COLUMN contest TEXT',
+  'ALTER TABLE practice_submissions ADD COLUMN prev_hash TEXT',
+  'ALTER TABLE practice_submissions ADD COLUMN entry_hash TEXT',
+  'ALTER TABLE practice_submissions ADD COLUMN ledger_payload TEXT',
   'ALTER TABLE anchors ADD COLUMN docket_head TEXT',
   'ALTER TABLE anchors ADD COLUMN rekor_uuid TEXT',
   'ALTER TABLE anchors ADD COLUMN rekor_log_index INTEGER',
@@ -480,11 +490,16 @@ export const practiceElection = (() => {
     return JSON.parse(fs.readFileSync(path.join(config.dataDir, 'practice.json'), 'utf8'));
   } catch { return null; }
 })();
+// Open indefinitely unless practice.json sets an explicit autoDeleteAt. Practice
+// costs nothing to leave running — it writes to its own table and its own chain
+// — and a closed sandbox is the one thing that makes a curious visitor leave.
 export const practiceActive = () =>
-  Boolean(practiceElection && Date.now() < Date.parse(practiceElection.autoDeleteAt));
+  Boolean(practiceElection && (!practiceElection.autoDeleteAt
+    || Date.now() < Date.parse(practiceElection.autoDeleteAt)));
 // Drop practice rows once the window closes (called on boot + on a timer).
 export function purgePracticeIfExpired() {
-  if (practiceElection && !practiceActive()) {
+  // No window configured ⇒ nothing ever expires, so nothing is purged.
+  if (practiceElection && practiceElection.autoDeleteAt && !practiceActive()) {
     try { return db.prepare('DELETE FROM practice_submissions').run().changes; } catch { return 0; }
   }
   return 0;

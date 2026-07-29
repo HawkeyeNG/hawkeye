@@ -7,6 +7,11 @@ import crypto from 'node:crypto';
 import { Router } from 'express';
 import { db, practiceElection, practiceActive } from '../db.js';
 
+// A separate genesis from the real ledger, so the two chains can never be
+// confused even if a hash is quoted out of context.
+const PRACTICE_GENESIS = 'p'.repeat(64);
+const sha256 = (v) => crypto.createHash('sha256').update(v).digest('hex');
+
 export const practiceRouter = Router();
 
 // What the practice page needs to render — the election, its sample unit and
@@ -29,9 +34,64 @@ practiceRouter.post('/practice/submit', (req, res) => {
     .map((v) => ({ party: v.party.slice(0, 24), count: v.count }));
   if (!clean.length) return res.status(400).json({ error: 'no_counts' });
   const puName = String(req.body?.puName || practiceElection.unit?.name || 'Practice Polling Unit').slice(0, 80);
-  db.prepare('INSERT INTO practice_submissions (pu_name, votes_json, created_at) VALUES (?, ?, ?)')
-    .run(puName, JSON.stringify(clean), Date.now());
-  // A throwaway hash purely so the confirmation screen looks like the real one.
-  const entryHash = 'practice-' + crypto.randomBytes(8).toString('hex');
-  res.json({ ok: true, practice: true, status: 'recorded (practice)', entryHash, recordedAt: Date.now() });
+  // A real register unit may be practised against (that is how someone rehearses
+  // at their OWN unit, in a state with no live election). Stored as a plain
+  // string: practice never joins polling_units, so it can never reach a result.
+  const puCode = String(req.body?.puCode || practiceElection.unit?.code || '').slice(0, 32) || null;
+  const contest = String(req.body?.contest || 'PRACTICE').slice(0, 16);
+
+  // Chain it, exactly as the real ledger does — sha256(prev + payload) — on the
+  // practice chain. Same arithmetic, different chain, never anchored.
+  const entry = db.transaction(() => {
+    const last = db.prepare('SELECT entry_hash FROM practice_submissions WHERE entry_hash IS NOT NULL ORDER BY id DESC LIMIT 1').get();
+    const prevHash = last ? last.entry_hash : PRACTICE_GENESIS;
+    const payload = JSON.stringify({ practice: true, puCode, contest, votes: clean });
+    const entryHash = sha256(prevHash + payload);
+    const info = db
+      .prepare(`INSERT INTO practice_submissions
+        (pu_name, pu_code, contest, votes_json, prev_hash, entry_hash, ledger_payload, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(puName, puCode, contest, JSON.stringify(clean), prevHash, entryHash, payload, Date.now());
+    return { entryHash, id: info.lastInsertRowid };
+  })();
+
+  res.json({
+    ok: true,
+    practice: true,
+    status: 'recorded (practice)',
+    entryHash: entry.entryHash,
+    submissionId: entry.id,
+    recordedAt: Date.now(),
+  });
+});
+
+// The practice chain, readable and verifiable exactly like the real one — so a
+// rehearsal can include "recompute the chain yourself", which is the part of
+// Hawkeye hardest to explain in words.
+practiceRouter.get('/practice/ledger', (_req, res) => {
+  const rows = db
+    .prepare(`SELECT id, pu_name, pu_code, contest, created_at, prev_hash, entry_hash, ledger_payload
+              FROM practice_submissions WHERE entry_hash IS NOT NULL ORDER BY id`)
+    .all();
+  let prev = PRACTICE_GENESIS;
+  let ok = true;
+  let brokenAtId = null;
+  for (const r of rows) {
+    if (r.prev_hash !== prev || sha256(prev + r.ledger_payload) !== r.entry_hash) {
+      ok = false;
+      brokenAtId = r.id;
+      break;
+    }
+    prev = r.entry_hash;
+  }
+  res.json({
+    practice: true,
+    anchored: false, // never — this chain exists precisely so it is not
+    genesis: PRACTICE_GENESIS,
+    ok,
+    brokenAtId,
+    entries: rows.length,
+    head: prev,
+    rows,
+  });
 });

@@ -1,8 +1,7 @@
 {
   "name": "Hawkeye Practice Election",
   "office": "Practice Governorship",
-  "note": "A safe sandbox to learn the reporting flow. Nothing here is published, counted, or added to the public ledger.",
-  "autoDeleteAt": "2026-08-14T00:00:00+01:00",
+  "note": "A safe sandbox to learn the reporting flow. Practice runs are chained on their own practice ledger — never the public one, and never anchored.",
   "unit": { "code": "PRACTICE-PU-001", "name": "Practice Polling Unit", "ward": "Demo Ward", "lga": "Demo LGA", "state": "Practice" },
   "parties": [
     { "code": "Party A", "color": "#2e7d32" },

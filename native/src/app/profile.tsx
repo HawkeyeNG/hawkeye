@@ -65,6 +65,16 @@ type Me = {
   }[];
 };
 
+type PracticeRun = {
+  id: number;
+  pu_name?: string;
+  pu_code?: string;
+  contest?: string;
+  entry_hash: string;
+  created_at: number;
+  votes: { party: string; count: number }[];
+};
+
 const dt = (t: number) =>
   new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -158,6 +168,9 @@ export default function Profile() {
   const [copied, setCopied] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<'signout' | 'delete' | null>(null);
+  /** Practice runs are per-device, not per-observer — practice never asks
+   *  anyone to sign in, so they arrive from their own endpoint. */
+  const [practice, setPractice] = useState<PracticeRun[]>([]);
   const [confirmBusy, setConfirmBusy] = useState(false);
 
   // --- password modal ------------------------------------------------------
@@ -191,6 +204,16 @@ export default function Profile() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    getIdentity()
+      .then((id) =>
+        fetch(`${BASE}/api/practice/mine`, { headers: { 'x-device-id': id.deviceId } })
+          .then((r) => (r.ok ? (r.json() as Promise<{ runs: PracticeRun[] }>) : null)),
+      )
+      .then((d) => setPractice(d?.runs ?? []))
+      .catch(() => {});
+  }, []);
 
   const openPw = () => {
     setPwMode('change');
@@ -348,6 +371,7 @@ export default function Profile() {
     { key: 'collation', icon: 'layers', label: 'Collation reports', count: me?.collation?.length ?? 0 },
     { key: 'incidents', icon: 'alert-triangle', label: 'Incident reports', count: me?.incidents?.length ?? 0 },
     { key: 'mappings', icon: 'map-pin', label: 'Units mapped', count: me?.mappings?.length ?? 0 },
+    { key: 'practice', icon: 'play-circle', label: 'Practice runs', count: practice.length },
   ];
 
   return (
@@ -514,6 +538,25 @@ export default function Profile() {
                           <Text className="text-[11px] text-muted">
                             {[c.ward, c.lga, c.state].filter(Boolean).join(', ')} ·{' '}
                             {dt(c.created_at)}
+                          </Text>
+                        </View>
+                      ))
+                    : null}
+                  {openSection === 'practice' && a.key === 'practice'
+                    ? practice.map((r) => (
+                        <View key={r.id} className="border-t border-line px-4 py-2.5">
+                          <Text className="text-sm font-semibold text-ink">
+                            {r.pu_name || r.pu_code || 'Practice polling unit'}
+                          </Text>
+                          <Text className="text-[11px] text-muted">
+                            {r.votes
+                              .filter((v) => v.count > 0)
+                              .map((v) => `${v.party} ${v.count}`)
+                              .join(' · ') || 'all zero'}{' '}
+                            · {dt(r.created_at)}
+                          </Text>
+                          <Text className="pt-0.5 font-mono text-[10px] text-faint">
+                            practice chain {String(r.entry_hash).slice(0, 16)}…
                           </Text>
                         </View>
                       ))

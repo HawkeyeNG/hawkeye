@@ -202,7 +202,15 @@ for (const ddl of [
   'ALTER TABLE practice_submissions ADD COLUMN prev_hash TEXT',
   'ALTER TABLE practice_submissions ADD COLUMN entry_hash TEXT',
   'ALTER TABLE practice_submissions ADD COLUMN ledger_payload TEXT',
+  // Attribution without an account: practice never asks for a sign-in, so a run
+  // is tied to the device that made it purely so that device can see its own
+  // history back.
+  'ALTER TABLE practice_submissions ADD COLUMN device_id TEXT',
   'ALTER TABLE anchors ADD COLUMN docket_head TEXT',
+  // The practice chain's head rides in the same anchor: one hash, clearly
+  // named, so a rehearsal is followable end-to-end without putting practice
+  // content in a public log or paying for a second Rekor entry.
+  'ALTER TABLE anchors ADD COLUMN practice_head TEXT',
   'ALTER TABLE anchors ADD COLUMN rekor_uuid TEXT',
   'ALTER TABLE anchors ADD COLUMN rekor_log_index INTEGER',
   'ALTER TABLE anchors ADD COLUMN rekor_time INTEGER',

@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { PasswordField } from '@/components/password-field';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 
@@ -115,25 +116,26 @@ function Row({
   chevron?: boolean;
   first?: boolean;
 }) {
+  const ui = useUi();
   return (
     <Pressable
       disabled={!onPress}
       onPress={onPress}
-      className={`flex-row items-center px-4 py-3.5 active:bg-hawk-mist ${
-        first ? '' : 'border-t border-hawk-mist'
+      className={`flex-row items-center px-4 py-3.5 active:bg-surface ${
+        first ? '' : 'border-t border-line'
       }`}
     >
       <Feather name={icon} size={17} color={BRAND.leaf} />
       <View className="flex-1 pl-3">
-        <Text className="text-base text-hawk-ink">{label}</Text>
+        <Text className="text-base text-ink">{label}</Text>
         {sub}
       </View>
       {value ? (
-        <Text className="max-w-[45%] pr-1 text-right text-sm text-neutral-400" numberOfLines={1}>
+        <Text className="max-w-[45%] pr-1 text-right text-sm text-faint" numberOfLines={1}>
           {value}
         </Text>
       ) : null}
-      {chevron ? <Feather name="chevron-right" size={16} color="#9db5a7" /> : null}
+      {chevron ? <Feather name="chevron-right" size={16} color={ui.faint} /> : null}
     </Pressable>
   );
 }
@@ -148,6 +150,7 @@ type PwMode = 'change' | 'reset-phone' | 'reset-otp' | 'reset-new';
  * /set-password skip the current password — that IS the reset.
  */
 export default function Profile() {
+  const ui = useUi();
   const auth = useAuth();
   const [me, setMe] = useState<Me | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -319,9 +322,9 @@ export default function Profile() {
 
   if (auth.status !== 'signedIn') {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist px-8">
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="user" size={28} color={BRAND.leaf} />
-        <Text className="pt-3 text-center text-base font-semibold text-hawk-ink">
+        <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to see your profile
         </Text>
         <Pressable
@@ -331,7 +334,7 @@ export default function Profile() {
           <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
         </Pressable>
         <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-neutral-500">Not now</Text>
+          <Text className="text-sm text-muted">Not now</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -348,16 +351,16 @@ export default function Profile() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">My Profile</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">My Profile</Text>
       </View>
 
       <ScrollView
@@ -383,7 +386,7 @@ export default function Profile() {
             {/* Hero identity card */}
             <View className="rounded-2xl bg-hawk-green px-5 py-5">
               <View className="flex-row items-center">
-                <View className="h-14 w-14 items-center justify-center rounded-full bg-white/10">
+                <View className="h-14 w-14 items-center justify-center rounded-full bg-card/10">
                   <Feather name="user" size={24} color={BRAND.gold} />
                 </View>
                 <View className="pl-4">
@@ -392,7 +395,7 @@ export default function Profile() {
                 </View>
               </View>
               <Pressable
-                className="mt-4 flex-row items-center rounded-xl bg-white/10 px-3 py-2.5 active:opacity-70"
+                className="mt-4 flex-row items-center rounded-xl bg-card/10 px-3 py-2.5 active:opacity-70"
                 onPress={async () => {
                   await Clipboard.setStringAsync(me.identityHash);
                   setCopied(true);
@@ -410,10 +413,10 @@ export default function Profile() {
             </View>
 
             {/* Account */}
-            <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+            <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
               Account
             </Text>
-            <View className="overflow-hidden rounded-2xl bg-white">
+            <View className="overflow-hidden rounded-2xl bg-card">
               <Row
                 first
                 icon="key"
@@ -432,13 +435,13 @@ export default function Profile() {
                   savedUnit ? (
                     <>
                       <Text
-                        className="pt-0.5 text-sm font-semibold text-hawk-ink"
+                        className="pt-0.5 text-sm font-semibold text-ink"
                         numberOfLines={2}
                       >
                         {savedUnit.name || savedUnit.pu_code}
                       </Text>
                       {savedUnitWhere ? (
-                        <Text className="text-[11px] text-neutral-500" numberOfLines={2}>
+                        <Text className="text-[11px] text-muted" numberOfLines={2}>
                           {savedUnitWhere}
                         </Text>
                       ) : null}
@@ -452,7 +455,7 @@ export default function Profile() {
             {me.subscriptions?.length ? (
               <View className="flex-row flex-wrap pt-3">
                 {me.subscriptions.map((s, i) => (
-                  <View key={i} className="mb-2 mr-2 rounded-full bg-white px-3 py-1.5">
+                  <View key={i} className="mb-2 mr-2 rounded-full bg-card px-3 py-1.5">
                     <Text className="text-xs font-semibold text-hawk-leaf">
                       {s.contest}
                       {s.state ? ` · ${s.state}` : ''}
@@ -463,39 +466,39 @@ export default function Profile() {
             ) : null}
 
             {/* Activity */}
-            <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+            <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
               My activity
             </Text>
-            <View className="overflow-hidden rounded-2xl bg-white">
+            <View className="overflow-hidden rounded-2xl bg-card">
               {acts.map((a, i) => (
                 <View key={a.key}>
                   <Pressable
-                    className={`flex-row items-center px-4 py-3.5 active:bg-hawk-mist ${
-                      i > 0 ? 'border-t border-hawk-mist' : ''
+                    className={`flex-row items-center px-4 py-3.5 active:bg-surface ${
+                      i > 0 ? 'border-t border-line' : ''
                     }`}
                     onPress={() => setOpenSection((o) => (o === a.key ? null : a.key))}
                   >
                     <Feather name={a.icon} size={17} color={BRAND.leaf} />
-                    <Text className="flex-1 pl-3 text-base text-hawk-ink">{a.label}</Text>
-                    <View className="mr-2 min-w-[24px] items-center rounded-full bg-hawk-mist px-2 py-0.5">
+                    <Text className="flex-1 pl-3 text-base text-ink">{a.label}</Text>
+                    <View className="mr-2 min-w-[24px] items-center rounded-full bg-surface px-2 py-0.5">
                       <Text className="text-xs font-bold text-hawk-leaf">{a.count}</Text>
                     </View>
                     <Feather
                       name={openSection === a.key ? 'chevron-up' : 'chevron-down'}
                       size={16}
-                      color="#9db5a7"
+                      color={ui.faint}
                     />
                   </Pressable>
                   {openSection === a.key && a.count === 0 ? (
-                    <Text className="px-4 pb-3 text-sm text-neutral-400">Nothing yet.</Text>
+                    <Text className="px-4 pb-3 text-sm text-faint">Nothing yet.</Text>
                   ) : null}
                   {openSection === 'reports' && a.key === 'reports'
                     ? me.reports?.map((r, j) => (
-                        <View key={j} className="border-t border-hawk-mist px-4 py-2.5">
-                          <Text className="text-sm font-semibold text-hawk-ink">
+                        <View key={j} className="border-t border-line px-4 py-2.5">
+                          <Text className="text-sm font-semibold text-ink">
                             {r.name || r.pu_code} · {r.contest}
                           </Text>
-                          <Text className="text-[11px] text-neutral-500">
+                          <Text className="text-[11px] text-muted">
                             {[r.lga, r.state].filter(Boolean).join(', ')} · {dt(r.created_at)} ·{' '}
                             ledger {String(r.entry_hash).slice(0, 10)}…
                           </Text>
@@ -504,11 +507,11 @@ export default function Profile() {
                     : null}
                   {openSection === 'collation' && a.key === 'collation'
                     ? me.collation?.map((c, j) => (
-                        <View key={j} className="border-t border-hawk-mist px-4 py-2.5">
-                          <Text className="text-sm font-semibold text-hawk-ink">
+                        <View key={j} className="border-t border-line px-4 py-2.5">
+                          <Text className="text-sm font-semibold text-ink">
                             {c.level.toUpperCase()} · {c.contest}
                           </Text>
-                          <Text className="text-[11px] text-neutral-500">
+                          <Text className="text-[11px] text-muted">
                             {[c.ward, c.lga, c.state].filter(Boolean).join(', ')} ·{' '}
                             {dt(c.created_at)}
                           </Text>
@@ -517,11 +520,11 @@ export default function Profile() {
                     : null}
                   {openSection === 'mappings' && a.key === 'mappings'
                     ? me.mappings?.map((m, j) => (
-                        <View key={j} className="border-t border-hawk-mist px-4 py-2.5">
-                          <Text className="text-sm font-semibold text-hawk-ink">
+                        <View key={j} className="border-t border-line px-4 py-2.5">
+                          <Text className="text-sm font-semibold text-ink">
                             {m.name || m.pu_code}
                           </Text>
-                          <Text className="text-[11px] text-neutral-500">
+                          <Text className="text-[11px] text-muted">
                             {[m.ward, m.lga, m.state].filter(Boolean).join(', ')} · {dt(m.created_at)}
                           </Text>
                           <Text className="pt-0.5 text-[11px] font-semibold text-hawk-leaf">
@@ -533,11 +536,11 @@ export default function Profile() {
                     : null}
                   {openSection === 'incidents' && a.key === 'incidents'
                     ? me.incidents?.map((n, j) => (
-                        <View key={j} className="border-t border-hawk-mist px-4 py-2.5">
-                          <Text className="text-sm font-semibold text-hawk-ink">
-                            {n.kind} <Text className="text-xs text-neutral-500">({n.status})</Text>
+                        <View key={j} className="border-t border-line px-4 py-2.5">
+                          <Text className="text-sm font-semibold text-ink">
+                            {n.kind} <Text className="text-xs text-muted">({n.status})</Text>
                           </Text>
-                          <Text className="text-[11px] text-neutral-500">
+                          <Text className="text-[11px] text-muted">
                             {[n.pu_code, n.state].filter(Boolean).join(' · ') || 'no location'} ·{' '}
                             {dt(n.created_at)}
                           </Text>
@@ -557,7 +560,7 @@ export default function Profile() {
               <Feather name="trash-2" size={16} color="#b91c1c" />
               <Text className="pl-2 text-base font-bold text-red-700">Delete my identity</Text>
             </Pressable>
-            <Text className="pt-2 text-center text-[11px] text-neutral-400">
+            <Text className="pt-2 text-center text-[11px] text-faint">
               Deleting wipes your key and subscriptions. Ledger reports are public and permanent.
             </Text>
           </>
@@ -568,9 +571,9 @@ export default function Profile() {
           expand on tap and push everything under them off-screen, so the one
           routine control here has to stay reachable regardless. */}
       {me && !err ? (
-        <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
           <Pressable
-            className="flex-row items-center justify-center rounded-2xl bg-white py-3.5 active:opacity-70"
+            className="flex-row items-center justify-center rounded-2xl bg-card py-3.5 active:opacity-70"
             onPress={() => setConfirm('signout')}
           >
             <Feather name="log-out" size={16} color={BRAND.leaf} />
@@ -608,9 +611,9 @@ export default function Profile() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="flex-1 justify-end bg-black/40"
         >
-          <View className="rounded-t-3xl bg-hawk-mist px-5 pb-8 pt-4">
+          <View className="rounded-t-3xl bg-surface px-5 pb-8 pt-4">
             <View className="flex-row items-center pb-3">
-              <Text className="flex-1 text-lg font-bold text-hawk-ink">
+              <Text className="flex-1 text-lg font-bold text-ink">
                 {pwMode === 'change'
                   ? me?.hasPassword
                     ? 'Change password'
@@ -620,15 +623,15 @@ export default function Profile() {
               <Pressable
                 hitSlop={12}
                 onPress={() => setPwOpen(false)}
-                className="h-8 w-8 items-center justify-center rounded-full bg-white"
+                className="h-8 w-8 items-center justify-center rounded-full bg-card"
               >
-                <Feather name="x" size={16} color={BRAND.ink} />
+                <Feather name="x" size={16} color={ui.ink} />
               </Pressable>
             </View>
 
             {pwMode === 'change' ? (
               <>
-                <Text className="pb-3 text-sm text-neutral-600">
+                <Text className="pb-3 text-sm text-muted">
                   A password lets you sign in on any device without waiting for a code.
                 </Text>
                 {me?.hasPassword ? (
@@ -663,7 +666,7 @@ export default function Profile() {
                   disabled={pwBusy}
                   onPress={() => savePassword(true)}
                   className={`mt-4 items-center rounded-2xl py-3.5 ${
-                    pwBusy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+                    pwBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
                   }`}
                 >
                   {pwBusy ? (
@@ -690,7 +693,7 @@ export default function Profile() {
 
             {pwMode === 'reset-phone' ? (
               <>
-                <Text className="pb-3 text-sm text-neutral-600">
+                <Text className="pb-3 text-sm text-muted">
                   Enter the number registered to this observer ID. Requesting a code changes
                   nothing on its own — your password only changes after you enter the code and
                   choose a new one.
@@ -701,7 +704,7 @@ export default function Profile() {
                   keyboardType="phone-pad"
                   placeholder="Your phone number"
                   placeholderTextColor="#9ca3af"
-                  className="rounded-2xl bg-white px-4 py-3.5 text-base text-hawk-ink"
+                  className="rounded-2xl bg-card px-4 py-3.5 text-base text-ink"
                 />
                 {pwMsg ? (
                   <Text className="pt-2 text-sm font-semibold text-amber-800">{pwMsg}</Text>
@@ -711,7 +714,7 @@ export default function Profile() {
                   onPress={sendResetOtp}
                   className={`mt-4 items-center rounded-2xl py-3.5 ${
                     pwBusy || resetPhone.trim().length < 10
-                      ? 'bg-neutral-300'
+                      ? 'bg-disabled'
                       : 'bg-hawk-green active:opacity-80'
                   }`}
                 >
@@ -726,7 +729,7 @@ export default function Profile() {
 
             {pwMode === 'reset-otp' ? (
               <>
-                <Text className="pb-3 text-sm text-neutral-600">{pwMsg ?? 'Enter the code.'}</Text>
+                <Text className="pb-3 text-sm text-muted">{pwMsg ?? 'Enter the code.'}</Text>
                 <TextInput
                   value={resetOtp}
                   onChangeText={setResetOtp}
@@ -734,14 +737,14 @@ export default function Profile() {
                   maxLength={6}
                   placeholder="······"
                   placeholderTextColor="#9ca3af"
-                  className="rounded-2xl bg-white px-4 py-3.5 text-center text-2xl font-bold tracking-[8px] text-hawk-ink"
+                  className="rounded-2xl bg-card px-4 py-3.5 text-center text-2xl font-bold tracking-[8px] text-ink"
                 />
                 <Pressable
                   disabled={pwBusy || resetOtp.trim().length < 6}
                   onPress={verifyResetOtp}
                   className={`mt-4 items-center rounded-2xl py-3.5 ${
                     pwBusy || resetOtp.trim().length < 6
-                      ? 'bg-neutral-300'
+                      ? 'bg-disabled'
                       : 'bg-hawk-green active:opacity-80'
                   }`}
                 >
@@ -756,7 +759,7 @@ export default function Profile() {
 
             {pwMode === 'reset-new' ? (
               <>
-                <Text className="pb-3 text-sm text-neutral-600">
+                <Text className="pb-3 text-sm text-muted">
                   Verified — now choose your new password.
                 </Text>
                 <PasswordField
@@ -781,7 +784,7 @@ export default function Profile() {
                   disabled={pwBusy}
                   onPress={() => savePassword(false)}
                   className={`mt-4 items-center rounded-2xl py-3.5 ${
-                    pwBusy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+                    pwBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
                   }`}
                 >
                   {pwBusy ? (

@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ContentBlock, SectionLabel } from '@/components/content-kit';
 import { SocialRow } from '@/components/social-row';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import type { Page } from '@/lib/content';
 
 /**
@@ -160,6 +161,7 @@ const TERMS: Page = {
 };
 
 export default function Terms() {
+  const ui = useUi();
   const scroll = useRef<ScrollView>(null);
   const y = useRef(new Animated.Value(0)).current;
   /** Measured tops of each 'label' block, so a chip can scroll to it. */
@@ -191,27 +193,27 @@ export default function Terms() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       {/* Collapsing header */}
-      <View className="border-b border-black/5 bg-hawk-mist px-4 pb-2 pt-2">
+      <View className="border-b border-line bg-surface px-4 pb-2 pt-2">
         <View className="flex-row items-center">
           <Pressable
             hitSlop={12}
             onPress={() => router.back()}
-            className="h-9 w-9 items-center justify-center rounded-full bg-white"
+            className="h-9 w-9 items-center justify-center rounded-full bg-card"
           >
-            <Feather name="x" size={18} color={BRAND.ink} />
+            <Feather name="x" size={18} color={ui.ink} />
           </Pressable>
           <Animated.Text
             numberOfLines={1}
             style={{ opacity: compact }}
-            className="flex-1 px-3 text-base font-bold text-hawk-ink"
+            className="flex-1 px-3 text-base font-bold text-ink"
           >
             {title}
           </Animated.Text>
           <Pressable
             hitSlop={12}
-            className="h-9 w-9 items-center justify-center rounded-full bg-white"
+            className="h-9 w-9 items-center justify-center rounded-full bg-card"
             onPress={() =>
               Share.share({
                 message: `${title} — Hawkeye\nhttps://hawkeye.com.ng/terms.html`,
@@ -228,12 +230,12 @@ export default function Terms() {
               key={s}
               onPress={() => jump(s)}
               className={`mr-2 rounded-full px-3.5 py-1.5 ${
-                i === active ? 'bg-hawk-green' : 'bg-white'
+                i === active ? 'bg-hawk-green' : 'bg-card'
               }`}
             >
               <Text
                 className={`text-xs font-semibold ${
-                  i === active ? 'text-hawk-gold' : 'text-neutral-600'
+                  i === active ? 'text-hawk-gold' : 'text-muted'
                 }`}
               >
                 {s}
@@ -253,7 +255,7 @@ export default function Terms() {
           <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-hawk-leaf">
             {kicker}
           </Text>
-          <Text className="pt-1 text-3xl font-bold leading-9 text-hawk-ink">{title}</Text>
+          <Text className="pt-1 text-3xl font-bold leading-9 text-ink">{title}</Text>
         </Animated.View>
 
         {blocks.map((b, i) =>

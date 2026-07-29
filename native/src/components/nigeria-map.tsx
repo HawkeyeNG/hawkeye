@@ -134,11 +134,11 @@ export function NigeriaMap({
   if (err || (geo && !box)) {
     return (
       <View
-        className="items-center justify-center rounded-2xl bg-white px-6 py-10"
+        className="items-center justify-center rounded-2xl bg-card px-6 py-10"
         style={{ width: '100%' }}
       >
         <Text className="text-sm font-semibold text-amber-800">Map unavailable</Text>
-        <Text className="pt-1 text-center text-xs text-neutral-500">
+        <Text className="pt-1 text-center text-xs text-muted">
           {err ?? `states_geo.json → unusable viewBox "${geo?.viewBox}"`}
         </Text>
       </View>
@@ -149,7 +149,7 @@ export function NigeriaMap({
 
   return (
     <View
-      className="items-center justify-center overflow-hidden rounded-2xl bg-white"
+      className="items-center justify-center overflow-hidden rounded-2xl bg-card"
       style={{ width: '100%', aspectRatio: aspect }}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
     >

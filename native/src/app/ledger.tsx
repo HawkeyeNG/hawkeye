@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 const GENESIS = '0'.repeat(64);
@@ -85,6 +86,7 @@ async function jget<T>(path: string): Promise<T> {
  * published in Sigstore's public Rekor log. Neither check trusts Hawkeye.
  */
 export default function Ledger() {
+  const ui = useUi();
   const [verify, setVerify] = useState<Verify | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
@@ -240,14 +242,14 @@ export default function Ledger() {
 
   const header = (
     <View className="px-4 pb-2 pt-3">
-      <Text className="pb-3 text-sm text-neutral-600">
+      <Text className="pb-3 text-sm text-muted">
         Every accepted report is chained by hash: each entry commits to all before it, so
         changing or removing any past report breaks every later hash. You can recompute the
         whole chain here — you don&apos;t have to trust us.
       </Text>
 
       {/* The server's own verdict — shown, but never the thing you rely on. */}
-      <View className="rounded-2xl bg-white px-4 py-4">
+      <View className="rounded-2xl bg-card px-4 py-4">
         {loading ? (
           <ActivityIndicator color={BRAND.leaf} />
         ) : loadErr ? (
@@ -268,10 +270,10 @@ export default function Ledger() {
               <Feather name="shield" size={18} color={BRAND.leaf} />
               <Text className="pl-2 text-base font-bold text-hawk-leaf">Chain intact</Text>
             </View>
-            <Text className="pt-1 text-sm text-neutral-600">
+            <Text className="pt-1 text-sm text-muted">
               {verify.entries} {verify.entries === 1 ? 'entry' : 'entries'} · server says the head is
             </Text>
-            <Text className="pt-1 font-mono text-xs text-neutral-500">
+            <Text className="pt-1 font-mono text-xs text-muted">
               {verify.head || GENESIS}
             </Text>
           </>
@@ -289,11 +291,11 @@ export default function Ledger() {
         disabled={loading || !!progress || !!loadErr}
         onPress={verifyChain}
         className={`mt-3 items-center rounded-2xl py-4 ${
-          loading || progress || loadErr ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+          loading || progress || loadErr ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
         }`}
       >
         {progress ? (
-          <Text className="text-base font-bold text-neutral-600">
+          <Text className="text-base font-bold text-muted">
             Recomputing… {progress.done}/{progress.total}
           </Text>
         ) : (
@@ -305,9 +307,9 @@ export default function Ledger() {
       {chain ? <Result ok={chain.ok} text={chain.text} /> : null}
 
       {/* Single-race proof: verify one contest without replaying the whole chain. */}
-      <View className="mt-4 rounded-2xl bg-white px-4 py-4">
-        <Text className="text-base font-bold text-hawk-ink">Verify a single race</Text>
-        <Text className="pt-1 text-sm text-neutral-600">
+      <View className="mt-4 rounded-2xl bg-card px-4 py-4">
+        <Text className="text-base font-bold text-ink">Verify a single race</Text>
+        <Text className="pt-1 text-sm text-muted">
           Each anchor batches every race into one Merkle root published to Sigstore&apos;s public
           Rekor log. Check one race&apos;s paper trail here — folded on your phone — without
           replaying every other race.
@@ -318,8 +320,8 @@ export default function Ledger() {
             className="pt-2"
             onPress={() => WebBrowser.openBrowserAsync(anchor.rekorSearchUrl || anchor.rekorUrl)}
           >
-            <Text className="text-xs text-neutral-500">
-              Anchor <Text className="font-bold text-hawk-ink">{anchor.day}</Text> ·{' '}
+            <Text className="text-xs text-muted">
+              Anchor <Text className="font-bold text-ink">{anchor.day}</Text> ·{' '}
               {anchor.racesCount} race(s) · root{' '}
               {(anchor.racesRoot || GENESIS).slice(0, 16)}…{'  '}
               <Text className="font-bold text-hawk-leaf">View in Rekor ↗</Text>
@@ -341,11 +343,11 @@ export default function Ledger() {
                       setRaceOut(null);
                     }}
                     className={`mb-2 mr-2 rounded-full px-4 py-2.5 ${
-                      on ? 'bg-hawk-green' : 'bg-hawk-mist'
+                      on ? 'bg-hawk-green' : 'bg-surface'
                     }`}
                   >
                     <Text
-                      className={`text-sm font-semibold ${on ? 'text-hawk-gold' : 'text-neutral-700'}`}
+                      className={`text-sm font-semibold ${on ? 'text-hawk-gold' : 'text-ink'}`}
                     >
                       {r.race_key} ({r.entries})
                     </Text>
@@ -355,31 +357,31 @@ export default function Ledger() {
             </View>
           </View>
         ) : !loading && !loadErr ? (
-          <Text className="pt-3 text-sm text-neutral-500">
+          <Text className="pt-3 text-sm text-muted">
             No race has been batched into an anchor yet — anchors start carrying race roots once
             reporting opens.
           </Text>
         ) : null}
       </View>
 
-      <Text className="pb-2 pt-5 text-base font-bold text-hawk-ink">Ledger entries</Text>
-      <Text className="pb-2 text-sm text-neutral-600">
+      <Text className="pb-2 pt-5 text-base font-bold text-ink">Ledger entries</Text>
+      <Text className="pb-2 text-sm text-muted">
         Newest first. Every row&apos;s evidence photos are public, content-addressed files.
       </Text>
     </View>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Verify the Ledger</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Verify the Ledger</Text>
       </View>
 
       {/* One virtualised list: on election day this chain is thousands of rows,
@@ -391,20 +393,20 @@ export default function Ledger() {
         contentContainerStyle={{ paddingBottom: raceSel ? 16 : 32 }}
         ListEmptyComponent={
           loading || loadErr ? null : (
-            <Text className="px-4 pt-2 text-sm text-neutral-500">
+            <Text className="px-4 pt-2 text-sm text-muted">
               No entries yet — nothing has been reported into the chain.
             </Text>
           )
         }
         renderItem={({ item }) => (
-          <View className="mx-4 mb-2 rounded-2xl bg-white px-4 py-3">
+          <View className="mx-4 mb-2 rounded-2xl bg-card px-4 py-3">
             <View className="flex-row items-center justify-between">
-              <Text className="text-sm font-bold text-hawk-ink">#{item.id}</Text>
-              <Text className="text-xs text-neutral-500">{timeAgo(item.created_at)}</Text>
+              <Text className="text-sm font-bold text-ink">#{item.id}</Text>
+              <Text className="text-xs text-muted">{timeAgo(item.created_at)}</Text>
             </View>
-            <Text className="pt-1 text-sm text-hawk-ink">{item.pu_code}</Text>
-            <Text className="text-xs text-neutral-500">{item.contest}</Text>
-            <Text className="pt-1 font-mono text-xs text-neutral-400">
+            <Text className="pt-1 text-sm text-ink">{item.pu_code}</Text>
+            <Text className="text-xs text-muted">{item.contest}</Text>
+            <Text className="pt-1 font-mono text-xs text-faint">
               {item.entry_hash.slice(0, 24)}…
             </Text>
             <View className="flex-row pt-2">
@@ -434,13 +436,13 @@ export default function Ledger() {
           rides down with it — a proof that fails to fold is retried from this
           same button, and it must stay in sight to be read. */}
       {raceSel ? (
-        <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
           {raceOut ? <Result ok={raceOut.ok} text={raceOut.text} link={raceOut.link} /> : null}
           <Pressable
             disabled={!raceSel || raceBusy}
             onPress={verifyRace}
             className={`mt-1 items-center rounded-2xl py-3.5 ${
-              !raceSel || raceBusy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+              !raceSel || raceBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
             }`}
           >
             {raceBusy ? (

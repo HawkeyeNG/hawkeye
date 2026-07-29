@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 
@@ -42,6 +43,7 @@ export function ReportContent({
   targetId: number;
   label?: string;
 }) {
+  const ui = useUi();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string | null>(null);
   const [detail, setDetail] = useState('');
@@ -85,7 +87,7 @@ export function ReportContent({
         onPress={() => setOpen(true)}
       >
         <Feather name={sent ? 'check' : 'flag'} size={13} color={sent ? BRAND.leaf : '#9db5a7'} />
-        <Text className={`pl-1.5 text-xs ${sent ? 'font-bold text-hawk-leaf' : 'text-neutral-400'}`}>
+        <Text className={`pl-1.5 text-xs ${sent ? 'font-bold text-hawk-leaf' : 'text-faint'}`}>
           {sent ? 'Reported — our team will review' : label}
         </Text>
       </Pressable>
@@ -95,18 +97,18 @@ export function ReportContent({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="flex-1 justify-end bg-black/40"
         >
-          <View className="rounded-t-3xl bg-hawk-mist px-5 pb-8 pt-5">
+          <View className="rounded-t-3xl bg-surface px-5 pb-8 pt-5">
             <View className="flex-row items-center pb-3">
-              <Text className="flex-1 text-lg font-bold text-hawk-ink">Report this content</Text>
+              <Text className="flex-1 text-lg font-bold text-ink">Report this content</Text>
               <Pressable
                 hitSlop={12}
                 onPress={() => setOpen(false)}
-                className="h-8 w-8 items-center justify-center rounded-full bg-white"
+                className="h-8 w-8 items-center justify-center rounded-full bg-card"
               >
-                <Feather name="x" size={16} color={BRAND.ink} />
+                <Feather name="x" size={16} color={ui.ink} />
               </Pressable>
             </View>
-            <Text className="pb-3 text-sm text-neutral-600">
+            <Text className="pb-3 text-sm text-muted">
               Tell us what is wrong with it. A moderator reviews every report.
             </Text>
 
@@ -115,7 +117,7 @@ export function ReportContent({
                 key={r.key}
                 onPress={() => setReason(r.key)}
                 className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${
-                  reason === r.key ? 'bg-hawk-green' : 'bg-white'
+                  reason === r.key ? 'bg-hawk-green' : 'bg-card'
                 }`}
               >
                 <Feather
@@ -125,7 +127,7 @@ export function ReportContent({
                 />
                 <Text
                   className={`pl-3 text-base ${
-                    reason === r.key ? 'font-bold text-hawk-gold' : 'text-hawk-ink'
+                    reason === r.key ? 'font-bold text-hawk-gold' : 'text-ink'
                   }`}
                 >
                   {r.label}
@@ -140,7 +142,7 @@ export function ReportContent({
               maxLength={500}
               placeholder="Add any detail (optional)"
               placeholderTextColor="#9ca3af"
-              className="min-h-[64px] rounded-2xl bg-white px-4 py-3 text-sm text-hawk-ink"
+              className="min-h-[64px] rounded-2xl bg-card px-4 py-3 text-sm text-ink"
             />
             {msg ? (
               <Text className="pt-2 text-sm font-semibold text-amber-800">{msg}</Text>
@@ -150,7 +152,7 @@ export function ReportContent({
               disabled={!reason || busy}
               onPress={send}
               className={`mt-3 items-center rounded-2xl py-3.5 ${
-                !reason || busy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+                !reason || busy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
               }`}
             >
               {busy ? (
@@ -160,10 +162,10 @@ export function ReportContent({
               )}
             </Pressable>
             <Pressable
-              className="mt-2 items-center rounded-2xl bg-white py-3.5 active:opacity-70"
+              className="mt-2 items-center rounded-2xl bg-card py-3.5 active:opacity-70"
               onPress={() => setOpen(false)}
             >
-              <Text className="text-base font-semibold text-neutral-600">Cancel</Text>
+              <Text className="text-base font-semibold text-muted">Cancel</Text>
             </Pressable>
           </View>
         </KeyboardAvoidingView>

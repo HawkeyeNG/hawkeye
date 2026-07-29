@@ -39,6 +39,7 @@ practiceRouter.post('/practice/submit', (req, res) => {
   // string: practice never joins polling_units, so it can never reach a result.
   const puCode = String(req.body?.puCode || practiceElection.unit?.code || '').slice(0, 32) || null;
   const contest = String(req.body?.contest || 'PRACTICE').slice(0, 16);
+  const deviceId = String(req.headers['x-device-id'] || '').slice(0, 64) || null;
 
   // Chain it, exactly as the real ledger does — sha256(prev + payload) — on the
   // practice chain. Same arithmetic, different chain, never anchored.
@@ -49,9 +50,9 @@ practiceRouter.post('/practice/submit', (req, res) => {
     const entryHash = sha256(prevHash + payload);
     const info = db
       .prepare(`INSERT INTO practice_submissions
-        (pu_name, pu_code, contest, votes_json, prev_hash, entry_hash, ledger_payload, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(puName, puCode, contest, JSON.stringify(clean), prevHash, entryHash, payload, Date.now());
+        (pu_name, pu_code, contest, votes_json, prev_hash, entry_hash, ledger_payload, device_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(puName, puCode, contest, JSON.stringify(clean), prevHash, entryHash, payload, deviceId, Date.now());
     return { entryHash, id: info.lastInsertRowid };
   })();
 
@@ -94,4 +95,19 @@ practiceRouter.get('/practice/ledger', (_req, res) => {
     head: prev,
     rows,
   });
+});
+
+// This device's own practice runs. No auth by design — practice never asks for a
+// sign-in, so the device id it already sends is the only handle there is. A
+// missing header returns nothing rather than everyone's runs.
+practiceRouter.get('/practice/mine', (req, res) => {
+  const deviceId = String(req.headers['x-device-id'] || '').slice(0, 64);
+  if (!deviceId) return res.json({ runs: [] });
+  const runs = db
+    .prepare(`SELECT id, pu_name, pu_code, contest, votes_json, entry_hash, created_at
+              FROM practice_submissions
+              WHERE device_id = ? ORDER BY id DESC LIMIT 50`)
+    .all(deviceId)
+    .map((r) => ({ ...r, votes: JSON.parse(r.votes_json), votes_json: undefined }));
+  res.json({ runs });
 });

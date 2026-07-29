@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PasswordField } from '@/components/password-field';
 import { passwordLogin, requestOtp, verifyOtp, type RegisterResult } from '@/lib/auth';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 type Channel = 'whatsapp' | 'sms' | 'telegram';
 
@@ -32,6 +33,7 @@ type Channel = 'whatsapp' | 'sms' | 'telegram';
  * phone step with the error line, so nothing is lost.
  */
 export default function SignIn() {
+  const ui = useUi();
   const [step, setStep] = useState<'phone' | 'otp' | 'password'>('phone');
   const [phone, setPhone] = useState('');
   const [channel, setChannel] = useState<Channel>('whatsapp');
@@ -145,7 +147,7 @@ export default function SignIn() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
@@ -154,22 +156,22 @@ export default function SignIn() {
           <Pressable
             hitSlop={12}
             onPress={() => router.back()}
-            className="h-9 w-9 items-center justify-center rounded-full bg-white"
+            className="h-9 w-9 items-center justify-center rounded-full bg-card"
           >
-            <Feather name="x" size={18} color={BRAND.ink} />
+            <Feather name="x" size={18} color={ui.ink} />
           </Pressable>
-          <Text className="pl-3 text-lg font-bold text-hawk-ink">Sign in</Text>
+          <Text className="pl-3 text-lg font-bold text-ink">Sign in</Text>
         </View>
 
         <View className="px-5 pt-6">
           {step === 'phone' ? (
             <>
-              <Text className="text-2xl font-bold text-hawk-ink">Your phone number</Text>
-              <Text className="pb-4 pt-1 text-sm text-neutral-600">
+              <Text className="text-2xl font-bold text-ink">Your phone number</Text>
+              <Text className="pb-4 pt-1 text-sm text-muted">
                 One code verifies you. Your number is never stored — only a one-way hash.
               </Text>
               <TextInput
-                className="rounded-2xl bg-white px-4 py-4 text-lg text-hawk-ink"
+                className="rounded-2xl bg-card px-4 py-4 text-lg text-ink"
                 placeholder="0803 123 4567"
                 placeholderTextColor="#9db5a7"
                 keyboardType="phone-pad"
@@ -184,12 +186,12 @@ export default function SignIn() {
                     key={c.key}
                     onPress={() => setChannel(c.key)}
                     className={`rounded-full px-4 py-2 ${
-                      channel === c.key ? 'bg-hawk-green' : 'bg-white'
+                      channel === c.key ? 'bg-hawk-green' : 'bg-card'
                     }`}
                   >
                     <Text
                       className={`text-sm font-semibold ${
-                        channel === c.key ? 'text-hawk-gold' : 'text-neutral-600'
+                        channel === c.key ? 'text-hawk-gold' : 'text-muted'
                       }`}
                     >
                       {c.label}
@@ -201,7 +203,7 @@ export default function SignIn() {
                 disabled={busy || phone.trim().length < 10}
                 onPress={onRequest}
                 className={`mt-5 items-center rounded-2xl py-4 ${
-                  busy || phone.trim().length < 10 ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+                  busy || phone.trim().length < 10 ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
                 }`}
               >
                 {busy ? (
@@ -224,12 +226,12 @@ export default function SignIn() {
             </>
           ) : step === 'password' ? (
             <>
-              <Text className="text-2xl font-bold text-hawk-ink">Password sign-in</Text>
-              <Text className="pb-4 pt-1 text-sm text-neutral-600">
+              <Text className="text-2xl font-bold text-ink">Password sign-in</Text>
+              <Text className="pb-4 pt-1 text-sm text-muted">
                 Phone number and password — no code needed.
               </Text>
               <TextInput
-                className="rounded-2xl bg-white px-4 py-4 text-lg text-hawk-ink"
+                className="rounded-2xl bg-card px-4 py-4 text-lg text-ink"
                 placeholder="0803 123 4567"
                 placeholderTextColor="#9db5a7"
                 keyboardType="phone-pad"
@@ -253,7 +255,7 @@ export default function SignIn() {
                 onPress={onPasswordLogin}
                 className={`mt-5 items-center rounded-2xl py-4 ${
                   busy || phone.trim().length < 10 || password.length < 8
-                    ? 'bg-neutral-300'
+                    ? 'bg-disabled'
                     : 'bg-hawk-green active:opacity-80'
                 }`}
               >
@@ -277,11 +279,11 @@ export default function SignIn() {
             </>
           ) : (
             <>
-              <Text className="text-2xl font-bold text-hawk-ink">Enter the code</Text>
-              <Text className="pb-4 pt-1 text-sm text-neutral-600">{line}</Text>
+              <Text className="text-2xl font-bold text-ink">Enter the code</Text>
+              <Text className="pb-4 pt-1 text-sm text-muted">{line}</Text>
               <TextInput
                 ref={otpRef}
-                className="rounded-2xl bg-white px-4 py-4 text-center text-2xl font-bold tracking-[8px] text-hawk-ink"
+                className="rounded-2xl bg-card px-4 py-4 text-center text-2xl font-bold tracking-[8px] text-ink"
                 placeholder="······"
                 placeholderTextColor="#9db5a7"
                 keyboardType="number-pad"
@@ -294,7 +296,7 @@ export default function SignIn() {
                 disabled={busy || otp.trim().length < 6}
                 onPress={onVerify}
                 className={`mt-5 items-center rounded-2xl py-4 ${
-                  busy || otp.trim().length < 6 ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+                  busy || otp.trim().length < 6 ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
                 }`}
               >
                 {busy ? (
@@ -306,7 +308,7 @@ export default function SignIn() {
               <View className="mt-4 flex-row items-center justify-center gap-6">
                 <Pressable disabled={cooldown > 0} onPress={() => send('Re-sending')}>
                   <Text
-                    className={`text-sm font-semibold ${cooldown > 0 ? 'text-neutral-400' : 'text-hawk-leaf'}`}
+                    className={`text-sm font-semibold ${cooldown > 0 ? 'text-faint' : 'text-hawk-leaf'}`}
                   >
                     {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
                   </Text>
@@ -323,7 +325,7 @@ export default function SignIn() {
           ) : null}
           {tgLink ? (
             <Pressable
-              className="mt-3 items-center rounded-2xl bg-white py-3"
+              className="mt-3 items-center rounded-2xl bg-card py-3"
               onPress={() => WebBrowser.openBrowserAsync(tgLink)}
             >
               <Text className="text-base font-semibold text-hawk-leaf">Open Telegram</Text>

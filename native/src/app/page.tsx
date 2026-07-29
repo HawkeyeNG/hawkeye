@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ContentBlock, QuestionRow, SectionLabel } from '@/components/content-kit';
 import { SocialRow } from '@/components/social-row';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import { PAGES } from '@/lib/content';
 import RAW from '@/lib/pages.json';
 
@@ -54,6 +55,7 @@ function faqPairs() {
  * lives in lib/content.ts; components/content-kit.tsx owns the shapes.
  */
 export default function StaticPage() {
+  const ui = useUi();
   const { slug } = useLocalSearchParams<{ slug?: string }>();
   const key = slug ?? '';
   const page = PAGES[key];
@@ -93,34 +95,34 @@ export default function StaticPage() {
 
   if (!page && !faq) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist px-8">
-        <Text className="text-sm text-neutral-500">That page doesn&apos;t exist.</Text>
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
+        <Text className="text-sm text-muted">That page doesn&apos;t exist.</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       {/* Collapsing header */}
-      <View className="border-b border-black/5 bg-hawk-mist px-4 pb-2 pt-2">
+      <View className="border-b border-line bg-surface px-4 pb-2 pt-2">
         <View className="flex-row items-center">
           <Pressable
             hitSlop={12}
             onPress={() => router.back()}
-            className="h-9 w-9 items-center justify-center rounded-full bg-white"
+            className="h-9 w-9 items-center justify-center rounded-full bg-card"
           >
-            <Feather name="x" size={18} color={BRAND.ink} />
+            <Feather name="x" size={18} color={ui.ink} />
           </Pressable>
           <Animated.Text
             numberOfLines={1}
             style={{ opacity: compact }}
-            className="flex-1 px-3 text-base font-bold text-hawk-ink"
+            className="flex-1 px-3 text-base font-bold text-ink"
           >
             {title}
           </Animated.Text>
           <Pressable
             hitSlop={12}
-            className="h-9 w-9 items-center justify-center rounded-full bg-white"
+            className="h-9 w-9 items-center justify-center rounded-full bg-card"
             onPress={() =>
               Share.share({
                 message: `${title} — Hawkeye\nhttps://hawkeye.com.ng/${WEB[key] ?? ''}`,
@@ -138,12 +140,12 @@ export default function StaticPage() {
                 key={s}
                 onPress={() => jump(s)}
                 className={`mr-2 rounded-full px-3.5 py-1.5 ${
-                  i === active ? 'bg-hawk-green' : 'bg-white'
+                  i === active ? 'bg-hawk-green' : 'bg-card'
                 }`}
               >
                 <Text
                   className={`text-xs font-semibold ${
-                    i === active ? 'text-hawk-gold' : 'text-neutral-600'
+                    i === active ? 'text-hawk-gold' : 'text-muted'
                   }`}
                 >
                   {s}
@@ -164,7 +166,7 @@ export default function StaticPage() {
           <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-hawk-leaf">
             {kicker}
           </Text>
-          <Text className="pt-1 text-3xl font-bold leading-9 text-hawk-ink">{title}</Text>
+          <Text className="pt-1 text-3xl font-bold leading-9 text-ink">{title}</Text>
         </Animated.View>
 
         {page
@@ -181,7 +183,7 @@ export default function StaticPage() {
 
         {faq ? (
           <>
-            <Text className="pb-3 pt-2 text-[15px] leading-6 text-neutral-700">{faq.intro}</Text>
+            <Text className="pb-3 pt-2 text-[15px] leading-6 text-ink">{faq.intro}</Text>
             {faq.items.map((q) => (
               <QuestionRow key={q.q} q={q.q} a={q.a} />
             ))}

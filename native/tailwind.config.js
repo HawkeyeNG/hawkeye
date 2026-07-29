@@ -6,6 +6,15 @@ module.exports = {
     extend: {
       colors: {
         // Hawkeye brand — keep in sync with app/styles.css on the web side
+        // Semantic, theme-aware. Use these for anything that must read in both
+        // themes; use hawk.* only for brand surfaces that stay put.
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        card: "rgb(var(--card) / <alpha-value>)",
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        faint: "rgb(var(--faint) / <alpha-value>)",
+        line: "rgb(var(--line) / <alpha-value>)",
+        disabled: "rgb(var(--disabled) / <alpha-value>)",
         hawk: {
           green: "#004225",
           leaf: "#0b6b3a",

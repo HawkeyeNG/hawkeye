@@ -8,7 +8,7 @@ export function TallyBar({ t }: { t: Tally }) {
   const tot = Math.max(1, t.total);
   const pct = (n: number): DimensionValue => `${(n / tot) * 100}%`;
   return (
-    <View className="mt-2 h-2 flex-row overflow-hidden rounded-full bg-hawk-mist">
+    <View className="mt-2 h-2 flex-row overflow-hidden rounded-full bg-surface">
       <View className="h-full bg-red-600" style={{ width: pct(t.fraudulent) }} />
       <View className="h-full bg-hawk-green" style={{ width: pct(t.legit) }} />
       <View className="h-full bg-amber-600" style={{ width: pct(t.inconclusive) }} />
@@ -20,7 +20,7 @@ export const STATUS_TONE: Record<string, string> = {
   open: 'bg-amber-100 text-amber-800',
   fraudulent: 'bg-red-100 text-red-700',
   legit: 'bg-emerald-100 text-hawk-leaf',
-  inconclusive: 'bg-neutral-100 text-neutral-600',
+  inconclusive: 'bg-line text-muted',
 };
 
 export function StatusChip({ status }: { status: string }) {

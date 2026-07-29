@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Crumb, Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import { getQuickFix, getSubmitFix } from '@/lib/location';
@@ -66,8 +67,8 @@ const num = (v: number) => v.toLocaleString();
 function StatCell({ value, label }: { value: string; label: string }) {
   return (
     <View className="flex-1 pr-2">
-      <Text className="text-lg font-bold text-hawk-ink">{value}</Text>
-      <Text className="text-[11px] leading-4 text-neutral-500">{label}</Text>
+      <Text className="text-lg font-bold text-ink">{value}</Text>
+      <Text className="text-[11px] leading-4 text-muted">{label}</Text>
     </View>
   );
 }
@@ -84,6 +85,7 @@ function StatCell({ value, label }: { value: string; label: string }) {
  * Unlike results, this is a plain JSON POST — no photos, no signature.
  */
 export default function MapUnit() {
+  const ui = useUi();
   const auth = useAuth();
   const [states, setStates] = useState<string[]>([]);
   const [stateSel, setStateSel] = useState<string | null>(null);
@@ -402,9 +404,9 @@ export default function MapUnit() {
 
   if (auth.status !== 'signedIn') {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist px-8">
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={BRAND.leaf} />
-        <Text className="pt-3 text-center text-base font-semibold text-hawk-ink">
+        <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to map a polling unit
         </Text>
         <Pressable
@@ -414,7 +416,7 @@ export default function MapUnit() {
           <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
         </Pressable>
         <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-neutral-500">Not now</Text>
+          <Text className="text-sm text-muted">Not now</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -422,12 +424,12 @@ export default function MapUnit() {
 
   if (done) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist px-8">
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
         <View className="h-16 w-16 items-center justify-center rounded-full bg-hawk-green">
           <Feather name="map-pin" size={28} color={BRAND.gold} />
         </View>
-        <Text className="pt-4 text-center text-lg font-bold text-hawk-ink">{done.title}</Text>
-        <Text className="pt-2 text-center text-sm text-neutral-600">{done.line}</Text>
+        <Text className="pt-4 text-center text-lg font-bold text-ink">{done.title}</Text>
+        <Text className="pt-2 text-center text-sm text-muted">{done.line}</Text>
         <Pressable
           className="mt-6 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
           onPress={() => router.back()}
@@ -441,9 +443,9 @@ export default function MapUnit() {
   const Chip = ({ label, onPress }: { label: string; onPress: () => void }) => (
     <Pressable
       onPress={onPress}
-      className="mb-2 mr-2 rounded-full bg-white px-4 py-2 active:opacity-70"
+      className="mb-2 mr-2 rounded-full bg-card px-4 py-2 active:opacity-70"
     >
-      <Text className="text-sm font-semibold text-neutral-700">{label}</Text>
+      <Text className="text-sm font-semibold text-ink">{label}</Text>
     </Pressable>
   );
 
@@ -465,13 +467,13 @@ export default function MapUnit() {
     return (
       <Pressable
         onPress={() => setUnit(u)}
-        className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+        className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-card'}`}
       >
         <View className="flex-1 pr-2">
-          <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-hawk-ink'}`}>
+          <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-ink'}`}>
             {u.name}
           </Text>
-          <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-neutral-500'}`}>
+          <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
             {unitSub(u)}
           </Text>
         </View>
@@ -485,27 +487,27 @@ export default function MapUnit() {
   const pct = stats && stats.total ? (stats.verified / stats.total) * 100 : 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Map a polling unit</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Map a polling unit</Text>
       </View>
 
       <ScrollView contentContainerClassName="px-4 pb-8 pt-3">
-        <Text className="pb-3 text-sm text-neutral-600">
+        <Text className="pb-3 text-sm text-muted">
           Stand at the polling unit and record one GPS fix. When enough observers agree, the
           unit becomes location-verified — and every result reported there can be proven.
         </Text>
 
         {stats ? (
-          <View className="mb-3 rounded-2xl bg-white px-4 py-3">
-            <Text className="pb-2 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+          <View className="mb-3 rounded-2xl bg-card px-4 py-3">
+            <Text className="pb-2 text-[11px] font-bold uppercase tracking-wider text-faint">
               Nationwide mapping coverage
             </Text>
             <View className="flex-row">
@@ -535,7 +537,7 @@ export default function MapUnit() {
               })
             }
             className={`mb-3 flex-row items-center rounded-2xl px-4 py-3 active:opacity-70 ${
-              unit?.pu_code === saved.pu_code ? 'bg-hawk-green' : 'bg-white'
+              unit?.pu_code === saved.pu_code ? 'bg-hawk-green' : 'bg-card'
             }`}
           >
             <Feather
@@ -546,21 +548,21 @@ export default function MapUnit() {
             <View className="flex-1 pl-2">
               <Text
                 className={`text-[11px] font-bold uppercase tracking-wider ${
-                  unit?.pu_code === saved.pu_code ? 'text-emerald-100' : 'text-neutral-400'
+                  unit?.pu_code === saved.pu_code ? 'text-emerald-100' : 'text-faint'
                 }`}
               >
                 Your polling unit
               </Text>
               <Text
                 className={`text-base font-semibold ${
-                  unit?.pu_code === saved.pu_code ? 'text-white' : 'text-hawk-ink'
+                  unit?.pu_code === saved.pu_code ? 'text-white' : 'text-ink'
                 }`}
               >
                 {saved.name ?? saved.pu_code}
               </Text>
               <Text
                 className={`text-xs ${
-                  unit?.pu_code === saved.pu_code ? 'text-emerald-100' : 'text-neutral-500'
+                  unit?.pu_code === saved.pu_code ? 'text-emerald-100' : 'text-muted'
                 }`}
               >
                 {[saved.ward ? `${saved.ward} ward` : null, saved.lga, saved.state]
@@ -576,7 +578,7 @@ export default function MapUnit() {
         <Pressable
           disabled={nearBusy}
           onPress={findNearby}
-          className={`flex-row items-center justify-center rounded-2xl py-4 ${nearBusy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'}`}
+          className={`flex-row items-center justify-center rounded-2xl py-4 ${nearBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
         >
           {nearBusy ? (
             <ActivityIndicator color={BRAND.gold} />
@@ -602,13 +604,13 @@ export default function MapUnit() {
 
         <Pressable
           onPress={() => setBrowse((b) => !b)}
-          className="mt-4 flex-row items-center rounded-2xl bg-white px-4 py-3 active:opacity-70"
+          className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"
         >
           <Feather name={browse ? 'chevron-down' : 'chevron-right'} size={16} color={BRAND.leaf} />
           <Text className="flex-1 pl-2 text-sm font-bold text-hawk-leaf">
             Browse the register instead
           </Text>
-          <Text className="text-xs text-neutral-400">state › LGA › ward</Text>
+          <Text className="text-xs text-faint">state › LGA › ward</Text>
         </Pressable>
 
         {browse ? (
@@ -656,7 +658,7 @@ export default function MapUnit() {
                   <UnitRow key={u.pu_code} u={u} />
                 ))}
                 {units.length === 0 ? (
-                  <Text className="pt-2 text-sm text-neutral-500">
+                  <Text className="pt-2 text-sm text-muted">
                     No units in the register for this ward yet.
                   </Text>
                 ) : null}
@@ -667,8 +669,8 @@ export default function MapUnit() {
       </ScrollView>
 
       {unit ? (
-        <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
-          <Text className="pb-2 text-xs text-neutral-500" numberOfLines={1}>
+        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+          <Text className="pb-2 text-xs text-muted" numberOfLines={1}>
             Selected: {unit.name}
           </Text>
 
@@ -677,7 +679,7 @@ export default function MapUnit() {
           <Pressable
             disabled={saving}
             onPress={toggleSaved}
-            className="mb-2 flex-row items-center rounded-2xl bg-white px-4 py-3 active:opacity-70"
+            className="mb-2 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"
           >
             {saving ? (
               <ActivityIndicator color={BRAND.leaf} />
@@ -688,7 +690,7 @@ export default function MapUnit() {
               <Text className="text-sm font-bold text-hawk-leaf">
                 {isSaved ? 'Saved as your polling unit — tap to remove' : 'Save as my polling unit'}
               </Text>
-              <Text className="text-xs text-neutral-500">
+              <Text className="text-xs text-muted">
                 {isSaved
                   ? 'You are alerted for every result report and approved incident here.'
                   : saved
@@ -701,7 +703,7 @@ export default function MapUnit() {
           <Pressable
             disabled={busy}
             onPress={onSubmit}
-            className={`items-center rounded-2xl py-4 ${busy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'}`}
+            className={`items-center rounded-2xl py-4 ${busy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
           >
             {busy ? (
               <ActivityIndicator color={BRAND.gold} />

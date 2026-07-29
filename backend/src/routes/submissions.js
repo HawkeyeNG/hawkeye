@@ -425,7 +425,7 @@ submissionsRouter.get('/ledger/entries', (_req, res) => {
 submissionsRouter.get('/anchors', (_req, res) => {
   const rows = db.prepare(`
     SELECT id, day, head_hash, collation_head, entries, collation_entries, created_at,
-           races_root, races_count, rekor_uuid, rekor_log_index, rekor_time, rekor_artifact
+           races_root, races_count, practice_head, rekor_uuid, rekor_log_index, rekor_time, rekor_artifact
     FROM anchors ORDER BY id DESC`).all();
   res.json({
     publicKey: anchorPublicKey(),
@@ -440,6 +440,9 @@ submissionsRouter.get('/anchors', (_req, res) => {
       collationHead: r.collation_head,
       collationEntries: r.collation_entries,
       racesRoot: r.races_root,
+      // The practice chain's head, published so a rehearsal is followable too.
+      // Named, never mixed with the ledger head above it.
+      practiceHead: r.practice_head,
       racesCount: r.races_count,
       at: new Date(r.created_at).toISOString(),
       artifact: r.rekor_artifact,

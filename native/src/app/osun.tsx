@@ -6,10 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RaceView } from '@/components/race';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import { loadPolitical, type Race } from '@/lib/political';
 
 /** Osun 2026 — Hawkeye's first live pilot election. */
 export default function Osun() {
+  const ui = useUi();
   const [race, setRace] = useState<Race | null>(null);
   const [logos, setLogos] = useState<Record<string, string>>({});
   const [err, setErr] = useState<string | null>(null);
@@ -24,16 +26,16 @@ export default function Osun() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Osun 2026</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Osun 2026</Text>
       </View>
 
       <ScrollView contentContainerClassName="px-4 pb-10 pt-3">

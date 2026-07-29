@@ -35,7 +35,7 @@ export default function Welcome() {
       {/* Brand-green fills the screen — the clock and battery need light icons. */}
       <StatusBar style="light" />
       <View className="flex-1 items-center justify-center px-8">
-        <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-white/10">
+        <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-card/10">
           <Image source={require('../../assets/images/icon.png')} style={{ width: 96, height: 96 }} />
         </View>
         <Text className="pt-5 text-3xl font-bold tracking-widest text-white">HAWKEYE</Text>
@@ -46,7 +46,7 @@ export default function Welcome() {
         <View className="w-full pt-8">
           {POINTS.map((p) => (
             <View key={p.icon} className="flex-row items-center py-2.5">
-              <View className="h-9 w-9 items-center justify-center rounded-full bg-white/10">
+              <View className="h-9 w-9 items-center justify-center rounded-full bg-card/10">
                 <Feather name={p.icon} size={16} color={BRAND.gold} />
               </View>
               <Text className="flex-1 pl-3 text-sm text-emerald-50">{p.text}</Text>
@@ -60,7 +60,7 @@ export default function Welcome() {
           className="items-center rounded-2xl bg-hawk-gold py-4 active:opacity-80"
           onPress={() => router.push('/sign-in')}
         >
-          <Text className="text-base font-bold text-hawk-ink">Become an observer</Text>
+          <Text className="text-base font-bold text-ink">Become an observer</Text>
         </Pressable>
         <Pressable
           className="mt-3 items-center rounded-2xl border border-white/30 py-4 active:opacity-70"

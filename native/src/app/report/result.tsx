@@ -21,6 +21,7 @@ import { CaptureCamera } from '@/components/capture-camera';
 import { NoElection } from '@/components/no-election';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { getQuickFix, getSubmitFix } from '@/lib/location';
 import { submitResult, type Receipt, type Shot, type Vote } from '@/lib/submit';
@@ -101,6 +102,7 @@ const receiptLocation = (r: Receipt) => {
 
 /** Report a result — unit → race → sheet photo → venue photo → votes → signed submit. */
 export default function ReportResult() {
+  const ui = useUi();
   const auth = useAuth();
   const [step, setStep] = useState<Step>('unit');
 
@@ -406,9 +408,9 @@ export default function ReportResult() {
   // -- guards ---------------------------------------------------------------
   if (auth.status !== 'signedIn') {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist px-8">
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={BRAND.leaf} />
-        <Text className="pt-3 text-center text-base font-semibold text-hawk-ink">
+        <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to report a result
         </Text>
         <Pressable
@@ -418,7 +420,7 @@ export default function ReportResult() {
           <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
         </Pressable>
         <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-neutral-500">Not now</Text>
+          <Text className="text-sm text-muted">Not now</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -487,9 +489,9 @@ export default function ReportResult() {
   const Chip = ({ label, on, onPress }: { label: string; on?: boolean; onPress: () => void }) => (
     <Pressable
       onPress={onPress}
-      className={`mb-2 mr-2 rounded-full px-4 py-2 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+      className={`mb-2 mr-2 rounded-full px-4 py-2 ${on ? 'bg-hawk-green' : 'bg-card'}`}
     >
-      <Text className={`text-sm font-semibold ${on ? 'text-hawk-gold' : 'text-neutral-700'}`}>
+      <Text className={`text-sm font-semibold ${on ? 'text-hawk-gold' : 'text-ink'}`}>
         {label}
       </Text>
     </Pressable>
@@ -500,14 +502,14 @@ export default function ReportResult() {
     const on = unit?.pu_code === u.pu_code;
     return (
       <Pressable
-        className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+        className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-card'}`}
         onPress={() => chooseUnit(u)}
       >
         <View className="flex-1 pr-2">
-          <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-hawk-ink'}`}>
+          <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-ink'}`}>
             {u.name}
           </Text>
-          <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-neutral-500'}`}>{sub}</Text>
+          <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>{sub}</Text>
         </View>
         {/* Inline Continue on the chosen row: in a long ward the footer CTA can
             sit far below the unit you just tapped. */}
@@ -516,8 +518,8 @@ export default function ReportResult() {
             className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
             onPress={continueFromUnit}
           >
-            <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
-            <Feather name="arrow-right" size={14} color={BRAND.ink} />
+            <Text className="pr-1 text-sm font-bold text-ink">Continue</Text>
+            <Feather name="arrow-right" size={14} color={ui.ink} />
           </Pressable>
         ) : null}
       </Pressable>
@@ -525,16 +527,16 @@ export default function ReportResult() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Report a result</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Report a result</Text>
       </View>
 
       {step !== 'done' ? (
@@ -544,8 +546,8 @@ export default function ReportResult() {
             const on = i <= idx;
             return (
               <View key={s.key} className="mr-1 flex-1">
-                <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-white'}`} />
-                <Text className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-hawk-leaf' : 'text-neutral-400'}`}>
+                <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-card'}`} />
+                <Text className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-hawk-leaf' : 'text-faint'}`}>
                   {s.label}
                 </Text>
               </View>
@@ -557,10 +559,10 @@ export default function ReportResult() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
         {step === 'unit' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
-            <Text className="pb-1 text-xl font-bold text-hawk-ink">
+            <Text className="pb-1 text-xl font-bold text-ink">
               {contests.length ? contests[0].election : 'Loading election…'}
             </Text>
-            <Text className="pb-3 text-sm text-neutral-600">
+            <Text className="pb-3 text-sm text-muted">
               Report from the unit you are standing at.
             </Text>
 
@@ -570,7 +572,7 @@ export default function ReportResult() {
             <Pressable
               disabled={nearBusy}
               onPress={findNearby}
-              className={`flex-row items-center justify-center rounded-2xl py-4 ${nearBusy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'}`}
+              className={`flex-row items-center justify-center rounded-2xl py-4 ${nearBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
             >
               {nearBusy ? (
                 <ActivityIndicator color={BRAND.gold} />
@@ -608,13 +610,13 @@ export default function ReportResult() {
 
             <Pressable
               onPress={() => setBrowse((b) => !b)}
-              className="mt-4 flex-row items-center rounded-2xl bg-white px-4 py-3 active:opacity-70"
+              className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"
             >
               <Feather name={browse ? 'chevron-down' : 'chevron-right'} size={16} color={BRAND.leaf} />
               <Text className="flex-1 pl-2 text-sm font-bold text-hawk-leaf">
                 Browse the register instead
               </Text>
-              <Text className="text-xs text-neutral-400">state › LGA › ward</Text>
+              <Text className="text-xs text-faint">state › LGA › ward</Text>
             </Pressable>
 
             {browse ? (
@@ -657,7 +659,7 @@ export default function ReportResult() {
                       <UnitRow key={u.pu_code} u={u} sub={`${u.pu_code} · ${u.ward}, ${u.lga}`} />
                     ))}
                     {units.length === 0 ? (
-                      <Text className="pt-2 text-sm text-neutral-500">No units in the register for this ward yet.</Text>
+                      <Text className="pt-2 text-sm text-muted">No units in the register for this ward yet.</Text>
                     ) : null}
                   </>
                 ) : null}
@@ -669,8 +671,8 @@ export default function ReportResult() {
         {/* Pinned CTA — a ward can list dozens of units, so the primary action
             must never be somewhere below the fold. */}
         {step === 'unit' && unit ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
-            <Text className="pb-2 text-xs text-neutral-500" numberOfLines={1}>
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+            <Text className="pb-2 text-xs text-muted" numberOfLines={1}>
               Selected: {unit.name}
             </Text>
             <Pressable
@@ -688,7 +690,7 @@ export default function ReportResult() {
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             {unit ? <Crumb label={unit.name} onPress={() => setStep('unit')} /> : null}
             <Prompt>Which election are you reporting?</Prompt>
-            <Text className="pb-3 text-sm text-neutral-600">
+            <Text className="pb-3 text-sm text-muted">
               Only the races that run at this polling unit are listed. Report each one separately.
             </Text>
             {applicable.map((c) => {
@@ -697,12 +699,12 @@ export default function ReportResult() {
                 <Pressable
                   key={c.code}
                   onPress={() => setContest(c)}
-                  className={`mb-2 rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+                  className={`mb-2 rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-card'}`}
                 >
-                  <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-hawk-ink'}`}>
+                  <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-ink'}`}>
                     {c.name}
                   </Text>
-                  <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-neutral-500'}`}>
+                  <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
                     {c.election}
                   </Text>
                   {c.open === false ? (
@@ -717,14 +719,14 @@ export default function ReportResult() {
         ) : null}
 
         {step === 'contest' ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             {closed && contest ? (
               <Text className="pb-2 text-sm font-semibold text-amber-800">{opensLine(contest)}</Text>
             ) : null}
             <Pressable
               disabled={!contest}
               onPress={() => setStep('sheet')}
-              className={`items-center rounded-2xl py-4 ${contest ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'}`}
+              className={`items-center rounded-2xl py-4 ${contest ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
               <Text className="text-base font-bold text-hawk-gold">Continue to photos</Text>
             </Pressable>
@@ -733,19 +735,19 @@ export default function ReportResult() {
 
         {step === 'votes' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
-            <Text className="pb-1 text-xl font-bold text-hawk-ink">Votes per party</Text>
-            <Text className="pb-3 text-sm text-neutral-600">
+            <Text className="pb-1 text-xl font-bold text-ink">Votes per party</Text>
+            <Text className="pb-3 text-sm text-muted">
               Copy the figures exactly as written on the sheet. Leave blank for parties not listed.
             </Text>
             <TextInput
-              className="mb-3 rounded-2xl bg-white px-4 py-3 text-base text-hawk-ink"
+              className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Search party (APC, PDP, LP…)"
               placeholderTextColor="#9db5a7"
               value={search}
               onChangeText={setSearch}
             />
             {filteredParties.slice(0, 30).map((p) => (
-              <View key={p.code} className="mb-2 flex-row items-center rounded-2xl bg-white px-4 py-2">
+              <View key={p.code} className="mb-2 flex-row items-center rounded-2xl bg-card px-4 py-2">
                 {logos[p.code] ? (
                   <Image
                     source={{ uri: `${BASE}/${logos[p.code]}` }}
@@ -755,23 +757,23 @@ export default function ReportResult() {
                   />
                 ) : (
                   <View
-                    className="mr-2.5 items-center justify-center rounded-md bg-hawk-mist"
+                    className="mr-2.5 items-center justify-center rounded-md bg-surface"
                     style={{ width: 30, height: 30 }}
                   >
                     <Text className="text-[10px] font-bold text-hawk-leaf">{p.code.slice(0, 3)}</Text>
                   </View>
                 )}
                 <View className="flex-1 pr-2">
-                  <Text className="text-base font-semibold text-hawk-ink">{p.code}</Text>
-                  <Text className="text-xs text-neutral-500" numberOfLines={1}>{p.name}</Text>
+                  <Text className="text-base font-semibold text-ink">{p.code}</Text>
+                  <Text className="text-xs text-muted" numberOfLines={1}>{p.name}</Text>
                 </View>
                 {readCodes.includes(p.code) ? (
-                  <View className="mr-2 rounded-full bg-hawk-mist px-2 py-0.5">
+                  <View className="mr-2 rounded-full bg-surface px-2 py-0.5">
                     <Text className="text-[9px] font-bold text-hawk-leaf">FROM SHEET</Text>
                   </View>
                 ) : null}
                 <TextInput
-                  className="w-24 rounded-xl bg-hawk-mist px-3 py-2 text-center text-lg font-bold text-hawk-ink"
+                  className="w-24 rounded-xl bg-surface px-3 py-2 text-center text-lg font-bold text-ink"
                   placeholder="0"
                   placeholderTextColor="#9db5a7"
                   keyboardType="number-pad"
@@ -786,11 +788,11 @@ export default function ReportResult() {
         {/* Pinned CTA — up to 30 party rows scroll above this, so the way out of
             the tally must not sit below the last figure the observer typed. */}
         {step === 'votes' ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Pressable
               disabled={votes.length === 0}
               onPress={() => setStep('review')}
-              className={`items-center rounded-2xl py-4 ${votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'}`}
+              className={`items-center rounded-2xl py-4 ${votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
               <Text className="text-base font-bold text-hawk-gold">Review report</Text>
             </Pressable>
@@ -799,10 +801,10 @@ export default function ReportResult() {
 
         {step === 'review' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
-            <Text className="pb-3 text-xl font-bold text-hawk-ink">Confirm and send</Text>
-            <View className="mb-3 rounded-2xl bg-white px-4 py-3">
-              <Text className="text-base font-semibold text-hawk-ink">{unit?.name}</Text>
-              <Text className="text-xs text-neutral-500">{unit?.pu_code} · {unit?.ward}, {unit?.lga}</Text>
+            <Text className="pb-3 text-xl font-bold text-ink">Confirm and send</Text>
+            <View className="mb-3 rounded-2xl bg-card px-4 py-3">
+              <Text className="text-base font-semibold text-ink">{unit?.name}</Text>
+              <Text className="text-xs text-muted">{unit?.pu_code} · {unit?.ward}, {unit?.lga}</Text>
               {contest ? (
                 <Text className="pt-1 text-xs font-bold text-hawk-leaf">
                   {contest.name} — {contest.election}
@@ -815,7 +817,7 @@ export default function ReportResult() {
                   <Pressable
                     key={i}
                     disabled={busy}
-                    className="flex-1 overflow-hidden rounded-2xl bg-white active:opacity-80"
+                    className="flex-1 overflow-hidden rounded-2xl bg-card active:opacity-80"
                     onPress={() => {
                       setRetaking(true);
                       setStep(i === 0 ? 'sheet' : 'venue');
@@ -823,7 +825,7 @@ export default function ReportResult() {
                   >
                     <Image source={{ uri: s.uri }} style={{ width: '100%', height: 110 }} contentFit="cover" />
                     <View className="flex-row items-center justify-between px-3 py-2">
-                      <Text className="text-xs font-semibold text-neutral-500">
+                      <Text className="text-xs font-semibold text-muted">
                         {i === 0 ? 'Result sheet' : 'Venue'}
                       </Text>
                       <Text className="text-xs font-bold text-hawk-leaf">Retake</Text>
@@ -832,14 +834,14 @@ export default function ReportResult() {
                 ) : null,
               )}
             </View>
-            <View className="mb-3 rounded-2xl bg-white px-4 py-2">
+            <View className="mb-3 rounded-2xl bg-card px-4 py-2">
               {votes
                 .slice()
                 .sort((a, b) => b.count - a.count)
                 .map((v) => (
                   <View key={v.party} className="flex-row justify-between py-1.5">
-                    <Text className="text-base font-semibold text-hawk-ink">{v.party}</Text>
-                    <Text className="text-base font-bold text-hawk-ink">{v.count.toLocaleString()}</Text>
+                    <Text className="text-base font-semibold text-ink">{v.party}</Text>
+                    <Text className="text-base font-bold text-ink">{v.count.toLocaleString()}</Text>
                   </View>
                 ))}
             </View>
@@ -847,7 +849,7 @@ export default function ReportResult() {
                 Sits immediately above the submit CTA so it cannot be missed. */}
             <Prompt>Enter the sheet serial number (optional)</Prompt>
             <TextInput
-              className="mb-3 rounded-2xl bg-white px-4 py-3 text-base text-hawk-ink"
+              className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Printed on the EC8A, if visible"
               placeholderTextColor="#9db5a7"
               autoCapitalize="characters"
@@ -855,7 +857,7 @@ export default function ReportResult() {
               onChangeText={setSheetSerial}
               editable={!busy}
             />
-            <Text className="pb-3 text-xs text-neutral-500">
+            <Text className="pb-3 text-xs text-muted">
               Submitting takes a GPS fix at your position, signs the report with this device’s
               key, and files it for review. Your number is never attached — only your observer ID.
             </Text>
@@ -866,7 +868,7 @@ export default function ReportResult() {
             line rides with the button: on a failed submit the retry must stay
             under the observer's thumb, not be pushed further down the scroll. */}
         {step === 'review' ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             {/* Say when, not just no. The server refuses early reports anyway;
                 finding that out after two photos and a full tally is the failure
                 this replaces. */}
@@ -880,7 +882,7 @@ export default function ReportResult() {
             <Pressable
               disabled={busy || closed}
               onPress={onSubmit}
-              className={`items-center rounded-2xl py-4 ${busy || closed ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'}`}
+              className={`items-center rounded-2xl py-4 ${busy || closed ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
             >
               {busy ? <ActivityIndicator color={BRAND.gold} /> : (
                 <Text className="text-base font-bold text-hawk-gold">
@@ -902,8 +904,8 @@ export default function ReportResult() {
               >
                 <Feather name={queued ? 'clock' : 'check'} size={28} color={BRAND.gold} />
               </View>
-              <Text className="pt-4 text-center text-lg font-bold text-hawk-ink">{done.title}</Text>
-              <Text className="pt-2 text-center text-sm text-neutral-600">{done.line}</Text>
+              <Text className="pt-4 text-center text-lg font-bold text-ink">{done.title}</Text>
+              <Text className="pt-2 text-center text-sm text-muted">{done.line}</Text>
             </View>
 
             {/* THE RECEIPT. Until now the observer handed over evidence and got a
@@ -915,7 +917,7 @@ export default function ReportResult() {
                   Ledger entry
                 </Text>
                 <Pressable
-                  className="mt-2 flex-row items-center rounded-xl bg-white/10 px-3 py-2.5 active:opacity-70"
+                  className="mt-2 flex-row items-center rounded-xl bg-card/10 px-3 py-2.5 active:opacity-70"
                   onPress={async () => {
                     await Clipboard.setStringAsync(receipt.entryHash!);
                     setCopied(true);
@@ -935,10 +937,10 @@ export default function ReportResult() {
             ) : null}
 
             {receipt.result || receipt.locationVerified != null || receipt.ocr ? (
-              <View className="mt-3 rounded-2xl bg-white px-4 py-2">
+              <View className="mt-3 rounded-2xl bg-card px-4 py-2">
                 {receipt.result?.status ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="text-sm text-neutral-500">Status</Text>
+                    <Text className="text-sm text-muted">Status</Text>
                     <Text
                       className={`text-sm font-bold ${receipt.result.status === 'disputed' ? 'text-red-700' : receipt.result.status === 'pending' ? 'text-amber-800' : 'text-hawk-leaf'}`}
                     >
@@ -948,32 +950,32 @@ export default function ReportResult() {
                 ) : null}
                 {receipt.result?.confidence != null ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="text-sm text-neutral-500">Confidence</Text>
-                    <Text className="text-sm font-bold text-hawk-ink">
+                    <Text className="text-sm text-muted">Confidence</Text>
+                    <Text className="text-sm font-bold text-ink">
                       {receipt.result.confidence}%
                     </Text>
                   </View>
                 ) : null}
                 {receipt.result?.totalReports != null ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="text-sm text-neutral-500">Reports agreeing</Text>
-                    <Text className="text-sm font-bold text-hawk-ink">
+                    <Text className="text-sm text-muted">Reports agreeing</Text>
+                    <Text className="text-sm font-bold text-ink">
                       {receipt.result.matchingReports ?? 0} of {receipt.result.totalReports}
                     </Text>
                   </View>
                 ) : null}
                 {receipt.result?.locationStatus || receipt.locationVerified != null ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="pr-3 text-sm text-neutral-500">Location</Text>
-                    <Text className="flex-1 text-right text-sm font-bold text-hawk-ink">
+                    <Text className="pr-3 text-sm text-muted">Location</Text>
+                    <Text className="flex-1 text-right text-sm font-bold text-ink">
                       {receiptLocation(receipt)}
                     </Text>
                   </View>
                 ) : null}
                 {receipt.result?.venueMatches ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="text-sm text-neutral-500">Venue photo matches</Text>
-                    <Text className="text-sm font-bold text-hawk-ink">
+                    <Text className="text-sm text-muted">Venue photo matches</Text>
+                    <Text className="text-sm font-bold text-ink">
                       {receipt.result.venueMatches}
                     </Text>
                   </View>
@@ -982,14 +984,14 @@ export default function ReportResult() {
                     the observer should see the machine's second opinion too. */}
                 {receipt.ocr?.total ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="pr-3 text-sm text-neutral-500">Read off your photo</Text>
-                    <Text className="text-sm font-bold text-hawk-ink">
+                    <Text className="pr-3 text-sm text-muted">Read off your photo</Text>
+                    <Text className="text-sm font-bold text-ink">
                       {receipt.ocr.matched} of {receipt.ocr.total} counts matched
                     </Text>
                   </View>
                 ) : null}
                 {receipt.result?.scope ? (
-                  <Text className="py-1.5 text-xs text-neutral-500">{receipt.result.scope}</Text>
+                  <Text className="py-1.5 text-xs text-muted">{receipt.result.scope}</Text>
                 ) : null}
               </View>
             ) : null}
@@ -997,7 +999,7 @@ export default function ReportResult() {
         ) : null}
 
         {step === 'done' ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             {/* replace, not push: the finished report flow should not sit under
                 the log the observer went to check. */}
             <Pressable className="items-center pb-3" onPress={() => router.replace('/reports-log')}>

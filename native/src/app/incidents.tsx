@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ReportContent } from '@/components/report-content';
 import { api, BRAND, type Incident } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 
@@ -64,6 +65,7 @@ const mediaUrl = (file: string) => `${BASE}/uploads/${encodeURI(file)}`;
  * status='published' — so nothing here is unmoderated.
  */
 export default function Incidents() {
+  const ui = useUi();
   const [rows, setRows] = useState<Published[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -101,7 +103,7 @@ export default function Incidents() {
 
   const header = (
     <View className="px-4 pb-1 pt-3">
-      <Text className="text-sm text-neutral-600">
+      <Text className="text-sm text-muted">
         Election-day incidents reported by observers. Every report is reviewed by a person
         before it appears here, and reporters are identified by observer ID only — never by
         name or phone number.
@@ -110,16 +112,16 @@ export default function Incidents() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Published incidents</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Published incidents</Text>
       </View>
 
       <FlashList
@@ -134,22 +136,22 @@ export default function Incidents() {
           rows === null && !err ? (
             <ActivityIndicator className="pt-8" color={BRAND.leaf} />
           ) : err ? (
-            <View className="mx-4 mt-3 items-center rounded-2xl bg-white px-6 py-10">
-              <Feather name="wifi-off" size={26} color="#9db5a7" />
-              <Text className="pt-3 text-base font-semibold text-hawk-ink">
+            <View className="mx-4 mt-3 items-center rounded-2xl bg-card px-6 py-10">
+              <Feather name="wifi-off" size={26} color={ui.faint} />
+              <Text className="pt-3 text-base font-semibold text-ink">
                 Could not load the feed
               </Text>
-              <Text className="pt-1 text-center text-sm text-neutral-500">
+              <Text className="pt-1 text-center text-sm text-muted">
                 Pull down to try again. ({err})
               </Text>
             </View>
           ) : (
-            <View className="mx-4 mt-3 items-center rounded-2xl bg-white px-6 py-10">
+            <View className="mx-4 mt-3 items-center rounded-2xl bg-card px-6 py-10">
               <Feather name="check-circle" size={26} color={BRAND.leaf} />
-              <Text className="pt-3 text-base font-semibold text-hawk-ink">
+              <Text className="pt-3 text-base font-semibold text-ink">
                 No incidents published yet
               </Text>
-              <Text className="pt-1 text-center text-sm text-neutral-500">
+              <Text className="pt-1 text-center text-sm text-muted">
                 Reports appear here once a moderator has reviewed them.
               </Text>
             </View>
@@ -160,25 +162,25 @@ export default function Incidents() {
           const place = [i.lga, i.state].filter(Boolean).join(', ');
           const media = i.media ?? [];
           return (
-            <View className="mx-4 mb-2 rounded-2xl bg-white px-4 py-3">
+            <View className="mx-4 mb-2 rounded-2xl bg-card px-4 py-3">
               <View className="flex-row items-center">
-                <View className="rounded-full bg-hawk-mist px-2.5 py-1">
+                <View className="rounded-full bg-surface px-2.5 py-1">
                   <Text className="text-[10px] font-bold uppercase tracking-wide text-hawk-leaf">
                     {KIND_LABEL[i.kind] ?? i.kind}
                   </Text>
                 </View>
                 {place ? (
-                  <Text className="flex-1 pl-2 text-xs text-neutral-500" numberOfLines={1}>
+                  <Text className="flex-1 pl-2 text-xs text-muted" numberOfLines={1}>
                     {place}
                   </Text>
                 ) : (
                   <View className="flex-1" />
                 )}
-                <Text className="pl-2 text-xs text-neutral-400">{timeAgo(i.created_at)}</Text>
+                <Text className="pl-2 text-xs text-faint">{timeAgo(i.created_at)}</Text>
               </View>
 
               {body ? (
-                <Text className="pt-2 text-sm text-neutral-700">{body}</Text>
+                <Text className="pt-2 text-sm text-ink">{body}</Text>
               ) : null}
 
               {media.length ? (
@@ -186,7 +188,7 @@ export default function Incidents() {
                   {media.map((m) => (
                     <Pressable
                       key={m.file}
-                      className="mb-2 mr-2 h-24 w-24 overflow-hidden rounded-xl bg-hawk-mist active:opacity-80"
+                      className="mb-2 mr-2 h-24 w-24 overflow-hidden rounded-xl bg-surface active:opacity-80"
                       accessibilityLabel={`Open ${m.type === 'video' ? 'video' : 'photo'} evidence full size`}
                       onPress={() => WebBrowser.openBrowserAsync(mediaUrl(m.file))}
                     >
@@ -222,7 +224,7 @@ export default function Incidents() {
       {/* Sibling of the list, not a row in it: the feed runs to a hundred cards,
           so a CTA scrolled with them would be unreachable exactly when reading
           one incident makes someone want to file their own. */}
-      <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+      <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
         <Pressable
           className="flex-row items-center justify-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
           onPress={() => router.push('/report/incident')}

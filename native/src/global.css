@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Semantic surfaces. Values are RGB triplets so Tailwind can apply opacity
+   modifiers (bg-card/80). Light first, then the dark overrides — the OS decides,
+   which is what userInterfaceStyle: automatic in app.json promises. */
+:root {
+  --surface: 232 242 236;      /* screen background      (hawk-mist) */
+  --card: 255 255 255;         /* raised card            (white)     */
+  --ink: 16 34 26;             /* primary text           (hawk-ink)  */
+  --muted: 82 96 88;           /* secondary text                     */
+  --faint: 141 156 147;        /* tertiary text, icons               */
+  --line: 226 236 230;         /* hairlines, dividers                */
+  --disabled: 212 212 212;     /* dead buttons                       */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: 8 20 14;        /* near-black with the brand's green cast */
+    --card: 18 36 27;
+    --ink: 232 242 236;
+    --muted: 158 176 165;
+    --faint: 110 128 118;
+    --line: 32 56 43;
+    --disabled: 48 62 54;
+  }
+}
+
 :root {
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,

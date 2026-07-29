@@ -74,10 +74,17 @@ export async function runAnchor(force = false) {
   // anchored alongside the results so the arbitration is equally rollback-proof.
   const { docketHead } = await import('./docket.js');
   const dHead = docketHead();
+  // Practice chain head — a hash of a chain that is deliberately not the
+  // ledger. Published so a rehearsal can be followed to Rekor like the real
+  // thing; named so it can never be read as one.
+  const pHead = (db.prepare(
+    "SELECT entry_hash FROM practice_submissions WHERE entry_hash IS NOT NULL ORDER BY id DESC LIMIT 1"
+  ).get() || {}).entry_hash || 'p'.repeat(64);
 
   const last = db.prepare('SELECT head_hash, collation_head, races_root, docket_head FROM anchors ORDER BY id DESC LIMIT 1').get();
   if (!force && last && last.head_hash === chain.head && last.collation_head === collHead
-      && last.races_root === racesRoot && last.docket_head === dHead) {
+      && last.races_root === racesRoot && last.docket_head === dHead
+      && last.practice_head === pHead) {
     return { skipped: 'unchanged' };
   }
 
@@ -88,6 +95,7 @@ export async function runAnchor(force = false) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(day, chain.head, collHead, chain.entries, collCount, null, racesRoot, races.length, dHead, now);
   const anchorId = info.lastInsertRowid;
+  db.prepare('UPDATE anchors SET practice_head = ? WHERE id = ?').run(pHead, anchorId);
 
   // Persist each race's subchain head + its Merkle inclusion proof so a single
   // disputed race can be verified in isolation (GET /api/anchors/:id/races/:key).
@@ -109,7 +117,8 @@ export async function runAnchor(force = false) {
   const electionLabel = contests[0]?.election || 'unlabelled';
   const artifact = `hawkeye-ledger-anchor|v1|election=${electionLabel}|day=${day}|head=${chain.head}|entries=${chain.entries}`
     + `|collationHead=${collHead}|collationEntries=${collCount}`
-    + `|racesRoot=${racesRoot}|races=${races.length}|docketHead=${dHead}|at=${new Date(now).toISOString()}`;
+    + `|racesRoot=${racesRoot}|races=${races.length}|docketHead=${dHead}`
+    + `|practiceHead=${pHead}|at=${new Date(now).toISOString()}`;
   const receipt = await publishToRekor(artifact);
   if (receipt) {
     db.prepare('UPDATE anchors SET rekor_uuid = ?, rekor_log_index = ?, rekor_time = ?, rekor_artifact = ? WHERE id = ?')

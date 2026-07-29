@@ -32,11 +32,11 @@ export function Crumb({ label, onPress }: { label: string; onPress: () => void }
   return (
     <Pressable
       onPress={onPress}
-      className="mb-2 flex-row items-center self-start rounded-2xl bg-white px-4 py-3 active:opacity-70"
+      className="mb-2 flex-row items-center self-start rounded-2xl bg-card px-4 py-3 active:opacity-70"
     >
       <Feather name="arrow-left" size={15} color={BRAND.leaf} />
       <Text className="pl-2 text-sm font-bold text-hawk-leaf">{label}</Text>
-      <Text className="pl-2 text-xs font-semibold text-neutral-400">change</Text>
+      <Text className="pl-2 text-xs font-semibold text-faint">change</Text>
     </Pressable>
   );
 }

@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,6 +32,8 @@ export default function Welcome() {
 
   return (
     <SafeAreaView className="flex-1 bg-hawk-green">
+      {/* Brand-green fills the screen — the clock and battery need light icons. */}
+      <StatusBar style="light" />
       <View className="flex-1 items-center justify-center px-8">
         <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-white/10">
           <Image source={require('../../assets/images/icon.png')} style={{ width: 96, height: 96 }} />

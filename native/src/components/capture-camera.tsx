@@ -113,6 +113,10 @@ export function CaptureCamera({
   // this, a pending confirmation fired onCapture AFTER the user hit Retake —
   // silently advancing the flow to the next step under their feet.
   const gen = useRef(0);
+  /** The auto-open fires once per capture step, never after a cancel. */
+  const autoScanned = useRef(false);
+  /** Lets the mount effect call scanDoc, which is declared below it. */
+  const scanDocRef = useRef<(() => Promise<void>) | null>(null);
   useEffect(() => () => void (cancelled.current = true), []);
 
   // Live elapsed counter while recording — an observer filming under pressure
@@ -143,6 +147,19 @@ export function CaptureCamera({
       live = false;
     };
   }, [readDocument, preview, partyCodes]);
+
+  // The scanner is the camera for documents: open it as the step begins rather
+  // than making the observer choose. Once only — after a cancel they are in the
+  // plain camera deliberately, and re-opening would trap them in a loop.
+  // Gated on the granted permission, not just mount: the first render exits at
+  // the permission gate ABOVE scanDoc's declaration, so the ref is still null
+  // then. Waiting for the granted render means the ref is assigned by the time
+  // this fires.
+  useEffect(() => {
+    if (!readDocument || !permission?.granted || !scannerAvailable() || autoScanned.current) return;
+    autoScanned.current = true;
+    void scanDocRef.current?.();
+  }, [readDocument, permission?.granted]);
 
   const cancel = () => {
     cancelled.current = true;
@@ -209,6 +226,8 @@ export function CaptureCamera({
         : 'Scanner unavailable — frame the sheet and shoot it directly.',
     );
   };
+
+  scanDocRef.current = scanDoc;
 
   const shootPhoto = async () => {
     if (busy) return;
@@ -328,27 +347,52 @@ export function CaptureCamera({
                   ? 'No GPS fix — move near a window or outside, then retry.'
                   : confirmHint}
             </Text>
-            {/* On-device read of the sheet — a warning while it can still be
-                acted on. Never blocks: the server re-reads the upload anyway. */}
-            {readDocument && read !== undefined ? (
-              <View className="flex-row items-center pt-2">
-                <Feather
-                  name={read && read.numericLines >= 3 ? 'check-circle' : 'alert-triangle'}
-                  size={13}
-                  color={read && read.numericLines >= 3 ? '#6ee7b7' : '#fcd34d'}
-                />
-                <Text className="pl-1.5 text-xs text-neutral-200">
-                  {read === null
-                    ? 'Could not read this sheet on-device — send it anyway if it looks clear.'
-                    : read.numericLines >= 3
-                      ? `Readable — ${read.numericLines} lines with figures${
-                          Object.keys(read.counts).length
-                            ? `, ${Object.keys(read.counts).length} party total(s) recognised`
-                            : ''
-                        }.`
-                      : 'Little text detected — check focus and glare, then retake.'}
-                </Text>
-              </View>
+            {/* On-device read of the sheet, as its own card: a verdict nobody
+                notices is the same as no verdict. Advisory throughout — the
+                server re-reads the upload regardless. */}
+            {readDocument ? (
+              read === undefined ? (
+                <View className="mt-2 flex-row items-center rounded-xl bg-white/10 px-3 py-2">
+                  <ActivityIndicator size="small" color="#fcd34d" />
+                  <Text className="pl-2 text-xs font-semibold text-neutral-200">
+                    Reading the sheet…
+                  </Text>
+                </View>
+              ) : read === null ? (
+                <View className="mt-2 rounded-xl bg-amber-400/15 px-3 py-2">
+                  <Text className="text-xs font-semibold text-amber-200">
+                    Could not read this sheet on this phone. Send it anyway if it looks clear —
+                    the server reads it too.
+                  </Text>
+                </View>
+              ) : read.numericLines >= 3 ? (
+                <View className="mt-2 rounded-xl bg-emerald-400/15 px-3 py-2">
+                  <View className="flex-row items-center">
+                    <Feather name="check-circle" size={13} color="#6ee7b7" />
+                    <Text className="pl-1.5 text-xs font-bold text-emerald-200">
+                      Readable — {read.numericLines} lines with figures
+                    </Text>
+                  </View>
+                  {Object.keys(read.counts).length ? (
+                    <Text className="pt-1 text-xs text-emerald-100">
+                      Read:{' '}
+                      {Object.entries(read.counts)
+                        .map(([p, n]) => `${p} ${n}`)
+                        .join(' · ')}
+                    </Text>
+                  ) : (
+                    <Text className="pt-1 text-xs text-emerald-100/80">
+                      No party totals matched — you will enter them yourself.
+                    </Text>
+                  )}
+                </View>
+              ) : (
+                <View className="mt-2 rounded-xl bg-amber-400/15 px-3 py-2">
+                  <Text className="text-xs font-semibold text-amber-200">
+                    Little text detected — check focus and glare, then retake.
+                  </Text>
+                </View>
+              )
             ) : null}
           </View>
         </View>
@@ -407,7 +451,7 @@ export function CaptureCamera({
           <Text className="pt-1 text-sm text-neutral-200">
             {line ??
               (readDocument && scannerAvailable()
-                ? `${hint} Tap Scan sheet to auto-crop it.`
+                ? `${hint} The scanner finds the edges — or shoot it plain.`
                 : hint)}
           </Text>
         </View>
@@ -459,7 +503,7 @@ export function CaptureCamera({
             className="flex-row items-center rounded-full bg-hawk-gold px-5 py-2.5 active:opacity-80"
           >
             <Feather name="crop" size={15} color={BRAND.ink} />
-            <Text className="pl-2 text-sm font-bold text-hawk-ink">Scan sheet</Text>
+            <Text className="pl-2 text-sm font-bold text-hawk-ink">Scan again</Text>
           </Pressable>
         </View>
       ) : null}

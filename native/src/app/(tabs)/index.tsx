@@ -1,43 +1,289 @@
-import { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { FlashList } from '@shopify/flash-list';
+import { router } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { api, type Contest, type IntegritySummary } from '@/lib/api';
+import { api, BRAND, type Contest, type IntegritySummary } from '@/lib/api';
+
+const BASE = 'https://hawkeye.com.ng';
+const REFRESH_MS = 30_000;
 
 function daysUntil(iso: string) {
   const ms = new Date(`${iso}T00:00:00+01:00`).getTime() - Date.now();
   return Math.max(0, Math.ceil(ms / 86_400_000));
 }
 
-/** Home — the live contest card plus trust stats, from the same public API the site uses. */
+function ago(ts: number) {
+  const m = Math.max(1, Math.round((Date.now() - ts) / 60000));
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `${h}h ago`;
+  return new Date(ts).toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
+
+type Kind = 'report' | 'incident' | 'flag' | 'case';
+
+type Item = {
+  id: string;
+  kind: Kind;
+  at: number;
+  title: string;
+  detail: string;
+  href?: string;
+};
+
+const KIND: Record<Kind, { icon: keyof typeof Feather.glyphMap; tone: string }> = {
+  report: { icon: 'file-text', tone: 'bg-emerald-100' },
+  incident: { icon: 'alert-triangle', tone: 'bg-amber-100' },
+  flag: { icon: 'flag', tone: 'bg-red-100' },
+  case: { icon: 'shield', tone: 'bg-neutral-200' },
+};
+
+const FILTERS: { key: Kind | 'all'; label: string }[] = [
+  { key: 'all', label: 'Everything' },
+  { key: 'report', label: 'Reports' },
+  { key: 'incident', label: 'Incidents' },
+  { key: 'flag', label: 'Flags' },
+  { key: 'case', label: 'Cases' },
+];
+
+async function jget<T>(path: string): Promise<T | null> {
+  try {
+    const r = await fetch(`${BASE}${path}`, { headers: { accept: 'application/json' } });
+    if (!r.ok) return null;
+    return (await r.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Home — the live feed of everything moving through Hawkeye.
+ *
+ * There is no single feed endpoint and there should not be: each of these is a
+ * different public record with its own audience and its own screen. They are
+ * merged here on the device from four public reads — accepted reports off the
+ * ledger, published incidents, integrity flags and docket cases — so the home
+ * tab answers "what is happening right now" instead of restating the pitch.
+ *
+ * Every row lands on the screen that owns it. A feed you cannot follow anywhere
+ * is decoration.
+ */
 export default function Home() {
   const [contests, setContests] = useState<Contest[] | null>(null);
   const [integrity, setIntegrity] = useState<IntegritySummary | null>(null);
+  const [items, setItems] = useState<Item[] | null>(null);
+  const [filter, setFilter] = useState<Kind | 'all'>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = async () => {
-    try {
-      setError(null);
-      const [c, i] = await Promise.all([api.contests(), api.integrity()]);
-      setContests(c);
-      setIntegrity(i);
-    } catch {
+  const load = useCallback(async () => {
+    const [c, i, ledger, incidents, flags, docket] = await Promise.all([
+      api.contests().catch(() => null),
+      api.integrity().catch(() => null),
+      jget<{ id: number; pu_code: string; contest: string; created_at: number }[]>(
+        '/api/ledger/entries',
+      ),
+      jget<{
+        incidents: {
+          id: number;
+          kind: string;
+          state?: string;
+          lga?: string;
+          text?: string;
+          created_at: number;
+        }[];
+      }>('/api/incidents'),
+      jget<{
+        discrepancies: {
+          id: number;
+          type: string;
+          severity: string;
+          pu_name?: string | null;
+          state?: string | null;
+          detail?: { summary?: string };
+          created_at: number;
+        }[];
+      }>('/api/integrity/discrepancies?limit=30'),
+      jget<{
+        cases: {
+          id: number;
+          name?: string | null;
+          puCode: string;
+          contest: string;
+          status: string;
+          openedAt: number;
+          resolvedAt: number | null;
+        }[];
+      }>('/api/docket'),
+    ]);
+
+    if (c) setContests(c);
+    if (i) setIntegrity(i);
+    // Every source failing at once means the network is gone, not that nothing
+    // is happening — the two look identical otherwise.
+    if (!c && !ledger && !incidents) {
       setError('Could not reach hawkeye.com.ng — check your connection.');
+      return;
     }
-  };
+    setError(null);
+
+    const merged: Item[] = [];
+
+    for (const e of (ledger ?? []).slice(-40)) {
+      merged.push({
+        id: `r${e.id}`,
+        kind: 'report',
+        at: e.created_at,
+        title: `Result reported · ${e.contest}`,
+        detail: e.pu_code,
+        href: '/reports-log',
+      });
+    }
+    for (const n of incidents?.incidents ?? []) {
+      merged.push({
+        id: `i${n.id}`,
+        kind: 'incident',
+        at: n.created_at,
+        title: n.kind.replace(/_/g, ' '),
+        detail: [n.lga, n.state].filter(Boolean).join(', ') || n.text?.slice(0, 60) || '',
+        href: '/incidents',
+      });
+    }
+    for (const d of flags?.discrepancies ?? []) {
+      if (d.severity === 'low') continue; // the home feed is for what is worth a look
+      merged.push({
+        id: `f${d.id}`,
+        kind: 'flag',
+        at: d.created_at,
+        title: d.type.replace(/_/g, ' '),
+        detail: d.detail?.summary?.slice(0, 90) || [d.pu_name, d.state].filter(Boolean).join(' · '),
+        href: '/integrity',
+      });
+    }
+    for (const k of docket?.cases ?? []) {
+      merged.push({
+        id: `c${k.id}`,
+        kind: 'case',
+        at: k.resolvedAt ?? k.openedAt,
+        title: k.resolvedAt ? `Case resolved — ${k.status}` : 'Case opened',
+        detail: `${k.name || k.puCode} · ${k.contest}`,
+        href: `/case?id=${k.id}`,
+      });
+    }
+
+    merged.sort((a, b) => b.at - a.at);
+    setItems(merged.slice(0, 80));
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+    const t = setInterval(load, REFRESH_MS);
+    return () => clearInterval(t);
+  }, [load]);
+
+  const shown = useMemo(
+    () => (filter === 'all' ? items : (items ?? []).filter((x) => x.kind === filter)),
+    [items, filter],
+  );
+
+  const header = (
+    <View className="px-4">
+      <Text className="pb-1 pt-4 text-2xl font-bold text-hawk-ink">Hawkeye</Text>
+      <Text className="pb-4 text-sm text-neutral-600">
+        Independent election observation — every report public, signed and verifiable.
+      </Text>
+
+      {error ? (
+        <View className="mb-3 rounded-2xl bg-amber-100 px-4 py-3">
+          <Text className="text-sm text-amber-900">{error}</Text>
+        </View>
+      ) : null}
+
+      {contests?.map((c) => (
+        <Pressable
+          key={c.code}
+          className="mb-3 overflow-hidden rounded-3xl bg-hawk-green active:opacity-90"
+          onPress={() => router.push('/report/result')}
+        >
+          <View className="px-5 pb-4 pt-5">
+            <Text className="text-xs font-semibold uppercase tracking-wider text-hawk-gold">
+              {c.open ? 'Reporting open' : 'Upcoming election'}
+            </Text>
+            <Text className="pt-1 text-xl font-bold text-white">{c.election}</Text>
+            <Text className="pt-1 text-sm text-emerald-100">
+              {new Date(`${c.date}T12:00:00`).toLocaleDateString('en-GB', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </Text>
+          </View>
+          <View className="flex-row items-center justify-between bg-[#00351e] px-5 py-3">
+            <Text className="text-sm font-semibold text-hawk-gold">
+              {c.open ? 'Report from your polling unit now' : `Opens in ${daysUntil(c.date)} days`}
+            </Text>
+            <Feather name="chevron-right" size={16} color={BRAND.gold} />
+          </View>
+        </Pressable>
+      ))}
+
+      <View className="flex-row gap-3">
+        <Pressable
+          className="flex-1 rounded-2xl bg-white px-4 py-4 active:opacity-80"
+          onPress={() => router.push('/reports-log')}
+        >
+          <Text className="text-2xl font-bold text-hawk-ink">{integrity?.reports ?? '—'}</Text>
+          <Text className="text-xs text-neutral-500">Accepted reports</Text>
+        </Pressable>
+        <Pressable
+          className="flex-1 rounded-2xl bg-white px-4 py-4 active:opacity-80"
+          onPress={() => router.push('/integrity')}
+        >
+          <Text className="text-2xl font-bold text-hawk-ink">{integrity?.unitsFlagged ?? '—'}</Text>
+          <Text className="text-xs text-neutral-500">Units flagged</Text>
+        </Pressable>
+      </View>
+
+      <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+        Live activity
+      </Text>
+      <View className="flex-row flex-wrap">
+        {FILTERS.map((f) => (
+          <Pressable
+            key={f.key}
+            onPress={() => setFilter(f.key)}
+            className={`mb-2 mr-2 rounded-full px-3.5 py-2 ${
+              filter === f.key ? 'bg-hawk-green' : 'bg-white'
+            }`}
+          >
+            <Text
+              className={`text-xs font-semibold ${
+                filter === f.key ? 'text-hawk-gold' : 'text-neutral-600'
+              }`}
+            >
+              {f.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-hawk-mist" edges={['top']}>
-      <ScrollView
-        contentContainerClassName="px-4 pb-8"
+      <FlashList
+        data={shown ?? []}
+        keyExtractor={(x) => x.id}
+        ListHeaderComponent={header}
+        contentContainerStyle={{ paddingBottom: 24 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
+            tintColor={BRAND.leaf}
             onRefresh={async () => {
               setRefreshing(true);
               await load();
@@ -45,62 +291,42 @@ export default function Home() {
             }}
           />
         }
-      >
-        <Text className="pb-1 pt-4 text-2xl font-bold text-hawk-ink">Hawkeye</Text>
-        <Text className="pb-4 text-sm text-neutral-600">
-          Independent election observation — every report public, signed and verifiable.
-        </Text>
-
-        {error ? (
-          <View className="mb-3 rounded-2xl bg-amber-100 px-4 py-3">
-            <Text className="text-sm text-amber-900">{error}</Text>
-          </View>
-        ) : null}
-
-        {contests?.map((c) => (
-          <View key={c.code} className="mb-3 overflow-hidden rounded-3xl bg-hawk-green">
-            <View className="px-5 pb-4 pt-5">
-              <Text className="text-xs font-semibold uppercase tracking-wider text-hawk-gold">
-                {c.open ? 'Reporting open' : 'Upcoming election'}
-              </Text>
-              <Text className="pt-1 text-xl font-bold text-white">{c.election}</Text>
-              <Text className="pt-1 text-sm text-emerald-100">
-                {new Date(`${c.date}T12:00:00`).toLocaleDateString('en-GB', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
+        ListEmptyComponent={
+          items === null ? (
+            <ActivityIndicator className="pt-6" color={BRAND.leaf} />
+          ) : (
+            <View className="px-4 pt-2">
+              <Text className="text-sm text-neutral-500">
+                {filter === 'all'
+                  ? 'Nothing has come in yet. Reports, incidents and flags appear here as they land.'
+                  : 'Nothing of this kind yet.'}
               </Text>
             </View>
-            <View className="flex-row items-center justify-between bg-[#00351e] px-5 py-3">
-              <Text className="text-sm font-semibold text-hawk-gold">
-                {c.open ? 'Report from your polling unit now' : `Opens in ${daysUntil(c.date)} days`}
-              </Text>
-            </View>
-          </View>
-        ))}
-
-        <View className="flex-row gap-3">
-          <View className="flex-1 rounded-2xl bg-white px-4 py-4">
-            <Text className="text-2xl font-bold text-hawk-ink">{integrity?.reports ?? '—'}</Text>
-            <Text className="text-xs text-neutral-500">Accepted reports</Text>
-          </View>
-          <View className="flex-1 rounded-2xl bg-white px-4 py-4">
-            <Text className="text-2xl font-bold text-hawk-ink">{integrity?.unitsFlagged ?? '—'}</Text>
-            <Text className="text-xs text-neutral-500">Units flagged</Text>
-          </View>
-        </View>
-
-        <View className="mt-3 rounded-2xl bg-white px-4 py-4">
-          <Text className="text-base font-semibold text-hawk-ink">How it works</Text>
-          <Text className="pt-1 text-sm leading-5 text-neutral-600">
-            Photograph the result sheet at your polling unit. Your report is GPS-checked,
-            signed on your device, and chained into a public ledger no one — including us —
-            can silently edit. Hawkeye never declares results; INEC does.
-          </Text>
-        </View>
-      </ScrollView>
+          )
+        }
+        renderItem={({ item }) => {
+          const k = KIND[item.kind];
+          return (
+            <Pressable
+              className="mx-4 mb-2 flex-row items-start rounded-2xl bg-white px-4 py-3 active:opacity-80"
+              onPress={() => (item.href ? router.push(item.href as never) : undefined)}
+            >
+              <View className={`mt-0.5 rounded-full p-1.5 ${k.tone}`}>
+                <Feather name={k.icon} size={12} color={BRAND.ink} />
+              </View>
+              <View className="flex-1 pl-3">
+                <Text className="text-sm font-bold capitalize text-hawk-ink">{item.title}</Text>
+                {item.detail ? (
+                  <Text className="pt-0.5 text-xs text-neutral-500" numberOfLines={2}>
+                    {item.detail}
+                  </Text>
+                ) : null}
+              </View>
+              <Text className="pl-2 text-[11px] text-neutral-400">{ago(item.at)}</Text>
+            </Pressable>
+          );
+        }}
+      />
     </SafeAreaView>
   );
 }

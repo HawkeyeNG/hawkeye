@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 
@@ -50,6 +51,7 @@ type Turn = { id: number; q: string; a: string | null };
  * landing fold, the auth form), which is a placement rule, not an access rule.
  */
 export default function Assistant() {
+  const ui = useUi();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
@@ -135,16 +137,16 @@ export default function Assistant() {
   const off = enabled === false;
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Ask Hawkeye</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Ask Hawkeye</Text>
       </View>
 
       <KeyboardAvoidingView
@@ -157,8 +159,8 @@ export default function Assistant() {
           keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: true })}
         >
-          <View className="mb-2 max-w-[88%] self-start rounded-2xl rounded-bl-md bg-white px-4 py-3">
-            <Text className="text-sm text-hawk-ink">{GREETING}</Text>
+          <View className="mb-2 max-w-[88%] self-start rounded-2xl rounded-bl-md bg-card px-4 py-3">
+            <Text className="text-sm text-ink">{GREETING}</Text>
           </View>
 
           {off ? (
@@ -172,18 +174,18 @@ export default function Assistant() {
 
           {turns.length === 0 && !off ? (
             <View className="pt-1">
-              <Text className="pb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              <Text className="pb-2 text-xs font-semibold uppercase tracking-wide text-muted">
                 Try asking
               </Text>
               {SUGGESTIONS.map((s) => (
                 <Pressable
                   key={s}
                   onPress={() => setQ(s)}
-                  className="mb-2 flex-row items-center rounded-2xl bg-white px-4 py-3 active:opacity-80"
+                  className="mb-2 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-80"
                 >
                   <Feather name="message-circle" size={14} color={BRAND.leaf} />
-                  <Text className="flex-1 pl-2.5 text-sm text-hawk-ink">{s}</Text>
-                  <Feather name="arrow-up-right" size={14} color="#9db5a7" />
+                  <Text className="flex-1 pl-2.5 text-sm text-ink">{s}</Text>
+                  <Feather name="arrow-up-right" size={14} color={ui.faint} />
                 </Pressable>
               ))}
             </View>
@@ -195,19 +197,19 @@ export default function Assistant() {
                 <Text className="text-sm text-white">{t.q}</Text>
               </View>
               {t.a ? (
-                <View className="mb-2 max-w-[88%] self-start rounded-2xl rounded-bl-md bg-white px-4 py-3">
-                  <Text className="text-sm leading-5 text-hawk-ink">{t.a}</Text>
+                <View className="mb-2 max-w-[88%] self-start rounded-2xl rounded-bl-md bg-card px-4 py-3">
+                  <Text className="text-sm leading-5 text-ink">{t.a}</Text>
                 </View>
               ) : busy && t.id === turns[turns.length - 1]?.id ? (
-                <View className="mb-2 flex-row items-center self-start rounded-2xl rounded-bl-md bg-white px-4 py-3">
+                <View className="mb-2 flex-row items-center self-start rounded-2xl rounded-bl-md bg-card px-4 py-3">
                   <ActivityIndicator size="small" color={BRAND.leaf} />
-                  <Text className="pl-2 text-sm text-neutral-500">Reading the reports…</Text>
+                  <Text className="pl-2 text-sm text-muted">Reading the reports…</Text>
                 </View>
               ) : (
                 // No pretend answer bubble for a failure: the named reason and the
                 // retry both live in the footer, where they can't scroll away.
-                <View className="mb-2 self-start rounded-2xl rounded-bl-md bg-hawk-mist px-4 py-2">
-                  <Text className="text-xs font-semibold text-neutral-500">Unanswered</Text>
+                <View className="mb-2 self-start rounded-2xl rounded-bl-md bg-surface px-4 py-2">
+                  <Text className="text-xs font-semibold text-muted">Unanswered</Text>
                 </View>
               )}
             </View>
@@ -217,12 +219,12 @@ export default function Assistant() {
         {/* Sibling of the thread, inside the keyboard avoider: a chat grows without
             limit, so the composer is the one thing that must never scroll — and
             the failure line rides with it so a retry never drifts off-screen. */}
-        <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
           {err ? <Text className="pb-2 text-sm font-semibold text-amber-800">{err}</Text> : null}
 
           <View className="flex-row items-end">
             <TextInput
-              className="mr-2 max-h-28 flex-1 rounded-2xl bg-white px-4 py-3 text-base text-hawk-ink"
+              className="mr-2 max-h-28 flex-1 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder={off ? 'The assistant is switched off' : 'Ask about the results…'}
               placeholderTextColor="#9db5a7"
               editable={!off}
@@ -238,7 +240,7 @@ export default function Assistant() {
               disabled={!canSend || off}
               onPress={() => (q.trim() ? ask(q) : failed ? ask(failed.q, failed.id) : undefined)}
               className={`h-12 items-center justify-center rounded-2xl px-5 ${
-                canSend && !off ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'
+                canSend && !off ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'
               }`}
             >
               {busy ? (
@@ -251,7 +253,7 @@ export default function Assistant() {
             </Pressable>
           </View>
 
-          <Text className="pt-2 text-xs text-neutral-500">
+          <Text className="pt-2 text-xs text-muted">
             Answers come only from crowd-reported, unofficial figures. INEC declares official
             results.
           </Text>

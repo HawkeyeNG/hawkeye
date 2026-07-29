@@ -4,6 +4,8 @@ import * as WebBrowser from 'expo-web-browser';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useUi } from '@/lib/theme';
+
 import { SocialRow } from '@/components/social-row';
 
 /**
@@ -53,21 +55,22 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
 ];
 
 export default function More() {
+  const ui = useUi();
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScrollView contentContainerClassName="px-4 pb-8">
-        <Text className="pb-2 pt-4 text-2xl font-bold text-hawk-ink">More</Text>
+        <Text className="pb-2 pt-4 text-2xl font-bold text-ink">More</Text>
         {GROUPS.map((g) => (
           <View key={g.title} className="pb-2">
-            <Text className="pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            <Text className="pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-muted">
               {g.title}
             </Text>
-            <View className="overflow-hidden rounded-2xl bg-white">
+            <View className="overflow-hidden rounded-2xl bg-card">
               {g.items.map((it, i) => (
                 <Pressable
                   key={it.href}
-                  className={`flex-row items-center px-4 py-3.5 active:bg-hawk-mist ${
-                    i > 0 ? 'border-t border-hawk-mist' : ''
+                  className={`flex-row items-center px-4 py-3.5 active:bg-surface ${
+                    i > 0 ? 'border-t border-line' : ''
                   }`}
                   onPress={() =>
                     it.href.startsWith('native:')
@@ -76,18 +79,18 @@ export default function More() {
                   }
                 >
                   <Feather name={it.icon} size={17} color="#0b6b3a" />
-                  <Text className="flex-1 pl-3 text-base text-hawk-ink">{it.label}</Text>
-                  <Feather name="chevron-right" size={16} color="#9db5a7" />
+                  <Text className="flex-1 pl-3 text-base text-ink">{it.label}</Text>
+                  <Feather name="chevron-right" size={16} color={ui.faint} />
                 </Pressable>
               ))}
             </View>
           </View>
         ))}
-        <Text className="pb-2 pt-5 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+        <Text className="pb-2 pt-5 text-xs font-semibold uppercase tracking-wider text-muted">
           Find Hawkeye
         </Text>
         <SocialRow />
-        <Text className="pt-5 text-center text-xs text-neutral-400">
+        <Text className="pt-5 text-center text-xs text-faint">
           © IniXien, LLC · Hawkeye is independent. It does not declare results; all
           official results are announced by INEC.
         </Text>

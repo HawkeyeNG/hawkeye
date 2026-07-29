@@ -6,11 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PartyMark, RaceView } from '@/components/race';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import { loadPolitical, partyColor, type Race } from '@/lib/political';
 
 /** 2027 Candidates — the declared presidential field, plus the side-by-side
  *  compare the web page carries (kept, scrolled horizontally, not dropped). */
 export default function Candidates() {
+  const ui = useUi();
   const [race, setRace] = useState<Race | null>(null);
   const [logos, setLogos] = useState<Record<string, string>>({});
   const [err, setErr] = useState<string | null>(null);
@@ -25,16 +27,16 @@ export default function Candidates() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">2027 Candidates</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">2027 Candidates</Text>
       </View>
 
       <ScrollView contentContainerClassName="px-4 pb-10 pt-3">
@@ -46,16 +48,16 @@ export default function Candidates() {
           <>
             <RaceView race={race} logos={logos} />
 
-            <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+            <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
               Quick compare
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View className="overflow-hidden rounded-2xl bg-white">
-                <View className="flex-row bg-hawk-mist px-3 py-2">
+              <View className="overflow-hidden rounded-2xl bg-card">
+                <View className="flex-row bg-surface px-3 py-2">
                   {['Candidate', 'Party', 'Home base', 'Bid', 'Status'].map((h, i) => (
                     <Text
                       key={h}
-                      className="text-[10px] font-bold uppercase tracking-wide text-neutral-500"
+                      className="text-[10px] font-bold uppercase tracking-wide text-muted"
                       style={{ width: i === 0 ? 150 : 120 }}
                     >
                       {h}
@@ -65,10 +67,10 @@ export default function Candidates() {
                 {race.candidates.map((c, i) => (
                   <View
                     key={`${c.party}-${c.name}`}
-                    className={`flex-row px-3 py-2.5 ${i > 0 ? 'border-t border-hawk-mist' : ''}`}
+                    className={`flex-row px-3 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}
                   >
                     <Text
-                      className="pr-2 text-xs font-bold text-hawk-ink"
+                      className="pr-2 text-xs font-bold text-ink"
                       style={{ width: 150 }}
                     >
                       {c.name}
@@ -85,7 +87,7 @@ export default function Candidates() {
                     {[c.home, c.bids, c.status].map((v, j) => (
                       <Text
                         key={j}
-                        className="pr-2 text-xs text-neutral-600"
+                        className="pr-2 text-xs text-muted"
                         style={{ width: 120 }}
                       >
                         {v || '—'}

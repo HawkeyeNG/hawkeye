@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { loadStatesGeo, NigeriaMap, NO_DATA_FILL, normState } from '@/components/nigeria-map';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import { loadPolitical, partyColor, partyName, type Political } from '@/lib/political';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -71,6 +72,7 @@ const label = (name: string) => LABEL[name] ?? name;
 type Mode = 'results' | 'power';
 
 export default function MapScreen() {
+  const ui = useUi();
   const [mode, setMode] = useState<Mode>('results');
   const [contests, setContests] = useState<Contest[]>([]);
   const [code, setCode] = useState<string | null>(null);
@@ -255,16 +257,16 @@ export default function MapScreen() {
       : 'Who holds each governorship now — the incumbents this election confirms or unseats.';
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Map of Nigeria</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Map of Nigeria</Text>
       </View>
 
       <ScrollView
@@ -291,10 +293,10 @@ export default function MapScreen() {
             <Pressable
               key={m}
               onPress={() => setMode(m)}
-              className={`mr-2 rounded-full px-3.5 py-2 ${mode === m ? 'bg-hawk-green' : 'bg-white'}`}
+              className={`mr-2 rounded-full px-3.5 py-2 ${mode === m ? 'bg-hawk-green' : 'bg-card'}`}
             >
               <Text
-                className={`text-xs font-semibold ${mode === m ? 'text-hawk-gold' : 'text-neutral-600'}`}
+                className={`text-xs font-semibold ${mode === m ? 'text-hawk-gold' : 'text-muted'}`}
               >
                 {text}
               </Text>
@@ -309,10 +311,10 @@ export default function MapScreen() {
               <Pressable
                 key={c.code}
                 onPress={() => setCode(c.code)}
-                className={`mb-2 mr-2 rounded-full px-3 py-1.5 ${c.code === code ? 'bg-hawk-leaf' : 'bg-white'}`}
+                className={`mb-2 mr-2 rounded-full px-3 py-1.5 ${c.code === code ? 'bg-hawk-leaf' : 'bg-card'}`}
               >
                 <Text
-                  className={`text-[11px] font-semibold ${c.code === code ? 'text-white' : 'text-neutral-600'}`}
+                  className={`text-[11px] font-semibold ${c.code === code ? 'text-white' : 'text-muted'}`}
                 >
                   {c.name}
                 </Text>
@@ -321,15 +323,15 @@ export default function MapScreen() {
           </View>
         ) : null}
 
-        <Text className="text-base font-bold text-hawk-ink">{heading}</Text>
-        <Text className="pb-3 pt-0.5 text-xs text-neutral-500">{subtitle}</Text>
+        <Text className="text-base font-bold text-ink">{heading}</Text>
+        <Text className="pb-3 pt-0.5 text-xs text-muted">{subtitle}</Text>
 
         {mode === 'results' && !stateKeyed ? (
-          <View className="mb-3 rounded-2xl bg-white px-4 py-3">
+          <View className="mb-3 rounded-2xl bg-card px-4 py-3">
             <Text className="text-sm font-semibold text-amber-800">
               This race can&apos;t be drawn on a state map.
             </Text>
-            <Text className="pt-1 text-xs text-neutral-600">
+            <Text className="pt-1 text-xs text-muted">
               {contest?.name ?? tally?.contest} is counted by {tally?.level}, not by state. Open the
               website&apos;s results map for the right polygons.
             </Text>
@@ -350,27 +352,27 @@ export default function MapScreen() {
                 className="h-3 w-3 rounded-sm"
                 style={{ backgroundColor: partyColor(party), opacity: 0.9 }}
               />
-              <Text className="pl-1.5 text-[11px] text-neutral-600">
+              <Text className="pl-1.5 text-[11px] text-muted">
                 {party} · {n}
               </Text>
             </View>
           ))}
           {legend.ties ? (
             <View className="mb-1.5 mr-3 flex-row items-center">
-              <View className="h-3 w-3 rounded-sm border border-neutral-300 bg-white" />
-              <Text className="pl-1.5 text-[11px] text-neutral-600">tied · {legend.ties}</Text>
+              <View className="h-3 w-3 rounded-sm border border-neutral-300 bg-card" />
+              <Text className="pl-1.5 text-[11px] text-muted">tied · {legend.ties}</Text>
             </View>
           ) : null}
           <View className="mb-1.5 mr-3 flex-row items-center">
             <View className="h-3 w-3 rounded-sm" style={{ backgroundColor: NO_DATA_FILL }} />
-            <Text className="pl-1.5 text-[11px] text-neutral-600">
+            <Text className="pl-1.5 text-[11px] text-muted">
               {mode === 'results' ? 'no reports yet' : 'no governor'}
             </Text>
           </View>
         </View>
 
         {mode === 'results' && tally ? (
-          <Text className="pt-1 text-[11px] text-neutral-400">
+          <Text className="pt-1 text-[11px] text-faint">
             {tally.regions.length} state(s) reporting · {tally.unitsReporting} unit(s) counted
             {tally.inDispute ? ` · ${tally.inDispute} excluded pending arbitration` : ''} · updated{' '}
             {new Date(tally.updatedAt).toLocaleTimeString([], {
@@ -380,12 +382,12 @@ export default function MapScreen() {
           </Text>
         ) : null}
         {mode === 'results' ? (
-          <Text className="pt-2 text-[11px] text-neutral-400">
+          <Text className="pt-2 text-[11px] text-faint">
             Unofficial. Crowd-reported totals, excluding disputed results. Official results remain
             INEC&apos;s.
           </Text>
         ) : (
-          <Text className="pt-2 text-[11px] text-neutral-400">
+          <Text className="pt-2 text-[11px] text-faint">
             {political?.note ?? 'Incumbency data is provisional and community-maintained.'}
           </Text>
         )}
@@ -394,7 +396,7 @@ export default function MapScreen() {
             targets that actually work for Lagos, Ekiti and the FCT. */}
         {names.length ? (
           <>
-            <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+            <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
               Every state
             </Text>
             <View className="flex-row flex-wrap">
@@ -406,14 +408,14 @@ export default function MapScreen() {
                   <Pressable
                     key={name}
                     onPress={() => setSelected(name)}
-                    className={`mb-2 mr-2 flex-row items-center rounded-full px-3 py-1.5 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+                    className={`mb-2 mr-2 flex-row items-center rounded-full px-3 py-1.5 ${on ? 'bg-hawk-green' : 'bg-card'}`}
                   >
                     <View
                       className="h-2 w-2 rounded-full"
                       style={{ backgroundColor: colour ?? '#c9d4cd' }}
                     />
                     <Text
-                      className={`pl-1.5 text-[11px] font-semibold ${on ? 'text-hawk-gold' : 'text-neutral-600'}`}
+                      className={`pl-1.5 text-[11px] font-semibold ${on ? 'text-hawk-gold' : 'text-muted'}`}
                     >
                       {label(name)}
                     </Text>
@@ -425,12 +427,12 @@ export default function MapScreen() {
         ) : null}
       </ScrollView>
 
-      <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+      <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
         {detail.title ? (
-          <Text className="text-sm font-bold text-hawk-ink">{detail.title}</Text>
+          <Text className="text-sm font-bold text-ink">{detail.title}</Text>
         ) : null}
         {detail.lines.map((line, i) => (
-          <Text key={i} className="pt-0.5 text-xs text-neutral-600">
+          <Text key={i} className="pt-0.5 text-xs text-muted">
             {line}
           </Text>
         ))}

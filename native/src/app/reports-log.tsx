@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;
@@ -70,6 +71,7 @@ function locationLine(r: Row) {
  * as the web page, and pulls to refresh because a phone should.
  */
 export default function ReportsLog() {
+  const ui = useUi();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [ledger, setLedger] = useState<Ledger | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -103,7 +105,7 @@ export default function ReportsLog() {
 
   const header = (
     <View className="px-4 pb-3 pt-3">
-      <Text className="pb-3 text-sm text-neutral-600">
+      <Text className="pb-3 text-sm text-muted">
         Confidence is the share of independent observers reporting the same numbers. Every
         report is digitally signed and permanently recorded on a public, tamper-evident ledger.
       </Text>
@@ -111,11 +113,11 @@ export default function ReportsLog() {
       {/* The ledger verdict belongs here too — and tapping it goes to the screen
           where the phone rechecks the chain itself rather than believing this line. */}
       <Pressable
-        className="flex-row items-center rounded-2xl bg-white px-4 py-3 active:opacity-80"
+        className="flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-80"
         onPress={() => router.push('/ledger')}
       >
         {!ledger ? (
-          <Text className="flex-1 text-sm text-neutral-500">Checking ledger integrity…</Text>
+          <Text className="flex-1 text-sm text-muted">Checking ledger integrity…</Text>
         ) : ledger.ok ? (
           <>
             <Feather name="shield" size={16} color={BRAND.leaf} />
@@ -131,7 +133,7 @@ export default function ReportsLog() {
             </Text>
           </>
         )}
-        <Feather name="chevron-right" size={16} color="#9db5a7" />
+        <Feather name="chevron-right" size={16} color={ui.faint} />
       </Pressable>
 
       {err ? (
@@ -143,16 +145,16 @@ export default function ReportsLog() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Public Reports Log</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Public Reports Log</Text>
       </View>
 
       <FlashList
@@ -167,7 +169,7 @@ export default function ReportsLog() {
           rows === null ? (
             <ActivityIndicator className="pt-6" color={BRAND.leaf} />
           ) : (
-            <Text className="px-4 pt-2 text-sm text-neutral-500">
+            <Text className="px-4 pt-2 text-sm text-muted">
               No reports yet — this fills up as observers submit from polling units.
             </Text>
           )
@@ -176,29 +178,29 @@ export default function ReportsLog() {
           const bad = r.status === 'disputed' || r.disputed;
           const counted = r.votes.filter((v) => v.count > 0);
           return (
-            <View className="mx-4 mb-2 rounded-2xl bg-white px-4 py-3">
-              <Text className="text-base font-bold text-hawk-ink">{r.name}</Text>
-              <Text className="pt-0.5 text-xs text-neutral-500">
+            <View className="mx-4 mb-2 rounded-2xl bg-card px-4 py-3">
+              <Text className="text-base font-bold text-ink">{r.name}</Text>
+              <Text className="pt-0.5 text-xs text-muted">
                 [{r.contest}] {r.puCode} · {[r.ward, r.lga, r.state].filter(Boolean).join(', ')}
                 {r.contest !== 'PRES' && r.scope ? ` · ${r.scope}` : ''}
               </Text>
 
-              <View className="mt-2 h-2 overflow-hidden rounded-full bg-hawk-mist">
+              <View className="mt-2 h-2 overflow-hidden rounded-full bg-surface">
                 <View
                   className={`h-full ${bad ? 'bg-red-600' : 'bg-hawk-green'}`}
                   style={{ width: `${Math.max(0, Math.min(100, r.confidence))}%` }}
                 />
               </View>
 
-              <Text className="pt-1.5 text-sm text-neutral-700">
+              <Text className="pt-1.5 text-sm text-ink">
                 <Text className={`font-bold ${bad ? 'text-red-700' : 'text-hawk-leaf'}`}>
                   {r.status.toUpperCase()}
                 </Text>
                 {` · ${r.confidence}% confidence · ${r.matchingReports}/${r.totalReports} matching reports`}
               </Text>
 
-              <Text className="pt-1 text-xs text-neutral-500">{locationLine(r)}</Text>
-              <Text className="pt-1 text-xs text-neutral-500">
+              <Text className="pt-1 text-xs text-muted">{locationLine(r)}</Text>
+              <Text className="pt-1 text-xs text-muted">
                 {counted.map((v) => `${v.party} ${v.count}`).join(' · ') || 'all zero'}
               </Text>
             </View>

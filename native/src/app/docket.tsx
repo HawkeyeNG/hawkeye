@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { StatusChip, TallyBar, type Tally } from '@/components/tally';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 
@@ -35,6 +36,7 @@ const when = (t: number | null) => (t ? new Date(t).toLocaleString() : '');
  * with quorum and a supermajority resolving them. Nobody at Hawkeye votes.
  */
 export default function Docket() {
+  const ui = useUi();
   const [cases, setCases] = useState<Case[] | null>(null);
   const [rule, setRule] = useState('');
   const [err, setErr] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export default function Docket() {
           Public Docket — flagged results, judged by the crowd. Nobody at Hawkeye decides.
         </Text>
       </View>
-      <Text className="text-sm text-neutral-600">
+      <Text className="text-sm text-muted">
         When automated checks flag a result, the flag never decides anything — it opens a case.
         Every case is published here with its full evidence, and verified observers worldwide
         judge it by answering factual questions. Quorum and a supermajority resolve it, every
@@ -72,7 +74,7 @@ export default function Docket() {
         transparency log.
       </Text>
       {rule ? (
-        <Text className="pt-2 text-xs text-neutral-500">Resolution rule: {rule}</Text>
+        <Text className="pt-2 text-xs text-muted">Resolution rule: {rule}</Text>
       ) : null}
       {err ? (
         <Text className="pt-2 text-sm font-semibold text-amber-800">
@@ -83,16 +85,16 @@ export default function Docket() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Public Docket</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Public Docket</Text>
       </View>
 
       <FlashList
@@ -115,23 +117,23 @@ export default function Docket() {
           cases === null ? (
             err ? null : <ActivityIndicator className="pt-6" color={BRAND.leaf} />
           ) : (
-            <Text className="px-4 pt-2 text-center text-sm text-neutral-500">
+            <Text className="px-4 pt-2 text-center text-sm text-muted">
               No cases — no results are currently in dispute.
             </Text>
           )
         }
         renderItem={({ item: c }) => (
           <Pressable
-            className="mx-4 mb-2 rounded-2xl bg-white px-4 py-3 active:opacity-80"
+            className="mx-4 mb-2 rounded-2xl bg-card px-4 py-3 active:opacity-80"
             onPress={() => router.push(`/case?id=${c.id}`)}
           >
             <View className="flex-row items-start">
-              <Text className="flex-1 pr-2 text-base font-bold text-hawk-ink">
+              <Text className="flex-1 pr-2 text-base font-bold text-ink">
                 {c.name || c.puCode} — {c.contest}
               </Text>
               <StatusChip status={c.status} />
             </View>
-            <Text className="pt-1 text-xs text-neutral-500">
+            <Text className="pt-1 text-xs text-muted">
               {[c.ward ? `${c.ward} ward` : null, c.lga, c.state].filter(Boolean).join(', ')} ·
               opened {when(c.openedAt)} ·{' '}
               {c.status === 'open'

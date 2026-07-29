@@ -31,9 +31,9 @@ export function PasswordField({
 }) {
   const [shown, setShown] = useState(false);
   return (
-    <View className="flex-row items-center rounded-2xl bg-white pr-2">
+    <View className="flex-row items-center rounded-2xl bg-card pr-2">
       <TextInput
-        className="flex-1 px-4 py-3.5 text-base text-hawk-ink"
+        className="flex-1 px-4 py-3.5 text-base text-ink"
         placeholder={placeholder}
         placeholderTextColor="#9db5a7"
         secureTextEntry={!shown}

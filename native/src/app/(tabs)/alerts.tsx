@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import { authedGet, signOut, useAuth } from '@/lib/auth';
 import { markRead, openNotificationTarget, setUnread, useUnread } from '@/lib/push';
 
@@ -30,6 +31,7 @@ function ago(ts: number) {
 
 /** Alerts — the observer's /api/notifications feed once signed in. */
 export default function Alerts() {
+  const ui = useUi();
   const auth = useAuth();
   const navigation = useNavigation();
   const unread = useUnread();
@@ -105,7 +107,7 @@ export default function Alerts() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ConfirmSheet
         visible={confirmOut}
         icon="log-out"
@@ -120,7 +122,7 @@ export default function Alerts() {
         onCancel={() => setConfirmOut(false)}
       />
       <View className="flex-row items-center justify-between px-4 pb-2 pt-4">
-        <Text className="text-2xl font-bold text-hawk-ink">Alerts</Text>
+        <Text className="text-2xl font-bold text-ink">Alerts</Text>
         {auth.status === 'signedIn' ? (
           <Pressable hitSlop={8} onPress={() => setConfirmOut(true)}>
             <Text className="text-sm font-semibold text-hawk-leaf">
@@ -131,10 +133,10 @@ export default function Alerts() {
       </View>
 
       {auth.status !== 'signedIn' ? (
-        <View className="mx-4 mt-4 items-center rounded-2xl bg-white px-6 py-10">
+        <View className="mx-4 mt-4 items-center rounded-2xl bg-card px-6 py-10">
           <Feather name="bell" size={28} color={BRAND.leaf} />
-          <Text className="pt-3 text-base font-semibold text-hawk-ink">Sign in to get alerts</Text>
-          <Text className="pt-1 text-center text-sm text-neutral-500">
+          <Text className="pt-3 text-base font-semibold text-ink">Sign in to get alerts</Text>
+          <Text className="pt-1 text-center text-sm text-muted">
             Race updates, docket cases and replies to your reports arrive here.
           </Text>
           <Pressable
@@ -161,19 +163,19 @@ export default function Alerts() {
               items === null && !err ? (
                 <ActivityIndicator className="pt-8" color={BRAND.leaf} />
               ) : err ? (
-                <View className="mt-4 items-center rounded-2xl bg-white px-6 py-10">
-                  <Feather name="wifi-off" size={26} color="#9db5a7" />
-                  <Text className="pt-3 text-base font-semibold text-hawk-ink">
+                <View className="mt-4 items-center rounded-2xl bg-card px-6 py-10">
+                  <Feather name="wifi-off" size={26} color={ui.faint} />
+                  <Text className="pt-3 text-base font-semibold text-ink">
                     Could not load your alerts
                   </Text>
-                  <Text className="pt-1 text-center text-sm text-neutral-500">
+                  <Text className="pt-1 text-center text-sm text-muted">
                     Pull down to try again. ({err})
                   </Text>
                 </View>
               ) : (
-                <View className="mt-4 items-center rounded-2xl bg-white px-6 py-10">
-                  <Text className="text-base font-semibold text-hawk-ink">Nothing yet</Text>
-                  <Text className="pt-1 text-center text-sm text-neutral-500">
+                <View className="mt-4 items-center rounded-2xl bg-card px-6 py-10">
+                  <Text className="text-base font-semibold text-ink">Nothing yet</Text>
+                  <Text className="pt-1 text-center text-sm text-muted">
                     You are signed in. Updates on races you follow and reports you file land here.
                   </Text>
                 </View>
@@ -183,21 +185,21 @@ export default function Alerts() {
               <Pressable
                 onPress={() => open(item)}
                 className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 active:opacity-80 ${
-                  item.read ? 'bg-white' : 'bg-emerald-50'
+                  item.read ? 'bg-card' : 'bg-emerald-50'
                 }`}
               >
                 <View className="flex-1 pr-2">
-                  <Text className="text-base font-semibold text-hawk-ink">{item.title}</Text>
+                  <Text className="text-base font-semibold text-ink">{item.title}</Text>
                   {item.body ? (
-                    <Text className="pt-0.5 text-sm text-neutral-600" numberOfLines={3}>
+                    <Text className="pt-0.5 text-sm text-muted" numberOfLines={3}>
                       {item.body}
                     </Text>
                   ) : null}
                 </View>
-                <Text className="text-xs text-neutral-400">{ago(item.created_at)}</Text>
+                <Text className="text-xs text-faint">{ago(item.created_at)}</Text>
                 {item.url ? (
                   <View className="pl-1">
-                    <Feather name="chevron-right" size={16} color="#9db5a7" />
+                    <Feather name="chevron-right" size={16} color={ui.faint} />
                   </View>
                 ) : null}
               </Pressable>
@@ -209,12 +211,12 @@ export default function Alerts() {
               to the bottom of a backlog they've already read elsewhere. Nothing
               to mark on an empty or unloaded feed, so it isn't there at all. */}
           {items?.length ? (
-            <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+            <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
               <Pressable
                 disabled={unread === 0 || marking}
                 onPress={markAll}
                 className={`flex-row items-center justify-center rounded-2xl py-3.5 ${
-                  unread === 0 || marking ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+                  unread === 0 || marking ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
                 }`}
               >
                 {marking ? (

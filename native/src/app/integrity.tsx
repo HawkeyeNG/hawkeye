@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;
@@ -123,7 +124,7 @@ async function jget<T>(path: string): Promise<T> {
 const SEV_COLOR: Record<string, string> = {
   high: 'bg-red-100 text-red-700',
   medium: 'bg-amber-100 text-amber-800',
-  low: 'bg-neutral-100 text-neutral-600',
+  low: 'bg-line text-muted',
 };
 
 function timeAgo(ts: number) {
@@ -154,7 +155,7 @@ function DigitBars({ items, n }: { items: Digit[]; n: number }) {
                 style={{ bottom: `${exp}%` }}
               />
             </View>
-            <Text className="pt-1 text-[10px] text-neutral-500">{d.digit}</Text>
+            <Text className="pt-1 text-[10px] text-muted">{d.digit}</Text>
           </View>
         );
       })}
@@ -171,6 +172,7 @@ function DigitBars({ items, n }: { items: Digit[]; n: number }) {
  * case in the Public Docket, where people (not the algorithm) decide.
  */
 export default function Integrity() {
+  const ui = useUi();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [rows, setRows] = useState<Discrepancy[] | null>(null);
   const [benford, setBenford] = useState<Benford | null>(null);
@@ -235,9 +237,9 @@ export default function Integrity() {
   const types = [...new Set((summary?.byType ?? []).map((r) => r.type))];
 
   const Stat = ({ n, label, tone }: { n: number | string; label: string; tone?: string }) => (
-    <View className="mb-2 mr-2 min-w-[30%] flex-1 rounded-2xl bg-white px-3 py-3">
-      <Text className={`text-xl font-bold ${tone ?? 'text-hawk-ink'}`}>{n}</Text>
-      <Text className="text-[11px] text-neutral-500">{label}</Text>
+    <View className="mb-2 mr-2 min-w-[30%] flex-1 rounded-2xl bg-card px-3 py-3">
+      <Text className={`text-xl font-bold ${tone ?? 'text-ink'}`}>{n}</Text>
+      <Text className="text-[11px] text-muted">{label}</Text>
     </View>
   );
 
@@ -252,9 +254,9 @@ export default function Integrity() {
   }) => (
     <Pressable
       onPress={onPress}
-      className={`mb-2 mr-2 rounded-full px-3.5 py-2 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+      className={`mb-2 mr-2 rounded-full px-3.5 py-2 ${on ? 'bg-hawk-green' : 'bg-card'}`}
     >
-      <Text className={`text-xs font-semibold ${on ? 'text-hawk-gold' : 'text-neutral-600'}`}>
+      <Text className={`text-xs font-semibold ${on ? 'text-hawk-gold' : 'text-muted'}`}>
         {label}
       </Text>
     </Pressable>
@@ -281,16 +283,16 @@ export default function Integrity() {
   })();
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Election Integrity</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Election Integrity</Text>
       </View>
 
       <ScrollView
@@ -314,7 +316,7 @@ export default function Integrity() {
           </Text>
         </View>
 
-        <Text className="pb-3 text-sm text-neutral-600">
+        <Text className="pb-3 text-sm text-muted">
           Every crowd-reported result is run through automated integrity checks. Anything that
           looks wrong is logged here in the open — over-voting, impossible turnout, forged form
           serials, conflicting counts and statistical outliers.
@@ -335,7 +337,7 @@ export default function Integrity() {
         </View>
 
         {/* Detected discrepancies */}
-        <Text className="pb-2 pt-3 text-base font-bold text-hawk-ink">Detected discrepancies</Text>
+        <Text className="pb-2 pt-3 text-base font-bold text-ink">Detected discrepancies</Text>
         <View className="flex-row flex-wrap">
           {[
             ['', 'All'],
@@ -376,7 +378,7 @@ export default function Integrity() {
         {rows === null ? (
           <ActivityIndicator className="py-4" color={BRAND.leaf} />
         ) : rows.length === 0 ? (
-          <Text className="py-3 text-sm text-neutral-500">
+          <Text className="py-3 text-sm text-muted">
             No discrepancies match — nothing flagged yet. 🎉
           </Text>
         ) : (
@@ -385,27 +387,27 @@ export default function Integrity() {
             const long = summaryText.length > 120;
             const show = expanded[d.id] || !long;
             return (
-              <View key={d.id} className="mb-2 rounded-2xl bg-white px-4 py-3">
+              <View key={d.id} className="mb-2 rounded-2xl bg-card px-4 py-3">
                 <View className="flex-row items-center">
                   <View className={`rounded-full px-2 py-0.5 ${SEV_COLOR[d.severity] ?? ''}`}>
                     <Text className="text-[10px] font-bold">{d.severity.toUpperCase()}</Text>
                   </View>
-                  <Text className="flex-1 pl-2 text-sm font-bold text-hawk-ink">
+                  <Text className="flex-1 pl-2 text-sm font-bold text-ink">
                     {TYPE_LABEL[d.type] || d.type}
                   </Text>
-                  <Text className="text-[11px] text-neutral-400">{timeAgo(d.created_at)}</Text>
+                  <Text className="text-[11px] text-faint">{timeAgo(d.created_at)}</Text>
                 </View>
-                <Text className="pt-1 text-sm text-hawk-ink">
+                <Text className="pt-1 text-sm text-ink">
                   {d.pu_name ? d.pu_name : d.state || '—'}
                 </Text>
                 {d.pu_code ? (
-                  <Text className="text-[11px] text-neutral-500">
+                  <Text className="text-[11px] text-muted">
                     {d.pu_code}
                     {d.state ? ` · ${d.state}` : ''}
                   </Text>
                 ) : null}
                 {summaryText ? (
-                  <Text className="pt-1.5 text-sm text-neutral-700">
+                  <Text className="pt-1.5 text-sm text-ink">
                     {show ? summaryText : `${summaryText.slice(0, 120).replace(/\s+\S*$/, '')}…`}
                     {d.contest ? ` (${d.contest})` : ''}
                   </Text>
@@ -433,89 +435,89 @@ export default function Integrity() {
         )}
 
         {/* Digit-distribution screening */}
-        <Text className="pb-1 pt-4 text-base font-bold text-hawk-ink">
+        <Text className="pb-1 pt-4 text-base font-bold text-ink">
           Digit-distribution screening
         </Text>
-        <Text className="pb-2 text-sm text-neutral-600">
+        <Text className="pb-2 text-sm text-muted">
           Fabricated figures cluster on favourite digits; genuine counts follow known
           distributions. Departures are screening signals — never proof on their own.
           {benford ? ` Based on ${benford.n} unit result(s), ${benford.nFirst || 0} party count(s).` : ''}
         </Text>
-        <View className="rounded-2xl bg-white px-4 py-4">
-          <Text className="text-sm font-bold text-hawk-ink">
+        <View className="rounded-2xl bg-card px-4 py-4">
+          <Text className="text-sm font-bold text-ink">
             First digit — Benford&apos;s law{' '}
-            <Text className="text-xs font-semibold text-neutral-500">
+            <Text className="text-xs font-semibold text-muted">
               {benford && VERDICT_TEXT[benford.verdict]
                 ? `— ${VERDICT_TEXT[benford.verdict](benford.mad)}`
                 : ''}
             </Text>
           </Text>
-          <Text className="pt-0.5 text-xs text-neutral-500">
+          <Text className="pt-0.5 text-xs text-muted">
             First digit of every party count vs Benford&apos;s expected curve (amber line).
           </Text>
           {benford?.firstDigit ? (
             <DigitBars items={benford.firstDigit} n={benford.nFirst} />
           ) : (
-            <Text className="pt-2 text-xs text-neutral-400">No counts yet.</Text>
+            <Text className="pt-2 text-xs text-faint">No counts yet.</Text>
           )}
 
-          <Text className="pt-4 text-sm font-bold text-hawk-ink">Last digit — uniformity</Text>
-          <Text className="pt-0.5 text-xs text-neutral-500">
+          <Text className="pt-4 text-sm font-bold text-ink">Last digit — uniformity</Text>
+          <Text className="pt-0.5 text-xs text-muted">
             Last digit of winning-party counts. A healthy spread sits near the 10% line.
           </Text>
           {benford?.lastDigit?.length ? (
             <DigitBars items={benford.lastDigit} n={benford.n} />
           ) : (
-            <Text className="pt-2 text-xs text-neutral-400">No counts yet.</Text>
+            <Text className="pt-2 text-xs text-faint">No counts yet.</Text>
           )}
         </View>
 
         {/* Cross-checks */}
-        <Text className="pb-1 pt-4 text-base font-bold text-hawk-ink">INEC IReV cross-check</Text>
-        <Text className="pb-2 text-sm text-neutral-600">
+        <Text className="pb-1 pt-4 text-base font-bold text-ink">INEC IReV cross-check</Text>
+        <Text className="pb-2 text-sm text-muted">
           Each crowd-reported count is compared against the EC8A sheet INEC itself uploads to its
           Results Viewing portal for the same polling unit — INEC&apos;s own evidence checked
           against the crowd&apos;s.
         </Text>
-        <View className="rounded-2xl bg-white px-4 py-3">
-          <Text className="text-sm text-neutral-700">{irevLine}</Text>
+        <View className="rounded-2xl bg-card px-4 py-3">
+          <Text className="text-sm text-ink">{irevLine}</Text>
         </View>
 
-        <Text className="pb-1 pt-4 text-base font-bold text-hawk-ink">
+        <Text className="pb-1 pt-4 text-base font-bold text-ink">
           Collation reconciliation (EC8B/C/D)
         </Text>
-        <Text className="pb-2 text-sm text-neutral-600">
+        <Text className="pb-2 text-sm text-muted">
           Announced ward, LGA and state totals are checked against the polling-unit sheets
           underneath them. A collated figure can never be less than the sum of the covered units
           alone — when it is, that is proof of subtraction.
         </Text>
-        <View className="rounded-2xl bg-white px-4 py-3">
-          <Text className="text-sm text-neutral-700">{collLine}</Text>
+        <View className="rounded-2xl bg-card px-4 py-3">
+          <Text className="text-sm text-ink">{collLine}</Text>
           <Pressable className="pt-2" onPress={() => router.push('/report/collation')}>
             <Text className="text-sm font-bold text-hawk-leaf">Report a collation result →</Text>
           </Pressable>
         </View>
 
         {/* What we check */}
-        <Text className="pb-1 pt-4 text-base font-bold text-hawk-ink">What we check</Text>
-        <Text className="pb-2 text-sm text-neutral-600">
+        <Text className="pb-1 pt-4 text-base font-bold text-ink">What we check</Text>
+        <Text className="pb-2 text-sm text-muted">
           Every result is run through these automated checks. Tap a group to see each one.
         </Text>
-        <View className="overflow-hidden rounded-2xl bg-white">
+        <View className="overflow-hidden rounded-2xl bg-card">
           {CHECKS.map((g, i) => (
-            <View key={g.title} className={i > 0 ? 'border-t border-hawk-mist' : ''}>
+            <View key={g.title} className={i > 0 ? 'border-t border-line' : ''}>
               <Pressable
-                className="flex-row items-center px-4 py-3.5 active:bg-hawk-mist"
+                className="flex-row items-center px-4 py-3.5 active:bg-surface"
                 onPress={() => setOpen((o) => ({ ...o, [i]: !o[i] }))}
               >
-                <Text className="flex-1 text-sm font-bold text-hawk-ink">{g.title}</Text>
-                <Feather name={open[i] ? 'chevron-up' : 'chevron-down'} size={16} color="#9db5a7" />
+                <Text className="flex-1 text-sm font-bold text-ink">{g.title}</Text>
+                <Feather name={open[i] ? 'chevron-up' : 'chevron-down'} size={16} color={ui.faint} />
               </Pressable>
               {open[i]
                 ? g.items.map(([name, what]) => (
                     <View key={name} className="px-4 pb-3">
-                      <Text className="text-sm text-neutral-700">
-                        <Text className="font-bold text-hawk-ink">{name}</Text> — {what}
+                      <Text className="text-sm text-ink">
+                        <Text className="font-bold text-ink">{name}</Text> — {what}
                       </Text>
                     </View>
                   ))
@@ -524,7 +526,7 @@ export default function Integrity() {
           ))}
         </View>
 
-        <Text className="pt-4 text-center text-xs text-neutral-400">
+        <Text className="pt-4 text-center text-xs text-faint">
           Automated flags aid scrutiny; they are not proof of fraud. Official results remain
           INEC&apos;s.
         </Text>

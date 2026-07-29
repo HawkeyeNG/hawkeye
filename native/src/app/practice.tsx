@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
 import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 
@@ -53,6 +54,7 @@ const STEPS: { key: Step; label: string }[] = [
  * practice in its own disposable table.
  */
 export default function Practice() {
+  const ui = useUi();
   const [cfg, setCfg] = useState<PracticeConfig | null>(null);
   const [step, setStep] = useState<Step>('sheet');
 
@@ -128,7 +130,7 @@ export default function Practice() {
 
   if (!cfg) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist">
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface">
         <ActivityIndicator color={BRAND.leaf} />
       </SafeAreaView>
     );
@@ -136,12 +138,12 @@ export default function Practice() {
 
   if (!cfg.active) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist px-8">
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="moon" size={28} color={BRAND.leaf} />
-        <Text className="pt-3 text-center text-base font-semibold text-hawk-ink">
+        <Text className="pt-3 text-center text-base font-semibold text-ink">
           Practice is closed
         </Text>
-        <Text className="pt-1 text-center text-sm text-neutral-500">
+        <Text className="pt-1 text-center text-sm text-muted">
           A fresh practice run reopens after the current election, so you can prepare for the next
           one.
         </Text>
@@ -224,7 +226,7 @@ export default function Practice() {
   }) => (
     <Pressable
       disabled={busy}
-      className="flex-1 overflow-hidden rounded-2xl bg-white active:opacity-80"
+      className="flex-1 overflow-hidden rounded-2xl bg-card active:opacity-80"
       onPress={onPress}
     >
       {shot ? (
@@ -234,31 +236,31 @@ export default function Practice() {
           contentFit="cover"
         />
       ) : (
-        <View className="h-[110px] items-center justify-center bg-hawk-mist">
+        <View className="h-[110px] items-center justify-center bg-surface">
           <Feather name="image" size={20} color={BRAND.leaf} />
-          <Text className="pt-1 text-[11px] font-semibold text-neutral-500">Sample used</Text>
+          <Text className="pt-1 text-[11px] font-semibold text-muted">Sample used</Text>
         </View>
       )}
       <View className="flex-row items-center justify-between px-3 py-2">
-        <Text className="text-xs font-semibold text-neutral-500">{label}</Text>
+        <Text className="text-xs font-semibold text-muted">{label}</Text>
         <Text className="text-xs font-bold text-hawk-leaf">{shot ? 'Retake' : 'Take photo'}</Text>
       </View>
     </Pressable>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Practice run</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Practice run</Text>
         <View className="ml-2 rounded-full bg-hawk-gold px-2 py-0.5">
-          <Text className="text-[10px] font-bold text-hawk-ink">PRACTICE</Text>
+          <Text className="text-[10px] font-bold text-ink">PRACTICE</Text>
         </View>
       </View>
 
@@ -269,10 +271,10 @@ export default function Practice() {
             const on = i <= idx;
             return (
               <View key={s.key} className="mr-1 flex-1">
-                <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-white'}`} />
+                <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-card'}`} />
                 <Text
                   className={`pt-1 text-center text-[10px] font-semibold ${
-                    on ? 'text-hawk-leaf' : 'text-neutral-400'
+                    on ? 'text-hawk-leaf' : 'text-faint'
                   }`}
                 >
                   {s.label}
@@ -305,12 +307,12 @@ export default function Practice() {
             {(cfg.parties ?? []).map((p) => (
               <View
                 key={p.code}
-                className="mb-2 flex-row items-center rounded-2xl bg-white px-4 py-2"
+                className="mb-2 flex-row items-center rounded-2xl bg-card px-4 py-2"
               >
                 <View className="mr-3 h-3 w-3 rounded-full" style={{ backgroundColor: p.color }} />
-                <Text className="flex-1 text-base font-semibold text-hawk-ink">{p.code}</Text>
+                <Text className="flex-1 text-base font-semibold text-ink">{p.code}</Text>
                 <TextInput
-                  className="w-24 rounded-xl bg-hawk-mist px-3 py-2 text-center text-lg font-bold text-hawk-ink"
+                  className="w-24 rounded-xl bg-surface px-3 py-2 text-center text-lg font-bold text-ink"
                   placeholder="0"
                   placeholderTextColor="#9db5a7"
                   keyboardType="number-pad"
@@ -327,12 +329,12 @@ export default function Practice() {
         {/* Pinned, like the real flow's votes step: practice teaches the shape of
             election day, so the shape has to be the same one. */}
         {step === 'votes' ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Pressable
               disabled={votes.length === 0}
               onPress={() => setStep('review')}
               className={`items-center rounded-2xl py-4 ${
-                votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'
+                votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'
               }`}
             >
               <Text className="text-base font-bold text-hawk-gold">Review</Text>
@@ -345,10 +347,10 @@ export default function Practice() {
 
         {step === 'review' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
-            <Text className="pb-3 text-xl font-bold text-hawk-ink">Confirm and send</Text>
-            <View className="mb-3 rounded-2xl bg-white px-4 py-3">
-              <Text className="text-base font-semibold text-hawk-ink">{cfg.unit?.name}</Text>
-              <Text className="text-xs text-neutral-500">
+            <Text className="pb-3 text-xl font-bold text-ink">Confirm and send</Text>
+            <View className="mb-3 rounded-2xl bg-card px-4 py-3">
+              <Text className="text-base font-semibold text-ink">{cfg.unit?.name}</Text>
+              <Text className="text-xs text-muted">
                 {cfg.unit?.code} · {cfg.unit?.ward}, {cfg.unit?.lga}
               </Text>
             </View>
@@ -370,14 +372,14 @@ export default function Practice() {
                 }}
               />
             </View>
-            <View className="mb-3 rounded-2xl bg-white px-4 py-2">
+            <View className="mb-3 rounded-2xl bg-card px-4 py-2">
               {votes
                 .slice()
                 .sort((a, b) => b.count - a.count)
                 .map((v) => (
                   <View key={v.party} className="flex-row justify-between py-1.5">
-                    <Text className="text-base font-semibold text-hawk-ink">{v.party}</Text>
-                    <Text className="text-base font-bold text-hawk-ink">
+                    <Text className="text-base font-semibold text-ink">{v.party}</Text>
+                    <Text className="text-base font-bold text-ink">
                       {v.count.toLocaleString()}
                     </Text>
                   </View>
@@ -385,7 +387,7 @@ export default function Practice() {
             </View>
             <Prompt>Enter the sheet serial number (optional)</Prompt>
             <TextInput
-              className="mb-3 rounded-2xl bg-white px-4 py-3 text-base text-hawk-ink"
+              className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Printed on the EC8A, if visible"
               placeholderTextColor="#9db5a7"
               autoCapitalize="characters"
@@ -393,7 +395,7 @@ export default function Practice() {
               onChangeText={setSheetSerial}
               editable={!busy}
             />
-            <Text className="pb-3 text-xs text-neutral-500">
+            <Text className="pb-3 text-xs text-muted">
               On election day this step takes a GPS fix, signs the report with this device&apos;s
               key and files it on the public ledger. Here it just completes the practice — nothing
               is published or counted.
@@ -406,7 +408,7 @@ export default function Practice() {
             below the fold. The failure line rides with it: a retry is pressed
             here, not wherever the scroll happens to have landed. */}
         {step === 'review' ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             {line ? (
               <Text className="pb-2 text-sm font-semibold text-amber-800">{line}</Text>
             ) : null}
@@ -414,7 +416,7 @@ export default function Practice() {
               disabled={busy}
               onPress={onSubmit}
               className={`items-center rounded-2xl py-4 ${
-                busy ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'
+                busy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
               }`}
             >
               {busy ? (
@@ -440,15 +442,15 @@ export default function Practice() {
             <View className="h-16 w-16 items-center justify-center rounded-full bg-hawk-green">
               <Feather name="check" size={28} color={BRAND.gold} />
             </View>
-            <Text className="pt-4 text-center text-lg font-bold text-hawk-ink">
+            <Text className="pt-4 text-center text-lg font-bold text-ink">
               Practice complete
             </Text>
-            <Text className="pt-2 text-center text-sm text-neutral-600">
+            <Text className="pt-2 text-center text-sm text-muted">
               That is exactly how you report a result on election day — except then it is signed,
               GPS-checked and chained into the public ledger.
             </Text>
-            <View className="mt-4 rounded-xl bg-white px-4 py-2">
-              <Text className="font-mono text-xs text-neutral-500">{done.entryHash}</Text>
+            <View className="mt-4 rounded-xl bg-card px-4 py-2">
+              <Text className="font-mono text-xs text-muted">{done.entryHash}</Text>
             </View>
             <Pressable
               className="mt-6 w-full items-center rounded-2xl bg-hawk-green py-3.5 active:opacity-80"
@@ -460,7 +462,7 @@ export default function Practice() {
               <Text className="text-sm font-semibold text-hawk-leaf">Practise again</Text>
             </Pressable>
             <Pressable className="mt-1 w-full items-center py-2" onPress={() => router.back()}>
-              <Text className="text-sm text-neutral-500">Done</Text>
+              <Text className="text-sm text-muted">Done</Text>
             </Pressable>
           </View>
         ) : null}

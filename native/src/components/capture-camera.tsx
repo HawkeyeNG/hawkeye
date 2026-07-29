@@ -11,6 +11,7 @@ import { scanSheet, scannerAvailable } from '@/lib/scan';
 import type { Shot } from '@/lib/submit';
 import { getSubmitFix } from '@/lib/location';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 /**
  * In-app capture with a GPS stamp taken at capture time — the property the
@@ -94,6 +95,7 @@ export function CaptureCamera({
   partyCodes,
   extraAction,
 }: Props) {
+  const ui = useUi();
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMic] = useMicrophonePermissions();
   const [mode, setMode] = useState<'picture' | 'video'>('picture');
@@ -102,6 +104,9 @@ export function CaptureCamera({
   const [line, setLine] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ uri: string; capturedAt: number } | null>(null);
   const [fixState, setFixState] = useState<'pending' | 'ok' | 'failed'>('pending');
+  /** Set once the scanner has actually failed; only then is the plain
+   *  camera a legitimate surface for a document step. */
+  const [scannerFailed, setScannerFailed] = useState(false);
   /** Result of on-device recognition on the current preview. */
   const [read, setRead] = useState<SheetRead | null | undefined>(undefined);
   const [elapsed, setElapsed] = useState(0);
@@ -176,7 +181,7 @@ export function CaptureCamera({
           Hawkeye needs the camera to capture evidence in-app.
         </Text>
         <Pressable className="mt-5 rounded-2xl bg-hawk-gold px-6 py-3" onPress={requestPermission}>
-          <Text className="text-base font-bold text-hawk-ink">Allow camera</Text>
+          <Text className="text-base font-bold text-ink">Allow camera</Text>
         </Pressable>
         {/* A denied camera must not dead-end a flow that has an escape (the
             PWA rule: no camera -> use a sample). */}
@@ -186,7 +191,7 @@ export function CaptureCamera({
           </Pressable>
         ) : null}
         <Pressable className="mt-3" onPress={cancel}>
-          <Text className="text-sm text-neutral-400">Cancel</Text>
+          <Text className="text-sm text-faint">Cancel</Text>
         </Pressable>
       </View>
     );
@@ -219,12 +224,16 @@ export function CaptureCamera({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       return;
     }
-    // Cancelled is a choice, not a fault — say nothing and leave the camera up.
-    setLine(
-      out.reason === 'cancelled'
-        ? null
-        : 'Scanner unavailable — frame the sheet and shoot it directly.',
-    );
+    if (out.reason === 'cancelled') {
+      // Backing out of the scanner means backing out of the step. Dropping the
+      // observer into a different capture mode they did not ask for is how you
+      // end up with an uncropped sheet nobody intended to take.
+      cancel();
+      return;
+    }
+    // Only a real failure exposes the plain camera — and it says why.
+    setScannerFailed(true);
+    setLine('Scanner unavailable on this phone — frame the sheet and shoot it directly.');
   };
 
   scanDocRef.current = scanDoc;
@@ -250,6 +259,15 @@ export function CaptureCamera({
     gen.current++; // abort any pending confirmation before it can fire onCapture
     setPreview(null);
     setRead(undefined);
+    // Retaking a document means scanning it again, not falling back to the raw
+    // camera — the crop is the point.
+    if (readDocument && scannerAvailable() && !scannerFailed) {
+      setLine(null);
+      setBusy(false);
+      setFixState('pending');
+      void scanDocRef.current?.();
+      return;
+    }
     setLine(null);
     setBusy(false);
     setFixState('pending');
@@ -352,7 +370,7 @@ export function CaptureCamera({
                 server re-reads the upload regardless. */}
             {readDocument ? (
               read === undefined ? (
-                <View className="mt-2 flex-row items-center rounded-xl bg-white/10 px-3 py-2">
+                <View className="mt-2 flex-row items-center rounded-xl bg-card/10 px-3 py-2">
                   <ActivityIndicator size="small" color="#fcd34d" />
                   <Text className="pl-2 text-xs font-semibold text-neutral-200">
                     Reading the sheet…
@@ -397,7 +415,7 @@ export function CaptureCamera({
           </View>
         </View>
         <View className="absolute inset-x-0 bottom-0 flex-row items-center justify-between px-6 pb-12">
-          <Pressable className="rounded-2xl bg-white/15 px-6 py-3.5" onPress={retake}>
+          <Pressable className="rounded-2xl bg-card/15 px-6 py-3.5" onPress={retake}>
             <Text className="text-base font-semibold text-white">Retake</Text>
           </Pressable>
           {fixState === 'failed' ? (
@@ -408,14 +426,14 @@ export function CaptureCamera({
                 usePhoto();
               }}
             >
-              <Text className="text-base font-bold text-hawk-ink">Retry GPS</Text>
+              <Text className="text-base font-bold text-ink">Retry GPS</Text>
             </Pressable>
           ) : (
             <Pressable className="rounded-2xl bg-hawk-gold px-6 py-3.5" onPress={usePhoto} disabled={busy}>
               {busy ? (
-                <ActivityIndicator color={BRAND.ink} />
+                <ActivityIndicator color={ui.ink} />
               ) : (
-                <Text className="text-base font-bold text-hawk-ink">Use photo</Text>
+                <Text className="text-base font-bold text-ink">Use photo</Text>
               )}
             </Pressable>
           )}
@@ -450,8 +468,8 @@ export function CaptureCamera({
           <Text className="text-lg font-bold text-white">{title}</Text>
           <Text className="pt-1 text-sm text-neutral-200">
             {line ??
-              (readDocument && scannerAvailable()
-                ? `${hint} The scanner finds the edges — or shoot it plain.`
+              (readDocument && scannerFailed
+                ? `${hint} The scanner could not start, so this is a plain photo.`
                 : hint)}
           </Text>
         </View>
@@ -462,11 +480,11 @@ export function CaptureCamera({
           Cancel; top-anchored ones fought the camera cutout. */}
       {recording ? (
         <View className="absolute inset-x-0 items-center" style={{ bottom: 188 }}>
-          <Text className="pb-1 text-[10px] font-semibold text-neutral-300">
+          <Text className="pb-1 text-[10px] font-semibold text-faint">
             max {VIDEO_MAX_S}s
           </Text>
           <View className="flex-row items-center rounded-full bg-red-600 px-3 py-1.5">
-            <View className="mr-1.5 h-2 w-2 rounded-full bg-white" />
+            <View className="mr-1.5 h-2 w-2 rounded-full bg-card" />
             <Text className="text-sm font-bold text-white">
               {String(Math.floor(elapsed / 60)).padStart(2, '0')}:
               {String(elapsed % 60).padStart(2, '0')}
@@ -484,7 +502,7 @@ export function CaptureCamera({
               onPress={() => setMode(m)}
               className={`rounded-full px-4 py-1.5 ${mode === m ? 'bg-hawk-gold' : 'bg-black/50'}`}
             >
-              <Text className={`text-xs font-bold ${mode === m ? 'text-hawk-ink' : 'text-white'}`}>
+              <Text className={`text-xs font-bold ${mode === m ? 'text-ink' : 'text-white'}`}>
                 {m === 'picture' ? 'Photo' : 'Video'}
               </Text>
             </Pressable>
@@ -495,15 +513,15 @@ export function CaptureCamera({
       {/* Document steps lead with the scanner: it finds the sheet's edges and
           returns a flat, cropped page. The plain shutter stays underneath for
           anyone who would rather just take the photo. */}
-      {readDocument && scannerAvailable() && !recording ? (
+      {readDocument && scannerAvailable() && !recording && scannerFailed ? (
         <View className="absolute inset-x-0 items-center" style={{ bottom: 132 }}>
           <Pressable
             disabled={busy}
             onPress={scanDoc}
             className="flex-row items-center rounded-full bg-hawk-gold px-5 py-2.5 active:opacity-80"
           >
-            <Feather name="crop" size={15} color={BRAND.ink} />
-            <Text className="pl-2 text-sm font-bold text-hawk-ink">Scan again</Text>
+            <Feather name="crop" size={15} color={ui.ink} />
+            <Text className="pl-2 text-sm font-bold text-ink">Scan again</Text>
           </Pressable>
         </View>
       ) : null}

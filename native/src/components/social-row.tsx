@@ -66,10 +66,10 @@ export function SocialRow({ dark }: { dark?: boolean }) {
       >
         <Feather name="send" size={17} color={tint} />
         <View className="flex-1 pl-3">
-          <Text className={`text-sm font-bold ${dark ? 'text-white' : 'text-hawk-ink'}`}>
+          <Text className={`text-sm font-bold ${dark ? 'text-white' : 'text-ink'}`}>
             Hawkeye on Telegram
           </Text>
-          <Text className={`text-xs ${dark ? 'text-emerald-200' : 'text-neutral-500'}`}>
+          <Text className={`text-xs ${dark ? 'text-emerald-200' : 'text-muted'}`}>
             @HawkEyeNGBot — OTP codes, result alerts
           </Text>
         </View>

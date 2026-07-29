@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
 import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import { getQuickFix } from '@/lib/location';
@@ -46,6 +47,7 @@ type MyUnit = { pu_code: string; name: string | null };
 
 /** Report an incident — kind, evidence (photo/video), description, GPS. */
 export default function ReportIncident() {
+  const ui = useUi();
   const auth = useAuth();
   const [kind, setKind] = useState<string | null>(null);
   const [description, setDescription] = useState('');
@@ -256,9 +258,9 @@ export default function ReportIncident() {
 
   if (auth.status !== 'signedIn') {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist px-8">
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={BRAND.leaf} />
-        <Text className="pt-3 text-center text-base font-semibold text-hawk-ink">
+        <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to report an incident
         </Text>
         <Pressable
@@ -268,7 +270,7 @@ export default function ReportIncident() {
           <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
         </Pressable>
         <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-neutral-500">Not now</Text>
+          <Text className="text-sm text-muted">Not now</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -291,14 +293,14 @@ export default function ReportIncident() {
 
   if (done) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist px-8">
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
         <View className="h-16 w-16 items-center justify-center rounded-full bg-hawk-green">
           {/* A tick on a queued report would claim a delivery that has not
               happened — the icon has to tell the two outcomes apart. */}
           <Feather name={done.icon} size={28} color={BRAND.gold} />
         </View>
-        <Text className="pt-4 text-center text-lg font-bold text-hawk-ink">{done.title}</Text>
-        <Text className="pt-2 text-center text-sm text-neutral-600">{done.line}</Text>
+        <Text className="pt-4 text-center text-lg font-bold text-ink">{done.title}</Text>
+        <Text className="pt-2 text-center text-sm text-muted">{done.line}</Text>
         <Pressable
           className="mt-6 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
           onPress={() => router.back()}
@@ -310,16 +312,16 @@ export default function ReportIncident() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Report an incident</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Report an incident</Text>
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
@@ -331,7 +333,7 @@ export default function ReportIncident() {
                 key={k.code}
                 onPress={() => setKind(k.code)}
                 className={`mb-2 mr-2 flex-row items-center rounded-full px-4 py-2 ${
-                  kind === k.code ? 'bg-hawk-green' : 'bg-white'
+                  kind === k.code ? 'bg-hawk-green' : 'bg-card'
                 }`}
               >
                 <Feather
@@ -341,7 +343,7 @@ export default function ReportIncident() {
                 />
                 <Text
                   className={`pl-1.5 text-sm font-semibold ${
-                    kind === k.code ? 'text-hawk-gold' : 'text-neutral-700'
+                    kind === k.code ? 'text-hawk-gold' : 'text-ink'
                   }`}
                 >
                   {k.label}
@@ -355,7 +357,7 @@ export default function ReportIncident() {
           </View>
           <View className="flex-row flex-wrap">
             {media.map((m, i) => (
-              <View key={m.uri} className="mb-2 mr-2 overflow-hidden rounded-xl bg-white">
+              <View key={m.uri} className="mb-2 mr-2 overflow-hidden rounded-xl bg-card">
                 <Image source={{ uri: m.uri }} style={{ width: 76, height: 76 }} contentFit="cover" />
                 {m.type === 'video' ? (
                   <View className="absolute inset-0 items-center justify-center bg-black/30">
@@ -374,14 +376,14 @@ export default function ReportIncident() {
             {media.length < MAX_MEDIA ? (
               <>
                 <Pressable
-                  className="mb-2 mr-2 h-[76px] w-[76px] items-center justify-center rounded-xl border-2 border-dashed border-hawk-leaf bg-white"
+                  className="mb-2 mr-2 h-[76px] w-[76px] items-center justify-center rounded-xl border-2 border-dashed border-hawk-leaf bg-card"
                   onPress={() => setCamera(true)}
                 >
                   <Feather name="camera" size={20} color={BRAND.leaf} />
                   <Text className="pt-1 text-[10px] font-semibold text-hawk-leaf">Camera</Text>
                 </Pressable>
                 <Pressable
-                  className="mb-2 h-[76px] w-[76px] items-center justify-center rounded-xl border-2 border-dashed border-hawk-leaf bg-white"
+                  className="mb-2 h-[76px] w-[76px] items-center justify-center rounded-xl border-2 border-dashed border-hawk-leaf bg-card"
                   onPress={pickFromLibrary}
                 >
                   <Feather name="image" size={20} color={BRAND.leaf} />
@@ -391,9 +393,9 @@ export default function ReportIncident() {
             ) : null}
           </View>
 
-          <Text className="pb-2 pt-3 text-sm font-semibold text-neutral-500">Description</Text>
+          <Text className="pb-2 pt-3 text-sm font-semibold text-muted">Description</Text>
           <TextInput
-            className="min-h-[110px] rounded-2xl bg-white px-4 py-3 text-base text-hawk-ink"
+            className="min-h-[110px] rounded-2xl bg-card px-4 py-3 text-base text-ink"
             placeholder="What did you witness? Where, when, who was involved…"
             placeholderTextColor="#9db5a7"
             multiline
@@ -411,7 +413,7 @@ export default function ReportIncident() {
             onPress={() => setUseGps((v) => !v)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: useGps }}
-            className="mt-3 flex-row items-center rounded-2xl bg-white px-4 py-3 active:opacity-80"
+            className="mt-3 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-80"
           >
             <Feather
               name={useGps ? 'check-square' : 'square'}
@@ -419,10 +421,10 @@ export default function ReportIncident() {
               color={useGps ? BRAND.leaf : '#9db5a7'}
             />
             <View className="flex-1 pl-3">
-              <Text className="text-sm font-semibold text-hawk-ink">
+              <Text className="text-sm font-semibold text-ink">
                 Attach my current location
               </Text>
-              <Text className="text-xs text-neutral-500">
+              <Text className="text-xs text-muted">
                 {useGps
                   ? 'Helps reviewers place the incident. Coordinates are never published.'
                   : 'No coordinates will be attached to this report.'}
@@ -431,13 +433,13 @@ export default function ReportIncident() {
           </Pressable>
 
           {unit ? (
-            <Text className="pt-2 text-xs text-neutral-500">
+            <Text className="pt-2 text-xs text-muted">
               Filed under {unit.name ?? unit.pu_code} ({unit.pu_code}) — your saved polling unit.
               Watchers there are alerted once a reviewer approves it.
             </Text>
           ) : null}
 
-          <Text className="pt-3 text-xs text-neutral-500">
+          <Text className="pt-3 text-xs text-muted">
             Your safety first: never confront anyone to get footage. Reports are reviewed
             before publication; your phone number is never attached.
           </Text>
@@ -449,13 +451,13 @@ export default function ReportIncident() {
             otherwise sit off-screen — and an incident is filed one-handed, under
             time pressure. The status line rides in the footer too, so a failed
             attempt doesn't push the retry button further away. */}
-        <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
           {line ? <Text className="pb-2 text-sm font-semibold text-amber-800">{line}</Text> : null}
           <Pressable
             disabled={!canSubmit || busy}
             onPress={onSubmit}
             className={`items-center rounded-2xl py-4 ${
-              canSubmit && !busy ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'
+              canSubmit && !busy ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'
             }`}
           >
             {busy ? (

@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Feather } from '@expo/vector-icons';
 import { BRAND } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 /**
  * The "Report" action sheet — native twin of the chooser menu.js attaches to
@@ -29,6 +30,7 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
   { onAction },
   ref,
 ) {
+  const ui = useUi();
   const insets = useSafeAreaInsets();
 
   const backdrop = useCallback(
@@ -56,14 +58,14 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
       backgroundStyle={{ backgroundColor: '#ffffff', borderRadius: 24 }}
     >
       <BottomSheetView style={{ paddingBottom: insets.bottom + 12 }}>
-        <Text className="px-5 pb-1 pt-1 text-lg font-bold text-hawk-ink">Report</Text>
-        <Text className="px-5 pb-3 text-sm text-neutral-500">
+        <Text className="px-5 pb-1 pt-1 text-lg font-bold text-ink">Report</Text>
+        <Text className="px-5 pb-3 text-sm text-muted">
           Every report is signed, hash-chained and publicly verifiable.
         </Text>
         {ACTIONS.map((a) => (
           <Pressable
             key={a.key}
-            className="mx-4 mb-2 flex-row items-center rounded-2xl bg-hawk-mist px-4 py-3 active:opacity-70"
+            className="mx-4 mb-2 flex-row items-center rounded-2xl bg-surface px-4 py-3 active:opacity-70"
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               onAction(a.key);
@@ -73,10 +75,10 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
               <Feather name={a.icon} size={18} color={BRAND.gold} />
             </View>
             <View className="flex-1">
-              <Text className="text-base font-semibold text-hawk-ink">{a.label}</Text>
-              <Text className="text-xs text-neutral-500">{a.sub}</Text>
+              <Text className="text-base font-semibold text-ink">{a.label}</Text>
+              <Text className="text-xs text-muted">{a.sub}</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#9db5a7" />
+            <Feather name="chevron-right" size={18} color={ui.faint} />
           </Pressable>
         ))}
       </BottomSheetView>

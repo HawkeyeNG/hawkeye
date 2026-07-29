@@ -17,10 +17,10 @@ export function PartyMark({
   if (!url) {
     return (
       <View
-        className="items-center justify-center rounded-full bg-hawk-mist"
+        className="items-center justify-center rounded-full bg-surface"
         style={{ width: size, height: size }}
       >
-        <Text className="text-[8px] font-bold text-neutral-600">{party.slice(0, 3)}</Text>
+        <Text className="text-[8px] font-bold text-muted">{party.slice(0, 3)}</Text>
       </View>
     );
   }
@@ -36,19 +36,19 @@ export function PartyMark({
 function CandidateCard({ c, logos }: { c: Candidate; logos: Record<string, string> }) {
   return (
     <View
-      className="mb-2 rounded-2xl bg-white px-4 py-3"
+      className="mb-2 rounded-2xl bg-card px-4 py-3"
       style={{ borderLeftWidth: 4, borderLeftColor: partyColor(c.party) }}
     >
       <View className="flex-row items-center">
         {c.photo ? (
           <Image
             source={{ uri: c.photo }}
-            className="h-11 w-11 rounded-full bg-hawk-mist"
+            className="h-11 w-11 rounded-full bg-surface"
             resizeMode="cover"
           />
         ) : (
-          <View className="h-11 w-11 items-center justify-center rounded-full bg-hawk-mist">
-            <Text className="text-xs font-bold text-neutral-500">{c.initials ?? ''}</Text>
+          <View className="h-11 w-11 items-center justify-center rounded-full bg-surface">
+            <Text className="text-xs font-bold text-muted">{c.initials ?? ''}</Text>
           </View>
         )}
         <View className="flex-1 pl-3">
@@ -58,15 +58,15 @@ function CandidateCard({ c, logos }: { c: Candidate; logos: Record<string, strin
               {c.party}
             </Text>
             {c.incumbent ? (
-              <View className="ml-2 rounded-full bg-hawk-mist px-2 py-0.5">
+              <View className="ml-2 rounded-full bg-surface px-2 py-0.5">
                 <Text className="text-[9px] font-bold text-hawk-leaf">INCUMBENT</Text>
               </View>
             ) : null}
           </View>
-          <Text className="pt-0.5 text-base font-bold text-hawk-ink">{c.name}</Text>
+          <Text className="pt-0.5 text-base font-bold text-ink">{c.name}</Text>
         </View>
       </View>
-      {c.line ? <Text className="pt-2 text-sm text-neutral-600">{c.line}</Text> : null}
+      {c.line ? <Text className="pt-2 text-sm text-muted">{c.line}</Text> : null}
       <View className="pt-2">
         {[
           ['Home base', c.home],
@@ -74,10 +74,10 @@ function CandidateCard({ c, logos }: { c: Candidate; logos: Record<string, strin
           ['Status', c.status],
         ].map(([k, v]) => (
           <View key={k} className="flex-row py-0.5">
-            <Text className="w-24 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
+            <Text className="w-24 text-[11px] font-semibold uppercase tracking-wide text-faint">
               {k}
             </Text>
-            <Text className="flex-1 text-xs text-neutral-600">{v || '—'}</Text>
+            <Text className="flex-1 text-xs text-muted">{v || '—'}</Text>
           </View>
         ))}
       </View>
@@ -111,11 +111,11 @@ export function RaceView({
 
   return (
     <View>
-      <Text className="text-xl font-bold text-hawk-ink">{race.office || race.election}</Text>
-      {dateStr ? <Text className="pt-0.5 text-sm text-neutral-500">{dateStr}</Text> : null}
+      <Text className="text-xl font-bold text-ink">{race.office || race.election}</Text>
+      {dateStr ? <Text className="pt-0.5 text-sm text-muted">{dateStr}</Text> : null}
 
       {race.stats ? (
-        <View className="mt-3 flex-row rounded-2xl bg-white px-2 py-3">
+        <View className="mt-3 flex-row rounded-2xl bg-card px-2 py-3">
           {[
             [race.stats.candidates, 'Candidates'],
             [race.stats.lgas, 'LGAs'],
@@ -124,23 +124,23 @@ export function RaceView({
             .filter(([n]) => n != null)
             .map(([n, l]) => (
               <View key={String(l)} className="flex-1 items-center">
-                <Text className="text-lg font-bold text-hawk-ink">{n}</Text>
-                <Text className="text-[10px] text-neutral-500">{l}</Text>
+                <Text className="text-lg font-bold text-ink">{n}</Text>
+                <Text className="text-[10px] text-muted">{l}</Text>
               </View>
             ))}
         </View>
       ) : null}
 
       {race.incumbentNote ? (
-        <View className="mt-3 rounded-2xl bg-hawk-mist px-4 py-3">
-          <Text className="text-sm text-neutral-700">{race.incumbentNote}</Text>
+        <View className="mt-3 rounded-2xl bg-surface px-4 py-3">
+          <Text className="text-sm text-ink">{race.incumbentNote}</Text>
         </View>
       ) : null}
 
-      <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+      <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
         {race.others ? 'Front-runners' : 'Declared candidates'}
       </Text>
-      <Text className="pb-2 text-xs text-neutral-500">
+      <Text className="pb-2 text-xs text-muted">
         Alphabetical by party. Not an endorsement or a prediction.
       </Text>
       {race.candidates.map((c) => (
@@ -149,17 +149,17 @@ export function RaceView({
 
       {ballot ? (
         <>
-          <Text className="pb-2 pt-3 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+          <Text className="pb-2 pt-3 text-[11px] font-bold uppercase tracking-wider text-faint">
             Full ballot — {ballot.length} candidates
           </Text>
-          <View className="overflow-hidden rounded-2xl bg-white">
+          <View className="overflow-hidden rounded-2xl bg-card">
             {ballot.map((c, i) => (
               <View
                 key={`${c.party}-${c.name}`}
-                className={`flex-row items-center px-4 py-2.5 ${i > 0 ? 'border-t border-hawk-mist' : ''}`}
+                className={`flex-row items-center px-4 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}
               >
                 <PartyMark party={c.party} logos={logos} />
-                <Text className="flex-1 pl-3 text-sm text-hawk-ink">{c.name}</Text>
+                <Text className="flex-1 pl-3 text-sm text-ink">{c.name}</Text>
                 <Text className="text-[11px] font-semibold" style={{ color: partyColor(c.party) }}>
                   {c.party}
                   {c.incumbent ? ' · inc' : ''}
@@ -172,19 +172,19 @@ export function RaceView({
 
       {race.minors?.length ? (
         <>
-          <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+          <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
             Other declared candidates
           </Text>
-          <View className="overflow-hidden rounded-2xl bg-white">
+          <View className="overflow-hidden rounded-2xl bg-card">
             {race.minors.map((m, i) => (
               <View
                 key={`${m.party}-${m.name}`}
-                className={`flex-row items-center px-4 py-2.5 ${i > 0 ? 'border-t border-hawk-mist' : ''}`}
+                className={`flex-row items-center px-4 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}
               >
                 <PartyMark party={m.party} logos={logos} />
                 <View className="flex-1 pl-3">
-                  <Text className="text-sm text-hawk-ink">{m.name}</Text>
-                  {m.meta ? <Text className="text-[11px] text-neutral-500">{m.meta}</Text> : null}
+                  <Text className="text-sm text-ink">{m.name}</Text>
+                  {m.meta ? <Text className="text-[11px] text-muted">{m.meta}</Text> : null}
                 </View>
                 <Text className="text-[11px] font-semibold" style={{ color: partyColor(m.party) }}>
                   {m.party}
@@ -196,7 +196,7 @@ export function RaceView({
       ) : null}
 
       {race.notableAbsence ? (
-        <Text className="pt-3 text-sm italic text-neutral-500">{race.notableAbsence}</Text>
+        <Text className="pt-3 text-sm italic text-muted">{race.notableAbsence}</Text>
       ) : null}
 
       <View className="flex-row pt-5">
@@ -217,7 +217,7 @@ export function RaceView({
       {[race.note, race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit]
         .filter(Boolean)
         .join(' ') ? (
-        <Text className="pt-4 text-xs text-neutral-400">
+        <Text className="pt-4 text-xs text-faint">
           {[race.note, race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit]
             .filter(Boolean)
             .join(' ')}

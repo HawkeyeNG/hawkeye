@@ -14,14 +14,14 @@ import type { Contest } from '@/lib/api';
  */
 export function NoElection({ state, contest }: { state: string; contest: Contest | null }) {
   return (
-    <View className="rounded-2xl bg-white px-4 py-5">
-      <Text className="text-base font-bold text-hawk-ink">No active election in {state}</Text>
-      <Text className="pt-1 text-sm text-neutral-600">
+    <View className="rounded-2xl bg-card px-4 py-5">
+      <Text className="text-base font-bold text-ink">No active election in {state}</Text>
+      <Text className="pt-1 text-sm text-muted">
         {contest
           ? `Hawkeye is currently covering the ${contest.election}. Reporting opens for other states when their elections are scheduled.`
           : 'No election is currently open for reporting.'}
       </Text>
-      <Text className="pt-2 text-sm text-neutral-600">
+      <Text className="pt-2 text-sm text-muted">
         You can still map polling units anywhere in Nigeria — that work counts before any
         election is called.
       </Text>

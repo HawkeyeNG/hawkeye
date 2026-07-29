@@ -21,6 +21,7 @@ import { CaptureCamera } from '@/components/capture-camera';
 import { NoElection } from '@/components/no-election';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { getSubmitFix } from '@/lib/location';
 import { submitCollation, type CollationLevel, type Receipt, type Shot, type Vote } from '@/lib/submit';
@@ -85,6 +86,7 @@ function opensLine(c: Contest): string {
  * this carries the same proof burden as the unit sheets it should sum to.
  */
 export default function ReportCollation() {
+  const ui = useUi();
   const auth = useAuth();
   const [step, setStep] = useState<Step>('scope');
 
@@ -327,9 +329,9 @@ export default function ReportCollation() {
   // -- guards ---------------------------------------------------------------
   if (auth.status !== 'signedIn') {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-hawk-mist px-8">
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={BRAND.leaf} />
-        <Text className="pt-3 text-center text-base font-semibold text-hawk-ink">
+        <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to report a collation
         </Text>
         <Pressable
@@ -339,7 +341,7 @@ export default function ReportCollation() {
           <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
         </Pressable>
         <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-neutral-500">Not now</Text>
+          <Text className="text-sm text-muted">Not now</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -392,25 +394,25 @@ export default function ReportCollation() {
   const Chip = ({ label, on, onPress }: { label: string; on?: boolean; onPress: () => void }) => (
     <Pressable
       onPress={onPress}
-      className={`mb-2 mr-2 rounded-full px-4 py-2 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+      className={`mb-2 mr-2 rounded-full px-4 py-2 ${on ? 'bg-hawk-green' : 'bg-card'}`}
     >
-      <Text className={`text-sm font-semibold ${on ? 'text-hawk-gold' : 'text-neutral-700'}`}>
+      <Text className={`text-sm font-semibold ${on ? 'text-hawk-gold' : 'text-ink'}`}>
         {label}
       </Text>
     </Pressable>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist">
+    <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white"
+          className="h-9 w-9 items-center justify-center rounded-full bg-card"
         >
-          <Feather name="x" size={18} color={BRAND.ink} />
+          <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-hawk-ink">Report a collation</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">Report a collation</Text>
       </View>
 
       {step !== 'done' ? (
@@ -420,9 +422,9 @@ export default function ReportCollation() {
             const on = i <= idx;
             return (
               <View key={s.key} className="mr-1 flex-1">
-                <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-white'}`} />
+                <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-card'}`} />
                 <Text
-                  className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-hawk-leaf' : 'text-neutral-400'}`}
+                  className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-hawk-leaf' : 'text-faint'}`}
                 >
                   {s.label}
                 </Text>
@@ -438,10 +440,10 @@ export default function ReportCollation() {
       >
         {step === 'scope' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
-            <Text className="pb-1 text-xl font-bold text-hawk-ink">
+            <Text className="pb-1 text-xl font-bold text-ink">
               {contests.length ? contests[0].election : 'Loading election…'}
             </Text>
-            <Text className="pb-4 text-sm text-neutral-600">
+            <Text className="pb-4 text-sm text-muted">
               Which collation are you reporting?
             </Text>
 
@@ -460,10 +462,10 @@ export default function ReportCollation() {
                       setLgaSel(null);
                       setWardSel(null);
                     }}
-                    className="mb-2 rounded-2xl bg-white px-4 py-3 active:opacity-80"
+                    className="mb-2 rounded-2xl bg-card px-4 py-3 active:opacity-80"
                   >
-                    <Text className="text-base font-semibold text-hawk-ink">{l.label}</Text>
-                    <Text className="text-xs text-neutral-500">{l.sub}</Text>
+                    <Text className="text-base font-semibold text-ink">{l.label}</Text>
+                    <Text className="text-xs text-muted">{l.sub}</Text>
                   </Pressable>
                 ))}
               </>
@@ -529,8 +531,8 @@ export default function ReportCollation() {
         ) : null}
 
         {step === 'scope' && scopeReady ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
-            <Text className="pb-2 text-xs text-neutral-500" numberOfLines={1}>
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+            <Text className="pb-2 text-xs text-muted" numberOfLines={1}>
               {level === 'state'
                 ? `State collation — ${stateSel}`
                 : level === 'lga'
@@ -552,7 +554,7 @@ export default function ReportCollation() {
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             <Crumb label={scopeLine} onPress={() => setStep('scope')} />
             <Prompt>Which election are you reporting?</Prompt>
-            <Text className="pb-3 text-sm text-neutral-600">
+            <Text className="pb-3 text-sm text-muted">
               A collation centre announces every race on the same day. Only the ones that run in{' '}
               {stateSel} are listed — report each one separately.
             </Text>
@@ -562,12 +564,12 @@ export default function ReportCollation() {
                 <Pressable
                   key={c.code}
                   onPress={() => setContest(c)}
-                  className={`mb-2 rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-white'}`}
+                  className={`mb-2 rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-card'}`}
                 >
-                  <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-hawk-ink'}`}>
+                  <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-ink'}`}>
                     {c.name}
                   </Text>
-                  <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-neutral-500'}`}>
+                  <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
                     {c.election}
                   </Text>
                   {c.open === false ? (
@@ -584,14 +586,14 @@ export default function ReportCollation() {
         ) : null}
 
         {step === 'contest' ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             {closed && contest ? (
               <Text className="pb-2 text-sm font-semibold text-amber-800">{opensLine(contest)}</Text>
             ) : null}
             <Pressable
               disabled={!contest}
               onPress={() => setStep('sheet')}
-              className={`items-center rounded-2xl py-4 ${contest ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'}`}
+              className={`items-center rounded-2xl py-4 ${contest ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
               <Text className="text-base font-bold text-hawk-gold">Continue to photos</Text>
             </Pressable>
@@ -600,19 +602,19 @@ export default function ReportCollation() {
 
         {step === 'votes' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
-            <Text className="pb-1 text-xl font-bold text-hawk-ink">Collated totals</Text>
-            <Text className="pb-3 text-sm text-neutral-600">
+            <Text className="pb-1 text-xl font-bold text-ink">Collated totals</Text>
+            <Text className="pb-3 text-sm text-muted">
               Copy the figures exactly as announced. Leave blank for parties not listed.
             </Text>
             <TextInput
-              className="mb-3 rounded-2xl bg-white px-4 py-3 text-base text-hawk-ink"
+              className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Search party (APC, PDP, LP…)"
               placeholderTextColor="#9db5a7"
               value={search}
               onChangeText={setSearch}
             />
             {filteredParties.slice(0, 30).map((p) => (
-              <View key={p.code} className="mb-2 flex-row items-center rounded-2xl bg-white px-4 py-2">
+              <View key={p.code} className="mb-2 flex-row items-center rounded-2xl bg-card px-4 py-2">
                 {logos[p.code] ? (
                   <Image
                     source={{ uri: `${BASE}/${logos[p.code]}` }}
@@ -622,20 +624,20 @@ export default function ReportCollation() {
                   />
                 ) : (
                   <View
-                    className="mr-2.5 items-center justify-center rounded-md bg-hawk-mist"
+                    className="mr-2.5 items-center justify-center rounded-md bg-surface"
                     style={{ width: 30, height: 30 }}
                   >
                     <Text className="text-[10px] font-bold text-hawk-leaf">{p.code.slice(0, 3)}</Text>
                   </View>
                 )}
                 <View className="flex-1 pr-2">
-                  <Text className="text-base font-semibold text-hawk-ink">{p.code}</Text>
-                  <Text className="text-xs text-neutral-500" numberOfLines={1}>
+                  <Text className="text-base font-semibold text-ink">{p.code}</Text>
+                  <Text className="text-xs text-muted" numberOfLines={1}>
                     {p.name}
                   </Text>
                 </View>
                 <TextInput
-                  className="w-24 rounded-xl bg-hawk-mist px-3 py-2 text-center text-lg font-bold text-hawk-ink"
+                  className="w-24 rounded-xl bg-surface px-3 py-2 text-center text-lg font-bold text-ink"
                   placeholder="0"
                   placeholderTextColor="#9db5a7"
                   keyboardType="number-pad"
@@ -652,11 +654,11 @@ export default function ReportCollation() {
         {/* Pinned: the party list runs to 30 rows, so at the end of the scroll
             this sits far below whichever party was just typed into. */}
         {step === 'votes' ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Pressable
               disabled={votes.length === 0}
               onPress={() => setStep('review')}
-              className={`items-center rounded-2xl py-4 ${votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-neutral-300'}`}
+              className={`items-center rounded-2xl py-4 ${votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
               <Text className="text-base font-bold text-hawk-gold">Review report</Text>
             </Pressable>
@@ -665,12 +667,12 @@ export default function ReportCollation() {
 
         {step === 'review' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
-            <Text className="pb-3 text-xl font-bold text-hawk-ink">Confirm and send</Text>
-            <View className="mb-3 rounded-2xl bg-white px-4 py-3">
-              <Text className="text-base font-semibold text-hawk-ink">
+            <Text className="pb-3 text-xl font-bold text-ink">Confirm and send</Text>
+            <View className="mb-3 rounded-2xl bg-card px-4 py-3">
+              <Text className="text-base font-semibold text-ink">
                 {levelDef?.label} collation · {levelDef?.form}
               </Text>
-              <Text className="text-xs text-neutral-500">{scopeLine}</Text>
+              <Text className="text-xs text-muted">{scopeLine}</Text>
               {contest ? (
                 <Text className="pt-0.5 text-xs font-semibold text-hawk-leaf">{contest.name}</Text>
               ) : null}
@@ -681,7 +683,7 @@ export default function ReportCollation() {
                   <Pressable
                     key={i}
                     disabled={busy}
-                    className="flex-1 overflow-hidden rounded-2xl bg-white active:opacity-80"
+                    className="flex-1 overflow-hidden rounded-2xl bg-card active:opacity-80"
                     onPress={() => {
                       setRetaking(true);
                       setStep(i === 0 ? 'sheet' : 'venue');
@@ -693,7 +695,7 @@ export default function ReportCollation() {
                       contentFit="cover"
                     />
                     <View className="flex-row items-center justify-between px-3 py-2">
-                      <Text className="text-xs font-semibold text-neutral-500">
+                      <Text className="text-xs font-semibold text-muted">
                         {i === 0 ? 'Collation form' : 'Venue'}
                       </Text>
                       <Text className="text-xs font-bold text-hawk-leaf">Retake</Text>
@@ -702,11 +704,11 @@ export default function ReportCollation() {
                 ) : null,
               )}
             </View>
-            <View className="mb-3 rounded-2xl bg-white px-4 py-2">
+            <View className="mb-3 rounded-2xl bg-card px-4 py-2">
               {rankedVotes.map((v) => (
                 <View key={v.party} className="flex-row justify-between py-1.5">
-                  <Text className="text-base font-semibold text-hawk-ink">{v.party}</Text>
-                  <Text className="text-base font-bold text-hawk-ink">
+                  <Text className="text-base font-semibold text-ink">{v.party}</Text>
+                  <Text className="text-base font-bold text-ink">
                     {v.count.toLocaleString()}
                   </Text>
                 </View>
@@ -715,7 +717,7 @@ export default function ReportCollation() {
             {/* Optional form serial — parity with the PWA's collation field. */}
             <Prompt>Enter the form serial number (optional)</Prompt>
             <TextInput
-              className="mb-3 rounded-2xl bg-white px-4 py-3 text-base text-hawk-ink"
+              className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Printed on the collation form, if visible"
               placeholderTextColor="#9db5a7"
               autoCapitalize="characters"
@@ -730,7 +732,7 @@ export default function ReportCollation() {
             submit ("No GPS fix…") is retried from here — the status line rides
             with the button so retrying never means scrolling back down. */}
         {step === 'review' ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             {/* Say when, not just no. The server refuses early reports anyway;
                 finding that out after two photos and a full tally is the failure
                 this replaces. */}
@@ -746,7 +748,7 @@ export default function ReportCollation() {
             <Pressable
               disabled={busy || closed}
               onPress={onSubmit}
-              className={`items-center rounded-2xl py-4 ${busy || closed ? 'bg-neutral-300' : 'bg-hawk-green active:opacity-80'}`}
+              className={`items-center rounded-2xl py-4 ${busy || closed ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
             >
               {busy ? (
                 <ActivityIndicator color={BRAND.gold} />
@@ -774,8 +776,8 @@ export default function ReportCollation() {
               >
                 <Feather name={queued ? 'clock' : 'check'} size={28} color={BRAND.gold} />
               </View>
-              <Text className="pt-4 text-center text-lg font-bold text-hawk-ink">{done.title}</Text>
-              <Text className="pt-2 text-center text-sm text-neutral-600">{done.line}</Text>
+              <Text className="pt-4 text-center text-lg font-bold text-ink">{done.title}</Text>
+              <Text className="pt-2 text-center text-sm text-muted">{done.line}</Text>
             </View>
 
             {/* THE RECEIPT. Until now the observer handed over evidence and got a
@@ -789,7 +791,7 @@ export default function ReportCollation() {
                   Ledger entry
                 </Text>
                 <Pressable
-                  className="mt-2 flex-row items-center rounded-xl bg-white/10 px-3 py-2.5 active:opacity-70"
+                  className="mt-2 flex-row items-center rounded-xl bg-card/10 px-3 py-2.5 active:opacity-70"
                   onPress={async () => {
                     await Clipboard.setStringAsync(receipt.entryHash!);
                     setCopied(true);
@@ -811,41 +813,41 @@ export default function ReportCollation() {
             {/* What was filed, in the observer's own figures. The collation route
                 answers with the entry hash alone — no consensus or OCR block like
                 a unit result — so the receipt states the record itself. */}
-            <View className="mt-3 rounded-2xl bg-white px-4 py-2">
+            <View className="mt-3 rounded-2xl bg-card px-4 py-2">
               <View className="flex-row items-center justify-between py-1.5">
-                <Text className="text-sm text-neutral-500">Status</Text>
+                <Text className="text-sm text-muted">Status</Text>
                 <Text
-                  className={`text-sm font-bold ${queued ? 'text-amber-800' : receipt.entryHash ? 'text-hawk-leaf' : 'text-neutral-500'}`}
+                  className={`text-sm font-bold ${queued ? 'text-amber-800' : receipt.entryHash ? 'text-hawk-leaf' : 'text-muted'}`}
                 >
                   {queued ? 'WAITING TO SEND' : receipt.entryHash ? 'RECORDED' : 'NOT FILED'}
                 </Text>
               </View>
               <View className="flex-row items-center justify-between py-1.5">
-                <Text className="text-sm text-neutral-500">Form</Text>
-                <Text className="text-sm font-bold text-hawk-ink">
+                <Text className="text-sm text-muted">Form</Text>
+                <Text className="text-sm font-bold text-ink">
                   {levelDef?.form} · {levelDef?.label} collation
                 </Text>
               </View>
               <View className="flex-row items-center justify-between py-1.5">
-                <Text className="pr-3 text-sm text-neutral-500">Scope</Text>
-                <Text className="flex-1 text-right text-sm font-bold text-hawk-ink">{scopeLine}</Text>
+                <Text className="pr-3 text-sm text-muted">Scope</Text>
+                <Text className="flex-1 text-right text-sm font-bold text-ink">{scopeLine}</Text>
               </View>
               {contest ? (
                 <View className="flex-row items-center justify-between py-1.5">
-                  <Text className="pr-3 text-sm text-neutral-500">Election</Text>
-                  <Text className="flex-1 text-right text-sm font-bold text-hawk-ink">
+                  <Text className="pr-3 text-sm text-muted">Election</Text>
+                  <Text className="flex-1 text-right text-sm font-bold text-ink">
                     {contest.name}
                   </Text>
                 </View>
               ) : null}
-              <View className="mt-1 border-t border-black/5 pt-2">
-                <Text className="pb-1 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+              <View className="mt-1 border-t border-line pt-2">
+                <Text className="pb-1 text-[11px] font-bold uppercase tracking-wider text-faint">
                   Totals you reported
                 </Text>
                 {rankedVotes.map((v) => (
                   <View key={v.party} className="flex-row items-center justify-between py-1">
-                    <Text className="text-sm font-semibold text-hawk-ink">{v.party}</Text>
-                    <Text className="text-sm font-bold text-hawk-ink">
+                    <Text className="text-sm font-semibold text-ink">{v.party}</Text>
+                    <Text className="text-sm font-bold text-ink">
                       {v.count.toLocaleString()}
                     </Text>
                   </View>
@@ -856,7 +858,7 @@ export default function ReportCollation() {
         ) : null}
 
         {step === 'done' ? (
-          <View className="border-t border-black/5 bg-hawk-mist px-4 pb-6 pt-3">
+          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             {/* Integrity, not the results log: a collation is cross-checked against
                 the unit sheets underneath it, and that comparison is what surfaces
                 publicly. replace, not push — the finished flow should not sit under

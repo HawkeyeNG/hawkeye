@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api, BRAND, type Contest, type IntegritySummary } from '@/lib/api';
+import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;
@@ -72,6 +73,7 @@ async function jget<T>(path: string): Promise<T | null> {
  * is decoration.
  */
 export default function Home() {
+  const ui = useUi();
   const [contests, setContests] = useState<Contest[] | null>(null);
   const [integrity, setIntegrity] = useState<IntegritySummary | null>(null);
   const [items, setItems] = useState<Item[] | null>(null);
@@ -191,8 +193,8 @@ export default function Home() {
 
   const header = (
     <View className="px-4">
-      <Text className="pb-1 pt-4 text-2xl font-bold text-hawk-ink">Hawkeye</Text>
-      <Text className="pb-4 text-sm text-neutral-600">
+      <Text className="pb-1 pt-4 text-2xl font-bold text-ink">Hawkeye</Text>
+      <Text className="pb-4 text-sm text-muted">
         Independent election observation — every report public, signed and verifiable.
       </Text>
 
@@ -233,22 +235,22 @@ export default function Home() {
 
       <View className="flex-row gap-3">
         <Pressable
-          className="flex-1 rounded-2xl bg-white px-4 py-4 active:opacity-80"
+          className="flex-1 rounded-2xl bg-card px-4 py-4 active:opacity-80"
           onPress={() => router.push('/reports-log')}
         >
-          <Text className="text-2xl font-bold text-hawk-ink">{integrity?.reports ?? '—'}</Text>
-          <Text className="text-xs text-neutral-500">Accepted reports</Text>
+          <Text className="text-2xl font-bold text-ink">{integrity?.reports ?? '—'}</Text>
+          <Text className="text-xs text-muted">Accepted reports</Text>
         </Pressable>
         <Pressable
-          className="flex-1 rounded-2xl bg-white px-4 py-4 active:opacity-80"
+          className="flex-1 rounded-2xl bg-card px-4 py-4 active:opacity-80"
           onPress={() => router.push('/integrity')}
         >
-          <Text className="text-2xl font-bold text-hawk-ink">{integrity?.unitsFlagged ?? '—'}</Text>
-          <Text className="text-xs text-neutral-500">Units flagged</Text>
+          <Text className="text-2xl font-bold text-ink">{integrity?.unitsFlagged ?? '—'}</Text>
+          <Text className="text-xs text-muted">Units flagged</Text>
         </Pressable>
       </View>
 
-      <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+      <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
         Live activity
       </Text>
       <View className="flex-row flex-wrap">
@@ -257,12 +259,12 @@ export default function Home() {
             key={f.key}
             onPress={() => setFilter(f.key)}
             className={`mb-2 mr-2 rounded-full px-3.5 py-2 ${
-              filter === f.key ? 'bg-hawk-green' : 'bg-white'
+              filter === f.key ? 'bg-hawk-green' : 'bg-card'
             }`}
           >
             <Text
               className={`text-xs font-semibold ${
-                filter === f.key ? 'text-hawk-gold' : 'text-neutral-600'
+                filter === f.key ? 'text-hawk-gold' : 'text-muted'
               }`}
             >
               {f.label}
@@ -274,7 +276,7 @@ export default function Home() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <FlashList
         data={shown ?? []}
         keyExtractor={(x) => x.id}
@@ -296,7 +298,7 @@ export default function Home() {
             <ActivityIndicator className="pt-6" color={BRAND.leaf} />
           ) : (
             <View className="px-4 pt-2">
-              <Text className="text-sm text-neutral-500">
+              <Text className="text-sm text-muted">
                 {filter === 'all'
                   ? 'Nothing has come in yet. Reports, incidents and flags appear here as they land.'
                   : 'Nothing of this kind yet.'}
@@ -308,21 +310,21 @@ export default function Home() {
           const k = KIND[item.kind];
           return (
             <Pressable
-              className="mx-4 mb-2 flex-row items-start rounded-2xl bg-white px-4 py-3 active:opacity-80"
+              className="mx-4 mb-2 flex-row items-start rounded-2xl bg-card px-4 py-3 active:opacity-80"
               onPress={() => (item.href ? router.push(item.href as never) : undefined)}
             >
               <View className={`mt-0.5 rounded-full p-1.5 ${k.tone}`}>
-                <Feather name={k.icon} size={12} color={BRAND.ink} />
+                <Feather name={k.icon} size={12} color={ui.ink} />
               </View>
               <View className="flex-1 pl-3">
-                <Text className="text-sm font-bold capitalize text-hawk-ink">{item.title}</Text>
+                <Text className="text-sm font-bold capitalize text-ink">{item.title}</Text>
                 {item.detail ? (
-                  <Text className="pt-0.5 text-xs text-neutral-500" numberOfLines={2}>
+                  <Text className="pt-0.5 text-xs text-muted" numberOfLines={2}>
                     {item.detail}
                   </Text>
                 ) : null}
               </View>
-              <Text className="pl-2 text-[11px] text-neutral-400">{ago(item.at)}</Text>
+              <Text className="pl-2 text-[11px] text-faint">{ago(item.at)}</Text>
             </Pressable>
           );
         }}

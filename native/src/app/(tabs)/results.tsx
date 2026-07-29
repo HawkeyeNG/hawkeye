@@ -138,7 +138,7 @@ export default function Results() {
           disabled={busy}
           onPress={toggleFollow}
           className={`mb-3 flex-row items-center rounded-2xl px-4 py-3 active:opacity-80 ${
-            following ? 'bg-white' : 'bg-hawk-green'
+            following ? 'bg-card' : 'bg-hawk-green'
           }`}
         >
           {busy ? (
@@ -157,7 +157,7 @@ export default function Results() {
           >
             {following ? 'Following this race' : 'Follow this race'}
           </Text>
-          <Text className={`text-xs ${following ? 'text-neutral-400' : 'text-emerald-200'}`}>
+          <Text className={`text-xs ${following ? 'text-faint' : 'text-emerald-200'}`}>
             {following ? 'Alerts on' : 'Get alerts on every report'}
           </Text>
         </Pressable>
@@ -167,13 +167,13 @@ export default function Results() {
 
   const footer =
     gaps && gaps.missing.length ? (
-      <View className="mt-4 rounded-2xl bg-white px-4 py-4">
-        <Text className="text-sm font-bold text-hawk-ink">Help cover these states</Text>
-        <Text className="pt-1 text-xs text-neutral-500">
+      <View className="mt-4 rounded-2xl bg-card px-4 py-4">
+        <Text className="text-sm font-bold text-ink">Help cover these states</Text>
+        <Text className="pt-1 text-xs text-muted">
           {gaps.statesReported} of {gaps.statesTotal} states have reports so far. Nothing has
           come in from:
         </Text>
-        <Text className="pt-2 text-xs text-neutral-600">{gaps.missing.join(' · ')}</Text>
+        <Text className="pt-2 text-xs text-muted">{gaps.missing.join(' · ')}</Text>
         <Pressable
           className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
           onPress={() => router.push('/report/result')}
@@ -184,10 +184,10 @@ export default function Results() {
     ) : null;
 
   return (
-    <SafeAreaView className="flex-1 bg-hawk-mist" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="px-4 pb-2 pt-4">
-        <Text className="text-2xl font-bold text-hawk-ink">Results</Text>
-        <Text className="text-sm text-neutral-600">
+        <Text className="text-2xl font-bold text-ink">Results</Text>
+        <Text className="text-sm text-muted">
           {contest?.election ?? 'Loading…'} · {data?.unitsReporting ?? 0} unit(s) reporting
           {updatedAt
             ? ` · updated ${new Date(updatedAt).toLocaleTimeString([], {
@@ -216,22 +216,22 @@ export default function Results() {
         }
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
         ListEmptyComponent={
-          <View className="mt-2 items-center rounded-2xl bg-white px-6 py-10">
-            <Text className="text-base font-semibold text-hawk-ink">No results yet</Text>
-            <Text className="pt-1 text-center text-sm text-neutral-500">
+          <View className="mt-2 items-center rounded-2xl bg-card px-6 py-10">
+            <Text className="text-base font-semibold text-ink">No results yet</Text>
+            <Text className="pt-1 text-center text-sm text-muted">
               Accepted reports appear here live, ranked by verified votes.
             </Text>
           </View>
         }
         renderItem={({ item, index }) => (
-          <View className="mb-2 flex-row items-center rounded-2xl bg-white px-4 py-3">
-            <Text className="w-7 text-base font-bold text-neutral-400">{index + 1}</Text>
+          <View className="mb-2 flex-row items-center rounded-2xl bg-card px-4 py-3">
+            <Text className="w-7 text-base font-bold text-faint">{index + 1}</Text>
             <View className="flex-1 pr-3">
-              <Text className="text-base font-semibold text-hawk-ink">{item.party}</Text>
-              <Text className="text-xs text-neutral-500" numberOfLines={1}>
+              <Text className="text-base font-semibold text-ink">{item.party}</Text>
+              <Text className="text-xs text-muted" numberOfLines={1}>
                 {item.name}
               </Text>
-              <View className="mt-1 h-1.5 overflow-hidden rounded-full bg-hawk-mist">
+              <View className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface">
                 <View
                   className="h-1.5 rounded-full bg-hawk-leaf"
                   style={{ width: `${Math.max(2, Math.round(item.share * 100))}%` }}
@@ -239,10 +239,10 @@ export default function Results() {
               </View>
             </View>
             <View className="items-end">
-              <Text className="text-base font-bold text-hawk-ink">
+              <Text className="text-base font-bold text-ink">
                 {item.votes.toLocaleString()}
               </Text>
-              <Text className="text-[11px] text-neutral-400">
+              <Text className="text-[11px] text-faint">
                 {Math.round(item.share * 100)}%
               </Text>
             </View>

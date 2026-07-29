@@ -6,5 +6,5 @@ import { View } from 'react-native';
  * mirroring the web shell where Report is a chooser, not a page.
  */
 export default function ReportRoute() {
-  return <View className="flex-1 bg-hawk-mist" />;
+  return <View className="flex-1 bg-surface" />;
 }

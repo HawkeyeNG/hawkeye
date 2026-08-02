@@ -77,25 +77,19 @@ export default function Support() {
       >
         <View className="gap-4 p-4">
           <View className="gap-2 rounded-2xl border border-line bg-card p-4">
-            <Text className="text-lg font-bold text-ink">Keep Hawkeye independent</Text>
+            <Text className="text-lg font-bold text-ink">Keep Hawkeye Independent</Text>
             <Text className="leading-6 text-muted">
               Hawkeye is built and paid for by its founder — no political funding, no
               advertisers, no strings attached. If the work is useful to you, a donation helps
               cover the servers, phones and time that keep it running and independent.
             </Text>
-            <Text className="leading-6 text-muted">
-              Crypto is the fastest way to give today. Nigerian and international bank transfers
-              will be added once our nonprofit registration clears.
-            </Text>
           </View>
 
           <Text className="mt-1 text-xs font-bold uppercase tracking-widest text-faint">
-            Crypto wallets
+            Crypto Wallets
           </Text>
           <Text className="-mt-2 text-xs leading-5 text-muted">
-            Tap Copy for the address, or QR for a large scannable code. The six EVM networks
-            (Ethereum, Base, Polygon, Monad, Robinhood, HyperEVM) share one address — Copy gives
-            you that address, and each QR is tagged for its network so a scan sends on the right one.
+            Tap Copy for wallet address, or QR to generate a scannable code.
           </Text>
 
           {WALLETS.map((w) => (
@@ -146,6 +140,9 @@ export default function Support() {
               className="w-full max-w-[340px] rounded-2xl border border-line bg-card p-5"
               onPress={() => {}}
             >
+              <Pressable onPress={() => setQr(null)} hitSlop={12} className="absolute right-3 top-2.5 z-10">
+                <Feather name="x" size={20} color={ui.muted} />
+              </Pressable>
               <View className="flex-row items-center justify-center gap-2">
                 <SvgXml xml={ICONS[qr.slug]} width={24} height={24} />
                 <Text className="text-base font-bold text-ink">{qr.label}</Text>

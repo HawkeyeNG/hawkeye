@@ -936,6 +936,15 @@ details.fold > summary::after { content: '⌄'; float: right; opacity: 0.5; }
 details.fold[open] > summary::after { content: '⌃'; }
 details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 .sec-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); border: 0; padding: 0; margin: 22px 0 2px; }
+/* Stacked entry cards — phone-friendly replacement for wide ledger/integrity tables. */
+.ecard { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.ecard .ec-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.ecard .ec-top strong { font-size: 0.95rem; }
+.ecard .ec-top .ec-time { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+.ecard .ec-line { font-size: 0.85rem; margin-top: 4px; }
+.ecard .ec-sub { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
+.ecard code { font-size: 0.75rem; word-break: break-all; }
+.ecard .ec-ev { margin-top: 6px; font-size: 0.85rem; }
 #camera-overlay video {
   display: block;
   width: auto;

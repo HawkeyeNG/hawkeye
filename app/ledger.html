@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=119" />
+  <link rel="stylesheet" href="styles.css?v=120" />
   <script src="native.js?v=103"></script>
   <style>
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -91,8 +91,7 @@
     <div class="card">
       <h2>Ledger Entries</h2>
       <p class="hint">Newest first. Each row's evidence photos are public, content-addressed files.</p>
-      <table><thead><tr><th>#</th><th>Recorded</th><th>Unit / Contest</th><th>Entry Hash</th><th>Evidence</th></tr></thead>
-        <tbody id="rows"></tbody></table>
+      <div id="rows"></div>
     </div>
   </main>
 
@@ -142,13 +141,12 @@
       document.getElementById('status').innerHTML = `Server head — compare, don't trust: <code>${verify.head || GENESIS}</code>`;
 
       document.getElementById('rows').innerHTML = [...entries].reverse().map((e) => `
-        <tr>
-          <td>${e.id}</td>
-          <td>${timeAgo(e.created_at)}</td>
-          <td>${e.pu_code}<br /><small>${e.contest}</small></td>
-          <td><code>${e.entry_hash.slice(0, 24)}…</code></td>
-          <td><a href="/uploads/${e.image_sha256}.jpg" target="_blank">sheet</a> · <a href="/uploads/${e.venue_image_sha256}.jpg" target="_blank">venue</a></td>
-        </tr>`).join('') || '<tr><td colspan="5" class="meta">No entries yet.</td></tr>';
+        <div class="ecard">
+          <div class="ec-top"><strong>#${e.id}</strong><span class="ec-time">${timeAgo(e.created_at)}</span></div>
+          <div class="ec-line">${e.pu_code} · ${e.contest}</div>
+          <div class="ec-sub"><code>${e.entry_hash.slice(0, 24)}…</code></div>
+          <div class="ec-ev"><a href="/uploads/${e.image_sha256}.jpg" target="_blank">sheet ↗</a> · <a href="/uploads/${e.venue_image_sha256}.jpg" target="_blank">venue ↗</a></div>
+        </div>`).join('') || '<div class="meta">No entries yet.</div>';
     })();
 
     document.getElementById('btn-verify').onclick = async () => {

@@ -6,20 +6,22 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { PasswordField } from '@/components/password-field';
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
@@ -165,6 +167,8 @@ type PwMode = 'change' | 'reset-phone' | 'reset-otp' | 'reset-new';
 export default function Profile() {
   const ui = useUi();
   const auth = useAuth();
+  const insets = useSafeAreaInsets();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const [me, setMe] = useState<Me | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -360,7 +364,7 @@ export default function Profile() {
 
   if (auth.status !== 'signedIn') {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
+      <View className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="user" size={28} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to see your profile
@@ -374,7 +378,7 @@ export default function Profile() {
         <Pressable className="mt-3" onPress={() => router.back()}>
           <Text className="text-sm text-muted">Not now</Text>
         </Pressable>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -397,20 +401,13 @@ export default function Profile() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="x" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">My Profile</Text>
-      </View>
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="My Profile" translateY={translateY} onClose={() => router.back()} />
 
-      <ScrollView
-        contentContainerClassName="px-4 pb-4 pt-3"
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 16 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -645,13 +642,16 @@ export default function Profile() {
             </Text>
           </>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Sign out is pinned below the scroll: the four activity accordions
           expand on tap and push everything under them off-screen, so the one
           routine control here has to stay reachable regardless. */}
       {me && !err ? (
-        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+        <View
+          className="border-t border-line bg-surface px-4 pt-3"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
           <Pressable
             className="flex-row items-center justify-center rounded-2xl bg-card py-3.5 active:opacity-70"
             onPress={() => setConfirm('signout')}
@@ -878,6 +878,6 @@ export default function Profile() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }

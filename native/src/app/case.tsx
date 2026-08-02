@@ -6,17 +6,19 @@ import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Image,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ReportContent } from '@/components/report-content';
+import { ScreenHeader } from '@/components/screen-header';
 import { StatusChip, TallyBar, type Tally } from '@/components/tally';
+import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { flagLabel } from '@/lib/flags';
 import { useUi } from '@/lib/theme';
@@ -78,6 +80,8 @@ export default function CaseScreen() {
   const ui = useUi();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const auth = useAuth();
+  const insets = useSafeAreaInsets();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const [c, setC] = useState<CaseFile | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [mine, setMine] = useState<{ verdict: string | null } | null>(null);
@@ -175,7 +179,7 @@ export default function CaseScreen() {
 
   if (err || (c && c.error)) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
+      <View className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="file-text" size={26} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
           Case Not Found
@@ -189,15 +193,15 @@ export default function CaseScreen() {
         >
           <Text className="text-base font-bold text-hawk-gold">All cases</Text>
         </Pressable>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!c) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface">
+      <View className="flex-1 items-center justify-center bg-surface">
         <ActivityIndicator color={ui.tint.good.ink} />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -234,22 +238,23 @@ export default function CaseScreen() {
   const canJudge = c.status === 'open' && auth.status === 'signedIn' && !mine?.verdict;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="arrow-left" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Case #{c.id}</Text>
-        <View className="ml-2">
-          <StatusChip status={c.status} />
-        </View>
-      </View>
+    <View className="flex-1 bg-surface">
+      <ScreenHeader
+        title={`Case #${c.id}`}
+        translateY={translateY}
+        onClose={() => router.back()}
+        rightSlot={<StatusChip status={c.status} />}
+      />
 
-      <ScrollView contentContainerClassName={`px-4 pt-3 ${canJudge ? 'pb-4' : 'pb-10'}`}>
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{
+          paddingTop: headerH + 12,
+          paddingHorizontal: 16,
+          paddingBottom: canJudge ? 16 : 40,
+        }}
+      >
         <Text className="text-xl font-bold text-ink">{c.unit.name}</Text>
         <Text className="pt-1 text-xs text-muted">
           {c.contest} · {c.unit.ward} ward, {c.unit.lga}, {c.unit.state}
@@ -428,7 +433,7 @@ export default function CaseScreen() {
             Resolution rule: {c.rule}
           </Text>
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Cast sits under every flag, two 128px photos and a vote list per
           submission, and a 3+ question form — in the scroll it starts offscreen
@@ -436,7 +441,10 @@ export default function CaseScreen() {
           reachable, and msg rides with it so a rejected attempt ("Answer every
           question.") doesn't push the retry away. */}
       {canJudge ? (
-        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+        <View
+          className="border-t border-line bg-surface px-4 pt-3"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
           {msg ? <Text className="pb-2 text-sm font-semibold text-good-ink">{msg}</Text> : null}
           <Pressable
             disabled={busy}
@@ -457,7 +465,7 @@ export default function CaseScreen() {
           </Text>
         </View>
       ) : null}
-    </SafeAreaView>
+    </View>
   );
 }
 

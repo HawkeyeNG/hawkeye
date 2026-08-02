@@ -1,12 +1,11 @@
-import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Animated, Pressable, RefreshControl, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { loadStatesGeo, NigeriaMap, NO_DATA_FILL, normState } from '@/components/nigeria-map';
-import { BRAND } from '@/lib/api';
-import { useUi } from '@/lib/theme';
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { loadPolitical, partyColor, partyName, type Political } from '@/lib/political';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -72,7 +71,8 @@ const label = (name: string) => LABEL[name] ?? name;
 type Mode = 'results' | 'power';
 
 export default function MapScreen() {
-  const ui = useUi();
+  const insets = useSafeAreaInsets();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const [mode, setMode] = useState<Mode>('results');
   const [contests, setContests] = useState<Contest[]>([]);
   const [code, setCode] = useState<string | null>(null);
@@ -257,21 +257,14 @@ export default function MapScreen() {
       : 'Who holds each governorship now — the incumbents this election confirms or unseats.';
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="x" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Map of Nigeria</Text>
-      </View>
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Map of Nigeria" translateY={translateY} onClose={() => router.back()} />
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="px-4 pb-6 pt-3"
+      <Animated.ScrollView
+        style={{ flex: 1 }}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 24 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -425,9 +418,12 @@ export default function MapScreen() {
             </View>
           </>
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
 
-      <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+      <View
+        className="border-t border-line bg-surface px-4 pt-3"
+        style={{ paddingBottom: insets.bottom + 12 }}
+      >
         {detail.title ? (
           <Text className="text-sm font-bold text-ink">{detail.title}</Text>
         ) : null}
@@ -450,6 +446,6 @@ export default function MapScreen() {
           </Text>
         </Pressable>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

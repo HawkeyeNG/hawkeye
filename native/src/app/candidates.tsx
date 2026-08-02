@@ -1,10 +1,10 @@
-import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Animated, ScrollView, Text, View } from 'react-native';
 
 import { PartyMark, RaceView } from '@/components/race';
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 import { loadPolitical, partyColor, type Race } from '@/lib/political';
 
@@ -25,20 +25,16 @@ export default function Candidates() {
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="x" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">2027 Candidates</Text>
-      </View>
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
 
-      <ScrollView contentContainerClassName="px-4 pb-10 pt-3">
+  return (
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Presidency 2027" translateY={translateY} onClose={() => router.back()} />
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
+      >
         {err ? (
           <Text className="text-sm font-semibold text-warn-ink">Could not load. ({err})</Text>
         ) : !race ? (
@@ -98,7 +94,7 @@ export default function Candidates() {
             </ScrollView>
           </>
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+    </View>
   );
 }

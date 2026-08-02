@@ -303,6 +303,13 @@ export const PAGES: Record<string, Page> = {
             cta: 'Open',
             href: '/ledger',
           },
+          {
+            icon: 'heart',
+            title: 'Support Hawkeye',
+            body: 'Founder-funded, no political money or advertisers. Crowd support keeps it running and independent.',
+            cta: 'Donate',
+            href: '/support',
+          },
         ],
       },
       { kind: 'label', text: 'Contact' },

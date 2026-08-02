@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00251a" />
+  <meta name="description" content="Support Hawkeye — an independent, founder-funded Nigerian election monitor. Donate crypto to help keep it running." />
+  <title>Hawkeye — Support</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css?v=117" />
+  <script src="native.js?v=103"></script>
+  <style>
+    .wallet-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
+    .wallet-row .addr { flex: 1; min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .copy-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; width: auto; margin: 0; padding: 8px 15px; font-size: 0.82rem; font-weight: 700; border-radius: 999px; background: var(--tint-ok); color: var(--green); border: 1px solid var(--green); cursor: pointer; }
+    .copy-btn:hover { filter: brightness(0.98); }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Support" />
+  <meta property="og:description" content="Founder-funded and independent. Crowd support keeps Hawkeye running." />
+  <meta property="og:url" content="https://hawkeye.com.ng/support.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">Leaderboard</a>
+        <a href="dashboard.html">Public Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="candidates.html">2027 Candidates</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Hawkeye</strong> — an independent transparency initiative; official results remain INEC's.</div></div>
+
+  <main class="wrap">
+    <h1>Support Hawkeye</h1>
+
+    <div class="card">
+      <h2>Keep Hawkeye independent</h2>
+      <p>Hawkeye is built and paid for by its founder — no political funding, no
+      advertisers, no strings attached. If the work is useful to you, a donation
+      helps cover the servers, phones and time that keep it running and independent.</p>
+      <p>Crypto is the fastest way to give today. Nigerian and international bank
+      transfers will be added once our nonprofit registration clears.</p>
+    </div>
+
+    <h2 style="margin-top:24px">Crypto wallets</h2>
+    <div id="wallets" class="option-list"></div>
+
+    <p class="hint" style="margin-top:14px">Always confirm the address after pasting.
+    Hawkeye will never message you asking for funds or seed phrases.</p>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a href="index.html">Home</a><a href="about.html">About & Contact</a>
+        <a href="how.html">How Hawkeye Works</a><a href="privacy.html">Privacy & Data</a></nav>
+    <p>Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+    <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+  </div></footer>
+
+  <script>
+    // Founder-funded donation page. The six EVM chains resolve to ONE address, so
+    // they are grouped rather than repeated six times.
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const WALLETS = [
+      { label: 'Any EVM chain', note: 'Ethereum · Base · Polygon · Monad · Robinhood · HyperEVM', address: '0x00F7bE0EA4A6dF70afc32d591C53460008d28C11' },
+      { label: 'Solana', address: 'Ac952LkbEvNAgECtd1n7LWG11M69VbGvUJCmAVkvenQN' },
+      { label: 'Bitcoin', address: 'bc1qnksyh8vvzetpjhc6kl9e7dxpa5tkk6pthehxly' },
+      { label: 'Sui', address: '0x0b46490cffac31ac4f08683cc1c9ab3b56c9d0e279ab18d5d26f77cdeb138fb3' },
+    ];
+    document.getElementById('wallets').innerHTML = WALLETS.map((w) => `
+      <div class="card">
+        <strong>${esc(w.label)}</strong>
+        ${w.note ? `<div class="hint" style="margin:2px 0 0">${esc(w.note)}</div>` : ''}
+        <div class="wallet-row">
+          <span class="addr" title="${esc(w.address)}">${esc(w.address)}</span>
+          <button class="copy-btn" type="button" data-addr="${esc(w.address)}"><span class="lbl">Copy</span></button>
+        </div>
+      </div>`).join('');
+    document.getElementById('wallets').addEventListener('click', async (e) => {
+      const b = e.target.closest('.copy-btn');
+      if (!b) return;
+      try {
+        await navigator.clipboard.writeText(b.dataset.addr);
+        const lbl = b.querySelector('.lbl');
+        lbl.textContent = 'Copied';
+        setTimeout(() => { lbl.textContent = 'Copy'; }, 1800);
+      } catch { /* clipboard blocked (insecure context) — user can select the text */ }
+    });
+  </script>
+  <script src="tg.js?v=95"></script>
+  <script src="menu.js?v=117"></script>
+</body>
+</html>

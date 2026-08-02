@@ -69,24 +69,38 @@
   // (the three report flows) under Take part, and Races under Live data. Each item
   // is either a plain href or { acc, hrefs }. Only those two collapse; the section
   // labels themselves stay flat (a shorter menu, per the plan).
+  // Mirror of native's More screen (native/src/app/(tabs)/more.tsx GROUPS), 1:1 in
+  // section order AND item order within each section — the app is what ships for
+  // Osun. My Profile leads Take part; Incident Reports (the public feed) sits under
+  // Trust & verify beside the Docket, distinct from "Report an Incident" (filing,
+  // inside the Report accordion). Ask Hawkeye is native-only (no web page yet), so
+  // it's the one native entry with no counterpart here.
   const GROUPS = [
-    ['Take part', [{ acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'map-unit.html', 'practice.html'], 'tp'],
-    ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html']],
-    ['Live data', ['results.html', { acc: 'Races', hrefs: ['races.html', 'osun.html', 'candidates.html'] }, 'dashboard.html', 'incident-reports.html', 'political.html']],
+    ['Take part', ['profile.html', { acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'practice.html', 'map-unit.html'], 'tp'],
+    ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html', 'incident-reports.html']],
+    ['Live data', ['results.html', { acc: 'Races', hrefs: ['osun.html', 'candidates.html'] }, 'dashboard.html', 'political.html']],
     // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
     // aren't in the panel, the group finds no members and is skipped.
-    ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'privacy.html', 'terms.html']],
+    ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'support.html', 'privacy.html', 'terms.html']],
   ];
   if (panel && !panel.querySelector('.menu-group')) {
     // Osun 2026 is the active pilot race — inject it once so it appears in the
     // menu on every page without editing each page's static link list.
-    // All-races selector page — the first item in the Races accordion, so the menu
-    // holds the full picker (every race type) plus the two live shortcuts below it.
-    if (!panel.querySelector('a[href="races.html"]')) {
-      const ra = document.createElement('a');
-      ra.href = 'races.html';
-      ra.textContent = 'All Races';
-      panel.appendChild(ra);
+    // My Profile leads Take part (mirrors native); injected so it appears on every
+    // page, not only the signed-in "Your account" append it used to be.
+    if (!panel.querySelector('a[href="profile.html"]')) {
+      const pf = document.createElement('a');
+      pf.href = 'profile.html';
+      pf.textContent = 'My Profile';
+      panel.appendChild(pf);
+    }
+    // Support Hawkeye — under Learn & about in native. The page exists (support.html)
+    // but few pages static-list it, so inject it like Osun/Practice/Terms.
+    if (!panel.querySelector('a[href="support.html"]')) {
+      const sp = document.createElement('a');
+      sp.href = 'support.html';
+      sp.textContent = 'Support Hawkeye';
+      panel.appendChild(sp);
     }
     // Public incident feed (viewing) — distinct from "Report an Incident" (filing).
     if (!panel.querySelector('a[href="incident-reports.html"]')) {
@@ -186,7 +200,10 @@
       }
     }
     for (const [href, a] of links) {
-      if (FOOTER_ONLY.includes(href)) a.remove();
+      // races.html (the all-races picker) is intentionally not in the menu — native
+      // has no such entry; drop any page's static link rather than leak it to the
+      // bottom of the panel.
+      if (FOOTER_ONLY.includes(href) || href === 'races.html') a.remove();
       else panel.appendChild(a); // anything unmapped keeps working
     }
   }
@@ -512,9 +529,8 @@
           p.appendChild(a);
           return a;
         };
-        // Dashboard (Observer Home on index.html) + My Profile — signed-in only.
-        add('index.html', 'Dashboard');
-        add('profile.html', 'My Profile');
+        // Dashboard removed (native has no such entry) and My Profile now leads the
+        // "Take part" section for everyone — so "Your account" carries just Sign out.
         // Sign out clears the token AND the device key so auto-resume can't
         // silently sign back in; sends the user to a fresh sign-up.
         add('#', 'Sign out', 'sign-out').addEventListener('click', (e) => {

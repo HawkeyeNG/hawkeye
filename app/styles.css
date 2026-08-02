@@ -753,7 +753,10 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 .menu-fade {
   position: sticky; bottom: -1px; height: 28px; margin-top: -28px;
   pointer-events: none; display: none;
-  background: linear-gradient(to top, var(--card) 12%, rgba(255, 255, 255, 0) 100%);
+  /* Fade to the PANEL's own colour, which is fixed white in both themes (see
+     .menu-panel `background:#fff`). It used var(--card) — dark in dark mode — so
+     the cue rendered as a black bar over the white panel. Always #fff. */
+  background: linear-gradient(to top, #fff 12%, rgba(255, 255, 255, 0) 100%);
 }
 .menu-panel.is-scrollable:not(.at-end) .menu-fade { display: block; }
 /* The fade div is the panel's last child, so :last-child no longer matches the
@@ -1083,6 +1086,7 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
   /* Only when the tab bar actually exists (native app) — mobile WEB keeps the
      normal header bell + footer. */
   body.has-tabbar a.bell-btn { display: none; }      /* the Alerts tab replaces it */
+  body.has-tabbar .menu-btn { display: none; }       /* the "More" tab opens the menu instead */
   body.has-tabbar .gov-footer { display: none; }     /* footer links live in "More" */
   body.has-tabbar #hk-fab { bottom: calc(78px + env(safe-area-inset-bottom)) !important; }
 }

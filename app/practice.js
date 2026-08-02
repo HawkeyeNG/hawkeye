@@ -24,6 +24,23 @@
   let stream = null; let target = null;
   async function openCamera(which) {
     target = which;
+    // App shell: capture natively — the SHEET runs through the ML Kit document
+    // scanner (live edge detection, auto-capture, perspective correction and
+    // on-device OCR), the same scan the real report flow uses; the VENUE uses the
+    // OS camera. This is the "scan" practice was missing in the APK. On the web
+    // (no capturePhoto) it falls through to the in-page getUserMedia camera below.
+    if (window.HAWKEYE && typeof window.HAWKEYE.capturePhoto === 'function') {
+      try {
+        const blob = await window.HAWKEYE.capturePhoto(which);
+        const img = $(`preview-${which}`);
+        img.src = URL.createObjectURL(blob);
+        img.hidden = false;
+        markSlot(which);
+      } catch (e) {
+        /* user backed out of the scanner/camera — leave the slot unchanged */
+      }
+      return;
+    }
     $('camera-title').textContent = which === 'sheet' ? 'Results sheet (EC8A)' : 'Polling venue';
     const guide = $('camera-guide');
     if (guide) {

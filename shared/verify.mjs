@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { BRAND, LIGHT, DARK, WEB_MAP, rgbHex } from "./tokens.mjs";
+import { BRAND, LIGHT, DARK, TYPE, WEB_MAP, rgbHex } from "./tokens.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p) => readFileSync(join(ROOT, p), "utf8");
@@ -92,6 +92,10 @@ dump("repoint value (Phase 2)", buckets.converge);
 dump("add to web (Phase 2)", buckets.missing);
 dump("design decision (ask user)", buckets.reconcile);
 dump("aligned", buckets.ok);
+
+// ---- 4. shape: web --radius should match the spec ------------------------
+const rad = (web.match(/--radius:\s*([0-9]+px)/) || [])[1];
+console.log(`\n[web] --radius = ${rad ?? "?"} (spec ${TYPE.radius}) ${rad === TYPE.radius ? "✓" : "✗ converge"}`);
 
 // ---- verdict -------------------------------------------------------------
 console.log("");

@@ -21,7 +21,7 @@
   --amber-border: #f5c518;
   --link: #0a6b40;
   --input-border: #b9c4bd;
-  --radius: 14px;
+  --radius: 16px;
   /* Tinted surfaces — ALWAYS use these (never raw hex) so dark mode can flip
      them. tint = light green wash, code-bg = hash/token blocks, tint-danger/
      warn/ok = severity washes, surface = card-like solid (was #fff). */
@@ -283,7 +283,7 @@ main.wrap { max-width: 840px; }
 }
 .btn-primary:hover, .btn-ghost:hover, .btn-white:hover, .btn-accent:hover { transform: translateY(-2px); }
 .btn-accent { background: var(--accent); color: var(--green-950); box-shadow: 0 8px 24px rgba(245, 179, 1, 0.35); }
-.btn-primary { background: var(--green); color: #fff; box-shadow: 0 6px 18px rgba(0, 135, 81, 0.35); }
+.btn-primary { background: var(--green); color: #fff; box-shadow: 0 6px 18px rgba(0, 66, 37, 0.35); }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost { border: 1.5px solid rgba(255, 255, 255, 0.45); color: #fff; }
 .btn-ghost:hover { border-color: #fff; background: rgba(255, 255, 255, 0.07); }
@@ -823,8 +823,8 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
   border-right: 2.5px solid var(--green); border-bottom: 2.5px solid var(--green);
   transform: rotate(-45deg); transition: transform .22s ease; }
 .acc[open] > summary::after { transform: rotate(45deg); }
-.acc > summary:hover { background: rgba(0, 135, 81, 0.05); }
-.acc[open] > summary { color: var(--link); background: rgba(0, 135, 81, 0.04); }
+.acc > summary:hover { background: rgba(0, 66, 37, 0.05); }
+.acc[open] > summary { color: var(--link); background: rgba(0, 66, 37, 0.04); }
 .acc > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
 .acc-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
   flex: none; border-radius: 50%; background: var(--green); color: #fff; font-size: 0.82rem; font-weight: 700; }
@@ -1026,7 +1026,7 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 .tabbar .tab-cta .ti {
   background: var(--green); color: #fff; width: 50px; height: 50px; border-radius: 50%;
   align-items: center; justify-content: center; margin-top: -22px;
-  box-shadow: 0 6px 16px rgba(0, 135, 81, 0.4); border: 3px solid var(--card);
+  box-shadow: 0 6px 16px rgba(0, 66, 37, 0.4); border: 3px solid var(--card);
 }
 .tabbar .tab-dot {
   position: absolute; top: -3px; right: -7px; min-width: 15px; height: 15px; padding: 0 3px;

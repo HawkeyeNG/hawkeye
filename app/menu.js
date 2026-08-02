@@ -233,6 +233,34 @@
   }
   publishChromeVars();
   addEventListener('resize', publishChromeVars);
+
+  // Scroll-hiding top pane (native app feel). On mobile widths the sticky header
+  // slides up on scroll-down and returns on scroll-up; it never hides at the very
+  // top and is force-shown whenever the ☰ panel opens (its anchor must be on
+  // screen). Desktop (>=900px) keeps a persistent header — that's where the
+  // .desktop-primary quick-nav lives, so hiding it would strand navigation.
+  (function () {
+    const hdr = document.querySelector('.gov-header');
+    if (!hdr) return;
+    const panel = document.getElementById('menu-panel');
+    const mobile = window.matchMedia('(max-width: 899px)');
+    const show = () => hdr.classList.remove('hdr-hidden');
+    let lastY = window.scrollY, ticking = false;
+    function onScroll() {
+      if (!mobile.matches) { show(); return; }
+      const y = window.scrollY;
+      if (Math.abs(y - lastY) <= 6) return;
+      if (y < 8 || y < lastY || (panel && !panel.hidden)) show();
+      else hdr.classList.add('hdr-hidden');
+      lastY = y;
+    }
+    addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(() => { onScroll(); ticking = false; }); ticking = true; }
+    }, { passive: true });
+    mobile.addEventListener('change', show);
+    if (panel) new MutationObserver(() => { if (!panel.hidden) show(); })
+      .observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+  })();
   addEventListener('orientationchange', () => setTimeout(publishChromeVars, 150));
 
   // The 🦅 emoji crest renders as a different glyph on every platform (and reads

@@ -1089,6 +1089,10 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
      normal header bell + footer. */
   body.has-tabbar a.bell-btn { display: none; }      /* the Alerts tab replaces it */
   body.has-tabbar .menu-btn { display: none; }       /* the "More" tab opens the menu instead */
+  /* No practice pitch on the app auth screen: someone who downloaded the app came
+     to observe. Practice stays open (signed-out) on the WEB, where ad/social traffic
+     lands. */
+  body.has-tabbar #starter-card, body.has-tabbar #practice-line { display: none !important; }
   body.has-tabbar .gov-footer { display: none; }     /* footer links live in "More" */
   body.has-tabbar #hk-fab { bottom: calc(78px + env(safe-area-inset-bottom)) !important; }
 }

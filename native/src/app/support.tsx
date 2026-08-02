@@ -3,6 +3,7 @@ import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useUi } from '@/lib/theme';
@@ -12,21 +13,30 @@ import { useUi } from '@/lib/theme';
  * app/support.html). Crypto only for now; Nigerian and international bank
  * transfers land once the CAC nonprofit registration clears.
  *
- * The six EVM chains the project lists all resolve to ONE address, so they are
- * grouped under a single "Any EVM chain" row rather than repeated six times —
- * showing the same string six times reads as an error, not thoroughness.
+ * The six EVM chains share ONE address, so each is listed separately with its
+ * own QR carrying an EIP-681 `ethereum:<addr>@<chainId>` — the only thing that
+ * can route a scan to the right network (Ethereum 1 / Base 8453 / Polygon 137 /
+ * Monad 143 / Robinhood 4663 / HyperEVM 999). Solana and Bitcoin use their own
+ * URI schemes; Sui has no standard one, so it stays a raw address. The QR carries
+ * the prefixed URI; Copy gives the RAW address (you paste an address, not a URI).
  */
-type Wallet = { label: string; note?: string; address: string };
+type Wallet = { label: string; address: string; qr: string };
+
+const EVM = '0x00F7bE0EA4A6dF70afc32d591C53460008d28C11';
+const SOL = 'Ac952LkbEvNAgECtd1n7LWG11M69VbGvUJCmAVkvenQN';
+const BTC = 'bc1qnksyh8vvzetpjhc6kl9e7dxpa5tkk6pthehxly';
+const SUI = '0x0b46490cffac31ac4f08683cc1c9ab3b56c9d0e279ab18d5d26f77cdeb138fb3';
 
 const WALLETS: Wallet[] = [
-  {
-    label: 'Any EVM chain',
-    note: 'Ethereum · Base · Polygon · Monad · Robinhood · HyperEVM',
-    address: '0x00F7bE0EA4A6dF70afc32d591C53460008d28C11',
-  },
-  { label: 'Solana', address: 'Ac952LkbEvNAgECtd1n7LWG11M69VbGvUJCmAVkvenQN' },
-  { label: 'Bitcoin', address: 'bc1qnksyh8vvzetpjhc6kl9e7dxpa5tkk6pthehxly' },
-  { label: 'Sui', address: '0x0b46490cffac31ac4f08683cc1c9ab3b56c9d0e279ab18d5d26f77cdeb138fb3' },
+  { label: 'Ethereum', address: EVM, qr: `ethereum:${EVM}@1` },
+  { label: 'Base', address: EVM, qr: `ethereum:${EVM}@8453` },
+  { label: 'Polygon', address: EVM, qr: `ethereum:${EVM}@137` },
+  { label: 'Monad', address: EVM, qr: `ethereum:${EVM}@143` },
+  { label: 'Robinhood Chain', address: EVM, qr: `ethereum:${EVM}@4663` },
+  { label: 'HyperEVM', address: EVM, qr: `ethereum:${EVM}@999` },
+  { label: 'Solana', address: SOL, qr: `solana:${SOL}` },
+  { label: 'Bitcoin', address: BTC, qr: `bitcoin:${BTC}` },
+  { label: 'Sui', address: SUI, qr: SUI },
 ];
 
 const short = (a: string) => `${a.slice(0, 12)}…${a.slice(-8)}`;
@@ -69,28 +79,37 @@ export default function Support() {
           <Text className="mt-1 text-xs font-bold uppercase tracking-widest text-faint">
             Crypto wallets
           </Text>
+          <Text className="-mt-2 text-xs leading-5 text-muted">
+            The six EVM networks (Ethereum, Base, Polygon, Monad, Robinhood, HyperEVM)
+            share one address — Copy gives you that address, and each QR is tagged for
+            its network so a scan sends on the right one.
+          </Text>
 
           {WALLETS.map((w) => (
-            <View key={w.label} className="gap-2 rounded-2xl border border-line bg-card p-4">
-              <Text className="font-bold text-ink">{w.label}</Text>
-              {w.note ? <Text className="text-xs text-muted">{w.note}</Text> : null}
-              <View className="mt-1 flex-row items-center justify-between gap-3">
-                <Text className="flex-1 font-mono text-xs text-muted" numberOfLines={1}>
-                  {short(w.address)}
-                </Text>
-                <Pressable
-                  onPress={() => copy(w.address)}
-                  className="flex-row items-center gap-1.5 rounded-full bg-good px-3 py-2"
-                >
-                  <Feather
-                    name={copied === w.address ? 'check' : 'copy'}
-                    size={14}
-                    color={ui.tint.good.ink}
-                  />
-                  <Text className="text-xs font-bold text-good-ink">
-                    {copied === w.address ? 'Copied' : 'Copy'}
+            <View key={w.label} className="rounded-2xl border border-line bg-card p-4">
+              <View className="flex-row items-center gap-3">
+                <View className="rounded-lg bg-white p-1.5">
+                  <QRCode value={w.qr} size={96} backgroundColor="#ffffff" color="#000000" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-bold text-ink">{w.label}</Text>
+                  <Text className="mt-1 font-mono text-xs text-muted" numberOfLines={1}>
+                    {short(w.address)}
                   </Text>
-                </Pressable>
+                  <Pressable
+                    onPress={() => copy(w.address)}
+                    className="mt-2 flex-row items-center gap-1.5 self-start rounded-full bg-good px-3 py-2"
+                  >
+                    <Feather
+                      name={copied === w.address ? 'check' : 'copy'}
+                      size={14}
+                      color={ui.tint.good.ink}
+                    />
+                    <Text className="text-xs font-bold text-good-ink">
+                      {copied === w.address ? 'Copied' : 'Copy'}
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           ))}

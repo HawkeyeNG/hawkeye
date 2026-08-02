@@ -94,6 +94,11 @@
       panel.appendChild(tm);
     }
     const links = new Map([...panel.querySelectorAll('a')].map((a) => [a.getAttribute('href'), a]));
+    // Canonical label for the results page: its static link text drifts across
+    // pages ("Leaderboard" / "Live Results" / "Public Results"), and native
+    // calls it the National Leaderboard. Normalise it here for every page at once.
+    const lb = links.get('results.html');
+    if (lb) lb.textContent = 'National Leaderboard';
     for (const [label, hrefs, tp] of GROUPS) {
       const members = hrefs.map((h) => links.get(h)).filter(Boolean);
       if (!members.length) continue;

@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=118" />
+  <link rel="stylesheet" href="styles.css?v=119" />
   <script src="native.js?v=103"></script>
   <style>
     .case { background: var(--card); border: 1px solid var(--border); border-left: 5px solid var(--danger); padding: 14px; margin: 10px 0; display: block; color: inherit; text-decoration: none; }
@@ -28,6 +28,7 @@
     .tallybar i { display: block; }
     .row-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
     .empty { color: var(--muted); padding: 24px; text-align: center; }
+    /* stat tiles (.stat-grid/.stile), folds (details.fold) and .sec-label are shared in styles.css */
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -35,7 +36,7 @@
   <meta property="og:description" content="Flagged results re-verified by the crowd, on the public record." />
   <meta property="og:url" content="https://hawkeye.com.ng/docket.html" />
   <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
-  <script src="authgate.js?v=1"></script>
+  <script src="authgate.js?v=2"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -68,22 +69,65 @@
 
   <main class="wrap">
     <h1>Public Docket</h1>
-    <p class="lede">When automated checks flag a result, the flag never decides anything — it holds that
-    result out of the tallies straight away and <strong>queues the evidence for crowd review</strong>. A
-    case is opened later, published here with its full evidence, and verified observers worldwide judge it
-    by answering factual questions. Quorum and a supermajority resolve it, every verdict is on the public
-    record, and the whole docket is anchored to a public transparency log.</p>
-    <p class="hint" id="rule"></p>
+    <p class="lede">A flag never decides anything. It holds that unit's votes out of every tally
+    straight away, and queues the evidence for crowd review — only the crowd's clearance puts the
+    votes back.</p>
+
+    <div class="stat-grid" id="tiles"></div>
+
+    <details class="fold"><summary>Why a disputed result is excluded</summary>
+      <p>Until the crowd reviews a flag, the unit's votes stay out of every tally. Holding a
+      possibly-bad result while it is checked is safer than letting it inflate a total — nothing is
+      deleted, only set aside until it is cleared or struck.</p></details>
+    <details class="fold"><summary>Who judges, and how</summary>
+      <p>Verified observers worldwide, never Hawkeye. Each answers factual questions about the
+      evidence on file — the results-sheet photo, the venue photo, the GPS fix. No one at Hawkeye
+      casts a verdict.</p></details>
+    <details class="fold"><summary>How a case resolves</summary>
+      <p id="resolve-text">Loading the resolution rule…</p></details>
+    <details class="fold"><summary>The docket is on the chain</summary>
+      <p>Every case, verdict and resolution is appended to the docket's own tamper-evident chain,
+      anchored to a public transparency log — the jury is as auditable as the count itself.</p></details>
+
+    <h2 class="sec-label">Cases</h2>
+    <p class="hint" style="margin:0 0 8px">Newest first. Open one to see its evidence and judge it.</p>
     <div id="list"><div class="skel" style="height:60px;margin:8px 0"></div></div>
   </main>
 
   <script>
     const $ = (id) => document.getElementById(id);
     const AGO = (t) => new Date(t).toLocaleString();
-    fetch('/api/docket').then((r) => r.json()).then((d) => {
-      $('rule').textContent = `Resolution rule: ${d.rule}`;
-      if (!d.cases.length) { $('list').innerHTML = '<div class="empty">No cases are open for judging yet.</div>'; return; }
-      $('list').innerHTML = d.cases.map((c) => {
+    // "Held out of tallies" is the server's own inDispute, summed across contests —
+    // the true count of results it excluded. Never inferred from the case rows,
+    // which cannot see it. Mirrors native docket.tsx's fetchHeldOut.
+    async function fetchHeldOut() {
+      try {
+        const contests = await fetch('/api/contests').then((r) => r.json());
+        const tallies = await Promise.all(contests.map((c) =>
+          fetch(`/api/national/${c.code}`).then((r) => r.json()).catch(() => null)));
+        let total = 0;
+        for (const t of tallies) { if (!t || typeof t.inDispute !== 'number') return null; total += t.inDispute; }
+        return total;
+      } catch { return null; }
+    }
+    fetch('/api/docket').then((r) => r.json()).then(async (d) => {
+      const cases = d.cases || [];
+      const by = (s) => cases.filter((c) => c.status === s).length;
+      const verdicts = cases.reduce((n, c) => n + ((c.tally && c.tally.total) || 0), 0);
+      const heldOut = await fetchHeldOut();
+      const tiles = [
+        ['Open cases', by('open'), by('open') ? 'warn' : ''],
+        ['Held out of tallies', heldOut == null ? '—' : heldOut, heldOut > 0 ? 'bad' : ''],
+        ['Struck by the crowd', by('upheld'), by('upheld') ? 'bad' : ''],
+        ['Cleared by the crowd', by('cleared'), by('cleared') ? 'ok' : ''],
+        ['Left unresolved', by('unresolved'), by('unresolved') ? 'warn' : ''],
+        ['Verdicts cast', verdicts, ''],
+      ];
+      $('tiles').innerHTML = tiles.map(([l, n, t]) =>
+        `<div class="stile ${t}"><b>${n}</b><span>${l}</span></div>`).join('');
+      $('resolve-text').textContent = `A case needs ${d.quorum} verdicts and a ${Math.round(d.supermajority * 100)}% supermajority inside a ${d.windowDays}-day window. Reach that and the crowd's verdict stands — the votes are struck or restored. Fall short and the case is left unresolved.`;
+      if (!cases.length) { $('list').innerHTML = '<div class="empty">No cases are open for judging yet.</div>'; return; }
+      $('list').innerHTML = cases.map((c) => {
         const t = c.tally, tot = Math.max(1, t.total);
         return `<a class="case ${c.status}" href="case.html?id=${c.id}">
           <div class="row-top"><h2>${c.name || c.puCode} — ${c.contest}</h2>
@@ -99,6 +143,6 @@
       }).join('');
     }).catch(() => { $('list').innerHTML = '<div class="empty">Could not load the docket — try again shortly.</div>'; });
   </script>
-  <script src="menu.js?v=118"></script>
+  <script src="menu.js?v=119"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=118" />
+  <link rel="stylesheet" href="styles.css?v=119" />
   <script src="native.js?v=103"></script>
   <style>
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -28,7 +28,7 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <script src="authgate.js?v=1"></script>
+  <script src="authgate.js?v=2"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -61,13 +61,19 @@
 
   <main class="wrap">
     <h1>Verify the Ledger</h1>
-    <p class="lede">Every accepted report is chained by hash: each entry commits to all before it,
-    so changing or removing any past report breaks every later hash. This page lets
-    <strong>you</strong> recompute the whole chain in your own browser — you don't have to trust us.</p>
+    <p class="lede"><strong>Verified</strong> means your phone recomputed every hash itself and got the
+    same head we publish — so no report has been altered or removed.</p>
 
-    <div class="status-box" id="status"><div class="skel" style="height:18px;width:60%"></div></div>
+    <div class="stat-grid" id="tiles"></div>
+
+    <details class="fold"><summary>How the chain is checked</summary>
+      <p>Every accepted report is chained by hash: each entry commits to all before it, so changing or
+      removing any past report breaks every later hash. This page recomputes the whole chain in your own
+      browser and compares the head it gets to the one the server publishes — you don't have to trust us.</p></details>
+
     <button id="btn-verify">🔒 Re-verify the entire chain in my browser</button>
     <p id="client-result" class="status" role="status"></p>
+    <p class="hint" id="status" style="margin-top:6px"></p>
 
     <div class="card">
       <h2>Verify a Single Race</h2>
@@ -104,16 +110,36 @@
       return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
     };
     let ENTRIES = [];
+    // Lead with numbers (native parity): the four tiles are the verdict; the long
+    // cryptography explanation is folded away above.
+    const TS = { entries: '…', server: '…', serverT: '', onPhone: 'Not run', onPhoneT: '', anchor: '—' };
+    function renderTiles() {
+      const cells = [
+        [TS.entries, 'Entries chained', '', false],
+        [TS.server, 'Server check', TS.serverT, true],
+        [TS.onPhone, 'On this phone', TS.onPhoneT, true],
+        [TS.anchor, 'Last anchor', '', true],
+      ];
+      document.getElementById('tiles').innerHTML = cells.map(([v, l, tone, tight]) =>
+        `<div class="stile ${tight ? 'tight' : ''} ${tone}"><b>${v}</b><span>${l}</span></div>`).join('');
+    }
+    renderTiles();
 
     (async () => {
-      const [verify, entries] = await Promise.all([
+      const [verify, entries, anchorsResp] = await Promise.all([
         fetch('/api/ledger/verify').then((r) => r.json()),
         fetch('/api/ledger/entries').then((r) => r.json()),
+        fetch('/api/anchors').then((r) => r.json()).catch(() => ({ anchors: [] })),
       ]);
       ENTRIES = entries;
-      document.getElementById('status').innerHTML = verify.ok
-        ? `<span class="ok">✔ Chain intact</span> — ${verify.entries} entries · head <code>${verify.head || GENESIS}</code>`
-        : `<span class="bad">✘ TAMPER DETECTED at entry ${verify.brokenAtId}</span>`;
+      TS.entries = String(verify.entries ?? entries.length);
+      TS.server = verify.ok ? 'Intact' : `Broken #${verify.brokenAtId}`;
+      TS.serverT = verify.ok ? 'ok' : 'bad';
+      const anchors = anchorsResp.anchors || [];
+      const latest = anchors.length ? anchors.reduce((a, b) => (b.created_at > a.created_at ? b : a)) : null;
+      TS.anchor = latest ? new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'None yet';
+      renderTiles();
+      document.getElementById('status').innerHTML = `Server head — compare, don't trust: <code>${verify.head || GENESIS}</code>`;
 
       document.getElementById('rows').innerHTML = [...entries].reverse().map((e) => `
         <tr>
@@ -132,11 +158,13 @@
       for (const e of ENTRIES) {
         if (e.prev_hash !== prev || (await sha256hex(prev + e.ledger_payload)) !== e.entry_hash) {
           out.innerHTML = `<span class="bad">✘ Chain broken at entry ${e.id} — a report was altered or removed.</span>`;
+          TS.onPhone = 'Broken'; TS.onPhoneT = 'bad'; renderTiles();
           return;
         }
         prev = e.entry_hash;
       }
       out.innerHTML = `<span class="ok">✔ Verified ${ENTRIES.length} entries in your browser. Head matches: <code>${prev}</code></span>`;
+      TS.onPhone = 'Verified'; TS.onPhoneT = 'ok'; renderTiles();
     };
 
     let LATEST_RACE_ANCHOR = null;
@@ -179,6 +207,6 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=118"></script>
+  <script src="menu.js?v=119"></script>
 </body>
 </html>

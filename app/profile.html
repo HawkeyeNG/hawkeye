@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=118" />
+  <link rel="stylesheet" href="styles.css?v=119" />
   <script src="native.js?v=103"></script>
   <style>
     .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
@@ -29,8 +29,18 @@
     input[type="password"] { width: 100%; box-sizing: border-box; }
     #pw-msg { min-height: 1.2em; }
     .signout { width: auto; padding: 8px 16px; }
+    /* Hero identity card — native parity. */
+    .phero { display: flex; align-items: center; gap: 14px; background: linear-gradient(160deg, #00251a, #00482b); border-radius: 16px; padding: 18px; color: #fff; margin: 8px 0 14px; }
+    .phero-av { flex: none; width: 46px; height: 46px; border-radius: 50%; background: rgba(245, 179, 1, 0.18); color: #f5b301; display: flex; align-items: center; justify-content: center; }
+    .phero-body { flex: 1; min-width: 0; }
+    .phero-body strong { display: block; font-size: 1.15rem; }
+    .phero-body span { font-size: 0.82rem; opacity: 0.82; }
+    .phero-copy { flex: none; background: rgba(255, 255, 255, 0.12); color: #fff; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 999px; padding: 7px 14px; font-size: 0.8rem; font-weight: 700; cursor: pointer; width: auto; }
+    .phero-copy:hover { background: rgba(255, 255, 255, 0.2); }
+    /* Count chip in an accordion summary. */
+    .cnt { display: inline-block; min-width: 20px; text-align: center; background: var(--tint); color: var(--muted); border-radius: 999px; padding: 1px 8px; font-size: 0.74rem; font-weight: 700; margin-left: 7px; }
   </style>
-  <script src="authgate.js?v=1"></script>
+  <script src="authgate.js?v=2"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -67,16 +77,19 @@
     </div>
     <div id="profile" hidden>
 
-      <div class="pcard">
-        <h2>Identity</h2>
-        <div class="kv"><b>Observer ID</b><span id="p-id"></span></div>
-        <div class="kv"><b>Member since</b><span id="p-since"></span></div>
-        <div class="kv" style="display:block"><b>Identity hash</b>
-          <p class="hint" style="margin:4px 0 6px">Your phone number is never stored or shown — this one-way hash is your public identity on the ledger.</p>
-          <div class="hashbox" id="p-hash"></div>
-          <button class="secondary copy" id="btn-copy">Copy hash</button>
+      <div class="phero">
+        <div class="phero-av" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>
         </div>
+        <div class="phero-body">
+          <strong id="p-id">Observer</strong>
+          <span id="p-since"></span>
+        </div>
+        <button class="phero-copy" id="btn-copy">Copy ID</button>
       </div>
+      <details class="fold"><summary>Your identity hash</summary>
+        <p>Your public identity on the ledger — your phone number is never stored.</p>
+        <div class="hashbox" id="p-hash"></div></details>
 
       <div class="pcard">
         <h2>Password</h2>
@@ -89,7 +102,7 @@
         <input id="pw-new" type="password" autocomplete="new-password" />
         <p class="hint" id="pw-msg"></p>
         <button id="btn-pw">Set password</button>
-        <p class="hint">Forgot your current password? Sign in again with an OTP on <a href="observe.html">the report page</a> — then you can set a new one here without it.</p>
+        <p class="hint">Forgot it? Reset it from the <a href="observe.html?intent=signin">sign-in page</a> — "Forgot your password?" sends a code, then you set a new one.</p>
       </div>
 
       <div class="pcard">
@@ -103,20 +116,13 @@
         <div id="p-subs" class="empty">None yet — follow a race from the <a href="results.html">leaderboard</a>.</div>
       </div>
 
-      <div class="pcard">
-        <h2>My result reports</h2>
-        <div id="p-reports" class="empty">No result reports yet.</div>
-      </div>
-
-      <div class="pcard">
-        <h2>My collation reports</h2>
-        <div id="p-collation" class="empty">No collation reports yet.</div>
-      </div>
-
-      <div class="pcard">
-        <h2>My incident reports</h2>
-        <div id="p-incidents" class="empty">No incident reports yet.</div>
-      </div>
+      <h2 class="sec-label" style="margin-top:18px">My activity</h2>
+      <details class="fold"><summary>Result reports <span class="cnt" id="cnt-reports">0</span></summary>
+        <div id="p-reports" class="empty">No result reports yet.</div></details>
+      <details class="fold"><summary>Collation reports <span class="cnt" id="cnt-collation">0</span></summary>
+        <div id="p-collation" class="empty">No collation reports yet.</div></details>
+      <details class="fold"><summary>Incident reports <span class="cnt" id="cnt-incidents">0</span></summary>
+        <div id="p-incidents" class="empty">No incident reports yet.</div></details>
 
       <div class="pcard">
         <h2>Session</h2>
@@ -125,8 +131,7 @@
 
       <div class="pcard danger">
         <h2>Delete my identity</h2>
-        <p class="hint">Wipes your signing key, device binding, Telegram link and subscriptions, and deactivates your ID.
-        Reports already on the public ledger are permanent and stay. Re-registering the same phone restores the same ID.</p>
+        <p class="hint">Wipes your key, device link, Telegram link and subscriptions. Reports already on the public ledger are permanent and stay; re-registering the same phone restores the same ID.</p>
         <button id="btn-delete">Delete my observer identity</button>
       </div>
 
@@ -160,8 +165,8 @@
       if (status !== 200) { localStorage.removeItem('hawkeye_token'); $('signed-out').hidden = false; return; }
       $('profile').hidden = false;
 
-      $('p-id').textContent = '#' + body.observerId;
-      $('p-since').textContent = dt(body.createdAt);
+      $('p-id').textContent = 'Observer #' + body.observerId;
+      $('p-since').textContent = 'since ' + dt(body.createdAt);
       $('p-hash').textContent = body.identityHash;
       hasPassword = body.hasPassword;
       $('pw-state').textContent = hasPassword
@@ -186,11 +191,14 @@
       renderList($('p-incidents'), body.incidents, (i) =>
         `<div class="item"><strong>${esc(i.kind)}</strong> <span class="tag">${esc(i.status)}</span>
          <div class="sub">${esc([i.pu_code, i.state].filter(Boolean).join(' · ') || 'no location')} · ${dt(i.created_at)}</div></div>`);
+      $('cnt-reports').textContent = (body.reports || []).length;
+      $('cnt-collation').textContent = (body.collation || []).length;
+      $('cnt-incidents').textContent = (body.incidents || []).length;
     }
 
     $('btn-copy').onclick = () => {
       navigator.clipboard.writeText($('p-hash').textContent)
-        .then(() => { $('btn-copy').textContent = 'Copied ✓'; setTimeout(() => ($('btn-copy').textContent = 'Copy hash'), 1500); })
+        .then(() => { $('btn-copy').textContent = 'Copied ✓'; setTimeout(() => ($('btn-copy').textContent = 'Copy ID'), 1500); })
         .catch(() => {});
     };
 
@@ -224,6 +232,6 @@
     load();
   </script>
   <script src="device.js"></script>
-  <script src="menu.js?v=118"></script>
+  <script src="menu.js?v=119"></script>
 </body>
 </html>

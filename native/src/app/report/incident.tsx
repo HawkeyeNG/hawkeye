@@ -986,6 +986,20 @@ export default function ReportIncident() {
   return (
     <SafeAreaView className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
+        {/* Hawkeye mark (tap → Home), matching the shared ScreenHeader
+            convention; the rest of this bar is bespoke to the wizard. */}
+        <Pressable
+          onPress={() => router.navigate('/(tabs)' as never)}
+          hitSlop={8}
+          className="mr-1.5"
+          accessibilityRole="button"
+          accessibilityLabel="Home"
+        >
+          <Image
+            source={require('@/assets/images/icon.png')}
+            style={{ width: 30, height: 30, borderRadius: 8 }}
+          />
+        </Pressable>
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}

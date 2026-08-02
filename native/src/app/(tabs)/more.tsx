@@ -3,13 +3,14 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Animated, Pressable, Text, View } from 'react-native';
 
 import { useUi } from '@/lib/theme';
 import { useThemePref, type ThemePref } from '@/lib/theme-pref';
 
+import { ScreenHeader } from '@/components/screen-header';
 import { SocialRow } from '@/components/social-row';
+import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 
 /**
  * More — the menu.js panel groups, carried over 1:1. Until each page is
@@ -230,10 +231,18 @@ function MenuAccordion({
 
 export default function More() {
   const ui = useUi();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <ScrollView contentContainerClassName="px-4 pb-8">
-        <Text className="pb-2 pt-4 text-2xl font-bold text-ink">More</Text>
+    <View className="flex-1 bg-surface">
+      {/* Tab screen: right="none" — the tab bar owns navigation, and this IS the
+          menu the shared header's menu button points at. The big in-scroll
+          "More" title is gone; the header carries it now. */}
+      <ScreenHeader title="More" right="none" translateY={translateY} />
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 32 }}
+      >
         {/* First group on the screen. It is the one setting in the app and the
             complaint was that nobody could find it; the four navigation groups
             below are all one scroll away either way. */}
@@ -274,7 +283,7 @@ export default function More() {
           © IniXien, LLC · Hawkeye is independent. It does not declare results; all
           official results are announced by INEC.
         </Text>
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+    </View>
   );
 }

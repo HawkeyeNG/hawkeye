@@ -13,6 +13,28 @@
   // CTA) with no race against page scripts.
   document.documentElement.classList.add('native-app');
 
+  // NO service worker in the app. The WebView already loads the shipped bundle
+  // (local, instant, offline) — a SW adds nothing and actively breaks updates: an
+  // installed SW keeps serving the PREVIOUS bundle's cached shell (old menu.js /
+  // styles.css) after the APK is updated in place, so shipped changes never appear.
+  // Registration is skipped in the shell (app.js / index.html guard on
+  // window.HAWKEYE.native); here we also tear down any SW + caches a past build
+  // left behind, so an updated install heals itself instead of staying stale.
+  if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
+    navigator.serviceWorker.getRegistrations()
+      .then((rs) => Promise.all(rs.map((r) => r.unregister())))
+      .then((rs) => {
+        if (window.caches && caches.keys) caches.keys().then((ks) => ks.forEach((k) => caches.delete(k)));
+        // If a stale SW WAS controlling this load, reload once (guarded so it can
+        // never loop) so the WebView re-fetches the current bundle, not the cache.
+        if (rs.length && navigator.serviceWorker.controller && !sessionStorage.getItem('hk_sw_purged')) {
+          sessionStorage.setItem('hk_sw_purged', '1');
+          location.reload();
+        }
+      })
+      .catch(() => {});
+  }
+
   // There is no same-origin server in the shell, so leading-slash URLs must
   // point at the real API host. CapacitorHttp (enabled in capacitor.config)
   // makes fetch use native HTTP, so this is cross-origin-safe (no CORS wall);

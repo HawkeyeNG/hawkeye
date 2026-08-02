@@ -47,6 +47,47 @@ try {
   VideoCompressor = null;
 }
 
+// Optional image downscaler (parity with the web/Capacitor compressCapture step):
+// shrink a freshly captured photo to the same targets before it is hashed/signed,
+// so a sheet is ~1500 px / q0.76 and a venue ~1280 px / q0.72 across every
+// platform instead of a full-sensor multi-MB JPEG. Probed like VideoCompressor —
+// no-op until `npx expo install expo-image-manipulator` adds it and the app is
+// rebuilt. Add it before the next release build to activate.
+let ImageManipulator: {
+  manipulateAsync: (uri: string, actions: object[], opts?: object) => Promise<{ uri: string; width: number; height: number }>;
+  SaveFormat: { JPEG: string };
+} | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // @ts-ignore optional module, added via `npx expo install expo-image-manipulator`
+  ImageManipulator = require('expo-image-manipulator');
+} catch {
+  ImageManipulator = null;
+}
+
+// Downscale to the shared upload target. Optional + fully guarded: if the module
+// is absent or the resize throws, the ORIGINAL photo is returned unchanged —
+// compression must never block or corrupt a capture (same contract as web).
+async function downscaleForUpload(uri: string, isDocument: boolean): Promise<string> {
+  if (!ImageManipulator?.manipulateAsync) return uri;
+  const maxDim = isDocument ? 1500 : 1280;
+  const quality = isDocument ? 0.76 : 0.72;
+  try {
+    const probe = await ImageManipulator.manipulateAsync(uri, []);
+    const longer = Math.max(probe.width, probe.height);
+    const jpeg = { compress: quality, format: ImageManipulator.SaveFormat.JPEG };
+    if (longer <= maxDim) {
+      const out = await ImageManipulator.manipulateAsync(uri, [], jpeg);
+      return out.uri || uri;
+    }
+    const resize = probe.width >= probe.height ? { width: maxDim } : { height: maxDim };
+    const out = await ImageManipulator.manipulateAsync(uri, [{ resize }], jpeg);
+    return out.uri || uri;
+  } catch {
+    return uri;
+  }
+}
+
 const VIDEO_MAX_S = VideoCompressor ? 180 : 90;
 const VIDEO_BITRATE = 2_000_000;
 const VIDEO_MAX_BYTES = 25 * 1024 * 1024; // pre-compress stop; edge rejects >33MB bodies
@@ -70,6 +111,9 @@ type Props = {
   partyCodes?: string[];
   /** Optional third control beside Cancel (practice's "Use a sample"). */
   extraAction?: { label: string; onPress: () => void };
+  /** Loud yellow banner for the VENUE step — observers routinely mistake it for
+   *  "re-shoot the sheet". Set on the venue step only (never on incidents). */
+  venueGuide?: string;
 };
 
 /**
@@ -109,6 +153,7 @@ export function CaptureCamera({
   readDocument,
   partyCodes,
   extraAction,
+  venueGuide,
 }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMic] = useMicrophonePermissions();
@@ -349,10 +394,14 @@ export function CaptureCamera({
       return;
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Downscale to the shared upload target before the bytes are hashed/signed, so
+    // storage + bandwidth match web/Capacitor (no-op until the module is built in).
+    const finalUri = await downscaleForUpload(preview.uri, isDocument);
+    if (cancelled.current || g !== gen.current) return; // retaken/cancelled mid-downscale
     setPreview(null);
     setBusy(false);
     onCapture({
-      uri: preview.uri,
+      uri: finalUri,
       capturedAt: preview.capturedAt,
       ...(fix ?? { lat: 0, lng: 0 }),
       type: 'image',
@@ -694,6 +743,12 @@ export function CaptureCamera({
           <Text className={`pt-1 text-neutral-200 ${frameGuide ? 'text-xs' : 'text-sm'}`}>
             {line ?? hint}
           </Text>
+          {/* Loud venue cue: observers keep re-shooting the sheet by mistake. */}
+          {venueGuide ? (
+            <View className="mt-2 rounded-xl bg-yellow-400 px-3 py-2">
+              <Text className="text-center text-sm font-extrabold text-neutral-900">{venueGuide}</Text>
+            </View>
+          ) : null}
           {/* Never degrade silently: an uncropped photo is weaker evidence than
               a scan, so say the scanner is out and say which failure it was.
               'unavailable' is a build without the module — retrying cannot help

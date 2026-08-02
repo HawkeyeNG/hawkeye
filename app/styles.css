@@ -353,6 +353,10 @@ section.how-sec h2 { font-size: 1.9rem; margin: 0 0 12px; }
   display: flex; align-items: center; justify-content: center;
 }
 .cta-band { padding: 72px 0; text-align: center; background: linear-gradient(180deg, var(--bg), var(--tint)); }
+/* Dark: the CTA sits between two brand-green sections (.trust / .gov-footer), so
+   the light-mode mist gradient reads as an off-palette black bar. Blend it into
+   the green flow, lifting the middle so the band still reads as its own strip. */
+:root[data-theme="dark"] .cta-band { background: linear-gradient(180deg, #00251a 0%, #013a24 50%, #00251a 100%); }
 .cta-band h2 { font-size: 2rem; margin: 0 0 12px; }
 .cta-band p { color: var(--muted); margin: 0 0 26px; }
 /* Dark-mode contrast fix for the practice-run banner. The rule that styles it
@@ -901,6 +905,10 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 }
 .camera-frame { width: 100%; max-width: 560px; max-height: 100%; overflow-y: auto; }
 #camera-title { color: #fff; font-weight: 700; margin: 0 0 10px; text-align: center; font-size: 1.05rem; }
+/* Loud per-shot guidance: the VENUE photo is easily mistaken for "re-shoot the
+   sheet", so it gets an unmissable yellow banner in the live capture overlay. */
+#camera-guide { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: #ffd400; color: #14150f; font-weight: 800; font-size: 0.95rem; text-align: center; line-height: 1.35; }
+#camera-guide[hidden] { display: none; }
 #camera-overlay video {
   display: block;
   width: auto;

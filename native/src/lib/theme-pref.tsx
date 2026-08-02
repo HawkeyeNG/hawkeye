@@ -83,7 +83,10 @@ export function themeClass(scheme: ResolvedScheme): string {
 }
 
 export function ThemePrefProvider({ children }: { children: ReactNode }) {
-  const system: ResolvedScheme = useSystemColorScheme() === 'dark' ? 'dark' : 'light';
+  // Default to DARK: follow the phone when it states a theme, but fall back to
+  // dark (not light) when the OS reports no preference — dark is Hawkeye's
+  // baseline across every platform. Only an explicit OS 'light' yields light.
+  const system: ResolvedScheme = useSystemColorScheme() === 'light' ? 'light' : 'dark';
   /** null = the stored preference has not been read yet. */
   const [pref, setPrefState] = useState<ThemePref | null>(null);
   /** Set once the gate has opened, so a late/slow read cannot re-gate the app. */
@@ -150,6 +153,7 @@ export function useThemePref(): ThemePrefState {
  */
 export function useResolvedColorScheme(): ResolvedScheme {
   const ctx = useContext(ThemePrefContext);
-  const system: ResolvedScheme = useSystemColorScheme() === 'dark' ? 'dark' : 'light';
+  // Same default-to-dark fallback as the provider (see ThemePrefProvider).
+  const system: ResolvedScheme = useSystemColorScheme() === 'light' ? 'light' : 'dark';
   return ctx ? ctx.scheme : system;
 }

@@ -261,6 +261,13 @@ const PREFILL = (QP.get('pu') && QP.get('contest')) ? {
   pu: QP.get('pu'), contest: QP.get('contest'),
   votes: (() => { try { return JSON.parse(QP.get('votes') || '[]'); } catch { return []; } })(),
 } : null;
+// The signed-out access guard (authgate.js) sends users here with ?next=<page> —
+// the gated page they were trying to open. Honour it once authenticated. Relative
+// .html paths only, so it can never be turned into an open redirect.
+const NEXT_DEST = (() => {
+  const n = QP.get('next');
+  return n && /^[a-z0-9_\-]+\.html(?:\?[^#]*)?$/i.test(n) ? n : null;
+})();
 // The "To Become an Observer, verify your phone below." banner is gone: the
 // heading and lede already say it, and a tinted notice above them made the
 // sign-up screen look cluttered. Kept as a no-op so the intent plumbing (which
@@ -289,8 +296,10 @@ function applySignInMode() {
   if ($('signin-line')) $('signin-line').hidden = true;     // they ARE on sign-in
   if ($('signup-line')) $('signup-line').hidden = false;
   if ($('pw-opt')) $('pw-opt').hidden = true;               // creating one is a sign-up job
-  // A returning observer doesn't need the practice pitch — it belongs on sign-up.
+  // A returning observer doesn't need the big practice pitch card — but a light
+  // practice link still belongs here (a practice link on every auth screen).
   if ($('starter-card')) $('starter-card').hidden = true;
+  if ($('practice-line')) $('practice-line').hidden = false;
 }
 // Sign-up mode (everything that isn't ?intent=signin). Mirror image of the above:
 // no "have a password?" toggle (a new observer can't have one), a link across to
@@ -305,6 +314,7 @@ function applySignUpMode() {
 }
 
 function afterVerified() {
+  if (NEXT_DEST) { location.href = NEXT_DEST; return; }
   if (INTENT_DEST[AUTH_INTENT]) { location.href = INTENT_DEST[AUTH_INTENT]; return; }
   // Default intent is 'observe' (AUTH_INTENT), so a fresh verification on this
   // page continues into the report flow even when a shared/og link dropped the
@@ -328,7 +338,9 @@ function resetAuthPane() {
   if ($('otp-phone')) $('otp-phone').hidden = true;
   if ($('channel-pick')) {
     $('channel-pick').hidden = false;
-    for (const r of document.querySelectorAll('input[name="otp-channel"]')) r.checked = false;
+    // Telegram is the default channel (free, and our primary route) — reselect it
+    // rather than clearing, so a user never has to pick before requesting a code.
+    for (const r of document.querySelectorAll('input[name="otp-channel"]')) r.checked = (r.value === 'telegram');
   }
   pendingChannel = '';
   if ($('pw-signin-wrap')) {
@@ -385,13 +397,28 @@ function showOtpPhone() {
   if (el) el.hidden = true;
 }
 
+// Re-issue the code on a chosen channel — powers both "Resend code" and the
+// "get it on WhatsApp instead" switch shown under a Telegram send.
+async function resendVia(channel) {
+  pendingChannel = channel;
+  $('otp-hint').textContent = 'Sending a fresh code…';
+  try {
+    const { status, body } = await api('/api/observers/register', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ phone: pendingPhone, channel }),
+    });
+    if (status !== 200) { $('otp-hint').textContent = explain(body); return; }
+    renderOtpSent(body);
+  } catch { $('otp-hint').textContent = 'Network problem — check your connection and try again.'; }
+}
+
 // How the code was delivered — shared by the first send and "Resend code".
-// ONE line. The user needs a single fact — where the code went — and the number
-// so they can spot a typo. Everything else (how to check WhatsApp, how to change
-// the number) is either obvious or already a control on screen.
+// The user needs a single fact — where the code went — and the number so they can
+// spot a typo. Telegram is the default, so a Telegram send also offers WhatsApp.
 function renderOtpSent(body) {
   const to = `<strong>${pendingPhone.replace(/</g, '&lt;')}</strong>`;
   const hint = $('otp-hint');
+  const waSwitch = ' <a class="btn-link" id="switch-wa" href="#">Prefer WhatsApp? Get the code there instead.</a>';
   if (body.devOtp) {
     hint.textContent = `DEV MODE — your code is ${body.devOtp}`;
   } else if (body.viaWhatsapp) {
@@ -403,13 +430,16 @@ function renderOtpSent(body) {
   } else if (body.telegramLink) {
     // The bot can only message someone who has opened it, so we send them
     // straight there; the two taps inside the bot are the whole instruction.
-    hint.innerHTML = `<a class="btn-link" id="tg-open" href="${body.telegramLink}" target="_blank" rel="noopener">Open Telegram</a> — tap <strong>Start</strong>, then <strong>Share my phone number</strong>.`;
+    hint.innerHTML = `<a class="btn-link" id="tg-open" href="${body.telegramLink}" target="_blank" rel="noopener">Open Telegram</a> — tap <strong>Start</strong>, then <strong>Share my phone number</strong>.` + waSwitch;
     $('tg-open').click(); // fresh gesture-linked click dodges popup blockers
   } else if (body.viaTelegram) {
-    hint.innerHTML = `Code sent on Telegram to ${to}.`;
+    // Telegram is the default — say so plainly, and offer WhatsApp as the switch.
+    hint.innerHTML = `Code sent on Telegram to ${to}.` + waSwitch;
   } else {
     hint.innerHTML = `Code sent to ${to}.`;
   }
+  const sw = $('switch-wa');
+  if (sw) sw.onclick = (e) => { e.preventDefault(); resendVia('whatsapp'); };
   showOtpPhone();
 }
 
@@ -661,7 +691,10 @@ function updateSubmitState() {
     badge.textContent = shots[t] ? 'Captured ✓' : 'Required';
     badge.classList.toggle('done', Boolean(shots[t]));
   }
-  $('btn-submit').disabled = !(shots.sheet && shots.venue) || selectedContestClosed();
+  // Only photos gate the button. A CLOSED contest keeps it clickable on purpose,
+  // so the tap surfaces the "reporting opens on election day" error (below) rather
+  // than a dead, silent button — the scope notice already explains the wait.
+  $('btn-submit').disabled = !(shots.sheet && shots.venue);
 }
 
 // ---------- camera (live capture only; overlay opens per slot) ----------
@@ -691,6 +724,13 @@ async function startCapture(target) {
   }
   $('camera-title').textContent = TARGET_LABELS[target].title;
   $('btn-capture').textContent = TARGET_LABELS[target].action;
+  const guide = $('camera-guide');
+  if (guide) {
+    guide.textContent = target === 'venue'
+      ? '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd around it. This is NOT the results sheet.'
+      : '';
+    guide.hidden = target !== 'venue';
+  }
   $('camera-overlay').hidden = false;
   const video = $('video');
   video.srcObject = cameraStream;
@@ -836,8 +876,8 @@ let capturing = false;
 // uploaded — so the compressed bytes are exactly what the observer signs, the server
 // stores, and the ledger content-addresses (integrity stays intact; see submissions.js
 // where image_sha256 = sha256 of these bytes). Phone cameras hand us 3–8 MB full-res
-// JPEGs; an EC8A sheet stays fully legible at ~1600 px (our own OCR downsizes to 1600 px
-// wide anyway), cutting each photo to a few hundred KB. Any failure returns the original
+// JPEGs; an EC8A sheet stays fully legible at ~1500 px, cutting each photo to a couple
+// hundred KB (the tuned 1500 px / q0.76 point). Any failure returns the original
 // blob unchanged — compression must never block a capture.
 async function compressCapture(blob, maxDim, quality) {
   try {
@@ -856,10 +896,11 @@ async function compressCapture(blob, maxDim, quality) {
 
 // Shared capture tail for BOTH the web overlay and the native camera: compress
 // FIRST (before hash/sign/upload — content-addressing commits these exact bytes),
-// require a GPS fix, then store + preview. Sheet kept crisper (1600 px / q0.8);
-// venue smaller (1280 px / q0.72). Returns false if the GPS fix failed.
+// require a GPS fix, then store + preview. Sheet 1500 px / q0.76 (the tuned point
+// that stays OCR-legible while pushing capacity toward ~10k observers); venue
+// smaller (1280 px / q0.72). Returns false if the GPS fix failed.
 async function finalizeShot(target, blob) {
-  blob = await compressCapture(blob, target === 'sheet' ? 1600 : 1280, target === 'sheet' ? 0.8 : 0.72);
+  blob = await compressCapture(blob, target === 'sheet' ? 1500 : 1280, target === 'sheet' ? 0.76 : 0.72);
   const fix = await getCaptureFix();
   if (!fix) {
     alert('No GPS fix — photos must be location-stamped. Move to open sky and retake.');
@@ -1124,7 +1165,8 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
   }
   if (localStorage.getItem('hawkeye_token')) {
     // Already registered — honour the CTA intent instead of re-verifying.
-    if (PREFILL) applyPrefill();
+    if (NEXT_DEST) location.href = NEXT_DEST;
+    else if (PREFILL) applyPrefill();
     else if (INTENT_DEST[AUTH_INTENT]) location.href = INTENT_DEST[AUTH_INTENT];
     // Following "Sign in" while already signed in means "take me to my account",
     // not "start a report" — send them to the dashboard.

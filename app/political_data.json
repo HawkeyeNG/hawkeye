@@ -248,7 +248,13 @@
     "meta": "AA flag bearer"
    }
   ],
-  "photoCredit": "Portraits via Wikipedia / Wikimedia Commons"
+  "photoCredit": "Portraits via Wikipedia / Wikimedia Commons",
+  "dateText": "2027",
+  "dateLabel": "Election year",
+  "stats": {
+   "lgas": 774,
+   "pollingUnits": 176846
+  }
  },
  "raceOsun2026": {
   "asOf": "2026-07-16",

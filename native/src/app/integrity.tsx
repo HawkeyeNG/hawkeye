@@ -376,7 +376,7 @@ export default function Integrity() {
           <ActivityIndicator className="py-4" color={ui.tint.good.ink} />
         ) : rows.length === 0 ? (
           <Text className="py-3 text-sm text-muted">
-            No discrepancies match — nothing flagged yet. 🎉
+            No discrepancies match — nothing flagged yet.
           </Text>
         ) : (
           rows.map((d) => {

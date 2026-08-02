@@ -62,6 +62,8 @@ const GROUPS: { title: string; items: MenuItem[] }[] = [
         acc: 'Races',
         icon: 'trending-up',
         items: [
+          // All Races — the selector where every contest will live as it opens.
+          { label: 'All Races', href: 'native:/races', icon: 'grid' },
           { label: 'Osun 2026', href: 'native:/osun', icon: 'trending-up' },
           { label: 'Presidency 2027', href: 'native:/candidates', icon: 'users' },
         ],

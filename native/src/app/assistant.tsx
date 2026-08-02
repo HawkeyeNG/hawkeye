@@ -11,8 +11,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/screen-header';
+import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
@@ -52,6 +54,11 @@ type Turn = { id: number; q: string; a: string | null };
  */
 export default function Assistant() {
   const ui = useUi();
+  const insets = useSafeAreaInsets();
+  // A chat auto-scrolls to the newest turn, so a scroll-hiding header would
+  // vanish on the first answer and never come back — this one stays put. It is
+  // absolutely positioned, so the thread pads its top by headerH to clear it.
+  const headerH = insets.top + HEADER_CONTENT_H;
   const [turns, setTurns] = useState<Turn[]>([]);
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
@@ -137,17 +144,8 @@ export default function Assistant() {
   const off = enabled === false;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="x" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Ask Hawkeye</Text>
-      </View>
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Ask Hawkeye" onClose={() => router.back()} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -155,7 +153,7 @@ export default function Assistant() {
       >
         <ScrollView
           ref={scroller}
-          contentContainerClassName="px-4 pb-4 pt-3"
+          contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 16 }}
           keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: true })}
         >
@@ -233,7 +231,10 @@ export default function Assistant() {
         {/* Sibling of the thread, inside the keyboard avoider: a chat grows without
             limit, so the composer is the one thing that must never scroll — and
             the failure line rides with it so a retry never drifts off-screen. */}
-        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+        <View
+          className="border-t border-line bg-surface px-4 pt-3"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
           {err ? <Text className="pb-2 text-sm font-semibold text-warn-ink">{err}</Text> : null}
 
           <View className="flex-row items-end">
@@ -273,6 +274,6 @@ export default function Assistant() {
           </Text>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }

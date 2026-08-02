@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Animated,
+  Image,
   Pressable,
   ScrollView,
   Share,
@@ -197,15 +198,22 @@ export default function Terms() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
-      {/* Collapsing header */}
+      {/* Collapsing header — the hawkeye mark (tap → Home) leads, matching the
+          shared ScreenHeader convention; the collapsing title, share and close
+          are this screen's own richer variant of it. */}
       <View className="border-b border-line bg-surface px-4 pb-2 pt-2">
         <View className="flex-row items-center">
           <Pressable
-            hitSlop={12}
-            onPress={() => router.back()}
-            className="h-9 w-9 items-center justify-center rounded-full bg-card"
+            onPress={() => router.navigate('/(tabs)' as never)}
+            hitSlop={8}
+            className="mr-1"
+            accessibilityRole="button"
+            accessibilityLabel="Home"
           >
-            <Feather name="x" size={18} color={ui.ink} />
+            <Image
+              source={require('@/assets/images/icon.png')}
+              style={{ width: 30, height: 30, borderRadius: 8 }}
+            />
           </Pressable>
           <Animated.Text
             numberOfLines={1}
@@ -216,7 +224,7 @@ export default function Terms() {
           </Animated.Text>
           <Pressable
             hitSlop={12}
-            className="h-9 w-9 items-center justify-center rounded-full bg-card"
+            className="mr-2 h-9 w-9 items-center justify-center rounded-full bg-card"
             onPress={() =>
               Share.share({
                 message: `${title} — Hawkeye\nhttps://hawkeye.com.ng/terms.html`,
@@ -224,6 +232,15 @@ export default function Terms() {
             }
           >
             <Feather name="share-2" size={16} color={ui.tint.good.ink} />
+          </Pressable>
+          <Pressable
+            hitSlop={12}
+            onPress={() => router.back()}
+            className="h-9 w-9 items-center justify-center rounded-full bg-card"
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
+            <Feather name="x" size={18} color={ui.ink} />
           </Pressable>
         </View>
 

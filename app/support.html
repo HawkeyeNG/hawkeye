@@ -15,6 +15,14 @@
     .wallet-row .addr { flex: 1; min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .copy-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; width: auto; margin: 0; padding: 8px 15px; font-size: 0.82rem; font-weight: 700; border-radius: 999px; background: var(--tint-ok); color: var(--green); border: 1px solid var(--green); cursor: pointer; }
     .copy-btn:hover { filter: brightness(0.98); }
+    .qr-card { display: flex; gap: 16px; align-items: center; }
+    .qr-body { flex: 1; min-width: 0; }
+    /* White plate always — a QR must stay dark-on-light to scan, even in dark mode. */
+    .qr-img { flex: none; width: 140px; height: 140px; background: #fff; border-radius: 8px; padding: 7px; box-sizing: border-box; }
+    @media (max-width: 480px) {
+      .qr-card { flex-direction: column; align-items: stretch; }
+      .qr-img { align-self: center; }
+    }
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -85,19 +93,22 @@
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const WALLETS = [
-      { label: 'Any EVM chain', note: 'Ethereum · Base · Polygon · Monad · Robinhood · HyperEVM', address: '0x00F7bE0EA4A6dF70afc32d591C53460008d28C11' },
-      { label: 'Solana', address: 'Ac952LkbEvNAgECtd1n7LWG11M69VbGvUJCmAVkvenQN' },
-      { label: 'Bitcoin', address: 'bc1qnksyh8vvzetpjhc6kl9e7dxpa5tkk6pthehxly' },
-      { label: 'Sui', address: '0x0b46490cffac31ac4f08683cc1c9ab3b56c9d0e279ab18d5d26f77cdeb138fb3' },
+      { label: 'Any EVM chain', note: 'Ethereum · Base · Polygon · Monad · Robinhood · HyperEVM', address: '0x00F7bE0EA4A6dF70afc32d591C53460008d28C11', qr: 'qr/qr-evm.svg' },
+      { label: 'Solana', address: 'Ac952LkbEvNAgECtd1n7LWG11M69VbGvUJCmAVkvenQN', qr: 'qr/qr-solana.svg' },
+      { label: 'Bitcoin', address: 'bc1qnksyh8vvzetpjhc6kl9e7dxpa5tkk6pthehxly', qr: 'qr/qr-bitcoin.svg' },
+      { label: 'Sui', address: '0x0b46490cffac31ac4f08683cc1c9ab3b56c9d0e279ab18d5d26f77cdeb138fb3', qr: 'qr/qr-sui.svg' },
     ];
     document.getElementById('wallets').innerHTML = WALLETS.map((w) => `
-      <div class="card">
-        <strong>${esc(w.label)}</strong>
-        ${w.note ? `<div class="hint" style="margin:2px 0 0">${esc(w.note)}</div>` : ''}
-        <div class="wallet-row">
-          <span class="addr" title="${esc(w.address)}">${esc(w.address)}</span>
-          <button class="copy-btn" type="button" data-addr="${esc(w.address)}"><span class="lbl">Copy</span></button>
+      <div class="card qr-card">
+        <div class="qr-body">
+          <strong>${esc(w.label)}</strong>
+          ${w.note ? `<div class="hint" style="margin:2px 0 6px">${esc(w.note)}</div>` : ''}
+          <div class="wallet-row">
+            <span class="addr" title="${esc(w.address)}">${esc(w.address)}</span>
+            <button class="copy-btn" type="button" data-addr="${esc(w.address)}"><span class="lbl">Copy</span></button>
+          </div>
         </div>
+        <img class="qr-img" src="${w.qr}" alt="${esc(w.label)} wallet address QR code" width="140" height="140" loading="lazy" />
       </div>`).join('');
     document.getElementById('wallets').addEventListener('click', async (e) => {
       const b = e.target.closest('.copy-btn');

@@ -139,7 +139,7 @@ export default function Incidents() {
             <View className="mx-4 mt-3 items-center rounded-2xl bg-card px-6 py-10">
               <Feather name="wifi-off" size={26} color={ui.faint} />
               <Text className="pt-3 text-base font-semibold text-ink">
-                Could not load the feed
+                Could Not Load the Feed
               </Text>
               <Text className="pt-1 text-center text-sm text-muted">
                 Pull down to try again. ({err})
@@ -149,7 +149,7 @@ export default function Incidents() {
             <View className="mx-4 mt-3 items-center rounded-2xl bg-card px-6 py-10">
               <Feather name="check-circle" size={26} color={ui.tint.good.ink} />
               <Text className="pt-3 text-base font-semibold text-ink">
-                No incidents published yet
+                No Incidents Published Yet
               </Text>
               <Text className="pt-1 text-center text-sm text-muted">
                 Reports appear here once a moderator has reviewed them.

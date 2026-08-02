@@ -2,14 +2,13 @@ import { Feather } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, type LayoutChangeEvent, Pressable, Text, View } from 'react-native';
 
 import { readSheet, type SheetRead } from '@/lib/ocr';
 import { scanSheet, scannerAvailable } from '@/lib/scan';
 import type { Shot } from '@/lib/submit';
-import { getSubmitFix } from '@/lib/location';
+import { describeFixFailure, trySubmitFix, type FixFailure } from '@/lib/location';
 import { BRAND } from '@/lib/api';
 
 /**
@@ -86,12 +85,16 @@ type Props = {
  */
 type ScanState = 'scanning' | 'unavailable' | 'failed' | null;
 
-/** Shared bounded GPS (lib/location): photo/video stamps use the accurate tier. */
-const getFix = async (): Promise<{ lat: number; lng: number } | null> => {
-  const perm = await Location.requestForegroundPermissionsAsync();
-  if (!perm.granted) return null;
-  return getSubmitFix();
-};
+/**
+ * Shared bounded GPS (lib/location): photo/video stamps use the accurate tier.
+ *
+ * Returns the failure REASON rather than a bare null, because both callers below
+ * render it. No permission prompt here — trySubmitFix's ensureUsable() checks
+ * location services before asking, which is the order that actually helps.
+ */
+const getFix = async (): Promise<
+  { ok: true; fix: { lat: number; lng: number } } | FixFailure
+> => trySubmitFix();
 
 export function CaptureCamera({
   title,
@@ -115,6 +118,8 @@ export function CaptureCamera({
   const [line, setLine] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ uri: string; capturedAt: number } | null>(null);
   const [fixState, setFixState] = useState<'pending' | 'ok' | 'failed'>('pending');
+  /** Why the stamp failed — drives the copy instead of a blanket GPS excuse. */
+  const [fixFail, setFixFail] = useState<FixFailure | null>(null);
   /**
    * Decided at MOUNT, not in an effect: an effect runs after the first paint,
    * so any camera mounted meanwhile is a frame the observer actually sees.
@@ -127,6 +132,22 @@ export function CaptureCamera({
   /** Result of on-device recognition on the current preview. */
   const [read, setRead] = useState<SheetRead | null | undefined>(undefined);
   const [elapsed, setElapsed] = useState(0);
+  /**
+   * Measured heights of the overlaid chrome (top instruction card, bottom
+   * control bar). The preview is full-bleed and the chrome floats ON it, so the
+   * only thing that needs to know where the chrome ends is the framing guide.
+   * Measured rather than hardcoded because the top card's height moves with the
+   * hint, the scanner note and the device's font scale.
+   */
+  const [chrome, setChrome] = useState({ top: 0, bottom: 0 });
+  /**
+   * Chrome measurement. Ignores sub-pixel churn so a re-render cannot start a
+   * layout loop with the guide it feeds.
+   */
+  const measure = (edge: 'top' | 'bottom') => (e: LayoutChangeEvent) => {
+    const h = Math.round(e.nativeEvent.layout.height);
+    setChrome((c) => (Math.abs(c[edge] - h) < 2 ? c : { ...c, [edge]: h }));
+  };
   const cam = useRef<CameraView>(null);
   const fixRef = useRef<Promise<{ lat: number; lng: number } | null> | null>(null);
   const cancelled = useRef(false);
@@ -223,9 +244,14 @@ export function CaptureCamera({
 
   const startFix = () => {
     setFixState('pending');
-    fixRef.current = getFix().then((f) => {
-      if (!cancelled.current) setFixState(f ? 'ok' : 'failed');
-      return f;
+    fixRef.current = getFix().then((r) => {
+      // Unwrap for the consumers (everything downstream wants {lat,lng}) but keep
+      // WHY it failed, so the copy below can stop guessing at "weak signal".
+      if (!cancelled.current) {
+        setFixState(r.ok ? 'ok' : 'failed');
+        setFixFail(r.ok ? null : r);
+      }
+      return r.ok ? r.fix : null;
     });
   };
 
@@ -270,12 +296,21 @@ export function CaptureCamera({
   // branch that expects the scanner may return above this line.
   scanDocRef.current = scanDoc;
 
+  /** A document step: the shot exists to be READ, not looked at. */
+  const isDocument = !!(readDocument || frameGuide);
+
   const shootPhoto = async () => {
     if (busy) return;
     setBusy(true);
     setLine('Hold still…');
     try {
-      const photo = await cam.current!.takePictureAsync({ quality: 0.7 });
+      // `quality` is JPEG compression, NOT resolution: expo-camera decodes the
+      // full-sensor frame (pictureSize unset -> CameraX HIGHEST_AVAILABLE) and
+      // re-compresses it at quality*100, with no downscale. 0.7 is fine for a
+      // venue photo and wrong for a sheet — q70 smears the thin strokes of
+      // handwritten tallies, which is exactly what ML Kit has to read. A sheet
+      // is worth the extra ~2x on the wire; the edge cap is 33MB.
+      const photo = await cam.current!.takePictureAsync({ quality: isDocument ? 0.95 : 0.7 });
       if (cancelled.current) return;
       startFix(); // resolve GPS while the observer reviews the shot
       setPreview({ uri: photo.uri, capturedAt: Date.now() });
@@ -350,10 +385,16 @@ export function CaptureCamera({
       setRecording(false);
       if (cancelled.current) return;
       setLine('Saving…');
-      const fix = await fixP;
+      const got = await fixP;
       if (cancelled.current) return;
+      const fix = got.ok ? got.fix : null;
       if (!video?.uri || !fix) {
-        setLine(fix ? 'Recording failed — try again.' : 'No GPS fix — move near a window and retry.');
+        if (fix) setLine('Recording failed — try again.');
+        else if (!got.ok) {
+          const d = describeFixFailure(got);
+          setFixFail(got);
+          setLine(`${d.lead}. (${d.code})`);
+        }
         setBusy(false);
         return;
       }
@@ -390,7 +431,11 @@ export function CaptureCamera({
               {busy
                 ? 'Confirming your location — a few seconds…'
                 : fixState === 'failed'
-                  ? 'No GPS fix — move near a window or outside, then retry.'
+                  ? // Name the actual cause: "move near a window" is wrong advice
+                    // when location services are off or the permission is blocked.
+                    fixFail
+                    ? `${describeFixFailure(fixFail).lead}. (${describeFixFailure(fixFail).code})`
+                    : 'No GPS fix — move near a window or outside, then retry.'
                   : confirmHint}
             </Text>
             {/* On-device read of the sheet, as its own card: a verdict nobody
@@ -506,9 +551,64 @@ export function CaptureCamera({
         ? 'The scanner could not start — Google Play services downloads it the first time it runs, so it needs a connection once. Taking a plain photo instead.'
         : null;
 
+
+  /**
+   * The guide is every pixel the observer can see the sheet in, minus the
+   * floating chrome — not a fixed fraction of the screen. The preview itself was
+   * always full-bleed (`flex: 1`); the small viewport the observer reported was
+   * this box, a centred 82%x62% rectangle whose top corners sat UNDER the
+   * instruction card, so "fit the sheet in the frame" pointed at a target with an
+   * invisible top edge.
+   *
+   * Be honest about the size of the win: on a 360x800dp screen the box goes from
+   * 295x496 to 340x487, so +15% width and +13% area — worthwhile, but the height
+   * is unchanged because chrome, not arithmetic, is what bounds it. The
+   * instruction card (with the scanner note, which is always present when this
+   * guide is visible — the guide only renders in the fallback camera) plus the
+   * control bar are ~305dp of an 800dp screen. The next real height comes from
+   * shortening the callers' `hint` copy or collapsing the scanner note, not from
+   * anything left to tune here.
+   *
+   * Extra clearance where a floating control sits above the bottom bar (the
+   * Photo/Video selector at bottom-36, "Try scanner again" at bottom-132) so the
+   * guide never runs under one — both land 8dp inside this bound, not by luck:
+   * chrome.bottom is 48dp of safe-area padding plus the 72dp shutter, and each
+   * term below is that floating control's own offset-plus-height minus 120.
+   */
+  const guideBottom =
+    chrome.bottom + 8 + (scanState === 'failed' ? 52 : 0) + (allowVideo ? 48 : 0);
+
   // ---- live camera -------------------------------------------------------
   return (
     <View className="flex-1 bg-black">
+      {/*
+       * Full-bleed on purpose, and it does NOT stretch the image — read off
+       * expo-camera 57.0.3 (android/.../ExpoCameraView.kt) rather than assumed:
+       *
+       *  - `previewView.scaleType` is only ever assigned inside `ratio?.let {}`.
+       *    We pass no `ratio`, so it keeps PreviewView's default FILL_CENTER:
+       *    the frame is scaled uniformly and CENTRE-CROPPED to the view. Uniform
+       *    scale means no distortion; a `flex: 1` preview is safe.
+       *  - DO NOT add `ratio="4:3"` (or "16:9") to "fix" the crop. Either value
+       *    flips scaleType to FIT_CENTER, which letterboxes the preview inside
+       *    the screen — the small viewport this component was changed to stop
+       *    having. 4:3 in a ~9:19.5 screen loses ~38% of the preview area.
+       *  - Which way the crop cuts matters for framing, so: a 4:3 sensor is
+       *    WIDER than a tall phone, so FILL_CENTER keeps the FULL capture HEIGHT
+       *    and hides roughly the outer 39% of the capture's WIDTH. The captured
+       *    JPEG is therefore a superset of what the preview shows — anything the
+       *    observer frames is captured, never the reverse — and HEIGHT is the
+       *    axis they control that maps 1:1 onto pixels on the sheet, which is
+       *    what the guide's nudge says.
+       *
+       * Resolution is already maximal and nothing below downsamples, so there is
+       * no prop to add here: `pictureSize` unset -> CameraX
+       * HIGHEST_AVAILABLE_STRATEGY for both preview and ImageCapture, and
+       * PictureOptions.maxDownsampling defaults to 1 (ResolveTakenPicture only
+       * halves resolution to recover from an OutOfMemoryError). Leave
+       * `autofocus` unset too: FocusMode.OFF is CONTINUOUS autofocus, while 'on'
+       * means focus once and LOCK — the wrong one for a handheld sheet.
+       */}
       <CameraView
         ref={cam}
         style={{ flex: 1 }}
@@ -519,18 +619,81 @@ export function CaptureCamera({
       />
 
       {frameGuide && mode === 'picture' ? (
-        <View pointerEvents="none" className="absolute inset-0 items-center justify-center">
-          <View
-            className="rounded-2xl border-2 border-dashed border-hawk-gold/80"
-            style={{ width: '82%', height: '62%' }}
-          />
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: 10,
+            right: 10,
+            top: chrome.top + 8,
+            bottom: guideBottom,
+          }}
+        >
+          <View className="flex-1 rounded-xl border border-hawk-gold/50" />
+          {/* Corner brackets: at this size a thin full outline reads as a border,
+              so the corners carry the "this is the target" signal. */}
+          {(
+            [
+              { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 12 },
+              { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 12 },
+              {
+                bottom: 0,
+                left: 0,
+                borderBottomWidth: 3,
+                borderLeftWidth: 3,
+                borderBottomLeftRadius: 12,
+              },
+              {
+                bottom: 0,
+                right: 0,
+                borderBottomWidth: 3,
+                borderRightWidth: 3,
+                borderBottomRightRadius: 12,
+              },
+            ] as const
+          ).map((corner, i) => (
+            <View
+              key={i}
+              className="absolute border-hawk-gold"
+              style={{ width: 34, height: 34, ...corner }}
+            />
+          ))}
+          {/* Says the quiet part out loud. The callers' hint ("fit the sheet in
+              the frame") is satisfied by a sheet that only half fills it; what
+              the OCR needs is the sheet pushed to these edges. Names TOP TO
+              BOTTOM specifically: the preview keeps the whole capture height but
+              hides the outer ~39% of its width (FILL_CENTER, see the CameraView
+              note), so height is the axis where closing the distance converts
+              directly into pixels on the tallies. */}
+          {/* /75, not /60: this pill floats INSIDE the framing guide, i.e. over
+              the result sheet itself, and a result sheet is white paper. Gold on
+              black/60 over white is 3.10:1 — the instruction telling the observer
+              how to frame the one photo the OCR has to read was the least legible
+              text on the screen, and only in the case that always happens. /75
+              takes it to 5.59:1 over white and matches the sibling instruction
+              cards above (black/70 and black/75); over a dark scene it moves
+              10.49 -> 10.81, so nothing is lost at the other end. */}
+          <View className="absolute inset-x-0 top-2 items-center">
+            <Text className="rounded-full bg-black/75 px-3 py-1 text-[11px] font-semibold text-hawk-gold">
+              Fill this frame top to bottom — closer reads sharper
+            </Text>
+          </View>
         </View>
       ) : null}
 
-      <View className="absolute inset-x-0 top-0 px-4 pt-14">
-        <View className="rounded-2xl bg-black/70 px-4 py-3">
-          <Text className="text-lg font-bold text-white">{title}</Text>
-          <Text className="pt-1 text-sm text-neutral-200">{line ?? hint}</Text>
+      <View
+        onLayout={measure('top')}
+        className={`absolute inset-x-0 top-0 ${frameGuide ? 'px-3 pt-12' : 'px-4 pt-14'}`}
+      >
+        {/* Tighter on a document step: every point of chrome here is a point the
+            framing guide below cannot use. */}
+        <View className={`rounded-2xl bg-black/70 px-4 ${frameGuide ? 'py-2' : 'py-3'}`}>
+          <Text className={`font-bold text-white ${frameGuide ? 'text-base' : 'text-lg'}`}>
+            {title}
+          </Text>
+          <Text className={`pt-1 text-neutral-200 ${frameGuide ? 'text-xs' : 'text-sm'}`}>
+            {line ?? hint}
+          </Text>
           {/* Never degrade silently: an uncropped photo is weaker evidence than
               a scan, so say the scanner is out and say which failure it was.
               'unavailable' is a build without the module — retrying cannot help
@@ -599,7 +762,10 @@ export function CaptureCamera({
         </View>
       ) : null}
 
-      <View className="absolute inset-x-0 bottom-0 flex-row items-center justify-between px-8 pb-12">
+      <View
+        onLayout={measure('bottom')}
+        className="absolute inset-x-0 bottom-0 flex-row items-center justify-between px-8 pb-12"
+      >
         {/* Cancel is never disabled — a stuck capture must always have an exit. */}
         <Pressable hitSlop={12} onPress={cancel}>
           <Text className="text-base font-semibold text-white">Cancel</Text>

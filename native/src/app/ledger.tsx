@@ -2,22 +2,13 @@ import { Feather } from '@expo/vector-icons';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { utf8ToBytes } from '@noble/hashes/utils.js';
 import { FlashList } from '@shopify/flash-list';
-import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  LayoutAnimation,
-  Platform,
-  Pressable,
-  Text,
-  UIManager,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { SectionLabel } from '@/components/content-kit';
+import { Fold, SectionLabel, Stat } from '@/components/content-kit';
 import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
@@ -62,54 +53,6 @@ type RaceProof = {
   error?: string;
 };
 
-/** Tinted surfaces that follow the theme. A verdict card must never be a
- *  hardcoded bg-emerald-50 / bg-red-50 — those stay pale in dark mode while the
- *  text on them goes near-white, which is how this screen shipped unreadable. */
-const TINT: Record<Tone, { bg: string; text: string }> = {
-  good: { bg: 'bg-good', text: 'text-good-ink' },
-  bad: { bg: 'bg-bad', text: 'text-bad-ink' },
-  warn: { bg: 'bg-warn', text: 'text-warn-ink' },
-};
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
-const animate = () =>
-  LayoutAnimation.configureNext(LayoutAnimation.create(180, 'easeInEaseOut', 'opacity'));
-
-/**
- * Detail, folded away — and every fold starts CLOSED. The screen leads with
- * numbers; the cryptography behind them is here for whoever wants it, but a
- * panel that opens itself puts the paragraphs back in front of the result.
- */
-function Fold({ title, body }: { title: string; body: string[] }) {
-  const ui = useUi();
-  const [open, setOpen] = useState(false);
-  return (
-    <View className="mt-2 overflow-hidden rounded-2xl bg-card">
-      <Pressable
-        className="flex-row items-center px-4 py-3.5 active:bg-surface"
-        onPress={() => {
-          animate();
-          Haptics.selectionAsync();
-          setOpen((o) => !o);
-        }}
-      >
-        <Text className="flex-1 pr-2 text-[15px] font-semibold text-ink">{title}</Text>
-        <Feather name={open ? 'minus' : 'plus'} size={16} color={ui.tint.good.ink} />
-      </Pressable>
-      {open
-        ? body.map((p, i) => (
-            <Text key={i} className="px-4 pb-3 text-sm leading-5 text-muted">
-              {p}
-            </Text>
-          ))
-        : null}
-    </View>
-  );
-}
-
 /** A verdict card. Tinted through the semantic tokens, so the tint darkens with
  *  the theme instead of leaving pale-on-pale text in dark mode. */
 function Result({ ok, text, link }: { ok: boolean; text: string; link?: string }) {
@@ -138,42 +81,23 @@ function Result({ ok, text, link }: { ok: boolean; text: string; link?: string }
   );
 }
 
-/** A number and what it counts. Tinted when it carries a verdict. */
-function Stat({
-  value,
-  label,
-  tone,
-  tight,
-}: {
-  value: string;
-  label: string;
-  tone?: Tone;
-  tight?: boolean;
-}) {
-  return (
-    <View
-      className={`mb-2 mr-2 min-w-[44%] flex-1 rounded-2xl px-3.5 py-3 ${
-        tone ? TINT[tone].bg : 'bg-card'
-      }`}
-    >
-      <Text
-        className={`${tight ? 'text-base' : 'text-xl'} font-bold ${
-          tone ? TINT[tone].text : 'text-ink'
-        }`}
-      >
-        {value}
-      </Text>
-      <Text className="pt-1 text-[10px] font-bold uppercase tracking-[1px] text-muted">
-        {label}
-      </Text>
-    </View>
-  );
-}
-
 const hex = (s: string) =>
   Array.from(sha256(utf8ToBytes(s)), (b) => b.toString(16).padStart(2, '0')).join('');
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
+
+/**
+ * An anchor's `day` arrives from the server as ISO `YYYY-MM-DD`. A tile reading
+ * "2026-07-28" is a database column, not a dashboard stat, so it is shown in the
+ * same short form the entry rows use. Parsed part-by-part on purpose:
+ * `new Date('2026-07-28')` is UTC midnight, which renders as the day before in
+ * any negative-offset timezone.
+ */
+function shortDay(iso: string) {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d).toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
 
 function timeAgo(ts: number) {
   const d = new Date(ts);
@@ -349,22 +273,30 @@ export default function Ledger() {
         : { value: 'Broken', tone: 'bad' }
       : { value: 'Not run' };
 
+  /* A failed load gets the error card and nothing else. The dashboard chrome —
+     section labels, a dead Re-verify button, two accordions about Merkle roots —
+     is not worth reading when the chain could not be fetched, so it stays off the
+     screen until Retry succeeds. */
+  const errorHeader = (
+    <View className="px-4 pb-2 pt-3">
+      <View className="rounded-2xl bg-bad px-4 py-4">
+        <Text className="text-sm font-semibold text-bad-ink">
+          Could not load the ledger. ({loadErr})
+        </Text>
+        <Pressable
+          className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
+          onPress={load}
+        >
+          <Text className="text-base font-bold text-hawk-gold">Retry</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
   const header = (
     <View className="px-4 pb-2 pt-3">
       {loading ? (
         <ActivityIndicator className="py-8" color={ui.tint.good.ink} />
-      ) : loadErr ? (
-        <View className="rounded-2xl bg-bad px-4 py-4">
-          <Text className="text-sm font-semibold text-bad-ink">
-            Could not load the ledger. ({loadErr})
-          </Text>
-          <Pressable
-            className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
-            onPress={load}
-          >
-            <Text className="text-base font-bold text-hawk-gold">Retry</Text>
-          </Pressable>
-        </View>
       ) : (
         <View className="flex-row flex-wrap">
           <Stat value={(verify?.entries ?? 0).toLocaleString()} label="Entries chained" />
@@ -376,7 +308,7 @@ export default function Ledger() {
             tight={!!verify && !verify.ok}
           />
           <Stat value={local.value} label="On this phone" tone={local.tone} tight={local.tight} />
-          <Stat value={anchor?.day ?? 'None yet'} label="Last anchor" tight />
+          <Stat value={anchor ? shortDay(anchor.day) : 'None yet'} label="Last anchor" tight />
         </View>
       )}
 
@@ -388,10 +320,10 @@ export default function Ledger() {
 
       <SectionLabel text="Chain" />
       <Pressable
-        disabled={loading || !!progress || !!loadErr}
+        disabled={loading || !!progress}
         onPress={verifyChain}
         className={`items-center rounded-2xl py-4 ${
-          loading || progress || loadErr ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
+          loading || progress ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
         }`}
       >
         {progress ? (
@@ -427,15 +359,29 @@ export default function Ledger() {
       <SectionLabel text="Single-Race Proof" />
       <View className="rounded-2xl bg-card px-4 py-4">
         {anchor ? (
-          <Pressable
-            onPress={() => WebBrowser.openBrowserAsync(anchor.rekorSearchUrl || anchor.rekorUrl)}
-          >
-            <Text className="text-xs text-muted">
-              <Text className="font-bold text-ink">{anchor.racesCount}</Text> race(s) · root{' '}
-              {(anchor.racesRoot || GENESIS).slice(0, 16)}…{'  '}
-              <Text className="font-bold text-good-ink">View in Rekor ↗</Text>
-            </Text>
-          </Pressable>
+          (() => {
+            // The anchor row is written before publishToRekor runs, and publishing
+            // is allowed to fail — so a real anchor can carry no Rekor URL at all.
+            // Only offer the link when one genuinely exists; otherwise state the
+            // batch honestly and say the public entry is still pending.
+            const rekor = anchor.rekorSearchUrl || anchor.rekorUrl;
+            const body = (
+              <Text className="text-xs text-muted">
+                <Text className="font-bold text-ink">{anchor.racesCount}</Text> race(s) · root{' '}
+                {(anchor.racesRoot || GENESIS).slice(0, 16)}…{'  '}
+                {rekor ? (
+                  <Text className="font-bold text-good-ink">View in Rekor ↗</Text>
+                ) : (
+                  <Text className="font-bold text-warn-ink">Not published to Rekor yet</Text>
+                )}
+              </Text>
+            );
+            return rekor ? (
+              <Pressable onPress={() => WebBrowser.openBrowserAsync(rekor)}>{body}</Pressable>
+            ) : (
+              body
+            );
+          })()
         ) : null}
 
         {races.length ? (
@@ -465,7 +411,7 @@ export default function Ledger() {
               })}
             </View>
           </View>
-        ) : !loading && !loadErr ? (
+        ) : !loading ? (
           <Text className={`${anchor ? 'pt-3 ' : ''}text-sm text-muted`}>
             No race is anchored yet — race roots start on reporting day.
           </Text>
@@ -504,7 +450,7 @@ export default function Ledger() {
       <FlashList
         data={rows}
         keyExtractor={(e) => String(e.id)}
-        ListHeaderComponent={header}
+        ListHeaderComponent={loadErr ? errorHeader : header}
         contentContainerStyle={{ paddingBottom: raceSel ? 16 : 32 }}
         ListEmptyComponent={
           loading || loadErr ? null : (

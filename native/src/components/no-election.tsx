@@ -15,7 +15,7 @@ import type { Contest } from '@/lib/api';
 export function NoElection({ state, contest }: { state: string; contest: Contest | null }) {
   return (
     <View className="rounded-2xl bg-card px-4 py-5">
-      <Text className="text-base font-bold text-ink">No active election in {state}</Text>
+      <Text className="text-base font-bold text-ink">No Active Election in {state}</Text>
       <Text className="pt-1 text-sm text-muted">
         {contest
           ? `Hawkeye is currently covering the ${contest.election}. Reporting opens for other states when their elections are scheduled.`

@@ -419,7 +419,7 @@ function Placeholder({
       style={{ height }}
     >
       <Feather name="map" size={22} color={ui.faint} />
-      <Text className="pt-2 text-sm font-semibold text-ink">Map unavailable</Text>
+      <Text className="pt-2 text-sm font-semibold text-ink">Map Unavailable</Text>
       <Text className="pt-1 text-center text-xs text-muted">{note}</Text>
       {onRetry ? (
         <Pressable

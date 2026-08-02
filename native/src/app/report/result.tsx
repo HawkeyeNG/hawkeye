@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -18,7 +19,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CaptureCamera } from '@/components/capture-camera';
+import { ContestPicker } from '@/components/contest-picker';
 import { NoElection } from '@/components/no-election';
+import { RekorAnchor } from '@/components/rekor-anchor';
 import {
   envelopeText,
   mapAvailable,
@@ -32,9 +35,22 @@ import {
 } from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
+import {
+  ELECTION_TYPES,
+  isRaceOpen,
+  listRaces,
+  type Race,
+  type StateName,
+} from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
-import { DISCOVERY_RADIUS_M, getQuickFix, getSubmitFix, type Fix } from '@/lib/location';
+import {
+  describeFixFailure,
+  DISCOVERY_RADIUS_M,
+  trySubmitFix,
+  tryQuickFix,
+  type Fix,
+} from '@/lib/location';
 import { submitResult, type Receipt, type Shot, type Vote } from '@/lib/submit';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -174,21 +190,23 @@ const MAX_NEARBY = 12;
  * only allowed to make claims about.
  *
  * /api/polling-units does NOT take a radius. It filters at
- * `config.geofenceRadiusM` (200m) and hard-slices to eight rows
- * (backend/src/routes/pollingUnits.js). It is also the only lookup that can see
+ * `config.discoveryRadiusM` and slices to `config.discoveryMaxRows`
+ * (backend/src/routes/pollingUnits.js) — a deliberately WIDER window than the
+ * submission geofence (`config.geofenceRadiusM`), which answers a different
+ * question and is a different number. It is also the only lookup that can see
  * the 7,652 units positioned solely by `crowd_lat`, so those units are reachable
- * at 200m and nowhere else — no matter what the map's ring is drawn at.
+ * at the discovery radius and nowhere else — no matter what the map's ring is
+ * drawn at.
  *
- * The endpoint echoes its own `radiusM` in the response, which is preferred over
- * the mirror below; the constant only covers a response that omits it.
+ * BOTH numbers now come off the wire: the response carries `radiusM`, `maxRows`
+ * and an explicit `capped`, and all three are preferred over the mirrors below.
+ * The mirrors exist only for a server too old to report them. A client-side copy
+ * of a server-owned number rots silently the moment the server changes it —
+ * which is precisely how this screen came to warn about truncation at eight rows
+ * long after the server had stopped truncating there.
  */
-const REGISTER_RADIUS_M = 200;
-
-/**
- * Its row cap. NOT on the wire — `.slice(0, 8)` server-side — so a full answer
- * is indistinguishable from a truncated one and has to be treated as truncated.
- */
-const REGISTER_MAX_ROWS = 8;
+const REGISTER_RADIUS_M = 500; // config.discoveryRadiusM, as of writing
+const REGISTER_MAX_ROWS = 40; // config.discoveryMaxRows, as of writing
 
 /** What the two lookups covered on the last run, so the screen can describe the
  *  area it really searched instead of the area it drew. */
@@ -197,7 +215,16 @@ type Searched = {
   registerM: number | null;
   /** Radius /api/mapping/nearby was asked for, or null if it never answered. */
   envelopeM: number | null;
-  /** The register lookup came back full, so nearer units may be missing. */
+  /**
+   * The row cap /api/polling-units applied — its own `maxRows`, so the copy
+   * quotes the server's number instead of a mirror that can drift from it.
+   */
+  maxRows: number;
+  /**
+   * The register lookup hit that cap, so nearer units may be missing. The
+   * server states this outright in `capped`; only a server too old to send it
+   * leaves the row count to be compared against the cap.
+   */
   capped: boolean;
 };
 
@@ -314,24 +341,6 @@ const racesIn = (state: string, contests: Contest[]) =>
   contests.filter((c) => contestApplies(state, c));
 
 /**
- * A scheduled election opens at poll-open on election day (the server sends
- * open:false + opensAt until then). Naming the instant is the whole point: an
- * observer who is told "not open" without a time comes back at random.
- */
-function opensLine(c: Contest): string {
-  if (!c.opensAt) return 'Reporting has not opened for this election yet.';
-  const d = new Date(c.opensAt);
-  if (Number.isNaN(d.getTime())) return `Reporting opens ${c.opensAt}.`;
-  return `Reporting opens ${d.toLocaleString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    hour: 'numeric',
-    minute: '2-digit',
-  })}.`;
-}
-
-/**
  * The receipt's location line.
  *
  * Two of its three endings are tiers the map also draws, so they borrow its
@@ -356,8 +365,12 @@ const receiptLocation = (r: Receipt): { label: string; color: string } => {
  * What the ring on the map is, in words, given what actually answered.
  *
  * The ring can only ever be one circle, and the two lookups behind this screen
- * search two different ones — 800m for units with a GRID3 area, 200m for units
- * an observer has already placed. Drawing the wider and leaving it unlabelled
+ * search two different ones — DISCOVERY_RADIUS_M for units with a GRID3 area,
+ * and whatever /api/polling-units reports as its own `radiusM`
+ * (config.discoveryRadiusM) for units an observer has already placed. Both
+ * numbers are read off the answers rather than asserted, which is why the
+ * sentences below interpolate `s.envelopeM`/`s.registerM` and never a literal.
+ * Drawing the wider and leaving it unlabelled
  * reads as "everything in here was checked", which is false for the 7,652 units
  * only the narrow lookup can see. So the ring is named.
  */
@@ -398,6 +411,180 @@ const TierDot = ({ tier }: { tier: UnitTier }) => (
   />
 );
 
+/**
+ * THE LIST / UI COMPONENTS LIVE AT MODULE SCOPE, and must stay here.
+ *
+ * They used to be declared inside ReportResult's body. A component created
+ * during render is a NEW function identity every render, so React treats it as a
+ * different component type and unmounts the whole subtree rather than updating
+ * it: every register row and every nearby row was torn down and rebuilt on any
+ * state change — a selection tap sets `picking`, which remounted the entire
+ * nearby list and lost the press/ripple feedback mid-gesture. Hoisted, the type
+ * is stable and a re-render is a re-render. Mirrors report/incident.tsx.
+ *
+ * Everything they need therefore arrives as props — no closure over the
+ * screen's state.
+ */
+
+const Chip = ({ label, on, onPress }: { label: string; on?: boolean; onPress: () => void }) => (
+  <Pressable
+    onPress={onPress}
+    className={`mb-2 mr-2 rounded-full px-4 py-2 ${on ? 'bg-hawk-green' : 'bg-card'}`}
+  >
+    <Text className={`text-sm font-semibold ${on ? 'text-hawk-gold' : 'text-ink'}`}>{label}</Text>
+  </Pressable>
+);
+
+/** A register-browse row: the drill-down already said where you are, so the
+ *  sub-line only has to name the unit. */
+const UnitRow = ({
+  u,
+  sub,
+  selected,
+  onChoose,
+  onContinue,
+}: {
+  u: Unit;
+  sub: string;
+  selected: boolean;
+  onChoose: (u: Unit) => void;
+  onContinue: () => void;
+}) => (
+  <Pressable
+    className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${selected ? 'bg-hawk-green' : 'bg-card'}`}
+    onPress={() => onChoose(u)}
+  >
+    <View className="flex-1 pr-2">
+      <Text className={`text-base font-semibold ${selected ? 'text-white' : 'text-ink'}`}>
+        {u.name}
+      </Text>
+      <Text className={`text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>{sub}</Text>
+    </View>
+    {/* Inline Continue on the chosen row: in a long ward the footer CTA can
+        sit far below the unit you just tapped. */}
+    {selected ? (
+      <Pressable
+        className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
+        onPress={onContinue}
+      >
+        {/* Fixed ink on a fixed brand surface. text-ink/ui.ink flip with the
+            theme, and near-white on hawk-gold is 1.6:1 — invisible in dark
+            mode. The gold does not flip, so neither may the text on it. */}
+        <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
+        <Feather name="arrow-right" size={14} color={BRAND.ink} />
+      </Pressable>
+    ) : null}
+  </Pressable>
+);
+
+/**
+ * A GPS-discovered row. Its tier is stated in the same words the map legend
+ * uses, so the pin and the row beside it cannot grade the same unit
+ * differently — and an approx unit says plainly what it costs, with the fix
+ * for it one tap away rather than buried in another screen's menu entry.
+ */
+const NearbyRow = ({
+  n,
+  selected,
+  loading,
+  onChoose,
+  onContinue,
+}: {
+  n: NearRow;
+  selected: boolean;
+  loading: boolean;
+  onChoose: (n: NearRow) => void;
+  onContinue: () => void;
+}) => {
+  const tier = n.tier;
+  return (
+    <View className={`mb-2 overflow-hidden rounded-2xl ${selected ? 'bg-hawk-green' : 'bg-card'}`}>
+      <Pressable
+        className="flex-row items-center px-4 py-3"
+        disabled={loading}
+        onPress={() => onChoose(n)}
+      >
+        <View className="flex-1 pr-2">
+          <Text className={`text-base font-semibold ${selected ? 'text-white' : 'text-ink'}`}>
+            {n.name}
+          </Text>
+          <Text className={`text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>
+            {n.puCode} · {n.ward} · {n.distanceM}m away
+          </Text>
+          {/* Same words and same colour as the pin this row refers to —
+              TierDot carries the map's palette down onto the list. */}
+          <View className="flex-row items-center pt-0.5">
+            <TierDot tier={tier} />
+            <Text className={`flex-1 text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>
+              {TIER_LABEL[tier]}
+              {/* The area in words, from the SHARED formatter — both screens
+                  describe the same envelope and had drifted (~1,200m here
+                  against ~1200m there for one unit).
+
+                  Read off `n.envelope`, so it appears only where the dot
+                  beside it IS that area's centre. On a unit the register also
+                  placed, the dot is a crowd fix kilometres from the centre and
+                  "within ~2,800m" beside it would be read as a claim about the
+                  dot; that area is stated in the selected row's paragraph
+                  below, which has room to say whose centre it is.
+
+                  This is the ONLY channel for a large one either way: the map
+                  stops drawing envelopes it cannot show the edge of, and real
+                  radii average 2.8km against an 800m search. */}
+              {tier === 'approx' && n.envelope ? envelopeText(n.envelope.radiusM) : ''}
+              {tier !== 'approx' && n.fixes ? ` · ${n.fixes} observer fix(es)` : ''}
+            </Text>
+          </View>
+        </View>
+        {/* Inline Continue on the chosen row: in a dense ward the footer CTA
+            can sit far below the unit you just tapped. */}
+        {loading ? (
+          <ActivityIndicator color={selected ? BRAND.gold : BRAND.leaf} />
+        ) : selected ? (
+          <Pressable
+            className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
+            onPress={onContinue}
+          >
+            <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
+            <Feather name="arrow-right" size={14} color={BRAND.ink} />
+          </Pressable>
+        ) : null}
+      </Pressable>
+
+      {/* Only on the selected row: ten of these paragraphs stacked in a ward
+          where nothing is mapped yet would say nothing at all. */}
+      {selected && tier === 'approx' ? (
+        <View className="border-t border-emerald-100/30 px-4 pb-3 pt-2">
+          <Text className="text-xs text-emerald-100">
+            Hawkeye knows this unit&apos;s approximate area, not where it stands. You can report
+            from here — the report just will not be location-verified until observers standing at
+            the unit map it.
+          </Text>
+          {/* Where the number goes when the row above could not carry it: the
+              area exists, but its centre is not the dot, and only a sentence
+              with room to say so can state both honestly. */}
+          {!n.envelope && n.fenceEnvelope ? (
+            <Text className="pt-1 text-xs text-emerald-100">
+              That area is a ~{Math.round(n.fenceEnvelope.radiusM).toLocaleString()}m circle
+              around a centre of its own — the point shown for this unit is the coordinate the
+              register holds for it, which is somewhere else.
+            </Text>
+          ) : null}
+          <Pressable
+            className="mt-2 flex-row items-center self-start rounded-xl bg-card px-3 py-2 active:opacity-70"
+            onPress={() => router.push('/map-unit')}
+          >
+            <Feather name="map-pin" size={13} color={BRAND.leaf} />
+            <Text className="pl-1.5 text-xs font-bold text-hawk-leaf">
+              Map this unit — one GPS fix ›
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </View>
+  );
+};
+
 /** Report a result — unit → race → sheet photo → venue photo → votes → signed submit. */
 export default function ReportResult() {
   const ui = useUi();
@@ -406,7 +593,20 @@ export default function ReportResult() {
 
   // -- step 1: which polling unit ------------------------------------------
   const [contests, setContests] = useState<Contest[]>([]);
+  /**
+   * The selected race, from the shared ContestPicker's authoritative catalogue
+   * (races.ts). It is the selection's identity and the picker's controlled
+   * value; `contest` below is the matching GET /api/contests object it resolves
+   * to, which is what the submit and the review screen actually read.
+   */
+  const [race, setRace] = useState<Race | null>(null);
   const [contest, setContest] = useState<Contest | null>(null);
+  /**
+   * The observer asked to browse the full 2027 catalogue even though exactly one
+   * race is open here and could have been auto-selected. Forces the picker step
+   * to render instead of the short auto-skip path.
+   */
+  const [wantsPicker, setWantsPicker] = useState(false);
   const [states, setStates] = useState<string[]>([]);
   const [stateSel, setStateSel] = useState<string | null>(null);
   const [lgas, setLgas] = useState<string[]>([]);
@@ -426,6 +626,12 @@ export default function ReportResult() {
   const [searched, setSearched] = useState<Searched | null>(null);
   /** The discovery fix, kept so the map has something to centre on. */
   const [fix, setFix] = useState<Fix | null>(null);
+  /** Set only when the last GPS failure is one the OS settings app has to fix
+   *  (location switched off, or permission blocked with no dialog left to
+   *  show). A timeout must never raise this — sending an observer with working
+   *  permission into their settings is the exact wild goose chase the old
+   *  one-size-fits-all message caused. */
+  const [gpsSettings, setGpsSettings] = useState(false);
   /** puCode whose register row is being fetched — a tap has landed, the
    *  selection has not yet. */
   const [picking, setPicking] = useState<string | null>(null);
@@ -497,16 +703,48 @@ export default function ReportResult() {
    *  "no active election here" answer instead of hiding the state. */
   const covered = !!stateSel && racesIn(stateSel, contests).length > 0;
 
-  /** The races that exist at the chosen unit — the contest step's whole content. */
+  /**
+   * Whether ANY contest — open or not — covers this unit's state. Drives only
+   * the "no election is running at this unit yet" warning; the race choice
+   * itself now runs through the ContestPicker, so this is no longer the contest
+   * step's content.
+   */
   const applicable = useMemo(
     () => (unit ? racesIn(unit.state, contests) : []),
     [unit, contests],
   );
 
-  /** The race step is real only when there is a choice to make. */
+  /**
+   * The races that are OPEN and selectable at this unit right now, drawn from
+   * the authoritative catalogue (races.ts) rather than from /api/contests
+   * directly — the same set the picker would let the observer choose. Openness
+   * is read only from `contests` via isRaceOpen, never hardcoded.
+   *
+   * SHA never appears here (its seat names are unpublished, so listRaces('SHA',…)
+   * is empty), which is correct: a State House seat cannot be selected yet, so it
+   * can never be the one race we auto-skip into.
+   */
+  const openRacesHere = useMemo<Race[]>(() => {
+    if (!unit) return [];
+    const st = unit.state as StateName;
+    return ELECTION_TYPES.flatMap((t) => listRaces(t.code, st)).filter((r) =>
+      isRaceOpen(r, contests),
+    );
+  }, [unit, contests]);
+
+  /**
+   * The picker step can be skipped ONLY when there is exactly one open,
+   * selectable race here and the observer has not asked to browse the full
+   * catalogue. Any other case — several open races, none open (but the state is
+   * covered), or an explicit "browse" — shows the picker so the 2027 structure is
+   * never hidden and a closed race is never a silent dead end.
+   */
+  const skipPicker = openRacesHere.length === 1 && !wantsPicker;
+
+  /** The race step is real only when the picker is actually shown. */
   const steps = useMemo(
-    () => STEPS.filter((s) => s.key !== 'contest' || applicable.length > 1),
-    [applicable.length],
+    () => STEPS.filter((s) => s.key !== 'contest' || !skipPicker),
+    [skipPicker],
   );
 
   /**
@@ -521,7 +759,8 @@ export default function ReportResult() {
    *   with no GRID3 envelope (Rivers 3,781, Akwa Ibom 534, Delta 431, Edo 384,
    *   Abia 361, Lagos 245 …). It is also the only one that returns whole
    *   register rows, so it is the only one that knows a unit's state. But it
-   *   measures against the submission geofence (200m) and stops at eight.
+   *   measures at config.discoveryRadiusM and stops at config.discoveryMaxRows,
+   *   both of which it reports on the wire (`radiusM`/`maxRows`/`capped`).
    * - /api/mapping/nearby reaches DISCOVERY_RADIUS_M and includes units placed
    *   only by their GRID3 envelope — the population an observer at an unmapped
    *   unit is standing in — but it never reads crowd_lat, so every one of those
@@ -550,23 +789,35 @@ export default function ReportResult() {
     // with a live Continue. The scope pickers already clear downstream state
     // for the same reason; discovery is no different.
     setUnit(null);
+    setGpsSettings(false);
     setNearLine('Getting your location…');
     try {
       // Quick fix, not the submit-grade one: this only shortlists candidates.
       // The accurate fix is taken again at submit, where the server checks it.
-      const f = await getQuickFix();
-      if (!f) {
-        setNearLine('Location is off or not permitted — turn it on and retry, or browse the register below. (no GPS fix)');
+      //
+      // The result is DISCRIMINATED, and the copy below says which of the four
+      // things went wrong. This screen used to print "Location is off or not
+      // permitted" for all of them, which was a lie to the commonest caller of
+      // all: an observer who granted permission and whose GPS simply had not
+      // locked yet indoors. Being told to fix a permission that is already
+      // granted is worse than being told nothing.
+      const r = await tryQuickFix();
+      if (!r.ok) {
+        const d = describeFixFailure(r);
+        setNearLine(`${d.lead}, or browse the register below. (${d.code})`);
+        setGpsSettings(d.settings);
         setBrowse(true);
         return;
       }
+      const f = r.fix;
       setFix(f);
       setNearLine(`Location fixed (±${Math.round(f.accuracy)}m). Looking up nearby units…`);
 
       const [located, envelope] = await Promise.all([
-        // No radius parameter exists on this one — it filters at the server's
-        // own geofence (200m) and returns at most eight rows. Both facts are
-        // load-bearing for the copy below and neither can be asked for.
+        // No radius parameter exists on this one — it filters at
+        // config.discoveryRadiusM and caps at config.discoveryMaxRows. Both
+        // facts are load-bearing for the copy below, neither can be asked for,
+        // and both are now read back out of the response instead of mirrored.
         fetch(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`).catch(() => null),
         // This one does take a radius, and would otherwise default to 5km.
         fetch(
@@ -582,7 +833,12 @@ export default function ReportResult() {
       }
 
       const locatedBody = located?.ok
-        ? ((await located.json().catch(() => ({}))) as { units?: LocatedRow[]; radiusM?: number })
+        ? ((await located.json().catch(() => ({}))) as {
+            units?: LocatedRow[];
+            radiusM?: number;
+            maxRows?: number;
+            capped?: boolean;
+          })
         : null;
       const locatedRows = locatedBody?.units ?? [];
       const envelopeRows = envelope?.ok
@@ -596,7 +852,14 @@ export default function ReportResult() {
        * reports the radius it used, so that is taken over the local mirror; a
        * lookup that did not answer contributes no radius rather than its
        * intended one, since nothing inside it was searched at all.
+       *
+       * The cap and the truncation flag are taken the same way and for the same
+       * reason — the server owns those numbers, and a mirror of them is wrong
+       * from the moment the server moves.
        */
+      const registerMaxRows = Number.isFinite(locatedBody?.maxRows)
+        ? Number(locatedBody?.maxRows)
+        : REGISTER_MAX_ROWS;
       const scope: Searched = {
         registerM: located?.ok
           ? Number.isFinite(locatedBody?.radiusM)
@@ -604,9 +867,15 @@ export default function ReportResult() {
             : REGISTER_RADIUS_M
           : null,
         envelopeM: envelope?.ok ? DISCOVERY_RADIUS_M : null,
-        // A full answer and a truncated one look identical on the wire, so a
-        // full one is treated as truncated.
-        capped: locatedRows.length >= REGISTER_MAX_ROWS,
+        maxRows: registerMaxRows,
+        // Truncation is stated outright now. Only against a server too old to
+        // send `capped` is it inferred from the row count — and there a full
+        // answer and a truncated one look identical, so a full one is treated
+        // as truncated.
+        capped:
+          typeof locatedBody?.capped === 'boolean'
+            ? locatedBody.capped
+            : locatedRows.length >= registerMaxRows,
       };
       setSearched(scope);
 
@@ -768,8 +1037,9 @@ export default function ReportResult() {
       setNearby(found);
       if (found.length === 0) {
         // Not "within 800m": the 7,652 units that only /api/polling-units can
-        // see were searched at 200m, so a single radius in this sentence would
-        // be a positive claim about a circle nothing ever looked in.
+        // see were searched at the narrower radius that lookup reports for
+        // itself, so a single radius in this sentence would be a positive claim
+        // about a circle nothing ever looked in.
         setNearLine(nothingFoundLine(scope));
         setBrowse(true);
         return;
@@ -787,11 +1057,33 @@ export default function ReportResult() {
     }
   };
 
-  /** Selecting a unit pre-picks its race when there is only one. */
+  /**
+   * Selecting a unit clears any race chosen for a previous one — the race is
+   * (re)chosen through the picker, or auto-selected in continueFromUnit when
+   * exactly one is open here.
+   */
   const chooseUnit = (u: Unit) => {
     setUnit(u);
-    const races = racesIn(u.state, contests);
-    setContest(races.length === 1 ? races[0] : null);
+    setRace(null);
+    setContest(null);
+    setWantsPicker(false);
+  };
+
+  /**
+   * Resolve a picked Race to its GET /api/contests object — what the submit and
+   * the review screen actually read — and record both. The match rule mirrors
+   * races.ts:matchContest (code + states[] scope), inlined so it returns the
+   * concrete api Contest rather than the loose races.ts shape.
+   */
+  const selectRace = (r: Race) => {
+    setRace(r);
+    setContest(
+      contests.find(
+        (c) =>
+          c.code === r.contestCode &&
+          (!c.states || c.states.length === 0 || (r.state != null && c.states.includes(r.state))),
+      ) ?? null,
+    );
   };
 
   /**
@@ -955,9 +1247,11 @@ export default function ReportResult() {
   })();
 
   /**
-   * The unit determines the race, so the contest step is built here rather than
-   * up front — and skipped entirely when the unit has exactly one race, which is
-   * every unit outside the FCT during a single-race election.
+   * Leaving the unit step. The unit's state locks the picker, so the race is
+   * chosen there — but when exactly one race is open here and the observer has
+   * not asked to browse, that single race is auto-selected and the picker is
+   * skipped, straight to the camera. That is the common path today (one green
+   * race at an Osun unit); everything else opens the picker.
    */
   const continueFromUnit = () => {
     if (!unit) return;
@@ -968,16 +1262,17 @@ export default function ReportResult() {
       );
       return;
     }
-    const races = racesIn(unit.state, contests);
-    if (races.length === 0) {
+    // Nothing Hawkeye covers runs in this state at all — not merely "not open
+    // yet", but out of scope. Mapping stays possible; reporting does not.
+    if (racesIn(unit.state, contests).length === 0) {
       Alert.alert(
         `No active election in ${unit.state}`,
         `Hawkeye is covering the ${contests[0].election}. Nothing is open for reporting at ${unit.name} yet — but you can still map polling units anywhere in Nigeria.`,
       );
       return;
     }
-    if (races.length === 1) {
-      setContest(races[0]);
+    if (skipPicker) {
+      selectRace(openRacesHere[0]);
       setStep('sheet');
       return;
     }
@@ -1046,22 +1341,26 @@ export default function ReportResult() {
   const [queued, setQueued] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  /** Nothing can be filed before poll-open; the server enforces it either way. */
-  const closed = contest?.open === false;
-
   const onSubmit = async () => {
-    if (!unit || !contest || !sheet || !venue || closed) return;
+    if (!unit || !contest || !sheet || !venue) return;
     setBusy(true);
     setLine('Getting your location…');
     try {
       // Bounded, accuracy-aware fix — the server rejects accuracy >100m, and an
       // unbounded High wait indoors can hang the submit button indefinitely.
-      const fix = await getSubmitFix();
-      if (!fix) {
-        setLine('No GPS fix — location must be on. Move near a window and retry.');
+      //
+      // Same rule as discovery: name the actual obstacle. A filled-in result
+      // sheet is the worst possible moment to tell someone their permission is
+      // broken when it is not — they will go turn on a setting that is already
+      // on and lose the fix they were seconds away from getting.
+      const got = await trySubmitFix();
+      if (!got.ok) {
+        const d = describeFixFailure(got);
+        setLine(`${d.lead}. (${d.code})`);
         setBusy(false);
         return;
       }
+      const fix = got.fix;
       setLine('Signing and submitting…');
       const r = await submitResult({
         puCode: unit.pu_code,
@@ -1071,6 +1370,9 @@ export default function ReportResult() {
         venue,
         fix,
         sheetSerial: sheetSerial.trim() || undefined,
+        // No dryRun: closed races are unselectable in this flow, so every submit
+        // here is a real report. Rehearsal now lives entirely in the practice
+        // section (submit.ts still carries the dryRun field for it).
       });
       if (r.ok) {
         setReceipt(r);
@@ -1093,13 +1395,6 @@ export default function ReportResult() {
           title: 'Saved on this phone',
           line: 'It will send when you have signal. The report is already signed, so it files exactly as you left it — keep the app installed and it goes on its own.',
         });
-        setStep('done');
-      } else if (r.error === 'reporting_not_open') {
-        // The flow worked end-to-end; only the election-day gate stopped it.
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setReceipt({});
-        setQueued(false);
-        setDone({ title: 'Dry run complete', line: r.message });
         setStep('done');
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -1184,7 +1479,7 @@ export default function ReportResult() {
             setRetaking(false);
             setStep('review');
           } else if (isSheet) {
-            setStep(applicable.length > 1 ? 'contest' : 'unit');
+            setStep(skipPicker ? 'unit' : 'contest');
           } else {
             setStep('sheet');
           }
@@ -1192,148 +1487,6 @@ export default function ReportResult() {
       />
     );
   }
-
-  const Chip = ({ label, on, onPress }: { label: string; on?: boolean; onPress: () => void }) => (
-    <Pressable
-      onPress={onPress}
-      className={`mb-2 mr-2 rounded-full px-4 py-2 ${on ? 'bg-hawk-green' : 'bg-card'}`}
-    >
-      <Text className={`text-sm font-semibold ${on ? 'text-hawk-gold' : 'text-ink'}`}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-
-  /** A register-browse row: the drill-down already said where you are, so the
-   *  sub-line only has to name the unit. */
-  const UnitRow = ({ u, sub }: { u: Unit; sub: string }) => {
-    const on = unit?.pu_code === u.pu_code;
-    return (
-      <Pressable
-        className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-card'}`}
-        onPress={() => chooseUnit(u)}
-      >
-        <View className="flex-1 pr-2">
-          <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-ink'}`}>
-            {u.name}
-          </Text>
-          <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>{sub}</Text>
-        </View>
-        {/* Inline Continue on the chosen row: in a long ward the footer CTA can
-            sit far below the unit you just tapped. */}
-        {on ? (
-          <Pressable
-            className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
-            onPress={continueFromUnit}
-          >
-            {/* Fixed ink on a fixed brand surface. text-ink/ui.ink flip with the
-                theme, and near-white on hawk-gold is 1.6:1 — invisible in dark
-                mode. The gold does not flip, so neither may the text on it. */}
-            <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
-            <Feather name="arrow-right" size={14} color={BRAND.ink} />
-          </Pressable>
-        ) : null}
-      </Pressable>
-    );
-  };
-
-  /**
-   * A GPS-discovered row. Its tier is stated in the same words the map legend
-   * uses, so the pin and the row beside it cannot grade the same unit
-   * differently — and an approx unit says plainly what it costs, with the fix
-   * for it one tap away rather than buried in another screen's menu entry.
-   */
-  const NearbyRow = ({ n }: { n: NearRow }) => {
-    const on = unit?.pu_code === n.puCode;
-    const loading = picking === n.puCode;
-    const tier = n.tier;
-    return (
-      <View className={`mb-2 overflow-hidden rounded-2xl ${on ? 'bg-hawk-green' : 'bg-card'}`}>
-        <Pressable
-          className="flex-row items-center px-4 py-3"
-          disabled={loading}
-          onPress={() => chooseNearby(n)}
-        >
-          <View className="flex-1 pr-2">
-            <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-ink'}`}>
-              {n.name}
-            </Text>
-            <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
-              {n.puCode} · {n.ward} · {n.distanceM}m away
-            </Text>
-            {/* Same words and same colour as the pin this row refers to —
-                TierDot carries the map's palette down onto the list. */}
-            <View className="flex-row items-center pt-0.5">
-              <TierDot tier={tier} />
-              <Text className={`flex-1 text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
-                {TIER_LABEL[tier]}
-                {/* The area in words, from the SHARED formatter — both screens
-                    describe the same envelope and had drifted (~1,200m here
-                    against ~1200m there for one unit).
-
-                    Read off `n.envelope`, so it appears only where the dot
-                    beside it IS that area's centre. On a unit the register also
-                    placed, the dot is a crowd fix kilometres from the centre and
-                    "within ~2,800m" beside it would be read as a claim about the
-                    dot; that area is stated in the selected row's paragraph
-                    below, which has room to say whose centre it is.
-
-                    This is the ONLY channel for a large one either way: the map
-                    stops drawing envelopes it cannot show the edge of, and real
-                    radii average 2.8km against an 800m search. */}
-                {tier === 'approx' && n.envelope ? envelopeText(n.envelope.radiusM) : ''}
-                {tier !== 'approx' && n.fixes ? ` · ${n.fixes} observer fix(es)` : ''}
-              </Text>
-            </View>
-          </View>
-          {/* Inline Continue on the chosen row: in a dense ward the footer CTA
-              can sit far below the unit you just tapped. */}
-          {loading ? (
-            <ActivityIndicator color={on ? BRAND.gold : BRAND.leaf} />
-          ) : on ? (
-            <Pressable
-              className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
-              onPress={continueFromUnit}
-            >
-              <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
-              <Feather name="arrow-right" size={14} color={BRAND.ink} />
-            </Pressable>
-          ) : null}
-        </Pressable>
-
-        {/* Only on the selected row: ten of these paragraphs stacked in a ward
-            where nothing is mapped yet would say nothing at all. */}
-        {on && tier === 'approx' ? (
-          <View className="border-t border-emerald-100/30 px-4 pb-3 pt-2">
-            <Text className="text-xs text-emerald-100">
-              Hawkeye knows this unit&apos;s approximate area, not where it stands. You can report
-              from here — the report just will not be location-verified until observers standing at
-              the unit map it.
-            </Text>
-            {/* Where the number goes when the row above could not carry it: the
-                area exists, but its centre is not the dot, and only a sentence
-                with room to say so can state both honestly. */}
-            {!n.envelope && n.fenceEnvelope ? (
-              <Text className="pt-1 text-xs text-emerald-100">
-                That area is a ~{Math.round(n.fenceEnvelope.radiusM).toLocaleString()}m circle
-                around a centre of its own — the point shown for this unit is the coordinate the
-                register holds for it, which is somewhere else.
-              </Text>
-            ) : null}
-            <Pressable
-              className="mt-2 flex-row items-center self-start rounded-xl bg-card px-3 py-2 active:opacity-70"
-              onPress={() => router.push('/map-unit')}
-            >
-              <Feather name="map-pin" size={13} color={BRAND.leaf} />
-              <Text className="pl-1.5 text-xs font-bold text-hawk-leaf">
-                Map this unit — one GPS fix ›
-              </Text>
-            </Pressable>
-          </View>
-        ) : null}
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
@@ -1397,13 +1550,28 @@ export default function ReportResult() {
               <Text className="pt-3 text-sm font-semibold text-warn-ink">{nearLine}</Text>
             ) : null}
 
-            {/* The register lookup returns at most eight rows and does not say
-                whether it had more. In a dense ward the unit the observer is
-                standing at can be the ninth — and the list above would look
-                complete. Said once, only when the answer came back full. */}
+            {/* Only for the two failures the settings app is actually the cure
+                for. The "Find units near me" button above IS the retry, so a
+                timeout needs no new control — just the honest sentence and
+                another tap. */}
+            {gpsSettings ? (
+              <Pressable
+                onPress={() => Linking.openSettings()}
+                className="mt-2 flex-row items-center self-start rounded-xl border border-line px-3 py-2 active:opacity-70"
+              >
+                <Feather name="settings" size={14} color={ui.muted} />
+                <Text className="pl-2 text-sm font-semibold text-ink">Open phone settings</Text>
+              </Pressable>
+            ) : null}
+
+            {/* The register lookup caps its answer, and in a dense ward the
+                unit the observer is standing at can be the one past the cap —
+                with the list above looking complete. Said once, and only when
+                the server itself reports the answer as truncated; both the cap
+                and the radius quoted here are its numbers, not ours. */}
             {searched?.capped && nearby.length ? (
               <Text className="pt-1 text-xs text-muted">
-                Units already placed by observers are looked up {REGISTER_MAX_ROWS} at a time within{' '}
+                Units already placed by observers are looked up {searched.maxRows} at a time within{' '}
                 {searched.registerM}m, and that limit was reached — if yours is not listed, browse
                 the register below.
               </Text>
@@ -1439,7 +1607,8 @@ export default function ReportResult() {
                 {/* The ring is one circle and the search was two. Naming it is
                     the difference between evidence and decoration: without this
                     line an empty 800m ring reads as "nothing is near you", when
-                    the units it cannot see were only ever searched at 200m. */}
+                    the units it cannot see were only ever searched at the
+                    narrower radius /api/polling-units reports for itself. */}
                 {searched && ringLine(searched) ? (
                   <Text className="pt-1.5 text-xs text-muted">{ringLine(searched)}</Text>
                 ) : null}
@@ -1449,7 +1618,14 @@ export default function ReportResult() {
             {nearby.length ? (
               <View className="pt-3">
                 {nearby.map((n) => (
-                  <NearbyRow key={n.puCode} n={n} />
+                  <NearbyRow
+                    key={n.puCode}
+                    n={n}
+                    selected={unit?.pu_code === n.puCode}
+                    loading={picking === n.puCode}
+                    onChoose={chooseNearby}
+                    onContinue={continueFromUnit}
+                  />
                 ))}
               </View>
             ) : null}
@@ -1502,7 +1678,14 @@ export default function ReportResult() {
                     <Crumb label={`${lgaSel} · ${wardSel}`} onPress={() => pickWard(null)} />
                     <Prompt>Select your polling unit</Prompt>
                     {units.map((u) => (
-                      <UnitRow key={u.pu_code} u={u} sub={`${u.pu_code} · ${u.ward}, ${u.lga}`} />
+                      <UnitRow
+                        key={u.pu_code}
+                        u={u}
+                        sub={`${u.pu_code} · ${u.ward}, ${u.lga}`}
+                        selected={unit?.pu_code === u.pu_code}
+                        onChoose={chooseUnit}
+                        onContinue={continueFromUnit}
+                      />
                     ))}
                     {units.length === 0 ? (
                       <Text className="pt-2 text-sm text-muted">No units in the register for this ward yet.</Text>
@@ -1560,53 +1743,59 @@ export default function ReportResult() {
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
             >
               <Text className="text-base font-bold text-hawk-gold">
-                {applicable.length > 1 ? 'Continue — choose the race' : 'Continue to photos'}
+                {skipPicker ? 'Continue to photos' : 'Continue — choose the race'}
               </Text>
             </Pressable>
+            {/* When exactly one race is open here the button above skips straight
+                to the camera. Offer the full 2027 catalogue as a deliberate
+                second path, so the auto-skip never hides the other races an
+                observer might be looking for. */}
+            {openRacesHere.length === 1 ? (
+              <Pressable
+                className="mt-3 items-center"
+                onPress={() => {
+                  setWantsPicker(true);
+                  setStep('contest');
+                }}
+              >
+                <Text className="text-sm font-semibold text-hawk-leaf">
+                  Browse all races instead ›
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
 
         {step === 'contest' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             {unit ? <Crumb label={unit.name} onPress={() => setStep('unit')} /> : null}
-            <Prompt>Which election are you reporting?</Prompt>
-            <Text className="pb-3 text-sm text-muted">
-              Only the races that run at this polling unit are listed. Report each one separately.
+            {/* The unit's state is known, so the picker is scoped to it and the
+                observer never re-picks a state. Openness comes only from
+                `contests` (isRaceOpen inside the picker), never hardcoded. */}
+            <Text className="pb-2 text-sm text-muted">
+              Reporting at {unit?.name}
+              {unit ? `, ${unit.state}` : ''}. Tap an open race to report it. A race that has not
+              opened shows when reporting begins — you cannot file it yet, but it is not hidden.
             </Text>
-            {applicable.map((c) => {
-              const on = contest?.code === c.code;
-              return (
-                <Pressable
-                  key={c.code}
-                  onPress={() => setContest(c)}
-                  className={`mb-2 rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-card'}`}
-                >
-                  <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-ink'}`}>
-                    {c.name}
-                  </Text>
-                  <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
-                    {c.election}
-                  </Text>
-                  {c.open === false ? (
-                    <Text className={`pt-1 text-xs font-semibold ${on ? 'text-hawk-gold' : 'text-warn-ink'}`}>
-                      {opensLine(c)}
-                    </Text>
-                  ) : null}
-                </Pressable>
-              );
-            })}
+            <ContestPicker
+              contests={contests}
+              value={race}
+              onSelect={selectRace}
+              lockedState={unit ? (unit.state as StateName) : undefined}
+              allowClosed={false}
+            />
           </ScrollView>
         ) : null}
 
         {step === 'contest' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
-            {closed && contest ? (
-              <Text className="pb-2 text-sm font-semibold text-warn-ink">{opensLine(contest)}</Text>
-            ) : null}
+            <Text className="pb-2 text-xs text-muted" numberOfLines={1}>
+              {race ? `Selected: ${race.label}` : 'Choose an open race to continue.'}
+            </Text>
             <Pressable
-              disabled={!contest}
+              disabled={!race}
               onPress={() => setStep('sheet')}
-              className={`items-center rounded-2xl py-4 ${contest ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
+              className={`items-center rounded-2xl py-4 ${race ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
               <Text className="text-base font-bold text-hawk-gold">Continue to photos</Text>
             </Pressable>
@@ -1754,25 +1943,14 @@ export default function ReportResult() {
             under the observer's thumb, not be pushed further down the scroll. */}
         {step === 'review' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
-            {/* Say when, not just no. The server refuses early reports anyway;
-                finding that out after two photos and a full tally is the failure
-                this replaces. */}
-            {closed && contest ? (
-              <Text className="pb-2 text-sm font-semibold text-warn-ink">
-                {opensLine(contest)} Nothing can be filed before then — your work stays here until you
-                reopen this screen on election day.
-              </Text>
-            ) : null}
             {line ? <Text className="pb-2 text-sm font-semibold text-warn-ink">{line}</Text> : null}
             <Pressable
-              disabled={busy || closed}
+              disabled={busy}
               onPress={onSubmit}
-              className={`items-center rounded-2xl py-4 ${busy || closed ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
+              className={`items-center rounded-2xl py-4 ${busy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
             >
               {busy ? <ActivityIndicator color={BRAND.gold} /> : (
-                <Text className="text-base font-bold text-hawk-gold">
-                  {closed ? 'Reporting not open yet' : 'Sign & submit'}
-                </Text>
+                <Text className="text-base font-bold text-hawk-gold">Sign &amp; submit</Text>
               )}
             </Pressable>
             <Pressable className="mt-3 items-center" onPress={() => setStep('votes')} disabled={busy}>
@@ -1788,6 +1966,10 @@ export default function ReportResult() {
                   gold on it — that pairing was ~2.4:1 and identical in both
                   themes. bg-warn/text-warn-ink is the same tinted pair every
                   other caution surface in the app uses, and it flips. */}
+              {/* TWO endings, two marks. The green check means "this is on the
+                  ledger" and only the filed one may wear it; amber-clock is the
+                  report still waiting in the outbox. (Rehearsal lives in the
+                  practice section now — closed races cannot be reached here.) */}
               <View
                 className={`h-16 w-16 items-center justify-center rounded-full ${queued ? 'bg-warn' : 'bg-hawk-green'}`}
               >
@@ -1810,7 +1992,11 @@ export default function ReportResult() {
                   Ledger entry
                 </Text>
                 <Pressable
-                  className="mt-2 flex-row items-center rounded-xl bg-card/10 px-3 py-2.5 active:opacity-70"
+                  // bg-white/10, not bg-card/10: this scrim sits on the fixed
+                  // brand-green receipt card, which does not flip. --card is dark
+                  // in dark mode, so a card-tinted scrim there goes dark-on-dark
+                  // and swallows the hash pill. Matches collation.tsx's fix.
+                  className="mt-2 flex-row items-center rounded-xl bg-white/10 px-3 py-2.5 active:opacity-70"
                   onPress={async () => {
                     await Clipboard.setStringAsync(receipt.entryHash!);
                     setCopied(true);
@@ -1827,6 +2013,16 @@ export default function ReportResult() {
                   is in the public ledger and has not been altered.
                 </Text>
               </View>
+            ) : null}
+
+            {/* THE INDEPENDENT PROOF. The hash above is Hawkeye's word; this is
+                the part that is not. The ledger head is signed into Sigstore
+                Rekor, a public append-only log we do not run — but only on the
+                anchor run, so a report filed minutes ago is not in one yet. The
+                component says which of those two is true and links ONLY when an
+                anchor covering this entry actually exists. */}
+            {receipt.entryHash ? (
+              <RekorAnchor entryHash={receipt.entryHash} chain="ledger" />
             ) : null}
 
             {receipt.result || receipt.locationVerified != null || receipt.ocr ? (
@@ -1911,6 +2107,8 @@ export default function ReportResult() {
                 the log the observer went to check. */}
             <Pressable className="items-center pb-3" onPress={() => router.replace('/reports-log')}>
               <Text className="text-sm font-semibold text-hawk-leaf">
+                {/* A queued report has no ledger entry to look for yet, so it is
+                    not sent looking for one. */}
                 {queued ? 'See the public log ›' : 'Find your report in the public log ›'}
               </Text>
             </Pressable>

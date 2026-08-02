@@ -65,7 +65,7 @@
     ['Live data', ['osun.html', 'results.html', 'dashboard.html', 'candidates.html', 'political.html']],
     // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
     // aren't in the panel, the group finds no members and is skipped.
-    ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'privacy.html']],
+    ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'privacy.html', 'terms.html']],
   ];
   if (panel && !panel.querySelector('.menu-group')) {
     // Osun 2026 is the active pilot race — inject it once so it appears in the
@@ -83,6 +83,15 @@
       pr.href = 'practice.html';
       pr.textContent = 'Practice Run';
       panel.appendChild(pr);
+    }
+    // Terms of Service — no page static-lists it, and its only other route
+    // (privacy.html's footer nav) is overwritten by the canonical footer below,
+    // so inject it here (like Osun/Practice above) so "Learn & about" surfaces it.
+    if (!panel.querySelector('a[href="terms.html"]')) {
+      const tm = document.createElement('a');
+      tm.href = 'terms.html';
+      tm.textContent = 'Terms of Service';
+      panel.appendChild(tm);
     }
     const links = new Map([...panel.querySelectorAll('a')].map((a) => [a.getAttribute('href'), a]));
     for (const [label, hrefs, tp] of GROUPS) {
@@ -283,8 +292,8 @@
   const foot = document.querySelector('.gov-footer nav');
   if (foot) {
     foot.innerHTML = '<a href="about.html">About</a><a href="how.html">How Hawkeye Works</a>'
-      + '<a href="privacy.html">Privacy Policy</a><a href="faq.html">FAQ</a>'
-      + '<a href="guide.html">Observer Guide</a>'
+      + '<a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a>'
+      + '<a href="faq.html">FAQ</a><a href="guide.html">Observer Guide</a>'
       + (localStorage.getItem('hawkeye_token') ? '<a href="profile.html">My Profile</a>' : '');
   }
 

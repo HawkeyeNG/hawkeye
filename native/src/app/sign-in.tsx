@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -15,30 +15,69 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PasswordField } from '@/components/password-field';
-import { passwordLogin, requestOtp, verifyOtp, type RegisterResult } from '@/lib/auth';
+import {
+  accountHasPassword,
+  passwordLogin,
+  requestOtp,
+  setPassword as savePassword,
+  signOut,
+  verifyOtp,
+  type RegisterResult,
+} from '@/lib/auth';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
 type Channel = 'whatsapp' | 'sms' | 'telegram';
 
 /**
- * OTP sign-in — the native twin of observe.html's auth step, keeping the
- * copy discipline the web flow settled on: one concise line per state.
+ * Sign in — password-first, the way a normal app works.
  *
- * The step transition is OPTIMISTIC: tapping "Request code" flips to the OTP
- * screen immediately and the send resolves in the background ("Sending…" →
- * "Code sent on WhatsApp…"). Gating the transition on the network made the
- * button spin for the whole server round-trip, which reads as a slow app —
- * the one thing this rewrite exists to avoid. On failure we return to the
- * phone step with the error line, so nothing is lost.
+ * DEFAULT is phone + password. A one-time code is no longer a co-equal way in:
+ * it is the recovery path (forgot password), the sign-up step that proves the
+ * number, and the rescue for accounts that predate passwords. Every OTP route
+ * therefore ENDS on the set-password step, so nobody leaves this screen without
+ * a password they can use next time.
+ *
+ * Steps
+ *   password      phone + password            (default; also ?intent=signin)
+ *   request       phone + channel -> send OTP (?intent=signup, forgot, rescue)
+ *   otp           enter the 6-digit code
+ *   set-password  choose + confirm a password (mandatory when the account has none)
+ *
+ * `purpose` is what the OTP is FOR, and it drives every line of copy on the
+ * request/set-password steps — the mechanics are identical in all three cases.
+ *
+ * The request -> otp transition stays OPTIMISTIC (tapping "Send code" flips the
+ * step immediately and the send resolves behind it); gating it on the network
+ * made the button spin for a whole round-trip, which reads as a slow app. On
+ * failure we drop back to the request step with the error line.
  */
+type Step = 'password' | 'request' | 'otp' | 'set-password';
+/** Why we're sending a code: sign-up proof / forgot-password / no password yet. */
+type Purpose = 'signup' | 'reset' | 'no-password';
+
 export default function SignIn() {
   const ui = useUi();
-  const [step, setStep] = useState<'phone' | 'otp' | 'password'>('phone');
+  const { intent } = useLocalSearchParams<{ intent?: string }>();
+  const signUpFirst = intent === 'signup';
+
+  const [step, setStep] = useState<Step>(signUpFirst ? 'request' : 'password');
+  const [purpose, setPurpose] = useState<Purpose>('signup');
   const [phone, setPhone] = useState('');
   const [channel, setChannel] = useState<Channel>('whatsapp');
   const [otp, setOtp] = useState('');
-  const [password, setPassword] = useState('');
+  const [password, setPasswordText] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [newPw2, setNewPw2] = useState('');
+  /** null = we couldn't check. Only an explicit `false` makes a password mandatory. */
+  const [hasPw, setHasPw] = useState<boolean | null>(null);
+  /**
+   * A number the server has told us DOES have a password, so the blank-password
+   * shortcut stops offering itself for it. Each blank submit on such an account
+   * spends one of the server's 10 wrong-password tries per hour, and tapping a
+   * live button repeatedly is exactly what someone does when nothing happens.
+   */
+  const [pwRequiredFor, setPwRequiredFor] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const [tgLink, setTgLink] = useState<string | null>(null);
@@ -73,21 +112,38 @@ export default function SignIn() {
     requestOtp(phone.trim(), channel)
       .then((r) => {
         if (r.telegramLink && !r.viaSms) {
-          // Telegram needs a one-time bot link — that UI lives on the phone step.
-          setStep('phone');
+          // Telegram needs a one-time bot link — that UI lives on the request step.
+          setStep('request');
           setTgLink(r.telegramLink);
           setLine('Open Telegram, tap Start, then Share my phone number.');
         } else if (r.ok) {
           setLine(sentLine(r));
         } else {
-          setStep('phone');
-          setLine(r.hint ?? 'Could not send a code — check the number.');
+          setStep('request');
+          setLine(
+            r.error === 'invalid_phone'
+              ? 'Enter a Nigerian mobile number, e.g. 08031234567.'
+              : r.error === 'too_many_requests'
+                ? 'Too many code requests from this network — wait a few minutes.'
+                : r.error === 'sms_send_failed'
+                  ? 'That code could not be delivered — try another channel below.'
+                  : (r.hint ?? 'Could not send a code — check the number.'),
+          );
         }
       })
       .catch(() => {
-        setStep('phone');
+        setStep('request');
         setLine('Network error — try again.');
       });
+  };
+
+  /** Enter the code flow for a given reason, keeping whatever number was typed. */
+  const startOtp = (why: Purpose) => {
+    setPurpose(why);
+    setOtp('');
+    setTgLink(null);
+    setLine(null);
+    setStep('request');
   };
 
   const onRequest = () => {
@@ -101,15 +157,94 @@ export default function SignIn() {
     setBusy(true);
     try {
       const r = await verifyOtp(phone.trim(), otp.trim());
+      if (!r.ok) {
+        setLine(
+          r.error === 'otp_incorrect' ? 'Wrong code — check and retry.'
+          : r.error === 'otp_expired' ? 'Code expired — request a new one.'
+          : r.error === 'too_many_attempts' ? 'Too many wrong codes — request a new one.'
+          : (r.hint ?? 'Verification failed — try again.'),
+        );
+        return;
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      // Signed in. Now: does this account still need a password? `no-password`
+      // already knows the answer (the server said so), `reset` is here on
+      // purpose, and a sign-up on a number that turns out to be an existing
+      // password-holder just goes straight in.
+      const hp = purpose === 'no-password' ? false : await accountHasPassword();
+      setHasPw(hp);
+      if (hp === false || purpose === 'reset') {
+        setNewPw('');
+        setNewPw2('');
+        setLine(null);
+        setStep('set-password');
+        return;
+      }
+      // hp === true, or null because the check itself failed: never strand
+      // someone on a password screen over a failed status call.
+      router.replace('/(tabs)');
+    } catch {
+      setLine('Network error — try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * A blank password is a legitimate submission here, not junk input.
+   *
+   * Legacy observers predate passwords and have none to type. The only thing
+   * that routes them to their rescue is the server's `password_login_unavailable`,
+   * and /login returns that BEFORE it looks at the password field at all — so
+   * requiring 8 characters first made the rescue reachable only by inventing
+   * junk. These are real users of an election tool; "cannot sign in" is the
+   * worst outcome this screen has. A valid number alone therefore submits, and
+   * the server classifies the account. A password that IS typed still has to
+   * meet the server's own minimum of 8, so nothing is loosened for real
+   * password logins.
+   */
+  const phoneReady = phone.trim().length >= 10;
+  const blankPw = password.length === 0;
+  const loginDisabled =
+    busy || !phoneReady || (blankPw ? pwRequiredFor === phone.trim() : password.length < 8);
+
+  const onPasswordLogin = async () => {
+    // Also the guard for onSubmitEditing, which fires straight from the keyboard.
+    if (loginDisabled) return;
+    const typedPhone = phone.trim();
+    const wasBlank = blankPw;
+    setBusy(true);
+    setLine(null);
+    try {
+      const r = await passwordLogin(typedPhone, password);
       if (r.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         router.replace('/(tabs)');
         return;
       }
+      // An account with no password_hash is an EXISTING observer from before
+      // passwords existed. Route them into the code flow rather than showing a
+      // dead end — the request step then explains it and set-password closes it.
+      if (r.error === 'password_login_unavailable') {
+        startOtp('no-password');
+        return;
+      }
+      // A blank submit that comes back `wrong_password` has answered its own
+      // question: this account does have one. Say so plainly — the verbatim
+      // "Wrong password" hint reads as a bug when the field was empty — and
+      // stop the blank shortcut for this number so taps can't burn the lockout.
+      if (wasBlank && r.error === 'wrong_password') {
+        setPwRequiredFor(typedPhone);
+        setLine('This account has a password — type it, or tap “Forgot password?” to get a code.');
+        return;
+      }
       setLine(
-        r.error === 'otp_incorrect' ? 'Wrong code — check and retry.'
-        : r.error === 'otp_expired' ? 'Code expired — request a new one.'
-        : r.hint ?? 'Verification failed — try again.',
+        r.error === 'invalid_phone'
+          ? 'Enter a Nigerian mobile number, e.g. 08031234567.'
+          // wrong_password / too_many_attempts hints are user-ready copy and
+          // both already point at the code path — show them verbatim.
+          : (r.hint ?? 'Sign-in failed — try again.'),
       );
     } catch {
       setLine('Network error — try again.');
@@ -118,24 +253,51 @@ export default function SignIn() {
     }
   };
 
-  const onPasswordLogin = async () => {
+  const onSavePassword = async () => {
+    if (newPw.length < 8) {
+      setLine('Use at least 8 characters.');
+      return;
+    }
+    // Typed twice: a typo in a blind field would otherwise lock this account out
+    // of its own password path until another code reset.
+    if (newPw !== newPw2) {
+      setLine('The two passwords do not match.');
+      return;
+    }
     setBusy(true);
     setLine(null);
     try {
-      const r = await passwordLogin(phone.trim(), password);
+      const r = await savePassword(newPw);
       if (r.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         router.replace('/(tabs)');
         return;
       }
-      // The server's hints are user-ready copy (wrong password / no password
-      // on this account / rate-limited) — show them verbatim.
-      setLine(r.hint ?? 'Sign-in failed — try again.');
+      setLine(
+        r.error === 'password_too_short' ? 'Use at least 8 characters.'
+        : r.error === 'password_too_long' ? 'That password is too long (200 characters max).'
+        // The no-current-password window is 15 min from the code — past that the
+        // server asks for the old one, which is exactly what they don't have.
+        : r.error === 'current_password_wrong' ? 'That took too long — request a new code and try again.'
+        : (r.hint ?? 'Could not save that password — try again.'),
+      );
     } catch {
       setLine('Network error — try again.');
     } finally {
       setBusy(false);
     }
+  };
+
+  /** Only an account we KNOW has no password is forced through this step. */
+  const mustSetPassword = hasPw === false;
+
+  const onAbandonPassword = async () => {
+    if (!mustSetPassword) {
+      router.replace('/(tabs)');
+      return;
+    }
+    await signOut();
+    router.replace('/welcome');
   };
 
   // Preference order: WhatsApp first (free, near-instant, most reach here),
@@ -146,6 +308,31 @@ export default function SignIn() {
     { key: 'sms', label: 'SMS' },
   ];
 
+  const requestCopy =
+    purpose === 'signup'
+      ? {
+          title: 'Create Your Account',
+          body: 'Enter your phone number. We send a one-time code (OTP) to confirm it, then you choose a password — that password is how you sign in from then on.',
+        }
+      : purpose === 'reset'
+        ? {
+            title: 'Reset Your Password',
+            body: 'We send a one-time code (OTP) to your number. Enter it and you can choose a new password.',
+          }
+        : {
+            title: 'No Password on This Account',
+            body: 'This account was created before Hawkeye had passwords, so it does not have one yet. Sign in with a one-time code (OTP) and set a password now — after that you sign in with your phone number and password like everyone else.',
+          };
+
+  const setPwCopy =
+    purpose === 'reset'
+      ? { title: 'Choose a New Password', body: 'Your number is verified. Pick a new password — at least 8 characters.' }
+      : purpose === 'no-password'
+        ? { title: 'Set Your Password', body: 'Your number is verified. Choose a password — at least 8 characters — and use it to sign in on any device from now on.' }
+        : { title: 'Create Your Password', body: 'Your number is verified. Choose a password — at least 8 characters. You will need it with your phone number every time you sign in.' };
+
+  const pwSaveDisabled = busy || newPw.length < 8 || newPw2.length < 8;
+
   return (
     <SafeAreaView className="flex-1 bg-surface">
       <KeyboardAvoidingView
@@ -153,22 +340,30 @@ export default function SignIn() {
         className="flex-1"
       >
         <View className="flex-row items-center px-4 pt-2">
-          <Pressable
-            hitSlop={12}
-            onPress={() => router.back()}
-            className="h-9 w-9 items-center justify-center rounded-full bg-card"
-          >
-            <Feather name="x" size={18} color={ui.ink} />
-          </Pressable>
-          <Text className="pl-3 text-lg font-bold text-ink">Sign In</Text>
+          {/* No escape hatch mid-way through a mandatory password: the only way
+              off that step is saving one, or the explicit sign-out link below it. */}
+          {step === 'set-password' && mustSetPassword ? (
+            <View className="h-9 w-9" />
+          ) : (
+            <Pressable
+              hitSlop={12}
+              onPress={() => router.back()}
+              className="h-9 w-9 items-center justify-center rounded-full bg-card"
+            >
+              <Feather name="x" size={18} color={ui.ink} />
+            </Pressable>
+          )}
+          <Text className="pl-3 text-lg font-bold text-ink">
+            {step === 'set-password' ? 'Your Password' : purpose === 'signup' && step !== 'password' ? 'Create Account' : 'Sign In'}
+          </Text>
         </View>
 
         <View className="px-5 pt-6">
-          {step === 'phone' ? (
+          {step === 'password' ? (
             <>
-              <Text className="text-2xl font-bold text-ink">Your Phone Number</Text>
+              <Text className="text-2xl font-bold text-ink">Welcome Back</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">
-                One code verifies you. Your number is never stored — only a one-way hash.
+                Your phone number and password. Your number is never stored — only a one-way hash.
               </Text>
               <TextInput
                 className="rounded-2xl bg-card px-4 py-4 text-lg text-ink"
@@ -176,6 +371,58 @@ export default function SignIn() {
                 placeholderTextColor={ui.faint}
                 keyboardType="phone-pad"
                 autoFocus
+                value={phone}
+                onChangeText={setPhone}
+                editable={!busy}
+              />
+              <View className="pt-3">
+                <PasswordField
+                  placeholder="Password"
+                  value={password}
+                  onChangeText={setPasswordText}
+                  editable={!busy}
+                  onSubmitEditing={onPasswordLogin}
+                  textContentType="password"
+                />
+              </View>
+              {/* The discoverability half of the fix: enabling the button is no
+                  use to someone who never thinks to tap it on an empty field. */}
+              <Text className="pt-2 text-xs text-muted">
+                Joined before Hawkeye had passwords? Leave the password blank and tap Sign in — we
+                will send you a code and set one up.
+              </Text>
+              <Pressable
+                disabled={loginDisabled}
+                onPress={onPasswordLogin}
+                className={`mt-5 items-center rounded-2xl py-4 ${
+                  loginDisabled ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
+                }`}
+              >
+                {busy ? (
+                  <ActivityIndicator color={BRAND.gold} />
+                ) : (
+                  <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
+                )}
+              </Pressable>
+              <Pressable className="mt-4 items-center" onPress={() => startOtp('reset')}>
+                <Text className="text-sm font-semibold text-good-ink">Forgot password?</Text>
+              </Pressable>
+              <Pressable className="mt-5 items-center" onPress={() => startOtp('signup')}>
+                <Text className="text-sm text-muted">
+                  New here? <Text className="font-semibold text-good-ink">Create an account</Text>
+                </Text>
+              </Pressable>
+            </>
+          ) : step === 'request' ? (
+            <>
+              <Text className="text-2xl font-bold text-ink">{requestCopy.title}</Text>
+              <Text className="pb-4 pt-1 text-sm text-muted">{requestCopy.body}</Text>
+              <TextInput
+                className="rounded-2xl bg-card px-4 py-4 text-lg text-ink"
+                placeholder="0803 123 4567"
+                placeholderTextColor={ui.faint}
+                keyboardType="phone-pad"
+                autoFocus={phone.trim().length === 0}
                 value={phone}
                 onChangeText={setPhone}
                 editable={!busy}
@@ -209,75 +456,23 @@ export default function SignIn() {
                 {busy ? (
                   <ActivityIndicator color={BRAND.gold} />
                 ) : (
-                  <Text className="text-base font-bold text-hawk-gold">Request code</Text>
+                  <Text className="text-base font-bold text-hawk-gold">Send code</Text>
                 )}
               </Pressable>
               <Pressable
                 className="mt-4 items-center"
                 onPress={() => {
                   setLine(null);
+                  setTgLink(null);
                   setStep('password');
                 }}
               >
                 <Text className="text-sm font-semibold text-good-ink">
-                  Sign in with a password instead
+                  {purpose === 'signup' ? 'Already have an account? Sign in' : 'Back to password sign-in'}
                 </Text>
               </Pressable>
             </>
-          ) : step === 'password' ? (
-            <>
-              <Text className="text-2xl font-bold text-ink">Password Sign-In</Text>
-              <Text className="pb-4 pt-1 text-sm text-muted">
-                Phone number and password — no code needed.
-              </Text>
-              <TextInput
-                className="rounded-2xl bg-card px-4 py-4 text-lg text-ink"
-                placeholder="0803 123 4567"
-                placeholderTextColor={ui.faint}
-                keyboardType="phone-pad"
-                value={phone}
-                onChangeText={setPhone}
-                editable={!busy}
-              />
-              <View className="pt-3">
-                <PasswordField
-                  placeholder="Password"
-                  autoFocus
-                  value={password}
-                  onChangeText={setPassword}
-                  editable={!busy}
-                  onSubmitEditing={onPasswordLogin}
-                  textContentType="password"
-                />
-              </View>
-              <Pressable
-                disabled={busy || phone.trim().length < 10 || password.length < 8}
-                onPress={onPasswordLogin}
-                className={`mt-5 items-center rounded-2xl py-4 ${
-                  busy || phone.trim().length < 10 || password.length < 8
-                    ? 'bg-disabled'
-                    : 'bg-hawk-green active:opacity-80'
-                }`}
-              >
-                {busy ? (
-                  <ActivityIndicator color={BRAND.gold} />
-                ) : (
-                  <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
-                )}
-              </Pressable>
-              <Pressable
-                className="mt-4 items-center"
-                onPress={() => {
-                  setLine(null);
-                  setStep('phone');
-                }}
-              >
-                <Text className="text-sm font-semibold text-good-ink">
-                  Forgot it? Sign in with a code instead
-                </Text>
-              </Pressable>
-            </>
-          ) : (
+          ) : step === 'otp' ? (
             <>
               <Text className="text-2xl font-bold text-ink">Enter the Code</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">{line}</Text>
@@ -313,10 +508,51 @@ export default function SignIn() {
                     {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
                   </Text>
                 </Pressable>
-                <Pressable onPress={() => setStep('phone')}>
+                <Pressable onPress={() => setStep('request')}>
                   <Text className="text-sm font-semibold text-good-ink">Use a different number</Text>
                 </Pressable>
               </View>
+            </>
+          ) : (
+            <>
+              <Text className="text-2xl font-bold text-ink">{setPwCopy.title}</Text>
+              <Text className="pb-4 pt-1 text-sm text-muted">{setPwCopy.body}</Text>
+              <PasswordField
+                placeholder="New password (min 8 characters)"
+                autoFocus
+                value={newPw}
+                onChangeText={setNewPw}
+                editable={!busy}
+                textContentType="newPassword"
+              />
+              <View className="pt-3">
+                <PasswordField
+                  placeholder="Repeat new password"
+                  value={newPw2}
+                  onChangeText={setNewPw2}
+                  editable={!busy}
+                  onSubmitEditing={onSavePassword}
+                  textContentType="newPassword"
+                />
+              </View>
+              <Pressable
+                disabled={pwSaveDisabled}
+                onPress={onSavePassword}
+                className={`mt-5 items-center rounded-2xl py-4 ${
+                  pwSaveDisabled ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
+                }`}
+              >
+                {busy ? (
+                  <ActivityIndicator color={BRAND.gold} />
+                ) : (
+                  <Text className="text-base font-bold text-hawk-gold">Save password and continue</Text>
+                )}
+              </Pressable>
+              <Pressable className="mt-4 items-center" onPress={onAbandonPassword}>
+                <Text className="text-sm font-semibold text-good-ink">
+                  {mustSetPassword ? 'Not now — sign out' : 'Keep my current password'}
+                </Text>
+              </Pressable>
             </>
           )}
 

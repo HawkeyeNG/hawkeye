@@ -32,6 +32,15 @@ module.exports = {
           DEFAULT: "rgb(var(--warn) / <alpha-value>)",
           ink: "rgb(var(--warn-ink) / <alpha-value>)",
         },
+        // bg-caution / text-caution-ink — SAFETY OF PERSON ONLY, a real hazard
+        // yellow. bg-warn is the informational notice and covers everything
+        // else; see the comment on --caution in src/global.css before reaching
+        // for this one, because "this is important" is not the same claim as
+        // "this could get you hurt".
+        caution: {
+          DEFAULT: "rgb(var(--caution) / <alpha-value>)",
+          ink: "rgb(var(--caution-ink) / <alpha-value>)",
+        },
         hawk: {
           green: "#004225",
           leaf: "#0b6b3a",

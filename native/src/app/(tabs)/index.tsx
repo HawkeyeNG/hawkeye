@@ -221,7 +221,12 @@ export default function Home() {
         <Pressable
           key={c.code}
           className="mb-3 overflow-hidden rounded-3xl bg-hawk-green active:opacity-90"
-          onPress={() => router.push('/report/result')}
+          // The election's own page, not straight into reporting. This card is an
+          // announcement ("this election is coming"), so it should open the thing
+          // it announces and let the observer decide to report from there —
+          // dropping someone into a capture flow they did not ask for is wrong,
+          // and before polls open it is a dead end.
+          onPress={() => router.push('/osun')}
         >
           <View className="px-5 pb-4 pt-5">
             <Text className="text-xs font-semibold uppercase tracking-wider text-hawk-gold">

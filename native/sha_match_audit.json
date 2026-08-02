@@ -1,0 +1,87 @@
+{
+ "Delta|Aniocha South": {
+  "verdict": "wrong",
+  "shouldBe": [
+   "Aniochasouth"
+  ],
+  "why": "Matcher tier 'directional' via the idx_nodir index: it stripped 'South' off the constituency and looked up 'aniocha', but idx_nodir also strips the compass word from LGA names, so 'Aniocha North' and 'Aniochasouth' both collapse to key 'aniocha' and the dict retained only the last-inserted one. Result attaches Aniocha South constituency to the Aniocha NORTH LGA. The register spells the correct LGA 'Aniochasouth' (no space), which is why the earlier exact tier missed it. Corroboration: 'Aniochasouth' is one of only two non-residue Delta LGAs with zero constituencies mapped to it, and fixing this and Ika South makes Delta balance exactly (25 LGAs, 29 constituencies, 4 two-seat LGAs)."
+ },
+ "Delta|Ika South": {
+  "verdict": "wrong",
+  "shouldBe": [
+   "Ikasouth"
+  ],
+  "why": "Same idx_nodir collision as Aniocha South. 'Ika South' -> base 'ika' matched 'Ika North- East' because that LGA's compass words were also stripped. The correct LGA is the register's 'Ikasouth' (concatenated, so the exact tier missed it). 'Ikasouth' is the other Delta LGA left with zero constituencies."
+ },
+ "Ebonyi|Afikpo North East": {
+  "verdict": "wrong",
+  "shouldBe": [
+   "Afikpo North"
+  ],
+  "why": "idx_nodir collision explicitly recorded: collide=['Afikpo North','Afikpo South'] -> both collapse to 'afikpo' and the dict kept 'Afikpo South'. An 'Afikpo North ...' constituency is in Afikpo North LGA. Corroboration: 'Afikpo North' is Ebonyi's only unclaimed LGA while 'Afikpo South' absorbed 4 constituencies; Ebonyi then balances exactly (13 LGAs, 24 seats, 11 LGAs with 2 seats + Ezza South and Ivo with 1)."
+ },
+ "Ebonyi|Afikpo North West": {
+  "verdict": "wrong",
+  "shouldBe": [
+   "Afikpo North"
+  ],
+  "why": "Identical idx_nodir collision to Afikpo North East - collapsed to 'afikpo' and got Afikpo South. Belongs to Afikpo North LGA."
+ },
+ "Plateau|Jos North West": {
+  "verdict": "wrong",
+  "shouldBe": [
+   "Jos North"
+  ],
+  "why": "idx_nodir collision across THREE LGAs: collide=['Jos East','Jos North','Jos South'] all collapse to 'jos' and the dict kept 'Jos South'. 'Jos North West' is plainly a split of Jos North LGA. Corroboration: Plateau's 24 seats balance only if Jos North holds 2 (Jos North + Jos North West), giving 5 two-seat LGAs plus Kanam and Wase from the residue."
+ },
+ "Plateau|Langtang Central": {
+  "verdict": "wrong",
+  "shouldBe": [
+   "Langtang North"
+  ],
+  "why": "idx_nodir collision: collide=['Langtang North','Langtang South'] -> 'langtang' kept Langtang South. The seat is reported in Plateau Assembly coverage as 'Langtang North Central', i.e. the central constituency of Langtang North LGA (member sworn in 2023 alongside a separate 'Langtang North' member). Langtang South LGA already has its own 'Langtang South' constituency, and Plateau's seat arithmetic needs Langtang North to hold 2."
+ },
+ "Abia|Umuahia Central": {
+  "verdict": "wrong",
+  "shouldBe": [
+   "Umuahia North"
+  ],
+  "why": "idx_nodir collision: collide=['Umuahia North','Umuahia South'] -> 'umuahia' kept Umuahia South. External evidence puts this seat in Umuahia North LGA: Chinedum Enyinnaya Orji, member for Umuahia Central 2015-2023 (Speaker of the 7th Assembly), is from Amaokwe Ugba, Ibeku, Umuahia North LGA; the 2023 winner Chinasa Anthony-Abiola likewise contested there. Umuahia South LGA already has its own 'Umuahia South' constituency."
+ },
+ "Abia|Umuahia East": {
+  "verdict": "suspect",
+  "shouldBe": [
+   "Umuahia North"
+  ],
+  "why": "Same idx_nodir collision as Umuahia Central (collide=['Umuahia North','Umuahia South'], dict kept Umuahia South), so the current value was chosen arbitrarily rather than derived. Evidence leans to Umuahia North LGA: the 2023 member Austin Okezie Meregini (Deputy Speaker) is reported as being from Umuahia North LGA, and Umuahia's four seats sit across only two LGAs of which Umuahia South already has its own eponymous seat - Umuahia North is the urban capital LGA (12 wards vs 10) that would carry North + Central + East. Not confirmed against an INEC delimitation document, so flagged suspect rather than wrong; verify before relying on it."
+ },
+ "Abia|Aba Central": {
+  "verdict": "suspect",
+  "shouldBe": [],
+  "why": "Produced by the same unsound idx_nodir collision (collide=['Aba North','Aba South'], dict kept Aba South) - i.e. the value was not derived from evidence even though it may be right. Aba's three seats span two LGAs and Aba South is far the more populous (~424k vs ~107k in 2006), so Aba South is the likely holder of the extra seat and the current mapping is probably correct. I could not confirm it: no source found ties Aba Central's wards to an LGA. Left as [] pending verification - do not treat the existing value as audited."
+ },
+ "Kano|Kura/Gurun Mallam": {
+  "verdict": "wrong",
+  "shouldBe": [
+   "Garun Malam",
+   "Kura"
+  ],
+  "why": "Compound tier dropped a real LGA. 'Gurun Mallam' is INEC's spelling of the Kano LGA the register spells 'Garun Malam'; difflib scored it 0.87, just under the matcher's 0.88 per-part cutoff, so the part was discarded and only Kura was kept. Corroboration: 'Garun Malam' is the only non-residue Kano LGA with zero constituencies, and Kano needs exactly four two-LGA seats to reconcile 44 LGAs against 40 constituencies - the other three (Rimi Gado/Tofa, Shanono/Bagwai, Tsanyawa/Kunchi) all matched, making this the fourth."
+ },
+ "Osun|Irepodun/Orulu": {
+  "verdict": "wrong",
+  "shouldBe": [
+   "Irepodun",
+   "Orolu"
+  ],
+  "why": "Compound tier dropped a real LGA. 'Orulu' is INEC's spelling of the register's 'Orolu' LGA; difflib scored 0.80, below the 0.88 per-part cutoff, so only Irepodun was kept. Corroboration: 'Orolu' is one of only two unclaimed Osun LGAs, and Osun needs exactly four two-LGA seats to reconcile 30 LGAs against 26 constituencies."
+ },
+ "Osun|Atakunmosa East and West": {
+  "verdict": "wrong",
+  "shouldBe": [
+   "Atakumosa East",
+   "Atakumosa West"
+  ],
+  "why": "Compound tier split on ' and ' into ['Atakunmosa East','West'], and the bare fragment 'West' matched no LGA, so only Atakumosa East was kept. The constituency covers both Atakumosa East and Atakumosa West LGAs. Corroboration: 'Atakumosa West' is the other unclaimed Osun LGA, and this is the fourth of Osun's four required two-LGA seats. The bug is structural: a compound whose components share a prefix ('X East and West') cannot be resolved by splitting alone - the head must be carried into the tail fragment."
+ }
+}

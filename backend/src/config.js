@@ -171,6 +171,33 @@ export const config = {
   // SMS_PRIMARY) the day approval lands; no code change, no redeploy of app/.
   smsOtpEnabled: (process.env.SMS_OTP_ENABLED || '').toLowerCase() === 'true',
 
+  // TWO DIFFERENT RADII, DELIBERATELY INDEPENDENT — do not collapse them back
+  // into one value, however similar they look sitting next to each other.
+  //
+  // discoveryRadiusM answers "HELP ME FIND MY UNIT": how far /api/polling-units
+  // looks when it lists candidate units for the picker. Set too tight and an
+  // observer standing at the gate of their own polling unit is told there is
+  // nothing nearby, and falls back to hand-browsing a 176,846-row register.
+  // Nothing is asserted by listing a unit, so this number is safe to widen.
+  //
+  // geofenceRadiusM answers "PROVE YOU WERE THERE": how close a device fix must
+  // be to a unit's verified coordinates before routes/submissions.js books the
+  // report as location-verified. It is the evidentiary standard behind every
+  // result in the ledger, and widening it retroactively weakens what the badge
+  // on all of them means.
+  //
+  // The two pulled in opposite directions while they shared one value: raising
+  // discovery to a usable radius silently widened the proof radius on every real
+  // election report. Hence the split. A unit found at 480 m and filed from 400 m
+  // is correctly listed here and correctly refused by the fence — that is the
+  // system working, not an inconsistency to tune away.
+  discoveryRadiusM: num('DISCOVERY_RADIUS_M', 500),
+  // Row cap on that discovery list — see routes/pollingUnits.js for the register
+  // density this was measured against. Env-tunable for the same reason the rest
+  // of this file is: a dense-ward surprise on election day should be a config
+  // change, not a deploy.
+  discoveryMaxRows: num('DISCOVERY_MAX_ROWS', 40),
+
   geofenceRadiusM: num('GEOFENCE_RADIUS_M', 200),
   maxGpsAccuracyM: num('MAX_GPS_ACCURACY_M', 100),
   // Tier-2 location trust: a non-geocoded unit earns 'provisional' location status

@@ -3,13 +3,29 @@ import * as WebBrowser from 'expo-web-browser';
 import { Linking, Pressable, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { BRAND } from '@/lib/api';
+import { SectionLabel } from '@/components/content-kit';
+import { useUi } from '@/lib/theme';
 
-/** X's mark is not in Feather (its `twitter` glyph is the retired bird), so it
- *  is drawn from the same path the website's footer uses. */
-function XMark({ color, size = 17 }: { color: string; size?: number }) {
+/** Optical size for every mark in the accounts strip. One constant, so the
+ *  Feather glyphs and the hand-drawn X below can never drift apart. */
+const GLYPH = 20;
+
+/**
+ * X's mark is not in Feather (its `twitter` glyph is the retired bird), so it is
+ * drawn from the same path the website's footer uses.
+ *
+ * The path is byte-identical to the one this file has always carried; only the
+ * viewBox is tightened. In a 24-unit box a Feather glyph stands 20 units tall,
+ * while this mark's ink spans just 16 (x and y both run 4..20) — so at an equal
+ * `size` prop it rendered a fifth shorter than the icons beside it, which is
+ * most of what made the old row read as a mismatched jumble. A 20.5-unit box
+ * centred on (12,12) scales the mark to ~0.78 of its frame: deliberately just
+ * under a Feather glyph's 0.833, because this mark is solid where the others
+ * are stroked, and a solid mark at identical height reads larger.
+ */
+function XMark({ color, size }: { color: string; size: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Svg width={size} height={size} viewBox="1.75 1.75 20.5 20.5">
       <Path
         d="M4 4l6.9 8.4L4.3 20H7l5.1-5.7L16.6 20H20l-7.2-8.8L19.4 4H16.8l-4.6 5.2L8.2 4z"
         fill={color}
@@ -19,14 +35,29 @@ function XMark({ color, size = 17 }: { color: string; size?: number }) {
 }
 
 /**
- * Where to find Hawkeye off-app — the native twin of the social row menu.js
- * builds into every page footer, kept in the same order and pointing at the
- * same accounts.
+ * Where to find Hawkeye off-app.
  *
- * The Telegram bot leads because it is not marketing: it delivers OTP codes
- * and result alerts, so it is the one link an observer may actually need. It
- * opens through Linking first so an installed Telegram app takes it, falling
- * back to the browser.
+ * This shares its ACCOUNTS with the social row menu.js builds into every page
+ * footer — the same four links in the same order, and the X path below is
+ * copied from that footer's — but it is deliberately no longer the same
+ * component. The website footer is a bare strip of four outlined icon circles:
+ * no heading, no Telegram entry, no text labels. This one has all three,
+ * because a footer and a screen section are not the same job: the footer is
+ * something you scroll past, while here the row is content, and on a phone an
+ * unlabelled glyph is a guess. Keep the URL list in step with menu.js; do not
+ * expect the two layouts to converge.
+ *
+ * Two tiers, because these links are not the same kind of thing:
+ *
+ *  - The Telegram bot is not marketing. It delivers OTP codes and result
+ *    alerts, so it is the one link here an observer may actually need, and it
+ *    gets the app's standard action-card shape — icon tile, what it does, a
+ *    real call to action — rather than a glyph in a row of logos.
+ *  - The four social accounts are secondary: one card, four equal cells,
+ *    every mark at the same optical size and every cell the same weight.
+ *
+ * The section heading lives here too, so all three screens that show this
+ * render nothing but <SocialRow /> and cannot drift apart again.
  */
 export const TELEGRAM_BOT = 'https://t.me/HawkEyeNGBot';
 
@@ -55,40 +86,66 @@ async function open(url: string) {
   await WebBrowser.openBrowserAsync(url);
 }
 
-export function SocialRow({ dark }: { dark?: boolean }) {
-  const border = dark ? 'border-white/25' : 'border-black/10';
-  const tint = dark ? '#e8f2ec' : BRAND.leaf;
+export function SocialRow() {
+  const ui = useUi();
   return (
-    <View className="pt-2">
+    <View>
+      <SectionLabel text="Find Hawkeye" />
+
       <Pressable
-        className={`flex-row items-center rounded-2xl border ${border} px-4 py-3 active:opacity-70`}
+        accessibilityRole="button"
+        accessibilityLabel="Open Hawkeye on Telegram, @HawkEyeNGBot"
+        className="flex-row rounded-2xl bg-card p-4 active:opacity-80"
         onPress={() => open(TELEGRAM_BOT)}
       >
-        <Feather name="send" size={17} color={tint} />
-        <View className="flex-1 pl-3">
-          <Text className={`text-sm font-bold ${dark ? 'text-white' : 'text-ink'}`}>
-            Hawkeye on Telegram
-          </Text>
-          <Text className={`text-xs ${dark ? 'text-emerald-200' : 'text-muted'}`}>
-            @HawkEyeNGBot — OTP codes, result alerts
-          </Text>
+        <View className="h-11 w-11 items-center justify-center rounded-2xl bg-surface">
+          <Feather name="send" size={19} color={ui.tint.good.ink} />
         </View>
-        <Feather name="external-link" size={15} color={dark ? '#9db5a7' : '#9db5a7'} />
+        <View className="flex-1 pl-3.5">
+          <Text className="text-base font-bold text-ink">Hawkeye on Telegram</Text>
+          <Text className="pt-1 text-sm leading-5 text-muted">
+            Your OTP codes and result alerts arrive here.
+          </Text>
+          <View className="flex-row items-center pt-2">
+            <Text className="text-sm font-bold text-good-ink">Open @HawkEyeNGBot</Text>
+            <Feather
+              name="arrow-right"
+              size={13}
+              color={ui.tint.good.ink}
+              style={{ marginLeft: 4 }}
+            />
+          </View>
+        </View>
       </Pressable>
 
-      <View className="flex-row justify-center pt-3">
-        {SOCIAL.map((s) => (
+      {/* The accounts, deliberately quieter than the card above: muted marks on
+          one card, split into four equal cells by the same hairline the rest of
+          the app divides list rows with. */}
+      <View className="mt-2 flex-row overflow-hidden rounded-2xl bg-card">
+        {SOCIAL.map((s, i) => (
           <Pressable
             key={s.name}
+            accessibilityRole="button"
             accessibilityLabel={`Hawkeye on ${s.name}`}
             onPress={() => open(s.url)}
-            className={`mx-1.5 h-11 w-11 items-center justify-center rounded-full border ${border} active:opacity-70`}
+            className={`flex-1 items-center py-3.5 active:bg-surface ${
+              i > 0 ? 'border-l border-line' : ''
+            }`}
           >
-            {s.icon === 'x' ? (
-              <XMark color={tint} />
-            ) : (
-              <Feather name={s.icon} size={17} color={tint} />
-            )}
+            {/* Fixed-height box so an SVG mark and a Feather glyph — which is a
+                text run, with a text run's line box — sit on the same line. */}
+            <View className="h-6 justify-center">
+              {s.icon === 'x' ? (
+                <XMark color={ui.muted} size={GLYPH} />
+              ) : (
+                <Feather name={s.icon} size={GLYPH} color={ui.muted} />
+              )}
+            </View>
+            {/* text-muted, not text-faint: --faint is rgb(141 156 147), which is
+                2.87:1 on white. These are 11px, so they get no large-text
+                allowance and 2.87:1 fails AA outright. text-muted is 7.6:1
+                light / 7.7:1 dark and still reads quieter than the marks. */}
+            <Text className="pt-1.5 text-[11px] font-medium text-muted">{s.name}</Text>
           </Pressable>
         ))}
       </View>

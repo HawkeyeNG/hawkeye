@@ -1,0 +1,2820 @@
+{
+ "Abia|Aba South": [
+  "Aba South"
+ ],
+ "Abia|Ukwa East": [
+  "Ukwa East"
+ ],
+ "Abia|Ikwuano": [
+  "Ikwuano"
+ ],
+ "Abia|Osisioma North": [
+  "Osisioma"
+ ],
+ "Abia|Osisioma South": [
+  "Osisioma"
+ ],
+ "Abia|Umuahia Central": [
+  "Umuahia South"
+ ],
+ "Abia|Umuahia North": [
+  "Umuahia North"
+ ],
+ "Abia|Ohafia South": [
+  "Ohafia"
+ ],
+ "Abia|Isiala Ngwa North": [
+  "Isiala Ngwa North"
+ ],
+ "Abia|Umunneochi": [
+  "Umunneochi"
+ ],
+ "Abia|Aba Central": [
+  "Aba South"
+ ],
+ "Abia|Bende South": [
+  "Bende"
+ ],
+ "Abia|Ugwunaagbo": [
+  "Ugwunagbo"
+ ],
+ "Abia|Bende North": [
+  "Bende"
+ ],
+ "Abia|Isuikwuato": [
+  "Isuikwuato"
+ ],
+ "Abia|Obingwa East": [
+  "Obingwa"
+ ],
+ "Abia|Aba North": [
+  "Aba North"
+ ],
+ "Abia|Umuahia East": [
+  "Umuahia South"
+ ],
+ "Abia|Ukwa West": [
+  "Ukwa West"
+ ],
+ "Abia|Arochukwu": [
+  "Arochukwu"
+ ],
+ "Abia|Isiala Ngwa South": [
+  "Isiala Ngwa South"
+ ],
+ "Abia|Umuahia South": [
+  "Umuahia South"
+ ],
+ "Abia|Obingwa West": [
+  "Obingwa"
+ ],
+ "Abia|Ohafia North": [
+  "Ohafia"
+ ],
+ "Adamawa|Yola North": [
+  "Yola North"
+ ],
+ "Adamawa|Fufore/Gurin (Fufore I)": [
+  "Fufore"
+ ],
+ "Adamawa|Mubi North": [
+  "Mubi North"
+ ],
+ "Adamawa|Verre (Fufore II)": [
+  "Fufore"
+ ],
+ "Adamawa|Koma/Leko (Jada I)": [
+  "Jada"
+ ],
+ "Adamawa|Hong (Hong II)": [
+  "Hong"
+ ],
+ "Adamawa|Nassarawo/Binyeri (Mayo Belwa I)": [
+  "Mayobelwa"
+ ],
+ "Adamawa|Lamurde": [
+  "Lamurde"
+ ],
+ "Adamawa|Girei": [
+  "Gire 1"
+ ],
+ "Adamawa|Shelleng": [
+  "Shelleng"
+ ],
+ "Adamawa|Gombi": [
+  "Gombi"
+ ],
+ "Adamawa|Mubi South": [
+  "Mubi South"
+ ],
+ "Adamawa|Song": [
+  "Song"
+ ],
+ "Adamawa|Michika": [
+  "Michika"
+ ],
+ "Adamawa|Jada/Mbulo (Jada II)": [
+  "Jada"
+ ],
+ "Adamawa|Maiha": [
+  "Maiha"
+ ],
+ "Adamawa|Numan": [
+  "Numan"
+ ],
+ "Adamawa|Ganye": [
+  "Ganye"
+ ],
+ "Adamawa|Toungo": [
+  "Toungo"
+ ],
+ "Adamawa|Uba/Gaya (Hong I)": [
+  "Hong"
+ ],
+ "Adamawa|Mayo-Belwa (Mayo Belwa II)": [
+  "Mayobelwa"
+ ],
+ "Adamawa|Madagali": [
+  "Madagali"
+ ],
+ "Adamawa|Guyuk": [
+  "Guyuk"
+ ],
+ "Adamawa|Demsa": [
+  "Demsa"
+ ],
+ "Adamawa|Yola South": [
+  "Yola South"
+ ],
+ "Akwa Ibom|Esit Eket/Ibeno": [
+  "Esit Eket",
+  "Ibeno"
+ ],
+ "Akwa Ibom|Ikot Ekpene/Obot Akara": [
+  "Ikot Ekpene",
+  "Obot Akara"
+ ],
+ "Akwa Ibom|Etim Ekpo/Ika": [
+  "Etim Ekpo",
+  "Ika"
+ ],
+ "Akwa Ibom|Nsit Ubium": [
+  "Nsit Ubium"
+ ],
+ "Akwa Ibom|Itu": [
+  "Itu"
+ ],
+ "Akwa Ibom|Nsit Atai": [
+  "Nsit Atai"
+ ],
+ "Akwa Ibom|Uruan": [
+  "Uruan"
+ ],
+ "Akwa Ibom|Okobo": [
+  "Okobo"
+ ],
+ "Akwa Ibom|Ukanafun": [
+  "Ukanafun"
+ ],
+ "Akwa Ibom|Ibiono Ibom": [
+  "Ibiono Ibom"
+ ],
+ "Akwa Ibom|Essien Udim": [
+  "Essien Udim"
+ ],
+ "Akwa Ibom|Uyo": [
+  "Uyo"
+ ],
+ "Akwa Ibom|Ini": [
+  "Ini"
+ ],
+ "Akwa Ibom|Urue Offong/Oruko": [
+  "Urue Offong/Oruko"
+ ],
+ "Akwa Ibom|Ikot Abasi/Eastern Obolo": [
+  "Eastern Obolo",
+  "Ikot Abasi"
+ ],
+ "Akwa Ibom|Ikono": [
+  "Ikono"
+ ],
+ "Akwa Ibom|Onna": [
+  "Onna"
+ ],
+ "Akwa Ibom|Etinan": [
+  "Etinan"
+ ],
+ "Akwa Ibom|Ibesikpo Asutan": [
+  "Ibesikpo Asutan"
+ ],
+ "Akwa Ibom|Abak": [
+  "Abak"
+ ],
+ "Akwa Ibom|Mkpat Enin": [
+  "Mkpat Enin"
+ ],
+ "Akwa Ibom|Oron/Udung Uko": [
+  "Oron",
+  "Udung Uko"
+ ],
+ "Akwa Ibom|Oruk Anam": [
+  "Oruk Anam"
+ ],
+ "Akwa Ibom|Eket": [
+  "Eket"
+ ],
+ "Akwa Ibom|Nsit Ibom": [
+  "Nsit Ibom"
+ ],
+ "Akwa Ibom|Mbo": [
+  "Mbo"
+ ],
+ "Anambra|Awka North": [
+  "Awka North"
+ ],
+ "Anambra|Onitsha North II": [
+  "Onitsha-North"
+ ],
+ "Anambra|Ogbaru II": [
+  "Ogbaru"
+ ],
+ "Anambra|Onitsha North I": [
+  "Onitsha-North"
+ ],
+ "Anambra|Aguata I": [
+  "Aguata"
+ ],
+ "Anambra|Ihiala II": [
+  "Ihala"
+ ],
+ "Anambra|Oyi": [
+  "Oyi"
+ ],
+ "Anambra|Idemili North": [
+  "Idemili North"
+ ],
+ "Anambra|Orumba North": [
+  "Orumba North"
+ ],
+ "Anambra|Nnewi South II": [
+  "Nnewi South"
+ ],
+ "Anambra|Awka South II": [
+  "Awka South"
+ ],
+ "Anambra|Ihiala I": [
+  "Ihala"
+ ],
+ "Anambra|Ayamelum": [
+  "Ayamelum"
+ ],
+ "Anambra|Nnewi South I": [
+  "Nnewi South"
+ ],
+ "Anambra|Orumba South": [
+  "Orumba South"
+ ],
+ "Anambra|Anaocha II": [
+  "Anaocha"
+ ],
+ "Anambra|Nnewi North": [
+  "Nnewi North"
+ ],
+ "Anambra|Aguata II": [
+  "Aguata"
+ ],
+ "Anambra|Anambra West": [
+  "Anambra West"
+ ],
+ "Anambra|Ogbaru I": [
+  "Ogbaru"
+ ],
+ "Anambra|Anaocha I": [
+  "Anaocha"
+ ],
+ "Anambra|Njikoka I": [
+  "Njikoka"
+ ],
+ "Anambra|Ekwusigo": [
+  "Ekwusigo"
+ ],
+ "Anambra|Njikoka II": [
+  "Njikoka"
+ ],
+ "Anambra|Idemili South": [
+  "Idemili-South"
+ ],
+ "Anambra|Awka South I": [
+  "Awka South"
+ ],
+ "Anambra|Anambra East": [
+  "Anambra East"
+ ],
+ "Anambra|Onitsha South II": [
+  "Onitsha -South"
+ ],
+ "Anambra|Onitsha South I": [
+  "Onitsha -South"
+ ],
+ "Anambra|Dunukofia": [
+  "Dunukofia"
+ ],
+ "Bauchi|Zungur/Galambi (Bauchi II)": [
+  "Bauchi"
+ ],
+ "Bauchi|Bauchi (Bauchi I)": [
+  "Bauchi"
+ ],
+ "Bauchi|Sakwa (Zaki I)": [
+  "Zaki"
+ ],
+ "Bauchi|Jama'are": [
+  "Jama'Are"
+ ],
+ "Bauchi|Ganjuwa West": [
+  "Ganjuwa"
+ ],
+ "Bauchi|Ganjuwa East": [
+  "Ganjuwa"
+ ],
+ "Bauchi|Sade (Darazo II)": [
+  "Darazo"
+ ],
+ "Bauchi|Lere/Bula (Tafawa/balewa)": [
+  "Tafawa Balewa"
+ ],
+ "Bauchi|Katagum (Katagum I)": [
+  "Katagum"
+ ],
+ "Bauchi|Darazo (Darazo I)": [
+  "Darazo"
+ ],
+ "Bauchi|Dambam/Dagauda/Jalam": [
+  "Dambam"
+ ],
+ "Bauchi|Burra (Ningi II)": [
+  "Ningi"
+ ],
+ "Bauchi|Ningi (Ningi I)": [
+  "Ningi"
+ ],
+ "Bauchi|Jama'a/Toro (Toro II)": [
+  "Toro"
+ ],
+ "Bauchi|Bogoro": [
+  "Bogoro"
+ ],
+ "Bauchi|Kirfi": [
+  "Kirfi"
+ ],
+ "Bauchi|Azare (Zaki II)": [
+  "Zaki"
+ ],
+ "Bauchi|Lame (Toro I)": [
+  "Toro"
+ ],
+ "Bauchi|Giade": [
+  "Giade"
+ ],
+ "Bauchi|Udubo (Gamawa I)": [
+  "Gamawa"
+ ],
+ "Bauchi|Madara/Chinade (Katagum II)": [
+  "Katagum"
+ ],
+ "Bauchi|Gamawa (Gamawa II)": [
+  "Gamawa"
+ ],
+ "Bauchi|Duguri/Gwana (Alkaleri II)": [
+  "Alkaleri"
+ ],
+ "Bauchi|Pali (Alkaleri I)": [
+  "Alkaleri"
+ ],
+ "Bauchi|Warji": [
+  "Warji"
+ ],
+ "Bauchi|Shira I (Disina)": [
+  "Shira"
+ ],
+ "Bauchi|Dass": [
+  "Dass"
+ ],
+ "Bauchi|Itas/Gadau": [
+  "Itas/Gadau"
+ ],
+ "Bauchi|Hardawa (Misau II)": [
+  "Misau"
+ ],
+ "Bauchi|Chiroma (Misau I)": [
+  "Misau"
+ ],
+ "Bauchi|Shira II (Shira)": [
+  "Shira"
+ ],
+ "Bayelsa|Brass II": [
+  "Brass"
+ ],
+ "Bayelsa|Kolokuma/Opokuma II": [
+  "Kolokuma/Opokuma"
+ ],
+ "Bayelsa|Brass III": [
+  "Brass"
+ ],
+ "Bayelsa|Yenagoa III": [
+  "Yenagoa"
+ ],
+ "Bayelsa|Ekeremor I": [
+  "Ekeremor"
+ ],
+ "Bayelsa|Nembe III": [
+  "Nembe"
+ ],
+ "Bayelsa|Yenagoa I": [
+  "Yenagoa"
+ ],
+ "Bayelsa|Yenagoa II": [
+  "Yenagoa"
+ ],
+ "Bayelsa|Nembe I": [
+  "Nembe"
+ ],
+ "Bayelsa|Ekeremor II": [
+  "Ekeremor"
+ ],
+ "Bayelsa|Ogbia III": [
+  "Ogbia"
+ ],
+ "Bayelsa|Nembe II": [
+  "Nembe"
+ ],
+ "Bayelsa|Ogbia II": [
+  "Ogbia"
+ ],
+ "Bayelsa|Ogbia I": [
+  "Ogbia"
+ ],
+ "Bayelsa|Kolokuma/Opokuma I": [
+  "Kolokuma/Opokuma"
+ ],
+ "Bayelsa|Sagbama III": [
+  "Sagbama"
+ ],
+ "Bayelsa|Southern Ijaw IV": [
+  "Southern Ijaw"
+ ],
+ "Bayelsa|Ekeremor III": [
+  "Ekeremor"
+ ],
+ "Bayelsa|Sagbama I": [
+  "Sagbama"
+ ],
+ "Bayelsa|Sagbama II": [
+  "Sagbama"
+ ],
+ "Bayelsa|Southern Ijaw II": [
+  "Southern Ijaw"
+ ],
+ "Bayelsa|Southern Ijaw I": [
+  "Southern Ijaw"
+ ],
+ "Bayelsa|Southern Ijaw III": [
+  "Southern Ijaw"
+ ],
+ "Bayelsa|Brass I": [
+  "Brass"
+ ],
+ "Benue|Okpokwu": [
+  "Okpokwu"
+ ],
+ "Benue|Kwande East": [
+  "Kwande"
+ ],
+ "Benue|Otukpo/Akpa": [
+  "Otukpo"
+ ],
+ "Benue|Ogbadibo": [
+  "Ogbadibo"
+ ],
+ "Benue|Ado": [
+  "Ado"
+ ],
+ "Benue|Gwer East": [
+  "Gwer East"
+ ],
+ "Benue|Makurdi I (North)": [
+  "Makurdi"
+ ],
+ "Benue|Logo": [
+  "Logo"
+ ],
+ "Benue|Makurdi South": [
+  "Makurdi"
+ ],
+ "Benue|Vandeikya I": [
+  "Vandeikya"
+ ],
+ "Benue|Kwande West": [
+  "Kwande"
+ ],
+ "Benue|Tarka": [
+  "Tarka"
+ ],
+ "Benue|Gboko West": [
+  "Gboko"
+ ],
+ "Benue|Katsina-Ala West": [
+  "Katsina-Ala"
+ ],
+ "Benue|Ukum I (Ngenev)": [
+  "Ukum"
+ ],
+ "Benue|Mata (Ushongo I)": [
+  "Ushongo"
+ ],
+ "Benue|Katsina Ala East": [
+  "Katsina-Ala"
+ ],
+ "Benue|Vandeikya II": [
+  "Vandeikya"
+ ],
+ "Benue|Mbagwa (Ushongo II)": [
+  "Ushongo"
+ ],
+ "Benue|Obi": [
+  "Obi"
+ ],
+ "Benue|Oju I": [
+  "Oju"
+ ],
+ "Benue|Oju II": [
+  "Oju"
+ ],
+ "Benue|Agbatu": [
+  "Agatu"
+ ],
+ "Benue|Guma (Guma I)": [
+  "Guma"
+ ],
+ "Benue|Ohimini": [
+  "Ohimini"
+ ],
+ "Benue|Konshisha I (Gaav)": [
+  "Konshisha"
+ ],
+ "Benue|Buruku": [
+  "Buruku"
+ ],
+ "Benue|Agasha (Guma II)": [
+  "Guma"
+ ],
+ "Benue|Apa": [
+  "Apa"
+ ],
+ "Benue|Gboko I (East)": [
+  "Gboko"
+ ],
+ "Benue|Gwer West": [
+  "Gwer West"
+ ],
+ "Borno|Maiduguri M.c": [
+  "Maiduguri M. C."
+ ],
+ "Borno|Konduga": [
+  "Konduga"
+ ],
+ "Borno|Gwoza": [
+  "Gwoza"
+ ],
+ "Borno|Hawul": [
+  "Hawul"
+ ],
+ "Borno|Bayo": [
+  "Bayo"
+ ],
+ "Borno|Kukawa": [
+  "Kukawa"
+ ],
+ "Borno|Biu": [
+  "Biu"
+ ],
+ "Borno|Kwaya Kusar": [
+  "Kwaya / Kusar"
+ ],
+ "Borno|Kala Balge": [
+  "Kala Balge"
+ ],
+ "Borno|Kaga": [
+  "Kaga"
+ ],
+ "Borno|Chibok": [
+  "Chibok"
+ ],
+ "Borno|Jere": [
+  "Jere"
+ ],
+ "Borno|Damaboa": [
+  "Damboa"
+ ],
+ "Borno|Mafa": [
+  "Mafa"
+ ],
+ "Borno|Guzamala": [
+  "Guzamala"
+ ],
+ "Borno|Dikwa": [
+  "Dikwa"
+ ],
+ "Borno|Abadam": [
+  "Abadam"
+ ],
+ "Borno|Ngala": [
+  "Ngala"
+ ],
+ "Borno|Nganzai": [
+  "Nganzai"
+ ],
+ "Borno|Mobbar": [
+  "Mobbar"
+ ],
+ "Borno|Marte": [
+  "Marte"
+ ],
+ "Borno|Monguno": [
+  "Monguno"
+ ],
+ "Borno|Bama II (Gulumba)": [
+  "Bama"
+ ],
+ "Borno|Bama I (Bama)": [
+  "Bama"
+ ],
+ "Borno|Magumeri": [
+  "Magumeri"
+ ],
+ "Borno|Gubio": [
+  "Gubio"
+ ],
+ "Borno|Shani": [
+  "Shani"
+ ],
+ "Cross River|Boki II": [
+  "Boki"
+ ],
+ "Cross River|Calabar South I": [
+  "Calabar South"
+ ],
+ "Cross River|Yala I": [
+  "Yala"
+ ],
+ "Cross River|Yakurr I": [
+  "Yakurr"
+ ],
+ "Cross River|Odukpani": [
+  "Odukpani"
+ ],
+ "Cross River|Obudu": [
+  "Obudu"
+ ],
+ "Cross River|Obubra II": [
+  "Obubra"
+ ],
+ "Cross River|Obubra I": [
+  "Obubra"
+ ],
+ "Cross River|Obanleku": [
+  "Obanliku"
+ ],
+ "Cross River|Ikom II": [
+  "Ikom"
+ ],
+ "Cross River|Ikom I": [
+  "Ikom"
+ ],
+ "Cross River|Etung": [
+  "Etung"
+ ],
+ "Cross River|Calabar South II": [
+  "Calabar South"
+ ],
+ "Cross River|Yakurr II": [
+  "Yakurr"
+ ],
+ "Cross River|Akpabuyo": [
+  "Akpabuyo"
+ ],
+ "Cross River|Abi": [
+  "Abi"
+ ],
+ "Cross River|Bekwarra": [
+  "Bekwarra"
+ ],
+ "Cross River|Akamkpa II": [
+  "Akamkpa"
+ ],
+ "Cross River|Boki I": [
+  "Boki"
+ ],
+ "Cross River|Calabar Municipal": [
+  "Calabar Municipality"
+ ],
+ "Cross River|Bakassi": [
+  "Bakassi"
+ ],
+ "Cross River|Ogoja": [
+  "Ogoja"
+ ],
+ "Cross River|Akamkpa I": [
+  "Akamkpa"
+ ],
+ "Cross River|Biase": [
+  "Biase"
+ ],
+ "Cross River|Yala II": [
+  "Yala"
+ ],
+ "Delta|Ughelli South": [
+  "Ughelli South"
+ ],
+ "Delta|Burutu": [
+  "Burutu"
+ ],
+ "Delta|Ndokwa East": [
+  "Ndokwa East"
+ ],
+ "Delta|Aniocha North": [
+  "Aniocha North"
+ ],
+ "Delta|Ika North East": [
+  "Ika North- East"
+ ],
+ "Delta|Burutu North": [
+  "Burutu"
+ ],
+ "Delta|Ndokwa West": [
+  "Ndokwa West"
+ ],
+ "Delta|Ika South": [
+  "Ika North- East"
+ ],
+ "Delta|Oshimili North": [
+  "Oshimilinorth"
+ ],
+ "Delta|Aniocha South": [
+  "Aniocha North"
+ ],
+ "Delta|Oshimili South": [
+  "Oshimilisouth"
+ ],
+ "Delta|Udu": [
+  "Udu"
+ ],
+ "Delta|Uvwie": [
+  "Uvwie"
+ ],
+ "Delta|Isoko South I": [
+  "Isoko South"
+ ],
+ "Delta|Isoko South II": [
+  "Isoko South"
+ ],
+ "Delta|Patani": [
+  "Patani"
+ ],
+ "Delta|Ethiope West": [
+  "Ethiope West"
+ ],
+ "Delta|Isoko North": [
+  "Isoko North"
+ ],
+ "Delta|Warri South II": [
+  "Warri South"
+ ],
+ "Delta|Ughelli North I": [
+  "Ughelli North"
+ ],
+ "Delta|Warri South- West": [
+  "Warri South West"
+ ],
+ "Delta|Warri South I": [
+  "Warri South"
+ ],
+ "Delta|Ethiope East": [
+  "Ethiope East"
+ ],
+ "Delta|Sapele": [
+  "Sapele"
+ ],
+ "Delta|Warri North": [
+  "Warri North"
+ ],
+ "Delta|Ukwuani": [
+  "Ukwuani"
+ ],
+ "Delta|Ughelli North II": [
+  "Ughelli North"
+ ],
+ "Delta|Bomadi": [
+  "Bomadi"
+ ],
+ "Delta|Okpe": [
+  "Okpe"
+ ],
+ "Ebonyi|Izzi West": [
+  "Izzi"
+ ],
+ "Ebonyi|Ezza South": [
+  "Ezza South"
+ ],
+ "Ebonyi|Afikpo North West": [
+  "Afikpo South"
+ ],
+ "Ebonyi|Ikwo North": [
+  "Ikwo"
+ ],
+ "Ebonyi|Ohaozara West": [
+  "Ohaozara"
+ ],
+ "Ebonyi|Afikpo North East": [
+  "Afikpo South"
+ ],
+ "Ebonyi|Ikwo South": [
+  "Ikwo"
+ ],
+ "Ebonyi|Afikpo South East": [
+  "Afikpo South"
+ ],
+ "Ebonyi|Ishielu North": [
+  "Ishielu"
+ ],
+ "Ebonyi|Izzi East": [
+  "Izzi"
+ ],
+ "Ebonyi|Ishielu South": [
+  "Ishielu"
+ ],
+ "Ebonyi|Onicha West": [
+  "Onicha"
+ ],
+ "Ebonyi|Ohaozara East": [
+  "Ohaozara"
+ ],
+ "Ebonyi|Ezza North East": [
+  "Ezza North"
+ ],
+ "Ebonyi|Abakaliki South": [
+  "Abakaliki"
+ ],
+ "Ebonyi|Ebonyi North West": [
+  "Ebonyi"
+ ],
+ "Ebonyi|Ohaukwu North": [
+  "Ohaukwu"
+ ],
+ "Ebonyi|Ezza North West": [
+  "Ezza North"
+ ],
+ "Ebonyi|Onicha East": [
+  "Onicha"
+ ],
+ "Ebonyi|Ohaukwu South": [
+  "Ohaukwu"
+ ],
+ "Ebonyi|Afikpo South West": [
+  "Afikpo South"
+ ],
+ "Ebonyi|Abakaliki North": [
+  "Abakaliki"
+ ],
+ "Ebonyi|Ebonyi North East": [
+  "Ebonyi"
+ ],
+ "Ebonyi|Ivo": [
+  "Ivo"
+ ],
+ "Edo|Esan South East": [
+  "Esan South East"
+ ],
+ "Edo|Owan East": [
+  "Owan East"
+ ],
+ "Edo|Uhunmwode": [
+  "Uhunmwode"
+ ],
+ "Edo|Esan Central": [
+  "Esan Central"
+ ],
+ "Edo|Orhionmwon II": [
+  "Orhionmwon"
+ ],
+ "Edo|Owan West": [
+  "Owan West"
+ ],
+ "Edo|Ikpoba - Okha": [
+  "Ikpoba/Okha"
+ ],
+ "Edo|Ovia North East I": [
+  "Ovia North East"
+ ],
+ "Edo|Egor": [
+  "Egor"
+ ],
+ "Edo|Oredo West": [
+  "Oredo"
+ ],
+ "Edo|Ovia North East II": [
+  "Ovia North East"
+ ],
+ "Edo|Oredo East": [
+  "Oredo"
+ ],
+ "Edo|Etsako West II": [
+  "Etsako West"
+ ],
+ "Edo|Etsako East": [
+  "Etsako East"
+ ],
+ "Edo|Esan North East II": [
+  "Esan North East"
+ ],
+ "Edo|Orhionmwon I": [
+  "Orhionmwon"
+ ],
+ "Edo|Akoko Edo II": [
+  "Akoko Edo"
+ ],
+ "Edo|Akoko Edo I": [
+  "Akoko Edo"
+ ],
+ "Edo|Esan North East I": [
+  "Esan North East"
+ ],
+ "Edo|Etsako Central": [
+  "Etsako Central"
+ ],
+ "Edo|Etsako West I": [
+  "Etsako West"
+ ],
+ "Edo|Igueben": [
+  "Igueben"
+ ],
+ "Edo|Esan West": [
+  "Esan West"
+ ],
+ "Edo|Ovia South West": [
+  "Ovia South West"
+ ],
+ "Ekiti|Ekiti West II": [
+  "Ekiti West"
+ ],
+ "Ekiti|Ekiti East I": [
+  "Ekiti East"
+ ],
+ "Ekiti|Moba II": [
+  "Moba"
+ ],
+ "Ekiti|Ekiti East II": [
+  "Ekiti East"
+ ],
+ "Ekiti|Irepodun/Ifelodun II": [
+  "Irepodun / Ifelodun"
+ ],
+ "Ekiti|Ekiti South West I": [
+  "Ekiti South West"
+ ],
+ "Ekiti|Efon": [
+  "Efon"
+ ],
+ "Ekiti|Ido/Osi II": [
+  "Ido / Osi"
+ ],
+ "Ekiti|Ilejemeje": [
+  "Ilejemeje"
+ ],
+ "Ekiti|Ekiti South West II": [
+  "Ekiti South West"
+ ],
+ "Ekiti|Moba I": [
+  "Moba"
+ ],
+ "Ekiti|Emure": [
+  "Emure"
+ ],
+ "Ekiti|Ekiti West I": [
+  "Ekiti West"
+ ],
+ "Ekiti|Irepodun/Ifelodun I": [
+  "Irepodun / Ifelodun"
+ ],
+ "Ekiti|Ido/Osi I": [
+  "Ido / Osi"
+ ],
+ "Ekiti|Oye I": [
+  "Oye"
+ ],
+ "Ekiti|Ikere I": [
+  "Ikere"
+ ],
+ "Ekiti|Oye II": [
+  "Oye"
+ ],
+ "Ekiti|Ikere II": [
+  "Ikere"
+ ],
+ "Ekiti|Ijero": [
+  "Ijero"
+ ],
+ "Ekiti|Gbonyin": [
+  "Gbonyin"
+ ],
+ "Ekiti|Ise/Orun": [
+  "Ise / Orun"
+ ],
+ "Ekiti|Ikole I": [
+  "Ikole"
+ ],
+ "Ekiti|Ikole II": [
+  "Ikole"
+ ],
+ "Enugu|Enugu North": [
+  "Enugu North"
+ ],
+ "Enugu|Awgu South": [
+  "Awgu"
+ ],
+ "Enugu|Igbo-Eze North I": [
+  "Igbo Eze North"
+ ],
+ "Enugu|Nsukka East": [
+  "Nsukka"
+ ],
+ "Enugu|Aniniri": [
+  "Aninri"
+ ],
+ "Enugu|Awgu North": [
+  "Awgu"
+ ],
+ "Enugu|Igbo-Etiti West": [
+  "Igbo Etiti"
+ ],
+ "Enugu|Udi North": [
+  "Udi"
+ ],
+ "Enugu|Isi-Uzo": [
+  "Isi Uzo"
+ ],
+ "Enugu|Enugu South I": [
+  "Enugu South"
+ ],
+ "Enugu|Igbo-Eze South": [
+  "Igbo Eze South"
+ ],
+ "Enugu|Oji River": [
+  "Oji-River"
+ ],
+ "Enugu|Nkanu West": [
+  "Nkanu West"
+ ],
+ "Enugu|Ezeagu": [
+  "Ezeagu"
+ ],
+ "Enugu|Nsukka West": [
+  "Nsukka"
+ ],
+ "Enugu|Nkanu East": [
+  "Nkanu East"
+ ],
+ "Enugu|Udi South": [
+  "Udi"
+ ],
+ "Enugu|Igbo-Eze North II": [
+  "Igbo Eze North"
+ ],
+ "Enugu|Enugu East II": [
+  "Enugu East"
+ ],
+ "Enugu|Enugu East I": [
+  "Enugu East"
+ ],
+ "Enugu|Enugu South II": [
+  "Enugu South"
+ ],
+ "Enugu|Igbo-Etiti East": [
+  "Igbo Etiti"
+ ],
+ "Enugu|Udenu": [
+  "Udenu"
+ ],
+ "Enugu|Uzo Uwani": [
+  "Uzo-Uwani"
+ ],
+ "Gombe|Kwami West": [
+  "Kwami"
+ ],
+ "Gombe|Kwami East": [
+  "Kwami"
+ ],
+ "Gombe|Akko North": [
+  "Akko"
+ ],
+ "Gombe|Akko Central": [
+  "Akko"
+ ],
+ "Gombe|Gombe North": [
+  "Gombe"
+ ],
+ "Gombe|Funakaye South": [
+  "Funakaye"
+ ],
+ "Gombe|Billiri East": [
+  "Billiri"
+ ],
+ "Gombe|Funakaye North": [
+  "Funakaye"
+ ],
+ "Gombe|Dukku South": [
+  "Dukku"
+ ],
+ "Gombe|Balanga South": [
+  "Balanga"
+ ],
+ "Gombe|Dukku North": [
+  "Dukku"
+ ],
+ "Gombe|Billiri West": [
+  "Billiri"
+ ],
+ "Gombe|Gombe South": [
+  "Gombe"
+ ],
+ "Gombe|Kaltungo West": [
+  "Kaltungo"
+ ],
+ "Gombe|Shongom": [
+  "Shongom"
+ ],
+ "Gombe|Balanga North": [
+  "Balanga"
+ ],
+ "Gombe|Nafada South": [
+  "Nafada"
+ ],
+ "Gombe|Nafada North": [
+  "Nafada"
+ ],
+ "Gombe|Kaltungo East": [
+  "Kaltungo"
+ ],
+ "Gombe|Akko West": [
+  "Akko"
+ ],
+ "Imo|Orlu": [
+  "Orlu"
+ ],
+ "Imo|Ideato South": [
+  "Ideato South"
+ ],
+ "Imo|Oguta": [
+  "Oguta"
+ ],
+ "Imo|Owerri West": [
+  "Owerri West"
+ ],
+ "Imo|Ehime Mbano": [
+  "Ehime Mbano"
+ ],
+ "Imo|Ngor Okpala": [
+  "Ngor Okpala"
+ ],
+ "Imo|Nwangele": [
+  "Nwangele"
+ ],
+ "Imo|Owerri North": [
+  "Owerri North"
+ ],
+ "Imo|Ohaji/Egbema": [
+  "Ohaji/Egbema"
+ ],
+ "Imo|Ikeduru": [
+  "Ikeduru"
+ ],
+ "Imo|Owerri Municipal": [
+  "Owerri Municipal"
+ ],
+ "Imo|Mbaitoli": [
+  "Mbaitoli"
+ ],
+ "Imo|Ideato North": [
+  "Ideato North"
+ ],
+ "Imo|Orsu": [
+  "Orsu"
+ ],
+ "Imo|Oru East": [
+  "Oru-East"
+ ],
+ "Imo|Obowo": [
+  "Obowo"
+ ],
+ "Imo|Okigwe": [
+  "Okigwe"
+ ],
+ "Imo|Onuimo": [
+  "Onuimo"
+ ],
+ "Imo|Ahiazu Mbaise": [
+  "Ahiazu Mbaise"
+ ],
+ "Imo|Isiala Mbano": [
+  "Isiala Mbano"
+ ],
+ "Imo|Ihite/Uboma": [
+  "Ihitte/Uboma"
+ ],
+ "Imo|Aboh Mbaise": [
+  "Aboh Mbaise"
+ ],
+ "Imo|Njaba": [
+  "Njaba"
+ ],
+ "Imo|Nkwerre": [
+  "Nkwerre"
+ ],
+ "Imo|Isu": [
+  "Isu"
+ ],
+ "Imo|Oru West": [
+  "Oru West"
+ ],
+ "Jigawa|Dutse": [
+  "Dutse"
+ ],
+ "Jigawa|Gumel": [
+  "Gumel"
+ ],
+ "Jigawa|Garki": [
+  "Garki"
+ ],
+ "Jigawa|Babura": [
+  "Babura"
+ ],
+ "Jigawa|Gwiwa": [
+  "Gwiwa"
+ ],
+ "Jigawa|Kazaure": [
+  "Kazaure"
+ ],
+ "Jigawa|Kaugama": [
+  "Kaugama"
+ ],
+ "Jigawa|Kiri-Kasamma": [
+  "Kirika Samma"
+ ],
+ "Jigawa|Birniwa": [
+  "Birniwa"
+ ],
+ "Jigawa|Kafin Hausa": [
+  "Kafin Hausa"
+ ],
+ "Jigawa|Jahun": [
+  "Jahun"
+ ],
+ "Jigawa|Hadejia": [
+  "Hadejia"
+ ],
+ "Jigawa|Gwaram": [
+  "Gwaram"
+ ],
+ "Jigawa|Birnin Kudu": [
+  "Birnin Kudu"
+ ],
+ "Jigawa|Guri": [
+  "Guri"
+ ],
+ "Jigawa|Buji": [
+  "Buji"
+ ],
+ "Jigawa|Taura": [
+  "Taura"
+ ],
+ "Jigawa|Gagarawa": [
+  "Gagarawa"
+ ],
+ "Jigawa|Maigatari": [
+  "Maigatari"
+ ],
+ "Jigawa|Roni": [
+  "Roni"
+ ],
+ "Jigawa|Auyo": [
+  "Auyo"
+ ],
+ "Jigawa|Yankwashi": [
+  "Yankwashi"
+ ],
+ "Jigawa|Mallam Madori": [
+  "Malam Madori"
+ ],
+ "Jigawa|Ringim": [
+  "Ringim"
+ ],
+ "Jigawa|Kiyawa": [
+  "Kiyawa"
+ ],
+ "Jigawa|Miga": [
+  "Miga"
+ ],
+ "Jigawa|Sule-Tankarkar": [
+  "Sule-Tankarkar"
+ ],
+ "Kaduna|Soba": [
+  "Soba"
+ ],
+ "Kaduna|Lere West": [
+  "Lere"
+ ],
+ "Kaduna|Igabi West": [
+  "Igabi"
+ ],
+ "Kaduna|Kachia": [
+  "Kachia"
+ ],
+ "Kaduna|Chikun I": [
+  "Chikun"
+ ],
+ "Kaduna|Jaba": [
+  "Jaba"
+ ],
+ "Kaduna|Sabon Gari": [
+  "Sabon Gari"
+ ],
+ "Kaduna|Kudan": [
+  "Kudan"
+ ],
+ "Kaduna|Sanga": [
+  "Sanga"
+ ],
+ "Kaduna|Makarfi": [
+  "Makarfi"
+ ],
+ "Kaduna|Giwa West": [
+  "Giwa"
+ ],
+ "Kaduna|Chawai/Kauru": [
+  "Kauru"
+ ],
+ "Kaduna|Lere East": [
+  "Lere"
+ ],
+ "Kaduna|Igabi East": [
+  "Igabi"
+ ],
+ "Kaduna|Kubau": [
+  "Kubau"
+ ],
+ "Kaduna|Jema'a": [
+  "Jema'A"
+ ],
+ "Kaduna|Ikara": [
+  "Ikara"
+ ],
+ "Kaduna|Zangon Kataf": [
+  "Zangon Kataf"
+ ],
+ "Kaduna|Kajuru": [
+  "Kajuru"
+ ],
+ "Kaduna|Kagarko": [
+  "Kagarko"
+ ],
+ "Kaduna|Giwa East": [
+  "Giwa"
+ ],
+ "Kaduna|Kaura": [
+  "Kaura"
+ ],
+ "Kano|Munjibir": [
+  "Minjibir"
+ ],
+ "Kano|Ajingi": [
+  "Ajingi"
+ ],
+ "Kano|Ungogo": [
+  "Ungogo"
+ ],
+ "Kano|Dawakin Kudu": [
+  "Dawaki Kudu"
+ ],
+ "Kano|Madobi": [
+  "Madobi"
+ ],
+ "Kano|Bichi": [
+  "Bichi"
+ ],
+ "Kano|Rimi Gado/Tofa": [
+  "Rimin Gado",
+  "Tofa"
+ ],
+ "Kano|Dawakin Tofa": [
+  "Dawaki Tofa"
+ ],
+ "Kano|Bunkure": [
+  "Bunkure"
+ ],
+ "Kano|Takai": [
+  "Takai"
+ ],
+ "Kano|Kura/Gurun Mallam": [
+  "Kura"
+ ],
+ "Kano|Gaya": [
+  "Gaya"
+ ],
+ "Kano|Nassarawa": [
+  "Nasarawa"
+ ],
+ "Kano|Karaye": [
+  "Karaye"
+ ],
+ "Kano|Kumbotso": [
+  "Kumbotso"
+ ],
+ "Kano|Gabasawa": [
+  "Gabasawa"
+ ],
+ "Kano|Gwarzo": [
+  "Gwarzo"
+ ],
+ "Kano|Dala": [
+  "Dala"
+ ],
+ "Kano|Fagge": [
+  "Fagge"
+ ],
+ "Kano|Rano": [
+  "Rano"
+ ],
+ "Kano|Gwale": [
+  "Gwale"
+ ],
+ "Kano|Tsanyawa/Kunchi": [
+  "Kunchi",
+  "Tsanyawa"
+ ],
+ "Kano|Kibiya": [
+  "Kibiya"
+ ],
+ "Kano|Sumaila": [
+  "Sumaila"
+ ],
+ "Kano|Bebeji": [
+  "Bebeji"
+ ],
+ "Kano|Albasu": [
+  "Albasu"
+ ],
+ "Kano|Kabo": [
+  "Kabo"
+ ],
+ "Kano|Wudil": [
+  "Wudil"
+ ],
+ "Kano|Shanono/Bagwai": [
+  "Bagwai",
+  "Shanono"
+ ],
+ "Kano|Kano Municipal": [
+  "Kano Municipal"
+ ],
+ "Kano|Kiru": [
+  "Kiru"
+ ],
+ "Kano|Rogo": [
+  "Rogo"
+ ],
+ "Kano|Makoda": [
+  "Makoda"
+ ],
+ "Kano|Tudun Wada": [
+  "Tudun Wada"
+ ],
+ "Kano|Tarauni": [
+  "Tarauni"
+ ],
+ "Kano|Doguwa": [
+  "Doguwa"
+ ],
+ "Kano|Gezawa": [
+  "Gezawa"
+ ],
+ "Kano|Garko": [
+  "Garko"
+ ],
+ "Kano|Warawa": [
+  "Warawa"
+ ],
+ "Katsina|Bakori": [
+  "Bakori"
+ ],
+ "Katsina|Batsari": [
+  "Batsari"
+ ],
+ "Katsina|Funtua": [
+  "Funtua"
+ ],
+ "Katsina|Mashi": [
+  "Mashi"
+ ],
+ "Katsina|Rimi": [
+  "Rimi"
+ ],
+ "Katsina|Kurfi": [
+  "Kurfi"
+ ],
+ "Katsina|Dutsin-Ma": [
+  "Dutsin-Ma"
+ ],
+ "Katsina|Safana": [
+  "Safana"
+ ],
+ "Katsina|Faskari": [
+  "Faskari"
+ ],
+ "Katsina|Katsina": [
+  "Katsina"
+ ],
+ "Katsina|Mai'adua": [
+  "Mai'Adua"
+ ],
+ "Katsina|Sandamu": [
+  "Sandamu"
+ ],
+ "Katsina|Bindawa": [
+  "Bindawa"
+ ],
+ "Katsina|Dutsi": [
+  "Dutsi"
+ ],
+ "Katsina|Musawa": [
+  "Musawa"
+ ],
+ "Katsina|Charanchi": [
+  "Charanchi"
+ ],
+ "Katsina|Baure": [
+  "Baure"
+ ],
+ "Katsina|Daura": [
+  "Daura"
+ ],
+ "Katsina|Danja": [
+  "Danja"
+ ],
+ "Katsina|Batagarawa": [
+  "Batagarawa"
+ ],
+ "Katsina|Sabuwa": [
+  "Sabuwa"
+ ],
+ "Katsina|Kusada": [
+  "Kusada"
+ ],
+ "Katsina|Zango": [
+  "Zango"
+ ],
+ "Katsina|Kankia": [
+  "Kankia"
+ ],
+ "Katsina|Danmusa": [
+  "Dan Musa"
+ ],
+ "Katsina|Kafur": [
+  "Kafur"
+ ],
+ "Katsina|Kankara": [
+  "Kankara"
+ ],
+ "Katsina|Ingawa": [
+  "Ingawa"
+ ],
+ "Katsina|Mani": [
+  "Mani"
+ ],
+ "Katsina|Jibia": [
+  "Jibia"
+ ],
+ "Katsina|Kaita": [
+  "Kaita"
+ ],
+ "Katsina|Dandume": [
+  "Dandume"
+ ],
+ "Katsina|Matazu": [
+  "Matazu"
+ ],
+ "Kebbi|Yauri": [
+  "Yauri"
+ ],
+ "Kebbi|Shanga": [
+  "Shanga"
+ ],
+ "Kebbi|Fakai": [
+  "Fakai"
+ ],
+ "Kebbi|Birnin Kebbi South": [
+  "Birnin Kebbi"
+ ],
+ "Kebbi|Birnin Kebbi North": [
+  "Birnin Kebbi"
+ ],
+ "Kebbi|Bagudo East": [
+  "Bagudo"
+ ],
+ "Kebbi|Wasagu/Danko East": [
+  "Wasagu/Danko"
+ ],
+ "Kebbi|Zuru": [
+  "Zuru"
+ ],
+ "Kebbi|Jega": [
+  "Jega"
+ ],
+ "Kebbi|Sakaba": [
+  "Sakaba"
+ ],
+ "Kebbi|Ngaski": [
+  "Ngaski"
+ ],
+ "Kebbi|Gwandu": [
+  "Gwandu"
+ ],
+ "Kebbi|Koko/Besse": [
+  "Koko/Besse"
+ ],
+ "Kebbi|Wasagu/Danko West": [
+  "Wasagu/Danko"
+ ],
+ "Kebbi|Arewa": [
+  "Arewa"
+ ],
+ "Kebbi|Bunza": [
+  "Bunza"
+ ],
+ "Kebbi|Dandi": [
+  "Dandi"
+ ],
+ "Kebbi|Kalgo": [
+  "Kalgo"
+ ],
+ "Kebbi|Argungu": [
+  "Argungu"
+ ],
+ "Kebbi|Maiyama": [
+  "Maiyama"
+ ],
+ "Kebbi|Suru": [
+  "Suru"
+ ],
+ "Kebbi|Augie": [
+  "Augie"
+ ],
+ "Kebbi|Bagudo West": [
+  "Bagudo"
+ ],
+ "Kogi|Kabba/Bunu": [
+  "Kabba/Bunu"
+ ],
+ "Kogi|Ofu": [
+  "Ofu"
+ ],
+ "Kogi|Ankpa II": [
+  "Ankpa"
+ ],
+ "Kogi|Bassa": [
+  "Bassa"
+ ],
+ "Kogi|Igalamela-Odolu": [
+  "Igalamela/Odolu"
+ ],
+ "Kogi|Idah": [
+  "Idah"
+ ],
+ "Kogi|Adavi": [
+  "Adavi"
+ ],
+ "Kogi|Ibaji": [
+  "Ibaji"
+ ],
+ "Kogi|Okene II (South)": [
+  "Okene"
+ ],
+ "Kogi|Yagba West": [
+  "Yagba West"
+ ],
+ "Kogi|Omala": [
+  "Omala"
+ ],
+ "Kogi|Ijumu": [
+  "Ijumu"
+ ],
+ "Kogi|Lokoja I": [
+  "Lokoja"
+ ],
+ "Kogi|Yagba East": [
+  "Yagba East"
+ ],
+ "Kogi|Lokoja II": [
+  "Lokoja"
+ ],
+ "Kogi|Olamaboro I": [
+  "Olamaboro"
+ ],
+ "Kogi|Dekina/Biraidu": [
+  "Dekina"
+ ],
+ "Kogi|Ajaokuta": [
+  "Ajaokuta"
+ ],
+ "Kogi|Ankpa I": [
+  "Ankpa"
+ ],
+ "Kogi|Okehi": [
+  "Okehi"
+ ],
+ "Kwara|Oke-Ogun/Oyun II": [
+  "Oyun"
+ ],
+ "Kwara|Balogun/Ojumu/Offa I": [
+  "Offa"
+ ],
+ "Kwara|Isin": [
+  "Isin"
+ ],
+ "Kwara|Irepodun": [
+  "Irepodun"
+ ],
+ "Kwara|Ekiti": [
+  "Ekiti"
+ ],
+ "Kwara|Shawo/Essa/Offa II": [
+  "Offa"
+ ],
+ "Kwara|Oke-Ero": [
+  "Okeero"
+ ],
+ "Kwara|Odo-Ogun/Oyun I": [
+  "Oyun"
+ ],
+ "Kwara|Patigi": [
+  "Patigi"
+ ],
+ "Kwara|Oloru/Malete/Ipaiye/Moro II": [
+  "Moro"
+ ],
+ "Kwara|Lanwa/Ejidongari/Moro I": [
+  "Moro"
+ ],
+ "Kwara|Lafiagi/Edu": [
+  "Edu"
+ ],
+ "Kwara|Kaiama/Wajibe/Kemanji/Kaiama II": [
+  "Kaiama"
+ ],
+ "Kwara|Ilorin South": [
+  "Ilorin-South"
+ ],
+ "Kwara|Ilorin East": [
+  "Ilorin East"
+ ],
+ "Kwara|Ilorin West/Ilorin West II": [
+  "Ilorin-West"
+ ],
+ "Kwara|Ilorin Central/Ilorin West I": [
+  "Ilorin-West"
+ ],
+ "Kwara|Gwanabe/Adena/Banni/Kaiama I": [
+  "Kaiama"
+ ],
+ "Lagos|Shomolu II": [
+  "Somolu"
+ ],
+ "Lagos|Agege I": [
+  "Agege"
+ ],
+ "Lagos|Agege II": [
+  "Agege"
+ ],
+ "Lagos|Ojo II": [
+  "Ojo"
+ ],
+ "Lagos|Amuwo Odofin I": [
+  "Amuwo-Odofin"
+ ],
+ "Lagos|Lagos Island II": [
+  "Lagos Island"
+ ],
+ "Lagos|Ifako/Ijaiye I": [
+  "Ifako-Ijaye"
+ ],
+ "Lagos|Ajeromi/Ifelodun II": [
+  "Ajeromi/Ifelodun"
+ ],
+ "Lagos|Badagry II": [
+  "Badagry"
+ ],
+ "Lagos|Lagos Mainland II": [
+  "Lagos Mainland"
+ ],
+ "Lagos|Ikorodu I": [
+  "Ikorodu"
+ ],
+ "Lagos|Oshodi/Isolo I": [
+  "Oshodi/Isolo"
+ ],
+ "Lagos|Lagos Mainland I": [
+  "Lagos Mainland"
+ ],
+ "Lagos|Ifako/Ijaiye II": [
+  "Ifako-Ijaye"
+ ],
+ "Lagos|Ojo I": [
+  "Ojo"
+ ],
+ "Lagos|Oshodi/Isolo II": [
+  "Oshodi/Isolo"
+ ],
+ "Lagos|Apapa II": [
+  "Apapa"
+ ],
+ "Lagos|Eti-Osa II": [
+  "Eti-Osa"
+ ],
+ "Lagos|Ikeja II": [
+  "Ikeja"
+ ],
+ "Lagos|Alimosho II": [
+  "Alimosho"
+ ],
+ "Lagos|Mushin II": [
+  "Mushin"
+ ],
+ "Lagos|Badagry I": [
+  "Badagry"
+ ],
+ "Lagos|Ikeja I": [
+  "Ikeja"
+ ],
+ "Lagos|Alimosho I": [
+  "Alimosho"
+ ],
+ "Lagos|Surulere II": [
+  "Surulere"
+ ],
+ "Lagos|Mushin I": [
+  "Mushin"
+ ],
+ "Lagos|Eti-Osa I": [
+  "Eti-Osa"
+ ],
+ "Lagos|Epe II": [
+  "Epe"
+ ],
+ "Lagos|Ikorodu II": [
+  "Ikorodu"
+ ],
+ "Lagos|Ajeromi/Ifelodun I": [
+  "Ajeromi/Ifelodun"
+ ],
+ "Lagos|Amuwo Odofin II": [
+  "Amuwo-Odofin"
+ ],
+ "Lagos|Epe I": [
+  "Epe"
+ ],
+ "Lagos|Kosofe I": [
+  "Kosofe"
+ ],
+ "Lagos|Apapa I": [
+  "Apapa"
+ ],
+ "Lagos|Kosofe II": [
+  "Kosofe"
+ ],
+ "Lagos|Shomolu I": [
+  "Somolu"
+ ],
+ "Lagos|Ibeju-Lekki I": [
+  "Ibeju/Lekki"
+ ],
+ "Lagos|Lagos Island I": [
+  "Lagos Island"
+ ],
+ "Lagos|Surulere I": [
+  "Surulere"
+ ],
+ "Lagos|Ibeju-Lekki II": [
+  "Ibeju/Lekki"
+ ],
+ "Nasarawa|Akwanga South": [
+  "Akwanga"
+ ],
+ "Nasarawa|Nasarawa-Eggon West": [
+  "Nasarawa Eggon"
+ ],
+ "Nasarawa|Keffi West": [
+  "Keffi"
+ ],
+ "Nasarawa|Keffi East": [
+  "Keffi"
+ ],
+ "Nasarawa|Wamba": [
+  "Wamba"
+ ],
+ "Nasarawa|Nasarawa-Eggon East": [
+  "Nasarawa Eggon"
+ ],
+ "Nasarawa|Karu/Gitata": [
+  "Karu"
+ ],
+ "Nasarawa|Lafia North": [
+  "Lafia"
+ ],
+ "Nasarawa|Lafia Central": [
+  "Lafia"
+ ],
+ "Nasarawa|Akwanga North": [
+  "Akwanga"
+ ],
+ "Nasarawa|Keana": [
+  "Keana"
+ ],
+ "Nasarawa|Kokona East": [
+  "Kokona"
+ ],
+ "Nasarawa|Doma South": [
+  "Doma"
+ ],
+ "Nasarawa|Kokona West": [
+  "Kokona"
+ ],
+ "Nasarawa|Obi I": [
+  "Obi"
+ ],
+ "Nasarawa|Awe North": [
+  "Awe"
+ ],
+ "Nasarawa|Awe South": [
+  "Awe"
+ ],
+ "Nasarawa|Nasarawa West (Loki/udege)": [
+  "Nasarawa"
+ ],
+ "Nasarawa|Gadabuke/Toto (Toto I)": [
+  "Toto"
+ ],
+ "Nasarawa|Nasarawa Central": [
+  "Nasarawa"
+ ],
+ "Nasarawa|Doma North": [
+  "Doma"
+ ],
+ "Nasarawa|Obi II": [
+  "Obi"
+ ],
+ "Nasarawa|Umaisha/Dausu (Toto II)": [
+  "Toto"
+ ],
+ "Niger|Bosso": [
+  "Bosso"
+ ],
+ "Niger|Gbako": [
+  "Gbako"
+ ],
+ "Niger|Chanchanga": [
+  "Chanchaga"
+ ],
+ "Niger|Bida I (North)": [
+  "Bida"
+ ],
+ "Niger|Kontagora I": [
+  "Kontagora"
+ ],
+ "Niger|Mashegu": [
+  "Mashegu"
+ ],
+ "Niger|Mariga": [
+  "Mariga"
+ ],
+ "Niger|Magama": [
+  "Magama"
+ ],
+ "Niger|Lavun": [
+  "Lavun"
+ ],
+ "Niger|Kotangora II": [
+  "Kontagora"
+ ],
+ "Niger|Bida II (South)": [
+  "Bida"
+ ],
+ "Niger|Lapai": [
+  "Lapai"
+ ],
+ "Niger|Borgu": [
+  "Borgu"
+ ],
+ "Niger|Suleja": [
+  "Suleja"
+ ],
+ "Niger|Gurara": [
+  "Gurara"
+ ],
+ "Niger|Katcha": [
+  "Katcha"
+ ],
+ "Niger|Edatti": [
+  "Edatti"
+ ],
+ "Niger|Agaie": [
+  "Agaie"
+ ],
+ "Niger|Wushishi": [
+  "Wushishi"
+ ],
+ "Niger|Paikoro": [
+  "Paikoro"
+ ],
+ "Niger|Shiroro": [
+  "Shiroro"
+ ],
+ "Niger|Mokwa": [
+  "Mokwa"
+ ],
+ "Niger|Rijau": [
+  "Rijau"
+ ],
+ "Niger|Agwara": [
+  "Agwara"
+ ],
+ "Niger|Rafi": [
+  "Rafi"
+ ],
+ "Niger|Munya": [
+  "Munya"
+ ],
+ "Niger|Tafa": [
+  "Tafa"
+ ],
+ "Ogun|Abeokuta North": [
+  "Abeokuta North"
+ ],
+ "Ogun|Ogun Waterside": [
+  "Ogun Water Side"
+ ],
+ "Ogun|Ikenne": [
+  "Ikenne"
+ ],
+ "Ogun|Ado/Odo/Ota I": [
+  "Ado Odo-Ota"
+ ],
+ "Ogun|Ifo II": [
+  "Ifo"
+ ],
+ "Ogun|Ijebu North I": [
+  "Ijebu North"
+ ],
+ "Ogun|Ijebu North II": [
+  "Ijebu North"
+ ],
+ "Ogun|Obafemi/Owode": [
+  "Obafemi/Owode"
+ ],
+ "Ogun|Egbado South": [
+  "Egbado South"
+ ],
+ "Ogun|Ijebu-Ode": [
+  "Ijebu Ode"
+ ],
+ "Ogun|Remo North": [
+  "Remo North"
+ ],
+ "Ogun|Abeokuta South II": [
+  "Abeokuta South"
+ ],
+ "Ogun|Ifo I": [
+  "Ifo"
+ ],
+ "Ogun|Abeokuta South I": [
+  "Abeokuta South"
+ ],
+ "Ogun|Egbado North I": [
+  "Egbado North"
+ ],
+ "Ogun|Ado-Odo/Ota II": [
+  "Ado Odo-Ota"
+ ],
+ "Ogun|Ijebu North East": [
+  "Ijebu North East"
+ ],
+ "Ogun|Imeko-Afon": [
+  "Imeko/Afon"
+ ],
+ "Ogun|Ewekoro": [
+  "Ewekoro"
+ ],
+ "Ogun|Odogbolu": [
+  "Odogbolu"
+ ],
+ "Ogun|Egbado North II": [
+  "Egbado North"
+ ],
+ "Ondo|Ilaje I": [
+  "Ilaje"
+ ],
+ "Ondo|Akoko North West II": [
+  "Akoko North West"
+ ],
+ "Ondo|Akoko South East": [
+  "Akoko South East"
+ ],
+ "Ondo|Akoko South West I": [
+  "Akoko South West"
+ ],
+ "Ondo|Akoko South West II": [
+  "Akoko South West"
+ ],
+ "Ondo|Akure North": [
+  "Akure North"
+ ],
+ "Ondo|Akure South I": [
+  "Akure South"
+ ],
+ "Ondo|Akure South II": [
+  "Akure South"
+ ],
+ "Ondo|Ese Odo": [
+  "Ese-Odo"
+ ],
+ "Ondo|Ifedore": [
+  "Ifedore"
+ ],
+ "Ondo|Okitipupa II": [
+  "Okitipupa"
+ ],
+ "Ondo|Owo I": [
+  "Owo"
+ ],
+ "Ondo|Ilaje II": [
+  "Ilaje"
+ ],
+ "Ondo|Odigbo II": [
+  "Odigbo"
+ ],
+ "Ondo|Okitipupa I": [
+  "Okitipupa"
+ ],
+ "Ondo|Owo II": [
+  "Owo"
+ ],
+ "Ondo|Idanre": [
+  "Idanre"
+ ],
+ "Ondo|Akoko North West I": [
+  "Akoko North West"
+ ],
+ "Ondo|Akoko North East": [
+  "Akoko North East"
+ ],
+ "Ondo|Ile Oluji/Oke Igbo": [
+  "Ileoluji/Okeigbo"
+ ],
+ "Ondo|Ondo West I": [
+  "Ondo West"
+ ],
+ "Ondo|Irele": [
+  "Irele"
+ ],
+ "Ondo|Ose": [
+  "Ose"
+ ],
+ "Ondo|Odigbo I": [
+  "Odigbo"
+ ],
+ "Ondo|Ondo West II": [
+  "Ondo West"
+ ],
+ "Ondo|Ondo East": [
+  "Ondo East"
+ ],
+ "Osun|Ayedire": [
+  "Ayedire"
+ ],
+ "Osun|Ifelodun": [
+  "Ifelodun"
+ ],
+ "Osun|Iwo": [
+  "Iwo"
+ ],
+ "Osun|Odo-Otin": [
+  "Odo-Otin"
+ ],
+ "Osun|Ayedade": [
+  "Ayedaade"
+ ],
+ "Osun|Ifedayo": [
+  "Ifedayo"
+ ],
+ "Osun|Irepodun/Orulu": [
+  "Irepodun"
+ ],
+ "Osun|Boripe/Boluwa- Duro": [
+  "Boluwaduro",
+  "Boripe"
+ ],
+ "Osun|Ife East": [
+  "Ife East"
+ ],
+ "Osun|Egbedore": [
+  "Egbedore"
+ ],
+ "Osun|Ede South": [
+  "Ede South"
+ ],
+ "Osun|Ejigbo": [
+  "Ejigbo"
+ ],
+ "Osun|Ife North": [
+  "Ife North"
+ ],
+ "Osun|Oriade": [
+  "Oriade"
+ ],
+ "Osun|Ife Central": [
+  "Ife Central"
+ ],
+ "Osun|Osogbo": [
+  "Osogbo"
+ ],
+ "Osun|Ilesa West": [
+  "Ilesa West"
+ ],
+ "Osun|Ede North": [
+  "Ede North"
+ ],
+ "Osun|Olorunda": [
+  "Olorunda"
+ ],
+ "Osun|Ila": [
+  "Ila"
+ ],
+ "Osun|Ola-Oluwa": [
+  "Ola-Oluwa"
+ ],
+ "Osun|Irewole/Isokan": [
+  "Irewole",
+  "Isokan"
+ ],
+ "Osun|Obokun": [
+  "Obokun"
+ ],
+ "Osun|Atakunmosa East and West": [
+  "Atakumosa East"
+ ],
+ "Osun|Ilesa East": [
+  "Ilesa East"
+ ],
+ "Osun|Ife South": [
+  "Ife South"
+ ],
+ "Oyo|Ibadan South West II": [
+  "Ibadan South West"
+ ],
+ "Oyo|Iwajowa": [
+  "Iwajowa"
+ ],
+ "Oyo|Oorelope": [
+  "Oorelope"
+ ],
+ "Oyo|Saki West": [
+  "Saki West"
+ ],
+ "Oyo|Ibarapa North & Ibarapa Central": [
+  "Ibarapa Central",
+  "Ibarapa North"
+ ],
+ "Oyo|Ibadan North- East II": [
+  "Ibadan North East"
+ ],
+ "Oyo|Oluyole": [
+  "Oluyole"
+ ],
+ "Oyo|Kajola": [
+  "Kajola"
+ ],
+ "Oyo|Akinyele II": [
+  "Akinyele"
+ ],
+ "Oyo|Oyo West/Oyo East": [
+  "Oyo East",
+  "Oyo West"
+ ],
+ "Oyo|Ibadan North I": [
+  "Ibadan North"
+ ],
+ "Oyo|Egbeda": [
+  "Egbeda"
+ ],
+ "Oyo|Lagelu": [
+  "Lagelu"
+ ],
+ "Oyo|Saki East and Atisbo": [
+  "Atisbo",
+  "Saki East"
+ ],
+ "Oyo|Ogbomoso South": [
+  "Ogbomoso South"
+ ],
+ "Oyo|Atiba": [
+  "Atiba"
+ ],
+ "Oyo|Ibadan South- West I": [
+  "Ibadan South West"
+ ],
+ "Oyo|Ogbomoso North": [
+  "Ogbomoso North"
+ ],
+ "Oyo|Ibarapa East": [
+  "Ibarapa East"
+ ],
+ "Oyo|Oriire": [
+  "Ori Ire"
+ ],
+ "Oyo|Ibadan North West": [
+  "Ibadan North West"
+ ],
+ "Oyo|Ido": [
+  "Ido"
+ ],
+ "Oyo|Irepo & Olorunsogo": [
+  "Irepo",
+  "Olorunsogo"
+ ],
+ "Oyo|Akinyele I": [
+  "Akinyele"
+ ],
+ "Oyo|Afijio": [
+  "Afijio"
+ ],
+ "Oyo|Ibadan North II": [
+  "Ibadan North"
+ ],
+ "Oyo|Ibadan South- East II": [
+  "Ibadan South-East"
+ ],
+ "Oyo|Iseyin and Itesiwaju": [
+  "Iseyin",
+  "Itesiwaju"
+ ],
+ "Oyo|Ona-Ara": [
+  "Ona-Ara"
+ ],
+ "Oyo|Ogo-Oluwa/Surulere": [
+  "Ogo-Oluwa",
+  "Surulere"
+ ],
+ "Oyo|Ibadan North East I": [
+  "Ibadan North East"
+ ],
+ "Oyo|Ibadan South- East I": [
+  "Ibadan South-East"
+ ],
+ "Plateau|Jos South": [
+  "Jos South"
+ ],
+ "Plateau|Riyom": [
+  "Riyom"
+ ],
+ "Plateau|Jos North": [
+  "Jos North"
+ ],
+ "Plateau|Mangu South": [
+  "Mangu"
+ ],
+ "Plateau|Langtang Central": [
+  "Langtang South"
+ ],
+ "Plateau|Langtang North": [
+  "Langtang North"
+ ],
+ "Plateau|Mikang": [
+  "Mikang"
+ ],
+ "Plateau|Qua'an Pan South": [
+  "Qua'An Pan"
+ ],
+ "Plateau|Pankshin North": [
+  "Pankshin"
+ ],
+ "Plateau|Langtang South": [
+  "Langtang South"
+ ],
+ "Plateau|Shendam": [
+  "Shendam"
+ ],
+ "Plateau|Kanke": [
+  "Kanke"
+ ],
+ "Plateau|Pankshin South": [
+  "Pankshin"
+ ],
+ "Plateau|Jos East": [
+  "Jos East"
+ ],
+ "Plateau|Mangu North": [
+  "Mangu"
+ ],
+ "Plateau|Jos North West": [
+  "Jos South"
+ ],
+ "Plateau|Bokkos": [
+  "Bokkos"
+ ],
+ "Plateau|Barkin Ladi": [
+  "Barikin Ladi"
+ ],
+ "Plateau|Wase": [
+  "Wase"
+ ],
+ "Plateau|Qua'an Pan North": [
+  "Qua'An Pan"
+ ],
+ "Rivers|Khana I": [
+  "Khana"
+ ],
+ "Rivers|Port-Harcourt III": [
+  "Port Harcourt"
+ ],
+ "Rivers|Emohua": [
+  "Emohua"
+ ],
+ "Rivers|Obio/Akpor II": [
+  "Obio/Akpor"
+ ],
+ "Rivers|Asari-Toru II": [
+  "Asari-Toru"
+ ],
+ "Rivers|Ogba/Egbema/Ndoni": [
+  "Ogba/Egbema/Ndoni"
+ ],
+ "Rivers|Ahoada West": [
+  "Ahoada West"
+ ],
+ "Rivers|Degema": [
+  "Degema"
+ ],
+ "Rivers|Akuku-Toru II": [
+  "Akuku Toru"
+ ],
+ "Rivers|Okrika": [
+  "Okrika"
+ ],
+ "Rivers|Khana II": [
+  "Khana"
+ ],
+ "Rivers|Akuku-Toru I": [
+  "Akuku Toru"
+ ],
+ "Rivers|Etche I": [
+  "Etche"
+ ],
+ "Rivers|Bonny": [
+  "Bonny"
+ ],
+ "Rivers|Tai": [
+  "Tai"
+ ],
+ "Rivers|Ikwere I": [
+  "Ikwerre"
+ ],
+ "Rivers|Asari-Toru I": [
+  "Asari-Toru"
+ ],
+ "Rivers|Andoni I": [
+  "Andoni"
+ ],
+ "Rivers|Obio/Akpor I": [
+  "Obio/Akpor"
+ ],
+ "Rivers|Ahoada East I": [
+  "Ahoada East"
+ ],
+ "Rivers|Abua/Odual": [
+  "Abua-Odual"
+ ],
+ "Rivers|Etche II": [
+  "Etche"
+ ],
+ "Rivers|Port-Harcourt II": [
+  "Port Harcourt"
+ ],
+ "Rivers|Eleme": [
+  "Eleme"
+ ],
+ "Rivers|Oyigbo": [
+  "Oyigbo"
+ ],
+ "Rivers|Ogu/Bolo": [
+  "Ogu/Bolo"
+ ],
+ "Rivers|Opobo/Nkoro": [
+  "Opobo/Nekoro"
+ ],
+ "Rivers|Gokana": [
+  "Gokana"
+ ],
+ "Rivers|Port-Harcourt I": [
+  "Port Harcourt"
+ ],
+ "Rivers|Omuma": [
+  "Omuma"
+ ],
+ "Rivers|Ahoada East II": [
+  "Ahoada East"
+ ],
+ "Sokoto|Tureta": [
+  "Tureta"
+ ],
+ "Sokoto|Tambuwal East": [
+  "Tambuwal"
+ ],
+ "Sokoto|Kware": [
+  "Kware"
+ ],
+ "Sokoto|Sokoto North I": [
+  "Sokoto North"
+ ],
+ "Sokoto|Sokoto South I": [
+  "Sokoto South"
+ ],
+ "Sokoto|Shagari": [
+  "Shagari"
+ ],
+ "Sokoto|Tambuwal West": [
+  "Tambuwal"
+ ],
+ "Sokoto|Gada West": [
+  "Gada"
+ ],
+ "Sokoto|Dange Shuni": [
+  "Dange/Shuni"
+ ],
+ "Sokoto|Goronyo": [
+  "Goronyo"
+ ],
+ "Sokoto|Sokoto South II": [
+  "Sokoto South"
+ ],
+ "Sokoto|Gada East": [
+  "Gada"
+ ],
+ "Sokoto|Wamakko": [
+  "Wamakko"
+ ],
+ "Sokoto|Tangaza": [
+  "Tangaza"
+ ],
+ "Sokoto|Yabo": [
+  "Yabo"
+ ],
+ "Sokoto|Kebbe": [
+  "Kebbe"
+ ],
+ "Sokoto|Isa": [
+  "Isa"
+ ],
+ "Sokoto|Gwadabawa South": [
+  "Gwadabawa"
+ ],
+ "Sokoto|Gwadabawa North": [
+  "Gwadabawa"
+ ],
+ "Sokoto|Gudu": [
+  "Gudu"
+ ],
+ "Sokoto|Illela": [
+  "Illela"
+ ],
+ "Sokoto|Rabah": [
+  "Rabah"
+ ],
+ "Sokoto|Silame": [
+  "Silame"
+ ],
+ "Sokoto|Sokoto North II": [
+  "Sokoto North"
+ ],
+ "Sokoto|Wurno": [
+  "Wurno"
+ ],
+ "Sokoto|Bodinga South": [
+  "Bodinga"
+ ],
+ "Sokoto|Bodinga North": [
+  "Bodinga"
+ ],
+ "Sokoto|Binji": [
+  "Binji"
+ ],
+ "Taraba|Jalingo I": [
+  "Jalingo"
+ ],
+ "Taraba|Wukari II": [
+  "Wukari"
+ ],
+ "Taraba|Gashaka": [
+  "Gashaka"
+ ],
+ "Taraba|Karim Lamido II": [
+  "Karim-Lamido"
+ ],
+ "Taraba|Gassol I": [
+  "Gassol"
+ ],
+ "Taraba|Yorro": [
+  "Yorro"
+ ],
+ "Taraba|Jalingo II": [
+  "Jalingo"
+ ],
+ "Taraba|Ibi": [
+  "Ibi"
+ ],
+ "Taraba|Lau": [
+  "Lau"
+ ],
+ "Taraba|Zing": [
+  "Zing"
+ ],
+ "Taraba|Kurmi": [
+  "Kurmi"
+ ],
+ "Taraba|Ardo-Kola": [
+  "Ardokola"
+ ],
+ "Taraba|Bali II": [
+  "Bali"
+ ],
+ "Taraba|Takum I": [
+  "Takum"
+ ],
+ "Taraba|Wukari I": [
+  "Wukari"
+ ],
+ "Taraba|Bali I": [
+  "Bali"
+ ],
+ "Taraba|Gembu (Sardauna I)": [
+  "Sardauna"
+ ],
+ "Taraba|Karim Lamido I": [
+  "Karim-Lamido"
+ ],
+ "Taraba|Gassol II": [
+  "Gassol"
+ ],
+ "Taraba|Kashimbila (Takum II)": [
+  "Takum"
+ ],
+ "Taraba|Ussa/Likam": [
+  "Ussa"
+ ],
+ "Yobe|Gulani": [
+  "Gulani"
+ ],
+ "Yobe|Tarmuwa": [
+  "Tarmuwa"
+ ],
+ "Yobe|Nangere": [
+  "Nangere"
+ ],
+ "Yobe|Geidam North": [
+  "Geidam"
+ ],
+ "Yobe|Fika/Ngalda": [
+  "Fika"
+ ],
+ "Yobe|Damaturu I": [
+  "Damaturu"
+ ],
+ "Yobe|Nguru I": [
+  "Nguru"
+ ],
+ "Yobe|Nguru II": [
+  "Nguru"
+ ],
+ "Yobe|Yunusari I": [
+  "Yunusari"
+ ],
+ "Yobe|Machina": [
+  "Machina"
+ ],
+ "Yobe|Karasuwa": [
+  "Karasawa"
+ ],
+ "Yobe|Jakusko": [
+  "Jakusko"
+ ],
+ "Yobe|Yusufari II": [
+  "Yusufari"
+ ],
+ "Yobe|Bade West": [
+  "Bade"
+ ],
+ "Yobe|Damaturu II": [
+  "Damaturu"
+ ],
+ "Yobe|Geidam South": [
+  "Geidam"
+ ],
+ "Yobe|Gujba": [
+  "Gujba"
+ ],
+ "Yobe|Bade East": [
+  "Bade"
+ ],
+ "Yobe|Bursari": [
+  "Bursari"
+ ],
+ "Zamfara|Kaura Namoda North": [
+  "Kaura Namoda"
+ ],
+ "Zamfara|Bukkuyum South": [
+  "Bukkuyum"
+ ],
+ "Zamfara|Anka": [
+  "Anka"
+ ],
+ "Zamfara|Bukkuyum North": [
+  "Bukkuyum"
+ ],
+ "Zamfara|Tsafe West": [
+  "Tsafe"
+ ],
+ "Zamfara|Gummi II": [
+  "Gummi"
+ ],
+ "Zamfara|Talata Mafara North": [
+  "Talata Mafara"
+ ],
+ "Zamfara|Maru South": [
+  "Maru"
+ ],
+ "Zamfara|Gusau East": [
+  "Gusau"
+ ],
+ "Zamfara|Bungudu East": [
+  "Bungudu"
+ ],
+ "Zamfara|Gusau West": [
+  "Gusau"
+ ],
+ "Zamfara|Zurmi East": [
+  "Zurmi"
+ ],
+ "Zamfara|Zurmi West": [
+  "Zurmi"
+ ],
+ "Zamfara|Bakura": [
+  "Bakura"
+ ],
+ "Zamfara|Maradun I": [
+  "Maradun"
+ ],
+ "Zamfara|Bungudu West": [
+  "Bungudu"
+ ],
+ "Zamfara|Talata Mafara South": [
+  "Talata Mafara"
+ ],
+ "Zamfara|Maradun II": [
+  "Maradun"
+ ],
+ "Zamfara|Maru North": [
+  "Maru"
+ ],
+ "Zamfara|Tsafe East": [
+  "Tsafe"
+ ],
+ "Zamfara|Gummi I": [
+  "Gummi"
+ ],
+ "Zamfara|Shinkafi": [
+  "Shinkafi"
+ ],
+ "Zamfara|Kaura Namoda South": [
+  "Kaura Namoda"
+ ],
+ "Zamfara|Birnin Magaji": [
+  "Birnin Magaji"
+ ]
+}

@@ -145,6 +145,15 @@ export type SubmitInput = {
   /** The submission-time fix taken on the review screen. */
   fix: { lat: number; lng: number; accuracy: number };
   sheetSerial?: string;
+  /**
+   * This send is a REHEARSAL — the contest has not opened yet, the observer was
+   * told so, and the point is to walk the whole flow and have the server refuse
+   * it with `reporting_not_open`.
+   *
+   * It changes exactly one thing: an undelivered dry run is discarded instead of
+   * being handed to the outbox. See `park()` below for why that matters.
+   */
+  dryRun?: boolean;
 };
 
 /**
@@ -210,6 +219,8 @@ export type CollationInput = {
   venue: Shot;
   fix: { lat: number; lng: number; accuracy: number };
   formSerial?: string;
+  /** Rehearsal before election day — see SubmitInput.dryRun. */
+  dryRun?: boolean;
 };
 
 /** Human line per backend error code — same tone as the web flow's one-liners. */
@@ -319,6 +330,25 @@ async function handOff(
   }
 }
 
+/**
+ * The other end of `handOff` — what an UNDELIVERED DRY RUN becomes.
+ *
+ * A rehearsal must leave nothing behind. Queuing one would put a report the
+ * observer never filed into the pending count, keep re-offering it, and
+ * eventually land it in the dropped list with a refusal the observer cannot
+ * explain. (It could not become a real filing — the server's poll-open gate runs
+ * before anything is written, and by election day the photos are long past
+ * `photoMaxAgeS` — but "harmless" is not the standard for a report the observer
+ * did not make.) So a dry run that never reached the server is simply a dry run
+ * that did not happen: nothing saved, nothing queued, retry when there is
+ * signal.
+ */
+const undeliveredDryRun = (why: string): SubmitResult => ({
+  ok: false,
+  error: 'dry_run_undelivered',
+  message: `The practice run could not reach the server, so there was nothing to rehearse — nothing was saved, queued or filed. Retry when you have signal. (${why})`,
+});
+
 export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   const id = await getIdentity();
   const token = await SecureStore.getItemAsync(K_TOKEN);
@@ -389,11 +419,15 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   };
   const label = `Result · ${input.puCode} · ${input.contest}`;
 
+  /** Outbox for a real report, nothing at all for a rehearsal. */
+  const park = (why: string, lead?: string): SubmitResult | Promise<SubmitResult> =>
+    input.dryRun ? undeliveredDryRun(why) : handOff('result', fields, files, label, why, lead);
+
   let res: Response;
   try {
     res = await deliver('/api/submissions', buildForm, token, id.deviceId);
   } catch (e) {
-    return handOff('result', fields, files, label, `network: ${errText(e)}`);
+    return park(`network: ${errText(e)}`);
   }
 
   // Still 401 after deliver() tried to re-mint the session. Queue it anyway:
@@ -401,11 +435,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   // this screen for the sign-in guard and takes the photos with it. The job is
   // signed and complete, and the outbox waits for a token before each attempt.
   if (res.status === 401) {
-    return handOff(
-      'result',
-      fields,
-      files,
-      label,
+    return park(
       'session expired / HTTP 401',
       'Signed out — your signed report is saved on this phone and will send itself once you sign in again.',
     );
@@ -413,7 +443,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   // The report is fine, the server is not. Exactly the class the outbox retries,
   // so queue it instead of making the observer stand at the unit and retry.
   if (res.status >= 500 || res.status === 429) {
-    return handOff('result', fields, files, label, `HTTP ${res.status}`);
+    return park(`HTTP ${res.status}`);
   }
 
   const body = (await res.json().catch(() => ({}))) as {
@@ -515,25 +545,25 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
   };
   const label = `${input.level} collation · ${input.ward || input.lga || input.state} · ${input.contest}`;
 
+  /** Outbox for a real report, nothing at all for a rehearsal. */
+  const park = (why: string, lead?: string): SubmitResult | Promise<SubmitResult> =>
+    input.dryRun ? undeliveredDryRun(why) : handOff('collation', fields, files, label, why, lead);
+
   let res: Response;
   try {
     res = await deliver('/api/collations', buildForm, token, id.deviceId);
   } catch (e) {
-    return handOff('collation', fields, files, label, `network: ${errText(e)}`);
+    return park(`network: ${errText(e)}`);
   }
 
   if (res.status === 401) {
-    return handOff(
-      'collation',
-      fields,
-      files,
-      label,
+    return park(
       'session expired / HTTP 401',
       'Signed out — your signed report is saved on this phone and will send itself once you sign in again.',
     );
   }
   if (res.status >= 500 || res.status === 429) {
-    return handOff('collation', fields, files, label, `HTTP ${res.status}`);
+    return park(`HTTP ${res.status}`);
   }
 
   const body = (await res.json().catch(() => ({}))) as {

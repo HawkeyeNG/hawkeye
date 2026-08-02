@@ -7,6 +7,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const shots = { sheet: false, venue: false };
   let PARTIES = [];
+  let UNIT_CODE = null;
 
   function refreshSubmit() {
     $('btn-submit').disabled = !(shots.sheet && shots.venue);
@@ -65,8 +66,9 @@
     $('submit-status').textContent = 'Recording your practice run…';
     try {
       const r = await fetch('/api/practice/submit', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ votes, puName: $('prac-unit-name').textContent }),
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-device-id': await getDeviceId() },
+        body: JSON.stringify({ votes, puName: $('prac-unit-name').textContent, puCode: UNIT_CODE }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.ok) {
@@ -97,6 +99,7 @@
     $('prac-title').firstChild.textContent = `${cfg.name} `;
     $('prac-sub').textContent = `${cfg.office} — a practice contest. ${cfg.note || ''}`;
     const u = cfg.unit || {};
+    UNIT_CODE = u.code || null;
     $('prac-unit-name').textContent = u.name || 'Practice Polling Unit';
     $('prac-unit-scope').textContent = [u.ward, u.lga, u.state].filter(Boolean).join(', ');
     $('vote-inputs').innerHTML = PARTIES.map((p) => `

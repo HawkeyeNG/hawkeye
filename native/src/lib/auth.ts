@@ -105,6 +105,53 @@ export async function passwordLogin(
 }
 
 /**
+ * Set (or reset) the password on the CURRENT session.
+ *
+ * The server only asks for the current password when the account already has
+ * one AND the session wasn't minted by a phone proof in the last 15 minutes —
+ * so every caller here (fresh sign-up, password-less account, forgot-password
+ * reset) is inside that window and sends the new password alone. Changing a
+ * password from a resumed session lives on the profile screen, which does pass
+ * `currentPassword`.
+ */
+export async function setPassword(
+  password: string,
+): Promise<{ ok: boolean; error?: string; hint?: string }> {
+  if (!state.token) return { ok: false, error: 'not_signed_in' };
+  const id = await getIdentity();
+  const r = await post<{ ok?: boolean; error?: string; hint?: string }>(
+    '/api/observers/set-password',
+    { password },
+    { authorization: `Bearer ${state.token}`, 'x-device-id': id.deviceId },
+  );
+  return r.ok ? { ok: true } : { ok: false, error: r.error, hint: r.hint };
+}
+
+/**
+ * Does the signed-in account have a password yet? `null` means we couldn't
+ * tell (network/401) — callers must fail OPEN on null, never strand someone on
+ * a password screen because a status check didn't load.
+ *
+ * `signOutOn401: false` is load-bearing, not defensive. This runs one tick
+ * after a successful OTP verify, and the caller's fail-open branch routes into
+ * the app on `null`. With the default 401 handling a blip here would signOut()
+ * — wiping the token AND setting the permanent opted-out flag — while the UI
+ * carried on into /(tabs): signed out, silent resume disabled forever, no way
+ * back except finding the sign-in screen again. A read that answers "I don't
+ * know" must never be able to end the session.
+ */
+export async function accountHasPassword(): Promise<boolean | null> {
+  try {
+    const r = await authedGet<{ hasPassword?: boolean }>('/api/observers/me', {
+      signOutOn401: false,
+    });
+    return typeof r.hasPassword === 'boolean' ? r.hasPassword : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Prove the phone number ON THIS ACCOUNT — the in-app password-reset step.
  *
  * Deliberately NOT verifyOtp: that one is the sign-in path, and it would create
@@ -162,23 +209,55 @@ export async function bootstrapAuth(): Promise<void> {
   set({ status: 'signedOut', observerId: null, token: null });
 }
 
-export async function signOut(): Promise<void> {
+/**
+ * The session ended WITHOUT the observer asking — an expired or rejected token.
+ *
+ * Deliberately does NOT set K_OPTED_OUT. That flag exists to remember a choice
+ * the person made, and a 401 is not a choice: setting it here would permanently
+ * disable silent device-resume for someone whose only mistake was leaving the
+ * app closed for seven days, and they would have no idea why they now have to
+ * sign in by hand every time. bootstrapAuth can recover this state on its own
+ * via /api/observers/resume, which is exactly what it is for.
+ */
+export async function expireSession(): Promise<void> {
   await SecureStore.deleteItemAsync(K_TOKEN);
   await SecureStore.deleteItemAsync(K_OBSERVER);
-  // Silent device-resume would sign this person straight back in on the next
-  // launch, which makes an explicit sign-out look broken. Remember the choice.
-  await SecureStore.setItemAsync(K_OPTED_OUT, '1');
   set({ status: 'signedOut', observerId: null, token: null });
 }
 
-/** Authenticated GET helper for Bearer-gated endpoints. */
-export async function authedGet<T>(path: string): Promise<T> {
+/** The observer asked to sign out. This one IS a choice, so it is remembered. */
+export async function signOut(): Promise<void> {
+  await expireSession();
+  // Silent device-resume would sign this person straight back in on the next
+  // launch, which makes an explicit sign-out look broken. Remember the choice.
+  await SecureStore.setItemAsync(K_OPTED_OUT, '1');
+}
+
+/**
+ * Authenticated GET helper for Bearer-gated endpoints.
+ *
+ * A 401 means the token is dead, so by default we clear the session — that is
+ * right for the screens that render account data and need the signed-out UI.
+ * It is NOT right for a status probe whose caller treats failure as "unknown"
+ * and carries on: signOut() also writes the opted-out flag that kills silent
+ * device resume for good. Those callers pass `signOutOn401: false` and handle
+ * the throw themselves.
+ */
+export async function authedGet<T>(
+  path: string,
+  opts: { signOutOn401?: boolean } = {},
+): Promise<T> {
   if (!state.token) throw new Error('not_signed_in');
   const res = await fetch(`${BASE}${path}`, {
     headers: { accept: 'application/json', authorization: `Bearer ${state.token}` },
   });
   if (res.status === 401) {
-    await signOut();
+    // expireSession, never signOut: a rejected token clears the session but must
+    // not set the opted-out flag. Background readers (unread counts, my-unit,
+    // the post-verify password check) all hit this path and none of them
+    // represent the observer choosing to leave. `signOutOn401: false` remains
+    // for callers that must not disturb the session at all.
+    if (opts.signOutOn401 !== false) await expireSession();
     throw new Error('session_expired');
   }
   if (!res.ok) throw new Error(`${path} -> ${res.status}`);

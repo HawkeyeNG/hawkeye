@@ -189,8 +189,8 @@ export default function StaticPage() {
           </>
         ) : null}
 
-        {/* Every explainer page ends the same way: where to find Hawkeye. */}
-        <SectionLabel text="Find Hawkeye" />
+        {/* Every explainer page ends the same way: where to find Hawkeye.
+            SocialRow renders its own section label. */}
         <SocialRow />
       </ScrollView>
     </SafeAreaView>

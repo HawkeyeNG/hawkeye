@@ -97,7 +97,8 @@
         }
       ],
       "expo-notifications",
-      "react-native-document-scanner-plugin"
+      "react-native-document-scanner-plugin",
+      "./plugins/with-allow-backup-override"
     ],
     "experiments": {
       "typedRoutes": true,

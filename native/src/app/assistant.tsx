@@ -196,7 +196,18 @@ export default function Assistant() {
 
           {turns.map((t) => (
             <View key={t.id}>
-              <View className="mb-2 max-w-[88%] self-end rounded-2xl rounded-br-md bg-hawk-green px-4 py-3">
+              {/* THE KEYLINE IS LOAD-BEARING, not decoration.
+                  bg-hawk-green is a fixed brand surface, so text-white on it is
+                  11.6:1 in both themes and the words were never the problem. What
+                  broke in dark mode is which bubble is WHOSE: the assistant's
+                  bg-card is #12241b and this fill is #004225 — 1.40:1 apart, and
+                  1.62:1 against the surface behind them. Two dark-green rectangles
+                  in a column, with only the alignment left to say who spoke.
+                  good-ink at 50% over the green gives the edge 4.66:1 on the dark
+                  surface and 4.03:1 against the assistant bubble, and in light mode
+                  resolves to #0b6b3a over #004225 — a quiet rim, because there the
+                  fill already separates on its own (10.2:1 / 11.6:1). */}
+              <View className="mb-2 max-w-[88%] self-end rounded-2xl rounded-br-md border border-good-ink/50 bg-hawk-green px-4 py-3">
                 <Text className="text-sm text-white">{t.q}</Text>
               </View>
               {t.a ? (

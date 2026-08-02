@@ -148,7 +148,7 @@ const TONE: Record<string, { icon: Icon; tone: Tone }> = {
   public: { icon: 'globe', tone: 'warn' },
 };
 
-const TINT: Record<Tone, { bg: string; text: string }> = {
+export const TINT: Record<Tone, { bg: string; text: string }> = {
   good: { bg: 'bg-good', text: 'text-good-ink' },
   bad: { bg: 'bg-bad', text: 'text-bad-ink' },
   warn: { bg: 'bg-warn', text: 'text-warn-ink' },
@@ -272,6 +272,93 @@ export function QuestionRow({ q, a }: { q: string; a: string[] }) {
       </Pressable>
       {open
         ? a.map((p, i) => (
+            <Text key={i} className="px-4 pb-3 text-sm leading-5 text-muted">
+              {p}
+            </Text>
+          ))
+        : null}
+    </View>
+  );
+}
+
+/* ─── Dashboard kit ───────────────────────────────────────────────────────────
+ *
+ * Verify the Ledger, the Public Docket and Election Integrity are meant to read
+ * as one screen shape: stat tiles first, one plain sentence saying what they
+ * mean, the detail folded away underneath. That match was held together by
+ * copy-paste — ledger.tsx and docket.tsx each carried their own byte-identical
+ * TINT / Stat / Fold, so tweaking a tile on one screen quietly split it from the
+ * other. The shape lives here now; screens import it and do not redeclare it.
+ */
+
+/**
+ * A number and what it counts.
+ *
+ * `tone` tints the whole tile through the semantic pairs, so it darkens with the
+ * theme rather than leaving pale-on-pale text in dark mode. Pass it only when
+ * the count actually carries a verdict — callers gate it on non-zero, because a
+ * docket with nothing struck is not a red docket and a screen with no flags is
+ * not a red screen.
+ *
+ * `tight` drops the value a step to text-base, for tiles whose value is a phrase
+ * or a date ("Broken at #12", "12 Jan") rather than a numeral that can afford
+ * the display size.
+ */
+export function Stat({
+  value,
+  label,
+  tone,
+  tight,
+}: {
+  value: string;
+  label: string;
+  tone?: Tone;
+  tight?: boolean;
+}) {
+  return (
+    <View
+      className={`mb-2 mr-2 min-w-[44%] flex-1 rounded-2xl px-3.5 py-3 ${
+        tone ? TINT[tone].bg : 'bg-card'
+      }`}
+    >
+      <Text
+        className={`${tight ? 'text-base' : 'text-xl'} font-bold ${
+          tone ? TINT[tone].text : 'text-ink'
+        }`}
+      >
+        {value}
+      </Text>
+      <Text className="pt-1 text-[10px] font-bold uppercase tracking-[1px] text-muted">
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Detail, folded away — and every fold starts CLOSED. These screens lead with
+ * numbers; the cryptography or the arbitration rules behind them are here for
+ * whoever wants them, but a panel that opens itself puts the paragraphs back in
+ * front of the result.
+ */
+export function Fold({ title, body }: { title: string; body: string[] }) {
+  const ui = useUi();
+  const [open, setOpen] = useState(false);
+  return (
+    <View className="mt-2 overflow-hidden rounded-2xl bg-card">
+      <Pressable
+        className="flex-row items-center px-4 py-3.5 active:bg-surface"
+        onPress={() => {
+          animate();
+          Haptics.selectionAsync();
+          setOpen((o) => !o);
+        }}
+      >
+        <Text className="flex-1 pr-2 text-[15px] font-semibold text-ink">{title}</Text>
+        <Feather name={open ? 'minus' : 'plus'} size={16} color={ui.tint.good.ink} />
+      </Pressable>
+      {open
+        ? body.map((p, i) => (
             <Text key={i} className="px-4 pb-3 text-sm leading-5 text-muted">
               {p}
             </Text>

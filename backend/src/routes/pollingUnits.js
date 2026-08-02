@@ -8,13 +8,29 @@ export const pollingUnitsRouter = Router();
 const tierOf = (u) =>
   u.lat != null ? 'verified' : u.crowd_lat != null ? (u.coords_source === 'geocoded' ? 'geocoded' : 'crowd') : 'unmapped';
 
-// Geofenced discovery. Two tiers appear here:
+// Unit DISCOVERY — "help me find my unit", not "prove you were there".
+//
+// Filters at config.discoveryRadiusM (500 m), deliberately WIDER than the
+// submission geofence (config.geofenceRadiusM, 200 m, enforced in
+// routes/submissions.js). Appearing in this list asserts nothing: a unit found
+// here at 480 m is still refused by the fence if the observer files from there.
+// Do not point this filter back at geofenceRadiusM to "make them agree" — the
+// note in config.js explains what that silently changes.
+//
+// Two tiers appear here:
 //   verified — official/field-verified coordinates; the geofence is enforced at
 //              submission and reports count as location-verified.
 //   crowd    — no verified coordinates, but enough independent observers reported
 //              from one spot that their median fix places the unit provisionally.
 // Units with neither stay invisible here; observers reach them through the
 // register browse endpoints below, and their GPS is recorded (not verified).
+//
+// `radiusM` in the response is the radius actually searched, and the native
+// clients prefer it over their own hardcoded mirror (native/src/app/report/
+// result.tsx), so their "no unit within Xm" copy tracks this value by itself.
+// `maxRows`/`capped` are reported for the same reason: truncation used to be
+// invisible on the wire, leaving the client to infer it from a row count it had
+// to hardcode.
 pollingUnitsRouter.get('/polling-units', (req, res) => {
   const lat = Number(req.query.lat);
   const lng = Number(req.query.lng);
@@ -29,10 +45,25 @@ pollingUnitsRouter.get('/polling-units', (req, res) => {
       locationTier: tierOf(u),
       distanceM: Math.round(haversineM(lat, lng, u.lat ?? u.crowd_lat, u.lng ?? u.crowd_lng)),
     }))
-    .filter((u) => u.distanceM <= config.geofenceRadiusM)
+    .filter((u) => u.distanceM <= config.discoveryRadiusM)
     .sort((a, b) => a.distanceM - b.distanceM)
-    .slice(0, 8);
-  res.json({ radiusM: config.geofenceRadiusM, units });
+    // Row cap, measured against the 117,167 located units actually in the
+    // register: within 500 m the median location has 3 units, p90 23, p95 36,
+    // max 109. The old cap of 8 therefore truncated at 27% of locations once the
+    // radius widened; 40 leaves 3.6% truncated. Truncation is the expensive
+    // failure — the observer's own unit silently absent, sending them to browse
+    // 176k rows by hand — while a surplus row costs ~477 bytes and a scroll, and
+    // the list is distance-sorted so any surplus is always the far tail. The
+    // full 40 only ever goes out in dense wards, which are cities with the
+    // bandwidth for it; rural fixes still send three rows.
+    .slice(0, config.discoveryMaxRows);
+  res.json({
+    radiusM: config.discoveryRadiusM,
+    maxRows: config.discoveryMaxRows,
+    // A full list and a truncated one are otherwise identical on the wire.
+    capped: units.length >= config.discoveryMaxRows,
+    units,
+  });
 });
 
 // Register browse: the fallback path to units without any coordinates. This is a

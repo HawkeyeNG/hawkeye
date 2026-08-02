@@ -111,7 +111,7 @@
 
       <div class="card">
         <h2><span class="step-no">3</span> Sign and submit</h2>
-        <p class="hint">Signed on this device, recorded permanently, and checked against polling-unit evidence in this area.</p>
+        <p class="hint">Signed on this device and written to the public tamper-evident ledger — it cannot be edited or withdrawn, and is checked against polling-unit evidence in this area. Its fingerprint is published to the public Rekor transparency log in the next daily anchor.</p>
         <button id="btn-submit" disabled>Sign &amp; submit collation report</button>
         <p id="status" class="status" role="status"></p>
       </div>
@@ -193,7 +193,7 @@
     $('sel-state').onchange = async () => {
       fill($('sel-ward'), [], '— select —');
       fill($('sel-lga'), await (await fetch('/api/register/lgas?state=' + encodeURIComponent($('sel-state').value))).json(), '— select LGA —');
-      updateSubmit();
+      fillContests();
     };
     $('sel-lga').onchange = async () => {
       fill($('sel-ward'), await (await fetch(`/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`)).json(), '— select ward —');
@@ -269,9 +269,28 @@
       const c = CONTESTS.find((x) => x.code === $('sel-contest').value);
       return Boolean(c && c.open === false);
     };
+    // Mirror of backend/src/services/scope.js: a single-state election carries a
+    // `states[]` allowlist (absent/empty ⇒ nationwide), and the FCT has no
+    // governorship or state assembly. Collation is scoped by the selected state
+    // (no polling unit), so gate the contest picker on that — a ward in a state a
+    // contest excludes must never be able to file against it. observe.html filters
+    // the same way via app.js `contestApplies`; ported here.
+    const contestApplies = (state, contest, states) =>
+      !(state === 'FCT' && (contest === 'GOV' || contest === 'SHA'))
+      && (!states || !states.length || states.includes(state));
+    // Rebuild the contest options for the chosen state, keeping a still-valid pick.
+    function fillContests() {
+      const state = $('sel-state').value;
+      const prev = $('sel-contest').value;
+      const applicable = CONTESTS.filter((c) => contestApplies(state, c.code, c.states));
+      $('sel-contest').innerHTML = '<option value="">— select election —</option>'
+        + applicable.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
+      if (prev && applicable.some((c) => c.code === prev)) $('sel-contest').value = prev;
+      updateSubmit();
+    }
     function updateSubmit() {
       const closed = contestClosed();
-      $('btn-submit').disabled = !(shots.sheet && shots.venue && scopeOk()) || closed;
+      $('btn-submit').disabled = !(shots.sheet && shots.venue && scopeOk() && $('sel-contest').value) || closed;
       const c = CONTESTS.find((x) => x.code === $('sel-contest').value);
       if (closed && c?.opensAt) {
         $('status').textContent = `Collation reporting opens when polls open — ${new Date(c.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}.`;
@@ -355,7 +374,7 @@
         fetch('/api/parties').then((r) => r.json()),
       ]);
       CONTESTS = contests;
-      $('sel-contest').innerHTML = contests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
+      fillContests();
       $('sel-contest').onchange = updateSubmit;
       fill($('sel-state'), states, '— select state —');
       $('vote-inputs').innerHTML = parties.map((p) => `

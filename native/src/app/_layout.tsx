@@ -101,7 +101,9 @@ function RootShell() {
   }, []);
 
   // Signed-out access tier for the APP: a signed-out user gets ONLY the auth
-  // funnel (welcome / sign-in) and practice. Any other route — the tabs, a
+  // funnel (welcome / sign-in) only — practice is signed-in on the app (people who
+  // downloaded it came to observe; the WEB keeps practice open for ad/social traffic).
+  // Any other route — the tabs, a
   // report flow, a trust page — bounces to welcome. Signed-in users are
   // unrestricted; nothing runs until auth has resolved past 'loading'. This is
   // the native counterpart of the web's authgate.js (which keeps more public,
@@ -111,7 +113,7 @@ function RootShell() {
   useEffect(() => {
     if (auth.status !== 'signedOut') return;
     const top = segments[0];
-    const allowed = top === 'welcome' || top === 'sign-in' || top === 'practice';
+    const allowed = top === 'welcome' || top === 'sign-in';
     if (!allowed) router.replace('/welcome');
   }, [auth.status, segments]);
 

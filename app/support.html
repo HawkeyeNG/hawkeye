@@ -74,6 +74,9 @@
     </div>
 
     <h2 style="margin-top:24px">Crypto wallets</h2>
+    <p class="hint" style="margin-bottom:10px">The six EVM networks (Ethereum, Base, Polygon,
+    Monad, Robinhood, HyperEVM) share one address — copy gives you that address, and each QR is
+    tagged for its network so a scan sends on the right one.</p>
     <div id="wallets" class="option-list"></div>
 
     <p class="hint" style="margin-top:14px">Always confirm the address after pasting.
@@ -92,8 +95,17 @@
     // they are grouped rather than repeated six times.
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    // The six EVM networks share ONE address; each QR is tagged with that chain's
+    // EIP-681 id so a scan routes to the right network. Copy always gives the raw
+    // address (you paste an address into a wallet, not a URI).
+    const EVM = '0x00F7bE0EA4A6dF70afc32d591C53460008d28C11';
     const WALLETS = [
-      { label: 'Any EVM chain', note: 'Ethereum · Base · Polygon · Monad · Robinhood · HyperEVM', address: '0x00F7bE0EA4A6dF70afc32d591C53460008d28C11', qr: 'qr/qr-evm.svg' },
+      { label: 'Ethereum', address: EVM, qr: 'qr/qr-ethereum.svg' },
+      { label: 'Base', address: EVM, qr: 'qr/qr-base.svg' },
+      { label: 'Polygon', address: EVM, qr: 'qr/qr-polygon.svg' },
+      { label: 'Monad', address: EVM, qr: 'qr/qr-monad.svg' },
+      { label: 'Robinhood Chain', address: EVM, qr: 'qr/qr-robinhood.svg' },
+      { label: 'HyperEVM', address: EVM, qr: 'qr/qr-hyperevm.svg' },
       { label: 'Solana', address: 'Ac952LkbEvNAgECtd1n7LWG11M69VbGvUJCmAVkvenQN', qr: 'qr/qr-solana.svg' },
       { label: 'Bitcoin', address: 'bc1qnksyh8vvzetpjhc6kl9e7dxpa5tkk6pthehxly', qr: 'qr/qr-bitcoin.svg' },
       { label: 'Sui', address: '0x0b46490cffac31ac4f08683cc1c9ab3b56c9d0e279ab18d5d26f77cdeb138fb3', qr: 'qr/qr-sui.svg' },

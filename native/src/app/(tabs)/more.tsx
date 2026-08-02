@@ -43,7 +43,7 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
       { label: 'Leaderboard', href: 'native:/(tabs)/results', icon: 'bar-chart-2' },
       { label: 'Osun 2026', href: 'native:/osun', icon: 'trending-up' },
       { label: 'Public Reports Log', href: 'native:/reports-log', icon: 'list' },
-      { label: '2027 Candidates', href: 'native:/candidates', icon: 'users' },
+      { label: 'Presidency 2027', href: 'native:/candidates', icon: 'users' },
       { label: 'Political Data', href: 'native:/political', icon: 'pie-chart' },
     ],
   },

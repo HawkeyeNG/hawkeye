@@ -74,12 +74,6 @@ export default function Welcome() {
         >
           <Text className="text-base font-bold text-white">Sign in</Text>
         </Pressable>
-        <Pressable
-          className="mt-3 items-center py-2"
-          onPress={() => router.replace('/(tabs)')}
-        >
-          <Text className="text-sm font-semibold text-emerald-200">Explore without signing in</Text>
-        </Pressable>
         <Text className="pt-4 text-center text-[11px] leading-4 text-emerald-200/70">
           Hawkeye is independent and nonpartisan. It does not declare results — all official
           results are announced by INEC.{'\n'}© 2026 IniXien, LLC. All rights reserved.

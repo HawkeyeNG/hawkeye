@@ -206,9 +206,15 @@
   });
 
   // Bottom tab bar (mobile app pattern) — one raised center action, 5 slots,
-  // consistent on every page. NATIVE SHELL ONLY: the web (even mobile web)
-  // keeps its header nav/bell/footer — the bar is an app affordance.
-  if (window.HAWKEYE && window.HAWKEYE.native && !document.querySelector('.tabbar')) {
+  // consistent on every page. APP SHELL: the Capacitor native app AND an
+  // INSTALLED PWA (standalone display-mode) — both ARE the app experience, so
+  // both get native-style bottom tabs (parity). A plain browser tab (mobile or
+  // desktop web) keeps its header nav/bell/footer instead. has-tabbar hides the
+  // footer, so an installed PWA gets exactly the native chrome, not both.
+  const inAppShell = (window.HAWKEYE && window.HAWKEYE.native)
+    || window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if (inAppShell && !document.querySelector('.tabbar')) {
     const page = (location.pathname.replace(/^.*\//, '') || 'index.html');
     const ic = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
     const TABS = [

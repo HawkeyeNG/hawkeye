@@ -61,8 +61,11 @@
   // "Take part" is hidden on desktop (≥900px) — its links live in the header there.
   const GROUPS = [
     ['Take part', ['observe.html', 'collation.html', 'incidents.html', 'map-unit.html', 'practice.html'], 'tp'],
+    // Active races. Osun 2026 (the pilot) + Presidency 2027 (candidates.html).
+    // Other race categories join here as their pages are built (political.html).
+    ['Races', ['osun.html', 'candidates.html']],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html']],
-    ['Live data', ['osun.html', 'results.html', 'dashboard.html', 'candidates.html', 'political.html']],
+    ['Live data', ['results.html', 'dashboard.html', 'political.html']],
     // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
     // aren't in the panel, the group finds no members and is skipped.
     ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'privacy.html', 'terms.html']],
@@ -75,6 +78,15 @@
       o.href = 'osun.html';
       o.textContent = 'Osun 2026';
       panel.appendChild(o);
+    }
+    // Presidency 2027 — the presidential race (candidates.html). Injected like
+    // Osun so it lands in the Races group on every page, even the two whose
+    // static list omits it.
+    if (!panel.querySelector('a[href="candidates.html"]')) {
+      const c = document.createElement('a');
+      c.href = 'candidates.html';
+      c.textContent = 'Presidency 2027';
+      panel.appendChild(c);
     }
     // Practice run — injected everywhere (like Osun) so new users can find it
     // without editing every page's static list.
@@ -99,18 +111,39 @@
     // calls it the National Leaderboard. Normalise it here for every page at once.
     const lb = links.get('results.html');
     if (lb) lb.textContent = 'National Leaderboard';
+    // "2027 Candidates" -> "Presidency 2027" for every page's static copy.
+    const pres = links.get('candidates.html');
+    if (pres) pres.textContent = 'Presidency 2027';
     for (const [label, hrefs, tp] of GROUPS) {
       const members = hrefs.map((h) => links.get(h)).filter(Boolean);
       if (!members.length) continue;
+      // Collapsible section (accordion): a clickable header + a body holding the
+      // links, remembered per-section in localStorage. Defaults OPEN so nothing
+      // is hidden on first visit — the toggle only lets a user tidy the list.
       const g = document.createElement('div');
       g.className = 'menu-group' + (tp ? ' tp-hide' : '');
-      g.textContent = label;
-      panel.appendChild(g);
+      g.setAttribute('role', 'button');
+      g.setAttribute('tabindex', '0');
+      g.innerHTML = '<span>' + label + '</span><svg class="mg-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+      const body = document.createElement('div');
+      body.className = 'mg-body' + (tp ? ' tp-hide' : '');
       for (const a of members) {
-        if (tp) a.classList.add('tp-hide');
-        panel.appendChild(a);
+        body.appendChild(a);
         links.delete(a.getAttribute('href'));
       }
+      panel.appendChild(g);
+      panel.appendChild(body);
+      const key = 'hk_mg_' + label;
+      const saved = localStorage.getItem(key);
+      const setOpen = (open) => g.setAttribute('aria-expanded', String(open));
+      setOpen(saved == null ? true : saved === '1');
+      const toggle = () => {
+        const open = g.getAttribute('aria-expanded') !== 'true';
+        setOpen(open);
+        try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) {}
+      };
+      g.addEventListener('click', toggle);
+      g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
     }
     for (const [href, a] of links) {
       if (FOOTER_ONLY.includes(href)) a.remove();

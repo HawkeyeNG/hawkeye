@@ -31,8 +31,8 @@
     /* QR modal — one large code at a time so a camera can isolate it cleanly. */
     .qr-modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0, 0, 0, 0.6); }
     .qr-modal[hidden] { display: none; }
-    .qr-dialog { background: var(--card); border: 1px solid var(--border); border-radius: 16px; max-width: 340px; width: 100%; padding: 42px 20px 20px; text-align: center; position: relative; }
-    .qr-close { position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 1.5rem; line-height: 1; color: var(--muted); cursor: pointer; }
+    .qr-dialog { background: var(--card); border: 1px solid var(--border); border-radius: 16px; max-width: 340px; width: 100%; padding: 22px 20px 20px; text-align: center; position: relative; }
+    .qr-close { position: absolute; top: 8px; right: 10px; width: auto; min-width: 0; padding: 2px 7px; margin: 0; background: none; border: none; font-size: 1.5rem; line-height: 1; color: var(--muted); cursor: pointer; }
     .qr-title { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; }
     .qr-title svg { width: 24px; height: 24px; }
     /* White plate always — a QR must stay dark-on-light to scan, even in dark mode. */

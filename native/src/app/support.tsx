@@ -2,10 +2,11 @@ import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Animated, Pressable, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 
 /**
@@ -51,16 +52,16 @@ export default function Support() {
     setTimeout(() => setCopied((c) => (c === address ? null : c)), 1800);
   };
 
-  return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <View className="flex-row items-center border-b border-line px-4 py-3">
-        <Pressable onPress={() => router.back()} hitSlop={10} className="mr-3">
-          <Feather name="arrow-left" size={24} color={ui.ink} />
-        </Pressable>
-        <Text className="text-xl font-bold text-ink">Support Hawkeye</Text>
-      </View>
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
 
-      <ScrollView className="flex-1">
+  return (
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Support Hawkeye" translateY={translateY} onClose={() => router.back()} />
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{ paddingTop: headerH }}
+      >
         <View className="gap-4 p-4">
           <View className="gap-2 rounded-2xl border border-line bg-card p-4">
             <Text className="text-lg font-bold text-ink">Keep Hawkeye independent</Text>
@@ -119,7 +120,7 @@ export default function Support() {
             asking for funds or seed phrases.
           </Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+    </View>
   );
 }

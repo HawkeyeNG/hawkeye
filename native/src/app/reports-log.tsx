@@ -3,8 +3,8 @@ import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -71,6 +71,7 @@ function locationLine(r: Row) {
  */
 export default function ReportsLog() {
   const ui = useUi();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [ledger, setLedger] = useState<Ledger | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -144,23 +145,15 @@ export default function ReportsLog() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="x" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Public Reports Log</Text>
-      </View>
-
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Public Reports Log" translateY={translateY} onClose={() => router.back()} />
       <FlashList
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
         data={rows ?? []}
         keyExtractor={(r) => `${r.puCode}|${r.contest}`}
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingTop: headerH, paddingBottom: 32 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ui.tint.good.ink} />
         }
@@ -209,6 +202,6 @@ export default function ReportsLog() {
           );
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }

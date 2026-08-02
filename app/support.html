@@ -109,6 +109,16 @@
     <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
   </div></footer>
 
+  <div class="qr-modal" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title" hidden>
+    <div class="qr-dialog">
+      <button class="qr-close" type="button" aria-label="Close" id="qr-close">&times;</button>
+      <div class="qr-title" id="qr-modal-title"></div>
+      <div class="qr-plate"><img id="qr-modal-img" alt="" width="232" height="232" /></div>
+      <p class="qr-net" id="qr-modal-net"></p>
+      <p class="qr-modal-addr" id="qr-modal-addr"></p>
+      <button class="pill-btn copy-btn" type="button" id="qr-modal-copy" style="margin:0 auto"><span class="lbl">Copy address</span></button>
+    </div>
+  </div>
   <script>
     // Founder-funded donation page. The six EVM chains resolve to ONE address, so
     // Copy hands over that raw address; each chain's QR carries its own EIP-681 tag
@@ -130,15 +140,15 @@
     };
     const EVM = '0x00F7bE0EA4A6dF70afc32d591C53460008d28C11';
     const WALLETS = [
+      { slug: 'solana', label: 'Solana', address: 'Ac952LkbEvNAgECtd1n7LWG11M69VbGvUJCmAVkvenQN' },
       { slug: 'ethereum', label: 'Ethereum', address: EVM },
+      { slug: 'bitcoin', label: 'Bitcoin', address: 'bc1qnksyh8vvzetpjhc6kl9e7dxpa5tkk6pthehxly' },
       { slug: 'base', label: 'Base', address: EVM },
       { slug: 'polygon', label: 'Polygon', address: EVM },
-      { slug: 'monad', label: 'Monad', address: EVM },
       { slug: 'robinhood', label: 'Robinhood Chain', address: EVM },
-      { slug: 'hyperevm', label: 'HyperEVM', address: EVM },
-      { slug: 'solana', label: 'Solana', address: 'Ac952LkbEvNAgECtd1n7LWG11M69VbGvUJCmAVkvenQN' },
-      { slug: 'bitcoin', label: 'Bitcoin', address: 'bc1qnksyh8vvzetpjhc6kl9e7dxpa5tkk6pthehxly' },
+      { slug: 'monad', label: 'Monad', address: EVM },
       { slug: 'sui', label: 'Sui', address: '0x0b46490cffac31ac4f08683cc1c9ab3b56c9d0e279ab18d5d26f77cdeb138fb3' },
+      { slug: 'hyperevm', label: 'HyperEVM', address: EVM },
     ];
     const NET_NOTE = {
       ethereum: 'Tagged for Ethereum (chain 1).', base: 'Tagged for Base (chain 8453).',
@@ -192,16 +202,6 @@
     modal.addEventListener('click', (e) => { if (e.target === modal) closeQr(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) closeQr(); });
   </script>
-  <div class="qr-modal" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title" hidden>
-    <div class="qr-dialog">
-      <button class="qr-close" type="button" aria-label="Close" id="qr-close">&times;</button>
-      <div class="qr-title" id="qr-modal-title"></div>
-      <div class="qr-plate"><img id="qr-modal-img" alt="" width="232" height="232" /></div>
-      <p class="qr-net" id="qr-modal-net"></p>
-      <p class="qr-modal-addr" id="qr-modal-addr"></p>
-      <button class="pill-btn copy-btn" type="button" id="qr-modal-copy" style="margin:0 auto"><span class="lbl">Copy address</span></button>
-    </div>
-  </div>
   <script src="tg.js?v=95"></script>
   <script src="menu.js?v=123"></script>
 </body>

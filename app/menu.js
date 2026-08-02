@@ -78,7 +78,7 @@
   const GROUPS = [
     ['Take part', ['profile.html', { acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'practice.html', 'map-unit.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html', 'incident-reports.html']],
-    ['Live data', ['results.html', { acc: 'Races', hrefs: ['osun.html', 'candidates.html'] }, 'dashboard.html', 'political.html']],
+    ['Live data', ['results.html', { acc: 'Races', hrefs: ['races.html', 'osun.html', 'candidates.html'] }, 'dashboard.html', 'political.html']],
     // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
     // aren't in the panel, the group finds no members and is skipped.
     ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'support.html', 'privacy.html', 'terms.html']],
@@ -86,6 +86,14 @@
   if (panel && !panel.querySelector('.menu-group')) {
     // Osun 2026 is the active pilot race — inject it once so it appears in the
     // menu on every page without editing each page's static link list.
+    // All Races selector — leads the Races accordion; where every contest will live
+    // as it opens. Injected so it appears on every page.
+    if (!panel.querySelector('a[href="races.html"]')) {
+      const ra = document.createElement('a');
+      ra.href = 'races.html';
+      ra.textContent = 'All Races';
+      panel.appendChild(ra);
+    }
     // My Profile leads Take part (mirrors native); injected so it appears on every
     // page, not only the signed-in "Your account" append it used to be.
     if (!panel.querySelector('a[href="profile.html"]')) {
@@ -200,10 +208,7 @@
       }
     }
     for (const [href, a] of links) {
-      // races.html (the all-races picker) is intentionally not in the menu — native
-      // has no such entry; drop any page's static link rather than leak it to the
-      // bottom of the panel.
-      if (FOOTER_ONLY.includes(href) || href === 'races.html') a.remove();
+      if (FOOTER_ONLY.includes(href)) a.remove();
       else panel.appendChild(a); // anything unmapped keeps working
     }
   }

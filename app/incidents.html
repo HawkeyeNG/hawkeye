@@ -103,6 +103,18 @@
         <input type="checkbox" id="use-gps" checked style="width:auto" /> Attach my current location
       </label>
 
+      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:400">
+        <input type="checkbox" id="attach-pu" style="width:auto" /> Attach the polling unit where this happened <small class="hint">(optional)</small>
+      </label>
+      <div id="pu-picker" hidden style="margin:8px 0 0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--tint)">
+        <label id="saved-unit-row" hidden style="display:flex;gap:8px;align-items:center;font-weight:400;margin-bottom:8px">
+          <input type="radio" name="pu-choice" id="use-saved" style="width:auto" /> <span id="saved-unit-name"></span>
+        </label>
+        <button type="button" id="btn-near" class="secondary" style="width:auto">Find units near me</button>
+        <p id="pu-status" class="hint" role="status" style="margin:8px 0 0"></p>
+        <div id="pu-near-list" style="margin-top:6px"></div>
+      </div>
+
       <button id="btn-submit">Submit report</button>
       <p id="status" class="status" role="status"></p>
       <p class="hint">A human reviews every report before anything is published.</p>
@@ -197,6 +209,45 @@
         (p) => res(p.coords), () => res(null), { enableHighAccuracy: true, timeout: 10000 }));
     }
 
+    // Optional polling-unit selector — OPT-IN. The reporter explicitly attaches a
+    // unit (their saved one, or one picked from nearby); nothing is stamped for
+    // them (that silent auto-stamp was removed). /api/incidents reads puCode,
+    // validates it against the register and derives the state server-side.
+    let puLoaded = false;
+    $('attach-pu').onchange = () => {
+      $('pu-picker').hidden = !$('attach-pu').checked;
+      if ($('attach-pu').checked && !puLoaded) { puLoaded = true; loadSavedUnit(); }
+    };
+    function loadSavedUnit() {
+      if (!token) return;
+      fetch('/api/observers/my-unit', { headers: { authorization: `Bearer ${token}` } })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (d && d.unit) {
+            $('saved-unit-name').textContent = `My saved unit — ${d.unit.name || d.unit.pu_code}${d.unit.ward ? ', ' + d.unit.ward : ''}`;
+            $('use-saved').value = d.unit.pu_code;
+            $('saved-unit-row').hidden = false;
+          }
+        })
+        .catch(() => {});
+    }
+    $('btn-near').onclick = async () => {
+      $('pu-status').textContent = 'Finding units near you…';
+      const c = await getPos();
+      if (!c) { $('pu-status').textContent = 'Location unavailable — allow location access and try again.'; return; }
+      try {
+        const r = await fetch(`/api/polling-units?lat=${c.latitude}&lng=${c.longitude}`);
+        const { units = [] } = await r.json();
+        if (!units.length) { $('pu-near-list').innerHTML = ''; $('pu-status').textContent = 'No mapped units within range — you can still submit without one.'; return; }
+        $('pu-status').textContent = `${units.length} near you — pick the one where it happened:`;
+        $('pu-near-list').innerHTML = units.map((u) => `
+          <label class="pu-opt" style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;font-weight:400;border-top:1px solid var(--line)">
+            <input type="radio" name="pu-choice" value="${esc(u.pu_code)}" style="width:auto;margin-top:3px" />
+            <span><strong>${esc(u.name || u.pu_code)}</strong><br /><small class="hint">${esc(u.ward || '')}${u.ward ? ' · ' : ''}${esc(u.lga || '')} · ${u.distanceM} m away</small></span>
+          </label>`).join('');
+      } catch { $('pu-status').textContent = 'Could not load nearby units — try again.'; }
+    };
+
     $('btn-submit') && ($('btn-submit').onclick = async () => {
       const kind = $('kind').value;
       const desc = $('desc').value.trim();
@@ -206,6 +257,11 @@
       try {
         const fd = new FormData();
         fd.set('kind', kind); fd.set('description', desc);
+        let puAttached = false;
+        if ($('attach-pu').checked) {
+          const chosen = document.querySelector('input[name="pu-choice"]:checked');
+          if (chosen && chosen.value) { fd.set('puCode', chosen.value); puAttached = true; }
+        }
         for (const f of files) fd.append('media', f);
         if ($('use-gps').checked) {
           const c = await getPos();
@@ -218,7 +274,7 @@
         });
         const body = await res.json().catch(() => ({}));
         if (res.status === 201) {
-          $('status').textContent = '✅ Submitted for review. Once approved it appears here and watchers of this polling unit are alerted (Telegram, WhatsApp, or the in-app feed).';
+          $('status').textContent = '✅ Submitted for review. Once approved it appears here' + (puAttached ? ', and watchers of that polling unit are alerted (Telegram, WhatsApp, or the in-app feed).' : '.');
           $('desc').value = ''; attachments.length = 0; renderPreview();
         } else if (res.status === 401) {
           localStorage.removeItem('hawkeye_token');

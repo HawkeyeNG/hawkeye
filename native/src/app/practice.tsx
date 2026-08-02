@@ -175,18 +175,8 @@ const PICK_TIMEOUT_MS = 12_000;
 
 /** The map ring names one circle; the search was two. Say which, so an empty
  *  ring is never read as "nothing is near you". */
-const ringLine = (s: Searched): string | null => {
-  if (s.envelopeM != null && s.registerM != null) {
-    return `The ring is the ${s.envelopeM}m searched for units with a mapped area. Units already placed by observers come from a separate ${s.registerM}m lookup — so the ring is not a claim that everything inside it was checked.`;
-  }
-  if (s.envelopeM != null) {
-    return `The ring is the ${s.envelopeM}m searched for units with a mapped area. The lookup that finds units placed by observers did not answer, so those are missing.`;
-  }
-  if (s.registerM != null) {
-    return `The ring is the ${s.registerM}m the register lookup searched. The wider search for units with a mapped area did not answer.`;
-  }
-  return null;
-};
+const ringLine = (_s: Searched): string =>
+  'Units found within an 800m radius. Unmapped units may not appear on map.';
 
 const nothingFoundLine = (s: Searched): string => {
   if (s.envelopeM != null && s.registerM != null) {
@@ -1021,8 +1011,8 @@ export default function Practice() {
         animationType="slide"
         onRequestClose={() => setShowHistory(false)}
       >
-        <View className="flex-1 justify-end bg-black/40">
-          <View className="max-h-[70%] rounded-t-3xl bg-surface px-5 pb-8 pt-5">
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setShowHistory(false)}>
+          <Pressable className="max-h-[70%] rounded-t-3xl bg-surface px-5 pb-8 pt-5" onPress={() => {}}>
             <View className="flex-row items-center pb-2">
               <Text className="flex-1 text-lg font-bold text-ink">Your Practice Runs</Text>
               <Pressable
@@ -1066,12 +1056,12 @@ export default function Practice() {
                 ))
               )}
             </ScrollView>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         {/* ── STEP 1: which polling unit ── */}
@@ -1079,8 +1069,7 @@ export default function Practice() {
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             <Text className="pb-1 text-xl font-bold text-ink">Which Polling Unit?</Text>
             <Text className="pb-3 text-sm text-muted">
-              Practise from the unit you would report at — or from anywhere. This is a rehearsal, so
-              you can also skip and use a sample unit.
+              Practise from your unit, from anywhere, or skip and use a sample.
             </Text>
 
             <Pressable
@@ -1254,9 +1243,8 @@ export default function Practice() {
               {unit ? `Selected: ${unit.name}` : 'No unit chosen — you’ll practise against the sample.'}
             </Text>
             <Text className="pb-2 text-xs text-muted">
-              In a real race, a report is only accepted from the polling unit itself — Hawkeye checks
-              your GPS against the unit and rejects one filed from anywhere else. Practice does not
-              check, so you can rehearse from anywhere.
+              A real report is only accepted at the polling unit itself. Practice isn’t checked, so
+              you can rehearse from anywhere.
             </Text>
             <Pressable
               onPress={() => setStep('contest')}

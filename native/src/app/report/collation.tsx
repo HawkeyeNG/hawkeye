@@ -484,7 +484,7 @@ export default function ReportCollation() {
       ) : null}
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         {step === 'scope' ? (

@@ -117,7 +117,7 @@ async function jget<T>(path: string): Promise<T> {
 const SEV_COLOR: Record<string, { bg: string; text: string }> = {
   high: { bg: 'bg-bad', text: 'text-bad-ink' },
   medium: { bg: 'bg-warn', text: 'text-warn-ink' },
-  low: { bg: 'bg-line', text: 'text-muted' },
+  low: { bg: 'bg-line', text: 'text-good-ink' }, // green text, matching the website's low tag
 };
 
 function timeAgo(ts: number) {
@@ -323,15 +323,17 @@ export default function Integrity() {
             value={String(bySev.high || 0)}
             label="High-severity flags"
             tone={bySev.high ? 'bad' : undefined}
+            topBar="#d4351c"
           />
           <Stat
             value={String(bySev.medium || 0)}
             label="Medium flags"
             tone={bySev.medium ? 'warn' : undefined}
+            topBar="#d4770c"
           />
-          <Stat value={String(bySev.low || 0)} label="Low flags" />
-          <Stat value={String(summary?.unitsFlagged ?? 0)} label="Units flagged" />
-          <Stat value={(summary?.reports ?? 0).toLocaleString()} label="Reports screened" />
+          <Stat value={String(bySev.low || 0)} label="Low flags" topBar="#004225" />
+          <Stat value={String(summary?.unitsFlagged ?? 0)} label="Units flagged" topBar="#004225" />
+          <Stat value={(summary?.reports ?? 0).toLocaleString()} label="Reports screened" topBar="#004225" />
         </View>
 
         <SectionLabel text="Detected Discrepancies" />

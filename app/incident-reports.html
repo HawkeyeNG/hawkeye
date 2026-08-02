@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00251a" />
+  <meta name="description" content="Published incident reports from Hawkeye observers — violence, vote-buying, BVAS failures and more, after human review." />
+  <title>Hawkeye — Incident Reports</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=119" />
+  <script src="native.js?v=103"></script>
+  <style>
+    .inc { margin: 10px 0; }
+    .inc-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .inc-kind { font-weight: 700; font-size: 0.78rem; padding: 3px 10px; border-radius: 999px; background: var(--tint-danger); color: var(--text-danger); }
+    .inc-time { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+    .inc-place { font-size: 0.85rem; color: var(--muted); margin-top: 6px; }
+    .inc-desc { margin: 8px 0 0; }
+    .inc-media { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+    .empty { color: var(--muted); padding: 24px; text-align: center; }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Incident Reports" />
+  <meta property="og:description" content="Observer-filed incidents, published after human review." />
+  <meta property="og:url" content="https://hawkeye.com.ng/incident-reports.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <script src="authgate.js?v=2"></script>
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">Leaderboard</a>
+        <a href="dashboard.html">Public Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="candidates.html">2027 Candidates</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Incident Reports</strong> — published only after human review. Nothing here is unmoderated.</div></div>
+
+  <main class="wrap">
+    <h1>Incident Reports</h1>
+    <p class="lede">Incidents observers filed on the ground — violence, vote-buying, BVAS failures and
+    more. Every one shown here was reviewed by a human before publishing. To file one yourself, use
+    <a href="incidents.html">Report an Incident</a>.</p>
+    <div id="list"><div class="skel" style="height:60px;margin:8px 0"></div></div>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a href="index.html">Home</a><a href="dashboard.html">Public Reports Log</a>
+      <a href="docket.html">Public Docket</a><a href="about.html">About & Contact</a></nav>
+    <p>Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+    <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+  </div></footer>
+
+  <script>
+    const KIND_LABEL = { violence: 'Violence', ballot_snatching: 'Ballot snatching', vote_buying: 'Vote buying', intimidation: 'Intimidation', bvas_failure: 'BVAS failure', late_materials: 'Late materials', obstruction: 'Obstruction', other: 'Other' };
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const timeAgo = (ms) => {
+      const s = Math.max(0, (Date.now() - ms) / 1000);
+      if (s < 60) return 'just now';
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+      return new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+    fetch('/api/incidents').then((r) => r.json()).then((d) => {
+      const items = d.incidents || [];
+      if (!items.length) { document.getElementById('list').innerHTML = '<div class="empty">No published incidents yet.</div>'; return; }
+      document.getElementById('list').innerHTML = items.map((i) => {
+        let media = 0; try { media = JSON.parse(i.media_json || '[]').length; } catch (e) { /* ignore */ }
+        const place = i.state || (i.pu_code ? 'Polling unit ' + i.pu_code : '');
+        return `<div class="card inc">
+          <div class="inc-top"><span class="inc-kind">${esc(KIND_LABEL[i.kind] || i.kind)}</span><span class="inc-time">${timeAgo(i.created_at)}</span></div>
+          ${place ? `<div class="inc-place">${esc(place)}</div>` : ''}
+          ${i.description ? `<p class="inc-desc">${esc(i.description)}</p>` : ''}
+          ${media ? `<div class="inc-media">📎 ${media} photo/video file${media === 1 ? '' : 's'} on file</div>` : ''}
+        </div>`;
+      }).join('');
+    }).catch(() => { document.getElementById('list').innerHTML = '<div class="empty">Could not load incidents — try again shortly.</div>'; });
+  </script>
+  <script src="menu.js?v=119"></script>
+</body>
+</html>

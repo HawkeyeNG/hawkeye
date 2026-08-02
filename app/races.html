@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00251a" />
+  <meta name="description" content="Every Nigerian race Hawkeye is watching — pick one to follow its candidates, report a result, or verify the count." />
+  <title>Hawkeye — Races</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=119" />
+  <script src="native.js?v=103"></script>
+  <style>
+    .race-item { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+    a.race-item { text-decoration: none; color: inherit; }
+    button.race-item { width: 100%; text-align: left; }
+    .rc-body { flex: 1; min-width: 0; }
+    .race-item h2 { margin: 0 0 2px; font-size: 1.05rem; border: 0; padding: 0; }
+    .race-item .rc-desc { margin: 0; font-size: 0.85rem; color: var(--muted); }
+    .rc-pill { flex: none; font-size: 0.72rem; font-weight: 700; padding: 3px 11px; border-radius: 999px; white-space: nowrap; }
+    .rc-pill.live { background: var(--tint-ok); color: var(--link); }
+    .rc-pill.soon { background: var(--tint); color: var(--muted); }
+    .soon-msg { color: var(--text-warn); font-size: 0.85rem; margin: 8px 0 0; }
+  </style>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Hawkeye — Races" />
+  <meta property="og:description" content="Pick a race to follow, report on, or verify." />
+  <meta property="og:url" content="https://hawkeye.com.ng/races.html" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <script src="authgate.js?v=2"></script>
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="collation.html">Report a Collation Result</a>
+        <a href="results.html">Leaderboard</a>
+        <a href="dashboard.html">Public Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
+        <a href="map-unit.html">Map a Polling Unit</a>
+        <a href="incidents.html">Report an Incident</a>
+        <a href="candidates.html">2027 Candidates</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About & Contact</a>
+        <a href="privacy.html">Privacy & Data</a>
+      </nav>
+    </div>
+  </header>
+  <div class="phase-banner"><div class="wrap"><strong>Races</strong> — every contest Hawkeye watches, in one place.</div></div>
+
+  <main class="wrap">
+    <h1>Races</h1>
+    <p class="lede">Pick a race to follow its candidates, report a result, or verify the count. We publish
+    each race's page as its election nears — roughly 28 days out — so a race without a page yet simply
+    isn't open for reporting.</p>
+    <p class="hint" style="margin:0 0 6px">Order: Presidency · Governorship · Senate · House of Representatives · State Assembly.</p>
+    <div id="races"></div>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a href="index.html">Home</a><a href="results.html">Leaderboard</a>
+      <a href="how.html">How Hawkeye Works</a><a href="about.html">About & Contact</a></nav>
+    <p>Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+    <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+  </div></footer>
+
+  <script>
+    // Canonical order: Presidency, Governorship, Senate, House of Reps, State Assembly.
+    // A race is "live" only once its page has been built (about 28 days out); the
+    // rest error politely on tap rather than 404.
+    const RACES = [
+      { name: 'Presidency 2027', desc: 'The declared presidential field, quick compare and live results.', href: 'candidates.html', live: true, pill: 'Live' },
+      { name: 'Governorship', desc: 'Osun 2026 is live now. Other states open closer to each election.', href: 'osun.html', live: true, pill: 'Osun 2026' },
+      { name: 'Senate', desc: '109 seats across 36 states and the FCT.', live: false },
+      { name: 'House of Representatives', desc: '360 federal constituencies.', live: false },
+      { name: 'State Houses of Assembly', desc: 'The 36 state legislatures.', live: false },
+    ];
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    document.getElementById('races').innerHTML = RACES.map((r, i) => r.live
+      ? `<a class="card race-item" href="${r.href}"><div class="rc-body"><h2>${esc(r.name)}</h2><p class="rc-desc">${esc(r.desc)}</p></div><span class="rc-pill live">${esc(r.pill)} ›</span></a>`
+      : `<button class="card race-item" type="button" data-i="${i}"><div class="rc-body"><h2>${esc(r.name)}</h2><p class="rc-desc">${esc(r.desc)}</p></div><span class="rc-pill soon">Soon</span></button>`
+    ).join('');
+    document.getElementById('races').addEventListener('click', (e) => {
+      const b = e.target.closest('button.race-item');
+      if (!b) return;
+      let m = b.querySelector('.soon-msg');
+      if (!m) { m = document.createElement('p'); m.className = 'soon-msg'; b.querySelector('.rc-body').appendChild(m); }
+      m.textContent = 'This race becomes available closer to the election — we publish each race page about 28 days out. Follow the presidency or Osun 2026 in the meantime.';
+    });
+  </script>
+  <script src="tg.js?v=95"></script>
+  <script src="menu.js?v=119"></script>
+</body>
+</html>

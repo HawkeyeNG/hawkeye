@@ -72,7 +72,7 @@
   const GROUPS = [
     ['Take part', [{ acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'map-unit.html', 'practice.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html']],
-    ['Live data', ['results.html', { acc: 'Races', hrefs: ['osun.html', 'candidates.html'] }, 'dashboard.html', 'political.html']],
+    ['Live data', ['results.html', { acc: 'Races', hrefs: ['races.html', 'osun.html', 'candidates.html'] }, 'dashboard.html', 'incident-reports.html', 'political.html']],
     // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
     // aren't in the panel, the group finds no members and is skipped.
     ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'privacy.html', 'terms.html']],
@@ -80,6 +80,21 @@
   if (panel && !panel.querySelector('.menu-group')) {
     // Osun 2026 is the active pilot race — inject it once so it appears in the
     // menu on every page without editing each page's static link list.
+    // All-races selector page — the first item in the Races accordion, so the menu
+    // holds the full picker (every race type) plus the two live shortcuts below it.
+    if (!panel.querySelector('a[href="races.html"]')) {
+      const ra = document.createElement('a');
+      ra.href = 'races.html';
+      ra.textContent = 'All Races';
+      panel.appendChild(ra);
+    }
+    // Public incident feed (viewing) — distinct from "Report an Incident" (filing).
+    if (!panel.querySelector('a[href="incident-reports.html"]')) {
+      const ir = document.createElement('a');
+      ir.href = 'incident-reports.html';
+      ir.textContent = 'Incident Reports';
+      panel.appendChild(ir);
+    }
     if (!panel.querySelector('a[href="osun.html"]')) {
       const o = document.createElement('a');
       o.href = 'osun.html';

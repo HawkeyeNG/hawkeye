@@ -28,8 +28,8 @@
   var WEB_PUBLIC = {
     'index.html': 1, '': 1,
     'results.html': 1, 'osun.html': 1, 'candidates.html': 1, 'dashboard.html': 1,
-    'political.html': 1, 'race.html': 1,
-    'ledger.html': 1, 'docket.html': 1, 'integrity.html': 1,
+    'political.html': 1, 'race.html': 1, 'races.html': 1,
+    'ledger.html': 1, 'docket.html': 1, 'integrity.html': 1, 'incident-reports.html': 1,
     'how.html': 1, 'guide.html': 1, 'faq.html': 1, 'about.html': 1,
     'privacy.html': 1, 'terms.html': 1, 'meta.html': 1, 'preview.html': 1
   };

@@ -11,9 +11,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ContestPicker } from '@/components/contest-picker';
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import {
   asMapLevel,
   LEVEL_WORD,
@@ -174,6 +175,7 @@ function whenLine(c: Contest): string {
 export default function Results() {
   const auth = useAuth();
   const ui = useUi();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
 
   /** The full /api/contests list — the picker's only source of openness. */
   const [contests, setContests] = useState<Contest[]>([]);
@@ -956,9 +958,9 @@ export default function Results() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <View className="px-4 pb-2 pt-4">
-        <Text className="text-2xl font-bold text-ink">Leaderboard</Text>
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Leaderboard" translateY={translateY} right="none" />
+      <View className="px-4 pb-2" style={{ paddingTop: headerH + 8 }}>
         <Text className="text-sm text-muted" numberOfLines={1}>
           {contest?.election ?? (race ? 'Not covered yet' : 'Loading…')} · {unitsReporting} unit(s)
           reporting
@@ -985,7 +987,11 @@ export default function Results() {
       </View>
 
       {picking ? (
-        <ScrollView contentContainerClassName="px-4 pb-8 pt-1">
+        <ScrollView
+          onScroll={onScroll}
+          scrollEventThrottle={scrollEventThrottle}
+          contentContainerClassName="px-4 pb-8 pt-1"
+        >
           <Text className="pb-2 text-sm text-muted">
             Choose any race to see its board. A race that has not opened can be viewed too — it
             will simply have no results yet.
@@ -1011,6 +1017,8 @@ export default function Results() {
               }}
             />
           }
+          onScroll={onScroll}
+          scrollEventThrottle={scrollEventThrottle}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
           ListEmptyComponent={
             <View className="mt-2 items-center rounded-2xl bg-card px-6 py-10">
@@ -1045,6 +1053,6 @@ export default function Results() {
           )}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }

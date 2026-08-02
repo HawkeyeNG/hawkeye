@@ -5,9 +5,11 @@ import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ReportContent } from '@/components/report-content';
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND, type Incident } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
@@ -66,6 +68,8 @@ const mediaUrl = (file: string) => `${BASE}/uploads/${encodeURI(file)}`;
  */
 export default function Incidents() {
   const ui = useUi();
+  const insets = useSafeAreaInsets();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
   const [rows, setRows] = useState<Published[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -112,23 +116,15 @@ export default function Incidents() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="x" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Published Incidents</Text>
-      </View>
-
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Published Incidents" translateY={translateY} onClose={() => router.back()} />
       <FlashList
         data={rows ?? []}
         keyExtractor={(i) => String(i.id)}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingBottom: 16 }}
+        contentContainerStyle={{ paddingTop: headerH, paddingBottom: 16 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ui.tint.good.ink} />
         }
@@ -224,7 +220,7 @@ export default function Incidents() {
       {/* Sibling of the list, not a row in it: the feed runs to a hundred cards,
           so a CTA scrolled with them would be unreachable exactly when reading
           one incident makes someone want to file their own. */}
-      <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+      <View className="border-t border-line bg-surface px-4 pt-3" style={{ paddingBottom: insets.bottom + 12 }}>
         <Pressable
           className="flex-row items-center justify-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
           onPress={() => router.push('/report/incident')}
@@ -233,6 +229,6 @@ export default function Incidents() {
           <Text className="pl-2 text-base font-bold text-hawk-gold">Report an incident</Text>
         </Pressable>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

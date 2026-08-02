@@ -1,12 +1,12 @@
-import { Feather } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Fold, SectionLabel, Stat } from '@/components/content-kit';
+import { ScreenHeader } from '@/components/screen-header';
 import { StatusChip, TallyBar, type Tally } from '@/components/tally';
+import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { api } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
@@ -107,6 +107,7 @@ export default function Docket() {
   const [heldOut, setHeldOut] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
 
   const load = useCallback(async () => {
     // Kicked off alongside the docket, and never rejects — a failure there
@@ -260,23 +261,15 @@ export default function Docket() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="x" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Public Docket</Text>
-      </View>
-
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Public Docket" translateY={translateY} onClose={() => router.back()} />
       <FlashList
         data={cases ?? []}
         keyExtractor={(c) => String(c.id)}
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{ paddingTop: headerH, paddingBottom: 32 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -321,6 +314,6 @@ export default function Docket() {
           </Pressable>
         )}
       />
-    </SafeAreaView>
+    </View>
   );
 }

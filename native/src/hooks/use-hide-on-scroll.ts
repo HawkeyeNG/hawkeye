@@ -1,5 +1,5 @@
-import { useMemo, useRef } from 'react';
-import { Animated } from 'react-native';
+import { useCallback, useMemo, useRef } from 'react';
+import { Animated, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** Height of the header row under the status-bar inset. Shared with ScreenHeader
@@ -33,6 +33,34 @@ export function useHideOnScroll() {
       }),
     }),
     [scrollY, headerH],
+  );
+  return { translateY, onScroll, headerH, scrollEventThrottle: 16 };
+}
+
+/**
+ * FlashList variant. FlashList routes scroll through its own wrapper and can't
+ * feed a native-driver Animated.event, so this drives the SAME diffClamp
+ * translateY from a plain JS onScroll callback (the transform runs on the JS
+ * thread — fine for a header slide). Same return shape; attach to a FlashList.
+ */
+export function useHideOnScrollList() {
+  const insets = useSafeAreaInsets();
+  const headerH = insets.top + HEADER_CONTENT_H;
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const translateY = useMemo(
+    () =>
+      Animated.diffClamp(scrollY, 0, headerH).interpolate({
+        inputRange: [0, headerH],
+        outputRange: [0, -headerH],
+        extrapolate: 'clamp',
+      }),
+    [scrollY, headerH],
+  );
+  const onScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollY.setValue(e.nativeEvent.contentOffset.y);
+    },
+    [scrollY],
   );
   return { translateY, onScroll, headerH, scrollEventThrottle: 16 };
 }

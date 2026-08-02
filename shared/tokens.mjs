@@ -68,7 +68,7 @@ export const TYPE = {
   display: "Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif",
   body: "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif",
   mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-  radius: "14px",
+  radius: "16px", // native's dominant card radius (Tailwind rounded-2xl = 1rem)
 };
 
 /** [r,g,b] -> "#rrggbb" */

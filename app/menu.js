@@ -318,7 +318,7 @@
       st.id = 'social-row-css';
       st.textContent = '.gov-footer .social-row{display:flex;gap:12px;justify-content:center;margin:0 0 14px}'
         + '.gov-footer .social-row a{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;border:1px solid var(--border,#dde4de);color:var(--muted,#5b6b62);margin:0;transition:color .15s,border-color .15s}'
-        + '.gov-footer .social-row a:hover{color:var(--green,#008751);border-color:var(--green,#008751)}';
+        + '.gov-footer .social-row a:hover{color:var(--green,#004225);border-color:var(--green,#004225)}';
       document.head.appendChild(st);
     }
   }
@@ -546,7 +546,7 @@
 
   function mount() {
     const css = `
-    #hk-fab{position:fixed;right:18px;bottom:18px;z-index:1200;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#008751);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+    #hk-fab{position:fixed;right:18px;bottom:18px;z-index:1200;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
     #hk-fab:hover{filter:brightness(1.08)}
     #hk-panel{position:fixed;right:18px;bottom:84px;z-index:1200;width:min(360px,calc(100vw - 36px));max-height:min(560px,calc(100vh - 120px));display:none;flex-direction:column;background:var(--card,#fff);border:1px solid var(--line,#dde4de);border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.28)}
     #hk-panel.open{display:flex}
@@ -554,11 +554,11 @@
     #hk-head button{display:inline-block;width:auto;margin:0;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:0 2px;flex:none;box-shadow:none}
     #hk-msgs{flex:1;min-height:120px;overflow-y:auto;overscroll-behavior:contain;padding:14px;display:flex;flex-direction:column;gap:10px;font-size:.94rem;background:var(--bg,#f7f8f6)}
     .hk-b{padding:9px 12px;border-radius:12px;max-width:85%;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
-    .hk-u{align-self:flex-end;background:var(--green,#008751);color:#fff;border-bottom-right-radius:4px}
+    .hk-u{align-self:flex-end;background:var(--green,#004225);color:#fff;border-bottom-right-radius:4px}
     .hk-a{align-self:flex-start;background:var(--card,#fff);border:1px solid var(--line,#e3e8e4);color:var(--ink,#14201a);border-bottom-left-radius:4px}
     #hk-form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line,#e3e8e4);background:var(--card,#fff)}
     #hk-in{flex:1;min-width:0;width:auto;display:block;margin:0;border:1px solid var(--border,#dde4de);border-radius:10px;padding:9px 11px;font:inherit;font-size:16px;background:var(--card,#fff);color:var(--ink,#14201a)}
-    #hk-form button{display:inline-block;width:auto;margin:0;flex:none;background:var(--green,#008751);color:#fff;border:none;border-radius:10px;padding:0 16px;font-weight:700;cursor:pointer}
+    #hk-form button{display:inline-block;width:auto;margin:0;flex:none;background:var(--green,#004225);color:#fff;border:none;border-radius:10px;padding:0 16px;font-weight:700;cursor:pointer}
     #hk-note{font-size:.72rem;color:var(--muted,#5b6b62);padding:0 14px 10px;background:var(--bg,#f7f8f6)}`;
     const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     const fab = document.createElement('button');

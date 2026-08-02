@@ -85,7 +85,7 @@
       </div>
       <div id="lmap"></div>
       <p class="map-key" hidden id="map-key">
-        <span><i style="background:#008751"></i> Location confirmed</span>
+        <span><i style="background:#004225"></i> Location confirmed</span>
         <span><i style="background:#1565c0"></i> Crowd-mapped</span>
         <span><i style="background:#f9a825"></i> Needs mapping (approximate area)</span>
       </p>
@@ -186,7 +186,7 @@
     };
 
     // ---------- Leaflet map: locator + ward boundaries + nearby PUs ----------
-    const STATUS_COLOR = { verified: '#008751', crowd: '#1565c0', approx: '#f9a825' };
+    const STATUS_COLOR = { verified: '#004225', crowd: '#1565c0', approx: '#f9a825' };
     let lmap = null, envelope = null, nearLayer = null;
     let wardLayer = null, wardFeatures = null, wardLoading = null;
 
@@ -223,7 +223,7 @@
           onEachFeature: (f, layer) => {
             const p = f.properties;
             layer.bindPopup(`<strong>${p.w || 'Ward'}</strong><br />${p.l || ''}${p.s ? ', ' + p.s : ''}`);
-            layer.on('mouseover', () => layer.setStyle({ weight: 2, color: '#008751' }));
+            layer.on('mouseover', () => layer.setStyle({ weight: 2, color: '#004225' }));
             layer.on('mouseout', () => wardLayer.resetStyle(layer));
           },
         });

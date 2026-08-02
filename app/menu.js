@@ -598,7 +598,7 @@
     const top = p.getBoundingClientRect().top;
     const avail = window.innerHeight - top - barH - 12; // 12px breathing room
     p.style.maxHeight = Math.max(160, Math.round(avail)) + 'px';
-    p.style.overflowY = 'auto';
+    p.style.overflowY = 'scroll';   // permanent gutter — bar visible whenever cut off
     markScrollCue(p);
   }
   // "There's more below" cue. A styled scrollbar alone isn't enough on touch,

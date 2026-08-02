@@ -285,14 +285,29 @@
     const panel = document.getElementById('menu-panel');
     const mobile = window.matchMedia('(max-width: 899px)');
     const show = () => hdr.classList.remove('hdr-hidden');
-    let lastY = window.scrollY, ticking = false;
+    const hide = () => hdr.classList.add('hdr-hidden');
+    // Hysteresis, not per-frame direction. The old handler flipped on the sign of
+    // every delta, so momentum and rubber-band scrolling — which jitter the scroll
+    // position back and forth by a pixel or two near the turning point — strobed the
+    // header hidden<->shown, each toggle restarting the .24s slide. That stutter IS
+    // the "choppy". Instead accumulate distance in the current direction and only
+    // flip past a threshold; a direction change resets the accumulator, so the next
+    // flip needs a fresh, deliberate gesture rather than scroll noise.
+    let lastY = Math.max(0, window.scrollY), accum = 0, ticking = false;
+    const HIDE_AT = 48;   // sustained downward px before it hides
+    const SHOW_AT = 24;   // upward px before it returns — smaller, so it comes back eagerly
     function onScroll() {
       if (!mobile.matches) { show(); return; }
-      const y = window.scrollY;
-      if (Math.abs(y - lastY) <= 6) return;
-      if (y < 8 || y < lastY || (panel && !panel.hidden)) show();
-      else hdr.classList.add('hdr-hidden');
+      const y = Math.max(0, window.scrollY);
+      const dy = y - lastY;
       lastY = y;
+      // Always shown near the top, and whenever the ☰ panel is open (its anchor
+      // must stay on screen).
+      if (y < 8 || (panel && !panel.hidden)) { show(); accum = 0; return; }
+      if ((dy > 0) !== (accum > 0)) accum = 0;   // reversal → start the count over
+      accum += dy;
+      if (accum > HIDE_AT) hide();
+      else if (accum < -SHOW_AT) show();
     }
     addEventListener('scroll', () => {
       if (!ticking) { requestAnimationFrame(() => { onScroll(); ticking = false; }); ticking = true; }

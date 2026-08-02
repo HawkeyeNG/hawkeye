@@ -23,7 +23,10 @@ export function ScreenHeader({
   rightSlot,
 }: {
   title: string;
-  translateY: Animated.AnimatedInterpolation<number>;
+  /** Omit for a static (non-hiding) header — e.g. a chat screen, where a header
+   *  that slid away mid-read would be wrong. When set, drive it from
+   *  useHideOnScroll's translateY so the pane hides on scroll-down. */
+  translateY?: Animated.AnimatedInterpolation<number>;
   onClose?: () => void;
   right?: 'close' | 'menu' | 'none';
   /** Custom content beside the title (e.g. a StatusChip), before the close/menu. */
@@ -35,7 +38,14 @@ export function ScreenHeader({
   return (
     <Animated.View
       className="border-b border-line bg-surface"
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, transform: [{ translateY }] }}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10,
+        transform: translateY ? [{ translateY }] : [],
+      }}
     >
       <View style={{ paddingTop: insets.top }}>
         <View className="flex-row items-center px-4" style={{ height: HEADER_CONTENT_H }}>

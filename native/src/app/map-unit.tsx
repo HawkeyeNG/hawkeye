@@ -6,13 +6,13 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Linking,
   Pressable,
-  ScrollView,
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Aliased because this screen's own component is called MapUnit; two things
 // under one name here would be a trap rather than a coincidence.
@@ -28,6 +28,8 @@ import {
   type UnitTier,
 } from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
@@ -357,6 +359,8 @@ function StatCell({ value, label }: { value: string; label: string }) {
 export default function MapUnit() {
   const ui = useUi();
   const auth = useAuth();
+  const insets = useSafeAreaInsets();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const [states, setStates] = useState<string[]>([]);
   const [stateSel, setStateSel] = useState<string | null>(null);
   const [lgas, setLgas] = useState<string[]>([]);
@@ -865,7 +869,7 @@ export default function MapUnit() {
 
   if (auth.status !== 'signedIn') {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
+      <View className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={BRAND.leaf} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to map a polling unit
@@ -879,13 +883,13 @@ export default function MapUnit() {
         <Pressable className="mt-3" onPress={() => router.back()}>
           <Text className="text-sm text-muted">Not now</Text>
         </Pressable>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (done) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
+      <View className="flex-1 items-center justify-center bg-surface px-8">
         <View className="h-16 w-16 items-center justify-center rounded-full bg-hawk-green">
           <Feather name="map-pin" size={28} color={BRAND.gold} />
         </View>
@@ -897,7 +901,7 @@ export default function MapUnit() {
         >
           <Text className="text-base font-bold text-hawk-gold">Done</Text>
         </Pressable>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -965,19 +969,18 @@ export default function MapUnit() {
   const selUnlocated = unit != null && !!unit.locationTier && rowTier(unit) === 'unmapped';
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="x" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Map a polling unit</Text>
-      </View>
+    <View className="flex-1 bg-surface">
+      <ScreenHeader
+        title="Map a polling unit"
+        translateY={translateY}
+        onClose={() => router.back()}
+      />
 
-      <ScrollView contentContainerClassName="px-4 pb-8 pt-3">
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 32 }}
+      >
         <Text className="pb-3 text-sm text-muted">
           Stand at the polling unit and record one GPS fix. When enough observers agree, the
           unit becomes location-verified — and every result reported there can be proven.
@@ -1231,10 +1234,13 @@ export default function MapUnit() {
             ) : null}
           </View>
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {unit ? (
-        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+        <View
+          className="border-t border-line bg-surface px-4 pt-3"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
           {/* An unlocated unit is known only as an area — one the map outlines
               when it is small enough to fit and leaves to these words when it is
               not. Naming its size here is what makes the CTA below read as
@@ -1295,6 +1301,6 @@ export default function MapUnit() {
           ) : null}
         </View>
       ) : null}
-    </SafeAreaView>
+    </View>
   );
 }

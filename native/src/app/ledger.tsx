@@ -6,9 +6,11 @@ import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Fold, SectionLabel, Stat } from '@/components/content-kit';
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
@@ -133,6 +135,8 @@ async function jget<T>(path: string): Promise<T> {
  */
 export default function Ledger() {
   const ui = useUi();
+  const insets = useSafeAreaInsets();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
   const [verify, setVerify] = useState<Verify | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
@@ -433,25 +437,17 @@ export default function Ledger() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="x" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Verify the Ledger</Text>
-      </View>
-
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Verify the Ledger" translateY={translateY} onClose={() => router.back()} />
       {/* One virtualised list: on election day this chain is thousands of rows,
           so the header rides along rather than sitting in a ScrollView. */}
       <FlashList
         data={rows}
         keyExtractor={(e) => String(e.id)}
         ListHeaderComponent={loadErr ? errorHeader : header}
-        contentContainerStyle={{ paddingBottom: raceSel ? 16 : 32 }}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{ paddingTop: headerH, paddingBottom: raceSel ? 16 : 32 }}
         ListEmptyComponent={
           loading || loadErr ? null : (
             <Text className="px-4 pt-2 text-sm text-muted">
@@ -497,7 +493,7 @@ export default function Ledger() {
           rides down with it — a proof that fails to fold is retried from this
           same button, and it must stay in sight to be read. */}
       {raceSel ? (
-        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+        <View className="border-t border-line bg-surface px-4 pt-3" style={{ paddingBottom: insets.bottom + 12 }}>
           {raceOut ? <Result ok={raceOut.ok} text={raceOut.text} link={raceOut.link} /> : null}
           <Pressable
             disabled={!raceSel || raceBusy}
@@ -514,6 +510,6 @@ export default function Ledger() {
           </Pressable>
         </View>
       ) : null}
-    </SafeAreaView>
+    </View>
   );
 }

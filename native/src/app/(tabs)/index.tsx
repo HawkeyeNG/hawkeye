@@ -3,8 +3,9 @@ import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND, type Contest, type IntegritySummary } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
 
@@ -87,6 +88,7 @@ async function jget<T>(path: string): Promise<T | null> {
  */
 export default function Home() {
   const ui = useUi();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
   const [contests, setContests] = useState<Contest[] | null>(null);
   const [integrity, setIntegrity] = useState<IntegritySummary | null>(null);
   const [items, setItems] = useState<Item[] | null>(null);
@@ -206,8 +208,7 @@ export default function Home() {
 
   const header = (
     <View className="px-4">
-      <Text className="pb-1 pt-4 text-2xl font-bold text-ink">Hawkeye</Text>
-      <Text className="pb-4 text-sm text-muted">
+      <Text className="pb-4 pt-1 text-sm text-muted">
         Independent election observation — every report public, signed and verifiable.
       </Text>
 
@@ -294,12 +295,15 @@ export default function Home() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Hawkeye" translateY={translateY} right="none" />
       <FlashList
         data={shown ?? []}
         keyExtractor={(x) => x.id}
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{ paddingTop: headerH, paddingBottom: 24 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -347,6 +351,6 @@ export default function Home() {
           );
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }

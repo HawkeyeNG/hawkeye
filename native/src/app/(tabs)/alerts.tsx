@@ -3,8 +3,9 @@ import { FlashList } from '@shopify/flash-list';
 import { router, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
@@ -32,6 +33,7 @@ function ago(ts: number) {
 export default function Alerts() {
   const ui = useUi();
   const auth = useAuth();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
   const navigation = useNavigation();
   const unread = useUnread();
   const [items, setItems] = useState<Notification[] | null>(null);
@@ -105,14 +107,14 @@ export default function Alerts() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      {/* Sign out lives ONLY on Profile and the menu bottom — never on Alerts. */}
-      <View className="px-4 pb-2 pt-4">
-        <Text className="text-2xl font-bold text-ink">Alerts</Text>
-      </View>
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Alerts" translateY={translateY} right="none" />
 
       {auth.status !== 'signedIn' ? (
-        <View className="mx-4 mt-4 items-center rounded-2xl bg-card px-6 py-10">
+        <View
+          className="mx-4 items-center rounded-2xl bg-card px-6 py-10"
+          style={{ marginTop: headerH + 16 }}
+        >
           <Feather name="bell" size={28} color={ui.tint.good.ink} />
           <Text className="pt-3 text-base font-semibold text-ink">Sign in to get alerts</Text>
           <Text className="pt-1 text-center text-sm text-muted">
@@ -137,7 +139,9 @@ export default function Alerts() {
                 tintColor={ui.tint.good.ink}
               />
             }
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 12 }}
+            onScroll={onScroll}
+            scrollEventThrottle={scrollEventThrottle}
+            contentContainerStyle={{ paddingTop: headerH, paddingHorizontal: 16, paddingBottom: 12 }}
             ListEmptyComponent={
               items === null && !err ? (
                 <ActivityIndicator className="pt-8" color={ui.tint.good.ink} />
@@ -223,6 +227,6 @@ export default function Alerts() {
           ) : null}
         </>
       )}
-    </SafeAreaView>
+    </View>
   );
 }

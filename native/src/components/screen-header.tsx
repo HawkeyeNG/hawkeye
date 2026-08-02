@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { type ReactNode } from 'react';
 import { Animated, Image, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,11 +20,14 @@ export function ScreenHeader({
   translateY,
   onClose,
   right,
+  rightSlot,
 }: {
   title: string;
   translateY: Animated.AnimatedInterpolation<number>;
   onClose?: () => void;
   right?: 'close' | 'menu' | 'none';
+  /** Custom content beside the title (e.g. a StatusChip), before the close/menu. */
+  rightSlot?: ReactNode;
 }) {
   const ui = useUi();
   const insets = useSafeAreaInsets();
@@ -50,6 +54,7 @@ export function ScreenHeader({
           <Text className="flex-1 text-xl font-bold text-ink" numberOfLines={1}>
             {title}
           </Text>
+          {rightSlot ? <View className="mr-2">{rightSlot}</View> : null}
           {rightKind === 'close' ? (
             <Pressable
               onPress={onClose ?? (() => router.back())}

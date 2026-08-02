@@ -42,15 +42,15 @@ const ICONS: Record<string, string> = {
 };
 
 const WALLETS: Wallet[] = [
+  { slug: 'solana', label: 'Solana', address: SOL, qr: `solana:${SOL}`, net: 'Solana Pay request.' },
   { slug: 'ethereum', label: 'Ethereum', address: EVM, qr: `ethereum:${EVM}@1`, net: 'Tagged for Ethereum (chain 1).' },
+  { slug: 'bitcoin', label: 'Bitcoin', address: BTC, qr: `bitcoin:${BTC}`, net: 'BIP-21 Bitcoin request.' },
   { slug: 'base', label: 'Base', address: EVM, qr: `ethereum:${EVM}@8453`, net: 'Tagged for Base (chain 8453).' },
   { slug: 'polygon', label: 'Polygon', address: EVM, qr: `ethereum:${EVM}@137`, net: 'Tagged for Polygon (chain 137).' },
-  { slug: 'monad', label: 'Monad', address: EVM, qr: `ethereum:${EVM}@143`, net: 'Tagged for Monad (chain 143).' },
   { slug: 'robinhood', label: 'Robinhood Chain', address: EVM, qr: `ethereum:${EVM}@4663`, net: 'Tagged for Robinhood Chain (chain 4663).' },
-  { slug: 'hyperevm', label: 'HyperEVM', address: EVM, qr: `ethereum:${EVM}@999`, net: 'Tagged for HyperEVM (chain 999).' },
-  { slug: 'solana', label: 'Solana', address: SOL, qr: `solana:${SOL}`, net: 'Solana Pay request.' },
-  { slug: 'bitcoin', label: 'Bitcoin', address: BTC, qr: `bitcoin:${BTC}`, net: 'BIP-21 Bitcoin request.' },
+  { slug: 'monad', label: 'Monad', address: EVM, qr: `ethereum:${EVM}@143`, net: 'Tagged for Monad (chain 143).' },
   { slug: 'sui', label: 'Sui', address: SUI, qr: SUI, net: 'Plain Sui address — Sui has no URI scheme, so no network tag.' },
+  { slug: 'hyperevm', label: 'HyperEVM', address: EVM, qr: `ethereum:${EVM}@999`, net: 'Tagged for HyperEVM (chain 999).' },
 ];
 
 const short = (a: string) => `${a.slice(0, 12)}…${a.slice(-8)}`;

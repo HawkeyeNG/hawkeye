@@ -118,6 +118,13 @@ export const config = {
   fcmProjectId: process.env.FCM_PROJECT_ID || '',
   fcmClientEmail: process.env.FCM_CLIENT_EMAIL || '',
   fcmPrivateKey: process.env.FCM_PRIVATE_KEY || '',
+  // Web Push (VAPID) — browser + installed-PWA notifications. Both keys unset =
+  // web push is a silent no-op, exactly like FCM above. The public key is served
+  // to the browser (safe); the private key never leaves the server. Subject is a
+  // mailto:/https: contact required by the Web Push spec.
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
+  vapidSubject: process.env.VAPID_SUBJECT || 'mailto:info@hawkeye.com.ng',
   // IReV cross-check: the IReV _id of the election being monitored (from
   // GET /api/v1/elections on the IReV API) and which of our contests it maps to.
   // Empty election id = feature idle. Set both when INEC opens the election.

@@ -1,7 +1,7 @@
 {
   "name": "hawkeye-backend",
   "version": "0.1.0",
-  "description": "Hawkeye election monitoring \u2014 backend API, location oracle and tamper-evident ledger",
+  "description": "Hawkeye election monitoring — backend API, location oracle and tamper-evident ledger",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
@@ -23,6 +23,7 @@
     "tesseract.js": "^7.0.0",
     "topojson-client": "^3.1.0",
     "topojson-server": "^3.0.1",
-    "topojson-simplify": "^3.0.3"
+    "topojson-simplify": "^3.0.3",
+    "web-push": "^3.6.7"
   }
 }

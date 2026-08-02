@@ -4,14 +4,23 @@
 // push. Tokens are registered by the mobile shell (app/native.js) and tied to an
 // observer; "new report at your saved unit" fans out here alongside Telegram.
 import jwt from 'jsonwebtoken';
+import webpush from 'web-push';
 import { db } from '../db.js';
 import { config } from '../config.js';
 
 const FCM_ENABLED = Boolean(config.fcmProjectId && config.fcmClientEmail && config.fcmPrivateKey);
+// Web Push (VAPID) — independent of FCM. Unset keys = silent no-op.
+const VAPID_ENABLED = Boolean(config.vapidPublicKey && config.vapidPrivateKey);
+if (VAPID_ENABLED) {
+  webpush.setVapidDetails(config.vapidSubject, config.vapidPublicKey, config.vapidPrivateKey);
+}
 
 /** Are the three FCM service-account vars present? Booleans only — safe to
  *  surface publicly, and it answers "did my .env land" without a deploy log. */
 export const pushConfigured = () => FCM_ENABLED;
+export const webPushConfigured = () => VAPID_ENABLED;
+/** The VAPID public key the browser needs to subscribe (safe to serve). */
+export const vapidPublicKey = () => config.vapidPublicKey;
 
 /**
  * Prove the credential actually WORKS, without pushing anything to anyone.
@@ -45,11 +54,14 @@ export async function checkPushCredentials() {
 
 export function registerPushToken(observerId, token, platform) {
   if (!token) return;
+  // A 'web' token is a JSON PushSubscription (endpoint + keys) — longer than an
+  // FCM device token, so allow more room; anything unknown falls back to android.
+  const p = platform === 'web' ? 'web' : platform === 'ios' ? 'ios' : 'android';
   db.prepare(`
     INSERT INTO device_push_tokens (token, observer_id, platform, created_at)
     VALUES (?, ?, ?, ?)
     ON CONFLICT(token) DO UPDATE SET observer_id = excluded.observer_id, platform = excluded.platform`)
-    .run(String(token).slice(0, 512), observerId, platform === 'ios' ? 'ios' : 'android', Date.now());
+    .run(String(token).slice(0, 2048), observerId, p, Date.now());
 }
 
 // Cached OAuth access token for FCM v1 (service-account JWT grant).
@@ -95,17 +107,41 @@ async function fcmSend(accessToken, deviceToken, title, body, data) {
   return res.ok;
 }
 
-// Best-effort; never throws into the caller (mirrors the Telegram helpers).
-export async function sendToObserver(observerId, { title, body, data } = {}) {
-  if (!FCM_ENABLED || !observerId) return 0;
-  const rows = db.prepare("SELECT token FROM device_push_tokens WHERE observer_id = ? AND platform = 'android'").all(observerId);
-  if (!rows.length) return 0;
+async function webPushSend(subJson, title, body, data) {
+  let sub;
+  try { sub = JSON.parse(subJson); } catch { return false; }
   try {
-    const at = await fcmAccessToken();
-    let sent = 0;
-    for (const r of rows) if (await fcmSend(at, r.token, title, body, data).catch(() => false)) sent++;
-    return sent;
-  } catch { return 0; }
+    await webpush.sendNotification(sub, JSON.stringify({ title, body, data: data || {} }));
+    return true;
+  } catch (e) {
+    // 404/410 → the browser dropped the subscription: forget it.
+    if (e?.statusCode === 404 || e?.statusCode === 410) {
+      db.prepare('DELETE FROM device_push_tokens WHERE token = ?').run(subJson);
+    }
+    return false;
+  }
+}
+
+// Best-effort; never throws into the caller (mirrors the Telegram helpers). Fans
+// out to BOTH the observer's Android (FCM) and web (VAPID) subscriptions; each
+// channel is gated independently so one being unconfigured never blocks the other.
+export async function sendToObserver(observerId, { title, body, data } = {}) {
+  if (!observerId) return 0;
+  let sent = 0;
+  if (FCM_ENABLED) {
+    const rows = db.prepare("SELECT token FROM device_push_tokens WHERE observer_id = ? AND platform = 'android'").all(observerId);
+    if (rows.length) {
+      try {
+        const at = await fcmAccessToken();
+        for (const r of rows) if (await fcmSend(at, r.token, title, body, data).catch(() => false)) sent++;
+      } catch { /* FCM oauth failed — web still goes out below */ }
+    }
+  }
+  if (VAPID_ENABLED) {
+    const rows = db.prepare("SELECT token FROM device_push_tokens WHERE observer_id = ? AND platform = 'web'").all(observerId);
+    for (const r of rows) if (await webPushSend(r.token, title, body, data)) sent++;
+  }
+  return sent;
 }
 
 // Fan out a push to everyone who saved this polling unit (Android only for now).

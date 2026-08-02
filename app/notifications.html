@@ -55,9 +55,17 @@
       <h1 style="margin:0">Notifications</h1>
       <button class="secondary" id="mark-all" hidden>Mark all read</button>
     </div>
+    <div id="push-card" class="card" hidden style="margin-bottom:14px">
+      <strong>Get alerts on this device</strong>
+      <p class="hint" style="margin:4px 0 10px">Turn on browser notifications for new reports, incidents and cases at the
+      units you follow — even when Hawkeye isn't open.</p>
+      <button id="push-enable" style="width:auto;display:inline-block">Enable notifications</button>
+      <span id="push-status" class="hint" style="margin-left:10px"></span>
+    </div>
     <div id="list"><p class="empty">Loading…</p></div>
   </main>
 
+  <script src="webpush.js?v=1"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
@@ -70,6 +78,33 @@
       if (s < 86400) return Math.floor(s / 3600) + 'h ago';
       return new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' });
     };
+
+    // Web Push opt-in — shown only when supported, signed in, and not already granted.
+    (function () {
+      const card = $('push-card');
+      if (!card || !token || !(window.hawkeyeWebPushSupported && window.hawkeyeWebPushSupported())) return;
+      if (Notification.permission === 'granted') return;
+      card.hidden = false;
+      $('push-enable').onclick = async () => {
+        $('push-enable').disabled = true;
+        $('push-status').textContent = 'Enabling…';
+        const r = await window.hawkeyeEnableWebPush();
+        if (r.ok) {
+          $('push-status').textContent = '✅ On — alerts will arrive here.';
+          setTimeout(() => { card.hidden = true; }, 2500);
+        } else {
+          const MSG = {
+            unsupported: 'Not supported in this browser.',
+            signin_required: 'Sign in first.',
+            server_push_off: 'Push is not enabled yet — try again later.',
+            denied: 'Notifications are blocked — enable them in your browser settings.',
+            register_failed: 'Could not save — try again.',
+          };
+          $('push-status').textContent = MSG[r.reason] || 'Could not enable.';
+          $('push-enable').disabled = false;
+        }
+      };
+    })();
 
     async function load() {
       if (!token) {

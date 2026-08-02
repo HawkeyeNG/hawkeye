@@ -31,7 +31,7 @@
     /* QR modal — one large code at a time so a camera can isolate it cleanly. */
     .qr-modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0, 0, 0, 0.6); }
     .qr-modal[hidden] { display: none; }
-    .qr-dialog { background: var(--card); border: 1px solid var(--border); border-radius: 16px; max-width: 340px; width: 100%; padding: 22px 20px 20px; text-align: center; position: relative; }
+    .qr-dialog { background: var(--card); border: 1px solid var(--border); border-radius: 16px; max-width: 340px; width: 100%; padding: 42px 20px 20px; text-align: center; position: relative; }
     .qr-close { position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 1.5rem; line-height: 1; color: var(--muted); cursor: pointer; }
     .qr-title { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; }
     .qr-title svg { width: 24px; height: 24px; }
@@ -39,6 +39,7 @@
     .qr-plate { width: 232px; height: 232px; max-width: 100%; background: #fff; border-radius: 12px; padding: 12px; margin: 14px auto 10px; box-sizing: border-box; }
     .qr-plate img { width: 100%; height: 100%; display: block; }
     .qr-net { font-size: 0.78rem; color: var(--muted); margin: 0 0 10px; }
+    #qr-modal-copy { width: 100%; justify-content: center; }
     .qr-modal-addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.72rem; color: var(--muted); word-break: break-all; margin: 0 0 14px; }
   </style>
   <meta property="og:type" content="website" />

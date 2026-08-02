@@ -26,6 +26,9 @@ docs/PROJECT-SHIELD-VS-CLOUDFLARE.md
 docs/cloudflare-rules.md
 docs/META-SETUP.txt
 docs/TIKTOK-SETUP.txt
+docs/WEB-PARITY-PLAN.md
+docs/WEB-PARITY-AUDIT.md
+docs/OBSERVER-CORRESPONDENCE.txt
 
 # rendered video masters/QA frames — large, regenerable (node render_howto.mjs)
 audit/howto/out/

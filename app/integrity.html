@@ -8,7 +8,8 @@
   <title>Hawkeye — Election Integrity</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=117" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=118" />
   <script src="native.js?v=103"></script>
   <style>
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
@@ -50,6 +51,7 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
+  <script src="authgate.js?v=1"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -195,7 +197,7 @@
   </div></footer>
 
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=117"></script>
+  <script src="menu.js?v=118"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const TYPE_LABEL = {
@@ -247,7 +249,7 @@
       const type = $('type-filter').value, state = $('state-filter').value;
       const qs = new URLSearchParams({ ...(sev && { severity: sev }), ...(type && { type }), ...(state && { state }) });
       const { discrepancies } = await fetch('/api/integrity/discrepancies?' + qs).then((r) => r.json());
-      if (!discrepancies.length) { $('rows').innerHTML = '<tr><td colspan="5" class="empty">No discrepancies match — nothing flagged yet. 🎉</td></tr>'; return; }
+      if (!discrepancies.length) { $('rows').innerHTML = '<tr><td colspan="5" class="empty">No discrepancies match — nothing flagged yet.</td></tr>'; return; }
       const states = [...new Set(discrepancies.map((d) => d.state).filter(Boolean))].sort();
       const sf = $('state-filter');
       if (sf.options.length === 1) for (const st of states) sf.add(new Option(st, st));

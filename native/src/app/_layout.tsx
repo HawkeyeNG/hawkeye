@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import '../global.css';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -10,7 +10,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AskFab } from '@/components/ask-fab';
-import { bootstrapAuth } from '@/lib/auth';
+import { bootstrapAuth, useAuth } from '@/lib/auth';
 import { usePushNotifications } from '@/lib/push';
 import { ThemePrefProvider, themeClass, useThemePref } from '@/lib/theme-pref';
 
@@ -99,6 +99,22 @@ function RootShell() {
   useEffect(() => {
     bootstrapAuth();
   }, []);
+
+  // Signed-out access tier for the APP: a signed-out user gets ONLY the auth
+  // funnel (welcome / sign-in) and practice. Any other route — the tabs, a
+  // report flow, a trust page — bounces to welcome. Signed-in users are
+  // unrestricted; nothing runs until auth has resolved past 'loading'. This is
+  // the native counterpart of the web's authgate.js (which keeps more public,
+  // per that platform's tier). Device-verify: no flash, no loop, correct bounce.
+  const auth = useAuth();
+  const segments = useSegments();
+  useEffect(() => {
+    if (auth.status !== 'signedOut') return;
+    const top = segments[0];
+    const allowed = top === 'welcome' || top === 'sign-in' || top === 'practice';
+    if (!allowed) router.replace('/welcome');
+  }, [auth.status, segments]);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       {/* The palette. NativeWind turns a class-scoped custom property into a

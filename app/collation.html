@@ -8,7 +8,8 @@
   <title>Hawkeye — Report a Collation Result</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=117" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=118" />
   <script src="native.js?v=103"></script>
   <style>
     .vote-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
@@ -24,6 +25,7 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
+  <script src="authgate.js?v=1"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -77,6 +79,7 @@
         <select id="sel-contest"></select>
         <label for="sel-state">State</label>
         <select id="sel-state"><option value="">— select —</option></select>
+        <p class="hint" id="hot-note" hidden style="margin:4px 0 0">🟢 marks a state with an election open now or within 28 days.</p>
         <div id="lga-block"><label for="sel-lga">Local Government Area</label>
           <select id="sel-lga" disabled><option value="">— select —</option></select></div>
         <div id="ward-block"><label for="sel-ward">Ward</label>
@@ -121,6 +124,7 @@
   <div id="camera-overlay" hidden>
     <div class="camera-frame">
       <p id="camera-title">Collation form</p>
+      <p id="camera-guide" hidden></p>
       <div class="video-wrap">
         <video id="video" playsinline></video>
         <canvas id="scan-canvas" hidden></canvas>
@@ -143,7 +147,7 @@
   <script src="device.js"></script>
   <script src="scan.js?v=3"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=117"></script>
+  <script src="menu.js?v=118"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
@@ -219,6 +223,13 @@
         cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } }, audio: false });
       } catch { return alert('Camera access is required — live photos only.'); }
       $('camera-title').textContent = target === 'sheet' ? `Collation form (${FORM[$('sel-level').value]})` : 'Collation centre';
+      const guide = $('camera-guide');
+      if (guide) {
+        guide.textContent = target === 'venue'
+          ? '📸 VENUE PHOTO — aim at the collation centre itself: the building, the room or the officials. This is NOT the collation form.'
+          : '';
+        guide.hidden = target !== 'venue';
+      }
       $('btn-capture').textContent = target === 'sheet' ? 'Capture Form' : 'Capture Venue';
       $('camera-overlay').hidden = false;
       const video = $('video');
@@ -290,7 +301,9 @@
     }
     function updateSubmit() {
       const closed = contestClosed();
-      $('btn-submit').disabled = !(shots.sheet && shots.venue && scopeOk() && $('sel-contest').value) || closed;
+      // Closed no longer disables the button — the click-handler surfaces an error
+      // instead of a dead, silent tap (the notice below still explains the wait).
+      $('btn-submit').disabled = !(shots.sheet && shots.venue && scopeOk() && $('sel-contest').value);
       const c = CONTESTS.find((x) => x.code === $('sel-contest').value);
       if (closed && c?.opensAt) {
         $('status').textContent = `Collation reporting opens when polls open — ${new Date(c.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}.`;
@@ -299,6 +312,7 @@
 
     // ---- submit ----
     $('btn-submit').onclick = async () => {
+      if (contestClosed()) { $('status').textContent = 'Collation reporting opens on election day, when polls open. Come back then.'; return; }
       $('btn-submit').disabled = true;
       $('status').textContent = 'Signing and submitting…';
       try {
@@ -376,7 +390,22 @@
       CONTESTS = contests;
       fillContests();
       $('sel-contest').onchange = updateSubmit;
-      fill($('sel-state'), states, '— select state —');
+      // Highlight states with an election open now or within 28 days (state-specific
+      // contests only — a nationwide race is not a per-state cue). Mobile <select>s
+      // ignore per-option colour, so the cue is a 🟢 marker in the option text.
+      const nowT = Date.now(), HOT_WIN = 28 * 864e5, hotStates = new Set();
+      for (const c of CONTESTS) {
+        if (!(c.states && c.states.length)) continue;
+        const t = c.date ? new Date(`${c.date}T00:00:00`).getTime() : null;
+        if (c.open === true || (t != null && t - nowT <= HOT_WIN && t >= nowT - HOT_WIN)) {
+          c.states.forEach((s) => hotStates.add(s));
+        }
+      }
+      $('sel-state').innerHTML = '<option value="">— select state —</option>' + states
+        .map((s) => `<option value="${s}">${hotStates.has(s) ? '🟢 ' : ''}${s}${hotStates.has(s) ? ' — voting soon' : ''}</option>`)
+        .join('');
+      $('sel-state').disabled = !states.length;
+      if (hotStates.size) $('hot-note').hidden = false;
       $('vote-inputs').innerHTML = parties.map((p) => `
         <div class="vote-row"><label>${p.code}</label>
         <input type="number" min="0" inputmode="numeric" placeholder="0" data-party="${p.code}" /></div>`).join('');

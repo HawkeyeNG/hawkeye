@@ -24,6 +24,10 @@ export type Race = {
   office?: string;
   election?: string;
   date?: string;
+  /** Verbatim date label when there is no fixed ISO date yet (e.g. the 2027
+   *  presidential day, shown as dateText "2027" / dateLabel "Election year"). */
+  dateText?: string;
+  dateLabel?: string;
   note?: string;
   photoCredit?: string;
   incumbentNote?: string;

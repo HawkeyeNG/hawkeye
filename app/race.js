@@ -38,15 +38,20 @@
     parts.push(`<h1>${title}</h1>`);
     if (race.office || dateStr) parts.push(`<p class="lede">${esc(race.office || race.election)}${dateStr ? ' · ' + dateStr : ''}.</p>`);
 
-    // Stat bar (optional)
-    if (race.stats) {
-      const cells = [];
-      if (race.date) cells.push([new Date(race.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }), 'Election day']);
-      if (race.stats.candidates != null) cells.push([race.stats.candidates, 'Candidates']);
-      if (race.stats.lgas != null) cells.push([race.stats.lgas, 'LGAs']);
-      if (race.stats.pollingUnits != null) cells.push(['~' + Number(race.stats.pollingUnits).toLocaleString(), 'Polling units']);
-      parts.push(`<div class="race-statbar">${cells.map(([n, l]) => `<div class="s"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('')}</div>`);
-    }
+    // Stat bar. The candidate count is derived from the cards on THIS page
+    // (front-runners + the full ballot / minor list) so it always matches what's
+    // shown; LGA and polling-unit totals are geographic facts from the data. Date
+    // is a fixed day where INEC has set one (Osun), else a verbatim label (the 2027
+    // presidential date is not yet fixed). Rendered on every race page.
+    const st = race.stats || {};
+    const candTotal = race.candidates.length + ((race.others || race.minors || []).length);
+    const cells = [];
+    if (race.date) cells.push([new Date(race.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }), 'Election day']);
+    else if (race.dateText) cells.push([race.dateText, race.dateLabel || 'Date']);
+    cells.push([candTotal, 'Candidates']);
+    if (st.lgas != null) cells.push([st.lgas, 'LGAs']);
+    if (st.pollingUnits != null) cells.push(['~' + Number(st.pollingUnits).toLocaleString(), 'Polling units']);
+    if (cells.length) parts.push(`<div class="race-statbar">${cells.map(([n, l]) => `<div class="s"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('')}</div>`);
 
     // Context / incumbent note (optional)
     if (race.incumbentNote) parts.push(`<div class="race-ctx">${esc(race.incumbentNote)}</div>`);
@@ -66,16 +71,6 @@
             <dt>Status</dt><dd>${esc(c.status || '—')}</dd></dl>
       </div>`).join('')}</div>`);
 
-    // Optional side-by-side compare table (presidential page keeps this)
-    if (opts.compare) {
-      parts.push('<h2 style="margin-top:26px">Quick compare</h2>');
-      parts.push(`<div class="race-compare"><table><thead>
-        <tr><th>Candidate</th><th>Party</th><th>Home base</th><th>Bid</th><th>Status</th></tr></thead><tbody>${
-        race.candidates.map((c) => `<tr><td><strong>${esc(c.name)}</strong></td>
-          <td>${flagInline(c.party)}<span style="font-weight:700;color:${color(c.party)}">${esc(c.party)}</span></td>
-          <td>${esc(c.home || '—')}</td><td>${esc(c.bids || '—')}</td><td>${esc(c.status || '—')}</td></tr>`).join('')}</tbody></table></div>`);
-    }
-
     // Full ballot (osun `others`) or minor candidates (presidential `minors`)
     const secondary = race.others || race.minors;
     if (secondary && secondary.length) {
@@ -94,6 +89,16 @@
     }
 
     if (race.notableAbsence) parts.push(`<p class="race-absence">${esc(race.notableAbsence)}</p>`);
+
+    // Quick compare — a compact side-by-side of the front-runner cards (Candidate,
+    // Party, Home base, Bid, Status). Shown on EVERY race page now (presidency and
+    // governorship alike); the action buttons sit directly below it.
+    parts.push('<h2 style="margin-top:26px">Quick compare</h2>');
+    parts.push(`<div class="race-compare"><table><thead>
+      <tr><th>Candidate</th><th>Party</th><th>Home base</th><th>Bid</th><th>Status</th></tr></thead><tbody>${
+      race.candidates.map((c) => `<tr><td><strong>${esc(c.name)}</strong></td>
+        <td>${flagInline(c.party)}<span style="font-weight:700;color:${color(c.party)}">${esc(c.party)}</span></td>
+        <td>${esc(c.home || '—')}</td><td>${esc(c.bids || '—')}</td><td>${esc(c.status || '—')}</td></tr>`).join('')}</tbody></table></div>`);
 
     // Calls to action. resultsHref lets a race page deep-link its own board
     // (e.g. Osun -> results.html?contest=GOV&scope=Osun preselects the race).

@@ -9,10 +9,11 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=117" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=118" />
   <script src="native.js?v=103"></script>
   <style>
-    .prac-banner { background: #fff4d6; border-left: 6px solid #f9a825; padding: 12px 14px; border-radius: 8px; margin: 0 0 16px; font-size: 0.92rem; }
+    .prac-banner { background: var(--tint-warn); border-left: 6px solid #f9a825; padding: 12px 14px; border-radius: 8px; margin: 0 0 16px; font-size: 0.92rem; }
     .prac-tag { display: inline-block; background: #f9a825; color: #3a2c00; font-weight: 800; font-size: 0.68rem; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 999px; vertical-align: middle; margin-left: 8px; }
     .vote-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
     .vote-row label { flex: 1; margin: 0; font-weight: 700; }
@@ -24,6 +25,7 @@
     .camera-frame { text-align: center; color: #fff; padding: 12px; width: 100%; max-width: 520px; }
     .camera-actions { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
   </style>
+  <script src="authgate.js?v=1"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -125,6 +127,7 @@
   <div id="camera-overlay" hidden>
     <div class="camera-frame">
       <p id="camera-title">Results sheet (EC8A)</p>
+      <p id="camera-guide" hidden></p>
       <video id="video" playsinline></video>
       <div class="camera-actions">
         <button id="btn-cancel-camera" class="secondary" style="width:auto">Cancel</button>
@@ -140,8 +143,8 @@
   </div></footer>
 
   <script src="device.js"></script>
-  <script src="practice.js?v=1"></script>
+  <script src="practice.js?v=2"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=117"></script>
+  <script src="menu.js?v=118"></script>
 </body>
 </html>

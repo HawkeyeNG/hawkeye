@@ -8,7 +8,8 @@
   <title>Hawkeye — Race</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=117" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=118" />
   <link rel="stylesheet" href="race.css?v=1" />
   <script src="native.js?v=103"></script>
   <meta property="og:type" content="website" />
@@ -17,6 +18,7 @@
   <meta property="og:url" content="https://hawkeye.com.ng/race.html" />
   <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
+  <script src="authgate.js?v=1"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -55,7 +57,7 @@
   <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
   </div></footer>
 
-  <script src="race.js?v=3"></script>
+  <script src="race.js?v=4"></script>
   <script>
     // Generic race page: ?race=<key> selects the race object in political_data.json
     // (default: the active Osun pilot). Any future race = add data + link here,
@@ -71,6 +73,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=117"></script>
+  <script src="menu.js?v=118"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 // Minimal service worker: cache the app shell so the observer app opens instantly
 // on flaky election-day networks. API calls always hit the network.
-const CACHE = 'hawkeye-v146'; // bump on any shell change so installed clients refresh
+const CACHE = 'hawkeye-v147'; // bump on any shell change so installed clients refresh
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every
@@ -10,7 +10,7 @@ const CACHE = 'hawkeye-v146'; // bump on any shell change so installed clients r
 // It was ~1.5 MB / 45 requests; the map data and Leaflet (~940 KB) are needed by
 // only 5 of ~25 pages, so they moved to LAZY below. Keep this lean: HTML +
 // core JS/CSS + fonts. Anything big and page-specific belongs in LAZY.
-const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/practice.html', '/practice.js?v=1', '/race.html', '/race.js?v=3', '/race.css?v=1', '/app.js?v=124', '/scan.js?v=3', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=117', '/tg.js?v=95', '/styles.css?v=117', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2'];
+const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/practice.html', '/practice.js?v=1', '/race.html', '/race.js?v=3', '/race.css?v=1', '/app.js?v=124', '/scan.js?v=3', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=117', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=117', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2'];
 
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.
@@ -69,4 +69,34 @@ self.addEventListener('fetch', (e) => {
   // served from the previous build.
   const opts = e.request.mode === 'navigate' ? { ignoreSearch: true } : undefined;
   e.respondWith(cacheP.then((c) => c.match(e.request, opts)).then((hit) => hit || fetch(e.request)));
+});
+
+// --- Web Push (VAPID). Backend sends { title, body, data:{ url? } }. Independent
+// of FCM; the native shell never installs this SW, so this only ever runs on the
+// web and installed PWAs. ---
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = {}; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Hawkeye', {
+    body: d.body || '',
+    icon: '/apple-touch-icon.png',
+    badge: '/apple-touch-icon.png',
+    data: d.data || {},
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/notifications.html';
+  e.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of wins) {
+      if ('focus' in c) {
+        await c.focus();
+        if (c.navigate) await c.navigate(url).catch(() => {});
+        return;
+      }
+    }
+    if (self.clients.openWindow) await self.clients.openWindow(url);
+  })());
 });

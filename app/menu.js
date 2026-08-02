@@ -107,10 +107,10 @@
     }
     const links = new Map([...panel.querySelectorAll('a')].map((a) => [a.getAttribute('href'), a]));
     // Canonical label for the results page: its static link text drifts across
-    // pages ("Leaderboard" / "Live Results" / "Public Results"), and native
-    // calls it the National Leaderboard. Normalise it here for every page at once.
+    // pages ("Leaderboard" / "Live Results" / "Public Results"). Native calls it
+    // just "Leaderboard", so normalise every page's drifted label to that.
     const lb = links.get('results.html');
-    if (lb) lb.textContent = 'National Leaderboard';
+    if (lb) lb.textContent = 'Leaderboard';
     // "2027 Candidates" -> "Presidency 2027" for every page's static copy.
     const pres = links.get('candidates.html');
     if (pres) pres.textContent = 'Presidency 2027';

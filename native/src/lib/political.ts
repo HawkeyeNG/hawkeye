@@ -100,3 +100,18 @@ export function loadPolitical() {
 
 export const logoUrl = (logos: Record<string, string>, party: string) =>
   logos[party] ? `${BASE}/${logos[party]}` : null;
+
+/**
+ * Absolutise a candidate photo path from political_data.json.
+ *
+ * The file stores site-relative paths ("photos/candidates/tinubu.jpg") because
+ * the web pages resolve them against the document. React Native has no document,
+ * so a bare relative string is not a loadable URI and the <Image> silently
+ * renders nothing — which is exactly how every candidate avatar came out blank.
+ * Absolute URLs are passed through untouched, so the JSON can move to a CDN
+ * without a code change.
+ */
+export const photoUrl = (photo?: string | null): string | undefined => {
+  if (!photo) return undefined;
+  return /^https?:\/\//i.test(photo) ? photo : `${BASE}/${photo.replace(/^\/+/, '')}`;
+};

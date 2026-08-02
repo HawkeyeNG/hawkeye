@@ -3,9 +3,33 @@
 @tailwind utilities;
 
 /* Semantic surfaces. Values are RGB triplets so Tailwind can apply opacity
-   modifiers (bg-card/80). Light first, then the dark overrides — the OS decides,
-   which is what userInterfaceStyle: automatic in app.json promises. */
-:root {
+   modifiers (bg-card/80). Light first, then the dark overrides.
+ *
+ * WHY THESE ARE CLASSES AND NOT `@media (prefers-color-scheme: dark)`
+ * ------------------------------------------------------------------
+ * They used to be. The dark set lived in a media query, so the OS was the only
+ * thing that could flip the palette and a manual Light/Dark preference was
+ * impossible: NativeWind's own override (`colorScheme.set()`) routes through
+ * `Appearance.setColorScheme()` → a native round-trip that only reaches the
+ * runtime if the platform echoes an `appearanceChanged` event back, and on web
+ * it throws outright while `darkMode` is 'media'. A toggle built on it would
+ * have compiled and done nothing on at least one platform.
+ *
+ * So the two palettes are addressed by CLASS instead. `ThemePrefProvider`
+ * (src/lib/theme-pref.tsx) puts `theme-light` or `theme-dark` on the one View
+ * that wraps the whole app, and NativeWind compiles a class-scoped custom
+ * property into a variable that every descendant inherits — the same mechanism
+ * `:root` uses, just one that JS can point at. That is what makes System /
+ * Light / Dark possible, and it behaves identically on native and web.
+ *
+ * `:root` therefore holds LIGHT as the pre-provider fallback (matching what
+ * use-color-scheme.web.ts renders before hydration); `.theme-light` repeats
+ * nothing, it is only a second selector on the same block. Anything that must
+ * follow the theme has to render inside that wrapper — everything under
+ * src/app/_layout.tsx's Stack does. Do not reintroduce a media query here:
+ * two things flipping the same variables is how you get half-light UI. */
+:root,
+.theme-light {
   --surface: 232 242 236;      /* screen background      (hawk-mist) */
   --card: 255 255 255;         /* raised card            (white)     */
   --ink: 16 34 26;             /* primary text           (hawk-ink)  */
@@ -25,31 +49,56 @@
   --good-ink: 11 107 58;
   --bad: 254 233 232;          /* prohibition / danger / fraudulent  */
   --bad-ink: 185 28 28;
-  --warn: 254 243 220;         /* caution / public / open            */
+  --warn: 254 243 220;         /* informational notice / public / open */
   --warn-ink: 180 83 9;
+
+  /* SAFETY OF PERSON ONLY — not a fourth informational tint.
+     --warn above is the *informational* one and stays soft on purpose: it
+     carries the docket, collation and result notices, i.e. most of the app.
+     Making that hazard-yellow would have every routine notice shouting, so a
+     message about somebody's physical safety gets its own pair instead. Today
+     that is one card: "never confront anyone to get footage" on the incident
+     report screen. Flagging a stale figure, an open case or a failed request is
+     NOT this — that is --warn. If you are about to add the third or fourth
+     --caution surface, one of them is probably mislabelled.
+     Light is a real hazard yellow (hue 53°, clear of the brand's 44° gold, so
+     the card cannot be mistaken for a gold accent). Its ink is a burnt amber
+     dark enough to set a heading in, not just an icon. */
+  --caution: 245 217 10;
+  --caution-ink: 122 62 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --surface: 8 20 14;        /* near-black with the brand's green cast */
-    --card: 18 36 27;
-    --ink: 232 242 236;
-    --muted: 158 176 165;
-    --faint: 110 128 118;
-    --line: 32 56 43;
-    --disabled: 48 62 54;
+/* The dark palette. Applied by class (see the note above), so `system` resolves
+   to it in JS rather than the stylesheet deciding on its own. */
+.theme-dark {
+  --surface: 8 20 14;          /* near-black with the brand's green cast */
+  --card: 18 36 27;
+  --ink: 232 242 236;
+  --muted: 158 176 165;
+  --faint: 110 128 118;
+  --line: 32 56 43;
+  --disabled: 48 62 54;
 
-    /* Deep tints, not pale ones — the card darkens with the theme so --ink
-       (232 242 236) stays light-on-dark. Measured against --ink: good 11.4:1,
-       bad 13.3:1, warn 11.6:1. The inks are the light end of each hue so a
-       heading still separates from its own tint (7.6:1 / 8.0:1 / 9.2:1). */
-    --good: 16 56 36;
-    --good-ink: 110 219 160;
-    --bad: 66 24 26;
-    --bad-ink: 252 165 165;
-    --warn: 64 44 12;
-    --warn-ink: 252 211 77;
-  }
+  /* Deep tints, not pale ones — the card darkens with the theme so --ink
+     (232 242 236) stays light-on-dark. Measured against --ink: good 11.4:1,
+     bad 13.3:1, warn 11.6:1. The inks are the light end of each hue so a
+     heading still separates from its own tint (7.6:1 / 8.0:1 / 9.2:1). */
+  --good: 16 56 36;
+  --good-ink: 110 219 160;
+  --bad: 66 24 26;
+  --bad-ink: 252 165 165;
+  --warn: 64 44 12;
+  --warn-ink: 252 211 77;
+
+  /* The caution pair inverts like the rest: a bright yellow SURFACE in dark
+     mode would glare and would put near-white --ink on near-white, so the
+     tint goes deep gold and the brightness moves into the ink. Deliberately
+     hotter and more saturated than --warn's brown (2.5:1 against --surface
+     where --warn manages 1.4:1) so the two are still telling different
+     stories at a glance. Measured on the tint: --ink 6.5:1, --caution-ink
+     5.6:1 (light: 11.7:1 and 5.9:1) — body copy clears 4.5:1 in both. */
+  --caution: 107 82 0;
+  --caution-ink: 250 224 20;
 }
 
 :root {

@@ -18,9 +18,10 @@ const POINTS: { icon: keyof typeof Feather.glyphMap; text: string }[] = [
 /**
  * Welcome — where sign-out lands and where a fresh install can start.
  *
- * One flow covers both "create account" and "sign in": a phone number IS the
- * identity, so the same OTP verifies a first-timer and a returner. The two
- * buttons exist because arrivals look for their own door — they just share it.
+ * Both buttons land on the same screen, which now opens on the step that door
+ * implies: "Become an observer" starts sign-up (?intent=signup — number, code,
+ * then choose a password), "Sign in" starts on phone + password. A phone number
+ * is still the identity, so either route ends at the same observer row.
  */
 export default function Welcome() {
   const auth = useAuth();
@@ -61,7 +62,7 @@ export default function Welcome() {
       <View className="px-6 pb-6">
         <Pressable
           className="items-center rounded-2xl bg-hawk-gold py-4 active:opacity-80"
-          onPress={() => router.push('/sign-in')}
+          onPress={() => router.push('/sign-in?intent=signup')}
         >
           {/* text-hawk-ink, not text-ink: the gold is fixed, so a label that
               flips near-white with the theme disappears into it (1.6:1). */}

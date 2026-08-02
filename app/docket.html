@@ -66,10 +66,11 @@
 
   <main class="wrap">
     <h1>Public Docket</h1>
-    <p class="lede">When automated checks flag a result, the flag never decides anything — it opens a
-    <strong>case</strong>. Every case is published here with its full evidence, and verified observers
-    worldwide judge it by answering factual questions. Quorum and a supermajority resolve it, every
-    verdict is on the public record, and the whole docket is anchored to a public transparency log.</p>
+    <p class="lede">When automated checks flag a result, the flag never decides anything — it holds that
+    result out of the tallies straight away and <strong>queues the evidence for crowd review</strong>. A
+    case is opened later, published here with its full evidence, and verified observers worldwide judge it
+    by answering factual questions. Quorum and a supermajority resolve it, every verdict is on the public
+    record, and the whole docket is anchored to a public transparency log.</p>
     <p class="hint" id="rule"></p>
     <div id="list"><div class="skel" style="height:60px;margin:8px 0"></div></div>
   </main>
@@ -79,7 +80,7 @@
     const AGO = (t) => new Date(t).toLocaleString();
     fetch('/api/docket').then((r) => r.json()).then((d) => {
       $('rule').textContent = `Resolution rule: ${d.rule}`;
-      if (!d.cases.length) { $('list').innerHTML = '<div class="empty">No cases — no results are currently in dispute.</div>'; return; }
+      if (!d.cases.length) { $('list').innerHTML = '<div class="empty">No cases are open for judging yet.</div>'; return; }
       $('list').innerHTML = d.cases.map((c) => {
         const t = c.tally, tot = Math.max(1, t.total);
         return `<a class="case ${c.status}" href="case.html?id=${c.id}">

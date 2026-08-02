@@ -16,6 +16,20 @@ cd "$HOME/hawkeye/native"
 # Keep the generated project in sync with app.json / plugin changes.
 npx expo prebuild --platform android --no-install 2>&1 | tail -3
 
+# Guard: react-native-compressor pulls TAndroidLame, which declares
+# allowBackup="true"; ours is "false" and the merger aborts without a
+# tools:replace. The config plugin (plugins/with-allow-backup-override) adds it,
+# but `expo prebuild` has proven flaky about re-applying manifest mods across
+# consecutive runs, so this makes the override deterministic right before gradle.
+# Idempotent: only patches when allowBackup is present but the replace is not.
+MANIFEST="android/app/src/main/AndroidManifest.xml"
+if grep -q 'android:allowBackup="false"' "$MANIFEST" \
+   && ! grep -q 'tools:replace="[^"]*android:allowBackup' "$MANIFEST"; then
+  sed -i 's/\(<application [^>]*android:allowBackup="false"\)/\1 tools:replace="android:allowBackup"/' "$MANIFEST"
+  echo "manifest guard: injected tools:replace=android:allowBackup"
+fi
+grep -o '<application[^>]*allowBackup[^>]*' "$MANIFEST" | head -1
+
 cd android
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 chmod +x ./gradlew

@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ReportContent } from '@/components/report-content';
 import { StatusChip, TallyBar, type Tally } from '@/components/tally';
 import { BRAND } from '@/lib/api';
+import { flagLabel } from '@/lib/flags';
 import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -260,7 +261,11 @@ export default function CaseScreen() {
 
         {c.flags.map((f) => (
           <View key={f.id} className="mt-3 rounded-2xl bg-warn px-4 py-3">
-            <Text className="text-sm font-bold text-warn-ink">{f.type}</Text>
+            {/* Titled, not the raw enum. This read "collation_chain_undercount"
+                — a database column heading a card, on the one screen whose whole
+                job is asking a juror to understand what was alleged. Same map
+                Election Integrity titles its flags with. */}
+            <Text className="text-sm font-bold text-warn-ink">{flagLabel(f.type)}</Text>
             <Text className="pt-0.5 text-sm text-ink">{f.detail.summary ?? ''}</Text>
             {f.detail.reason ? (
               <Text className="pt-1 text-xs text-muted">{f.detail.reason}</Text>

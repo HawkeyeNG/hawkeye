@@ -113,14 +113,14 @@
       recorded; nothing is published.</p>
       <button id="btn-gps">📍 Capture GPS at this unit</button>
       <button id="btn-save-unit" class="secondary">⭐ Save as my polling unit</button>
-      <p class="hint">Save to get Telegram alerts for every result and approved incident at this unit.</p>
+      <p class="hint">Save to get alerts — in the app, and on Telegram or WhatsApp — for every result and approved incident at this unit.</p>
       <p id="cap-status" class="status" role="status"></p>
     </section>
 
     <section id="my-unit-card" class="card" hidden>
       <h2>My polling unit</h2>
       <p id="my-unit-info" class="status"></p>
-      <p class="hint">You get a Telegram alert for everything reported at this unit.
+      <p class="hint">You get an alert — in the app, and on Telegram or WhatsApp — for everything reported at this unit.
         <a id="btn-unsave" class="link" href="#">Stop watching</a></p>
     </section>
   </main>
@@ -155,7 +155,7 @@
       $('units').innerHTML = '';
       for (const u of r.units || []) {
         const b = document.createElement('button'); b.className = 'pu-option';
-        b.innerHTML = `<strong>${u.name}</strong><br /><small>${u.pu_code} · ${u.locationTier === 'verified' ? '📍 already located' : 'needs mapping'}</small>`;
+        b.innerHTML = `<strong>${u.name}</strong><br /><small>${u.pu_code} · ${u.coords_source === 'crowd_mapped' ? '◌ crowd-confirmed location' : u.locationTier === 'verified' ? '📍 already located' : 'needs mapping'}</small>`;
         b.onclick = () => { unit = u; $('unit-name').textContent = `${u.name} (${u.pu_code})`; $('capture').hidden = false; $('cap-status').textContent = ''; $('capture').scrollIntoView(); };
         $('units').appendChild(b);
       }
@@ -299,7 +299,7 @@
 
     initMap();
 
-    // ---------- my polling unit (Telegram alerts for everything at this unit) ----------
+    // ---------- my polling unit (alerts for everything at this unit) ----------
     async function showMyUnit() {
       if (!token) return;
       const { status, b } = await api('/api/observers/my-unit', {
@@ -320,7 +320,7 @@
         body: JSON.stringify({ puCode: unit.pu_code }),
       });
       $('cap-status').textContent = status === 200
-        ? `⭐ Saved — you'll get Telegram alerts for everything at ${unit.pu_code}.`
+        ? `⭐ Saved — you'll get alerts for everything at ${unit.pu_code}.`
         : (b.error === 'unknown_unit' ? 'Unit not on the register.' : 'Could not save — try again.');
       showMyUnit();
     };

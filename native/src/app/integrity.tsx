@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SectionLabel, Stat } from '@/components/content-kit';
+import { flagLabel } from '@/lib/flags';
 import { useUi } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -42,23 +44,6 @@ type Benford = {
 
 type Irev = { electionId?: string | null; counts?: Record<string, number> };
 type CollationStat = { byLevel?: Record<string, number>; flags?: Record<string, number> };
-
-const TYPE_LABEL: Record<string, string> = {
-  over_voting: 'Over-voting',
-  high_turnout: 'Impossible turnout',
-  turnout_outlier: 'Turnout outlier',
-  single_party_sweep: 'Single-party sweep',
-  duplicate_serial: 'Duplicate serial',
-  disputed_counts: 'Conflicting counts',
-  location_inconsistent: 'Location inconsistent',
-  irev_mismatch: 'INEC IReV mismatch',
-  collation_undercount: 'Collation undercount',
-  collation_disputed: 'Conflicting collation reports',
-  collation_mismatch: 'Collation mismatch (full coverage)',
-  collation_chain_undercount: 'Collation chain undercount',
-  collation_ocr_mismatch: 'Collation form OCR mismatch',
-  signup_burst: 'Signup burst (informational)',
-};
 
 const VERDICT_TEXT: Record<string, (mad: number) => string> = {
   insufficient_data: () => 'needs ≥100 counts for a verdict',
@@ -249,13 +234,6 @@ export default function Integrity() {
   const bySev = Object.fromEntries((summary?.bySeverity ?? []).map((r) => [r.severity, r.c]));
   const types = [...new Set((summary?.byType ?? []).map((r) => r.type))];
 
-  const Stat = ({ n, label, tone }: { n: number | string; label: string; tone?: string }) => (
-    <View className="mb-2 mr-2 min-w-[30%] flex-1 rounded-2xl bg-card px-3 py-3">
-      <Text className={`text-xl font-bold ${tone ?? 'text-ink'}`}>{n}</Text>
-      <Text className="text-[11px] text-muted">{label}</Text>
-    </View>
-  );
-
   const Chip = ({
     label,
     on,
@@ -341,16 +319,27 @@ export default function Integrity() {
           </Text>
         ) : null}
 
+        {/* The shared dashboard tile, same as the Ledger and the Docket. Severity
+            tints the whole tile rather than just its numeral, and only when the
+            count is non-zero — a screen with nothing flagged is not a red
+            screen, which is the rule the other two dashboards already follow. */}
         <View className="flex-row flex-wrap">
-          <Stat n={bySev.high || 0} label="High-severity flags" tone="text-bad-ink" />
-          <Stat n={bySev.medium || 0} label="Medium flags" tone="text-warn-ink" />
-          <Stat n={bySev.low || 0} label="Low flags" />
-          <Stat n={summary?.unitsFlagged ?? 0} label="Units flagged" />
-          <Stat n={(summary?.reports ?? 0).toLocaleString()} label="Reports screened" />
+          <Stat
+            value={String(bySev.high || 0)}
+            label="High-severity flags"
+            tone={bySev.high ? 'bad' : undefined}
+          />
+          <Stat
+            value={String(bySev.medium || 0)}
+            label="Medium flags"
+            tone={bySev.medium ? 'warn' : undefined}
+          />
+          <Stat value={String(bySev.low || 0)} label="Low flags" />
+          <Stat value={String(summary?.unitsFlagged ?? 0)} label="Units flagged" />
+          <Stat value={(summary?.reports ?? 0).toLocaleString()} label="Reports screened" />
         </View>
 
-        {/* Detected discrepancies */}
-        <Text className="pb-2 pt-3 text-base font-bold text-ink">Detected Discrepancies</Text>
+        <SectionLabel text="Detected Discrepancies" />
         <View className="flex-row flex-wrap">
           {[
             ['', 'All'],
@@ -367,7 +356,7 @@ export default function Integrity() {
             {types.map((t) => (
               <Chip
                 key={t}
-                label={TYPE_LABEL[t] || t}
+                label={flagLabel(t)}
                 on={type === t}
                 onPress={() => setType(type === t ? '' : t)}
               />
@@ -412,7 +401,7 @@ export default function Integrity() {
                     </Text>
                   </View>
                   <Text className="flex-1 pl-2 text-sm font-bold text-ink">
-                    {TYPE_LABEL[d.type] || d.type}
+                    {flagLabel(d.type)}
                   </Text>
                   <Text className="text-[11px] text-faint">{timeAgo(d.created_at)}</Text>
                 </View>
@@ -453,10 +442,7 @@ export default function Integrity() {
           })
         )}
 
-        {/* Digit-distribution screening */}
-        <Text className="pb-1 pt-4 text-base font-bold text-ink">
-          Digit-Distribution Screening
-        </Text>
+        <SectionLabel text="Digit-Distribution Screening" />
         <Text className="pb-2 text-sm text-muted">
           Fabricated figures cluster on favourite digits; genuine counts follow known
           distributions. Departures are screening signals — never proof on their own.
@@ -491,8 +477,7 @@ export default function Integrity() {
           )}
         </View>
 
-        {/* Cross-checks */}
-        <Text className="pb-1 pt-4 text-base font-bold text-ink">INEC IReV Cross-Check</Text>
+        <SectionLabel text="INEC IReV Cross-Check" />
         <Text className="pb-2 text-sm text-muted">
           Each crowd-reported count is compared against the EC8A sheet INEC itself uploads to its
           Results Viewing portal for the same polling unit — INEC&apos;s own evidence checked
@@ -502,9 +487,7 @@ export default function Integrity() {
           <Text className="text-sm text-ink">{irevLine}</Text>
         </View>
 
-        <Text className="pb-1 pt-4 text-base font-bold text-ink">
-          Collation Reconciliation (EC8B/C/D)
-        </Text>
+        <SectionLabel text="Collation Reconciliation (EC8B/C/D)" />
         <Text className="pb-2 text-sm text-muted">
           Announced ward, LGA and state totals are checked against the polling-unit sheets
           underneath them. A collated figure can never be less than the sum of the covered units
@@ -517,8 +500,7 @@ export default function Integrity() {
           </Pressable>
         </View>
 
-        {/* What we check */}
-        <Text className="pb-1 pt-4 text-base font-bold text-ink">What We Check</Text>
+        <SectionLabel text="What We Check" />
         <Text className="pb-2 text-sm text-muted">
           Every result is run through these automated checks. Tap a group to see each one.
         </Text>

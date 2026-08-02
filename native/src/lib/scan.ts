@@ -36,6 +36,25 @@
  * same class. So the runtime retry below IS the mitigation, not a placeholder
  * for one. Re-check that table before adding a manifest token: guessing one
  * would also collide with the barcode_ui value expo-camera already declares.
+ *
+ * WHAT IS TUNABLE HERE — the whole list, read off the installed module
+ * (react-native-document-scanner-plugin 2.0.4: android/src/main/java/com/
+ * documentscanner/DocumentScannerModule.kt and ios/DocScanner/DocScanner.swift):
+ *
+ *   croppedImageQuality  0-100 JPEG quality. iOS only in practice — see below.
+ *   maxNumDocuments      Android only; maps to setPageLimit().
+ *   responseType         'imageFilePath' | 'base64'.
+ *
+ * Those three are everything the native side reads. The scanner's APPEARANCE is
+ * fixed and not ours: its camera preview, viewport, edge-detection overlay,
+ * corner handles, retake/crop/rotate controls and shutter all live in a Play
+ * services activity (Android) or VNDocumentCameraViewController (iOS) running
+ * OUTSIDE our process. Both are already full-screen, so there is no small
+ * viewport here to enlarge — and no prop, style or option that could enlarge one
+ * if there were. The module also hardcodes SCANNER_MODE_FULL and
+ * RESULT_FORMAT_JPEG and never calls setGalleryImportAllowed, so scanner mode,
+ * PDF output and gallery import are equally unreachable from JS. Anything past
+ * those three options needs a patch to the module, not an argument.
  */
 
 type ScanResult = { scannedImages?: string[]; status?: 'success' | 'cancel' | string };
@@ -66,16 +85,33 @@ export type ScanOutcome =
 /**
  * Scan exactly one sheet.
  *
- * Quality is 92 rather than 100: the sheet is uploaded over Nigerian mobile
- * data and the server caps bodies, and the difference is invisible on a form
- * whose only job is to be readable. One document only — an EC8A is one page,
- * and a multi-page return would silently drop everything after the first.
+ * One document only — an EC8A is one page, and a multi-page return would
+ * silently drop everything after the first.
+ *
+ * croppedImageQuality is iOS-only and a NO-OP on Android — worth knowing before
+ * anyone tunes it hoping to sharpen the OCR. The Android module only applies it
+ * inside its base64 branch (getImageInBase64 → bitmap.compress); with
+ * responseType 'imageFilePath', which is what we ask for, it hands back ML Kit's
+ * own JPEG URI untouched. So on Android the sheet we read and upload is ML Kit's
+ * full-quality crop and nothing here re-compresses it — the better outcome, and
+ * the reason not to "fix" this by switching to base64.
+ *
+ * On iOS the value is real: DocScanner.swift calls
+ * jpegData(compressionQuality:) on every response type, so it is the only thing
+ * standing between VNDocumentCameraScan's crop and what gets read. It is 98
+ * rather than the 92 it started at because the scanner is the PRIMARY sheet
+ * path and was the more compressed of the two — the fallback camera shoots
+ * documents at q95 (capture-camera.tsx) — and q92 is where JPEG starts smearing
+ * the thin strokes of a handwritten tally, which is the one thing OCR needs
+ * intact. A deskewed single sheet is a few MB at q98, nowhere near the edge's
+ * 33MB body limit even with the venue photo alongside it. Not 100: that stops
+ * buying detail and only costs bytes on Nigerian mobile data.
  */
 export async function scanSheet(): Promise<ScanOutcome> {
   if (!DocumentScanner) return { ok: false, reason: 'unavailable' };
   try {
     const res = await DocumentScanner.scanDocument({
-      croppedImageQuality: 92,
+      croppedImageQuality: 98,
       maxNumDocuments: 1,
       responseType: 'imageFilePath',
     });

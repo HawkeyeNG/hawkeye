@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,11 +16,25 @@ import { SocialRow } from '@/components/social-row';
  * rebuilt natively, entries open the live site in an in-app browser tab,
  * so nothing the web app offers is unreachable from the native shell.
  */
-const GROUPS: { title: string; items: { label: string; href: string; icon: keyof typeof Feather.glyphMap }[] }[] = [
+type Icon = keyof typeof Feather.glyphMap;
+type MenuLink = { label: string; href: string; icon: Icon };
+type MenuItem = MenuLink | { acc: string; icon: Icon; items: MenuLink[] };
+
+const GROUPS: { title: string; items: MenuItem[] }[] = [
   {
     title: 'Take part',
     items: [
       { label: 'My Profile', href: 'native:/profile', icon: 'user' },
+      // Report accordion — the three report flows collapsed under one entry.
+      {
+        acc: 'Report',
+        icon: 'edit-3',
+        items: [
+          { label: 'Report a Result', href: 'native:/report/result', icon: 'camera' },
+          { label: 'Report a Collation Result', href: 'native:/report/collation', icon: 'layers' },
+          { label: 'Report an Incident', href: 'native:/report/incident', icon: 'alert-triangle' },
+        ],
+      },
       { label: 'Practice Run', href: 'native:/practice', icon: 'play-circle' },
       { label: 'Map a Polling Unit', href: 'native:/map-unit', icon: 'map-pin' },
     ],
@@ -41,9 +56,16 @@ const GROUPS: { title: string; items: { label: string; href: string; icon: keyof
       // name in the menu found nothing. "Leaderboard", not "National
       // Leaderboard" — the word matches results.html's nav and <h1>.
       { label: 'Leaderboard', href: 'native:/(tabs)/results', icon: 'bar-chart-2' },
-      { label: 'Osun 2026', href: 'native:/osun', icon: 'trending-up' },
+      // Races accordion — Osun + Presidency; other race categories join as built.
+      {
+        acc: 'Races',
+        icon: 'trending-up',
+        items: [
+          { label: 'Osun 2026', href: 'native:/osun', icon: 'trending-up' },
+          { label: 'Presidency 2027', href: 'native:/candidates', icon: 'users' },
+        ],
+      },
       { label: 'Public Reports Log', href: 'native:/reports-log', icon: 'list' },
-      { label: 'Presidency 2027', href: 'native:/candidates', icon: 'users' },
       { label: 'Political Data', href: 'native:/political', icon: 'pie-chart' },
     ],
   },
@@ -156,6 +178,56 @@ function AppearanceGroup() {
   );
 }
 
+// A collapsible menu entry (Report, Races): a normal-looking row whose chevron
+// flips and whose sub-links reveal below, indented. Default closed — the point is
+// a shorter menu. Only these two groups collapse; sections stay flat.
+function MenuAccordion({
+  title,
+  icon,
+  items,
+  border,
+}: {
+  title: string;
+  icon: Icon;
+  items: MenuLink[];
+  border: boolean;
+}) {
+  const ui = useUi();
+  const [open, setOpen] = useState(false);
+  const go = (href: string) =>
+    href.startsWith('native:')
+      ? router.push(href.slice(7) as never)
+      : WebBrowser.openBrowserAsync(`https://hawkeye.com.ng/${href}`);
+  return (
+    <View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        className={`flex-row items-center px-4 py-3.5 active:bg-surface ${border ? 'border-t border-line' : ''}`}
+        onPress={() => {
+          Haptics.selectionAsync();
+          setOpen((o) => !o);
+        }}
+      >
+        <Feather name={icon} size={17} color="#0b6b3a" />
+        <Text className="flex-1 pl-3 text-base text-ink">{title}</Text>
+        <Feather name={open ? 'chevron-down' : 'chevron-right'} size={16} color={ui.faint} />
+      </Pressable>
+      {open &&
+        items.map((it) => (
+          <Pressable
+            key={it.href}
+            className="flex-row items-center border-t border-line py-3 pl-11 pr-4 active:bg-surface"
+            onPress={() => go(it.href)}
+          >
+            <Feather name={it.icon} size={16} color={ui.faint} />
+            <Text className="flex-1 pl-3 text-[15px] text-ink">{it.label}</Text>
+          </Pressable>
+        ))}
+    </View>
+  );
+}
+
 export default function More() {
   const ui = useUi();
   return (
@@ -172,23 +244,27 @@ export default function More() {
               {g.title}
             </Text>
             <View className="overflow-hidden rounded-2xl bg-card">
-              {g.items.map((it, i) => (
-                <Pressable
-                  key={it.href}
-                  className={`flex-row items-center px-4 py-3.5 active:bg-surface ${
-                    i > 0 ? 'border-t border-line' : ''
-                  }`}
-                  onPress={() =>
-                    it.href.startsWith('native:')
-                      ? router.push(it.href.slice(7) as never)
-                      : WebBrowser.openBrowserAsync(`https://hawkeye.com.ng/${it.href}`)
-                  }
-                >
-                  <Feather name={it.icon} size={17} color="#0b6b3a" />
-                  <Text className="flex-1 pl-3 text-base text-ink">{it.label}</Text>
-                  <Feather name="chevron-right" size={16} color={ui.faint} />
-                </Pressable>
-              ))}
+              {g.items.map((it, i) =>
+                'acc' in it ? (
+                  <MenuAccordion key={it.acc} title={it.acc} icon={it.icon} items={it.items} border={i > 0} />
+                ) : (
+                  <Pressable
+                    key={it.href}
+                    className={`flex-row items-center px-4 py-3.5 active:bg-surface ${
+                      i > 0 ? 'border-t border-line' : ''
+                    }`}
+                    onPress={() =>
+                      it.href.startsWith('native:')
+                        ? router.push(it.href.slice(7) as never)
+                        : WebBrowser.openBrowserAsync(`https://hawkeye.com.ng/${it.href}`)
+                    }
+                  >
+                    <Feather name={it.icon} size={17} color="#0b6b3a" />
+                    <Text className="flex-1 pl-3 text-base text-ink">{it.label}</Text>
+                    <Feather name="chevron-right" size={16} color={ui.faint} />
+                  </Pressable>
+                ),
+              )}
             </View>
           </View>
         ))}

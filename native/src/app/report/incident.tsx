@@ -222,18 +222,8 @@ type Searched = {
  * for units an observer placed). Both are interpolated off the answers below,
  * never written as literals.
  */
-const ringLine = (s: Searched): string | null => {
-  if (s.envelopeM != null && s.registerM != null) {
-    return `The ring is the ${s.envelopeM}m searched for units with a mapped area. Units already placed by observers come from a separate ${s.registerM}m lookup — so the ring is not a claim that everything inside it was checked.`;
-  }
-  if (s.envelopeM != null) {
-    return `The ring is the ${s.envelopeM}m searched for units with a mapped area. The lookup that finds units placed by observers did not answer, so those are missing.`;
-  }
-  if (s.registerM != null) {
-    return `The ring is the ${s.registerM}m the register lookup searched. The wider search for units with a mapped area did not answer.`;
-  }
-  return null;
-};
+const ringLine = (_s: Searched): string =>
+  'Units found within an 800m radius. Unmapped units may not appear on map.';
 
 /** The same honesty for an empty answer: name the circles that were searched,
  *  rather than the one that was drawn. */
@@ -1029,7 +1019,7 @@ export default function ReportIncident() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         {step === 'unit' ? (

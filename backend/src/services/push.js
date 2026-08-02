@@ -4,15 +4,29 @@
 // push. Tokens are registered by the mobile shell (app/native.js) and tied to an
 // observer; "new report at your saved unit" fans out here alongside Telegram.
 import jwt from 'jsonwebtoken';
-import webpush from 'web-push';
 import { db } from '../db.js';
 import { config } from '../config.js';
 
 const FCM_ENABLED = Boolean(config.fcmProjectId && config.fcmClientEmail && config.fcmPrivateKey);
 // Web Push (VAPID) — independent of FCM. Unset keys = silent no-op.
 const VAPID_ENABLED = Boolean(config.vapidPublicKey && config.vapidPrivateKey);
-if (VAPID_ENABLED) {
-  webpush.setVapidDetails(config.vapidSubject, config.vapidPublicKey, config.vapidPrivateKey);
+
+// web-push is an OPTIONAL server dependency. If it isn't installed in the server's
+// node_modules, Web Push is simply OFF (sends no-op) instead of crashing the whole
+// API at import time — a missing optional dep must never take the transparency
+// backend down. Lazy-loaded + cached; VAPID details are set on first load.
+let _webpush; // undefined = not yet tried, null = unavailable, object = loaded
+async function getWebpush() {
+  if (_webpush !== undefined) return _webpush;
+  try {
+    _webpush = (await import('web-push')).default;
+    if (VAPID_ENABLED) {
+      _webpush.setVapidDetails(config.vapidSubject, config.vapidPublicKey, config.vapidPrivateKey);
+    }
+  } catch {
+    _webpush = null;
+  }
+  return _webpush;
 }
 
 /** Are the three FCM service-account vars present? Booleans only — safe to
@@ -110,8 +124,10 @@ async function fcmSend(accessToken, deviceToken, title, body, data) {
 async function webPushSend(subJson, title, body, data) {
   let sub;
   try { sub = JSON.parse(subJson); } catch { return false; }
+  const wp = await getWebpush();
+  if (!wp) return false; // web-push not installed on this server — silent no-op
   try {
-    await webpush.sendNotification(sub, JSON.stringify({ title, body, data: data || {} }));
+    await wp.sendNotification(sub, JSON.stringify({ title, body, data: data || {} }));
     return true;
   } catch (e) {
     // 404/410 → the browser dropped the subscription: forget it.

@@ -1,10 +1,11 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native';
 
 import { PartyMark } from '@/components/race';
+import { ScreenHeader } from '@/components/screen-header';
+import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 import { loadPolitical, partyColor, partyName, type Political } from '@/lib/political';
 
@@ -21,6 +22,7 @@ export default function PoliticalData() {
   const [d, setD] = useState<Political | null>(null);
   const [logos, setLogos] = useState<Record<string, string>>({});
   const [err, setErr] = useState<string | null>(null);
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
 
   useEffect(() => {
     loadPolitical()
@@ -44,19 +46,13 @@ export default function PoliticalData() {
   })();
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-row items-center px-4 pt-2">
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          className="h-9 w-9 items-center justify-center rounded-full bg-card"
-        >
-          <Feather name="x" size={18} color={ui.ink} />
-        </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Political Data</Text>
-      </View>
-
-      <ScrollView contentContainerClassName="px-4 pb-10 pt-3">
+    <View className="flex-1 bg-surface">
+      <ScreenHeader title="Political Data" translateY={translateY} onClose={() => router.back()} />
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
+      >
         <Text className="pb-3 text-sm text-muted">
           The parties in power now — the incumbents this election confirms or unseats.
         </Text>
@@ -212,7 +208,7 @@ export default function PoliticalData() {
             ) : null}
           </>
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+    </View>
   );
 }

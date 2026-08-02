@@ -107,13 +107,21 @@ main.wrap { max-width: 840px; }
      extend the green header up into that inset so time/battery sit on green and
      content isn't clipped. env() is 0 on browsers without an inset, so no-op there. */
   padding-top: env(safe-area-inset-top, 0px);
-  transition: transform .28s ease;
+  /* Promote to its own compositor layer and animate only transform, so the slide
+     runs on the GPU thread instead of repainting the blurred bar every frame. The
+     Material standard-easing curve reads smoother than plain `ease`. */
+  transition: transform .24s cubic-bezier(.4, 0, .2, 1);
+  will-change: transform;
 }
 /* Scroll-hiding top pane (menu.js toggles .hdr-hidden on mobile widths): slides
    up on scroll-down, returns on scroll-up. Stays put at the top and while the ☰
    panel is open. Desktop keeps the header persistent. */
 .gov-header.hdr-hidden { transform: translateY(-100%); }
-.brand-row { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; padding-bottom: 12px; position: relative; }
+/* Tight top, normal bottom: in edge-to-edge the header's own padding-top sits ON
+   TOP of env(safe-area-inset-top), so a 12px here read as a 12px empty band ABOVE
+   the status-bar band. 6px keeps the logo off the clock without adding a second
+   gap; the bottom keeps its breathing room before the border. */
+.brand-row { display: flex; align-items: center; justify-content: space-between; padding-top: 6px; padding-bottom: 12px; position: relative; }
 .brand { display: flex; align-items: center; gap: 11px; }
 .crest { font-size: 1.8rem; line-height: 1; }
 /* menu.js swaps the 🦅 emoji for the real crest SVG. That artwork is drawn in

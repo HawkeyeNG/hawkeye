@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=119" />
+  <link rel="stylesheet" href="styles.css?v=120" />
   <script src="native.js?v=103"></script>
   <style>
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
@@ -100,12 +100,7 @@
         <select id="type-filter" aria-label="Filter by discrepancy type"><option value="">All types</option></select>
         <select id="state-filter" aria-label="Filter by state"><option value="">All states</option></select>
       </div>
-      <div class="table-wrap">
-      <table>
-        <thead><tr><th>Severity</th><th>Type</th><th>Polling unit</th><th>Detail</th><th>When</th></tr></thead>
-        <tbody id="rows"><tr><td colspan="5"><div class="skel" style="height:14px;margin:6px 0"></div><div class="skel" style="height:14px;margin:6px 0;width:70%"></div></td></tr></tbody>
-      </table>
-      </div>
+      <div id="rows"><div class="skel" style="height:48px;margin:8px 0"></div></div>
     </div>
 
     <div class="card">
@@ -249,18 +244,17 @@
       const type = $('type-filter').value, state = $('state-filter').value;
       const qs = new URLSearchParams({ ...(sev && { severity: sev }), ...(type && { type }), ...(state && { state }) });
       const { discrepancies } = await fetch('/api/integrity/discrepancies?' + qs).then((r) => r.json());
-      if (!discrepancies.length) { $('rows').innerHTML = '<tr><td colspan="5" class="empty">No discrepancies match — nothing flagged yet.</td></tr>'; return; }
+      if (!discrepancies.length) { $('rows').innerHTML = '<div class="empty">No discrepancies match — nothing flagged yet.</div>'; return; }
       const states = [...new Set(discrepancies.map((d) => d.state).filter(Boolean))].sort();
       const sf = $('state-filter');
       if (sf.options.length === 1) for (const st of states) sf.add(new Option(st, st));
       $('rows').innerHTML = discrepancies.map((d) => `
-        <tr>
-          <td><span class="sev ${d.severity}">${d.severity.toUpperCase()}</span></td>
-          <td class="type-tag">${TYPE_LABEL[d.type] || d.type}</td>
-          <td>${d.pu_name ? `${d.pu_name}<br /><small>${d.pu_code}${d.state ? ' · ' + d.state : ''}</small>` : (d.state || '—')}</td>
-          <td>${detailCell(d.detail.summary || '')}${d.contest ? ` <small>(${d.contest})</small>` : ''}${d.detail.docUrl ? ` · <a href="${d.detail.docUrl}" target="_blank" rel="noopener">view INEC's sheet →</a>` : ''}</td>
-          <td><small>${fmtTime(d.created_at)}</small></td>
-        </tr>`).join('');
+        <div class="ecard">
+          <div class="ec-top"><span class="sev ${d.severity}">${d.severity.toUpperCase()}</span><span class="ec-time">${fmtTime(d.created_at)}</span></div>
+          <div class="ec-line"><strong>${TYPE_LABEL[d.type] || d.type}</strong>${d.contest ? ` · ${d.contest}` : ''}</div>
+          <div class="ec-sub">${d.pu_name ? `${d.pu_name} · ${d.pu_code}${d.state ? ' · ' + d.state : ''}` : (d.state || '—')}</div>
+          <div class="ec-line">${detailCell(d.detail.summary || '')}${d.detail.docUrl ? ` · <a href="${d.detail.docUrl}" target="_blank" rel="noopener">view INEC's sheet →</a>` : ''}</div>
+        </div>`).join('');
     }
 
     async function loadBenford() {

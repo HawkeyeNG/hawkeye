@@ -5,10 +5,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ConfirmSheet } from '@/components/confirm-sheet';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
-import { authedGet, signOut, useAuth } from '@/lib/auth';
+import { authedGet, useAuth } from '@/lib/auth';
 import { markRead, openNotificationTarget, setUnread, useUnread } from '@/lib/push';
 
 type Notification = {
@@ -39,7 +38,6 @@ export default function Alerts() {
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [marking, setMarking] = useState(false);
-  const [confirmOut, setConfirmOut] = useState(false);
 
   // Returns the failure so the caller can decide how loudly to say it: a first
   // load has an empty screen to explain itself in, a pull-to-refresh does not.
@@ -108,28 +106,9 @@ export default function Alerts() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <ConfirmSheet
-        visible={confirmOut}
-        icon="log-out"
-        title="Sign out?"
-        body="You'll need your phone number and a code — or your password — to sign back in on this device. Nothing you have reported is affected."
-        confirmLabel="Sign out"
-        onConfirm={async () => {
-          setConfirmOut(false);
-          await signOut();
-          router.replace('/welcome');
-        }}
-        onCancel={() => setConfirmOut(false)}
-      />
-      <View className="flex-row items-center justify-between px-4 pb-2 pt-4">
+      {/* Sign out lives ONLY on Profile and the menu bottom — never on Alerts. */}
+      <View className="px-4 pb-2 pt-4">
         <Text className="text-2xl font-bold text-ink">Alerts</Text>
-        {auth.status === 'signedIn' ? (
-          <Pressable hitSlop={8} onPress={() => setConfirmOut(true)}>
-            <Text className="text-sm font-semibold text-good-ink">
-              Observer #{auth.observerId} · Sign out
-            </Text>
-          </Pressable>
-        ) : null}
       </View>
 
       {auth.status !== 'signedIn' ? (

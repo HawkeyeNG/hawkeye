@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=119" />
+  <link rel="stylesheet" href="styles.css?v=120" />
   <script src="native.js?v=103"></script>
   <style>
     .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
@@ -123,6 +123,8 @@
         <div id="p-collation" class="empty">No collation reports yet.</div></details>
       <details class="fold"><summary>Incident reports <span class="cnt" id="cnt-incidents">0</span></summary>
         <div id="p-incidents" class="empty">No incident reports yet.</div></details>
+      <details class="fold"><summary>Units mapped <span class="cnt" id="cnt-mappings">0</span></summary>
+        <div id="p-mappings" class="empty">No units mapped yet.</div></details>
 
       <div class="pcard">
         <h2>Session</h2>
@@ -191,9 +193,13 @@
       renderList($('p-incidents'), body.incidents, (i) =>
         `<div class="item"><strong>${esc(i.kind)}</strong> <span class="tag">${esc(i.status)}</span>
          <div class="sub">${esc([i.pu_code, i.state].filter(Boolean).join(' · ') || 'no location')} · ${dt(i.created_at)}</div></div>`);
+      renderList($('p-mappings'), body.mappings, (m) =>
+        `<div class="item"><strong>${esc(m.name || m.pu_code)}</strong>${m.confirmed ? ' <span class="tag ok">confirmed</span>' : ''}
+         <div class="sub">${esc([m.ward, m.lga, m.state].filter(Boolean).join(', '))} · ${m.source === 'fix' ? 'you mapped it' : 'via your report'} · ${dt(m.created_at)}</div></div>`);
       $('cnt-reports').textContent = (body.reports || []).length;
       $('cnt-collation').textContent = (body.collation || []).length;
       $('cnt-incidents').textContent = (body.incidents || []).length;
+      $('cnt-mappings').textContent = (body.mappings || []).length;
     }
 
     $('btn-copy').onclick = () => {

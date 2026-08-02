@@ -1149,7 +1149,7 @@ async function tryResume() {
 
 // ---------- boot ----------
 $('sel-contest').onchange = updateScopeNotice;
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) navigator.serviceWorker.register('sw.js');
 (async () => {
   // Expired/corrupt tokens are dropped BEFORE deciding which screen to show —
   // never let a dead session masquerade as signed-in (resume re-mints silently).

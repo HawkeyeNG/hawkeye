@@ -721,7 +721,9 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
   top: calc(100% + 8px);
   max-height: calc(100vh - 110px);
   max-height: calc(100dvh - 110px);
-  overflow-y: auto;
+  /* scroll, not auto: a PERMANENT gutter so the bar is always visible when the
+     list is cut off (auto let the WebView hide it until a scroll started). */
+  overflow-y: scroll;
   min-width: 254px;
   background: #fff; /* always light — links are pinned dark, so keep it legible in dark mode too */
   border: 1px solid #e3e8e4;
@@ -741,12 +743,12 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 .menu-panel::-webkit-scrollbar { width: 9px; }
 .menu-panel::-webkit-scrollbar-track { background: transparent; }
 .menu-panel::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.26); border-radius: 9px;
-  border: 2px solid transparent; background-clip: content-box;
+  background: rgba(0, 0, 0, 0.4); border-radius: 9px;
+  border: 1px solid transparent; background-clip: content-box;
 }
 .menu-panel::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.42); background-clip: content-box; }
 :root[data-theme="dark"] .menu-panel { scrollbar-color: rgba(255, 255, 255, 0.32) transparent; }
-:root[data-theme="dark"] .menu-panel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.28); background-clip: content-box; }
+:root[data-theme="dark"] .menu-panel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.42); background-clip: content-box; }
 /* Sticky bottom fade (menu.js adds the element + toggles the classes): the cue
    that carries on touch, where scrollbars stay hidden until you scroll.
    Negative margin so it overlays the last row instead of adding height. */

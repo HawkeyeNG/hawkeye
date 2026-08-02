@@ -59,13 +59,14 @@
   const footerCarriesThem = !(window.HAWKEYE && window.HAWKEYE.native);
   const FOOTER_ONLY = footerCarriesThem ? FOOTER_ONLY_HREFS : [];
   // "Take part" is hidden on desktop (≥900px) — its links live in the header there.
+  // Flat section labels, with TWO collapsible accordions nested inside — Report
+  // (the three report flows) under Take part, and Races under Live data. Each item
+  // is either a plain href or { acc, hrefs }. Only those two collapse; the section
+  // labels themselves stay flat (a shorter menu, per the plan).
   const GROUPS = [
-    ['Take part', ['observe.html', 'collation.html', 'incidents.html', 'map-unit.html', 'practice.html'], 'tp'],
-    // Active races. Osun 2026 (the pilot) + Presidency 2027 (candidates.html).
-    // Other race categories join here as their pages are built (political.html).
-    ['Races', ['osun.html', 'candidates.html']],
+    ['Take part', [{ acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'map-unit.html', 'practice.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html']],
-    ['Live data', ['results.html', 'dashboard.html', 'political.html']],
+    ['Live data', ['results.html', { acc: 'Races', hrefs: ['osun.html', 'candidates.html'] }, 'dashboard.html', 'political.html']],
     // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
     // aren't in the panel, the group finds no members and is skipped.
     ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'privacy.html', 'terms.html']],
@@ -114,36 +115,54 @@
     // "2027 Candidates" -> "Presidency 2027" for every page's static copy.
     const pres = links.get('candidates.html');
     if (pres) pres.textContent = 'Presidency 2027';
-    for (const [label, hrefs, tp] of GROUPS) {
-      const members = hrefs.map((h) => links.get(h)).filter(Boolean);
-      if (!members.length) continue;
-      // Collapsible section (accordion): a clickable header + a body holding the
-      // links, remembered per-section in localStorage. Defaults OPEN so nothing
-      // is hidden on first visit — the toggle only lets a user tidy the list.
-      const g = document.createElement('div');
-      g.className = 'menu-group' + (tp ? ' tp-hide' : '');
-      g.setAttribute('role', 'button');
-      g.setAttribute('tabindex', '0');
-      g.innerHTML = '<span>' + label + '</span><svg class="mg-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    // A collapsible accordion: a link-styled header that shows/hides its
+    // sub-links, remembered in localStorage. Default CLOSED — the whole point of
+    // an accordion here is a shorter menu.
+    const makeAccordion = (title, members, tp) => {
+      const head = document.createElement('div');
+      head.className = 'menu-acc' + (tp ? ' tp-hide' : '');
+      head.setAttribute('role', 'button');
+      head.setAttribute('tabindex', '0');
+      head.innerHTML = '<span>' + title + '</span><svg class="mg-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
       const body = document.createElement('div');
       body.className = 'mg-body' + (tp ? ' tp-hide' : '');
-      for (const a of members) {
-        body.appendChild(a);
-        links.delete(a.getAttribute('href'));
-      }
-      panel.appendChild(g);
+      for (const a of members) body.appendChild(a);
+      panel.appendChild(head);
       panel.appendChild(body);
-      const key = 'hk_mg_' + label;
-      const saved = localStorage.getItem(key);
-      const setOpen = (open) => g.setAttribute('aria-expanded', String(open));
-      setOpen(saved == null ? true : saved === '1');
+      const key = 'hk_acc_' + title;
+      const setOpen = (open) => head.setAttribute('aria-expanded', String(open));
+      setOpen(localStorage.getItem(key) === '1');
       const toggle = () => {
-        const open = g.getAttribute('aria-expanded') !== 'true';
+        const open = head.getAttribute('aria-expanded') !== 'true';
         setOpen(open);
         try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) {}
       };
-      g.addEventListener('click', toggle);
-      g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+      head.addEventListener('click', toggle);
+      head.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    };
+    for (const [label, items, tp] of GROUPS) {
+      // Resolve items against the page's links: a string -> that link; an
+      // { acc, hrefs } -> a collapsible group of the ones that exist.
+      const resolved = items.map((it) => {
+        if (typeof it === 'string') { const a = links.get(it); return a ? { a } : null; }
+        const members = it.hrefs.map((h) => links.get(h)).filter(Boolean);
+        return members.length ? { acc: it.acc, members } : null;
+      }).filter(Boolean);
+      if (!resolved.length) continue;
+      const head = document.createElement('div');
+      head.className = 'menu-group' + (tp ? ' tp-hide' : '');
+      head.textContent = label;
+      panel.appendChild(head);
+      for (const r of resolved) {
+        if (r.a) {
+          if (tp) r.a.classList.add('tp-hide');
+          panel.appendChild(r.a);
+          links.delete(r.a.getAttribute('href'));
+        } else {
+          makeAccordion(r.acc, r.members, tp);
+          r.members.forEach((a) => links.delete(a.getAttribute('href')));
+        }
+      }
     }
     for (const [href, a] of links) {
       if (FOOTER_ONLY.includes(href)) a.remove();

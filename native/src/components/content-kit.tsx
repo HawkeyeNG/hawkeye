@@ -309,17 +309,22 @@ export function Stat({
   label,
   tone,
   tight,
+  topBar,
 }: {
   value: string;
   label: string;
   tone?: Tone;
   tight?: boolean;
+  /** Optional 4px coloured top stripe (integrity's severity cue — ported from the
+   *  website). Opt-in so the other dashboards keep their plain tiles. */
+  topBar?: string;
 }) {
   return (
     <View
       className={`mb-2 mr-2 min-w-[44%] flex-1 rounded-2xl px-3.5 py-3 ${
         tone ? TINT[tone].bg : 'bg-card'
       }`}
+      style={topBar ? { borderTopWidth: 4, borderTopColor: topBar } : undefined}
     >
       <Text
         className={`${tight ? 'text-base' : 'text-xl'} font-bold ${

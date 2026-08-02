@@ -290,8 +290,8 @@ function applySignInMode() {
   if ($('channel-pick')) $('channel-pick').hidden = true;   // password sign-in sends no code
   $('btn-auth').textContent = 'Sign In';
   if ($('pw-link')) {
-    $('pw-link').hidden = false;                            // OTP fallback, sign-in only
-    $('pw-link').textContent = 'Sign in with a one-time code instead';
+    $('pw-link').hidden = false;                            // reset path, sign-in only
+    $('pw-link').textContent = 'Forgot your password?';
   }
   if ($('signin-line')) $('signin-line').hidden = true;     // they ARE on sign-in
   if ($('signup-line')) $('signup-line').hidden = false;
@@ -347,27 +347,21 @@ function resetAuthPane() {
     $('pw-signin-wrap').hidden = true;
     $('pw-signin-input').value = '';
   }
-  if ($('pw-opt')) {
-    $('pw-opt-check').checked = false;
-    $('pw-opt-field').hidden = true;
-    $('pw-opt-input').value = '';
-  }
+  if ($('pw-opt-input')) $('pw-opt-input').value = '';
   // Whichever mode this visit is in owns the links and the password controls —
   // exactly one of these two does anything.
   applySignUpMode();
   applySignInMode();   // keep a sign-in visit in sign-in mode after a reset
 }
 
-// Optional password at sign-up: checkbox reveals the field; applied right after
-// a successful OTP verify (fresh phone proof, so no current password needed).
-if ($('pw-opt-check')) $('pw-opt-check').onchange = () => {
-  $('pw-opt-field').hidden = !$('pw-opt-check').checked;
-  if (!$('pw-opt-check').checked) $('pw-opt-input').value = '';
-};
+// Password (#pw-opt-input) is REQUIRED and shown whenever a code is in flight —
+// no checkbox to toggle. It's applied right after a successful OTP verify (fresh
+// phone proof, so no current password is needed), on both sign-up and reset.
 
-// SIGN-IN ONLY (the link is hidden on sign-up): flips between the password field
-// and the OTP flow in place, so a forgotten password never dead-ends — OTP is
-// always the recovery path, and wrong/unset password errors point at it.
+// SIGN-IN ONLY (the link is hidden on sign-up): "Forgot your password?" flips the
+// pane into the OTP flow, which then forces a NEW password on verify — a proper
+// reset. OTP is thus only ever a sign-up or password-reset tool, never a way to
+// sign in around a password.
 if ($('pw-link')) $('pw-link').onclick = (e) => {
   e.preventDefault();
   const toPw = authMode !== 'password';
@@ -376,7 +370,7 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   if (!toPw) $('pw-signin-input').value = '';
   if ($('channel-pick')) $('channel-pick').hidden = toPw; // password sign-in sends no code
   $('btn-auth').textContent = toPw ? 'Sign In' : 'Request OTP';
-  $('pw-link').textContent = toPw ? 'Sign in with a one-time code instead' : 'Sign in with your password instead';
+  $('pw-link').textContent = toPw ? 'Forgot your password?' : 'Sign in with your password instead';
   $('otp-hint').textContent = '';
 };
 
@@ -499,10 +493,12 @@ $('btn-auth').onclick = async () => {
     return;
   }
 
-  // Optional sign-up password: validate BEFORE burning the OTP attempt.
-  const wantsPw = authMode !== 'password' && $('pw-opt-check') && $('pw-opt-check').checked;
-  const optPw = wantsPw ? $('pw-opt-input').value : '';
-  if (wantsPw && optPw.length < 8) return alert('Your password needs at least 8 characters (or untick the box to skip it).');
+  // A password is REQUIRED whenever we finish via OTP — a sign-up OR a forgotten-
+  // password reset. Validate BEFORE burning the OTP attempt. Password sign-in
+  // (authMode 'password') sets nothing; it uses the existing password.
+  const settingPw = authMode !== 'password';
+  const newPw = settingPw && $('pw-opt-input') ? $('pw-opt-input').value : '';
+  if (settingPw && newPw.length < 8) return alert('Choose a password of at least 8 characters to finish — you will use it to sign in.');
 
   if (authMode === 'password') {
     if (!input.value.trim()) return alert('Enter your phone number.');
@@ -522,13 +518,13 @@ $('btn-auth').onclick = async () => {
   });
   if (status !== 200) return alert(explain(body));
   localStorage.setItem('hawkeye_token', body.token);
-  if (wantsPw) {
+  if (settingPw) {
     const r = await api('/api/observers/set-password', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${body.token}` },
-      body: JSON.stringify({ password: optPw }),
+      body: JSON.stringify({ password: newPw }),
     });
-    if (r.status !== 200) alert('Signed in, but the password could not be set (' + explain(r.body) + '). You can set one any time on My Profile.');
+    if (r.status !== 200) alert('Signed in, but saving your password failed (' + explain(r.body) + '). Set one on My Profile so you can sign in with it next time.');
   }
   resetAuthPane();
   afterVerified();

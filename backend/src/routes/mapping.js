@@ -29,16 +29,30 @@ mappingRouter.post('/mappings', requireObserver, (req, res) => {
   const lat = Number(req.body?.lat);
   const lng = Number(req.body?.lng);
   const accuracy = Number(req.body?.accuracy);
-  const pu = db.prepare('SELECT pu_code, coords_source, approx_lat, approx_lng, approx_radius_m FROM polling_units WHERE pu_code = ?').get(puCode);
+  const pu = db.prepare('SELECT pu_code, coords_source, approx_lat, approx_lng, approx_radius_m, state, lga, ward FROM polling_units WHERE pu_code = ?').get(puCode);
   if (!pu) return res.status(404).json({ error: 'unknown_polling_unit' });
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return res.status(400).json({ error: 'gps_required' });
   if (!Number.isFinite(accuracy) || accuracy > config.maxGpsAccuracyM) {
     return res.status(400).json({ error: 'gps_accuracy_too_low', maxAccuracyM: config.maxGpsAccuracyM });
   }
-  // Reject fixes implausibly far from where the unit can be (its GRID3 envelope) —
-  // stops mapping a unit from the wrong location. No envelope = accept (unknown).
-  if (pu.approx_lat != null && haversineM(lat, lng, pu.approx_lat, pu.approx_lng) > pu.approx_radius_m * 1.5 + 2000) {
-    return res.status(403).json({ error: 'too_far_from_unit' });
+  // Reject fixes implausibly far from where the unit can be. Prefer the unit's own
+  // GRID3 envelope; if it has none, fall back to its WARD's location — the centroid
+  // of sibling units in the same ward that DO have a known spot — so a unit can't
+  // be mapped from the wrong state (the real gap: a unit with no envelope had NO
+  // distance check at all). Only when neither exists do we accept blind (unknown).
+  if (pu.approx_lat != null) {
+    if (haversineM(lat, lng, pu.approx_lat, pu.approx_lng) > pu.approx_radius_m * 1.5 + 2000) {
+      return res.status(403).json({ error: 'too_far_from_unit' });
+    }
+  } else if (pu.state && pu.lga && pu.ward) {
+    const sib = db.prepare(
+      `SELECT AVG(COALESCE(lat, approx_lat)) AS la, AVG(COALESCE(lng, approx_lng)) AS ln, COUNT(*) AS n
+         FROM polling_units
+        WHERE state = ? AND lga = ? AND ward = ? AND pu_code != ? AND COALESCE(lat, approx_lat) IS NOT NULL`,
+    ).get(pu.state, pu.lga, pu.ward, puCode);
+    if (sib && sib.n > 0 && haversineM(lat, lng, sib.la, sib.ln) > config.wardFallbackRadiusM) {
+      return res.status(403).json({ error: 'too_far_from_unit' });
+    }
   }
   const deviceId = String(req.headers['x-device-id'] || '').slice(0, 64) || null;
   const replaced = !!db.prepare('SELECT 1 FROM pu_mappings WHERE pu_code = ? AND observer_id = ?').get(puCode, req.observer.id);

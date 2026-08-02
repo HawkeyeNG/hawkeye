@@ -217,6 +217,11 @@ export const config = {
   // knows exactly where inside a large estate/compound the booth will stand, so
   // fixes taken around the general area should still agree.
   mapClusterRadiusM: num('MAP_CLUSTER_RADIUS_M', 500),
+  // When a unit has NO GRID3 envelope of its own, a mapping fix is still bounded
+  // by the WARD's location (the centroid of sibling units that do have one), so a
+  // unit can't be mapped from the wrong state. Generous — wards can be large, and
+  // this only needs to catch gross errors (e.g. mapping an Osun unit from Abuja).
+  wardFallbackRadiusM: num('WARD_FALLBACK_RADIUS_M', 15000),
   // Election-day geofence for crowd-mapped units mirrors that uncertainty — the
   // booth may sit anywhere inside the mapped area, not within 200 m of its median.
   crowdGeofenceRadiusM: num('CROWD_GEOFENCE_RADIUS_M', 750),

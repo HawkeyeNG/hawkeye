@@ -386,6 +386,7 @@ export default function ReportCollation() {
         key={step}
         title={isSheet ? 'Photo 1 of 2 — the collation form' : 'Photo 2 of 2 — the centre'}
         frameGuide={isSheet}
+        venueGuide={isSheet ? undefined : '📸 VENUE PHOTO — aim at the collation centre itself: the building, the room or the officials. This is NOT the collation form.'}
         hint={
           isSheet
             ? 'Fit the whole form in frame. Every figure must be readable.'

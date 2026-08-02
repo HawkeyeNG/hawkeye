@@ -25,6 +25,13 @@
   async function openCamera(which) {
     target = which;
     $('camera-title').textContent = which === 'sheet' ? 'Results sheet (EC8A)' : 'Polling venue';
+    const guide = $('camera-guide');
+    if (guide) {
+      guide.textContent = which === 'venue'
+        ? '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd around it. This is NOT the results sheet.'
+        : '';
+      guide.hidden = which !== 'venue';
+    }
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     } catch {

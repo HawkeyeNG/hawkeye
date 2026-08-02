@@ -1,8 +1,14 @@
-// Apply a user-forced theme before anything paints under it; system preference
-// rules when unset (styles.css handles both via tokens).
+// Resolve the effective theme before anything paints: a user-forced choice wins;
+// otherwise follow the system, DEFAULTING TO DARK when the system expresses no
+// (or a non-light) preference. A pre-paint inline copy of this lives in each
+// page's <head> to avoid a flash; this re-affirms it (and covers any page that
+// somehow lacks the inline tag).
 (function () {
-  const t = localStorage.getItem('hawkeye_theme');
-  if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+  let t = localStorage.getItem('hawkeye_theme');
+  if (t !== 'dark' && t !== 'light') {
+    t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  }
+  document.documentElement.dataset.theme = t;
 })();
 
 // Shared header-menu behaviour: close the dropdown when clicking anywhere
@@ -179,7 +185,7 @@
   if (btn && !document.querySelector('.theme-btn')) {
     const tb = document.createElement('button');
     tb.className = 'theme-btn';
-    const effective = () => document.documentElement.dataset.theme || 'light';
+    const effective = () => document.documentElement.dataset.theme || 'dark';
     // Inline SVG (sun/moon) instead of emoji — emoji render as tofu boxes on
     // fontless systems; SVG is always crisp and inherits currentColor.
     const SUN = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';

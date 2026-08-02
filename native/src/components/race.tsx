@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { logoUrl, partyColor, photoUrl, type Candidate, type Race } from '@/lib/political';
 
@@ -122,22 +122,43 @@ export function RaceView({
       <Text className="text-xl font-bold text-ink">{race.office || race.election}</Text>
       {dateStr ? <Text className="pt-0.5 text-sm text-muted">{dateStr}</Text> : null}
 
-      {race.stats ? (
-        <View className="mt-3 flex-row rounded-2xl bg-card px-2 py-3">
-          {[
-            [race.stats.candidates, 'Candidates'],
-            [race.stats.lgas, 'LGAs'],
-            [race.stats.pollingUnits ? `~${race.stats.pollingUnits.toLocaleString()}` : null, 'Units'],
-          ]
-            .filter(([n]) => n != null)
-            .map(([n, l]) => (
-              <View key={String(l)} className="flex-1 items-center">
-                <Text className="text-lg font-bold text-ink">{n}</Text>
+      {(() => {
+        // Candidate count is derived from the cards on THIS page (front-runners +
+        // full ballot / minors), matching web's race.js; LGA/unit totals come from
+        // the data. Date is a fixed day where INEC set one (Osun), else a verbatim
+        // label (the 2027 presidential date is not yet fixed — dateText '2027').
+        const st = race.stats;
+        const candTotal =
+          race.candidates.length + (race.others?.length ?? race.minors?.length ?? 0);
+        const cells: Array<[string | number, string]> = [];
+        if (race.date) {
+          cells.push([
+            new Date(`${race.date}T00:00:00`).toLocaleDateString('en-NG', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            }),
+            'Election day',
+          ]);
+        } else if (race.dateText) {
+          cells.push([race.dateText, race.dateLabel ?? 'Date']);
+        }
+        cells.push([candTotal, 'Candidates']);
+        if (st?.lgas != null) cells.push([st.lgas, 'LGAs']);
+        if (st?.pollingUnits != null) cells.push([`~${st.pollingUnits.toLocaleString()}`, 'Units']);
+        return (
+          <View className="mt-3 flex-row rounded-2xl bg-card px-2 py-3">
+            {cells.map(([n, l]) => (
+              <View key={l} className="flex-1 items-center">
+                <Text className="text-base font-bold text-ink" numberOfLines={1}>
+                  {n}
+                </Text>
                 <Text className="text-[10px] text-muted">{l}</Text>
               </View>
             ))}
-        </View>
-      ) : null}
+          </View>
+        );
+      })()}
 
       {race.incumbentNote ? (
         <View className="mt-3 rounded-2xl bg-surface px-4 py-3">
@@ -206,6 +227,48 @@ export function RaceView({
       {race.notableAbsence ? (
         <Text className="pt-3 text-sm italic text-muted">{race.notableAbsence}</Text>
       ) : null}
+
+      {/* Quick compare — front-runner cards side by side. On EVERY race page now
+          (presidency + governorship), with the action buttons directly below. */}
+      <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
+        Quick compare
+      </Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View className="overflow-hidden rounded-2xl bg-card">
+          <View className="flex-row bg-surface px-3 py-2">
+            {['Candidate', 'Party', 'Home base', 'Bid', 'Status'].map((h, i) => (
+              <Text
+                key={h}
+                className="text-[10px] font-bold uppercase tracking-wide text-muted"
+                style={{ width: i === 0 ? 150 : 120 }}
+              >
+                {h}
+              </Text>
+            ))}
+          </View>
+          {race.candidates.map((c, i) => (
+            <View
+              key={`${c.party}-${c.name}`}
+              className={`flex-row px-3 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}
+            >
+              <Text className="pr-2 text-xs font-bold text-ink" style={{ width: 150 }}>
+                {c.name}
+              </Text>
+              <View className="flex-row items-center" style={{ width: 120 }}>
+                <PartyMark party={c.party} logos={logos} size={14} />
+                <Text className="pl-1 text-xs font-bold" style={{ color: partyColor(c.party) }}>
+                  {c.party}
+                </Text>
+              </View>
+              {[c.home, c.bids, c.status].map((v, j) => (
+                <Text key={j} className="pr-2 text-xs text-muted" style={{ width: 120 }}>
+                  {v || '—'}
+                </Text>
+              ))}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
 
       <View className="flex-row pt-5">
         <Pressable

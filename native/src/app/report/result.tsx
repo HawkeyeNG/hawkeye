@@ -1437,6 +1437,7 @@ export default function ReportResult() {
         key={step}
         title={isSheet ? 'Photo 1 of 2 — the result sheet' : 'Photo 2 of 2 — the surroundings'}
         frameGuide={isSheet}
+        venueGuide={isSheet ? undefined : '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd. This is NOT the results sheet.'}
         hint={
           isSheet
             ? 'Fit the EC8A inside the frame. Every figure must be readable.'

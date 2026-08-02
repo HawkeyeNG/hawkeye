@@ -8,7 +8,8 @@
   <title>Hawkeye — Case File</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=117" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=118" />
   <script src="native.js?v=103"></script>
   <style>
     .chipst { font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; }
@@ -28,11 +29,12 @@
     .q p { font-weight: 700; margin: 0 0 6px; }
     .q label { display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; font-size: 0.92rem; }
     .q input { width: auto; margin: 0; }
-    .tallybar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: #eee; margin: 8px 0; }
+    .tallybar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); margin: 8px 0; }
     .tallybar i { display: block; }
     .verdict-box { border-top: 4px solid var(--green); }
     .note { font-size: 0.85rem; color: var(--muted); }
   </style>
+  <script src="authgate.js?v=1"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -171,6 +173,6 @@
     }
     load();
   </script>
-  <script src="menu.js?v=117"></script>
+  <script src="menu.js?v=118"></script>
 </body>
 </html>

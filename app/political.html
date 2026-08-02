@@ -8,7 +8,8 @@
   <title>Hawkeye — Political Data</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=117" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=118" />
   <script src="native.js?v=103"></script>
   <style>
     .map-card svg { width: 100%; height: auto; }
@@ -58,6 +59,7 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
+  <script src="authgate.js?v=1"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -93,7 +95,7 @@
     <p class="lede">The parties currently in power — the incumbents this election will confirm or
     unseat. Governing party shown per state; hover for details.</p>
     <p class="scope-note" id="prez"></p>
-    <p class="unofficial" id="provisional" style="background:#fff8e1;border-left:6px solid #f9a825;padding:10px;font-size:0.85rem;color:#5f4200"></p>
+    <p class="unofficial" id="provisional" style="background:var(--tint-warn);border-left:6px solid #f9a825;padding:10px;font-size:0.85rem;color:var(--text-warn)"></p>
 
     <div class="card">
       <h2>The 2027 Presidential Race</h2>
@@ -218,6 +220,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=117"></script>
+  <script src="menu.js?v=118"></script>
 </body>
 </html>

@@ -889,6 +889,7 @@ export default function Practice() {
             : 'Practice — photo 2 of 2, the venue'
         }
         frameGuide={isSheet}
+        venueGuide={isSheet ? undefined : '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd. This is NOT the results sheet.'}
         hint={
           isSheet
             ? 'On election day every figure must be readable. Try it now, or use a sample.'

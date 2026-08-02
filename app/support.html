@@ -19,7 +19,9 @@
     .wallet-addr { flex: 1; min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .w-actions { flex: none; display: inline-flex; gap: 8px; }
     .pill-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 999px; cursor: pointer; }
-    .copy-btn { background: var(--tint-ok); color: var(--green); border: 1px solid var(--green); }
+    /* --link (not --green): --green is the fixed brand dark-green, which sat
+       dark-on-dark over --tint-ok in dark mode. --link flips per theme. */
+    .copy-btn { background: var(--tint-ok); color: var(--link); border: 1px solid var(--link); }
     .qr-btn { background: transparent; color: var(--ink); border: 1px solid var(--border); }
     .pill-btn:hover { filter: brightness(0.98); }
     @media (max-width: 540px) {

@@ -3,7 +3,15 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Aliased because this screen's own component is called MapUnit; two things
@@ -24,7 +32,13 @@ import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
-import { DISCOVERY_RADIUS_M, getQuickFix, getSubmitFix, type Fix } from '@/lib/location';
+import {
+  describeFixFailure,
+  MAPPING_RADIUS_M,
+  trySubmitFix,
+  tryQuickFix,
+  type Fix,
+} from '@/lib/location';
 
 type Unit = {
   pu_code: string;
@@ -117,22 +131,22 @@ const REG = `${BASE}/api/register`;
 const MAX_NEARBY = 12;
 
 /**
- * How far /api/polling-units actually looks — used only until it says so itself.
+ * How far /api/polling-units looks, and how many rows it returns — used only
+ * until it says so itself, which it now does on every answer.
  *
- * That endpoint does NOT search the discovery radius: it measures against the
- * SUBMISSION geofence (backend/src/config.js `geofenceRadiusM`, 200m), while
- * /api/mapping/nearby honours the radiusM we ask for (800m). Two different
- * windows behind one button, so no single number can describe the search —
- * which is why the copy below names both, and why the response's own `radiusM`
- * is preferred over this mirror whenever it arrives.
+ * That endpoint takes no radius: it filters at backend/src/config.js
+ * `discoveryRadiusM` and slices at `discoveryMaxRows`, while /api/mapping/nearby
+ * honours the radiusM we ask for (800m). Two different windows behind one
+ * button, so no single number can describe the search — which is why the copy
+ * below names both, and why the response's own `radiusM`, `maxRows` and `capped`
+ * are preferred over these mirrors whenever they arrive.
+ *
+ * Note the discovery radius is NOT the submission geofence
+ * (`config.geofenceRadiusM`); they answer different questions and are different
+ * numbers, and pointing one at the other is the mistake config.js warns about.
  */
-const REGISTER_RADIUS_M = 200;
-
-/**
- * Its row cap. NOT on the wire — `.slice(0, 8)` server-side — so a full answer
- * is indistinguishable from a truncated one and has to be treated as truncated.
- */
-const REGISTER_MAX_ROWS = 8;
+const REGISTER_RADIUS_M = 500; // config.discoveryRadiusM, as of writing
+const REGISTER_MAX_ROWS = 40; // config.discoveryMaxRows, as of writing
 
 /**
  * What the two lookups covered on the last run, so the screen can describe the
@@ -148,7 +162,16 @@ type Searched = {
   registerM: number | null;
   /** Radius /api/mapping/nearby was asked for, or null if it never answered. */
   envelopeM: number | null;
-  /** The register lookup came back full, so nearer units may be missing. */
+  /**
+   * The row cap /api/polling-units applied — its own `maxRows`, so the copy
+   * quotes the server's number rather than a mirror that can drift from it.
+   */
+  maxRows: number;
+  /**
+   * The register lookup hit that cap, so nearer units may be missing. The
+   * server says so outright; only one too old to send `capped` leaves it to be
+   * inferred from the row count.
+   */
   capped: boolean;
 };
 
@@ -156,9 +179,11 @@ type Searched = {
  * What the ring on the map is, in words, given what actually answered.
  *
  * The ring can only ever be one circle, and the two lookups search two
- * different ones — 800m for units with a GRID3 area, 200m for units an observer
- * has already placed. Drawing the wider and leaving it unlabelled reads as
- * "everything in here was checked", which is false for the 7,652 units only the
+ * different ones — MAPPING_RADIUS_M for units with a GRID3 area, and whatever
+ * /api/polling-units reports as its own `radiusM` (config.discoveryRadiusM) for
+ * units an observer has already placed; both are read off the answers below
+ * rather than written as literals. Drawing the wider and leaving it unlabelled
+ * reads as "everything in here was checked", which is false for the 7,652 units only the
  * narrow lookup can see. So the ring is named.
  */
 const ringLine = (s: Searched): string | null => {
@@ -355,6 +380,11 @@ export default function MapUnit() {
    *  screen would like to have searched. */
   const [searched, setSearched] = useState<Searched | null>(null);
   const [browse, setBrowse] = useState(false);
+  /** Set only when the last GPS failure is one the settings app has to fix
+   *  (location off, or permission blocked with no dialog left). A timeout must
+   *  never raise it — permission is granted in that case, and saying otherwise
+   *  is what sent observers hunting a setting that was never wrong. */
+  const [gpsSettings, setGpsSettings] = useState(false);
 
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
@@ -464,7 +494,7 @@ export default function MapUnit() {
    * answered, the ring drops to what IT searched rather than standing at four
    * times the radius anything was actually queried at.
    */
-  const ringM = searched?.envelopeM ?? searched?.registerM ?? DISCOVERY_RADIUS_M;
+  const ringM = searched?.envelopeM ?? searched?.registerM ?? MAPPING_RADIUS_M;
 
   /**
    * GPS discovery — the primary path, as on the web. An observer standing at
@@ -479,11 +509,13 @@ export default function MapUnit() {
    * screen exists to fix, but it carries no LGA and cannot replace the first.
    *
    * THE TWO SEARCH DIFFERENT AREAS, and nothing on screen may pretend otherwise.
-   * /polling-units measures against the submission geofence (200m) and returns
-   * at most eight rows; /mapping/nearby honours DISCOVERY_RADIUS_M (800m) and
-   * returns up to 200. So an empty result is never "there is no unit within
-   * 800m of you" — a crowd-located unit 300m away is outside the only lookup
-   * that can see it. Both numbers are named in the copy for that reason.
+   * /polling-units measures at config.discoveryRadiusM and caps at
+   * config.discoveryMaxRows — both of which it reports on the wire, so the copy
+   * quotes them rather than mirroring them — while /mapping/nearby honours
+   * MAPPING_RADIUS_M (5km) and returns up to 200. So an empty result is never
+   * "there is no unit within 800m of you": a crowd-located unit can sit inside
+   * the ring and outside the only lookup that can see it. Both numbers are named
+   * in the copy for that reason.
    */
   const findNearby = async () => {
     setNearBusy(true);
@@ -493,28 +525,34 @@ export default function MapUnit() {
     // scope would caption that ring with the last run's numbers.
     setFix(null);
     setSearched(null);
+    setGpsSettings(false);
     setNearLine('Getting your location…');
     try {
       // Quick fix, not the submit-grade one: this only shortlists candidates.
       // The accurate fix is taken again at submit, where the server checks it.
-      const fix = await getQuickFix();
-      if (!fix) {
-        setNearLine(
-          'Location is off or not permitted — turn it on and retry, or browse the register below. (no GPS fix)',
-        );
+      //
+      // The failure is DISCRIMINATED and named. One message for all of them
+      // told observers with working permission that they had none — and this
+      // screen exists to recruit exactly those people into mapping units.
+      const r = await tryQuickFix();
+      if (!r.ok) {
+        const d = describeFixFailure(r);
+        setNearLine(`${d.lead}, or browse the register below. (${d.code})`);
+        setGpsSettings(d.settings);
         setBrowse(true);
         return;
       }
+      const fix = r.fix;
       setFix(fix);
       setNearLine(`Location fixed (±${Math.round(fix.accuracy)}m). Looking up units around you…`);
 
       const [located, envelope] = await Promise.all([
         fetch(`${BASE}/api/polling-units?lat=${fix.lat}&lng=${fix.lng}`).catch(() => null),
-        // The endpoint would default to 5km. DISCOVERY_RADIUS_M is what the map
+        // Mapping searches 5km on purpose (see MAPPING_RADIUS_M): this screen
         // below draws, and a ring that is not the area actually searched turns
         // the map from evidence into decoration.
         fetch(
-          `${BASE}/api/mapping/nearby?lat=${fix.lat}&lng=${fix.lng}&radiusM=${DISCOVERY_RADIUS_M}`,
+          `${BASE}/api/mapping/nearby?lat=${fix.lat}&lng=${fix.lng}&radiusM=${MAPPING_RADIUS_M}`,
         ).catch(() => null),
       ]);
 
@@ -531,9 +569,12 @@ export default function MapUnit() {
         return;
       }
 
-      const body: { radiusM?: number; units?: LocatedRow[] } = located?.ok
-        ? await located.json().catch(() => ({}))
-        : {};
+      const body: {
+        radiusM?: number;
+        maxRows?: number;
+        capped?: boolean;
+        units?: LocatedRow[];
+      } = located?.ok ? await located.json().catch(() => ({})) : {};
       const extra = envelope?.ok
         ? (((await envelope.json().catch(() => ({}))) as { units?: NearbyRow[] }).units ?? [])
         : [];
@@ -545,17 +586,29 @@ export default function MapUnit() {
        * so that beats the local mirror; a lookup that did not answer
        * contributes no radius rather than its intended one, since nothing
        * inside it was searched at all.
+       *
+       * Its cap and its truncation flag are taken the same way and for the same
+       * reason: the server owns those numbers, and a mirror of one is wrong the
+       * moment the server moves it.
        */
+      const registerMaxRows = Number.isFinite(body.maxRows)
+        ? Number(body.maxRows)
+        : REGISTER_MAX_ROWS;
       const scope: Searched = {
         registerM: located?.ok
           ? Number.isFinite(body.radiusM)
             ? Number(body.radiusM)
             : REGISTER_RADIUS_M
           : null,
-        envelopeM: envelope?.ok ? DISCOVERY_RADIUS_M : null,
-        // A full answer and a truncated one look identical on the wire, so a
-        // full one is treated as truncated.
-        capped: (body.units?.length ?? 0) >= REGISTER_MAX_ROWS,
+        envelopeM: envelope?.ok ? MAPPING_RADIUS_M : null,
+        maxRows: registerMaxRows,
+        // Only inferred against a server too old to send `capped` — there a
+        // full answer and a truncated one look identical on the wire, so a full
+        // one is treated as truncated.
+        capped:
+          typeof body.capped === 'boolean'
+            ? body.capped
+            : (body.units?.length ?? 0) >= registerMaxRows,
       };
       setSearched(scope);
 
@@ -645,9 +698,10 @@ export default function MapUnit() {
       setNearby(found);
       if (found.length === 0) {
         // NOT "within 800m": the units only /api/polling-units can see were
-        // searched at 200m, so one radius in this sentence would be a positive
-        // claim about a circle nothing ever looked in — and would send an
-        // observer hunting for a unit the app never asked about.
+        // searched at the narrower radius it reports for itself, so one radius
+        // in this sentence would be a positive claim about a circle nothing ever
+        // looked in — and would send an observer hunting for a unit the app
+        // never asked about.
         setNearLine(nothingFoundLine(scope));
         setBrowse(true);
         return;
@@ -739,12 +793,18 @@ export default function MapUnit() {
     setBusy(true);
     setLine('Getting an accurate fix — stand still…');
     try {
-      const fix = await getSubmitFix();
-      if (!fix) {
-        fail('No GPS fix — turn location on, step outside, and retry.');
+      // Named failure, not "no GPS fix". Mapping a unit is a standing-outside
+      // task, so a timeout here is genuinely a signal problem and should say
+      // so — while a real permission or services problem gets its own words
+      // instead of hiding behind the same sentence.
+      const got = await trySubmitFix();
+      if (!got.ok) {
+        const d = describeFixFailure(got);
+        fail(`${d.lead}. (${d.code})`);
         setBusy(false);
         return;
       }
+      const fix = got.fix;
       const id = await getIdentity();
       const token = await SecureStore.getItemAsync('hawkeye.auth.token');
       const res = await fetch(`${BASE}/api/mappings`, {
@@ -1015,13 +1075,27 @@ export default function MapUnit() {
           <Text className="pt-3 text-sm font-semibold text-warn-ink">{nearLine}</Text>
         ) : null}
 
-        {/* The register lookup returns at most eight rows and does not say
-            whether it had more. In a dense ward the unit the observer is
-            standing at can be the ninth — and the list above would look
-            complete. Said once, only when the answer came back full. */}
+        {/* Only for the failures the settings app is the cure for. The button
+            above is already the retry, so a weak-signal timeout gets the honest
+            sentence and another tap, not a detour into system settings. */}
+        {gpsSettings ? (
+          <Pressable
+            onPress={() => Linking.openSettings()}
+            className="mt-2 flex-row items-center self-start rounded-xl border border-line px-3 py-2 active:opacity-70"
+          >
+            <Feather name="settings" size={14} color={ui.muted} />
+            <Text className="pl-2 text-sm font-semibold text-ink">Open phone settings</Text>
+          </Pressable>
+        ) : null}
+
+        {/* The register lookup caps its answer. In a dense ward the unit the
+            observer is standing at can be the row past the cap — and the list
+            above would look complete. Said once, and only when the server
+            reports the answer as truncated; the cap and the radius quoted here
+            are its numbers, off the wire, not a mirror of them. */}
         {searched?.capped && nearby.length ? (
           <Text className="pt-1 text-xs text-muted">
-            Units already placed by observers are looked up {REGISTER_MAX_ROWS} at a time within{' '}
+            Units already placed by observers are looked up {searched.maxRows} at a time within{' '}
             {searched.registerM}m, and that limit was reached — if yours is not listed, browse the
             register below.
           </Text>
@@ -1064,8 +1138,9 @@ export default function MapUnit() {
             />
             {/* An unlabelled ring is read as "everything in here was checked",
                 and that is false: the units this screen most needs to reach are
-                found by a lookup that only searched 200m of it. The ring is
-                therefore named rather than merely drawn. */}
+                found by a lookup that searched only the narrower radius it
+                reports for itself. The ring is therefore named, at whatever
+                radius came back, rather than merely drawn. */}
             {searched && ringLine(searched) ? (
               <Text className="pt-2 text-xs leading-4 text-muted">{ringLine(searched)}</Text>
             ) : null}

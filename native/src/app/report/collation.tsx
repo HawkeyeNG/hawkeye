@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -18,12 +19,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CaptureCamera } from '@/components/capture-camera';
+import { ContestPicker } from '@/components/contest-picker';
 import { NoElection } from '@/components/no-election';
+import { RekorAnchor } from '@/components/rekor-anchor';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
+import type { Race, StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
-import { getSubmitFix } from '@/lib/location';
+import { describeFixFailure, trySubmitFix } from '@/lib/location';
 import { submitCollation, type CollationLevel, type Receipt, type Shot, type Vote } from '@/lib/submit';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -92,7 +96,11 @@ export default function ReportCollation() {
 
   // -- scope ---------------------------------------------------------------
   const [contests, setContests] = useState<Contest[]>([]);
+  // `race` is the ContestPicker's controlled selection (a full 2027-catalogue
+  // Race); `contest` is the matched /api/contests row derived from it, which is
+  // what the submit + review + receipt read (its .code, .name, .open).
   const [contest, setContest] = useState<Contest | null>(null);
+  const [race, setRace] = useState<Race | null>(null);
   const [level, setLevel] = useState<CollationLevel | null>(null);
   const [states, setStates] = useState<string[]>([]);
   const [stateSel, setStateSel] = useState<string | null>(null);
@@ -135,17 +143,30 @@ export default function ReportCollation() {
    *  "no active election here" answer instead of hiding the state. */
   const covered = !!stateSel && racesIn(stateSel, contests).length > 0;
 
-  /** The races that exist in the chosen state — the contest step's whole content. */
+  /** The contests that exist in the chosen state — used to derive the matched
+   *  Contest from a picked Race, and to word the informational opens-on line. */
   const applicable = useMemo(
     () => (stateSel ? racesIn(stateSel, contests) : []),
     [stateSel, contests],
   );
 
-  /** The race step is real only when there is a choice to make. */
-  const steps = useMemo(
-    () => STEPS.filter((s) => s.key !== 'contest' || applicable.length > 1),
-    [applicable.length],
-  );
+  /**
+   * The informational opens-on line for the contest step.
+   *
+   * Closed races are unselectable in the picker (which tags each with its own
+   * "Opens …"), so this fires only when NOTHING is open for this scope yet — the
+   * case where the observer reaches the race step with no selectable race and
+   * the useful thing to tell them is when reporting opens. No practice-run
+   * framing: the flow can no longer reach a rehearsal from here.
+   */
+  const opensInfo = useMemo(() => {
+    if (applicable.length === 0 || applicable.some((c) => c.open)) return null;
+    return applicable.find((c) => c.opensAt) ?? applicable[0];
+  }, [applicable]);
+
+  /** Every step is real now: closed races are unselectable rather than
+   *  auto-picked, so the race step always renders (no single-race skip). */
+  const steps = STEPS;
 
   /** Scope completeness mirrors the server rule exactly. */
   const scopeReady =
@@ -159,9 +180,11 @@ export default function ReportCollation() {
   const levelDef = LEVELS.find((l) => l.key === level) ?? null;
 
   /**
-   * The state determines the race, so the contest step is built here rather than
-   * up front — and skipped entirely when the state has exactly one race, which
-   * is every state outside the FCT during a single-race election.
+   * The state determines which races run there, so the race step comes AFTER the
+   * scope: by the time it renders the state is always chosen, and the picker is
+   * handed it as `lockedState` so it only has to ask type → race. The step always
+   * renders now — a lone race may be closed (unselectable), so it can no longer
+   * be auto-picked into the camera.
    */
   const continueFromScope = () => {
     if (!stateSel) return;
@@ -180,29 +203,30 @@ export default function ReportCollation() {
       );
       return;
     }
-    if (races.length === 1) {
-      setContest(races[0]);
-      setStep('sheet');
-      return;
-    }
     setStep('contest');
   };
 
   /**
-   * Choosing a state pre-picks its race when there is only one, and drops any
-   * race chosen under the previous state: the contest is derived from the scope,
-   * so it must never outlive it. Backing out to a different state otherwise left
-   * the pinned Continue live for a contest that does not run where the observer
-   * is now reporting from.
-   *
-   * Done here rather than in an effect on stateSel because /api/contests may
-   * still be in flight — continueFromScope re-derives the race at press time,
-   * which is the moment it actually has to be right.
+   * Choosing a state drops any race chosen under the previous state: the contest
+   * is derived from the scope, so it must never outlive it. Backing out to a
+   * different state otherwise left a stale selection for a contest that does not
+   * run where the observer is now reporting from.
    */
   const chooseState = (s: string | null) => {
     setStateSel(s);
-    const races = s ? racesIn(s, contests) : [];
-    setContest(races.length === 1 ? races[0] : null);
+    setContest(null);
+    setRace(null);
+  };
+
+  /**
+   * The picker returns a full-catalogue Race; the rest of the screen speaks in
+   * /api/contests rows, so match it back to one (open, by construction — the
+   * picker's allowClosed is false) and advance straight to the camera.
+   */
+  const chooseRace = (r: Race) => {
+    setRace(r);
+    setContest(stateSel ? (racesIn(stateSel, contests).find((c) => c.code === r.contestCode) ?? null) : null);
+    setStep('sheet');
   };
 
   // -- photos ---------------------------------------------------------------
@@ -251,26 +275,41 @@ export default function ReportCollation() {
   const [formSerial, setFormSerial] = useState('');
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
+  /** Set only when the last GPS failure is one the OS settings app has to fix
+   *  (location switched off, or permission blocked with no dialog left to
+   *  show). A timeout must never raise it — permission is granted in that case,
+   *  and marching someone into their settings over a weak signal is the wild
+   *  goose chase the old one-size-fits-all message sent them on. */
+  const [gpsSettings, setGpsSettings] = useState(false);
   const [done, setDone] = useState({ title: '', line: '' });
   const [receipt, setReceipt] = useState<Receipt>({});
   /** Held in the offline outbox rather than delivered — a different ending. */
   const [queued, setQueued] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  /** Nothing can be filed before poll-open; the server enforces it either way. */
-  const closed = contest?.open === false;
-
   const onSubmit = async () => {
-    if (!contest || !level || !stateSel || !sheet || !venue || closed) return;
+    if (!contest || !level || !stateSel || !sheet || !venue) return;
     setBusy(true);
+    setGpsSettings(false);
     setLine('Getting your location…');
     try {
-      const fix = await getSubmitFix();
-      if (!fix) {
-        setLine('No GPS fix — location must be on. Move near a window and retry.');
+      // DISCRIMINATED failure, named. A collation centre is an indoor room —
+      // a hall, a party secretariat, an INEC office — which is precisely where
+      // a perfectly granted permission still takes a slow satellite lock, and
+      // the old sentence ("location must be on") told those observers their
+      // location was off. There is no geofence on a collation: nothing here
+      // checks WHERE the observer stands, the fix is only the stamp signed
+      // into the record. So the copy names the real obstacle and never implies
+      // a placement rule this form does not have.
+      const got = await trySubmitFix();
+      if (!got.ok) {
+        const d = describeFixFailure(got);
+        setLine(`${d.lead}. Nothing was sent — your figures and photos are still here. (${d.code})`);
+        setGpsSettings(d.settings);
         setBusy(false);
         return;
       }
+      const fix = got.fix;
       setLine('Signing and submitting…');
       const r = await submitCollation({
         level,
@@ -305,13 +344,6 @@ export default function ReportCollation() {
           title: 'Saved on This Phone',
           line: 'It will send when you have signal. The report is already signed, so it files exactly as you left it — keep the app installed and it goes on its own.',
         });
-        setStep('done');
-      } else if (r.error === 'reporting_not_open') {
-        // The flow worked end-to-end; only the election-day gate stopped it.
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setReceipt({});
-        setQueued(false);
-        setDone({ title: 'Dry Run Complete', line: r.message });
         setStep('done');
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -382,7 +414,7 @@ export default function ReportCollation() {
             setRetaking(false);
             setStep('review');
           } else if (isSheet) {
-            setStep(applicable.length > 1 ? 'contest' : 'scope');
+            setStep('contest');
           } else {
             setStep('sheet');
           }
@@ -545,61 +577,36 @@ export default function ReportCollation() {
               onPress={continueFromScope}
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
             >
-              <Text className="text-base font-bold text-hawk-gold">
-                {applicable.length > 1 ? 'Continue — choose the race' : 'Continue to photos'}
-              </Text>
+              <Text className="text-base font-bold text-hawk-gold">Continue — choose the race</Text>
             </Pressable>
           </View>
         ) : null}
 
-        {step === 'contest' ? (
+        {step === 'contest' && stateSel ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             <Crumb label={scopeLine} onPress={() => setStep('scope')} />
-            <Prompt>Which election are you reporting?</Prompt>
             <Text className="pb-3 text-sm text-muted">
-              A collation centre announces every race on the same day. Only the ones that run in{' '}
-              {stateSel} are listed — report each one separately.
+              A collation centre announces every race on the same day. Choose the one you are
+              reporting — only races open for reporting can be selected.
             </Text>
-            {applicable.map((c) => {
-              const on = contest?.code === c.code;
-              return (
-                <Pressable
-                  key={c.code}
-                  onPress={() => setContest(c)}
-                  className={`mb-2 rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-card'}`}
-                >
-                  <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-ink'}`}>
-                    {c.name}
-                  </Text>
-                  <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
-                    {c.election}
-                  </Text>
-                  {c.open === false ? (
-                    <Text
-                      className={`pt-1 text-xs font-semibold ${on ? 'text-hawk-gold' : 'text-warn-ink'}`}
-                    >
-                      {opensLine(c)}
-                    </Text>
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        ) : null}
-
-        {step === 'contest' ? (
-          <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
-            {closed && contest ? (
-              <Text className="pb-2 text-sm font-semibold text-warn-ink">{opensLine(contest)}</Text>
+            {/* Informational opens-on line: shown only when nothing is open for
+                this scope yet, so the observer who cannot select anything is at
+                least told when reporting begins. No practice-run framing — a
+                closed race can no longer be walked through from here. */}
+            {opensInfo ? (
+              <Text className="pb-3 text-sm font-semibold text-warn-ink">{opensLine(opensInfo)}</Text>
             ) : null}
-            <Pressable
-              disabled={!contest}
-              onPress={() => setStep('sheet')}
-              className={`items-center rounded-2xl py-4 ${contest ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
-            >
-              <Text className="text-base font-bold text-hawk-gold">Continue to photos</Text>
-            </Pressable>
-          </View>
+            {/* The shared type → race selector, locked to the scope's state.
+                allowClosed=false: closed races are visible but unselectable, and
+                picking an open one advances straight to the camera. */}
+            <ContestPicker
+              contests={contests}
+              value={race}
+              onSelect={chooseRace}
+              lockedState={stateSel as StateName}
+              allowClosed={false}
+            />
+          </ScrollView>
         ) : null}
 
         {step === 'votes' ? (
@@ -731,33 +738,40 @@ export default function ReportCollation() {
         ) : null}
 
         {/* Pinned: the summary above grows with the vote list, and a failed
-            submit ("No GPS fix…") is retried from here — the status line rides
-            with the button so retrying never means scrolling back down. */}
+            submit (a named location failure, a rejected send) is retried from
+            here — the status line rides with the button so retrying never
+            means scrolling back down. */}
         {step === 'review' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
-            {/* Say when, not just no. The server refuses early reports anyway;
-                finding that out after two photos and a full tally is the failure
-                this replaces. */}
-            {closed && contest ? (
-              <Text className="pb-2 text-sm font-semibold text-warn-ink">
-                {opensLine(contest)} Nothing can be filed before then — your work stays here until
-                you reopen this screen on election day.
-              </Text>
-            ) : null}
             {line ? (
               <Text className="pb-2 text-sm font-semibold text-warn-ink">{line}</Text>
             ) : null}
+
+            {/* Only for the two failures the settings app is actually the cure
+                for — location switched off, or a permanently blocked
+                permission. "Sign & submit" directly below IS the retry, so a
+                weak-signal timeout gets the honest sentence and another tap,
+                never a detour into settings that were never wrong. */}
+            {gpsSettings ? (
+              <Pressable
+                disabled={busy}
+                onPress={() => Linking.openSettings()}
+                className="mb-3 flex-row items-center self-start rounded-xl border border-line px-3 py-2 active:opacity-70"
+              >
+                <Feather name="settings" size={14} color={ui.muted} />
+                <Text className="pl-2 text-sm font-semibold text-ink">Open phone settings</Text>
+              </Pressable>
+            ) : null}
+
             <Pressable
-              disabled={busy || closed}
+              disabled={busy}
               onPress={onSubmit}
-              className={`items-center rounded-2xl py-4 ${busy || closed ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
+              className={`items-center rounded-2xl py-4 ${busy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
             >
               {busy ? (
                 <ActivityIndicator color={BRAND.gold} />
               ) : (
-                <Text className="text-base font-bold text-hawk-gold">
-                  {closed ? 'Reporting not open yet' : 'Sign & submit'}
-                </Text>
+                <Text className="text-base font-bold text-hawk-gold">Sign &amp; submit</Text>
               )}
             </Pressable>
             <Pressable
@@ -775,7 +789,9 @@ export default function ReportCollation() {
             <View className="items-center">
               {/* The waiting ending gets the warn tint + its own ink: gold on
                   amber-600 was ~1.8:1, and the tint follows the theme so the
-                  disc darkens instead of staying a pale chip on a dark screen. */}
+                  disc darkens instead of staying a pale chip on a dark screen.
+                  The green check means "this is on the ledger" and only the filed
+                  report may wear it; a queued one is still waiting. */}
               <View
                 className={`h-16 w-16 items-center justify-center rounded-full ${queued ? 'bg-warn' : 'bg-hawk-green'}`}
               >
@@ -819,6 +835,15 @@ export default function ReportCollation() {
                   is in the public ledger and has not been altered.
                 </Text>
               </View>
+            ) : null}
+
+            {/* The independent half of that claim. Collations carry their own
+                chain, and its head rides in the same daily Rekor artifact as the
+                unit ledger (collationHead in services/anchor.js) — so this links
+                to the same public log, once an anchor covering this entry
+                exists. Before that it says so plainly rather than linking. */}
+            {receipt.entryHash ? (
+              <RekorAnchor entryHash={receipt.entryHash} chain="collation" />
             ) : null}
 
             {/* What was filed, in the observer's own figures. The collation route

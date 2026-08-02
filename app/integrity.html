@@ -138,7 +138,12 @@
     <h2>What we check</h2>
     <p class="hint">Every result is run through these automated checks. Expand a group to see each one.</p>
     <div class="acc-wrap">
-      <details class="acc" open>
+      <!-- Every group starts CLOSED. This one carried `open`, which auto-expanded
+           five list items on load and buried the dashboard under a checklist
+           nobody asked to see. The native twin (native/src/app/integrity.tsx)
+           seeds its open-panel map with {} for the same reason — keep the two
+           in step. -->
+      <details class="acc">
         <summary>Against INEC &amp; collation records</summary>
         <ul>
           <li><strong>INEC IReV mismatch</strong> — the crowd's counts don't appear on INEC's own uploaded sheet for that unit.</li>

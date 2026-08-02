@@ -7,8 +7,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export function useTheme() {
-  const scheme = useColorScheme();
-  const theme = scheme === 'unspecified' ? 'light' : scheme;
-
-  return Colors[theme];
+  // Already narrowed to 'light' | 'dark' and already carrying the user's
+  // override — no 'unspecified' / null branch to defend against any more.
+  return Colors[useColorScheme()];
 }

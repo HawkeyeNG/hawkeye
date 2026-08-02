@@ -100,8 +100,8 @@
 
   <main class="wrap">
     <h1>Leaderboard</h1>
-    <p class="unofficial"><strong>Tentative and unofficial.</strong> These are partial tallies built from matching crowd reports. They are not —
-    and never will be — official election results, which only INEC declares.</p>
+    <p class="unofficial"><strong>Tentative and unofficial.</strong> These are partial tallies built from matching crowd reports, excluding any
+    results currently in dispute. They are not — and never will be — official election results, which only INEC declares.</p>
 
     <div class="toolbar" id="follow">
       <div>
@@ -421,7 +421,7 @@
         body: JSON.stringify({ contest, state: scope }),
       });
       msg.textContent = r.ok
-        ? `🔔 Following ${scope || 'everywhere'}. You'll get a Telegram message on every new report.`
+        ? `🔔 Following ${scope || 'everywhere'}. You'll be alerted on every new report (Telegram or WhatsApp, your choice, plus the in-app feed).`
         : 'Could not set up following — make sure your phone is verified.';
     };
   </script>

@@ -166,7 +166,7 @@ export default function Alerts() {
                 <View className="mt-4 items-center rounded-2xl bg-card px-6 py-10">
                   <Feather name="wifi-off" size={26} color={ui.faint} />
                   <Text className="pt-3 text-base font-semibold text-ink">
-                    Could not load your alerts
+                    Could Not Load Your Alerts
                   </Text>
                   <Text className="pt-1 text-center text-sm text-muted">
                     Pull down to try again. ({err})
@@ -174,7 +174,7 @@ export default function Alerts() {
                 </View>
               ) : (
                 <View className="mt-4 items-center rounded-2xl bg-card px-6 py-10">
-                  <Text className="text-base font-semibold text-ink">Nothing yet</Text>
+                  <Text className="text-base font-semibold text-ink">Nothing Yet</Text>
                   <Text className="pt-1 text-center text-sm text-muted">
                     You are signed in. Updates on races you follow and reports you file land here.
                   </Text>
@@ -198,7 +198,15 @@ export default function Alerts() {
                     </Text>
                   ) : null}
                 </View>
-                <Text className="text-xs text-faint">{ago(item.created_at)}</Text>
+                {/* faint is the app's timestamp colour on a card and stays that
+                    on a read row. It cannot survive the unread TINT, though:
+                    --faint on --good is 1.88:1 in light mode (pale sage on pale
+                    mint) and 3.11:1 in dark — the one row whose age matters most
+                    was the one you could not read it on. muted holds 5.67:1 /
+                    5.71:1 there, so the tinted row steps up one level. */}
+                <Text className={`text-xs ${item.read ? 'text-faint' : 'text-muted'}`}>
+                  {ago(item.created_at)}
+                </Text>
                 {item.url ? (
                   <View className="pl-1">
                     <Feather name="chevron-right" size={16} color={ui.faint} />

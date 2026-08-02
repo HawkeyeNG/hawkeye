@@ -2,19 +2,19 @@
    Deep institutional green + mint accent, editorial serif headings,
    soft cards, sticky translucent chrome. All v1 class names kept. */
 :root {
-  --green: #008751;         /* Nigeria green (kept for accents) */
+  --green: #004225;         /* Nigeria green (kept for accents) */
   --green-dark: #00482b;
   --green-darker: #00331e;
   --green-950: #00251a;
   --green-700: #0a5c39;
-  --accent: #2ee59d;        /* mint — CTAs, highlights */
-  --gold: #f5c518;
-  --ink: #14201a;
-  --muted: #5b6b62;
-  --bg: #f7f8f6;
+  --accent: var(--gold);        /* mint — CTAs, highlights */
+  --gold: #f5b301;
+  --ink: #10221a;
+  --muted: #526058;
+  --bg: #e8f2ec;
   --card: #ffffff;
   --border: #dde4de;
-  --line: #e3e8e4;
+  --line: #e2ece6;
   --focus: #ffdd00;
   --danger: #d4351c;
   --amber: #fdf6dd;
@@ -27,18 +27,22 @@
      warn/ok = severity washes, surface = card-like solid (was #fff). */
   --tint: #eef5f0;
   --code-bg: #eef2ef;
-  --tint-danger: #fbeaea;
-  --tint-warn: #fff3e0;
-  --tint-ok: #e8f5ee;
+  --tint-danger: #fee9e8;
+  --tint-warn: #fef3dc;
+  --tint-ok: #dff2e8;
   --surface: #ffffff;
-  --text-danger: #b3261e;
-  --text-warn: #7a4506;
+  --text-danger: #b91c1c;
+  --text-warn: #b45309;
   /* "only light", not "light": plain `light` still lets a user agent apply its
      OWN automatic dark treatment (Chrome's "auto dark mode for web contents",
      Android WebView algorithmic darkening), which repainted the site to match
      system dark and made the header toggle look broken — our CSS never follows
      prefers-color-scheme at all. `only` is the standards opt-out that keeps
      rendering in OUR hands; [data-theme="dark"] below flips it to `only dark`. */
+  --faint: #8d9c93;
+  --disabled: #d4d4d4;
+  --caution: #f5d90a;      /* SAFETY-OF-PERSON hazard yellow only */
+  --caution-ink: #7a3e00;
   color-scheme: only light;
 }
 /* Dark theme is OPT-IN ONLY via the header toggle (html[data-theme="dark"], set
@@ -46,18 +50,22 @@
    across browsers. NEUTRALS ONLY: brand greens, hero/trust/footer gradients and
    the amber banner are untouched; only the white surfaces flip. */
 :root[data-theme="dark"] {
-  --ink: #e7efe9; --muted: #9db1a5;
-  --bg: #0c1310; --card: #151f19;
-  --border: #2b3a31; --line: #223028; --input-border: #35463c;
+  --ink: #e8f2ec; --muted: #9eb0a5;
+  --bg: #08140e; --card: #12241b;
+  --border: #2b3a31; --line: #20382b; --input-border: #35463c;
   --link: #57d9a1;
   --tint: #1b2a21;
   --code-bg: #1a2622;
-  --tint-danger: #331d1d;
-  --tint-warn: #302517;
-  --tint-ok: #16281e;
-  --surface: #151f19;
-  --text-danger: #ff9d94;
-  --text-warn: #e8b07a;
+  --tint-danger: #42181a;
+  --tint-warn: #402c0c;
+  --tint-ok: #103824;
+  --surface: #12241b;
+  --text-danger: #fca5a5;
+  --text-warn: #fcd34d;
+  --faint: #6e8076;
+  --disabled: #303e36;
+  --caution: #6b5200;
+  --caution-ink: #fae014;
   color-scheme: only dark;   /* see the "only light" note above */
 }
 /* Self-hosted type: Inter for UI/body, Lora serif for headings. */
@@ -65,8 +73,6 @@
 @font-face { font-family: 'Inter'; font-weight: 500; font-display: swap; src: url('fonts/inter-500.woff2') format('woff2'); }
 @font-face { font-family: 'Inter'; font-weight: 600; font-display: swap; src: url('fonts/inter-600.woff2') format('woff2'); }
 @font-face { font-family: 'Inter'; font-weight: 700; font-display: swap; src: url('fonts/inter-700.woff2') format('woff2'); }
-@font-face { font-family: 'Lora'; font-weight: 600; font-display: swap; src: url('fonts/lora-600.woff2') format('woff2'); }
-@font-face { font-family: 'Lora'; font-weight: 700; font-display: swap; src: url('fonts/lora-700.woff2') format('woff2'); }
 
 * { box-sizing: border-box; }
 html { background: var(--bg); scroll-behavior: smooth; }
@@ -84,7 +90,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
-h1, h2, h3 { font-family: 'Lora', Georgia, 'Times New Roman', serif; line-height: 1.2; letter-spacing: -0.01em; }
+h1, h2, h3 { font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; line-height: 1.2; letter-spacing: -0.01em; }
 h1 { font-weight: 700; }
 h2, h3 { font-weight: 600; }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
@@ -119,7 +125,7 @@ main.wrap { max-width: 840px; }
    and clearly secondary. */
 .hero-fold #install-cta { display: inline-block; width: auto; margin: 0; padding: 9px 15px; font-size: 0.85rem; box-shadow: none; }
 .brand-text { display: flex; flex-direction: column; }
-.brand-text strong { font-family: 'Lora', Georgia, serif; font-size: 1.08rem; letter-spacing: 0.07em; }
+.brand-text strong { font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; font-size: 1.08rem; letter-spacing: 0.07em; }
 .brand-text span { font-size: 0.68rem; color: #9fbfae; letter-spacing: 0.03em; }
 .gov-header nav a { color: #fff; font-weight: 700; text-decoration: none; border-bottom: 2px solid transparent; }
 .gov-header nav a:hover { border-bottom-color: var(--accent); }
@@ -129,7 +135,7 @@ main.wrap { max-width: 840px; }
 /* ---------- landing hero ---------- */
 .hero {
   background:
-    radial-gradient(1100px 480px at 78% -10%, rgba(46, 229, 157, 0.16), transparent 60%),
+    radial-gradient(1100px 480px at 78% -10%, rgba(245, 179, 1, 0.16), transparent 60%),
     radial-gradient(700px 420px at 8% 110%, rgba(245, 197, 24, 0.10), transparent 55%),
     linear-gradient(165deg, var(--green-950) 0%, var(--green-darker) 55%, var(--green-dark) 100%);
   color: #fff; padding: clamp(18px, 4.5vw, 60px) 0 0; overflow: hidden;
@@ -199,7 +205,7 @@ main.wrap { max-width: 840px; }
   min-height: calc(100svh - var(--hdr-h, 85px) - var(--bar-h, 0px));
   padding: 18px 0 22px; text-align: center; color: #fff;
   background:
-    radial-gradient(760px 380px at 50% -12%, rgba(46, 229, 157, 0.18), transparent 62%),
+    radial-gradient(760px 380px at 50% -12%, rgba(245, 179, 1, 0.18), transparent 62%),
     linear-gradient(168deg, var(--green-950) 0%, var(--green-darker) 58%, var(--green-dark) 100%);
 }
 /* In the app the marketing page is noise — hide it so the welcome screen is the
@@ -262,7 +268,7 @@ main.wrap { max-width: 840px; }
 .hero-signin a:hover { color: var(--accent); }
 .hero-badge, .badge {
   display: inline-flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 600;
-  color: #bfe9d4; background: rgba(46, 229, 157, 0.12); border: 1px solid rgba(46, 229, 157, 0.35);
+  color: #bfe9d4; background: rgba(245, 179, 1, 0.12); border: 1px solid rgba(245, 179, 1, 0.35);
   padding: 6px 14px; border-radius: 999px; margin: 0 0 20px;
 }
 .live-dot, .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s infinite; }
@@ -276,7 +282,7 @@ main.wrap { max-width: 840px; }
   font-size: 0.97rem; border-radius: 10px; transition: transform 0.12s, filter 0.12s;
 }
 .btn-primary:hover, .btn-ghost:hover, .btn-white:hover, .btn-accent:hover { transform: translateY(-2px); }
-.btn-accent { background: var(--accent); color: var(--green-950); box-shadow: 0 8px 24px rgba(46, 229, 157, 0.35); }
+.btn-accent { background: var(--accent); color: var(--green-950); box-shadow: 0 8px 24px rgba(245, 179, 1, 0.35); }
 .btn-primary { background: var(--green); color: #fff; box-shadow: 0 6px 18px rgba(0, 135, 81, 0.35); }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost { border: 1.5px solid rgba(255, 255, 255, 0.45); color: #fff; }
@@ -303,7 +309,7 @@ main.wrap { max-width: 840px; }
 /* stats band (hero bottom) */
 .stats-band { margin-top: 52px; background: rgba(0, 0, 0, 0.25); border-top: 1px solid rgba(255, 255, 255, 0.08); padding: 24px 0; }
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; }
-.stats-row strong { display: block; font-family: 'Lora', Georgia, serif; font-size: 1.8rem; color: var(--accent); }
+.stats-row strong { display: block; font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; font-size: 1.8rem; color: var(--accent); }
 .stats-row span { font-size: 0.76rem; color: #a9c3b4; }
 /* legacy hero-stats (kept) */
 .hero-stats { display: flex; gap: 10px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
@@ -325,7 +331,7 @@ section.how-sec h2 { font-size: 1.9rem; margin: 0 0 12px; }
 .step .num {
   width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, var(--green-dark), var(--green-700)); color: var(--accent);
-  font-family: 'Lora', Georgia, serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 16px;
+  font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 16px;
 }
 .step h3 { font-size: 1.1rem; margin: 0 0 8px; }
 .step p { font-size: 0.9rem; color: var(--muted); margin: 0; }
@@ -338,12 +344,18 @@ section.how-sec h2 { font-size: 1.9rem; margin: 0 0 12px; }
 .tick-list li { padding: 10px 0 10px 34px; position: relative; font-size: 0.93rem; color: #dcebe2; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
 .tick-list li::before {
   content: '✓'; position: absolute; left: 0; top: 9px; width: 22px; height: 22px; border-radius: 50%;
-  background: rgba(46, 229, 157, 0.15); color: var(--accent); font-size: 0.8rem;
+  background: rgba(245, 179, 1, 0.15); color: var(--accent); font-size: 0.8rem;
   display: flex; align-items: center; justify-content: center;
 }
-.cta-band { padding: 72px 0; text-align: center; background: linear-gradient(180deg, var(--bg), #edf2ee); }
+.cta-band { padding: 72px 0; text-align: center; background: linear-gradient(180deg, var(--bg), var(--tint)); }
 .cta-band h2 { font-size: 2rem; margin: 0 0 12px; }
 .cta-band p { color: var(--muted); margin: 0 0 26px; }
+/* Dark-mode contrast fix for the practice-run banner. The rule that styles it
+   lives in an inline <style> in practice.html (a raw #fff4d6 that inherits the
+   near-white --ink in dark → ~1.07:1). We can't edit that file here, so this
+   higher-specificity override (html .prac-banner beats the inline .prac-banner)
+   pins a themed wash + text pair that passes in both themes. */
+html .prac-banner { background: var(--tint-warn); color: var(--text-warn); }
 
 /* skeleton loading shimmer */
 .skel {
@@ -502,7 +514,7 @@ button.secondary:hover { background: var(--tint); filter: none; }
 .auth-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 18px; }
 .auth-brand {
   display: inline-flex; align-items: center; gap: 7px;
-  font-family: 'Lora', Georgia, serif; font-weight: 700; font-size: 0.95rem;
+  font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 0.95rem;
   letter-spacing: 0.07em; color: var(--ink);
 }
 .auth-brand img { display: block; width: 26px; height: 26px; }
@@ -799,7 +811,7 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 /* Accordion — expandable guide / FAQ / system sections. Replaces flat "note" cards
    with a grouped list: hairline dividers, rotating caret, gentle reveal. */
 .acc-lead { display: block; margin: 26px 0 10px; font-family: 'Inter', sans-serif;
-  font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.13em; font-weight: 700; color: var(--green-700); }
+  font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.13em; font-weight: 700; color: var(--link); }
 .acc-wrap { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--card);
   margin: 0 0 24px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03); }
 .acc { border-top: 1px solid var(--line); }

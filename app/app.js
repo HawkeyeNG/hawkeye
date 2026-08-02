@@ -219,8 +219,15 @@ const TIER_LABEL = {
   geocoded: '◌ located from map data (unconfirmed)',
   unmapped: '⚠ location not yet verified',
 };
+// `crowd_mapped` is graded FIRST, ahead of the server's own tier: /api/polling-units
+// runs pollingUnits.js:tierOf(), which calls any row holding `lat` 'verified' — including
+// a promoted crowd median (mapping.js writes the clustered median into `lat` alongside
+// coords_source='crowd_mapped'). Matches native's rowTier (native/src/app/map-unit.tsx),
+// so a crowd-confirmed location is never overstated as verified.
 const tierOf = (u) =>
-  u.locationTier || (u.lat != null ? 'verified' : u.crowd_lat != null ? 'crowd' : 'unmapped');
+  u.coords_source === 'crowd_mapped'
+    ? 'crowd'
+    : u.locationTier || (u.lat != null ? 'verified' : u.crowd_lat != null ? 'crowd' : 'unmapped');
 
 // ---------- state ----------
 let selectedPu = null;
@@ -524,7 +531,7 @@ $('btn-locate').onclick = async () => {
   const { body } = await api(`/api/polling-units?lat=${lat}&lng=${lng}`);
   if (!body.units || body.units.length === 0) {
     $('locate-status').textContent =
-      `No mapped polling unit within ${body.radiusM || 200} m — use "Browse the register" below.`;
+      `No mapped polling unit within ${body.radiusM} m — use "Browse the register" below.`;
     $('browse-block').open = true;
     return;
   }
@@ -1007,10 +1014,11 @@ $('btn-submit').onclick = async () => {
   try {
     ({ status, body } = await post());
   } catch {
-    // Network failure. The report is already signed over its exact bytes, so in
-    // the app we queue it and flush on reconnect (offline outbox); on the web we
-    // just ask the user to retry.
-    if (window.HAWKEYE && window.HAWKEYE.native && window.HawkeyeOutbox) {
+    // Network failure. The report is already signed over its exact bytes, so we
+    // queue it and flush on reconnect (offline outbox) — on every platform, since
+    // IndexedDB is universal. outbox.js's own 'online' + DOMContentLoaded listeners
+    // drive the retry (the Capacitor shell fires those same events).
+    if (window.HAWKEYE && window.HawkeyeOutbox) {
       const fields = {};
       for (const [k, v] of form.entries()) if (typeof v === 'string') fields[k] = v;
       try { await window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob }); } catch { /* ignore */ }

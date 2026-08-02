@@ -1,0 +1,415 @@
+{
+ "Benue|Adoka/Ugboju": {
+  "lgas": [
+   "Otukpo"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Benue chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/BENUE.pdf — entry 184 'Adoka/Ugbouju' composed of RAs Adoka-Ehaje/Adoka-Icho/Entekpa/Ugboju-Ehaje/Ugboju-Icho/Ugboju-Etaje, collation 'Holy Rosary Coll Otukpo Adoka'; Adoka and Ugboju are two of Otukpo LGA's four districts (https://en.wikipedia.org/wiki/Otukpo).",
+  "confidence": "high"
+ },
+ "Borno|Askira": {
+  "lgas": [
+   "Askira / Uba"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Borno chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/BORNO.pdf — entry 191 'Askira/Uba', collation 'INEC Office Askira'. Register spells the LGA 'Askira / Uba'.",
+  "confidence": "high"
+ },
+ "Ekiti|Ado I": {
+  "lgas": [
+   "Ado Ekiti"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Ekiti chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/EKITI.pdf — entry 320 'Ado I = 7 RAs of Ado Ekiti I', collation Mary Immaculate Gram. Sch., Ado Ekiti.",
+  "confidence": "high"
+ },
+ "Ekiti|Ado II": {
+  "lgas": [
+   "Ado Ekiti"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Ekiti chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/EKITI.pdf — entry 321 'Ado II = 6 RAs of Ado Ekiti II', collation Emmanuel Pry. Sch. Ado Ekiti.",
+  "confidence": "high"
+ },
+ "Gombe|Deba": {
+  "lgas": [
+   "Yalmaltu/ Deba"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Gombe chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/GOMBE.pdf — entry 389 'Deba' composed of Deba/Kanawa/Wajari/Kuri/Lano/Lambam Nono/Kunuwal/Wuro Birdeka, collation Central Pri. Sch. Deba (all Yamaltu/Deba LGA wards). Register spells the LGA 'Yalmaltu/ Deba'.",
+  "confidence": "high"
+ },
+ "Gombe|Yamaltu West": {
+  "lgas": [
+   "Yalmaltu/ Deba"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Gombe chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/GOMBE.pdf — entry 391 'Yamaltu West' composed of Difa/Lubo/Kinafa/Kwadon/Liji/Kurba/Zambuk/Kwali, collation 'Kwadon Pri. Sch. Yamaltu/Deba'.",
+  "confidence": "high"
+ },
+ "Gombe|Yamaltu East": {
+  "lgas": [
+   "Yalmaltu/ Deba"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Gombe chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/GOMBE.pdf — entry 390 'Yamaltu East' composed of Gwani/Shinga/Wade/Hinna/Jagali North/Jagali South, collation Bello Pri. Sch. Hinna (Yamaltu/Deba LGA).",
+  "confidence": "high"
+ },
+ "Gombe|Pero Chonge": {
+  "lgas": [
+   "Shongom"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Gombe chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/GOMBE.pdf — entry 388 'Pero Chonge' composed of Bangunji/Burak/Filiya/Gundale/Gwandum/Kushi (6 RAs), collation Junior Sec. Sch. Filiya; these are the other six Shongom LGA wards, the remaining four forming the 'Shongom' constituency (entry 387). Corroborated by https://en.wikipedia.org/wiki/Gombe_State_House_of_Assembly.",
+  "confidence": "high"
+ },
+ "Imo|Ezinihitte": {
+  "lgas": [
+   "Ezinihitte Mbaise"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Imo chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/IMO.pdf — entry 398 'Ezinihitte', 12 RAs (Amumara/Itu/Okpofe-Ezeagbogu/Onicha I-IV/Eziudo/...), collation 'Ezinihitte LGA Council Hall'. Register spells the LGA 'Ezinihitte Mbaise'.",
+  "confidence": "high"
+ },
+ "Jigawa|Balangu": {
+  "lgas": [
+   "Kafin Hausa"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Jigawa chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/JIGAWA.pdf — entry SC/18/JG 'Bulangu', 5 RAs, collation Bulangu Primary School, listed immediately after SC/17/JG 'Kafin-Hausa' (6 RAs); 6+5 = Kafin Hausa LGA's 11 wards. Balangu/Bulangu is a village in Kafin Hausa LGA and its assembly member (Yusuf Ahmed Bulangu) is listed as 'Member House of Assembly Kafin Hausa'.",
+  "confidence": "high"
+ },
+ "Jigawa|Fagam": {
+  "lgas": [
+   "Gwaram"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Jigawa chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/JIGAWA.pdf — entry SC/13/JG 'Fagam', 4 RAs, collation Fagam Primary School, listed immediately after SC/12/JG 'Gwaram' (6 RAs); 6+4 = Gwaram LGA's 10 wards. https://en.wikipedia.org/wiki/Fagam states 'Fagam is a town and state constituency under Gwaram local government area'.",
+  "confidence": "high"
+ },
+ "Jigawa|Kanya": {
+  "lgas": [
+   "Babura"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Jigawa chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/JIGAWA.pdf — entry SC/03/JG 'Kanya', 5 RAs, collation Kanya Primary School, listed immediately after SC/02/JG 'Babura' (6 RAs); 6+5 = Babura LGA's 11 wards. https://en.wikipedia.org/wiki/Jigawa_State_House_of_Assembly gives 'Kanya constituency, Babura'; Kanya Babba is a district of Babura LGA. NOTE: Garki LGA also has a ward named Kanya — the constituency is the Babura one.",
+  "confidence": "high"
+ },
+ "Kaduna|Zaria Kewaye": {
+  "lgas": [
+   "Zaria"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 31 'Kewaye' SC/481/KD, 7 RAs, collation 'INEC Office Zaria'; with Zaria City (6 RAs) that is Zaria LGA's 13 wards.",
+  "confidence": "high"
+ },
+ "Kaduna|Doka/Gabasawa": {
+  "lgas": [
+   "Kaduna North"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 16 'Doka/Gabasawa' SC/466/KD, 7 RAs, collation 'KD North LGA Council Chamber'. Corroborated by Daily Trust, 'APC Wins Gabasawa/Doka Constituency In Kaduna North' (https://dailytrust.com/apc-wins-gabasawa-doka-constituency-in-kaduna-north/).",
+  "confidence": "high"
+ },
+ "Kaduna|Unguwar Sanusi": {
+  "lgas": [
+   "Kaduna South"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 19 'Unguwan Sanusi' SC/469/KD, 4 RAs, collation 'GGSS Maimuna Gwarzo, KD South'. Unguwan Sanusi is a listed ward of Kaduna South LGA (https://en.wikipedia.org/wiki/Kaduna_South).",
+  "confidence": "high"
+ },
+ "Kaduna|Makera": {
+  "lgas": [
+   "Kaduna South"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 18 'Makera' SC/468/KD, 5 RAs, collation 'LEA Babban Dodo, KD. South'. Makera is a Kaduna South ward and the LGA headquarters.",
+  "confidence": "high"
+ },
+ "Kaduna|Zaria City": {
+  "lgas": [
+   "Zaria"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 32 'Zaria City' SC/482/KD, 6 RAs, collation 'Zaria LGA Secretariat'.",
+  "confidence": "high"
+ },
+ "Kaduna|Kawo": {
+  "lgas": [
+   "Kaduna North"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 15 'Kawo' SC/465/KD, 5 RAs, collation 'LEA Pry. Sch. Kawo KD. North'. Kawo is a listed electoral ward of Kaduna North LGA (https://en.wikipedia.org/wiki/Kaduna_North).",
+  "confidence": "high"
+ },
+ "Kaduna|Tudun Wada": {
+  "lgas": [
+   "Kaduna South"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 17 'Tudun Wada' SC/467/KD, 4 RAs, collation 'Town Hall, Court 1, T/Wada KD. South'. Kaduna South has Tudun Wada North/South/West wards. NOTE: distinct from Kano State's Tudun Wada LGA.",
+  "confidence": "high"
+ },
+ "Kaduna|Basawa": {
+  "lgas": [
+   "Sabon Gari"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 26 'Basawa' SC/476/KD, 4 RAs, collation 'Sabon Gari LGA Secretariat'; with entry 25 'Sabon Gari' (7 RAs) that is Sabon Gari LGA's 11 wards.",
+  "confidence": "high"
+ },
+ "Kaduna|Magajin Gari": {
+  "lgas": [
+   "Birnin Gwari"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 1 'Magajin Gari' SC/451/KD, 3 RAs, collation 'Mai Gwari Pri. Sch. B/Gwari'. Birnin Gwari LGA has wards Magajin Gari I/II/III; Kaduna North has no Magajin Gari ward (its secretariat merely sits at Magajin Gari, Doka). Corroborated by Citizen Science Nigeria's Kaduna assembly list (Magajin Gari constituency, Birnin Gwari).",
+  "confidence": "high"
+ },
+ "Kaduna|Kakangi": {
+  "lgas": [
+   "Birnin Gwari"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 2 'Kakangi' SC/452/KD, 8 RAs, collation 'Sarkin Yaki Pri. Sch. B/Gwari'; 3+8 = Birnin Gwari LGA's 11 wards. Kakangi is a Birnin Gwari ward.",
+  "confidence": "high"
+ },
+ "Kaduna|Zonkwa": {
+  "lgas": [
+   "Zangon Kataf"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 30 'Zonkwa' SC/480/KD, 5 RAs, collation 'INEC Office Zonkwa, Z/Kataf'. Zonkwa is the Zangon Kataf LGA headquarters.",
+  "confidence": "high"
+ },
+ "Kaduna|Maigana": {
+  "lgas": [
+   "Soba"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kaduna chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KADUNA.pdf — entry 27 'Maigana' SC/477/KD, 5 RAs, collation 'INEC Office Maigana', paired with entry 28 'Soba' (5 RAs). Maigana is the Soba LGA headquarters town.",
+  "confidence": "high"
+ },
+ "Kano|Dambatta": {
+  "lgas": [
+   "Danbata"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kano chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KANO.pdf — entry 7 'Dambatta' SC/492/KN, 10 RAs (the whole LGA), collation Dambatta INEC Office. Register spells the LGA 'Danbata'.",
+  "confidence": "high"
+ },
+ "Katsina|Malumfashi East": {
+  "lgas": [
+   "Malufashi"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Katsina chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KATSINA.pdf — entry 25 'Malumfashi' SC/025.KT, 12 RAs, collation Malumfashi INEC Office; Malumfashi LGA is the only Katsina LGA the 2023 name can refer to. Register spells the LGA 'Malufashi' (a register typo for Malumfashi).",
+  "confidence": "high"
+ },
+ "Kebbi|Aleiro": {
+  "lgas": [
+   "Aliero"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kebbi chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KEBBI.pdf — entry 560 'Aleiro — The Entire LGA', 10 RAs, collation INEC Office Aleiro. Register spells the LGA 'Aliero'.",
+  "confidence": "high"
+ },
+ "Kogi|Kogi (K.k)": {
+  "lgas": [
+   "Kogi . K. K."
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kogi chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KOGI.pdf — entry 13 'Kogi (KK)' SC/595/KG, collation 'Local Government Council Sec., Kotonkarfe' (Kogi/Koton-Karfe LGA). Register spells the LGA 'Kogi . K. K.'.",
+  "confidence": "high"
+ },
+ "Kogi|Okura": {
+  "lgas": [
+   "Dekina"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kogi chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KOGI.pdf — entry 7 'Okura' SC/589/KG, collation 'CMML Primary Sch. Egume'; Egume is a town in Dekina LGA and Okura-Olafia is a Dekina ward. Dekina's other seat is entry 6 'Dekina/Biraidu'.",
+  "confidence": "high"
+ },
+ "Kogi|Mopamuro": {
+  "lgas": [
+   "Mopa Moro"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kogi chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KOGI.pdf — entry 16 'Mopamuro' SC/598/KG, collation 'Local Government Secretariat, Mopa'. Register spells the LGA 'Mopa Moro'.",
+  "confidence": "high"
+ },
+ "Kogi|Okene Town": {
+  "lgas": [
+   "Okene"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kogi chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KOGI.pdf — entry 20 'Okene Town' SC/602/KG, collation 'Local Government Secretariat, Okene'; paired with entry 21 'Okene II (South)'.",
+  "confidence": "high"
+ },
+ "Kogi|Ogori/Magongo": {
+  "lgas": [
+   "Ogori Mangogo"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kogi chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KOGI.pdf — entry 18 'Ogorimagongo' SC/600/KG, collation 'INEC Local Government Office, Akpafa' (Ogori/Magongo LGA). Register spells the LGA 'Ogori Mangogo'.",
+  "confidence": "high"
+ },
+ "Kwara|Share/Oke-Ode Ifelodun II": {
+  "lgas": [
+   "Ifelodun"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kwara chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KWARA.pdf — entry 10 'Share/Oke-Ode', LGA column = Ifelodun, collation INEC Office Share Ifelodun.",
+  "confidence": "high"
+ },
+ "Kwara|Omupo/Igbaja Ifelodun I": {
+  "lgas": [
+   "Ifelodun"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kwara chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KWARA.pdf — entry 9 'Omupo', LGA column = Ifelodun, collation Town Hall Omupo.",
+  "confidence": "high"
+ },
+ "Kwara|Okuta/Ayashkira Barutin II": {
+  "lgas": [
+   "Baruten"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kwara chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KWARA.pdf — entry 4 'Okuta/Yashikira', LGA column = Baruten, collation Trad. Council Chamber Kosubosu.",
+  "confidence": "high"
+ },
+ "Kwara|Onire/Owode": {
+  "lgas": [
+   "Asa"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kwara chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KWARA.pdf — entry 2 'Onire/Owode', LGA column = Asa, collation 'LGEA School Alapa, Asa Lga'.",
+  "confidence": "high"
+ },
+ "Kwara|Afon": {
+  "lgas": [
+   "Asa"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kwara chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KWARA.pdf — entry 1 'Afon' SC/01/W, LGA column = Asa, collation 'INEC Office, Afon, Asa Lga'.",
+  "confidence": "high"
+ },
+ "Kwara|Ilesha/Gwanara Barutin I": {
+  "lgas": [
+   "Baruten"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Kwara chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/KWARA.pdf — entry 3 'Ilesha/Gwanara', LGA column = Baruten, collation 'LGEA Pry. Sch. Gwanara, Baruten'.",
+  "confidence": "high"
+ },
+ "Nasarawa|Karshi/Uke": {
+  "lgas": [
+   "Karu"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Nasarawa chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/NASARAWA.pdf — entry 8 'Uke/Karshi', 5 RAs, collation GSS Uke, listed immediately after entry 7 'Karu/Gitata' (6 RAs); 6+5 = Karu LGA's 11 wards. Uke and Karshi are both Karu LGA wards.",
+  "confidence": "high"
+ },
+ "Ogun|Sagamu II Makun": {
+  "lgas": [
+   "Sagamu"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Ogun chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/OGUN.pdf — entry 741 'Sagamu II', 5 RAs, collation 'Wesley School Makun 1' (Makun is in Sagamu LGA).",
+  "confidence": "high"
+ },
+ "Ogun|Odeda Area": {
+  "lgas": [
+   "Odeda"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Ogun chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/OGUN.pdf — entry 727 'Odeda', 10 RAs, collation 'Odeda Local Govt Council Hall'.",
+  "confidence": "high"
+ },
+ "Ogun|Ijebu East Area": {
+  "lgas": [
+   "Ijebu East"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Ogun chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/OGUN.pdf — entry 735 'Ijebu East', 11 RAs, collation 'Town Hall, Ogbore' (Ogbere, Ijebu East LGA).",
+  "confidence": "high"
+ },
+ "Ogun|Sagamu I Offin": {
+  "lgas": [
+   "Sagamu"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Ogun chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/OGUN.pdf — entry 740 'Sagamu I', 10 RAs, collation 'Muslim High School, Sagamu'; Offin is a Sagamu LGA ward.",
+  "confidence": "high"
+ },
+ "Ogun|Idiroko Ipokia": {
+  "lgas": [
+   "Ipokia"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Ogun chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/OGUN.pdf — entry 745 'Ipokia / Idiroko', 12 RAs, collation 'Local Govt Premises, Ipokia'; Idiroko is the border town in Ipokia LGA.",
+  "confidence": "high"
+ },
+ "Plateau|Kantana": {
+  "lgas": [
+   "Kanam"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Plateau chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/PLATEAU.pdf — entry 13 'Kantana' SC/13/PL, listed immediately after entry 12 'Dengi' (collation Kanam LG Sec.); Kantana is a Kanam LGA district. Corroborated by the 2019 Plateau members-elect list, which files Kantana under KANAM LGA (https://fbdglobalnews.wordpress.com/2019/03/13/members-elect-plateau-state-house-of-assembly-know-your-legislator/).",
+  "confidence": "high"
+ },
+ "Plateau|Dengi": {
+  "lgas": [
+   "Kanam"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Plateau chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/PLATEAU.pdf — entry 12 'Dengi' SC/12/PL, collation 'Kanam LG Sec.'. Dengi is the Kanam LGA headquarters.",
+  "confidence": "high"
+ },
+ "Plateau|Pengana": {
+  "lgas": [
+   "Bassa"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Plateau chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/PLATEAU.pdf — entry 2 'Pengana' SC/02/PL, collation 'Govt. College Jingre' (Jengre is in Bassa LGA), listed adjacent to Rukuba/Irigwe (collation 'LGA Office, Bassa'). Pengana Chiefdom is in Bassa LGA (https://en.wikipedia.org/wiki/Yakubu_Yackson_Sanda).",
+  "confidence": "high"
+ },
+ "Plateau|Rukuba/Irigwe": {
+  "lgas": [
+   "Bassa"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Plateau chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/PLATEAU.pdf — entry 3 'Rukuba/Irigwe' SC/03/PL, collation 'LGA Office, Bassa'. Corroborated by Bassa LGA's own site (https://bassalga.panafricanhost.com/rukuba-irigwe/).",
+  "confidence": "high"
+ },
+ "Rivers|Onelga II": {
+  "lgas": [
+   "Ogba/Egbema/Ndoni"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Rivers chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/RIVERS.pdf — entry 23 'Ogba/Egbema/Ndoni II (Onelga II)', 7 RAs: Obirkom (Usomini North)/Kerigani (Usomini South)/Egbema I/Egbema II/Ndoni I/Ndoni II/Ndoni III, collation INEC Office Omoku.",
+  "confidence": "high"
+ },
+ "Sokoto|Sabon Birni North": {
+  "lgas": [
+   "S/Birni"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Sokoto chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/SOKOTO.pdf — entry 905 'Sabon Birni North', 5 RAs (Sabon Birni East/West, Tsamaye, Unguwar Lalle, Makuwana), collation 'LGA Sec. Sch. Sabon Birni'. Register abbreviates the LGA as 'S/Birni'.",
+  "confidence": "high"
+ },
+ "Sokoto|Sabon Birni South": {
+  "lgas": [
+   "S/Birni"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Sokoto chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/SOKOTO.pdf — entry 906 'Sabon Birni South', RAs Tara/Gatawa/Kurawa/Gangara/Kalgo/Lajinge; 5+6 = Sabon Birni LGA's 11 wards. Register abbreviates the LGA as 'S/Birni'.",
+  "confidence": "high"
+ },
+ "Taraba|Mbamnga": {
+  "lgas": [
+   "Sardauna"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Taraba chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/TARABA.pdf — entry 13 'Mbamnga', wards Kabri/Mbamnga/Warwar (3 RAs), collation GDSS Mbamnga; with Gembu (4) and Nguroje (4) that is Sardauna LGA's 11 wards, so Sardauna carries three constituencies.",
+  "confidence": "high"
+ },
+ "Taraba|Nguroje": {
+  "lgas": [
+   "Sardauna"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Taraba chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/TARABA.pdf — entry 12 'Nguroje', wards Kakara/Magu/Nguroje/Ndum-Yaji (4 RAs), collation 'Devt. Area Office Nguroje' (Mambilla Plateau, Sardauna LGA).",
+  "confidence": "high"
+ },
+ "Taraba|Donda": {
+  "lgas": [
+   "Donga"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Taraba chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/TARABA.pdf — 'Donda' is the 2023 INEC rendering of the Donga constituency: the SR table's entry 21 'Donga' takes all 10 Donga LGA wards (Akate/Asibiti/Fada/Gayama/Gindin Dutse/Gyatta Aure/Kadarko/Mararraba/Nyita/Suntai), collation Donga LGA Secretariat, and Donga is the only Taraba LGA left unaccounted for once the other 23 seats are matched. NOTE: resolved by elimination plus the near-identical name, not by a source that spells it 'Donda' and names the LGA.",
+  "confidence": "medium"
+ },
+ "Yobe|Mamudo": {
+  "lgas": [
+   "Potiskum"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Yobe chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/YOBE.pdf — entry 21 'Mamudo', Wards 04, 08 & 09, collation 'Mamudo Pry School Potiskum'. Mamudo is a Potiskum LGA ward.",
+  "confidence": "high"
+ },
+ "Yobe|Potiskum Town": {
+  "lgas": [
+   "Potiskum"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Yobe chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/YOBE.pdf — entry 20 'Potiskum Town', Wards 01-03, 05-07 & 10, collation FCE (Tech) Potiskum; 7+3 = Potiskum LGA's 10 wards.",
+  "confidence": "high"
+ },
+ "Yobe|Goya/Ngeji": {
+  "lgas": [
+   "Fika"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Yobe chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/YOBE.pdf — entry 7 'Goya/Ngeji', Wards 01, 03, 04, 06 & 08, collation 'Govt Sec. Sch. Gadaka' (Gadaka is in Fika LGA); paired with entry 6 'Fika/Ngalda' (Wards 02, 05, 07, 09, 10). Gooya/Goya valley is in Fika LGA.",
+  "confidence": "high"
+ },
+ "Yobe|Damagum": {
+  "lgas": [
+   "Fune"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Yobe chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/YOBE.pdf — entry 8 'Damagum', Wards 01 & 04-08, collation 'Fune LGA Secretariat'. Damagum is the Fune LGA headquarters.",
+  "confidence": "high"
+ },
+ "Yobe|Jajere": {
+  "lgas": [
+   "Fune"
+  ],
+  "source": "Nigeria Civil Society Situation Room 2015 Election Guide (INEC-derived), Yobe chapter, STATE CONSTITUENCIES table: https://situationroomng.org/wp-content/uploads/2015/02/YOBE.pdf — entry 9 'Jajere', Wards 02, 03 & 09-13, collation 'Jajere Primary School'; 6+7 = Fune LGA's 13 wards. Jajere A/B are Fune LGA wards.",
+  "confidence": "high"
+ }
+}

@@ -211,12 +211,6 @@
           const c = await getPos();
           if (c) { fd.set('lat', c.latitude); fd.set('lng', c.longitude); }
         }
-        // Tie the incident to the reporter's saved polling unit so unit
-        // watchers can be alerted once it's approved.
-        try {
-          const mu = await fetch('/api/observers/my-unit', { headers: { authorization: `Bearer ${token}` } }).then((r) => r.json());
-          if (mu.unit?.pu_code) fd.set('puCode', mu.unit.pu_code);
-        } catch { /* optional */ }
         const res = await fetch('/api/incidents', {
           method: 'POST',
           headers: { authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() },
@@ -224,7 +218,7 @@
         });
         const body = await res.json().catch(() => ({}));
         if (res.status === 201) {
-          $('status').textContent = '✅ Submitted for review. Once approved it appears here and watchers of this polling unit get a Telegram alert.';
+          $('status').textContent = '✅ Submitted for review. Once approved it appears here and watchers of this polling unit are alerted (Telegram, WhatsApp, or the in-app feed).';
           $('desc').value = ''; attachments.length = 0; renderPreview();
         } else if (res.status === 401) {
           localStorage.removeItem('hawkeye_token');

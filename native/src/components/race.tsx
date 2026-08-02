@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Image, Pressable, Text, View } from 'react-native';
 
-import { logoUrl, partyColor, type Candidate, type Race } from '@/lib/political';
+import { logoUrl, partyColor, photoUrl, type Candidate, type Race } from '@/lib/political';
 
 /** Party emblem, falling back to the code itself when there's no image. */
 export function PartyMark({
@@ -45,7 +45,12 @@ function CandidateCard({ c, logos }: { c: Candidate; logos: Record<string, strin
       <View className="flex-row items-center">
         {c.photo ? (
           <Image
-            source={{ uri: c.photo }}
+            // photoUrl, not c.photo: political_data.json stores a path relative to
+            // the site root ("photos/candidates/tinubu.jpg"). A browser resolves
+            // that against the page; React Native has no page to resolve against,
+            // so the bare string is not a URI and every avatar rendered blank.
+            // Same shape as the party emblems, which were already absolutised.
+            source={{ uri: photoUrl(c.photo) }}
             className="h-11 w-11 rounded-full bg-surface"
             resizeMode="cover"
           />
@@ -209,11 +214,16 @@ export function RaceView({
         >
           <Text className="text-sm font-bold text-hawk-gold">Become an observer</Text>
         </Pressable>
+        {/* good-ink, not hawk-green: the fixed #004225 sat at 1.6:1 on the dark
+            surface — an outline and a label that both disappeared. The semantic
+            pair is 5.8:1 light / 11.0:1 dark, and matches every other secondary
+            affordance in the app. The filled button beside it keeps the fixed
+            brand pair because gold on dark green reads the same in both themes. */}
         <Pressable
-          className="flex-1 items-center rounded-2xl border border-hawk-green py-3.5 active:opacity-70"
+          className="flex-1 items-center rounded-2xl border border-good-ink py-3.5 active:opacity-70"
           onPress={() => router.push((resultsHref ?? '/(tabs)/results') as never)}
         >
-          <Text className="text-sm font-bold text-hawk-green">Live results</Text>
+          <Text className="text-sm font-bold text-good-ink">Live results</Text>
         </Pressable>
       </View>
 

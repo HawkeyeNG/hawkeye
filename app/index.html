@@ -20,7 +20,7 @@
     // without stripping them from every other page in the shell.
     document.documentElement.classList.add('is-landing');
   </script>
-  <script src="native.js?v=103"></script>
+  <script src="native.js?v=104"></script>
   <style>
     /* ---- Observer Home (signed-in index) ---- */
     .home-obs { display: none; }
@@ -287,7 +287,7 @@
   </footer>
 
   <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+    if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) navigator.serviceWorker.register('sw.js');
 
     // Live stats + count-up
     const countUp = (el) => {

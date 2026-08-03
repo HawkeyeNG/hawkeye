@@ -365,9 +365,20 @@
     if (bt) {
       const page = (location.pathname.replace(/^.*\//, '') || 'index.html');
       const h1 = document.querySelector('main h1');
-      const title = page === 'index.html'
-        ? 'HAWKEYE'
-        : ((h1 && h1.textContent) || document.title.split('—').pop() || '').trim();
+      // Explicit header names where the page's own H1 is a poor fit — multi-step
+      // flows whose H1 changes as you advance (observe, practice), and pages whose
+      // H1 is longer or worded differently from what the menu calls them.
+      const TITLES = {
+        'index.html': 'HAWKEYE',
+        'observe.html': 'Report a Result',
+        'practice.html': 'Practice',
+        'dashboard.html': 'Reports Log',
+        'collation.html': 'Report Collation Result',
+        'candidates.html': 'Presidency 2027',
+        'osun.html': 'Osun 2026',
+      };
+      const title = TITLES[page]
+        || ((h1 && h1.textContent) || document.title.split('—').pop() || '').trim();
       // The header now names the page, so an H1 repeating it is dead weight.
       if (h1 && title && h1.textContent.trim() === title) h1.hidden = true;
       if (title) {

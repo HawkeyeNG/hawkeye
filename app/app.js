@@ -288,6 +288,7 @@ function applySignInMode() {
   if (lede) lede.textContent = 'Welcome back — sign in to your observer account.';
   if ($('pw-signin-wrap')) $('pw-signin-wrap').hidden = false;
   if ($('channel-pick')) $('channel-pick').hidden = true;   // password sign-in sends no code
+  syncChannelGate();
   $('btn-auth').textContent = 'Sign In';
   if ($('pw-link')) {
     $('pw-link').hidden = false;                            // reset path, sign-in only
@@ -371,6 +372,7 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   $('pw-signin-wrap').hidden = !toPw;
   if (!toPw) $('pw-signin-input').value = '';
   if ($('channel-pick')) $('channel-pick').hidden = toPw; // password sign-in sends no code
+  syncChannelGate();
   $('btn-auth').textContent = toPw ? 'Sign In' : 'Request OTP';
   $('pw-link').textContent = toPw ? 'Forgot your password?' : 'Sign in with your password instead';
   $('otp-hint').textContent = '';
@@ -383,7 +385,9 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
 function syncChannelGate() {
   const btn = document.getElementById('btn-auth');
   const pick = document.getElementById('channel-pick');
-  if (!btn || !pick || pick.hidden) return;
+  if (!btn) return;
+  // No picker on screen (password sign-in sends no code) => nothing to gate.
+  if (!pick || pick.hidden) { btn.disabled = false; return; }
   btn.disabled = !document.querySelector('input[name="otp-channel"]:checked');
 }
 document.addEventListener('change', (e) => {

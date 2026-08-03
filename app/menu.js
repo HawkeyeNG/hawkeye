@@ -363,8 +363,13 @@
   if (inAppShell) {
     const bt = document.querySelector('.gov-header .brand-text');
     if (bt) {
+      const page = (location.pathname.replace(/^.*\//, '') || 'index.html');
       const h1 = document.querySelector('main h1');
-      const title = ((h1 && h1.textContent) || document.title.split('—').pop() || '').trim();
+      const title = page === 'index.html'
+        ? 'HAWKEYE'
+        : ((h1 && h1.textContent) || document.title.split('—').pop() || '').trim();
+      // The header now names the page, so an H1 repeating it is dead weight.
+      if (h1 && title && h1.textContent.trim() === title) h1.hidden = true;
       if (title) {
         bt.innerHTML = '';
         const st = document.createElement('strong');

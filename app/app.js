@@ -338,9 +338,11 @@ function resetAuthPane() {
   if ($('otp-phone')) $('otp-phone').hidden = true;
   if ($('channel-pick')) {
     $('channel-pick').hidden = false;
-    // Telegram is the default channel (free, and our primary route) — reselect it
-    // rather than clearing, so a user never has to pick before requesting a code.
-    for (const r of document.querySelectorAll('input[name="otp-channel"]')) r.checked = (r.value === 'telegram');
+    // NO DEFAULT CHANNEL: a pre-selected route meant a mistap could send on a
+    // channel the user never chose (and cost us a paid message). Clear every
+    // radio and keep Request OTP disabled until one is picked.
+    for (const r of document.querySelectorAll('input[name="otp-channel"]')) r.checked = false;
+    syncChannelGate();
   }
   pendingChannel = '';
   if ($('pw-signin-wrap')) {
@@ -377,6 +379,17 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
 // The delivery channel picked on the form ('telegram' | 'whatsapp'; 'sms' is
 // retired until a sender ID is approved); remembered for "Resend code". Radios
 // are required — no silent default.
+// Request OTP stays disabled (and greyed) until a delivery channel is chosen.
+function syncChannelGate() {
+  const btn = document.getElementById('btn-auth');
+  const pick = document.getElementById('channel-pick');
+  if (!btn || !pick || pick.hidden) return;
+  btn.disabled = !document.querySelector('input[name="otp-channel"]:checked');
+}
+document.addEventListener('change', (e) => {
+  if (e.target && e.target.name === 'otp-channel') syncChannelGate();
+});
+
 const pickedChannel = () => document.querySelector('input[name="otp-channel"]:checked')?.value || '';
 let pendingChannel = '';
 

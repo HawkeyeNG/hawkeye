@@ -357,6 +357,27 @@
   const inAppShell = (window.HAWKEYE && window.HAWKEYE.native)
     || window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
+  // GOOGLE PLAY "Misleading Claims" COMPLIANCE (rejection, 2026-08-03).
+  // Any app presenting government-related information must, in-app, (a) state
+  // plainly that it does not represent the government entity and (b) link the
+  // official source. Injected on every page so it can never be missed, and it
+  // sits directly under the page heading where the data is. The web footer says
+  // the same thing, but the app shell hides that footer — which is exactly the
+  // surface the reviewer saw.
+  (function govDisclaimer() {
+    const main = document.querySelector('main');
+    if (!main || document.querySelector('.gov-disclaimer')) return;
+    const d = document.createElement('aside');
+    d.className = 'gov-disclaimer';
+    d.innerHTML = '<strong>Not a government service.</strong> Hawkeye is an independent, '
+      + 'citizen-run transparency tool. It is not affiliated with, endorsed by, or acting on '
+      + 'behalf of INEC or any government entity, and it does not declare election results. '
+      + 'Figures here are unofficial crowd reports. Official results and electoral information '
+      + 'come from INEC: <a href="https://www.inecnigeria.org" target="_blank" rel="noopener">inecnigeria.org</a> '
+      + '&middot; <a href="https://www.inecelectionresults.ng" target="_blank" rel="noopener">inecelectionresults.ng</a>.';
+    main.insertBefore(d, main.firstChild);
+  })();
+
   // APP SHELL HEADER: the crest already says whose app this is, so the row
   // carries the PAGE's name instead of repeating "HAWKEYE" on every screen (and
   // the strapline, which read as clutter on a phone). Web keeps the wordmark.

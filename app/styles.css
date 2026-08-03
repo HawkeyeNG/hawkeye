@@ -1145,3 +1145,12 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 body.has-tabbar .brand-text strong { font-size: 1rem; letter-spacing: 0.01em; text-transform: none; }
 body.has-tabbar .top { display: block; }
 body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
+
+/* Play-policy disclaimer + official source links (Misleading Claims). Must stay
+   visible on every page and in the app shell, which hides the site footer. */
+.gov-disclaimer {
+  display: block; margin: 0 0 16px; padding: 11px 13px;
+  background: var(--tint-warn); border: 1px solid var(--amber-border); border-radius: 10px;
+  font-size: 0.82rem; line-height: 1.45; color: var(--ink);
+}
+.gov-disclaimer a { color: var(--link); font-weight: 700; }

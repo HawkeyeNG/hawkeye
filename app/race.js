@@ -36,7 +36,8 @@
 
     const parts = [];
     parts.push(`<h1>${title}</h1>`);
-    if (race.office || dateStr) parts.push(`<p class="lede">${esc(race.office || race.election)}${dateStr ? ' · ' + dateStr : ''}.</p>`);
+    // No office/date lede: the header already names the race and the date is a
+    // stat-bar cell below, so this line only ever repeated them.
 
     // Stat bar. The candidate count is derived from the cards on THIS page
     // (front-runners + the full ballot / minor list) so it always matches what's

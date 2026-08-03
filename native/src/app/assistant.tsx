@@ -148,7 +148,7 @@ export default function Assistant() {
       <ScreenHeader title="Ask Hawkeye" onClose={() => router.back()} />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         className="flex-1"
       >
         <ScrollView

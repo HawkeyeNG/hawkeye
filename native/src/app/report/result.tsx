@@ -1523,7 +1523,7 @@ export default function ReportResult() {
         </View>
       ) : null}
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'padding'} className="flex-1">
         {step === 'unit' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             <Text className="pb-1 text-xl font-bold text-ink">

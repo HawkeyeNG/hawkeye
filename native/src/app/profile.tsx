@@ -195,6 +195,9 @@ export default function Profile() {
   const [pwBusy, setPwBusy] = useState(false);
   /** Only a verified OTP for THIS account's number may open the reset step. */
   const [resetProven, setResetProven] = useState(false);
+  /** NO DEFAULT — the observer picks the route, so a reset can never fan out to a
+   *  channel they didn't choose. SMS is parked until the sender ID is approved. */
+  const [resetChannel, setResetChannel] = useState<'whatsapp' | 'telegram' | null>(null);
 
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn') return;
@@ -241,6 +244,7 @@ export default function Profile() {
     setPwConfirm('');
     setResetPhone('');
     setResetOtp('');
+    setResetChannel(null);
     setResetProven(false);
     setPwMsg(null);
     setPwOpen(true);
@@ -297,7 +301,7 @@ export default function Profile() {
     setPwBusy(true);
     setPwMsg(null);
     try {
-      const r = await requestOtp(resetPhone.trim(), 'whatsapp');
+      const r = await requestOtp(resetPhone.trim(), resetChannel as 'whatsapp' | 'telegram');
       if (r.ok || r.viaSms || r.viaWhatsapp) {
         setPwMode('reset-otp');
         setPwMsg(r.devOtp ? `DEV MODE — your code is ${r.devOtp}` : 'Code sent — check WhatsApp/SMS.');
@@ -789,11 +793,28 @@ export default function Profile() {
                 {pwMsg ? (
                   <Text className="pt-2 text-sm font-semibold text-warn-ink">{pwMsg}</Text>
                 ) : null}
+                {/* Pick the route — nothing is pre-selected, so a reset never
+                    sends on a channel the observer didn't choose. */}
+                <View className="flex-row gap-2 pt-3">
+                  {(['whatsapp', 'telegram'] as const).map((c) => (
+                    <Pressable
+                      key={c}
+                      onPress={() => setResetChannel(c)}
+                      className={`rounded-full px-4 py-2 ${resetChannel === c ? 'bg-hawk-green' : 'bg-card'}`}
+                    >
+                      <Text
+                        className={`text-sm font-semibold ${resetChannel === c ? 'text-hawk-gold' : 'text-muted'}`}
+                      >
+                        {c === 'whatsapp' ? 'WhatsApp' : 'Telegram (free)'}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
                 <Pressable
-                  disabled={pwBusy || resetPhone.trim().length < 10}
+                  disabled={pwBusy || resetPhone.trim().length < 10 || !resetChannel}
                   onPress={sendResetOtp}
                   className={`mt-4 items-center rounded-2xl py-3.5 ${
-                    pwBusy || resetPhone.trim().length < 10
+                    pwBusy || resetPhone.trim().length < 10 || !resetChannel
                       ? 'bg-disabled'
                       : 'bg-hawk-green active:opacity-80'
                   }`}

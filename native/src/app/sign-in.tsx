@@ -27,7 +27,7 @@ import {
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
-type Channel = 'whatsapp' | 'sms' | 'telegram';
+type Channel = 'whatsapp' | 'telegram';
 
 /**
  * Sign in — password-first, the way a normal app works.
@@ -64,7 +64,9 @@ export default function SignIn() {
   const [step, setStep] = useState<Step>(signUpFirst ? 'request' : 'password');
   const [purpose, setPurpose] = useState<Purpose>('signup');
   const [phone, setPhone] = useState('');
-  const [channel, setChannel] = useState<Channel>('whatsapp');
+  // NO DEFAULT: the user must pick a route, so a mistap can never send on a
+  // channel they didn't choose (SMS is parked until the sender ID is approved).
+  const [channel, setChannel] = useState<Channel | null>(null);
   const [otp, setOtp] = useState('');
   const [password, setPasswordText] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -109,7 +111,8 @@ export default function SignIn() {
   const send = (verb: string) => {
     setLine(`${verb} code to ${phone.trim()}…`);
     setCooldown(30);
-    requestOtp(phone.trim(), channel)
+    // Non-null: Send code is disabled until a channel is picked.
+    requestOtp(phone.trim(), channel as Channel)
       .then((r) => {
         if (r.telegramLink && !r.viaSms) {
           // Telegram needs a one-time bot link — that UI lives on the request step.
@@ -300,12 +303,11 @@ export default function SignIn() {
     router.replace('/welcome');
   };
 
-  // Preference order: WhatsApp first (free, near-instant, most reach here),
-  // Telegram next, SMS last — it costs per message and is the slowest in NG.
+  // SMS is PARKED until the Sendchamp sender ID is approved — NG carriers drop
+  // codes from unapproved IDs, and it costs per message.
   const CHANNELS: { key: Channel; label: string }[] = [
     { key: 'whatsapp', label: 'WhatsApp' },
-    { key: 'telegram', label: 'Telegram' },
-    { key: 'sms', label: 'SMS' },
+    { key: 'telegram', label: 'Telegram (free)' },
   ];
 
   const requestCopy =

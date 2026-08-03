@@ -11,6 +11,7 @@ import { useThemePref, type ThemePref } from '@/lib/theme-pref';
 import { ScreenHeader } from '@/components/screen-header';
 import { SocialRow } from '@/components/social-row';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
+import { GovDisclaimer } from '@/components/gov-disclaimer';
 
 /**
  * More — the menu.js panel groups, carried over 1:1. Until each page is
@@ -248,6 +249,7 @@ export default function More() {
         {/* First group on the screen. It is the one setting in the app and the
             complaint was that nobody could find it; the four navigation groups
             below are all one scroll away either way. */}
+        <GovDisclaimer />
         <AppearanceGroup />
         {GROUPS.map((g) => (
           <View key={g.title} className="pb-2">

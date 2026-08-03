@@ -32,6 +32,7 @@ import { partyColor, partyName } from '@/lib/political';
 import { ELECTION_TYPES, listRaces, STATES, type Race, type StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import * as SecureStore from 'expo-secure-store';
+import { GovDisclaimer } from '@/components/gov-disclaimer';
 
 const BASE = 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;
@@ -882,12 +883,7 @@ export default function Results() {
           Tailwind tint does not follow the theme, so on the dark board this
           block stayed a pale card — the one notice that must read cleanly in
           both. */}
-      <View className="mb-3 rounded-2xl bg-warn px-4 py-3">
-        <Text className="text-xs font-semibold text-warn-ink">
-          Tentative and unofficial. These are crowd-reported figures — only INEC declares
-          official results.
-        </Text>
-      </View>
+      <GovDisclaimer />
 
       {contest ? (
         <Pressable

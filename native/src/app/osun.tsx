@@ -7,6 +7,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 import { loadPolitical, type Race } from '@/lib/political';
+import { GovDisclaimer } from '@/components/gov-disclaimer';
 
 /** Osun 2026 — Hawkeye's first live pilot election. */
 export default function Osun() {
@@ -34,6 +35,7 @@ export default function Osun() {
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
       >
+        <GovDisclaimer />
         <View className="mb-3 rounded-xl bg-hawk-green px-3 py-2">
           <Text className="text-xs font-semibold text-hawk-gold">
             First live pilot — we monitor and publish; official results remain INEC&apos;s.

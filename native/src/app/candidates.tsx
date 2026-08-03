@@ -7,6 +7,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 import { loadPolitical, type Race } from '@/lib/political';
+import { GovDisclaimer } from '@/components/gov-disclaimer';
 
 /** 2027 Candidates — the declared presidential field, plus the side-by-side
  *  compare the web page carries (kept, scrolled horizontally, not dropped). */
@@ -35,6 +36,7 @@ export default function Candidates() {
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
       >
+        <GovDisclaimer />
         {err ? (
           <Text className="text-sm font-semibold text-warn-ink">Could not load. ({err})</Text>
         ) : !race ? (

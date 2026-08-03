@@ -9,6 +9,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { flagLabel } from '@/lib/flags';
 import { useUi } from '@/lib/theme';
+import { GovDisclaimer } from '@/components/gov-disclaimer';
 
 const BASE = 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;

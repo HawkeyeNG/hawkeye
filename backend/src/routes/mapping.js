@@ -3,21 +3,9 @@ import { db } from '../db.js';
 import { config } from '../config.js';
 import { locationCluster, haversineM } from '../services/geo.js';
 import { requireObserver } from './observers.js';
-import { tgSendMessage } from '../services/sms.js';
 import { notifyMaster } from '../services/notify.js';
 
 export const mappingRouter = Router();
-
-// Telegram ping (best-effort, never blocks the request).
-function notifyObservers(observerIds, text) {
-  const q = db.prepare(
-    'SELECT tl.chat_id FROM telegram_links tl JOIN observers o ON o.phone_hash = tl.phone_hash WHERE o.id = ?',
-  );
-  for (const id of new Set(observerIds)) {
-    const link = q.get(id);
-    if (link) tgSendMessage(link.chat_id, text).catch(() => {});
-  }
-}
 
 // Record one GPS fix for a polling unit (observer physically present, pre-election).
 // Resubmitting REPLACES the observer's earlier fix (booth spots are uncertain until
@@ -75,13 +63,23 @@ mappingRouter.post('/mappings', requireObserver, (req, res) => {
   }
 
   const unitName = db.prepare('SELECT name FROM polling_units WHERE pu_code = ?').get(puCode)?.name || puCode;
-  if (mapped) {
-    notifyObservers(fixes.map((f) => f.observer_id),
-      `✅ Hawkeye: ${unitName} (${puCode}) is now crowd-confirmed — ${fixes.length} observer fixes agreed. Thank you for mapping it.`);
-  } else {
-    notifyObservers([req.observer.id],
-      `📍 Hawkeye: your ${replaced ? 'updated ' : ''}fix for ${unitName} (${puCode}) is recorded — ${fixes.length} of ${config.mapMinReports} observers needed to confirm.`);
-  }
+  // In-app feed + push on every platform (pushNote fans out to FCM + web-push),
+  // replacing the old Telegram-only notifyObservers route. Best-effort.
+  import('../services/notifications.js').then((n) => {
+    if (mapped) {
+      for (const f of fixes) n.pushNote(f.observer_id, {
+        kind: 'mapping', title: 'Unit crowd-confirmed',
+        body: `${unitName} (${puCode}) — ${fixes.length} observer fixes agreed. Thank you for mapping it.`,
+        url: 'https://hawkeye.com.ng/map-unit.html',
+      });
+    } else {
+      n.pushNote(req.observer.id, {
+        kind: 'mapping', title: replaced ? 'Fix updated' : 'Fix recorded',
+        body: `${unitName} (${puCode}) — ${fixes.length} of ${config.mapMinReports} observers needed to confirm.`,
+        url: 'https://hawkeye.com.ng/map-unit.html',
+      });
+    }
+  }).catch(() => {});
   notifyMaster(`mapping · observer #${req.observer.id} · ${unitName} (${puCode})${mapped ? ' → CONFIRMED' : ` [${fixes.length}/${config.mapMinReports}]`}`);
   res.status(201).json({ ok: true, fixes: fixes.length, needed: config.mapMinReports, mapped, replaced });
 });

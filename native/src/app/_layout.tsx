@@ -100,6 +100,27 @@ function RootShell() {
     bootstrapAuth();
   }, []);
 
+  // Ask for camera + location ONCE, up front, the way the Capacitor shell does.
+  // Android grants at runtime, so "on install" means the first launch: an observer
+  // standing at a unit with a sheet in hand should not meet a permission dialog
+  // mid-capture. Failures are ignored — every call site still requests on demand.
+  useEffect(() => {
+    (async () => {
+      try {
+        const Camera = await import('expo-camera');
+        await Camera.Camera.requestCameraPermissionsAsync();
+      } catch {
+        /* asked again at capture time */
+      }
+      try {
+        const Location = await import('expo-location');
+        await Location.requestForegroundPermissionsAsync();
+      } catch {
+        /* asked again at fix time */
+      }
+    })();
+  }, []);
+
   // Signed-out access tier for the APP: a signed-out user gets ONLY the auth
   // funnel (welcome / sign-in) only — practice is signed-in on the app (people who
   // downloaded it came to observe; the WEB keeps practice open for ad/social traffic).

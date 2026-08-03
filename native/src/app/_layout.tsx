@@ -131,7 +131,10 @@ function RootShell() {
             correcting itself. The native splash is still up while we wait
             because AnimatedSplashOverlay — which is what calls
             SplashScreen.hideAsync() — is inside this gate. */}
-        {!loaded ? null : (
+        {/* Also wait for auth: the Stack's initial route is the tabs, so painting
+            before auth resolves flashed the home screen for signed-out users
+            before the welcome redirect landed. The native splash covers the wait. */}
+        {!loaded || auth.status === 'loading' ? null : (
           <ThemeProvider value={dark ? DarkTheme : DefaultTheme}>
             <StatusBar style={dark ? 'light' : 'dark'} />
             <AnimatedSplashOverlay />

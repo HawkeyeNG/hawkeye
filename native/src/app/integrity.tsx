@@ -296,6 +296,7 @@ export default function Integrity() {
           />
         }
       >
+        <GovDisclaimer />
         <View className="mb-3 rounded-xl bg-warn px-3 py-2">
           <Text className="text-xs font-semibold text-warn-ink">
             Beta — anomalies are automated flags for scrutiny, not verdicts. Official results

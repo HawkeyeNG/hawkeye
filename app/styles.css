@@ -1138,3 +1138,10 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 .rs-opt strong { display: block; font-size: 0.98rem; }
 .rs-opt small { color: var(--muted); font-size: 0.8rem; }
 .rs-opt:active { background: var(--tint); }
+
+/* App shell (Capacitor / installed PWA): the header carries the page name, so it
+   is set as running text rather than a spaced-out wordmark, and the notifications
+   row stacks so "Mark all read" can span the width. */
+body.has-tabbar .brand-text strong { font-size: 1rem; letter-spacing: 0.01em; text-transform: none; }
+body.has-tabbar .top { display: block; }
+body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }

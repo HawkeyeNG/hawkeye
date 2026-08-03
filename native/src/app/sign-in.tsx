@@ -336,7 +336,7 @@ export default function SignIn() {
   return (
     <SafeAreaView className="flex-1 bg-surface">
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         className="flex-1"
       >
         <View className="flex-row items-center px-4 pt-2">

@@ -1061,7 +1061,7 @@ export default function Practice() {
       </Modal>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         className="flex-1"
       >
         {/* ── STEP 1: which polling unit ── */}

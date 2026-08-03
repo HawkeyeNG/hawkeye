@@ -688,7 +688,7 @@ export default function Profile() {
       {/* Password modal — change, or reset via OTP without leaving it. */}
       <Modal visible={pwOpen} animationType="slide" transparent onRequestClose={() => setPwOpen(false)}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
           className="flex-1 justify-end bg-black/40"
         >
           <View className="rounded-t-3xl bg-surface px-5 pb-8 pt-4">

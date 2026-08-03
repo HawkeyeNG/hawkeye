@@ -128,7 +128,7 @@ main.wrap { max-width: 840px; }
    dark greens (it was made for light backgrounds), so on the dark green header it
    read as a muddy blob — give it a light plate so the mark actually reads. */
 .gov-header .crest:has(img) {
-  width: 34px; height: 34px; border-radius: 50%; background: #f4f8f5;
+  width: 34px; height: 34px; border-radius: 9px; background: #f4f8f5;
   display: inline-flex; align-items: center; justify-content: center;
   overflow: hidden; flex: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }

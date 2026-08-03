@@ -357,6 +357,23 @@
   const inAppShell = (window.HAWKEYE && window.HAWKEYE.native)
     || window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
+  // APP SHELL HEADER: the crest already says whose app this is, so the row
+  // carries the PAGE's name instead of repeating "HAWKEYE" on every screen (and
+  // the strapline, which read as clutter on a phone). Web keeps the wordmark.
+  if (inAppShell) {
+    const bt = document.querySelector('.gov-header .brand-text');
+    if (bt) {
+      const h1 = document.querySelector('main h1');
+      const title = ((h1 && h1.textContent) || document.title.split('—').pop() || '').trim();
+      if (title) {
+        bt.innerHTML = '';
+        const st = document.createElement('strong');
+        st.textContent = title;
+        bt.appendChild(st);
+      }
+    }
+  }
+
   if (inAppShell && !document.querySelector('.tabbar')) {
     const page = (location.pathname.replace(/^.*\//, '') || 'index.html');
     const ic = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;

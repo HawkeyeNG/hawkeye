@@ -19,7 +19,7 @@ fi
 cd android || exit 1
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 chmod +x ./gradlew
-echo "▶ [2/3] gradle assembleRelease — arm64 + R8 minify + resource shrink…"
+echo "▶ [2/3] gradle assembleRelease — arm64 + R8 minify + resource shrink, no lintVital…"
 
 # ~340 actionable tasks in this project; count "> Task :" lines for a rough %.
 TOTAL=340
@@ -27,6 +27,12 @@ TOTAL=340
   -PreactNativeArchitectures=arm64-v8a \
   -Pandroid.enableMinifyInReleaseBuilds=true \
   -Pandroid.enableShrinkResourcesInReleaseBuilds=true \
+  \
+  `# lintVital ran across ~30 Expo modules and took 34 of this build's 36` \
+  `# minutes (2026-08-04). It is a fatal-severity gate for STORE releases, so` \
+  `# it stays on in tmp/build_aab.sh (bundleRelease) — this APK only ever goes` \
+  `# to the team by hand, so skip it here.` \
+  -x lintVitalRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease \
   \
   assembleRelease 2>&1 | {
     n=0

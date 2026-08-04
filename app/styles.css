@@ -1192,6 +1192,23 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
   font-weight: 700; color: var(--link); text-decoration: underline; white-space: nowrap;
 }
 .gov-disc-more:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 3px; }
+/* The ⓘ that replaces a paragraph. Sized to sit on a heading's baseline and to
+   stay a 24px tap target without pushing the line height around. */
+.info-i {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; margin: 0 0 0 6px; flex: none;
+  border: 1.5px solid var(--link); border-radius: 50%; background: none;
+  color: var(--link); font: 700 0.72rem/1 Georgia, 'Times New Roman', serif;
+  cursor: pointer; vertical-align: middle; box-shadow: none;
+}
+.info-i::before { content: 'i'; }
+.info-i:hover { background: var(--tint); }
+.info-i:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.info-modal h2[hidden] { display: none; }
+/* The dialog sets its body with textContent, so a dot that folds in several
+   topics (docket, ledger) needs its blank lines to survive as paragraph breaks. */
+.info-modal p { white-space: pre-line; }
+
 .gov-disc-modal {
   border: 0; border-radius: 16px; padding: 22px; max-width: min(92vw, 440px);
   color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, .3);

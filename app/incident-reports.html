@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=132" />
+  <link rel="stylesheet" href="styles.css?v=134" />
   <script src="native.js?v=104"></script>
   <style>
     .inc { margin: 10px 0; }
@@ -58,9 +58,10 @@
   </header>
 <main class="wrap">
     <h1>Incident Reports</h1>
-    <p class="lede">Incidents observers filed on the ground — violence, vote-buying, BVAS failures and
-    more. Every one shown here was reviewed by a human before publishing. To file one yourself, use
-    <a href="incidents.html">Report an Incident</a>.</p>
+    <p class="lede">Incidents observers filed on the ground, each reviewed before publishing.<button
+      class="info-i" data-info-title="What appears here"
+      data-info="Violence, vote-buying, BVAS failures, obstruction and more, filed by observers at the scene. Every report shown on this page was reviewed by a human before it was published — reports still under review are not listed."></button>
+    <a class="link" href="incidents.html">Report an incident →</a></p>
     <div id="list"><div class="skel" style="height:60px;margin:8px 0"></div></div>
   </main>
 
@@ -96,6 +97,6 @@
       }).join('');
     }).catch(() => { document.getElementById('list').innerHTML = '<div class="empty">Could not load incidents — try again shortly.</div>'; });
   </script>
-  <script src="menu.js?v=132"></script>
+  <script src="menu.js?v=133"></script>
 </body>
 </html>

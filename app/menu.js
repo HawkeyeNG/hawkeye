@@ -426,6 +426,51 @@
     };
   })();
 
+  /**
+   * INFO DOTS. Explanatory prose is the single biggest consumer of vertical space
+   * on these pages, and almost none of it is read twice. Anything that explains
+   * rather than instructs becomes an ⓘ next to the thing it explains:
+   *
+   *   <h2>Election Integrity <button class="info-i" data-info="…long text…"></button></h2>
+   *
+   * Attribute-driven and delegated, so a page only has to move its paragraph
+   * into `data-info` — no per-page JS. Instructions inside a flow (which photo
+   * to take, what to type) stay visible; those are not explanations.
+   */
+  (function infoDots() {
+    let dlg = null;
+    const open = (title, body) => {
+      if (!dlg) {
+        dlg = document.createElement('dialog');
+        dlg.className = 'gov-disc-modal info-modal';
+        dlg.innerHTML = '<h2 tabindex="-1"></h2><p></p><button type="button" class="gov-disc-close">Close</button>';
+        document.body.appendChild(dlg);
+        dlg.querySelector('.gov-disc-close').onclick = () => dlg.close();
+        dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+      }
+      const h = dlg.querySelector('h2');
+      h.textContent = title || 'About this';
+      h.hidden = !title;
+      dlg.querySelector('p').textContent = body;
+      dlg.showModal();
+      h.focus();
+    };
+    document.addEventListener('click', (e) => {
+      const b = e.target && e.target.closest && e.target.closest('.info-i');
+      if (!b) return;
+      e.preventDefault();
+      e.stopPropagation();
+      open(b.getAttribute('data-info-title') || '', b.getAttribute('data-info') || '');
+    });
+    // Label every dot for screen readers without repeating it in the markup.
+    const label = () => document.querySelectorAll('.info-i:not([aria-label])').forEach((b) => {
+      b.setAttribute('aria-label', 'More information');
+      b.setAttribute('type', 'button');
+    });
+    label();
+    new MutationObserver(label).observe(document.body, { childList: true, subtree: true });
+  })();
+
   // APP SHELL HEADER: the crest already says whose app this is, so the row
   // carries the PAGE's name instead of repeating "HAWKEYE" on every screen (and
   // the strapline, which read as clutter on a phone). Web keeps the wordmark.

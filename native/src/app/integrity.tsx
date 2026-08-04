@@ -10,6 +10,7 @@ import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { flagLabel } from '@/lib/flags';
 import { useUi } from '@/lib/theme';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
+import { InfoDot } from '@/components/info-dot';
 
 const BASE = 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;
@@ -301,10 +302,15 @@ export default function Integrity() {
             with it — the disclaimer bar directly above already says that. The
             one point it carried that nothing else does (a flag is not a verdict)
             is folded into the sentence below. */}
-        <Text className="pb-3 text-sm text-muted">
-          Automated checks flag anything that looks wrong — over-voting, impossible turnout, forged
-          serials, conflicting counts, statistical outliers. A flag is for scrutiny, not a verdict.
-        </Text>
+        <View className="flex-row items-center pb-3">
+          <Text className="flex-1 text-sm text-muted">
+            Automated checks on every result. Anything that looks wrong is logged here.
+          </Text>
+          <InfoDot
+            title="What gets checked"
+            text="Over-voting, impossible turnout, forged form serials, conflicting counts and statistical outliers. A flag is a signal for scrutiny, not a verdict — and never proof of fraud."
+          />
+        </View>
 
         {err ? (
           <Text className="pb-2 text-sm font-semibold text-warn-ink">

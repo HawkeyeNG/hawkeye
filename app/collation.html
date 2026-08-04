@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=132" />
+  <link rel="stylesheet" href="styles.css?v=134" />
   <script src="native.js?v=104"></script>
   <style>
     .vote-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
@@ -56,9 +56,9 @@
   </header>
 <main class="wrap">
     <h1>Report a Collation Result</h1>
-    <p class="lede">At a ward (EC8B), LGA (EC8C) or state (EC8D) collation centre? Photograph the
-    announced collation form and enter its totals. Hawkeye automatically checks them against the
-    polling-unit sheets underneath — numbers that shrink on the way up get flagged publicly.</p>
+    <p class="lede">At a collation centre? Photograph the announced form and enter its totals.<button
+      class="info-i" data-info-title="Why collation forms matter"
+      data-info="Collation happens at three levels: ward (EC8B), LGA (EC8C) and state (EC8D). Hawkeye checks each form's totals against the polling-unit sheets underneath it, so a party's number that shrinks on the way up is flagged publicly — that gap between the units and the declared total is where a count is most often changed."></button></p>
 
     <section id="need-auth" class="card" hidden>
       <p>To report a collation result, register your device first.</p>
@@ -112,7 +112,9 @@
 
       <div class="card">
         <h2><span class="step-no">3</span> Sign and submit</h2>
-        <p class="hint">Signed on this device and written to the public tamper-evident ledger — it cannot be edited or withdrawn, and is checked against polling-unit evidence in this area. Its fingerprint is published to the public Rekor transparency log in the next daily anchor.</p>
+        <p class="hint">Signed on this device. Once submitted it cannot be edited or withdrawn.<button
+          class="info-i" data-info-title="What happens to this report"
+          data-info="Your report is signed on this device and written to the public tamper-evident ledger, so it cannot be edited or withdrawn afterwards. It is checked against the polling-unit evidence in this area, and its fingerprint is published to the public Rekor transparency log in the next daily anchor."></button></p>
         <button id="btn-submit" disabled>Sign &amp; submit collation report</button>
         <p id="status" class="status" role="status"></p>
       </div>
@@ -145,7 +147,7 @@
   <script src="device.js"></script>
   <script src="scan.js?v=3"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=132"></script>
+  <script src="menu.js?v=133"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');

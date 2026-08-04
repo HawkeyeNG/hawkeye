@@ -3,6 +3,7 @@ import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
+import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
@@ -105,10 +106,15 @@ export default function ReportsLog() {
 
   const header = (
     <View className="px-4 pb-3 pt-3">
-      <Text className="pb-3 text-sm text-muted">
-        Confidence is the share of independent observers reporting the same numbers. Every
-        report is digitally signed and permanently recorded on a public, tamper-evident ledger.
-      </Text>
+      <View className="flex-row items-center pb-3">
+        <Text className="flex-1 text-sm text-muted">
+          Confidence is the share of independent observers reporting the same numbers.
+        </Text>
+        <InfoDot
+          title="How these reports are held"
+          text="Every report is digitally signed on the observer's own device and permanently recorded on a public, tamper-evident ledger, so it cannot be edited or removed after the fact. Confidence rises as independent observers at the same unit file matching numbers."
+        />
+      </View>
 
       {/* The ledger verdict belongs here too — and tapping it goes to the screen
           where the phone rechecks the chain itself rather than believing this line. */}

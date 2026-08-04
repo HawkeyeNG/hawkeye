@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=132" />
+  <link rel="stylesheet" href="styles.css?v=134" />
   <script src="native.js?v=104"></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
@@ -175,7 +175,10 @@
       <h2 id="map-title">Leading party by state</h2>
       <!-- Rewritten by refresh() to match the race's own division (state / LGA /
            district / constituency); the static text is only the first-paint value. -->
-      <p class="hint" id="map-hint">Reporting states show the leading party's emblem. Tap any state for details.</p>
+      <!-- The explainer line above the map is gone: the legend directly below it
+           already names both fills, and "tap for details" is discoverable by
+           tapping. -->
+
       <div id="map"><div class="skel" style="height:320px"></div></div>
       <p id="map-info" class="hint" aria-live="polite" hidden></p>
       <p class="map-legend">
@@ -568,8 +571,6 @@
       // claim to be "by state" while drawing one state's LGAs.
       const where = data.scope && data.scope.state ? ` in ${data.scope.state}` : '';
       document.getElementById('map-title').textContent = `Leading party by ${word}${where}`;
-      document.getElementById('map-hint').textContent =
-        `Reporting ${word}s show the leading party's emblem. Tap any ${word} for details.`;
       const plural = word.endsWith('y') ? `${word.slice(0, -1)}ies` : `${word}s`;
       document.getElementById('led-col').textContent = `${plural[0].toUpperCase()}${plural.slice(1)} led`;
       renderMap(data);
@@ -651,6 +652,6 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=132"></script>
+  <script src="menu.js?v=133"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=132" />
+  <link rel="stylesheet" href="styles.css?v=134" />
   <script src="native.js?v=104"></script>
   <style>
     .race-item { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
@@ -60,10 +60,9 @@
   </header>
 <main class="wrap">
     <h1>Races</h1>
-    <p class="lede">Pick a race to follow its candidates, report a result, or verify the count. We publish
-    each race's page as its election nears — roughly 28 days out — so a race without a page yet simply
-    isn't open for reporting.</p>
-    <p class="hint" style="margin:0 0 6px">Order: Presidency · Governorship · Senate · House of Representatives · State Assembly.</p>
+    <p class="lede">Pick a race to follow, report on, or verify.<button
+      class="info-i" data-info-title="Why some races say “Soon”"
+      data-info="We publish each race's page as its election nears — roughly 28 days out — so a race without a page yet simply isn't open for reporting. Listed in order: Presidency, Governorship, Senate, House of Representatives, State Assembly."></button></p>
     <div id="races"></div>
   </main>
 
@@ -102,6 +101,6 @@
     });
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=132"></script>
+  <script src="menu.js?v=133"></script>
 </body>
 </html>

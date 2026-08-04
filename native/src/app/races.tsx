@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
+import { InfoDot } from '@/components/info-dot';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 
@@ -54,11 +55,15 @@ export default function Races() {
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
       >
         <Text className="text-2xl font-bold text-ink">Races</Text>
-        <Text className="pt-1 text-sm text-muted">
-          Pick a race to follow its candidates, report a result, or verify the count. Each race&apos;s
-          page is published as its election nears — roughly 28 days out — so a race without a page yet
-          simply isn&apos;t open for reporting.
-        </Text>
+        <View className="flex-row items-center pt-1">
+          <Text className="flex-1 text-sm text-muted">
+            Pick a race to follow, report on, or verify.
+          </Text>
+          <InfoDot
+            title="Why some races say “Soon”"
+            text="Each race's page is published as its election nears — roughly 28 days out — so a race without a page yet simply isn't open for reporting. Listed in order: Presidency, Governorship, Senate, House of Representatives, State Assembly."
+          />
+        </View>
 
         <View className="pt-4">
           {RACES.map((r) => {

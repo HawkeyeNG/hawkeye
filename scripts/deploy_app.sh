@@ -19,11 +19,12 @@
 set -uo pipefail
 
 REMOTE_PATH=/hawkeye/app
+PATH_EXPLICIT=0
 RESTART=0
 FILES=()
 while [ $# -gt 0 ]; do
   case "$1" in
-    --path) REMOTE_PATH="$2"; shift 2 ;;
+    --path) REMOTE_PATH="$2"; PATH_EXPLICIT=1; shift 2 ;;
     --restart) RESTART=1; shift ;;
     *) FILES+=("$1"); shift ;;
   esac
@@ -37,11 +38,28 @@ API="https://da32.host-ww.net:2222/CMD_API_FILE_MANAGER"
 SITE=https://hawkeye.com.ng
 [ -z "$U" ] || [ -z "$P" ] && { echo "GO54 credentials not readable from backend/.env"; exit 1; }
 
+# Where a file lands on the server. NOT simply REMOTE_PATH: a file in a subdir
+# has to keep that subdir, or it silently overwrites whatever shares its
+# basename at the top level. On 2026-08-04 `app/open/index.html` was passed in a
+# bulk run and landed as /hawkeye/app/index.html — the App Link fallback page
+# REPLACED the homepage in production, and verify() missed it because it fetched
+# /open/index.html, which was still the old (correct) file. Only an explicit
+# --path overrides this.
+remote_for() {                                 # remote_for <localfile>
+  local f="$1" sub
+  if [ "$PATH_EXPLICIT" = 1 ]; then echo "$REMOTE_PATH"; return; fi
+  case "$f" in
+    app/*/*) sub=$(dirname "${f#app/}"); echo "$REMOTE_PATH/$sub" ;;
+    *) echo "$REMOTE_PATH" ;;
+  esac
+}
+
 upload() {                                     # upload <localfile>
-  local f="$1" try code
+  local f="$1" try code dest
+  dest=$(remote_for "$f")
   for try in 1 2 3 4 5; do
     code=$(curl -sk -m 180 -u "$U:$P" -o /tmp/da_deploy.txt -w '%{http_code}' \
-      -F 'action=upload' -F "path=$REMOTE_PATH" -F "file1=@$f" "$API")
+      -F 'action=upload' -F "path=$dest" -F "file1=@$f" "$API")
     if [ "$code" = "200" ] && grep -q 'error=0' /tmp/da_deploy.txt; then return 0; fi
     sleep $(( try * 4 ))
   done

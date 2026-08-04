@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=132" />
+  <link rel="stylesheet" href="styles.css?v=134" />
   <script src="native.js?v=104"></script>
   <style>
     .map-card svg { width: 100%; height: auto; }
@@ -90,8 +90,9 @@
   </header>
 <main class="wrap">
     <h1>Political Data</h1>
-    <p class="lede">The parties currently in power — the incumbents this election will confirm or
-    unseat. Governing party shown per state; hover for details.</p>
+    <p class="lede">The parties in power — the incumbents this election will confirm or unseat.<button
+      class="info-i" data-info-title="Reading this page"
+      data-info="Each state is coloured by its governing party. Tap or hover a state for its governor, party and the year of its next election. Figures are compiled from public records and updated as results are declared."></button></p>
     <p class="scope-note" id="prez"></p>
     <p class="unofficial" id="provisional" style="background:var(--tint-warn);border-left:6px solid #f9a825;padding:10px;font-size:0.85rem;color:var(--text-warn)"></p>
 
@@ -218,6 +219,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=132"></script>
+  <script src="menu.js?v=133"></script>
 </body>
 </html>

@@ -8,7 +8,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Fold, SectionLabel, Stat } from '@/components/content-kit';
+import { SectionLabel, Stat } from '@/components/content-kit';
+import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { Prompt } from '@/components/wizard';
@@ -316,11 +317,17 @@ export default function Ledger() {
         </View>
       )}
 
-      {/* The one sentence the screen's credibility rests on. */}
-      <Text className="pt-1 text-sm leading-5 text-muted">
-        Verified means your phone recomputed every hash itself and got the same head we publish —
-        so no report has been altered or removed.
-      </Text>
+      {/* The one sentence the screen's credibility rests on, plus the
+          "How the chain is checked" fold that used to follow it. */}
+      <View className="flex-row items-center pt-1">
+        <Text className="flex-1 text-sm leading-5 text-muted">
+          Verified means your phone recomputed every hash itself and got the same head we publish.
+        </Text>
+        <InfoDot
+          title="How the chain is checked"
+          text="Each entry stores the hash of the one before it, so altering or removing any past report breaks every hash after it. This screen recomputes the whole chain on your own device and compares the head it gets to the one we publish — you don't have to trust us."
+        />
+      </View>
 
       <SectionLabel text="Chain" />
       <Pressable
@@ -351,13 +358,6 @@ export default function Ledger() {
           </Text>
         </View>
       ) : null}
-
-      <Fold
-        title="How the Chain Is Checked"
-        body={[
-          'Each entry stores the hash of the one before it, so altering any past report breaks every hash after it.',
-        ]}
-      />
 
       {/* Single-race proof: verify one contest without replaying the whole chain. */}
       <SectionLabel text="Single-Race Proof" />
@@ -422,12 +422,13 @@ export default function Ledger() {
         ) : null}
       </View>
 
-      <Fold
-        title="What a Single-Race Proof Shows"
-        body={[
-          "Each anchor folds every race into one Merkle root published to Sigstore's Rekor log, which we cannot rewrite. Your phone folds one race's proof up to that root, without replaying the others.",
-        ]}
-      />
+      <View className="flex-row items-center pt-2">
+        <Text className="flex-1 text-sm text-muted">Check one race&apos;s paper trail on its own.</Text>
+        <InfoDot
+          title="What a single-race proof shows"
+          text="Each anchor folds every race into one Merkle root published to Sigstore's Rekor log, which we cannot rewrite. Your phone folds one race's proof up to that root, without replaying the others."
+        />
+      </View>
 
       <SectionLabel text="Ledger Entries" />
       <Text className="pb-2 text-sm text-muted">

@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=132" />
+  <link rel="stylesheet" href="styles.css?v=134" />
   <script src="native.js?v=104"></script>
   <style>
     .feed-item { background: var(--card); border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
@@ -78,8 +78,9 @@
 
   <main class="wrap">
     <h1>Report an Incident</h1>
-    <p class="lede">Witnessed violence, ballot snatching, vote-buying, voter intimidation or a BVAS
-    failure? Report it with photos, a short video, or a written account. Our team reviews every report — approved ones appear in the public feed below.</p>
+    <p class="lede">Report what you witnessed — photo, video or text.<button
+      class="info-i" data-info-title="What to report, and what happens next"
+      data-info="Violence, ballot snatching, vote-buying, voter intimidation, BVAS failure, late materials, obstruction — anything that affected the vote. A person reviews every report before it appears; approved ones are published in the feed below, identified by observer ID only."></button></p>
 
     <section id="need-auth" class="card" hidden>
       <p>To report an incident, register your device first.</p>
@@ -137,7 +138,7 @@
 
   <script src="device.js"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=132"></script>
+  <script src="menu.js?v=133"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     // Escape ALL HTML metacharacters (not just '<') so observer-supplied text is

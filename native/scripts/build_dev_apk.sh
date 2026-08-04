@@ -33,7 +33,12 @@ grep -o '<application[^>]*allowBackup[^>]*' "$MANIFEST" | head -1
 cd android
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 chmod +x ./gradlew
-./gradlew --no-daemon --no-watch-fs --console=plain -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" assembleDebug 2>&1 | tail -20
+# arm64-v8a ONLY. A four-ABI debug APK is ~314 MB and three of those ABIs are
+# dead weight on a real phone — this drops it to ~100-130 MB with no behaviour
+# change. Re-add armeabi-v7a for a pre-2018 device, or x86_64 for an emulator.
+# NOT minified on purpose: R8 renames the classes expo-dev-client looks up
+# reflectively, so a minified dev build fails to launch and loses stack traces.
+./gradlew --no-daemon --no-watch-fs --console=plain -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" assembleDebug 2>&1 | tail -20
 
 APK="app/build/outputs/apk/debug/app-debug.apk"
 if [ -f "$APK" ]; then

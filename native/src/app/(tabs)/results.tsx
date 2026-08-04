@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { ContestPicker } from '@/components/contest-picker';
+import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -538,14 +539,25 @@ export default function Results() {
     if (!level) return;
     let alive = true;
     loadMapGeo(level)
-      .then((g) => alive && setShapes({ level, names: g.shapes.map((s) => s.name) }))
+      .then((g) => {
+        if (!alive) return;
+        // Count only the shapes the map actually DRAWS. Unfiltered, a
+        // state-scoped board reported "no votes counted yet · 774" — every LGA
+        // in Nigeria — under a map showing Osun's 30. Same crop ResultsMap
+        // applies, so the legend and the map describe one set of regions.
+        const drawn =
+          mapScope && g.geoLevel === 'lga'
+            ? g.shapes.filter((s) => s.state === regionKey('state', mapScope))
+            : g.shapes;
+        setShapes({ level, names: drawn.map((s) => s.name) });
+      })
       .catch(() => {
         /* ResultsMap renders its own failure; a second copy of it helps nobody */
       });
     return () => {
       alive = false;
     };
-  }, [level]);
+  }, [level, mapScope]);
   const shapeNames = shapes?.level === level ? shapes.names : NO_SHAPES;
 
   /**
@@ -744,15 +756,23 @@ export default function Results() {
     [data],
   );
 
-  /** The honest sentence under the heading: what this map can and cannot show. */
+  /**
+   * What this map can and cannot show. The one-line legend stays visible; every
+   * caveat after it moves into the ⓘ — they explain, they do not instruct, and
+   * stacked they pushed the map itself off the screen.
+   */
   const mapNote = (() => {
-    if (!level || !word) return '';
-    const parts: string[] = [];
-    parts.push(
+    if (!level || !word) return { lead: '', more: '' };
+    const lead =
       level === 'lga'
-        ? 'State Assembly reports are grouped by state in the tally, not by state constituency — so this map colours whole states. It cannot show which constituency inside a state a party is winning.'
-        : `Every ${word.one} that has reported, filled with the party leading there.`,
-    );
+        ? 'Coloured by the party leading in each state.'
+        : `Every ${word.one} that has reported, filled with the party leading there.`;
+    const parts: string[] = [];
+    if (level === 'lga') {
+      parts.push(
+        'State Assembly reports are grouped by state in the tally, not by state constituency — so this map colours whole states. It cannot show which constituency inside a state a party is winning.',
+      );
+    }
     const total = REGIONS_EXPECTED[level];
     if (shapeNames.length > 0 && shapeNames.length < total) {
       parts.push(
@@ -784,7 +804,7 @@ export default function Results() {
         }.`,
       );
     }
-    return parts.join(' ');
+    return { lead, more: parts.join(' ') };
   })();
 
   const mapCard =
@@ -805,7 +825,10 @@ export default function Results() {
           Leading party by {word.one}
           {mapScope ? ` in ${mapScope}` : ''}
         </Text>
-        <Text className="pt-1 text-xs text-muted">{mapNote}</Text>
+        <View className="flex-row items-center pt-1">
+          <Text className="flex-1 text-xs text-muted">{mapNote.lead}</Text>
+          {mapNote.more ? <InfoDot title="About this map" text={mapNote.more} /> : null}
+        </View>
 
         <View className="pt-3">
           <ResultsMap

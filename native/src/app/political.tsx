@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native';
 
+import { InfoDot } from '@/components/info-dot';
 import { PartyMark } from '@/components/race';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
@@ -53,9 +54,15 @@ export default function PoliticalData() {
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
       >
-        <Text className="pb-3 text-sm text-muted">
-          The parties in power now — the incumbents this election confirms or unseats.
-        </Text>
+        <View className="flex-row items-center pb-3">
+          <Text className="flex-1 text-sm text-muted">
+            The parties in power now — the incumbents this election confirms or unseats.
+          </Text>
+          <InfoDot
+            title="Reading this page"
+            text="Each state is listed with its governing party, its governor and the year of its next election. Figures are compiled from public records and updated as results are declared."
+          />
+        </View>
 
         {err ? (
           <Text className="text-sm font-semibold text-warn-ink">Could not load. ({err})</Text>

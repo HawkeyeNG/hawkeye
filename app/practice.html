@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=127" />
+  <link rel="stylesheet" href="styles.css?v=132" />
   <script src="native.js?v=104"></script>
   <style>
     .prac-banner { background: var(--tint-warn); border-left: 6px solid #f9a825; padding: 12px 14px; border-radius: 8px; margin: 0 0 16px; font-size: 0.92rem; }
@@ -50,7 +50,7 @@
       </nav>
     </div>
   </header>
-  <div class="phase-banner"><div class="wrap"><strong>Practice mode</strong> — a safe run-through. Nothing here is published, counted, or added to the ledger.</div></div>
+  <div class="phase-banner"><div class="wrap"><strong>Practice</strong> — nothing here is published or counted.</div></div>
 
   <main class="wrap" id="main">
     <section id="closed" hidden>
@@ -64,8 +64,9 @@
       <h1 id="prac-title">Practice run <span class="prac-tag">PRACTICE</span></h1>
       <p class="lede" id="prac-sub"></p>
 
-      <div class="prac-banner">This is a <strong>practice run</strong> — a safe way to learn the exact steps
-      before election day. Nothing you enter here is published, counted, or added to the public ledger.</div>
+      <!-- The .prac-banner that sat here said, a third time, what the page-top
+           phase banner and the lede already say: nothing here is published.
+           Three restatements of one fact pushed the actual flow below the fold. -->
 
       <div class="card">
         <strong id="prac-unit-name">Practice Polling Unit</strong>
@@ -113,13 +114,15 @@
         <p>Nicely done — that’s exactly how you report a result on election day.</p>
       </div>
       <div class="card">
-        <p><strong>This was practice — nothing was published.</strong> On election day, your real report
-        is signed on your phone and permanently recorded on Hawkeye’s public, tamper-evident ledger.</p>
+        <p><strong>Nothing was published.</strong> A real report is signed on your phone and recorded
+        on Hawkeye’s public, tamper-evident ledger.</p>
         <p class="hint">Practice ledger entry: <code id="entry-hash"></code></p>
       </div>
       <div class="race-cta">
         <a class="btn-accent" href="observe.html?intent=observe">Become an Observer →</a>
-        <button id="btn-again" class="btn-ghost" style="border-color:var(--green);color:var(--green);width:auto">Practise again</button>
+        <!-- btn-quiet, not an inline `color:var(--green)` override: that was dark
+             green on a near-black panel in dark mode, and barely readable. -->
+        <button id="btn-again" class="btn-quiet">Practise again</button>
       </div>
     </section>
   </main>
@@ -143,8 +146,8 @@
   </div></footer>
 
   <script src="device.js"></script>
-  <script src="practice.js?v=3"></script>
+  <script src="practice.js?v=4"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=127"></script>
+  <script src="menu.js?v=132"></script>
 </body>
 </html>

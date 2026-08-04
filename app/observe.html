@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=127" />
+  <link rel="stylesheet" href="styles.css?v=132" />
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
   <script src="native.js?v=104"></script>
   <meta property="og:type" content="website" />
@@ -56,11 +56,7 @@
       </nav>
     </div>
   </header>
-  <div class="phase-banner">
-    <div class="wrap"><strong>Beta</strong> — this service is in public testing. Official results remain INEC's.</div>
-  </div>
-
-  <main class="wrap">
+<main class="wrap">
     <!-- 1. Registration -->
     <section id="screen-register" hidden>
       <!-- Top of the screen. The site header is hidden here on BOTH app and web
@@ -161,6 +157,10 @@
         <p id="locate-status" class="status" role="status"></p>
         <div id="pu-list" class="option-list"></div>
       </div>
+      <!-- Search by name/code before the register cascade: knowing your unit's
+           NAME but not its ward is the common case, and the cascade cannot serve
+           it. Populated by pu-search.js. -->
+      <div id="pu-search-host" class="card"></div>
       <details id="browse-block" class="card">
         <summary>Can't see your unit? Browse the register</summary>
         <p class="hint">No verified location yet? You can still report — your GPS is recorded
@@ -283,8 +283,11 @@
   <script src="device.js" defer></script>
   <script src="scan.js?v=3" defer></script>
   <script src="outbox.js" defer></script>
-  <script src="app.js?v=129" defer></script>
+  <!-- Before app.js (which mounts it) and not deferred, so window.puSearch
+       exists by the time the deferred app.js runs. -->
+  <script src="pu-search.js?v=1"></script>
+  <script src="app.js?v=130" defer></script>
   <script src="tg.js?v=95" defer></script>
-  <script src="menu.js?v=127" defer></script>
+  <script src="menu.js?v=132" defer></script>
 </body>
 </html>

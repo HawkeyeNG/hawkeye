@@ -297,17 +297,13 @@ export default function Integrity() {
         }
       >
         <GovDisclaimer />
-        <View className="mb-3 rounded-xl bg-warn px-3 py-2">
-          <Text className="text-xs font-semibold text-warn-ink">
-            Beta — anomalies are automated flags for scrutiny, not verdicts. Official results
-            remain INEC&apos;s.
-          </Text>
-        </View>
-
+        {/* The Beta card is gone, and its "official results remain INEC's" tail
+            with it — the disclaimer bar directly above already says that. The
+            one point it carried that nothing else does (a flag is not a verdict)
+            is folded into the sentence below. */}
         <Text className="pb-3 text-sm text-muted">
-          Every crowd-reported result is run through automated integrity checks. Anything that
-          looks wrong is logged here in the open — over-voting, impossible turnout, forged form
-          serials, conflicting counts and statistical outliers.
+          Automated checks flag anything that looks wrong — over-voting, impossible turnout, forged
+          serials, conflicting counts, statistical outliers. A flag is for scrutiny, not a verdict.
         </Text>
 
         {err ? (
@@ -526,10 +522,8 @@ export default function Integrity() {
           ))}
         </View>
 
-        <Text className="pt-4 text-center text-xs text-faint">
-          Automated flags aid scrutiny; they are not proof of fraud. Official results remain
-          INEC&apos;s.
-        </Text>
+        {/* Dropped: the "not proof" point is now made once, in the intro line at
+            the top of this screen, and the INEC half is the disclaimer bar's job. */}
       </Animated.ScrollView>
     </View>
   );

@@ -124,6 +124,55 @@ export function toTier(status?: string | null): UnitTier {
 }
 
 /**
+ * Register-browse rows can also be honestly unlocated — unlike the map's
+ * three-way fold, a list row with no coordinates should say so rather than be
+ * promoted to `approx`. Mirrors map-unit.tsx's RowTier/rowTier and the web's
+ * tierOf (app.js): crowd_mapped is graded FIRST because pollingUnits.js calls
+ * any row holding `lat` 'verified', including a promoted crowd median.
+ */
+export type RegisterTier = UnitTier | 'unmapped';
+export const REGISTER_TIER_LABEL: Record<RegisterTier, string> = {
+  ...TIER_LABEL,
+  unmapped: 'Not located yet',
+};
+export function registerTier(u: {
+  coords_source?: string | null;
+  locationTier?: string;
+  lat?: number | null;
+  crowd_lat?: number | null;
+}): RegisterTier {
+  if (u.coords_source === 'crowd_mapped') return 'crowd';
+  if (u.locationTier) return u.locationTier === 'unmapped' ? 'unmapped' : toTier(u.locationTier);
+  if (u.lat != null) return 'verified';
+  if (u.crowd_lat != null) return 'crowd';
+  return 'unmapped';
+}
+
+/**
+ * The tier line for a register-browse row: same dot, same words as the nearby
+ * rows and the map legend. ONE component so the three browse lists (report
+ * result / incident / practice) cannot drift again — they shipped without any
+ * tier mark while the web's browse rows carried one.
+ */
+export function RegisterTierBadge({ u, selected }: {
+  u: Parameters<typeof registerTier>[0];
+  selected?: boolean;
+}) {
+  const tier = registerTier(u);
+  return (
+    <View className="flex-row items-center pt-0.5">
+      <View
+        className="mr-1.5 h-2 w-2 rounded-full"
+        style={{ backgroundColor: tier === 'unmapped' ? '#9aa7a0' : TIER_COLOR[tier] }}
+      />
+      <Text className={`flex-1 text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>
+        {REGISTER_TIER_LABEL[tier]}
+      </Text>
+    </View>
+  );
+}
+
+/**
  * The area a unit is known to sit somewhere inside — carrying its OWN centre.
  *
  * The centre belongs to the envelope rather than being inherited from the

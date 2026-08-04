@@ -29,6 +29,7 @@ import {
 } from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
 import { ScreenHeader } from '@/components/screen-header';
+import { UnitSearch } from '@/components/unit-search';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
@@ -1160,6 +1161,9 @@ export default function MapUnit() {
           </View>
         ) : null}
 
+        {/* Search by name/code, above the cascade — knowing the unit's name but
+            not its ward is the case the cascade cannot serve. */}
+        <UnitSearch<Unit> onSelect={(u) => setUnit(u)} />
         <Pressable
           onPress={() => setBrowse((b) => !b)}
           className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"

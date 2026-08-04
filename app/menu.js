@@ -367,21 +367,75 @@
   (function govDisclaimer() {
     const main = document.querySelector('main');
     if (!main || document.querySelector('.gov-disclaimer')) return;
-    const d = document.createElement('aside');
-    d.className = 'gov-disclaimer';
-    d.innerHTML = '<strong>Not a government service.</strong> Hawkeye is an independent, '
-      + 'citizen-run transparency tool. It is not affiliated with, endorsed by, or acting on '
-      + 'behalf of INEC or any government entity, and it does not declare election results. '
-      + 'Figures here are unofficial crowd reports. Official results and electoral information '
-      + 'come from INEC: <a href="https://www.inecnigeria.org" target="_blank" rel="noopener">inecnigeria.org</a> '
-      + '&middot; <a href="https://www.inecelectionresults.ng" target="_blank" rel="noopener">inecelectionresults.ng</a>.';
-    main.insertBefore(d, main.firstChild);
+    // One-liner keeps the Play-critical claim (independent, not affiliated with
+    // INEC) always visible without interaction; the full statement + official
+    // links live in a modal so the banner stops dominating every page's layout.
+    const bar = document.createElement('aside');
+    bar.className = 'gov-disclaimer';
+    // "Details" runs INLINE, right after the sentence it belongs to, so the whole
+    // notice wraps as two lines of ordinary prose instead of a text column beside
+    // its own right-aligned button.
+    // "independent," is dropped so the notice + inline Details fit two lines on a
+    // phone (73 chars ran to three). Both Play-critical claims survive: it is not
+    // a government service, and it is not affiliated with INEC. "Independent" is
+    // still stated in full in the modal.
+    // A span, NOT a <button>: a button is inline-block, and its line box pushed
+    // "Details" onto a third line even though the content only needed two.
+    // role/tabindex + the keydown handler below keep it a real control.
+    // One line. The modal carries the full statement, so the bar only has to
+    // make the claim itself — that Hawkeye is neither government nor INEC.
+    bar.innerHTML = '<strong>Not government or INEC affiliated.</strong> '
+      + '<span class="gov-disc-more" role="button" tabindex="0">Details</span>';
+    // On the sign-in / sign-up screen the disclaimer goes BELOW the form: it is a
+    // legal footnote, and at the top of a bare auth page it was the first and
+    // loudest thing on screen, overshadowing the brand.
+    if (document.documentElement.classList.contains('auth-screen')) main.appendChild(bar);
+    else main.insertBefore(bar, main.firstChild);
+    let dlg = document.getElementById('gov-disc-modal');
+    if (!dlg) {
+      dlg = document.createElement('dialog');
+      dlg.id = 'gov-disc-modal';
+      dlg.className = 'gov-disc-modal';
+      // tabindex on the heading so focus can land HERE on open. <dialog>.showModal()
+      // otherwise focuses the first focusable child — the inecnigeria.org link —
+      // which renders as a preselected link nobody asked for.
+      dlg.innerHTML = '<h2 tabindex="-1">Not a government service</h2>'
+        + '<p>Hawkeye is an independent, citizen-run transparency tool. It is not affiliated with, '
+        + 'endorsed by, or acting on behalf of INEC or any government entity, and it does not declare '
+        + 'election results. Figures here are unofficial crowd reports. Official results and electoral '
+        + 'information come from INEC:</p>'
+        + '<p class="gov-disc-links"><a href="https://www.inecnigeria.org" target="_blank" rel="noopener">inecnigeria.org</a> '
+        + '&middot; <a href="https://www.inecelectionresults.ng" target="_blank" rel="noopener">inecelectionresults.ng</a></p>'
+        + '<button type="button" class="gov-disc-close">Close</button>';
+      document.body.appendChild(dlg);
+      dlg.querySelector('.gov-disc-close').onclick = () => dlg.close();
+      dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    }
+    // Open, then move focus to the heading — announces the modal's title to a
+    // screen reader and stops the first link reading as preselected.
+    const openDisc = () => {
+      dlg.showModal();
+      dlg.querySelector('h2')?.focus();
+    };
+    const more = bar.querySelector('.gov-disc-more');
+    more.onclick = () => openDisc();
+    // A <span role="button"> gets no key handling for free, unlike the <button>
+    // it replaced. Enter and Space are what a button responds to.
+    more.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDisc(); }
+    };
   })();
 
   // APP SHELL HEADER: the crest already says whose app this is, so the row
   // carries the PAGE's name instead of repeating "HAWKEYE" on every screen (and
   // the strapline, which read as clutter on a phone). Web keeps the wordmark.
-  if (inAppShell) {
+  // Runs EVERYWHERE now, not only in the app shell: the website carried the page
+  // name twice — once in an in-page <h1>, once implicitly in the tab title —
+  // while the header said nothing about where you were. Naming the page in the
+  // header and dropping the duplicate H1 is the same trade the Capacitor shell
+  // already makes, and it buys back a whole heading's worth of vertical space on
+  // every page. The crest still carries the brand.
+  {
     const bt = document.querySelector('.gov-header .brand-text');
     if (bt) {
       const page = (location.pathname.replace(/^.*\//, '') || 'index.html');
@@ -407,6 +461,10 @@
         const st = document.createElement('strong');
         st.textContent = title;
         bt.appendChild(st);
+        // A page name is prose, not a wordmark — the brand's wide tracking and
+        // uppercase treatment make "Report Collation Result" unreadable. Home
+        // keeps the wordmark styling because its title IS the wordmark.
+        bt.classList.toggle('is-page', title !== 'HAWKEYE');
       }
     }
   }
@@ -779,11 +837,33 @@
     const add = (who, text) => { const d = document.createElement('div'); d.className = 'hk-b ' + (who === 'u' ? 'hk-u' : 'hk-a'); d.textContent = text; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d; };
     let greeted = false;
     const close = () => panel.classList.remove('open');
+    // Ask Hawkeye and the ☰ dropdown are mutually exclusive. Both open at once
+    // is two overlapping panels over the page — unreadable, and neither reads as
+    // the thing you just tapped.
+    const closeMenu = () => {
+      const m = document.getElementById('menu-panel');
+      if (m && !m.hidden) {
+        m.hidden = true;
+        document.querySelector('.menu-btn')?.setAttribute('aria-expanded', 'false');
+      }
+    };
     fab.onclick = (e) => {
       e.stopPropagation();
       const open = panel.classList.toggle('open');
+      if (open) closeMenu();
       if (open && !greeted) { greeted = true; add('a', 'Hi! Ask me about the crowd-reported results — a national tally, a polling unit, or how much of the country is mapped.'); }
     };
+    // The other direction. Capture phase, because the ☰ button's own inline
+    // onclick and the app-shell "More" tab both stop propagation before a
+    // bubbling listener would ever see the click.
+    document.addEventListener(
+      'click',
+      (e) => {
+        const t = e.target;
+        if (t && t.closest && (t.closest('.menu-btn') || t.closest('[data-more]') || t.closest('#menu-panel'))) close();
+      },
+      true,
+    );
     panel.querySelector('#hk-x').onclick = close;
     panel.addEventListener('click', (e) => e.stopPropagation());
     // Close on outside click / Escape, just like the header dropdown.

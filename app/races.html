@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=127" />
+  <link rel="stylesheet" href="styles.css?v=132" />
   <script src="native.js?v=104"></script>
   <style>
     .race-item { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
@@ -58,9 +58,7 @@
       </nav>
     </div>
   </header>
-  <div class="phase-banner"><div class="wrap"><strong>Races</strong> — every contest Hawkeye watches, in one place.</div></div>
-
-  <main class="wrap">
+<main class="wrap">
     <h1>Races</h1>
     <p class="lede">Pick a race to follow its candidates, report a result, or verify the count. We publish
     each race's page as its election nears — roughly 28 days out — so a race without a page yet simply
@@ -81,7 +79,10 @@
     // A race is "live" only once its page has been built (about 28 days out); the
     // rest error politely on tap rather than 404.
     const RACES = [
-      { name: 'Presidency 2027', desc: 'The declared presidential field, quick compare and live results.', href: 'candidates.html', live: true, pill: 'Live' },
+      // `<race> (<year>)` — the app-wide naming convention. The entries below it
+      // are race CATEGORIES spanning many states and years, so they stay bare and
+      // carry their year in the pill instead.
+      { name: 'Presidency (2027)', desc: 'The declared presidential field, quick compare and live results.', href: 'candidates.html', live: true, pill: 'Live' },
       { name: 'Governorship', desc: 'Osun 2026 is live now. Other states open closer to each election.', href: 'osun.html', live: true, pill: 'Osun 2026' },
       { name: 'Senate', desc: '109 seats across 36 states and the FCT.', live: false },
       { name: 'House of Representatives', desc: '360 federal constituencies.', live: false },
@@ -101,6 +102,6 @@
     });
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=127"></script>
+  <script src="menu.js?v=132"></script>
 </body>
 </html>

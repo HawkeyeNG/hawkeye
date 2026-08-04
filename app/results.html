@@ -9,12 +9,19 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=127" />
+  <link rel="stylesheet" href="styles.css?v=132" />
   <script src="native.js?v=104"></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
     /* Stears-style: regions awaiting reports are neutral grey; reporting regions green-tinted */
     .state-shape { fill: #e9e9e7; stroke: #b7bcb7; stroke-width: 1; }
+    /* A cropped map keeps the shared 800x660 projection but shrinks the viewBox
+       ~10x, and stroke-width is in USER units — so the same 1-unit border came
+       out ~10x thicker on screen and swallowed the small shapes it was meant to
+       separate. That thick outline, not the geometry, is what read as "choppy".
+       non-scaling-stroke pins the border to device pixels at any zoom. */
+    .map-card svg.zoomed path { vector-effect: non-scaling-stroke; }
+    .map-card svg.zoomed path.sel { stroke-width: 2; }
     .state-shape.led { fill: #e2ecdf; stroke: #7a9486; }
     /* hover highlight on every region (tie tints are pointer-transparent) */
     .map-card svg path:not(.tie-fill):hover { filter: brightness(0.9); cursor: pointer; }
@@ -96,32 +103,79 @@
       </nav>
     </div>
   </header>
-  <div class="phase-banner">
-    <div class="wrap"><strong>Beta</strong> — this service is in public testing. Official results remain INEC's.</div>
-  </div>
-
-  <main class="wrap">
+<main class="wrap">
     <h1>Leaderboard</h1>
-    <p class="unofficial"><strong>Tentative and unofficial.</strong> These are partial tallies built from matching crowd reports, excluding any
-    results currently in dispute. They are not — and never will be — official election results, which only INEC declares.</p>
+    <!-- The "Tentative and unofficial" block is gone: the .gov-disclaimer bar on
+         every page makes the same claim in one line, and its modal states it in
+         full. The disputed-results detail lives on docket.html, where it can be
+         acted on. -->
+
+
+    <!-- The race being ranked leads the board, and changing it is a first-class
+         control — mirroring the native Leaderboard. Previously the only visible
+         dropdown here was the REGION filter, so the board answered "which state?"
+         but never "which election am I looking at?"; the election itself was a
+         hidden <select> set only by a ?contest= deep link.
+
+         #sel-contest stays in the DOM, hidden, because it is the value contract
+         every other handler already reads (refresh(), the Follow button). The
+         picker writes to it and calls refresh(), so nothing downstream changed. -->
+    <div hidden>
+      <label for="sel-contest">Election</label>
+      <select id="sel-contest"><option value="">Loading elections…</option></select>
+    </div>
+
+    <div class="race-card">
+      <button id="btn-race" class="race-pick" aria-expanded="false" aria-controls="race-picker">
+        <span class="race-ico" aria-hidden="true">🏅</span>
+        <span id="race-name">Loading…</span>
+        <span class="race-change" id="race-change">Change</span>
+      </button>
+      <!-- Sits UNDER the race it describes, and no longer repeats the election's
+           long name (the old text opened with "Osun State Governorship Election
+           2026", restating the race named directly above it). -->
+      <p class="updated" id="updated"></p>
+    </div>
+
+    <div class="card" id="race-picker" hidden>
+      <p class="hint" style="margin-top:0">Choose any race to see its board. A race that has not opened can be viewed too — it will simply have no results yet.</p>
+      <div id="race-list"></div>
+    </div>
 
     <div class="toolbar" id="follow">
-      <!-- The election is chosen via the Races flow, not on the board itself: the
-           leaderboard shows whatever ?contest= it was opened with (presidential
-           default). The <select> stays in the DOM, hidden, so the JS still reads it. -->
-      <div hidden>
-        <label for="sel-contest">Election</label>
-        <select id="sel-contest"><option value="">Loading elections…</option></select>
-      </div>
       <select id="sel-scope" aria-label="Filter the leaderboard by state or district" style="width:auto;min-width:200px"><option value="">Everywhere</option></select>
       <button id="btn-follow" class="secondary" style="width:auto;margin:0">🔔 Follow</button>
-      <p class="updated" id="updated"></p>
     </div>
     <p id="follow-msg" class="hint"></p>
 
+    <style>
+      .race-card { margin: 0 0 10px; }
+      .race-pick {
+        width: 100%; display: flex; align-items: center; gap: 10px;
+        background: var(--card, #fff); border: 1px solid var(--border); border-radius: 14px;
+        padding: 12px 14px; font: inherit; font-weight: 700; color: var(--ink); cursor: pointer; text-align: left;
+      }
+      .race-pick .race-ico { flex: none; font-size: .95rem; }
+      .race-pick #race-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .race-change { flex: none; font-size: .8rem; font-weight: 800; color: var(--link); }
+      .race-card .updated { margin: 6px 2px 0; font-size: .82rem; color: var(--muted, #5b6b62); }
+      #race-list { display: flex; flex-direction: column; gap: 8px; }
+      .race-opt {
+        width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+        background: var(--card, #fff); border: 1px solid var(--border); border-radius: 12px;
+        padding: 12px 14px; font: inherit; color: var(--ink); cursor: pointer;
+      }
+      .race-opt.on { border-color: #008751; background: var(--tint, #e8f5ee); }
+      .race-opt b { flex: 1; min-width: 0; font-size: .95rem; }
+      .race-tag { flex: none; font-size: .72rem; font-weight: 800; color: var(--muted, #5b6b62); }
+      .race-tag.open { color: #008751; }
+    </style>
+
     <div class="card map-card">
       <h2 id="map-title">Leading party by state</h2>
-      <p class="hint">Reporting states show the leading party's emblem. Tap any state for details.</p>
+      <!-- Rewritten by refresh() to match the race's own division (state / LGA /
+           district / constituency); the static text is only the first-paint value. -->
+      <p class="hint" id="map-hint">Reporting states show the leading party's emblem. Tap any state for details.</p>
       <div id="map"><div class="skel" style="height:320px"></div></div>
       <p id="map-info" class="hint" aria-live="polite" hidden></p>
       <p class="map-legend">
@@ -136,8 +190,9 @@
     </div>
 
     <div class="card" id="gaps-card" hidden>
-      <h2>Help cover these states</h2>
-      <p class="hint">These states have no reports yet for this election. Voting or observing in one? Be the first. <a href="observe.html?intent=observe">Become an observer →</a></p>
+      <!-- Both rewritten by loadGaps() — the noun depends on the contest's scope. -->
+      <h2 id="gaps-title">Help cover these states</h2>
+      <p class="hint" id="gaps-hint">These states have no reports yet for this election. Voting or observing in one? Be the first. <a href="observe.html?intent=observe">Become an observer →</a></p>
       <div id="gaps" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
     </div>
 
@@ -205,8 +260,78 @@
       let shapes = '';
       let aria;
       let badgeR = 13;
+      // Null = draw the whole country in the geo files' own viewBox. Set by the
+      // scoped branch to a bbox computed from just the shapes it drew.
+      let viewBox = null;
 
-      if (data.level === 'state') {
+      // Register spellings and geo-file spellings disagree for ~5 LGAs per state
+      // ("Atakumosa" vs "atakunmosa", "Ilesa" vs "ilesha"), so a plain exact match
+      // silently drops them. Same two-tier fallback the native map uses: exact
+      // normalised, then a first-4-letters-per-word stem. Verified 30/30 for Osun.
+      const stemOf = (s) => norm(s).split(' ').map((w) => w.slice(0, 4)).join(' ');
+      function regionLookup(regions) {
+        const exact = new Map(), stem = new Map();
+        for (const r of regions) {
+          exact.set(norm(r.region), r);
+          const k = stemOf(r.region);
+          // Ambiguous stems are dropped rather than guessed at.
+          stem.set(k, stem.has(k) ? null : r);
+        }
+        return (name) => exact.get(norm(name)) ?? stem.get(stemOf(name)) ?? null;
+      }
+      // Fit the drawn subset. Every geo file is pre-projected into one shared
+      // 800x660 space, so a subset keeps correct absolute coordinates and only
+      // the viewBox has to move — no re-projection.
+      function bboxOf(paths) {
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const d of paths) {
+          const n = String(d).match(/-?\d+(?:\.\d+)?/g) || [];
+          for (let i = 0; i + 1 < n.length; i += 2) {
+            const x = +n[i], y = +n[i + 1];
+            if (x < x0) x0 = x; if (x > x1) x1 = x;
+            if (y < y0) y0 = y; if (y > y1) y1 = y;
+          }
+        }
+        if (!Number.isFinite(x0)) return null;
+        const pad = Math.max((x1 - x0), (y1 - y0)) * 0.06;
+        return `${(x0 - pad).toFixed(1)} ${(y0 - pad).toFixed(1)} ${(x1 - x0 + pad * 2).toFixed(1)} ${(y1 - y0 + pad * 2).toFixed(1)}`;
+      }
+
+      const scopeState = data.scope && data.scope.state;
+      if (scopeState) {
+        // A contest held in ONE state: draw that state's sub-units only, and zoom
+        // to them. Sub-units come from `data.subunits` (the register), never from
+        // `data.regions` — before election day there are no regions at all, and
+        // the map must still show the state rather than an empty frame.
+        const find = regionLookup(data.regions);
+        const titleCase = (s) => s.replace(/\b[a-z]/g, (c) => c.toUpperCase());
+        let items;
+        if (data.level === 'lga') {
+          const pre = norm(scopeState);
+          items = LGAS.lgas
+            .filter((l) => l.key.split('|')[0] === pre)
+            .map((l) => ({ name: titleCase(l.key.split('|')[1] || ''), path: l.path }));
+          badgeR = 9;
+        } else {
+          const GEO = data.level === 'senatorial' ? DGEO : CGEO;
+          const want = new Set((data.subunits || []).map(norm));
+          const wantStem = new Set((data.subunits || []).map(stemOf));
+          items = GEO.regions
+            .filter((rg) => want.has(norm(rg.name)) || wantStem.has(stemOf(rg.name)))
+            .map((rg) => ({ name: rg.name, path: rg.path }));
+          badgeR = 10;
+        }
+        for (const it of items) {
+          const info = find(it.name);
+          const L = leadersOf(info);
+          const tip = info
+            ? `${it.name}: ${leadText(L)} · ${info.unitsReporting} unit(s)`
+            : `${it.name}: no reports yet`;
+          shapes += `<path class="state-shape${L.length ? ' led' : ''}"${tieStyle(L)} data-leaders="${L.join(',')}" fill-rule="evenodd" d="${it.path}"><title>${tip}</title></path>`;
+        }
+        viewBox = bboxOf(items.map((i) => i.path));
+        aria = `Map of ${scopeState}: leading party per ${REGION_WORD[data.level] || 'area'}`;
+      } else if (data.level === 'state') {
         const byKey = Object.fromEntries(data.regions.map((r) => [norm(r.region), r]));
         for (const st of STATES.states) {
           const info = byKey[st.key];
@@ -246,7 +371,7 @@
         aria = `Map of Nigeria: leading party per ${word}`;
       }
       document.getElementById('map').innerHTML =
-        `<svg viewBox="${STATES.viewBox}" role="img" aria-label="${aria}"><defs></defs><g class="badges"></g>${''}</svg>`;
+        `<svg class="${viewBox ? 'zoomed' : ''}" viewBox="${viewBox || STATES.viewBox}" role="img" aria-label="${aria}"><defs></defs><g class="badges"></g>${''}</svg>`;
       const svg = document.querySelector('#map svg');
       svg.insertAdjacentHTML('afterbegin', shapes);
 
@@ -308,7 +433,10 @@
         </tr>`).join('');
     }
 
-    const REGION_WORD = { state: 'state', lga: 'state', senatorial: 'senatorial district', federal: 'federal constituency' };
+    // 'lga' used to say "state" because the LGA view only ever tinted LGAs by
+    // their STATE's leader. Now that a state-scoped board really is per-LGA, the
+    // word has to be the truth.
+    const REGION_WORD = { state: 'state', lga: 'LGA', senatorial: 'senatorial district', federal: 'federal constituency' };
 
     // "Data at a glance": vote-share donut + top regions by units reporting.
     function renderGlance(data, word) {
@@ -337,24 +465,111 @@
         const g = await fetch(`/api/coverage/gaps?contest=${contest}`).then((r) => r.json());
         const card = document.getElementById('gaps-card');
         if (!g.missing || !g.missing.length) { card.hidden = true; return; }
+        // The noun follows the contest's scope — a governorship's gaps are LGAs
+        // inside its own state, not the 36 states it was never held in.
+        const unit = g.unit === 'LGA' ? 'LGA' : 'state';
+        const where = g.scope && g.scope.state ? ` in ${g.scope.state}` : '';
+        document.getElementById('gaps-title').textContent = `Help cover these ${unit}s`;
+        document.getElementById('gaps-hint').innerHTML =
+          `These ${unit}s${where} have no reports yet for this election. Voting or observing in one? Be the first. `
+          + `<a href="observe.html?intent=observe">Become an observer →</a>`;
         document.getElementById('gaps').innerHTML = g.missing.map((s) =>
           `<span style="font-size:.85rem;padding:5px 11px;border-radius:999px;background:var(--tint);border:1px solid var(--border);color:var(--link)">${s}</span>`).join('');
         card.hidden = false;
       } catch { /* non-critical */ }
     }
 
+    // The /api/contests array, kept so the race card and picker can name a race
+    // without refetching. Populated by the init IIFE below.
+    let CONTESTS = [];
+
+    /**
+     * The catalogue's own cycle — the year of last resort for a contest the
+     * backend has not dated. Twin of native/src/lib/races.ts:GENERAL_ELECTION_YEAR.
+     */
+    const GENERAL_ELECTION_YEAR = 2027;
+
+    /**
+     * How a race is named wherever it is shown: `<race> (<year>)`.
+     *
+     * The year is DERIVED from the contest's own polling date, never written
+     * down: Osun's GOV row is dated 2026-08-15, so it reads "Osun Governorship
+     * (2026)", and a contest with no date falls back to the general-election
+     * cycle ("Presidency (2027)"). Governorship elections are staggered across
+     * years, so a hardcoded year would mislabel every off-cycle state the moment
+     * a second GOV contest is configured. Mirrors races.ts:raceLabel.
+     */
+    const raceLabel = (c) => {
+      if (!c) return 'Choose a race';
+      const year = Number(String(c.date || '').slice(0, 4)) || GENERAL_ELECTION_YEAR;
+      // A contest on exactly one state's ballot reads as that state's own race
+      // ("Osun Governorship"); a nationwide one keeps the bare name.
+      const where = Array.isArray(c.states) && c.states.length === 1 ? `${c.states[0]} ` : '';
+      return `${where}${c.name} (${year})`;
+    };
+
+    /**
+     * The race options, in the picker panel. Openness is never hardcoded — it
+     * comes from the `open`/`opensAt` the API computes, exactly as the native
+     * ContestPicker reads them. A closed race is still selectable: viewing a
+     * board is not reporting to it.
+     */
+    function renderRaceList(current) {
+      const list = document.getElementById('race-list');
+      if (!list) return;
+      list.innerHTML = CONTESTS.map((c) => {
+        const when = c.opensAt || c.date;
+        const tag = c.open
+          ? '<span class="race-tag open">Open</span>'
+          : `<span class="race-tag">${when ? `Opens ${new Date(when).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Not open yet'}</span>`;
+        return `<button type="button" class="race-opt${c.code === current ? ' on' : ''}" data-code="${c.code}">`
+          + `<b>${raceLabel(c)}</b>${tag}</button>`;
+      }).join('');
+    }
+
+    // Delegated so it survives every re-render of the list.
+    document.getElementById('race-list').addEventListener('click', (e) => {
+      const b = e.target.closest('.race-opt');
+      if (!b) return;
+      document.getElementById('sel-contest').value = b.dataset.code;
+      togglePicker(false);
+      refresh();
+    });
+
+    function togglePicker(open) {
+      const panel = document.getElementById('race-picker');
+      const on = open === undefined ? panel.hidden : open;
+      panel.hidden = !on;
+      document.getElementById('btn-race').setAttribute('aria-expanded', String(on));
+      document.getElementById('race-change').textContent = on ? 'Cancel' : 'Change';
+    }
+    document.getElementById('btn-race').onclick = () => togglePicker();
+
     async function refresh() {
       const contest = document.getElementById('sel-contest').value || 'PRES';
       loadGaps(contest);
+      const picked = CONTESTS.find((c) => c.code === contest);
+      document.getElementById('race-name').textContent = raceLabel(picked);
+      renderRaceList(contest);
       const data = await fetch(`/api/national/${contest}`).then((r) => r.json());
       const word = REGION_WORD[data.level] || 'region';
-      // Populate the follow-scope picker with the regions for this contest.
-      const names = data.level === 'senatorial' ? DGEO.regions.map((r) => r.name)
+      // Populate the follow-scope picker with the regions for this contest. When
+      // the contest is confined to one state, its own sub-units ARE the choices —
+      // offering all 36 states to follow on an Osun-only race was the clearest
+      // sign the board still thought it was presidential.
+      const names = data.subunits && data.subunits.length ? data.subunits
+        : data.level === 'senatorial' ? DGEO.regions.map((r) => r.name)
         : data.level === 'federal' ? CGEO.regions.map((r) => r.name)
         : STATES.states.map((s) => s.name);
+      const anywhere = data.scope && data.scope.state ? `Everywhere in ${data.scope.state}` : 'Everywhere';
       document.getElementById('sel-scope').innerHTML =
-        `<option value="">Everywhere</option>` + [...names].sort().map((n) => `<option>${n}</option>`).join('');
-      document.getElementById('map-title').textContent = `Leading party by ${word}`;
+        `<option value="">${anywhere}</option>` + [...names].sort().map((n) => `<option>${n}</option>`).join('');
+      // Name the area the map actually shows, so a governorship board does not
+      // claim to be "by state" while drawing one state's LGAs.
+      const where = data.scope && data.scope.state ? ` in ${data.scope.state}` : '';
+      document.getElementById('map-title').textContent = `Leading party by ${word}${where}`;
+      document.getElementById('map-hint').textContent =
+        `Reporting ${word}s show the leading party's emblem. Tap any ${word} for details.`;
       const plural = word.endsWith('y') ? `${word.slice(0, -1)}ies` : `${word}s`;
       document.getElementById('led-col').textContent = `${plural[0].toUpperCase()}${plural.slice(1)} led`;
       renderMap(data);
@@ -383,8 +598,13 @@
       // Order by seat magnitude: Presidential > Governorship > Senate > Reps > State Assembly.
       const ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
       const ordered = [...contests].sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code));
+      CONTESTS = ordered;
       sel.innerHTML = ordered.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
       sel.onchange = refresh;
+      // Default: the first configured race — today the Osun governorship, since
+      // it is the only contest on the wire. Derived from the list, not pinned to
+      // a code, so it stays right as contests are added.
+      if (ordered.length) sel.value = ordered[0].code;
       // Deep-link preselect (e.g. results.html?contest=GOV&scope=Osun from the
       // Osun race page): pick the race before the first load, and the region
       // scope after refresh() has populated the scope options.
@@ -431,6 +651,6 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=127"></script>
+  <script src="menu.js?v=132"></script>
 </body>
 </html>

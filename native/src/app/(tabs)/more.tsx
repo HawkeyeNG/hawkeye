@@ -283,10 +283,9 @@ export default function More() {
         ))}
         {/* Heading included — SocialRow owns the whole "Find Hawkeye" section. */}
         <SocialRow />
-        <Text className="pt-5 text-center text-xs text-faint">
-          © IniXien, LLC · Hawkeye is independent. It does not declare results; all
-          official results are announced by INEC.
-        </Text>
+        {/* The independence/INEC sentence lived here AND in the disclaimer bar at
+            the top of this same screen. One of them had to go. */}
+        <Text className="pt-5 text-center text-xs text-faint">© IniXien, LLC</Text>
       </Animated.ScrollView>
     </View>
   );

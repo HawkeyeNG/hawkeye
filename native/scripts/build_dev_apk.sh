@@ -33,7 +33,7 @@ grep -o '<application[^>]*allowBackup[^>]*' "$MANIFEST" | head -1
 cd android
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 chmod +x ./gradlew
-./gradlew --no-daemon --console=plain -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" assembleDebug 2>&1 | tail -20
+./gradlew --no-daemon --no-watch-fs --console=plain -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" assembleDebug 2>&1 | tail -20
 
 APK="app/build/outputs/apk/debug/app-debug.apk"
 if [ -f "$APK" ]; then

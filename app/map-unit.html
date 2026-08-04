@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=127" />
+  <link rel="stylesheet" href="styles.css?v=132" />
   <script src="native.js?v=104"></script>
   <!-- Leaflet self-hosted (vendor/leaflet) — CDN was a single point of failure
        on flaky networks and inside the future Telegram webview. -->
@@ -67,9 +67,7 @@
       </nav>
     </div>
   </header>
-  <div class="phase-banner"><div class="wrap"><strong>Optional community activity</strong> — help map polling units before election day.</div></div>
-
-  <main class="wrap">
+<main class="wrap">
     <h1>Map a Polling Unit</h1>
     <p class="lede">Most polling units have no confirmed location yet, so results from them can't be location-checked.
     Standing <strong>at a polling unit</strong>, capture its GPS position. When a few
@@ -98,6 +96,10 @@
       <p>To map a polling unit, register your device first.</p>
       <a class="btn-link" href="observe.html?intent=map">Register your device →</a>
     </section>
+
+    <!-- Free-text search sits ABOVE the cascade: it answers "I know the name",
+         where state → LGA → ward only answers "I know the hierarchy". -->
+    <section id="pu-search-host" class="card" hidden></section>
 
     <section id="picker" class="card" hidden>
       <label for="sel-state">State</label>
@@ -131,6 +133,7 @@
     <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p></div></footer>
 
   <script src="device.js"></script>
+  <script src="pu-search.js?v=1"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
@@ -158,10 +161,20 @@
       for (const u of r.units || []) {
         const b = document.createElement('button'); b.className = 'pu-option';
         b.innerHTML = `<strong>${u.name}</strong><br /><small>${u.pu_code} · ${u.coords_source === 'crowd_mapped' ? '◌ crowd-confirmed location' : u.locationTier === 'verified' ? '📍 already located' : 'needs mapping'}</small>`;
-        b.onclick = () => { unit = u; $('unit-name').textContent = `${u.name} (${u.pu_code})`; $('capture').hidden = false; $('cap-status').textContent = ''; $('capture').scrollIntoView(); };
+        b.onclick = () => pickUnit(u);
         $('units').appendChild(b);
       }
     };
+
+    // Extracted from the row handler so the free-text search can select a unit
+    // the same way the browse cascade does.
+    function pickUnit(u) {
+      unit = u;
+      $('unit-name').textContent = `${u.name} (${u.pu_code})`;
+      $('capture').hidden = false;
+      $('cap-status').textContent = '';
+      $('capture').scrollIntoView();
+    }
 
     $('btn-gps').onclick = () => {
       $('cap-status').textContent = 'Getting a precise GPS fix…';
@@ -339,11 +352,13 @@
       await stats();
       if (!token) { $('need-auth').hidden = false; return; }
       $('picker').hidden = false;
+      $('pu-search-host').hidden = false;
+      window.puSearch.mount($('pu-search-host'), { onSelect: pickUnit });
       showMyUnit();
       fill($('sel-state'), await (await fetch('/api/register/states')).json(), '— select state —');
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=127"></script>
+  <script src="menu.js?v=132"></script>
 </body>
 </html>

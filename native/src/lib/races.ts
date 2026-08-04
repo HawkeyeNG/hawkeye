@@ -1656,9 +1656,42 @@ const slug = (s: string) => s.replace(/\s+/g, ' ').trim();
 export const PRESIDENTIAL_RACE: Race = {
   type: 'PRES',
   contestCode: 'PRES',
-  label: 'President of the Federal Republic of Nigeria',
+  label: 'Presidency',
   key: 'PRES',
 };
+
+/**
+ * The catalogue's own cycle: every race enumerated in this file belongs to the
+ * January 2027 general election. raceLabel() uses it as the year of last resort
+ * so that no race carries a hand-written year of its own.
+ */
+export const GENERAL_ELECTION_YEAR = 2027;
+
+/**
+ * How a race is named wherever it is shown: `<race> (<year>)`.
+ *
+ * The year is DERIVED, never written down per race. A race the backend has
+ * configured carries its own polling date (Osun's GOV row is 2026-08-15, so
+ * "Osun Governorship (2026)"); anything with no contest row yet — today the
+ * presidency — falls back to the catalogue's general-election cycle, giving
+ * "Presidency (2027)".
+ *
+ * Deriving it is the whole point: governorship elections are STAGGERED across
+ * years, and this file generates a `${state} Governorship` race for all 36
+ * states. A hardcoded 2026 would mislabel every off-cycle state the moment a
+ * second GOV contest is configured; reading the contest's own date cannot.
+ *
+ * `contests` is structurally typed rather than importing Contest from lib/api,
+ * which would make this module and the API client circular.
+ */
+export function raceLabel(
+  race: Pick<Race, 'label' | 'contestCode'>,
+  contests?: { code: string; date?: string }[],
+): string {
+  const date = contests?.find((c) => c.code === race.contestCode)?.date;
+  const year = Number(date?.slice(0, 4)) || GENERAL_ELECTION_YEAR;
+  return `${race.label} (${year})`;
+}
 
 /**
  * Enumerate every concrete race for a given election type. For SHA this returns

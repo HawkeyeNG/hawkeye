@@ -3,7 +3,8 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 
-import { Fold, SectionLabel, Stat } from '@/components/content-kit';
+import { SectionLabel, Stat } from '@/components/content-kit';
+import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { StatusChip, TallyBar, type Tally } from '@/components/tally';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
@@ -206,52 +207,34 @@ export default function Docket() {
         </View>
       )}
 
-      {/* The one sentence the screen's claim rests on. Says what withholding a
-          result actually depends on — the flag, not the case, does it first.
-          "Queues", not "puts", because the two halves are not simultaneous in
-          the shipped configuration: withholding is immediate, but with
+      {/* The one sentence the screen's claim rests on, plus a dot carrying the
+          four folds that used to sit here — all four explained, none instructed.
+          Says what withholding a result actually depends on: the flag, not the
+          case, does it first. Withholding is immediate, but with
           DOCKET_AUTO_OPEN_CASES off (the real general election) no case exists
-          for the crowd to judge until the post-election batch opens it. Matches
-          the fold below, which states both conditions. */}
-      <Text className="pt-1 text-sm leading-5 text-muted">
-        A flag never decides anything. It holds that unit&apos;s votes out of every tally straight
-        away, and queues the evidence for crowd review — only the crowd&apos;s clearance puts the
-        votes back.
-      </Text>
-
-      <SectionLabel text="How the Docket Works" />
-      <Fold
-        title="Why a Disputed Result Is Excluded"
-        body={[
-          'A unit is marked disputed while a serious flag on it is unresolved, or while its case is open, upheld, or timed out without quorum. Disputed means badged everywhere, barred from ever reading as verified, and left out of the headline tallies.',
-          'That is why the count above can be higher than the number of cases below: a result is held back the moment it is flagged, and the case putting it to the crowd may only be opened once polls close.',
-          'A result the crowd clears goes straight back into the count. The flag that opened the case stays on the public record either way.',
-        ]}
-      />
-      <Fold
-        title="Who Judges, and How"
-        body={[
-          'Verified observers worldwide answer factual questions about evidence they can see — one verdict per person, published with the answers behind it.',
-          'Nobody at Hawkeye votes, and no juror picks a side: a published rule computes each verdict from the answers.',
-        ]}
-      />
-      <Fold
-        title="How a Case Resolves"
-        body={[
-          quorum && pct
-            ? `A case needs ${quorum} verdicts and a ${pct}% supermajority${
-                windowDays ? ` inside a ${windowDays}-day window` : ''
-              }. Anything short of that closes unresolved — still disputed, still revisitable.`
-            : 'A case needs a quorum of verdicts and a supermajority to resolve. Anything short of that closes unresolved — still disputed, still revisitable.',
-          ...(rule ? [`Resolution rule: ${rule}`] : []),
-        ]}
-      />
-      <Fold
-        title="The Docket Is on the Chain"
-        body={[
-          "Every flag, case opening and verdict is appended to the docket's own hash chain, whose head is folded into the same public Rekor anchor as the results — the arbitration is as rollback-proof as what it judges.",
-        ]}
-      />
+          for the crowd to judge until the post-election batch opens it — the
+          dot's first paragraph states both conditions. */}
+      <View className="flex-row items-center pt-1">
+        <Text className="flex-1 text-sm leading-5 text-muted">
+          A flag never decides anything — it holds that unit&apos;s votes out of every tally until
+          the crowd clears them.
+        </Text>
+        <InfoDot
+          title="How the docket works"
+          text={[
+            'Why a disputed result is excluded — a unit is marked disputed while a serious flag on it is unresolved, or while its case is open, upheld, or timed out without quorum. Disputed means badged everywhere, barred from ever reading as verified, and left out of the headline tallies. That is why the count above can be higher than the number of cases below: a result is held back the moment it is flagged, and the case putting it to the crowd may only be opened once polls close. A result the crowd clears goes straight back into the count, and the flag stays on the public record either way.',
+            'Who judges, and how — verified observers worldwide answer factual questions about evidence they can see, one verdict per person, published with the answers behind it. Nobody at Hawkeye votes, and no juror picks a side: a published rule computes each verdict from the answers.',
+            quorum && pct
+              ? `How a case resolves — a case needs ${quorum} verdicts and a ${pct}% supermajority${
+                  windowDays ? ` inside a ${windowDays}-day window` : ''
+                }. Anything short of that closes unresolved — still disputed, still revisitable.${
+                  rule ? ` Resolution rule: ${rule}` : ''
+                }`
+              : 'How a case resolves — a case needs a quorum of verdicts and a supermajority. Anything short of that closes unresolved — still disputed, still revisitable.',
+            "The docket is on the chain — every flag, case opening and verdict is appended to the docket's own hash chain, whose head is folded into the same public Rekor anchor as the results. The arbitration is as rollback-proof as what it judges.",
+          ].join('\n\n')}
+        />
+      </View>
 
       <SectionLabel text="Cases" />
       <Text className="pb-2 text-sm text-muted">

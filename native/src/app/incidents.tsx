@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { InfoDot } from '@/components/info-dot';
 import { ReportContent } from '@/components/report-content';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
@@ -107,11 +108,15 @@ export default function Incidents() {
 
   const header = (
     <View className="px-4 pb-1 pt-3">
-      <Text className="text-sm text-muted">
-        Election-day incidents reported by observers. Every report is reviewed by a person
-        before it appears here, and reporters are identified by observer ID only — never by
-        name or phone number.
-      </Text>
+      <View className="flex-row items-center">
+        <Text className="flex-1 text-sm text-muted">
+          Election-day incidents reported by observers, each reviewed before it appears.
+        </Text>
+        <InfoDot
+          title="What appears here"
+          text="Violence, vote-buying, BVAS failures, obstruction and more, filed by observers at the scene. Every report is reviewed by a person before it is published, and reporters are identified by observer ID only — never by name or phone number."
+        />
+      </View>
     </View>
   );
 

@@ -28,6 +28,7 @@ import {
   type UnitTier,
 } from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
+import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { UnitSearch } from '@/components/unit-search';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
@@ -972,10 +973,16 @@ export default function MapUnit() {
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 32 }}
       >
-        <Text className="pb-3 text-sm text-muted">
-          Stand at the polling unit and record one GPS fix. When enough observers agree, the
-          unit becomes location-verified — and every result reported there can be proven.
-        </Text>
+        {/* The instruction stays visible — it is what to do, not why. */}
+        <View className="flex-row items-center pb-3">
+          <Text className="flex-1 text-sm text-muted">
+            Stand at the polling unit and record one GPS fix.
+          </Text>
+          <InfoDot
+            title="Why mapping units matters"
+            text="Most polling units have no confirmed location on record, so results reported from them cannot be location-checked. When enough independent observers agree on a unit's position it becomes location-verified, and every result filed there on election day can be matched against it."
+          />
+        </View>
 
         {stats ? (
           <View className="mb-3 rounded-2xl bg-card px-4 py-3">

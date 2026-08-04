@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=132" />
+  <link rel="stylesheet" href="styles.css?v=134" />
   <script src="native.js?v=104"></script>
   <style>
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -59,15 +59,13 @@
   </header>
 <main class="wrap">
     <h1>Verify the Ledger</h1>
-    <p class="lede"><strong>Verified</strong> means your phone recomputed every hash itself and got the
-    same head we publish — so no report has been altered or removed.</p>
+    <!-- The lede and the "How the chain is checked" fold both explained rather
+         than instructed, so both collapse into one ⓘ. -->
+    <p class="lede"><strong>Verified</strong> = your phone recomputed every hash and matched our published head.<button
+      class="info-i" data-info-title="How the chain is checked"
+      data-info="Every accepted report is chained by hash: each entry commits to all before it, so changing or removing any past report breaks every later hash. This page recomputes the whole chain in your own browser and compares the head it gets to the one the server publishes — you don't have to trust us."></button></p>
 
     <div class="stat-grid" id="tiles"></div>
-
-    <details class="fold"><summary>How the chain is checked</summary>
-      <p>Every accepted report is chained by hash: each entry commits to all before it, so changing or
-      removing any past report breaks every later hash. This page recomputes the whole chain in your own
-      browser and compares the head it gets to the one the server publishes — you don't have to trust us.</p></details>
 
     <button id="btn-verify">🔒 Re-verify the entire chain in my browser</button>
     <p id="client-result" class="status" role="status"></p>
@@ -75,9 +73,9 @@
 
     <div class="card">
       <h2>Verify a Single Race</h2>
-      <p class="hint">Every anchor batches every race (Presidential, each Senate/House/Governorship/State
-      Assembly race) into one Merkle root published to Rekor. Verify one race's paper trail here — folded
-      in your own browser — without replaying every other race or trusting us.</p>
+      <p class="hint">Check one race's paper trail on its own.<button class="info-i"
+        data-info-title="Verifying a single race"
+        data-info="Every anchor batches every race — Presidential, and each Senate, House, Governorship and State Assembly race — into one Merkle root published to Rekor. Verifying one race folds only that race's branch, in your own browser, without replaying every other race or trusting us."></button></p>
       <div id="race-anchor-info" class="meta">Loading latest anchor…</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0">
         <select id="race-select" aria-label="Select a race to verify"></select>
@@ -203,6 +201,6 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=132"></script>
+  <script src="menu.js?v=133"></script>
 </body>
 </html>

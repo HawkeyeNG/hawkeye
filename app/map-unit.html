@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=132" />
+  <link rel="stylesheet" href="styles.css?v=134" />
   <script src="native.js?v=104"></script>
   <!-- Leaflet self-hosted (vendor/leaflet) — CDN was a single point of failure
        on flaky networks and inside the future Telegram webview. -->
@@ -69,9 +69,9 @@
   </header>
 <main class="wrap">
     <h1>Map a Polling Unit</h1>
-    <p class="lede">Most polling units have no confirmed location yet, so results from them can't be location-checked.
-    Standing <strong>at a polling unit</strong>, capture its GPS position. When a few
-    independent people map the same unit, its location is confirmed for election day.</p>
+    <p class="lede">Standing <strong>at a polling unit</strong>, capture its GPS position.<button
+      class="info-i" data-info-title="Why mapping units matters"
+      data-info="Most polling units have no confirmed location on record, so results reported from them cannot be location-checked. When a few independent people map the same unit, its location is confirmed and every result filed there on election day can be matched against it."></button></p>
     <p id="stats" class="scope-note"></p>
 
     <section class="card">
@@ -359,6 +359,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=132"></script>
+  <script src="menu.js?v=133"></script>
 </body>
 </html>

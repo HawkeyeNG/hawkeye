@@ -12,6 +12,7 @@ import {
   STATE_ASSEMBLY,
   STATES,
   listRaces,
+  raceLabel,
   type ElectionType,
   type ElectionTypeCode,
   type Race,
@@ -337,7 +338,7 @@ export function ContestPicker({
                 <Text
                   className={`text-sm font-semibold ${open ? 'text-good-ink' : 'text-ink'}`}
                 >
-                  {race.label}
+                  {raceLabel(race, contests)}
                 </Text>
                 {!open ? (
                   <Text className="pt-0.5 text-[11px] font-semibold text-faint">

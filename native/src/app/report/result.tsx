@@ -25,6 +25,7 @@ import { RekorAnchor } from '@/components/rekor-anchor';
 import {
   envelopeText,
   mapAvailable,
+  RegisterTierBadge,
   toTier,
   UnitMap,
   TIER_COLOR,
@@ -34,6 +35,7 @@ import {
   type UnitTier,
 } from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
+import { UnitSearch } from '@/components/unit-search';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
 import {
   ELECTION_TYPES,
@@ -56,13 +58,19 @@ import { submitResult, type Receipt, type Shot, type Vote } from '@/lib/submit';
 const BASE = 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
 
-/** A register row — every field the rest of this screen reads off the selection. */
+/** A register row — every field the rest of this screen reads off the selection.
+ *  The tier fields ride along (the API SELECT *s the register row) so browse
+ *  rows can carry the same location badge the nearby rows and the web show. */
 type Unit = {
   pu_code: string;
   name: string;
   ward: string;
   lga: string;
   state: string;
+  coords_source?: string | null;
+  locationTier?: string;
+  lat?: number | null;
+  crowd_lat?: number | null;
 };
 
 /**
@@ -449,6 +457,9 @@ const UnitRow = ({
         {u.name}
       </Text>
       <Text className={`text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>{sub}</Text>
+      {/* Same badge the nearby rows carry — browse rows shipped without it
+          while the web's browse rows had one. */}
+      <RegisterTierBadge u={u} selected={selected} />
     </View>
     {/* Inline Continue on the chosen row: in a long ward the footer CTA can
         sit far below the unit you just tapped. */}
@@ -1635,6 +1646,9 @@ export default function ReportResult() {
               </View>
             ) : null}
 
+            {/* Search by name/code, above the cascade — knowing the unit's name
+                but not its ward is the case the cascade cannot serve. */}
+            <UnitSearch<Unit> onSelect={chooseUnit} />
             <Pressable
               onPress={() => setBrowse((b) => !b)}
               className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"

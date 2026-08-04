@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db, parties } from '../db.js';
+import { db, parties, contests } from '../db.js';
 import { config } from '../config.js';
 import { haversineM } from '../services/geo.js';
 
@@ -98,6 +98,57 @@ pollingUnitsRouter.get('/register/units', (req, res) => {
   res.json({ units });
 });
 
+/**
+ * Free-text polling-unit search — the one endpoint every PU picker shares.
+ *
+ * Until now the only ways to reach a unit were "near me" (GPS) and the strict
+ * state → LGA → ward cascade, so someone who knew their unit's NAME but not its
+ * ward had to guess their way down a tree. Typing "wonde" now finds
+ * "Wonderland Estate".
+ *
+ * Matches name, pu_code and ward, so a unit number works as well as a name.
+ *
+ * Ranked, because a bare LIKE is worse than useless here: '%wonde%' returns
+ * "Playground, Ukwonde" above "Wonderland Estate" on raw row order, which reads
+ * as broken. Exact code first, then prefix matches, then mid-word.
+ *
+ * Cost: `LIKE '%q%'` cannot use an index (leading wildcard), so this is a scan
+ * of ~177k rows — measured 83ms warm on the live DB. better-sqlite3 is
+ * synchronous, so that is 83ms of blocked event loop; the 3-character minimum,
+ * the LIMIT, and the optional state/lga narrowing are what keep it cheap, and
+ * clients debounce.
+ */
+pollingUnitsRouter.get('/register/search', (req, res) => {
+  const q = String(req.query.q || '').trim();
+  if (q.length < 3) return res.json({ units: [], error: 'too_short' });
+  const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 25);
+  const state = String(req.query.state || '').trim();
+  const lga = String(req.query.lga || '').trim();
+
+  const like = `%${q.replace(/[%_]/g, (c) => `\\${c}`)}%`;
+  const pre = `${q.replace(/[%_]/g, (c) => `\\${c}`)}%`;
+  const where = ["(name LIKE ? ESCAPE '\\' OR pu_code LIKE ? ESCAPE '\\' OR ward LIKE ? ESCAPE '\\')"];
+  const args = [like, like, like];
+  if (state) { where.push('state = ?'); args.push(state); }
+  if (lga) { where.push('lga = ?'); args.push(lga); }
+
+  const units = db
+    .prepare(`
+      SELECT * FROM polling_units
+      WHERE ${where.join(' AND ')}
+      ORDER BY
+        CASE WHEN pu_code = ? THEN 0
+             WHEN name LIKE ? ESCAPE '\\' THEN 1
+             WHEN pu_code LIKE ? ESCAPE '\\' THEN 2
+             ELSE 3 END,
+        name
+      LIMIT ?`)
+    .all(...args, q, pre, pre, limit)
+    .map((u) => ({ ...u, locationTier: tierOf(u) }));
+
+  res.json({ units, query: q, truncated: units.length === limit });
+});
+
 // Single unit by code — used by the Telegram hybrid /report handoff to prefill
 // the Mini App (chat collects PU + votes; the app does live capture + signing).
 pollingUnitsRouter.get('/register/unit', (req, res) => {
@@ -106,17 +157,41 @@ pollingUnitsRouter.get('/register/unit', (req, res) => {
   res.json({ unit: { ...u, locationTier: tierOf(u) } });
 });
 
-// Reporting gaps: states with NO crowd report yet for a contest — where observers
-// are still needed. Drives the "help cover these" nudge and the assistant tool.
+// Reporting gaps: the areas with NO crowd report yet for a contest — where
+// observers are still needed. Drives the "help cover these" nudge and the
+// assistant tool.
+//
+// Scope follows the contest, exactly as /api/national does: a contest confined
+// to one state reports its missing LGAs, not the 36 other states it was never
+// held in. `unit`/`scope` tell the clients which noun to print.
 pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
   const contest = String(req.query.contest || 'PRES').toUpperCase();
-  const all = db.prepare('SELECT DISTINCT state FROM polling_units ORDER BY state').all().map((r) => r.state);
-  const reported = new Set(
-    db.prepare(`SELECT DISTINCT p.state AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ?`)
-      .all(contest).map((r) => r.s),
-  );
+  const c = contests.find((x) => x.code === contest);
+  const state = Array.isArray(c?.states) && c.states.length === 1 ? c.states[0] : null;
+  const col = state ? 'lga' : 'state';
+
+  const all = (state
+    ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE state = ? AND ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all(state)
+    : db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all()
+  ).map((r) => r.r);
+
+  const reported = new Set((state
+    ? db.prepare(`SELECT DISTINCT p.${col} AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ? AND p.state = ?`).all(contest, state)
+    : db.prepare(`SELECT DISTINCT p.${col} AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ?`).all(contest)
+  ).map((r) => r.s));
+
   const missing = all.filter((s) => !reported.has(s));
-  res.json({ contest, statesTotal: all.length, statesReported: reported.size, missing });
+  res.json({
+    contest,
+    scope: state ? { state } : null,
+    unit: state ? 'LGA' : 'state',
+    // statesTotal/statesReported kept under their original names so existing
+    // callers (native's coverage card, the assistant tool) keep working — they
+    // now count LGAs when the contest is state-scoped.
+    statesTotal: all.length,
+    statesReported: reported.size,
+    missing,
+  });
 });
 
 // Register size vs geofence coverage — how much of the country is reportable, by tier.

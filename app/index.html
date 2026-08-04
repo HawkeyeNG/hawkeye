@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=127" />
+  <link rel="stylesheet" href="styles.css?v=132" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -33,7 +33,10 @@
     .home-hero .unit-chip { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 999px; padding: 6px 14px; font-size: 0.84rem; color: #fff; text-decoration: none; }
     .home-hero .unit-chip:hover { background: rgba(255, 255, 255, 0.2); }
 
-    .qa-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 18px 0 6px; }
+    /* 20px between blocks, matching .card's margin-bottom in styles.css — the
+       Observer Home defines its own card system, and its 18/6/8/14/20 mix made
+       the gaps between sections visibly uneven against every other page. */
+    .qa-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0; }
     @media (min-width: 700px) { .qa-grid { grid-template-columns: repeat(4, 1fr); } }
     .qa { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; color: inherit; text-decoration: none; transition: transform 0.12s ease, box-shadow 0.12s ease; }
     .qa:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09); }
@@ -44,7 +47,7 @@
     .qa.primary svg { stroke: #2EE59D; }
     .qa.primary small { color: #fff; } /* solid white on the dark green: >7:1 (axe AA) */
 
-    .home-cols { display: grid; gap: 14px; margin: 8px 0 20px; }
+    .home-cols { display: grid; gap: 20px; margin: 20px 0; }
     @media (min-width: 900px) { .home-cols { grid-template-columns: 1.2fr 1fr; align-items: start; } }
     .home-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
     .home-card h2 { margin: 0 0 10px; font-size: 1rem; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
@@ -181,7 +184,7 @@
   <section class="hero hero-fold">
     <div class="wrap hero-grid">
       <div>
-        <p class="hero-badge"><span class="live-dot"></span> Public beta — monitoring the 2027 general elections</p>
+        <p class="hero-badge"><span class="live-dot"></span> Monitoring the 2027 general elections</p>
         <h1>The count at your polling unit,<br /><em>witnessed and unchangeable.</em></h1>
         <p class="hero-sub">Photograph, sign and publish the results announced at your polling unit.
         Independent reports must agree before a count is trusted — and every report lives on a
@@ -311,7 +314,18 @@
 
     // Ledger stack: latest real reports; sample preview until the first ones land.
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const CONTEST_NAMES = { PRES: 'Presidential', SEN: 'Senate', REP: 'House of Reps', GOV: 'Governorship', SHA: 'State Assembly' };
+    // Fallbacks only. Any contest the backend has actually configured overrides
+    // its entry below with the app-wide `<race> (<year>)` label, whose year is
+    // derived from that contest's own polling date — so a ledger card names a
+    // race exactly as the leaderboard and the bot do.
+    const CONTEST_NAMES = { PRES: 'Presidency (2027)', SEN: 'Senate', REP: 'House of Reps', GOV: 'Governorship', SHA: 'State Assembly' };
+    fetch('/api/contests').then((r) => r.json()).then((cs) => {
+      for (const c of cs) {
+        const year = Number(String(c.date || '').slice(0, 4)) || 2027;
+        const where = Array.isArray(c.states) && c.states.length === 1 ? `${c.states[0]} ` : '';
+        CONTEST_NAMES[c.code] = `${where}${c.name} (${year})`;
+      }
+    }).catch(() => { /* fallbacks stand */ });
     const lcard = (e, sample) => `
       <div class="lcard">
         <div class="row"><strong>PU ${esc(e.pu_code)} · ${CONTEST_NAMES[e.contest] || esc(e.contest)}</strong>
@@ -415,6 +429,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=127"></script>
+  <script src="menu.js?v=132"></script>
 </body>
 </html>

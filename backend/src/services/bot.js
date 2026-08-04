@@ -12,7 +12,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
-import { db, partyCodes, contests } from '../db.js';
+import { db, partyCodes, contests, contestLabel } from '../db.js';
 import { config } from '../config.js';
 import { contestApplies } from './scope.js';
 import { askAssistant, assistantEnabled } from './assistant.js';
@@ -42,6 +42,24 @@ const send = (token, chatId, text, extra = {}) =>
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const webAppBtn = (text, page) => ({ text, web_app: { url: `${SITE}/${page}` } });
+
+/**
+ * "Open in the Hawkeye app" — an Android App Link (docs/DEEP-LINKS.md).
+ *
+ * Telegram inline buttons accept only http(s), so the app's own `hawkeye://`
+ * scheme cannot be used here. A verified https://hawkeye.com.ng/open?to=… URL
+ * is handed to the installed app by Android; with no app installed the SAME url
+ * renders app/open.html and continues on the website. One button, both cases —
+ * which is why it is safe to show unconditionally.
+ *
+ * It sits BESIDE the Mini App button rather than replacing it: the Mini App is
+ * the only path that works on desktop Telegram and on iOS (Universal Links are
+ * not configured yet), and it is where the live-camera capture happens.
+ */
+const appLinkBtn = (text, to, params = {}) => {
+  const qs = new URLSearchParams({ to, ...params }).toString();
+  return { text, url: `${SITE}/open?${qs}` };
+};
 
 const KIND_LABEL = {
   violence: '⚠️ Violence', ballot_snatching: '🗳️ Ballot snatching', vote_buying: '💰 Vote buying',
@@ -164,13 +182,15 @@ async function finishTip(token, chatId, s, text, photoFileId) {
 
 // ---- hybrid /report: collect PU + votes in chat, hand off to the Mini App for
 // the live photo + on-device signature (chat can't force camera-only capture).
-const CONTEST_LABEL = Object.fromEntries(contests.map((c) => [c.code, c.name]));
+// `<race> (<year>)`, the app-wide convention — derived in db.js from each
+// contest's own date, so the bot names a race exactly as the board does.
+const CONTEST_LABEL = Object.fromEntries(contests.map((c) => [c.code, contestLabel(c.code)]));
 const puByCode = (code) => db.prepare(
   'SELECT pu_code, name, ward, lga, state, senatorial, federal_constituency FROM polling_units WHERE pu_code = ?',
 ).get(String(code || '').trim().toUpperCase());
 const contestKeyboard = (pu) => ({
   inline_keyboard: contests.filter((c) => contestApplies(pu, c.code, c.states))
-    .map((c) => [{ text: c.name, callback_data: `rep:contest:${c.code}` }]),
+    .map((c) => [{ text: contestLabel(c.code), callback_data: `rep:contest:${c.code}` }]),
 });
 
 function startReport(token, chatId) {
@@ -276,7 +296,18 @@ function reportHandoff(token, chatId, s) {
   return send(token, chatId,
     `✅ <b>${s.data.puName}</b>\n${CONTEST_LABEL[s.data.contest] || s.data.contest}\n${rows}\n\n`
     + 'Last step — open the camera to photograph the result sheet. Photos are captured <b>live</b> and signed on your phone; that is what makes the report trustworthy.',
-    { reply_markup: { inline_keyboard: [[{ text: '📸 Open camera & submit', web_app: { url } }]] } });
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '📸 Open camera & submit', web_app: { url } }],
+          // Same unit, contest and counts, carried into the native app when it
+          // is installed — otherwise this lands on the identical web flow.
+          [appLinkBtn('📱 Open in the Hawkeye app', 'report', {
+            pu: s.data.pu, contest: s.data.contest, votes: JSON.stringify(s.data.votes),
+          })],
+        ],
+      },
+    });
 }
 
 // Handle one Telegram update for the bot identified by `token`. Returns true if
@@ -382,13 +413,14 @@ export async function handleUpdate(update, token) {
   if (text === '/start' || text === '/help') { session.clear(chatId); await send(token, chatId, HELP); return true; }
 
   if (text === '/report') { await startReport(token, chatId); return true; }
-  if (text === '/collation') { await send(token, chatId, '🏛️ Report a collation-centre result:', { reply_markup: { inline_keyboard: [[webAppBtn('Open collation reporter', 'collation.html')]] } }); return true; }
-  if (text === '/mapunit') { await send(token, chatId, '📍 Map your polling unit before election day — and save it to get alerts for everything there:', { reply_markup: { inline_keyboard: [[webAppBtn('Open unit mapper', 'map-unit.html')]] } }); return true; }
-  if (text === '/ledger') { await send(token, chatId, '🔒 Re-verify the whole public ledger in your own browser — no trust required:', { reply_markup: { inline_keyboard: [[webAppBtn('Open ledger verifier', 'ledger.html')]] } }); return true; }
+  if (text === '/collation') { await send(token, chatId, '🏛️ Report a collation-centre result:', { reply_markup: { inline_keyboard: [[webAppBtn('Open collation reporter', 'collation.html')], [appLinkBtn('📱 Open in the Hawkeye app', 'collation')]] } }); return true; }
+  if (text === '/mapunit') { await send(token, chatId, '📍 Map your polling unit before election day — and save it to get alerts for everything there:', { reply_markup: { inline_keyboard: [[webAppBtn('Open unit mapper', 'map-unit.html')], [appLinkBtn('📱 Open in the Hawkeye app', 'mapunit')]] } }); return true; }
+  if (text === '/ledger') { await send(token, chatId, '🔒 Re-verify the whole public ledger in your own browser — no trust required:', { reply_markup: { inline_keyboard: [[webAppBtn('Open ledger verifier', 'ledger.html')], [appLinkBtn('📱 Open in the Hawkeye app', 'ledger')]] } }); return true; }
   if (text === '/incident') {
     await send(token, chatId, '🚨 Report an incident. The full reporter attaches signed photos and location; a quick tip is a fast note typed here (reviewed, lower evidential weight).', {
       reply_markup: { inline_keyboard: [
         [webAppBtn('Open full incident reporter', 'incidents.html')],
+        [appLinkBtn('📱 Open in the Hawkeye app', 'incident')],
         [{ text: '⚡ Send a quick tip here instead', callback_data: 'tip:start' }],
       ] },
     });

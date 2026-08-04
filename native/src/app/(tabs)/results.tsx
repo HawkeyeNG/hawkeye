@@ -14,7 +14,8 @@ import {
 
 import { ContestPicker } from '@/components/contest-picker';
 import { ScreenHeader } from '@/components/screen-header';
-import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
+import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   asMapLevel,
   LEVEL_WORD,
@@ -29,7 +30,7 @@ import { api, BRAND, type Contest, type National, type Party } from '@/lib/api';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import { partyColor, partyName } from '@/lib/political';
-import { ELECTION_TYPES, listRaces, STATES, type Race, type StateName } from '@/lib/races';
+import { ELECTION_TYPES, listRaces, raceLabel, STATES, type Race, type StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import * as SecureStore from 'expo-secure-store';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
@@ -38,7 +39,18 @@ const BASE = 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;
 
 type Row = { party: string; name: string; votes: number; share: number };
-type Gaps = { contest: string; statesTotal: number; statesReported: number; missing: string[] };
+/**
+ * `statesTotal`/`statesReported` keep their original names but now count
+ * whatever `unit` says: LGAs for a contest held in one state, states otherwise.
+ */
+type Gaps = {
+  contest: string;
+  statesTotal: number;
+  statesReported: number;
+  missing: string[];
+  unit?: 'LGA' | 'state';
+  scope?: { state: string } | null;
+};
 type Sub = { contest: string; state?: string };
 
 /**
@@ -176,7 +188,14 @@ function whenLine(c: Contest): string {
 export default function Results() {
   const auth = useAuth();
   const ui = useUi();
-  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
+  /**
+   * STATIC header (assistant.tsx's pattern), not hide-on-scroll. The race card
+   * below is pinned — it sits outside both scrollers — so a header that slid
+   * away left a dead band above a card that never moved with it, which is the
+   * choppiness this screen had. A fixed card wants a fixed header.
+   */
+  const insets = useSafeAreaInsets();
+  const headerH = insets.top + HEADER_CONTENT_H;
 
   /** The full /api/contests list — the picker's only source of openness. */
   const [contests, setContests] = useState<Contest[]>([]);
@@ -378,6 +397,18 @@ export default function Results() {
   }, [data, race]);
 
   /**
+   * The one state this board is about, or null for a nationwide contest. The
+   * server decides it (a contest whose `states` array holds exactly one entry),
+   * and the map crops and zooms to it — an Osun governorship board drawing all
+   * 36 other states was the clearest sign it still thought it was presidential.
+   * `race.state` is the fallback for the moment before the tally arrives.
+   */
+  const mapScope = useMemo<string | null>(
+    () => data?.scope?.state ?? (race?.state ?? null),
+    [data, race],
+  );
+
+  /**
    * The region row for the selected race. A race that is one seat inside a
    * multi-state contest is ranked on ITS region, not on the contest-wide sum,
    * which would credit it with votes cast in other states.
@@ -428,7 +459,7 @@ export default function Results() {
     if (!contest)
       return {
         title: 'Not covered yet',
-        body: `Hawkeye is not collecting results for ${race.label} yet, so there is nothing to rank. It will appear here once the race is added.`,
+        body: `Hawkeye is not collecting results for ${raceLabel(race, contests)} yet, so there is nothing to rank. It will appear here once the race is added.`,
       };
     // Closed is checked BEFORE the fetch state on purpose: for a race that has
     // not opened, "nothing can be reported yet" is the whole truth, and it stays
@@ -467,10 +498,23 @@ export default function Results() {
    */
   const coverage = useMemo(() => {
     if (!gaps) return null;
-    const only = contest?.states?.length ? contest.states : null;
+    // The server now scopes gaps to the contest itself and says which noun it is
+    // counting (`unit`: "LGA" for a one-state contest, else "state"). The old
+    // client-side narrowing by contest.states only worked while gaps were always
+    // states; it would have filtered LGA names against a list of state names and
+    // emptied the card.
+    const unit = gaps.unit === 'LGA' ? 'LGA' : 'state';
+    const scoped = gaps.unit === 'LGA' || gaps.scope?.state;
+    const only = !scoped && contest?.states?.length ? contest.states : null;
     const missing = only ? gaps.missing.filter((s) => only.includes(s)) : gaps.missing;
     const total = only ? only.length : gaps.statesTotal;
-    return { missing, total, reported: Math.max(0, total - missing.length) };
+    return {
+      missing,
+      total,
+      reported: Math.max(0, total - missing.length),
+      unit,
+      where: gaps.scope?.state ?? null,
+    };
   }, [gaps, contest]);
 
   // ── The results map ────────────────────────────────────────────────────────
@@ -757,16 +801,25 @@ export default function Results() {
       </View>
     ) : (
       <View className="mt-4 rounded-2xl bg-card px-4 py-4">
-        <Text className="text-sm font-bold text-ink">Leading party by {word.one}</Text>
+        <Text className="text-sm font-bold text-ink">
+          Leading party by {word.one}
+          {mapScope ? ` in ${mapScope}` : ''}
+        </Text>
         <Text className="pt-1 text-xs text-muted">{mapNote}</Text>
 
         <View className="pt-3">
           <ResultsMap
             level={level}
+            scopeState={mapScope}
+            subunits={data?.subunits ?? null}
             fills={map.fills}
             selected={inspect?.name ?? null}
             onPress={onRegionPress}
-            accessibilityLabel={`Map of Nigeria: leading party by ${word.one}`}
+            accessibilityLabel={
+              mapScope
+                ? `Map of ${mapScope}: leading party by ${word.one}`
+                : `Map of Nigeria: leading party by ${word.one}`
+            }
           />
         </View>
 
@@ -827,7 +880,7 @@ export default function Results() {
               className="mt-2.5 items-center rounded-xl bg-hawk-green py-2.5 active:opacity-80"
             >
               <Text className="text-xs font-bold text-hawk-gold" numberOfLines={1}>
-                Rank {jump.label} instead
+                Rank {raceLabel(jump, contests)} instead
               </Text>
             </Pressable>
           ) : null}
@@ -931,9 +984,10 @@ export default function Results() {
   const coverageCard =
     coverage && coverage.missing.length ? (
       <View className="mt-4 rounded-2xl bg-card px-4 py-4">
-        <Text className="text-sm font-bold text-ink">Help cover these states</Text>
+        <Text className="text-sm font-bold text-ink">Help cover these {coverage.unit}s</Text>
         <Text className="pt-1 text-xs text-muted">
-          {coverage.reported} of {coverage.total} state(s) in this election have reports so far.
+          {coverage.reported} of {coverage.total} {coverage.unit}(s)
+          {coverage.where ? ` in ${coverage.where}` : ''} in this election have reports so far.
           Nothing has come in from:
         </Text>
         <Text className="pt-2 text-xs text-muted">{coverage.missing.join(' · ')}</Text>
@@ -955,12 +1009,33 @@ export default function Results() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Leaderboard" translateY={translateY} right="none" />
+      <ScreenHeader title="Leaderboard" right="none" />
       <View className="px-4 pb-2" style={{ paddingTop: headerH + 8 }}>
-        <Text className="text-sm text-muted" numberOfLines={1}>
-          {contest?.election ?? (race ? 'Not covered yet' : 'Loading…')} · {unitsReporting} unit(s)
-          reporting
-          {updatedAt
+        {/* Which race is being ranked, and the way to change it — pinned in the
+            header so the control is never something you have to scroll to find.
+            It leads now: the detail line under it describes THIS race, and a
+            sub-line above its own subject read as a stray sentence. */}
+        <Pressable
+          onPress={() => setPicking((v) => !v)}
+          className="flex-row items-center rounded-2xl bg-card px-3.5 py-2.5 active:opacity-80"
+        >
+          <Feather name={picking ? 'x' : 'award'} size={15} color={ui.muted} />
+          <Text className="flex-1 px-2.5 text-sm font-semibold text-ink" numberOfLines={1}>
+            {picking
+              ? 'Keep the current race'
+              : race
+                ? raceLabel(race, contests)
+                : 'Choose a race'}
+          </Text>
+          <Text className="text-xs font-bold text-hawk-leaf">{picking ? 'Cancel' : 'Change'}</Text>
+        </Pressable>
+        {/* Deliberately no longer opens with `contest.election` ("Osun State
+            Governorship Election 2026"): that restated, at greater length, the
+            race named directly above it. What is left is the part the line
+            exists to carry — how much has come in, and how fresh it is. */}
+        <Text className="pt-1.5 text-sm text-muted" numberOfLines={1}>
+          {contest ? `${unitsReporting} unit(s) reporting` : race ? 'Not covered yet' : 'Loading…'}
+          {contest && updatedAt
             ? ` · updated ${new Date(updatedAt).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -968,26 +1043,10 @@ export default function Results() {
               })}`
             : ''}
         </Text>
-        {/* Which race is being ranked, and the way to change it — pinned in the
-            header so the control is never something you have to scroll to find. */}
-        <Pressable
-          onPress={() => setPicking((v) => !v)}
-          className="mt-3 flex-row items-center rounded-2xl bg-card px-3.5 py-2.5 active:opacity-80"
-        >
-          <Feather name={picking ? 'x' : 'award'} size={15} color={ui.muted} />
-          <Text className="flex-1 px-2.5 text-sm font-semibold text-ink" numberOfLines={1}>
-            {picking ? 'Keep the current race' : (race?.label ?? 'Choose a race')}
-          </Text>
-          <Text className="text-xs font-bold text-hawk-leaf">{picking ? 'Cancel' : 'Change'}</Text>
-        </Pressable>
       </View>
 
       {picking ? (
-        <ScrollView
-          onScroll={onScroll}
-          scrollEventThrottle={scrollEventThrottle}
-          contentContainerClassName="px-4 pb-8 pt-1"
-        >
+        <ScrollView contentContainerClassName="px-4 pb-8 pt-1">
           <Text className="pb-2 text-sm text-muted">
             Choose any race to see its board. A race that has not opened can be viewed too — it
             will simply have no results yet.
@@ -1013,8 +1072,6 @@ export default function Results() {
               }}
             />
           }
-          onScroll={onScroll}
-          scrollEventThrottle={scrollEventThrottle}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
           ListEmptyComponent={
             <View className="mt-2 items-center rounded-2xl bg-card px-6 py-10">

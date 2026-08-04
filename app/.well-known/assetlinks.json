@@ -1,0 +1,24 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ng.com.hawkeye.observer",
+      "sha256_cert_fingerprints": [
+        "DE:AC:3A:94:5D:EA:8E:66:73:CD:4B:19:E9:53:F4:1E:B5:E9:CE:EE:F6:29:A8:4E:27:27:B7:ED:FB:6B:D2:62",
+        "8E:6F:AF:F5:C5:15:65:F8:B6:C2:17:70:B8:2A:6F:DE:AD:BF:82:20:F8:43:90:59:8B:2D:F1:B1:3B:27:56:3F"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ng.com.hawkeye.observer.dev",
+      "sha256_cert_fingerprints": [
+        "FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C",
+        "8E:6F:AF:F5:C5:15:65:F8:B6:C2:17:70:B8:2A:6F:DE:AD:BF:82:20:F8:43:90:59:8B:2D:F1:B1:3B:27:56:3F"
+      ]
+    }
+  }
+]

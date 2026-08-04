@@ -1,12 +1,13 @@
 import { Router } from 'express';
-import { db, contests } from '../db.js';
+import { db, contests, contestLabel } from '../db.js';
 import { config } from '../config.js';
 import { tgSendMessage } from '../services/sms.js';
 import { notifyChat, notifyMaster, chatIdByHash } from '../services/notify.js';
 import { requireObserver } from './observers.js';
 
 export const subscriptionsRouter = Router();
-const contestName = (c) => contests.find((x) => x.code === c)?.name || c;
+// `<race> (<year>)` — the same convention the board and the bot use.
+const contestName = (c) => contestLabel(c);
 
 subscriptionsRouter.get('/subscriptions', requireObserver, (req, res) => {
   res.json(db.prepare('SELECT contest, state FROM subscriptions WHERE observer_id = ?').all(req.observer.id));

@@ -35,12 +35,9 @@ export default function Osun() {
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
       >
+        {/* The "official results remain INEC's" card is gone — the disclaimer
+            bar immediately above it now carries exactly that claim. */}
         <GovDisclaimer />
-        <View className="mb-3 rounded-xl bg-hawk-green px-3 py-2">
-          <Text className="text-xs font-semibold text-hawk-gold">
-            First live pilot — we monitor and publish; official results remain INEC&apos;s.
-          </Text>
-        </View>
         {err ? (
           <Text className="text-sm font-semibold text-warn-ink">Could not load. ({err})</Text>
         ) : !race ? (

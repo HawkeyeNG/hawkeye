@@ -489,6 +489,41 @@ export const contests = JSON.parse(
 );
 export const contestCodes = new Set(contests.map((c) => c.code));
 
+/**
+ * The cycle every race without its own configured date belongs to — the year of
+ * last resort for contestLabel(). Twin of native/src/lib/races.ts.
+ */
+export const GENERAL_ELECTION_YEAR = 2027;
+
+/**
+ * How a contest is named to people: `<race> (<year>)` — the one convention every
+ * surface uses (web board, native leaderboard and picker, Telegram bot).
+ *
+ * The year is DERIVED from the contest's own polling date, never written down:
+ * Osun's GOV row is dated 2026-08-15, so it reads "Osun Governorship (2026)".
+ * Governorship elections are staggered across years, so a hardcoded year would
+ * mislabel every off-cycle state the moment a second GOV contest is configured.
+ *
+ * NOTE: this reads `name` + `date` + `states`. It deliberately does NOT touch
+ * `election`, which is baked into the Rekor anchor artifact (services/anchor.js)
+ * and must keep its stored wording.
+ */
+const BARE_RACE_NAME = {
+  PRES: 'Presidency', GOV: 'Governorship', SEN: 'Senate',
+  REP: 'House of Reps', SHA: 'State Assembly',
+};
+export function contestLabel(code) {
+  const c = contests.find((x) => x.code === code);
+  // Not configured yet (today: PRES). Name it from the known codes rather than
+  // leaking a raw "PRES" into a chat message or a follow confirmation.
+  if (!c) return BARE_RACE_NAME[code] ? `${BARE_RACE_NAME[code]} (${GENERAL_ELECTION_YEAR})` : code;
+  const year = Number(String(c.date || '').slice(0, 4)) || GENERAL_ELECTION_YEAR;
+  // A contest on exactly one state's ballot reads as that state's own race;
+  // a nationwide one keeps the bare name.
+  const where = Array.isArray(c.states) && c.states.length === 1 ? `${c.states[0]} ` : '';
+  return `${where}${c.name} (${year})`;
+}
+
 // Practice/mock election (sandbox for new users). Optional file — absent or
 // past its autoDeleteAt ⇒ no practice election is offered. Kept ENTIRELY
 // separate from `contests` so it can never leak into raceKey/anchoring/the

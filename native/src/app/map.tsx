@@ -376,8 +376,7 @@ export default function MapScreen() {
         ) : null}
         {mode === 'results' ? (
           <Text className="pt-2 text-[11px] text-faint">
-            Unofficial. Crowd-reported totals, excluding disputed results. Official results remain
-            INEC&apos;s.
+            Crowd-reported totals, excluding disputed results.
           </Text>
         ) : (
           <Text className="pt-2 text-[11px] text-faint">

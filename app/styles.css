@@ -295,12 +295,32 @@ main.wrap { max-width: 840px; }
   font-size: 0.97rem; border-radius: 10px; transition: transform 0.12s, filter 0.12s;
 }
 .btn-primary:hover, .btn-ghost:hover, .btn-white:hover, .btn-accent:hover { transform: translateY(-2px); }
-.btn-accent { background: var(--accent); color: var(--green-950); box-shadow: 0 8px 24px rgba(245, 179, 1, 0.35); }
-.btn-primary { background: var(--green); color: #fff; box-shadow: 0 6px 18px rgba(0, 66, 37, 0.35); }
+/* Neutral lift, not a coloured halo. The old tinted shadows (gold at .35, green
+   at .35) read as a glow around the button on the dark theme — most visibly on
+   the practice receipt, where a gold CTA sits on a near-black panel. */
+.btn-accent { background: var(--accent); color: var(--green-950); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22); }
+.btn-primary { background: var(--green); color: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22); }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost { border: 1.5px solid rgba(255, 255, 255, 0.45); color: #fff; }
 .btn-ghost:hover { border-color: #fff; background: rgba(255, 255, 255, 0.07); }
-.btn-white { background: #fff; color: var(--green-dark); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); }
+.btn-white { background: #fff; color: var(--green-dark); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); }
+
+/* The end-of-flow CTA pair (practice receipt, race pages). It had NO styles at
+   all: two differently-shaped controls sat in inline flow, and the last one
+   ended up flush against the fixed tab bar. Stacked, equal width, and with
+   clearance of its own so it never depends on body padding alone. */
+.race-cta { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 28px; }
+.race-cta > a, .race-cta > button {
+  width: 100%; margin: 0; text-align: center; justify-content: center;
+}
+/* Secondary action beside a filled CTA. Themed via currentColor-safe tokens —
+   practice.html used to force `color:var(--green)`, which on the dark theme was
+   dark green on near-black and effectively unreadable. */
+.race-cta .btn-quiet {
+  background: transparent; border: 1.5px solid var(--border);
+  color: var(--link); font-weight: 700; border-radius: 999px; padding: 13px 18px;
+}
+.race-cta .btn-quiet:hover { border-color: var(--link); background: var(--tint); }
 
 /* hero visual: ledger card stack */
 .ledger-stack { position: relative; min-height: 330px; }
@@ -1143,14 +1163,44 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
    is set as running text rather than a spaced-out wordmark, and the notifications
    row stacks so "Mark all read" can span the width. */
 body.has-tabbar .brand-text strong { font-size: 1rem; letter-spacing: 0.01em; text-transform: none; }
+/* The header now names the page on the website too (menu.js). A page title set
+   in the wordmark's wide tracking + uppercase is barely readable at length. */
+.brand-text.is-page strong { font-size: 1rem; letter-spacing: 0.01em; text-transform: none; }
 body.has-tabbar .top { display: block; }
 body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
 
 /* Play-policy disclaimer + official source links (Misleading Claims). Must stay
    visible on every page and in the app shell, which hides the site footer. */
+/* Plain block, not flex: "Details" is part of the sentence now, so the notice
+   wraps as two lines of prose. The old flex row put the link in its own column,
+   which both stretched the card and read as a separate control. */
 .gov-disclaimer {
-  display: block; margin: 0 0 16px; padding: 11px 13px;
-  background: var(--tint-warn); border: 1px solid var(--amber-border); border-radius: 10px;
-  font-size: 0.82rem; line-height: 1.45; color: var(--ink);
+  display: block;
+  /* Top margin matters: injected as main's first child it otherwise sits flush
+     against the header/phase banner above it. */
+  margin: 16px 0 12px; padding: 7px 11px;
+  background: var(--tint-warn); border: 1px solid var(--amber-border); border-radius: 9px;
+  font-size: 0.78rem; line-height: 1.4; color: var(--ink);
 }
-.gov-disclaimer a { color: var(--link); font-weight: 700; }
+/* On the auth screen it is appended below the form, so the margin flips. */
+.auth-screen .gov-disclaimer { margin: 18px 0 0; }
+/* Inline, so it flows as the last words of the sentence. It is a <span role=
+   "button"> rather than a <button> on purpose: a button is inline-block, and its
+   line box forced a third line onto a two-line notice. */
+.gov-disc-more {
+  display: inline; cursor: pointer;
+  font-weight: 700; color: var(--link); text-decoration: underline; white-space: nowrap;
+}
+.gov-disc-more:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 3px; }
+.gov-disc-modal {
+  border: 0; border-radius: 16px; padding: 22px; max-width: min(92vw, 440px);
+  color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+}
+.gov-disc-modal::backdrop { background: rgba(10, 20, 15, .5); }
+.gov-disc-modal h2 { font-size: 1.05rem; margin: 0 0 10px; }
+.gov-disc-modal p { font-size: 0.9rem; line-height: 1.5; margin: 0 0 10px; }
+.gov-disc-modal a { color: var(--link); font-weight: 700; }
+.gov-disc-close {
+  margin-top: 4px; width: 100%; border: 0; border-radius: 999px; padding: 12px;
+  background: #008751; color: #fff; font-weight: 800; font-size: 0.95rem; cursor: pointer;
+}

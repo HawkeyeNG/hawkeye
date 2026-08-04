@@ -1,3 +1,15 @@
+// ⚠️ SUPERSEDED — use scripts/build_lga_from_wards.js instead.
+//
+// This script asks ArcGIS for server-simplified geometry (maxAllowableOffset
+// below) and projects each LGA INDEPENDENTLY. Per-feature Douglas-Peucker does
+// not preserve shared edges, so neighbouring LGAs stop touching and the
+// state-scoped leaderboard map (which zooms ~12x) shows the gaps as slivers:
+// measured 31% shared vertices and 98.6% area coverage of Osun.
+// build_lga_from_wards.js dissolves ward polygons through ONE TopoJSON topology
+// — the same cure merge_regions.js uses for districts — giving 71% shared
+// vertices and 99.4% coverage. Running THIS script again would reintroduce the
+// holes.
+//
 // app/lga_geo.json — simplified LGA polygons (774) for the district/constituency
 // map views. Same projection/viewBox as fetch_states_geo.js so layers align.
 //   node scripts/fetch_lga_geo.js

@@ -24,6 +24,7 @@ import { RekorAnchor } from '@/components/rekor-anchor';
 import {
   envelopeText,
   mapAvailable,
+  RegisterTierBadge,
   toTier,
   TIER_COLOR,
   TIER_LABEL,
@@ -33,6 +34,7 @@ import {
   type UnitTier,
 } from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
+import { UnitSearch } from '@/components/unit-search';
 import { api, BRAND, type Contest } from '@/lib/api';
 import { getIdentity } from '@/lib/identity';
 import { describeFixFailure, DISCOVERY_RADIUS_M, tryQuickFix, type Fix } from '@/lib/location';
@@ -74,6 +76,12 @@ type Unit = {
   ward: string;
   lga: string;
   state: string;
+  // Tier fields ride along (the API SELECT *s the register row) so browse rows
+  // can carry the same location badge the nearby rows and the web show.
+  coords_source?: string | null;
+  locationTier?: string;
+  lat?: number | null;
+  crowd_lat?: number | null;
 };
 
 /** /api/polling-units row (whole register row, so it can name the state). */
@@ -273,6 +281,9 @@ const UnitRow = ({
       <Text className={`text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>
         {u.pu_code} · {u.ward}, {u.lga}
       </Text>
+      {/* Same badge the nearby rows carry — browse rows shipped without it
+          while the web's browse rows had one. */}
+      <RegisterTierBadge u={u} selected={selected} />
     </View>
     {selected ? (
       <Pressable
@@ -1153,6 +1164,9 @@ export default function Practice() {
               </View>
             ) : null}
 
+            {/* Search by name/code, above the cascade — knowing the unit's name
+                but not its ward is the case the cascade cannot serve. */}
+            <UnitSearch<Unit> onSelect={chooseUnit} />
             <Pressable
               onPress={() => setBrowse((b) => !b)}
               className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"

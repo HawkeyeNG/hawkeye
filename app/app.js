@@ -596,6 +596,13 @@ async function fillSelect(sel, items, placeholder) {
   sel.disabled = items.length === 0;
 }
 
+// Free-text unit search, above the cascade. selectUnit() is the same handler the
+// near-me list and the browse cascade use, so a searched unit takes the identical
+// path through the wizard.
+if ($('pu-search-host') && window.puSearch) {
+  window.puSearch.mount($('pu-search-host'), { onSelect: selectUnit });
+}
+
 $('browse-block').addEventListener('toggle', async () => {
   if ($('browse-block').open && $('sel-state').options.length <= 1) {
     const { body } = await api('/api/register/states');

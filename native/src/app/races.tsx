@@ -18,7 +18,10 @@ type Race = { name: string; desc: string; href?: string; pill?: string };
 
 const RACES: Race[] = [
   {
-    name: 'Presidency 2027',
+    // `<race> (<year>)` — the app-wide naming convention. The entries below it
+    // are race CATEGORIES spanning many states and years, so they stay bare and
+    // carry their year in the pill instead.
+    name: 'Presidency (2027)',
     desc: 'The declared presidential field, quick compare and live results.',
     href: '/candidates',
     pill: 'Live',

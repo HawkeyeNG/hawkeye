@@ -18,8 +18,13 @@ const BASE = 'https://hawkeye.com.ng';
  */
 export type MapLevel = 'state' | 'lga' | 'senatorial' | 'federal';
 
-/** The geometry file a level is drawn from. `lga` deliberately borrows `state`. */
-export type GeoLevel = 'state' | 'senatorial' | 'federal';
+/**
+ * The geometry file a level is drawn from. `lga` used to borrow `state`, because
+ * the LGA "view" only ever tinted whole states; now that a state-scoped board is
+ * genuinely per-LGA it has its own file (lga_geo.json, 774 shapes keyed
+ * `"<state>|<lga>"`).
+ */
+export type GeoLevel = 'state' | 'lga' | 'senatorial' | 'federal';
 
 const LEVELS = new Set<MapLevel>(['state', 'lga', 'senatorial', 'federal']);
 
@@ -32,12 +37,13 @@ export function asMapLevel(level: string | null | undefined): MapLevel | null {
   return LEVELS.has(level as MapLevel) ? (level as MapLevel) : null;
 }
 
-export const geoLevelOf = (level: MapLevel): GeoLevel => (level === 'lga' ? 'state' : level);
+export const geoLevelOf = (level: MapLevel): GeoLevel => level;
 
 /** What one region of each level is called, for headings and sentences. */
 export const LEVEL_WORD: Record<MapLevel, { one: string; many: string }> = {
   state: { one: 'state', many: 'states' },
-  lga: { one: 'state', many: 'states' },
+  // Was "state"/"states" back when the LGA view was really a state view.
+  lga: { one: 'LGA', many: 'LGAs' },
   senatorial: { one: 'senatorial district', many: 'senatorial districts' },
   federal: { one: 'federal constituency', many: 'federal constituencies' },
 };
@@ -162,7 +168,13 @@ export function matchRegion<T>(
   return only(tokenKey, tk) ?? only(stemKey, stemKey(wanted));
 }
 
-export type MapShape = { name: string; key: string; path: string };
+export type MapShape = {
+  name: string;
+  key: string;
+  path: string;
+  /** LGA shapes only — the normalised state they sit in, used to crop by state. */
+  state?: string;
+};
 export type MapGeo = { viewBox: string; geoLevel: GeoLevel; shapes: MapShape[] };
 
 /**
@@ -180,6 +192,7 @@ export type MapGeo = { viewBox: string; geoLevel: GeoLevel; shapes: MapShape[] }
 const FILES: Record<Exclude<GeoLevel, 'state'>, string> = {
   senatorial: 'district_geo.json',
   federal: 'constituency_geo.json',
+  lga: 'lga_geo.json',
 };
 
 /**
@@ -190,6 +203,9 @@ const FILES: Record<Exclude<GeoLevel, 'state'>, string> = {
 const FRONT = ['Ogun West', 'Kaduna South', 'Kebbi Central', 'Ondo Central'];
 
 type RawRegions = { viewBox: string; regions: { name: string; path: string }[] };
+/** lga_geo.json's own shape: keyed `"<state>|<lga>"`, lowercase, and no name field. */
+type RawLgas = { viewBox: string; lgas: { key: string; path: string }[] };
+const titleCase = (s: string) => s.replace(/\b[a-z]/g, (c) => c.toUpperCase());
 
 const cache: Partial<Record<GeoLevel, Promise<MapGeo>>> = {};
 
@@ -207,6 +223,23 @@ export function loadMapGeo(level: MapLevel): Promise<MapGeo> {
           geoLevel,
           shapes: g.states.map((s) => ({ name: s.name, key: key(s.name), path: s.path })),
         }))
+      : geoLevel === 'lga'
+      ? fetch(`${BASE}/${FILES.lga}`, { headers: { accept: 'application/json' } }).then(async (r) => {
+          if (!r.ok) throw new Error(`${FILES.lga} → HTTP ${r.status}`);
+          const raw = (await r.json()) as RawLgas;
+          if (!raw?.lgas?.length) throw new Error(`${FILES.lga} → no LGA shapes`);
+          return {
+            viewBox: raw.viewBox,
+            geoLevel,
+            // `key` stays the FULL "state|lga" so shapes can be filtered to one
+            // state; `name` is just the LGA, which is what a reader sees and what
+            // the tally's region names are matched against.
+            shapes: raw.lgas.map((l) => {
+              const [st, lga] = l.key.split('|');
+              return { name: titleCase(lga || ''), key: l.key, state: st, path: l.path };
+            }),
+          };
+        })
       : fetch(`${BASE}/${FILES[geoLevel]}`, { headers: { accept: 'application/json' } })
           .then(async (r) => {
             if (!r.ok) throw new Error(`${FILES[geoLevel]} → HTTP ${r.status}`);
@@ -232,8 +265,49 @@ export function loadMapGeo(level: MapLevel): Promise<MapGeo> {
 /** Shape of the box before the geometry lands — keeps the card from jumping. */
 const FALLBACK_ASPECT = 800 / 660;
 
+/**
+ * Bounding box of a set of pre-projected paths, as an SVG viewBox string.
+ *
+ * Every geo file shares one 800x660 projection, so drawing a SUBSET is already
+ * geometrically correct — only the viewBox has to move for it to fill the frame.
+ * react-native-svg has no getBBox() (the web map uses it), so the numbers are
+ * read straight out of the path data, which is safe here: these paths are plain
+ * absolute M/L/Z with no arcs or curves.
+ */
+export function bboxViewBox(paths: string[]): string | null {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const d of paths) {
+    const n = String(d).match(/-?\d+(?:\.\d+)?/g);
+    if (!n) continue;
+    for (let i = 0; i + 1 < n.length; i += 2) {
+      const x = Number(n[i]);
+      const y = Number(n[i + 1]);
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  }
+  if (!Number.isFinite(x0) || x1 <= x0 || y1 <= y0) return null;
+  const pad = Math.max(x1 - x0, y1 - y0) * 0.06;
+  return `${(x0 - pad).toFixed(1)} ${(y0 - pad).toFixed(1)} ${(x1 - x0 + pad * 2).toFixed(1)} ${(y1 - y0 + pad * 2).toFixed(1)}`;
+}
+
 export type ResultsMapProps = {
   level: MapLevel;
+  /**
+   * Crop to one state's sub-units and zoom to them — for a contest held in a
+   * single state, where a map of all 36 others answers a question nobody asked.
+   * Undefined draws the whole country.
+   */
+  scopeState?: string | null;
+  /**
+   * The sub-unit names in scope, from the API's `subunits` (the register). Used
+   * for senatorial/federal crops, where the geo files carry no state property so
+   * membership cannot be derived from the shapes themselves. Ignored for LGAs,
+   * whose keys already name their state.
+   */
+  subunits?: string[] | null;
   /** region name → fill colour. Keys are matched by `regionKey`, so any spelling works. */
   fills: Record<string, string>;
   /** Outlined and painted last, so neighbours cannot clip the highlight. */
@@ -259,6 +333,8 @@ export type ResultsMapProps = {
  */
 export const ResultsMap = memo(function ResultsMap({
   level,
+  scopeState,
+  subunits,
   fills,
   selected,
   onPress,
@@ -289,17 +365,47 @@ export const ResultsMap = memo(function ResultsMap({
     };
   }, [level, geoLevel]);
 
-  // viewBox is "minX minY width height". Trusting it blindly would render a
-  // blank box, so an unusable one is reported like any other failure.
-  const box = useMemo(() => {
+  /**
+   * The shapes actually drawn. Unscoped this is the whole file; scoped it is one
+   * state's sub-units — by key prefix for LGAs (whose keys name their state), and
+   * by the register's `subunits` list for districts/constituencies, whose shapes
+   * carry no state property at all.
+   */
+  const shapes = useMemo(() => {
     if (!geo) return null;
-    const n = String(geo.viewBox ?? '')
-      .trim()
-      .split(/[\s,]+/)
-      .map(Number);
+    if (!scopeState) return geo.shapes;
+    if (geo.geoLevel === 'lga') {
+      const pre = regionKey('state', scopeState);
+      return geo.shapes.filter((s) => s.state === pre);
+    }
+    if (!subunits?.length) return geo.shapes;
+    const want = new Set(subunits.map((n) => regionKey(level, n)));
+    const scoped = geo.shapes.filter(
+      (s) => want.has(s.key) || matchRegion(level, s.name, subunits, (n) => n) != null,
+    );
+    // Never hand back an empty map: if nothing matched, the honest fallback is
+    // the full picture rather than a blank frame.
+    return scoped.length ? scoped : geo.shapes;
+  }, [geo, scopeState, subunits, level]);
+
+  // viewBox is "minX minY width height". Trusting it blindly would render a
+  // blank box, so an unusable one is reported like any other failure. When the
+  // map is cropped, the file's own box is replaced by the drawn subset's.
+  const viewBox = useMemo(() => {
+    if (!geo) return null;
+    if (scopeState && shapes && shapes.length && shapes.length !== geo.shapes.length) {
+      const fitted = bboxViewBox(shapes.map((s) => s.path));
+      if (fitted) return fitted;
+    }
+    return geo.viewBox;
+  }, [geo, shapes, scopeState]);
+
+  const box = useMemo(() => {
+    if (!viewBox) return null;
+    const n = String(viewBox).trim().split(/[\s,]+/).map(Number);
     if (n.length !== 4 || n.some((x) => !Number.isFinite(x)) || n[2] <= 0 || n[3] <= 0) return null;
     return { w: n[2], h: n[3] };
-  }, [geo]);
+  }, [viewBox]);
 
   const byKey = useMemo(() => {
     const m: Record<string, string> = {};
@@ -309,23 +415,47 @@ export const ResultsMap = memo(function ResultsMap({
     return m;
   }, [fills, level]);
 
+  /**
+   * A shape's fill. LGA shapes are keyed `"state|lga"` while the tally names a
+   * bare LGA, so the shape's own key never matches — and the register and the
+   * geo file disagree on ~5 spellings per state ("Ilesa" vs "ilesha"), so an
+   * exact name match drops those too. Try the key, then the name, then
+   * matchRegion's stem fallback, which is what resolves the rest.
+   */
+  const fillNames = useMemo(() => Object.keys(fills).filter((k) => fills[k]), [fills]);
+  const fillOf = useMemo(() => {
+    return (s: MapShape): string | undefined => {
+      const direct = byKey[s.key] ?? byKey[regionKey(level, s.name)];
+      if (direct) return direct;
+      const hit = matchRegion(level, s.name, fillNames, (n) => n);
+      return hit ? byKey[regionKey(level, hit)] : undefined;
+    };
+  }, [byKey, level, fillNames]);
+
   const selKey = useMemo(() => {
     if (!geo || !selected) return null;
-    const hit = matchRegion(level, selected, geo.shapes, (s) => s.name);
+    const hit = matchRegion(level, selected, shapes ?? geo.shapes, (s) => s.name);
     return hit ? hit.key : null;
-  }, [geo, level, selected]);
+  }, [geo, shapes, level, selected]);
 
   // Hairlines: a constituency is a few pixels wide on a phone, and a 1-unit
   // border on 358 of them eats the fill it is supposed to separate.
-  const border = geoLevel === 'federal' ? 0.5 : geoLevel === 'senatorial' ? 0.8 : 1;
+  //
+  // Scaled by the viewBox, because stroke-width is in USER units: a cropped map
+  // keeps the shared 800-wide projection but shows ~75 units, so an unscaled
+  // 1-unit border rendered ~10x thicker and swallowed the small shapes it was
+  // meant to separate. (The web does this with vector-effect:non-scaling-stroke;
+  // react-native-svg support for that is inconsistent, so scale the number.)
+  const baseBorder = geoLevel === 'federal' ? 0.5 : geoLevel === 'senatorial' ? 0.8 : 1;
+  const border = baseBorder * Math.min(1, (box?.w ?? 800) / 800);
 
   const paths = useMemo(() => {
-    if (!geo) return null;
+    if (!geo || !shapes) return null;
     const ordered = selKey
-      ? [...geo.shapes].sort((a, b) => Number(a.key === selKey) - Number(b.key === selKey))
-      : geo.shapes;
+      ? [...shapes].sort((a, b) => Number(a.key === selKey) - Number(b.key === selKey))
+      : shapes;
     return ordered.map((s) => {
-      const fill = byKey[s.key];
+      const fill = fillOf(s);
       const sel = s.key === selKey;
       return (
         <Path
@@ -341,7 +471,7 @@ export const ResultsMap = memo(function ResultsMap({
         />
       );
     });
-  }, [geo, selKey, byKey, empty, border, onPress, ui.tint.good.ink, ui.mapLine]);
+  }, [geo, shapes, selKey, fillOf, empty, border, onPress, ui.tint.good.ink, ui.mapLine]);
 
   if (err || (geo && !box)) {
     return (
@@ -368,7 +498,7 @@ export const ResultsMap = memo(function ResultsMap({
         <Svg
           width={width}
           height={width / aspect}
-          viewBox={geo.viewBox}
+          viewBox={viewBox ?? geo.viewBox}
           accessibilityLabel={accessibilityLabel ?? 'Map of Nigeria by region'}
         >
           {paths}

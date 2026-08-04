@@ -268,10 +268,8 @@ export default function Assistant() {
             </Pressable>
           </View>
 
-          <Text className="pt-2 text-xs text-muted">
-            Answers come only from crowd-reported, unofficial figures. INEC declares official
-            results.
-          </Text>
+          {/* Removed: the disclaimer bar states the unofficial/INEC point once,
+              app-wide. Repeating it under every answer was noise. */}
         </View>
       </KeyboardAvoidingView>
     </View>

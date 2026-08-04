@@ -22,6 +22,7 @@ import { CaptureCamera, type Media } from '@/components/capture-camera';
 import {
   envelopeText,
   mapAvailable,
+  RegisterTierBadge,
   toTier,
   UnitMap,
   TIER_COLOR,
@@ -31,6 +32,7 @@ import {
   type UnitTier,
 } from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
+import { UnitSearch } from '@/components/unit-search';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
@@ -111,6 +113,12 @@ type RegisterUnit = {
   ward: string;
   lga: string;
   state: string;
+  // Tier fields ride along (the API SELECT *s the register row) so browse rows
+  // can carry the same location badge the nearby rows and the web show.
+  coords_source?: string | null;
+  locationTier?: string;
+  lat?: number | null;
+  crowd_lat?: number | null;
 };
 
 /**
@@ -294,6 +302,9 @@ const RegisterRow = ({
       <Text className={`text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>
         {u.pu_code} · {u.ward}, {u.lga}
       </Text>
+      {/* Same badge the nearby rows carry — browse rows shipped without it
+          while the web's browse rows had one. */}
+      <RegisterTierBadge u={u} selected={selected} />
     </View>
     {selected ? <Feather name="check" size={18} color={BRAND.gold} /> : null}
   </Pressable>
@@ -1199,6 +1210,9 @@ export default function ReportIncident() {
               </View>
             </Pressable>
 
+            {/* Search by name/code, above the cascade — knowing the unit's name
+                but not its ward is the case the cascade cannot serve. */}
+            <UnitSearch<PickedUnit> onSelect={choose} />
             <Pressable
               onPress={() => setBrowse((b) => !b)}
               className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"

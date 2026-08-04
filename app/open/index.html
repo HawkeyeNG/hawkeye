@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="robots" content="noindex" />
+  <title>Opening Hawkeye…</title>
+  <link rel="icon" type="image/svg+xml" href="../logo.svg?v=98" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <!-- One directory deeper than the rest of the site: this file is served as
+       /open (not /open.html) so the URL is a valid Expo Router route on the
+       native side. Hence the ../ on every asset. -->
+  <link rel="stylesheet" href="../styles.css?v=132" />
+</head>
+<body>
+  <!--
+    The fallback half of the Android App Link (docs/DEEP-LINKS.md).
+
+    When the native app is installed, Android intercepts /open BEFORE this page
+    is ever fetched and routes to native/src/app/open.tsx. Reaching this HTML
+    therefore means one of: no app installed, desktop, or an in-app browser that
+    does not honour App Links — in every case the right answer is the website.
+
+    Query params are carried across verbatim, so the bot's existing
+    ?pu=&contest=&votes= handoff survives the bounce.
+  -->
+  <main class="wrap" style="padding:48px 0;text-align:center">
+    <p class="lede" id="msg">Opening Hawkeye…</p>
+    <p class="hint"><a id="manual" href="../index.html">Continue on the website</a></p>
+  </main>
+  <script>
+    (function () {
+      // Served from /open/, so every destination is one level up.
+      var TARGETS = {
+        report: '../observe.html', collation: '../collation.html', incident: '../incidents.html',
+        mapunit: '../map-unit.html', ledger: '../ledger.html', results: '../results.html',
+        activity: '../profile.html', ask: '../index.html'
+      };
+      var qp = new URLSearchParams(location.search);
+      var to = qp.get('to') || '';
+      qp.delete('to');
+      var rest = qp.toString();
+      // Unknown target -> home, never an error page: a stale link from an old
+      // bot message should still land somewhere useful.
+      var dest = (TARGETS[to] || 'index.html') + (rest ? (TARGETS[to] ? '?' : '?') + rest : '');
+      document.getElementById('manual').href = dest;
+      location.replace(dest);
+    })();
+  </script>
+</body>
+</html>

@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=98" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=127" />
+  <link rel="stylesheet" href="styles.css?v=132" />
   <script src="native.js?v=104"></script>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -54,13 +54,11 @@
       </nav>
     </div>
   </header>
-  <div class="phase-banner">
-    <div class="wrap"><strong>Beta</strong> — this service is in public testing. Official results remain INEC's.</div>
-  </div>
-
-  <main class="wrap">
+<main class="wrap">
     <h1>Live polling unit reports</h1>
-    <p class="lede">Confidence is the share of independent observers reporting the same numbers. Every report is digitally signed and permanently recorded on a public, tamper-evident ledger.</p>
+    <!-- The ledger sentence is gone: the .ledger-card link directly below says
+         the same thing, and says it as an action. -->
+    <p class="lede">Confidence = share of independent observers reporting the same numbers.</p>
     <a id="ledger-status" class="ledger-card" href="ledger.html">Checking ledger integrity…</a>
     <div id="results"><div class="skel" style="height:16px;margin:8px 0"></div><div class="skel" style="height:16px;margin:8px 0;width:80%"></div><div class="skel" style="height:16px;margin:8px 0;width:60%"></div></div>
   </main>
@@ -124,6 +122,6 @@
     setInterval(refresh, 30000);
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=127"></script>
+  <script src="menu.js?v=132"></script>
 </body>
 </html>

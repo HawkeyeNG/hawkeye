@@ -121,7 +121,9 @@
 
     PARTIES = cfg.parties || [];
     $('prac-title').firstChild.textContent = `${cfg.name} `;
-    $('prac-sub').textContent = `${cfg.office} — a practice contest. ${cfg.note || ''}`;
+    // cfg.note is deliberately dropped: it restated "nothing is published" a
+    // third time, after the phase banner and the receipt already say it.
+    $('prac-sub').textContent = `${cfg.office} — a practice contest.`;
     const u = cfg.unit || {};
     UNIT_CODE = u.code || null;
     $('prac-unit-name').textContent = u.name || 'Practice Polling Unit';

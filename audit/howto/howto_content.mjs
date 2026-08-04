@@ -30,6 +30,11 @@ const miniMap = (pinLabel) => `<div class="ph-map"><div class="ph-mgrid"></div><
 const tgAlert = (msgs) => `<div class="ph-tg">${msgs.map((m) => `<div class="ph-tgmsg"><b>Hawkeye</b><span>${esc(m)}</span></div>`).join('')}</div>`;
 const warn = (t) => `<div class="ph-warn">${esc(t)}</div>`;
 
+// Re-exported so the Telegram how-tos (howto_content_tg.mjs) can build the real
+// app screens for their in-app bookends / end-to-end handoff steps, instead of
+// re-deriving them. Same builders the app clips below use.
+export { hd, scr, h1, lede, card, label, input, btn, otp, pu, select, ok, cam, results, chain, textarea, photoTile, miniMap, tgAlert, warn };
+
 export const CLIPS = [
   { slug: 'signup', title: 'How to Sign Up', kicker: 'GET VERIFIED IN UNDER A MINUTE', steps: [
     { cap: 'Open Hawkeye and enter your Nigerian mobile number, then tap Request OTP.', screen: scr('Register your device', h1('Register your device') + lede('One verified phone number equals one observer identity.') + card(label('Nigerian mobile number') + input('e.g. 0803 123 4567', '0803 123 4567') + btn('Request OTP'))) },

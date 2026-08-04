@@ -24,6 +24,10 @@ export type NationalRow = {
 export type National = {
   contest: string;
   level: string;
+  /** Set when the contest runs in ONE state — the map crops and zooms to it. */
+  scope?: { state: string } | null;
+  /** Every sub-unit in scope, reported or not, so the map draws before any results exist. */
+  subunits?: string[];
   updatedAt: number;
   unitsReporting: number;
   inDispute: number;

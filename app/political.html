@@ -215,7 +215,11 @@
       // are dealt within each party's own bloc, so an unnamed dot is always a
       // seat NASS has not published — never a seat attributed to the wrong party.
       const pool = {};
-      for (const m of (roster && roster.members) || []) (pool[m.party] ||= []).push(m);
+      const unknown = [];
+      for (const m of (roster && roster.members) || []) {
+        if (m.partyKnown && m.party) (pool[m.party] ||= []).push(m);
+        else unknown.push(m);
+      }
       const entries = Object.entries(parties).sort((a,b) => b[1]-a[1]);
       const filled = entries.reduce((s,[,n]) => s+n, 0);
       const total = Math.max(size, filled);
@@ -240,21 +244,30 @@
       slots.sort((a,b) => a.t - b.t || a.r - b.r);
       // Colour them party by party, longest bloc first — left to right.
       const seq = [];
+      // Each bloc takes its confirmed members first. Any seats left over are
+      // filled from the members whose party our sources do not publish — they
+      // are named, but the tooltip says the colour is this seat's bloc, not a
+      // confirmed affiliation for that person.
+      const spare = unknown.slice();
       entries.forEach(([p,n]) => {
         const named = (pool[p] || []).slice();
-        for (let i=0;i<n;i++) seq.push({ party: p, m: named[i] || null });
+        for (let i=0;i<n;i++) {
+          const m = named[i] || spare.shift() || null;
+          seq.push({ party: p, m, sure: Boolean(named[i]) });
+        }
       });
-      while (seq.length < total) seq.push({ party: null, m: null });  // vacant / undeclared
+      while (seq.length < total) seq.push({ party: null, m: null, sure: false });  // vacant
       const dots = slots.map((s, i) => {
         const a = Math.PI * (1 - s.t);
         const x = 110 + Math.cos(a) * s.r, y = 108 - Math.sin(a) * s.r;
-        const { party: p, m } = seq[i];
+        const { party: p, m, sure } = seq[i];
         // A presiding officer gets a gold ring and a wider dot — the four people
         // who actually control each chamber's floor should be findable in it.
         const boss = m && m.office;
         const label = m
-          ? `${m.name}${m.office ? ` — ${m.office}` : ''}\n${m.district || m.state} (${m.party})`
-          : (p ? `${p} — seat not listed on nass.gov.ng` : 'Vacant / undeclared');
+          ? `${m.name}${m.office ? ` — ${m.office}` : ''}\n${m.district || m.state}`
+            + (sure ? ` (${m.party})` : ` (${p} bloc — party not published for this member)`)
+          : (p ? `${p} — seat not named by our sources` : 'Vacant / undeclared');
         return `<circle class="${boss ? 'boss' : ''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}"
           r="${boss ? 4.4 : 3.1}" fill="${p ? color(p) : '#d7ded9'}"><title>${esc(label)}</title></circle>`;
       }).join('');
@@ -309,9 +322,10 @@
           const r = live && live.ok && live.members && live.members[key];
           if (!r || !r.listed) return '';
           const named = r.listed, principals = r.members.filter((m) => m.office).length;
+          const wp = r.withParty || 0;
           return `<p class="sub" style="margin-top:8px">Hover or tap a seat for the member.
-            ${named} named from nass.gov.ng${principals ? `, including ${principals} presiding officers (ringed)` : ''} —
-            the portal does not publish the rest.</p>`;
+            All ${named} named from currentaffairs.ng${principals ? `, ${principals} presiding officers ringed` : ''}.
+            Party confirmed against nass.gov.ng for ${wp}${wp < named ? ` — the remaining ${named - wp} are seated in their bloc but their party is not published` : ''}.</p>`;
         };
         // Federal chambers only. The composition file also carries governors,
         // who are not in the National Assembly and are already covered by the

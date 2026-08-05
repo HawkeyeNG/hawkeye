@@ -652,10 +652,15 @@ async function selectUnit(u) {
   if (logos === null) {
     logos = await fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({}));
   }
-  $('sel-contest').innerHTML = '<option value="">— Select election —</option>' + contests
-    .filter((c) => contestApplies(selectedPu, c.code, c.states))
-    .map((c) => `<option value="${c.code}">${c.name}</option>`)
-    .join('');
+  // Full races list, unconfigured ones disabled — same picker as collation.html.
+  // See window.HAWKEYE_RACES in menu.js for why /api/contests alone is too short.
+  const applicableContests = contests.filter((c) => contestApplies(selectedPu, c.code, c.states));
+  if (window.HAWKEYE_RACES) {
+    window.HAWKEYE_RACES.fill($('sel-contest'), applicableContests, { placeholder: '— Select election —' });
+  } else {
+    $('sel-contest').innerHTML = '<option value="">— Select election —</option>'
+      + applicableContests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
+  }
   updateScopeNotice();
   const wrap = $('vote-inputs');
   wrap.innerHTML = '';

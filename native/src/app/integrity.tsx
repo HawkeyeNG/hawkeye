@@ -523,7 +523,11 @@ export default function Integrity() {
             <View key={g.title} className={i > 0 ? 'border-t border-line' : ''}>
               <Pressable
                 className="flex-row items-center px-4 py-3.5 active:bg-surface"
-                onPress={() => setOpen((o) => ({ ...o, [i]: !o[i] }))}
+                // Exclusive: replacing the map rather than spreading it shuts
+                // whichever group was open. Twin of the delegated `toggle`
+                // handler in app/menu.js; profile.tsx already behaves this way
+                // via a single openSection.
+                onPress={() => setOpen((o) => (o[i] ? {} : { [i]: true }))}
               >
                 <Text className="flex-1 text-sm font-bold text-ink">{g.title}</Text>
                 <Feather name={open[i] ? 'chevron-up' : 'chevron-down'} size={16} color={ui.faint} />

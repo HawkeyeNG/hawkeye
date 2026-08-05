@@ -56,3 +56,4 @@ mobile/android/app/google-services.json
 tests/ui/node_modules/
 tests/ui/report/
 tests/ui/test-results/
+docs/EMAIL-TEMPLATE.html

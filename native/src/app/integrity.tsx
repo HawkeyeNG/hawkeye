@@ -528,9 +528,16 @@ export default function Integrity() {
                 <Text className="flex-1 text-sm font-bold text-ink">{g.title}</Text>
                 <Feather name={open[i] ? 'chevron-up' : 'chevron-down'} size={16} color={ui.faint} />
               </Pressable>
+              {/* Each item is a DISTINCT check, so partition the rows the way the
+                  groups themselves are partitioned — same hairline border-line.
+                  The first row is divided from its own summary already, hence
+                  the j > 0 guard. Web twin: .acc-wrap.checks .acc li. */}
               {open[i]
-                ? g.items.map(([name, what]) => (
-                    <View key={name} className="px-4 pb-3">
+                ? g.items.map(([name, what], j) => (
+                    <View
+                      key={name}
+                      className={`px-4 py-2.5 ${j > 0 ? 'border-t border-line' : ''}`}
+                    >
                       <Text className="text-sm text-ink">
                         <Text className="font-bold text-ink">{name}</Text> — {what}
                       </Text>

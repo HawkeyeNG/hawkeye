@@ -32,7 +32,7 @@ const TTL_MS = 12 * 60 * 60 * 1000;          // twice a day is plenty for seat c
  * an empty object in production purely because a pre-members snapshot was still
  * inside its window. A shape change must invalidate, not wait.
  */
-const SCHEMA = 3;
+const SCHEMA = 5;
 const CACHE = path.join(config.dataDir, 'political_cache.json');
 
 /** Full party names as Wikipedia writes them -> the abbreviations we display. */
@@ -60,6 +60,10 @@ const abbrev = (name) => {
     .replace(/\s+/g, ' ').trim();
   return ABBREV[k] || name.trim().split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 5);
 };
+
+/** Constituency names differ in spacing and hyphens between sources. */
+const normDistrict = (s) => String(s || '').toLowerCase()
+  .replace(/federal constituency|senatorial district/g, '').replace(/[^a-z]/g, '');
 
 async function wiki(page) {
   const url = `${API}?action=parse&page=${encodeURIComponent(page)}`
@@ -147,6 +151,85 @@ async function nassMembers(chamber) {
 }
 
 /**
+ * The full name roster, from currentaffairs.ng.
+ *
+ * WHY A SECOND NAME SOURCE. nass.gov.ng carries party but publishes only 74 of
+ * 109 senators and 246 of 360 reps. These two pages are the mirror image: a
+ * complete list (109 and 360 rows, header included) of name / constituency /
+ * state, with NO party column at all. Neither source alone can name every seat
+ * AND colour it, so they are joined on constituency — the one field both carry
+ * and the only one that is unique per seat.
+ *
+ * A name whose party cannot be resolved keeps `party: null` and is marked
+ * `partyKnown: false`. It still gets a seat and a name; the page then says the
+ * colour is that seat's bloc rather than a confirmed affiliation. Guessing the
+ * party from a neighbouring row is exactly the mistake the presiding-officer
+ * join already made once.
+ */
+const ROSTER = {
+  senate: 'https://currentaffairs.ng/sen/',
+  house: 'https://currentaffairs.ng/rep/',
+};
+
+async function rosterNames(chamber) {
+  const r = await fetch(ROSTER[chamber], {
+    headers: { 'user-agent': UA },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!r.ok) throw new Error(`roster ${chamber}: HTTP ${r.status}`);
+  const html = await r.text();
+  const strip = (x) => x.replace(/<[^>]+>/g, ' ').replace(/&#?\w+;/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+  const out = [];
+  for (const row of html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)) {
+    const cells = [...row[1].matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/g)].map((c) => strip(c[1]));
+    if (cells.length < 3) continue;
+    const [name, district, state] = cells;
+    // Skip the header and any stray non-rows.
+    if (!name || /^(senator|representative)$/i.test(name)) continue;
+    out.push({ name, district, state });
+  }
+  return out;
+}
+
+/**
+ * Join the complete roster to NASS's partial party data on constituency.
+ * NASS rows that match contribute their party; the rest keep the name only.
+ */
+function mergeRoster(names, nass) {
+  const byDistrict = new Map();
+  for (const m of nass) byDistrict.set(normDistrict(m.district), m);
+  // Constituency strings do not always agree between the two sites — NASS
+  // writes "Owan East/Owan West" where the roster has "Owan East/West" — and a
+  // district-only join threw away the party for 91 of 245 House rows it had.
+  // So an unmatched row falls back to a NAME match, which needs two shared
+  // tokens (surname alone put a ring on the wrong senator once already).
+  const used = new Set();
+  const byName = nass.map((m) => ({ m, tok: new Set(nameTokens(m.name)) }));
+  const findByName = (name) => {
+    const want = nameTokens(name);
+    if (want.length < 2) return null;
+    const hit = byName.find(({ m, tok }) =>
+      !used.has(m) && want.filter((t) => tok.has(t)).length >= 2);
+    return hit ? hit.m : null;
+  };
+  return names.map((n) => {
+    let hit = byDistrict.get(normDistrict(n.district));
+    if (hit && used.has(hit)) hit = null;
+    if (!hit) hit = findByName(n.name);
+    if (hit) used.add(hit);
+    return {
+      name: hit ? hit.name : n.name,       // NASS spells names more fully
+      state: n.state || (hit && hit.state) || '',
+      district: n.district,
+      party: hit ? hit.party : null,
+      partyKnown: Boolean(hit),
+      id: hit ? hit.id : null,
+    };
+  });
+}
+
+/**
  * Presiding officers, read from Wikipedia's leadership tables rather than
  * hardcoded.
  *
@@ -202,8 +285,6 @@ function leaders(text) {
  */
 const nameTokens = (s) => String(s || '').toLowerCase()
   .replace(/[^a-z\s]/g, ' ').split(/\s+/).filter((t) => t.length > 2);
-const normDistrict = (s) => String(s || '').toLowerCase()
-  .replace(/federal constituency|senatorial district/g, '').replace(/[^a-z]/g, '');
 
 function tagPrincipals(members, offices) {
   for (const { office, name, district } of offices) {
@@ -236,9 +317,19 @@ async function build() {
   await Promise.all(Object.keys(CHAMBER).map(async (c) => {
     try {
       const m = await nassMembers(c);
+      let full = [];
+      try { full = await rosterNames(c); } catch { /* fall back to NASS names only */ }
+      const merged = full.length ? mergeRoster(full, m.members) : m.members
+        .map((x) => ({ ...x, partyKnown: true }));
       let offices = [];
       try { offices = leaders((await wiki(LEADER_PAGES[c])).text); } catch { /* no rings */ }
-      members[c] = { ...m, members: tagPrincipals(m.members, offices), offices };
+      members[c] = {
+        listed: merged.length,
+        official: m.official,
+        withParty: merged.filter((x) => x.partyKnown).length,
+        members: tagPrincipals(merged, offices),
+        offices,
+      };
     } catch { /* leave the chamber unnamed */ }
   }));
 

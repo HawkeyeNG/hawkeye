@@ -345,7 +345,7 @@
   // so all pages get it without touching 25 files.
   document.querySelectorAll('.crest').forEach((c) => {
     if (!/[\u{1F300}-\u{1FAFF}]/u.test(c.textContent)) return;
-    c.innerHTML = '<img src="logo-crest.svg?v=99" alt="" width="30" height="30" style="display:block" />';
+    c.innerHTML = '<img src="logo-crest.svg?v=100" alt="" width="30" height="30" style="display:block" />';
   });
 
   // Bottom tab bar (mobile app pattern) — one raised center action, 5 slots,
@@ -571,7 +571,7 @@
   // Mascot trial: swap the emoji crest for the hawk mark on every page from
   // one place (pages keep the emoji as a no-JS fallback).
   for (const c of document.querySelectorAll('.crest')) {
-    c.innerHTML = '<img src="logo-crest.svg?v=99" alt="" style="width:36px;height:36px;display:block" />';
+    c.innerHTML = '<img src="logo-crest.svg?v=100" alt="" style="width:36px;height:36px;display:block" />';
   }
 
   // Accessibility: skip-to-content link, first in the tab order.

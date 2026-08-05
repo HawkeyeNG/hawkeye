@@ -12,6 +12,13 @@ echo "▶ [1/3] expo prebuild (sync android project)…"
 if ! npx expo prebuild --platform android --no-install >/tmp/team_prebuild.log 2>&1; then
   echo "❌ prebuild FAILED"; tail -6 /tmp/team_prebuild.log; exit 1
 fi
+# Same splash guard as build_dev_apk.sh: prebuild sometimes drops the
+# expo-splash-screen mod, leaving styles.xml pointing at a drawable that no
+# longer exists, and the build then dies in mergeResources minutes later.
+if [ ! -f android/app/src/main/res/drawable-hdpi/splashscreen_logo.png ]; then
+  echo "▶ splash guard: splashscreen_logo missing — prebuild --clean"
+  npx expo prebuild --platform android --no-install --clean >>/tmp/team_prebuild.log 2>&1
+fi
 M=android/app/src/main/AndroidManifest.xml
 if grep -q 'android:allowBackup="false"' "$M" && ! grep -q 'tools:replace="[^"]*android:allowBackup' "$M"; then
   sed -i 's/\(<application [^>]*android:allowBackup="false"\)/\1 tools:replace="android:allowBackup"/' "$M"

@@ -37,6 +37,7 @@ import {
 import { Crumb, Prompt } from '@/components/wizard';
 import { UnitSearch } from '@/components/unit-search';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
+import { pick, tap } from '@/lib/haptics';
 import {
   ELECTION_TYPES,
   isRaceOpen,
@@ -1064,6 +1065,7 @@ export default function ReportResult() {
    * exactly one is open here.
    */
   const chooseUnit = (u: Unit) => {
+    pick();
     setUnit(u);
     setRace(null);
     setContest(null);
@@ -1105,6 +1107,7 @@ export default function ReportResult() {
    * nor raise its own cancellation as an error the observer has to read.
    */
   const chooseNearby = async (n: NearRow) => {
+    pick();
     // Already selected: nothing to fetch, but a lookup for a DIFFERENT unit may
     // still be in flight, and returning without killing it hands the screen to
     // whichever unit that request names when it lands. The observer's last tap
@@ -1255,6 +1258,7 @@ export default function ReportResult() {
    * race at an Osun unit); everything else opens the picker.
    */
   const continueFromUnit = () => {
+    tap();
     if (!unit) return;
     if (contests.length === 0) {
       Alert.alert(
@@ -1343,6 +1347,7 @@ export default function ReportResult() {
   const [copied, setCopied] = useState(false);
 
   const onSubmit = async () => {
+    tap();
     if (!unit || !contest || !sheet || !venue) return;
     setBusy(true);
     setLine('Getting your location…');

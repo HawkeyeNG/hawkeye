@@ -899,8 +899,11 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
    var(--line). Bullets go with it; the leading <strong> already opens each row.
    Scoped to .checks on purpose: the folds on how/guide/faq/privacy/terms hold
    ordinary prose lists, where a rule between every bullet reads as clutter. */
-.acc-wrap.checks .acc ul { padding-left: 0; list-style: none; }
-.acc-wrap.checks .acc li { margin: 0; padding: 10px 2px; border-top: 1px solid var(--line); }
+/* 20px matches `.acc > summary`'s own horizontal padding, so a row's text lines
+   up under its group heading. Zeroing it (the first attempt) pushed the rows
+   flush to the card edge while the headings stayed inset. */
+.acc-wrap.checks .acc ul { padding-left: 20px; list-style: none; }
+.acc-wrap.checks .acc li { margin: 0; padding: 10px 0; border-top: 1px solid var(--line); }
 .acc-wrap.checks .acc li:first-child { border-top: 0; }
 .acc a { color: var(--link); font-weight: 600; }
 .acc[open] > *:not(summary) { animation: accReveal .22s ease; }

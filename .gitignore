@@ -57,3 +57,8 @@ tests/ui/node_modules/
 tests/ui/report/
 tests/ui/test-results/
 docs/EMAIL-TEMPLATE.html
+
+# Built APK served from /download — a 31 MB regenerable build artifact.
+# Committing it would bloat this PUBLIC repo permanently; it is deployed
+# straight to the host by scripts/deploy_app.sh instead.
+app/download/*.apk

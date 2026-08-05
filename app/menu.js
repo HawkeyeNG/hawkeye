@@ -927,4 +927,60 @@
       msgs.scrollTop = msgs.scrollHeight;
     });
   }
+
+  /**
+   * THE FULL RACES LIST, shared by every reporting flow (collation.html and
+   * observe.html via app.js).
+   *
+   * /api/contests only returns races that are actually CONFIGURED — today that
+   * is the Osun governorship alone — so a picker built straight from it showed a
+   * single line and read as though Hawkeye only knows about one election. The
+   * canonical five are rendered here instead, in seat-magnitude order, with the
+   * unconfigured ones DISABLED. Disabled options cannot be submitted, so the
+   * backend still only ever receives a code from `contestCodes`.
+   *
+   * Mirrors BARE_RACE_NAME in backend/src/db.js and RACES in races.html — keep
+   * the three in step if a race is ever added.
+   */
+  const RACE_ORDER = [
+    { code: 'PRES', name: 'Presidency' },
+    { code: 'GOV', name: 'Governorship' },
+    { code: 'SEN', name: 'Senate' },
+    { code: 'REP', name: 'House of Reps' },
+    { code: 'SHA', name: 'State Assembly' },
+  ];
+
+  window.HAWKEYE_RACES = {
+    ORDER: RACE_ORDER,
+    /**
+     * Fill a <select> with all five races.
+     * @param sel        the <select> element
+     * @param available  configured contests that apply here (from /api/contests)
+     * @param opts       { placeholder }
+     * @returns the code auto-selected, or '' if the user still has to choose
+     */
+    fill(sel, available, opts) {
+      const o = opts || {};
+      const esc = (s) => String(s == null ? '' : s)
+        .replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const by = new Map((available || []).map((c) => [c.code, c]));
+      const prev = sel.value;
+      const head = o.placeholder === false ? '' : `<option value="">${esc(o.placeholder || '— select election —')}</option>`;
+      sel.innerHTML = head + RACE_ORDER.map((r) => {
+        const c = by.get(r.code);
+        if (c) return `<option value="${esc(c.code)}">${esc(c.name)}</option>`;
+        // Named, visible, and unselectable — it tells people the race exists and
+        // is coming without letting them file against an election with no date.
+        return `<option value="${esc(r.code)}" disabled>${esc(r.name)} — not open yet</option>`;
+      }).join('');
+      if (prev && by.has(prev)) { sel.value = prev; return prev; }
+      // Exactly one race actually reportable (today: Osun GOV) ⇒ pick it, rather
+      // than making everyone choose from a list of one enabled row.
+      if (by.size === 1) {
+        sel.value = [...by.keys()][0];
+        return sel.value;
+      }
+      return sel.value || '';
+    },
+  };
 })();

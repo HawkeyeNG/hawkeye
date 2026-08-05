@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=139" />
+  <link rel="stylesheet" href="styles.css?v=140" />
   <script src="native.js?v=104"></script>
   <style>
     .map-card svg { width: 100%; height: auto; }
@@ -147,7 +147,6 @@
       <p class="hint" id="comp-note"></p>
       <div id="arches"></div>
       <div id="composition"></div>
-      <div class="srcs" id="srcs"></div>
     </div>
 
     <div class="card">
@@ -318,14 +317,14 @@
         const liveCh = (live && live.ok && live.chambers) || {};
         // Coverage, stated. Hovering a dot that has no name should not leave
         // anyone wondering whether the seat is empty or the source is thin.
+        // One instruction per chamber. Everything about provenance and coverage
+        // moved into the single info dot on the note line above — this sits under
+        // a graphic and should say what to DO with it, nothing more.
         const nameNote = (key) => {
           const r = live && live.ok && live.members && live.members[key];
           if (!r || !r.listed) return '';
-          const named = r.listed, principals = r.members.filter((m) => m.office).length;
-          const wp = r.withParty || 0;
-          return `<p class="sub" style="margin-top:8px">Hover or tap a seat for the member.
-            All ${named} named from currentaffairs.ng${principals ? `, ${principals} presiding officers ringed` : ''}.
-            Party confirmed against nass.gov.ng for ${wp}${wp < named ? ` — the remaining ${named - wp} are seated in their bloc but their party is not published` : ''}.</p>`;
+          return `<p class="sub" style="margin-top:8px">Hover or tap a seat for the
+            ${key === 'senate' ? 'Senator' : 'Member'}.</p>`;
         };
         // Federal chambers only. The composition file also carries governors,
         // who are not in the National Assembly and are already covered by the
@@ -360,14 +359,37 @@
             </div>`;
           }).join('');
 
-        const stamp = live && live.ok && live.fetchedAt
-          ? ` Cross-checked against Wikipedia ${new Date(live.fetchedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}.` : '';
-        document.getElementById('comp-note').textContent =
-          `${data.composition.note} (as of ${data.composition.asOf}).${stamp}`;
-        if (live && live.ok && live.sources) {
-          document.getElementById('srcs').innerHTML = live.sources.map((s) =>
-            `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)} ↗</a>`).join('');
-        }
+        // Everything that EXPLAINS where these numbers come from — provenance,
+        // dates, how many seats each source could name — goes in the dot. The
+        // visible line is the claim itself.
+        const when = live && live.ok && live.fetchedAt
+          ? new Date(live.fetchedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+          : null;
+        const cover = ['senate', 'house'].map((k) => {
+          const r = live && live.ok && live.members && live.members[k];
+          if (!r || !r.listed) return '';
+          const label = k === 'senate' ? 'Senate' : 'House';
+          const rings = r.members.filter((m) => m.office).length;
+          return `${label}: all ${r.listed} seats named from currentaffairs.ng`
+            + (rings ? `, ${rings} presiding officers ringed in gold` : '')
+            + `. Party confirmed against nass.gov.ng for ${r.withParty || 0}`
+            + ((r.withParty || 0) < r.listed
+              ? `; the other ${r.listed - (r.withParty || 0)} are seated in their bloc, but their party is not published by either source.` : '.');
+        }).filter(Boolean).join(' ');
+        const info = [
+          data.composition.note,
+          `Figures are as of ${data.composition.asOf}.`,
+          when ? `Cross-checked against Wikipedia on ${when}; where the two disagree, both numbers are shown below.` : '',
+          cover,
+        ].filter(Boolean).join(' ');
+        // Sources ride inside the dot rather than as a visible chip strip —
+        // they are provenance, which is exactly what the dot is for.
+        const srcLines = ((live && live.ok && live.sources) || [])
+          .map((x) => `${x.name}|${x.url}`).join('\n');
+        document.getElementById('comp-note').innerHTML =
+          `Who holds the 469 federal seats today.<button class="info-i"
+             data-info-title="Where these numbers come from"
+             data-info="${esc(info)}" data-info-links="${esc(srcLines)}"></button>`;
       }
       document.getElementById('prez').textContent = `${data.president.name}: governing party ${data.president.party}`;
       document.getElementById('provisional').textContent = data.note;
@@ -444,6 +466,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=137"></script>
+  <script src="menu.js?v=138"></script>
 </body>
 </html>

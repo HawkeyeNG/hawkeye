@@ -1232,3 +1232,24 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
   margin-top: 4px; width: 100%; border: 0; border-radius: 999px; padding: 12px;
   background: #008751; color: #fff; font-weight: 800; font-size: 0.95rem; cursor: pointer;
 }
+
+/* PWA install steps. Taller than the disclaimer dialogs (two platforms, four
+   steps each), so it scrolls inside itself rather than off the screen. */
+.pwa-modal {
+  border: 0; border-radius: 16px; padding: 22px; max-width: min(94vw, 460px);
+  max-height: 86vh; overflow-y: auto;
+  background: var(--card); color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+}
+.pwa-modal::backdrop { background: rgba(10, 20, 15, .55); }
+.pwa-modal h2 { font-size: 1.15rem; margin: 0 0 8px; border: 0; padding: 0; }
+.pwa-modal h3 { font-size: 0.95rem; margin: 0 0 6px; border: 0; padding: 0; }
+.pwa-lede { font-size: 0.9rem; line-height: 1.5; color: var(--muted); margin: 0 0 14px; }
+.pwa-os {
+  border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+/* The visitor's own platform, marked so it reads first at a glance. */
+.pwa-os.is-yours { border-color: var(--green); background: var(--tint); }
+.pwa-os ol { margin: 0; padding-left: 20px; }
+.pwa-os li { margin: 6px 0; font-size: 0.9rem; line-height: 1.45; }
+.pwa-os li em { display: block; color: var(--muted); font-style: normal; font-size: 0.82rem; margin-top: 2px; }
+.pwa-foot { font-size: 0.82rem; color: var(--muted); margin: 4px 0 12px; }

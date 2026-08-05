@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=136" />
+  <link rel="stylesheet" href="styles.css?v=137" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -206,6 +206,44 @@
           <p id="install-hint" hidden class="hint" style="margin: 0"></p>
           <button class="btn-ghost" id="install-cta" hidden type="button">Install Web App</button>
         </div>
+
+        <!-- Manual install steps. Chromium's one-tap prompt covers most Android
+             browsers, but iOS Safari NEVER fires beforeinstallprompt, so on
+             iPhone this dialog is the only route — and the steps are not
+             discoverable (Share → Add to Home Screen is three taps deep, and
+             Chrome on iOS cannot do it at all). Both platforms are shown, with
+             the visitor's own first. -->
+        <dialog id="install-modal" class="pwa-modal">
+          <h2 tabindex="-1">Install Hawkeye</h2>
+          <p class="pwa-lede">Hawkeye runs from your home screen like any other app — no
+            app store, no download. It takes about ten seconds.</p>
+
+          <section class="pwa-os" id="pwa-android">
+            <h3>📱 Android</h3>
+            <ol>
+              <li>Open <strong>hawkeye.com.ng</strong> in <strong>Chrome</strong>.</li>
+              <li>Tap the <strong>⋮</strong> menu, top-right.</li>
+              <li>Tap <strong>Install app</strong> (or <strong>Add to Home screen</strong>).</li>
+              <li>Tap <strong>Install</strong> to confirm.</li>
+            </ol>
+          </section>
+
+          <section class="pwa-os" id="pwa-ios">
+            <h3>🍎 iPhone &amp; iPad</h3>
+            <ol>
+              <li>Open <strong>hawkeye.com.ng</strong> in <strong>Safari</strong>.
+                <em>Chrome and Firefox on iPhone cannot install it — it must be Safari.</em></li>
+              <li>Tap the <strong>Share</strong> button (the square with an arrow) at the
+                bottom of the screen.</li>
+              <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+              <li>Tap <strong>Add</strong>, top-right.</li>
+            </ol>
+          </section>
+
+          <p class="pwa-foot">The Hawkeye icon then sits on your home screen and opens
+            full-screen. Alerts work once it has been added.</p>
+          <button type="button" class="gov-disc-close" id="install-modal-close">Close</button>
+        </dialog>
       </div>
       <div class="ledger-stack" id="ledger-stack" aria-hidden="true"></div>
     </div>
@@ -417,15 +455,36 @@
           deferred = null;
           if (outcome === 'accepted') return;
         }
-        // No native prompt available (iOS always; Android/Brave when suppressed) —
-        // show the manual steps for this platform, right below the button.
-        hint.innerHTML = isIOS
-          ? 'On iPhone: tap the <strong>Share</strong> icon, then <strong>Add to Home Screen</strong>.'
-          : isAndroid
-            ? 'On Android: open the browser <strong>⋮</strong> menu, then tap <strong>Install app</strong> / <strong>Add to Home screen</strong>.'
-            : 'Use the <strong>install</strong> icon in your browser’s address bar.';
-        hint.hidden = false;
+        // No native prompt, or it was dismissed. iOS Safari NEVER fires one, and
+        // Android suppresses it in several browsers — in both cases a one-line
+        // hint under the button was too little to act on, so open the dialog with
+        // the full steps for both platforms instead.
+        const dlg = document.getElementById('install-modal');
+        // The visitor's own platform goes first; the other stays available,
+        // because people install on a phone from a link opened on a laptop.
+        if (isIOS) {
+          const ios = document.getElementById('pwa-ios');
+          ios.parentNode.insertBefore(ios, document.getElementById('pwa-android'));
+        }
+        if (isIOS || isAndroid) {
+          (isIOS ? document.getElementById('pwa-ios') : document.getElementById('pwa-android'))
+            .classList.add('is-yours');
+        } else {
+          hint.innerHTML = 'On this computer, use the <strong>install</strong> icon in your browser’s address bar — or follow the steps below on your phone.';
+          hint.hidden = false;
+        }
+        if (typeof dlg.showModal === 'function') {
+          dlg.showModal();
+          dlg.querySelector('h2').focus();
+        } else {
+          dlg.setAttribute('open', '');   // very old browsers: inline fallback
+        }
       });
+      const dlgClose = document.getElementById('install-modal-close');
+      const dlgEl = document.getElementById('install-modal');
+      if (dlgClose) dlgClose.onclick = () => dlgEl.close();
+      // Backdrop click closes, matching the ⓘ dialogs in menu.js.
+      if (dlgEl) dlgEl.addEventListener('click', (e) => { if (e.target === dlgEl) dlgEl.close(); });
     })();
   </script>
   <script src="tg.js?v=95"></script>

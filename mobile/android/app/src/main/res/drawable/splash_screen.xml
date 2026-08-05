@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pre-Android-12 splash: the green field with the hawk centred on top.
+     A bare bitmap cannot do this — it would either stretch edge to edge or sit
+     on whatever the theme's background happens to be (black, in our case), so
+     the colour is painted as its own layer underneath. Android 12+ does not use
+     this at all; see values-v31/styles.xml. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splashBackground" />
+    <item>
+        <bitmap
+            android:src="@drawable/splash_icon"
+            android:gravity="center"
+            android:width="180dp"
+            android:height="180dp" />
+    </item>
+</layer-list>

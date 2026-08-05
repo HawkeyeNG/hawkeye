@@ -16,6 +16,17 @@ cd "$HOME/hawkeye/native"
 # Keep the generated project in sync with app.json / plugin changes.
 npx expo prebuild --platform android --no-install 2>&1 | tail -3
 
+# Guard: the same prebuild flakiness that loses the manifest mod (below) also
+# loses the SPLASH mod. When it does, styles.xml still points at
+# @drawable/splashscreen_logo while the density folders are empty, and the build
+# dies late in mergeDebugResources with "resource drawable/splashscreen_logo not
+# found" — 7 minutes in, for a missing PNG. expo-splash-screen only writes those
+# files on a fresh native dir, so a re-run with --clean is the only fix.
+if [ ! -f android/app/src/main/res/drawable-hdpi/splashscreen_logo.png ]; then
+  echo "splash guard: splashscreen_logo missing after prebuild — re-running with --clean"
+  npx expo prebuild --platform android --no-install --clean 2>&1 | tail -3
+fi
+
 # Guard: react-native-compressor pulls TAndroidLame, which declares
 # allowBackup="true"; ours is "false" and the merger aborts without a
 # tools:replace. The config plugin (plugins/with-allow-backup-override) adds it,

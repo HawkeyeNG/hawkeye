@@ -8,7 +8,14 @@ import { PartyMark } from '@/components/race';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
-import { loadPolitical, partyColor, partyName, type Political } from '@/lib/political';
+import { SeatArch } from '@/components/seat-arch';
+import {
+  loadPolitical,
+  partyColor,
+  partyName,
+  type Members,
+  type Political,
+} from '@/lib/political';
 
 /**
  * Political Data — who holds power now: the incumbents this election confirms
@@ -22,14 +29,16 @@ export default function PoliticalData() {
   const ui = useUi();
   const [d, setD] = useState<Political | null>(null);
   const [logos, setLogos] = useState<Record<string, string>>({});
+  const [members, setMembers] = useState<Members | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
 
   useEffect(() => {
     loadPolitical()
-      .then(({ data, logos: l }) => {
+      .then(({ data, logos: l, members: m }) => {
         setD(data);
         setLogos(l);
+        setMembers(m);
       })
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
   }, []);
@@ -103,15 +112,30 @@ export default function PoliticalData() {
                   Who holds power now
                 </Text>
                 {Object.entries(d.composition.chambers).map(([key, ch]) => {
-                  const parties = Object.entries(ch.parties).sort((a, b) => b[1] - a[1]);
+                  // Counts come from our own roster wherever we have one, so the
+                  // picture and the names are the same fact counted once. The
+                  // committed composition stays the fallback (and is the only
+                  // source for governors / assemblies, who are not members).
+                  const seats = members?.chambers?.[key];
+                  const counts = seats?.withParty ? seats.parties : ch.parties;
+                  const parties = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+                  const held = parties.reduce((s, [, n]) => s + n, 0);
                   return (
                     <View key={key} className="mb-2 rounded-2xl bg-card px-4 py-3">
                       <View className="flex-row items-baseline">
                         <Text className="flex-1 text-sm font-bold text-ink">{ch.label}</Text>
                         <Text className="text-[11px] text-faint">
-                          {ch.total}/{ch.size} seats declared
+                          {held}/{ch.size} attributed
                         </Text>
                       </View>
+                      {seats ? (
+                        <>
+                          <SeatArch parties={counts} size={ch.size} roster={seats} />
+                          <Text className="pt-1 text-[11px] text-faint">
+                            Tap a seat for the {key === 'senate' ? 'Senator' : 'Member'}.
+                          </Text>
+                        </>
+                      ) : null}
                       <View className="mt-2 h-2.5 flex-row overflow-hidden rounded-full bg-surface">
                         {parties.map(([p, n]) => (
                           <View

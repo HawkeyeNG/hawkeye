@@ -79,8 +79,8 @@
   ]
  },
  "composition": {
-  "asOf": "2026-07-06",
-  "note": "Current seat composition by party, compiled from public records (NASS/INEC declarations incl. defections). Vacant/undeclared seats make totals fall short of chamber size.",
+  "asOf": "2026-08-05",
+  "note": "Current seat composition by party, compiled from public records (NASS/INEC declarations incl. defections). Vacant/undeclared seats make totals fall short of chamber size. House figures were corrected on 2026-08-05: the previous set gave Labour 37 of 360, which the party has never held — it won 34-35 seats in 2023 and has lost members since — and totalled only 325, omitting the 2025-26 wave of defections to the APC. They now follow the current House of Representatives (Nigeria) infobox, which totals 360. Caveat: that source still shows ADC on 1 and so probably lags the 2026 ADC defections, among them Kaduna North's Mohammed Bello El-Rufai.",
   "chambers": {
    "senate": {
     "label": "Senate",
@@ -100,16 +100,16 @@
    "house": {
     "label": "House of Representatives",
     "size": 360,
-    "total": 325,
+    "total": 360,
     "parties": {
-     "LP": 37,
-     "APC": 172,
-     "PDP": 92,
-     "APGA": 2,
-     "YPP": 1,
-     "NNPP": 18,
+     "APC": 242,
+     "PDP": 72,
+     "LP": 22,
+     "NNPP": 15,
+     "APGA": 5,
+     "SDP": 2,
      "ADC": 1,
-     "SDP": 2
+     "YPP": 1
     }
    },
    "governors": {

@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Crumb, Prompt } from '@/components/wizard';
@@ -130,20 +130,24 @@ export function ContestPicker({
   const anyOpen = ELECTION_TYPES.some((t) => counts[t.code] > 0);
 
   /**
-   * The "Open races" filter. Default ON once anything is open, so the common
-   * path is short — but only while the user has not set it themselves, and it is
-   * kept in step with `anyOpen` because `contests` arrives async: the first
-   * render sees an empty list (nothing open), and the default has to flip on
-   * when the real list lands.
+   * The "Open races" filter, DEFAULT OFF.
+   *
+   * It used to default ON as soon as anything was open, to keep the common path
+   * short. With exactly one contest configured that collapsed the whole picker
+   * to "Governorship", and the app read as though Hawkeye only covers one
+   * election — the same complaint the web pickers had (window.HAWKEYE_RACES in
+   * app/menu.js is the twin fix). Showing all five, with the closed ones muted
+   * and badged "No open races", states the 2027 coverage up front; the toggle is
+   * still there for anyone who wants the short list.
+   *
+   * `anyOpen` is still read here so the toggle only appears when filtering would
+   * actually do something.
    */
   const [onlyOpen, setOnlyOpen] = useState(false);
-  const [touched, setTouched] = useState(false);
-  useEffect(() => {
-    if (!touched) setOnlyOpen(anyOpen);
-  }, [anyOpen, touched]);
 
+  // `touched` is gone with the auto-default: nothing overrides the user's choice
+  // any more, so there is no longer anything to guard against.
   const toggleFilter = () => {
-    setTouched(true);
     setOnlyOpen((v) => !v);
     Haptics.selectionAsync();
   };

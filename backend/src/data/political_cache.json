@@ -1,0 +1,332 @@
+{
+  "fetchedAt": "2026-08-05T17:06:58.192Z",
+  "revid": 1355294681,
+  "chambers": {
+    "senate": {
+      "label": "Senate",
+      "size": 109,
+      "parties": {
+        "APC": 75,
+        "PDP": 26,
+        "LP": 4,
+        "APGA": 2,
+        "NNPP": 1,
+        "SDP": 1
+      }
+    },
+    "house": {
+      "label": "House of Representatives",
+      "size": 360,
+      "parties": {
+        "APC": 242,
+        "PDP": 72,
+        "LP": 22,
+        "NNPP": 15,
+        "APGA": 5,
+        "SDP": 2,
+        "ADC": 1,
+        "YPP": 1
+      }
+    }
+  },
+  "states": {
+    "Abia": {
+      "seats": 24,
+      "parties": {
+        "PDP": 18,
+        "APC": 3,
+        "LP": 2,
+        "APGA": 1
+      },
+      "asOf": "July 2022"
+    },
+    "Adamawa": {
+      "seats": 25,
+      "parties": {
+        "PDP": 14,
+        "APC": 10,
+        "NNPP": 1
+      },
+      "asOf": "5 June 2022"
+    },
+    "Akwa Ibom": {
+      "seats": 26,
+      "parties": {
+        "PDP": 24,
+        "YPP": 2
+      },
+      "asOf": "July 2022"
+    },
+    "Anambra": {
+      "seats": 30,
+      "parties": {
+        "APGA": 17,
+        "PDP": 7,
+        "APC": 2
+      },
+      "asOf": "21 May 2022"
+    },
+    "Bauchi": {
+      "seats": 31,
+      "parties": {
+        "APC": 16,
+        "PDP": 15
+      },
+      "asOf": "17 April 2022"
+    },
+    "Bayelsa": {
+      "seats": 24,
+      "parties": {
+        "PDP": 20,
+        "APC": 4
+      },
+      "asOf": "15 April 2021"
+    },
+    "Benue": {
+      "seats": 30,
+      "parties": {
+        "PDP": 24,
+        "APC": 5,
+        "ADC": 1
+      },
+      "asOf": "27 October 2021"
+    },
+    "Borno": {
+      "seats": 30,
+      "parties": {
+        "APC": 30
+      },
+      "asOf": "late 2020–early 2021"
+    },
+    "Cross River": {
+      "seats": 25,
+      "parties": {
+        "APC": 18,
+        "PDP": 18
+      },
+      "asOf": "16 March 2021"
+    },
+    "Delta": {
+      "seats": 29,
+      "parties": {
+        "PDP": 27,
+        "APC": 2
+      },
+      "asOf": "22 September 2021"
+    },
+    "Ebonyi": {
+      "seats": 24,
+      "parties": {
+        "APC": 17,
+        "PDP": 5
+      },
+      "asOf": "8 March 2022"
+    },
+    "Ekiti": {
+      "seats": 26,
+      "parties": {
+        "APC": 25
+      },
+      "asOf": "20 December 2021"
+    },
+    "Enugu": {
+      "seats": 24,
+      "parties": {
+        "PDP": 24
+      },
+      "asOf": "16 December 2020"
+    },
+    "Gombe": {
+      "seats": 24,
+      "parties": {
+        "APC": 21,
+        "PDP": 3
+      },
+      "asOf": "6 March 2022"
+    },
+    "Imo": {
+      "seats": 27,
+      "parties": {
+        "APC": 19,
+        "PDP": 5
+      },
+      "asOf": "24 December 2021"
+    },
+    "Jigawa": {
+      "seats": 30,
+      "parties": {
+        "APC": 30
+      },
+      "asOf": "early 2021"
+    },
+    "Kaduna": {
+      "seats": 31,
+      "parties": {
+        "APC": 20,
+        "PDP": 10
+      },
+      "asOf": "15 December 2021"
+    },
+    "Kano": {
+      "seats": 40,
+      "parties": {
+        "APC": 30,
+        "NNPP": 9,
+        "PDP": 1
+      },
+      "asOf": "15 May 2022"
+    },
+    "Katsina": {
+      "seats": 34,
+      "parties": {
+        "APC": 34
+      },
+      "asOf": "late 2020–early 2021"
+    },
+    "Kebbi": {
+      "seats": 24,
+      "parties": {
+        "APC": 24
+      },
+      "asOf": "24 August 2021"
+    },
+    "Kogi": {
+      "seats": 25,
+      "parties": {
+        "APC": 25
+      },
+      "asOf": "April 2021"
+    },
+    "Kwara": {
+      "seats": 24,
+      "parties": {
+        "APC": 21,
+        "PDP": 1
+      },
+      "asOf": "19 May 2021"
+    },
+    "Lagos": {
+      "seats": 40,
+      "parties": {
+        "APC": 40
+      },
+      "asOf": "20 December 2020"
+    },
+    "Nasarawa": {
+      "seats": 24,
+      "parties": {
+        "APC": 20,
+        "PDP": 2,
+        "ZLP": 1
+      },
+      "asOf": "13 September 2021<ref>{{Cite news |last1=Odama |first1=David |title=Suspension: Nasarawa Assembly announces new minority leader |url=https://www.vanguardngr.com/2021/09/suspension-nasarawa-assembly-announces-new-minority-leader/ |location=Lagos, Nigeria|newspaper=[[Vanguard (Nigeria"
+    },
+    "Niger": {
+      "seats": 27,
+      "parties": {
+        "APC": 26,
+        "PDP": 1
+      },
+      "asOf": "early 2021"
+    },
+    "Ogun": {
+      "seats": 26,
+      "parties": {
+        "APC": 25,
+        "PDP": 1
+      },
+      "asOf": "23 February 2021"
+    },
+    "Ondo": {
+      "seats": 26,
+      "parties": {
+        "APC": 22,
+        "PDP": 2,
+        "ZLP": 1
+      },
+      "asOf": "31 March 2022"
+    },
+    "Osun": {
+      "seats": 26,
+      "parties": {
+        "APC": 23,
+        "PDP": 3
+      },
+      "asOf": "6 June 2019"
+    },
+    "Oyo": {
+      "seats": 32,
+      "parties": {
+        "PDP": 26,
+        "APC": 5,
+        "ADP": 1
+      },
+      "asOf": "10 June 2019"
+    },
+    "Plateau": {
+      "seats": 24,
+      "parties": {
+        "APC": 14,
+        "PDP": 7,
+        "LP": 1
+      },
+      "asOf": "22 March 2022"
+    },
+    "Rivers": {
+      "seats": 32,
+      "parties": {
+        "PDP": 32
+      },
+      "asOf": "10 June 2019"
+    },
+    "Sokoto": {
+      "seats": 30,
+      "parties": {
+        "PDP": 17,
+        "APC": 13
+      },
+      "asOf": "14 April 2022"
+    },
+    "Taraba": {
+      "seats": 24,
+      "parties": {
+        "PDP": 15,
+        "APC": 5
+      },
+      "asOf": "22 June 2022"
+    },
+    "Yobe": {
+      "seats": 24,
+      "parties": {
+        "APC": 24
+      },
+      "asOf": "2021"
+    },
+    "Zamfara": {
+      "seats": 24,
+      "parties": {
+        "APC": 21,
+        "PDP": 1
+      },
+      "asOf": "10 February 2022"
+    }
+  },
+  "sources": [
+    {
+      "name": "National Assembly of Nigeria",
+      "url": "https://nass.gov.ng/"
+    },
+    {
+      "name": "Wikipedia — National Assembly (Nigeria)",
+      "url": "https://en.wikipedia.org/wiki/National_Assembly_(Nigeria)"
+    },
+    {
+      "name": "Wikipedia — Houses of assembly of Nigerian states",
+      "url": "https://en.wikipedia.org/wiki/Houses_of_assembly_of_Nigerian_states"
+    },
+    {
+      "name": "INEC",
+      "url": "https://www.inecnigeria.org/"
+    }
+  ]
+}

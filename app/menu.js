@@ -439,11 +439,11 @@
    */
   (function infoDots() {
     let dlg = null;
-    const open = (title, body) => {
+    const open = (title, body, links) => {
       if (!dlg) {
         dlg = document.createElement('dialog');
         dlg.className = 'gov-disc-modal info-modal';
-        dlg.innerHTML = '<h2 tabindex="-1"></h2><p></p><button type="button" class="gov-disc-close">Close</button>';
+        dlg.innerHTML = '<h2 tabindex="-1"></h2><p></p><div class="info-links"></div><button type="button" class="gov-disc-close">Close</button>';
         document.body.appendChild(dlg);
         dlg.querySelector('.gov-disc-close').onclick = () => dlg.close();
         dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
@@ -452,6 +452,23 @@
       h.textContent = title || 'About this';
       h.hidden = !title;
       dlg.querySelector('p').textContent = body;
+      // Optional sources, as REAL links. The body is set with textContent (so a
+      // dot can carry arbitrary text safely), which means a URL written in it
+      // would render as dead characters. Anything a reader is meant to click
+      // has to come through here instead: data-info-links="Name|https://…"
+      // one per line.
+      const box = dlg.querySelector('.info-links');
+      const raw = links || '';
+      box.innerHTML = '';
+      box.hidden = !raw;
+      for (const line of String(raw).split('\n')) {
+        const [name, href] = line.split('|').map((x) => (x || '').trim());
+        if (!name || !/^https?:\/\//.test(href || '')) continue;
+        const a = document.createElement('a');
+        a.href = href; a.target = '_blank'; a.rel = 'noopener';
+        a.textContent = name + ' \u2197';
+        box.appendChild(a);
+      }
       dlg.showModal();
       h.focus();
     };
@@ -460,7 +477,8 @@
       if (!b) return;
       e.preventDefault();
       e.stopPropagation();
-      open(b.getAttribute('data-info-title') || '', b.getAttribute('data-info') || '');
+      open(b.getAttribute('data-info-title') || '', b.getAttribute('data-info') || '',
+        b.getAttribute('data-info-links') || '');
     });
     // Label every dot for screen readers without repeating it in the markup.
     const label = () => document.querySelectorAll('.info-i:not([aria-label])').forEach((b) => {

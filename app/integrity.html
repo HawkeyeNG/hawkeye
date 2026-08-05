@@ -103,8 +103,10 @@
 
     <div class="card">
       <h2>Digit-distribution screening</h2>
-      <p class="hint">Fabricated figures cluster on favourite digits; genuine counts follow known
-      distributions. Departures are screening signals — never proof on their own. <span id="benford-n"></span></p>
+      <p class="hint">Screening signal, never proof on its own.<button class="info-i"
+        data-info-title="Digit-distribution screening"
+        data-info="Fabricated figures cluster on favourite digits, while genuine counts follow known distributions — Benford's law for first digits, and a roughly even spread for last digits. A departure means these numbers are worth a closer look, nothing more. Real elections throw up odd-looking distributions for innocent reasons, so a flag here is a prompt to check the evidence, not a finding of fraud."></button>
+        <span id="benford-n"></span></p>
       <h3 style="margin:14px 0 2px;font-size:0.95rem">First digit — Benford's law <span id="benford-verdict" class="verdict-tag"></span></h3>
       <p class="hint">First digit of every party count vs Benford's expected curve (dashed).</p>
       <div class="benford" id="benford-first"></div>
@@ -115,18 +117,18 @@
 
     <div class="card">
       <h2>INEC IReV cross-check</h2>
-      <p class="hint">Each crowd-reported count is compared against the EC8A sheet INEC itself
-      uploads to its Results Viewing portal (IReV) for the same polling unit — INEC's own
-      evidence checked against the crowd's. Mismatches appear above with a link to INEC's sheet.</p>
+      <p class="hint">The crowd's count, checked against INEC's own uploaded sheet.<button
+        class="info-i" data-info-title="INEC IReV cross-check"
+        data-info="For each polling unit, the crowd's reported count is compared against the EC8A sheet INEC itself uploads to its Results Viewing portal (IReV) — INEC's own evidence checked against the crowd's, neither one trusted over the other. Any mismatch appears in the discrepancies above, with a link straight to INEC's sheet so you can look yourself."></button></p>
       <p id="irev-status" class="scope-note">Loading…</p>
     </div>
 
     <div class="card">
       <h2>Collation reconciliation (EC8B/C/D)</h2>
-      <p class="hint">Announced ward, LGA and state collation totals are checked against the
-      polling-unit sheets underneath them. A collated figure can never be <em>less</em> than the
-      sum of the covered units alone — when it is, that's proof of subtraction, flagged above.
-      <a href="collation.html">Report a collation result →</a></p>
+      <p class="hint">Announced totals, checked against the units underneath them.<button
+        class="info-i" data-info-title="Collation reconciliation"
+        data-info="Ward (EC8B), LGA (EC8C) and state (EC8D) collation totals are checked against the polling-unit sheets they are built from. A collated figure can never be LESS than the sum of the covered units alone — when it is, that is arithmetic proof of subtraction, not a matter of opinion, and it is flagged in the discrepancies above. This is the step where a count is most often changed."></button>
+        <a href="collation.html">Report a collation result →</a></p>
       <p id="collation-status" class="scope-note">Loading…</p>
     </div>
 

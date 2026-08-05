@@ -444,11 +444,16 @@ export default function Integrity() {
         )}
 
         <SectionLabel text="Digit-Distribution Screening" />
-        <Text className="pb-2 text-sm text-muted">
-          Fabricated figures cluster on favourite digits; genuine counts follow known
-          distributions. Departures are screening signals — never proof on their own.
-          {benford ? ` Based on ${benford.n} unit result(s), ${benford.nFirst || 0} party count(s).` : ''}
-        </Text>
+        <View className="flex-row items-center pb-2">
+          <Text className="flex-1 text-sm text-muted">
+            Screening signal, never proof on its own.
+            {benford ? ` Based on ${benford.n} unit result(s), ${benford.nFirst || 0} party count(s).` : ''}
+          </Text>
+          <InfoDot
+            title="Digit-distribution screening"
+            text="Fabricated figures cluster on favourite digits, while genuine counts follow known distributions — Benford's law for first digits, and a roughly even spread for last digits. A departure means these numbers are worth a closer look, nothing more. Real elections throw up odd-looking distributions for innocent reasons, so a flag here is a prompt to check the evidence, not a finding of fraud."
+          />
+        </View>
         <View className="rounded-2xl bg-card px-4 py-4">
           <Text className="text-sm font-bold text-ink">
             First Digit — Benford&apos;s Law{' '}
@@ -479,21 +484,29 @@ export default function Integrity() {
         </View>
 
         <SectionLabel text="INEC IReV Cross-Check" />
-        <Text className="pb-2 text-sm text-muted">
-          Each crowd-reported count is compared against the EC8A sheet INEC itself uploads to its
-          Results Viewing portal for the same polling unit — INEC&apos;s own evidence checked
-          against the crowd&apos;s.
-        </Text>
+        <View className="flex-row items-center pb-2">
+          <Text className="flex-1 text-sm text-muted">
+            The crowd&apos;s count, checked against INEC&apos;s own uploaded sheet.
+          </Text>
+          <InfoDot
+            title="INEC IReV cross-check"
+            text="For each polling unit, the crowd's reported count is compared against the EC8A sheet INEC itself uploads to its Results Viewing portal (IReV) — INEC's own evidence checked against the crowd's, neither one trusted over the other. Any mismatch appears in the discrepancies above."
+          />
+        </View>
         <View className="rounded-2xl bg-card px-4 py-3">
           <Text className="text-sm text-ink">{irevLine}</Text>
         </View>
 
         <SectionLabel text="Collation Reconciliation (EC8B/C/D)" />
-        <Text className="pb-2 text-sm text-muted">
-          Announced ward, LGA and state totals are checked against the polling-unit sheets
-          underneath them. A collated figure can never be less than the sum of the covered units
-          alone — when it is, that is proof of subtraction.
-        </Text>
+        <View className="flex-row items-center pb-2">
+          <Text className="flex-1 text-sm text-muted">
+            Announced totals, checked against the units underneath them.
+          </Text>
+          <InfoDot
+            title="Collation reconciliation"
+            text="Ward (EC8B), LGA (EC8C) and state (EC8D) collation totals are checked against the polling-unit sheets they are built from. A collated figure can never be LESS than the sum of the covered units alone — when it is, that is arithmetic proof of subtraction, not a matter of opinion. This is the step where a count is most often changed."
+          />
+        </View>
         <View className="rounded-2xl bg-card px-4 py-3">
           <Text className="text-sm text-ink">{collLine}</Text>
           <Pressable className="pt-2" onPress={() => router.push('/report/collation')}>

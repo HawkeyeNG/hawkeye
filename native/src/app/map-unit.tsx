@@ -33,6 +33,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { UnitSearch } from '@/components/unit-search';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
+import { tap } from '@/lib/haptics';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -785,6 +786,7 @@ export default function MapUnit() {
   };
 
   const onSubmit = async () => {
+    tap();
     if (!unit) return;
     setBusy(true);
     setLine('Getting an accurate fix — stand still…');

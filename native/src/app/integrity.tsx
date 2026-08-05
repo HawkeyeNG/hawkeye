@@ -8,6 +8,7 @@ import { SectionLabel, Stat } from '@/components/content-kit';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { flagLabel } from '@/lib/flags';
+import { pick } from '@/lib/haptics';
 import { useUi } from '@/lib/theme';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 import { InfoDot } from '@/components/info-dot';
@@ -527,7 +528,10 @@ export default function Integrity() {
                 // whichever group was open. Twin of the delegated `toggle`
                 // handler in app/menu.js; profile.tsx already behaves this way
                 // via a single openSection.
-                onPress={() => setOpen((o) => (o[i] ? {} : { [i]: true }))}
+                onPress={() => {
+                  pick();
+                  setOpen((o) => (o[i] ? {} : { [i]: true }));
+                }}
               >
                 <Text className="flex-1 text-sm font-bold text-ink">{g.title}</Text>
                 <Feather name={open[i] ? 'chevron-up' : 'chevron-down'} size={16} color={ui.faint} />

@@ -23,6 +23,7 @@ import { PasswordField } from '@/components/password-field';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND } from '@/lib/api';
+import { pick } from '@/lib/haptics';
 import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -538,7 +539,10 @@ export default function Profile() {
                     className={`flex-row items-center px-4 py-3.5 active:bg-surface ${
                       i > 0 ? 'border-t border-line' : ''
                     }`}
-                    onPress={() => setOpenSection((o) => (o === a.key ? null : a.key))}
+                    onPress={() => {
+                      pick();
+                      setOpenSection((o) => (o === a.key ? null : a.key));
+                    }}
                   >
                     <Feather name={a.icon} size={17} color={ui.tint.good.ink} />
                     <Text className="flex-1 pl-3 text-base text-ink">{a.label}</Text>

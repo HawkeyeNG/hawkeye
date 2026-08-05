@@ -34,6 +34,7 @@ import {
 import { Crumb, Prompt } from '@/components/wizard';
 import { UnitSearch } from '@/components/unit-search';
 import { BRAND } from '@/lib/api';
+import { tap } from '@/lib/haptics';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -769,6 +770,7 @@ export default function ReportIncident() {
   };
 
   const onSubmit = async () => {
+    tap();
     if (!kind || !unitDecided) return;
     setBusy(true);
     setLine('Submitting…');

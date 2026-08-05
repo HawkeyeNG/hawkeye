@@ -24,6 +24,7 @@ import { NoElection } from '@/components/no-election';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
+import { pick, tap } from '@/lib/haptics';
 import type { Race, StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
@@ -187,6 +188,7 @@ export default function ReportCollation() {
    * be auto-picked into the camera.
    */
   const continueFromScope = () => {
+    tap();
     if (!stateSel) return;
     if (contests.length === 0) {
       Alert.alert(
@@ -213,6 +215,7 @@ export default function ReportCollation() {
    * run where the observer is now reporting from.
    */
   const chooseState = (s: string | null) => {
+    pick();
     setStateSel(s);
     setContest(null);
     setRace(null);
@@ -224,6 +227,7 @@ export default function ReportCollation() {
    * picker's allowClosed is false) and advance straight to the camera.
    */
   const chooseRace = (r: Race) => {
+    pick();
     setRace(r);
     setContest(stateSel ? (racesIn(stateSel, contests).find((c) => c.code === r.contestCode) ?? null) : null);
     setStep('sheet');
@@ -288,6 +292,7 @@ export default function ReportCollation() {
   const [copied, setCopied] = useState(false);
 
   const onSubmit = async () => {
+    tap();
     if (!contest || !level || !stateSel || !sheet || !venue) return;
     setBusy(true);
     setGpsSettings(false);

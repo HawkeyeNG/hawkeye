@@ -204,7 +204,7 @@
              signed in) the header bell. -->
         <div class="hero-cta" style="margin-top: 14px; flex-direction: column; align-items: flex-start; gap: 8px">
           <p id="install-hint" hidden class="hint" style="margin: 0"></p>
-          <button class="btn-ghost" id="install-cta" hidden type="button">Install Web App</button>
+          <button class="btn-ghost" id="install-cta" hidden type="button">Install Mobile App</button>
         </div>
 
         <!-- Manual install steps. Chromium's one-tap prompt covers most Android
@@ -216,7 +216,7 @@
         <dialog id="install-modal" class="pwa-modal">
           <h2 tabindex="-1">Install Hawkeye</h2>
           <p class="pwa-lede">Hawkeye runs from your home screen like any other app — no
-            app store, no download. It takes about ten seconds.</p>
+            app store needed. It takes about ten seconds.</p>
 
           <section class="pwa-os" id="pwa-android">
             <h3>📱 Android</h3>
@@ -226,6 +226,19 @@
               <li>Tap <strong>Install app</strong> (or <strong>Add to Home screen</strong>).</li>
               <li>Tap <strong>Install</strong> to confirm.</li>
             </ol>
+            <!-- Direct APK, served from our OWN domain rather than a file-sharing
+                 link. An election tool asking people to install software from a
+                 third-party drive link is indistinguishable from the phishing it
+                 exists to help people resist; hawkeye.com.ng is the one origin a
+                 visitor can already check. Android blocks sideloading by default,
+                 so the permission step is stated rather than left to be discovered. -->
+            <p class="pwa-alt">Or install it directly:</p>
+            <p><a class="btn-ghost apk-dl" href="download/hawkeye.apk"
+                  download="hawkeye.apk" rel="nofollow">⬇ Download the Android App</a></p>
+            <p class="pwa-note">31&nbsp;MB. Android will ask you to allow installs from
+              your browser — that prompt is normal for an app not yet on Play, and it
+              only applies to this one install. The file is served from
+              hawkeye.com.ng itself; do not install a Hawkeye APK from anywhere else.</p>
           </section>
 
           <section class="pwa-os" id="pwa-ios">

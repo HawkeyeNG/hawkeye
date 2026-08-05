@@ -1262,3 +1262,8 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
 .pwa-os li { margin: 6px 0; font-size: 0.9rem; line-height: 1.45; }
 .pwa-os li em { display: block; color: var(--muted); font-style: normal; font-size: 0.82rem; margin-top: 2px; }
 .pwa-foot { font-size: 0.82rem; color: var(--muted); margin: 4px 0 12px; }
+/* Direct-APK block inside the Android section of the install dialog. */
+.pwa-alt { font-size: 0.82rem; color: var(--muted); margin: 12px 0 6px;
+  padding-top: 10px; border-top: 1px solid var(--border, #dde4de); }
+.pwa-os .apk-dl { display: inline-block; font-size: 0.9rem; font-weight: 700; }
+.pwa-note { font-size: 0.78rem; color: var(--muted); line-height: 1.45; margin: 6px 0 0; }

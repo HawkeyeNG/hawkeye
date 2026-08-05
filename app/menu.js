@@ -929,6 +929,30 @@
   }
 
   /**
+   * EXCLUSIVE ACCORDIONS: opening one closes its siblings.
+   *
+   * Same reasoning as the menu/assistant pair — two open panels at once is a
+   * busier page than anyone reads, and nobody reads two at a time anyway. One
+   * delegated listener covers every <details> on the site (terms, privacy, faq,
+   * how, integrity) with no per-page markup, so pages added later inherit it.
+   *
+   * `toggle` does NOT bubble, hence the capture phase — a plain listener on
+   * document never fires. Scope is the nearest .acc-wrap so independent groups
+   * on one page stay independent, falling back to <main> for the pages whose
+   * folds are loose siblings rather than wrapped.
+   */
+  document.addEventListener('toggle', (e) => {
+    const d = e.target;
+    if (!d || d.tagName !== 'DETAILS' || !d.open) return;
+    const scope = d.closest('.acc-wrap') || d.closest('main') || document;
+    scope.querySelectorAll('details[open]').forEach((other) => {
+      // Only true siblings in this scope — a nested <details> must not be shut
+      // by its own parent opening.
+      if (other !== d && !other.contains(d) && !d.contains(other)) other.open = false;
+    });
+  }, true);
+
+  /**
    * THE FULL RACES LIST, shared by every reporting flow (collation.html and
    * observe.html via app.js).
    *

@@ -19,7 +19,7 @@ export const politicalRouter = Router();
  */
 politicalRouter.get('/political', async (_req, res) => {
   const data = await upstream();
-  res.set('cache-control', 'public, max-age=1800');
+  res.set('cache-control', 'public, max-age=300');
   if (!data) return res.json({ ok: false, reason: 'upstream_unavailable' });
   return res.json({ ok: true, ...data });
 });

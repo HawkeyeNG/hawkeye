@@ -39,6 +39,8 @@
        lifted as an image, so it always matches the numbers beside it. */
     .arch { display: block; width: 100%; max-width: 460px; margin: 4px auto 0; height: auto; }
     .arch circle { stroke: var(--card); stroke-width: 0.8; }
+    .arch circle.boss { stroke: #f0b429; stroke-width: 1.8; }
+    .arch circle:hover { stroke: var(--ink); stroke-width: 1.4; }
     .arch .tot { fill: var(--ink); font-weight: 800; text-anchor: middle; }
     .arch .totsub { fill: var(--muted); text-anchor: middle; }
     .chamber { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: var(--card); margin-bottom: 14px; }
@@ -207,7 +209,13 @@
      * contiguous block. Generated from the counts rather than shipped as an
      * image, so the picture cannot drift from the numbers printed beside it.
      */
-    function seatArch(parties, size) {
+    function seatArch(parties, size, roster) {
+      // Members come from nass.gov.ng, which publishes fewer members than there
+      // are seats (74 of 109 senators, 246 of 360 reps as of Aug 2026). Names
+      // are dealt within each party's own bloc, so an unnamed dot is always a
+      // seat NASS has not published — never a seat attributed to the wrong party.
+      const pool = {};
+      for (const m of (roster && roster.members) || []) (pool[m.party] ||= []).push(m);
       const entries = Object.entries(parties).sort((a,b) => b[1]-a[1]);
       const filled = entries.reduce((s,[,n]) => s+n, 0);
       const total = Math.max(size, filled);
@@ -232,13 +240,23 @@
       slots.sort((a,b) => a.t - b.t || a.r - b.r);
       // Colour them party by party, longest bloc first — left to right.
       const seq = [];
-      entries.forEach(([p,n]) => { for (let i=0;i<n;i++) seq.push(p); });
-      while (seq.length < total) seq.push(null);      // vacant / undeclared
+      entries.forEach(([p,n]) => {
+        const named = (pool[p] || []).slice();
+        for (let i=0;i<n;i++) seq.push({ party: p, m: named[i] || null });
+      });
+      while (seq.length < total) seq.push({ party: null, m: null });  // vacant / undeclared
       const dots = slots.map((s, i) => {
         const a = Math.PI * (1 - s.t);
         const x = 110 + Math.cos(a) * s.r, y = 108 - Math.sin(a) * s.r;
-        const p = seq[i];
-        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.1" fill="${p?color(p):'#d7ded9'}"><title>${p?esc(p):'Vacant / undeclared'}</title></circle>`;
+        const { party: p, m } = seq[i];
+        // A presiding officer gets a gold ring and a wider dot — the four people
+        // who actually control each chamber's floor should be findable in it.
+        const boss = m && m.office;
+        const label = m
+          ? `${m.name}${m.office ? ` — ${m.office}` : ''}\n${m.district || m.state} (${m.party})`
+          : (p ? `${p} — seat not listed on nass.gov.ng` : 'Vacant / undeclared');
+        return `<circle class="${boss ? 'boss' : ''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}"
+          r="${boss ? 4.4 : 3.1}" fill="${p ? color(p) : '#d7ded9'}"><title>${esc(label)}</title></circle>`;
       }).join('');
       return `<svg class="arch" viewBox="0 0 220 124" role="img"
         aria-label="${filled} of ${size} seats held, by party">
@@ -285,6 +303,16 @@
       // ---- Hemicycles, plus an honest cross-check against the live source ----
       if (data.composition) {
         const liveCh = (live && live.ok && live.chambers) || {};
+        // Coverage, stated. Hovering a dot that has no name should not leave
+        // anyone wondering whether the seat is empty or the source is thin.
+        const nameNote = (key) => {
+          const r = live && live.ok && live.members && live.members[key];
+          if (!r || !r.listed) return '';
+          const named = r.listed, principals = r.members.filter((m) => m.office).length;
+          return `<p class="sub" style="margin-top:8px">Hover or tap a seat for the member.
+            ${named} named from nass.gov.ng${principals ? `, including ${principals} presiding officers (ringed)` : ''} —
+            the portal does not publish the rest.</p>`;
+        };
         // Federal chambers only. The composition file also carries governors,
         // who are not in the National Assembly and are already covered by the
         // zone accordions and the map below.
@@ -313,7 +341,7 @@
             return `<div class="chamber">
               <h3>${esc(ch.label)}</h3>
               <p class="sub">${held} of ${ch.size} seats held${held<ch.size?` · ${ch.size-held} vacant or undeclared`:''}</p>
-              ${seatArch(ch.parties, ch.size)}
+              ${seatArch(ch.parties, ch.size, (live && live.ok && live.members) ? live.members[key] : null)}${nameNote(key)}
               <div class="seat-key">${key6}</div>${diff}
             </div>`;
           }).join('');

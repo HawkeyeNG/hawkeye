@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=138" />
+  <link rel="stylesheet" href="styles.css?v=139" />
   <script src="native.js?v=104"></script>
   <style>
     .map-card svg { width: 100%; height: auto; }
@@ -32,6 +32,43 @@
     .cand .pill::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--pc, #9aa7a0); margin-right: 5px; }
     .cand p { margin: 0; font-size: 0.84rem; color: var(--muted); }
     .cand .inc { font-size: 0.68rem; font-weight: 700; color: #6b5500; background: #fdf3d7; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
+    /* ---- Parliament arch: one dot per seat, laid out in a hemicycle ----
+       The Wikipedia seat-spread diagram is the clearest way to read a chamber
+       — a bar says the ratio, an arch says how many bodies that IS. Ours is
+       generated from the party counts (see seatArch() below) rather than
+       lifted as an image, so it always matches the numbers beside it. */
+    .arch { display: block; width: 100%; max-width: 460px; margin: 4px auto 0; height: auto; }
+    .arch circle { stroke: var(--card); stroke-width: 0.8; }
+    .arch .tot { fill: var(--ink); font-weight: 800; text-anchor: middle; }
+    .arch .totsub { fill: var(--muted); text-anchor: middle; }
+    .chamber { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: var(--card); margin-bottom: 14px; }
+    .chamber h3 { margin: 0 0 2px; font-size: 1rem; }
+    .chamber .sub { margin: 0; font-size: 0.8rem; color: var(--muted); }
+    .seat-key { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; font-size: 0.82rem; }
+    .seat-key span { display: inline-flex; align-items: center; gap: 6px; }
+    .seat-key i { width: 10px; height: 10px; border-radius: 50%; }
+    .seat-key b { font-variant-numeric: tabular-nums; }
+    /* Source disagreement — stated, never silently resolved. */
+    .xcheck { margin-top: 12px; font-size: 0.8rem; color: var(--text-warn); background: var(--tint-warn);
+      border-left: 4px solid #f9a825; border-radius: 0 8px 8px 0; padding: 9px 12px; }
+    .xcheck b { font-variant-numeric: tabular-nums; }
+    /* Governors, grouped by geopolitical zone so the 37-row table collapses. */
+    .zone { border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; background: var(--card); overflow: hidden; }
+    .zone > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-weight: 700; }
+    .zone > summary::-webkit-details-marker { display: none; }
+    .zone > summary::after { content: ''; margin-left: auto; width: 8px; height: 8px; flex: none;
+      border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); }
+    .zone[open] > summary::after { transform: rotate(-135deg); }
+    .zone-mix { display: flex; gap: 3px; margin-left: 4px; }
+    .zone-mix i { width: 9px; height: 9px; border-radius: 50%; }
+    .zone-n { font-weight: 400; font-size: 0.82rem; color: var(--muted); }
+    .zone table { margin: 0; }
+    .zone td:first-child { padding-left: 14px; }
+    /* Source strip */
+    .srcs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .srcs a { font-size: 0.76rem; text-decoration: none; color: var(--muted); border: 1px solid var(--line);
+      border-radius: 999px; padding: 3px 10px; }
+    .srcs a:hover { border-color: var(--green); color: var(--link); }
     /* seat-composition bars + donuts */
     .comp-row { margin: 16px 0 4px; display: flex; gap: 16px; align-items: center; }
     .comp-main { flex: 1; min-width: 0; }
@@ -104,9 +141,17 @@
     </div>
 
     <div class="card">
-      <h2>Who Holds Power Now</h2>
+      <h2>The National Assembly</h2>
       <p class="hint" id="comp-note"></p>
+      <div id="arches"></div>
       <div id="composition"></div>
+      <div class="srcs" id="srcs"></div>
+    </div>
+
+    <div class="card">
+      <h2>State Houses of Assembly</h2>
+      <p class="hint" id="sha-note">Loading…</p>
+      <div id="sha"></div>
     </div>
 
     <div class="card map-card">
@@ -117,7 +162,8 @@
 
     <div class="card">
       <h2>Incumbent Governors</h2>
-      <table><thead><tr><th>State</th><th>Governing Party</th></tr></thead><tbody id="tbl"></tbody></table>
+      <p class="hint">Grouped by geopolitical zone — open one to see its states.</p>
+      <div id="zones"></div>
     </div>
 
     <div class="card">
@@ -136,14 +182,80 @@
     <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p></div></footer>
 
   <script>
-    const PC = { APC:'#2e7d32', PDP:'#c62828', LP:'#388e3c', NNPP:'#1565c0', APGA:'#f9a825', SDP:'#5e35b1', ADC:'#00897b', YPP:'#ef6c00', APM:'#283593', NDC:'#2e3192', A:'#00838f' };
+    const PC = { APC:'#2e7d32', PDP:'#c62828', LP:'#8bc34a', NNPP:'#1565c0', APGA:'#f9a825', SDP:'#5e35b1', ADC:'#00897b', YPP:'#ef6c00', APM:'#283593', NDC:'#2e3192', A:'#00838f' };
     const color = (p) => PC[p] || '#9aa7a0';
     const norm = (s) => { const n = String(s||'').toLowerCase().replace(/[^a-z ]+/g,' ').replace(/\s+/g,' ').trim(); return /fct|federal capital|abuja/.test(n)?'fct':n; };
+    const esc = (s) => String(s==null?'':s).replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+    // The six geopolitical zones. Fixed, constitutional groupings — not a
+    // presentation choice — so they live as data, not as a sort.
+    const ZONES = {
+      'North Central': ['Benue','Kogi','Kwara','Nasarawa','Niger','Plateau','FCT'],
+      'North East': ['Adamawa','Bauchi','Borno','Gombe','Taraba','Yobe'],
+      'North West': ['Jigawa','Kaduna','Kano','Katsina','Kebbi','Sokoto','Zamfara'],
+      'South East': ['Abia','Anambra','Ebonyi','Enugu','Imo'],
+      'South South': ['Akwa Ibom','Bayelsa','Cross River','Delta','Edo','Rivers'],
+      'South West': ['Ekiti','Lagos','Ogun','Ondo','Osun','Oyo'],
+    };
+
+    /**
+     * A hemicycle — one dot per seat, the way a chamber actually sits.
+     *
+     * Seats are dealt row by row from the outermost arc inwards, each row
+     * holding a share proportional to its radius (a longer arc fits more), then
+     * filled left-to-right across the whole arch so each party occupies one
+     * contiguous block. Generated from the counts rather than shipped as an
+     * image, so the picture cannot drift from the numbers printed beside it.
+     */
+    function seatArch(parties, size) {
+      const entries = Object.entries(parties).sort((a,b) => b[1]-a[1]);
+      const filled = entries.reduce((s,[,n]) => s+n, 0);
+      const total = Math.max(size, filled);
+      const ROWS = total > 200 ? 12 : 8, R0 = 34, R1 = 96;
+      // Row capacities proportional to radius, scaled to hit `total` exactly.
+      const radii = Array.from({length:ROWS}, (_,i) => R0 + (R1-R0) * (i/(ROWS-1)));
+      const weight = radii.reduce((a,r) => a+r, 0);
+      const caps = radii.map((r) => Math.max(1, Math.round(total * r / weight)));
+      let drift = total - caps.reduce((a,b)=>a+b,0);
+      for (let i = caps.length-1; drift !== 0; i = (i-1+caps.length)%caps.length) {
+        const d = drift > 0 ? 1 : -1;
+        if (caps[i] + d >= 1) { caps[i] += d; drift -= d; }
+      }
+      // Deal every seat an (angle, radius), ordered across the arch.
+      const slots = [];
+      caps.forEach((cap, row) => {
+        for (let i = 0; i < cap; i++) {
+          const t = cap === 1 ? 0.5 : i/(cap-1);
+          slots.push({ t, r: radii[row] });
+        }
+      });
+      slots.sort((a,b) => a.t - b.t || a.r - b.r);
+      // Colour them party by party, longest bloc first — left to right.
+      const seq = [];
+      entries.forEach(([p,n]) => { for (let i=0;i<n;i++) seq.push(p); });
+      while (seq.length < total) seq.push(null);      // vacant / undeclared
+      const dots = slots.map((s, i) => {
+        const a = Math.PI * (1 - s.t);
+        const x = 110 + Math.cos(a) * s.r, y = 108 - Math.sin(a) * s.r;
+        const p = seq[i];
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.1" fill="${p?color(p):'#d7ded9'}"><title>${p?esc(p):'Vacant / undeclared'}</title></circle>`;
+      }).join('');
+      return `<svg class="arch" viewBox="0 0 220 124" role="img"
+        aria-label="${filled} of ${size} seats held, by party">
+        ${dots}
+        <text class="tot" x="110" y="98" font-size="19">${filled}</text>
+        <text class="totsub" x="110" y="114" font-size="8.5">of ${size} seats</text>
+      </svg>`;
+    }
+
     (async () => {
-      const [geo, data, logos] = await Promise.all([
+      const [geo, data, logos, live] = await Promise.all([
         fetch('states_geo.json').then(r=>r.json()),
         fetch('political_data.json').then(r=>r.json()),
         fetch('logos/manifest.json').then(r=>r.json()).catch(()=>({})),
+        // Server-refreshed upstream (Wikipedia/NASS). Enrichment only — the page
+        // renders fully from the committed JSON if this is unavailable.
+        fetch('/api/political').then(r=>r.json()).catch(()=>({ok:false})),
       ]);
       const byKey = {}; for (const [st,p] of Object.entries(data.governors)) byKey[norm(st)] = { st, p };
 
@@ -170,29 +282,50 @@
 
       // Seat composition — stacked bar + donut per chamber, party-colored,
       // grey remainder = vacant/undeclared seats.
+      // ---- Hemicycles, plus an honest cross-check against the live source ----
       if (data.composition) {
-        document.getElementById('comp-note').textContent =
-          `${data.composition.note} (as of ${data.composition.asOf})`;
-        document.getElementById('composition').innerHTML =
-          Object.values(data.composition.chambers).map((ch) => {
-            const entries = Object.entries(ch.parties).sort((a, b) => b[1] - a[1]);
-            const seats = entries.reduce((s, [, n]) => s + n, 0);
-            const segs = entries.map(([p, n]) =>
-              `<i style="width:${(n / ch.size) * 100}%;background:${color(p)}" title="${p}: ${n}"></i>`).join('');
-            const legend = entries.slice(0, 6).map(([p, n]) => `<span><b>${p}</b> ${n}</span>`).join('')
-              + (entries.length > 6 ? `<span>+${entries.length - 6} more</span>` : '');
-            let acc = 0;
-            const stops = entries.map(([p, n]) => {
-              const from = (acc / ch.size) * 100; acc += n;
-              return `${color(p)} ${from}% ${(acc / ch.size) * 100}%`;
-            }).join(', ');
-            const donut = `<div class="donut" aria-hidden="true" style="background:conic-gradient(${stops}${acc < ch.size ? `, #eef2ef ${(acc / ch.size) * 100}% 100%` : ''})"></div>`;
-            return `<div class="comp-row">${donut}<div class="comp-main">
-              <div class="comp-head"><strong>${ch.label}</strong><span>${seats} of ${ch.size} seats declared</span></div>
-              <div class="comp-bar">${segs}</div>
-              <div class="comp-legend">${legend}</div>
-            </div></div>`;
+        const liveCh = (live && live.ok && live.chambers) || {};
+        // Federal chambers only. The composition file also carries governors,
+        // who are not in the National Assembly and are already covered by the
+        // zone accordions and the map below.
+        document.getElementById('arches').innerHTML =
+          Object.entries(data.composition.chambers)
+            .filter(([key]) => key === 'senate' || key === 'house')
+            .map(([key, ch]) => {
+            const entries = Object.entries(ch.parties).sort((a,b) => b[1]-a[1]);
+            const held = entries.reduce((s,[,n]) => s+n, 0);
+            const key6 = entries.slice(0,7).map(([p,n]) =>
+              `<span><i style="background:${color(p)}"></i><b>${n}</b> ${esc(p)}</span>`).join('');
+            // Where our curated figure and Wikipedia's disagree, SAY so. The
+            // usual cause is defections Wikipedia has not absorbed yet, and
+            // quietly preferring one source is the thing this project exists
+            // to argue against.
+            const lp = liveCh[key] && liveCh[key].parties;
+            let diff = '';
+            if (lp) {
+              const rows = [...new Set([...Object.keys(ch.parties), ...Object.keys(lp)])]
+                .filter((p) => (ch.parties[p]||0) !== (lp[p]||0))
+                .map((p) => `${esc(p)} <b>${ch.parties[p]||0}</b> vs <b>${lp[p]||0}</b>`);
+              if (rows.length) diff = `<div class="xcheck">Wikipedia currently differs on
+                ${rows.length} part${rows.length===1?'y':'ies'} — ${rows.join(', ')} (ours first).
+                Ours reflects declared defections; we do not overwrite it automatically.</div>`;
+            }
+            return `<div class="chamber">
+              <h3>${esc(ch.label)}</h3>
+              <p class="sub">${held} of ${ch.size} seats held${held<ch.size?` · ${ch.size-held} vacant or undeclared`:''}</p>
+              ${seatArch(ch.parties, ch.size)}
+              <div class="seat-key">${key6}</div>${diff}
+            </div>`;
           }).join('');
+
+        const stamp = live && live.ok && live.fetchedAt
+          ? ` Cross-checked against Wikipedia ${new Date(live.fetchedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}.` : '';
+        document.getElementById('comp-note').textContent =
+          `${data.composition.note} (as of ${data.composition.asOf}).${stamp}`;
+        if (live && live.ok && live.sources) {
+          document.getElementById('srcs').innerHTML = live.sources.map((s) =>
+            `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)} ↗</a>`).join('');
+        }
       }
       document.getElementById('prez').textContent = `${data.president.name}: governing party ${data.president.party}`;
       document.getElementById('provisional').textContent = data.note;
@@ -208,8 +341,58 @@
       const parties = [...new Set(Object.values(data.governors).filter(Boolean))];
       document.getElementById('legend').innerHTML = parties.map(p=>`<span><i style="background:${color(p)}"></i>${p}</span>`).join('');
 
-      document.getElementById('tbl').innerHTML = Object.entries(data.governors).sort().map(([st,p])=>`
-        <tr><td>${st}</td><td>${p?`<span class="chip">${logos[p]?`<img src="${logos[p]}" alt="">`:`<span class="dot" style="background:${color(p)}">${p.slice(0,3)}</span>`}${p}</span>`:'—'}</td></tr>`).join('');
+      // Governors, grouped into the six geopolitical zones. 37 rows in one
+      // table is a wall; six named groups is a shape people already hold in
+      // their heads. The party dots on each closed row mean a zone's balance
+      // reads without opening it. menu.js keeps only one open at a time.
+      const chipOf = (p) => p
+        ? `<span class="chip">${logos[p] ? `<img src="${logos[p]}" alt="">`
+            : `<span class="dot" style="background:${color(p)}">${esc(p.slice(0, 3))}</span>`}${esc(p)}</span>`
+        : '\u2014';
+      document.getElementById('zones').innerHTML = Object.entries(ZONES).map(([zone, states]) => {
+        const rows = states.filter((st) => st in data.governors);
+        const mix = {};
+        rows.forEach((st) => { const p = data.governors[st]; if (p) mix[p] = (mix[p] || 0) + 1; });
+        const ranked = Object.entries(mix).sort((a, b) => b[1] - a[1]);
+        const dots = ranked.map(([p, n]) =>
+          `<i style="background:${color(p)}" title="${esc(p)}: ${n}"></i>`.repeat(n)).join('');
+        const lead = ranked[0];
+        return `<details class="zone acc"><summary>${esc(zone)}
+            <span class="zone-mix">${dots}</span>
+            <span class="zone-n">${rows.length} state${rows.length === 1 ? '' : 's'}${lead ? ` \u00b7 ${esc(lead[0])} leads` : ''}</span>
+          </summary>
+          <table><tbody>${rows.map((st) =>
+            `<tr><td>${esc(st)}</td><td>${chipOf(data.governors[st])}</td></tr>`).join('')}</tbody></table>
+        </details>`;
+      }).join('');
+
+      // ---- State assemblies: Wikipedia is the only source, so it is used as-is
+      // and each row keeps the "as of" Wikipedia itself carries. Several are
+      // years old; saying so is better than implying they are current. ----
+      if (live && live.ok && live.states && Object.keys(live.states).length) {
+        const sts = Object.entries(live.states).sort((a, b) => a[0].localeCompare(b[0]));
+        document.getElementById('sha-note').textContent =
+          `${sts.length} of 36 state assemblies, from Wikipedia. Each row keeps its own "as of" date — some are several years old.`;
+        document.getElementById('sha').innerHTML = Object.entries(ZONES).map(([zone, states]) => {
+          const rows = sts.filter(([st]) => states.includes(st));
+          if (!rows.length) return '';
+          return `<details class="zone acc"><summary>${esc(zone)}
+              <span class="zone-n">${rows.length} assembl${rows.length === 1 ? 'y' : 'ies'}</span>
+            </summary>
+            <table><tbody>${rows.map(([st, a]) => {
+              const seg = Object.entries(a.parties).sort((x, y) => y[1] - x[1])
+                .map(([p, n]) => `<i style="width:${(n / a.seats) * 100}%;background:${color(p)}" title="${esc(p)}: ${n}"></i>`).join('');
+              const top = Object.entries(a.parties).sort((x, y) => y[1] - x[1])[0];
+              return `<tr><td>${esc(st)}<div class="comp-bar" style="margin-top:5px">${seg}</div></td>
+                <td style="white-space:nowrap">${top ? `<strong>${esc(top[0])}</strong> ${top[1]}/${a.seats}` : '\u2014'}
+                <div class="zone-n">${a.asOf ? `as of ${esc(a.asOf)}` : ''}</div></td></tr>`;
+            }).join('')}</tbody></table>
+          </details>`;
+        }).join('');
+      } else {
+        document.getElementById('sha-note').textContent =
+          'State assembly data is unavailable right now — it is pulled live and the source did not answer.';
+      }
 
       if (data.upcoming) {
         document.getElementById('up-note').textContent = data.upcoming.note;

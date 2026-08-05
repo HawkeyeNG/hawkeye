@@ -147,7 +147,7 @@
   <script src="device.js"></script>
   <script src="scan.js?v=3"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=133"></script>
+  <script src="menu.js?v=134"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
@@ -294,9 +294,17 @@
       const state = $('sel-state').value;
       const prev = $('sel-contest').value;
       const applicable = CONTESTS.filter((c) => contestApplies(state, c.code, c.states));
-      $('sel-contest').innerHTML = '<option value="">— select election —</option>'
-        + applicable.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
-      if (prev && applicable.some((c) => c.code === prev)) $('sel-contest').value = prev;
+      // Show ALL five races, not just the configured one — the unconfigured ones
+      // render disabled, so the picker says what Hawkeye covers without letting
+      // anyone file against a race with no date. Helper in menu.js; falls back to
+      // the old configured-only list if menu.js somehow has not run.
+      if (window.HAWKEYE_RACES) {
+        window.HAWKEYE_RACES.fill($('sel-contest'), applicable);
+      } else {
+        $('sel-contest').innerHTML = '<option value="">— select election —</option>'
+          + applicable.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
+        if (prev && applicable.some((c) => c.code === prev)) $('sel-contest').value = prev;
+      }
       updateSubmit();
     }
     function updateSubmit() {

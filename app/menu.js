@@ -771,7 +771,24 @@
     const bar = document.querySelector('.tabbar');
     const barH = bar && getComputedStyle(bar).display !== 'none' ? bar.getBoundingClientRect().height : 0;
     const top = p.getBoundingClientRect().top;
-    const avail = window.innerHeight - top - barH - 12; // 12px breathing room
+    // visualViewport is the ONLY reliable height on mobile: window.innerHeight
+    // counts the area under a retracted browser toolbar, and in the Capacitor
+    // WebView it counts the gesture-bar inset too, so both over-report and the
+    // panel's tail ends up behind the tab bar.
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    // A fixed tab bar may or may not include the safe-area inset in its own box
+    // depending on how it padded itself, so read the inset and take whichever
+    // reservation is larger rather than assuming.
+    const probe = getComputedStyle(document.documentElement)
+      .getPropertyValue('--safe-bottom').trim();
+    const inset = parseFloat(probe) || 0;
+    const bottom = Math.max(barH, barH + inset - 8);
+    // Clear the assistant button too — a menu that ends underneath it looks
+    // like the list was cut off, and the last row is unclickable either way.
+    const fab = document.getElementById('hk-fab');
+    const fabH = fab && getComputedStyle(fab).display !== 'none'
+      ? Math.max(0, vh - fab.getBoundingClientRect().top - bottom) : 0;
+    const avail = vh - top - bottom - fabH - 16;   // 16px breathing room
     p.style.maxHeight = Math.max(160, Math.round(avail)) + 'px';
     p.style.overflowY = 'scroll';   // permanent gutter — bar visible whenever cut off
     markScrollCue(p);
@@ -796,6 +813,9 @@
     new MutationObserver(() => sizeMenuPanel()).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
     panel.addEventListener('scroll', () => markScrollCue(panel), { passive: true });
     addEventListener('resize', sizeMenuPanel);
+    // The WebView fires visualViewport resize (toolbar retract, keyboard) without
+    // firing window resize, and that is exactly when the panel is mis-sized.
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', sizeMenuPanel);
     addEventListener('orientationchange', () => setTimeout(sizeMenuPanel, 150));
   }
 })();

@@ -24,7 +24,11 @@ const WELCOME = 'Welcome to Hawkeye. Tap the button below to share your phone nu
 export const CLIPS_TG = [
   {
     slug: 'otp-telegram',
-    title: 'How to Get Your Code',
+    // Says OTP and Telegram outright. "Get Your Code" told a scrolling viewer
+    // neither what the thing is called in the app nor where it turns up, and
+    // this title is BOTH the on-screen card and the intro voiceover line
+    // (build_howto_hf.mjs derives the VO intro from it), so it has one job.
+    title: 'How to get your OTP from Telegram',
     kicker: 'YOUR CODE ARRIVES ON TELEGRAM',
     steps: [
       {

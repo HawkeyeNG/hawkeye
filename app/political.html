@@ -38,6 +38,25 @@
        generated from the party counts (see seatArch() below) rather than
        lifted as an image, so it always matches the numbers beside it. */
     .arch { display: block; width: 100%; max-width: 460px; margin: 4px auto 0; height: auto; }
+    /* A seat is ~3 user units across, which on a phone is a 5px target — under
+       half the ~9mm a fingertip actually covers. A TRANSPARENT stroke widens the
+       hit area without changing a pixel of what is drawn; 2 units keeps it
+       inside the ~6.7-unit gap between neighbours on the outermost row. */
+    .arch .seat { cursor: pointer; stroke: rgba(0,0,0,0); stroke-width: 2; }
+    .arch .seat:focus { outline: none; }
+    /* The tapped seat gets a visible ring so it is obvious WHICH dot the card
+       below is describing — on a 360-dot arch the finger covers the target. */
+    .arch .seat.is-open { stroke: var(--ink, #0b2b1c); stroke-width: 2; paint-order: stroke; }
+    .seat-card {
+      margin: 8px auto 0; max-width: 460px; display: none;
+      border: 1px solid var(--line, #e3e8e4); border-left: 4px solid var(--pc, #9aa7a0);
+      border-radius: 10px; padding: 9px 12px; background: var(--card, #fff); text-align: left;
+    }
+    .seat-card.show { display: block; }
+    .seat-card b { display: block; font-size: 0.95rem; line-height: 1.3; }
+    .seat-card .meta { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
+    .seat-card .office { color: #a9791f; font-weight: 700; font-size: 0.78rem; }
+    .seat-card .src { font-size: 0.72rem; opacity: 0.6; margin-top: 4px; }
     .arch circle { stroke: var(--card); stroke-width: 0.8; }
     .arch circle.boss { stroke: #f0b429; stroke-width: 1.8; }
     .arch circle:hover { stroke: var(--ink); stroke-width: 1.4; }
@@ -210,14 +229,12 @@
      */
     function seatArch(parties, size, roster) {
       // Members come from nass.gov.ng, which publishes fewer members than there
-      // are seats (74 of 109 senators, 246 of 360 reps as of Aug 2026). Names
-      // are dealt within each party's own bloc, so an unnamed dot is always a
-      // seat NASS has not published — never a seat attributed to the wrong party.
+      // are seats (74 of 109 senators, 245 of 360 reps as of Aug 2026). Only
+      // members a source actually places in a party are poolable; the rest are
+      // deliberately left out of the picture entirely (see the deal below).
       const pool = {};
-      const unknown = [];
       for (const m of (roster && roster.members) || []) {
-        if (m.partyKnown && m.party) (pool[m.party] ||= []).push(m);
-        else unknown.push(m);
+        if (m.party) (pool[m.party] ||= []).push(m);
       }
       const entries = Object.entries(parties).sort((a,b) => b[1]-a[1]);
       const filled = entries.reduce((s,[,n]) => s+n, 0);
@@ -243,32 +260,53 @@
       slots.sort((a,b) => a.t - b.t || a.r - b.r);
       // Colour them party by party, longest bloc first — left to right.
       const seq = [];
-      // Each bloc takes its confirmed members first. Any seats left over are
-      // filled from the members whose party our sources do not publish — they
-      // are named, but the tooltip says the colour is this seat's bloc, not a
-      // confirmed affiliation for that person.
-      const spare = unknown.slice();
+      // A bloc names ONLY the members a source actually places in that party.
+      // Seats it cannot name stay unnamed.
+      //
+      // DO NOT "helpfully" fill the remainder from the members whose party no
+      // source publishes. That is what this did until 2026-08-05, and a
+      // coloured dot reads as an assertion no matter what the tooltip says: 25
+      // unattributed northern members were dealt into the Labour bloc purely
+      // because it had 25 seats spare, so Kano, Kaduna, Jigawa and Katsina reps
+      // — among them an APC member who had already moved to the ADC — appeared
+      // on the page as Labour, in a chamber where Labour holds no northern seat
+      // but one. An unnamed seat is honest; a named seat under an unsourced
+      // party is a fabricated claim, and this is an election-integrity product.
       entries.forEach(([p,n]) => {
         const named = (pool[p] || []).slice();
-        for (let i=0;i<n;i++) {
-          const m = named[i] || spare.shift() || null;
-          seq.push({ party: p, m, sure: Boolean(named[i]) });
-        }
+        for (let i=0;i<n;i++) seq.push({ party: p, m: named[i] || null });
       });
-      while (seq.length < total) seq.push({ party: null, m: null, sure: false });  // vacant
+      // The remainder are real sitting members whose party no source publishes.
+      // They get a seat and their NAME — they exist, and leaving them as
+      // "vacant" was its own small lie — but a neutral grey dot and no party
+      // claim. Anything left after that is a genuinely undeclared seat.
+      const noParty = ((roster && roster.members) || []).filter((m) => !m.party);
+      while (seq.length < total) seq.push({ party: null, m: noParty.shift() || null });
       const dots = slots.map((s, i) => {
         const a = Math.PI * (1 - s.t);
         const x = 110 + Math.cos(a) * s.r, y = 108 - Math.sin(a) * s.r;
-        const { party: p, m, sure } = seq[i];
+        const { party: p, m } = seq[i];
         // A presiding officer gets a gold ring and a wider dot — the four people
         // who actually control each chamber's floor should be findable in it.
         const boss = m && m.office;
         const label = m
           ? `${m.name}${m.office ? ` — ${m.office}` : ''}\n${m.district || m.state}`
-            + (sure ? ` (${m.party})` : ` (${p} bloc — party not published for this member)`)
+            + (m.party ? ` (${m.party})` : ' — party not published by any source')
           : (p ? `${p} — seat not named by our sources` : 'Vacant / undeclared');
-        return `<circle class="${boss ? 'boss' : ''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}"
-          r="${boss ? 4.4 : 3.1}" fill="${p ? color(p) : '#d7ded9'}"><title>${esc(label)}</title></circle>`;
+        // A phone cannot hover, so the <title> tooltip — which is all this had —
+        // was desktop-only, and on desktop a click DISMISSED it. Every seat now
+        // carries its detail as data and is a real button; the <title> stays as
+        // the free desktop hover and the accessible name.
+        const at = m
+          ? ` data-name="${esc(m.name)}" data-sub="${esc(m.district || m.state)}"`
+            + ` data-party="${esc(m.party || '')}" data-office="${esc(m.office || '')}"`
+            + ` data-src="${esc(m.party ? (m.source || '') : 'no source publishes a party for this seat')}"`
+          : ` data-name="${esc(p ? `${p} — seat not named` : 'Vacant / undeclared')}"`
+            + ` data-sub="${esc(p ? 'No source we have found names this seat' : 'No member declared')}"`
+            + ` data-party="${esc(p || '')}"`;
+        return `<circle class="seat${boss ? ' boss' : ''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}"
+          r="${boss ? 4.4 : 3.1}" fill="${p ? color(p) : '#d7ded9'}" tabindex="0" role="button"${at}
+          ><title>${esc(label)}</title></circle>`;
       }).join('');
       return `<svg class="arch" viewBox="0 0 220 124" role="img"
         aria-label="${filled} of ${size} seats held, by party">
@@ -279,14 +317,19 @@
     }
 
     (async () => {
-      const [geo, data, logos, live] = await Promise.all([
+      const [geo, data, logos, live, own] = await Promise.all([
         fetch('states_geo.json').then(r=>r.json()),
         fetch('political_data.json').then(r=>r.json()),
         fetch('logos/manifest.json').then(r=>r.json()).catch(()=>({})),
         // Server-refreshed upstream (Wikipedia/NASS). Enrichment only — the page
         // renders fully from the committed JSON if this is unavailable.
         fetch('/api/political').then(r=>r.json()).catch(()=>({ok:false})),
+        // Our own roster: every seat, its party, and which source produced it.
+        // This is the authority for both the names AND the counts, so the
+        // chart can never disagree with the people standing in it.
+        fetch('members.json').then(r=>r.json()).catch(()=>null),
       ]);
+      const roster = (own && own.chambers) || {};
       const byKey = {}; for (const [st,p] of Object.entries(data.governors)) byKey[norm(st)] = { st, p };
 
       // 2027 presidential race cards — Wikipedia portraits + party flags
@@ -314,16 +357,22 @@
       // grey remainder = vacant/undeclared seats.
       // ---- Hemicycles, plus an honest cross-check against the live source ----
       if (data.composition) {
-        const liveCh = (live && live.ok && live.chambers) || {};
+        // Counts are DERIVED from the roster wherever we have one, so a seat
+        // and the person in it are always the same fact counted once. The
+        // curated block stays as the fallback for a chamber we have not
+        // rostered (and for governors / assemblies, which are not members).
+        for (const [k, ch] of Object.entries(data.composition.chambers)) {
+          if (roster[k] && roster[k].parties && roster[k].withParty) ch.parties = roster[k].parties;
+        }
         // Coverage, stated. Hovering a dot that has no name should not leave
         // anyone wondering whether the seat is empty or the source is thin.
         // One instruction per chamber. Everything about provenance and coverage
         // moved into the single info dot on the note line above — this sits under
         // a graphic and should say what to DO with it, nothing more.
         const nameNote = (key) => {
-          const r = live && live.ok && live.members && live.members[key];
+          const r = roster[key];
           if (!r || !r.listed) return '';
-          return `<p class="sub" style="margin-top:8px">Hover or tap a seat for the
+          return `<p class="sub" style="margin-top:8px">Tap a seat for the
             ${key === 'senate' ? 'Senator' : 'Member'}.</p>`;
         };
         // Federal chambers only. The composition file also carries governors,
@@ -337,27 +386,56 @@
             const held = entries.reduce((s,[,n]) => s+n, 0);
             const key6 = entries.slice(0,7).map(([p,n]) =>
               `<span><i style="background:${color(p)}"></i><b>${n}</b> ${esc(p)}</span>`).join('');
-            // Where our curated figure and Wikipedia's disagree, SAY so. The
-            // usual cause is defections Wikipedia has not absorbed yet, and
-            // quietly preferring one source is the thing this project exists
-            // to argue against.
-            const lp = liveCh[key] && liveCh[key].parties;
-            let diff = '';
-            if (lp) {
-              const rows = [...new Set([...Object.keys(ch.parties), ...Object.keys(lp)])]
-                .filter((p) => (ch.parties[p]||0) !== (lp[p]||0))
-                .map((p) => `${esc(p)} <b>${ch.parties[p]||0}</b> vs <b>${lp[p]||0}</b>`);
-              if (rows.length) diff = `<div class="xcheck">Wikipedia currently differs on
-                ${rows.length} part${rows.length===1?'y':'ies'} — ${rows.join(', ')} (ours first).
-                Ours reflects declared defections; we do not overwrite it automatically.</div>`;
-            }
+            // NO cross-check card here. There is no single authority on which
+            // party a member sits for today — nass.gov.ng records only the
+            // party someone was elected on, Wikipedia's roster covers 16
+            // states, and no source at all covers every seat. Printing "we say
+            // X, Wikipedia says Y" beside every chamber just published that
+            // confusion and invited the reader to arbitrate it. Our own roster
+            // (members.json, one cited source per seat) IS the answer, and the
+            // provenance for it lives in the info dot above.
             return `<div class="chamber">
               <h3>${esc(ch.label)}</h3>
-              <p class="sub">${held} of ${ch.size} seats held${held<ch.size?` · ${ch.size-held} vacant or undeclared`:''}</p>
-              ${seatArch(ch.parties, ch.size, (live && live.ok && live.members) ? live.members[key] : null)}${nameNote(key)}
-              <div class="seat-key">${key6}</div>${diff}
+              <p class="sub">${held} of ${ch.size} seats attributed${held<ch.size
+                  ? ` · ${ch.size-held} held by a member whose party no source publishes`
+                  : ''}</p>
+              ${seatArch(ch.parties, ch.size, roster[key])}
+              <div class="seat-card" id="seat-card-${key}"></div>${nameNote(key)}
+              <div class="seat-key">${key6}</div>
             </div>`;
           }).join('');
+
+        // Tap/click a seat -> show its card under that chamber's arch. Delegated
+        // once on the container, so it survives the arches being re-rendered.
+        // Keyboard gets the same thing: the dots are focusable buttons.
+        const openSeat = (c) => {
+          const card = c.closest('.chamber').querySelector('.seat-card');
+          if (!card) return;
+          const wasOpen = c.classList.contains('is-open');
+          document.querySelectorAll('.arch .seat.is-open').forEach((o) => o.classList.remove('is-open'));
+          document.querySelectorAll('.seat-card.show').forEach((o) => o.classList.remove('show'));
+          if (wasOpen) return;                       // tapping the same dot closes it
+          c.classList.add('is-open');
+          const d = c.dataset;
+          card.style.setProperty('--pc', d.party ? color(d.party) : '#9aa7a0');
+          card.innerHTML = `<b>${esc(d.name)}</b>`
+            + (d.office ? `<div class="office">${esc(d.office)}</div>` : '')
+            + `<div class="meta">${esc(d.sub)}${d.party ? ` · ${esc(d.party)}` : ''}</div>`
+            + (!d.src ? ''
+               : d.party
+                 ? `<div class="src">Party per ${esc(d.src === 'hawkeye' ? 'Hawkeye (sourced attribution)' : d.src)}</div>`
+                 : `<div class="src">${esc(d.src)}</div>`);
+          card.classList.add('show');
+        };
+        document.getElementById('arches').addEventListener('click', (e) => {
+          const c = e.target.closest('.seat');
+          if (c) openSeat(c);
+        });
+        document.getElementById('arches').addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          const c = e.target.closest && e.target.closest('.seat');
+          if (c) { e.preventDefault(); openSeat(c); }
+        });
 
         // Everything that EXPLAINS where these numbers come from — provenance,
         // dates, how many seats each source could name — goes in the dot. The
@@ -365,16 +443,25 @@
         const when = live && live.ok && live.fetchedAt
           ? new Date(live.fetchedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
           : null;
+        // Coverage and provenance, per chamber, counted off our own roster.
+        // No overflow arithmetic any more: the seat counts are derived from
+        // these same members, so a member can no longer be squeezed out of a
+        // bloc that a differently-dated source said was full.
         const cover = ['senate', 'house'].map((k) => {
-          const r = live && live.ok && live.members && live.members[k];
+          const r = roster[k];
           if (!r || !r.listed) return '';
           const label = k === 'senate' ? 'Senate' : 'House';
           const rings = r.members.filter((m) => m.office).length;
-          return `${label}: all ${r.listed} seats named from currentaffairs.ng`
+          const bySrc = {};
+          for (const m of r.members) if (m.party) bySrc[m.source || 'other'] = (bySrc[m.source || 'other'] || 0) + 1;
+          const srcList = Object.entries(bySrc).sort((a, b) => b[1] - a[1])
+            .map(([s, n]) => `${n} from ${s === 'hawkeye' ? 'our own sourced attributions' : s}`).join(', ');
+          return `${label}: all ${r.listed} seats named`
             + (rings ? `, ${rings} presiding officers ringed in gold` : '')
-            + `. Party confirmed against nass.gov.ng for ${r.withParty || 0}`
-            + ((r.withParty || 0) < r.listed
-              ? `; the other ${r.listed - (r.withParty || 0)} are seated in their bloc, but their party is not published by either source.` : '.');
+            + `. ${r.withParty} carry a party we can cite — ${srcList}.`
+            + (r.withParty < r.listed
+              ? ` The remaining ${r.listed - r.withParty} have no party in any source we have found, so they sit unnamed rather than coloured by guesswork; each one we confirm gets added with its citation.`
+              : '');
         }).filter(Boolean).join(' ');
         const info = [
           data.composition.note,

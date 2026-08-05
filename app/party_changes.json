@@ -1,0 +1,105 @@
+{
+ "note": "Hawkeye's editorial layer over app/members.json, applied on top of whatever the scraped sources produced. Two kinds of row, both requiring a citable source. (1) A DEFECTION carries `from`, and is skipped unless the elected party matches — that guard is what stops a stale change being applied to a seat that has since changed hands. (2) An ATTRIBUTION omits `from` and simply supplies a party for a seat no public source publishes; these exist because no dataset covers all 469 seats, and hand-sourcing the remainder is precisely how this becomes the reliable record rather than another partial copy. Match is on constituency, which is unique per seat.",
+ "changes": [
+  {
+   "member": "Mohammed Bello El-Rufai",
+   "district": "Kaduna North",
+   "chamber": "house",
+   "from": "APC",
+   "to": "ADC",
+   "date": "2026-05-07",
+   "source": "https://politicsnigeria.com/2026/05/07/breaking-el-rufais-son-dumps-apc-defects-to-adc-ahead-of-2027-elections/"
+  },
+  {
+   "member": "Abdulmumin Jibrin",
+   "district": "Bebeji/Kiru",
+   "chamber": "house",
+   "from": "NNPP",
+   "to": "APC",
+   "date": "2025-11-13",
+   "source": "https://saharareporters.com/2025/11/13/two-house-reps-members-kano-dump-nnpp-apc-cite-internal-crisis"
+  },
+  {
+   "member": "Ibrahim Sagir Koki",
+   "district": "Kano Municipal",
+   "chamber": "house",
+   "from": "NNPP",
+   "to": "APC",
+   "date": "2025-11-13",
+   "source": "https://saharareporters.com/2025/11/13/two-house-reps-members-kano-dump-nnpp-apc-cite-internal-crisis"
+  },
+  {
+   "member": "Ghali Tijjani Mustapha",
+   "district": "Albasu/Gaya/Ajingi",
+   "chamber": "house",
+   "from": "NNPP",
+   "to": "APC",
+   "date": "2026-03-31",
+   "source": "https://www.channelstv.com/2026/03/31/eight-kano-reps-dump-nnpp-for-apc/"
+  },
+  {
+   "member": "Dankawu Idris",
+   "district": "Kumbotso",
+   "chamber": "house",
+   "from": "NNPP",
+   "to": "APC",
+   "date": "2026-03-31",
+   "source": "https://www.channelstv.com/2026/03/31/eight-kano-reps-dump-nnpp-for-apc/"
+  },
+  {
+   "member": "Rabiu Yusuf Takai",
+   "district": "Sumaila/Takai",
+   "chamber": "house",
+   "from": "NNPP",
+   "to": "APC",
+   "date": "2026-03-31",
+   "source": "https://www.channelstv.com/2026/03/31/eight-kano-reps-dump-nnpp-for-apc/"
+  },
+  {
+   "member": "Aliyu Sani Madaki",
+   "district": "Dala",
+   "chamber": "house",
+   "from": "NNPP",
+   "to": "APC",
+   "date": "2026-03-31",
+   "source": "https://www.arise.tv/nine-kano-reps-defect-from-nnpp-to-apc-amid-political-realignment/"
+  },
+  {
+   "member": "Ibrahim Garba Mohammed",
+   "district": "Gwale",
+   "chamber": "house",
+   "from": "NNPP",
+   "to": "APC",
+   "date": "2026-03-31",
+   "source": "https://www.arise.tv/nine-kano-reps-defect-from-nnpp-to-apc-amid-political-realignment/"
+  },
+  {
+   "member": "Tijjani Abdulkadir Jobe",
+   "district": "Dawakin Tofa/Tofa/Rimin Gado",
+   "chamber": "house",
+   "from": "NNPP",
+   "to": "APC",
+   "date": "2026-03-31",
+   "source": "https://www.arise.tv/nine-kano-reps-defect-from-nnpp-to-apc-amid-political-realignment/"
+  },
+
+  {"member": "Murtar Muhammad", "district": "Kazaure/Roni/Gwiwa/Yankwashi", "chamber": "house", "to": "APC", "source": "https://www.stears.co/elections/2023/house-of-representatives/JI/"},
+  {"member": "Yusuf Saidu Miga", "district": "Miga/Jahun", "chamber": "house", "to": "APC", "source": "https://en.wikipedia.org/wiki/Yusuf_Sa%27idu_Miga"},
+  {"member": "Saad Taura", "district": "Taura/Ringim", "chamber": "house", "to": "APC", "source": "https://www.stears.co/elections/2023/house-of-representatives/JI/"},
+
+  {"member": "Jallo Hussaini Mohammed", "district": "Igabi", "chamber": "house", "to": "PDP", "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"},
+  {"member": "Amos Daniel", "district": "Jemaa/Sanga", "chamber": "house", "to": "PDP", "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"},
+  {"member": "Gabriel Saleh Zock", "district": "Kachia/Kagarko", "chamber": "house", "to": "APC", "source": "https://en.wikipedia.org/wiki/Gabriel_Saleh_Zock"},
+  {"member": "Matthew Donatus Kuzalio", "district": "Kaura", "chamber": "house", "to": "LP", "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"},
+  {"member": "Sadiq Ango Abdullahi", "district": "Sabon Gari", "chamber": "house", "to": "PDP", "source": "https://blueprint.ng/kaduna-speaker-abbas-ango-abdullahis-son-secure-tickets-as-apc-announces-reps-results/"},
+
+  {"member": "Ibrahim Hamisu", "district": "Dambatta/Makoda", "chamber": "house", "to": "APC", "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"},
+  {"member": "Aminu Sulaiman Goro", "district": "Fagge", "chamber": "house", "to": "NNPP", "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"},
+  {"member": "Gwarzo Abdullahi Mu'azu", "district": "Gwarzo/Kabo", "chamber": "house", "to": "APC", "source": "https://en.wikipedia.org/wiki/Gwarzo_Abdullahi_Muazu"},
+  {"member": "Zakari Umar Mukhtar", "district": "Tarauni", "chamber": "house", "to": "NNPP", "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"},
+
+  {"member": "Jamilu Muhammed", "district": "Faskari/Kankara/Sabuwa", "chamber": "house", "to": "PDP", "note": "Quit the PDP in July 2025 with no new party declared; seat also contested in court by APC's Shehu Dalhatu Tafoki. Left on the party he was seated under until one of the two resolves.", "source": "https://www.naijanews.com/2025/07/17/reps-member-jamilu-muhammad-dumps-pdp/"},
+  {"member": "Aminu Ibrahim Kafur", "district": "Malumfashi/Kafur", "chamber": "house", "to": "APC", "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"},
+  {"member": "Lawal Sani", "district": "Zango/Baure", "chamber": "house", "to": "APC", "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"}
+ ]
+}

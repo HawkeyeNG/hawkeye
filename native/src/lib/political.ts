@@ -88,7 +88,40 @@ const PARTY_NAME: Record<string, string> = { A: 'Accord' };
 /** Display label for a party code — "A" alone tells a reader nothing. */
 export const partyName = (p: string) => (PARTY_NAME[p] ? `${PARTY_NAME[p]} (${p})` : p);
 
-let cache: Promise<{ data: Political; logos: Record<string, string> }> | null = null;
+/** One seat in members.json — Hawkeye's own roster (see backend/scripts/build_members.py). */
+export type Member = {
+  name: string;
+  state: string;
+  district: string;
+  /** Current party, or null when no source we have found publishes one. */
+  party: string | null;
+  elected?: string | null;
+  office?: string | null;
+  /** Which source produced the party — shown so any seat can be challenged. */
+  source?: string | null;
+  changed?: { from?: string; to: string; date?: string; source?: string };
+};
+
+export type Chamber = {
+  size: number;
+  listed: number;
+  withParty: number;
+  parties: Record<string, number>;
+  members: Member[];
+};
+
+export type Members = {
+  asOf?: string;
+  note?: string;
+  changesApplied?: number;
+  chambers: Record<string, Chamber>;
+};
+
+let cache: Promise<{
+  data: Political;
+  logos: Record<string, string>;
+  members: Members | null;
+}> | null = null;
 
 export function loadPolitical() {
   if (!cache) {
@@ -97,7 +130,12 @@ export function loadPolitical() {
       fetch(`${BASE}/logos/manifest.json`)
         .then((r) => r.json() as Promise<Record<string, string>>)
         .catch(() => ({})),
-    ]).then(([data, logos]) => ({ data, logos }));
+      // The roster is an enrichment: if it fails the screen still renders the
+      // committed composition, exactly as it did before this existed.
+      fetch(`${BASE}/members.json`)
+        .then((r) => r.json() as Promise<Members>)
+        .catch(() => null),
+    ]).then(([data, logos, members]) => ({ data, logos, members }));
   }
   return cache;
 }

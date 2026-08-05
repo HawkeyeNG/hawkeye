@@ -1,0 +1,3967 @@
+{
+ "asOf": "2026-08-05",
+ "note": "Hawkeye's own roster of the National Assembly. No single public source lists every sitting member with a current party, so this merges all of them, records which source produced each seat, and applies our own documented party changes on top. Seat counts are derived from these members, so the chart and the names always agree.",
+ "sources": [
+  {
+   "name": "currentaffairs.ng",
+   "url": "https://currentaffairs.ng/rep/",
+   "role": "complete name roster"
+  },
+  {
+   "name": "National Assembly of Nigeria",
+   "url": "https://nass.gov.ng/",
+   "role": "party as elected"
+  },
+  {
+   "name": "Wikipedia \u2014 House members 2023\u20132027",
+   "url": "https://en.wikipedia.org/wiki/List_of_members_of_the_House_of_Representatives_of_Nigeria,_2023%E2%80%932027",
+   "role": "current party, 16 states"
+  },
+  {
+   "name": "Wikipedia \u2014 state delegations",
+   "url": "https://en.wikipedia.org/wiki/Nigerian_National_Assembly_delegation_from_Kano",
+   "role": "current party, per state"
+  },
+  {
+   "name": "Media Nigeria \u2014 2023 declared results",
+   "url": "https://www.medianigeria.com/",
+   "role": "2023 result, Senate"
+  }
+ ],
+ "changesApplied": 24,
+ "chambers": {
+  "house": {
+   "size": 360,
+   "listed": 360,
+   "withParty": 316,
+   "parties": {
+    "APC": 170,
+    "PDP": 102,
+    "LP": 24,
+    "NNPP": 11,
+    "YPP": 3,
+    "APGA": 2,
+    "ADC": 1,
+    "AA": 1,
+    "SDP": 1,
+    "ADP": 1
+   },
+   "members": [
+    {
+     "name": "Alex Mascot Ikwechegh",
+     "state": "Abia",
+     "district": "Aba North/Aba South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ibe Osonwa",
+     "state": "Abia",
+     "district": "Arochukwu/Ohafia",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Benjamin Kalu",
+     "state": "Abia",
+     "district": "Bende",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Samuel Ifeanyi Onuigbo",
+     "state": "Abia",
+     "district": "Ikwuano/Umuahia North and South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nigerianqueries"
+    },
+    {
+     "name": "Ginger Onwusibe",
+     "state": "Abia",
+     "district": "Isiala Ngwa South/Isiala Ngwa North",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Nkeiruka Onyejeocha",
+     "state": "Abia",
+     "district": "Isuikwuato/Umunneochi",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Solomon Adaelu",
+     "state": "Abia",
+     "district": "Obingwa, Osisoma Ngwa, and Ugwunagbo",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Christian Nkwonta",
+     "state": "Abia",
+     "district": "Ukwa East/Ukwa West",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Kwamoti Laori",
+     "state": "Adamawa",
+     "district": "Demsa/Numan/ Lamurde",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Aliyu Wakili Boya",
+     "state": "Adamawa",
+     "district": "Furore/Song",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Kobis Ari Thimnu",
+     "state": "Adamawa",
+     "district": "Guyuk/Shelleng",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Barka James Shuiabu",
+     "state": "Adamawa",
+     "district": "Hong/Gombi",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Bassi Mohammed Inuwa",
+     "state": "Adamawa",
+     "district": "Jada/Ganye/Mayo Belwa/Toungo",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Zakaria Dauda Nyampa",
+     "state": "Adamawa",
+     "district": "Michika/Madagali",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Rufa&#8217;i Jingi",
+     "state": "Adamawa",
+     "district": "Mubi N/Mubi S/Maiha",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Abubakar Baba Zango",
+     "state": "Adamawa",
+     "district": "Yola North/Yola South/Girei",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Aniekan John Umanah",
+     "state": "Akwa Ibom",
+     "district": "Abak/Etim Ekpo/Ika",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Etteh Okpolupm Ikpong",
+     "state": "Akwa Ibom",
+     "district": "Eket/Onna/Esit Eket/Ibeno",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ekpo Paul Asuquo",
+     "state": "Akwa Ibom",
+     "district": "Etinan/Nsit Ibom/Nsit Ubium",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Emmanuel Ukpong-udo",
+     "state": "Akwa Ibom",
+     "district": "Ikono/Ini",
+     "party": "YPP",
+     "elected": "YPP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Odudoh Uduak Alphonsus",
+     "state": "Akwa Ibom",
+     "district": "Ikot Abasi/Mkpat Enin/Eastern Obolo",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Umoh Patrick Patrick",
+     "state": "Akwa Ibom",
+     "district": "Ikot Ekpene/Essien Udim/Obot Akara",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ime Bassey Okon",
+     "state": "Akwa Ibom",
+     "district": "Itu/Ibiono Ibom",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Esin Martins Etim",
+     "state": "Akwa Ibom",
+     "district": "Oron, Mbo, Okobo, Udung Uko, Urue Offong, Oruko",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Unyime Idem",
+     "state": "Akwa Ibom",
+     "district": "Oruk Anam/Ukanafun",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Esset Mark Udo",
+     "state": "Akwa Ibom",
+     "district": "Uyo, Uruan, Nsit Atai, Ibesikpo Asutan",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Okafor Dominic Ifeanyi",
+     "state": "Anambra",
+     "district": "Aguata",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Aniekwe Peter Udeogalanya",
+     "state": "Anambra",
+     "district": "Anambra East/Anambra West",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Orogbu Obiageli",
+     "state": "Anambra",
+     "district": "Awka North, Awka South",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Okonkwo Uchenna Harris",
+     "state": "Anambra",
+     "district": "Idemili North/Idemili South",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Agbodike Paschal Arinzechukwu",
+     "state": "Anambra",
+     "district": "Ihiala",
+     "party": "APGA",
+     "elected": "APGA",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ozodinobi George Ibezimako",
+     "state": "Anambra",
+     "district": "Njikoka/Dunukofia/Anaocha",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ifeanyi Peter uzokwe",
+     "state": "Anambra",
+     "district": "Nnewi North/Nnewi South/Ekwusigo",
+     "party": "YPP",
+     "elected": "YPP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Afam Ogene",
+     "state": "Anambra",
+     "district": "Ogbaru",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Emeka Idu Godwin Obiajulu",
+     "state": "Anambra",
+     "district": "Onitsha North/South",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Nnabuife Chinwe Clara",
+     "state": "Anambra",
+     "district": "Orumba North/South",
+     "party": "YPP",
+     "elected": "YPP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Maureen Chinwe Gwacham",
+     "state": "Anambra",
+     "district": "Oyi, Ayamelum",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Kabiru Yusuf Alhaji",
+     "state": "Bauchi",
+     "district": "Alkaleri / Kirfi",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Aliyu Aminu Garu",
+     "state": "Bauchi",
+     "district": "Bauchi",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Leko Jafaru Gambo",
+     "state": "Bauchi",
+     "district": "Bogoro/Dass/Tafawa Balewa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Mansur Manu Soro",
+     "state": "Bauchi",
+     "district": "Darazo/Ganjuwa",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Adamu Ibrahim Gamawa",
+     "state": "Bauchi",
+     "district": "Gamawa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Rabilu Bala",
+     "state": "Bauchi",
+     "district": "Jama&#039;are/Itas-Gadau",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Auwalu Abdu Gwalabe",
+     "state": "Bauchi",
+     "district": "Katagum",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Aliyu Bappa Misau",
+     "state": "Bauchi",
+     "district": "Misau/Dambam",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Hashimu Adamu",
+     "state": "Bauchi",
+     "district": "Ningi/Warji",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Sani Ibrahim Tanko",
+     "state": "Bauchi",
+     "district": "Shira / Giade",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Dabo Ismaila Haruna",
+     "state": "Bauchi",
+     "district": "Toro",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Muhammed Dan Abba Shehu",
+     "state": "Bauchi",
+     "district": "Zaki",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ebikake Marie Enenimiete",
+     "state": "Bayelsa",
+     "district": "Brass/Nembe",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Obordor Mitema",
+     "state": "Bayelsa",
+     "district": "Ogbia",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Agbedi Yeitiemone Frederick",
+     "state": "Bayelsa",
+     "district": "Sagbama/Ekeremor",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Rodney Ebikebina Ambaiowei",
+     "state": "Bayelsa",
+     "district": "Southern Ijaw",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Obuku Abonsizibe Oforji",
+     "state": "Bayelsa",
+     "district": "Yenagoa/Kolokuna/ Opokuma",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Philip Agbese",
+     "state": "Benue",
+     "district": "Ado/Ogbadibo/Okpokwu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ojema Ojotu",
+     "state": "Benue",
+     "district": "Apa/Agatu",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Sekav Dzua Iyortyom",
+     "state": "Benue",
+     "district": "Buruku",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Regina Akuma",
+     "state": "Benue",
+     "district": "Gboko/Tarka",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Austin Asema Achado",
+     "state": "Benue",
+     "district": "Gwer East/Gwer West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Solomon Wombo",
+     "state": "Benue",
+     "district": "Katsina Ala/Logo/Ukum",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Sesoo Ikpacher",
+     "state": "Benue",
+     "district": "Konshisha/Vandeikya",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ugbor Terseer",
+     "state": "Benue",
+     "district": "Kwande/Ushongo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Tarkighir Dominic Dickson",
+     "state": "Benue",
+     "district": "Makurdi/Guma",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "David Ogewu",
+     "state": "Benue",
+     "district": "Oju/Obi",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Midala Usman Balami",
+     "state": "Borno",
+     "district": "Askira-Uba/Hawul",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Zainab Gimba",
+     "state": "Borno",
+     "district": "Bama/Ngala/Kalabalge",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Aliyu Muktar Betera",
+     "state": "Borno",
+     "district": "Biu/Bayo/Shani/Kwaya Kusar",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Jaha Ahmadu Usman",
+     "state": "Borno",
+     "district": "Damboa/Gwoza/Chibok",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ibrahim Mohammed Bukar",
+     "state": "Borno",
+     "district": "Dikwa/Mafa/Konduga",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Satomi Alhaji Ahmad",
+     "state": "Borno",
+     "district": "Jere",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Usman Zannah",
+     "state": "Borno",
+     "district": "Kaga/Gubio/Magumeri",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Gana Mallam Bukar",
+     "state": "Borno",
+     "district": "Kukawa/Mobbar/Abadam/Guzamala",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Rahis Abdulkadir",
+     "state": "Borno",
+     "district": "Maiduguri (Metropolitan)",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Bukar Talba",
+     "state": "Borno",
+     "district": "Monguno/Marte/Nganzai",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Inyang Emil Lemke",
+     "state": "Cross River",
+     "district": "Akamkpa/Biase",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Akiba Bassey Ekpenyong",
+     "state": "Cross River",
+     "district": "Calabar Municipal/ Odukpani",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Bassey Joseph",
+     "state": "Cross River",
+     "district": "Calabar South/Akpabuyo/Bakassi",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Abang Victor Bisong",
+     "state": "Cross River",
+     "district": "Ikom / Boki",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Peter Akpanke Atianashie",
+     "state": "Cross River",
+     "district": "Obanliku/Obudu/ Bekwarra",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Irom Etaba Micheal",
+     "state": "Cross River",
+     "district": "Obubra/Etung",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ekpo Godwin Odey Offiong",
+     "state": "Cross River",
+     "district": "Ogoja/yala",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Egbona Alex Egbona",
+     "state": "Cross River",
+     "district": "Yakurr/Abi",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Okolie Ngozi Lawrence",
+     "state": "Delta",
+     "district": "Aniocha North/Aniocha South/ Oshimili North &amp; South",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Mutu Nicholas Ebomo",
+     "state": "Delta",
+     "district": "Bomadi/Patani",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Pondi Julius Gbabojor",
+     "state": "Delta",
+     "district": "Burutu",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ibori-Suenu Erhiatake",
+     "state": "Delta",
+     "district": "Ethiope East/Ethiope West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Nwokolo Victor Onyemeachi",
+     "state": "Delta",
+     "district": "Ika North East/Ika South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ukodhiko Ajirioghene Jonathan",
+     "state": "Delta",
+     "district": "Isoko North/Isoko South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ezechi Nnamdi",
+     "state": "Delta",
+     "district": "Ndokwa East/Ndokwa West/Ukwuani",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Etanabene Benedict",
+     "state": "Delta",
+     "district": "Okpe/Sapele/Uvwie",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Francis Ejiroghene Waive",
+     "state": "Delta",
+     "district": "Ughelli North/Ughelli South/Udu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Thomas Ereyitomi",
+     "state": "Delta",
+     "district": "Warri North/Warri South/ Warri South West",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Uguru Emmanuel",
+     "state": "Ebonyi",
+     "district": "Abakaliki/Izzi",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Igariwey Iduma Enwo",
+     "state": "Ebonyi",
+     "district": "Afikpo North/Afikpo South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Eze Nwachukwu Eze",
+     "state": "Ebonyi",
+     "district": "Ebonyi/Ohaukwu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ogah Nweke Chinedu",
+     "state": "Ebonyi",
+     "district": "Ezza South/Ikwo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Nwobashi Joseph",
+     "state": "Ebonyi",
+     "district": "Ezza-North/Ishielu",
+     "party": "APGA",
+     "elected": "APGA",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Osi Kama Nkemkanma St. Andy",
+     "state": "Ebonyi",
+     "district": "Ivo/Ohaozara/Onicha",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ohiozojeh Peter Akpatason",
+     "state": "Edo",
+     "district": "Akoko-Edo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Omoruyi Murphy Osaro",
+     "state": "Edo",
+     "district": "Egor Ikpoba Okha",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Marcus Onobun",
+     "state": "Edo",
+     "district": "Esan Central/West/Igueben",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Onobun Marcus Iziegbeaya",
+     "state": "Edo",
+     "district": "Esan Central/West/Igueben",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Prince Odianosen Okojie",
+     "state": "Edo",
+     "district": "Esan South-East/Esan North-East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Dekeri Anamero Sunday",
+     "state": "Edo",
+     "district": "Etsako East/West/Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Esosa Iyawe",
+     "state": "Edo",
+     "district": "Oredo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Osawaru Billy Famous Adesuwa",
+     "state": "Edo",
+     "district": "Orhionmwon/Uhunmwonde",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Omosede Igbinedion",
+     "state": "Edo",
+     "district": "Ovia",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Dennis Amadi Idahosa",
+     "state": "Edo",
+     "district": "Ovia North East, Ovia South West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Julius Omozuanvbo Ihonvbere",
+     "state": "Edo",
+     "district": "Owan East/West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Fatoba Olusola Steve Gbadura",
+     "state": "Ekiti",
+     "district": "Ado Ekiti/Irepodun/Ifelodun",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ojuawo Rufus Adeniyi",
+     "state": "Ekiti",
+     "district": "Ekiti South West/Ikere/Ise/Orun",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Bamisile Olufemi Richard",
+     "state": "Ekiti",
+     "district": "Emure/Gbonyin/Ekiti East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Kolawole Davidson Akinlayo",
+     "state": "Ekiti",
+     "district": "Ido / Osi / Moba / Ilejemeje",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Omoleye Abiodun Francis",
+     "state": "Ekiti",
+     "district": "Ijero/Ekiti West/Efon",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Rotimi Akintunde Oluwaseun",
+     "state": "Ekiti",
+     "district": "Ikole/Oye",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Chijoke Stanislaus Okereke",
+     "state": "Enugu",
+     "district": "Aninri/Awgu/Oji River",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Paul Sunday Nnamchi",
+     "state": "Enugu",
+     "district": "Enugu East/Isi Uzo",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Chimaobi Sam Atu",
+     "state": "Enugu",
+     "district": "Enugu North/Enugu South",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Sunday Cyriacus Umeha",
+     "state": "Enugu",
+     "district": "Ezeagu/Udi",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Nwodo Stainless Chijioke",
+     "state": "Enugu",
+     "district": "Igbo Etiti/Uzo Uwani",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Nnaji Nnolim John",
+     "state": "Enugu",
+     "district": "Nkanu East/Nkanu West",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Obetta Mark Chidi",
+     "state": "Enugu",
+     "district": "Nsukka/Igboeze South",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Atigwe Simon Chukwuemeka",
+     "state": "Enugu",
+     "district": "Udenu/Igbo-Eze North",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Obika Joshua Chinedu",
+     "state": "FCT",
+     "district": "Abuja Municipal/Bwari",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Ajiya Abulrahaman",
+     "state": "FCT",
+     "district": "Kuje/Abaji/Gwagwalada/Kwali",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Usman Bello-Kumo",
+     "state": "Gombe",
+     "district": "Akko",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ali Isa",
+     "state": "Gombe",
+     "district": "Balanga/ Billiri",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "El-Rasheed Abdullahi",
+     "state": "Gombe",
+     "district": "Dukku/Nafada",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Yaya Bauchi Tongo",
+     "state": "Gombe",
+     "district": "Gombe/Kwami/Funakaya",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Yaya-Bauchi Tongo",
+     "state": "Gombe",
+     "district": "Gombe/Kwami/Funakaye",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Obed Paul Shehu",
+     "state": "Gombe",
+     "district": "Kaltungo/Shongom",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Paul Obed Shehu",
+     "state": "Gombe",
+     "district": "Kaltungo/Shongom",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Garba Inuwa",
+     "state": "Gombe",
+     "district": "Yamaltu/Deba",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Inuwa Garba",
+     "state": "Gombe",
+     "district": "Yamaltu/Deba",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Nwogu Matthew",
+     "state": "Imo",
+     "district": "Aboh Mbaise/Ngor Okpala",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Emeka Chinedu",
+     "state": "Imo",
+     "district": "Ahaizu Mbaise/Ezinihitte",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Okeke Jonas Onwuegbuchulam",
+     "state": "Imo",
+     "district": "Ehimembano/Ihitte Uboma/Obowo",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ikeagwuonu Michael",
+     "state": "Imo",
+     "district": "Ideato North/Ideato South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Akarachi Etinosa Amadi",
+     "state": "Imo",
+     "district": "Ikeduru/Mbaitoli",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Miriam Odinaka Onuoh",
+     "state": "Imo",
+     "district": "Isiala Mbano/Okigwe/Onuimo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Ugonna Ozuruigbo",
+     "state": "Imo",
+     "district": "Isu/Njaba/Nkwerre/Nwangele",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Dibiagwu Eugene Okechukwu",
+     "state": "Imo",
+     "district": "Oguta/Ohaji Egbema/Oru West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Chukwugozie Nwachukwu",
+     "state": "Imo",
+     "district": "Our East/Orsu/Orlu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Tochukwu Chinedu Okere",
+     "state": "Imo",
+     "district": "Owerri Municipal/Owerri North/Owerri West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Rabiu Mukhtar",
+     "state": "Jigawa",
+     "district": "Babura/Garki",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Fulata Abubakar Hassan",
+     "state": "Jigawa",
+     "district": "Birniwa/Guri/Kirikasamma",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abubakar Hassan Fulata",
+     "state": "Jigawa",
+     "district": "Birniwa/Guri/Kirikasamma",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adamu Yakubu",
+     "state": "Jigawa",
+     "district": "Buji/Birnin Kudu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Madawaki Dahiru",
+     "state": "Jigawa",
+     "district": "Dutse/Kiyawa",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Isa Dongoyaro",
+     "state": "Jigawa",
+     "district": "Garki/Babura",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Nazifi Sani",
+     "state": "Jigawa",
+     "district": "Gumel/Maigatari/Sule Tankarkar/Gagarawa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Yusuf Shitu Galambi",
+     "state": "Jigawa",
+     "district": "Gwaram",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Usman Ibrahim Auyo",
+     "state": "Jigawa",
+     "district": "Hadeja/Kafin Hausa/Auyo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Makki Yalleman Abubakar",
+     "state": "Jigawa",
+     "district": "Kaugama/Mallam Madori",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Murtar Muhammad",
+     "state": "Jigawa",
+     "district": "Kazaure/Roni/Gwiwa/Yankwashi",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://www.stears.co/elections/2023/house-of-representatives/JI/"
+     }
+    },
+    {
+     "name": "Yusuf Miga",
+     "state": "Jigawa",
+     "district": "Miga/Jahun",
+     "party": "APC",
+     "elected": "APC",
+     "source": "hawkeye",
+     "changed": {
+      "from": "APC",
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Yusuf_Sa%27idu_Miga"
+     }
+    },
+    {
+     "name": "Yusuf Saidu Miga",
+     "state": "Jigawa",
+     "district": "Miga/Jahun",
+     "party": "APC",
+     "elected": "APC",
+     "source": "hawkeye",
+     "changed": {
+      "from": "APC",
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Yusuf_Sa%27idu_Miga"
+     }
+    },
+    {
+     "name": "Saad Taura",
+     "state": "Jigawa",
+     "district": "Taura/Ringim",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://www.stears.co/elections/2023/house-of-representatives/JI/"
+     }
+    },
+    {
+     "name": "Usman Bashir Zubairu",
+     "state": "Kaduna",
+     "district": "Birnin Gwari/Giwa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ekene Abubakar Adams",
+     "state": "Kaduna",
+     "district": "Chikun/Kajuru",
+     "party": "LP",
+     "elected": "LP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ekene Abubakar Adams",
+     "state": "Kaduna",
+     "district": "Chikun/Kajuru",
+     "party": "LP",
+     "elected": "LP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Aminu Jamo Daura",
+     "state": "Kaduna",
+     "district": "Daura/Sandamu/Maiadua",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Jallo Hussaini Mohammed",
+     "state": "Kaduna",
+     "district": "Igabi",
+     "party": "PDP",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PDP",
+      "date": null,
+      "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"
+     }
+    },
+    {
+     "name": "Ahmed Aliyu Abdullahi",
+     "state": "Kaduna",
+     "district": "Ikara/Kubau",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Amos Daniel",
+     "state": "Kaduna",
+     "district": "Jemaa/Sanga",
+     "party": "PDP",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PDP",
+      "date": null,
+      "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"
+     }
+    },
+    {
+     "name": "Gabriel Saleh Zock",
+     "state": "Kaduna",
+     "district": "Kachia/Kagarko",
+     "party": "APC",
+     "elected": "APC",
+     "source": "hawkeye",
+     "changed": {
+      "from": "APC",
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Gabriel_Saleh_Zock"
+     }
+    },
+    {
+     "name": "El-Rufai Mohammed Bello",
+     "state": "Kaduna",
+     "district": "Kaduna North",
+     "party": "ADC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": "APC",
+      "to": "ADC",
+      "date": "2026-05-07",
+      "source": "https://politicsnigeria.com/2026/05/07/breaking-el-rufais-son-dumps-apc-defects-to-adc-ahead-of-2027-elections/"
+     }
+    },
+    {
+     "name": "Abdulkarim Hussaini Ahmed",
+     "state": "Kaduna",
+     "district": "Kaduna South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Matthew Donatus Kuzalio",
+     "state": "Kaduna",
+     "district": "Kaura",
+     "party": "LP",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "LP",
+      "date": null,
+      "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"
+     }
+    },
+    {
+     "name": "Yusuf Bashir",
+     "state": "Kaduna",
+     "district": "Kauru",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Munir Ahmed Mohammed",
+     "state": "Kaduna",
+     "district": "Lere",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ajilo Umar Shehu",
+     "state": "Kaduna",
+     "district": "Makarfi/Kudan",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Sadiq Ango Abdullahi",
+     "state": "Kaduna",
+     "district": "Sabon Gari",
+     "party": "PDP",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PDP",
+      "date": null,
+      "source": "https://blueprint.ng/kaduna-speaker-abbas-ango-abdullahis-son-secure-tickets-as-apc-announces-reps-results/"
+     }
+    },
+    {
+     "name": "Yahaya Suleiman Richifa",
+     "state": "Kaduna",
+     "district": "Soba",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Magaji Amos Gwamna Abel",
+     "state": "Kaduna",
+     "district": "Zangon Kataf/Jaba",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Tajudeen Abbas",
+     "state": "Kaduna",
+     "district": "Zaria",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ghali Tijjani Mustapha",
+     "state": "Kano",
+     "district": "Albasu/Gaya/Ajingi",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": "NNPP",
+      "to": "APC",
+      "date": "2026-03-31",
+      "source": "https://www.channelstv.com/2026/03/31/eight-kano-reps-dump-nnpp-for-apc/"
+     }
+    },
+    {
+     "name": "Ahmad Yusuf Badau",
+     "state": "Kano",
+     "district": "Bagwai/Shanono",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Ajingi Abdulmumin Jibrin",
+     "state": "Kano",
+     "district": "Bebeji/Kiru",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nigerianqueries"
+    },
+    {
+     "name": "Abubakar Kabir Abubakar",
+     "state": "Kano",
+     "district": "Bichi",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Aliyu Sani Madaki",
+     "state": "Kano",
+     "district": "Dala",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": "NNPP",
+      "to": "APC",
+      "date": "2026-03-31",
+      "source": "https://www.arise.tv/nine-kano-reps-defect-from-nnpp-to-apc-amid-political-realignment/"
+     }
+    },
+    {
+     "name": "Ibrahim Hamisu",
+     "state": "Kano",
+     "district": "Dambatta/Makoda",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"
+     }
+    },
+    {
+     "name": "Hassan Mohammed",
+     "state": "Kano",
+     "district": "Dawakin Kudu/Warawa",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Tijjani Abdulkadir Jobe",
+     "state": "Kano",
+     "district": "Dawakin Tofa/Tofa/Rimin Gado",
+     "party": "APC",
+     "elected": "NNPP",
+     "source": "hawkeye",
+     "changed": {
+      "from": "NNPP",
+      "to": "APC",
+      "date": "2026-03-31",
+      "source": "https://www.arise.tv/nine-kano-reps-defect-from-nnpp-to-apc-amid-political-realignment/"
+     }
+    },
+    {
+     "name": "Aminu Sulaiman Goro",
+     "state": "Kano",
+     "district": "Fagge",
+     "party": "NNPP",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "NNPP",
+      "date": null,
+      "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"
+     }
+    },
+    {
+     "name": "Chiroma Mohammed Garba",
+     "state": "Kano",
+     "district": "Gezawa/Gabasawa",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Ibrahim Garba Mohammed",
+     "state": "Kano",
+     "district": "Gwale",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Gwarzo Abdullahi Mu&#8217;azu",
+     "state": "Kano",
+     "district": "Gwarzo/Kabo",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Gwarzo_Abdullahi_Muazu"
+     }
+    },
+    {
+     "name": "Ibrahim Sagir Koki",
+     "state": "Kano",
+     "district": "Kano Municipal",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": "NNPP",
+      "to": "APC",
+      "date": "2025-11-13",
+      "source": "https://saharareporters.com/2025/11/13/two-house-reps-members-kano-dump-nnpp-apc-cite-internal-crisis"
+     }
+    },
+    {
+     "name": "Rogo Abdullahi Sani",
+     "state": "Kano",
+     "district": "Karaye/Rogo",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Dankawu Idris",
+     "state": "Kano",
+     "district": "Kumbotso",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": "NNPP",
+      "to": "APC",
+      "date": "2026-03-31",
+      "source": "https://www.channelstv.com/2026/03/31/eight-kano-reps-dump-nnpp-for-apc/"
+     }
+    },
+    {
+     "name": "Datti Yusuf Umar",
+     "state": "Kano",
+     "district": "Kura/Madobi/Garun Mallam",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Sani Dankawu Adamu",
+     "state": "Kano",
+     "district": "Minjibir/Ungogo",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Hussain Hassan Shehu",
+     "state": "Kano",
+     "district": "Nassarawa",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Alhassan Kabiru Usman Rurum",
+     "state": "Kano",
+     "district": "Rano/Bunkure/Kibiya",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Rabiu Yusuf Takai",
+     "state": "Kano",
+     "district": "Sumaila/Takai",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": "NNPP",
+      "to": "APC",
+      "date": "2026-03-31",
+      "source": "https://www.channelstv.com/2026/03/31/eight-kano-reps-dump-nnpp-for-apc/"
+     }
+    },
+    {
+     "name": "Zakari Umar Mukhtar",
+     "state": "Kano",
+     "district": "Tarauni",
+     "party": "NNPP",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "NNPP",
+      "date": null,
+      "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"
+     }
+    },
+    {
+     "name": "Sani Bala Umar",
+     "state": "Kano",
+     "district": "Tsanyawa/Kunchi",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Alhassan Ado Garba",
+     "state": "Kano",
+     "district": "Tudun Wada/Doguwa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Abdulhakeem Kamilu Ado",
+     "state": "Kano",
+     "district": "Wudil/Garko",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Dabai Abdullahi Balarabe",
+     "state": "Katsina",
+     "district": "Bakori/Danja",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Murtala Usman Banye",
+     "state": "Katsina",
+     "district": "Batagarawa/Charanchi/Rimi",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Aliyu Iliyasu",
+     "state": "Katsina",
+     "district": "Batsari/Safana/Danmusa",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Balele Aminu",
+     "state": "Katsina",
+     "district": "Dutsin-Ma/Kurfi",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Jamilu Muhammed",
+     "state": "Katsina",
+     "district": "Faskari/Kankara/Sabuwa",
+     "party": "PDP",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PDP",
+      "date": null,
+      "source": "https://www.naijanews.com/2025/07/17/reps-member-jamilu-muhammad-dumps-pdp/"
+     }
+    },
+    {
+     "name": "Mohammad Abubakar Ahmad",
+     "state": "Katsina",
+     "district": "Funtana/Dandume",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Kusada Ismail Dalha",
+     "state": "Katsina",
+     "district": "Ingawa/Kankia/Kusada",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Sada Soli Jibiya",
+     "state": "Katsina",
+     "district": "Jibia/Kaita",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Chindo Aminu Ahmad",
+     "state": "Katsina",
+     "district": "Katsina Central",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Aminu Ibrahim Kafur",
+     "state": "Katsina",
+     "district": "Malumfashi/Kafur",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"
+     }
+    },
+    {
+     "name": "Yusuf Ahmed Doro",
+     "state": "Katsina",
+     "district": "Mani/Bindawa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Salisu Yusuf Majigiri",
+     "state": "Katsina",
+     "district": "Mashi/Dutsi",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ahmed Aliyu Abdullahi",
+     "state": "Katsina",
+     "district": "Matazu/Musawa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Lawal Sani",
+     "state": "Katsina",
+     "district": "Zango/Baure",
+     "party": "APC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"
+     }
+    },
+    {
+     "name": "Rabiu Garba Kamba",
+     "state": "Kebbi",
+     "district": "Arewa/Dandi",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Sani Yakubu Noma",
+     "state": "Kebbi",
+     "district": "Argungu/ Augie",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Bello A. Kaoje",
+     "state": "Kebbi",
+     "district": "Bagudo/Suru",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ibrahim Mohammed Bukar",
+     "state": "Kebbi",
+     "district": "Bunza/Birnin Kebbi/Kalgo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Mansur Musa",
+     "state": "Kebbi",
+     "district": "Gwandu/Aleiro/Jega",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Salisu Garba Koko",
+     "state": "Kebbi",
+     "district": "Koko Besse/Maiyama",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Umar Garba Uba",
+     "state": "Kebbi",
+     "district": "Yauri, Shanga &amp; Ngaski",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Kabir Tukura Ibrahim",
+     "state": "Kebbi",
+     "district": "Zuru/Fakai/Sakaba/D/Wasagu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Lawal Muhammadu Idirisu",
+     "state": "Kogi",
+     "district": "Ajaokuta Federal Constituency",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Malam Mohammed Bio",
+     "state": "Kwara",
+     "district": "Baruten/Kaiama",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abdulraheem Olatunji Olawuyi",
+     "state": "Kwara",
+     "district": "Ekiti/Irepodun/Isin/Oke Ero",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ismail Kayode Tijani",
+     "state": "Kwara",
+     "district": "Ifelodun/Offa/Oyun",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Yinka Ahmed Aluko",
+     "state": "Kwara",
+     "district": "Ilorin East/Ilorin South",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Tolani Shagaya",
+     "state": "Kwara",
+     "district": "Ilorin West/Asa",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Adam Ahmed Saba",
+     "state": "Kwara",
+     "district": "Patigi/Edu/Moro",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Hameed Adewale Waheed",
+     "state": "Lagos",
+     "district": "Agege",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adeboye Paul Kalejaiye",
+     "state": "Lagos",
+     "district": "Ajeromi/Ifelodun",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ganiyu Ayuba",
+     "state": "Lagos",
+     "district": "Alimosho",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "George Olawande",
+     "state": "Lagos",
+     "district": "Amuwo Odofin",
+     "party": "LP",
+     "elected": "LP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adedayo Olumiywa",
+     "state": "Lagos",
+     "district": "Apapa",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Setonji G. Koshoedo",
+     "state": "Lagos",
+     "district": "Badagry",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Raji Olawale",
+     "state": "Lagos",
+     "district": "Epe",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Obanikoro Ibrahim",
+     "state": "Lagos",
+     "district": "Eti-Osa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Adebayo Olusegun Balogun",
+     "state": "Lagos",
+     "district": "Ibeju-Lekki",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abiodun James Faleke",
+     "state": "Lagos",
+     "district": "Ikeja",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Babajimi Adegoke Benson",
+     "state": "Lagos",
+     "district": "Ikorodu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adetola Kafilat Ogbara",
+     "state": "Lagos",
+     "district": "Kosofe",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Akanni Enitan Dolapo-badru",
+     "state": "Lagos",
+     "district": "Lagos Island I",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Yakubu Balogun",
+     "state": "Lagos",
+     "district": "Lagos Island II",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Moshood Olanrewaju Oshun",
+     "state": "Lagos",
+     "district": "Lagos Mainland",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Abayomi Dauda Kako Are",
+     "state": "Lagos",
+     "district": "Mushin I",
+     "party": "AA",
+     "elected": "AA",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Fayinka Toyin",
+     "state": "Lagos",
+     "district": "Mushin II",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Oluwaseyi Sowumi",
+     "state": "Lagos",
+     "district": "Ojo",
+     "party": "LP",
+     "elected": "LP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Okey Joe",
+     "state": "Lagos",
+     "district": "Oshodi-Isolo II",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Aliu Ademorin Kuye",
+     "state": "Lagos",
+     "district": "Somolu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Fuad Kayode Laguda",
+     "state": "Lagos",
+     "district": "Surulere I",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Lanre okunlola",
+     "state": "Lagos",
+     "district": "Surulere II",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Umaru Jeremiah",
+     "state": "Nasarawa",
+     "district": "Akwanga/Naarawa Eggon/Wamba",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Gbefwi Gaza Jonathan",
+     "state": "Nasarawa",
+     "district": "Keffi/Karu/Kokona",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ari Abdulmumin Mohammed",
+     "state": "Nasarawa",
+     "district": "Nassarawa/Toto",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Mamudu Abdullahi",
+     "state": "Niger",
+     "district": "Agaie/Lapai",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Jafaru Mohammed",
+     "state": "Niger",
+     "district": "Agwara/Borgu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Nalaraba Abubakar Hassan",
+     "state": "Niger",
+     "district": "Awe/Doma/Keana",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abdullahi Saidu Musa",
+     "state": "Niger",
+     "district": "Bida/Gbako/Katcho",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Baraje Yusuf Kure",
+     "state": "Niger",
+     "district": "Booso/Paikoro",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Abubakar Abdul Buba Abubakar",
+     "state": "Niger",
+     "district": "Chanchaga",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Tanko Adamu",
+     "state": "Niger",
+     "district": "Gurara/Suleja/Tapa",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Garba Idris Abdullahi",
+     "state": "Niger",
+     "district": "Kontagora/Wushishi/Mariga/Mashegu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abubakar Sariki Dahiru",
+     "state": "Niger",
+     "district": "Lafia/Obi",
+     "party": "SDP",
+     "elected": "SDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Gana Joshua Audu",
+     "state": "Niger",
+     "district": "Lavun/Mokwa/Edati",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Saleh Rijah Shehu",
+     "state": "Niger",
+     "district": "Magama/Rijau",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Modibo Ismail Musa",
+     "state": "Niger",
+     "district": "Shiroro/Rafi/Munya",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Afuape Afolabi Moruf",
+     "state": "Ogun",
+     "district": "Abeokuta South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Akinosi Olatunji Akanni",
+     "state": "Ogun",
+     "district": "Ado Odo/Ota",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Isiaka Nasiru Adegboyega",
+     "state": "Ogun",
+     "district": "Egbado North/Imeko Afon",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Akinlade Abiodun Isiaq",
+     "state": "Ogun",
+     "district": "Egbado South/Ipokia",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Ibrahim Ayokunle Isiaka",
+     "state": "Ogun",
+     "district": "Ifo/Ewekoro",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adegbesan Joseph Folorunsho",
+     "state": "Ogun",
+     "district": "Ijebu East/Ijebu North/Ogun Waterside",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ogunbanwo Adeleke Olufemi",
+     "state": "Ogun",
+     "district": "Ijebu Ode/Odogbolu/Ijebu North East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adesola Elegbeji",
+     "state": "Ogun",
+     "district": "Ikenne/Sagamu/Remo North",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Adewunmi Oriyomi Onanuga",
+     "state": "Ogun",
+     "district": "Ikenne/Shagamu/Remo North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Olumide Babatunde Osoba",
+     "state": "Ogun",
+     "district": "Odeda/Obafemi Owode/Abeokuta North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ifeoluwa Babajide Ehindero",
+     "state": "Ondo",
+     "district": "Akoko North East/North West",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Adefarati Adegboyega Adeyemi",
+     "state": "Ondo",
+     "district": "Akoko South East/Akoko South West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adesida Abiodun Cornelius Aderin",
+     "state": "Ondo",
+     "district": "Akure North/Akure South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Akingbaso Festus Olanrewaju",
+     "state": "Ondo",
+     "district": "Idanre/Ifedore",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Ojogo Donald Kimikanboh",
+     "state": "Ondo",
+     "district": "Ilaje/Ese Odo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adefiranye Ayodele Festus",
+     "state": "Ondo",
+     "district": "Ileoluji Okeigbo/Odigbo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Odimayo okunjimi John",
+     "state": "Ondo",
+     "district": "Okitipupa/Irele",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Makinde Abiola Peter",
+     "state": "Ondo",
+     "district": "Ondo West/Ondo East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adelegbe Oluwatimehin Emmanuel",
+     "state": "Ondo",
+     "district": "Owo/Ose",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Akintola Oluokun Goeorge",
+     "state": "Osun",
+     "district": "Akinyele/Lagelu",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Oladebo Lanre Olomololaye",
+     "state": "Osun",
+     "district": "Ayedaade/Irewole/Isokan",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Akanni Clement Ademola",
+     "state": "Osun",
+     "district": "Ayedire/Iwo/Ola-Oluwa",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Mudashiru Lukman Alani",
+     "state": "Osun",
+     "district": "Ayedire/Iwo/Ola-Oluwa",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Omirin Emmanuel Olusanya",
+     "state": "Osun",
+     "district": "Ede North,South/Egbedero/Ejigbo",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Salam Bamidele",
+     "state": "Osun",
+     "district": "Ede North,South/Egbedero/Ejigbo",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adewale Morufu Adebayo",
+     "state": "Osun",
+     "district": "Ife Central/Ife North/Ife South/Ife East",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Ajilesoro Taofeek Abimbola",
+     "state": "Osun",
+     "district": "Ife Central/Ife North/Ife South/Ife East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Oke Busayo Oluwole",
+     "state": "Osun",
+     "district": "Obokon/Oriade",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adetunji Abidemi Olusoji",
+     "state": "Osun",
+     "district": "Odo-Otin/Ifelodun/Boripe",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Akeem Adeniyi Adeyemi",
+     "state": "Oyo",
+     "district": "Afijio/Atiba/Oyo East/Oyo West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Akinola Adekunle Alabi",
+     "state": "Oyo",
+     "district": "Egbeda/Ona Ara",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Prince olaide Adewale Akinremi",
+     "state": "Oyo",
+     "district": "Ibadan North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abass Agboworin",
+     "state": "Oyo",
+     "district": "Ibadan North East/Ibadan South East",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Abass Adekunle Adigun",
+     "state": "Oyo",
+     "district": "Ibadan North-East/South-East",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Adedeji Stanley Olajide",
+     "state": "Oyo",
+     "district": "Ibadan South West/Ibadan North West",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Anthony Adebayo Adepoju",
+     "state": "Oyo",
+     "district": "Ibarapa Central/Ibarapa North",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Aderemi Abasi Oseni",
+     "state": "Oyo",
+     "district": "Ibarapa East/Ido",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ojerinde Olumide Abiodun",
+     "state": "Oyo",
+     "district": "Irepo/Orelope/Olorunsogo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nigerianqueries"
+    },
+    {
+     "name": "Najimdeen Oyedeji",
+     "state": "Oyo",
+     "district": "Iseyin/Itesiwaju/Kajola/Iwajowa",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ajao Jacob Adejumo",
+     "state": "Oyo",
+     "district": "Ogbomosho North/Ogbomoso South/Orire",
+     "party": "ADP",
+     "elected": "ADP",
+     "source": "nigerianqueries"
+    },
+    {
+     "name": "Sunday Makanjuola Ojo",
+     "state": "Oyo",
+     "district": "Ogo Oluwa/Surulere",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Tolulope Tiwalola Akande-sadipe",
+     "state": "Oyo",
+     "district": "Oluyole",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Olatubosun Olajide Boladale",
+     "state": "Oyo",
+     "district": "Saki East/Saki West/Atisbo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nigerianqueries"
+    },
+    {
+     "name": "Gyendeng Peter Ibrahim",
+     "state": "Plateau",
+     "district": "Barkin Ladi/Riyom",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Lalu Ishaya David",
+     "state": "Plateau",
+     "district": "Bokkos/Mangu",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Avia Musa Agah",
+     "state": "Plateau",
+     "district": "Jos North/Bassa",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Bagos Dachung Musa",
+     "state": "Plateau",
+     "district": "Jos South/Jos East",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Yusuf Adamu Gagdi",
+     "state": "Plateau",
+     "district": "Kanke/Pankshin/Kanam",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Beni Butmak Lar",
+     "state": "Plateau",
+     "district": "Langtang North/South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Kwallu Isaac Kyale",
+     "state": "Plateau",
+     "district": "Mikang/Quaan/Pan/Shedam",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ahmed Idris Wase",
+     "state": "Plateau",
+     "district": "Wase",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Solomon T Bob",
+     "state": "Rivers",
+     "district": "Abua-Odual/Ahaoda East",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Obuzor Victor",
+     "state": "Rivers",
+     "district": "Ahaoda West/Ogba Egbema",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Boma Goodhead",
+     "state": "Rivers",
+     "district": "Akuku Toru/Asari Toru",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Hart Cyril Godwin",
+     "state": "Rivers",
+     "district": "Bonny/Degema",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Nwaeke Felix Uche",
+     "state": "Rivers",
+     "district": "Eleme/Tai/Oyigbo",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Nwogu Kelechi",
+     "state": "Rivers",
+     "district": "Etche/Omuma",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Emerengwa Boniface Sunday",
+     "state": "Rivers",
+     "district": "Ikwerre/Emuoha",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Dumnamene Robinson Deekor",
+     "state": "Rivers",
+     "district": "Khana/Gokana",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Chinda Kingsley Ogundu",
+     "state": "Rivers",
+     "district": "Obio/Akpor",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Anderson Allison Igbiks",
+     "state": "Rivers",
+     "district": "Okrika/Ogu-Bolo",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abiante Awaji-Inombek Diagomie",
+     "state": "Rivers",
+     "district": "Opobo/Nkoro/Andoni",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Umezuruike Manuchim",
+     "state": "Rivers",
+     "district": "Port-Harcourt I",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Blessing Chigeru Amadi",
+     "state": "Rivers",
+     "district": "Port-Harcourt II",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Saadu Nabunkari",
+     "state": "Sokoto",
+     "district": "Binji/Silame",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Shehu Nasiru",
+     "state": "Sokoto",
+     "district": "Dange-Shuni/Bodinga/Tureta",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Bashiru Usman Gorau",
+     "state": "Sokoto",
+     "district": "Goronyo/Gada",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Isah Bello Ambarura",
+     "state": "Sokoto",
+     "district": "Illela/Gwadabawa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abdulkadir Jelani Danbuga",
+     "state": "Sokoto",
+     "district": "Isa/Sabon Birni",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abdussamad Dasuki",
+     "state": "Sokoto",
+     "district": "Kebbe/Tambuwal",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Abdullahi Ahmad Kalambaina",
+     "state": "Sokoto",
+     "district": "Kware/Wamako",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ibrahim Almustapha Aliyu",
+     "state": "Sokoto",
+     "district": "Wurno/Rabah",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Umar Musa Yabo",
+     "state": "Sokoto",
+     "district": "Yabo/Shagari",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Jaafaru Chiroma Yakubu",
+     "state": "Taraba",
+     "district": "Bali/Gassol",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Rimamnde Shawulu Kwewum",
+     "state": "Taraba",
+     "district": "Donga/Ussa/Takum/Special Area",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nigerianqueries"
+    },
+    {
+     "name": "Ayuba Aboki Zaku Dampar",
+     "state": "Taraba",
+     "district": "Ibi/Wukari",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Ismaila Yushau Mohammed",
+     "state": "Taraba",
+     "district": "Jalingo/Yorro/Zing",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Audu Mohammed Lauya",
+     "state": "Taraba",
+     "district": "Karim Lamido Lau/Ardo-Kola",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "David Abel Fuoh",
+     "state": "Taraba",
+     "district": "Sarduana/Kurmi/Gashaka",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Yakubu Sani Alhaji",
+     "state": "Taraba",
+     "district": "Tangaza/Gudu",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Jakduwa Hassan Kaikuku",
+     "state": "Yobe",
+     "district": "Bade/Jakusko",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Alli Lawan Shettima",
+     "state": "Yobe",
+     "district": "Bursari/Geidam/Yunusari",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ibrahim Mohammed Bukar",
+     "state": "Yobe",
+     "district": "Damaturu/Gujba/Gulani/Tarmuwa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia"
+    },
+    {
+     "name": "Jajere Mohammed Buba",
+     "state": "Yobe",
+     "district": "Fika/Fune",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Zakariya Tijjani Zanna Zakariya",
+     "state": "Yobe",
+     "district": "Machina/Nguru/Yusufari/Karasuwa",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Fatima Talba",
+     "state": "Yobe",
+     "district": "Nangere/Potiskum",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Anka Isa Mohammed",
+     "state": "Zamfara",
+     "district": "Anka/Talata/Mafara",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Sulaiman Gumi Abubakar",
+     "state": "Zamfara",
+     "district": "Gummi/Bukkuyum",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Aminu Jaji",
+     "state": "Zamfara",
+     "district": "Kaura Namoda/Birnin Magaji",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Muhammad Sani Ahmad",
+     "state": "Zamfara",
+     "district": "Maradun/Bakura",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abdulmalik Zubairu",
+     "state": "Zamfara",
+     "district": "Maru/Bungudu",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Bello Hassan Shinkafi",
+     "state": "Zamfara",
+     "district": "Shinkafi/Zurmi",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Kabiru Amadu",
+     "state": "Zamfara",
+     "district": "Tsafe/Gusau",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Prince olaide Adewale Akinremi",
+     "state": "",
+     "district": "Ibadan North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    }
+   ]
+  },
+  "senate": {
+   "size": 109,
+   "listed": 109,
+   "withParty": 97,
+   "parties": {
+    "APC": 53,
+    "PDP": 29,
+    "LP": 7,
+    "NNPP": 2,
+    "SDP": 2,
+    "APGA": 1,
+    "YPP": 1,
+    "ADC": 1,
+    "ADP": 1
+   },
+   "members": [
+    {
+     "name": "Augustine Okwudiri Akobundu",
+     "state": "Abia",
+     "district": "Abia Central",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Orji Uzor Kalu",
+     "state": "Abia",
+     "district": "Abia North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Enyinnaya Harcourt Abaribe",
+     "state": "Abia",
+     "district": "Abia-South",
+     "party": "APGA",
+     "elected": "APGA",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abbas Aminu Iya",
+     "state": "Adamawa",
+     "district": "Adamawa Central",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Amos Yohanna",
+     "state": "Adamawa",
+     "district": "Adamawa North",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Binos Dauda Yaroe",
+     "state": "Adamawa",
+     "district": "Adamawa South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Bassey Aniekan Etim",
+     "state": "Akwa Ibom",
+     "district": "Akwa Ibom North-East",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Godswill Obot Akpabio",
+     "state": "Akwa Ibom",
+     "district": "Akwa Ibom North-West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Akpan Ekong Sampson",
+     "state": "Akwa Ibom",
+     "district": "Akwa Ibom South",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Victor C. Umeh",
+     "state": "Anambra",
+     "district": "Anambra Central",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Tony Nwoye",
+     "state": "Anambra",
+     "district": "Anambra North",
+     "party": "LP",
+     "elected": "LP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Emmanuel Nwachukwu",
+     "state": "Anambra",
+     "district": "Anambra South",
+     "party": "YPP",
+     "elected": "YPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Ahmed Abdul Ningi",
+     "state": "Bauchi",
+     "district": "Bauchi central",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Samaila Dahuwa Kaila",
+     "state": "Bauchi",
+     "district": "Bauchi North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Umar Shehu Buba",
+     "state": "Bauchi",
+     "district": "Bauchi South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Benson Friday Konbowei",
+     "state": "Bayelsa",
+     "district": "Bayelsa Central",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Agadaga Benson Sunday",
+     "state": "Bayelsa",
+     "district": "Bayelsa East",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Henry Seriake Dickson",
+     "state": "Bayelsa",
+     "district": "Bayelsa West",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Udende Memsa Emmanuel",
+     "state": "Benue",
+     "district": "Benue North East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Titus Tartengar Zam",
+     "state": "Benue",
+     "district": "Benue North West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Patrick Abba Moro",
+     "state": "Benue",
+     "district": "Benue South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Kaka Shehu Lawan",
+     "state": "Borno",
+     "district": "Borno Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Mohammed Tahir Monguno",
+     "state": "Borno",
+     "district": "Borno North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Mohammed Ali Ndume",
+     "state": "Borno",
+     "district": "Borno South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Williams Eteng Jonah",
+     "state": "Cross River",
+     "district": "Cross River Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Jarigbe Agom Jarigbe",
+     "state": "Cross River",
+     "district": "Cross River North",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Asuquo Ekpenyong Jr.",
+     "state": "Cross River",
+     "district": "Cross River South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Dafinone Ede Omueya",
+     "state": "Delta",
+     "district": "Delta Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Chinedu Munir Nwoko",
+     "state": "Delta",
+     "district": "Delta North",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Joel-Onowakpo Thomas",
+     "state": "Delta",
+     "district": "Delta South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Eze Kenneth Emeka",
+     "state": "Ebonyi",
+     "district": "Ebonyi Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Nwebonyi Onyeka Peter",
+     "state": "Ebonyi",
+     "district": "Ebonyi North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Anthony Okorie Ani",
+     "state": "Ebonyi",
+     "district": "Ebonyi South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Peter Akpatason",
+     "state": "Edo",
+     "district": "Edo central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Adams Aliyu Oshiomole",
+     "state": "Edo",
+     "district": "Edo North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Neda Bernards Imasuen",
+     "state": "Edo",
+     "district": "Edo South",
+     "party": "LP",
+     "elected": "LP",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Michael Opeyemi Bamidele",
+     "state": "Ekiti",
+     "district": "Ekiti Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Fasuyi Cyril Oluwole",
+     "state": "Ekiti",
+     "district": "Ekiti North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Adaramodu Adeyemi Raphael",
+     "state": "Ekiti",
+     "district": "Ekiti South",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Kelvin Chukwu",
+     "state": "Enugu",
+     "district": "Enugu East",
+     "party": "LP",
+     "elected": "LP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Okechukwu Ezea",
+     "state": "Enugu",
+     "district": "Enugu North",
+     "party": "LP",
+     "elected": "LP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Engr. Osita Ngwu",
+     "state": "Enugu",
+     "district": "Enugu West",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Ireti Heebah Kingibe",
+     "state": "FCT",
+     "district": "FCT",
+     "party": "LP",
+     "elected": "LP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Mohammed Danjuma Goje",
+     "state": "Gombe",
+     "district": "Gombe Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ibrahim Hassan Dankwambo",
+     "state": "Gombe",
+     "district": "Gombe North",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Anthony Siyako Yaro",
+     "state": "Gombe",
+     "district": "Gombe South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ezenwa Francis Onyewuchi",
+     "state": "Imo",
+     "district": "Imo east",
+     "party": "LP",
+     "elected": "LP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Patrick Ndubueze",
+     "state": "Imo",
+     "district": "Imo North",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Osita Izunaso",
+     "state": "Imo",
+     "district": "Imo West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Mallam-madori Ahmed Abdulhamid",
+     "state": "Jigawa",
+     "district": "Jigawa North East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Babangida Hussaini",
+     "state": "Jigawa",
+     "district": "JIgawa Northwest",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Khabeeb Mustapha",
+     "state": "Jigawa",
+     "district": "JIGAWA SOUTH WEST",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Lawal Adamu Usman",
+     "state": "Kaduna",
+     "district": "Kaduna Central",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Khalid Mustapha",
+     "state": "Kaduna",
+     "district": "Kaduna North",
+     "party": "ADC",
+     "elected": null,
+     "source": "hawkeye",
+     "changed": {
+      "from": "APC",
+      "to": "ADC",
+      "date": "2026-05-07",
+      "source": "https://politicsnigeria.com/2026/05/07/breaking-el-rufais-son-dumps-apc-defects-to-adc-ahead-of-2027-elections/"
+     }
+    },
+    {
+     "name": "Sunday Marshall Katung",
+     "state": "Kaduna",
+     "district": "Kaduna South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ibrahim Shekarau",
+     "state": "Kano",
+     "district": "Kano Central",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Barau Jibrin",
+     "state": "Kano",
+     "district": "Kano North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Kawu Sumaila",
+     "state": "Kano",
+     "district": "Kano South",
+     "party": "NNPP",
+     "elected": "NNPP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Abdulaziz Musa Yar&#8217;Adua",
+     "state": "Katsina",
+     "district": "Katsina Central",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Nasiru Sani zangon daura",
+     "state": "Katsina",
+     "district": "Katsina North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Dandutse Muntari Mohammed",
+     "state": "Katsina",
+     "district": "Katsina South",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Mohammad Adamu Mainasara aliero",
+     "state": "Kebbi",
+     "district": "Kebbi Central",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Yahaya Abubakar Abdullahi",
+     "state": "Kebbi",
+     "district": "Kebbi North",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Garba Musa Maidoki",
+     "state": "Kebbi",
+     "district": "Kebbi South",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Akpoti-uduaghan Natasha",
+     "state": "Kogi",
+     "district": "Kogi Central",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Jibrin Isah",
+     "state": "Kogi",
+     "district": "Kogi East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Sunday Steve Karimi",
+     "state": "Kogi",
+     "district": "Kogi West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Mallam Saliu Mustapha",
+     "state": "Kwara",
+     "district": "Kwara central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Suleiman Sadiq Umar",
+     "state": "Kwara",
+     "district": "Kwara North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ashiru Oyelola Yisa",
+     "state": "Kwara",
+     "district": "Kwara South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Wasiu Eshilokun Sanni",
+     "state": "Lagos",
+     "district": "Lagos Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Tokunbo Abiru",
+     "state": "Lagos",
+     "district": "Lagos East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Oluranti Adebule",
+     "state": "Lagos",
+     "district": "Lagos West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Godiya Akwashiki",
+     "state": "Nasarawa",
+     "district": "Nasarawa North",
+     "party": "SDP",
+     "elected": "SDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Mohammed Ogoshi Onawo",
+     "state": "Nasarawa",
+     "district": "Nasarawa South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ahmed Aliyu Wadada",
+     "state": "Nasarawa",
+     "district": "Nasarawa West",
+     "party": "SDP",
+     "elected": "SDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Mohammed Sani Musa",
+     "state": "Niger",
+     "district": "Niger East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abubakar Sani Bello",
+     "state": "Niger",
+     "district": "Niger North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Peter Ndalikali Jiya",
+     "state": "Niger",
+     "district": "Niger South",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Shuaibu Afolabi Salisu",
+     "state": "Ogun",
+     "district": "Ogun Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Justus Olugbenga Daniel",
+     "state": "Ogun",
+     "district": "Ogun East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Solomon Olamilekan Adeola",
+     "state": "Ogun",
+     "district": "Ogun West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Adeniyi Ayodele Adegbonmire",
+     "state": "Ondo",
+     "district": "Ondo Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Ipinsagba Emmanuel Olajide",
+     "state": "Ondo",
+     "district": "Ondo north",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Jimoh Ibrahim",
+     "state": "Ondo",
+     "district": "Ondo South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Oluwole Fadeyi Olubiyi",
+     "state": "Osun",
+     "district": "Osun Central",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Fadahunsi Francis Adenigba",
+     "state": "Osun",
+     "district": "Osun East",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Olalere Oyewumi",
+     "state": "Osun",
+     "district": "Osun West",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Yunus Akintunde",
+     "state": "Oyo",
+     "district": "Oyo Central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Abdulfatai Buhari",
+     "state": "Oyo",
+     "district": "Oyo North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Sharafadeen Abiodun Alli",
+     "state": "Oyo",
+     "district": "Oyo South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Diket Plang",
+     "state": "Plateau",
+     "district": "Plateau Central",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Pam Mwadkon Dachungyang",
+     "state": "Plateau",
+     "district": "Plateau North",
+     "party": "ADP",
+     "elected": "ADP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Napoleon Bali",
+     "state": "Plateau",
+     "district": "Plateau South",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Allwell Heacho Onyesoh",
+     "state": "Rivers",
+     "district": "Rivers East",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Barinada Barry Mpigi",
+     "state": "Rivers",
+     "district": "Rivers South-East",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Dr. Mrs Ipalibo Harry Banigo",
+     "state": "Rivers",
+     "district": "Rivers West",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "medianigeria"
+    },
+    {
+     "name": "Abdullahi Ibrahim Gobir",
+     "state": "Sokoto",
+     "district": "Sokoto East",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Aliyu Magatakarda Wamakko",
+     "state": "Sokoto",
+     "district": "Sokoto North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Aminu Tambuwal",
+     "state": "Sokoto",
+     "district": "Sokoto South",
+     "party": null,
+     "elected": null,
+     "source": null
+    },
+    {
+     "name": "Haruna Manu",
+     "state": "Taraba",
+     "district": "Taraba Central",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Shuaibu Isa Lau",
+     "state": "Taraba",
+     "district": "Taraba North",
+     "party": "PDP",
+     "elected": "PDP",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "David Jimkuta",
+     "state": "Taraba",
+     "district": "Taraba South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Ibrahim Gaidam",
+     "state": "Yobe",
+     "district": "Yobe East",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Ahmed Ibrahim Lawan",
+     "state": "Yobe",
+     "district": "Yobe North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Ibrahim Mohammed Bomai",
+     "state": "Yobe",
+     "district": "Yobe South",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    },
+    {
+     "name": "Ikra Aliyu Bilbis",
+     "state": "Zamfara",
+     "district": "Zamfara central",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Sahabi Alhaji Ya\u00fa",
+     "state": "Zamfara",
+     "district": "Zamfara North",
+     "party": "APC",
+     "elected": "APC",
+     "source": "nass.gov.ng"
+    },
+    {
+     "name": "Abdul&#8217;aziz Abubakar Yari",
+     "state": "Zamfara",
+     "district": "Zamfara West",
+     "party": "APC",
+     "elected": "APC",
+     "source": "wikipedia-delegation"
+    }
+   ]
+  }
+ }
+}

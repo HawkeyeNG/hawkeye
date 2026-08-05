@@ -2,6 +2,10 @@
    Deep institutional green + mint accent, editorial serif headings,
    soft cards, sticky translucent chrome. All v1 class names kept. */
 :root {
+  /* Readable from JS: env() is not available to getComputedStyle on its own,
+     so menu.js reads this to reserve the gesture-bar inset when it sizes the
+     dropdown above the tab bar. */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --green: #004225;         /* Nigeria green (kept for accents) */
   --green-dark: #00482b;
   --green-darker: #00331e;

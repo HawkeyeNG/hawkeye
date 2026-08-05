@@ -5,6 +5,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import multer from 'multer';
 import { Router } from 'express';
 import { db, contests } from '../db.js';
 import { config } from '../config.js';
@@ -401,4 +402,76 @@ adminRouter.post('/admin/incidents/:id/unpublish', requireAdmin, (req, res) => {
   if (!info.changes) return res.status(404).json({ error: 'not_found_or_not_published' });
   notifyMaster(`🗑 incident #${id} unpublished from the public feed`);
   res.json({ ok: true, status: 'rejected' });
+});
+
+// ---- social media upload (post.html) ---------------------------------------
+// The poster could only accept a URL that was ALREADY hosted on hawkeye.com.ng,
+// so every post meant deploying the file by hand first. This takes the file
+// straight off the device and returns the public URL the poster needs.
+//
+// Files land in uploads/social/, deliberately NOT in the evidence tree: these
+// are marketing assets and must stay out of the content-addressed audit
+// artifacts that the docket and the anchor chain cover.
+const socialDir = path.join(config.uploadDir, 'social');
+fs.mkdirSync(socialDir, { recursive: true });
+
+const SOCIAL_EXT = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'video/mp4': 'mp4',
+  'video/quicktime': 'mov',
+  'video/webm': 'webm',
+};
+
+// The claimed mimetype is client-controlled, so the extension we publish is
+// decided by the actual bytes — same rule the incident uploader already uses.
+function sniffSocial(buf) {
+  if (buf.length < 12) return null;
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return 'image/png';
+  if (buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP') return 'image/webp';
+  if (buf.slice(4, 8).toString() === 'ftyp') {
+    return buf.slice(8, 12).toString().startsWith('qt') ? 'video/quicktime' : 'video/mp4';
+  }
+  if (buf[0] === 0x1a && buf[1] === 0x45 && buf[2] === 0xdf && buf[3] === 0xa3) return 'video/webm';
+  return null;
+}
+
+const socialUpload = multer({
+  storage: multer.memoryStorage(),
+  // TikTok and Reels both take a full-length cut; 300 MB covers anything we make.
+  limits: { fileSize: 300 * 1024 * 1024, files: 1 },
+}).single('file');
+
+adminRouter.post('/admin/social/upload', requireAdmin, (req, res) => {
+  socialUpload(req, res, (err) => {
+    if (err) {
+      const tooBig = err.code === 'LIMIT_FILE_SIZE';
+      return res.status(tooBig ? 413 : 400).json({
+        error: tooBig ? 'too_large' : 'upload_failed',
+        detail: String(err.message || err),
+      });
+    }
+    const f = req.file;
+    if (!f) return res.status(400).json({ error: 'no_file' });
+    const real = sniffSocial(f.buffer);
+    if (!real || !SOCIAL_EXT[real]) {
+      return res.status(415).json({ error: 'unsupported_type', hint: 'jpg, png, webp, mp4, mov or webm' });
+    }
+    // Content-addressed, so re-uploading the same cut reuses one URL instead of
+    // littering the folder with near-duplicates in the run-up to a launch.
+    const sha = crypto.createHash('sha256').update(f.buffer).digest('hex');
+    const name = `${sha}.${SOCIAL_EXT[real]}`;
+    const dest = path.join(socialDir, name);
+    const reused = fs.existsSync(dest);
+    if (!reused) fs.writeFileSync(dest, f.buffer);
+    res.json({
+      ok: true,
+      url: `${config.publicBaseUrl}/uploads/social/${name}`,
+      mediaType: real.startsWith('video/') ? 'video' : 'image',
+      bytes: f.buffer.length,
+      reused,
+    });
+  });
 });

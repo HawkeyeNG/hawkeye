@@ -59,6 +59,10 @@ export const config = {
 
   dbPath: process.env.DB_PATH || path.join(backendRoot, 'storage', 'hawkeye.db'),
   uploadDir: process.env.UPLOAD_DIR || path.join(backendRoot, 'storage', 'uploads'),
+  // Canonical public origin. Used where we must hand an ABSOLUTE url to someone
+  // outside (social platforms fetch our media server-side, so a relative path or
+  // a localhost origin silently fails their ingest).
+  publicBaseUrl: (process.env.PUBLIC_BASE_URL || 'https://hawkeye.com.ng').replace(/\/+$/, ''),
   appDir: path.resolve(backendRoot, '..', 'app'),
   dataDir: path.join(backendRoot, 'src', 'data'),
   registerCsvPath:

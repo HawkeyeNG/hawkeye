@@ -1,6 +1,6 @@
 // Minimal service worker: cache the app shell so the observer app opens instantly
 // on flaky election-day networks. API calls always hit the network.
-const CACHE = 'hawkeye-v188'; // bump on any shell change so installed clients refresh
+const CACHE = 'hawkeye-v189'; // bump on any shell change so installed clients refresh
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every
@@ -17,6 +17,7 @@ const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html'
 // og-image.png is here too — only crawlers fetch it, and they don't use the SW.
 const LAZY = ['/opencv.js', '/nga_wards.geojson', '/states_geo.json', '/lga_geo.json',
   '/district_geo.json', '/constituency_geo.json', '/political_data.json',
+  '/members.json', '/party_changes.json',
   '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/og-image.png'];
 
 // Opened ONCE per worker lifetime. The global caches.match() searches every

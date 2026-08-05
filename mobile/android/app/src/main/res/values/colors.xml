@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The splash field. Android 12+ ignores the launch theme's window
+         background and paints windowSplashScreenBackground instead; with that
+         unset it fell back to the platform default, which is why the Capacitor
+         splash showed the hawk on BLACK. Same value as the native shell's
+         expo-splash-screen backgroundColor and the web theme-color. -->
+    <color name="splashBackground">#004225</color>
+</resources>

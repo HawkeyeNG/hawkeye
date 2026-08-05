@@ -22,7 +22,14 @@
     </style>
 
 
+    <!-- Pre-Android-12 launch theme. `android:background` was the wrong hook —
+         it styles the decor view, not the window, so the splash showed
+         @drawable/splash on the theme's own (black) window background.
+         windowBackground is what the system paints before the first frame, and
+         splash_screen is a layer-list that carries the green field with it.
+         Android 12+ overrides this whole style; see values-v31/styles.xml. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="android:windowBackground">@drawable/splash_screen</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

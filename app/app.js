@@ -1180,13 +1180,33 @@ async function tryResume() {
 $('sel-contest').onchange = updateScopeNotice;
 if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) navigator.serviceWorker.register('sw.js');
 (async () => {
+  const paintRegister = () => {
+    applyIntentCopy();
+    applySignUpMode();
+    applySignInMode();
+    show('screen-register');
+  };
+
   // Expired/corrupt tokens are dropped BEFORE deciding which screen to show —
   // never let a dead session masquerade as signed-in (resume re-mints silently).
   if (!tokenFresh()) {
     localStorage.removeItem('hawkeye_token');
-    // Don't hold first paint hostage to a stalled network — after 6s show the
-    // register pane anyway (a late resume still lands the token silently).
-    await Promise.race([tryResume().catch(() => {}), new Promise((r) => setTimeout(r, 6000))]);
+    // PAINT FIRST, resume in the background.
+    //
+    // This used to `await` tryResume() before showing anything, capped at 6s.
+    // tryResume() ALWAYS goes to the network — it generates keys and POSTs to
+    // /api/observers/resume even on a fresh install that has nothing to resume —
+    // so every signed-out launch sat on a blank page for as long as that request
+    // took, and for the full 6s whenever the link was slow or the API was down.
+    // On the Capacitor shell, where every asset is already local, that wait was
+    // the entire startup delay.
+    //
+    // The register pane is what a signed-out visitor needs regardless, so it goes
+    // up immediately; a resume that lands afterwards still redirects below. The
+    // cost is a brief glimpse of the form for the narrow case of an EXPIRED token
+    // that then resumes — and those users were staring at a blank screen before.
+    paintRegister();
+    await Promise.race([tryResume().catch(() => {}), new Promise((r) => setTimeout(r, 4000))]);
   }
   if (localStorage.getItem('hawkeye_token')) {
     // Already registered — honour the CTA intent instead of re-verifying.
@@ -1198,10 +1218,9 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
     else if (IS_SIGNIN) location.href = 'index.html';
     else show('screen-locate');
   } else {
-    applyIntentCopy();
-    applySignUpMode();
-    applySignInMode();
-    show('screen-register');
+    // Idempotent — already painted above on the !tokenFresh path; this covers a
+    // fresh-token check that then found no token.
+    paintRegister();
   }
 })();
 

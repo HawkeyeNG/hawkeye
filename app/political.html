@@ -118,7 +118,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <script src="authgate.js?v=2"></script>
-  <script src="map-label.js?v=1"></script>
+  <script src="map-label.js?v=2"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -497,7 +497,7 @@
       const mapEl = document.getElementById('map');
       mapEl.innerHTML = `<svg viewBox="${geo.viewBox}" role="img" aria-label="Governing party by state">${s}<g class="badges"></g></svg>`;
       const msvg = mapEl.querySelector('svg');
-      const R = 10;                       // was 11, and on a plate now
+      const R = window.HAWKEYE_MAP.badgeScale(msvg);  // constant on-screen size
       let b = '';
       msvg.querySelectorAll('path.st').forEach((path, i) => {
         const p = won[i];

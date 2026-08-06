@@ -29,7 +29,10 @@
     .map-legend { display: flex; gap: 16px; align-items: center; font-size: 0.8rem; color: var(--muted); margin: 8px 0 0; }
     .map-legend span { display: inline-flex; align-items: center; gap: 6px; }
     .map-legend i { width: 13px; height: 13px; display: inline-block; border: 1px solid #b7bcb7; }
-    .badge-text { font-weight: 700; fill: #fff; font-size: 11px; text-anchor: middle; dominant-baseline: central; }
+    .badge-text { font-weight: 700; fill: #fff; font-size: 9px; text-anchor: middle; dominant-baseline: central; }
+    /* White plate behind each emblem — same treatment as preview.html and
+       political.html, and it is what keeps a flag legible on a saturated fill. */
+    .flag-disc { fill: #fff; stroke: rgba(0,0,0,.25); stroke-width: .8; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
     table th { white-space: nowrap; }
@@ -70,7 +73,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <script src="authgate.js?v=2"></script>
-  <script src="map-label.js?v=1"></script>
+  <script src="map-label.js?v=2"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -246,11 +249,23 @@
     let CGEO = null;    // constituency_geo.json — federal constituencies
     let LOGOS = {};
 
-    function badgeSvg(party, cx, cy, r = 13) {
+    // One badge treatment across preview.html, political.html and here, so the
+    // election-day map looks like the preview people were shown.
+    //
+    // A PLATE, and the emblem drawn as a WIDE rectangle rather than boxed into a
+    // square. Party emblems are wide artwork: squaring them letterboxes each one
+    // to a fraction of its box, and now that regions are filled with saturated
+    // party colour a bare emblem has nothing to separate it from the fill.
+    function badgeSvg(party, cx, cy, r = 10) {
+      const w = r * 2, h = r * 1.45;
+      const plate = `<rect class="flag-disc" x="${cx - w / 2 - 1}" y="${cy - h / 2 - 1}"
+        width="${w + 2}" height="${h + 2}" rx="2.5"></rect>`;
       if (LOGOS[party]) {
-        return `<image href="${LOGOS[party]}" x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}"></image>`;
+        return `<g>${plate}<image href="${LOGOS[party]}" x="${cx - w / 2}" y="${cy - h / 2}"
+          width="${w}" height="${h}"></image></g>`;
       }
-      return `<g><circle cx="${cx}" cy="${cy}" r="${r}" fill="${color(party)}" stroke="#fff" stroke-width="1.5"></circle>
+      return `<g>${plate}<rect x="${cx - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}" rx="2"
+          fill="${color(party)}"></rect>
         <text class="badge-text" x="${cx}" y="${cy}">${party.slice(0, 4)}</text></g>`;
     }
 
@@ -263,7 +278,7 @@
       const tieStyle = (L) => (L.length > 2 ? ' style="fill:#fff"' : '');
       let shapes = '';
       let aria;
-      let badgeR = 13;
+      let badgeR = 10;
       // Null = draw the whole country in the geo files' own viewBox. Set by the
       // scoped branch to a bbox computed from just the shapes it drew.
       let viewBox = null;
@@ -384,6 +399,19 @@
       // Exact ties split the shape diagonally: two clipped tints + two smaller flags.
       const defs = svg.querySelector('defs');
       const badgeLayer = svg.querySelector('g.badges');
+      // Badge size is in USER units, and a cropped map shrinks the viewBox ~10x
+      // while the rendered width stays the same — so a badge that is 7px on the
+      // national map came out 79px on the Osun LGA map and buried the geometry.
+      // This is the same trap the CSS above documents for stroke-width, which
+      // vector-effect solves; there is no such property for <image>/<rect>, so
+      // convert a target ON-SCREEN size into user units at the current scale.
+      // Measured, not assumed: viewBox width over rendered width.
+      // Scale it to the viewBox, not to pixels: the badge then occupies the same
+      // FRACTION of the map at any crop, and still grows with the viewport the
+      // way the rest of the SVG does. /80 reproduces the r=10 that preview.html
+      // and political.html use on the national viewBox (800 wide), so all three
+      // maps are identical at every zoom level.
+      badgeR = window.HAWKEYE_MAP.badgeScale(svg);
       let clipN = 0;
       for (const p of svg.querySelectorAll('path[data-leaders]')) {
         const L = (p.dataset.leaders || '').split(',').filter(Boolean);

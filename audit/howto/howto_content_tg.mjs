@@ -6,8 +6,8 @@
 // in-app bookends) and Telegram-chat screens (tg_components.mjs). Copy is taken
 // verbatim from the live bot (backend/src/services/bot.js + routes/telegram.js);
 // parties stay placeholder per the nonpartisan rule where they ever appear.
-import { scr, h1, lede, card, label, input, btn, otp, ok } from './howto_content.mjs';
-import { tgScreen, botMsg, userMsg, TG_CSS } from './tg_components.mjs';
+import { scr, h1, lede, card, label, input, btn, otp, ok, cam } from './howto_content.mjs';
+import { tgScreen, botMsg, userMsg, cmd, botMsgKb, TG_CSS } from './tg_components.mjs';
 
 export { TG_CSS };
 
@@ -22,6 +22,76 @@ const channelPick = () => `<div style="display:flex;gap:14px">
 const WELCOME = 'Welcome to Hawkeye. Tap the button below to share your phone number — this confirms the number you entered in the app is really yours.';
 
 export const CLIPS_TG = [
+  {
+    slug: 'report-telegram',
+    // Says the command out loud. Someone scrolling needs to know this is the
+    // thing they will actually do on election day, not a features tour.
+    title: 'How to report a result from Telegram',
+    kicker: 'ONE COMMAND · /REPORT',
+    steps: [
+      {
+        cap: 'Send /report in the Hawkeye chat. Pick your saved unit, or browse.',
+        vo: 'Send slash report, then pick your saved unit.',
+        screen: tgScreen(
+          cmd('/report', '09:14')
+          + botMsgKb(
+            '📋 Report a polling-unit result.<br><br>Which unit? Tap <b>Browse</b> to pick it '
+            + 'from a list, or send its <b>PU code</b> (e.g. <code>25-01-05-012</code>) — '
+            + '/mapunit shows yours if unsure.<br><br>Your saved unit:',
+            [[{ text: '⭐ Ward 5 Primary School' }], [{ text: '🔎 Browse by state → unit' }]],
+            '09:14'),
+        ),
+      },
+      {
+        // The standalone "Which election?" keyboard screen used to live here as
+        // its own step. It was cut to shorten the clip (the renderer dies on this
+        // box past ~1150 frames, and length is driven straight off the voiceover),
+        // so the unit confirmation and the election both fold into this bot
+        // message instead — same information, one screen fewer.
+        cap: 'Confirm the unit and election, then type the votes — one party per line.',
+        vo: 'Confirm the unit and election, then type the votes. One party per line.',
+        screen: tgScreen(
+          botMsg('Unit: <b>Ward 5 Primary School</b> · Governorship.<br>'
+            + 'Now send the votes — one party per line or comma-separated, e.g.<br>'
+            + '<code>APC 341<br>PDP 220<br>LP 190</code>', '09:15')
+          + userMsg('<code>APC 341<br>PDP 220<br>LP 190</code>', '09:16'),
+          { typed: 'APC 341' },
+        ),
+      },
+      {
+        cap: 'Check the read-back. If a figure is wrong, this is where you catch it.',
+        vo: 'Check the read-back. Catch a wrong figure here.',
+        screen: tgScreen(
+          botMsgKb(
+            '✅ <b>Ward 5 Primary School (25-01-05-012)</b><br>Governorship<br>'
+            + 'APC — 341<br>PDP — 220<br>LP — 190<br><br>'
+            + 'Last step — open the camera to photograph the result sheet. Photos are captured '
+            + '<b>live</b> and signed on your phone; that is what makes the report trustworthy.',
+            [[{ text: '📸 Open camera', kind: 'app' }]],
+            '09:16'),
+        ),
+      },
+      {
+        cap: 'The camera opens. Photograph the sheet — it is signed on your phone as you shoot.',
+        vo: 'Photograph the sheet. It is signed on your phone as you shoot.',
+        screen: scr('Report a result',
+          h1('Photograph the sheet')
+          + lede('Live capture only — gallery uploads are rejected.')
+          + card(
+            cam('EC8A') + btn('Capture'),
+          )),
+      },
+      {
+        cap: 'Submitted. Your report is on the public ledger within seconds.',
+        vo: 'Submitted. It is on the public ledger within seconds.',
+        screen: scr('Submitted',
+          ok('Result recorded', 'Ward 5 Primary School · Governorship')
+          + card('<div class="ph-fine">Signed with your key and chained to the entry before it. '
+            + 'Nobody — including us — can alter it without breaking the chain.</div>'),
+        ),
+      },
+    ],
+  },
   {
     slug: 'otp-telegram',
     // Says OTP and Telegram outright. "Get Your Code" told a scrolling viewer

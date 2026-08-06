@@ -1,5 +1,5 @@
 {
- "asOf": "2026-08-05",
+ "asOf": "2026-08-06",
  "note": "Hawkeye's own roster of the National Assembly. No single public source lists every sitting member with a current party, so this merges all of them, records which source produced each seat, and applies our own documented party changes on top. Seat counts are derived from these members, so the chart and the names always agree.",
  "sources": [
   {
@@ -28,22 +28,25 @@
    "role": "2023 result, Senate"
   }
  ],
- "changesApplied": 24,
+ "changesApplied": 80,
  "chambers": {
   "house": {
    "size": 360,
    "listed": 360,
-   "withParty": 316,
+   "withParty": 358,
    "parties": {
-    "APC": 170,
-    "PDP": 102,
-    "LP": 24,
+    "APC": 202,
+    "PDP": 105,
+    "LP": 25,
     "NNPP": 11,
+    "ADC": 4,
     "YPP": 3,
     "APGA": 2,
-    "ADC": 1,
+    "NDC": 1,
+    "PRP": 1,
     "AA": 1,
     "SDP": 1,
+    "A": 1,
     "ADP": 1
    },
    "members": [
@@ -107,9 +110,15 @@
      "name": "Christian Nkwonta",
      "state": "Abia",
      "district": "Ukwa East/Ukwa West",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/List_of_members_of_the_House_of_Representatives_of_Nigeria,_2023%E2%80%932027"
+     }
     },
     {
      "name": "Kwamoti Laori",
@@ -899,9 +908,15 @@
      "name": "Omosede Igbinedion",
      "state": "Edo",
      "district": "Ovia",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://www.thecable.ng/omosede-igbinedion-wins-by-election-in-edo-secures-return-to-house-of-reps/"
+     }
     },
     {
      "name": "Dennis Amadi Idahosa",
@@ -1035,17 +1050,29 @@
      "name": "Obika Joshua Chinedu",
      "state": "FCT",
      "district": "Abuja Municipal/Bwari",
-     "party": null,
+     "party": "NDC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "NDC",
+      "date": null,
+      "source": "https://authorityngr.com/2026/05/13/2027-abuja-rep-obika-explains-move-from-lp-to-apc-then-ndc/"
+     }
     },
     {
      "name": "Ajiya Abulrahaman",
      "state": "FCT",
      "district": "Kuje/Abaji/Gwagwalada/Kwali",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://pmnewsnigeria.com/2023/02/28/apcs-abdulrahman-ajiya-wins-abuja-south-fed-const-seat/"
+     }
     },
     {
      "name": "Usman Bello-Kumo",
@@ -1203,9 +1230,15 @@
      "name": "Rabiu Mukhtar",
      "state": "Jigawa",
      "district": "Babura/Garki",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://gazettengr.com/apcs-rabiu-wins-babura-garki-federal-constituency-by-election/"
+     }
     },
     {
      "name": "Fulata Abubakar Hassan",
@@ -1235,9 +1268,15 @@
      "name": "Madawaki Dahiru",
      "state": "Jigawa",
      "district": "Dutse/Kiyawa",
-     "party": null,
+     "party": "PDP",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PDP",
+      "date": null,
+      "source": "https://www.premiumtimesng.com/news/top-news/880601-2027-jigawa-pdp-reps-get-return-tickets-as-party-opts-for-consensus.html"
+     }
     },
     {
      "name": "Isa Dongoyaro",
@@ -1841,9 +1880,15 @@
      "name": "Chindo Aminu Ahmad",
      "state": "Katsina",
      "district": "Katsina Central",
-     "party": "PDP",
+     "party": "APC",
      "elected": "PDP",
-     "source": "nass.gov.ng"
+     "source": "hawkeye",
+     "changed": {
+      "from": "PDP",
+      "to": "APC",
+      "date": null,
+      "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"
+     }
     },
     {
      "name": "Aminu Ibrahim Kafur",
@@ -1901,17 +1946,29 @@
      "name": "Rabiu Garba Kamba",
      "state": "Kebbi",
      "district": "Arewa/Dandi",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Rabiu_Garba-Kamba"
+     }
     },
     {
      "name": "Sani Yakubu Noma",
      "state": "Kebbi",
      "district": "Argungu/ Augie",
-     "party": null,
+     "party": "ADC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "ADC",
+      "date": null,
+      "source": "https://naltf.gov.ng/house-of-representatives-plenary-highlights-tuesday-march-21-2026/"
+     }
     },
     {
      "name": "Bello A. Kaoje",
@@ -1941,17 +1998,29 @@
      "name": "Salisu Garba Koko",
      "state": "Kebbi",
      "district": "Koko Besse/Maiyama",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://dailytrust.com/just-in-kebbi-rep-dumps-pdp-for-apc/"
+     }
     },
     {
      "name": "Umar Garba Uba",
      "state": "Kebbi",
      "district": "Yauri, Shanga &amp; Ngaski",
-     "party": null,
+     "party": "PRP",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PRP",
+      "date": null,
+      "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+     }
     },
     {
      "name": "Kabir Tukura Ibrahim",
@@ -1997,17 +2066,29 @@
      "name": "Yinka Ahmed Aluko",
      "state": "Kwara",
      "district": "Ilorin East/Ilorin South",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://citizensciencenigeria.org/public-offices/persons/yinka-ahmed-aluko"
+     }
     },
     {
      "name": "Tolani Shagaya",
      "state": "Kwara",
      "district": "Ilorin West/Asa",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Muktar_Tolani_Shagaya"
+     }
     },
     {
      "name": "Adam Ahmed Saba",
@@ -2053,9 +2134,15 @@
      "name": "Adedayo Olumiywa",
      "state": "Lagos",
      "district": "Apapa",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Adesola_Adedayo"
+     }
     },
     {
      "name": "Setonji G. Koshoedo",
@@ -2149,9 +2236,15 @@
      "name": "Fayinka Toyin",
      "state": "Lagos",
      "district": "Mushin II",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Moses_Fayinka"
+     }
     },
     {
      "name": "Oluwaseyi Sowumi",
@@ -2165,9 +2258,15 @@
      "name": "Okey Joe",
      "state": "Lagos",
      "district": "Oshodi-Isolo II",
-     "party": null,
+     "party": "LP",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "LP",
+      "date": null,
+      "source": "https://www.thisdaylive.com/2023/11/02/appeal-court-upholds-lp-onuakalusis-election-in-oshodi-isolo-federal-constituency/"
+     }
     },
     {
      "name": "Aliu Ademorin Kuye",
@@ -2181,9 +2280,15 @@
      "name": "Fuad Kayode Laguda",
      "state": "Lagos",
      "district": "Surulere I",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Fuad_Kayode_Laguda"
+     }
     },
     {
      "name": "Lanre okunlola",
@@ -2253,17 +2358,29 @@
      "name": "Baraje Yusuf Kure",
      "state": "Niger",
      "district": "Booso/Paikoro",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Yusuf_Kure_Baraje"
+     }
     },
     {
      "name": "Abubakar Abdul Buba Abubakar",
      "state": "Niger",
      "district": "Chanchaga",
-     "party": null,
+     "party": "PDP",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PDP",
+      "date": null,
+      "source": "https://dailypost.ng/2023/02/26/pdp-wins-chanchaga-federal-constituency-election-in-niger/"
+     }
     },
     {
      "name": "Tanko Adamu",
@@ -2325,25 +2442,43 @@
      "name": "Akinosi Olatunji Akanni",
      "state": "Ogun",
      "district": "Ado Odo/Ota",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://dailypost.ng/2023/02/26/election-result-apc-wins-ado-odo-ota-federal-constituency-seat/"
+     }
     },
     {
      "name": "Isiaka Nasiru Adegboyega",
      "state": "Ogun",
      "district": "Egbado North/Imeko Afon",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Gboyega_Nasir_Isiaka"
+     }
     },
     {
      "name": "Akinlade Abiodun Isiaq",
      "state": "Ogun",
      "district": "Egbado South/Ipokia",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Akinlade_Abiodun_Isiaq"
+     }
     },
     {
      "name": "Ibrahim Ayokunle Isiaka",
@@ -2373,9 +2508,15 @@
      "name": "Adesola Elegbeji",
      "state": "Ogun",
      "district": "Ikenne/Sagamu/Remo North",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://www.thecable.ng/acourt-dismisses-sdp-petition-affirms-apcs-elegbeji-victory-in-remo-north-federal-constituency-by-election/"
+     }
     },
     {
      "name": "Adewunmi Oriyomi Onanuga",
@@ -2397,9 +2538,15 @@
      "name": "Ifeoluwa Babajide Ehindero",
      "state": "Ondo",
      "district": "Akoko North East/North West",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://nass.gov.ng/"
+     }
     },
     {
      "name": "Adefarati Adegboyega Adeyemi",
@@ -2421,9 +2568,15 @@
      "name": "Akingbaso Festus Olanrewaju",
      "state": "Ondo",
      "district": "Idanre/Ifedore",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://www.naijanews.com/2025/05/28/ondo-reps-member-dumps-pdp-for-apc/"
+     }
     },
     {
      "name": "Ojogo Donald Kimikanboh",
@@ -2469,17 +2622,29 @@
      "name": "Akintola Oluokun Goeorge",
      "state": "Osun",
      "district": "Akinyele/Lagelu",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+     }
     },
     {
      "name": "Oladebo Lanre Olomololaye",
      "state": "Osun",
      "district": "Ayedaade/Irewole/Isokan",
-     "party": null,
+     "party": "A",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "A",
+      "date": null,
+      "source": "https://dailypost.ng/2026/03/02/six-reps-defect-to-accord-party-in-osun/"
+     }
     },
     {
      "name": "Akanni Clement Ademola",
@@ -2517,9 +2682,15 @@
      "name": "Adewale Morufu Adebayo",
      "state": "Osun",
      "district": "Ife Central/Ife North/Ife South/Ife East",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://nass.gov.ng/"
+     }
     },
     {
      "name": "Ajilesoro Taofeek Abimbola",
@@ -2527,7 +2698,13 @@
      "district": "Ife Central/Ife North/Ife South/Ife East",
      "party": "APC",
      "elected": "APC",
-     "source": "nass.gov.ng"
+     "source": "hawkeye",
+     "changed": {
+      "from": "APC",
+      "to": "APC",
+      "date": null,
+      "source": "https://nass.gov.ng/"
+     }
     },
     {
      "name": "Oke Busayo Oluwole",
@@ -2573,9 +2750,15 @@
      "name": "Abass Agboworin",
      "state": "Oyo",
      "district": "Ibadan North East/Ibadan South East",
-     "party": null,
+     "party": "PDP",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PDP",
+      "date": null,
+      "source": "https://nass.gov.ng/"
+     }
     },
     {
      "name": "Abass Adekunle Adigun",
@@ -2669,9 +2852,15 @@
      "name": "Lalu Ishaya David",
      "state": "Plateau",
      "district": "Bokkos/Mangu",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/David_Ishaya_Lalu"
+     }
     },
     {
      "name": "Avia Musa Agah",
@@ -2733,9 +2922,15 @@
      "name": "Obuzor Victor",
      "state": "Rivers",
      "district": "Ahaoda West/Ogba Egbema",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://saharareporters.com/2025/12/23/six-house-reps-members-rivers-state-dump-pdp-apc"
+     }
     },
     {
      "name": "Boma Goodhead",
@@ -2749,25 +2944,43 @@
      "name": "Hart Cyril Godwin",
      "state": "Rivers",
      "district": "Bonny/Degema",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://saharareporters.com/2025/12/23/six-house-reps-members-rivers-state-dump-pdp-apc"
+     }
     },
     {
      "name": "Nwaeke Felix Uche",
      "state": "Rivers",
      "district": "Eleme/Tai/Oyigbo",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://saharareporters.com/2025/12/23/six-house-reps-members-rivers-state-dump-pdp-apc"
+     }
     },
     {
      "name": "Nwogu Kelechi",
      "state": "Rivers",
      "district": "Etche/Omuma",
-     "party": null,
+     "party": "PDP",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PDP",
+      "date": null,
+      "source": "https://dezmayorz.org/2022/05/rivers-2023-list-of-winners-of-pdp-house-of-representatives-primaries/"
+     }
     },
     {
      "name": "Emerengwa Boniface Sunday",
@@ -2813,17 +3026,29 @@
      "name": "Umezuruike Manuchim",
      "state": "Rivers",
      "district": "Port-Harcourt I",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://www.thecable.ng/four-rivers-reps-defect-from-pdp-lp-to-apc/"
+     }
     },
     {
      "name": "Blessing Chigeru Amadi",
      "state": "Rivers",
      "district": "Port-Harcourt II",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://saharareporters.com/2025/12/23/six-house-reps-members-rivers-state-dump-pdp-apc"
+     }
     },
     {
      "name": "Saadu Nabunkari",
@@ -2837,17 +3062,29 @@
      "name": "Shehu Nasiru",
      "state": "Sokoto",
      "district": "Dange-Shuni/Bodinga/Tureta",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Nasiru_Shehu_Bodinga"
+     }
     },
     {
      "name": "Bashiru Usman Gorau",
      "state": "Sokoto",
      "district": "Goronyo/Gada",
-     "party": null,
+     "party": "ADC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "ADC",
+      "date": null,
+      "source": "https://thesun.ng/apc-invades-bashir-usman-goraus-political-stronghold-as-thousands-dump-adc/"
+     }
     },
     {
      "name": "Isah Bello Ambarura",
@@ -2869,9 +3106,15 @@
      "name": "Abdussamad Dasuki",
      "state": "Sokoto",
      "district": "Kebbe/Tambuwal",
-     "party": null,
+     "party": "ADC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "ADC",
+      "date": null,
+      "source": "https://www.thecable.ng/sokoto-rep-quits-pdp-joins-adc/"
+     }
     },
     {
      "name": "Abdullahi Ahmad Kalambaina",
@@ -2893,9 +3136,15 @@
      "name": "Umar Musa Yabo",
      "state": "Sokoto",
      "district": "Yabo/Shagari",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+     }
     },
     {
      "name": "Jaafaru Chiroma Yakubu",
@@ -2949,17 +3198,29 @@
      "name": "Yakubu Sani Alhaji",
      "state": "Taraba",
      "district": "Tangaza/Gudu",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Sani_Alhaji_Yakubu"
+     }
     },
     {
      "name": "Jakduwa Hassan Kaikuku",
      "state": "Yobe",
      "district": "Bade/Jakusko",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://dailypost.ng/2026/04/05/yobe-lawmaker-jakduwa-defects-to-apc-after-pdp-exit/"
+     }
     },
     {
      "name": "Alli Lawan Shettima",
@@ -3005,9 +3266,15 @@
      "name": "Anka Isa Mohammed",
      "state": "Zamfara",
      "district": "Anka/Talata/Mafara",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+     }
     },
     {
      "name": "Sulaiman Gumi Abubakar",
@@ -3070,16 +3337,16 @@
   "senate": {
    "size": 109,
    "listed": 109,
-   "withParty": 97,
+   "withParty": 109,
    "parties": {
-    "APC": 53,
-    "PDP": 29,
+    "APC": 61,
+    "PDP": 31,
     "LP": 7,
+    "ADC": 3,
     "NNPP": 2,
     "SDP": 2,
     "APGA": 1,
     "YPP": 1,
-    "ADC": 1,
     "ADP": 1
    },
    "members": [
@@ -3151,9 +3418,15 @@
      "name": "Akpan Ekong Sampson",
      "state": "Akwa Ibom",
      "district": "Akwa Ibom South",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://punchng.com/akwa-ibom-senator-gets-apc-ticket-for-re-election/"
+     }
     },
     {
      "name": "Victor C. Umeh",
@@ -3207,9 +3480,15 @@
      "name": "Benson Friday Konbowei",
      "state": "Bayelsa",
      "district": "Bayelsa Central",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://www.channelstv.com/2025/10/16/bayelsa-senator-konbowei-defects-to-apc/"
+     }
     },
     {
      "name": "Agadaga Benson Sunday",
@@ -3391,9 +3670,15 @@
      "name": "Adaramodu Adeyemi Raphael",
      "state": "Ekiti",
      "district": "Ekiti South",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+     }
     },
     {
      "name": "Kelvin Chukwu",
@@ -3463,9 +3748,15 @@
      "name": "Patrick Ndubueze",
      "state": "Imo",
      "district": "Imo North",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://en.wikipedia.org/wiki/Patrick_Ndubueze"
+     }
     },
     {
      "name": "Osita Izunaso",
@@ -3495,9 +3786,15 @@
      "name": "Khabeeb Mustapha",
      "state": "Jigawa",
      "district": "JIGAWA SOUTH WEST",
-     "party": null,
+     "party": "PDP",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PDP",
+      "date": null,
+      "source": "https://tribuneonlineng.com/jigawa-pdp-drops-incumbent-senator-picks-ex-deputy-govs-son-as-consensus-candidate-for-jigawa-southwest/"
+     }
     },
     {
      "name": "Lawal Adamu Usman",
@@ -3557,9 +3854,15 @@
      "name": "Abdulaziz Musa Yar&#8217;Adua",
      "state": "Katsina",
      "district": "Katsina Central",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"
+     }
     },
     {
      "name": "Nasiru Sani zangon daura",
@@ -3573,9 +3876,15 @@
      "name": "Dandutse Muntari Mohammed",
      "state": "Katsina",
      "district": "Katsina South",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"
+     }
     },
     {
      "name": "Mohammad Adamu Mainasara aliero",
@@ -3597,9 +3906,15 @@
      "name": "Garba Musa Maidoki",
      "state": "Kebbi",
      "district": "Kebbi South",
-     "party": null,
+     "party": "ADC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "ADC",
+      "date": null,
+      "source": "https://dailytrust.com/kebbi-apc-senator-decamps-to-adc-over-primary-crisis/"
+     }
     },
     {
      "name": "Akpoti-uduaghan Natasha",
@@ -3821,9 +4136,15 @@
      "name": "Diket Plang",
      "state": "Plateau",
      "district": "Plateau Central",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://punchng.com/plateau-senator-loses-apc-return-ticket/"
+     }
     },
     {
      "name": "Pam Mwadkon Dachungyang",
@@ -3837,9 +4158,15 @@
      "name": "Napoleon Bali",
      "state": "Plateau",
      "district": "Plateau South",
-     "party": null,
+     "party": "PDP",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "PDP",
+      "date": null,
+      "source": "https://www.thecable.ng/tribunal-sacks-pdp-senator-declares-lalong-as-winner-of-plateau-south/"
+     }
     },
     {
      "name": "Allwell Heacho Onyesoh",
@@ -3869,9 +4196,15 @@
      "name": "Abdullahi Ibrahim Gobir",
      "state": "Sokoto",
      "district": "Sokoto East",
-     "party": null,
+     "party": "APC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "APC",
+      "date": null,
+      "source": "https://pmnewsnigeria.com/2023/04/16/sokoto-apc-wins-2-senate-8-reps-seats/"
+     }
     },
     {
      "name": "Aliyu Magatakarda Wamakko",
@@ -3885,9 +4218,15 @@
      "name": "Aminu Tambuwal",
      "state": "Sokoto",
      "district": "Sokoto South",
-     "party": null,
+     "party": "ADC",
      "elected": null,
-     "source": null
+     "source": "hawkeye",
+     "changed": {
+      "from": null,
+      "to": "ADC",
+      "date": null,
+      "source": "https://blueprint.ng/tambuwal-leaves-pdp-for-adc/"
+     }
     },
     {
      "name": "Haruna Manu",

@@ -1,6 +1,26 @@
 /* Hawkeye — design language v2.
    Deep institutional green + mint accent, editorial serif headings,
    soft cards, sticky translucent chrome. All v1 class names kept. */
+/* Cross-document view transitions.
+   Every screen here is its OWN html document — the app is a multi-page site in
+   a WebView, not an SPA — so each tap tears the document down and rebuilds it,
+   and the gap between the two shows as a white flash and a jump. That is the
+   choppiness, and it is not a speed problem: the files already come from the
+   service-worker cache.
+   This hands the WebView both frames and lets it cross-fade between them, so a
+   navigation reads as one continuous screen. Progressive enhancement — browsers
+   without it just navigate as before, and it is skipped entirely for anyone who
+   has asked for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 140ms; }
+  /* The header and tab bar are the same element on both pages, so naming them
+     keeps them PINNED while the body cross-fades, instead of fading the whole
+     screen including furniture that never changed. */
+  .gov-header { view-transition-name: hk-header; }
+  .tabbar { view-transition-name: hk-tabbar; }
+}
+
 :root {
   /* Readable from JS: env() is not available to getComputedStyle on its own,
      so menu.js reads this to reserve the gesture-bar inset when it sizes the

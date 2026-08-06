@@ -522,38 +522,95 @@ adminRouter.get('/admin/stats', requireAdmin, (_req, res) => {
   });
 });
 
-// Per-observer roll, oldest first, so "is that lot just my team?" is answerable
-// by eye. Owner-only.
+// Per-observer roll with a full activity timeline, oldest first.
 //
-// The phone hash is TRUNCATED by default. It is a one-way hash, but Nigerian
-// mobile numbers are a small enough space to brute-force offline if a full list
-// ever escaped — and the stated use for these figures is showing them to
-// funders, where a screenshot travels further than anyone intends. A 12-char
-// prefix distinguishes rows, which is all identifying a signup needs.
-// ?full=1 returns whole hashes for the cases where that is genuinely required.
+// EVERY created_at in this file's queries is MILLISECONDS. Verified per table
+// rather than assumed — submissions, collation_reports, incidents, pu_mappings,
+// saved_units and observers all write Date.now(). Getting this wrong once
+// already produced a "6 of 6 registered today" that looked like data.
+//
+// Result submissions carry a ledger link. The submissions table IS the chain
+// (prev_hash/entry_hash per row), so a report is addressable by its entry hash
+// and ledger.html deep-links to it. Collation reports are a SEPARATE chain with
+// its own head and no public per-entry view, so those carry the hash but no
+// deep link — saying so beats inventing a URL that 404s.
+const LEDGER_URL = (h) => `${config.publicBaseUrl}/ledger.html#${h}`;
+
 adminRouter.get('/admin/observers', requireAdmin, (req, res) => {
   const full = String(req.query.full || '') === '1';
-  const rows = db.prepare(`
-    SELECT o.id, o.phone_hash, o.status, o.reputation, o.created_at,
-           (SELECT COUNT(*) FROM telegram_links   t WHERE t.phone_hash  = o.phone_hash) AS tg,
-           (SELECT COUNT(*) FROM saved_units      s WHERE s.observer_id = o.id)         AS savedUnit,
-           (SELECT COUNT(*) FROM device_push_tokens d WHERE d.observer_id = o.id)       AS pushTokens,
-           (SELECT COUNT(*) FROM submissions      b WHERE b.observer_id = o.id)         AS submissions
-    FROM observers o ORDER BY o.id ASC`).all();
+  const iso = (ms) => (ms ? new Date(ms).toISOString() : null);
+  const q = (sql) => { try { return db.prepare(sql).all(); } catch { return []; } };
+
+  const observers = q('SELECT id, phone_hash, status, reputation, created_at FROM observers ORDER BY id ASC');
+  const subs = q(`SELECT id, observer_id, pu_code, contest, created_at, entry_hash
+                  FROM submissions ORDER BY created_at ASC`);
+  const coll = q(`SELECT id, observer_id, contest, level, state, lga, ward, created_at, entry_hash
+                  FROM collation_reports ORDER BY created_at ASC`);
+  const inc  = q(`SELECT id, observer_id, kind, pu_code, state, status, created_at
+                  FROM incidents ORDER BY created_at ASC`);
+  const maps = q('SELECT observer_id, pu_code, created_at FROM pu_mappings ORDER BY created_at ASC');
+  const saved = q('SELECT observer_id, pu_code, created_at FROM saved_units');
+  const tg = q('SELECT phone_hash FROM telegram_links');
+  const push = q('SELECT observer_id, COUNT(*) AS c FROM device_push_tokens GROUP BY observer_id');
+
+  const tgSet = new Set(tg.map((r) => r.phone_hash));
+  const pushBy = Object.fromEntries(push.map((r) => [r.observer_id, r.c]));
+  const savedBy = Object.fromEntries(saved.map((r) => [r.observer_id, r]));
+  const byObs = (rows) => rows.reduce((m, r) => ((m[r.observer_id] ||= []).push(r), m), {});
+  const S = byObs(subs); const C = byObs(coll); const I = byObs(inc); const M = byObs(maps);
+
   res.json({
     at: new Date().toISOString(),
-    count: rows.length,
+    count: observers.length,
     hashes: full ? 'full' : 'truncated to 12 chars — add ?full=1 for complete hashes',
-    observers: rows.map((r) => ({
-      id: r.id,
-      phoneHash: full ? r.phone_hash : String(r.phone_hash || '').slice(0, 12),
-      status: r.status,
-      reputation: r.reputation,
-      registered: r.created_at ? new Date(r.created_at).toISOString() : null,
-      telegramLinked: !!r.tg,
-      savedUnit: !!r.savedUnit,
-      pushTokens: r.pushTokens,
-      submissions: r.submissions,
-    })),
+    note: 'Result reports link into the public ledger by entry hash. Collation reports '
+        + 'are on a separate chain with no per-entry public view yet, so they carry the '
+        + 'hash only.',
+    observers: observers.map((o) => {
+      const mine = {
+        result: (S[o.id] || []).map((r) => ({
+          type: 'result', at: iso(r.created_at), puCode: r.pu_code, contest: r.contest,
+          entryHash: r.entry_hash, ledgerUrl: LEDGER_URL(r.entry_hash),
+        })),
+        collation: (C[o.id] || []).map((r) => ({
+          type: 'collation', at: iso(r.created_at), contest: r.contest, level: r.level,
+          scope: [r.ward, r.lga, r.state].filter(Boolean).join(', '),
+          entryHash: r.entry_hash, ledgerUrl: null,
+        })),
+        incident: (I[o.id] || []).map((r) => ({
+          type: 'incident', at: iso(r.created_at), kind: r.kind,
+          puCode: r.pu_code, state: r.state, status: r.status,
+        })),
+        mapped: (M[o.id] || []).map((r) => ({
+          type: 'unit_mapped', at: iso(r.created_at), puCode: r.pu_code,
+        })),
+      };
+      const sv = savedBy[o.id];
+      const timeline = [
+        { type: 'signup', at: iso(o.created_at) },
+        ...mine.result, ...mine.collation, ...mine.incident, ...mine.mapped,
+        ...(sv ? [{ type: 'saved_unit', at: iso(sv.created_at), puCode: sv.pu_code }] : []),
+      ].sort((a, b) => String(a.at).localeCompare(String(b.at)));
+
+      return {
+        id: o.id,
+        phoneHash: full ? o.phone_hash : String(o.phone_hash || '').slice(0, 12),
+        status: o.status,
+        reputation: o.reputation,
+        registered: iso(o.created_at),
+        telegramLinked: tgSet.has(o.phone_hash),
+        pushTokens: pushBy[o.id] || 0,
+        savedUnit: sv ? sv.pu_code : null,
+        counts: {
+          results: mine.result.length,
+          collation: mine.collation.length,
+          incidents: mine.incident.length,
+          unitsMapped: mine.mapped.length,
+          total: timeline.length - 1,        // signup is not an activity
+        },
+        lastActiveAt: timeline.length ? timeline[timeline.length - 1].at : iso(o.created_at),
+        timeline,
+      };
+    }),
   });
 });

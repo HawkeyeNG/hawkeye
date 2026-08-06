@@ -37,6 +37,13 @@
     table.roll { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-top: 8px; }
     table.roll th, table.roll td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line, #e6e6e5); white-space: nowrap; }
     table.roll td.mono { font-family: ui-monospace, Menlo, monospace; }
+    details.obs { border: 1px solid var(--line, #e3e8e4); border-radius: 10px; padding: 8px 12px; margin: 6px 0; background: var(--card, #fff); }
+    details.obs > summary { cursor: pointer; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    details.obs code { font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; }
+    .pillrow { display: inline-flex; gap: 5px; flex-wrap: wrap; margin-left: auto; }
+    .pill { font-style: normal; font-size: 0.72rem; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: var(--tint, #e8f5ee); color: var(--ink); }
+    .pill.dim { background: var(--code-bg, #eef1ee); color: var(--muted); font-weight: 600; }
+    .pill.warn { background: #fdecea; color: #b3261e; }
     .lab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
     .lab { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
     .lab img { width: 100%; height: 170px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); display: block; }
@@ -159,15 +166,41 @@
         const r = await fetch('/api/admin/observers', { headers: hdr() });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const d = await r.json();
-        $('obs-list').innerHTML = `<table class="roll"><thead><tr>
-            <th>#</th><th>hash</th><th>registered</th><th>TG</th><th>unit</th>
-            <th>push</th><th>reports</th><th>status</th></tr></thead><tbody>`
-          + d.observers.map((x) => `<tr>
-              <td>${x.id}</td><td class="mono">${x.phoneHash}</td>
-              <td>${(x.registered || '').replace('T', ' ').slice(0, 16)}</td>
-              <td>${x.telegramLinked ? '✓' : '—'}</td><td>${x.savedUnit ? '✓' : '—'}</td>
-              <td>${x.pushTokens}</td><td>${x.submissions}</td><td>${x.status}</td>
-            </tr>`).join('') + '</tbody></table>';
+        const when = (t) => (t || '').replace('T', ' ').slice(0, 16);
+        const LABEL = {
+          signup: 'Signed up', result: 'Result report', collation: 'Collation report',
+          incident: 'Incident', unit_mapped: 'Mapped a unit', saved_unit: 'Saved a unit',
+        };
+        // One row per observer, with their whole history underneath. Rolled up
+        // rather than a flat event log: the question is nearly always "what has
+        // THIS person done", not "what happened at 14:02".
+        $('obs-list').innerHTML = `<p class="meta">${d.note}</p>` + d.observers.map((o) => `
+          <details class="obs">
+            <summary>
+              <b>#${o.id}</b> <code>${o.phoneHash}</code>
+              <span class="meta">joined ${when(o.registered)}</span>
+              <span class="pillrow">
+                ${o.counts.results ? `<i class="pill">${o.counts.results} result</i>` : ''}
+                ${o.counts.collation ? `<i class="pill">${o.counts.collation} collation</i>` : ''}
+                ${o.counts.incidents ? `<i class="pill">${o.counts.incidents} incident</i>` : ''}
+                ${o.counts.unitsMapped ? `<i class="pill">${o.counts.unitsMapped} mapped</i>` : ''}
+                ${o.counts.total === 0 ? '<i class="pill dim">no activity yet</i>' : ''}
+                ${o.telegramLinked ? '<i class="pill dim">TG</i>' : ''}
+                ${o.pushTokens ? `<i class="pill dim">${o.pushTokens} push</i>` : ''}
+                ${o.status !== 'active' ? `<i class="pill warn">${o.status}</i>` : ''}
+              </span>
+            </summary>
+            <table class="roll"><tbody>
+              ${o.timeline.map((t) => `<tr>
+                <td>${when(t.at)}</td>
+                <td>${LABEL[t.type] || t.type}</td>
+                <td>${[t.puCode, t.contest, t.scope, t.kind, t.status].filter(Boolean).join(' · ')}</td>
+                <td>${t.ledgerUrl
+                      ? `<a href="${t.ledgerUrl}" target="_blank" rel="noopener">ledger ↗</a>`
+                      : (t.entryHash ? `<code title="${t.entryHash}">${t.entryHash.slice(0, 12)}…</code>` : '')}</td>
+              </tr>`).join('')}
+            </tbody></table>
+          </details>`).join('');
       } catch (e) {
         $('obs-list').innerHTML = `<p class="empty">Could not load roll (${e.message})</p>`;
       }

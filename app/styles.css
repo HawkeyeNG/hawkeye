@@ -1006,6 +1006,9 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 .sec-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); border: 0; padding: 0; margin: 22px 0 2px; }
 /* Stacked entry cards — phone-friendly replacement for wide ledger/integrity tables. */
 .ecard { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+/* Arrived via ledger.html#<entry_hash>: mark WHICH entry was linked to, or the
+   reader lands mid-list with no idea which row the link meant. */
+.ecard.ec-focus { border-color: var(--gold, #f5b301); box-shadow: 0 0 0 3px rgba(245, 179, 1, .22); }
 .ecard .ec-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .ecard .ec-top strong { font-size: 0.95rem; }
 .ecard .ec-top .ec-time { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }

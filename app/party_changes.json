@@ -82,24 +82,523 @@
    "date": "2026-03-31",
    "source": "https://www.arise.tv/nine-kano-reps-defect-from-nnpp-to-apc-amid-political-realignment/"
   },
-
-  {"member": "Murtar Muhammad", "district": "Kazaure/Roni/Gwiwa/Yankwashi", "chamber": "house", "to": "APC", "source": "https://www.stears.co/elections/2023/house-of-representatives/JI/"},
-  {"member": "Yusuf Saidu Miga", "district": "Miga/Jahun", "chamber": "house", "to": "APC", "source": "https://en.wikipedia.org/wiki/Yusuf_Sa%27idu_Miga"},
-  {"member": "Saad Taura", "district": "Taura/Ringim", "chamber": "house", "to": "APC", "source": "https://www.stears.co/elections/2023/house-of-representatives/JI/"},
-
-  {"member": "Jallo Hussaini Mohammed", "district": "Igabi", "chamber": "house", "to": "PDP", "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"},
-  {"member": "Amos Daniel", "district": "Jemaa/Sanga", "chamber": "house", "to": "PDP", "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"},
-  {"member": "Gabriel Saleh Zock", "district": "Kachia/Kagarko", "chamber": "house", "to": "APC", "source": "https://en.wikipedia.org/wiki/Gabriel_Saleh_Zock"},
-  {"member": "Matthew Donatus Kuzalio", "district": "Kaura", "chamber": "house", "to": "LP", "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"},
-  {"member": "Sadiq Ango Abdullahi", "district": "Sabon Gari", "chamber": "house", "to": "PDP", "source": "https://blueprint.ng/kaduna-speaker-abbas-ango-abdullahis-son-secure-tickets-as-apc-announces-reps-results/"},
-
-  {"member": "Ibrahim Hamisu", "district": "Dambatta/Makoda", "chamber": "house", "to": "APC", "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"},
-  {"member": "Aminu Sulaiman Goro", "district": "Fagge", "chamber": "house", "to": "NNPP", "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"},
-  {"member": "Gwarzo Abdullahi Mu'azu", "district": "Gwarzo/Kabo", "chamber": "house", "to": "APC", "source": "https://en.wikipedia.org/wiki/Gwarzo_Abdullahi_Muazu"},
-  {"member": "Zakari Umar Mukhtar", "district": "Tarauni", "chamber": "house", "to": "NNPP", "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"},
-
-  {"member": "Jamilu Muhammed", "district": "Faskari/Kankara/Sabuwa", "chamber": "house", "to": "PDP", "note": "Quit the PDP in July 2025 with no new party declared; seat also contested in court by APC's Shehu Dalhatu Tafoki. Left on the party he was seated under until one of the two resolves.", "source": "https://www.naijanews.com/2025/07/17/reps-member-jamilu-muhammad-dumps-pdp/"},
-  {"member": "Aminu Ibrahim Kafur", "district": "Malumfashi/Kafur", "chamber": "house", "to": "APC", "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"},
-  {"member": "Lawal Sani", "district": "Zango/Baure", "chamber": "house", "to": "APC", "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"}
+  {
+   "member": "Murtar Muhammad",
+   "district": "Kazaure/Roni/Gwiwa/Yankwashi",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://www.stears.co/elections/2023/house-of-representatives/JI/"
+  },
+  {
+   "member": "Yusuf Saidu Miga",
+   "district": "Miga/Jahun",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/Yusuf_Sa%27idu_Miga"
+  },
+  {
+   "member": "Saad Taura",
+   "district": "Taura/Ringim",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://www.stears.co/elections/2023/house-of-representatives/JI/"
+  },
+  {
+   "member": "Jallo Hussaini Mohammed",
+   "district": "Igabi",
+   "chamber": "house",
+   "to": "PDP",
+   "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"
+  },
+  {
+   "member": "Amos Daniel",
+   "district": "Jemaa/Sanga",
+   "chamber": "house",
+   "to": "PDP",
+   "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"
+  },
+  {
+   "member": "Gabriel Saleh Zock",
+   "district": "Kachia/Kagarko",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/Gabriel_Saleh_Zock"
+  },
+  {
+   "member": "Matthew Donatus Kuzalio",
+   "district": "Kaura",
+   "chamber": "house",
+   "to": "LP",
+   "source": "https://punchng.com/nigeriaelections2023-pdp-wins-kaduna-senatorial-reps-seats/"
+  },
+  {
+   "member": "Sadiq Ango Abdullahi",
+   "district": "Sabon Gari",
+   "chamber": "house",
+   "to": "PDP",
+   "source": "https://blueprint.ng/kaduna-speaker-abbas-ango-abdullahis-son-secure-tickets-as-apc-announces-reps-results/"
+  },
+  {
+   "member": "Ibrahim Hamisu",
+   "district": "Dambatta/Makoda",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"
+  },
+  {
+   "member": "Aminu Sulaiman Goro",
+   "district": "Fagge",
+   "chamber": "house",
+   "to": "NNPP",
+   "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"
+  },
+  {
+   "member": "Gwarzo Abdullahi Mu'azu",
+   "district": "Gwarzo/Kabo",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/Gwarzo_Abdullahi_Muazu"
+  },
+  {
+   "member": "Zakari Umar Mukhtar",
+   "district": "Tarauni",
+   "chamber": "house",
+   "to": "NNPP",
+   "source": "https://dailytrust.com/see-list-of-elected-house-of-representatives-members-from-kano-state/"
+  },
+  {
+   "member": "Jamilu Muhammed",
+   "district": "Faskari/Kankara/Sabuwa",
+   "chamber": "house",
+   "to": "PDP",
+   "note": "Quit the PDP in July 2025 with no new party declared; seat also contested in court by APC's Shehu Dalhatu Tafoki. Left on the party he was seated under until one of the two resolves.",
+   "source": "https://www.naijanews.com/2025/07/17/reps-member-jamilu-muhammad-dumps-pdp/"
+  },
+  {
+   "member": "Aminu Ibrahim Kafur",
+   "district": "Malumfashi/Kafur",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"
+  },
+  {
+   "member": "Lawal Sani",
+   "district": "Zango/Baure",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"
+  },
+  {
+   "member": "Akpan Ekong Sampson",
+   "district": "Akwa Ibom South",
+   "chamber": "senate",
+   "to": "APC",
+   "note": "Elected PDP; joined APC 2026 after Gov. Umo Eno's defection.",
+   "source": "https://punchng.com/akwa-ibom-senator-gets-apc-ticket-for-re-election/"
+  },
+  {
+   "member": "Benson Friday Konbowei",
+   "district": "Bayelsa Central",
+   "chamber": "senate",
+   "to": "APC",
+   "note": "Elected PDP; defected to APC 16 Oct 2025.",
+   "source": "https://www.channelstv.com/2025/10/16/bayelsa-senator-konbowei-defects-to-apc/"
+  },
+  {
+   "member": "Patrick Ndubueze",
+   "district": "Imo North",
+   "chamber": "senate",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/Patrick_Ndubueze"
+  },
+  {
+   "member": "Khabeeb Mustapha",
+   "district": "JIGAWA SOUTH WEST",
+   "chamber": "senate",
+   "to": "PDP",
+   "source": "https://tribuneonlineng.com/jigawa-pdp-drops-incumbent-senator-picks-ex-deputy-govs-son-as-consensus-candidate-for-jigawa-southwest/"
+  },
+  {
+   "member": "Abdulaziz Musa Yar'Adua",
+   "district": "Katsina Central",
+   "chamber": "senate",
+   "to": "APC",
+   "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"
+  },
+  {
+   "member": "Garba Musa Maidoki",
+   "district": "Kebbi South",
+   "chamber": "senate",
+   "to": "ADC",
+   "note": "Elected PDP; to APC May 2025; to ADC June 2026.",
+   "source": "https://dailytrust.com/kebbi-apc-senator-decamps-to-adc-over-primary-crisis/"
+  },
+  {
+   "member": "Diket Plang",
+   "district": "Plateau Central",
+   "chamber": "senate",
+   "to": "APC",
+   "source": "https://punchng.com/plateau-senator-loses-apc-return-ticket/"
+  },
+  {
+   "member": "Napoleon Bali",
+   "district": "Plateau South",
+   "chamber": "senate",
+   "to": "PDP",
+   "note": "DISPUTED SEAT: a 2023 tribunal declared Simon Lalong (APC) winner and nullified Bali's election. Confirm who currently sits before publishing.",
+   "source": "https://www.thecable.ng/tribunal-sacks-pdp-senator-declares-lalong-as-winner-of-plateau-south/"
+  },
+  {
+   "member": "Aminu Tambuwal",
+   "district": "Sokoto South",
+   "chamber": "senate",
+   "to": "ADC",
+   "note": "Elected PDP; defected to ADC March 2026.",
+   "source": "https://blueprint.ng/tambuwal-leaves-pdp-for-adc/"
+  },
+  {
+   "member": "Umar Garba Uba",
+   "district": "Yauri, Shanga & Ngaski",
+   "chamber": "house",
+   "to": "PRP",
+   "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+  },
+  {
+   "member": "Akintola Oluokun Goeorge",
+   "district": "Akinyele/Lagelu",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+  },
+  {
+   "member": "Umar Musa Yabo",
+   "district": "Yabo/Shagari",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+  },
+  {
+   "member": "Anka Isa Mohammed",
+   "district": "Anka/Talata/Mafara",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+  },
+  {
+   "member": "Abass Agboworin",
+   "district": "Ibadan North East/Ibadan South East",
+   "chamber": "house",
+   "to": "PDP",
+   "source": "https://nass.gov.ng/"
+  },
+  {
+   "member": "Adewale Morufu Adebayo",
+   "district": "Ife Central/Ife North/Ife South/Ife East",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://nass.gov.ng/"
+  },
+  {
+   "member": "Christian Nkwonta",
+   "district": "Ukwa East/Ukwa West",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/List_of_members_of_the_House_of_Representatives_of_Nigeria,_2023%E2%80%932027"
+  },
+  {
+   "member": "Ifeoluwa Babajide Ehindero",
+   "district": "Akoko North East/North West",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://nass.gov.ng/"
+  },
+  {
+   "member": "Omosede Igbinedion",
+   "district": "Ovia",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Won the Ovia by-election for the APC, August 2025.",
+   "source": "https://www.thecable.ng/omosede-igbinedion-wins-by-election-in-edo-secures-return-to-house-of-reps/"
+  },
+  {
+   "member": "Obika Joshua Chinedu",
+   "district": "Abuja Municipal/Bwari",
+   "chamber": "house",
+   "to": "NDC",
+   "note": "Elected LP; to APC March 2026; to NDC May 2026.",
+   "source": "https://authorityngr.com/2026/05/13/2027-abuja-rep-obika-explains-move-from-lp-to-apc-then-ndc/"
+  },
+  {
+   "member": "Ajiya Abulrahaman",
+   "district": "Kuje/Abaji/Gwagwalada/Kwali",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://pmnewsnigeria.com/2023/02/28/apcs-abdulrahman-ajiya-wins-abuja-south-fed-const-seat/"
+  },
+  {
+   "member": "Rabiu Mukhtar",
+   "district": "Babura/Garki",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Won the Babura/Garki by-election for the APC, July 2025.",
+   "source": "https://gazettengr.com/apcs-rabiu-wins-babura-garki-federal-constituency-by-election/"
+  },
+  {
+   "member": "Madawaki Dahiru",
+   "district": "Dutse/Kiyawa",
+   "chamber": "house",
+   "to": "PDP",
+   "source": "https://www.premiumtimesng.com/news/top-news/880601-2027-jigawa-pdp-reps-get-return-tickets-as-party-opts-for-consensus.html"
+  },
+  {
+   "member": "Rabiu Garba Kamba",
+   "district": "Arewa/Dandi",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/Rabiu_Garba-Kamba"
+  },
+  {
+   "member": "Sani Yakubu Noma",
+   "district": "Argungu/ Augie",
+   "chamber": "house",
+   "to": "ADC",
+   "note": "Elected PDP; later APC; recorded as ADC in the April 2026 plenary record.",
+   "source": "https://naltf.gov.ng/house-of-representatives-plenary-highlights-tuesday-march-21-2026/"
+  },
+  {
+   "member": "Salisu Garba Koko",
+   "district": "Koko Besse/Maiyama",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Elected PDP; defected to APC February 2025.",
+   "source": "https://dailytrust.com/just-in-kebbi-rep-dumps-pdp-for-apc/"
+  },
+  {
+   "member": "Yinka Ahmed Aluko",
+   "district": "Ilorin East/Ilorin South",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://citizensciencenigeria.org/public-offices/persons/yinka-ahmed-aluko"
+  },
+  {
+   "member": "Tolani Shagaya",
+   "district": "Ilorin West/Asa",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/Muktar_Tolani_Shagaya"
+  },
+  {
+   "member": "Adedayo Olumiywa",
+   "district": "Apapa",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/Adesola_Adedayo"
+  },
+  {
+   "member": "Fayinka Toyin",
+   "district": "Mushin II",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/Moses_Fayinka"
+  },
+  {
+   "member": "Fuad Kayode Laguda",
+   "district": "Surulere I",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Won the Surulere I by-election for the APC, February 2024.",
+   "source": "https://en.wikipedia.org/wiki/Fuad_Kayode_Laguda"
+  },
+  {
+   "member": "Okey Joe",
+   "district": "Oshodi-Isolo II",
+   "chamber": "house",
+   "to": "LP",
+   "source": "https://www.thisdaylive.com/2023/11/02/appeal-court-upholds-lp-onuakalusis-election-in-oshodi-isolo-federal-constituency/"
+  },
+  {
+   "member": "Baraje Yusuf Kure",
+   "district": "Booso/Paikoro",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/Yusuf_Kure_Baraje"
+  },
+  {
+   "member": "Abubakar Abdul Buba Abubakar",
+   "district": "Chanchaga",
+   "chamber": "house",
+   "to": "PDP",
+   "source": "https://dailypost.ng/2023/02/26/pdp-wins-chanchaga-federal-constituency-election-in-niger/"
+  },
+  {
+   "member": "Akinosi Olatunji Akanni",
+   "district": "Ado Odo/Ota",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://dailypost.ng/2023/02/26/election-result-apc-wins-ado-odo-ota-federal-constituency-seat/"
+  },
+  {
+   "member": "Isiaka Nasiru Adegboyega",
+   "district": "Egbado North/Imeko Afon",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Gboyega Nasir Isiaka; the constituency is now written Yewa North/Imeko-Afon.",
+   "source": "https://en.wikipedia.org/wiki/Gboyega_Nasir_Isiaka"
+  },
+  {
+   "member": "Akinlade Abiodun Isiaq",
+   "district": "Egbado South/Ipokia",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Constituency now written Yewa South/Ipokia.",
+   "source": "https://en.wikipedia.org/wiki/Akinlade_Abiodun_Isiaq"
+  },
+  {
+   "member": "Adesola Elegbeji",
+   "district": "Ikenne/Sagamu/Remo North",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Won the by-election for the APC, 16 August 2025; affirmed on appeal.",
+   "source": "https://www.thecable.ng/acourt-dismisses-sdp-petition-affirms-apcs-elegbeji-victory-in-remo-north-federal-constituency-by-election/"
+  },
+  {
+   "member": "Hart Cyril Godwin",
+   "district": "Bonny/Degema",
+   "chamber": "house",
+   "to": "APC",
+   "note": "CORRECTED: elected PDP, but among the six Rivers reps who left the PDP for the APC on 23 December 2025.",
+   "source": "https://saharareporters.com/2025/12/23/six-house-reps-members-rivers-state-dump-pdp-apc"
+  },
+  {
+   "member": "Obuzor Victor",
+   "district": "Ahaoda West/Ogba Egbema",
+   "chamber": "house",
+   "to": "APC",
+   "note": "CORRECTED: elected PDP, but among the six Rivers reps who left the PDP for the APC on 23 December 2025.",
+   "source": "https://saharareporters.com/2025/12/23/six-house-reps-members-rivers-state-dump-pdp-apc"
+  },
+  {
+   "member": "Nwaeke Felix Uche",
+   "district": "Eleme/Tai/Oyigbo",
+   "chamber": "house",
+   "to": "APC",
+   "note": "CORRECTED: elected PDP, but among the six Rivers reps who left the PDP for the APC on 23 December 2025.",
+   "source": "https://saharareporters.com/2025/12/23/six-house-reps-members-rivers-state-dump-pdp-apc"
+  },
+  {
+   "member": "Nwogu Kelechi",
+   "district": "Etche/Omuma",
+   "chamber": "house",
+   "to": "PDP",
+   "note": "Held: he is NOT named in either Rivers defection list (18 or 23 December 2025), so he is recorded as still PDP. Re-check if a further Rivers defection is reported.",
+   "source": "https://dezmayorz.org/2022/05/rivers-2023-list-of-winners-of-pdp-house-of-representatives-primaries/"
+  },
+  {
+   "member": "Abdussamad Dasuki",
+   "district": "Kebbe/Tambuwal",
+   "chamber": "house",
+   "to": "ADC",
+   "note": "Elected PDP; resigned and joined the ADC 15 March 2026; now Deputy Minority Leader.",
+   "source": "https://www.thecable.ng/sokoto-rep-quits-pdp-joins-adc/"
+  },
+  {
+   "member": "Lalu Ishaya David",
+   "district": "Bokkos/Mangu",
+   "chamber": "house",
+   "to": "APC",
+   "source": "https://en.wikipedia.org/wiki/David_Ishaya_Lalu"
+  },
+  {
+   "member": "Akingbaso Festus Olanrewaju",
+   "district": "Idanre/Ifedore",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Elected PDP; defected to APC May 2025.",
+   "source": "https://www.naijanews.com/2025/05/28/ondo-reps-member-dumps-pdp-for-apc/"
+  },
+  {
+   "member": "Oladebo Lanre Olomololaye",
+   "district": "Ayedaade/Irewole/Isokan",
+   "chamber": "house",
+   "to": "A",
+   "note": "Elected PDP; one of six Osun PDP reps who defected to the Accord Party, March 2026.",
+   "source": "https://dailypost.ng/2026/03/02/six-reps-defect-to-accord-party-in-osun/"
+  },
+  {
+   "member": "Shehu Nasiru",
+   "district": "Dange-Shuni/Bodinga/Tureta",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Nasiru Shehu Bodinga.",
+   "source": "https://en.wikipedia.org/wiki/Nasiru_Shehu_Bodinga"
+  },
+  {
+   "member": "Jakduwa Hassan Kaikuku",
+   "district": "Bade/Jakusko",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Elected PDP; defected to APC April 2026.",
+   "source": "https://dailypost.ng/2026/04/05/yobe-lawmaker-jakduwa-defects-to-apc-after-pdp-exit/"
+  },
+  {
+   "member": "Umezuruike Manuchim",
+   "district": "Port-Harcourt I",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Elected LP (affirmed on appeal); defected to APC 18 December 2025 after Gov. Fubara's switch.",
+   "source": "https://www.thecable.ng/four-rivers-reps-defect-from-pdp-lp-to-apc/"
+  },
+  {
+   "member": "Blessing Chigeru Amadi",
+   "district": "Port-Harcourt II",
+   "chamber": "house",
+   "to": "APC",
+   "note": "CORRECTED: elected PDP, but among the six Rivers reps who left the PDP for the APC on 23 December 2025.",
+   "source": "https://saharareporters.com/2025/12/23/six-house-reps-members-rivers-state-dump-pdp-apc"
+  },
+  {
+   "member": "Adaramodu Adeyemi Raphael",
+   "district": "Ekiti South",
+   "chamber": "senate",
+   "to": "APC",
+   "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+  },
+  {
+   "member": "Dandutse Muntari Mohammed",
+   "district": "Katsina South",
+   "chamber": "senate",
+   "to": "APC",
+   "source": "https://parliamentreports.com/meet-members-of-the-10th-national-assembly-from-katsina-state/"
+  },
+  {
+   "member": "Abdullahi Ibrahim Gobir",
+   "district": "Sokoto East",
+   "chamber": "senate",
+   "to": "APC",
+   "source": "https://pmnewsnigeria.com/2023/04/16/sokoto-apc-wins-2-senate-8-reps-seats/"
+  },
+  {
+   "member": "Umar Garba Uba",
+   "district": "Yauri, Shanga &amp; Ngaski",
+   "chamber": "house",
+   "to": "PRP",
+   "source": "https://nigerianqueries.com/names-of-reps-in-nigeria/"
+  },
+  {
+   "member": "Bashiru Usman Gorau",
+   "district": "Goronyo/Gada",
+   "chamber": "house",
+   "to": "ADC",
+   "note": "Elected PDP; has since defected to the ADC — APC has been campaigning against him in the constituency as an ADC incumbent.",
+   "source": "https://thesun.ng/apc-invades-bashir-usman-goraus-political-stronghold-as-thousands-dump-adc/"
+  },
+  {
+   "member": "Yakubu Sani Alhaji",
+   "district": "Tangaza/Gudu",
+   "chamber": "house",
+   "to": "APC",
+   "note": "Sani Alhaji Yakubu. NB the roster files this seat under Taraba; Tangaza/Gudu is a SOKOTO constituency.",
+   "source": "https://en.wikipedia.org/wiki/Sani_Alhaji_Yakubu"
+  }
  ]
 }

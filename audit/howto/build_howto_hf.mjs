@@ -61,6 +61,20 @@ stepDurs.forEach((d) => { stepStart.push(t); t += d; });
 const outroStart = t;
 const TOTAL = +(INTRO + stepDurs.reduce((a, b) => a + b, 0) + OUTRO).toFixed(2);
 
+// The bed is a fixed 34s file but a how-to runs as long as its voiceover, which
+// can overrun it (the /report clip was 46s before it was cut back to fit under
+// the renderer's frame ceiling), and the renderer does NOT loop — it shortens the audio
+// slot to the media length and only warns, so the tail renders in silence while
+// the mp4 still writes. Nothing fails, which is why it goes unnoticed.
+//
+// Fixed by stacking slots rather than by building a longer file. Re-encoding the
+// bed was tried first and is a trap: despite the .mp3 name it is uncompressed
+// pcm_s16le, so an MP3 re-encode made the renderer reject the job outright, and
+// `-c:a copy` wrote PCM into an MP3 container that would not even probe. Reusing
+// the exact asset that already renders avoids the whole question.
+const BED = dur(path.join(assets, 'bgm.mp3'));
+const BGM_SLOTS = Math.max(1, Math.ceil(TOTAL / BED));
+
 // ---- composition ------------------------------------------------------------
 const N = c.steps.length;
 const screens = c.steps.map((s, i) => `<div class="pscreen" id="scr${i}">${s.screen}</div>`).join('');
@@ -138,7 +152,11 @@ const html = `<!doctype html>
       <div id="footer" class="clip" data-start="0" data-duration="${TOTAL}" data-track-index="3">hawkeye.com.ng</div>
       <div id="bar" class="clip" data-start="0" data-duration="${TOTAL}" data-track-index="4"></div>
       <audio id="vo" src="assets/vo.mp3" data-start="0" data-duration="${TOTAL}" data-track-index="10" data-volume="1"></audio>
-      <audio id="bgm" src="assets/bgm.mp3" data-start="0" data-duration="${TOTAL}" data-track-index="11" data-volume="0.14"></audio>
+      ${Array.from({ length: BGM_SLOTS }, (_, i) => {
+        const st = +(i * BED).toFixed(2);
+        const dn = +Math.min(BED, TOTAL - st).toFixed(2);
+        return `<audio class="bgm" id="bgm${i === 0 ? '' : i}" src="assets/bgm.mp3" data-start="${st}" data-duration="${dn}" data-track-index="${11 + i}" data-volume="0.14"></audio>`;
+      }).join('\n      ')}
     </div>
 
     <script>
@@ -169,8 +187,8 @@ const html = `<!doctype html>
       tl.from("#houtro .chip", { scale: 0.9, opacity: 0, duration: 0.5, ease: "back.out(1.6)" }, ${(outroStart + 0.35).toFixed(2)});
       // progress + bgm
       tl.fromTo("#bar", { scaleX: 0 }, { scaleX: 1, duration: ${TOTAL}, ease: "none" }, 0);
-      tl.fromTo("#bgm", { volume: 0 }, { volume: 0.14, duration: 1.0, ease: "sine.out" }, 0);
-      tl.to("#bgm", { volume: 0, duration: 1.4, ease: "sine.in" }, ${(TOTAL - 1.5).toFixed(2)});
+      tl.fromTo(".bgm", { volume: 0 }, { volume: 0.14, duration: 1.0, ease: "sine.out" }, 0);
+      tl.to(".bgm", { volume: 0, duration: 1.4, ease: "sine.in" }, ${(TOTAL - 1.5).toFixed(2)});
       window.__timelines["main"] = tl;
     </script>
   </body>

@@ -136,14 +136,34 @@
       renderTiles();
       document.getElementById('status').innerHTML = `Server head — compare, don't trust: <code>${verify.head || GENESIS}</code>`;
 
+      // Each card is addressable by its entry hash, so a report can be linked
+      // to directly — ledger.html#<entry_hash>. The whole point of a public
+      // chain is being able to point someone at one specific entry; before
+      // this, the only way to cite a report was "scroll until you find it".
       document.getElementById('rows').innerHTML = [...entries].reverse().map((e) => `
-        <div class="ecard">
+        <div class="ecard" id="e-${e.entry_hash}">
           <div class="ec-top"><strong>#${e.id}</strong><span class="ec-time">${timeAgo(e.created_at)}</span></div>
           <div class="ec-line">${e.pu_code} · ${e.contest}</div>
           <div class="ec-sub"><code>${e.entry_hash.slice(0, 24)}…</code></div>
           <div class="ec-ev"><a href="/uploads/${e.image_sha256}.jpg" target="_blank">sheet ↗</a> · <a href="/uploads/${e.venue_image_sha256}.jpg" target="_blank">venue ↗</a></div>
         </div>`).join('') || '<div class="meta">No entries yet.</div>';
+      // Deep link: the fragment is set before this list exists, so the browser's
+      // own scroll-to-fragment has already run and found nothing. Do it here.
+      focusEntry();
     })();
+
+    function focusEntry() {
+      const h = (location.hash || '').replace(/^#(e-)?/, '');
+      if (!h) return;
+      const el = document.getElementById('e-' + h) || document.getElementById(h);
+      if (!el) return;
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.add('ec-focus');
+    }
+    addEventListener('hashchange', () => {
+      document.querySelectorAll('.ec-focus').forEach((n) => n.classList.remove('ec-focus'));
+      focusEntry();
+    });
 
     document.getElementById('btn-verify').onclick = async () => {
       const out = document.getElementById('client-result');

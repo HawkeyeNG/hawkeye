@@ -118,6 +118,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <script src="authgate.js?v=2"></script>
+  <script src="map-label.js?v=1"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -481,13 +482,33 @@
       document.getElementById('prez').textContent = `${data.president.name}: governing party ${data.president.party}`;
       document.getElementById('provisional').textContent = data.note;
 
-      let s='', b='';
+      let s='';
+      const won=[];
       for (const st of geo.states) {
         const g = byKey[st.key]; const p = g?.p;
+        won.push(p);
         s += `<path class="st" d="${st.path}" fill="${p?color(p):'#eef4f0'}" fill-opacity="${p?0.85:1}"><title>${st.name}: ${p||'—'}</title></path>`;
-        if (p && logos[p]) b += `<image href="${logos[p]}" x="${st.cx-11}" y="${st.cy-11}" width="22" height="22"/>`;
       }
-      document.getElementById('map').innerHTML = `<svg viewBox="${geo.viewBox}" role="img" aria-label="Governing party by state">${s}${b}</svg>`;
+      // Shapes first, THEN the emblems: the label point is measured off the
+      // rendered path. Same fix as preview.html and results.html — the old
+      // st.cx/st.cy centroid is only the visual middle of a convex shape, so on
+      // states with a tail or a crescent the emblem sat on the border or off the
+      // state entirely. See map-label.js.
+      const mapEl = document.getElementById('map');
+      mapEl.innerHTML = `<svg viewBox="${geo.viewBox}" role="img" aria-label="Governing party by state">${s}<g class="badges"></g></svg>`;
+      const msvg = mapEl.querySelector('svg');
+      const R = 10;                       // was 11, and on a plate now
+      let b = '';
+      msvg.querySelectorAll('path.st').forEach((path, i) => {
+        const p = won[i];
+        if (!p || !logos[p]) return;
+        const pt = window.HAWKEYE_MAP.labelPoint(path);
+        const w = R * 2, h = R * 1.45;
+        b += `<rect x="${pt.x-w/2-1}" y="${pt.y-h/2-1}" width="${w+2}" height="${h+2}" rx="2.5"
+                fill="#fff" stroke="rgba(0,0,0,.25)" stroke-width=".8"/>`
+           + `<image href="${logos[p]}" x="${pt.x-w/2}" y="${pt.y-h/2}" width="${w}" height="${h}"/>`;
+      });
+      msvg.querySelector('g.badges').innerHTML = b;
 
       const parties = [...new Set(Object.values(data.governors).filter(Boolean))];
       document.getElementById('legend').innerHTML = parties.map(p=>`<span><i style="background:${color(p)}"></i>${p}</span>`).join('');

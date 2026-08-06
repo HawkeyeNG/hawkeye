@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#00482b" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Hawkeye — Review Console</title>
+  <title>Hawkeye — Admin Console</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=141" />
   <script src="native.js?v=104"></script>
   <style>
+/* ---- from review.html ---- */
+
     .tabs { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
     .tab { border: 1px solid var(--border); background: var(--card); padding: 6px 14px; border-radius: 999px; cursor: pointer; font-weight: 700; font-size: 0.9rem; }
     .tab.on { background: var(--green); color: #fff; border-color: var(--green); }
@@ -58,6 +59,32 @@
     label.seen select { width: auto; margin: 0; padding: 5px 8px; font-size: 0.86rem; }
     details.seen-wrap { margin-top: 16px; border-top: 1px solid var(--line, #e3e8e4); padding-top: 10px; }
     details.seen-wrap > summary { cursor: pointer; font-weight: 700; font-size: 0.9rem; color: var(--muted); margin-bottom: 10px; }
+  
+/* ---- from post.html ---- */
+
+    .box { max-width: 680px; }
+    label { display: block; font-weight: 700; margin: 12px 0 4px; }
+    input, textarea, select { width: 100%; }
+    .status { padding: 9px 12px; border-radius: 8px; margin: 8px 0; font-weight: 600; font-size: 0.9rem; }
+    .status.ok { background: var(--tint-ok); color: var(--link); }
+    .status.bad { background: var(--tint-danger); color: var(--text-danger); }
+    .status.info { background: var(--tint); }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.82rem; word-break: break-all; white-space: pre-wrap; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .targets label { display: inline-flex; gap: 7px; align-items: center; font-weight: 600; margin: 0 16px 0 0; }
+    .targets input { width: auto; }
+    .plat { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+    .plat b { display: block; }
+    .muted { color: var(--muted); font-size: 0.85rem; }
+  
+/* ---- unified console ---- */
+    .panelbar { display: flex; gap: 8px; margin: 4px 0 18px; flex-wrap: wrap; border-bottom: 1px solid var(--line, #e3e8e4); padding-bottom: 10px; }
+    .panel > h1:first-child { margin-top: 0; }
+    /* One passphrase for the whole console, so post.html's own passphrase row
+       is redundant here — hidden rather than deleted, to keep this file a
+       mechanical assembly of the two originals. */
+    .panel[data-p="social"] label[for="secret"],
+    .panel[data-p="social"] label[for="secret"] + .row { display: none; }
   </style>
   <script src="authgate.js?v=2"></script>
 </head>
@@ -65,7 +92,7 @@
   <header class="gov-header">
     <div class="wrap brand-row">
       <span class="brand"><span class="crest" aria-hidden="true">🦅</span>
-        <div class="brand-text"><strong>HAWKEYE</strong><span>Review Console — private</span></div></span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Admin Console — private</span></div></span>
     </div>
   </header>
 
@@ -80,6 +107,11 @@
     </section>
 
     <section id="console" hidden>
+      <div class="panelbar" id="panelbar">
+        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="social">Social</span>
+        <span class="tab" data-p="_logout" style="margin-left:auto">Lock 🔒</span>
+      </div>
+      <div class="panel" data-p="reach">
       <!-- Growth first: it is the number asked for most often, including by
            funders, and it was previously only reachable by hand-rolling a curl
            with the console secret. -->
@@ -93,7 +125,7 @@
         <div id="obs-list"><p class="empty">Loading…</p></div>
       </details>
 
-      <h1 style="margin-top:34px">Incident review</h1>
+      </div><div class="panel" data-p="incidents" hidden><h1 style="margin-top:34px">Incident review</h1>
       <div class="tabs" id="tabs">
         <span class="tab on" data-s="pending">Pending <b id="c-pending"></b></span>
         <!-- Reviewed incidents are done with; they are reference, not a queue.
@@ -110,7 +142,7 @@
       </div>
       <div id="list"><p class="empty">Loading…</p></div>
 
-      <h1 style="margin-top:34px">Label review</h1>
+      </div><div class="panel" data-p="labels" hidden><h1 style="margin-top:34px">Label review</h1>
       <p class="meta">Spot-check the counts each scorer typed against the sheet itself (tap a photo for full size).</p>
       <div class="tabs" id="set-tabs">
         <span class="tab on" data-set="3">Derek <b id="s3"></b></span>
@@ -120,10 +152,186 @@
       </div>
       <p class="meta" id="lab-summary"></p>
       <div id="lab-list"><p class="empty">Loading…</p></div>
+    </div><div class="panel" data-p="social" hidden>
+    <h1>Post to all channels</h1>
+    <p class="hint">Owner-only. One caption + one public media URL fans out to TikTok, the Facebook Page,
+    and Instagram. Media must be a public hawkeye.com.ng URL. Instagram needs media (no text-only);
+    TikTok needs a <strong>video</strong> and (until audited) the account must be private.</p>
+
+    <label for="secret">Admin passphrase</label>
+    <div class="row"><input id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
+      <button id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
+
+    <div id="plat-tt" class="plat"><b>TikTok</b><span class="muted" id="tt-state">…</span>
+      <div class="row" style="margin-top:6px">
+        <button id="tt-connect" class="secondary" style="width:auto;margin:0">🔗 Connect</button>
+        <button id="tt-check" class="secondary" style="width:auto;margin:0">🩺 Diagnostics</button>
+      </div></div>
+    <div id="plat-meta" class="plat"><b>Meta (Facebook + Instagram)</b><span class="muted" id="meta-state">…</span>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input id="fb-usertoken" type="text" placeholder="Short-lived USER token (Graph Explorer)" style="flex:1;min-width:240px" />
+        <button id="fb-exchange" class="secondary" style="width:auto;margin:0">🔑 Exchange &amp; store</button>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+        <input id="fb-appid" type="text" placeholder="App ID" style="flex:1;min-width:140px" />
+        <input id="fb-appsecret" type="password" placeholder="App Secret" style="flex:1;min-width:140px" />
+      </div>
+      <p class="hint" style="margin:4px 0 0">One-time: turns a short USER token into a durable Page token (no more expiry). App ID/Secret from developers.facebook.com → your app → Settings → Basic.</p>
+    </div>
+    <div id="plat-x" class="plat"><b>X (Twitter)</b><span class="muted" id="x-state">…</span></div>
+    <pre id="diag" class="mono status info" hidden></pre>
+
+    <hr style="margin:18px 0" />
+
+    <label>Post to</label>
+    <div class="targets">
+      <label><input type="checkbox" id="t-tiktok" checked /> TikTok</label>
+      <label><input type="checkbox" id="t-tiktok-draft" /> TikTok (drafts)</label>
+      <label><input type="checkbox" id="t-facebook" checked /> Facebook</label>
+      <label><input type="checkbox" id="t-instagram" checked /> Instagram</label>
+      <label><input type="checkbox" id="t-x" checked /> X</label>
+    </div>
+
+    <label for="caption">Caption</label>
+    <textarea id="caption" rows="3">Verify any polling-unit result yourself on Hawkeye's public, tamper-evident ledger. Independent. Nonpartisan. hawkeye.com.ng</textarea>
+
+    <label for="mtype">Media type</label>
+    <select id="mtype">
+      <option value="video">Video / Reel</option>
+      <option value="image">Image</option>
+      <option value="text">Text only (Facebook only)</option>
+    </select>
+    <label for="media">Media URL (public, hawkeye.com.ng)</label>
+    <input id="media" type="url" value="https://hawkeye.com.ng/media/demo.mp4" placeholder="https://hawkeye.com.ng/media/…" />
+
+    <!-- Upload straight from the device. The platforms fetch our media
+         server-side, so it has to be hosted before posting; this removes the
+         deploy-by-hand step that used to sit in front of every post. -->
+    <div class="row" style="margin-top:8px;align-items:center;gap:8px">
+      <input id="file" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" style="flex:1" />
+      <button id="upload" type="button" style="width:auto">Upload from device</button>
+    </div>
+    <p class="hint" id="uphint">jpg, png, webp, mp4, mov or webm, up to 300&nbsp;MB. On upload the Media URL and
+    type above are filled in for you.</p>
+
+    <button id="post" style="margin-top:14px">Post to selected</button>
+    <div id="result"></div>
+  </div>
     </section>
   </main>
 
   <script>
+  // post.html's script. Wrapped: it declares $, secret, hdr and setStatus at
+  // top level, exactly as review.html's does.
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const secret = () => localStorage.getItem('hawkeye_admin') || '';
+    const hdr = () => ({ 'x-admin-secret': secret(), 'content-type': 'application/json' });
+    const setStatus = (el, cls, msg) => { el.className = 'status ' + cls; el.textContent = msg; el.hidden = false; };
+
+    $('save-secret').onclick = () => { localStorage.setItem('hawkeye_admin', $('secret').value.trim()); refresh(); };
+    $('secret').value = secret();
+    $('tt-connect').onclick = () => { window.location.href = '/api/tiktok/auth'; };
+    $('fb-exchange').onclick = async () => {
+      const ut = $('fb-usertoken').value.trim();
+      if (!ut) return setStatus($('result'), 'bad', 'Paste a short-lived USER token first.');
+      setStatus($('result'), 'info', 'Exchanging for a durable Page token…');
+      try {
+        const r = await fetch('/api/meta/exchange', { method: 'POST', headers: { ...hdr(), 'content-type': 'application/json' }, body: JSON.stringify({ userToken: ut, appId: $('fb-appid').value.trim(), appSecret: $('fb-appsecret').value.trim() }) });
+        const d = await r.json();
+        if (d.tokenStored) { $('fb-usertoken').value = ''; setStatus($('result'), 'ok', `Durable token stored for ${d.pageName} ✓ — reloading status`); refresh(); }
+        else setStatus($('result'), 'bad', 'Exchange failed: ' + (d.error || 'unknown'));
+      } catch (e) { setStatus($('result'), 'bad', 'Exchange error: ' + e.message); }
+    };
+    $('tt-check').onclick = async () => {
+      const d = $('diag'); d.hidden = false; d.className = 'mono status info'; d.textContent = 'Querying TikTok creator_info…';
+      try { d.textContent = JSON.stringify(await (await fetch('/api/tiktok/creator-info', { headers: hdr() })).json(), null, 2); }
+      catch (e) { d.textContent = 'Failed: ' + e.message; }
+    };
+
+    async function refresh() {
+      if (!secret()) { $('tt-state').textContent = 'enter passphrase'; $('meta-state').textContent = 'enter passphrase'; return; }
+      try {
+        const r = await fetch('/api/social/status', { headers: hdr() });
+        if (r.status === 401) { $('tt-state').textContent = 'wrong passphrase'; return; }
+        const d = await r.json();
+        const tt = d.tiktok || {};
+        $('tt-state').textContent = !tt.enabled ? 'not configured on server'
+          : (tt.connected
+            ? `connected ✓ ${tt.displayName ? `as ${tt.displayName} ` : ''}(open_id ${tt.open_id || '—'})`
+            : 'configured — click Connect');
+        const m = d.meta || {};
+        $('meta-state').textContent = !m.enabled ? 'not configured on server'
+          : (m.ok ? `Page "${m.pageName || m.pageId}" ✓ · Instagram ${m.igLinked ? 'linked (' + (m.igUserId || '') + ')' : 'not linked yet'}`
+                  : ('token set but check failed: ' + (m.error || '')));
+        const x = d.x || {};
+        $('x-state').textContent = !x.enabled ? 'not configured on server'
+          : (x.ok ? `connected ✓ @${x.username || ''}` : ('creds set but auth failed: ' + (x.error || '')));
+      } catch { $('tt-state').textContent = $('meta-state').textContent = $('x-state').textContent = 'server unreachable'; }
+    }
+
+    // Upload from device -> hosted URL. FormData ONLY: setting a JSON
+    // content-type here strips multer's boundary and the file never arrives.
+    $('upload').onclick = async () => {
+      const res = $('result');
+      if (!secret()) return setStatus(res, 'bad', 'Enter the admin passphrase first.');
+      const f = $('file').files[0];
+      if (!f) return setStatus(res, 'bad', 'Choose a file first.');
+      const mb = (f.size / 1048576).toFixed(1);
+      setStatus(res, 'info', `Uploading ${f.name} (${mb} MB)…`);
+      try {
+        const fd = new FormData();
+        fd.append('file', f);
+        const r = await fetch('/api/admin/social/upload', {
+          method: 'POST',
+          headers: { 'x-admin-secret': secret() },   // no content-type: the browser sets the boundary
+          body: fd,
+        });
+        const d = await r.json();
+        if (!r.ok || !d.ok) return setStatus(res, 'bad', `Upload failed: ${d.hint || d.error || r.status}`);
+        $('media').value = d.url;
+        if (d.mediaType === 'video') $('mtype').value = 'video';
+        else if ($('mtype').value === 'video') $('mtype').value = 'image';
+        setStatus(res, 'ok', `${d.reused ? 'Already hosted' : 'Uploaded'} (${mb} MB) — ${d.url}`);
+      } catch (e) {
+        setStatus(res, 'bad', `Upload failed: ${e.message}`);
+      }
+    };
+
+    $('post').onclick = async () => {
+      const res = $('result');
+      if (!secret()) return setStatus(res, 'bad', 'Enter the admin passphrase first.');
+      const targets = ['tiktok', 'tiktok-draft', 'facebook', 'instagram', 'x'].filter((t) => $('t-' + t).checked);
+      if (!targets.length) return setStatus(res, 'bad', 'Pick at least one channel.');
+      setStatus(res, 'info', 'Posting… (video may take up to a minute)');
+      try {
+        const r = await fetch('/api/social/post', {
+          method: 'POST', headers: hdr(),
+          body: JSON.stringify({ targets, caption: $('caption').value, mediaUrl: $('media').value, mediaType: $('mtype').value }),
+        });
+        const d = await r.json();
+        const line = (name, ok, err) => ok ? `${name} ✓ ${ok.id || ok.publishId || ''}` : (err ? `${name} ✗ ${err}` : '');
+        const parts = [
+          line('TikTok', d.tiktok, d.tiktokError),
+          line('TikTok drafts', d.tiktokDraft, d.tiktokDraftError),
+          line('Facebook', d.facebook, d.facebookError),
+          line('Instagram', d.instagram, d.instagramError),
+          line('X', d.x, d.xError),
+        ].filter(Boolean);
+        setStatus(res, d.ok ? 'ok' : 'bad', parts.join('   ·   ') || ('Error: ' + (d.error || r.status)));
+      } catch (e) { setStatus(res, 'bad', 'Failed: ' + e.message); }
+    };
+
+    (new URLSearchParams(location.search).get('connected')) && setTimeout(() => setStatus($('result'), 'ok', 'TikTok connected ✓'), 100);
+    refresh();
+  
+    window.__socialRefresh = typeof refresh === 'function' ? refresh : null;
+  })();
+  </script>
+
+  <script>
+  // review.html's script, same wrapping for the same reason.
+  (function () {
     const $ = (id) => document.getElementById(id);
     const KIND = {
       violence: 'Violence', ballot_snatching: 'Ballot snatching', vote_buying: 'Vote-buying',
@@ -341,6 +549,32 @@
     });
 
     if (secret) { $('login').hidden = true; $('console').hidden = false; load(); loadLabels(); loadStats(); }
+  
+  })();
+  </script>
+
+  <script>
+  // Panel switching + the one thing the two originals disagreed on: review.html
+  // keeps the passphrase in sessionStorage, post.html reads it from
+  // localStorage. Mirror it on the way into the Social panel so a single unlock
+  // serves both, instead of editing either script's auth.
+  (function () {
+    const bar = document.getElementById('panelbar');
+    const panels = [...document.querySelectorAll('.panel')];
+    bar.addEventListener('click', (e) => {
+      const t = e.target.closest('.tab');
+      if (!t) return;
+      const key = t.dataset.p;
+      if (key === '_logout') return;            // review.html's own handler covers it
+      bar.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t));
+      panels.forEach((p) => { p.hidden = p.dataset.p !== key; });
+      if (key === 'social') {
+        const s = sessionStorage.getItem('hawkeye_admin');
+        if (s) localStorage.setItem('hawkeye_admin', s);
+        if (window.__socialRefresh) try { window.__socialRefresh(); } catch {}
+      }
+    });
+  })();
   </script>
 </body>
 </html>

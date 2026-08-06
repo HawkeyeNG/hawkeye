@@ -892,7 +892,14 @@
     const css = `
     #hk-fab{position:fixed;right:18px;bottom:18px;z-index:1200;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
     #hk-fab:hover{filter:brightness(1.08)}
-    #hk-panel{position:fixed;right:18px;bottom:84px;z-index:1200;width:min(360px,calc(100vw - 36px));max-height:min(560px,calc(100vh - 120px));display:none;flex-direction:column;background:var(--card,#fff);border:1px solid var(--line,#dde4de);border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+    /* GOLD border, not the usual hairline. This panel floats over whatever page
+       you were reading, and a 1px var(--line) edge is the same colour as every
+       card underneath it — in dark mode especially it camouflaged, so it read as
+       part of the page rather than as a thing sitting on top of it. Brand gold
+       is the one accent not already used for a party colour or a status state,
+       so it says "assistant" without competing with the results palette. The
+       tinted shadow does the rest of the lifting off the page. */
+    #hk-panel{position:fixed;right:18px;bottom:84px;z-index:1200;width:min(360px,calc(100vw - 36px));max-height:min(560px,calc(100vh - 120px));display:none;flex-direction:column;background:var(--card,#fff);border:2px solid var(--gold,#f5b301);border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.32),0 0 0 4px rgba(245,179,1,.16)}
     #hk-panel.open{display:flex}
     #hk-head{background:var(--green-darker,#00331e);color:#fff;padding:11px 14px;font-weight:700;font-size:.95rem;display:flex;justify-content:space-between;align-items:center;gap:8px;white-space:nowrap}
     #hk-head button{display:inline-block;width:auto;margin:0;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:0 2px;flex:none;box-shadow:none}
@@ -1045,4 +1052,38 @@
       return sel.value || '';
     },
   };
+})();
+
+/* ---- Prerender the next screen -------------------------------------------
+ * The other half of the "choppy transitions" problem. View transitions (see
+ * styles.css) hide the SEAM between two documents; this removes the WAIT, by
+ * letting the browser build the next page before the tap completes.
+ *
+ * Eagerness is deliberately "moderate", i.e. on hover/pointerdown, NOT
+ * "eager". Eager would speculatively load every linked screen the moment a
+ * page opens — on the slow mobile links this app is built for, that is a data
+ * bill the user did not ask for, and this codebase has already had to strip
+ * the service-worker precache back for exactly that reason. Moderate only
+ * spends anything once the finger is already down on the link.
+ *
+ * Same-origin only, and the API is ignored entirely by browsers that lack it.
+ */
+(function () {
+  try {
+    if (!HTMLScriptElement.supports || !HTMLScriptElement.supports('speculationrules')) return;
+    if (document.querySelector('script[type="speculationrules"]')) return;
+    // Respect an explicit data-saver signal; prerendering is a luxury.
+    const conn = navigator.connection;
+    if (conn && (conn.saveData || /^(slow-)?2g$/.test(conn.effectiveType || ''))) return;
+    const s = document.createElement('script');
+    s.type = 'speculationrules';
+    s.textContent = JSON.stringify({
+      prerender: [{
+        source: 'document',
+        where: { and: [{ href_matches: '/*' }, { not: { href_matches: '/api/*' } }] },
+        eagerness: 'moderate',
+      }],
+    });
+    document.head.appendChild(s);
+  } catch { /* never let a nice-to-have break navigation */ }
 })();

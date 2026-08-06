@@ -70,6 +70,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <script src="authgate.js?v=2"></script>
+  <script src="map-label.js?v=1"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -228,7 +229,7 @@
 
   <script>
     const PARTY_COLORS = {
-      APC: '#2e7d32', PDP: '#c62828', LP: '#388e3c', NNPP: '#1565c0', APGA: '#f9a825',
+      APC: '#2e7d32', PDP: '#c62828', LP: '#8bc34a', NNPP: '#1565c0', APGA: '#f9a825',
       SDP: '#5e35b1', ADC: '#00897b', YPP: '#ef6c00', PRP: '#8d6e63', ADP: '#455a64',
       AAC: '#6a1b9a', A: '#00695c', AA: '#3e2723', APM: '#283593', APP: '#4e342e',
       BP: '#37474f', NRM: '#827717', ZLP: '#00838f',
@@ -387,9 +388,20 @@
       for (const p of svg.querySelectorAll('path[data-leaders]')) {
         const L = (p.dataset.leaders || '').split(',').filter(Boolean);
         if (!L.length || L.length > 2) continue; // 3-way+ = white fill only
+        // Tint the region with its leader's OWN colour. Every reporting region
+        // used to get the same pale green, so the map showed WHERE results had
+        // arrived but not WHO was winning — which is the one thing a results
+        // map exists to show. Ties keep their diagonal split tints below.
+        if (L.length === 1) p.style.fill = color(L[0]);
+        // Pole of inaccessibility, not the bbox centre. The bbox centre is only
+        // the visual middle of a roughly convex shape; on a state with a tail or
+        // a crescent it sits against an edge or outside the fill entirely, and
+        // with 37 regions on screen that reads as a scattering of misplaced
+        // flags. See map-label.js.
+        const lp = window.HAWKEYE_MAP.labelPoint(p);
+        const cx = lp.x;
+        const cy = lp.y;
         const b = p.getBBox();
-        const cx = b.x + b.width / 2;
-        const cy = b.y + b.height / 2;
         if (L.length === 1) {
           badgeLayer.insertAdjacentHTML('beforeend', badgeSvg(L[0], cx, cy, badgeR));
           continue;

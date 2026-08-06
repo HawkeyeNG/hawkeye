@@ -63,7 +63,7 @@ export type Political = {
 const PC: Record<string, string> = {
   APC: '#2e7d32',
   PDP: '#c62828',
-  LP: '#388e3c',
+  LP: '#8bc34a',
   NNPP: '#1565c0',
   APGA: '#f9a825',
   SDP: '#5e35b1',

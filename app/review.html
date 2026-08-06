@@ -29,6 +29,14 @@
     .social { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
     #login { max-width: 380px; }
     .empty { color: var(--muted); padding: 20px; text-align: center; }
+    .statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+    .statgrid .s { border: 1px solid var(--line, #e3e8e4); border-radius: 12px; padding: 12px 14px; background: var(--card, #fff); }
+    .statgrid .s b { display: block; font-size: 1.5rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .statgrid .s span { font-size: 0.78rem; color: var(--muted); }
+    .statgrid .s.warn b { color: #b3261e; }
+    table.roll { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-top: 8px; }
+    table.roll th, table.roll td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line, #e6e6e5); white-space: nowrap; }
+    table.roll td.mono { font-family: ui-monospace, Menlo, monospace; }
     .lab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
     .lab { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
     .lab img { width: 100%; height: 170px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); display: block; }
@@ -61,7 +69,20 @@
     </section>
 
     <section id="console" hidden>
-      <h1>Incident review</h1>
+      <!-- Growth first: it is the number asked for most often, including by
+           funders, and it was previously only reachable by hand-rolling a curl
+           with the console secret. -->
+      <h1>Reach</h1>
+      <div id="stats" class="statgrid"><p class="empty">Loading…</p></div>
+      <details id="obs-wrap" style="margin-top:10px">
+        <summary style="cursor:pointer;font-weight:700">Observer roll</summary>
+        <p class="meta">Phone hashes are truncated. They are one-way, but Nigerian mobile
+          numbers are a small enough space to brute-force offline, and these figures get
+          screenshotted — a 12-character prefix identifies a row without carrying that risk.</p>
+        <div id="obs-list"><p class="empty">Loading…</p></div>
+      </details>
+
+      <h1 style="margin-top:34px">Incident review</h1>
       <div class="tabs" id="tabs">
         <span class="tab on" data-s="pending">Pending <b id="c-pending"></b></span>
         <span class="tab" data-s="published">Published <b id="c-published"></b></span>
@@ -100,13 +121,57 @@
       if (r.ok) {
         sessionStorage.setItem('hawkeye_admin', secret);
         $('login').hidden = true; $('console').hidden = false;
-        load(); loadLabels();
+        load(); loadLabels(); loadStats();
       } else {
         $('login-status').textContent = r.status === 403 ? 'Console is disabled (no passphrase set on server).' : 'Wrong passphrase.';
       }
     }
     $('btn-login').onclick = login;
     $('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+    // Reach panel. Counts only — the endpoint returns no phone numbers or keys.
+    async function loadStats() {
+      try {
+        const r = await fetch('/api/admin/stats', { headers: hdr() });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        const o = d.observers, a = d.activity;
+        const since = o.firstRegisteredAt ? new Date(o.firstRegisteredAt).toISOString().slice(0, 10) : '—';
+        const cell = (n, label, warn) =>
+          `<div class="s${warn ? ' warn' : ''}"><b>${n == null ? '—' : n}</b><span>${label}</span></div>`;
+        $('stats').innerHTML =
+          cell(o.total, 'observers registered')
+          + cell(o.newLast24h, 'new in 24h', o.newLast24h === 0)
+          + cell(o.newLast7d, 'new in 7 days')
+          + cell(o.telegramLinked, 'Telegram linked')
+          + cell(o.pushSubscribed, 'push enabled')
+          + cell(o.withSavedUnit, 'saved a unit')
+          + cell(a.submissions, 'result submissions')
+          + cell(a.collationReports, 'collation reports')
+          + cell(a.incidents, 'incidents filed')
+          + cell(a.practiceRuns, 'practice runs')
+          + cell(a.unitsCrowdMapped, 'units crowd-mapped')
+          + cell(since, 'first signup');
+      } catch (e) {
+        $('stats').innerHTML = `<p class="empty">Could not load stats (${e.message})</p>`;
+      }
+      try {
+        const r = await fetch('/api/admin/observers', { headers: hdr() });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        $('obs-list').innerHTML = `<table class="roll"><thead><tr>
+            <th>#</th><th>hash</th><th>registered</th><th>TG</th><th>unit</th>
+            <th>push</th><th>reports</th><th>status</th></tr></thead><tbody>`
+          + d.observers.map((x) => `<tr>
+              <td>${x.id}</td><td class="mono">${x.phoneHash}</td>
+              <td>${(x.registered || '').replace('T', ' ').slice(0, 16)}</td>
+              <td>${x.telegramLinked ? '✓' : '—'}</td><td>${x.savedUnit ? '✓' : '—'}</td>
+              <td>${x.pushTokens}</td><td>${x.submissions}</td><td>${x.status}</td>
+            </tr>`).join('') + '</tbody></table>';
+      } catch (e) {
+        $('obs-list').innerHTML = `<p class="empty">Could not load roll (${e.message})</p>`;
+      }
+    }
 
     async function load() {
       const r = await fetch(`/api/admin/incidents?status=${tab}`, { headers: hdr() });
@@ -212,7 +277,7 @@
       load();
     });
 
-    if (secret) { $('login').hidden = true; $('console').hidden = false; load(); loadLabels(); }
+    if (secret) { $('login').hidden = true; $('console').hidden = false; load(); loadLabels(); loadStats(); }
   </script>
 </body>
 </html>

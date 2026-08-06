@@ -475,3 +475,85 @@ adminRouter.post('/admin/social/upload', requireAdmin, (req, res) => {
     });
   });
 });
+
+// ---- owner stats snapshot -------------------------------------------------
+// Read-only counts, for answering "how many observers do we have" without
+// pulling a copy of production down. That matters here specifically: the
+// database runs in WAL mode and the write-ahead log is comparable in size to
+// the database itself, so a downloaded .db WITHOUT its -wal is a stale
+// snapshot that silently under-reports. Asking the running process is the only
+// way to see committed state.
+//
+// observers.created_at is MILLISECONDS (Date.now(), see routes/observers.js) —
+// NOT seconds. Comparing it against a seconds-based cutoff made every single
+// observer look like it registered in the last 24 hours, because any ms
+// timestamp (~1.78e12) dwarfs any seconds cutoff (~1.78e9). The window is a
+// thousand times too wide and every row falls inside it, so the bug reads as
+// plausible data rather than an error. Other tables are not assumed to match;
+// only columns verified as ms are compared this way.
+const MS_DAY = 86400000;
+adminRouter.get('/admin/stats', requireAdmin, (_req, res) => {
+  const n = (sql) => {
+    try { return db.prepare(sql).get().c; } catch { return null; }
+  };
+  const now = Date.now();
+  res.json({
+    at: new Date(now).toISOString(),
+    observers: {
+      total: n('SELECT COUNT(*) AS c FROM observers'),
+      active: n("SELECT COUNT(*) AS c FROM observers WHERE status = 'active'"),
+      suspended: n("SELECT COUNT(*) AS c FROM observers WHERE status != 'active'"),
+      newLast24h: n(`SELECT COUNT(*) AS c FROM observers WHERE created_at >= ${now - MS_DAY}`),
+      newLast7d: n(`SELECT COUNT(*) AS c FROM observers WHERE created_at >= ${now - 7 * MS_DAY}`),
+      newLast30d: n(`SELECT COUNT(*) AS c FROM observers WHERE created_at >= ${now - 30 * MS_DAY}`),
+      firstRegisteredAt: n('SELECT MIN(created_at) AS c FROM observers'),
+      lastRegisteredAt: n('SELECT MAX(created_at) AS c FROM observers'),
+      telegramLinked: n('SELECT COUNT(*) AS c FROM telegram_links'),
+      withSavedUnit: n('SELECT COUNT(DISTINCT observer_id) AS c FROM saved_units'),
+      pushSubscribed: n('SELECT COUNT(DISTINCT observer_id) AS c FROM device_push_tokens'),
+    },
+    activity: {
+      submissions: n('SELECT COUNT(*) AS c FROM submissions'),
+      collationReports: n('SELECT COUNT(*) AS c FROM collation_reports'),
+      incidents: n('SELECT COUNT(*) AS c FROM incidents'),
+      practiceRuns: n('SELECT COUNT(*) AS c FROM practice_submissions'),
+      unitsCrowdMapped: n("SELECT COUNT(*) AS c FROM polling_units WHERE coords_source = 'crowd_mapped'"),
+    },
+  });
+});
+
+// Per-observer roll, oldest first, so "is that lot just my team?" is answerable
+// by eye. Owner-only.
+//
+// The phone hash is TRUNCATED by default. It is a one-way hash, but Nigerian
+// mobile numbers are a small enough space to brute-force offline if a full list
+// ever escaped — and the stated use for these figures is showing them to
+// funders, where a screenshot travels further than anyone intends. A 12-char
+// prefix distinguishes rows, which is all identifying a signup needs.
+// ?full=1 returns whole hashes for the cases where that is genuinely required.
+adminRouter.get('/admin/observers', requireAdmin, (req, res) => {
+  const full = String(req.query.full || '') === '1';
+  const rows = db.prepare(`
+    SELECT o.id, o.phone_hash, o.status, o.reputation, o.created_at,
+           (SELECT COUNT(*) FROM telegram_links   t WHERE t.phone_hash  = o.phone_hash) AS tg,
+           (SELECT COUNT(*) FROM saved_units      s WHERE s.observer_id = o.id)         AS savedUnit,
+           (SELECT COUNT(*) FROM device_push_tokens d WHERE d.observer_id = o.id)       AS pushTokens,
+           (SELECT COUNT(*) FROM submissions      b WHERE b.observer_id = o.id)         AS submissions
+    FROM observers o ORDER BY o.id ASC`).all();
+  res.json({
+    at: new Date().toISOString(),
+    count: rows.length,
+    hashes: full ? 'full' : 'truncated to 12 chars — add ?full=1 for complete hashes',
+    observers: rows.map((r) => ({
+      id: r.id,
+      phoneHash: full ? r.phone_hash : String(r.phone_hash || '').slice(0, 12),
+      status: r.status,
+      reputation: r.reputation,
+      registered: r.created_at ? new Date(r.created_at).toISOString() : null,
+      telegramLinked: !!r.tg,
+      savedUnit: !!r.savedUnit,
+      pushTokens: r.pushTokens,
+      submissions: r.submissions,
+    })),
+  });
+});

@@ -85,5 +85,31 @@
     return out;
   }
 
-  window.HAWKEYE_MAP = { labelPoint };
+  /**
+   * Half-width, in USER units, for a badge that should be `targetPx` wide on
+   * screen — whatever the viewBox is.
+   *
+   * SVG lengths are user units, so a badge sized in them changes physical size
+   * whenever the viewBox does. The national map is 800 units wide; a cropped
+   * state map is ~75. The same 20-unit badge is 7px on one and 79px on the
+   * other, which is how the Osun LGA map ended up completely buried under its
+   * own flags. Sizing by viewBox fraction instead just inverts the problem —
+   * the Osun flags shrink to 7px and stop being readable.
+   *
+   * Pinning it to a constant PIXEL size is the other wrong answer, and it is
+   * worth writing down because it looks right on a desktop: the map shrinks
+   * with the viewport but the flags do not, so on a phone they collide into an
+   * unreadable pile in the dense south. Flags have to scale WITH the map.
+   *
+   * So: a constant fraction of the viewBox. Identical relative size on the
+   * national map and on any cropped state map, and it grows and shrinks with
+   * the viewport exactly like the rest of the SVG. /80 reproduces the r=10 that
+   * was signed off on the 800-wide national viewBox.
+   */
+  function badgeScale(svg, divisor) {
+    const vbW = svg.viewBox && svg.viewBox.baseVal ? svg.viewBox.baseVal.width : 0;
+    return vbW > 0 ? vbW / (divisor || 80) : 10;
+  }
+
+  window.HAWKEYE_MAP = { labelPoint, badgeScale };
 })();

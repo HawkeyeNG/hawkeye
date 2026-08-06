@@ -18,7 +18,7 @@
     svg{width:100%;height:auto}
   </style>
   <script src="authgate.js?v=2"></script>
-  <script src="map-label.js?v=1"></script>
+  <script src="map-label.js?v=2"></script>
 </head>
 <body>
   <header class="gov-header"><div class="wrap brand-row"><a class="brand" href="index.html"><span class="crest">🦅</span><div class="brand-text"><strong>HAWKEYE</strong><span>Map Preview</span></div></a></div></header>
@@ -35,7 +35,7 @@
     const PC={APC:'#2e7d32',PDP:'#c62828',LP:'#8bc34a',NNPP:'#1565c0',APGA:'#f9a825',
       SDP:'#5e35b1',ADC:'#00897b',YPP:'#ef6c00',A:'#00838f',ADP:'#455a64',NDC:'#2e3192',
       PRP:'#6d4c41',AA:'#3e2723',NRM:'#827717'};
-    const R=9;   // was 14 — 37 of these at once read as clutter, not data
+    let R=10;    // recomputed per render from the svg's on-screen scale
     let GEO,LOGOS={};
     // Party emblems are WIDE rectangles, not square icons, so a circular clip
     // would slice the artwork. A rounded plate behind them, with the image
@@ -69,6 +69,7 @@
       // geometry has to exist in the document before the flags are placed.
       map.innerHTML=`<svg viewBox="${GEO.viewBox}">${s}<g class="badges"></g></svg>`;
       const svg=map.querySelector('svg');
+      R=window.HAWKEYE_MAP.badgeScale(svg);   // constant on-screen size at any viewport
       const layer=svg.querySelector('g.badges');
       const paths=svg.querySelectorAll('path.state-shape');
       let b='';

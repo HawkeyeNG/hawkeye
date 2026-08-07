@@ -39,7 +39,20 @@
        `input` display rule outranks the UA sheet's [hidden]{display:none}, so
        the camera seam rendered as a second, bare "Choose File" row next to the
        real one. It is a seam, never a control — keep it out of the layout. */
-    #media-actions #media-cam { display: none; }
+    #media-actions #media-cam, #media-actions #media-vid { display: none; }
+    /* [hidden] must beat display:flex or the modal shows on load and never
+       closes — the same trap as #media-cam above, and as the profile modal. */
+    .modal-back[hidden] { display: none; }
+    .modal-back {
+      position: fixed; inset: 0; z-index: 60; display: flex;
+      align-items: center; justify-content: center; padding: 20px;
+      background: rgba(0, 0, 0, 0.55);
+    }
+    .modal-card {
+      width: 100%; max-width: 420px; border-radius: 14px; padding: 20px 22px;
+      background: var(--surface, #fff); border: 1px solid var(--border, #d5ddd7);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+    }
     /* "You can add more" as a TILE in the grid rather than a sentence under it —
        the same affordance the native screen uses. It sits at the end of the
        thumbnails, so the place you add media is the place your media already is,
@@ -94,7 +107,9 @@
 
   <main class="wrap">
     <h1>Report an Incident</h1>
-    <p class="lede">Report what you witnessed — photo, video or text.<button
+    <!-- The lede said what the h1 already says. The ⓘ carries the part that is
+         actually new information, so it moves up beside the heading. -->
+    <p class="lede" style="margin-top:-6px"><button
       class="info-i" data-info-title="What to report, and what happens next"
       data-info="Violence, ballot snatching, vote-buying, voter intimidation, BVAS failure, late materials, obstruction — anything that affected the vote. A person reviews every report before it appears; approved ones are published in the feed below, identified by observer ID only."></button></p>
 
@@ -109,13 +124,19 @@
            observer and the shutter, at the one moment the scene is still there.
            Classification and prose keep; the scene does not. Mirrors the native
            screen (native/src/app/report/incident.tsx). -->
-      <label for="btn-camera">Photos / video (optional, up to 4, 30 MB each)</label>
+      <label for="btn-camera">Upload Media <span class="hint">(optional — up to 4, 30 MB each)</span></label>
       <div id="media-actions">
         <!-- No longer `hidden`: this used to be unhidden only inside the
              Capacitor shell, so on the WEBSITE there was no camera control at
              all — just a file input that opens a chooser. It is now the primary
              control everywhere, routed per-platform in the wiring below. -->
-        <button type="button" id="btn-camera" class="secondary">📷 Capture</button>
+        <button type="button" id="btn-camera" class="secondary">📷 Photo</button>
+        <!-- VIDEO WAS UNREACHABLE. `capture` on the photo seam pins the OS
+             camera to stills, so "photo, video or text" was a promise the page
+             could not keep — an incident is often only provable on video.
+             capture="camcorder" opens the recorder directly. -->
+        <button type="button" id="btn-video" class="secondary">🎥 Video</button>
+        <input id="media-vid" type="file" accept="video/*" capture="camcorder" hidden />
         <input id="media" type="file" accept="image/*,video/*" multiple />
         <!-- The web camera seam. `capture` makes a mobile browser open the
              camera DIRECTLY instead of the gallery chooser; desktop ignores the
@@ -154,6 +175,21 @@
       <p id="status" class="status" role="status"></p>
       <p class="hint">A human reviews every report before anything is published.</p>
     </section>
+
+    <!-- Submission receipt. A line of text under the button was missed after a
+         submit — the observer had already looked away — so filing an incident
+         appeared to do nothing. A modal makes the outcome unmissable and gives
+         the only two things anyone wants next. -->
+    <div id="done-modal" class="modal-back" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="done-title">
+        <h2 id="done-title" style="margin-top:0">✅ Sent for review</h2>
+        <p id="done-msg" class="hint"></p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+          <button id="btn-another" style="flex:1;min-width:150px">Report another incident</button>
+          <button id="btn-exit" class="secondary" style="flex:1;min-width:110px">Exit</button>
+        </div>
+      </div>
+    </div>
 
     <section class="card">
       <h2>Published incidents</h2>
@@ -232,6 +268,24 @@
     }
     $('media').onchange = () => { addFiles($('media').files); $('media').value = ''; };
     $('media-cam').onchange = () => { addFiles($('media-cam').files); $('media-cam').value = ''; };
+    $('media-vid').onchange = () => { addFiles($('media-vid').files); $('media-vid').value = ''; };
+    // Video always goes through the file input: the Capacitor Camera plugin is
+    // stills-only, so there is no native seam to route to on either platform.
+    $('btn-video').onclick = () => {
+      if (attachments.length >= MAX_FILES) { $('status').textContent = `You can attach up to ${MAX_FILES} files.`; return; }
+      $('media-vid').click();
+    };
+
+    // Receipt actions. "Report another" returns to a clean form at the top of
+    // the page; "Exit" leaves for the dashboard.
+    $('btn-another').onclick = () => {
+      $('done-modal').hidden = true;
+      $('status').textContent = '';
+      $('kind').selectedIndex = 0;
+      $('attach-pu').checked = false; $('pu-picker').hidden = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    $('btn-exit').onclick = () => { location.href = 'index.html'; };
     $('preview').onclick = (e) => {
       if (e.target.closest('.addmore')) { doCapture(); return; }
       const b = e.target.closest('.rm');
@@ -356,8 +410,14 @@
         });
         const body = await res.json().catch(() => ({}));
         if (res.status === 201) {
-          $('status').textContent = '✅ Submitted for review. Once approved it appears here' + (puAttached ? ', and watchers of that polling unit are alerted (Telegram, WhatsApp, or the in-app feed).' : '.');
           $('desc').value = ''; attachments.length = 0; renderPreview();
+          $('status').textContent = '';
+          $('done-msg').textContent = 'Once approved it appears in the feed below'
+            + (puAttached ? ', and watchers of that polling unit are alerted (Telegram, WhatsApp, or the in-app feed).' : '.')
+            + ' A human reviews every report before anything is published.';
+          $('done-modal').hidden = false;
+          $('btn-submit').disabled = false;
+          return; // the modal IS the outcome; skip the inline status/scroll below
         } else if (res.status === 401) {
           localStorage.removeItem('hawkeye_token');
           $('status').innerHTML = 'Session expired — <a href="observe.html?intent=incident">register your device again →</a>';

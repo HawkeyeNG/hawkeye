@@ -45,6 +45,7 @@ import {
   type Race,
   type StateName,
 } from '@/lib/races';
+import { resolveUnitFromText } from '@/lib/pu-code';
 import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import {
@@ -1075,6 +1076,46 @@ export default function ReportResult() {
   };
 
   /**
+   * TIER A resolution. The resolver reads the ALREADY-FETCHED nearby list first,
+   * which is what lets this work offline on the election-day network the outbox
+   * exists to survive; a single exact lookup is the online extra. Repairs stay
+   * cache-only, because an 81-probe sweep must never touch the network.
+   */
+  const resolveUnitFromSheet = async (text: string) => {
+    if (unit) return;
+    const byCode = new Map(nearby.map((n) => [n.puCode, n]));
+    const toUnit = (n: NearRow) => ({ name: n.name, lat: n.lat, lng: n.lng });
+    const local = async (code: string) => {
+      const n = byCode.get(code);
+      return n ? toUnit(n) : null;
+    };
+    const withNet = async (code: string) => {
+      const hit = await local(code);
+      if (hit) return hit;
+      try {
+        const r = await fetch(`${REG}/unit?pu_code=${encodeURIComponent(code)}`);
+        const b = r.ok ? await r.json() : null;
+        return b?.unit ? { name: b.unit.name, lat: b.unit.lat, lng: b.unit.lng } : null;
+      } catch { return null; }
+    };
+    const f = fix ? { lat: fix.lat, lng: fix.lng } : undefined;
+    let hit = null;
+    try {
+      hit = await resolveUnitFromText(text, { resolve: withNet, fix: f, maxRepair: 0 })
+        ?? await resolveUnitFromText(text, { resolve: local, fix: f });
+    } catch { return; }
+    if (!hit || hit.confidence !== 'high' || unit) return;
+    // Go through the normal selection path so a sheet-read unit is bound exactly
+    // as a tapped one is — same register fetch when the row carries no unit,
+    // same race reset. Only rows already in `nearby` can be selected this way;
+    // a code resolved purely from the network is left as a suggestion, because
+    // selecting a unit the observer is demonstrably not near is the one mistake
+    // this whole ladder is built to avoid.
+    const row = byCode.get(hit.code);
+    if (row) void chooseNearby(row);
+  };
+
+  /**
    * Reaching the unit step runs the lookup on its own — GPS first, always.
    *
    * The rule across every flow and platform: asking "which unit?" IS the request
@@ -1509,6 +1550,13 @@ export default function ReportResult() {
               });
               setReadCodes(codes);
             }
+            // TIER A: let the sheet name its own unit. The EC8A header carries
+            // the delimitation code and readSheet already returns the full
+            // recognised text — it was only ever keeping the party counts.
+            // Resolution refuses ambiguous repairs (see lib/pu-code.ts), and
+            // only a HIGH-confidence read is allowed to select: a wrong unit is
+            // worse than a slower one. Never overrides a unit already chosen.
+            if (shot.read?.text && !unit) void resolveUnitFromSheet(shot.read.text);
             setStep(retaking ? 'review' : 'venue');
           } else {
             setVenue(shot);

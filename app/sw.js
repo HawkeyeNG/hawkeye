@@ -1,6 +1,6 @@
 // Minimal service worker: cache the app shell so the observer app opens instantly
 // on flaky election-day networks. API calls always hit the network.
-const CACHE = 'hawkeye-v214'; // bump on any shell change so installed clients refresh
+const CACHE = 'hawkeye-v215'; // bump on any shell change so installed clients refresh
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every
@@ -10,7 +10,7 @@ const CACHE = 'hawkeye-v214'; // bump on any shell change so installed clients r
 // It was ~1.5 MB / 45 requests; the map data and Leaflet (~940 KB) are needed by
 // only 5 of ~25 pages, so they moved to LAZY below. Keep this lean: HTML +
 // core JS/CSS + fonts. Anything big and page-specific belongs in LAZY.
-const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/races.html', '/incident-reports.html', '/practice.html', '/practice.js?v=4', '/race.html', '/race.js?v=7', '/race.css?v=1', '/app.js?v=133', '/scan.js?v=5', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=140', '/authgate.js?v=2', '/map-label.js?v=2', '/pu-code.js?v=2', '/pu-search.js?v=1', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=141', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2'];
+const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/races.html', '/incident-reports.html', '/practice.html', '/practice.js?v=4', '/race.html', '/race.js?v=7', '/race.css?v=1', '/app.js?v=134', '/scan.js?v=5', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=140', '/authgate.js?v=2', '/map-label.js?v=2', '/pu-code.js?v=2', '/pu-search.js?v=1', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=141', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2'];
 
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.

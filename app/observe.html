@@ -45,6 +45,9 @@
     .slot-head strong { grid-column: 1; grid-row: 1; }
     .slot-head .slot-status { grid-column: 2; grid-row: 1; }
     .slot-head small { grid-column: 1 / -1; grid-row: 2; }
+    /* No unit chosen yet: collapse the heading entirely rather than leaving a
+       gap where duplicate text used to be. */
+    #submit-pu-name.is-empty { margin: 0; height: 0; overflow: hidden; }
   </style>
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
   <script src="native.js?v=104"></script>
@@ -190,9 +193,12 @@
 
     <!-- 2. Report -->
     <section id="screen-submit" hidden>
-      <!-- Names the unit once one is chosen; until then it names the task, since
-           this screen is now reached before any unit is known. -->
-      <h1 id="submit-pu-name">Report a result</h1>
+      <!-- Names the unit once one is chosen. Empty until then: the page header
+           already says "Report a Result", so a matching h1 was the same words
+           twice on the smallest screens. #submit-pu-name is still set by
+           bindUnit, and .is-empty collapses its margins so nothing reserves
+           space for a heading that has not arrived. -->
+      <h1 id="submit-pu-name" class="is-empty"></h1>
       <p id="tier-notice" class="notice" hidden></p>
 
       <!-- CAPTURE FIRST. The election picker used to sit above this: a dropdown
@@ -351,7 +357,7 @@
   <!-- Tier A of the unit ladder: reads the delimitation code off the OCR'd
        sheet. Must load before app.js, which calls into it. -->
   <script src="pu-code.js?v=2"></script>
-  <script src="app.js?v=133" defer></script>
+  <script src="app.js?v=134" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="menu.js?v=140" defer></script>
 </body>

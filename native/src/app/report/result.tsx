@@ -658,6 +658,12 @@ export default function ReportResult() {
   const pickReq = useRef<AbortController | null>(null);
   /** The register drill-down is the fallback, so it starts folded away. */
   const [browse, setBrowse] = useState(false);
+  /** Typing in unit search (or opening the register drill) clears the map and
+   *  the nearby list: typing means "my unit is NOT in what you showed me", so
+   *  keeping them pushes the observer's actual task off-screen. Mirrors
+   *  map-unit.tsx. */
+  const [searchTyping, setSearchTyping] = useState(false);
+  const searchBusyHiding = searchTyping || browse;
 
   useEffect(() => {
     // Every state is listed, not just the active contest's. Hiding the rest
@@ -831,21 +837,48 @@ export default function ReportResult() {
       setFix(f);
       setNearLine(`Location fixed (±${Math.round(f.accuracy)}m). Looking up nearby units…`);
 
+      /**
+       * ONE RETRY, AND A REAL DEADLINE. These two were plain fetches whose only
+       * failure handling was `.catch(() => null)`, so any network hiccup became
+       * the bare word "lookup_failed" with no status and no second chance.
+       * /api/polling-units measures ~6.4s from a good link — close enough to
+       * Android's ~10s socket timeout that mobile data pushes it over, which is
+       * precisely how both requests end up null.
+       */
+      const tryFetch = async (url: string) => {
+        for (let i = 0; i < 2; i++) {
+          try {
+            const ctl = new AbortController();
+            const t = setTimeout(() => ctl.abort(), 20000);
+            const r = await fetch(url, { signal: ctl.signal });
+            clearTimeout(t);
+            return r;
+          } catch (e) {
+            if (i === 1) { lastNetErr = e instanceof Error ? e.message : String(e); return null; }
+          }
+        }
+        return null;
+      };
+      let lastNetErr = '';
       const [located, envelope] = await Promise.all([
         // No radius parameter exists on this one — it filters at
         // config.discoveryRadiusM and caps at config.discoveryMaxRows. Both
         // facts are load-bearing for the copy below, neither can be asked for,
         // and both are now read back out of the response instead of mirrored.
-        fetch(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`).catch(() => null),
+        tryFetch(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`),
         // This one does take a radius, and would otherwise default to 5km.
-        fetch(
-          `${BASE}/api/mapping/nearby?lat=${f.lat}&lng=${f.lng}&radiusM=${DISCOVERY_RADIUS_M}`,
-        ).catch(() => null),
+        tryFetch(`${BASE}/api/mapping/nearby?lat=${f.lat}&lng=${f.lng}&radiusM=${DISCOVERY_RADIUS_M}`),
       ]);
 
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
-        setNearLine(`Could not look up nearby units — browse the register below. (lookup_failed${status ? ` / HTTP ${status}` : ''})`);
+        // Name the ACTUAL failure. "lookup_failed" with nothing after it was
+        // unactionable — it could not be told apart from a timeout, a DNS
+        // failure or a 500, which cost a whole debugging round.
+        setNearLine(
+          `Could not look up nearby units — browse the register below. (${
+            status ? `HTTP ${status}` : lastNetErr || 'network unreachable'})`,
+        );
         setBrowse(true);
         return;
       }
@@ -1732,7 +1765,7 @@ export default function ReportResult() {
                 at any radius. An 800m ring drawn then is an unlabelled empty
                 circle whose caption is suppressed for exactly the same reason,
                 asserting a search that never happened. */}
-            {fix && searched && mapAvailable() ? (
+            {fix && searched && mapAvailable() && !searchBusyHiding ? (
               <View className="pt-3">
                 <UnitMap
                   center={{ lat: fix.lat, lng: fix.lng }}
@@ -1759,7 +1792,7 @@ export default function ReportResult() {
               </View>
             ) : null}
 
-            {nearby.length ? (
+            {nearby.length && !searchBusyHiding ? (
               <View className="pt-3">
                 {nearby.map((n) => (
                   <NearbyRow
@@ -1776,7 +1809,7 @@ export default function ReportResult() {
 
             {/* Search by name/code, above the cascade — knowing the unit's name
                 but not its ward is the case the cascade cannot serve. */}
-            <UnitSearch<Unit> onSelect={chooseUnit} />
+            <UnitSearch<Unit> onSelect={chooseUnit} onEngaged={setSearchTyping} />
             <Pressable
               onPress={() => setBrowse((b) => !b)}
               className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"

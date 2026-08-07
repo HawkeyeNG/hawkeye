@@ -183,5 +183,19 @@ window.DocScanner = (() => {
     return rawFrame();
   }
 
-  return { start, stop, rearm, capture };
+  /**
+   * Spin the worker up BEFORE the camera opens.
+   *
+   * The worker pulls opencv.js — 13.3 MB — and it used to start only inside
+   * start(), i.e. at the moment the observer opens the camera. With capture now
+   * the FIRST step of the flow, that download has no time to finish, so
+   * auto-detect was simply not ready and the sheet capture behaved like a plain
+   * photo. Warming here buys it the whole sign-in-to-shutter window instead.
+   *
+   * Safe to call repeatedly: makeWorker() is idempotent, and a failure just sets
+   * workerDead so capture() falls back to the manual frame exactly as before.
+   */
+  function warm() { try { makeWorker(); } catch { /* falls back to manual */ } }
+
+  return { start, stop, rearm, capture, warm };
 })();

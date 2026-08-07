@@ -503,7 +503,7 @@ export default function ReportCollation() {
         className="flex-1"
       >
         {step === 'scope' ? (
-          <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
+          <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-1 text-xl font-bold text-ink">
               {contests.length ? contests[0].election : 'Loading election…'}
             </Text>
@@ -613,7 +613,7 @@ export default function ReportCollation() {
         ) : null}
 
         {step === 'contest' && stateSel ? (
-          <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
+          <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
             <Crumb label={scopeLine} onPress={() => setStep('scope')} />
             <Text className="pb-3 text-sm text-muted">
               A collation centre announces every race on the same day. Choose the one you are
@@ -705,7 +705,7 @@ export default function ReportCollation() {
         ) : null}
 
         {step === 'review' ? (
-          <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
+          <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-3 text-xl font-bold text-ink">Confirm and Send</Text>
             <View className="mb-3 rounded-2xl bg-card px-4 py-3">
               <Text className="text-base font-semibold text-ink">

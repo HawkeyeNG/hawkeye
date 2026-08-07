@@ -125,6 +125,11 @@ function show(screenId) {
   document.documentElement.classList.toggle('auth-screen', screenId === 'screen-register');
 }
 let lastFix = null; // most recent successful GPS fix
+// maximumAge 30s, not 0: the keeper is already feeding lastFix, and demanding a
+// brand-new satellite fix made the FIRST lookup race a cold GPS start and lose
+// — the observer saw "failed", tapped the button, and won only because the
+// first attempt had warmed the chip. A 30s-old fix is ample to shortlist units.
+// On failure, fall back to whatever the keeper last saw before giving up.
 function getPosition() {
   return new Promise((resolve, reject) =>
     navigator.geolocation.getCurrentPosition(
@@ -132,8 +137,8 @@ function getPosition() {
         lastFix = pos;
         resolve(pos);
       },
-      reject,
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+      (err) => (lastFix ? resolve(lastFix) : reject(err)),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
     ),
   );
 }
@@ -922,6 +927,17 @@ function updateSubmitState() {
     const badge = $(`status-${t}`);
     badge.textContent = shots[t] ? 'Captured ✓' : 'Required';
     badge.classList.toggle('done', Boolean(shots[t]));
+  }
+  // Fold the photo card once both shots are in: two big filled slots otherwise
+  // push step 2 below the fold with nothing saying more work remains. Only ever
+  // AUTO-closes on the not-both -> both transition, so an observer who reopened
+  // it to review is not fought with; reset (new report) reopens it.
+  const fold = $('photo-fold');
+  if (fold) {
+    const both = Boolean(shots.sheet && shots.venue);
+    if (both && !fold.dataset.folded) { fold.open = false; fold.dataset.folded = '1'; }
+    if (!both) { fold.open = true; delete fold.dataset.folded; }
+    $('photo-fold-state').textContent = both ? '✓ Both captured — tap to review' : '';
   }
   // Photos AND a unit gate the button. The unit is part of this now because it
   // is chosen on this screen rather than before reaching it — without it the

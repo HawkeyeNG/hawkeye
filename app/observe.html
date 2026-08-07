@@ -33,6 +33,18 @@
     #pu-search-host:not(:empty) { margin-top: 12px; }
     #browse-block { margin-top: 12px; }
     #browse-block > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+
+    /* Capture-slot header: title and REQUIRED badge share row 1; the
+       description spans the FULL card on row 2. It was flexed beside the badge,
+       so on a phone "The official announced results form" wrapped to three
+       lines inside half a card and made both slots needlessly tall.
+       `display:contents` promotes <strong>/<small> to grid items, so this needs
+       no HTML change and applies to both slots. */
+    .slot-head { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; }
+    .slot-head > div { display: contents; }
+    .slot-head strong { grid-column: 1; grid-row: 1; }
+    .slot-head .slot-status { grid-column: 2; grid-row: 1; }
+    .slot-head small { grid-column: 1 / -1; grid-row: 2; }
   </style>
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
   <script src="native.js?v=104"></script>

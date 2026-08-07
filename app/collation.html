@@ -28,12 +28,24 @@
     .step-card:not(.locked) > summary::after { content: ' ▸'; color: var(--muted); }
     .step-card[open]:not(.locked) > summary::after { content: ' ▾'; }
     .step-card.done > summary { color: var(--green); }
-    /* The camera must fit ONE screen. The video was unconstrained, so a tall
-       portrait stream pushed Capture and Cancel below the fold and the observer
-       had to scroll while holding a phone at a form. Cap it against the
-       viewport, leaving room for the title and the action row. */
-    .video-wrap video { max-height: 62vh; width: auto; max-width: 100%; }
-    .camera-frame { max-height: 100vh; overflow: auto; }
+    /* THE CAMERA MUST FIT ONE SCREEN — Capture and Cancel are never scrolled to.
+       styles.css caps the video with `#camera-overlay video { max-height:
+       calc(100dvh - 190px) }`, an ID selector that beat the class rule tried
+       first; and 190px is not enough anyway once the guide banner runs to four
+       lines. So the frame becomes a flex column: the video takes whatever is
+       left after the fixed pieces, and the action row is flex:none, which makes
+       it impossible to push off-screen regardless of banner length. */
+    #camera-overlay .camera-frame {
+      display: flex; flex-direction: column; max-height: 100dvh; overflow: hidden;
+    }
+    #camera-overlay .video-wrap {
+      flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center;
+    }
+    #camera-overlay video { max-height: 100%; height: auto; }
+    #camera-overlay .camera-actions { flex: none; }
+    #camera-overlay #camera-title, #camera-overlay #camera-guide,
+    #camera-overlay #scan-hint { flex: none; }
+    #camera-overlay #camera-guide { max-height: 22vh; overflow: auto; }
     .party-mark { width: 26px; height: 26px; object-fit: contain; flex: none; }
     .party-label { display: flex; align-items: center; gap: 8px; }
     .party-label small { color: var(--muted); font-size: 0.72rem; }
@@ -269,7 +281,45 @@
       if (cameraStream) { cameraStream.getTracks().forEach((t) => t.stop()); cameraStream = null; }
       $('camera-overlay').hidden = true;
     }
+    /**
+     * NATIVE SHELL: use the OS document scanner, not this overlay.
+     *
+     * The web scanner needs opencv.js, and the APK build STRIPS opencv.js (it is
+     * 13 MB of dead weight there because the shell has ML Kit). So inside
+     * Capacitor DocScanner could never initialise, and the sheet step always
+     * fell through to the plain viewport with "Auto-detect unavailable" — which
+     * is exactly what the collation form showed. observe.html has routed around
+     * this via useNativeCam() all along; collation never did.
+     */
+    const nativeCam = () => Boolean(window.HAWKEYE && window.HAWKEYE.native
+      && window.HAWKEYE.capabilities && window.HAWKEYE.capabilities.camera
+      && window.HAWKEYE.capturePhoto);
+    async function nativeCapture(target) {
+      cameraTarget = target;
+      let blob;
+      try {
+        // 'sheet' asks for the ML Kit document scanner (edge detection,
+        // auto-capture, perspective correction); 'venue' is the plain camera.
+        blob = await window.HAWKEYE.capturePhoto(target === 'sheet' ? 'sheet' : 'venue');
+      } catch (e) {
+        const msg = String((e && e.message) || e || '');
+        if (!/cancel/i.test(msg)) $('status').textContent = `Camera unavailable — ${msg || 'unknown error'}`;
+        return;
+      }
+      if (!blob) return;
+      const fix = await getFix();
+      if (!fix) return alert('No GPS fix — move to open sky and retake.');
+      shots[target] = { blob, capturedAt: Date.now(), lat: fix.latitude, lng: fix.longitude, accuracy: fix.accuracy };
+      const img = $(`preview-${target}`);
+      img.src = URL.createObjectURL(blob); img.hidden = false;
+      $(`status-${target}`).textContent = 'Captured ✓';
+      $(`status-${target}`).classList.add('done');
+      $(`btn-cam-${target}`).textContent = 'Retake';
+      updateSubmit();
+    }
+
     async function openCamera(target) {
+      if (nativeCam()) return nativeCapture(target);
       cameraTarget = target;
       try {
         cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } }, audio: false });

@@ -91,31 +91,57 @@
     return d ? d.slice(0, want) : null;
   }
 
-  /** Every shape-valid candidate in the recognised text, best first. */
+  /**
+   * Every shape-valid candidate in the recognised text, best first.
+   *
+   * WORKS ON A TOKEN STREAM, NOT ON LINES. The first version demanded the digits
+   * sit on the same LINE as the word "Code", which is true of the printed form
+   * and false of what OCR returns: each boxed digit is its own text block, so
+   * ML Kit hands back "Code" and "3" and "7" on separate lines and the parser
+   * matched nothing. That is why the sheet never named its unit on a real
+   * capture while the party counts read fine.
+   *
+   * Flattening to tokens makes both layouts work: after each "Code" marker we
+   * take the following digit tokens, stopping at the first token that is not
+   * digits (which is what keeps the S/N run out).
+   */
   function extractCandidates(text) {
     const out = [];
     const add = (c) => { if (c && !out.includes(c)) out.push(c); };
+    const raw = String(text || '');
 
-    // 1. The real EC8A layout: four labelled Code boxes.
-    const lines = String(text || '').split(/\r?\n/);
+    // Field widths are fixed by the form: state 2, LGA 2, ward 2, unit 3.
+    const WIDTHS = [2, 2, 2, 3];
+    const toks = raw.split(/[\s.:_|]+/).filter(Boolean);
+    const groups = [];
+    for (let i = 0; i < toks.length; i++) {
+      if (!/^C[O0]DE$/i.test(toks[i])) continue;
+      const want = WIDTHS[Math.min(groups.length, WIDTHS.length - 1)];
+      let d = '';
+      for (let j = i + 1; j < toks.length && d.length < want; j++) {
+        const t = digits(toks[j]);
+        if (!t || t.length !== toks[j].length) break; // not a digit box — stop
+        d += t;
+      }
+      if (d) groups.push(d.slice(0, want));
+    }
+    if (groups.length >= 4) {
+      add(normalizeCode(groups[0].slice(0, 2) + groups[1].slice(0, 2)
+        + groups[2].slice(0, 2) + groups[3].slice(0, 3)));
+    }
+
+    // Line-based labelled read, kept as a second opinion: when the labels DO
+    // land on the same line as their digits it is the more certain of the two.
     const got = {};
-    const loose = [];
-    for (const ln of lines) {
+    for (const ln of raw.split(/\r?\n/)) {
       const U = ln.toUpperCase();
       const f = FIELDS.find((x) => x.re.test(U));
-      const d = codeDigitsAfter(ln, f ? f.n : 3);
-      if (d == null) continue;
-      // A labelled field must carry its full width or it is not that field.
-      if (f && d.length === f.n) { if (!got[f.key]) got[f.key] = d; }
-      else loose.push(d);
+      if (!f) continue;
+      const d = codeDigitsAfter(ln, f.n);
+      if (d && d.length === f.n && !got[f.key]) got[f.key] = d;
     }
     if (got.state && got.lga && got.ward && got.pu) {
       add(normalizeCode(got.state + got.lga + got.ward + got.pu));
-    } else if (!Object.keys(got).length && loose.length >= 4) {
-      // Labels unreadable but four Code boxes found — the form's field order is
-      // fixed, so positional assembly is a fair second guess. Still register-
-      // checked like everything else, so a bad guess simply resolves to nothing.
-      add(normalizeCode(loose[0].slice(0, 2) + loose[1].slice(0, 2) + loose[2].slice(0, 2) + loose[3].slice(0, 3)));
     }
 
     // 2. Contiguous NN-NN-NN-NNN, for anywhere the code is written out in full

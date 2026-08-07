@@ -48,6 +48,20 @@
     /* No unit chosen yet: collapse the heading entirely rather than leaving a
        gap where duplicate text used to be. */
     #submit-pu-name.is-empty { margin: 0; height: 0; overflow: hidden; }
+
+    /* Step cards. A locked step is visibly out of reach AND cannot be opened —
+       pointer-events on the summary is what makes the order real rather than
+       advisory, since <details> would otherwise toggle on any tap. */
+    .step-card.locked { opacity: 0.5; }
+    .step-card.locked > summary { pointer-events: none; cursor: default; }
+    .step-card.locked > summary::after { content: ' 🔒'; font-size: 0.85rem; }
+    .step-card > summary::marker, .step-card > summary::-webkit-details-marker { display: none; }
+    /* An affordance on every unlocked step: ▸ closed, ▾ open. Confirmed steps
+       say "tap to edit" in their state span, so the arrow is the only chrome
+       needed. */
+    .step-card:not(.locked) > summary::after { content: ' ▸'; color: var(--muted); }
+    .step-card[open]:not(.locked) > summary::after { content: ' ▾'; }
+    .step-card.done > summary { color: var(--green); }
   </style>
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
   <script src="native.js?v=104"></script>
@@ -247,19 +261,19 @@
         </div>
       </details>
 
-      <!-- STEP 2 — ONE CONFIRM CARD. Unit, election and counts were three
-           separate cards, which read as three more jobs stacked under the
-           photographs. They are one job: confirming what the sheet already
-           says. Tier A fills the unit from the sheet's own delimitation code
-           and the OCR read-back proposes the counts, so on a good read this
-           card is mostly checking rather than typing — which is the whole point
-           of doing it away from the crowd.
-           The ladder inside is unchanged: nearest units first, then search by
+      <!-- STEPS 2-4, each its own self-closing card. One merged card meant the
+           whole remainder of the report sat open at once; now each step folds
+           when its confirmer fires (a unit chosen, an election chosen, counts
+           verified) and the next unlocks. A locked card cannot be opened — the
+           order is real, not advisory — and any confirmed card reopens for
+           edits, which re-locks everything after it (see app.js stepLock).
+           The ladder inside step 2 is unchanged: nearest units, then search by
            name/code (pu-search.js), then the register cascade. -->
-      <div class="card">
-        <h2><span class="step-no">2</span> Confirm the details</h2>
-
-        <h3 class="confirm-head">Which polling unit?</h3>
+      <details class="card step-card" id="unit-fold" data-step="2">
+        <summary style="cursor:pointer;list-style:none">
+          <h2 style="display:inline-block;margin:0"><span class="step-no">2</span> Which polling unit?</h2>
+          <span id="unit-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
         <button id="btn-locate">Find polling units near me</button>
         <p id="locate-status" class="status" role="status"></p>
         <div id="pu-list" class="option-list"></div>
@@ -279,21 +293,34 @@
           <select id="sel-ward" disabled><option value="">— select —</option></select>
           <div id="register-units" class="option-list"></div>
         </details>
+      </details>
 
-        <h3 class="confirm-head">Which election?</h3>
-        <label for="sel-contest">Election being reported</label>
+      <details class="card step-card" id="race-fold" data-step="3">
+        <summary style="cursor:pointer;list-style:none">
+          <h2 style="display:inline-block;margin:0"><span class="step-no">3</span> Which election?</h2>
+          <span id="race-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
         <select id="sel-contest"></select>
         <p id="contest-scope" class="scope-note"></p>
         <p class="hint">One report per election — each needs photos of its own results sheet.</p>
+      </details>
 
-        <h3 class="confirm-head">The announced counts</h3>
+      <details class="card step-card" id="counts-fold" data-step="4">
+        <summary style="cursor:pointer;list-style:none">
+          <h2 style="display:inline-block;margin:0"><span class="step-no">4</span> The announced counts</h2>
+          <span id="counts-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
         <div id="vote-inputs"></div>
         <label for="sheet-serial">EC8A form serial number <small>(optional — printed on the sheet)</small></label>
         <input id="sheet-serial" type="text" inputmode="text" placeholder="e.g. 0451233" autocomplete="off" />
-      </div>
+        <!-- Counts have no natural confirmer the way a picker does — typing a
+             number is not a decision. This button is it, and it is also the
+             moment to look again at figures the OCR proposed. -->
+        <button id="btn-verify-counts" class="secondary" style="margin-top:12px">Verify counts</button>
+      </details>
 
       <div class="card">
-        <h2><span class="step-no">3</span> Sign and submit</h2>
+        <h2><span class="step-no">5</span> Sign and submit</h2>
         <p class="hint">Signed on this device and written to the public tamper-evident
         ledger — it cannot be edited or withdrawn. Its fingerprint is published to the
         public Rekor transparency log in the next daily anchor.</p>
@@ -357,7 +384,7 @@
   <!-- Tier A of the unit ladder: reads the delimitation code off the OCR'd
        sheet. Must load before app.js, which calls into it. -->
   <script src="pu-code.js?v=2"></script>
-  <script src="app.js?v=134" defer></script>
+  <script src="app.js?v=135" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="menu.js?v=140" defer></script>
 </body>

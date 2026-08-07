@@ -793,6 +793,15 @@ function resetReportState() {
   // nothing reserves space for a heading that has not arrived.
   $('submit-pu-name').textContent = '';
   $('submit-pu-name').classList.add('is-empty');
+  // A new report starts at step 1 open, everything after it locked.
+  stepDone = [false, false, false, false];
+  STEP_FOLDS.forEach((id, i) => {
+    const el = $(id);
+    if (el) el.open = i === 0;
+    const st = $(`${id}-state`);
+    if (st) st.textContent = '';
+  });
+  stepLock();
   $('tier-notice').hidden = true;
   $('submit-status').textContent = '';
   $('pu-list').innerHTML = '';
@@ -899,11 +908,17 @@ function enterReportFlow() {
  * the coupling step 1 existed to remove. Bind only.
  */
 function selectUnit(u) {
+  // A DIFFERENT unit invalidates what follows: which elections run there can
+  // change, and counts belong to a race at a place. Re-picking the SAME unit is
+  // just a confirmation and must not wipe work the observer already did.
+  const changed = !selectedPu || selectedPu.pu_code !== u.pu_code;
   bindUnit(u);
   updateSubmitState();
-  // Confirming the unit answers step 2; move the observer on to the election
-  // rather than leaving them looking at a list they have finished with.
-  $('sel-contest').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (changed) { stepDone[2] = false; stepDone[3] = false; $('race-fold-state').textContent = ''; $('counts-fold-state').textContent = ''; }
+  // Choosing a unit IS step 2's confirmer: it folds and step 3 opens.
+  stepDone[1] = false; // force the transition so the fold/advance fires again
+  setStepDone(1, true, `✓ ${u.name}`);
+  $('race-fold').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Prefill the submit screen from a Telegram chat handoff, then let the observer
@@ -927,23 +942,68 @@ async function applyPrefill() {
   } catch { enterReportFlow(); }
 }
 
+/**
+ * STEP LOCKING for the report cards.
+ *
+ * Each step folds when its own confirmer fires — both photos taken, a unit
+ * chosen, an election chosen, counts verified — and the next one unlocks. A step
+ * that is not yet reachable cannot be opened at all: the order is real, not a
+ * suggestion, and an observer who opens step 4 first would be typing counts for
+ * a unit they have not named.
+ *
+ * Reopening a CONFIRMED step is always allowed (that is the edit path), and it
+ * re-locks everything after it, because changing the unit can change which
+ * elections exist and therefore which counts make sense.
+ */
+const STEP_FOLDS = ['photo-fold', 'unit-fold', 'race-fold', 'counts-fold'];
+let stepDone = [false, false, false, false];
+// CSS pointer-events blocks a TAP, but not the keyboard and not script, so the
+// lock is enforced here as well: a locked <details> that somehow opens is
+// closed again on the toggle event. Belt and braces, because "cannot open"
+// being merely cosmetic is how someone types counts for a unit they never named.
+STEP_FOLDS.forEach((id) => {
+  const el = typeof document !== 'undefined' && document.getElementById(id);
+  if (el) el.addEventListener('toggle', () => {
+    if (el.open && el.classList.contains('locked')) el.open = false;
+  });
+});
+function stepLock() {
+  STEP_FOLDS.forEach((id, i) => {
+    const el = $(id);
+    if (!el) return;
+    // Reachable = every earlier step confirmed.
+    const reachable = i === 0 || stepDone[i - 1];
+    el.classList.toggle('locked', !reachable);
+    el.classList.toggle('done', stepDone[i]);
+    if (!reachable && el.open) el.open = false;
+  });
+}
+/** Mark a step confirmed (or not), fold it, and open the next unlocked one. */
+function setStepDone(i, done, label) {
+  const was = stepDone[i];
+  stepDone[i] = done;
+  // Anything after a step that just became UNconfirmed is no longer valid.
+  if (!done) for (let j = i + 1; j < stepDone.length; j++) stepDone[j] = false;
+  const el = $(STEP_FOLDS[i]);
+  const state = $(`${STEP_FOLDS[i]}-state`.replace('-fold-state', '-fold-state'));
+  if (state) state.textContent = done ? (label || '✓ Done — tap to edit') : '';
+  if (done && !was && el) {
+    el.open = false;
+    const next = $(STEP_FOLDS[i + 1]);
+    if (next) next.open = true;
+  }
+  stepLock();
+}
+
 function updateSubmitState() {
   for (const t of ['sheet', 'venue']) {
     const badge = $(`status-${t}`);
     badge.textContent = shots[t] ? 'Captured ✓' : 'Required';
     badge.classList.toggle('done', Boolean(shots[t]));
   }
-  // Fold the photo card once both shots are in: two big filled slots otherwise
-  // push step 2 below the fold with nothing saying more work remains. Only ever
-  // AUTO-closes on the not-both -> both transition, so an observer who reopened
-  // it to review is not fought with; reset (new report) reopens it.
-  const fold = $('photo-fold');
-  if (fold) {
-    const both = Boolean(shots.sheet && shots.venue);
-    if (both && !fold.dataset.folded) { fold.open = false; fold.dataset.folded = '1'; }
-    if (!both) { fold.open = true; delete fold.dataset.folded; }
-    $('photo-fold-state').textContent = both ? '✓ Both captured — tap to review' : '';
-  }
+  // Step 1's confirmer is the second photo landing.
+  const both = Boolean(shots.sheet && shots.venue);
+  if (both !== stepDone[0]) setStepDone(0, both, '✓ Both captured — tap to review');
   // Photos AND a unit gate the button. The unit is part of this now because it
   // is chosen on this screen rather than before reaching it — without it the
   // button would look ready while submit() silently returned on !selectedPu.
@@ -1461,7 +1521,25 @@ async function tryResume() {
 }
 
 // ---------- boot ----------
-$('sel-contest').onchange = updateScopeNotice;
+// Picking an election is step 3's confirmer. An empty selection un-confirms it,
+// which also re-locks the counts behind it — counts belong to a race.
+$('sel-contest').onchange = () => {
+  updateScopeNotice();
+  const sel = $('sel-contest');
+  const label = sel.options[sel.selectedIndex]?.textContent || '';
+  setStepDone(2, Boolean(sel.value), `✓ ${label}`);
+};
+// Counts have no natural confirmer, so this button is it.
+$('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
+  const n = [...document.querySelectorAll('#vote-inputs input')]
+    .filter((i) => i.value !== '' && Number(i.value) >= 0).length;
+  if (!n) { $('submit-status').textContent = 'Enter at least one party count.'; return; }
+  $('submit-status').textContent = '';
+  // Any OCR-proposed value the observer has now looked at is theirs.
+  document.querySelectorAll('#vote-inputs input.ocr-filled')
+    .forEach((i) => i.classList.remove('ocr-filled'));
+  setStepDone(3, true, `✓ ${n} part${n === 1 ? 'y' : 'ies'} entered`);
+});
 if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) navigator.serviceWorker.register('sw.js');
 (async () => {
   const paintRegister = () => {

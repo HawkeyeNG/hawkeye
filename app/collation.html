@@ -20,6 +20,23 @@
     .slot-head strong { grid-column: 1; grid-row: 1; }
     .slot-head .slot-status { grid-column: 2; grid-row: 1; }
     .slot-head small { grid-column: 1 / -1; grid-row: 2; }
+    /* Step cards — mirrors observe.html. Locked steps cannot be opened. */
+    .step-card.locked { opacity: 0.5; }
+    .step-card.locked > summary { pointer-events: none; cursor: default; }
+    .step-card.locked > summary::after { content: ' 🔒'; font-size: 0.85rem; }
+    .step-card > summary::marker, .step-card > summary::-webkit-details-marker { display: none; }
+    .step-card:not(.locked) > summary::after { content: ' ▸'; color: var(--muted); }
+    .step-card[open]:not(.locked) > summary::after { content: ' ▾'; }
+    .step-card.done > summary { color: var(--green); }
+    /* The camera must fit ONE screen. The video was unconstrained, so a tall
+       portrait stream pushed Capture and Cancel below the fold and the observer
+       had to scroll while holding a phone at a form. Cap it against the
+       viewport, leaving room for the title and the action row. */
+    .video-wrap video { max-height: 62vh; width: auto; max-width: 100%; }
+    .camera-frame { max-height: 100vh; overflow: auto; }
+    .party-mark { width: 26px; height: 26px; object-fit: contain; flex: none; }
+    .party-label { display: flex; align-items: center; gap: 8px; }
+    .party-label small { color: var(--muted); font-size: 0.72rem; }
     .vote-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
     .vote-row label { flex: 1; margin: 0; font-weight: 700; }
     .vote-row input { width: 110px; margin: 0; }
@@ -78,8 +95,11 @@
            to stand between the observer and the shutter, while an EC8B/C/D is on
            display for a limited window. The scope keeps; the form does not.
            See docs/REPORT-FLOW-CAPTURE-FIRST.md. -->
-      <div class="card">
-        <h2><span class="step-no">1</span> Photograph the form and the venue</h2>
+      <details class="card step-card" id="photo-fold" open>
+        <summary style="cursor:pointer;list-style:none">
+          <h2 style="display:inline-block;margin:0"><span class="step-no">1</span> Photograph the form and the venue</h2>
+          <span id="photo-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
         <!-- Mirrors observe.html: one line. Live-only capture and the stamps are
              enforced by the product, not by describing them. -->
         <p class="hint">Take photos while standing at the collation centre.</p>
@@ -97,18 +117,23 @@
           <img id="preview-venue" alt="" hidden />
           <button id="btn-cam-venue" class="secondary">Take photo</button>
         </div>
-      </div>
+      </details>
 
-      <div class="card">
-        <h2><span class="step-no">2</span> Confirm what this form covers</h2>
+      <!-- ELECTION LAST. It used to sit second, above the location — but which
+           elections exist somewhere DEPENDS on where that somewhere is, so the
+           picker was being answered before the question that scopes it. Level
+           and location first, election last. -->
+      <details class="card step-card" id="scope-fold" data-step="2">
+        <summary style="cursor:pointer;list-style:none">
+          <h2 style="display:inline-block;margin:0"><span class="step-no">2</span> What does this form cover?</h2>
+          <span id="scope-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
         <label for="sel-level">Collation level</label>
         <select id="sel-level">
           <option value="ward">Ward — form EC8B</option>
           <option value="lga">Local Government — form EC8C</option>
           <option value="state">State — form EC8D</option>
         </select>
-        <label for="sel-contest">Election</label>
-        <select id="sel-contest"></select>
         <label for="sel-state">State</label>
         <select id="sel-state"><option value="">— select —</option></select>
         <p class="hint" id="hot-note" hidden style="margin:4px 0 0">🟢 marks a state with an election open now or within 28 days.</p>
@@ -116,17 +141,29 @@
           <select id="sel-lga" disabled><option value="">— select —</option></select></div>
         <div id="ward-block"><label for="sel-ward">Ward</label>
           <select id="sel-ward" disabled><option value="">— select —</option></select></div>
-      </div>
+      </details>
 
-      <div class="card">
-        <h2><span class="step-no">3</span> Enter the announced totals</h2>
+      <details class="card step-card" id="race-fold" data-step="3">
+        <summary style="cursor:pointer;list-style:none">
+          <h2 style="display:inline-block;margin:0"><span class="step-no">3</span> Which election?</h2>
+          <span id="race-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
+        <select id="sel-contest"></select>
+      </details>
+
+      <details class="card step-card" id="counts-fold" data-step="4">
+        <summary style="cursor:pointer;list-style:none">
+          <h2 style="display:inline-block;margin:0"><span class="step-no">4</span> The announced totals</h2>
+          <span id="counts-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
         <div id="vote-inputs"></div>
         <label for="form-serial">Form serial number <small>(optional)</small></label>
         <input id="form-serial" type="text" autocomplete="off" />
-      </div>
+        <button id="btn-verify-counts" class="secondary" style="margin-top:12px">Verify totals</button>
+      </details>
 
       <div class="card">
-        <h2><span class="step-no">4</span> Sign and submit</h2>
+        <h2><span class="step-no">5</span> Sign and submit</h2>
         <p class="hint">Signed on this device. Once submitted it cannot be edited or withdrawn.<button
           class="info-i" data-info-title="What happens to this report"
           data-info="Your report is signed on this device and written to the public tamper-evident ledger, so it cannot be edited or withdrawn afterwards. It is checked against the polling-unit evidence in this area, and its fingerprint is published to the public Rekor transparency log in the next daily anchor."></button></p>
@@ -160,7 +197,7 @@
   </div></footer>
 
   <script src="device.js"></script>
-  <script src="scan.js?v=3"></script>
+  <script src="scan.js?v=5"></script>
   <script src="tg.js?v=95"></script>
   <script src="menu.js?v=140"></script>
   <script>
@@ -279,6 +316,23 @@
         updateSubmit();
       } finally { capturing = false; }
     }
+    // Counts have no natural confirmer — typing a number is not a decision.
+    $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
+      const n = [...document.querySelectorAll('#vote-inputs input')].filter((i) => i.value !== '').length;
+      if (!n) { $('status').textContent = 'Enter at least one party total.'; return; }
+      $('status').textContent = '';
+      setStepDone(3, true, `✓ ${n} part${n === 1 ? 'y' : 'ies'} entered`);
+    });
+
+    // WARM THE SCANNER. DocScanner was wired here all along, but its OpenCV
+    // worker (~13 MB) only started inside start() — i.e. when the camera opened —
+    // so it was never ready and the sheet step fell back to a plain viewport
+    // with no edge detection. Same fix as the result flow. Web only: the native
+    // shell uses ML Kit and the build strips opencv.js.
+    if (!(window.HAWKEYE && window.HAWKEYE.native) && window.DocScanner && DocScanner.warm) {
+      try { DocScanner.warm(); } catch { /* falls back to manual framing */ }
+    }
+
     $('btn-cam-sheet').onclick = () => openCamera('sheet');
     $('btn-cam-venue').onclick = () => openCamera('venue');
     $('btn-cancel-camera').onclick = closeCamera;
@@ -288,6 +342,45 @@
       const lv = $('sel-level').value;
       return $('sel-state').value && (lv === 'state' || $('sel-lga').value) && (lv !== 'ward' || $('sel-ward').value);
     }
+
+    /* STEP LOCKING — mirrors app.js on the result flow. Each step folds when its
+       confirmer fires and unlocks the next; a locked step cannot be opened
+       (pointer-events for taps, the toggle handler below for keyboard/script).
+       Scope is confirmed by a COMPLETE scope, not by any one dropdown, because
+       ward-level needs state+LGA+ward before it means anything. */
+    const STEP_FOLDS = ['photo-fold', 'scope-fold', 'race-fold', 'counts-fold'];
+    let stepDone = [false, false, false, false];
+    STEP_FOLDS.forEach((id) => {
+      const el = $(id);
+      if (el) el.addEventListener('toggle', () => {
+        if (el.open && el.classList.contains('locked')) el.open = false;
+      });
+    });
+    function stepLock() {
+      STEP_FOLDS.forEach((id, i) => {
+        const el = $(id);
+        if (!el) return;
+        const reachable = i === 0 || stepDone[i - 1];
+        el.classList.toggle('locked', !reachable);
+        el.classList.toggle('done', stepDone[i]);
+        if (!reachable && el.open) el.open = false;
+      });
+    }
+    function setStepDone(i, done, label) {
+      const was = stepDone[i];
+      stepDone[i] = done;
+      if (!done) for (let j = i + 1; j < stepDone.length; j++) stepDone[j] = false;
+      const st = $(`${STEP_FOLDS[i]}-state`);
+      if (st) st.textContent = done ? (label || '✓ Done — tap to edit') : '';
+      if (done && !was) {
+        const el = $(STEP_FOLDS[i]);
+        if (el) el.open = false;
+        const next = $(STEP_FOLDS[i + 1]);
+        if (next) next.open = true;
+      }
+      stepLock();
+    }
+    stepLock();
     // A scheduled election (server sends open:false + opensAt until poll-open
     // on election day) cannot be reported early.
     let CONTESTS = [];
@@ -324,6 +417,20 @@
     }
     function updateSubmit() {
       const closed = contestClosed();
+      // Step confirmers: both photos (1), a complete scope (2), an election (3).
+      const both = Boolean(shots.sheet && shots.venue);
+      if (both !== stepDone[0]) setStepDone(0, both, '✓ Both captured — tap to review');
+      const sc = scopeOk();
+      if (sc !== stepDone[1]) {
+        const lv = $('sel-level').value;
+        const bits = [$('sel-state').value, lv !== 'state' ? $('sel-lga').value : '', lv === 'ward' ? $('sel-ward').value : ''];
+        setStepDone(1, sc, `✓ ${bits.filter(Boolean).join(' › ')}`);
+      }
+      const race = Boolean($('sel-contest').value);
+      if (race !== stepDone[2]) {
+        const s = $('sel-contest');
+        setStepDone(2, race, `✓ ${s.options[s.selectedIndex]?.textContent || ''}`);
+      }
       // Closed no longer disables the button — the click-handler surfaces an error
       // instead of a dead, silent tap (the notice below still explains the wait).
       $('btn-submit').disabled = !(shots.sheet && shots.venue && scopeOk() && $('sel-contest').value);
@@ -429,9 +536,21 @@
         .join('');
       $('sel-state').disabled = !states.length;
       if (hotStates.size) $('hot-note').hidden = false;
-      $('vote-inputs').innerHTML = parties.map((p) => `
-        <div class="vote-row"><label>${p.code}</label>
-        <input type="number" min="0" inputmode="numeric" placeholder="0" data-party="${p.code}" /></div>`).join('');
+      // Party emblems, as observe.html has had all along. Several Nigerian party
+      // NAMES read alike (ADC/ADP/APC/APGA/APM), and on a collation form the
+      // observer is transcribing from a printed sheet that shows the logo — so
+      // matching on the mark is faster and less error-prone than on three
+      // letters. Falls back to the code when a logo is missing.
+      let logos = {};
+      try { logos = await fetch('logos/manifest.json').then((r) => r.json()); } catch { logos = {}; }
+      $('vote-inputs').innerHTML = parties.map((p) => {
+        const mark = logos[p.code]
+          ? `<img class="party-mark" src="${logos[p.code]}" alt="" loading="lazy" />`
+          : `<span class="party-mark mono">${p.code.slice(0, 3)}</span>`;
+        return `<div class="vote-row">
+          <label class="party-label">${mark}<span><strong>${p.code}</strong><br /><small>${p.name || ''}</small></span></label>
+          <input type="number" min="0" inputmode="numeric" placeholder="0" data-party="${p.code}" /></div>`;
+      }).join('');
       scopeUpdate();
     })();
   </script>

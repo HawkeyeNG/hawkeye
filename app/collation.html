@@ -66,7 +66,32 @@
     </section>
 
     <section id="form" hidden>
+      <!-- CAPTURE FIRST. Five dropdowns (level, election, state, LGA, ward) used
+           to stand between the observer and the shutter, while an EC8B/C/D is on
+           display for a limited window. The scope keeps; the form does not.
+           See docs/REPORT-FLOW-CAPTURE-FIRST.md. -->
       <div class="card">
+        <h2><span class="step-no">1</span> Photograph the form and the venue</h2>
+        <p class="hint">Both photos are taken live and location-stamped. Take them
+        now; the scope and the totals can be filled in from somewhere safer.</p>
+        <div class="capture-slot">
+          <div class="slot-head"><div><strong id="form-label">Collation form</strong>
+            <small>The announced result form</small></div>
+            <span class="slot-status" id="status-sheet">Required</span></div>
+          <img id="preview-sheet" alt="" hidden />
+          <button id="btn-cam-sheet" class="secondary">Take photo</button>
+        </div>
+        <div class="capture-slot">
+          <div class="slot-head"><div><strong>Collation centre</strong>
+            <small>The venue or surroundings</small></div>
+            <span class="slot-status" id="status-venue">Required</span></div>
+          <img id="preview-venue" alt="" hidden />
+          <button id="btn-cam-venue" class="secondary">Take photo</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">2</span> Confirm what this form covers</h2>
         <label for="sel-level">Collation level</label>
         <select id="sel-level">
           <option value="ward">Ward — form EC8B</option>
@@ -85,33 +110,14 @@
       </div>
 
       <div class="card">
-        <h2><span class="step-no">1</span> Photograph the form and the venue</h2>
-        <p class="hint">Both photos are taken live and location-stamped.</p>
-        <div class="capture-slot">
-          <div class="slot-head"><div><strong id="form-label">Collation form</strong>
-            <small>The announced result form</small></div>
-            <span class="slot-status" id="status-sheet">Required</span></div>
-          <img id="preview-sheet" alt="" hidden />
-          <button id="btn-cam-sheet" class="secondary">Take photo</button>
-        </div>
-        <div class="capture-slot">
-          <div class="slot-head"><div><strong>Collation centre</strong>
-            <small>The venue or surroundings</small></div>
-            <span class="slot-status" id="status-venue">Required</span></div>
-          <img id="preview-venue" alt="" hidden />
-          <button id="btn-cam-venue" class="secondary">Take photo</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2><span class="step-no">2</span> Enter the announced totals</h2>
+        <h2><span class="step-no">3</span> Enter the announced totals</h2>
         <div id="vote-inputs"></div>
         <label for="form-serial">Form serial number <small>(optional)</small></label>
         <input id="form-serial" type="text" autocomplete="off" />
       </div>
 
       <div class="card">
-        <h2><span class="step-no">3</span> Sign and submit</h2>
+        <h2><span class="step-no">4</span> Sign and submit</h2>
         <p class="hint">Signed on this device. Once submitted it cannot be edited or withdrawn.<button
           class="info-i" data-info-title="What happens to this report"
           data-info="Your report is signed on this device and written to the public tamper-evident ledger, so it cannot be edited or withdrawn afterwards. It is checked against the polling-unit evidence in this area, and its fingerprint is published to the public Rekor transparency log in the next daily anchor."></button></p>

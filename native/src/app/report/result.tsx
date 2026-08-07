@@ -327,11 +327,24 @@ const UNCONFIRMED_FENCE_M = 750;
 
 type Step = 'unit' | 'contest' | 'sheet' | 'venue' | 'votes' | 'review' | 'done';
 
+// CAPTURE FIRST. The EC8A sheet is the perishable thing on election day — an
+// INEC agent may display it briefly, a crowd forms, access closes. Which unit,
+// which race and what the figures say are all still true five minutes later,
+// from somewhere safer. The old order (unit, race, THEN sheet) made the durable
+// steps block the perishable one, and cost observers the shot.
+//
+// Both photos sit together at the front: same physical position, one context
+// switch. Interleaving capture with typing would spend the freshness budget in
+// the crowd and make the observer re-settle for the second shot.
+//
+// Step order is cryptographically free — the observer signature is one ECDSA
+// sign over the whole canonical payload at submit, so nothing here touches the
+// ledger or any server-side gate. See docs/REPORT-FLOW-CAPTURE-FIRST.md.
 const STEPS: { key: Step; label: string }[] = [
-  { key: 'unit', label: 'Unit' },
-  { key: 'contest', label: 'Race' },
   { key: 'sheet', label: 'Sheet' },
   { key: 'venue', label: 'Venue' },
+  { key: 'unit', label: 'Unit' },
+  { key: 'contest', label: 'Race' },
   { key: 'votes', label: 'Votes' },
   { key: 'review', label: 'Send' },
 ];
@@ -591,7 +604,9 @@ const NearbyRow = ({
 export default function ReportResult() {
   const ui = useUi();
   const auth = useAuth();
-  const [step, setStep] = useState<Step>('unit');
+  // Opens straight into the camera: 'sheet' and 'venue' ARE the capture screen,
+  // so there is nothing between arriving here and shooting.
+  const [step, setStep] = useState<Step>('sheet');
 
   // -- step 1: which polling unit ------------------------------------------
   const [contests, setContests] = useState<Contest[]>([]);
@@ -1060,6 +1075,26 @@ export default function ReportResult() {
   };
 
   /**
+   * Reaching the unit step runs the lookup on its own — GPS first, always.
+   *
+   * The rule across every flow and platform: asking "which unit?" IS the request
+   * to find it. Every failure path inside findNearby already ends somewhere
+   * usable (a discriminated message plus the register browser opened for them),
+   * so firing it unprompted cannot strand anyone; it only removes a button press
+   * from an observer who has just walked away from a crowd.
+   *
+   * Runs ONCE per arrival, never when a unit is already chosen (they may have
+   * come back through a crumb). It SUGGESTS only — nothing here selects.
+   */
+  const [autoNearRan, setAutoNearRan] = useState(false);
+  useEffect(() => {
+    if (step !== 'unit' || autoNearRan || unit) return;
+    setAutoNearRan(true);
+    void findNearby();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, autoNearRan, unit]);
+
+  /**
    * Selecting a unit clears any race chosen for a previous one — the race is
    * (re)chosen through the picker, or auto-selected in continueFromUnit when
    * exactly one is open here.
@@ -1278,7 +1313,7 @@ export default function ReportResult() {
     }
     if (skipPicker) {
       selectRace(openRacesHere[0]);
-      setStep('sheet');
+      setStep('votes');
       return;
     }
     setStep('contest');
@@ -1477,7 +1512,8 @@ export default function ReportResult() {
             setStep(retaking ? 'review' : 'venue');
           } else {
             setVenue(shot);
-            setStep(retaking ? 'review' : 'votes');
+            // Evidence is safe from here — attribution follows, away from the crowd.
+            setStep(retaking ? 'review' : 'unit');
           }
           setRetaking(false);
         }}
@@ -1486,7 +1522,9 @@ export default function ReportResult() {
             setRetaking(false);
             setStep('review');
           } else if (isSheet) {
-            setStep(skipPicker ? 'unit' : 'contest');
+            // The sheet is the FIRST step now, so there is no earlier screen to
+            // fall back to — backing out of the camera leaves the report.
+            router.back();
           } else {
             setStep('sheet');
           }
@@ -1562,7 +1600,12 @@ export default function ReportResult() {
               ) : (
                 <>
                   <Feather name="crosshair" size={17} color={BRAND.gold} />
-                  <Text className="pl-2 text-base font-bold text-hawk-gold">Find units near me</Text>
+                  {/* The lookup runs on arrival, so this is the RETRY once it
+                      has. A control still reading "Find units near me" after a
+                      search reads as work the observer has yet to do. */}
+                  <Text className="pl-2 text-base font-bold text-hawk-gold">
+                    {autoNearRan ? 'Search near me again' : 'Find units near me'}
+                  </Text>
                 </>
               )}
             </Pressable>
@@ -1767,11 +1810,12 @@ export default function ReportResult() {
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
             >
               <Text className="text-base font-bold text-hawk-gold">
-                {skipPicker ? 'Continue to photos' : 'Continue — choose the race'}
+                {skipPicker ? 'Continue to the figures' : 'Continue — choose the race'}
               </Text>
             </Pressable>
             {/* When exactly one race is open here the button above skips straight
-                to the camera. Offer the full 2027 catalogue as a deliberate
+                past the race picker to the figures (the photos are already taken
+                by this point). Offer the full 2027 catalogue as a deliberate
                 second path, so the auto-skip never hides the other races an
                 observer might be looking for. */}
             {openRacesHere.length === 1 ? (
@@ -1818,10 +1862,10 @@ export default function ReportResult() {
             </Text>
             <Pressable
               disabled={!race}
-              onPress={() => setStep('sheet')}
+              onPress={() => setStep('votes')}
               className={`items-center rounded-2xl py-4 ${race ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
-              <Text className="text-base font-bold text-hawk-gold">Continue to photos</Text>
+              <Text className="text-base font-bold text-hawk-gold">Continue to the figures</Text>
             </Pressable>
           </View>
         ) : null}

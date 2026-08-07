@@ -180,17 +180,17 @@
       <h1 id="submit-pu-name"></h1>
       <p id="tier-notice" class="notice" hidden></p>
 
-      <div class="card">
-        <label for="sel-contest">Election being reported</label>
-        <select id="sel-contest"></select>
-        <p id="contest-scope" class="scope-note"></p>
-        <p class="hint">One report per election — each needs photos of its own results sheet.</p>
-      </div>
-
+      <!-- CAPTURE FIRST. The election picker used to sit above this: a dropdown
+           between the observer and the shutter, while the EC8A is on display for
+           a limited window and a crowd is forming. Which race it is keeps
+           perfectly well; the sheet does not. Step order does not touch the
+           signature — that is one sign over the whole payload at submit.
+           See docs/REPORT-FLOW-CAPTURE-FIRST.md. -->
       <div class="card">
         <h2><span class="step-no">1</span> Photograph the evidence</h2>
         <p class="hint">Photos are taken live at the unit — no gallery uploads. Each is
-        time- and location-stamped.</p>
+        time- and location-stamped. Take both now; the rest can be filled in from
+        somewhere safer.</p>
 
         <div class="capture-slot" id="slot-sheet">
           <div class="slot-head">
@@ -218,14 +218,22 @@
       </div>
 
       <div class="card">
-        <h2><span class="step-no">2</span> Enter the announced counts</h2>
+        <h2><span class="step-no">2</span> Confirm the election</h2>
+        <label for="sel-contest">Election being reported</label>
+        <select id="sel-contest"></select>
+        <p id="contest-scope" class="scope-note"></p>
+        <p class="hint">One report per election — each needs photos of its own results sheet.</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-no">3</span> Enter the announced counts</h2>
         <div id="vote-inputs"></div>
         <label for="sheet-serial">EC8A form serial number <small>(optional — printed on the sheet)</small></label>
         <input id="sheet-serial" type="text" inputmode="text" placeholder="e.g. 0451233" autocomplete="off" />
       </div>
 
       <div class="card">
-        <h2><span class="step-no">3</span> Sign and submit</h2>
+        <h2><span class="step-no">4</span> Sign and submit</h2>
         <p class="hint">Signed on this device and written to the public tamper-evident
         ledger — it cannot be edited or withdrawn. Its fingerprint is published to the
         public Rekor transparency log in the next daily anchor.</p>

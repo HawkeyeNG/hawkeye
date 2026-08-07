@@ -92,3 +92,25 @@ const resolve = async (c) => REG[c] || null;
   console.log(failed ? `\n${failed} FAILED` : '\nall passed');
   process.exit(failed ? 1 : 0);
 })();
+
+/* REGRESSION: what ML Kit actually returns from a photographed EC8A.
+ * Each boxed digit is its own text block, so Code and its digits land on
+ * SEPARATE lines. The first parser demanded them on one line and therefore
+ * never fired on a real capture — the failure this fixture exists to prevent. */
+(function () {
+  const OCR_BLOCKS = [
+    'INDEPENDENT NATIONAL ELECTORAL COMMISSION',
+    'STATEMENT OF RESULT OF POLL FROM POLLING UNIT',
+    '2026 FCT AREA COUNCIL ELECTIONS',
+    'KWALI CHAIRMANSHIP',
+    'FORM EC 8A',
+    'State', 'FCT', 'Code', '3', '7',
+    'S/N', '0000111',
+    'Area Council', 'KWALI', 'Code', '0', '5',
+    'Registration Area(WARD)', 'KILANKWA', 'Code', '0', '4',
+    'Polling Unit', 'SHEDA SARKI II VILLAGE SQUARE', 'Code', '0', '2', '7',
+    'APC', '8', 'EIGHT',
+  ].join('\n');
+  eq('ML Kit block layout (digits on their own lines)',
+    P.extractCandidates(OCR_BLOCKS), ['37-05-04-027']);
+}());

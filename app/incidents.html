@@ -163,10 +163,14 @@
         <input type="checkbox" id="use-gps" checked style="width:auto" /> Attach my current location
       </label>
 
-      <!-- nowrap on the "(optional)" so the label reads as ONE line: it was
-           wrapping to a second row and reading like a separate setting. -->
-      <label style="display:flex;gap:6px;align-items:center;margin-top:10px;font-weight:400">
-        <input type="checkbox" id="attach-pu" style="width:auto" /> Attach polling unit where this happened <small class="hint" style="white-space:nowrap">(optional)</small>
+      <!-- The text and "(optional)" must be ONE flex item. As two siblings the
+           flex row gave each its own column, so the sentence wrapped inside a
+           narrow column with "(optional)" floating beside it — which is exactly
+           what it looked like on a phone. Wrapping them in a single span makes
+           them one run of text that flows normally. -->
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-weight:400">
+        <input type="checkbox" id="attach-pu" style="width:auto;margin-top:3px;flex:none" />
+        <span>Attach polling unit <small class="hint">(optional)</small></span>
       </label>
       <div id="pu-picker" hidden style="margin:8px 0 0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--tint)">
         <label id="saved-unit-row" hidden style="display:flex;gap:8px;align-items:center;font-weight:400;margin-bottom:8px">

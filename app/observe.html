@@ -62,6 +62,21 @@
     .step-card:not(.locked) > summary::after { content: ' ▸'; color: var(--muted); }
     .step-card[open]:not(.locked) > summary::after { content: ' ▾'; }
     .step-card.done > summary { color: var(--green); }
+
+    /* Same camera fix as collation.html: flex column so Capture/Cancel can
+       never be pushed below the fold by a long guide banner. styles.css caps
+       the video with an ID selector, so this has to match on ID too. */
+    #camera-overlay .camera-frame {
+      display: flex; flex-direction: column; max-height: 100dvh; overflow: hidden;
+    }
+    #camera-overlay .video-wrap {
+      flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center;
+    }
+    #camera-overlay video { max-height: 100%; height: auto; }
+    #camera-overlay .camera-actions { flex: none; }
+    #camera-overlay #camera-title, #camera-overlay #camera-guide,
+    #camera-overlay #scan-hint { flex: none; }
+    #camera-overlay #camera-guide { max-height: 22vh; overflow: auto; }
   </style>
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
   <script src="native.js?v=104"></script>
@@ -383,7 +398,7 @@
   <script src="pu-search.js?v=1"></script>
   <!-- Tier A of the unit ladder: reads the delimitation code off the OCR'd
        sheet. Must load before app.js, which calls into it. -->
-  <script src="pu-code.js?v=2"></script>
+  <script src="pu-code.js?v=3"></script>
   <script src="app.js?v=135" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="menu.js?v=140" defer></script>

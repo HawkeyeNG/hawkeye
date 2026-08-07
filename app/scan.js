@@ -16,7 +16,7 @@ window.DocScanner = (() => {
 
   let video = null, canvas = null, hint = null, onAuto = null;
   let timer = null, quad = null, lastRaw = null, stable = 0, fired = false;
-  let worker = null, workerDead = false, awaitingDetect = false;
+  let worker = null, workerDead = false, awaitingDetect = false, cvReady = false;
   const procBuf = document.createElement('canvas'); // reused downscale target
 
   // Corner jitter tolerance scales with frame size — detection runs at PROC_W and
@@ -37,12 +37,19 @@ window.DocScanner = (() => {
     worker.onerror = () => { workerDead = true; if (hint) hint.textContent = 'Auto-detect unavailable — frame the sheet and capture manually'; };
     worker.onmessage = (e) => {
       const m = e.data || {};
+      // OpenCV finished loading inside the worker. Until this flips, capture()
+      // must NOT wait on the worker — see the readiness check there.
+      if (m.type === 'ready') cvReady = true;
       if (m.type === 'error') {
         workerDead = true;
         if (hint) hint.textContent = 'Auto-detect unavailable — frame the sheet and capture manually';
       }
       // 'quad' + 'warped' are consumed by the loop / capture() via their own handlers.
     };
+    // Kick the OpenCV load immediately. start() also posts this, but the whole
+    // point of creating the worker early (warm) is spending the wait BEFORE the
+    // camera opens — without a preload the 13 MB download still started late.
+    try { worker.postMessage({ type: 'preload' }); } catch { /* onerror covers it */ }
     return worker;
   }
 
@@ -60,7 +67,10 @@ window.DocScanner = (() => {
 
   // Ask the worker for the current sheet corners (one in flight at a time).
   function requestDetect() {
-    if (!worker || workerDead || awaitingDetect || !video) return;
+    // Skipping until OpenCV is ready keeps detect frames from QUEUEING in the
+    // worker — otherwise every frame posted during the download replays in one
+    // burst when it lands, all against a camera that has since moved.
+    if (!worker || workerDead || !cvReady || awaitingDetect || !video) return;
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw) return;
     const w = PROC_W, h = Math.max(1, Math.round(vh * (PROC_W / vw)));
@@ -128,8 +138,14 @@ window.DocScanner = (() => {
       if (hint) hint.textContent = 'Auto-detect unavailable — frame the sheet and capture manually';
       return;
     }
-    worker.postMessage({ type: 'preload' }); // warm OpenCV in the worker
-    if (hint) hint.textContent = 'Point the camera at the whole EC8A sheet';
+    worker.postMessage({ type: 'preload' }); // no-op if the warm() preload already ran
+    // Honest hint: auto-detect only exists once OpenCV has landed. The Capture
+    // button works either way — an un-ready scanner takes a plain frame.
+    if (hint) {
+      hint.textContent = cvReady
+        ? 'Point the camera at the whole EC8A sheet'
+        : 'Loading auto-detect… you can already capture manually';
+    }
     tick();
   }
 
@@ -165,7 +181,13 @@ window.DocScanner = (() => {
   // in the shot and flatten it. Any failure falls back to the raw frame.
   async function capture() {
     if (!video) return { blob: null, scanned: false, warnings: [] };
-    if (workerDead || !worker) return rawFrame();
+    // NOT READY IS NOT WORTH WAITING FOR. A capture message posted while OpenCV
+    // (13.3 MB) is still downloading gets no reply until it lands, so this used
+    // to sit on its 10-second timeout and then fall back anyway — a tap on the
+    // Capture button that did nothing for ten seconds reads as a broken button.
+    // The observer's tap means NOW: take the plain frame immediately, exactly
+    // what the venue capture does. The scan upgrade applies when it is ready.
+    if (workerDead || !worker || !cvReady) return rawFrame();
     const vw = video.videoWidth, vh = video.videoHeight;
     const id = frameImageData(vw, vh);
     const res = await new Promise((resolve) => {

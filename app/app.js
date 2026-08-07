@@ -830,6 +830,12 @@ async function prepareReportUI() {
   // seconds, not half a minute, by the time the sheet is captured. Deliberately
   // NOT awaited — it is a background download, not a prerequisite.
   try { tessReady(); } catch { /* best-effort */ }
+  // Same for the document scanner's OpenCV worker (~13 MB). It used to load
+  // only when the camera opened, which under capture-first left it no time to
+  // arrive — so the sheet step fell back to a plain photo with no edge
+  // detection or auto-capture. Both are background downloads; if either is
+  // still in flight the capture path degrades gracefully rather than waiting.
+  try { window.DocScanner && DocScanner.warm(); } catch { /* best-effort */ }
 }
 
 function bindUnit(u) {

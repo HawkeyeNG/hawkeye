@@ -1116,7 +1116,17 @@ export default function ReportResult() {
   };
 
   /**
-   * Reaching the unit step runs the lookup on its own — GPS first, always.
+   * The lookup runs ON MOUNT, not on reaching the unit step — GPS first, always.
+   *
+   * IT USED TO WAIT FOR THE UNIT STEP, and that quietly broke Tier A. With
+   * capture first, the unit step comes AFTER both photographs, so `nearby` was
+   * still empty when the sheet was read: resolveUnitFromSheet could resolve the
+   * code but then found no row to select and did nothing at all. Silent, and
+   * indistinguishable from the OCR simply failing.
+   *
+   * Firing on mount fixes that and is what the flow wants anyway — the list is
+   * warm before the observer has finished shooting, so the unit step opens
+   * populated instead of starting a round trip.
    *
    * The rule across every flow and platform: asking "which unit?" IS the request
    * to find it. Every failure path inside findNearby already ends somewhere
@@ -1124,16 +1134,16 @@ export default function ReportResult() {
    * so firing it unprompted cannot strand anyone; it only removes a button press
    * from an observer who has just walked away from a crowd.
    *
-   * Runs ONCE per arrival, never when a unit is already chosen (they may have
-   * come back through a crumb). It SUGGESTS only — nothing here selects.
+   * Runs ONCE, never when a unit is already chosen (they may have come back
+   * through a crumb). It SUGGESTS only — nothing here selects.
    */
   const [autoNearRan, setAutoNearRan] = useState(false);
   useEffect(() => {
-    if (step !== 'unit' || autoNearRan || unit) return;
+    if (autoNearRan || unit) return;
     setAutoNearRan(true);
     void findNearby();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, autoNearRan, unit]);
+  }, [autoNearRan, unit]);
 
   /**
    * Selecting a unit clears any race chosen for a previous one — the race is

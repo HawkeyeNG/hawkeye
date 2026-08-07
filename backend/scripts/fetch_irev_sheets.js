@@ -16,10 +16,24 @@ const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'st
 fs.mkdirSync(dir, { recursive: true });
 const H = { 'user-agent': 'Mozilla/5.0' };
 const BASE = 'https://dolphin-app-sleqh.ondigitalocean.app/api/v1';
-const j = (u) => fetch(u, { headers: H }).then((r) => r.json());
+// Retry with backoff, and never hand JSON.parse an HTML error page. Under load
+// this host answers with an HTML holding page — sometimes even at HTTP 200 —
+// which used to crash the run outright on the first `.json()`.
+const j = async (u, tries = 4) => {
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetch(u, { headers: H });
+      const t = await r.text();
+      if (r.ok && t.trimStart().startsWith('{')) return JSON.parse(t);
+    } catch { /* fall through to the backoff */ }
+    await new Promise((res) => setTimeout(res, 2000 * (i + 1)));
+  }
+  return {};
+};
 
 const lgas = await j(`${BASE}/elections/${electionId}/lga/state/${stateId}`);
 let saved = 0;
+let bad = 0; // responses that were not decodable images (see the guard below)
 outer: for (const lga of lgas.data || []) {
   for (const ward of lga.wards || []) {
     const pus = await j(`${BASE}/elections/${electionId}/pus?ward=${ward._id}`);
@@ -32,8 +46,20 @@ outer: for (const lga of lgas.data || []) {
         // Compress on download (max 1500px, q76 mozjpeg) — same size the viewer
         // serves, so sheets are small on disk and fast to upload/label.
         const raw = Buffer.from(await img.arrayBuffer());
-        let out = raw;
-        try { out = await sharp(raw).rotate().resize({ width: 1500, withoutEnlargement: true }).jpeg({ quality: 76, mozjpeg: true }).toBuffer(); } catch { /* keep raw on decode failure */ }
+        // IT MUST ACTUALLY BE AN IMAGE. The old code kept `raw` when sharp could
+        // not decode it ("keep raw on decode failure"), which quietly wrote
+        // whatever came back — and under rate limiting this host returns an HTML
+        // error page with HTTP 200. That produced 1KB files named <pu_code>.jpg
+        // that begin "<!DOCTYPE ht", indistinguishable from real sheets in a
+        // directory listing and silently poisoning the training corpus.
+        // A file that does not decode is not a sheet: skip it and say so.
+        let out;
+        try {
+          out = await sharp(raw).rotate().resize({ width: 1500, withoutEnlargement: true }).jpeg({ quality: 76, mozjpeg: true }).toBuffer();
+        } catch {
+          bad++;
+          continue;
+        }
         fs.writeFileSync(path.join(dir, `${(pu.pu_code || pu._id).replaceAll('/', '-')}.jpg`), out);
         saved++;
         process.stdout.write(`\r  saved ${saved}`);
@@ -44,3 +70,4 @@ outer: for (const lga of lgas.data || []) {
   }
 }
 console.log(`\ndone: ${saved} sheets -> storage/training/`);
+if (bad) console.log(`  ${bad} response(s) skipped — not decodable images (this host serves an HTML error page with HTTP 200 when rate-limited; slow down and retry)`);

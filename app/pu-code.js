@@ -40,12 +40,88 @@
     return `${d.slice(0, 2)}-${d.slice(2, 4)}-${d.slice(4, 6)}-${d.slice(6)}`;
   }
 
-  /** Every shape-valid candidate in the recognised text, in reading order. */
+  /**
+   * THE CODE IS NOT PRINTED AS ONE STRING. A real EC8A carries it as four
+   * separately labelled boxes, on four different lines, with the unit's name in
+   * between:
+   *
+   *   State ............ FCT       Code [3][7]
+   *   Area Council ..... KWALI     Code [0][5]
+   *   Registration Area  KILANKWA  Code [0][4]
+   *   Polling Unit ..... SHEDA…    Code [0][2][7]
+   *
+   * The first version of this hunted a contiguous NN-NN-NN-NNN run tolerating
+   * two separator characters, so on a real sheet it matched nothing at all and
+   * the whole tier was inert. Found by reading an actual IReV sheet
+   * (37-05-04-027) rather than the invented strings the tests used.
+   *
+   * So the four labelled fields are read in their own right and assembled.
+   * Digits per field are fixed by the form: 2, 2, 2, 3.
+   */
+  const FIELDS = [
+    { key: 'state', n: 2, re: /\bSTATE\b/ },
+    { key: 'lga', n: 2, re: /AREA\s*COUNCIL|LOCAL\s*GOVERNMENT|\bL\.?G\.?A\.?\b/ },
+    { key: 'ward', n: 2, re: /REGISTRATION\s*AREA|\bWARD\b/ },
+    { key: 'pu', n: 3, re: /POLLING\s*UNIT/ },
+  ];
+
+  /**
+   * Digits immediately following the word "Code" on one line.
+   *
+   * Stops at the first token that is not a digit box, which is what keeps the
+   * S/N field out: OCR readily joins columns into "...Code 3 7 S/N 0000111",
+   * and swallowing that would yield a nine-digit run that shape-validates as a
+   * perfectly plausible — and completely wrong — code.
+   */
+  function codeDigitsAfter(line, want) {
+    const m = /\bC[O0]DE\b/i.exec(line);
+    if (!m) return null;
+    const rest = line.slice(m.index + m[0].length);
+    let d = '';
+    for (const tok of rest.split(/[\s.:_|]+/)) {
+      if (!tok) continue;
+      const t = digits(tok);
+      if (!t || t.length !== tok.length) break; // not a pure digit box — stop
+      d += t;
+      if (d.length >= want) break;
+    }
+    // Return whatever was found, capped. The caller decides whether it is
+    // enough — a labelled field knows its own width, an unlabelled one does not
+    // and must not be held to the widest guess.
+    return d ? d.slice(0, want) : null;
+  }
+
+  /** Every shape-valid candidate in the recognised text, best first. */
   function extractCandidates(text) {
     const out = [];
+    const add = (c) => { if (c && !out.includes(c)) out.push(c); };
+
+    // 1. The real EC8A layout: four labelled Code boxes.
+    const lines = String(text || '').split(/\r?\n/);
+    const got = {};
+    const loose = [];
+    for (const ln of lines) {
+      const U = ln.toUpperCase();
+      const f = FIELDS.find((x) => x.re.test(U));
+      const d = codeDigitsAfter(ln, f ? f.n : 3);
+      if (d == null) continue;
+      // A labelled field must carry its full width or it is not that field.
+      if (f && d.length === f.n) { if (!got[f.key]) got[f.key] = d; }
+      else loose.push(d);
+    }
+    if (got.state && got.lga && got.ward && got.pu) {
+      add(normalizeCode(got.state + got.lga + got.ward + got.pu));
+    } else if (!Object.keys(got).length && loose.length >= 4) {
+      // Labels unreadable but four Code boxes found — the form's field order is
+      // fixed, so positional assembly is a fair second guess. Still register-
+      // checked like everything else, so a bad guess simply resolves to nothing.
+      add(normalizeCode(loose[0].slice(0, 2) + loose[1].slice(0, 2) + loose[2].slice(0, 2) + loose[3].slice(0, 3)));
+    }
+
+    // 2. Contiguous NN-NN-NN-NNN, for anywhere the code is written out in full
+    //    (a stamp, a handwritten header, a form variant). Costs nothing to keep.
     for (const m of String(text || '').matchAll(RE)) {
-      const c = normalizeCode(m[1] + m[2] + m[3] + m[4]);
-      if (c && !out.includes(c)) out.push(c);
+      add(normalizeCode(m[1] + m[2] + m[3] + m[4]));
     }
     return out;
   }

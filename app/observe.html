@@ -11,6 +11,29 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=141" />
+  <style>
+    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=141, so
+       putting three rules in the shared sheet would mean bumping and
+       redeploying all forty to defeat the HTTP cache — a large blast radius
+       for CSS only this page uses. Move it into styles.css whenever that file
+       next changes for other reasons.
+
+       Sub-headings inside the single confirm card. Unit, election and counts
+       used to be three separate cards; they are one job, so they now share a
+       card and these divide it. Ruled, not boxed — nested cards inside a card
+       read as more work, which is the impression the merge exists to remove.
+       The first needs no rule: the h2 sits directly above it. */
+    .confirm-head {
+      margin: 22px 0 10px; padding-top: 16px;
+      border-top: 1px solid var(--line, #dfe6e0);
+      font-size: 1rem; font-weight: 700;
+    }
+    .confirm-head:first-of-type { margin-top: 12px; padding-top: 0; border-top: none; }
+    /* These were .card children and are now plain blocks inside the confirm card. */
+    #pu-search-host:not(:empty) { margin-top: 12px; }
+    #browse-block { margin-top: 12px; }
+    #browse-block > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+  </style>
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
   <script src="native.js?v=104"></script>
   <meta property="og:type" content="website" />
@@ -197,50 +220,53 @@
         </div>
       </div>
 
-      <!-- STEP 2: the unit, moved here from the old screen-locate. The lookup
-           fires on arrival (app.js), so this card opens already populated
-           instead of asking for a press. The ladder is unchanged: nearest units
-           first, then search by name/code, then the register cascade. -->
+      <!-- STEP 2 — ONE CONFIRM CARD. Unit, election and counts were three
+           separate cards, which read as three more jobs stacked under the
+           photographs. They are one job: confirming what the sheet already
+           says. Tier A fills the unit from the sheet's own delimitation code
+           and the OCR read-back proposes the counts, so on a good read this
+           card is mostly checking rather than typing — which is the whole point
+           of doing it away from the crowd.
+           The ladder inside is unchanged: nearest units first, then search by
+           name/code (pu-search.js), then the register cascade. -->
       <div class="card">
-        <h2><span class="step-no">2</span> Which polling unit?</h2>
+        <h2><span class="step-no">2</span> Confirm the details</h2>
+
+        <h3 class="confirm-head">Which polling unit?</h3>
         <button id="btn-locate">Find polling units near me</button>
         <p id="locate-status" class="status" role="status"></p>
         <div id="pu-list" class="option-list"></div>
-      </div>
-      <!-- Search by name/code before the register cascade: knowing your unit's
-           NAME but not its ward is the common case, and the cascade cannot serve
-           it. Populated by pu-search.js. -->
-      <div id="pu-search-host" class="card"></div>
-      <details id="browse-block" class="card">
-        <summary>Can't see your unit? Browse the register</summary>
-        <p class="hint">No verified location yet? You can still report — your GPS is recorded
-        and the unit stays “location unverified” until other reports confirm it.</p>
-        <label for="sel-state">State</label>
-        <select id="sel-state"><option value="">— select —</option></select>
-        <label for="sel-lga">Local Government Area</label>
-        <select id="sel-lga" disabled><option value="">— select —</option></select>
-        <label for="sel-ward">Ward</label>
-        <select id="sel-ward" disabled><option value="">— select —</option></select>
-        <div id="register-units" class="option-list"></div>
-      </details>
+        <!-- Search by name/code before the register cascade: knowing your unit's
+             NAME but not its ward is the common case, and the cascade cannot
+             serve it. Populated by pu-search.js. -->
+        <div id="pu-search-host"></div>
+        <details id="browse-block">
+          <summary>Can't see your unit? Browse the register</summary>
+          <p class="hint">No verified location yet? You can still report — your GPS is recorded
+          and the unit stays “location unverified” until other reports confirm it.</p>
+          <label for="sel-state">State</label>
+          <select id="sel-state"><option value="">— select —</option></select>
+          <label for="sel-lga">Local Government Area</label>
+          <select id="sel-lga" disabled><option value="">— select —</option></select>
+          <label for="sel-ward">Ward</label>
+          <select id="sel-ward" disabled><option value="">— select —</option></select>
+          <div id="register-units" class="option-list"></div>
+        </details>
 
-      <div class="card">
-        <h2><span class="step-no">3</span> Confirm the election</h2>
+        <h3 class="confirm-head">Which election?</h3>
         <label for="sel-contest">Election being reported</label>
         <select id="sel-contest"></select>
         <p id="contest-scope" class="scope-note"></p>
         <p class="hint">One report per election — each needs photos of its own results sheet.</p>
-      </div>
 
-      <div class="card">
-        <h2><span class="step-no">4</span> Enter the announced counts</h2>
+        <h3 class="confirm-head">The announced counts</h3>
         <div id="vote-inputs"></div>
         <label for="sheet-serial">EC8A form serial number <small>(optional — printed on the sheet)</small></label>
         <input id="sheet-serial" type="text" inputmode="text" placeholder="e.g. 0451233" autocomplete="off" />
       </div>
 
       <div class="card">
-        <h2><span class="step-no">5</span> Sign and submit</h2>
+        <h2><span class="step-no">3</span> Sign and submit</h2>
         <p class="hint">Signed on this device and written to the public tamper-evident
         ledger — it cannot be edited or withdrawn. Its fingerprint is published to the
         public Rekor transparency log in the next daily anchor.</p>

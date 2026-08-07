@@ -73,29 +73,53 @@ function codeDigitsAfter(line: string, want: number): string | null {
   return d ? d.slice(0, want) : null;
 }
 
-/** Every shape-valid candidate in the recognised text, best first. */
+/**
+ * Every shape-valid candidate in the recognised text, best first.
+ *
+ * WORKS ON A TOKEN STREAM, NOT ON LINES. The first version demanded the digits
+ * sit on the same LINE as "Code" — true of the printed form, false of what OCR
+ * returns. ML Kit treats each boxed digit as its own text block, so it hands
+ * back "Code", "3", "7" on separate lines and the parser matched nothing. That
+ * is why a real capture read the party counts (one line each) but never the
+ * unit code. Mirror of app/pu-code.js.
+ */
 export function extractCandidates(text: string): string[] {
   const out: string[] = [];
   const add = (c: string | null) => { if (c && !out.includes(c)) out.push(c); };
+  const raw = String(text || '');
 
-  const lines = String(text || '').split(/\r?\n/);
+  // Field widths are fixed by the form: state 2, LGA 2, ward 2, unit 3.
+  const WIDTHS = [2, 2, 2, 3];
+  const toks = raw.split(/[\s.:_|]+/).filter(Boolean);
+  const groups: string[] = [];
+  for (let i = 0; i < toks.length; i++) {
+    if (!/^C[O0]DE$/i.test(toks[i])) continue;
+    const want = WIDTHS[Math.min(groups.length, WIDTHS.length - 1)];
+    let d = '';
+    for (let j = i + 1; j < toks.length && d.length < want; j++) {
+      const t = digits(toks[j]);
+      if (!t || t.length !== toks[j].length) break; // not a digit box — stop
+      d += t;
+    }
+    if (d) groups.push(d.slice(0, want));
+  }
+  if (groups.length >= 4) {
+    add(normalizeCode(groups[0].slice(0, 2) + groups[1].slice(0, 2)
+      + groups[2].slice(0, 2) + groups[3].slice(0, 3)));
+  }
+
+  // Line-based labelled read, kept as a second opinion: when the labels DO land
+  // on the same line as their digits it is the more certain of the two.
   const got: Record<string, string> = {};
-  const loose: string[] = [];
-  for (const ln of lines) {
+  for (const ln of raw.split(/\r?\n/)) {
     const U = ln.toUpperCase();
     const f = FIELDS.find((x) => x.re.test(U));
-    const d = codeDigitsAfter(ln, f ? f.n : 3);
-    if (d == null) continue;
-    if (f && d.length === f.n) { if (!got[f.key]) got[f.key] = d; }
-    else loose.push(d);
+    if (!f) continue;
+    const d = codeDigitsAfter(ln, f.n);
+    if (d && d.length === f.n && !got[f.key]) got[f.key] = d;
   }
   if (got.state && got.lga && got.ward && got.pu) {
     add(normalizeCode(got.state + got.lga + got.ward + got.pu));
-  } else if (!Object.keys(got).length && loose.length >= 4) {
-    // Labels unreadable but four Code boxes found — field order on the form is
-    // fixed, so positional assembly is a fair second guess, and it is still
-    // register-checked, so a bad guess simply resolves to nothing.
-    add(normalizeCode(loose[0].slice(0, 2) + loose[1].slice(0, 2) + loose[2].slice(0, 2) + loose[3].slice(0, 3)));
   }
 
   // Contiguous NN-NN-NN-NNN, for wherever the code is written out in full.

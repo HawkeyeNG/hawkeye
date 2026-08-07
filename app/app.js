@@ -337,8 +337,7 @@ let selectedPu = null;
 let parties = [];
 let contests = [];
 let logos = null; // party code -> official emblem path (logos/manifest.json)
-let cameraStream = null;
-let cameraTarget = null; // 'sheet' | 'venue'
+// cameraStream/capturing now live in capture.js — the single camera owner.
 const shots = { sheet: null, venue: null }; // { blob, capturedAt }
 
 // ---------- registration (single pane: phone first, then OTP in the same input) ----------
@@ -1014,52 +1013,29 @@ function updateSubmitState() {
 }
 
 // ---------- camera (live capture only; overlay opens per slot) ----------
+/**
+ * CAMERA — the shared implementation in capture.js.
+ *
+ * This code used to live here and collation.html carried a divergent copy, so
+ * the native-scanner routing, the OpenCV warm-up and the camera height each got
+ * fixed on this page and stayed broken there. capture.js is now the only copy;
+ * this page supplies the tail that is genuinely its own (finalizeShot).
+ */
 const TARGET_LABELS = {
   sheet: { title: 'Results sheet (EC8A)', action: 'Capture EC8A' },
   venue: { title: 'Polling venue', action: 'Capture Polling Venue' },
 };
+const closeCamera = () => window.HAWKEYE_CAPTURE.close();
+const openCamera = (target) => window.HAWKEYE_CAPTURE.open(target, {
+  // Truthy closes the camera; falsy keeps it open for a retake, which is what
+  // finalizeShot already signals.
+  onShot: (blob, t) => finalizeShot(t, blob),
+  onError: (m) => { $('submit-status').textContent = m; },
+  labels: TARGET_LABELS,
+});
 
-function closeCamera() {
-  if (window.DocScanner) DocScanner.stop();
-  if (cameraStream) {
-    cameraStream.getTracks().forEach((t) => t.stop());
-    cameraStream = null;
-  }
-  $('camera-overlay').hidden = true;
-}
-
-async function startCapture(target) {
-  cameraTarget = target;
-  try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1920 } },
-      audio: false,
-    });
-  } catch {
-    return alert('Camera access is required — Hawkeye only accepts live photos. If you denied it, allow Camera for this site (tap the padlock/ⓘ icon by the address bar → Permissions) and try again.');
-  }
-  $('camera-title').textContent = TARGET_LABELS[target].title;
-  $('btn-capture').textContent = TARGET_LABELS[target].action;
-  const guide = $('camera-guide');
-  if (guide) {
-    guide.textContent = target === 'venue'
-      ? '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd around it. This is NOT the results sheet.'
-      : '';
-    guide.hidden = target !== 'venue';
-  }
-  $('camera-overlay').hidden = false;
-  const video = $('video');
-  video.srcObject = cameraStream;
-  await video.play();
-  // Sheet capture gets Adobe-Scan-style document detection: live outline,
-  // auto-capture when steady, perspective-corrected output (scan.js).
-  if (target === 'sheet' && window.DocScanner) {
-    DocScanner.start(video, $('scan-canvas'), $('scan-hint'), doCapture);
-  }
-}
-
-$('btn-cam-sheet').onclick = () => (useNativeCam() ? nativeCapture('sheet') : startCapture('sheet'));
-$('btn-cam-venue').onclick = () => (useNativeCam() ? nativeCapture('venue') : startCapture('venue'));
+$('btn-cam-sheet').onclick = () => openCamera('sheet');
+$('btn-cam-venue').onclick = () => openCamera('venue');
 
 // Web OCR — gives the browser the same sheet read-back the app shell gets from
 // ML Kit, via Tesseract.js (WASM, self-hosted under vendor/tesseract, lazy-
@@ -1228,9 +1204,10 @@ window.addEventListener('hawkeye-sheet-ocr', (e) => {
 $('vote-inputs').addEventListener('input', (e) => {
   if (e.target && e.target.classList) e.target.classList.remove('ocr-filled');
 });
-$('btn-cancel-camera').onclick = closeCamera;
+// btn-capture / btn-cancel-camera are wired inside capture.js.
+const useNativeCam = () => window.HAWKEYE_CAPTURE.native();
 
-let capturing = false;
+
 // Downscale + recompress a freshly captured photo BEFORE it is hashed, signed and
 // uploaded — so the compressed bytes are exactly what the observer signs, the server
 // stores, and the ledger content-addresses (integrity stays intact; see submissions.js
@@ -1273,63 +1250,6 @@ async function finalizeShot(target, blob) {
   $(`btn-cam-${target}`).textContent = 'Retake photo';
   updateSubmitState();
   return true;
-}
-
-async function doCapture() {
-  if (capturing || !cameraStream) return;
-  capturing = true;
-  try {
-    let blob;
-    if (cameraTarget === 'sheet' && window.DocScanner) {
-      const scan = await DocScanner.capture();
-      if (scan.warnings.length && !confirm(`${scan.warnings.join(' ')} Use this photo anyway?`)) {
-        DocScanner.rearm();
-        return;
-      }
-      blob = scan.blob;
-    } else {
-      const video = $('video');
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d').drawImage(video, 0, 0);
-      blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-    }
-    const ok = await finalizeShot(cameraTarget, blob);
-    if (!ok) { if (cameraTarget === 'sheet' && window.DocScanner) DocScanner.rearm(); return; }
-    closeCamera();
-  } finally {
-    capturing = false;
-  }
-}
-$('btn-capture').onclick = doCapture;
-
-// Native shell: the OS camera (capture-only, no gallery) replaces the getUserMedia
-// overlay entirely — tapping the capture button invokes it directly. Same
-// finalizeShot tail, so the integrity pipeline is identical to web.
-const useNativeCam = () => Boolean(window.HAWKEYE && window.HAWKEYE.native
-  && window.HAWKEYE.capabilities && window.HAWKEYE.capabilities.camera);
-async function nativeCapture(target) {
-  if (capturing) return;
-  capturing = true;
-  cameraTarget = target;
-  try {
-    let blob;
-    try { blob = await window.HAWKEYE.capturePhoto(target); }
-    catch (e) {
-      // Same silent-catch trap as incidents.html: treating EVERY rejection as a
-      // dismissal makes a denied permission or a missing plugin look exactly
-      // like a button that does nothing. Only a real cancel stays quiet.
-      const msg = String((e && e.message) || e || '');
-      if (!/cancel/i.test(msg)) {
-        $('submit-status').textContent = `Camera unavailable — ${msg || 'unknown error'}`;
-      }
-      return;
-    }
-    await finalizeShot(target, blob);
-  } finally {
-    capturing = false;
-  }
 }
 
 // ---------- submit ----------

@@ -210,6 +210,7 @@
 
   <script src="device.js"></script>
   <script src="scan.js?v=5"></script>
+  <script src="capture.js?v=1"></script>
   <script src="tg.js?v=95"></script>
   <script src="menu.js?v=140"></script>
   <script>
@@ -270,102 +271,54 @@
     $('sel-ward').onchange = updateSubmit;
 
     // ---- camera (scanner for the form; plain capture for the venue) ----
-    let cameraStream = null, cameraTarget = null, capturing = false;
+    // Camera state lives in capture.js now — this page only keeps the shots.
     const shots = { sheet: null, venue: null };
     function getFix() {
       return new Promise((res) => navigator.geolocation.getCurrentPosition(
         (p) => res(p.coords), () => res(null), { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }));
     }
-    function closeCamera() {
-      if (window.DocScanner) DocScanner.stop();
-      if (cameraStream) { cameraStream.getTracks().forEach((t) => t.stop()); cameraStream = null; }
-      $('camera-overlay').hidden = true;
-    }
     /**
-     * NATIVE SHELL: use the OS document scanner, not this overlay.
+     * CAMERA: the shared implementation, lifted from the working result flow.
      *
-     * The web scanner needs opencv.js, and the APK build STRIPS opencv.js (it is
-     * 13 MB of dead weight there because the shell has ML Kit). So inside
-     * Capacitor DocScanner could never initialise, and the sheet step always
-     * fell through to the plain viewport with "Auto-detect unavailable" — which
-     * is exactly what the collation form showed. observe.html has routed around
-     * this via useNativeCam() all along; collation never did.
+     * This page used to carry its own copy, which is why the native-scanner
+     * routing, the OpenCV warm-up and the camera height were fixed on
+     * observe.html and stayed broken here — three rounds, one cause. capture.js
+     * is now the only implementation; this page supplies the tail that is
+     * genuinely its own (GPS stamp, preview, step state).
      */
-    const nativeCam = () => Boolean(window.HAWKEYE && window.HAWKEYE.native
-      && window.HAWKEYE.capabilities && window.HAWKEYE.capabilities.camera
-      && window.HAWKEYE.capturePhoto);
-    async function nativeCapture(target) {
-      cameraTarget = target;
-      let blob;
-      try {
-        // 'sheet' asks for the ML Kit document scanner (edge detection,
-        // auto-capture, perspective correction); 'venue' is the plain camera.
-        blob = await window.HAWKEYE.capturePhoto(target === 'sheet' ? 'sheet' : 'venue');
-      } catch (e) {
-        const msg = String((e && e.message) || e || '');
-        if (!/cancel/i.test(msg)) $('status').textContent = `Camera unavailable — ${msg || 'unknown error'}`;
-        return;
-      }
-      if (!blob) return;
+    const CAM_LABELS = {
+      sheet: { title: 'Collation form', action: 'Capture Form' },
+      venue: { title: 'Collation centre', action: 'Capture Venue' },
+    };
+    const VENUE_GUIDE = '📸 VENUE PHOTO — aim at the collation centre itself: the building, the room or the officials. This is NOT the collation form.';
+
+    async function onShot(blob, target) {
       const fix = await getFix();
-      if (!fix) return alert('No GPS fix — move to open sky and retake.');
+      if (!fix) { alert('No GPS fix — move to open sky and retake.'); return false; }
       shots[target] = { blob, capturedAt: Date.now(), lat: fix.latitude, lng: fix.longitude, accuracy: fix.accuracy };
       const img = $(`preview-${target}`);
       img.src = URL.createObjectURL(blob); img.hidden = false;
       $(`status-${target}`).textContent = 'Captured ✓';
       $(`status-${target}`).classList.add('done');
-      $(`btn-cam-${target}`).textContent = 'Retake';
+      $(`btn-cam-${target}`).textContent = 'Retake photo';
       updateSubmit();
+      return true;
     }
 
-    async function openCamera(target) {
-      if (nativeCam()) return nativeCapture(target);
-      cameraTarget = target;
-      try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } }, audio: false });
-      } catch { return alert('Camera access is required — live photos only.'); }
-      $('camera-title').textContent = target === 'sheet' ? `Collation form (${FORM[$('sel-level').value]})` : 'Collation centre';
-      const guide = $('camera-guide');
-      if (guide) {
-        guide.textContent = target === 'venue'
-          ? '📸 VENUE PHOTO — aim at the collation centre itself: the building, the room or the officials. This is NOT the collation form.'
-          : '';
-        guide.hidden = target !== 'venue';
-      }
-      $('btn-capture').textContent = target === 'sheet' ? 'Capture Form' : 'Capture Venue';
-      $('camera-overlay').hidden = false;
-      const video = $('video');
-      video.srcObject = cameraStream;
-      await video.play();
-      if (target === 'sheet' && window.DocScanner) DocScanner.start(video, $('scan-canvas'), $('scan-hint'), doCapture);
+    function openCamera(target) {
+      CAM_LABELS.sheet.title = `Collation form (${FORM[$('sel-level').value]})`;
+      return window.HAWKEYE_CAPTURE.open(target, {
+        onShot,
+        onError: (m) => { $('status').textContent = m; },
+        labels: CAM_LABELS,
+        venueGuide: VENUE_GUIDE,
+      });
     }
-    async function doCapture() {
-      if (capturing || !cameraStream) return;
-      capturing = true;
-      try {
-        let blob;
-        if (cameraTarget === 'sheet' && window.DocScanner) {
-          const scan = await DocScanner.capture();
-          if (scan.warnings.length && !confirm(`${scan.warnings.join(' ')} Use this photo anyway?`)) { DocScanner.rearm(); return; }
-          blob = scan.blob;
-        } else {
-          const v = $('video');
-          const c = document.createElement('canvas');
-          c.width = v.videoWidth; c.height = v.videoHeight;
-          c.getContext('2d').drawImage(v, 0, 0);
-          blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.9));
-        }
-        const fix = await getFix();
-        if (!fix) { if (window.DocScanner) DocScanner.rearm(); return alert('No GPS fix — move to open sky and retake.'); }
-        shots[cameraTarget] = { blob, capturedAt: Date.now(), lat: fix.latitude, lng: fix.longitude, accuracy: fix.accuracy };
-        closeCamera();
-        const img = $(`preview-${cameraTarget}`);
-        img.src = URL.createObjectURL(blob); img.hidden = false;
-        $(`status-${cameraTarget}`).textContent = 'Captured ✓';
-        $(`btn-cam-${cameraTarget}`).textContent = 'Retake photo';
-        updateSubmit();
-      } finally { capturing = false; }
-    }
+
+    // Warm the scanner's OpenCV worker before the shutter (web only).
+    window.HAWKEYE_CAPTURE.warm();
+
+
     // Counts have no natural confirmer — typing a number is not a decision.
     $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
       const n = [...document.querySelectorAll('#vote-inputs input')].filter((i) => i.value !== '').length;
@@ -385,7 +338,8 @@
 
     $('btn-cam-sheet').onclick = () => openCamera('sheet');
     $('btn-cam-venue').onclick = () => openCamera('venue');
-    $('btn-cancel-camera').onclick = closeCamera;
+    // btn-capture / btn-cancel-camera are wired inside capture.js — the camera
+    // owns its own controls now, on both pages.
     $('btn-capture').onclick = doCapture;
 
     function scopeOk() {

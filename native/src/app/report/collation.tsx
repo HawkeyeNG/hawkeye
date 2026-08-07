@@ -36,11 +36,16 @@ const REG = `${BASE}/api/register`;
 
 type Step = 'scope' | 'contest' | 'sheet' | 'venue' | 'votes' | 'review' | 'done';
 
+// CAPTURE FIRST — same reasoning as result.tsx, and the same reason it is safe:
+// the collation form (EC8B/C/D) is on display for a limited window, while the
+// scope, the race and the figures keep. Step order does not touch the signature,
+// which is one sign over the whole payload at submit.
+// See docs/REPORT-FLOW-CAPTURE-FIRST.md.
 const STEPS: { key: Step; label: string }[] = [
-  { key: 'scope', label: 'Scope' },
-  { key: 'contest', label: 'Race' },
   { key: 'sheet', label: 'Form' },
   { key: 'venue', label: 'Venue' },
+  { key: 'scope', label: 'Scope' },
+  { key: 'contest', label: 'Race' },
   { key: 'votes', label: 'Votes' },
   { key: 'review', label: 'Send' },
 ];
@@ -93,7 +98,8 @@ function opensLine(c: Contest): string {
 export default function ReportCollation() {
   const ui = useUi();
   const auth = useAuth();
-  const [step, setStep] = useState<Step>('scope');
+  // Opens straight into the camera: 'sheet' and 'venue' ARE the capture screen.
+  const [step, setStep] = useState<Step>('sheet');
 
   // -- scope ---------------------------------------------------------------
   const [contests, setContests] = useState<Contest[]>([]);
@@ -224,13 +230,14 @@ export default function ReportCollation() {
   /**
    * The picker returns a full-catalogue Race; the rest of the screen speaks in
    * /api/contests rows, so match it back to one (open, by construction — the
-   * picker's allowClosed is false) and advance straight to the camera.
+   * picker's allowClosed is false) and advance to the figures. The photos are
+   * already taken by this point — capture leads, attribution follows.
    */
   const chooseRace = (r: Race) => {
     pick();
     setRace(r);
     setContest(stateSel ? (racesIn(stateSel, contests).find((c) => c.code === r.contestCode) ?? null) : null);
-    setStep('sheet');
+    setStep('votes');
   };
 
   // -- photos ---------------------------------------------------------------
@@ -411,7 +418,8 @@ export default function ReportCollation() {
             setStep(retaking ? 'review' : 'venue');
           } else {
             setVenue(shot);
-            setStep(retaking ? 'review' : 'votes');
+            // Evidence is safe from here — scope and race follow, away from the room.
+            setStep(retaking ? 'review' : 'scope');
           }
           setRetaking(false);
         }}
@@ -420,7 +428,9 @@ export default function ReportCollation() {
             setRetaking(false);
             setStep('review');
           } else if (isSheet) {
-            setStep('contest');
+            // The form is the FIRST step now, so there is no earlier screen to
+            // fall back to — backing out of the camera leaves the report.
+            router.back();
           } else {
             setStep('sheet');
           }

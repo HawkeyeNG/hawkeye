@@ -982,7 +982,16 @@ async function nativeCapture(target) {
   try {
     let blob;
     try { blob = await window.HAWKEYE.capturePhoto(target); }
-    catch { return; } // user cancelled / dismissed the OS camera
+    catch (e) {
+      // Same silent-catch trap as incidents.html: treating EVERY rejection as a
+      // dismissal makes a denied permission or a missing plugin look exactly
+      // like a button that does nothing. Only a real cancel stays quiet.
+      const msg = String((e && e.message) || e || '');
+      if (!/cancel/i.test(msg)) {
+        $('submit-status').textContent = `Camera unavailable — ${msg || 'unknown error'}`;
+      }
+      return;
+    }
     await finalizeShot(target, blob);
   } finally {
     capturing = false;

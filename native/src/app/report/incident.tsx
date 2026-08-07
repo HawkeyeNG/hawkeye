@@ -355,24 +355,45 @@ const Chip = ({ label, onPress }: { label: string; onPress: () => void }) => (
   </Pressable>
 );
 
-type Step = 'unit' | 'report';
+type Step = 'report' | 'unit';
 
-/** Report an incident — polling unit, then kind, evidence, description, GPS. */
+/** Report an incident — kind, evidence, description, then the polling unit. */
 export default function ReportIncident() {
   const ui = useUi();
   const auth = useAuth();
 
   /**
-   * THE UNIT IS CHOSEN FIRST, and never assumed.
+   * THE UNIT IS NEVER ASSUMED — but it is no longer asked FIRST.
    *
-   * This screen used to stamp every report with the reporter's SAVED polling
-   * unit. Plenty of observers stand at a unit they are not registered at — they
-   * are there to watch, not to vote — so that stamp silently attached a
-   * location claim to a published report about a place the reporter was
-   * nowhere near. The unit is now a deliberate first step, and the saved one is
-   * an opt-IN checkbox rather than a default that fills itself in.
+   * Two separate lessons are folded into this ordering, and it is worth keeping
+   * them apart, because the fix for the first one was later mistaken for the
+   * second.
+   *
+   * 1. NON-ASSUMPTION. This screen used to stamp every report with the
+   *    reporter's SAVED polling unit. Plenty of observers stand at a unit they
+   *    are not registered at — they are there to watch, not to vote — so that
+   *    stamp silently attached a location claim to a published report about a
+   *    place the reporter was nowhere near. The saved unit is an opt-IN
+   *    checkbox, never a default that fills itself in, and `unitDecided`
+   *    demands an explicit choice either way. THAT INVARIANT IS UNTOUCHED.
+   *
+   * 2. ORDERING. Non-assumption was originally delivered by making the unit a
+   *    deliberate FIRST step, and the two got welded together. They are
+   *    independent: a choice is no less deliberate for being made a minute
+   *    later. Asking first has a real cost — an observer watching violence had
+   *    to stand there and work a polling-unit picker before they could
+   *    photograph or describe anything.
+   *
+   * So capture comes first and attribution second. The backend already allowed
+   * this: media is optional (a photo/video OR a description satisfies
+   * `empty_report`) and incidents carry no photo-freshness clock, so a report
+   * filed from somewhere safe half an hour later is as valid as one filed on
+   * the spot. Only this screen was holding it wrong.
+   *
+   * Design rule for this flow: NOTHING stands between opening the screen and
+   * capturing. An observer in danger should never meet a picker.
    */
-  const [step, setStep] = useState<Step>('unit');
+  const [step, setStep] = useState<Step>('report');
   const [unit, setUnit] = useState<PickedUnit | null>(null);
   /** Filing deliberately without a unit — an explicit choice, not the absence
    *  of one. The server accepts it: pu_code and state both land null. */
@@ -419,6 +440,12 @@ export default function ReportIncident() {
 
   /** A decision about the unit has been made, either way. */
   const unitDecided = !!unit || noUnit;
+
+  /** Enough of an incident to be worth attributing — the same bar the server
+   *  applies (`empty_report`: a description OR media), plus the kind, which is
+   *  what makes the report classifiable. Deliberately does NOT consider the
+   *  unit: this gate exists to let the observer leave the scene. */
+  const reportReady = !!kind && (description.trim().length > 0 || media.length > 0);
 
   /** The saved-unit checkbox's own state — provenance, not identity, because
    *  the same code can also be reached through the register drill. */
@@ -735,6 +762,30 @@ export default function ReportIncident() {
   };
 
   /**
+   * Reaching the WHERE step runs the location lookup on its own.
+   *
+   * Every failure path inside findNearby is already handled and already ends
+   * somewhere useful — a discriminated message plus the register browser opened
+   * for them — so firing it unprompted cannot strand anyone. What it removes is
+   * a button press demanded of someone who has just walked away from an
+   * incident, at the one moment they are least able to spare it.
+   *
+   * Runs ONCE per arrival, and never when the observer already decided (they
+   * may have come back through the crumb to change something else). It suggests
+   * only: nothing here selects a unit, which is the invariant at the top of
+   * this file. `nearBusy` in the dependency list would re-fire this the instant
+   * the search finished, so it is read through a ref-like guard instead.
+   */
+  const [autoNearRan, setAutoNearRan] = useState(false);
+  useEffect(() => {
+    if (step !== 'unit' || autoNearRan || unitDecided) return;
+    setAutoNearRan(true);
+    void findNearby();
+    // findNearby is stable enough for this one-shot; autoNearRan is the guard.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, autoNearRan, unitDecided]);
+
+  /**
    * Gallery/files picker — parity with the PWA's
    * <input type="file" accept="image/*,video/*" multiple>. Evidence often
    * already exists on the phone (filmed before opening Hawkeye, or received
@@ -1013,18 +1064,18 @@ export default function ReportIncident() {
         <Text className="pl-3 text-lg font-bold text-ink">Report an incident</Text>
       </View>
 
-      {/* Two stages, so the observer can see that naming the place comes first
-          and is not a field they may skip past without noticing. */}
+      {/* Two stages. Naming the place is still a stage of its own — visible,
+          not a field to skip past unnoticed — it simply comes second now. */}
       <View className="flex-row px-4 pt-3">
-        {(['unit', 'report'] as Step[]).map((s, i) => {
-          const on = s === 'unit' || step === 'report';
+        {(['report', 'unit'] as Step[]).map((s, i) => {
+          const on = s === 'report' || step === 'unit';
           return (
             <View key={s} className="mr-1 flex-1">
               <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-card'}`} />
               <Text
                 className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-hawk-leaf' : 'text-faint'}`}
               >
-                {i === 0 ? 'Where' : 'What happened'}
+                {i === 0 ? 'What happened' : 'Where'}
               </Text>
             </View>
           );
@@ -1037,14 +1088,28 @@ export default function ReportIncident() {
       >
         {step === 'unit' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
+            {/* What has already been captured, one tap from being changed. The
+                evidence is safe by this point, so this crumb points BACKWARD at
+                an answered question — the direction a crumb can honestly go. */}
+            <Crumb
+              label={KINDS.find((k) => k.code === kind)?.label ?? 'What happened'}
+              onPress={() => setStep('report')}
+            />
+
             <Prompt>Which polling unit is this about?</Prompt>
             <Text className="pb-3 text-sm text-muted">
               The unit you are AT, which may not be the one you are registered at. It decides which
-              state the report is filed under and which watchers are alerted.
+              state the report is filed under and which watchers are alerted. Answer this from
+              somewhere safe — your report is already saved on this device.
             </Text>
 
             {/* GPS FIRST. Someone standing at a unit they are only observing
-                knows where they are, not that ward's spelling in the register. */}
+                knows where they are, not that ward's spelling in the register.
+
+                This now runs on arrival (see the auto-lookup effect), so the
+                button is the RETRY rather than the trigger — worth saying out
+                loud once a search has been attempted, because a control that
+                looks unpressed reads as work still owed. */}
             <Pressable
               disabled={nearBusy}
               onPress={findNearby}
@@ -1055,7 +1120,9 @@ export default function ReportIncident() {
               ) : (
                 <>
                   <Feather name="crosshair" size={17} color={BRAND.gold} />
-                  <Text className="pl-2 text-base font-bold text-hawk-gold">Find units near me</Text>
+                  <Text className="pl-2 text-base font-bold text-hawk-gold">
+                    {autoNearRan ? 'Search near me again' : 'Find units near me'}
+                  </Text>
                 </>
               )}
             </Pressable>
@@ -1291,43 +1358,15 @@ export default function ReportIncident() {
           </ScrollView>
         ) : (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
-            {/* What this report will claim about WHERE, one tap from being
-                changed — the observer sees it above every field they fill in
-                rather than as a footnote under the description box. */}
-            <Crumb
-              label={unit ? `${unit.name} (${unit.pu_code})` : 'No polling unit'}
-              onPress={() => setStep('unit')}
-            />
+            {/* No crumb here any more: WHERE is now the step after this one,
+                and a control pointing at an unanswered question would read as
+                something the observer had already skipped.
 
-            <Prompt>Select what happened</Prompt>
-            <View className="flex-row flex-wrap">
-              {KINDS.map((k) => (
-                <Pressable
-                  key={k.code}
-                  onPress={() => setKind(k.code)}
-                  className={`mb-2 mr-2 flex-row items-center rounded-full px-4 py-2 ${
-                    kind === k.code ? 'bg-hawk-green' : 'bg-card'
-                  }`}
-                >
-                  <Feather
-                    name={k.icon}
-                    size={13}
-                    color={kind === k.code ? BRAND.gold : ui.faint}
-                  />
-                  <Text
-                    className={`pl-1.5 text-sm font-semibold ${
-                      kind === k.code ? 'text-hawk-gold' : 'text-ink'
-                    }`}
-                  >
-                    {k.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <View className="pt-3">
-              <Prompt>Add evidence, or describe it below</Prompt>
-            </View>
+                CAPTURE IS THE FIRST THING ON THE SCREEN. Choosing a kind used
+                to sit above this — a taxonomy quiz between the observer and the
+                shutter. Classification keeps perfectly well; the scene does
+                not, so the kind chips now come after the description. */}
+            <Prompt>Capture what you can — or describe it below</Prompt>
             <View className="flex-row flex-wrap">
               {media.map((m, i) => (
                 <View key={m.uri} className="mb-2 mr-2 overflow-hidden rounded-xl bg-card">
@@ -1382,11 +1421,39 @@ export default function ReportIncident() {
               onChangeText={setDescription}
             />
 
+            <View className="pt-3">
+              <Prompt>Select what happened</Prompt>
+            </View>
+            <View className="flex-row flex-wrap">
+              {KINDS.map((k) => (
+                <Pressable
+                  key={k.code}
+                  onPress={() => setKind(k.code)}
+                  className={`mb-2 mr-2 flex-row items-center rounded-full px-4 py-2 ${
+                    kind === k.code ? 'bg-hawk-green' : 'bg-card'
+                  }`}
+                >
+                  <Feather
+                    name={k.icon}
+                    size={13}
+                    color={kind === k.code ? BRAND.gold : ui.faint}
+                  />
+                  <Text
+                    className={`pl-1.5 text-sm font-semibold ${
+                      kind === k.code ? 'text-hawk-gold' : 'text-ink'
+                    }`}
+                  >
+                    {k.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
             {/* Location is opt-OUT, matching the PWA's checked-by-default box.
                 This is the reporter's OWN position, which is a different claim
-                from the polling unit chosen on step 1 — an observer standing
-                among the people they are reporting has a real reason to give
-                the unit and withhold themselves. */}
+                from the polling unit chosen on the NEXT step — an observer
+                standing among the people they are reporting has a real reason
+                to give the unit and withhold themselves. */}
             <Pressable
               onPress={() => setUseGps((v) => !v)}
               accessibilityRole="checkbox"
@@ -1477,18 +1544,16 @@ export default function ReportIncident() {
             </Text>
           </View>
 
-          {step === 'unit' ? (
+          {step === 'report' ? (
             <Pressable
-              disabled={!unitDecided}
-              onPress={() => setStep('report')}
-              className={`items-center rounded-2xl py-4 ${unitDecided ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
+              disabled={!reportReady}
+              onPress={() => setStep('unit')}
+              className={`items-center rounded-2xl py-4 ${reportReady ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
               <Text className="text-base font-bold text-hawk-gold">
-                {unit
-                  ? 'Continue — what happened'
-                  : noUnit
-                    ? 'Continue without a unit'
-                    : 'Choose a unit, or tick an option above'}
+                {reportReady
+                  ? 'Continue — where did this happen'
+                  : 'Pick what happened, and add a photo or a description'}
               </Text>
             </Pressable>
           ) : (
@@ -1506,7 +1571,14 @@ export default function ReportIncident() {
                 {busy ? (
                   <ActivityIndicator color={BRAND.gold} />
                 ) : (
-                  <Text className="text-base font-bold text-hawk-gold">Submit incident report</Text>
+                  // reportReady is already true to have reached this step, so an
+                  // un-submittable form here can only be the undecided unit —
+                  // name that, rather than leaving a dead grey button.
+                  <Text className="text-base font-bold text-hawk-gold">
+                    {unitDecided
+                      ? 'Submit incident report'
+                      : 'Choose a unit, or tick an option above'}
+                  </Text>
                 )}
               </Pressable>
             </>

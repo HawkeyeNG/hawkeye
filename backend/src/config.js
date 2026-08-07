@@ -246,7 +246,19 @@ export const config = {
   // (windows, blocks, rows of rectangles) can cough up a few coincidental inliers,
   // but only a real same-scene pair aligns most of its matches on one homography.
   sceneInlierShare: Number(process.env.SCENE_INLIER_SHARE || 0.5),
-  photoMaxAgeS: num('PHOTO_MAX_AGE_S', 600),
+  // Capture -> SERVER RECEIPT, so this is also the offline outbox's usable life:
+  // a queued report delivered after this window is rejected photo_not_fresh, which
+  // is precisely the election-day outage the outbox exists to survive. 10 minutes
+  // could not survive one.
+  //
+  // Widening it costs little, because freshness was never the load-bearing defence:
+  // capturedAt is signed by the OBSERVER'S OWN key, so an observer can put any value
+  // there. What actually binds a photo to a place and a moment is the rest of the
+  // stack — live in-app capture, the 750 m coherence envelope across the sheet fix,
+  // venue fix and submission fix, the dhash duplicate guards, and the one-race-per-
+  // device fingerprint. Those all still hold at 60 minutes. This window's real job
+  // is catching accidental staleness and casual replay, and it still does that.
+  photoMaxAgeS: num('PHOTO_MAX_AGE_S', 3600),
   dhashHammingThreshold: num('DHASH_HAMMING_THRESHOLD', 4),
   minReportsForVerified: num('MIN_REPORTS_FOR_VERIFIED', 3),
   minConfidenceForVerified: num('MIN_CONFIDENCE_FOR_VERIFIED', 66),

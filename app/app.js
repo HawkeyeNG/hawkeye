@@ -174,6 +174,7 @@ async function getCaptureFix() {
  */
 let geoWatchId = null;
 function startLocationKeeper() {
+  keeperWanted = true;
   if (geoWatchId != null || !navigator.geolocation) return;
   geoWatchId = navigator.geolocation.watchPosition(
     (pos) => {
@@ -189,9 +190,13 @@ function stopLocationKeeper() {
   navigator.geolocation.clearWatch(geoWatchId);
   geoWatchId = null;
 }
+let keeperWanted = false; // only true once the report flow has asked for it
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) stopLocationKeeper();
-  else startLocationKeeper();
+  // Resume ONLY if the flow had it running. Without this guard, backgrounding
+  // and returning to the sign-in screen would start the keeper there — exactly
+  // the context-free permission prompt moving it out of page load avoided.
+  else if (keeperWanted) startLocationKeeper();
 });
 
 /**
@@ -762,12 +767,52 @@ $('sel-ward').onchange = async () => {
  * the old order, so this commit is a pure refactor and can be verified against
  * the existing flow before anything moves.
  */
-async function prepareReportUI() {
-  if (parties.length === 0) parties = (await api('/api/parties')).body;
-  if (contests.length === 0) contests = (await api('/api/contests')).body;
-  if (logos === null) {
-    logos = await fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({}));
+/**
+ * SYNCHRONOUS reset. Everything here must run before the screen is painted,
+ * because it is what makes the screen a NEW report rather than the last one.
+ * No network, so it can never delay the paint.
+ */
+function resetReportState() {
+  shots.sheet = null;
+  shots.venue = null;
+  selectedPu = null;
+  window.HAWKEYE && (window.HAWKEYE.sheetOcr = null);
+  const oldHint = document.getElementById('ocr-hint');
+  if (oldHint) oldHint.remove();
+  for (const t of ['sheet', 'venue']) {
+    $(`preview-${t}`).hidden = true;
+    $(`btn-cam-${t}`).textContent = 'Take photo';
   }
+  $('submit-pu-name').textContent = 'Report a result';
+  $('tier-notice').hidden = true;
+  $('submit-status').textContent = '';
+  $('pu-list').innerHTML = '';
+  $('locate-status').textContent = '';
+  updateSubmitState();
+}
+
+/**
+ * ASYNC fill. Parties, contests and logos, then the vote rows.
+ *
+ * THIS MUST NEVER BE AWAITED BEFORE PAINTING THE SCREEN. It was, and it cost a
+ * five-second freeze on entering the report flow: three sequential round trips
+ * plus a ~6 MB Tesseract warm-up, all in front of the first paint, so the app
+ * looked hung on the previous screen. The screen now shows immediately and
+ * fills in behind. Nothing the observer can do in those first seconds needs
+ * this — the camera does not depend on the party list.
+ *
+ * The three fetches run together rather than in sequence; they were independent
+ * all along.
+ */
+async function prepareReportUI() {
+  const [p, c, l] = await Promise.all([
+    parties.length === 0 ? api('/api/parties').then((r) => r.body).catch(() => []) : parties,
+    contests.length === 0 ? api('/api/contests').then((r) => r.body).catch(() => []) : contests,
+    logos === null ? fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})) : logos,
+  ]);
+  parties = p || [];
+  contests = c || [];
+  logos = l || {};
   const wrap = $('vote-inputs');
   wrap.innerHTML = '';
   for (const p of parties) {
@@ -781,18 +826,10 @@ async function prepareReportUI() {
       <input type="number" min="0" step="1" inputmode="numeric" placeholder="0" data-party="${p.code}" />`;
     wrap.appendChild(row);
   }
-  shots.sheet = null;
-  shots.venue = null;
-  window.HAWKEYE && (window.HAWKEYE.sheetOcr = null);
-  const oldHint = document.getElementById('ocr-hint');
-  if (oldHint) oldHint.remove();
-  // Warm up the web OCR engine now (~6 MB one-time download) so the read-back
-  // is seconds, not half a minute, by the time the sheet is captured.
+  // Warm up the web OCR engine (~6 MB one-time download) so the read-back is
+  // seconds, not half a minute, by the time the sheet is captured. Deliberately
+  // NOT awaited — it is a background download, not a prerequisite.
   try { tessReady(); } catch { /* best-effort */ }
-  for (const t of ['sheet', 'venue']) {
-    $(`preview-${t}`).hidden = true;
-    $(`btn-cam-${t}`).textContent = 'Take photo';
-  }
 }
 
 function bindUnit(u) {
@@ -822,14 +859,14 @@ function bindUnit(u) {
  * only place that means "start a new report" — and the screen opens on the
  * capture card with no unit yet chosen.
  */
-async function enterReportFlow() {
-  await prepareReportUI();
-  selectedPu = null;
-  $('submit-pu-name').textContent = 'Report a result';
-  $('tier-notice').hidden = true;
-  $('submit-status').textContent = '';
-  updateSubmitState();
-  show('screen-submit');
+function enterReportFlow() {
+  resetReportState();   // synchronous — the screen must open as a NEW report
+  show('screen-submit'); // paint NOW, never behind a network call
+  // Location warms from here, not from page load: asking for GPS permission on
+  // the sign-in screen is a prompt with no context, before the observer has any
+  // reason to grant it. This is the first moment it is actually needed.
+  startLocationKeeper();
+  void prepareReportUI(); // parties, contests, logos, vote rows — fills in behind
 }
 
 /**
@@ -1491,9 +1528,8 @@ function armTelegramLogin() {
 if (window.HawkeyeTG) armTelegramLogin();
 document.addEventListener('hawkeye-tg-ready', armTelegramLogin);
 
-// Start warming location the moment the report app loads — i.e. as soon as the
-// observer taps "Report", since that is what brings them to this page. By the
-// time they reach the unit step or the shutter, the fix and the nearby list are
-// already in hand. Costs nothing when permission is denied: the keeper's error
-// path is a no-op and every caller keeps its own fallback.
-startLocationKeeper();
+// NOTE: the location keeper is NOT started here. Starting it at page load meant
+// a GPS permission prompt on the SIGN-IN screen, before the observer had any
+// reason to grant it — and a prompt with no context is a prompt that gets
+// denied. It starts in enterReportFlow() instead, which is the first moment a
+// fix is actually needed and the first moment the ask makes sense.

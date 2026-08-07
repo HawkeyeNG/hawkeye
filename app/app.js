@@ -788,7 +788,11 @@ function resetReportState() {
     $(`preview-${t}`).hidden = true;
     $(`btn-cam-${t}`).textContent = 'Take photo';
   }
-  $('submit-pu-name').textContent = 'Report a result';
+  // Empty, not 'Report a result': the page header already says that, so a
+  // matching h1 was the same words twice. .is-empty collapses the element so
+  // nothing reserves space for a heading that has not arrived.
+  $('submit-pu-name').textContent = '';
+  $('submit-pu-name').classList.add('is-empty');
   $('tier-notice').hidden = true;
   $('submit-status').textContent = '';
   $('pu-list').innerHTML = '';
@@ -851,6 +855,7 @@ async function prepareReportUI() {
 function bindUnit(u) {
   selectedPu = u;
   $('submit-pu-name').textContent = `${u.name} (${u.pu_code})`;
+  $('submit-pu-name').classList.remove('is-empty');
   const tier = tierOf(u);
   $('tier-notice').hidden = tier === 'verified';
   $('tier-notice').textContent =

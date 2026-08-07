@@ -835,7 +835,12 @@ async function prepareReportUI() {
   // arrive — so the sheet step fell back to a plain photo with no edge
   // detection or auto-capture. Both are background downloads; if either is
   // still in flight the capture path degrades gracefully rather than waiting.
-  try { window.DocScanner && DocScanner.warm(); } catch { /* best-effort */ }
+  // WEB ONLY. The native shell uses ML Kit's document scanner and the build
+  // strips opencv.js from the APK, so warming there would spawn a worker whose
+  // only possible outcome is failure.
+  try {
+    if (!(window.HAWKEYE && window.HAWKEYE.native) && window.DocScanner) DocScanner.warm();
+  } catch { /* best-effort */ }
 }
 
 function bindUnit(u) {

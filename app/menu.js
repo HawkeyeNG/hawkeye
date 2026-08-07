@@ -49,6 +49,17 @@
     // Primary action rendered as a pill CTA at the end of the quick-nav.
     const cta = nav.querySelector('a[href="observe.html"]');
     if (cta) { cta.classList.add('nav-cta'); nav.appendChild(cta); }
+    // My Profile lives under "Take part" in the ☰ panel, but that whole section
+    // is hidden on desktop (≥900px, .tp-hide) on the theory its links moved to
+    // this header — and profile.html never did. Signed-in desktop users had NO
+    // route to their profile. Signed-out users are skipped: the link would only
+    // bounce them to sign-in.
+    if (localStorage.getItem('hawkeye_token')) {
+      const pf = document.createElement('a');
+      pf.href = 'profile.html';
+      pf.textContent = 'My Profile';
+      nav.insertBefore(pf, cta || null);
+    }
     if (nav.children.length) btn.parentNode.insertBefore(nav, btn);
   }
 

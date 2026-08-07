@@ -110,7 +110,10 @@ function show(screenId) {
   // strand anyone. It SUGGESTS only; selecting a unit is still a deliberate tap.
   // Once per session: a return trip to this screen (changing unit, a rejected
   // submit) must not re-trigger a lookup the observer did not ask for.
-  if (screenId === 'screen-locate' && !autoLocateRan && $('btn-locate')) {
+  // The unit picker now lives on the report screen (step 2), so that is where
+  // the lookup arms. Once per session: a return trip — changing unit, a rejected
+  // submit — must not re-trigger a search the observer did not ask for.
+  if (screenId === 'screen-submit' && !autoLocateRan && $('btn-locate')) {
     autoLocateRan = true;
     $('btn-locate').textContent = 'Search near me again';
     setTimeout(() => $('btn-locate').onclick(), 0); // after this screen paints
@@ -410,7 +413,7 @@ function afterVerified() {
   // Default intent is 'observe' (AUTH_INTENT), so a fresh verification on this
   // page continues into the report flow even when a shared/og link dropped the
   // ?intent=observe param — matching the signed-in boot path below.
-  if (AUTH_INTENT === 'observe') { show('screen-locate'); return; }
+  if (AUTH_INTENT === 'observe') { enterReportFlow(); return; }
   location.href = 'index.html';
 }
 
@@ -815,25 +818,46 @@ function bindUnit(u) {
 }
 
 /**
- * Unchanged entry point: still prepare-then-bind in the old order, so nothing
- * observable moves in this step. When capture leads (step 2), prepareReportUI()
- * runs on entering the flow and bindUnit() runs where the unit is chosen —
- * WITHOUT the shot reset following it around.
+ * Entering the report flow. Everything unit-independent is prepared HERE — the
+ * only place that means "start a new report" — and the screen opens on the
+ * capture card with no unit yet chosen.
  */
-async function selectUnit(u) {
+async function enterReportFlow() {
   await prepareReportUI();
-  bindUnit(u);
+  selectedPu = null;
+  $('submit-pu-name').textContent = 'Report a result';
+  $('tier-notice').hidden = true;
   $('submit-status').textContent = '';
+  updateSubmitState();
   show('screen-submit');
+}
+
+/**
+ * Choosing a unit no longer navigates and no longer resets anything: the
+ * observer is already on this screen, very likely with both photographs already
+ * taken. It binds the unit and nothing else.
+ *
+ * If this ever calls prepareReportUI() again it will WIPE THE PHOTOS — that was
+ * the coupling step 1 existed to remove. Bind only.
+ */
+function selectUnit(u) {
+  bindUnit(u);
+  updateSubmitState();
+  // Confirming the unit answers step 2; move the observer on to the election
+  // rather than leaving them looking at a list they have finished with.
+  $('sel-contest').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // Prefill the submit screen from a Telegram chat handoff, then let the observer
 // capture the live photos and sign as normal.
 async function applyPrefill() {
   try {
+    // The flow must be prepared before a unit can be bound onto it — the
+    // Telegram handoff used to get that for free from selectUnit().
+    await enterReportFlow();
     const { body } = await api(`/api/register/unit?pu_code=${encodeURIComponent(PREFILL.pu)}`);
-    if (!body?.unit) { show('screen-locate'); return; }
-    await selectUnit(body.unit);
+    if (!body?.unit) return; // already on the report screen; pick a unit by hand
+    selectUnit(body.unit);
     const sc = $('sel-contest');
     if (sc && [...sc.options].some((o) => o.value === PREFILL.contest)) sc.value = PREFILL.contest;
     updateScopeNotice();
@@ -842,7 +866,7 @@ async function applyPrefill() {
       if (inp && Number.isFinite(+v.count)) inp.value = v.count;
     }
     $('submit-status').textContent = 'Prefilled from Telegram — now capture the sheet & venue photos to finish.';
-  } catch { show('screen-locate'); }
+  } catch { enterReportFlow(); }
 }
 
 function updateSubmitState() {
@@ -851,10 +875,13 @@ function updateSubmitState() {
     badge.textContent = shots[t] ? 'Captured ✓' : 'Required';
     badge.classList.toggle('done', Boolean(shots[t]));
   }
-  // Only photos gate the button. A CLOSED contest keeps it clickable on purpose,
-  // so the tap surfaces the "reporting opens on election day" error (below) rather
-  // than a dead, silent button — the scope notice already explains the wait.
-  $('btn-submit').disabled = !(shots.sheet && shots.venue);
+  // Photos AND a unit gate the button. The unit is part of this now because it
+  // is chosen on this screen rather than before reaching it — without it the
+  // button would look ready while submit() silently returned on !selectedPu.
+  // A CLOSED contest still keeps it clickable on purpose, so the tap surfaces
+  // the "reporting opens on election day" error rather than a dead, silent
+  // button — the scope notice already explains the wait.
+  $('btn-submit').disabled = !(shots.sheet && shots.venue && selectedPu);
 }
 
 // ---------- camera (live capture only; overlay opens per slot) ----------
@@ -1234,7 +1261,7 @@ $('btn-submit').onclick = async () => {
       try { await window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob }); } catch { /* ignore */ }
       shots.sheet = null; shots.venue = null;
       alert('Saved offline — your signed report will send automatically when you are back online.');
-      show('screen-locate');
+      enterReportFlow(); // that report is queued; this is a fresh one
       $('btn-submit').disabled = false;
       return;
     }
@@ -1285,8 +1312,9 @@ $('btn-submit').onclick = async () => {
 };
 
 $('btn-another').onclick = () => {
-  selectedPu = null;
-  show('screen-locate');
+  // "Report another" IS a new report, so it goes through the same entry point —
+  // which is what clears the previous shots and rebuilds the vote rows.
+  enterReportFlow();
 };
 
 // A token can LOOK signed-in long after it died (7-day JWT expiry, or the
@@ -1360,7 +1388,7 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
     // Following "Sign in" while already signed in means "take me to my account",
     // not "start a report" — send them to the dashboard.
     else if (IS_SIGNIN) location.href = 'index.html';
-    else show('screen-locate');
+    else enterReportFlow();
   } else {
     // Idempotent — already painted above on the !tokenFresh path; this covers a
     // fresh-token check that then found no token.

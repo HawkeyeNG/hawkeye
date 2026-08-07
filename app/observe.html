@@ -149,35 +149,15 @@
     </section>
 
     <!-- 2. Locate -->
-    <section id="screen-locate" hidden>
-      <h1>Find your polling unit</h1>
-      <p class="lede">Stand at your polling unit — nearby units appear automatically.</p>
-      <div class="card">
-        <button id="btn-locate">Find polling units near me</button>
-        <p id="locate-status" class="status" role="status"></p>
-        <div id="pu-list" class="option-list"></div>
-      </div>
-      <!-- Search by name/code before the register cascade: knowing your unit's
-           NAME but not its ward is the common case, and the cascade cannot serve
-           it. Populated by pu-search.js. -->
-      <div id="pu-search-host" class="card"></div>
-      <details id="browse-block" class="card">
-        <summary>Can't see your unit? Browse the register</summary>
-        <p class="hint">No verified location yet? You can still report — your GPS is recorded
-        and the unit stays “location unverified” until other reports confirm it.</p>
-        <label for="sel-state">State</label>
-        <select id="sel-state"><option value="">— select —</option></select>
-        <label for="sel-lga">Local Government Area</label>
-        <select id="sel-lga" disabled><option value="">— select —</option></select>
-        <label for="sel-ward">Ward</label>
-        <select id="sel-ward" disabled><option value="">— select —</option></select>
-        <div id="register-units" class="option-list"></div>
-      </details>
-    </section>
+    <!-- screen-locate is GONE. Finding the unit was a whole screen standing in
+         front of the camera; it is now step 2 of the submit screen, below the
+         capture card. See docs/REPORT-FLOW-CAPTURE-FIRST.md. -->
 
-    <!-- 3. Submit -->
+    <!-- 2. Report -->
     <section id="screen-submit" hidden>
-      <h1 id="submit-pu-name"></h1>
+      <!-- Names the unit once one is chosen; until then it names the task, since
+           this screen is now reached before any unit is known. -->
+      <h1 id="submit-pu-name">Report a result</h1>
       <p id="tier-notice" class="notice" hidden></p>
 
       <!-- CAPTURE FIRST. The election picker used to sit above this: a dropdown
@@ -217,8 +197,35 @@
         </div>
       </div>
 
+      <!-- STEP 2: the unit, moved here from the old screen-locate. The lookup
+           fires on arrival (app.js), so this card opens already populated
+           instead of asking for a press. The ladder is unchanged: nearest units
+           first, then search by name/code, then the register cascade. -->
       <div class="card">
-        <h2><span class="step-no">2</span> Confirm the election</h2>
+        <h2><span class="step-no">2</span> Which polling unit?</h2>
+        <button id="btn-locate">Find polling units near me</button>
+        <p id="locate-status" class="status" role="status"></p>
+        <div id="pu-list" class="option-list"></div>
+      </div>
+      <!-- Search by name/code before the register cascade: knowing your unit's
+           NAME but not its ward is the common case, and the cascade cannot serve
+           it. Populated by pu-search.js. -->
+      <div id="pu-search-host" class="card"></div>
+      <details id="browse-block" class="card">
+        <summary>Can't see your unit? Browse the register</summary>
+        <p class="hint">No verified location yet? You can still report — your GPS is recorded
+        and the unit stays “location unverified” until other reports confirm it.</p>
+        <label for="sel-state">State</label>
+        <select id="sel-state"><option value="">— select —</option></select>
+        <label for="sel-lga">Local Government Area</label>
+        <select id="sel-lga" disabled><option value="">— select —</option></select>
+        <label for="sel-ward">Ward</label>
+        <select id="sel-ward" disabled><option value="">— select —</option></select>
+        <div id="register-units" class="option-list"></div>
+      </details>
+
+      <div class="card">
+        <h2><span class="step-no">3</span> Confirm the election</h2>
         <label for="sel-contest">Election being reported</label>
         <select id="sel-contest"></select>
         <p id="contest-scope" class="scope-note"></p>
@@ -226,14 +233,14 @@
       </div>
 
       <div class="card">
-        <h2><span class="step-no">3</span> Enter the announced counts</h2>
+        <h2><span class="step-no">4</span> Enter the announced counts</h2>
         <div id="vote-inputs"></div>
         <label for="sheet-serial">EC8A form serial number <small>(optional — printed on the sheet)</small></label>
         <input id="sheet-serial" type="text" inputmode="text" placeholder="e.g. 0451233" autocomplete="off" />
       </div>
 
       <div class="card">
-        <h2><span class="step-no">4</span> Sign and submit</h2>
+        <h2><span class="step-no">5</span> Sign and submit</h2>
         <p class="hint">Signed on this device and written to the public tamper-evident
         ledger — it cannot be edited or withdrawn. Its fingerprint is published to the
         public Rekor transparency log in the next daily anchor.</p>

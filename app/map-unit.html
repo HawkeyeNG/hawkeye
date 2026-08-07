@@ -276,7 +276,18 @@
       $('near-status').textContent = `Showing ${hit.properties.w}, ${hit.properties.l}.`;
     }
 
+    // GPS FIRST on Map a Unit too. Mapping is the one flow where the observer
+    // is definitionally standing at the thing they are describing, so arriving
+    // here IS the request to find what is around them. Once per visit; the
+    // handler's own failure paths already end somewhere usable, so firing it
+    // unprompted cannot strand anyone.
+    let nearAutoRan = false;
     $('btn-near').onclick = () => {
+      // Once a search has run this is the RETRY, not the trigger (see the
+      // auto-fire below) — a control still reading "Near me" looks like work
+      // the observer has yet to do.
+      nearAutoRan = true;
+      $('btn-near').textContent = '📍 Search near me again';
       $('near-status').textContent = 'Getting your position…';
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
@@ -309,10 +320,15 @@
         $('near-status').textContent = (r.units || []).length
           ? `${r.units.length} unit(s) within 5 km. Positions marked orange are approximate — mapping them pins the real spot.`
           : 'No units found within 5 km — pick your state, LGA and ward below instead.';
-      }, () => { $('near-status').textContent = 'Location unavailable.'; }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+      }, () => {
+        $('near-status').textContent = 'Location unavailable — pick your state, LGA and ward below instead.';
+      }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     };
 
     initMap();
+    // Fire the lookup on arrival (see the note above btn-near). Deferred a tick
+    // so the map is initialised before markers are drawn onto it.
+    if (!nearAutoRan) setTimeout(() => $('btn-near').onclick(), 0);
 
     // ---------- my polling unit (alerts for everything at this unit) ----------
     async function showMyUnit() {

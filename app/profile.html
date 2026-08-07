@@ -28,6 +28,19 @@
     .danger button { background: #B3341F; }
     input[type="password"] { width: 100%; box-sizing: border-box; }
     #pw-msg { min-height: 1.2em; }
+    /* Password modal (native's pattern). Fixed backdrop + centred card; the
+       card caps at 420px and inherits the page's --surface so it holds up in
+       both themes. */
+    .pw-modal-back {
+      position: fixed; inset: 0; z-index: 60; display: flex;
+      align-items: center; justify-content: center; padding: 20px;
+      background: rgba(0, 0, 0, 0.55);
+    }
+    .pw-modal {
+      width: 100%; max-width: 420px; border-radius: 14px; padding: 20px 22px;
+      background: var(--surface, #fff); border: 1px solid var(--border, #d5ddd7);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+    }
     .signout { width: auto; padding: 8px 16px; }
     /* Hero identity card — native parity. */
     .phero { display: flex; align-items: center; gap: 14px; background: linear-gradient(160deg, #00251a, #00482b); border-radius: 16px; padding: 18px; color: #fff; margin: 8px 0 14px; }
@@ -91,18 +104,31 @@
         <p>Your public identity on the ledger — your phone number is never stored.</p>
         <div class="hashbox" id="p-hash"></div></details>
 
+      <!-- Password: one line + one button; the form itself lives in a modal
+           (native's pattern). Two always-visible inputs made the card read as a
+           form demanding to be filled on every visit. -->
       <div class="pcard">
         <h2>Password</h2>
         <p class="hint" id="pw-state"></p>
-        <div id="pw-current-wrap" hidden>
-          <label for="pw-current">Current password</label>
-          <input id="pw-current" type="password" autocomplete="current-password" />
-        </div>
-        <label for="pw-new">New password <span class="hint">(min 8 characters)</span></label>
-        <input id="pw-new" type="password" autocomplete="new-password" />
-        <p class="hint" id="pw-msg"></p>
-        <button id="btn-pw">Set password</button>
+        <button id="btn-pw-open" class="secondary" style="width:auto">Set password</button>
         <p class="hint">Forgot it? Reset it from the <a href="observe.html?intent=signin">sign-in page</a> — "Forgot your password?" sends a code, then you set a new one.</p>
+      </div>
+
+      <div id="pw-modal" class="pw-modal-back" hidden>
+        <div class="pw-modal" role="dialog" aria-modal="true" aria-labelledby="pw-modal-title">
+          <h2 id="pw-modal-title" style="margin-top:0">Set password</h2>
+          <div id="pw-current-wrap" hidden>
+            <label for="pw-current">Current password</label>
+            <input id="pw-current" type="password" autocomplete="current-password" />
+          </div>
+          <label for="pw-new">New password <span class="hint">(min 8 characters)</span></label>
+          <input id="pw-new" type="password" autocomplete="new-password" />
+          <p class="hint" id="pw-msg"></p>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+            <button id="btn-pw-cancel" class="secondary" style="width:auto">Cancel</button>
+            <button id="btn-pw" style="width:auto">Save</button>
+          </div>
+        </div>
       </div>
 
       <div class="pcard">
@@ -175,7 +201,8 @@
         ? 'You have a password — you can sign in on any device without an OTP.'
         : 'No password yet. Set one to sign in on new devices without waiting for an OTP.';
       $('pw-current-wrap').hidden = !hasPassword;
-      $('btn-pw').textContent = hasPassword ? 'Change password' : 'Set password';
+      $('btn-pw-open').textContent = hasPassword ? 'Change password' : 'Set password';
+      $('pw-modal-title').textContent = hasPassword ? 'Change password' : 'Set password';
 
       if (body.unit) {
         $('p-unit').classList.remove('empty');
@@ -208,6 +235,19 @@
         .catch(() => {});
     };
 
+    // Modal open/close. Fields and message reset on open so a previous attempt's
+    // error never greets the next one; backdrop tap and Escape both close.
+    const pwOpen = () => {
+      $('pw-new').value = ''; $('pw-current').value = ''; $('pw-msg').textContent = '';
+      $('pw-modal').hidden = false;
+      (hasPassword ? $('pw-current') : $('pw-new')).focus();
+    };
+    const pwClose = () => { $('pw-modal').hidden = true; };
+    $('btn-pw-open').onclick = pwOpen;
+    $('btn-pw-cancel').onclick = pwClose;
+    $('pw-modal').onclick = (e) => { if (e.target === $('pw-modal')) pwClose(); };
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('pw-modal').hidden) pwClose(); });
+
     $('btn-pw').onclick = async () => {
       const pw = $('pw-new').value;
       $('pw-msg').textContent = '';
@@ -218,12 +258,15 @@
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
       });
       if (status !== 200) { $('pw-msg').textContent = body.hint || body.error || 'Failed.'; return; }
-      $('pw-msg').textContent = hasPassword ? 'Password changed ✓' : 'Password set ✓ — you can now sign in with it on any device.';
       $('pw-new').value = ''; $('pw-current').value = '';
       hasPassword = true;
       $('pw-current-wrap').hidden = false;
-      $('btn-pw').textContent = 'Change password';
-      $('pw-state').textContent = 'You have a password — you can sign in on any device without an OTP.';
+      $('btn-pw-open').textContent = 'Change password';
+      $('pw-modal-title').textContent = 'Change password';
+      $('pw-state').textContent = hasPassword
+        ? 'You have a password ✓ — you can sign in on any device without an OTP.'
+        : '';
+      pwClose(); // success closes the modal; the card's state line carries the ✓
     };
 
     $('btn-signout').onclick = () => { localStorage.removeItem('hawkeye_token'); location.href = 'index.html'; };

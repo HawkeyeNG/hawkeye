@@ -31,12 +31,76 @@ export function normalizeCode(raw: string): string | null {
   return `${d.slice(0, 2)}-${d.slice(2, 4)}-${d.slice(4, 6)}-${d.slice(6)}`;
 }
 
-/** Every shape-valid candidate in the recognised text, in reading order. */
+/**
+ * THE CODE IS NOT PRINTED AS ONE STRING. A real EC8A carries it as four
+ * separately labelled boxes, on four different lines, with the unit's name in
+ * between:
+ *
+ *   State ............ FCT       Code [3][7]
+ *   Area Council ..... KWALI     Code [0][5]
+ *   Registration Area  KILANKWA  Code [0][4]
+ *   Polling Unit ..... SHEDA…    Code [0][2][7]
+ *
+ * The first version hunted a contiguous NN-NN-NN-NNN run, so on a real sheet it
+ * matched nothing and the whole tier was inert. Found by reading an actual IReV
+ * sheet (37-05-04-027), not the invented strings the tests used.
+ */
+const FIELDS: { key: string; n: number; re: RegExp }[] = [
+  { key: 'state', n: 2, re: /\bSTATE\b/ },
+  { key: 'lga', n: 2, re: /AREA\s*COUNCIL|LOCAL\s*GOVERNMENT|\bL\.?G\.?A\.?\b/ },
+  { key: 'ward', n: 2, re: /REGISTRATION\s*AREA|\bWARD\b/ },
+  { key: 'pu', n: 3, re: /POLLING\s*UNIT/ },
+];
+
+/**
+ * Digits immediately after "Code" on one line. Stops at the first token that is
+ * not a pure digit box, which keeps the S/N field out: OCR readily joins columns
+ * into "...Code 3 7 S/N 0000111", and swallowing that yields a nine-digit run
+ * that shape-validates as a plausible, completely wrong code.
+ */
+function codeDigitsAfter(line: string, want: number): string | null {
+  const m = /\bC[O0]DE\b/i.exec(line);
+  if (!m) return null;
+  const rest = line.slice(m.index + m[0].length);
+  let d = '';
+  for (const tok of rest.split(/[\s.:_|]+/)) {
+    if (!tok) continue;
+    const t = digits(tok);
+    if (!t || t.length !== tok.length) break;
+    d += t;
+    if (d.length >= want) break;
+  }
+  return d ? d.slice(0, want) : null;
+}
+
+/** Every shape-valid candidate in the recognised text, best first. */
 export function extractCandidates(text: string): string[] {
   const out: string[] = [];
+  const add = (c: string | null) => { if (c && !out.includes(c)) out.push(c); };
+
+  const lines = String(text || '').split(/\r?\n/);
+  const got: Record<string, string> = {};
+  const loose: string[] = [];
+  for (const ln of lines) {
+    const U = ln.toUpperCase();
+    const f = FIELDS.find((x) => x.re.test(U));
+    const d = codeDigitsAfter(ln, f ? f.n : 3);
+    if (d == null) continue;
+    if (f && d.length === f.n) { if (!got[f.key]) got[f.key] = d; }
+    else loose.push(d);
+  }
+  if (got.state && got.lga && got.ward && got.pu) {
+    add(normalizeCode(got.state + got.lga + got.ward + got.pu));
+  } else if (!Object.keys(got).length && loose.length >= 4) {
+    // Labels unreadable but four Code boxes found — field order on the form is
+    // fixed, so positional assembly is a fair second guess, and it is still
+    // register-checked, so a bad guess simply resolves to nothing.
+    add(normalizeCode(loose[0].slice(0, 2) + loose[1].slice(0, 2) + loose[2].slice(0, 2) + loose[3].slice(0, 3)));
+  }
+
+  // Contiguous NN-NN-NN-NNN, for wherever the code is written out in full.
   for (const m of String(text || '').matchAll(RE)) {
-    const c = normalizeCode(m[1] + m[2] + m[3] + m[4]);
-    if (c && !out.includes(c)) out.push(c);
+    add(normalizeCode(m[1] + m[2] + m[3] + m[4]));
   }
   return out;
 }

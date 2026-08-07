@@ -55,10 +55,19 @@ remote_for() {                                 # remote_for <localfile>
 }
 
 upload() {                                     # upload <localfile>
-  local f="$1" try code dest
+  local f="$1" try code dest bytes maxt
   dest=$(remote_for "$f")
+  # TIMEOUT MUST SCALE WITH SIZE. A flat -m 180 silently truncates anything big:
+  # curl aborts mid-transfer and DirectAdmin writes the bytes that arrived, so
+  # the upload "succeeds" and the file is corrupt. That is how the 31.6 MB APK
+  # on the download page became an 11 MB file that cannot install — after having
+  # uploaded intact earlier the same day on a faster link. Allow 180s plus 60s
+  # per MB (a 31 MB APK gets ~32 min), which is generous enough that a slow link
+  # finishes rather than half-writing.
+  bytes=$(wc -c < "$f")
+  maxt=$(( 180 + bytes / 17476 ))
   for try in 1 2 3 4 5; do
-    code=$(curl -sk -m 180 -u "$U:$P" -o /tmp/da_deploy.txt -w '%{http_code}' \
+    code=$(curl -sk -m "$maxt" -u "$U:$P" -o /tmp/da_deploy.txt -w '%{http_code}' \
       -F 'action=upload' -F "path=$dest" -F "file1=@$f" "$API")
     if [ "$code" = "200" ] && grep -q 'error=0' /tmp/da_deploy.txt; then return 0; fi
     sleep $(( try * 4 ))

@@ -34,7 +34,12 @@
       font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; }
     #media-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
     #media-actions #btn-camera { width: auto; margin: 0; }
-    #media-actions #media { flex: 1; min-width: 0; }
+    /* Photo and Video share one row; the gallery input drops to its own line
+       below. All three side by side wrapped the buttons onto separate rows on a
+       phone, which is what made Video look like it had its own section. */
+    #media-actions { flex-wrap: wrap; }
+    #media-actions #btn-camera, #media-actions #btn-video { flex: 1; min-width: 0; margin: 0; }
+    #media-actions #media { flex: 1 1 100%; min-width: 0; }
     /* The `hidden` ATTRIBUTE alone does not hide this: the stylesheet's own
        `input` display rule outranks the UA sheet's [hidden]{display:none}, so
        the camera seam rendered as a second, bare "Choose File" row next to the
@@ -107,11 +112,6 @@
 
   <main class="wrap">
     <h1>Report an Incident</h1>
-    <!-- The lede said what the h1 already says. The ⓘ carries the part that is
-         actually new information, so it moves up beside the heading. -->
-    <p class="lede" style="margin-top:-6px"><button
-      class="info-i" data-info-title="What to report, and what happens next"
-      data-info="Violence, ballot snatching, vote-buying, voter intimidation, BVAS failure, late materials, obstruction — anything that affected the vote. A person reviews every report before it appears; approved ones are published in the feed below, identified by observer ID only."></button></p>
 
     <section id="need-auth" class="card" hidden>
       <p>To report an incident, register your device first.</p>
@@ -124,7 +124,11 @@
            observer and the shutter, at the one moment the scene is still there.
            Classification and prose keep; the scene does not. Mirrors the native
            screen (native/src/app/report/incident.tsx). -->
-      <label for="btn-camera">Upload Media (Optional)</label>
+      <!-- The ⓘ rode alone under the h1, spending a whole line on an icon. It
+           belongs on the label it explains. -->
+      <label for="btn-camera">Upload Media (Optional)<button
+        class="info-i" data-info-title="What to report, and what happens next"
+        data-info="Violence, ballot snatching, vote-buying, voter intimidation, BVAS failure, late materials, obstruction — anything that affected the vote. A person reviews every report before it appears; approved ones are published in the feed below, identified by observer ID only."></button></label>
       <div id="media-actions">
         <!-- No longer `hidden`: this used to be unhidden only inside the
              Capacitor shell, so on the WEBSITE there was no camera control at
@@ -159,8 +163,10 @@
         <input type="checkbox" id="use-gps" checked style="width:auto" /> Attach my current location
       </label>
 
-      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:400">
-        <input type="checkbox" id="attach-pu" style="width:auto" /> Attach the polling unit where this happened <small class="hint">(optional)</small>
+      <!-- nowrap on the "(optional)" so the label reads as ONE line: it was
+           wrapping to a second row and reading like a separate setting. -->
+      <label style="display:flex;gap:6px;align-items:center;margin-top:10px;font-weight:400">
+        <input type="checkbox" id="attach-pu" style="width:auto" /> Attach polling unit where this happened <small class="hint" style="white-space:nowrap">(optional)</small>
       </label>
       <div id="pu-picker" hidden style="margin:8px 0 0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--tint)">
         <label id="saved-unit-row" hidden style="display:flex;gap:8px;align-items:center;font-weight:400;margin-bottom:8px">
@@ -172,8 +178,10 @@
       </div>
 
       <button id="btn-submit">Submit report</button>
+      <!-- "A human reviews every report…" lived here AND in the receipt modal.
+           The receipt is where it lands after the act it describes, so this copy
+           went rather than being said twice. -->
       <p id="status" class="status" role="status"></p>
-      <p class="hint">A human reviews every report before anything is published.</p>
     </section>
 
     <!-- Submission receipt. A line of text under the button was missed after a

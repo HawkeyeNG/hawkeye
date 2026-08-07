@@ -1144,6 +1144,24 @@ export default function ReportResult() {
     void findNearby();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoNearRan, unit]);
+  /**
+   * ONE silent retry. The auto-fire above runs at mount — the coldest moment a
+   * GPS ever has — so its first attempt can time out where a tap ten seconds
+   * later succeeds purely because the first attempt warmed the chip. The
+   * observer saw exactly that: "failed", then a manual press that worked. If no
+   * fix has landed 6s after the first attempt, try once more; a fix arriving
+   * (or a unit being chosen) cancels the timer via the effect cleanup.
+   */
+  const nearRetried = useRef(false);
+  useEffect(() => {
+    if (!autoNearRan || nearRetried.current || fix || unit) return;
+    const t = setTimeout(() => {
+      nearRetried.current = true;
+      void findNearby();
+    }, 6000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoNearRan, fix, unit]);
 
   /**
    * Selecting a unit clears any race chosen for a previous one — the race is

@@ -99,9 +99,22 @@ async function api(path, opts = {}) {
   const body = await res.json().catch(() => ({}));
   return { status: res.status, body };
 }
+let autoLocateRan = false;
 function show(screenId) {
   for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== screenId;
   window.scrollTo(0, 0); // each screen starts at the top, not the old scroll pos
+  // GPS FIRST, EVERY FLOW, EVERY PLATFORM: arriving at "which unit?" IS the
+  // request to find it, so the lookup runs itself rather than waiting on a
+  // press. btn-locate's handler already ends every failure somewhere usable —
+  // a message plus the register browser opened — so firing it unprompted cannot
+  // strand anyone. It SUGGESTS only; selecting a unit is still a deliberate tap.
+  // Once per session: a return trip to this screen (changing unit, a rejected
+  // submit) must not re-trigger a lookup the observer did not ask for.
+  if (screenId === 'screen-locate' && !autoLocateRan && $('btn-locate')) {
+    autoLocateRan = true;
+    $('btn-locate').textContent = 'Search near me again';
+    setTimeout(() => $('btn-locate').onclick(), 0); // after this screen paints
+  }
   // Mark the auth step so the app can strip its chrome: nothing in the shell
   // should be reachable before sign-in, and a header/tab bar around a sign-in
   // form makes it look like a web page rather than an app screen. Scoped to the

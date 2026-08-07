@@ -35,6 +35,22 @@
     #media-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
     #media-actions #btn-camera { width: auto; margin: 0; }
     #media-actions #media { flex: 1; min-width: 0; }
+    /* The `hidden` ATTRIBUTE alone does not hide this: the stylesheet's own
+       `input` display rule outranks the UA sheet's [hidden]{display:none}, so
+       the camera seam rendered as a second, bare "Choose File" row next to the
+       real one. It is a seam, never a control — keep it out of the layout. */
+    #media-actions #media-cam { display: none; }
+    /* "You can add more" as a TILE in the grid rather than a sentence under it —
+       the same affordance the native screen uses. It sits at the end of the
+       thumbnails, so the place you add media is the place your media already is,
+       and it disappears on its own at the cap instead of needing a caption to
+       explain the limit. Matches the thumbnail box exactly so the row stays even. */
+    .addmore { width: 80px; height: 64px; border-radius: 6px; margin: 0; padding: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; background: var(--tint); color: var(--muted); border: 2px dashed var(--border);
+      box-shadow: none; font-size: 1.35rem; line-height: 1; cursor: pointer; }
+    .addmore:hover { color: var(--link); border-color: var(--link); background: var(--tint); filter: none; }
+    .addmore span { font-size: 0.6rem; font-weight: 700; letter-spacing: .02em; }
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -88,19 +104,35 @@
     </section>
 
     <section id="form-card" class="card" hidden>
-      <label for="kind">Type of incident</label>
+      <!-- CAPTURE COMES FIRST. The incident kind and the description used to sit
+           above this: a taxonomy dropdown and a writing task standing between an
+           observer and the shutter, at the one moment the scene is still there.
+           Classification and prose keep; the scene does not. Mirrors the native
+           screen (native/src/app/report/incident.tsx). -->
+      <label for="btn-camera">Photos / video (optional, up to 4, 30 MB each)</label>
+      <div id="media-actions">
+        <!-- No longer `hidden`: this used to be unhidden only inside the
+             Capacitor shell, so on the WEBSITE there was no camera control at
+             all — just a file input that opens a chooser. It is now the primary
+             control everywhere, routed per-platform in the wiring below. -->
+        <button type="button" id="btn-camera" class="secondary">📷 Capture</button>
+        <input id="media" type="file" accept="image/*,video/*" multiple />
+        <!-- The web camera seam. `capture` makes a mobile browser open the
+             camera DIRECTLY instead of the gallery chooser; desktop ignores the
+             attribute and falls back to a file dialog, which is the right
+             degradation. It is separate from #media because `capture` would
+             otherwise take the gallery away from people who already filmed the
+             incident before opening Hawkeye. -->
+        <input id="media-cam" type="file" accept="image/*,video/*" capture="environment" hidden />
+      </div>
+      <div id="preview"></div>
+
+      <label for="kind" style="margin-top:12px;display:block">Type of incident</label>
       <select id="kind"></select>
 
       <label for="desc">What happened?</label>
       <textarea id="desc" rows="4" placeholder="Describe the incident — where, when, who was involved."
         style="width:100%;font-family:inherit;font-size:1rem;padding:10px;border:2px solid var(--border);border-radius:10px"></textarea>
-
-      <label for="media">Photos / video (optional, up to 4, 30 MB each)</label>
-      <div id="media-actions">
-        <button type="button" id="btn-camera" class="secondary" hidden>📷 Take a photo</button>
-        <input id="media" type="file" accept="image/*,video/*" multiple />
-      </div>
-      <div id="preview"></div>
 
       <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:400">
         <input type="checkbox" id="use-gps" checked style="width:auto" /> Attach my current location
@@ -176,6 +208,18 @@
           + `<button type="button" class="rm" data-i="${i}" aria-label="Remove">✕</button>`;
         $('preview').appendChild(cell);
       });
+      // The add-more affordance is a TILE, not a sentence. It only appears once
+      // there is something to add to (an empty grid already has the Capture
+      // button right above it) and vanishes at the cap, so the limit shows
+      // itself instead of being described.
+      if (attachments.length && attachments.length < MAX_FILES) {
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'addmore';
+        add.setAttribute('aria-label', `Add another photo or video (${attachments.length} of ${MAX_FILES} added)`);
+        add.innerHTML = '＋<span>ADD</span>';
+        $('preview').appendChild(add);
+      }
       syncCap();
     }
     function addFiles(list) {
@@ -187,25 +231,46 @@
       renderPreview();
     }
     $('media').onchange = () => { addFiles($('media').files); $('media').value = ''; };
+    $('media-cam').onchange = () => { addFiles($('media-cam').files); $('media-cam').value = ''; };
     $('preview').onclick = (e) => {
+      if (e.target.closest('.addmore')) { doCapture(); return; }
       const b = e.target.closest('.rm');
       if (!b) return;
       attachments.splice(Number(b.dataset.i), 1);
       renderPreview();
     };
-    // Native app only: a bare file input can't open the camera in the WebView,
-    // so add an explicit capture button backed by the OS camera (one still/tap).
-    if (window.HAWKEYE && window.HAWKEYE.native && window.HAWKEYE.capabilities
-        && window.HAWKEYE.capabilities.camera && window.HAWKEYE.capturePhoto) {
-      $('btn-camera').hidden = false;
-      $('btn-camera').onclick = async () => {
-        if (attachments.length >= MAX_FILES) { $('status').textContent = `You can attach up to ${MAX_FILES} files.`; return; }
-        try {
-          const blob = await window.HAWKEYE.capturePhoto('venue'); // 'venue' = plain OS camera, no doc-scan
-          if (blob) addFiles([new File([blob], `photo-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })]);
-        } catch { /* user backed out of the camera */ }
-      };
+    // ONE capture entry point, two seams — used by the Capture button and by the
+    // add-more tile, so both platforms and both controls share a single path.
+    //
+    // Native: a bare file input cannot reach the camera inside the WebView, so
+    // it goes through the OS Camera plugin.
+    // Web: click the `capture` input, which opens the camera DIRECTLY on mobile.
+    // This is the half that was missing — the button existed but was unhidden
+    // only in the shell, so the website had no camera control at all.
+    const nativeCam = () => Boolean(window.HAWKEYE && window.HAWKEYE.native && window.HAWKEYE.capabilities
+      && window.HAWKEYE.capabilities.camera && window.HAWKEYE.capturePhoto);
+    async function doCapture() {
+      if (attachments.length >= MAX_FILES) { $('status').textContent = `You can attach up to ${MAX_FILES} files.`; return; }
+      if (!nativeCam()) { $('media-cam').click(); return; }
+      try {
+        const blob = await window.HAWKEYE.capturePhoto('venue'); // 'venue' = plain OS camera, no doc-scan
+        if (blob) addFiles([new File([blob], `photo-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })]);
+        // A resolved-but-empty result is NOT a cancel — it means the plugin came
+        // back with nothing, which used to look identical to success.
+        else $('status').textContent = 'The camera returned no photo — use “Choose files” below instead.';
+      } catch (e) {
+        // This catch used to swallow EVERYTHING as "user backed out". A denied
+        // permission, a missing plugin and a real crash all rendered as a button
+        // that does nothing at all, which is undiagnosable in the field and on a
+        // phone we cannot attach a console to. Only a genuine cancel is silent
+        // now; anything else names itself and points at the fallback, so the
+        // observer still gets their evidence attached.
+        const msg = String((e && e.message) || e || '');
+        if (/cancel/i.test(msg)) return;
+        $('status').textContent = `Camera unavailable — use “Choose files” below instead. (${msg || 'unknown error'})`;
+      }
     }
+    $('btn-camera').onclick = doCapture;
 
     async function getPos() {
       return new Promise((res) => navigator.geolocation.getCurrentPosition(
@@ -217,9 +282,18 @@
     // them (that silent auto-stamp was removed). /api/incidents reads puCode,
     // validates it against the register and derives the state server-side.
     let puLoaded = false;
+    let nearAutoRan = false;
     $('attach-pu').onchange = () => {
       $('pu-picker').hidden = !$('attach-pu').checked;
       if ($('attach-pu').checked && !puLoaded) { puLoaded = true; loadSavedUnit(); }
+      // Asking to attach a unit IS the request to find one, so the lookup runs
+      // itself rather than demanding a second press from someone who has just
+      // walked away from an incident. Every failure path below already ends
+      // somewhere usable (a message plus the manual options), so firing it
+      // unprompted cannot strand anyone. It only ever SUGGESTS — picking
+      // remains an explicit tap, which is the invariant the native screen
+      // documents at length: a unit is never assumed for the reporter.
+      if ($('attach-pu').checked && !nearAutoRan) { nearAutoRan = true; $('btn-near').onclick(); }
     };
     function loadSavedUnit() {
       if (!token) return;
@@ -235,6 +309,11 @@
         .catch(() => {});
     }
     $('btn-near').onclick = async () => {
+      // Once a search has been attempted the button is the RETRY, not the
+      // trigger — a control that still reads "Find units near me" looks like
+      // work the observer has yet to do.
+      nearAutoRan = true;
+      $('btn-near').textContent = 'Search near me again';
       $('pu-status').textContent = 'Finding units near you…';
       const c = await getPos();
       if (!c) { $('pu-status').textContent = 'Location unavailable — allow location access and try again.'; return; }

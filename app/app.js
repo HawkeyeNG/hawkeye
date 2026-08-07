@@ -1006,7 +1006,50 @@ function ocrHint(msg) {
   }
   hint.textContent = msg;
 }
+/**
+ * TIER A of the unit ladder: let the sheet name its own unit.
+ *
+ * The EC8A header carries the delimitation code, and the OCR already returns the
+ * full recognised text — it was simply throwing everything that was not a party
+ * count away. Resolution goes through pu-code.js, which treats the register as
+ * the arbiter and refuses ambiguous repairs.
+ *
+ * The resolver tries the CACHED near-me slice first. That is not just a speed
+ * trick: it is what lets Tier A work offline, on the election-day network the
+ * outbox exists to survive. A single exact server lookup is the online extra —
+ * never the 81 round trips a repair sweep would otherwise cost.
+ *
+ * Only a HIGH-confidence read selects. Anything weaker is left for the observer,
+ * because a wrong unit is worse than a slower one.
+ */
+async function resolveUnitFromSheet(text) {
+  const P = window.HAWKEYE_PUCODE;
+  if (!P || selectedPu) return; // never override a unit already chosen
+  const warm = (nearbyCache && nearbyCache.body && nearbyCache.body.units) || [];
+  const byCode = new Map(warm.map((u) => [u.pu_code, u]));
+  const resolve = async (code) => {
+    if (byCode.has(code)) return byCode.get(code);
+    if (!navigator.onLine) return null;
+    try {
+      const { body } = await api(`/api/register/unit?pu_code=${encodeURIComponent(code)}`);
+      return body && body.unit ? body.unit : null;
+    } catch { return null; }
+  };
+  // Repairs stay local-only: an 81-probe sweep must never hit the network.
+  const local = async (code) => (byCode.has(code) ? byCode.get(code) : null);
+  const fix = lastFix ? { lat: lastFix.coords.latitude, lng: lastFix.coords.longitude } : undefined;
+  let hit = null;
+  try {
+    hit = await P.resolveUnitFromText(text, { resolve, fix, maxRepair: 0 }) // exact, may use network
+      || await P.resolveUnitFromText(text, { resolve: local, fix });        // repairs, cache only
+  } catch { return; }
+  if (!hit || hit.confidence !== 'high' || selectedPu) return;
+  selectUnit(hit.unit);
+  $('locate-status').textContent = `Unit read from the sheet: ${hit.unit.name}. Tap another if this is wrong.`;
+}
+
 window.addEventListener('hawkeye-sheet-ocr', (e) => {
+  if (e.detail && e.detail.text) resolveUnitFromSheet(e.detail.text);
   const wrap = $('vote-inputs');
   const d = e.detail;
   if (!wrap || !d || !d.tokens || !d.tokens.length) return;

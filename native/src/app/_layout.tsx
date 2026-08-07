@@ -118,7 +118,20 @@ function RootShell() {
       } catch {
         /* asked again at fix time */
       }
+      // Once permission is settled, keep a fix warm for as long as the app is
+      // in use, so the shutter and the near-me lookup never pay a cold GPS
+      // start. Foreground-only and torn down on background — see the keeper's
+      // own note in lib/location.ts.
+      try {
+        const { startLocationKeeper } = await import('@/lib/location');
+        await startLocationKeeper();
+      } catch {
+        /* best-effort warm-up; every fix call site keeps its own fallback */
+      }
     })();
+    return () => {
+      import('@/lib/location').then((m) => m.stopLocationKeeper()).catch(() => {});
+    };
   }, []);
 
   // Signed-out access tier for the APP: a signed-out user gets ONLY the auth

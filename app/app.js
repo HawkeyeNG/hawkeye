@@ -152,6 +152,83 @@ async function getCaptureFix() {
     return lastFix;
   }
 }
+/**
+ * LATENT LOCATION KEEPER — keeps `lastFix` warm for as long as the app is in use.
+ *
+ * Every expensive moment in this product needs a fix: both photos are
+ * GPS-stamped at the shutter, the submission carries its own fix, and the
+ * near-me lookup cannot start without one. A cold `getCurrentPosition` on a
+ * phone can take many seconds, and it was being paid at exactly the wrong times
+ * — at the shutter, with a crowd forming, or on arriving at the unit step.
+ *
+ * watchPosition rather than a polling interval: the OS is already tracking
+ * position for other apps and coalesces subscribers, so this rides along with
+ * what the platform is doing anyway instead of forcing a fresh fix on a timer.
+ *
+ * Suspended whenever the page is hidden, so a backgrounded tab is never holding
+ * the GPS open. Resumed on return, because a fix from before the observer
+ * travelled is worse than no cached fix at all.
+ */
+let geoWatchId = null;
+function startLocationKeeper() {
+  if (geoWatchId != null || !navigator.geolocation) return;
+  geoWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      lastFix = pos;
+      prefetchNearby(); // first fix arms the unit list before its turn comes
+    },
+    () => { /* denied/unavailable — every caller already has its own fallback */ },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 15000 },
+  );
+}
+function stopLocationKeeper() {
+  if (geoWatchId == null) return;
+  navigator.geolocation.clearWatch(geoWatchId);
+  geoWatchId = null;
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopLocationKeeper();
+  else startLocationKeeper();
+});
+
+/**
+ * NEAR-ME PREFETCH. The unit list is fetched as soon as a fix exists, not when
+ * the observer reaches the unit step, so the step opens already populated
+ * instead of spending its first seconds on a round trip.
+ *
+ * Cached against the position it was fetched from and re-fetched once the
+ * observer has moved past the staleness bounds — a list from 500 m ago is the
+ * wrong list, and silently showing it would be worse than a short wait.
+ */
+let nearbyCache = null; // { lat, lng, at, body }
+const NEARBY_MAX_AGE_MS = 120000;
+const NEARBY_MAX_MOVE_M = 150;
+// Metres between two fixes. The server has its own haversine; this side had
+// none, and the cache is only sound if it can tell that the observer moved.
+function fixDistanceM(aLat, aLng, bLat, bLng) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (bLat - aLat) * rad, dLng = (bLng - aLng) * rad;
+  const s = Math.sin(dLat / 2) ** 2
+    + Math.cos(aLat * rad) * Math.cos(bLat * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+function nearbyCacheUsable() {
+  if (!nearbyCache || !lastFix) return false;
+  if (Date.now() - nearbyCache.at > NEARBY_MAX_AGE_MS) return false;
+  return fixDistanceM(
+    lastFix.coords.latitude, lastFix.coords.longitude,
+    nearbyCache.lat, nearbyCache.lng,
+  ) <= NEARBY_MAX_MOVE_M;
+}
+async function prefetchNearby() {
+  if (!lastFix || nearbyCacheUsable()) return;
+  const { latitude: lat, longitude: lng } = lastFix.coords;
+  try {
+    const { body } = await api(`/api/polling-units?lat=${lat}&lng=${lng}`);
+    nearbyCache = { lat, lng, at: Date.now(), body };
+  } catch { /* best-effort warm-up; btn-locate still does the real fetch */ }
+}
+
 const ERRORS = {
   outside_geofence: 'You are too far from this polling unit to report it.',
   too_far_from_unit: 'You are too far from this polling unit — report only while standing there.',
@@ -583,8 +660,16 @@ $('btn-locate').onclick = async () => {
     return;
   }
   const { latitude: lat, longitude: lng, accuracy } = pos.coords;
-  $('locate-status').textContent = `Location fixed (±${Math.round(accuracy)} m). Looking up nearby units…`;
-  const { body } = await api(`/api/polling-units?lat=${lat}&lng=${lng}`);
+  // Use the warm list when it was fetched from close enough, recently enough
+  // (see nearbyCacheUsable) — that is the whole point of the prefetch: this
+  // step opens populated rather than spending its first seconds on a round trip.
+  const warm = nearbyCacheUsable() ? nearbyCache.body : null;
+  if (!warm) {
+    $('locate-status').textContent = `Location fixed (±${Math.round(accuracy)} m). Looking up nearby units…`;
+  }
+  const { body } = warm
+    ? { body: warm }
+    : await api(`/api/polling-units?lat=${lat}&lng=${lng}`);
   if (!body.units || body.units.length === 0) {
     $('locate-status').textContent =
       `No mapped polling unit within ${body.radiusM} m — use "Browse the register" below.`;
@@ -651,30 +736,35 @@ $('sel-ward').onchange = async () => {
 };
 
 // ---------- submit screen ----------
-async function selectUnit(u) {
-  selectedPu = u;
-  $('submit-pu-name').textContent = `${u.name} (${u.pu_code})`;
-  const tier = tierOf(u);
-  $('tier-notice').hidden = tier === 'verified';
-  $('tier-notice').textContent =
-    tier === 'crowd'
-      ? '◌ This unit\'s location is crowd-confirmed, not yet officially verified.'
-      : '⚠ This unit has no verified location. Your GPS position will be recorded with your report, and the result stays marked "location unverified" until independent reports from the same spot corroborate it.';
+/**
+ * STEP 1 of the capture-first web restructure (docs/REPORT-FLOW-CAPTURE-FIRST.md).
+ *
+ * selectUnit() used to do seven things at once, only three of which actually
+ * need a unit. That coupling is what pins unit selection ahead of capture on
+ * the web, so it is split before any markup moves:
+ *
+ *   prepareReportUI()  parties, contests, logos, vote rows, OCR warm-up, and
+ *                      the shot reset — none of it unit-dependent, all of it
+ *                      safe to run on entering the flow.
+ *   bindUnit(u)        name, tier notice, contest filtering — the genuinely
+ *                      unit-dependent remainder.
+ *
+ * THE SHOT RESET IS THE REASON THIS SPLIT COMES FIRST. `shots.sheet = null`
+ * lived inside selectUnit(), so once capture moves ahead of unit selection,
+ * choosing a unit would silently destroy both photographs — the exact evidence
+ * loss the whole reorder exists to prevent. It now belongs to flow entry, which
+ * is the only place that means "start a new report".
+ *
+ * Behaviour is deliberately unchanged for now: selectUnit() still calls both in
+ * the old order, so this commit is a pure refactor and can be verified against
+ * the existing flow before anything moves.
+ */
+async function prepareReportUI() {
   if (parties.length === 0) parties = (await api('/api/parties')).body;
   if (contests.length === 0) contests = (await api('/api/contests')).body;
   if (logos === null) {
     logos = await fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({}));
   }
-  // Full races list, unconfigured ones disabled — same picker as collation.html.
-  // See window.HAWKEYE_RACES in menu.js for why /api/contests alone is too short.
-  const applicableContests = contests.filter((c) => contestApplies(selectedPu, c.code, c.states));
-  if (window.HAWKEYE_RACES) {
-    window.HAWKEYE_RACES.fill($('sel-contest'), applicableContests, { placeholder: '— Select election —' });
-  } else {
-    $('sel-contest').innerHTML = '<option value="">— Select election —</option>'
-      + applicableContests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
-  }
-  updateScopeNotice();
   const wrap = $('vote-inputs');
   wrap.innerHTML = '';
   for (const p of parties) {
@@ -700,7 +790,39 @@ async function selectUnit(u) {
     $(`preview-${t}`).hidden = true;
     $(`btn-cam-${t}`).textContent = 'Take photo';
   }
+}
+
+function bindUnit(u) {
+  selectedPu = u;
+  $('submit-pu-name').textContent = `${u.name} (${u.pu_code})`;
+  const tier = tierOf(u);
+  $('tier-notice').hidden = tier === 'verified';
+  $('tier-notice').textContent =
+    tier === 'crowd'
+      ? '◌ This unit\'s location is crowd-confirmed, not yet officially verified.'
+      : '⚠ This unit has no verified location. Your GPS position will be recorded with your report, and the result stays marked "location unverified" until independent reports from the same spot corroborate it.';
+  // Full races list, unconfigured ones disabled — same picker as collation.html.
+  // See window.HAWKEYE_RACES in menu.js for why /api/contests alone is too short.
+  const applicableContests = contests.filter((c) => contestApplies(selectedPu, c.code, c.states));
+  if (window.HAWKEYE_RACES) {
+    window.HAWKEYE_RACES.fill($('sel-contest'), applicableContests, { placeholder: '— Select election —' });
+  } else {
+    $('sel-contest').innerHTML = '<option value="">— Select election —</option>'
+      + applicableContests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
+  }
+  updateScopeNotice();
   updateSubmitState();
+}
+
+/**
+ * Unchanged entry point: still prepare-then-bind in the old order, so nothing
+ * observable moves in this step. When capture leads (step 2), prepareReportUI()
+ * runs on entering the flow and bindUnit() runs where the unit is chosen —
+ * WITHOUT the shot reset following it around.
+ */
+async function selectUnit(u) {
+  await prepareReportUI();
+  bindUnit(u);
   $('submit-status').textContent = '';
   show('screen-submit');
 }
@@ -1297,3 +1419,10 @@ function armTelegramLogin() {
 }
 if (window.HawkeyeTG) armTelegramLogin();
 document.addEventListener('hawkeye-tg-ready', armTelegramLogin);
+
+// Start warming location the moment the report app loads — i.e. as soon as the
+// observer taps "Report", since that is what brings them to this page. By the
+// time they reach the unit step or the shutter, the fix and the nearby list are
+// already in hand. Costs nothing when permission is denied: the keeper's error
+// path is a no-op and every caller keeps its own fallback.
+startLocationKeeper();

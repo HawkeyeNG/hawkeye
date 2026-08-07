@@ -718,6 +718,21 @@ export default function MapUnit() {
     }
   };
 
+  /**
+   * GPS FIRST here too. Mapping a unit is the one flow where the observer is
+   * definitionally standing at the thing they are describing, so opening this
+   * screen IS the request to find what is around them. Same rule as the report
+   * flows: once per arrival, suggests only, and every failure path inside
+   * findNearby already lands somewhere usable.
+   */
+  const [autoNearRan, setAutoNearRan] = useState(false);
+  useEffect(() => {
+    if (autoNearRan || unit) return;
+    setAutoNearRan(true);
+    void findNearby();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoNearRan, unit]);
+
   /** Errors go to a modal: inline text below a long unit list is never seen. */
   const fail = (msg: string) => {
     setLine(msg);

@@ -324,3 +324,41 @@ export function describeFixFailure(f: FixFailure): {
       };
   }
 }
+
+/**
+ * LATENT LOCATION KEEPER — keeps the OS last-known fix warm while Hawkeye is in
+ * the foreground.
+ *
+ * tryQuickFix already prefers getLastKnownPositionAsync(maxAge 60s), which is
+ * instant when something has recently asked the OS for a position and slow
+ * exactly when nothing has. This subscription is what keeps that cache fed, so
+ * the expensive moments — the shutter, where both photos are GPS-stamped, and
+ * the unit step's near-me lookup — start from a warm fix instead of paying a
+ * cold start with a crowd forming.
+ *
+ * Balanced, not Highest: this exists to keep a fix RECENT, not to pin down the
+ * last few metres. The precise fix is taken again at submit, where the server
+ * checks it against the geofence.
+ *
+ * Foreground only, and torn down on background — the app has no business
+ * holding the GPS open when it is not on screen. Idempotent, so callers may
+ * start it freely.
+ */
+let keeper: Location.LocationSubscription | null = null;
+export async function startLocationKeeper(): Promise<void> {
+  if (keeper) return;
+  const perm = await Location.getForegroundPermissionsAsync().catch(() => null);
+  if (!perm?.granted) return; // never prompts — prompting is a screen's job
+  try {
+    keeper = await Location.watchPositionAsync(
+      { accuracy: Location.Accuracy.Balanced, timeInterval: 30_000, distanceInterval: 25 },
+      () => { /* the value is unused: the point is that the OS cache stays fresh */ },
+    );
+  } catch {
+    keeper = null; // provider disabled mid-flight; every caller still has a fallback
+  }
+}
+export function stopLocationKeeper(): void {
+  keeper?.remove();
+  keeper = null;
+}

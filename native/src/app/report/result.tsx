@@ -1637,7 +1637,11 @@ export default function ReportResult() {
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'padding'} className="flex-1">
         {step === 'unit' ? (
-          <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
+          /* keyboardShouldPersistTaps: the search field lives on this step, so
+             with the keyboard up a first tap on a state/LGA/ward chip was spent
+             DISMISSING the keyboard and never reached the chip — "state
+             selection doesn't respond". The votes step already had this. */
+          <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-1 text-xl font-bold text-ink">
               {contests.length ? contests[0].election : 'Loading election…'}
             </Text>

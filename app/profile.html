@@ -31,6 +31,9 @@
     /* Password modal (native's pattern). Fixed backdrop + centred card; the
        card caps at 420px and inherits the page's --surface so it holds up in
        both themes. */
+    /* display beats the UA's [hidden] rule — without this the modal shows on
+       load and Cancel does nothing. Same trap as #media-cam in incidents.html. */
+    .pw-modal-back[hidden] { display: none; }
     .pw-modal-back {
       position: fixed; inset: 0; z-index: 60; display: flex;
       align-items: center; justify-content: center; padding: 20px;
@@ -123,6 +126,8 @@
           </div>
           <label for="pw-new">New password <span class="hint">(min 8 characters)</span></label>
           <input id="pw-new" type="password" autocomplete="new-password" />
+          <label for="pw-new2">Confirm new password</label>
+          <input id="pw-new2" type="password" autocomplete="new-password" />
           <p class="hint" id="pw-msg"></p>
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
             <button id="btn-pw-cancel" class="secondary" style="width:auto">Cancel</button>
@@ -238,7 +243,7 @@
     // Modal open/close. Fields and message reset on open so a previous attempt's
     // error never greets the next one; backdrop tap and Escape both close.
     const pwOpen = () => {
-      $('pw-new').value = ''; $('pw-current').value = ''; $('pw-msg').textContent = '';
+      $('pw-new').value = ''; $('pw-new2').value = ''; $('pw-current').value = ''; $('pw-msg').textContent = '';
       $('pw-modal').hidden = false;
       (hasPassword ? $('pw-current') : $('pw-new')).focus();
     };
@@ -252,13 +257,14 @@
       const pw = $('pw-new').value;
       $('pw-msg').textContent = '';
       if (pw.length < 8) { $('pw-msg').textContent = 'Use at least 8 characters.'; return; }
+      if (pw !== $('pw-new2').value) { $('pw-msg').textContent = 'Passwords do not match.'; $('pw-new2').focus(); return; }
       const payload = { password: pw };
       if (hasPassword) payload.currentPassword = $('pw-current').value;
       const { status, body } = await api('/api/observers/set-password', {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
       });
       if (status !== 200) { $('pw-msg').textContent = body.hint || body.error || 'Failed.'; return; }
-      $('pw-new').value = ''; $('pw-current').value = '';
+      $('pw-new').value = ''; $('pw-new2').value = ''; $('pw-current').value = '';
       hasPassword = true;
       $('pw-current-wrap').hidden = false;
       $('btn-pw-open').textContent = 'Change password';
@@ -281,6 +287,6 @@
     load();
   </script>
   <script src="device.js"></script>
-  <script src="menu.js?v=139"></script>
+  <script src="menu.js?v=140"></script>
 </body>
 </html>

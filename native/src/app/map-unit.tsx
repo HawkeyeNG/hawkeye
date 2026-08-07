@@ -377,6 +377,10 @@ export default function MapUnit() {
    *  screen would like to have searched. */
   const [searched, setSearched] = useState<Searched | null>(null);
   const [browse, setBrowse] = useState(false);
+  /** True while the observer is typing a search — see the note at UnitSearch. */
+  const [searchTyping, setSearchTyping] = useState(false);
+  /** Engaging search OR the register drill hides the map + nearby list above. */
+  const searchBusyHiding = searchTyping || browse;
   /** Set only when the last GPS failure is one the settings app has to fix
    *  (location off, or permission blocked with no dialog left). A timeout must
    *  never raise it — permission is granted in that case, and saying otherwise
@@ -989,6 +993,10 @@ export default function MapUnit() {
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 32 }}
+        /* Same first-tap-eaten bug fec1235 fixed on result/collation: the search
+           field lives on this screen, so without this the first tap on a state
+           chip only dismissed the keyboard. This screen was missed then. */
+        keyboardShouldPersistTaps="handled"
       >
         {/* The instruction stays visible — it is what to do, not why. */}
         <View className="flex-row items-center pb-3">
@@ -1140,7 +1148,7 @@ export default function MapUnit() {
             failure line above already says the lookup died, and the register
             browser below is the way out. report/result.tsx runs the identical
             pair of lookups and takes the identical gate. */}
-        {fix && searched && mapAvailable() ? (
+        {fix && searched && mapAvailable() && !searchBusyHiding ? (
           <View className="pt-3">
             <UnitMap
               center={{ lat: fix.lat, lng: fix.lng }}
@@ -1177,7 +1185,7 @@ export default function MapUnit() {
           </View>
         ) : null}
 
-        {nearby.length ? (
+        {nearby.length && !searchBusyHiding ? (
           <View className="pt-3">
             {nearby.map((u) => (
               <UnitRow key={u.pu_code} u={u} />
@@ -1186,8 +1194,12 @@ export default function MapUnit() {
         ) : null}
 
         {/* Search by name/code, above the cascade — knowing the unit's name but
-            not its ward is the case the cascade cannot serve. */}
-        <UnitSearch<Unit> onSelect={(u) => setUnit(u)} />
+            not its ward is the case the cascade cannot serve. While it (or the
+            register drill) is in use, the map and the nearby list above give
+            way: typing means "my unit is NOT in what you showed me", so keeping
+            them pushes the observer's actual task off-screen. Clearing the
+            search (or closing the drill) brings them straight back. */}
+        <UnitSearch<Unit> onSelect={(u) => setUnit(u)} onEngaged={setSearchTyping} />
         <Pressable
           onPress={() => setBrowse((b) => !b)}
           className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"

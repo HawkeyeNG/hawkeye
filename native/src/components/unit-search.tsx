@@ -31,15 +31,20 @@ export function UnitSearch<T extends Row>({
   state,
   lga,
   placeholder = 'Name, ward or unit number',
+  onEngaged,
 }: {
   onSelect: (unit: T) => void;
   /** Optional narrowing when the caller already knows where it is. */
   state?: string | null;
   lga?: string | null;
   placeholder?: string;
+  /** Fires when the observer starts/stops using this search (typing), so the
+   *  host screen can clear space — e.g. map-unit hides the map + nearby list. */
+  onEngaged?: (active: boolean) => void;
 }) {
   const ui = useUi();
   const [q, setQ] = useState('');
+  useEffect(() => { onEngaged?.(q.trim().length > 0); }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
   const [rows, setRows] = useState<T[] | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);

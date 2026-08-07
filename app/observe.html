@@ -189,8 +189,15 @@
            perfectly well; the sheet does not. Step order does not touch the
            signature — that is one sign over the whole payload at submit.
            See docs/REPORT-FLOW-CAPTURE-FIRST.md. -->
-      <div class="card">
-        <h2><span class="step-no">1</span> Photograph the evidence</h2>
+      <!-- A <details> so the card can fold itself once BOTH photos are in
+           (app.js updateSubmitState): with capture done, two big photo slots
+           push step 2 below the fold and nothing says more work remains. The
+           summary keeps the ✓ and stays tappable for review/retake. -->
+      <details class="card" id="photo-fold" open>
+        <summary style="cursor:pointer;list-style:none">
+          <h2 style="display:inline-block;margin:0"><span class="step-no">1</span> Photograph the evidence</h2>
+          <span id="photo-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
         <p class="hint">Photos are taken live at the unit — no gallery uploads. Each is
         time- and location-stamped. Take both now; the rest can be filled in from
         somewhere safer.</p>
@@ -218,7 +225,7 @@
           <img id="preview-venue" alt="Polling venue preview" hidden />
           <button id="btn-cam-venue" class="secondary">Take photo</button>
         </div>
-      </div>
+      </details>
 
       <!-- STEP 2 — ONE CONFIRM CARD. Unit, election and counts were three
            separate cards, which read as three more jobs stacked under the
@@ -330,7 +337,7 @@
   <!-- Tier A of the unit ladder: reads the delimitation code off the OCR'd
        sheet. Must load before app.js, which calls into it. -->
   <script src="pu-code.js?v=2"></script>
-  <script src="app.js?v=132" defer></script>
+  <script src="app.js?v=133" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="menu.js?v=140" defer></script>
 </body>

@@ -1148,9 +1148,31 @@ async function resolveUnitFromSheet(text) {
     hit = await P.resolveUnitFromText(text, { resolve, fix, maxRepair: 0 }) // exact, may use network
       || await P.resolveUnitFromText(text, { resolve: local, fix });        // repairs, cache only
   } catch { return; }
-  if (!hit || hit.confidence !== 'high' || selectedPu) return;
-  selectUnit(hit.unit);
-  $('locate-status').textContent = `Unit read from the sheet: ${hit.unit.name}. Tap another if this is wrong.`;
+  // ASK, DO NOT ASSUME. Auto-selecting was silent in both directions: when it
+  // worked nobody could tell it had, and when it read the wrong unit it was
+  // already chosen. Offer what it read — code AND unit — and let the observer
+  // say yes. Any confidence is worth offering; only SELECTING needed the bar.
+  if (!hit || selectedPu) return;
+  const u = hit.unit;
+  const box = $('pu-list');
+  if (!box) return;
+  const where = [u.ward, u.lga, u.state].filter(Boolean).join(', ');
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.cssText = 'border:2px solid var(--green);margin:0 0 10px';
+  card.innerHTML = `<p style="margin:0 0 6px;font-weight:700">Is this your polling unit?</p>
+    <p style="margin:0 0 2px"><strong>${u.name}</strong></p>
+    <p class="hint" style="margin:0 0 10px">${u.pu_code}${where ? ` · ${where}` : ''} · read from the sheet${hit.source === 'repaired' ? ' (one digit corrected)' : ''}</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="pu-yes" style="flex:1;min-width:120px">Yes, use this unit</button>
+      <button class="pu-no secondary" style="flex:1;min-width:100px">No, choose another</button>
+    </div>`;
+  card.querySelector('.pu-yes').onclick = () => { card.remove(); selectUnit(u); };
+  card.querySelector('.pu-no').onclick = () => {
+    card.remove();
+    $('locate-status').textContent = 'Pick your unit below, or search for it.';
+  };
+  box.prepend(card);
 }
 
 window.addEventListener('hawkeye-sheet-ocr', (e) => {

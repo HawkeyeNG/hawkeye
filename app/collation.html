@@ -93,7 +93,9 @@
   </header>
 <main class="wrap">
     <h1>Report a Collation Result</h1>
-    <p class="lede">At a collation centre? Photograph the announced form and enter its totals.<button
+    <!-- The lede restated the h1 and the first step card. Only the ⓘ carried
+         anything new, so that is all that remains. -->
+    <p class="lede" style="margin-top:-6px"><button
       class="info-i" data-info-title="Why collation forms matter"
       data-info="Collation happens at three levels: ward (EC8B), LGA (EC8C) and state (EC8D). Hawkeye checks each form's totals against the polling-unit sheets underneath it, so a party's number that shrinks on the way up is flagged publicly — that gap between the units and the declared total is where a count is most often changed."></button></p>
 
@@ -327,20 +329,11 @@
       setStepDone(3, true, `✓ ${n} part${n === 1 ? 'y' : 'ies'} entered`);
     });
 
-    // WARM THE SCANNER. DocScanner was wired here all along, but its OpenCV
-    // worker (~13 MB) only started inside start() — i.e. when the camera opened —
-    // so it was never ready and the sheet step fell back to a plain viewport
-    // with no edge detection. Same fix as the result flow. Web only: the native
-    // shell uses ML Kit and the build strips opencv.js.
-    if (!(window.HAWKEYE && window.HAWKEYE.native) && window.DocScanner && DocScanner.warm) {
-      try { DocScanner.warm(); } catch { /* falls back to manual framing */ }
-    }
-
+    // The scanner warm-up lives in capture.js and is already called above.
     $('btn-cam-sheet').onclick = () => openCamera('sheet');
     $('btn-cam-venue').onclick = () => openCamera('venue');
     // btn-capture / btn-cancel-camera are wired inside capture.js — the camera
     // owns its own controls now, on both pages.
-    $('btn-capture').onclick = doCapture;
 
     function scopeOk() {
       const lv = $('sel-level').value;

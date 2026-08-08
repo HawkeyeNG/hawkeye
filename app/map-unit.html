@@ -69,14 +69,13 @@
   </header>
 <main class="wrap">
     <h1>Map a Polling Unit</h1>
-    <p class="lede">Standing <strong>at a polling unit</strong>, capture its GPS position.<button
-      class="info-i" data-info-title="Why mapping units matters"
-      data-info="Most polling units have no confirmed location on record, so results reported from them cannot be location-checked. When a few independent people map the same unit, its location is confirmed and every result filed there on election day can be matched against it."></button></p>
+    <!-- The lede said what the h1 says. Its ⓘ carried the only new information,
+         so it moves onto the stats line — which is a sentence worth reading and
+         had no explanation of its own. -->
     <p id="stats" class="scope-note"></p>
 
     <section class="card">
       <h2>Polling unit map &amp; locator</h2>
-      <p class="hint">Search your ward or tap 📍 Near me, then tap an orange unit to map it.</p>
       <div class="map-tools">
         <input id="ward-search" type="text" placeholder="Search a ward or LGA…" />
         <button id="btn-search" class="secondary">Find</button>
@@ -143,7 +142,15 @@
 
     async function stats() {
       const s = await fetch('/api/mapping/stats').then((r) => r.json());
-      $('stats').textContent = `${s.verified.toLocaleString()} of ${s.total.toLocaleString()} units have a verified location · ${s.crowdMapped} crowd-mapped so far`;
+      // Ends in a full stop, with the ⓘ that used to sit on the deleted lede
+      // inline after it — the stats line is the sentence that actually wants
+      // explaining ("why does this number matter?").
+      $('stats').textContent = `${s.verified.toLocaleString()} of ${s.total.toLocaleString()} units have a verified location · ${s.crowdMapped} crowd-mapped so far.`;
+      const i = document.createElement('button');
+      i.className = 'info-i';
+      i.dataset.infoTitle = 'Why mapping units matters';
+      i.dataset.info = 'Most polling units have no confirmed location on record, so results reported from them cannot be location-checked. When a few independent people map the same unit, its location is confirmed and every result filed there on election day can be matched against it.';
+      $('stats').appendChild(i);
     }
     async function fill(sel, items, ph) { sel.innerHTML = `<option value="">${ph}</option>` + items.map((i) => `<option>${i}</option>`).join(''); sel.disabled = !items.length; }
 

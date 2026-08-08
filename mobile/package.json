@@ -11,6 +11,8 @@
     "open:ios": "cap open ios"
   },
   "dependencies": {
+    "@capacitor-mlkit/document-scanner": "^8.1.0",
+    "@capacitor-mlkit/text-recognition": "^8.1.0",
     "@capacitor/android": "^8.0.0",
     "@capacitor/app": "^8.0.0",
     "@capacitor/camera": "^8.0.0",
@@ -19,8 +21,7 @@
     "@capacitor/network": "^8.0.0",
     "@capacitor/preferences": "^8.0.0",
     "@capacitor/push-notifications": "^8.0.0",
-    "@capacitor-mlkit/document-scanner": "^8.1.0",
-    "@capacitor-mlkit/text-recognition": "^8.1.0"
+    "@capacitor/splash-screen": "^8.0.2"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",

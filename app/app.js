@@ -99,6 +99,48 @@ async function api(path, opts = {}) {
   const body = await res.json().catch(() => ({}));
   return { status: res.status, body };
 }
+/**
+ * ONE RETRY, AND A REAL DEADLINE — the rule native/src/app/report/result.tsx
+ * already applies, ported here rather than written a third time.
+ *
+ * A bare `await api()` has no timeout: /api/polling-units measures ~6.4 s from a
+ * good link, close enough to a mobile socket timeout that a slow election-day
+ * network can leave the promise pending forever. The rejection then escaped the
+ * click handler entirely, so "Looking up nearby units…" stayed on screen for the
+ * rest of the session with no error and no second chance.
+ *
+ * Never throws. Returns { status, body, error } — `error` set means the call did
+ * not complete, and it NAMES the failure, because "lookup_failed" could not be
+ * told apart from a timeout, a DNS failure or a 500.
+ */
+async function apiTry(path, { tries = 2, timeoutMs = 20000, ...opts } = {}) {
+  let err = '';
+  for (let i = 0; i < tries; i++) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), timeoutMs);
+    try {
+      return await api(path, { ...opts, signal: ctl.signal });
+    } catch (e) {
+      err = e && e.name === 'AbortError'
+        ? `timed out after ${Math.round(timeoutMs / 1000)}s`
+        : (e && e.message) || String(e);
+    } finally { clearTimeout(t); }
+  }
+  return { status: 0, body: {}, error: err || 'network unreachable' };
+}
+/**
+ * A blocking refusal, shown as a dialog. Reuses menu.js's info modal so there is
+ * one dialog implementation, and degrades to alert() if menu.js has not loaded
+ * (the shell is cached separately, so that is a real possibility) — a refusal
+ * must never fail silently, which is the whole reason it stopped being a line of
+ * text under the submit button.
+ */
+function notifyBlocked(title, body) {
+  if (window.HAWKEYE_MODAL) window.HAWKEYE_MODAL(title, body, '');
+  else alert(body);
+  const s = $('submit-status');
+  if (s) s.textContent = body; // still recorded in place for screen readers
+}
 let autoLocateRan = false;
 function show(screenId) {
   for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== screenId;
@@ -115,7 +157,9 @@ function show(screenId) {
   // submit — must not re-trigger a search the observer did not ask for.
   if (screenId === 'screen-submit' && !autoLocateRan && $('btn-locate')) {
     autoLocateRan = true;
-    $('btn-locate').textContent = 'Search near me again';
+    // The button is NOT renamed here. It used to read "Search near me again"
+    // before any search had run — offering to repeat something that had never
+    // happened once. The handler renames it after a search actually completes.
     setTimeout(() => $('btn-locate').onclick(), 0); // after this screen paints
   }
   // Mark the auth step so the app can strip its chrome: nothing in the shell
@@ -145,6 +189,15 @@ function getPosition() {
 // Capture-time fix: fast (accepts a <30 s old reading), falls back to the last
 // known fix — each photo gets GPS-stamped the moment it is taken.
 async function getCaptureFix() {
+  // A FIX THE KEEPER TOOK MOMENTS AGO IS AS GOOD AS ONE TAKEN NOW — the observer
+  // has not moved between the shutter and this line.
+  //
+  // This used to always ask for a fresh high-accuracy lock. Indoors that burns
+  // the entire 8 s timeout and then falls back to `lastFix` ANYWAY — the same
+  // value this returns immediately — so the shutter appeared dead for 5-7 s and
+  // step 1 could not fold until it resolved. It really was faster by a window:
+  // outdoors the lock returned quickly, indoors it always timed out.
+  if (lastFix && Date.now() - lastFix.timestamp < 30000) return lastFix;
   try {
     return await new Promise((resolve, reject) =>
       navigator.geolocation.getCurrentPosition(
@@ -383,7 +436,7 @@ function applySignInMode() {
   if (!IS_SIGNIN) return;
   authMode = 'password';
   const title = $('register-title');
-  if (title) title.textContent = 'Sign in';
+  if (title) title.textContent = 'Sign In';
   // "One number, one observer" is a sign-UP promise; a returning observer has
   // already made it.
   const lede = $('register-lede');
@@ -598,6 +651,10 @@ $('btn-auth').onclick = async () => {
     input.value = '';
     input.placeholder = 'Enter OTP';
     input.inputMode = 'numeric';
+    // The LABEL has to move with the field. It kept saying "Nigerian Mobile
+    // Number" over an input that now wants a code, which is the one thing on
+    // this screen the observer reads before typing.
+    if ($('auth-input-label')) $('auth-input-label').textContent = 'Enter OTP';
     $('btn-auth').textContent = 'Verify OTP';
     $('auth-reset').hidden = false;
     if ($('otp-resend')) $('otp-resend').hidden = false;
@@ -617,7 +674,7 @@ $('btn-auth').onclick = async () => {
   // (authMode 'password') sets nothing; it uses the existing password.
   const settingPw = authMode !== 'password';
   const newPw = settingPw && $('pw-opt-input') ? $('pw-opt-input').value : '';
-  if (settingPw && newPw.length < 8) return alert('Choose a password of at least 8 characters to finish — you will use it to sign in.');
+  if (settingPw && newPw.length < 8) return alert('Your password must be at least 8 characters.');
 
   if (authMode === 'password') {
     if (!input.value.trim()) return alert('Enter your phone number.');
@@ -679,9 +736,19 @@ $('btn-locate').onclick = async () => {
   if (!warm) {
     $('locate-status').textContent = `Location fixed (±${Math.round(accuracy)} m). Looking up nearby units…`;
   }
-  const { body } = warm
+  const r = warm
     ? { body: warm }
-    : await api(`/api/polling-units?lat=${lat}&lng=${lng}`);
+    : await apiTry(`/api/polling-units?lat=${lat}&lng=${lng}`);
+  // Every exit from here on leaves the observer somewhere usable — a named
+  // failure and an open register browser, never a status line that just stops.
+  if (r.error) {
+    $('locate-status').textContent =
+      `Could not look up nearby units — use "Browse the register" below. (${r.error})`;
+    $('browse-block').open = true;
+    $('btn-locate').textContent = 'Try Searching Near Me Again';
+    return;
+  }
+  const body = r.body;
   if (!body.units || body.units.length === 0) {
     $('locate-status').textContent =
       `No mapped polling unit within ${body.radiusM} m — use "Browse the register" below.`;
@@ -697,6 +764,8 @@ $('btn-locate').onclick = async () => {
     btn.onclick = () => selectUnit(u);
     $('pu-list').appendChild(btn);
   }
+  // A search has now genuinely run, so offering to repeat it is honest.
+  $('btn-locate').textContent = 'Search Near Me Again';
 };
 
 // ---------- locate: register browse (units without coordinates) ----------
@@ -713,27 +782,54 @@ if ($('pu-search-host') && window.puSearch) {
   window.puSearch.mount($('pu-search-host'), { onSelect: selectUnit });
 }
 
+/**
+ * REGISTER REFERENCE DATA IS IMMUTABLE — cache it in the browser.
+ *
+ * States, LGAs, wards and a ward's units do not change during an election, yet
+ * every visit re-fetched them, and the register browser walks them in sequence:
+ * states, then LGAs, then wards, then units. Measured against production each
+ * leg costs ~1-2.5 s, so picking a unit by hand meant four serial round trips
+ * before the first tap — which is why "select state" felt like it hung.
+ *
+ * Cached, only the first walk pays; after that the dropdowns fill instantly and
+ * keep working with no signal at all, which matters more on election day than
+ * any of this does on a desk. Falls through to the network on any storage error,
+ * and never caches a failed response.
+ */
+async function refApi(path) {
+  const key = 'hk_ref:' + path;
+  try {
+    const hit = localStorage.getItem(key);
+    if (hit) return { status: 200, body: JSON.parse(hit) };
+  } catch { /* unreadable or full — just fetch */ }
+  const r = await apiTry(path);
+  if (!r.error && r.body) {
+    try { localStorage.setItem(key, JSON.stringify(r.body)); } catch { /* quota — fine */ }
+  }
+  return r;
+}
+
 $('browse-block').addEventListener('toggle', async () => {
   if ($('browse-block').open && $('sel-state').options.length <= 1) {
-    const { body } = await api('/api/register/states');
+    const { body } = await refApi('/api/register/states');
     fillSelect($('sel-state'), body, '— select state —');
   }
 });
 $('sel-state').onchange = async () => {
   $('register-units').innerHTML = '';
   fillSelect($('sel-ward'), [], '— select —');
-  const { body } = await api(`/api/register/lgas?state=${encodeURIComponent($('sel-state').value)}`);
+  const { body } = await refApi(`/api/register/lgas?state=${encodeURIComponent($('sel-state').value)}`);
   fillSelect($('sel-lga'), body, '— select LGA —');
 };
 $('sel-lga').onchange = async () => {
   $('register-units').innerHTML = '';
-  const { body } = await api(
+  const { body } = await refApi(
     `/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`,
   );
   fillSelect($('sel-ward'), body, '— select ward —');
 };
 $('sel-ward').onchange = async () => {
-  const { body } = await api(
+  const { body } = await refApi(
     `/api/register/units?state=${encodeURIComponent($('sel-state').value)}` +
       `&lga=${encodeURIComponent($('sel-lga').value)}&ward=${encodeURIComponent($('sel-ward').value)}`,
   );
@@ -841,7 +937,21 @@ async function prepareReportUI() {
       : `<span class="party-mark mono">${p.code.slice(0, 3)}</span>`;
     row.innerHTML = `<span class="party-label">${mark}<span><strong>${p.code}</strong><br /><small>${p.name}</small></span></span>
       <input type="number" min="0" step="1" inputmode="numeric" placeholder="0" data-party="${p.code}" />`;
+    row.dataset.q = `${p.code} ${p.name}`.toLowerCase();
     wrap.appendChild(row);
+  }
+  // Filter, don't scroll. A row with a COUNT ALREADY IN IT is never hidden:
+  // filtering is a way to find a party, not a way to lose a number you typed.
+  const filter = $('vote-filter');
+  if (filter) {
+    filter.value = '';
+    filter.oninput = () => {
+      const q = filter.value.trim().toLowerCase();
+      for (const row of wrap.querySelectorAll('.vote-row')) {
+        const typed = row.querySelector('input').value !== '';
+        row.hidden = !!q && !typed && !row.dataset.q.includes(q);
+      }
+    };
   }
   // Warm up the web OCR engine (~6 MB one-time download) so the read-back is
   // seconds, not half a minute, by the time the sheet is captured. Deliberately
@@ -916,7 +1026,7 @@ function selectUnit(u) {
   if (changed) { stepDone[2] = false; stepDone[3] = false; $('race-fold-state').textContent = ''; $('counts-fold-state').textContent = ''; }
   // Choosing a unit IS step 2's confirmer: it folds and step 3 opens.
   stepDone[1] = false; // force the transition so the fold/advance fires again
-  setStepDone(1, true, `✓ ${u.name}`);
+  setStepDone(1, true, `✔ ${u.name}`);
   $('race-fold').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -985,11 +1095,21 @@ function setStepDone(i, done, label) {
   if (!done) for (let j = i + 1; j < stepDone.length; j++) stepDone[j] = false;
   const el = $(STEP_FOLDS[i]);
   const state = $(`${STEP_FOLDS[i]}-state`.replace('-fold-state', '-fold-state'));
-  if (state) state.textContent = done ? (label || '✓ Done — tap to edit') : '';
+  // The "— tap to edit" tail is gone: the summary's ::after now says what the tap
+  // does ("Tap to review" / "Tap to close"), on the heading line, in both states.
+  if (state) state.textContent = done ? (label || '✔ Done') : '';
   if (done && !was && el) {
     el.open = false;
     const next = $(STEP_FOLDS[i + 1]);
-    if (next) next.open = true;
+    if (next) {
+      next.open = true;
+      // SCROLL TO THE STEP THAT JUST OPENED. Folding a card above the viewport
+      // shortens the page under the observer, leaving them looking at whatever
+      // happens to land where they were — usually the "Search near me again"
+      // button, which reads as if nothing happened. Deferred a frame so the
+      // fold has actually collapsed before the position is measured.
+      requestAnimationFrame(() => next.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
   }
   stepLock();
 }
@@ -997,12 +1117,12 @@ function setStepDone(i, done, label) {
 function updateSubmitState() {
   for (const t of ['sheet', 'venue']) {
     const badge = $(`status-${t}`);
-    badge.textContent = shots[t] ? 'Captured ✓' : 'Required';
+    badge.textContent = shots[t] ? 'Captured ✔' : 'Required';
     badge.classList.toggle('done', Boolean(shots[t]));
   }
   // Step 1's confirmer is the second photo landing.
   const both = Boolean(shots.sheet && shots.venue);
-  if (both !== stepDone[0]) setStepDone(0, both, '✓ Both captured — tap to review');
+  if (both !== stepDone[0]) setStepDone(0, both, '✔ Both captured');
   // Photos AND a unit gate the button. The unit is part of this now because it
   // is chosen on this screen rather than before reaching it — without it the
   // button would look ready while submit() silently returned on !selectedPu.
@@ -1088,7 +1208,12 @@ async function webOcrSheet(blob) {
     const text = data.text || '';
     const tokens = text.match(/\d+/g) || [];
     if (!tokens.length) { ocrHint('📖 Could not read numbers off the photo — enter the counts from your sheet.'); return; }
-    window.dispatchEvent(new CustomEvent('hawkeye-sheet-ocr', { detail: { text, tokens, lines, at: Date.now() } }));
+    // Mirror native.js: park the read on window.HAWKEYE so the exact recognised
+    // string can be inspected after the fact on web too, instead of being
+    // reconstructed from guesses when the parser misses.
+    const read = { text, tokens, lines, at: Date.now() };
+    window.HAWKEYE && (window.HAWKEYE.sheetOcr = read);
+    window.dispatchEvent(new CustomEvent('hawkeye-sheet-ocr', { detail: read }));
   } catch {
     // best-effort — never blocks capture, but don't leave "reading…" up forever
     try { ocrHint('📖 Could not read the photo here — enter the counts from your sheet.'); } catch { /* no inputs yet */ }
@@ -1152,10 +1277,21 @@ async function resolveUnitFromSheet(text) {
   // worked nobody could tell it had, and when it read the wrong unit it was
   // already chosen. Offer what it read — code AND unit — and let the observer
   // say yes. Any confidence is worth offering; only SELECTING needed the bar.
-  if (!hit || selectedPu) return;
+  const box = $('pu-sheet-card') || $('pu-list');
+  if (!box || selectedPu) return;
+  box.innerHTML = '';
+  // SAY WHAT HAPPENED. Failing silently here was indistinguishable from the OCR
+  // never having run at all, which is exactly what made this cost several rounds
+  // of guessing at the parser instead of reading one line on screen.
+  if (!hit) {
+    let codes = [];
+    try { codes = P.extractCandidates(text); } catch { /* report as unread */ }
+    box.innerHTML = codes.length
+      ? `<p class="hint">Read <strong>${codes[0]}</strong> off the sheet, but no unit with that code was found — pick yours below.</p>`
+      : '<p class="hint">Could not read the unit code off the sheet — pick yours below.</p>';
+    return;
+  }
   const u = hit.unit;
-  const box = $('pu-list');
-  if (!box) return;
   const where = [u.ward, u.lga, u.state].filter(Boolean).join(', ');
   const card = document.createElement('div');
   card.className = 'card';
@@ -1258,16 +1394,30 @@ async function compressCapture(blob, maxDim, quality) {
 // that stays OCR-legible while pushing capacity toward ~10k observers); venue
 // smaller (1280 px / q0.72). Returns false if the GPS fix failed.
 async function finalizeShot(target, blob) {
+  // SHOW THE PHOTO FIRST. The preview used to be set only after compression AND
+  // the GPS await, so between the shutter and the fix there was nothing on screen
+  // at all — the app looked frozen, and on a slow indoor lock that lasted several
+  // seconds. Painting the raw frame costs nothing and is replaced below by the
+  // compressed bytes, which are the ones actually signed and uploaded.
+  const img = $(`preview-${target}`);
+  const raw = URL.createObjectURL(blob);
+  img.src = raw;
+  img.hidden = false;
+
   blob = await compressCapture(blob, target === 'sheet' ? 1500 : 1280, target === 'sheet' ? 0.76 : 0.72);
   const fix = await getCaptureFix();
   if (!fix) {
+    // Nothing was stored, so the optimistic preview has to come back off.
+    img.hidden = true;
+    img.removeAttribute('src');
+    URL.revokeObjectURL(raw);
     alert('No GPS fix — photos must be location-stamped. Move to open sky and retake.');
     return false;
   }
   shots[target] = { blob, capturedAt: Date.now(), lat: fix.coords.latitude, lng: fix.coords.longitude };
   if (target === 'sheet') webOcrSheet(blob); // fire-and-forget read-back (no-op in the app shell — ML Kit covers it there)
-  const img = $(`preview-${target}`);
   img.src = URL.createObjectURL(blob);
+  URL.revokeObjectURL(raw);
   img.hidden = false;
   $(`btn-cam-${target}`).textContent = 'Retake photo';
   updateSubmitState();
@@ -1283,7 +1433,12 @@ $('btn-submit').onclick = async () => {
     return;
   }
   if (selectedContestClosed()) {
-    $('submit-status').textContent = ERRORS.reporting_not_open;
+    // A MODAL, NOT A LINE UNDER THE BUTTON. This is not "check that field" — it
+    // is the whole submission being refused for a reason no amount of editing
+    // fixes today, and the observer has just photographed a sheet and typed a
+    // tally. A status line below the fold is missable enough that it reads as
+    // the button doing nothing.
+    notifyBlocked('Reporting is not open yet', ERRORS.reporting_not_open);
     return;
   }
   const auto = [...document.querySelectorAll('#vote-inputs input.ocr-filled')]
@@ -1469,7 +1624,7 @@ $('sel-contest').onchange = () => {
   updateScopeNotice();
   const sel = $('sel-contest');
   const label = sel.options[sel.selectedIndex]?.textContent || '';
-  setStepDone(2, Boolean(sel.value), `✓ ${label}`);
+  setStepDone(2, Boolean(sel.value), `✔ ${label}`);
 };
 // Counts have no natural confirmer, so this button is it.
 $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
@@ -1480,7 +1635,7 @@ $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
   // Any OCR-proposed value the observer has now looked at is theirs.
   document.querySelectorAll('#vote-inputs input.ocr-filled')
     .forEach((i) => i.classList.remove('ocr-filled'));
-  setStepDone(3, true, `✓ ${n} part${n === 1 ? 'y' : 'ies'} entered`);
+  setStepDone(3, true, `✔ ${n} part${n === 1 ? 'y' : 'ies'} entered`);
 });
 if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) navigator.serviceWorker.register('sw.js');
 (async () => {

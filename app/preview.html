@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Hawkeye — Election-Day Map Preview (mock data)</title>
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
-  <script src="native.js?v=104"></script>
+  <link rel="stylesheet" href="styles.css?v=145" />
+  <script src="native.js?v=105"></script>
   <style>
     /* Awaiting reports = neutral grey. A region that has reported takes its
        leading party's OWN colour: one pale green for every winner told the
@@ -26,7 +26,7 @@
     <h1>Presidential Map — Election-Day Preview</h1>
     <p class="unofficial" style="background:var(--tint-danger);border-left:6px solid #b3261e;padding:12px">MOCK DATA — random winners, for layout preview only. On election day each state fills with the leading party's official emblem as reports arrive.</p>
     <div class="card"><div id="map">Loading…</div></div>
-    <button class="secondary" onclick="draw()">Randomise winners</button>
+    <button class="secondary" onclick="draw()">Randomise Winners</button>
   </main>
   <script>
     // Same palette as the seat arch on political.html — one party, one colour,

@@ -1120,8 +1120,11 @@ export default function ReportIncident() {
               ) : (
                 <>
                   <Feather name="crosshair" size={17} color={BRAND.gold} />
+                  {/* A FINISHED search, not a started one: autoNearRan flips on
+                      kick-off, so this offered to search "again" before it had
+                      ever succeeded once. Mirrors result.tsx. */}
                   <Text className="pl-2 text-base font-bold text-hawk-gold">
-                    {autoNearRan ? 'Search near me again' : 'Find units near me'}
+                    {nearby.length || nearLine ? 'Search near me again' : 'Find units near me'}
                   </Text>
                 </>
               )}

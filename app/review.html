@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
-  <script src="native.js?v=104"></script>
+  <link rel="stylesheet" href="styles.css?v=145" />
+  <script src="native.js?v=105"></script>
   <style>
     .tabs { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
     .tab { border: 1px solid var(--border); background: var(--card); padding: 6px 14px; border-radius: 999px; cursor: pointer; font-weight: 700; font-size: 0.9rem; }
@@ -86,14 +86,14 @@
       <h1>Reach</h1>
       <div id="stats" class="statgrid"><p class="empty">Loading…</p></div>
       <details id="obs-wrap" style="margin-top:10px">
-        <summary style="cursor:pointer;font-weight:700">Observer roll</summary>
+        <summary style="cursor:pointer;font-weight:700">Observer Roll</summary>
         <p class="meta">Phone hashes are truncated. They are one-way, but Nigerian mobile
           numbers are a small enough space to brute-force offline, and these figures get
           screenshotted — a 12-character prefix identifies a row without carrying that risk.</p>
         <div id="obs-list"><p class="empty">Loading…</p></div>
       </details>
 
-      <h1 style="margin-top:34px">Incident review</h1>
+      <h1 style="margin-top:34px">Incident Review</h1>
       <div class="tabs" id="tabs">
         <span class="tab on" data-s="pending">Pending <b id="c-pending"></b></span>
         <!-- Reviewed incidents are done with; they are reference, not a queue.
@@ -101,7 +101,7 @@
              rather than an ever-growing archive of settled cases. -->
         <label class="seen">Reviewed
           <select id="inc-seen">
-            <option value="">— pick —</option>
+            <option value="">— Pick —</option>
             <option value="published">Published</option>
             <option value="rejected">Rejected</option>
           </select>
@@ -110,7 +110,7 @@
       </div>
       <div id="list"><p class="empty">Loading…</p></div>
 
-      <h1 style="margin-top:34px">Label review</h1>
+      <h1 style="margin-top:34px">Label Review</h1>
       <p class="meta">Spot-check the counts each scorer typed against the sheet itself (tap a photo for full size).</p>
       <div class="tabs" id="set-tabs">
         <span class="tab on" data-set="3">Derek <b id="s3"></b></span>

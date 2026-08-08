@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
-  <script src="native.js?v=104"></script>
+  <link rel="stylesheet" href="styles.css?v=145" />
+  <script src="native.js?v=105"></script>
   <style>
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e6e6e5; vertical-align: top; }
@@ -72,20 +72,20 @@
     <p class="hint" id="status" style="margin-top:6px"></p>
 
     <div class="card">
-      <h2>Verify a single race</h2>
+      <h2>Verify a Single Race</h2>
       <p class="hint">Check one race's paper trail on its own.<button class="info-i"
         data-info-title="Verifying a single race"
         data-info="Every anchor batches every race — Presidential, and each Senate, House, Governorship and State Assembly race — into one Merkle root published to Rekor. Verifying one race folds only that race's branch, in your own browser, without replaying every other race or trusting us."></button></p>
       <div id="race-anchor-info" class="meta">Loading latest anchor…</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0">
         <select id="race-select" aria-label="Select a race to verify"></select>
-        <button id="btn-verify-race">🔎 Verify this race</button>
+        <button id="btn-verify-race">🔎 Verify This Race</button>
       </div>
       <p id="race-result" class="status" role="status"></p>
     </div>
 
     <div class="card">
-      <h2>Ledger entries</h2>
+      <h2>Ledger Entries</h2>
       <p class="hint">Newest first. Each row's evidence photos are public, content-addressed files.</p>
       <div id="rows"></div>
     </div>
@@ -221,6 +221,6 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=140"></script>
+  <script src="menu.js?v=142"></script>
 </body>
 </html>

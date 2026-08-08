@@ -8,7 +8,7 @@
   <title>Hawkeye — TikTok Poster (admin)</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
+  <link rel="stylesheet" href="styles.css?v=145" />
   <style>
     .box { max-width: 640px; }
     label { display: block; font-weight: 700; margin: 12px 0 4px; }
@@ -25,7 +25,7 @@
 <body>
   <header class="gov-header"><div class="wrap brand-row">
     <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
-      <div class="brand-text"><strong>HAWKEYE</strong><span>TikTok Poster (admin)</span></div></a>
+      <div class="brand-text"><strong>HAWKEYE</strong><span>TikTok Poster (Admin)</span></div></a>
   </div></header>
 
   <main class="wrap box">
@@ -34,14 +34,14 @@
     Content Posting API. Before the app is audited, TikTok only allows <strong>SELF_ONLY</strong>
     (private) posts and the video URL's domain must be verified in the developer portal.</p>
 
-    <label for="secret">Admin passphrase</label>
+    <label for="secret">Admin Passphrase</label>
     <div class="row"><input id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
       <button id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
 
     <div id="conn" class="status info">Checking connection…</div>
     <div class="row">
-      <button id="connect" class="secondary" style="width:auto">🔗 Connect / re-connect TikTok</button>
-      <button id="check" class="secondary" style="width:auto">🩺 Check account (diagnostics)</button>
+      <button id="connect" class="secondary" style="width:auto">🔗 Connect / Re-connect TikTok</button>
+      <button id="check" class="secondary" style="width:auto">🩺 Check Account (Diagnostics)</button>
     </div>
     <pre id="diag" class="mono" style="white-space:pre-wrap;background:var(--tint);padding:10px;border-radius:8px" hidden></pre>
 
@@ -60,7 +60,7 @@
     <div id="result"></div>
   </main>
 
-  <script src="native.js?v=104"></script>
+  <script src="native.js?v=105"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const secret = () => localStorage.getItem('hawkeye_admin') || '';

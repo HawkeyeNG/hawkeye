@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
-  <script src="native.js?v=104"></script>
+  <link rel="stylesheet" href="styles.css?v=145" />
+  <script src="native.js?v=105"></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
     /* Stears-style: regions awaiting reports are neutral grey; reporting regions green-tinted */
@@ -176,7 +176,7 @@
     </style>
 
     <div class="card map-card">
-      <h2 id="map-title">Leading party by state</h2>
+      <h2 id="map-title">Leading Party by State</h2>
       <!-- Rewritten by refresh() to match the race's own division (state / LGA /
            district / constituency); the static text is only the first-paint value. -->
       <!-- The explainer line above the map is gone: the legend directly below it
@@ -192,19 +192,19 @@
     </div>
 
     <div class="card">
-      <h2>Data at a glance</h2>
+      <h2>Data at a Glance</h2>
       <div id="glance" class="glance"><p class="meta">Charts appear as soon as reports arrive.</p></div>
     </div>
 
     <div class="card" id="gaps-card" hidden>
       <!-- Both rewritten by loadGaps() — the noun depends on the contest's scope. -->
-      <h2 id="gaps-title">Help cover these states</h2>
+      <h2 id="gaps-title">Help Cover These States</h2>
       <p class="hint" id="gaps-hint">These states have no reports yet for this election. Voting or observing in one? Be the first. <a href="observe.html?intent=observe">Become an observer →</a></p>
       <div id="gaps" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
     </div>
 
     <div class="card">
-      <h2>Party totals</h2>
+      <h2>Party Totals</h2>
       <div class="table-wrap">
         <table>
           <thead>
@@ -692,6 +692,6 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=140"></script>
+  <script src="menu.js?v=142"></script>
 </body>
 </html>

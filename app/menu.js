@@ -356,7 +356,12 @@
   // so all pages get it without touching 25 files.
   document.querySelectorAll('.crest').forEach((c) => {
     if (!/[\u{1F300}-\u{1FAFF}]/u.test(c.textContent)) return;
-    c.innerHTML = '<img src="logo-crest.svg?v=100" alt="" width="30" height="30" style="display:block" />';
+    // THE SAME ARTWORK NATIVE USES (native/assets/images/icon.png == icon-192.png).
+    // logo-crest.svg is drawn in dark greens for light backgrounds, which is why
+    // web needed a white plate behind it and native did not — the plate was the
+    // whole visual difference between the platforms. The icon carries its own
+    // background, so it sits on the header exactly as it does in the app.
+    c.innerHTML = '<img src="icon-192.png?v=hawk2" alt="" width="30" height="30" style="display:block;border-radius:7px" />';
   });
 
   // Bottom tab bar (mobile app pattern) — one raised center action, 5 slots,
@@ -483,6 +488,10 @@
       dlg.showModal();
       h.focus();
     };
+    // Exposed so a flow can raise the SAME dialog for a blocking condition —
+    // e.g. "reporting is not open yet" on submit — instead of a third modal
+    // implementation, or a status line under a button nobody scrolls back to.
+    window.HAWKEYE_MODAL = open;
     document.addEventListener('click', (e) => {
       const b = e.target && e.target.closest && e.target.closest('.info-i');
       if (!b) return;
@@ -600,7 +609,10 @@
   // Mascot trial: swap the emoji crest for the hawk mark on every page from
   // one place (pages keep the emoji as a no-JS fallback).
   for (const c of document.querySelectorAll('.crest')) {
-    c.innerHTML = '<img src="logo-crest.svg?v=100" alt="" style="width:36px;height:36px;display:block" />';
+    // APP-SHELL header (the Capacitor/tab-bar chrome) — same swap as the website
+    // header above, and it must use the same artwork or the two disagree. This is
+    // the one the phone actually shows.
+    c.innerHTML = '<img src="icon-192.png?v=hawk2" alt="" style="width:36px;height:36px;display:block;border-radius:8px" />';
   }
 
   // Accessibility: skip-to-content link, first in the tab order.

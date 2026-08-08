@@ -132,10 +132,22 @@ pollingUnitsRouter.get('/register/search', (req, res) => {
   if (state) { where.push('state = ?'); args.push(state); }
   if (lga) { where.push('lga = ?'); args.push(lga); }
 
-  const units = db
+  /**
+   * PREFIX FIRST, CONTAINS ONLY IF NEEDED.
+   *
+   * The contains-match below is a leading wildcard, which no index can serve, so
+   * it full-scans all 176,846 rows on every keystroke — 1.2-1.9s to first byte
+   * against production, on the one control an observer types into.
+   *
+   * Nearly every real search is the START of a unit name or a PU code, and that
+   * shape IS indexable (idx_pu_*_nocase in db.js). So try the seek first and
+   * only pay for the scan when the prefix genuinely finds nothing — a rare case
+   * that stays correct, just slow, instead of being slow every single time.
+   */
+  const runQuery = (clause, clauseArgs) => db
     .prepare(`
       SELECT * FROM polling_units
-      WHERE ${where.join(' AND ')}
+      WHERE ${clause}
       ORDER BY
         CASE WHEN pu_code = ? THEN 0
              WHEN name LIKE ? ESCAPE '\\' THEN 1
@@ -143,8 +155,16 @@ pollingUnitsRouter.get('/register/search', (req, res) => {
              ELSE 3 END,
         name
       LIMIT ?`)
-    .all(...args, q, pre, pre, limit)
+    .all(...clauseArgs, q, pre, pre, limit)
     .map((u) => ({ ...u, locationTier: tierOf(u) }));
+
+  const scoped = where.slice(1); // the state/lga filters, without the match term
+  const prefixWhere = ["(name LIKE ? ESCAPE '\\' OR pu_code LIKE ? ESCAPE '\\' OR ward LIKE ? ESCAPE '\\')", ...scoped]
+    .join(' AND ');
+  const prefixArgs = [pre, pre, pre, ...args.slice(3)];
+
+  let units = runQuery(prefixWhere, prefixArgs);
+  if (!units.length) units = runQuery(where.join(' AND '), args);
 
   res.json({ units, query: q, truncated: units.length === limit });
 });

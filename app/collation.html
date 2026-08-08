@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
-  <script src="native.js?v=104"></script>
+  <link rel="stylesheet" href="styles.css?v=145" />
+  <script src="native.js?v=105"></script>
   <style>
     /* Mirror of observe.html: the slot description spans the full card instead
        of being flexed beside the REQUIRED badge, which made it wrap to three
@@ -23,10 +23,9 @@
     /* Step cards — mirrors observe.html. Locked steps cannot be opened. */
     .step-card.locked { opacity: 0.5; }
     .step-card.locked > summary { pointer-events: none; cursor: default; }
-    .step-card.locked > summary::after { content: ' 🔒'; font-size: 0.85rem; }
     .step-card > summary::marker, .step-card > summary::-webkit-details-marker { display: none; }
-    .step-card:not(.locked) > summary::after { content: ' ▸'; color: var(--muted); }
-    .step-card[open]:not(.locked) > summary::after { content: ' ▾'; }
+    /* ::after affordance lives in styles.css now (see observe.html note) — a
+       page-local copy would win over the shared sheet. */
     .step-card.done > summary { color: var(--green); }
     /* THE CAMERA MUST FIT ONE SCREEN — Capture and Cancel are never scrolled to.
        styles.css caps the video with `#camera-overlay video { max-height:
@@ -49,6 +48,24 @@
     .party-mark { width: 26px; height: 26px; object-fit: contain; flex: none; }
     .party-label { display: flex; align-items: center; gap: 8px; }
     .party-label small { color: var(--muted); font-size: 0.72rem; }
+    /* Mirrors observe.html: one-line step receipt, and a capped preview so the
+       captured sheet does not push the next step off screen. */
+    .step-card > summary .hint {
+      display: block; margin-left: 0 !important;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    /* max-width IS LOAD-BEARING. `width: auto` alone let a landscape capture
+       render at its intrinsic width and spill out past the card — the photo
+       overflowing its slot on step 1. Cap both axes and let contain letterbox. */
+    /* [hidden] must beat the display below — see observe.html. Without this an
+       untaken slot shows a broken-image icon and its alt text. */
+    #preview-sheet[hidden], #preview-venue[hidden] { display: none; }
+    #preview-sheet, #preview-venue {
+      display: block; max-height: 26vh; max-width: 100%;
+      width: auto; height: auto; object-fit: contain;
+    }
+    .hot-dot { color: #35d07f; font-weight: 700; }
+    .vote-row[hidden] { display: none; }
     .vote-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
     .vote-row label { flex: 1; margin: 0; font-weight: 700; }
     .vote-row input { width: 110px; margin: 0; }
@@ -92,12 +109,9 @@
     </div>
   </header>
 <main class="wrap">
-    <h1>Report a Collation Result</h1>
-    <!-- The lede restated the h1 and the first step card. Only the ⓘ carried
-         anything new, so that is all that remains. -->
-    <p class="lede" style="margin-top:-6px"><button
-      class="info-i" data-info-title="Why collation forms matter"
-      data-info="Collation happens at three levels: ward (EC8B), LGA (EC8C) and state (EC8D). Hawkeye checks each form's totals against the polling-unit sheets underneath it, so a party's number that shrinks on the way up is flagged publicly — that gap between the units and the declared total is where a count is most often changed."></button></p>
+    <!-- No <h1> here: the app header already says "Report Collation Result", and
+         repeating it pushed the first real step below the fold. The ⓘ was the
+         only thing this block carried, so it moved onto the step-1 heading. -->
 
     <section id="need-auth" class="card" hidden>
       <p>To report a collation result, register your device first.</p>
@@ -111,7 +125,9 @@
            See docs/REPORT-FLOW-CAPTURE-FIRST.md. -->
       <details class="card step-card" id="photo-fold" open>
         <summary style="cursor:pointer;list-style:none">
-          <h2 style="display:inline-block;margin:0"><span class="step-no">1</span> Photograph the form and the venue</h2>
+          <h2 style="display:inline-block;margin:0"><span class="step-no">1</span> Capture the Evidence<button
+            class="info-i" data-info-title="Why collation forms matter"
+            data-info="Collation happens at three levels: ward (EC8B), LGA (EC8C) and state (EC8D). Hawkeye checks each form's totals against the polling-unit sheets underneath it, so a party's number that shrinks on the way up is flagged publicly — that gap between the units and the declared total is where a count is most often changed."></button></h2>
           <span id="photo-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
         <!-- Mirrors observe.html: one line. Live-only capture and the stamps are
@@ -122,14 +138,14 @@
             <small>The announced result form</small></div>
             <span class="slot-status" id="status-sheet">Required</span></div>
           <img id="preview-sheet" alt="" hidden />
-          <button id="btn-cam-sheet" class="secondary">Take photo</button>
+          <button id="btn-cam-sheet" class="secondary">Take Photo</button>
         </div>
         <div class="capture-slot">
           <div class="slot-head"><div><strong>Collation centre</strong>
             <small>The venue or surroundings</small></div>
             <span class="slot-status" id="status-venue">Required</span></div>
           <img id="preview-venue" alt="" hidden />
-          <button id="btn-cam-venue" class="secondary">Take photo</button>
+          <button id="btn-cam-venue" class="secondary">Take Photo</button>
         </div>
       </details>
 
@@ -142,7 +158,7 @@
           <h2 style="display:inline-block;margin:0"><span class="step-no">2</span> What does this form cover?</h2>
           <span id="scope-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
-        <label for="sel-level">Collation level</label>
+        <label for="sel-level">Collation Level</label>
         <select id="sel-level">
           <option value="ward">Ward — form EC8B</option>
           <option value="lga">Local Government — form EC8C</option>
@@ -150,7 +166,7 @@
         </select>
         <label for="sel-state">State</label>
         <select id="sel-state"><option value="">— select —</option></select>
-        <p class="hint" id="hot-note" hidden style="margin:4px 0 0">🟢 marks a state with an election open now or within 28 days.</p>
+        <p class="hint" id="hot-note" hidden style="margin:4px 0 0">States shown in <span class="hot-dot">green</span> have an election open now or within 28 days.</p>
         <div id="lga-block"><label for="sel-lga">Local Government Area</label>
           <select id="sel-lga" disabled><option value="">— select —</option></select></div>
         <div id="ward-block"><label for="sel-ward">Ward</label>
@@ -167,21 +183,23 @@
 
       <details class="card step-card" id="counts-fold" data-step="4">
         <summary style="cursor:pointer;list-style:none">
-          <h2 style="display:inline-block;margin:0"><span class="step-no">4</span> The announced totals</h2>
+          <h2 style="display:inline-block;margin:0"><span class="step-no">4</span> The Announced Totals</h2>
           <span id="counts-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
+        <input id="vote-filter" type="search" autocomplete="off" placeholder="Filter parties — name or code"
+               aria-label="Filter parties by name or code" style="margin-bottom:8px" />
         <div id="vote-inputs"></div>
-        <label for="form-serial">Form serial number <small>(optional)</small></label>
+        <label for="form-serial">Form Serial Number <small>(Optional)</small></label>
         <input id="form-serial" type="text" autocomplete="off" />
-        <button id="btn-verify-counts" class="secondary" style="margin-top:12px">Verify totals</button>
+        <button id="btn-verify-counts" class="secondary" style="margin-top:12px">Verify Totals</button>
       </details>
 
       <div class="card">
-        <h2><span class="step-no">5</span> Sign and submit</h2>
+        <h2><span class="step-no">5</span> Sign and Submit</h2>
         <p class="hint">Signed on this device. Once submitted it cannot be edited or withdrawn.<button
           class="info-i" data-info-title="What happens to this report"
           data-info="Your report is signed on this device and written to the public tamper-evident ledger, so it cannot be edited or withdrawn afterwards. It is checked against the polling-unit evidence in this area, and its fingerprint is published to the public Rekor transparency log in the next daily anchor."></button></p>
-        <button id="btn-submit" disabled>Sign &amp; submit collation report</button>
+        <button id="btn-submit" disabled>Sign &amp; Submit Collation Report</button>
         <p id="status" class="status" role="status"></p>
       </div>
     </section>
@@ -214,7 +232,7 @@
   <script src="scan.js?v=5"></script>
   <script src="capture.js?v=1"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=140"></script>
+  <script src="menu.js?v=142"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
@@ -300,7 +318,7 @@
       shots[target] = { blob, capturedAt: Date.now(), lat: fix.latitude, lng: fix.longitude, accuracy: fix.accuracy };
       const img = $(`preview-${target}`);
       img.src = URL.createObjectURL(blob); img.hidden = false;
-      $(`status-${target}`).textContent = 'Captured ✓';
+      $(`status-${target}`).textContent = 'Captured ✔';
       $(`status-${target}`).classList.add('done');
       $(`btn-cam-${target}`).textContent = 'Retake photo';
       updateSubmit();
@@ -326,7 +344,7 @@
       const n = [...document.querySelectorAll('#vote-inputs input')].filter((i) => i.value !== '').length;
       if (!n) { $('status').textContent = 'Enter at least one party total.'; return; }
       $('status').textContent = '';
-      setStepDone(3, true, `✓ ${n} part${n === 1 ? 'y' : 'ies'} entered`);
+      setStepDone(3, true, `✔ ${n} part${n === 1 ? 'y' : 'ies'} entered`);
     });
 
     // The scanner warm-up lives in capture.js and is already called above.
@@ -368,12 +386,18 @@
       stepDone[i] = done;
       if (!done) for (let j = i + 1; j < stepDone.length; j++) stepDone[j] = false;
       const st = $(`${STEP_FOLDS[i]}-state`);
-      if (st) st.textContent = done ? (label || '✓ Done — tap to edit') : '';
+      if (st) st.textContent = done ? (label || '✔ Done') : '';
       if (done && !was) {
         const el = $(STEP_FOLDS[i]);
         if (el) el.open = false;
         const next = $(STEP_FOLDS[i + 1]);
-        if (next) next.open = true;
+        if (next) {
+          next.open = true;
+          // Mirrors app.js: folding a card above the viewport shortens the page
+          // under the observer, so scroll the newly opened step into view rather
+          // than leaving them on whatever slid up into their eyeline.
+          requestAnimationFrame(() => next.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        }
       }
       stepLock();
     }
@@ -416,17 +440,17 @@
       const closed = contestClosed();
       // Step confirmers: both photos (1), a complete scope (2), an election (3).
       const both = Boolean(shots.sheet && shots.venue);
-      if (both !== stepDone[0]) setStepDone(0, both, '✓ Both captured — tap to review');
+      if (both !== stepDone[0]) setStepDone(0, both, '✔ Both captured');
       const sc = scopeOk();
       if (sc !== stepDone[1]) {
         const lv = $('sel-level').value;
         const bits = [$('sel-state').value, lv !== 'state' ? $('sel-lga').value : '', lv === 'ward' ? $('sel-ward').value : ''];
-        setStepDone(1, sc, `✓ ${bits.filter(Boolean).join(' › ')}`);
+        setStepDone(1, sc, `✔ ${bits.filter(Boolean).join(' › ')}`);
       }
       const race = Boolean($('sel-contest').value);
       if (race !== stepDone[2]) {
         const s = $('sel-contest');
-        setStepDone(2, race, `✓ ${s.options[s.selectedIndex]?.textContent || ''}`);
+        setStepDone(2, race, `✔ ${s.options[s.selectedIndex]?.textContent || ''}`);
       }
       // Closed no longer disables the button — the click-handler surfaces an error
       // instead of a dead, silent tap (the notice below still explains the wait).
@@ -496,7 +520,15 @@
             unknown_scope: 'That state/LGA/ward combination is not on the register.',
             reporting_not_open: 'Collation reporting opens on election day, when polls open. Come back then.',
           };
-          $('status').textContent = M[b.error] || b.hint || b.error || 'Could not submit.';
+          const msg = M[b.error] || b.hint || b.error || 'Could not submit.';
+          $('status').textContent = msg;
+          // "Not open yet" is a refusal of the whole submission, not a hint about
+          // a field — raise it as a dialog (same one the ⓘ dots use) so it cannot
+          // be missed below a button the observer has already scrolled past.
+          if (b.error === 'reporting_not_open') {
+            if (window.HAWKEYE_MODAL) window.HAWKEYE_MODAL('Reporting is not open yet', msg, '');
+            else alert(msg);
+          }
           $('btn-submit').disabled = false;
         }
       } catch (e) {
@@ -519,7 +551,7 @@
       $('sel-contest').onchange = updateSubmit;
       // Highlight states with an election open now or within 28 days (state-specific
       // contests only — a nationwide race is not a per-state cue). Mobile <select>s
-      // ignore per-option colour, so the cue is a 🟢 marker in the option text.
+      // may ignore per-option colour, so the option TEXT carries the cue too.
       const nowT = Date.now(), HOT_WIN = 28 * 864e5, hotStates = new Set();
       for (const c of CONTESTS) {
         if (!(c.states && c.states.length)) continue;
@@ -529,7 +561,12 @@
         }
       }
       $('sel-state').innerHTML = '<option value="">— select state —</option>' + states
-        .map((s) => `<option value="${s}">${hotStates.has(s) ? '🟢 ' : ''}${s}${hotStates.has(s) ? ' — voting soon' : ''}</option>`)
+        // COLOUR, not a marker glyph. The 🟢 emoji was here because a native
+        // select will not colour an option — but an emoji renders at its own
+        // optical size and dwarfed the text. Colour degrades gracefully: where
+        // the platform honours it the state reads green, and where it does not
+        // the "— voting soon" suffix still carries the whole meaning.
+        .map((s) => `<option value="${s}"${hotStates.has(s) ? ' style="color:#35d07f"' : ''}>${s}${hotStates.has(s) ? ' — voting soon' : ''}</option>`)
         .join('');
       $('sel-state').disabled = !states.length;
       if (hotStates.size) $('hot-note').hidden = false;
@@ -544,10 +581,20 @@
         const mark = logos[p.code]
           ? `<img class="party-mark" src="${logos[p.code]}" alt="" loading="lazy" />`
           : `<span class="party-mark mono">${p.code.slice(0, 3)}</span>`;
-        return `<div class="vote-row">
+        return `<div class="vote-row" data-q="${`${p.code} ${p.name || ''}`.toLowerCase()}">
           <label class="party-label">${mark}<span><strong>${p.code}</strong><br /><small>${p.name || ''}</small></span></label>
           <input type="number" min="0" inputmode="numeric" placeholder="0" data-party="${p.code}" /></div>`;
       }).join('');
+      // Same filter as the result flow (app.js): a row with a count already in
+      // it is never hidden — filtering finds a party, it does not lose a number.
+      const vf = $('vote-filter');
+      if (vf) vf.oninput = () => {
+        const q = vf.value.trim().toLowerCase();
+        for (const row of document.querySelectorAll('#vote-inputs .vote-row')) {
+          const typed = row.querySelector('input').value !== '';
+          row.hidden = !!q && !typed && !row.dataset.q.includes(q);
+        }
+      };
       scopeUpdate();
     })();
   </script>

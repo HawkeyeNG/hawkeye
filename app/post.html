@@ -8,7 +8,7 @@
   <title>Hawkeye — Social Poster (admin)</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
+  <link rel="stylesheet" href="styles.css?v=145" />
   <style>
     .box { max-width: 680px; }
     label { display: block; font-weight: 700; margin: 12px 0 4px; }
@@ -30,16 +30,16 @@
 <body>
   <header class="gov-header"><div class="wrap brand-row">
     <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
-      <div class="brand-text"><strong>HAWKEYE</strong><span>Social Poster (admin)</span></div></a>
+      <div class="brand-text"><strong>HAWKEYE</strong><span>Social Poster (Admin)</span></div></a>
   </div></header>
 
   <main class="wrap box">
-    <h1>Post to all channels</h1>
+    <h1>Post to All Channels</h1>
     <p class="hint">Owner-only. One caption + one public media URL fans out to TikTok, the Facebook Page,
     and Instagram. Media must be a public hawkeye.com.ng URL. Instagram needs media (no text-only);
     TikTok needs a <strong>video</strong> and (until audited) the account must be private.</p>
 
-    <label for="secret">Admin passphrase</label>
+    <label for="secret">Admin Passphrase</label>
     <div class="row"><input id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
       <button id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
 
@@ -51,7 +51,7 @@
     <div id="plat-meta" class="plat"><b>Meta (Facebook + Instagram)</b><span class="muted" id="meta-state">…</span>
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <input id="fb-usertoken" type="text" placeholder="Short-lived USER token (Graph Explorer)" style="flex:1;min-width:240px" />
-        <button id="fb-exchange" class="secondary" style="width:auto;margin:0">🔑 Exchange &amp; store</button>
+        <button id="fb-exchange" class="secondary" style="width:auto;margin:0">🔑 Exchange &amp; Store</button>
       </div>
       <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
         <input id="fb-appid" type="text" placeholder="App ID" style="flex:1;min-width:140px" />
@@ -64,10 +64,10 @@
 
     <hr style="margin:18px 0" />
 
-    <label>Post to</label>
+    <label>Post To</label>
     <div class="targets">
       <label><input type="checkbox" id="t-tiktok" checked /> TikTok</label>
-      <label><input type="checkbox" id="t-tiktok-draft" /> TikTok (drafts)</label>
+      <label><input type="checkbox" id="t-tiktok-draft" /> TikTok (Drafts)</label>
       <label><input type="checkbox" id="t-facebook" checked /> Facebook</label>
       <label><input type="checkbox" id="t-instagram" checked /> Instagram</label>
       <label><input type="checkbox" id="t-x" checked /> X</label>
@@ -76,13 +76,13 @@
     <label for="caption">Caption</label>
     <textarea id="caption" rows="3">Verify any polling-unit result yourself on Hawkeye's public, tamper-evident ledger. Independent. Nonpartisan. hawkeye.com.ng</textarea>
 
-    <label for="mtype">Media type</label>
+    <label for="mtype">Media Type</label>
     <select id="mtype">
       <option value="video">Video / Reel</option>
       <option value="image">Image</option>
       <option value="text">Text only (Facebook only)</option>
     </select>
-    <label for="media">Media URL (public, hawkeye.com.ng)</label>
+    <label for="media">Media URL (Public, hawkeye.com.ng)</label>
     <input id="media" type="url" value="https://hawkeye.com.ng/media/demo.mp4" placeholder="https://hawkeye.com.ng/media/…" />
 
     <!-- Upload straight from the device. The platforms fetch our media
@@ -90,16 +90,16 @@
          deploy-by-hand step that used to sit in front of every post. -->
     <div class="row" style="margin-top:8px;align-items:center;gap:8px">
       <input id="file" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" style="flex:1" />
-      <button id="upload" type="button" style="width:auto">Upload from device</button>
+      <button id="upload" type="button" style="width:auto">Upload from Device</button>
     </div>
     <p class="hint" id="uphint">jpg, png, webp, mp4, mov or webm, up to 300&nbsp;MB. On upload the Media URL and
     type above are filled in for you.</p>
 
-    <button id="post" style="margin-top:14px">Post to selected</button>
+    <button id="post" style="margin-top:14px">Post to Selected</button>
     <div id="result"></div>
   </main>
 
-  <script src="native.js?v=104"></script>
+  <script src="native.js?v=105"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const secret = () => localStorage.getItem('hawkeye_admin') || '';

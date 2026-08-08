@@ -410,6 +410,16 @@ for (const ddl of [
      PRIMARY KEY (anchor_id, race_key)
    )`,
   'CREATE INDEX IF NOT EXISTS idx_anchor_races_key ON anchor_races(race_key)',
+  // UNIT SEARCH. /api/register/search matched with a LEADING wildcard
+  // (name LIKE '%q%'), which no index can serve, so every keystroke full-scanned
+  // all 176,846 register rows — three LIKEs per row, plus two more in the ORDER
+  // BY — and measured 1.2-1.9s against production before a single byte came
+  // back. These make the PREFIX pass (name LIKE 'q%') an index seek; SQLite only
+  // uses an index for LIKE when the column is indexed COLLATE NOCASE and
+  // case_sensitive_like is off (its default), hence the explicit collation.
+  'CREATE INDEX IF NOT EXISTS idx_pu_name_nocase ON polling_units(name COLLATE NOCASE)',
+  'CREATE INDEX IF NOT EXISTS idx_pu_code_nocase ON polling_units(pu_code COLLATE NOCASE)',
+  'CREATE INDEX IF NOT EXISTS idx_pu_ward_nocase ON polling_units(ward COLLATE NOCASE)',
   // Existing DBs: add the Merkle columns to a pre-existing anchors table.
   'ALTER TABLE anchors ADD COLUMN races_root TEXT',
   'ALTER TABLE anchors ADD COLUMN races_count INTEGER',

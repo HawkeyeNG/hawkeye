@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
-  <script src="native.js?v=104"></script>
+  <link rel="stylesheet" href="styles.css?v=145" />
+  <script src="native.js?v=105"></script>
   <style>
     .sheet { width: 100%; border: 1px solid #dde4de; border-radius: 8px; }
     .tokens { font-family: monospace; font-size: 0.85rem; background: var(--tint); padding: 10px; border-radius: 6px; word-break: break-word; }
@@ -64,12 +64,12 @@
     <p class="progress" id="progress"></p>
 
     <section id="batch" class="card" hidden>
-      <h2>Your labelling batch</h2>
+      <h2>Your Labelling Batch</h2>
       <p class="progress" id="mine"></p>
       <p class="hint" id="avail"></p>
       <div class="pair">
         <input type="number" id="gen-count" min="1" placeholder="how many" style="width:130px" />
-        <button id="btn-gen">Generate batch</button>
+        <button id="btn-gen">Generate Batch</button>
       </div>
       <p id="gen-msg" class="status"></p>
     </section>
@@ -90,8 +90,8 @@
         <h2>Actual Counts</h2>
         <p class="hint">Party code + votes, non-zero rows only (e.g. APC 341).</p>
         <div id="pairs"></div>
-        <button id="btn-add" class="secondary">+ Add row</button>
-        <button id="btn-save">Save &amp; next sheet</button>
+        <button id="btn-add" class="secondary">+ Add Row</button>
+        <button id="btn-save">Save &amp; Next Sheet</button>
         <button id="btn-skip" class="secondary">Skip</button>
         <p id="msg" class="status"></p>
       </div>
@@ -197,6 +197,6 @@
       next();
     })();
   </script>
-  <script src="menu.js?v=140"></script>
+  <script src="menu.js?v=142"></script>
 </body>
 </html>

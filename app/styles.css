@@ -148,13 +148,13 @@ main.wrap { max-width: 840px; }
 .brand-row { display: flex; align-items: center; justify-content: space-between; padding-top: 6px; padding-bottom: 12px; position: relative; }
 .brand { display: flex; align-items: center; gap: 11px; }
 .crest { font-size: 1.8rem; line-height: 1; }
-/* menu.js swaps the 🦅 emoji for the real crest SVG. That artwork is drawn in
-   dark greens (it was made for light backgrounds), so on the dark green header it
-   read as a muddy blob — give it a light plate so the mark actually reads. */
+/* menu.js swaps the 🦅 emoji for the real crest SVG. The light plate behind it
+   is gone: native shows the mark straight on the header with no card behind it,
+   and the plate was the only reason the two platforms looked different. */
 .gov-header .crest:has(img) {
-  width: 34px; height: 34px; border-radius: 9px; background: #f4f8f5;
+  width: 34px; height: 34px; border-radius: 9px; background: transparent;
   display: inline-flex; align-items: center; justify-content: center;
-  overflow: hidden; flex: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  overflow: hidden; flex: none; box-shadow: none;
 }
 .gov-header .crest img { width: 30px; height: 30px; display: block; }
 /* The global `button` rule is display:block/width:100%, which made the optional
@@ -461,10 +461,27 @@ h2 { font-size: 1.18rem; margin: 0 0 8px; display: flex; align-items: center; ga
 .link { color: var(--link); font-weight: 700; }
 code { word-break: break-all; font-size: 0.72rem; background: var(--code-bg); border-radius: 4px; padding: 2px 5px; }
 
+/* Roughly half the old 28px. At full size the number competed with the step
+   heading it was only meant to index. */
 .step-no {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 9px;
-  background: linear-gradient(135deg, var(--green-dark), var(--green-700)); color: var(--accent); font-size: 0.95rem; flex: none;
+  width: 16px; height: 16px; border-radius: 5px;
+  background: linear-gradient(135deg, var(--green-dark), var(--green-700)); color: var(--accent); font-size: 0.62rem; flex: none;
+}
+
+/* ---------- step-card summary chrome ----------
+   The affordance rides on the HEADING LINE, right margin — it used to fall to a
+   line of its own under the ✓ value, which read as a stray character. It also
+   says what the tap does, and says it in both directions. */
+.step-card > summary { position: relative; padding-right: 92px; }
+.step-card:not(.locked) > summary::after {
+  content: '▸'; position: absolute; right: 0; top: 2px;
+  color: var(--muted); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.01em;
+}
+.step-card.done:not([open]) > summary::after { content: 'Review ▸'; }
+.step-card[open]:not(.locked) > summary::after { content: 'Close ▾'; }
+.step-card.locked > summary::after {
+  content: '🔒'; position: absolute; right: 0; top: 2px; font-size: 0.85rem;
 }
 
 /* ---------- cards / sections ---------- */
@@ -666,6 +683,10 @@ details summary { cursor: pointer; font-weight: 700; color: var(--link); }
 details[open] summary { margin-bottom: 6px; }
 
 /* ---------- vote entry ---------- */
+/* An author `display` outranks the UA sheet's [hidden]{display:none}, so the
+   party filter's row.hidden would do nothing without this. Same trap as
+   #media-cam and the profile/receipt modals. */
+.vote-row[hidden] { display: none; }
 .vote-row {
   display: flex;
   align-items: center;

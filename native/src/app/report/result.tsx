@@ -45,7 +45,7 @@ import {
   type Race,
   type StateName,
 } from '@/lib/races';
-import { resolveUnitFromText } from '@/lib/pu-code';
+import { extractCandidates, resolveUnitFromText } from '@/lib/pu-code';
 import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import {
@@ -1114,6 +1114,19 @@ export default function ReportResult() {
    * exists to survive; a single exact lookup is the online extra. Repairs stay
    * cache-only, because an 81-probe sweep must never touch the network.
    */
+  /**
+   * What the sheet said about its own unit — OFFERED, never assumed.
+   *
+   * `sheetMiss` is the other half and matters as much: a Tier A that fails in
+   * silence is indistinguishable from one that never ran, which is exactly what
+   * made this cost several rounds of guessing at the parser instead of reading
+   * one line on screen. Whatever happens, this step now says so.
+   */
+  const [sheetGuess, setSheetGuess] = useState<
+    { code: string; name: string; where: string; repaired: boolean; row: NearRow | null; unit: Unit | null } | null
+  >(null);
+  const [sheetMiss, setSheetMiss] = useState('');
+
   const resolveUnitFromSheet = async (text: string) => {
     if (unit) return;
     const byCode = new Map(nearby.map((n) => [n.puCode, n]));
@@ -1122,13 +1135,16 @@ export default function ReportResult() {
       const n = byCode.get(code);
       return n ? toUnit(n) : null;
     };
+    // Return the WHOLE register row, not three fields off it. The full row is
+    // what chooseUnit needs to bind a unit that is not in `nearby`, and it also
+    // gives the resolver's name-match check something to corroborate against.
     const withNet = async (code: string) => {
       const hit = await local(code);
       if (hit) return hit;
       try {
         const r = await fetch(`${REG}/unit?pu_code=${encodeURIComponent(code)}`);
         const b = r.ok ? await r.json() : null;
-        return b?.unit ? { name: b.unit.name, lat: b.unit.lat, lng: b.unit.lng } : null;
+        return b?.unit ?? null;
       } catch { return null; }
     };
     const f = fix ? { lat: fix.lat, lng: fix.lng } : undefined;
@@ -1137,15 +1153,45 @@ export default function ReportResult() {
       hit = await resolveUnitFromText(text, { resolve: withNet, fix: f, maxRepair: 0 })
         ?? await resolveUnitFromText(text, { resolve: local, fix: f });
     } catch { return; }
-    if (!hit || hit.confidence !== 'high' || unit) return;
-    // Go through the normal selection path so a sheet-read unit is bound exactly
-    // as a tapped one is — same register fetch when the row carries no unit,
-    // same race reset. Only rows already in `nearby` can be selected this way;
-    // a code resolved purely from the network is left as a suggestion, because
-    // selecting a unit the observer is demonstrably not near is the one mistake
-    // this whole ladder is built to avoid.
-    const row = byCode.get(hit.code);
-    if (row) void chooseNearby(row);
+    if (unit) return;
+    if (!hit) {
+      let codes: string[] = [];
+      try { codes = extractCandidates(text); } catch { /* report as unread */ }
+      setSheetMiss(
+        codes.length
+          ? `Read ${codes[0]} off the sheet, but no unit with that code was found — pick yours below.`
+          : 'Could not read the unit code off the sheet — pick yours below.',
+      );
+      return;
+    }
+    // ASK, DO NOT ASSUME. Auto-selecting was silent in both directions: when it
+    // worked nobody could tell it had, and when it read the wrong unit it was
+    // already chosen. It also stranded any code that resolved from the REGISTER
+    // rather than the nearby list — the branch below simply found no row and did
+    // nothing at all. Offering it covers both: the observer sees the code and
+    // the unit it names, and one tap binds it through the normal path.
+    const row = byCode.get(hit.code) ?? null;
+    const u = (row ? null : (hit.unit as unknown as Unit)) ?? null;
+    setSheetMiss('');
+    setSheetGuess({
+      code: hit.code,
+      // The register row always carries a name; the resolver's shape allows it
+      // to be absent, and a blank confirm card would be worse than the code alone.
+      name: hit.unit.name || row?.name || hit.code,
+      where: [u?.ward ?? row?.ward, u?.lga, u?.state].filter(Boolean).join(', '),
+      repaired: hit.source === 'repaired',
+      row,
+      unit: u,
+    });
+  };
+
+  /** The observer said yes: bind it exactly as a tapped unit binds. */
+  const acceptSheetGuess = () => {
+    const g = sheetGuess;
+    setSheetGuess(null);
+    if (!g) return;
+    if (g.row) void chooseNearby(g.row);
+    else if (g.unit) chooseUnit(g.unit);
   };
 
   /**
@@ -1715,9 +1761,13 @@ export default function ReportResult() {
                   <Feather name="crosshair" size={17} color={BRAND.gold} />
                   {/* The lookup runs on arrival, so this is the RETRY once it
                       has. A control still reading "Find units near me" after a
-                      search reads as work the observer has yet to do. */}
+                      search reads as work the observer has yet to do.
+                      Keyed on a FINISHED search (rows, or a message saying why
+                      there are none) rather than on autoNearRan, which flips
+                      when the search STARTS — so the button offered to search
+                      "again" before it had ever succeeded once. */}
                   <Text className="pl-2 text-base font-bold text-hawk-gold">
-                    {autoNearRan ? 'Search near me again' : 'Find units near me'}
+                    {nearby.length || nearLine ? 'Search near me again' : 'Find units near me'}
                   </Text>
                 </>
               )}
@@ -1725,6 +1775,39 @@ export default function ReportResult() {
 
             {nearLine ? (
               <Text className="pt-3 text-sm font-semibold text-warn-ink">{nearLine}</Text>
+            ) : null}
+
+            {/* TIER A: the sheet named a unit. Offered above the nearby list
+                because it is the most specific answer available — it came off
+                the form in the observer's hand — but it is still only an offer. */}
+            {!unit && sheetGuess ? (
+              <View className="mt-3 rounded-2xl border-2 border-hawk-green bg-card p-4">
+                <Text className="pb-1.5 text-base font-bold text-ink">Is this your polling unit?</Text>
+                <Text className="text-base font-semibold text-ink">{sheetGuess.name}</Text>
+                <Text className="pb-3 text-xs text-muted">
+                  {sheetGuess.code}
+                  {sheetGuess.where ? ` · ${sheetGuess.where}` : ''} · read from the sheet
+                  {sheetGuess.repaired ? ' (one digit corrected)' : ''}
+                </Text>
+                <View className="flex-row gap-2.5">
+                  <Pressable
+                    onPress={acceptSheetGuess}
+                    className="flex-1 items-center rounded-xl bg-hawk-green py-3 active:opacity-80"
+                  >
+                    <Text className="text-sm font-bold text-hawk-gold">Yes, use this unit</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => { setSheetGuess(null); setSheetMiss('Pick your unit below, or search for it.'); }}
+                    className="flex-1 items-center rounded-xl border border-line py-3 active:opacity-70"
+                  >
+                    <Text className="text-sm font-bold text-ink">No, choose another</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+
+            {!unit && !sheetGuess && sheetMiss ? (
+              <Text className="pt-3 text-sm text-muted">{sheetMiss}</Text>
             ) : null}
 
             {/* Only for the two failures the settings app is actually the cure

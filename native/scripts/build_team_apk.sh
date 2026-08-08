@@ -20,8 +20,33 @@ if [ -s /etc/ld.so.preload ]; then
 fi
 
 cd "$HOME/hawkeye/native"
-# Keep the generated android/ project in sync with app.config.js / plugin changes.
-npx expo prebuild --platform android --no-install 2>&1 | tail -3
+# Keep the generated android/ project in sync with app.json / plugin changes.
+#
+# NEVER PIPE THIS. It used to end `| tail -3`, which makes $? the status of
+# `tail` — always 0 — so `set -e` could not see a prebuild that died halfway.
+# On 2026-08-08 one did, right after "Creating native directory", and gradle
+# happily built the RAW React Native template that was left behind: applicationId
+# com.helloworld, label "Hello App Display Name", versionCode 1. That APK is not
+# Hawkeye — wrong package (so the Maps key does not apply and App Links are
+# dead), and it installs alongside the real app rather than over it. It reported
+# BUILD SUCCESSFUL and was copied to Downloads like any good build.
+if ! npx expo prebuild --platform android --no-install > /tmp/prebuild.log 2>&1; then
+  echo "PREBUILD FAILED — refusing to build a template APK"
+  tail -30 /tmp/prebuild.log
+  exit 1
+fi
+tail -3 /tmp/prebuild.log
+
+# Belt and braces: prebuild can also exit 0 having applied none of the config
+# mods, so ASSERT the identity it was supposed to write instead of trusting the
+# status code. Cheap, and it is the exact thing that shipped wrong.
+if ! grep -q "applicationId .ng\.com\.hawkeye\.observer\.dev." android/app/build.gradle \
+  || ! grep -q '<string name="app_name">Hawkeye</string>' android/app/src/main/res/values/strings.xml; then
+  echo "IDENTITY CHECK FAILED — android/ is not the Hawkeye project:"
+  grep -n 'applicationId' android/app/build.gradle || true
+  cat android/app/src/main/res/values/strings.xml || true
+  exit 1
+fi
 
 # Guard: react-native-compressor pulls TAndroidLame, which declares
 # allowBackup="true"; ours is "false" and the manifest merger aborts without a
@@ -49,14 +74,26 @@ chmod +x ./gradlew
   -Pandroid.enableShrinkResourcesInReleaseBuilds=true \
   -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" \
   assembleRelease 2>&1 | tail -20
+# Same pipe trap as prebuild: check gradle's OWN status, not tail's.
+[ "${PIPESTATUS[0]}" -eq 0 ] || { echo "GRADLE FAILED"; exit 1; }
 
 APK="app/build/outputs/apk/release/app-release.apk"
 if [ -f "$APK" ]; then
+  # VERIFY WHAT IS IN THE APK BEFORE HANDING IT OVER. A build that is green and
+  # the right size can still be the wrong app — see the prebuild note above.
+  # resources.arsc carries the launcher label; the placeholder must be absent
+  # and the real name present.
+  unzip -p "$APK" resources.arsc > /tmp/apk_res.arsc 2>/dev/null || true
+  if grep -qa 'Hello App Display Name' /tmp/apk_res.arsc; then
+    echo "APK_WRONG_IDENTITY — built the RN template, not Hawkeye. Not copying."
+    exit 1
+  fi
   cp "$APK" /mnt/c/Users/HP/Downloads/hawkeye-team-test.apk
   ls -la /mnt/c/Users/HP/Downloads/hawkeye-team-test.apk
   echo "APK_OK"
 else
   echo "APK_MISSING"
+  exit 1
 fi
 # Restore the Datadog preload if we paused it.
 if [ -f /etc/ld.so.preload.tb ]; then

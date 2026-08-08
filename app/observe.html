@@ -10,9 +10,9 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
+  <link rel="stylesheet" href="styles.css?v=145" />
   <style>
-    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=141, so
+    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=145, so
        putting three rules in the shared sheet would mean bumping and
        redeploying all forty to defeat the HTTP cache — a large blast radius
        for CSS only this page uses. Move it into styles.css whenever that file
@@ -54,14 +54,35 @@
        advisory, since <details> would otherwise toggle on any tap. */
     .step-card.locked { opacity: 0.5; }
     .step-card.locked > summary { pointer-events: none; cursor: default; }
-    .step-card.locked > summary::after { content: ' 🔒'; font-size: 0.85rem; }
     .step-card > summary::marker, .step-card > summary::-webkit-details-marker { display: none; }
-    /* An affordance on every unlocked step: ▸ closed, ▾ open. Confirmed steps
-       say "tap to edit" in their state span, so the arrow is the only chrome
-       needed. */
-    .step-card:not(.locked) > summary::after { content: ' ▸'; color: var(--muted); }
-    .step-card[open]:not(.locked) > summary::after { content: ' ▾'; }
+    /* The ::after affordance now lives in styles.css — it is absolutely
+       positioned on the heading line and says "Tap to review" / "Tap to close".
+       The rules that used to sit here appended a bare ▸ AFTER the ✓ value, which
+       is what put it on a line of its own. A page-local copy would win over the
+       shared sheet, so it must stay deleted, not merely edited. */
     .step-card.done > summary { color: var(--green); }
+    /* The confirmed-step receipt is ONE line. Sitting inline after the heading it
+       wrapped mid-name — "✓ 1," on the heading row and "Akepe Street" below —
+       which read as two separate things. Own line, ellipsis if it is too long. */
+    .step-card > summary .hint {
+      display: block; margin-left: 0 !important;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    /* A captured sheet took ~half the screen, pushing the next step out of view
+       on the very step where the observer needs to see there IS a next step. */
+    /* max-width IS LOAD-BEARING. `width: auto` alone let a landscape capture
+       render at its intrinsic width and spill out past the card — the photo
+       overflowing its slot on step 1. Cap both axes and let contain letterbox. */
+    /* [hidden] MUST beat the display below, or an empty preview renders as a
+       broken-image icon with its alt text ("Polling venue preview") before any
+       photo has been taken. Adding `display: block` above is what broke it —
+       an author display rule outranks the UA sheet's [hidden]{display:none}.
+       Same trap as #media-cam and the profile/receipt modals. */
+    #preview-sheet[hidden], #preview-venue[hidden] { display: none; }
+    #preview-sheet, #preview-venue {
+      display: block; max-height: 26vh; max-width: 100%;
+      width: auto; height: auto; object-fit: contain;
+    }
 
     /* Same camera fix as collation.html: flex column so Capture/Cancel can
        never be pushed below the fold by a long guide banner. styles.css caps
@@ -79,7 +100,7 @@
     #camera-overlay #camera-guide { max-height: 22vh; overflow: auto; }
   </style>
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
-  <script src="native.js?v=104"></script>
+  <script src="native.js?v=105"></script>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
   <meta property="og:title" content="Hawkeye — Report a Polling Unit Result" />
@@ -134,7 +155,7 @@
       <div class="auth-top">
         <span class="auth-brand"><img src="logo-crest.svg?v=98" alt="" width="26" height="26" />HAWKEYE</span>
       </div>
-      <h1 id="register-title">Verify your phone</h1>
+      <h1 id="register-title">Verify Your Phone</h1>
       <p class="lede" id="register-lede">One number, one observer. Your number is never published.</p>
       <!-- Practice: a proper card instead of a tinted sentence. Hidden in
            sign-in mode (returning observers don't need it). -->
@@ -153,14 +174,17 @@
         </span>
       </a>
       <div class="card">
-        <label for="auth-input">Nigerian mobile number</label>
+        <!-- app.js retitles this to "Enter OTP" once a code is in flight: the
+             field itself switches from a phone number to the code, so a label
+             still reading "Nigerian mobile number" describes the wrong input. -->
+        <label for="auth-input" id="auth-input-label">Nigerian Mobile Number</label>
         <input id="auth-input" type="tel" inputmode="tel" placeholder="e.g. 0803 123 4567" autocomplete="tel" />
         <p id="otp-phone" class="hint" hidden></p>
         <fieldset id="channel-pick" style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:10px 0">
-          <legend style="font-size:.85rem;font-weight:700;padding:0 6px">Get your code by</legend>
+          <legend style="font-size:.85rem;font-weight:700;padding:0 6px">Get Your Code By</legend>
           <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
             <input type="radio" name="otp-channel" value="telegram" style="width:auto;margin:0" />
-            <span>Telegram <small>(free)</small></span>
+            <span>Telegram <small>(Free)</small></span>
           </label>
           <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
             <input type="radio" name="otp-channel" value="whatsapp" style="width:auto;margin:0" />
@@ -190,15 +214,18 @@
              sign in afterwards. Same field does double duty on a forgotten-password
              reset (Forgot your password? → code → set a new one). -->
         <div id="pw-opt" hidden>
-          <label for="pw-opt-input">Create a password <small>(min 8 characters — you'll use it to sign in)</small></label>
-          <input id="pw-opt-input" type="password" autocomplete="new-password" placeholder="Choose a password" />
+          <!-- The length rule lives in the PLACEHOLDER and in the error you get
+               for breaking it — not as a permanent parenthetical beside every
+               password field on every page. -->
+          <label for="pw-opt-input">Create a Password</label>
+          <input id="pw-opt-input" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
         </div>
         <button id="btn-auth" disabled>Request OTP</button>
         <!-- Sign-up mode: the only link that makes sense under "Request OTP" is
              the way OVER to sign-in — someone signing up for the first time
              cannot already have a password. -->
         <p class="hint auth-alt" id="signin-line">Have an account?
-          <a href="observe.html?intent=signin">Sign in</a></p>
+          <a href="observe.html?intent=signin">Sign In</a></p>
         <!-- Sign-in mode only (?intent=signin): OTP is always the recovery path
              when the password is forgotten, so it stays one tap away in place. -->
         <p class="hint auth-alt"><a id="pw-link" href="#" hidden>Sign in with a one-time code instead</a></p>
@@ -206,12 +233,12 @@
              instead of leaving them stuck on a password field for an account
              they don't have yet. -->
         <p class="hint auth-alt" id="signup-line" hidden>Don't have an account?
-          <a href="observe.html?intent=observe">Sign up</a></p>
+          <a href="observe.html?intent=observe">Sign Up</a></p>
         <!-- Practice link for BOTH modes: sign-up shows the big starter-card above;
              sign-in (where that card is hidden) gets this lighter link instead. -->
         <p class="hint auth-alt" id="practice-line" hidden><a href="practice.html">Try a practice run first — no sign-up needed</a></p>
-        <p class="hint"><a id="otp-resend" href="#" hidden>Resend code</a></p>
-        <p class="hint"><a id="auth-reset" href="#" hidden>← Use a different number</a></p>
+        <p class="hint"><a id="otp-resend" href="#" hidden>Resend Code</a></p>
+        <p class="hint"><a id="auth-reset" href="#" hidden>← Use a Different Number</a></p>
       </div>
     </section>
 
@@ -240,9 +267,9 @@
            (app.js updateSubmitState): with capture done, two big photo slots
            push step 2 below the fold and nothing says more work remains. The
            summary keeps the ✓ and stays tappable for review/retake. -->
-      <details class="card" id="photo-fold" open>
+      <details class="card step-card" id="photo-fold" open>
         <summary style="cursor:pointer;list-style:none">
-          <h2 style="display:inline-block;margin:0"><span class="step-no">1</span> Photograph the evidence</h2>
+          <h2 style="display:inline-block;margin:0"><span class="step-no">1</span> Capture the Evidence</h2>
           <span id="photo-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
         <!-- One line. The rest ("live only, no gallery uploads", "time- and
@@ -260,7 +287,7 @@
             <span class="slot-status" id="status-sheet">Required</span>
           </div>
           <img id="preview-sheet" alt="Results sheet preview" hidden />
-          <button id="btn-cam-sheet" class="secondary">Take photo</button>
+          <button id="btn-cam-sheet" class="secondary">Take Photo</button>
         </div>
 
         <div class="capture-slot" id="slot-venue">
@@ -272,7 +299,7 @@
             <span class="slot-status" id="status-venue">Required</span>
           </div>
           <img id="preview-venue" alt="Polling venue preview" hidden />
-          <button id="btn-cam-venue" class="secondary">Take photo</button>
+          <button id="btn-cam-venue" class="secondary">Take Photo</button>
         </div>
       </details>
 
@@ -289,8 +316,12 @@
           <h2 style="display:inline-block;margin:0"><span class="step-no">2</span> Which polling unit?</h2>
           <span id="unit-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
-        <button id="btn-locate">Find polling units near me</button>
+        <button id="btn-locate">Find Polling Units Near Me</button>
         <p id="locate-status" class="status" role="status"></p>
+        <!-- What the SHEET said about its own unit (Tier A). Its own container,
+             because btn-locate clears #pu-list on every search and would
+             otherwise wipe the confirm card the observer was about to answer. -->
+        <div id="pu-sheet-card"></div>
         <div id="pu-list" class="option-list"></div>
         <!-- Search by name/code before the register cascade: knowing your unit's
              NAME but not its ward is the common case, and the cascade cannot
@@ -322,24 +353,29 @@
 
       <details class="card step-card" id="counts-fold" data-step="4">
         <summary style="cursor:pointer;list-style:none">
-          <h2 style="display:inline-block;margin:0"><span class="step-no">4</span> The announced counts</h2>
+          <h2 style="display:inline-block;margin:0"><span class="step-no">4</span> The Announced Counts</h2>
           <span id="counts-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
+        <!-- ~20 parties, three-line names: the list is taller than the screen and
+             finding one meant scrolling past all of it. Native has had this
+             filter; web/Capacitor did not. -->
+        <input id="vote-filter" type="search" autocomplete="off" placeholder="Filter parties — name or code"
+               aria-label="Filter parties by name or code" style="margin-bottom:8px" />
         <div id="vote-inputs"></div>
         <label for="sheet-serial">EC8A form serial number <small>(optional — printed on the sheet)</small></label>
         <input id="sheet-serial" type="text" inputmode="text" placeholder="e.g. 0451233" autocomplete="off" />
         <!-- Counts have no natural confirmer the way a picker does — typing a
              number is not a decision. This button is it, and it is also the
              moment to look again at figures the OCR proposed. -->
-        <button id="btn-verify-counts" class="secondary" style="margin-top:12px">Verify counts</button>
+        <button id="btn-verify-counts" class="secondary" style="margin-top:12px">Verify Counts</button>
       </details>
 
       <div class="card">
-        <h2><span class="step-no">5</span> Sign and submit</h2>
+        <h2><span class="step-no">5</span> Sign and Submit</h2>
         <p class="hint">Signed on this device and written to the public tamper-evident
         ledger — it cannot be edited or withdrawn. Its fingerprint is published to the
         public Rekor transparency log in the next daily anchor.</p>
-        <button id="btn-submit" disabled>Sign &amp; submit report</button>
+        <button id="btn-submit" disabled>Sign &amp; Submit Report</button>
         <p id="submit-status" class="status" role="status"></p>
       </div>
     </section>
@@ -347,13 +383,13 @@
     <!-- 4. Result -->
     <section id="screen-result" hidden>
       <div class="confirm-panel">
-        <h1>Report recorded</h1>
+        <h1>Report Recorded</h1>
         <p>Your report is on the public tamper-evident ledger now — it cannot be edited or withdrawn. Its fingerprint is published to the public Rekor transparency log in the next daily anchor.</p>
       </div>
       <div class="card" id="result-summary"></div>
       <p class="hint">Ledger entry: <code id="entry-hash"></code></p>
       <a class="link" href="dashboard.html">View the public dashboard →</a><br /><br />
-      <button id="btn-another" class="secondary">Report another unit</button>
+      <button id="btn-another" class="secondary">Report Another Unit</button>
     </section>
   </main>
 
@@ -395,13 +431,13 @@
   <script src="outbox.js" defer></script>
   <!-- Before app.js (which mounts it) and not deferred, so window.puSearch
        exists by the time the deferred app.js runs. -->
-  <script src="pu-search.js?v=1"></script>
+  <script src="pu-search.js?v=2"></script>
   <!-- Tier A of the unit ladder: reads the delimitation code off the OCR'd
        sheet. Must load before app.js, which calls into it. -->
   <script src="pu-code.js?v=3"></script>
   <script src="capture.js?v=1"></script>
-  <script src="app.js?v=137" defer></script>
+  <script src="app.js?v=142" defer></script>
   <script src="tg.js?v=95" defer></script>
-  <script src="menu.js?v=140" defer></script>
+  <script src="menu.js?v=142" defer></script>
 </body>
 </html>

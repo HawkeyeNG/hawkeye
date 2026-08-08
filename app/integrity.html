@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
-  <script src="native.js?v=104"></script>
+  <link rel="stylesheet" href="styles.css?v=145" />
+  <script src="native.js?v=105"></script>
   <style>
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
     .stat { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--green); padding: 14px; }
@@ -89,7 +89,7 @@
     <div class="cards" id="cards"></div>
 
     <div class="card">
-      <h2>Detected discrepancies</h2>
+      <h2>Detected Discrepancies</h2>
       <div class="filters" id="sev-filters">
         <span class="chip on" data-sev="">All</span>
         <span class="chip" data-sev="high">🚩 High</span>
@@ -102,21 +102,21 @@
     </div>
 
     <div class="card">
-      <h2>Digit-distribution screening</h2>
+      <h2>Digit-distribution Screening</h2>
       <p class="hint">Screening signal, never proof on its own.<button class="info-i"
         data-info-title="Digit-distribution screening"
         data-info="Fabricated figures cluster on favourite digits, while genuine counts follow known distributions — Benford's law for first digits, and a roughly even spread for last digits. A departure means these numbers are worth a closer look, nothing more. Real elections throw up odd-looking distributions for innocent reasons, so a flag here is a prompt to check the evidence, not a finding of fraud."></button>
         <span id="benford-n"></span></p>
-      <h3 style="margin:14px 0 2px;font-size:0.95rem">First digit — Benford's law <span id="benford-verdict" class="verdict-tag"></span></h3>
+      <h3 style="margin:14px 0 2px;font-size:0.95rem">First Digit — Benford's Law <span id="benford-verdict" class="verdict-tag"></span></h3>
       <p class="hint">First digit of every party count vs Benford's expected curve (dashed).</p>
       <div class="benford" id="benford-first"></div>
-      <h3 style="margin:18px 0 2px;font-size:0.95rem">Last digit — uniformity</h3>
+      <h3 style="margin:18px 0 2px;font-size:0.95rem">Last Digit — Uniformity</h3>
       <p class="hint">Last digit of winning-party counts. A healthy spread sits near the 10% line (dashed).</p>
       <div class="benford" id="benford"></div>
     </div>
 
     <div class="card">
-      <h2>INEC IReV cross-check</h2>
+      <h2>INEC IReV Cross-check</h2>
       <p class="hint">The crowd's count, checked against INEC's own uploaded sheet.<button
         class="info-i" data-info-title="INEC IReV cross-check"
         data-info="For each polling unit, the crowd's reported count is compared against the EC8A sheet INEC itself uploads to its Results Viewing portal (IReV) — INEC's own evidence checked against the crowd's, neither one trusted over the other. Any mismatch appears in the discrepancies above, with a link straight to INEC's sheet so you can look yourself."></button></p>
@@ -124,7 +124,7 @@
     </div>
 
     <div class="card">
-      <h2>Collation reconciliation (EC8B/C/D)</h2>
+      <h2>Collation Reconciliation (EC8B/C/D)</h2>
       <p class="hint">Announced totals, checked against the units underneath them.<button
         class="info-i" data-info-title="Collation reconciliation"
         data-info="Ward (EC8B), LGA (EC8C) and state (EC8D) collation totals are checked against the polling-unit sheets they are built from. A collated figure can never be LESS than the sum of the covered units alone — when it is, that is arithmetic proof of subtraction, not a matter of opinion, and it is flagged in the discrepancies above. This is the step where a count is most often changed."></button>
@@ -132,7 +132,7 @@
       <p id="collation-status" class="scope-note">Loading…</p>
     </div>
 
-    <h2>What we check</h2>
+    <h2>What We Check</h2>
     <p class="hint">Every result is run through these automated checks. Expand a group to see each one.</p>
     <div class="acc-wrap checks">
       <!-- Every group starts CLOSED. This one carried `open`, which auto-expanded
@@ -141,7 +141,7 @@
            seeds its open-panel map with {} for the same reason — keep the two
            in step. -->
       <details class="acc">
-        <summary>Against INEC &amp; collation records</summary>
+        <summary>Against INEC &amp; Collation Records</summary>
         <ul>
           <li><strong>INEC IReV mismatch</strong> — the crowd's counts don't appear on INEC's own uploaded sheet for that unit.</li>
           <li><strong>Collation undercount</strong> — a ward/LGA/state form showing less for a party than its covered polling units alone add up to.</li>
@@ -151,7 +151,7 @@
         </ul>
       </details>
       <details class="acc">
-        <summary>Statistical tripwires</summary>
+        <summary>Statistical Tripwires</summary>
         <ul>
           <li><strong>Over-voting</strong> — more votes than registered voters at a unit (impossible).</li>
           <li><strong>Impossible turnout</strong> — turnout above ~95%, or a strong outlier vs. its state.</li>
@@ -162,14 +162,14 @@
         </ul>
       </details>
       <details class="acc">
-        <summary>AI vision on the result sheet</summary>
+        <summary>AI Vision on the Result Sheet</summary>
         <ul>
           <li><strong>Sheet authenticity</strong> — the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.</li>
           <li><strong>Vision count mismatch</strong> — an AI read of the sheet photo disagreeing with the observer's typed counts.</li>
         </ul>
       </details>
       <details class="acc">
-        <summary>Provenance &amp; duplicates</summary>
+        <summary>Provenance &amp; Duplicates</summary>
         <ul>
           <li><strong>Duplicate form serial</strong> — the same EC8A serial reported at two units.</li>
           <li><strong>Conflicting counts</strong> — independent observers at one unit disagreeing.</li>
@@ -177,7 +177,7 @@
         </ul>
       </details>
       <details class="acc">
-        <summary>Incident patterns</summary>
+        <summary>Incident Patterns</summary>
         <ul>
           <li><strong>Incident hotspot</strong> — several incident reports of the same kind in one state within a short window.</li>
         </ul>
@@ -192,7 +192,7 @@
   </div></footer>
 
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=140"></script>
+  <script src="menu.js?v=142"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const TYPE_LABEL = {
@@ -216,7 +216,7 @@
       const N = 120;
       if (s.length <= N) return esc(s);
       const short = s.slice(0, N).replace(/\s+\S*$/, '');
-      return `<span class="clip">${esc(short)}…&nbsp;<a href="#" class="morebtn">more</a></span><span class="full" hidden>${esc(s)}&nbsp;<a href="#" class="morebtn">less</a></span>`;
+      return `<span class="clip">${esc(short)}…&nbsp;<a href="#" class="morebtn">More</a></span><span class="full" hidden>${esc(s)}&nbsp;<a href="#" class="morebtn">Less</a></span>`;
     }
     document.getElementById('rows').addEventListener('click', (e) => {
       if (!e.target.classList.contains('morebtn')) return;

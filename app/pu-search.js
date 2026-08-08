@@ -39,6 +39,9 @@
 
     let timer = null;
     let seq = 0;
+    // Per-session, keyed by the full query string so a state/LGA-scoped search
+    // never answers an unscoped one. The register does not change mid-session.
+    const cache = new Map();
     async function run() {
       const term = q.value.trim();
       list.innerHTML = '';
@@ -46,13 +49,46 @@
         status.textContent = term ? 'Keep typing — at least 3 characters.' : '';
         return;
       }
-      status.textContent = 'Searching…';
       const mine = ++seq;
       const p = new URLSearchParams({ q: term });
       if (o.state) p.set('state', o.state);
       if (o.lga) p.set('lga', o.lga);
+      const key = p.toString();
       try {
-        const r = await fetch(`/api/register/search?${p}`).then((x) => x.json());
+        /**
+         * MOST KEYSTROKES SHOULD COST NOTHING.
+         *
+         * The request itself is the expense, not the query: measured against
+         * production a search round-trips in ~1.2s, and an early-return that
+         * touches no data at all takes the same — so it is latency, not SQL.
+         * Typing "osogbo" is six of those in a row, each superseding the last.
+         *
+         * Two ways out, both here. A term already searched is answered from
+         * memory. And a term that EXTENDS an earlier one whose results were not
+         * truncated is narrowed locally — every match for "osogb" is contained
+         * in the matches for "osog", so the server has nothing to add.
+         */
+        let r = cache.get(key);
+        if (!r) {
+          for (const [k, v] of cache) {
+            if (v.truncated || !k.startsWith('q=')) continue;
+            const prev = decodeURIComponent(k.slice(2).split('&')[0]).toLowerCase();
+            if (prev.length >= 3 && term.toLowerCase().startsWith(prev)
+                && k.slice(k.indexOf('&') + 1) === key.slice(key.indexOf('&') + 1)) {
+              const t = term.toLowerCase();
+              r = {
+                units: (v.units || []).filter((u) => `${u.name} ${u.pu_code} ${u.ward}`.toLowerCase().includes(t)),
+                truncated: false,
+              };
+              break;
+            }
+          }
+        }
+        if (!r) {
+          status.textContent = 'Searching…';
+          r = await fetch(`/api/register/search?${p}`).then((x) => x.json());
+          if (r && !r.error) cache.set(key, { units: r.units || [], truncated: !!r.truncated });
+        }
         // A slower earlier request must never overwrite a newer answer.
         if (mine !== seq) return;
         const units = r.units || [];

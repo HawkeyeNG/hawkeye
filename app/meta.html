@@ -8,7 +8,7 @@
   <title>Hawkeye — Meta Poster (admin)</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
+  <link rel="stylesheet" href="styles.css?v=145" />
   <style>
     .box { max-width: 640px; }
     label { display: block; font-weight: 700; margin: 12px 0 4px; }
@@ -27,7 +27,7 @@
 <body>
   <header class="gov-header"><div class="wrap brand-row">
     <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
-      <div class="brand-text"><strong>HAWKEYE</strong><span>Meta Poster (admin)</span></div></a>
+      <div class="brand-text"><strong>HAWKEYE</strong><span>Meta Poster (Admin)</span></div></a>
   </div></header>
 
   <main class="wrap box">
@@ -36,7 +36,7 @@
     Business account via the Graph API. Media must be a public URL on hawkeye.com.ng (Instagram has no
     file upload). Text-only posts go to the Facebook Page only.</p>
 
-    <label for="secret">Admin passphrase</label>
+    <label for="secret">Admin Passphrase</label>
     <div class="row"><input id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
       <button id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
 
@@ -44,33 +44,33 @@
 
     <hr style="margin:20px 0" />
 
-    <label>Post to</label>
+    <label>Post To</label>
     <div class="targets">
       <label><input type="checkbox" id="t-fb" checked /> Facebook Page</label>
       <label><input type="checkbox" id="t-ig" checked /> Instagram</label>
     </div>
 
-    <label for="caption">Caption / message</label>
+    <label for="caption">Caption / Message</label>
     <textarea id="caption" rows="3">Verify any polling-unit result yourself on Hawkeye's public, tamper-evident ledger. Independent. Nonpartisan. hawkeye.com.ng</textarea>
 
-    <label for="mtype">Media type</label>
+    <label for="mtype">Media Type</label>
     <select id="mtype">
       <option value="video">Video / Reel</option>
       <option value="image">Image</option>
       <option value="text">Text only (Facebook only)</option>
     </select>
 
-    <label for="media">Media URL (public, hawkeye.com.ng)</label>
+    <label for="media">Media URL (Public, hawkeye.com.ng)</label>
     <input id="media" type="url" value="https://hawkeye.com.ng/media/demo.mp4" placeholder="https://hawkeye.com.ng/media/…" />
 
-    <label for="link">Link (optional, Facebook text posts)</label>
+    <label for="link">Link (Optional, Facebook Text Posts)</label>
     <input id="link" type="url" placeholder="https://hawkeye.com.ng/" />
 
     <button id="post" style="margin-top:14px">Post</button>
     <div id="result"></div>
   </main>
 
-  <script src="native.js?v=104"></script>
+  <script src="native.js?v=105"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const secret = () => localStorage.getItem('hawkeye_admin') || '';

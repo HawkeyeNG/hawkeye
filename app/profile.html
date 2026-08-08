@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
-  <script src="native.js?v=104"></script>
+  <link rel="stylesheet" href="styles.css?v=145" />
+  <script src="native.js?v=105"></script>
   <style>
     .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
     .pcard h2 { margin: 0 0 10px; font-size: 1.02rem; }
@@ -103,7 +103,7 @@
         </div>
         <button class="phero-copy" id="btn-copy">Copy ID</button>
       </div>
-      <details class="fold"><summary>Your identity hash</summary>
+      <details class="fold"><summary>Your Identity Hash</summary>
         <p>Your public identity on the ledger — your phone number is never stored.</p>
         <div class="hashbox" id="p-hash"></div></details>
 
@@ -113,20 +113,20 @@
       <div class="pcard">
         <h2>Password</h2>
         <p class="hint" id="pw-state"></p>
-        <button id="btn-pw-open" class="secondary" style="width:auto">Set password</button>
+        <button id="btn-pw-open" class="secondary" style="width:auto">Set Password</button>
         <p class="hint">Forgot it? Reset it from the <a href="observe.html?intent=signin">sign-in page</a> — "Forgot your password?" sends a code, then you set a new one.</p>
       </div>
 
       <div id="pw-modal" class="pw-modal-back" hidden>
         <div class="pw-modal" role="dialog" aria-modal="true" aria-labelledby="pw-modal-title">
-          <h2 id="pw-modal-title" style="margin-top:0">Set password</h2>
+          <h2 id="pw-modal-title" style="margin-top:0">Set Password</h2>
           <div id="pw-current-wrap" hidden>
-            <label for="pw-current">Current password</label>
+            <label for="pw-current">Current Password</label>
             <input id="pw-current" type="password" autocomplete="current-password" />
           </div>
-          <label for="pw-new">New password <span class="hint">(min 8 characters)</span></label>
-          <input id="pw-new" type="password" autocomplete="new-password" />
-          <label for="pw-new2">Confirm new password</label>
+          <label for="pw-new">New Password</label>
+          <input id="pw-new" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+          <label for="pw-new2">Confirm New Password</label>
           <input id="pw-new2" type="password" autocomplete="new-password" />
           <p class="hint" id="pw-msg"></p>
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
@@ -137,35 +137,35 @@
       </div>
 
       <div class="pcard">
-        <h2>My polling unit</h2>
+        <h2>My Polling Unit</h2>
         <div id="p-unit" class="empty">None saved.</div>
         <p class="hint">Save or change it on <a href="map-unit.html">Map a Polling Unit</a> — you'll get alerts for every report at your unit.</p>
       </div>
 
       <div class="pcard">
-        <h2>Followed races</h2>
+        <h2>Followed Races</h2>
         <div id="p-subs" class="empty">None yet — follow a race from the <a href="results.html">leaderboard</a>.</div>
       </div>
 
-      <h2 class="sec-label" style="margin-top:18px">My activity</h2>
-      <details class="fold"><summary>Result reports <span class="cnt" id="cnt-reports">0</span></summary>
+      <h2 class="sec-label" style="margin-top:18px">My Activity</h2>
+      <details class="fold"><summary>Result Reports <span class="cnt" id="cnt-reports">0</span></summary>
         <div id="p-reports" class="empty">No result reports yet.</div></details>
-      <details class="fold"><summary>Collation reports <span class="cnt" id="cnt-collation">0</span></summary>
+      <details class="fold"><summary>Collation Reports <span class="cnt" id="cnt-collation">0</span></summary>
         <div id="p-collation" class="empty">No collation reports yet.</div></details>
-      <details class="fold"><summary>Incident reports <span class="cnt" id="cnt-incidents">0</span></summary>
+      <details class="fold"><summary>Incident Reports <span class="cnt" id="cnt-incidents">0</span></summary>
         <div id="p-incidents" class="empty">No incident reports yet.</div></details>
-      <details class="fold"><summary>Units mapped <span class="cnt" id="cnt-mappings">0</span></summary>
+      <details class="fold"><summary>Units Mapped <span class="cnt" id="cnt-mappings">0</span></summary>
         <div id="p-mappings" class="empty">No units mapped yet.</div></details>
 
       <div class="pcard">
         <h2>Session</h2>
-        <button class="secondary signout" id="btn-signout">Sign out on this device</button>
+        <button class="secondary signout" id="btn-signout">Sign Out on This Device</button>
       </div>
 
       <div class="pcard danger">
-        <h2>Delete my identity</h2>
+        <h2>Delete My Identity</h2>
         <p class="hint">Wipes your key, device link, Telegram link and subscriptions. Reports already on the public ledger are permanent and stay; re-registering the same phone restores the same ID.</p>
-        <button id="btn-delete">Delete my observer identity</button>
+        <button id="btn-delete">Delete My Observer Identity</button>
       </div>
 
     </div>
@@ -267,8 +267,8 @@
       $('pw-new').value = ''; $('pw-new2').value = ''; $('pw-current').value = '';
       hasPassword = true;
       $('pw-current-wrap').hidden = false;
-      $('btn-pw-open').textContent = 'Change password';
-      $('pw-modal-title').textContent = 'Change password';
+      $('btn-pw-open').textContent = 'Change Password';
+      $('pw-modal-title').textContent = 'Change Password';
       $('pw-state').textContent = hasPassword
         ? 'You have a password ✓ — you can sign in on any device without an OTP.'
         : '';
@@ -287,6 +287,6 @@
     load();
   </script>
   <script src="device.js"></script>
-  <script src="menu.js?v=140"></script>
+  <script src="menu.js?v=142"></script>
 </body>
 </html>

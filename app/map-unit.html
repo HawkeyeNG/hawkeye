@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=141" />
-  <script src="native.js?v=104"></script>
+  <link rel="stylesheet" href="styles.css?v=145" />
+  <script src="native.js?v=105"></script>
   <!-- Leaflet self-hosted (vendor/leaflet) — CDN was a single point of failure
        on flaky networks and inside the future Telegram webview. -->
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
@@ -75,12 +75,12 @@
     <p id="stats" class="scope-note"></p>
 
     <section class="card">
-      <h2>Polling unit map &amp; locator</h2>
+      <h2>Polling Unit Map &amp; Locator</h2>
       <div class="map-tools">
         <input id="ward-search" type="text" placeholder="Search a ward or LGA…" />
         <button id="btn-search" class="secondary">Find</button>
-        <button id="btn-near" class="secondary">📍 Near me</button>
-        <label class="ward-toggle"><input type="checkbox" id="toggle-wards" /> Ward boundaries</label>
+        <button id="btn-near" class="secondary">📍 Near Me</button>
+        <label class="ward-toggle"><input type="checkbox" id="toggle-wards" /> Ward Boundaries</label>
       </div>
       <div id="lmap"></div>
       <p class="map-key" hidden id="map-key">
@@ -114,17 +114,17 @@
       <h2 id="unit-name"></h2>
       <p class="hint">Only do this while physically standing at the unit. Your GPS fix is
       recorded; nothing is published.</p>
-      <button id="btn-gps">📍 Capture GPS at this unit</button>
-      <button id="btn-save-unit" class="secondary">⭐ Save as my polling unit</button>
+      <button id="btn-gps">📍 Capture GPS at This Unit</button>
+      <button id="btn-save-unit" class="secondary">⭐ Save as My Polling Unit</button>
       <p class="hint">Save to get alerts — in the app, and on Telegram or WhatsApp — for every result and approved incident at this unit.</p>
       <p id="cap-status" class="status" role="status"></p>
     </section>
 
     <section id="my-unit-card" class="card" hidden>
-      <h2>My polling unit</h2>
+      <h2>My Polling Unit</h2>
       <p id="my-unit-info" class="status"></p>
       <p class="hint">You get an alert — in the app, and on Telegram or WhatsApp — for everything reported at this unit.
-        <a id="btn-unsave" class="link" href="#">Stop watching</a></p>
+        <a id="btn-unsave" class="link" href="#">Stop Watching</a></p>
     </section>
   </main>
 
@@ -132,7 +132,7 @@
     <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p></div></footer>
 
   <script src="device.js"></script>
-  <script src="pu-search.js?v=1"></script>
+  <script src="pu-search.js?v=2"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
@@ -294,7 +294,7 @@
       // auto-fire below) — a control still reading "Near me" looks like work
       // the observer has yet to do.
       nearAutoRan = true;
-      $('btn-near').textContent = '📍 Search near me again';
+      $('btn-near').textContent = '📍 Search Near Me Again';
       $('near-status').textContent = 'Getting your position…';
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
@@ -382,6 +382,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=140"></script>
+  <script src="menu.js?v=142"></script>
 </body>
 </html>

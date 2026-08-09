@@ -997,7 +997,10 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
   justify-content: center;
   box-sizing: border-box;
   z-index: 100;
-  padding: 16px;
+  /* FULL BLEED. With padding + a 560px cap the video was letterboxed to fit the
+     remaining height, so a portrait stream rendered as a narrow strip down the
+     middle — the "skinny viewport". The chrome gets its own padding below. */
+  padding: 0;
 }
 /* THE CAMERA MUST FIT ONE SCREEN — Capture/Cancel are never scrolled to.
    overflow-y:auto here was the "weirdly long viewport": the frame SCROLLED its
@@ -1007,7 +1010,7 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
    it cannot be pushed off-screen. Was page-local CSS on observe/collation
    (practice never got it) — sitewide now, page copies deleted. */
 .camera-frame {
-  width: 100%; max-width: 560px;
+  width: 100%; max-width: none;
   display: flex; flex-direction: column;
   /* height, NOT max-height. flex-grow shares out FREE space, and a
      max-height-only box is still content-sized — so there was no free space,
@@ -1028,7 +1031,17 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
    detection outline misaligned with what the camera is showing. */
 #camera-overlay .video-wrap {
   flex: 1 1 0; min-height: 0;
+  /* width:100% overrides the later `.video-wrap { width: fit-content }`: the
+     wrap is now the sizing box the video covers, not a shrink-wrap around it. */
+  width: 100%; max-width: none;
   display: flex; align-items: center; justify-content: center;
+}
+/* The frame is edge-to-edge now, so the chrome carries its own insets. */
+#camera-overlay #camera-title, #camera-overlay #camera-guide,
+#camera-overlay #scan-hint { padding-left: 14px; padding-right: 14px; }
+#camera-overlay #camera-title { padding-top: 12px; }
+#camera-overlay .camera-actions {
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
 }
 #camera-overlay .camera-actions { flex: none; }
 #camera-overlay #camera-title, #camera-overlay #camera-guide,
@@ -1077,12 +1090,15 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 .ecard .ec-ev { margin-top: 6px; font-size: 0.85rem; }
 #camera-overlay video {
   display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  /* 100% of .video-wrap's flex share — the old calc(100dvh - 190px) under-counted
-     the moment the guide banner ran past two lines. */
-  max-height: 100%;
+  /* FILL the wrap and crop, rather than fitting inside it. Fitting a portrait
+     stream into a tall box left a narrow strip; cover uses the whole viewport.
+     scan.js maps the detection outline through the same cover transform, so the
+     overlay still lands on the sheet. */
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
   background: #000;
 }
 /* max-height too, or this rule (which comes LATER in the file) leaves the wrap

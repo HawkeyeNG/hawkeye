@@ -15,7 +15,8 @@ window.DocScanner = (() => {
   const STABLE_NEEDED = 5; // ~0.8 s of steady corners -> auto-capture
 
   let video = null, canvas = null, hint = null, onAuto = null;
-  let timer = null, quad = null, lastRaw = null, stable = 0, fired = false;
+  const MISS_GRACE = 3; // ~0.4 s of dropouts tolerated before the lock is dropped
+  let timer = null, quad = null, lastRaw = null, stable = 0, fired = false, misses = 0;
   let worker = null, workerDead = false, awaitingDetect = false, cvReady = false;
   const procBuf = document.createElement('canvas'); // reused downscale target
 
@@ -87,11 +88,29 @@ window.DocScanner = (() => {
         stable = steady ? stable + 1 : 1;
         lastRaw = q;
         quad = smooth(quad, q); // smoothed corners drive the outline + capture
+        misses = 0;
       } else {
-        // Brief detection dropouts (a flicker, a shadow) shouldn't wipe progress.
-        stable = Math.max(0, stable - 2);
-        lastRaw = null;
-        if (stable === 0) quad = null;
+        /**
+         * A DROPOUT MUST NOT RESET THE COMPARISON POINT.
+         *
+         * This used to null `lastRaw`, so the next successful detection had
+         * nothing to measure against, scored `steady = false` and knocked
+         * `stable` back to 1. Against a real sheet detection alternates
+         * hit/miss constantly (shadow, hand tremor, a passing head), so stable
+         * oscillated around 1 and NEVER reached STABLE_NEEDED — auto-capture
+         * could not fire at all, and the outline blinked out on every miss.
+         *
+         * Keeping the last corners through a few misses lets a steady hand
+         * accumulate across the gaps, and holds the outline on screen instead
+         * of flickering. Only a sustained loss clears the state.
+         */
+        // NO DECREMENT INSIDE THE GRACE WINDOW. Docking a point per miss just
+        // cancels the point the next hit earns: against choppy detection the
+        // count oscillates 1,0,1,0 and still never reaches STABLE_NEEDED. A miss
+        // only pauses progress; `misses` resets on every hit, so it takes
+        // MISS_GRACE CONSECUTIVE misses to drop the lock.
+        misses += 1;
+        if (misses > MISS_GRACE) { quad = null; lastRaw = null; stable = 0; misses = 0; }
       }
       draw();
       if (hint) {
@@ -135,20 +154,39 @@ window.DocScanner = (() => {
     g.restore();
   }
 
+  /**
+   * The overlay is drawn in DISPLAYED pixels, not video pixels.
+   *
+   * The video now fills the frame with object-fit: cover, so the visible image
+   * is a CENTRE CROP of the stream — the canvas can no longer just inherit the
+   * intrinsic size and be stretched, or the outline would sit wherever the crop
+   * pushed it. Detection stays in intrinsic coords (capture() warps with those);
+   * only the drawing is mapped through the same cover transform the browser
+   * applied, so the outline lands exactly on the sheet the observer can see.
+   */
   function draw() {
     if (!canvas || !video) return;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    if (!canvas.width || !canvas.height) return; // stream not up yet
+    const box = canvas.parentElement;
+    const dw = (box && box.clientWidth) || 0;
+    const dh = (box && box.clientHeight) || 0;
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if (!dw || !dh || !vw || !vh) return; // stream or layout not up yet
+    canvas.width = dw;
+    canvas.height = dh;
     const g = canvas.getContext('2d');
-    g.clearRect(0, 0, canvas.width, canvas.height);
-    drawGuide(g, canvas.width, canvas.height, !!quad);
+    g.clearRect(0, 0, dw, dh);
+    drawGuide(g, dw, dh, !!quad);
     if (!quad) return;
+    const s = Math.max(dw / vw, dh / vh);            // cover: fill, crop overflow
+    const ox = (dw - vw * s) / 2, oy = (dh - vh * s) / 2;
     g.beginPath();
-    quad.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)));
+    quad.forEach((p, i) => {
+      const x = p.x * s + ox, y = p.y * s + oy;
+      return i ? g.lineTo(x, y) : g.moveTo(x, y);
+    });
     g.closePath();
     const locked = stable >= STABLE_NEEDED;
-    g.lineWidth = Math.max(3, canvas.width / 250);
+    g.lineWidth = Math.max(3, dw / 160);
     g.strokeStyle = locked ? '#2e9940' : '#f5a623';
     g.fillStyle = locked ? 'rgba(46,153,64,0.15)' : 'rgba(245,166,35,0.08)';
     g.fill();
@@ -168,7 +206,7 @@ window.DocScanner = (() => {
 
   function start(v, overlayCanvas, hintEl, onAutoCapture) {
     video = v; canvas = overlayCanvas; hint = hintEl; onAuto = onAutoCapture;
-    quad = null; stable = 0; fired = false; awaitingDetect = false;
+    quad = null; stable = 0; fired = false; awaitingDetect = false; misses = 0; lastRaw = null;
     canvas.hidden = false;
     if (hint) { hint.hidden = false; hint.textContent = 'Loading document detection…'; }
     makeWorker();
@@ -197,7 +235,7 @@ window.DocScanner = (() => {
       canvas = null;
     }
     if (hint) { hint.hidden = true; hint = null; }
-    quad = null; stable = 0; fired = false; awaitingDetect = false;
+    quad = null; stable = 0; fired = false; awaitingDetect = false; misses = 0; lastRaw = null;
   }
 
   // Allow another auto-capture after an aborted one (no GPS / user chose retake).

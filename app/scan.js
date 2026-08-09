@@ -104,12 +104,45 @@ window.DocScanner = (() => {
     worker.postMessage({ type: 'detect', buf: id.data.buffer, w, h }, [id.data.buffer]);
   }
 
+  /**
+   * A PERSISTENT FRAMING GUIDE — the scanner has to look like a scanner.
+   *
+   * draw() used to clear the canvas and return whenever no document was
+   * detected, so until OpenCV locked onto a sheet the overlay was completely
+   * blank: on the web the sheet step was indistinguishable from a plain camera,
+   * which is exactly the "there is no scanner on the website" report. The native
+   * shell never showed this because ML Kit brings its own scanner chrome.
+   *
+   * Corner brackets are always on, and dim once a document is outlined so the
+   * detected quad is the thing that stands out.
+   */
+  function drawGuide(g, w, h, detected) {
+    const inset = Math.round(Math.min(w, h) * 0.06);
+    const len = Math.round(Math.min(w, h) * 0.11);
+    g.save();
+    g.strokeStyle = detected ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.85)';
+    g.lineWidth = Math.max(3, w / 220);
+    g.lineCap = 'round';
+    const corners = [
+      [inset, inset, 1, 1], [w - inset, inset, -1, 1],
+      [inset, h - inset, 1, -1], [w - inset, h - inset, -1, -1],
+    ];
+    for (const [x, y, dx, dy] of corners) {
+      g.beginPath();
+      g.moveTo(x, y + dy * len); g.lineTo(x, y); g.lineTo(x + dx * len, y);
+      g.stroke();
+    }
+    g.restore();
+  }
+
   function draw() {
     if (!canvas || !video) return;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+    if (!canvas.width || !canvas.height) return; // stream not up yet
     const g = canvas.getContext('2d');
     g.clearRect(0, 0, canvas.width, canvas.height);
+    drawGuide(g, canvas.width, canvas.height, !!quad);
     if (!quad) return;
     g.beginPath();
     quad.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)));
@@ -124,6 +157,11 @@ window.DocScanner = (() => {
 
   function tick() {
     if (!video) return;
+    // Paint EVERY tick, not only on a worker reply. Detection is skipped until
+    // OpenCV is ready (and skipped entirely if the worker died), so a draw that
+    // only ran on detect messages left the overlay blank for the whole load —
+    // and forever on any device where the worker never comes up.
+    draw();
     requestDetect();
     timer = setTimeout(tick, 140);
   }

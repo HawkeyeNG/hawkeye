@@ -31,14 +31,20 @@
    * so this costs no network. The fallback timer is not optional — an overlay
    * nothing removes is an app that never appears.
    */
+  // index.html carries the splash as STATIC markup (see the comment there) so it
+  // paints with the page's first frame. This file only takes it down — creating
+  // it from <head> meant appending to <html> before <body> existed, which is the
+  // version that never appeared. Other entry pages get one built here.
   if (!sessionStorage.getItem('hk_booted')) {
     sessionStorage.setItem('hk_booted', '1');
-    const boot = document.createElement('div');
-    boot.id = 'hk-boot-splash';
-    boot.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#004225;'
-      + 'display:flex;align-items:center;justify-content:center;transition:opacity .25s';
-    boot.innerHTML = '<img src="icon-192.png?v=hawk2" alt="" width="128" height="128" style="border-radius:24px" />';
-    (document.body || document.documentElement).appendChild(boot);
+    if (!document.getElementById('hk-boot-splash')) {
+      const boot = document.createElement('div');
+      boot.id = 'hk-boot-splash';
+      boot.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#004225;'
+        + 'display:flex;align-items:center;justify-content:center;transition:opacity .25s';
+      boot.innerHTML = '<img src="icon-192.png?v=hawk2" alt="" width="128" height="128" style="border-radius:24px" />';
+      (document.body || document.documentElement).appendChild(boot);
+    }
     const off = () => {
       const el = document.getElementById('hk-boot-splash');
       if (!el) return;

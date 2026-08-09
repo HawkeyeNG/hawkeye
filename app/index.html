@@ -20,7 +20,7 @@
     // without stripping them from every other page in the shell.
     document.documentElement.classList.add('is-landing');
   </script>
-  <script src="native.js?v=107"></script>
+  <script src="native.js?v=108"></script>
   <style>
     /* ---- Observer Home (signed-in index) ---- */
     .home-obs { display: none; }
@@ -76,6 +76,18 @@
   <script src="authgate.js?v=2"></script>
 </head>
 <body>
+  <!-- BOOT SPLASH — static markup, deliberately the first thing in <body>.
+       Android 12+ omits the splash ICON on the first launch after install (a
+       platform bug, issuetracker.google.com/205021357), so the hawk can only be
+       shown once the WebView paints. This was being injected by native.js from
+       <head>, where document.body does not exist yet and it had to be appended
+       to <html> — markup here paints with the page's first frame instead, with
+       no dependency on script timing, external CSS or the network.
+       Removed immediately on the web; native.js fades it out on load. -->
+  <div id="hk-boot-splash" style="position:fixed;inset:0;z-index:2147483647;background:#004225;display:flex;align-items:center;justify-content:center;transition:opacity .25s">
+    <img src="icon-192.png?v=hawk2" alt="" width="128" height="128" style="border-radius:24px" />
+  </div>
+  <script>/*hk-boot*/(function(){try{var C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform())){var e=document.getElementById("hk-boot-splash");if(e)e.remove();}}catch(x){var e2=document.getElementById("hk-boot-splash");if(e2)e2.remove();}})();</script>
   <header class="gov-header">
     <div class="wrap brand-row">
       <a class="brand" href="index.html">

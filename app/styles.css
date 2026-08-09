@@ -999,7 +999,26 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
   z-index: 100;
   padding: 16px;
 }
-.camera-frame { width: 100%; max-width: 560px; max-height: 100%; overflow-y: auto; }
+/* THE CAMERA MUST FIT ONE SCREEN — Capture/Cancel are never scrolled to.
+   overflow-y:auto here was the "weirdly long viewport": the frame SCROLLED its
+   content instead of shrinking the video, so the action row sat below the fold
+   whenever the guide banner ran long. Flex column instead: the video takes
+   whatever is left after the fixed pieces, and the action row is flex:none, so
+   it cannot be pushed off-screen. Was page-local CSS on observe/collation
+   (practice never got it) — sitewide now, page copies deleted. */
+.camera-frame {
+  width: 100%; max-width: 560px;
+  display: flex; flex-direction: column;
+  max-height: 100vh; max-height: 100dvh; overflow: hidden;
+}
+#camera-overlay .video-wrap {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+#camera-overlay .camera-actions { flex: none; }
+#camera-overlay #camera-title, #camera-overlay #camera-guide,
+#camera-overlay #scan-hint { flex: none; }
+#camera-overlay #camera-guide { max-height: 22vh; overflow: auto; }
 #camera-title { color: #fff; font-weight: 700; margin: 0 0 10px; text-align: center; font-size: 1.05rem; }
 /* Loud per-shot guidance: the VENUE photo is easily mistaken for "re-shoot the
    sheet", so it gets an unmissable yellow banner in the live capture overlay. */
@@ -1046,8 +1065,9 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: calc(100vh - 190px);
-  max-height: calc(100dvh - 190px);
+  /* 100% of .video-wrap's flex share — the old calc(100dvh - 190px) under-counted
+     the moment the guide banner ran past two lines. */
+  max-height: 100%;
   background: #000;
 }
 .video-wrap { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; }

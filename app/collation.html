@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=146" />
+  <link rel="stylesheet" href="styles.css?v=147" />
   <script src="native.js?v=107"></script>
   <style>
     /* Mirror of observe.html: the slot description spans the full card instead
@@ -27,24 +27,7 @@
     /* ::after affordance lives in styles.css now (see observe.html note) — a
        page-local copy would win over the shared sheet. */
     .step-card.done > summary { color: var(--green); }
-    /* THE CAMERA MUST FIT ONE SCREEN — Capture and Cancel are never scrolled to.
-       styles.css caps the video with `#camera-overlay video { max-height:
-       calc(100dvh - 190px) }`, an ID selector that beat the class rule tried
-       first; and 190px is not enough anyway once the guide banner runs to four
-       lines. So the frame becomes a flex column: the video takes whatever is
-       left after the fixed pieces, and the action row is flex:none, which makes
-       it impossible to push off-screen regardless of banner length. */
-    #camera-overlay .camera-frame {
-      display: flex; flex-direction: column; max-height: 100dvh; overflow: hidden;
-    }
-    #camera-overlay .video-wrap {
-      flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center;
-    }
-    #camera-overlay video { max-height: 100%; height: auto; }
-    #camera-overlay .camera-actions { flex: none; }
-    #camera-overlay #camera-title, #camera-overlay #camera-guide,
-    #camera-overlay #scan-hint { flex: none; }
-    #camera-overlay #camera-guide { max-height: 22vh; overflow: auto; }
+    /* Camera overlay sizing lives in styles.css now — sitewide, one copy. */
     .party-mark { width: 26px; height: 26px; object-fit: contain; flex: none; }
     .party-label { display: flex; align-items: center; gap: 8px; }
     .party-label small { color: var(--muted); font-size: 0.72rem; }

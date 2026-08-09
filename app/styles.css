@@ -465,6 +465,10 @@ code { word-break: break-all; font-size: 0.72rem; background: var(--code-bg); bo
    heading it was only meant to index. */
 .step-no {
   display: inline-flex; align-items: center; justify-content: center;
+  /* An inline-flex box sits on the TEXT BASELINE by default, so a 16px badge
+     beside a ~1.35rem heading hangs below it and the two read as skewed. Centre
+     it on the text instead. */
+  vertical-align: middle; position: relative; top: -0.06em; margin-right: 3px;
   width: 16px; height: 16px; border-radius: 5px;
   background: linear-gradient(135deg, var(--green-dark), var(--green-700)); color: var(--accent); font-size: 0.62rem; flex: none;
 }

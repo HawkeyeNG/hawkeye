@@ -27,6 +27,13 @@ chmod +x ./gradlew
 APK="app/build/outputs/apk/debug/app-debug.apk"
 if [ -f "$APK" ]; then
   cp "$APK" /mnt/c/Users/HP/Downloads/hawkeye-debug.apk
-  ls -la /mnt/c/Users/HP/Downloads/hawkeye-debug.apk; echo "APK_OK"
+  # ALSO refresh the copy the WEBSITE serves. This was a manual step, so it kept
+  # drifting behind — the public download sat two days stale while the local
+  # build was current. It is stripped from the bundle before cap sync above, so
+  # writing it here cannot end up inside the next APK.
+  # NOTE the name: the site serves it as hawkeye.apk. Only this local test copy
+  # carries the -debug suffix.
+  cp "$APK" "$HOME/hawkeye/app/download/hawkeye.apk"
+  ls -la /mnt/c/Users/HP/Downloads/hawkeye-debug.apk "$HOME/hawkeye/app/download/hawkeye.apk"; echo "APK_OK"
 else echo "APK_MISSING"; fi
 echo "=== DONE $(date +%T) ==="

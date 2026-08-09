@@ -770,9 +770,14 @@ $('btn-locate').onclick = async () => {
 
 // ---------- locate: register browse (units without coordinates) ----------
 async function fillSelect(sel, items, placeholder) {
+  // A non-array here USED TO THROW and take the whole handler down with it, so
+  // one bad payload emptied every dropdown in the cascade rather than just its
+  // own. Degrade to an empty, disabled select instead: visibly nothing to pick,
+  // and the steps after it still run.
+  const list = Array.isArray(items) ? items : [];
   sel.innerHTML = `<option value="">${placeholder}</option>` +
-    items.map((i) => `<option>${i}</option>`).join('');
-  sel.disabled = items.length === 0;
+    list.map((i) => `<option>${i}</option>`).join('');
+  sel.disabled = list.length === 0;
 }
 
 // Free-text unit search, above the cascade. selectUnit() is the same handler the
@@ -796,14 +801,91 @@ if ($('pu-search-host') && window.puSearch) {
  * any of this does on a desk. Falls through to the network on any storage error,
  * and never caches a failed response.
  */
+/**
+ * CACHE ONLY A USABLE ANSWER, AND NEVER TRUST WHAT COMES BACK OUT.
+ *
+ * The first version cached whenever `!r.error` — but apiTry only sets `error`
+ * for NETWORK failures. A 500, or an HTML error page, still resolves with
+ * `body = {}` (api() falls back to {} when the JSON parse fails), and `{}` is
+ * truthy, so the empty object was written to localStorage. From then on every
+ * call returned it, fillSelect did `{}.map(...)`, threw, and killed the handler:
+ * State, LGA and Ward all sat empty, on every launch, permanently — a poisoned
+ * cache survives restarts and reinstalls of the page.
+ *
+ * So: store only a 200 carrying real data, and re-validate on the way out, so a
+ * cache poisoned by an older build heals itself instead of needing a hard reset.
+ * The `hk_ref2:` prefix retires any entry the buggy version already wrote.
+ */
+const refUsable = (b) => Array.isArray(b) ? b.length > 0 : !!(b && Array.isArray(b.units) && b.units.length);
+
+/**
+ * THE ELECTION-STATE REGISTER IS SHIPPED, NOT FETCHED.
+ *
+ * The browse cascade is four sequential round trips — states, LGAs, wards, then
+ * units — and each measured ~1-2.5s against production on a good link. That is
+ * where observers get stuck, and election-day mobile is the worst case of it.
+ * The register does not change, so asking a server for it is avoidable work.
+ *
+ * app/register-osun.json (built by scripts/build_register_bundle.mjs) holds the
+ * whole Osun tree — 30 LGAs, 332 wards, 3,763 units — as the SAME row shape the
+ * API returns, so tiers, coordinates and the geofence behave identically. 1.7 MB
+ * raw but ~98 KB over the wire, fetched once and then cached by the service
+ * worker, so the cascade is instant and works with no signal at all.
+ *
+ * Deliberately NOT in the SW precache SHELL: that list is re-downloaded in full
+ * on every deploy, and this is too heavy to pay repeatedly. It is in LAZY, so it
+ * lands on first use and stays.
+ *
+ * Other states still go to the network — Osun is the election.
+ */
+let regBundle = null;
+let regPending = null;
+function loadRegisterBundle() {
+  if (regBundle !== null) return Promise.resolve(regBundle);
+  if (!regPending) {
+    regPending = fetch('register-osun.json?v=1')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { regBundle = j || false; return regBundle; })
+      .catch(() => { regBundle = false; return false; }); // false = tried and failed; never retry-loop
+  }
+  return regPending;
+}
+
+/** Answer a /api/register/* path from the bundle, or null if it cannot. */
+function registerFromBundle(b, path) {
+  if (!b) return null;
+  const u = new URL(path, location.origin);
+  const p = u.pathname;
+  const st = u.searchParams.get('state');
+  const lga = u.searchParams.get('lga');
+  const ward = u.searchParams.get('ward');
+  if (p.endsWith('/states')) return b.states || null;
+  if (!st || !b[st]) return null; // only the bundled state is served locally
+  if (p.endsWith('/lgas')) return Object.keys(b[st]);
+  if (p.endsWith('/wards')) return b[st][lga] ? Object.keys(b[st][lga]) : null;
+  if (p.endsWith('/units')) {
+    const rows = b[st][lga] && b[st][lga][ward];
+    return rows ? { units: rows } : null;
+  }
+  return null;
+}
+
 async function refApi(path) {
-  const key = 'hk_ref:' + path;
+  // Shipped register first — no network, no localStorage, no staleness.
+  const local = registerFromBundle(await loadRegisterBundle(), path);
+  if (refUsable(local)) return { status: 200, body: local };
+
+  const key = 'hk_ref2:' + path;
   try {
     const hit = localStorage.getItem(key);
-    if (hit) return { status: 200, body: JSON.parse(hit) };
-  } catch { /* unreadable or full — just fetch */ }
+    if (hit) {
+      const body = JSON.parse(hit);
+      if (refUsable(body)) return { status: 200, body };
+      localStorage.removeItem(key); // poisoned or empty — drop it and refetch
+    }
+  } catch { try { localStorage.removeItem(key); } catch { /* nothing to do */ } }
   const r = await apiTry(path);
-  if (!r.error && r.body) {
+  if (r.status === 200 && refUsable(r.body)) {
     try { localStorage.setItem(key, JSON.stringify(r.body)); } catch { /* quota — fine */ }
   }
   return r;

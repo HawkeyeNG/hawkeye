@@ -10,9 +10,9 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=149" />
+  <link rel="stylesheet" href="styles.css?v=150" />
   <style>
-    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=149, so
+    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=150, so
        putting three rules in the shared sheet would mean bumping and
        redeploying all forty to defeat the HTTP cache — a large blast radius
        for CSS only this page uses. Move it into styles.css whenever that file
@@ -87,7 +87,7 @@
     /* Camera overlay sizing lives in styles.css now — sitewide, one copy. */
   </style>
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
-  <script src="native.js?v=108"></script>
+  <script src="native.js?v=109"></script>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
   <meta property="og:title" content="Hawkeye — Report a Polling Unit Result" />
@@ -418,12 +418,12 @@
   <script src="outbox.js" defer></script>
   <!-- Before app.js (which mounts it) and not deferred, so window.puSearch
        exists by the time the deferred app.js runs. -->
-  <script src="pu-search.js?v=2"></script>
+  <script src="pu-search.js?v=3"></script>
   <!-- Tier A of the unit ladder: reads the delimitation code off the OCR'd
        sheet. Must load before app.js, which calls into it. -->
   <script src="pu-code.js?v=3"></script>
   <script src="capture.js?v=1"></script>
-  <script src="app.js?v=142" defer></script>
+  <script src="app.js?v=144" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="menu.js?v=142" defer></script>
 </body>

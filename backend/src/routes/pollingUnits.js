@@ -103,14 +103,15 @@ pollingUnitsRouter.get('/register/units', (req, res) => {
  *
  * Until now the only ways to reach a unit were "near me" (GPS) and the strict
  * state → LGA → ward cascade, so someone who knew their unit's NAME but not its
- * ward had to guess their way down a tree. Typing "wonde" now finds
- * "Wonderland Estate".
+ * ward had to guess their way down a tree. Typing "aso dr" now finds
+ * "Aso Drive".
  *
  * Matches name, pu_code and ward, so a unit number works as well as a name.
  *
- * Ranked, because a bare LIKE is worse than useless here: '%wonde%' returns
- * "Playground, Ukwonde" above "Wonderland Estate" on raw row order, which reads
- * as broken. Exact code first, then prefix matches, then mid-word.
+ * Ranked, because a bare LIKE is worse than useless here: searching "aso" on raw
+ * row order can return a unit that merely CONTAINS those letters mid-word above
+ * "Aso Drive" itself, which reads as broken. Exact code first, then prefix
+ * matches, then mid-word.
  *
  * Cost: `LIKE '%q%'` cannot use an index (leading wildcard), so this is a scan
  * of ~177k rows — measured 83ms warm on the live DB. better-sqlite3 is

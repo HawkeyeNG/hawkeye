@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=149" />
-  <script src="native.js?v=108"></script>
+  <link rel="stylesheet" href="styles.css?v=150" />
+  <script src="native.js?v=109"></script>
   <style>
     .feed-item { background: var(--card); border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
     .feed-item .k { font-weight: 700; color: var(--link); }
@@ -212,6 +212,41 @@
          submit — the observer had already looked away — so filing an incident
          appeared to do nothing. A modal makes the outcome unmissable and gives
          the only two things anyone wants next. -->
+    <!-- What the ADD tile opens: the same three seams as the row above, so the
+         place you add media is the place your media already is. -->
+    <div id="add-modal" class="modal-back" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
+        <h2 id="add-modal-title" style="margin-top:0">Add Media</h2>
+        <div id="media-actions" style="margin-bottom:12px">
+          <button type="button" id="add-photo">📷 Photo</button>
+          <button type="button" id="add-video">🎥 Video</button>
+          <label for="media" class="media-upload" id="add-upload">⬆ Upload</label>
+        </div>
+        <button type="button" id="add-cancel" class="secondary" style="width:auto">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Camera overlay for HAWKEYE_CAPTURE — same markup and ids as observe.html
+         and collation.html, so the shared module and the shared styles.css rules
+         (full-bleed viewport, safe-area action row) apply here unchanged.
+         #scan-canvas/#scan-hint are unused on this page (no document scanning for
+         incidents) but capture.js expects the structure. -->
+    <div id="camera-overlay" hidden>
+      <div class="camera-frame">
+        <p id="camera-title">Incident photo</p>
+        <p id="camera-guide" hidden></p>
+        <div class="video-wrap">
+          <video id="video" playsinline></video>
+          <canvas id="scan-canvas" hidden></canvas>
+        </div>
+        <p id="scan-hint" hidden></p>
+        <div class="camera-actions">
+          <button id="btn-cancel-camera" class="secondary">Cancel</button>
+          <button id="btn-capture">Capture Photo</button>
+        </div>
+      </div>
+    </div>
+
     <div id="done-modal" class="modal-back" hidden>
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="done-title">
         <h2 id="done-title" style="margin-top:0">✅ Sent for Review</h2>
@@ -237,6 +272,7 @@
   </div></footer>
 
   <script src="device.js"></script>
+  <script src="capture.js?v=1"></script>
   <script src="tg.js?v=95"></script>
   <script src="menu.js?v=142"></script>
   <script>
@@ -318,8 +354,19 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
     $('btn-exit').onclick = () => { location.href = 'index.html'; };
+    // ADD chooser: each option closes the sheet, then reuses the SAME seam its
+    // twin in the row above uses — one implementation per medium, not two.
+    const closeAdd = () => { $('add-modal').hidden = true; };
+    $('add-cancel').onclick = closeAdd;
+    $('add-modal').onclick = (e) => { if (e.target === $('add-modal')) closeAdd(); };
+    $('add-photo').onclick = () => { closeAdd(); doCapture(); };
+    $('add-video').onclick = () => { closeAdd(); $('btn-video').click(); };
+    $('add-upload').onclick = closeAdd; // the <label for="media"> opens the picker itself
     $('preview').onclick = (e) => {
-      if (e.target.closest('.addmore')) { doCapture(); return; }
+      // ADD offers all three seams. It used to go straight to the camera, so it
+      // was really an "add another photo" button — no way to add a video or a
+      // file you already have without scrolling back to the row above.
+      if (e.target.closest('.addmore')) { $('add-modal').hidden = false; return; }
       const b = e.target.closest('.rm');
       if (!b) return;
       attachments.splice(Number(b.dataset.i), 1);
@@ -337,6 +384,32 @@
       && window.HAWKEYE.capabilities.camera && window.HAWKEYE.capturePhoto);
     async function doCapture() {
       if (attachments.length >= MAX_FILES) { $('status').textContent = `You can attach up to ${MAX_FILES} files.`; return; }
+      /**
+       * THE SHARED CAMERA, not a file input.
+       *
+       * The web branch used to click #media-cam — a file input carrying
+       * capture="environment". With accept="image/*,video/*" Android ignores the
+       * capture hint and shows the ordinary picker, so "Photo" did exactly what
+       * "Upload" does. Result and collation never had this problem because they
+       * go through HAWKEYE_CAPTURE, which opens the real viewport on the web and
+       * routes to the OS camera in the shell — so both platforms are fixed by
+       * using it here too, and the incident photo gets the same full-bleed
+       * viewport as every other capture in the app.
+       *
+       * Target 'incident' deliberately: 'sheet' would start the EC8A document
+       * scanner, and 'venue' would show the polling-venue guidance banner.
+       */
+      if (window.HAWKEYE_CAPTURE) {
+        window.HAWKEYE_CAPTURE.open('incident', {
+          labels: { incident: { title: 'Incident photo', action: 'Capture Photo' } },
+          onShot: (blob) => {
+            if (blob) addFiles([new File([blob], `incident-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })]);
+            return true; // close the camera
+          },
+          onError: (m) => { $('status').textContent = m; },
+        });
+        return;
+      }
       if (!nativeCam()) { $('media-cam').click(); return; }
       try {
         const blob = await window.HAWKEYE.capturePhoto('venue'); // 'venue' = plain OS camera, no doc-scan

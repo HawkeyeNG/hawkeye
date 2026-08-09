@@ -31,30 +31,24 @@
    * so this costs no network. The fallback timer is not optional — an overlay
    * nothing removes is an app that never appears.
    */
-  // index.html carries the splash as STATIC markup (see the comment there) so it
-  // paints with the page's first frame. This file only takes it down — creating
-  // it from <head> meant appending to <html> before <body> existed, which is the
-  // version that never appeared. Other entry pages get one built here.
-  if (!sessionStorage.getItem('hk_booted')) {
-    sessionStorage.setItem('hk_booted', '1');
-    if (!document.getElementById('hk-boot-splash')) {
-      const boot = document.createElement('div');
-      boot.id = 'hk-boot-splash';
-      boot.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#004225;'
-        + 'display:flex;align-items:center;justify-content:center;transition:opacity .25s';
-      boot.innerHTML = '<img src="icon-192.png?v=hawk2" alt="" width="128" height="128" style="border-radius:24px" />';
-      (document.body || document.documentElement).appendChild(boot);
-    }
-    const off = () => {
-      const el = document.getElementById('hk-boot-splash');
-      if (!el) return;
-      el.style.opacity = '0';
-      setTimeout(() => el.remove(), 300);
-    };
-    if (document.readyState === 'complete') setTimeout(off, 150);
-    else window.addEventListener('load', () => setTimeout(off, 150), { once: true });
-    setTimeout(off, 4000); // hard cap — never strand the app behind the overlay
-  }
+  // index.html owns the splash: it carries the markup AND its own removal (see
+  // the comment there). This file NEVER creates one — it only guarantees any
+  // splash present is taken down.
+  //
+  // REMOVAL IS UNCONDITIONAL. It used to sit inside a `!sessionStorage.hk_booted`
+  // block, so returning Home later in the same session re-rendered index.html's
+  // static splash with nothing left to remove it — the app sat behind a green
+  // screen it could never leave. Removing an absent splash is a no-op, so there
+  // is no reason to gate this on anything at all.
+  const offSplash = () => {
+    const el = document.getElementById('hk-boot-splash');
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  };
+  if (document.readyState === 'complete') setTimeout(offSplash, 150);
+  else window.addEventListener('load', () => setTimeout(offSplash, 150), { once: true });
+  setTimeout(offSplash, 3000); // hard cap — never strand the app behind the overlay
 
   // NO service worker in the app. The WebView already loads the shipped bundle
   // (local, instant, offline) — a SW adds nothing and actively breaks updates: an

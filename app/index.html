@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=149" />
+  <link rel="stylesheet" href="styles.css?v=150" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -20,7 +20,7 @@
     // without stripping them from every other page in the shell.
     document.documentElement.classList.add('is-landing');
   </script>
-  <script src="native.js?v=108"></script>
+  <script src="native.js?v=109"></script>
   <style>
     /* ---- Observer Home (signed-in index) ---- */
     .home-obs { display: none; }
@@ -87,7 +87,27 @@
   <div id="hk-boot-splash" style="position:fixed;inset:0;z-index:2147483647;background:#004225;display:flex;align-items:center;justify-content:center;transition:opacity .25s">
     <img src="icon-192.png?v=hawk2" alt="" width="128" height="128" style="border-radius:24px" />
   </div>
-  <script>/*hk-boot*/(function(){try{var C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform())){var e=document.getElementById("hk-boot-splash");if(e)e.remove();}}catch(x){var e2=document.getElementById("hk-boot-splash");if(e2)e2.remove();}})();</script>
+  <!-- SELF-DESTRUCTING, and it owns its own removal. A boot splash that can
+       outlive the load is an app that never starts, and gating removal on
+       session state (as native.js did) meant returning Home later in the session
+       re-rendered it with nothing left to take it down. Rules here:
+         · not the app, or already booted this session -> gone immediately
+         · otherwise -> gone on load, and unconditionally after 2.5s
+       native.js also removes it; removing twice is harmless. -->
+  <script>/*hk-boot*/(function(){
+    var el = document.getElementById("hk-boot-splash");
+    if (!el) return;
+    var kill = function () { if (el && el.parentNode) el.remove(); el = null; };
+    var app = false;
+    try {
+      var C = window.Capacitor;
+      app = !!(C && C.isNativePlatform && C.isNativePlatform()) && !sessionStorage.getItem("hk_booted");
+      if (app) sessionStorage.setItem("hk_booted", "1");
+    } catch (x) { app = false; }
+    if (!app) return kill();
+    window.addEventListener("load", function () { setTimeout(kill, 150); }, { once: true });
+    setTimeout(kill, 2500);
+  })();</script>
   <header class="gov-header">
     <div class="wrap brand-row">
       <a class="brand" href="index.html">

@@ -59,29 +59,12 @@
     if (n.nodeType === 1) { fixEl(n); scan(n); }
   }))).observe(document.documentElement, { childList: true, subtree: true });
 
-  /**
-   * SPLASH SCREEN — held by the web layer, not by a timer.
-   *
-   * The theme-based splash (AppTheme.NoActionBarLaunch) draws instantly, but
-   * nothing was deciding when it went away, so on the very first launch after an
-   * install it was gone before the WebView had painted — the splash "never
-   * showed", while a later warm start happened to be slow enough to reveal it.
-   *
-   * launchAutoHide:false hands that decision here: the splash stays up until the
-   * page is actually ready to be looked at.
-   *
-   * THE FALLBACK IS NOT OPTIONAL. With auto-hide off, a splash that is never
-   * told to hide is an app that never starts, so the timer is armed FIRST and
-   * unconditionally — before any code below it can throw — and a later hide() is
-   * harmless because hiding twice is a no-op.
-   */
-  const Splash = Cap.Plugins && Cap.Plugins.SplashScreen;
-  if (Splash) {
-    const hideSplash = () => { try { Splash.hide(); } catch { /* already gone */ } };
-    setTimeout(hideSplash, 4000);
-    if (document.readyState === 'complete') setTimeout(hideSplash, 200);
-    else window.addEventListener('load', () => setTimeout(hideSplash, 200), { once: true });
-  }
+  // NO SPLASH PLUGIN. It was added to hold a splash the web layer controlled,
+  // and it never showed the mark at all — the thing actually on screen is the
+  // system splash and then the activity's own window background, so that is
+  // where the fix belongs (mobile/android/.../values/styles.xml). One mechanism,
+  // no timers, and nothing that can leave an app stuck behind a splash it was
+  // never told to dismiss.
 
   // Native capability seams — app.js calls these when present, keeping the
   // compress → hash → sign → upload order intact (architecture §3).

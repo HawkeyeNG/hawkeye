@@ -13,6 +13,16 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- THE SPLASH HAS TO SURVIVE THE HANDOVER. The system splash (green +
+             hawk) ends the instant the first frame is drawn, and this theme took
+             over with no window background at all — so on a FIRST install, where
+             the WebView has nothing cached and takes seconds, the hawk vanished
+             and left a bare field. On a relaunch the WebView paints fast enough
+             that the system splash is still what you see, which is exactly why
+             it "worked on relaunch but not on install".
+             Painting the SAME drawable here continues it seamlessly until the
+             page draws over it. No plugin, no timers, no second splash. -->
+        <item name="android:windowBackground">@drawable/splash_screen</item>
         <!-- Hawkeye theming is opt-in via the in-app header toggle (styles.css
              [data-theme="dark"]); the CSS never follows prefers-color-scheme. With
              a DayNight theme the WebView would algorithmically darken the page to

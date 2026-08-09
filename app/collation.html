@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=149" />
-  <script src="native.js?v=108"></script>
+  <link rel="stylesheet" href="styles.css?v=150" />
+  <script src="native.js?v=109"></script>
   <style>
     /* Mirror of observe.html: the slot description spans the full card instead
        of being flexed beside the REQUIRED badge, which made it wrap to three
@@ -149,7 +149,13 @@
         </select>
         <label for="sel-state">State</label>
         <select id="sel-state"><option value="">— select —</option></select>
-        <p class="hint" id="hot-note" hidden style="margin:4px 0 0">States shown in <span class="hot-dot">green</span> have an election open now or within 28 days.</p>
+        <!-- Describes the SUFFIX, not the colour. Android's native select popup
+             renders every option in its own colour, so the inline green on the
+             option is silently dropped there — the legend promised green and the
+             list showed none, which reads as a bug in the list. The "— voting
+             soon" tag is the part that actually renders everywhere; the colour
+             stays as a bonus on platforms that honour it. -->
+        <p class="hint" id="hot-note" hidden style="margin:4px 0 0">States with an election open now or within 28 days are tagged <span class="hot-dot">— voting soon</span>.</p>
         <div id="lga-block"><label for="sel-lga">Local Government Area</label>
           <select id="sel-lga" disabled><option value="">— select —</option></select></div>
         <div id="ward-block"><label for="sel-ward">Ward</label>

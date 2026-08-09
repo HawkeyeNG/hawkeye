@@ -4,7 +4,7 @@
 // Before this, a unit could only be reached by GPS ("near me") or by walking the
 // state → LGA → ward cascade — which fails the very common case of knowing your
 // unit's NAME but not which ward the register files it under. This searches
-// name, unit code and ward, on partial input: "wonde" finds "Wonderland Estate".
+// name, unit code and ward, on partial input: "aso dr" finds "Aso Drive".
 //
 // Usage:
 //   window.puSearch.mount(containerEl, { onSelect(unit) {...}, state, lga });
@@ -30,7 +30,7 @@
     const o = opts || {};
     host.innerHTML =
       '<label for="pus-q">Search for your polling unit</label>'
-      + '<input id="pus-q" type="search" autocomplete="off" placeholder="Name, ward or unit number — e.g. Wonderland" />'
+      + '<input id="pus-q" type="search" autocomplete="off" placeholder="Name, ward or unit number — e.g. Aso Drive" />'
       + '<p class="hint" id="pus-status" role="status" aria-live="polite" style="margin:6px 0 0"></p>'
       + '<div id="pus-results" style="margin-top:8px"></div>';
     const q = host.querySelector('#pus-q');

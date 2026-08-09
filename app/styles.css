@@ -477,7 +477,14 @@ code { word-break: break-all; font-size: 0.72rem; background: var(--code-bg); bo
    The affordance rides on the HEADING LINE, right margin — it used to fall to a
    line of its own under the ✓ value, which read as a stray character. It also
    says what the tap does, and says it in both directions. */
-.step-card > summary { position: relative; padding-right: 92px; }
+/* Reserve only what the affordance actually needs. A flat 92px was sized for
+   "Tap to review", but a LOCKED step shows just 🔒 — so locked headings were
+   wrapping ~70px early and the title broke across two lines miles from the
+   padlock. Locked and plain-closed steps get a narrow gutter; only the states
+   that render words get the wide one. */
+.step-card > summary { position: relative; padding-right: 30px; }
+.step-card.done:not([open]) > summary,
+.step-card[open]:not(.locked) > summary { padding-right: 92px; }
 .step-card:not(.locked) > summary::after {
   content: '▸'; position: absolute; right: 0; top: 2px;
   color: var(--muted); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.01em;

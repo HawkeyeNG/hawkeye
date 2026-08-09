@@ -13,6 +13,43 @@
   // CTA) with no race against page scripts.
   document.documentElement.classList.add('native-app');
 
+  /**
+   * BOOT SPLASH IN THE WEB LAYER — the only place the mark can be shown on the
+   * FIRST launch after install.
+   *
+   * Android 12+ has a documented platform bug (issuetracker.google.com/205021357;
+   * hits Cordova/Xamarin/MAUI identically): on the first launch after
+   * installation the system splash draws ONLY windowSplashScreenBackground — the
+   * icon is omitted. Every later launch draws it. No theme, plugin or activity
+   * code can change that; the icon-less splash is on screen before any app code
+   * runs. So the hawk is drawn HERE, from the first frame the WebView paints
+   * until the page is ready — bare green (OS, brief, unfixable) → green + hawk
+   * (this) → app.
+   *
+   * First page of the SESSION only: in-shell navigations repaint instantly and
+   * an overlay there would read as flicker. Assets are bundled (icon-192.png),
+   * so this costs no network. The fallback timer is not optional — an overlay
+   * nothing removes is an app that never appears.
+   */
+  if (!sessionStorage.getItem('hk_booted')) {
+    sessionStorage.setItem('hk_booted', '1');
+    const boot = document.createElement('div');
+    boot.id = 'hk-boot-splash';
+    boot.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#004225;'
+      + 'display:flex;align-items:center;justify-content:center;transition:opacity .25s';
+    boot.innerHTML = '<img src="icon-192.png?v=hawk2" alt="" width="128" height="128" style="border-radius:24px" />';
+    (document.body || document.documentElement).appendChild(boot);
+    const off = () => {
+      const el = document.getElementById('hk-boot-splash');
+      if (!el) return;
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 300);
+    };
+    if (document.readyState === 'complete') setTimeout(off, 150);
+    else window.addEventListener('load', () => setTimeout(off, 150), { once: true });
+    setTimeout(off, 4000); // hard cap — never strand the app behind the overlay
+  }
+
   // NO service worker in the app. The WebView already loads the shipped bundle
   // (local, instant, offline) — a SW adds nothing and actively breaks updates: an
   // installed SW keeps serving the PREVIOUS bundle's cached shell (old menu.js /

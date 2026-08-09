@@ -1009,10 +1009,25 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 .camera-frame {
   width: 100%; max-width: 560px;
   display: flex; flex-direction: column;
-  max-height: 100vh; max-height: 100dvh; overflow: hidden;
+  /* height, NOT max-height. flex-grow shares out FREE space, and a
+     max-height-only box is still content-sized — so there was no free space,
+     .video-wrap grew to 0, and the video fell back to its intrinsic height.
+     #camera-overlay is position:fixed inset:0, so its content box is definite
+     and 100% here resolves. */
+  height: 100%; overflow: hidden;
 }
+/* flex-basis 0, NOT auto. This is the whole bug: with `flex: 1 1 auto` the
+   wrap's height depends on its content (the video), so it is INDEFINITE — and a
+   percentage max-height on the video cannot resolve against an indefinite
+   parent, so `max-height: 100%` silently did nothing and the stream rendered at
+   its full intrinsic height (measured: 1920px inside a 550px frame), pushing
+   Capture/Cancel off screen. A basis of 0 makes the flex algorithm assign a
+   definite height, which the percentage can then resolve against.
+   The video stays the sizing element on purpose: scan.js stretches #scan-canvas
+   over .video-wrap, so letterboxing the video with object-fit would leave the
+   detection outline misaligned with what the camera is showing. */
 #camera-overlay .video-wrap {
-  flex: 1 1 auto; min-height: 0;
+  flex: 1 1 0; min-height: 0;
   display: flex; align-items: center; justify-content: center;
 }
 #camera-overlay .camera-actions { flex: none; }
@@ -1070,7 +1085,9 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
   max-height: 100%;
   background: #000;
 }
-.video-wrap { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; }
+/* max-height too, or this rule (which comes LATER in the file) leaves the wrap
+   free to grow past its flex share and the clamp above is undone. */
+.video-wrap { position: relative; width: fit-content; max-width: 100%; max-height: 100%; margin: 0 auto; }
 #scan-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 #scan-canvas[hidden] { display: none; }
 #scan-hint { color: #b8f5c0; text-align: center; margin: 8px 0 0; font-size: 0.9rem; min-height: 1.2em; }

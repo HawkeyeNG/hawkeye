@@ -1,0 +1,179 @@
+# Hawkeye — App Store Connect listing package
+
+Ready-to-paste answers for the iOS submission. Bundle ID `ng.com.hawkeye.observer`.
+Where Apple asks the same question Google did, the answer is carried over from
+`docs/PLAY-STORE-LISTING.md` deliberately — the two listings must not contradict
+each other, because reviewers on both sides can see the same website.
+
+---
+
+## 1. App information
+
+- **Name (≤30):** `Hawkeye Election Monitor`  (24)
+- **Subtitle (≤30):** `Citizen election transparency`  (29)
+- **Primary language:** English (U.K.)
+- **Bundle ID:** `ng.com.hawkeye.observer`
+- **SKU:** `hawkeye-observer`
+- **Primary category:** Utilities · **Secondary:** Reference
+
+  Not **News**. The Play IARC answer already declares this is *not* primarily a
+  news product — its function is recording and verifying, not reporting — and
+  claiming otherwise invites news-publisher obligations and contradicts the
+  other listing.
+
+- **Copyright:** `2026 IniXien, LLC`
+- **Support URL:** `https://hawkeye.com.ng/support.html`
+- **Marketing URL:** `https://hawkeye.com.ng`
+- **Privacy Policy URL:** `https://hawkeye.com.ng/privacy.html`
+
+---
+
+## 2. Keywords (≤100 chars)
+
+```
+observer,polling,results,ballot,vote,civic,Nigeria,audit,ledger,integrity,evidence,democracy
+```
+(92 chars.) Words already in the name or subtitle — election, monitor,
+transparency — are deliberately **omitted**: Apple indexes those fields anyway,
+so repeating them wastes the budget.
+
+**Do not add `INEC` as a keyword.** It is another organisation's name, and
+bidding on it implies exactly the affiliation this listing denies — the same
+mistake that got the Android app rejected twice.
+
+---
+
+## 3. Promotional text (≤170, editable without review)
+
+```
+Osun governorship, 15 August 2026. Record what you see at your polling unit and publish it to a public, tamper-evident record that anyone can check.
+```
+
+---
+
+## 4. Description (≤4000)
+
+```
+Hawkeye is an independent, citizen-run election transparency tool. It is not affiliated with INEC or any political party — official results always remain INEC's. Hawkeye simply lets ordinary observers record what they see at their own polling unit and publish it to a public, tamper-evident record that anyone can check.
+
+WHAT YOU CAN DO
+• Report a polling-unit result — photograph the result sheet and enter the counts.
+• Report an incident — violence, ballot snatching, vote-buying, voter intimidation, BVAS failures and more, with an optional photo or short video. A human reviews every incident before it is published.
+• Follow a live leaderboard aggregated from citizen reports.
+• Verify the public ledger — every published record is anchored to an independent transparency log, so entries cannot be quietly altered after the fact.
+• Practise first — a built-in mock election lets you learn the flow before you report anything real.
+
+HOW IT STAYS HONEST
+• Every result is tied to the polling unit and, where you allow it, a GPS fix, so reports can be cross-checked for location plausibility.
+• Published records are cryptographically anchored — the ledger is auditable by anyone, not just by us.
+• Disputed results are excluded from tallies and can be resolved openly in a public docket.
+
+WHO IT'S FOR
+Accredited observers, party agents, journalists and everyday citizens who want an independent, verifiable picture of an election alongside the official one.
+
+Your safety comes first — never put yourself at risk to capture evidence.
+
+Hawkeye is a non-partisan transparency initiative. It does not tell you how to vote and does not favour any candidate or party.
+
+Hawkeye is not affiliated with, endorsed by, or acting on behalf of the Independent National Electoral Commission (INEC), any government agency, or any political party. Hawkeye does not represent a government entity and does not declare election results. All figures in the app are unofficial, crowd-reported observations.
+
+Official sources: INEC — https://www.inecnigeria.org · INEC Election Results Portal — https://www.inecelectionresults.ng
+```
+
+The on-device scanning sentence from the Play description is dropped here on
+purpose: `@capacitor-mlkit/document-scanner` is Android-only, so on iPhone the
+sheet capture falls back to the plain camera. Describing auto-flattening in an
+iOS listing would be claiming a feature the binary does not have.
+
+---
+
+## 5. Age rating questionnaire
+
+- Violence — cartoon/fantasy: **None**. Realistic violence: **Infrequent/Mild**
+  (incident *categories* name violence and ballot snatching; nothing is depicted
+  or glorified).
+- Sexual content, nudity, profanity, horror, gambling, alcohol/drugs/tobacco,
+  contests: **None**.
+- **User-generated content: Yes** — with content moderation, a report mechanism
+  and the ability to suspend abusive contributors (see §7).
+- Unrestricted web access: **No** (no in-app browser).
+- Medical/treatment information: **No**.
+- Expected result: 12+.
+
+---
+
+## 6. App Privacy (nutrition label)
+
+Mirrors the Play Data safety declaration. **Used to Track You: nothing.**
+**Shared with third parties: nothing.** No ads, no analytics SDK, no Ad ID.
+
+| Data | Collected | Linked to identity | Purpose |
+|---|---|---|---|
+| Contact Info → Phone Number | Yes | Yes | App Functionality |
+| Identifiers → User ID | Yes | Yes | App Functionality |
+| Identifiers → Device ID | Yes | Yes | App Functionality |
+| Location → Precise Location | Yes (optional) | Yes | App Functionality |
+| User Content → Photos or Videos | Yes | Yes | App Functionality |
+| User Content → Other User Content | Yes | Yes | App Functionality |
+
+Phone numbers are stored hashed. Account deletion route:
+`https://hawkeye.com.ng/privacy.html`.
+
+---
+
+## 7. Guideline 1.2 — user-generated content
+
+Apple requires all four; all four already ship, so answer plainly if asked:
+
+1. **Filtering objectionable material** — every incident is human-reviewed before
+   publication; nothing user-submitted appears unmoderated.
+2. **Reporting mechanism** — "⚑ Report This Content" on published incidents and
+   results (`POST /api/incidents/flags`), open to signed-out readers, with
+   reasons: abusive, false, privacy, other.
+3. **Blocking abusive users** — observers can be suspended from the admin
+   console. Note if asked: Hawkeye has no user-to-user messaging, feed or
+   comments, so there is no per-user block surface to build; abuse is handled by
+   removing the contributor.
+4. **Published contact information** — `info@hawkeye.com.ng`, on
+   `https://hawkeye.com.ng/about.html`. **Do not remove it.**
+
+---
+
+## 8. App Review Information
+
+- **Sign-in required:** Yes, for submitting reports. Browsing needs no account.
+- **Demo account:** `+2348167000004` — international format, including the `+`.
+  Password is the one stored in Play Console → App content → App access.
+  **Re-verify it works before submitting**, exactly as on the Android side; a
+  password that was never set server-side caused a rejection there.
+- **Contact:** osas@inixien.com
+
+**Notes (paste into App Review Notes):**
+
+```
+Hawkeye is an independent civic transparency tool. It is not a government app and is not affiliated with INEC or any political party; every screen carries a disclaimer to that effect and links to the official INEC site.
+
+Sign in with the demo account above (phone + password — please do not use the OTP option, as codes go to a physical SIM).
+
+Result and incident reporting is date-gated to election day. To review the full reporting flow on any date, open "Practice Run" from the menu — it is a complete mock election that needs no account.
+
+All figures shown in the app are unofficial, crowd-reported observations from citizen observers. Official results are declared by INEC and are linked from within the app.
+
+Note: the automatic document-scanner used on Android is an Android-only library, so on iOS result-sheet capture uses the standard camera.
+```
+
+---
+
+## 9. Screenshots
+
+Generated by `scripts/ios_screenshots.mjs` into `app/ios-shots/`:
+- **6.7"** 1290 × 2796 (iPhone 15 Pro Max)
+- **6.5"** 1242 × 2688 (iPhone 11 Pro Max)
+
+Every frame is checked to have the "Not government or INEC affiliated" bar
+**inside the viewport**, not merely in the DOM.
+
+**Use:** `01-home`, `02-how`, `03-integrity`, `07-about`, `08-faq`, `06-guide`.
+**Skip `05-incidents`** — it reads "No published incidents yet" over an empty
+panel before an election. `04-ledger` is usable only after the "Invalid Date"
+fix is deployed and it is re-shot.

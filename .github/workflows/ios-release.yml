@@ -140,6 +140,37 @@ jobs:
           plutil -replace CFBundleShortVersionString -string "$VERSION" ios/App/App/Info.plist
           plutil -replace CFBundleVersion -string "$BUILD" ios/App/App/Info.plist
 
+      # `cap add ios` regenerates ios/ on every run from Capacitor's template,
+      # which carries NO privacy usage strings. Without them iOS terminates the
+      # app the instant it touches the camera, and review rejects it outright
+      # (Guideline 5.1.1 — purpose strings must be present AND specific about
+      # what the data is used for). So they are injected here, not committed.
+      - name: Inject privacy usage strings
+        working-directory: mobile
+        run: |
+          set -euo pipefail
+          P=ios/App/App/Info.plist
+          set_str() {
+            plutil -replace "$1" -string "$2" "$P" 2>/dev/null \
+              || plutil -insert "$1" -string "$2" "$P"
+          }
+          set_str NSCameraUsageDescription \
+            "Hawkeye uses the camera to photograph polling unit result sheets and to capture optional photo or video evidence for incident reports."
+          set_str NSMicrophoneUsageDescription \
+            "Hawkeye records audio only as part of a short video you choose to attach as evidence to an incident report."
+          set_str NSPhotoLibraryUsageDescription \
+            "Hawkeye lets you attach a photo or video you already have as evidence for an incident or result report."
+          set_str NSPhotoLibraryAddUsageDescription \
+            "Hawkeye can save a copy of a result sheet you photograph to your own photo library."
+          set_str NSLocationWhenInUseUsageDescription \
+            "Hawkeye attaches your location to a report so it can be cross-checked against the polling unit you selected. This is optional and is only read when you submit a report."
+          # Declares no non-exempt encryption, so every upload skips the export
+          # compliance questionnaire instead of blocking the build in review.
+          plutil -replace ITSAppUsesNonExemptEncryption -bool false "$P" 2>/dev/null \
+            || plutil -insert ITSAppUsesNonExemptEncryption -bool false "$P"
+          echo "--- usage strings now in Info.plist ---"
+          plutil -p "$P" | grep -E "UsageDescription|NonExempt"
+
       - name: Write export options
         working-directory: mobile
         run: |

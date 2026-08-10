@@ -131,8 +131,19 @@
       TS.server = verify.ok ? 'Intact' : `Broken #${verify.brokenAtId}`;
       TS.serverT = verify.ok ? 'ok' : 'bad';
       const anchors = anchorsResp.anchors || [];
-      const latest = anchors.length ? anchors.reduce((a, b) => (b.created_at > a.created_at ? b : a)) : null;
-      TS.anchor = latest ? new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'None yet';
+      // /api/anchors returns `at` (an ISO string) and `day` ("YYYY-MM-DD"). It
+      // does NOT return created_at — that is the column name, not the JSON key —
+      // so this read `undefined` and the tile rendered the literal string
+      // "Invalid Date" on the verification page. The reduce was broken the same
+      // way (undefined > undefined is always false, so it just kept the first
+      // element); it only looked right because the query is ORDER BY id DESC.
+      const anchorTime = (a) => Date.parse(a.at ?? `${a.day}T00:00:00Z`) || 0;
+      const latest = anchors.length ? anchors.reduce((a, b) => (anchorTime(b) > anchorTime(a) ? b : a)) : null;
+      const anchorMs = latest ? anchorTime(latest) : 0;
+      // Never print "Invalid Date" again: fall back to the raw day, then to none.
+      TS.anchor = anchorMs
+        ? new Date(anchorMs).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : (latest?.day || 'None yet');
       renderTiles();
       document.getElementById('status').innerHTML = `Server head — compare, don't trust: <code>${verify.head || GENESIS}</code>`;
 

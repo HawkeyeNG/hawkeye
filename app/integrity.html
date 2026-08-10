@@ -84,7 +84,7 @@
     <h1>Election Integrity</h1>
     <p class="lede">Automated checks on every result. Anything that looks wrong is logged here.<button
       class="info-i" data-info-title="What gets checked"
-      data-info="Over-voting, impossible turnout, forged form serials, conflicting counts and statistical outliers. A flag is a signal for scrutiny, not a verdict — and never proof of fraud." data-info-links="INEC — official electoral information|https://www.inecnigeria.org&#10;INEC IReV — official result sheet portal|https://www.inecelectionresults.ng"></button></p>
+      data-info="Over-voting, impossible turnout, forged form serials, conflicting counts and statistical outliers. A flag is a signal for scrutiny, not a verdict — and never proof of fraud." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
 
     <div class="cards" id="cards"></div>
 
@@ -105,7 +105,7 @@
       <h2>Digit-distribution Screening</h2>
       <p class="hint">Screening signal, never proof on its own.<button class="info-i"
         data-info-title="Digit-distribution screening"
-        data-info="Fabricated figures cluster on favourite digits, while genuine counts follow known distributions — Benford's law for first digits, and a roughly even spread for last digits. A departure means these numbers are worth a closer look, nothing more. Real elections throw up odd-looking distributions for innocent reasons, so a flag here is a prompt to check the evidence, not a finding of fraud." data-info-links="INEC — official electoral information|https://www.inecnigeria.org&#10;INEC IReV — official result sheet portal|https://www.inecelectionresults.ng"></button>
+        data-info="Fabricated figures cluster on favourite digits, while genuine counts follow known distributions — Benford's law for first digits, and a roughly even spread for last digits. A departure means these numbers are worth a closer look, nothing more. Real elections throw up odd-looking distributions for innocent reasons, so a flag here is a prompt to check the evidence, not a finding of fraud." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button>
         <span id="benford-n"></span></p>
       <h3 style="margin:14px 0 2px;font-size:0.95rem">First Digit — Benford's Law <span id="benford-verdict" class="verdict-tag"></span></h3>
       <p class="hint">First digit of every party count vs Benford's expected curve (dashed).</p>
@@ -119,7 +119,7 @@
       <h2>INEC IReV Cross-check</h2>
       <p class="hint">The crowd's count, checked against INEC's own uploaded sheet.<button
         class="info-i" data-info-title="INEC IReV cross-check"
-        data-info="For each polling unit, the crowd's reported count is compared against the EC8A sheet INEC itself uploads to its Results Viewing portal (IReV) — INEC's own evidence checked against the crowd's, neither one trusted over the other. Any mismatch appears in the discrepancies above, with a link straight to INEC's sheet so you can look yourself." data-info-links="INEC — official electoral information|https://www.inecnigeria.org&#10;INEC IReV — official result sheet portal|https://www.inecelectionresults.ng"></button></p>
+        data-info="For each polling unit, the crowd's reported count is compared against the EC8A sheet INEC itself uploads to its Results Viewing portal (IReV) — INEC's own evidence checked against the crowd's, neither one trusted over the other. Any mismatch appears in the discrepancies above, with a link straight to INEC's sheet so you can look yourself." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
       <p id="irev-status" class="scope-note">Loading…</p>
     </div>
 
@@ -127,7 +127,7 @@
       <h2>Collation Reconciliation (EC8B/C/D)</h2>
       <p class="hint">Announced totals, checked against the units underneath them.<button
         class="info-i" data-info-title="Collation reconciliation"
-        data-info="Ward (EC8B), LGA (EC8C) and state (EC8D) collation totals are checked against the polling-unit sheets they are built from. A collated figure can never be LESS than the sum of the covered units alone — when it is, that is arithmetic proof of subtraction, not a matter of opinion, and it is flagged in the discrepancies above. This is the step where a count is most often changed." data-info-links="INEC — official electoral information|https://www.inecnigeria.org&#10;INEC IReV — official result sheet portal|https://www.inecelectionresults.ng"></button>
+        data-info="Ward (EC8B), LGA (EC8C) and state (EC8D) collation totals are checked against the polling-unit sheets they are built from. A collated figure can never be LESS than the sum of the covered units alone — when it is, that is arithmetic proof of subtraction, not a matter of opinion, and it is flagged in the discrepancies above. This is the step where a count is most often changed." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button>
         <a href="collation.html">Report a collation result →</a></p>
       <p id="collation-status" class="scope-note">Loading…</p>
     </div>
@@ -192,7 +192,7 @@
   </div></footer>
 
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=143"></script>
+  <script src="menu.js?v=145"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const TYPE_LABEL = {

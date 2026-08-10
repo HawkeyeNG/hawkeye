@@ -381,7 +381,26 @@
   // the same thing, but the app shell hides that footer — which is exactly the
   // surface the reviewer saw.
   (function govDisclaimer() {
-    const main = document.querySelector('main');
+    /**
+     * THE LANDING PAGE HAD NO DISCLAIMER AT ALL.
+     *
+     * This required a <main>, and index.html's only <main> lives inside
+     * div.home-obs — the SIGNED-IN Observer Home, which is display:none for a
+     * visitor. The signed-out landing page is a run of <section>s with no
+     * <main>, so this bailed and the first page every new user and every Play
+     * reviewer sees carried no government disclaimer whatsoever. That is very
+     * likely part of why Play flagged "government information" twice.
+     *
+     * Fall back to the first visible section, so a page cannot silently opt out
+     * of the notice by not using <main>.
+     */
+    let main = document.querySelector('main');
+    if (main && !main.offsetParent && main.closest('.home-obs')) main = null; // hidden Observer Home
+    if (!main) {
+      const cand = [...document.querySelectorAll('body > section, body > .wrap, body > div')]
+        .find((el) => el.offsetParent !== null && !el.classList.contains('gov-disclaimer'));
+      main = cand || null;
+    }
     if (!main || document.querySelector('.gov-disclaimer')) return;
     // One-liner keeps the Play-critical claim (independent, not affiliated with
     // INEC) always visible without interaction; the full statement + official
@@ -406,8 +425,15 @@
     // source(s)". The full statement and both sources were already one tap away
     // under "Details", but a reviewer (and a reader) sees only the claim of
     // non-affiliation unless the source is on the face of the bar. It is now.
+    // WORDING MATTERS AS MUCH AS THE LINK. "Official source: inecnigeria.org"
+    // was wrong: Hawkeye's figures come from OBSERVERS, not from INEC, and
+    // labelling INEC as the source of what is on screen implies exactly the
+    // affiliation the rest of this bar denies. INEC is named as the official
+    // BODY — whose site is the source for the register and the official
+    // declaration we check against — not as where these numbers came from.
     bar.innerHTML = '<strong>Not government or INEC affiliated.</strong> '
-      + 'Official source: <a href="https://www.inecnigeria.org" target="_blank" rel="noopener">inecnigeria.org</a> '
+      + 'Figures are crowd reports; official results come from INEC — '
+      + '<a href="https://www.inecnigeria.org" target="_blank" rel="noopener">inecnigeria.org</a> '
       + '<span class="gov-disc-more" role="button" tabindex="0">Details</span>';
     // On the sign-in / sign-up screen the disclaimer goes BELOW the form: it is a
     // legal footnote, and at the top of a bare auth page it was the first and

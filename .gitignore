@@ -62,3 +62,6 @@ docs/EMAIL-TEMPLATE.html
 # Committing it would bloat this PUBLIC repo permanently; it is deployed
 # straight to the host by scripts/deploy_app.sh instead.
 app/download/*.apk
+
+# Play listing screenshots — regenerable via scripts/play_screenshots.mjs
+app/play-shots/

@@ -400,7 +400,14 @@
     // role/tabindex + the keydown handler below keep it a real control.
     // One line. The modal carries the full statement, so the bar only has to
     // make the claim itself — that Hawkeye is neither government nor INEC.
+    // THE SOURCE LINK IS VISIBLE, not only inside the modal. Google Play rejected
+    // the app twice under Misleading Claims — "provides government information but
+    // lacks one or more clear and accessible URL/link(s) to the original
+    // source(s)". The full statement and both sources were already one tap away
+    // under "Details", but a reviewer (and a reader) sees only the claim of
+    // non-affiliation unless the source is on the face of the bar. It is now.
     bar.innerHTML = '<strong>Not government or INEC affiliated.</strong> '
+      + 'Official source: <a href="https://www.inecnigeria.org" target="_blank" rel="noopener">inecnigeria.org</a> '
       + '<span class="gov-disc-more" role="button" tabindex="0">Details</span>';
     // On the sign-in / sign-up screen the disclaimer goes BELOW the form: it is a
     // legal footnote, and at the top of a bare auth page it was the first and

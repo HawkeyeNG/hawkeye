@@ -32,34 +32,39 @@
     .thumb .rm { position: absolute; top: -7px; right: -7px; width: 22px; height: 22px; margin: 0; padding: 0;
       border-radius: 50%; background: #c0392b; color: #fff; border: 2px solid var(--surface); box-shadow: none;
       font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; }
-    #media-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
-    #media-actions #btn-camera { width: auto; margin: 0; }
+    .media-actions { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+    .media-actions #btn-camera { width: auto; margin: 0; }
     /* Photo and Video share one row; the gallery input drops to its own line
        below. All three side by side wrapped the buttons onto separate rows on a
        phone, which is what made Video look like it had its own section. */
-    #media-actions { flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .media-actions { flex-wrap: nowrap; gap: 8px; margin-top: 10px; }
     /* Three real buttons on one row. Photo and Video were outlined boxes that
        read as note cards rather than controls, and the raw file input sat under
        them showing a truncated "Choose Files | No fil...hosen". The input is now
        driven by its own label, so the control is short, legible and matches its
        neighbours — and chosen files show as thumbnails in #preview, which says
        more than "No files chosen" ever did. */
-    #media-actions #btn-camera, #media-actions #btn-video, #media-actions .media-upload {
-      flex: 1 1 0; min-width: 0; margin: 0;
+    /* BY CHILD, NOT BY ID. These were listed as #btn-camera/#btn-video, so the
+       ADD sheet's own Photo/Video (different ids) matched nothing and fell back
+       to the global `button { display:block; width:100% }` — three stacked
+       full-width buttons in the sheet against three side-by-side in the row.
+       `flex: 1 1 0` on every child is what makes all three EQUAL width rather
+       than sized to their labels, in both places. */
+    .media-actions > button, .media-actions > .media-upload {
+      flex: 1 1 0; min-width: 0; margin: 0; width: auto;
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       padding: 12px 10px; border-radius: 12px; cursor: pointer;
       font-weight: 700; font-size: 0.92rem; text-align: center;
       background: var(--green-dark); color: var(--accent); border: 1px solid var(--green-700);
     }
-    #media-actions #btn-camera:active, #media-actions #btn-video:active,
-    #media-actions .media-upload:active { opacity: 0.8; }
+    .media-actions > button:active, .media-actions > .media-upload:active { opacity: 0.8; }
     /* The native input is a seam now, not a control — see .media-upload above. */
-    #media-actions #media { display: none; }
+    .media-actions #media { display: none; }
     /* The `hidden` ATTRIBUTE alone does not hide this: the stylesheet's own
        `input` display rule outranks the UA sheet's [hidden]{display:none}, so
        the camera seam rendered as a second, bare "Choose File" row next to the
        real one. It is a seam, never a control — keep it out of the layout. */
-    #media-actions #media-cam, #media-actions #media-vid { display: none; }
+    .media-actions #media-cam, .media-actions #media-vid { display: none; }
     /* [hidden] must beat display:flex or the modal shows on load and never
        closes — the same trap as #media-cam above, and as the profile modal. */
     .modal-back[hidden] { display: none; }
@@ -144,7 +149,7 @@
       <label for="btn-camera">Upload Media (Optional)<button
         class="info-i" data-info-title="What to report, and what happens next"
         data-info="Violence, ballot snatching, vote-buying, voter intimidation, BVAS failure, late materials, obstruction — anything that affected the vote. A person reviews every report before it appears; approved ones are published in the feed below, identified by observer ID only."></button></label>
-      <div id="media-actions">
+      <div id="media-actions" class="media-actions">
         <!-- No longer `hidden`: this used to be unhidden only inside the
              Capacitor shell, so on the WEBSITE there was no camera control at
              all — just a file input that opens a chooser. It is now the primary
@@ -160,7 +165,7 @@
              two neighbours. A file input cannot have its button relabelled, so
              "Choose Files / No files chosen" was unavoidable while it was the
              visible control; it is now hidden and this <label> opens it. -->
-        <label for="media" class="media-upload">⬆ Upload</label>
+        <label for="media" class="media-upload">📄 Upload</label>
         <input id="media" type="file" accept="image/*,video/*" multiple />
         <!-- The web camera seam. `capture` makes a mobile browser open the
              camera DIRECTLY instead of the gallery chooser; desktop ignores the
@@ -217,10 +222,10 @@
     <div id="add-modal" class="modal-back" hidden>
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
         <h2 id="add-modal-title" style="margin-top:0">Add Media</h2>
-        <div id="media-actions" style="margin-bottom:12px">
+        <div class="media-actions" style="margin-bottom:12px">
           <button type="button" id="add-photo">📷 Photo</button>
           <button type="button" id="add-video">🎥 Video</button>
-          <label for="media" class="media-upload" id="add-upload">⬆ Upload</label>
+          <label for="media" class="media-upload" id="add-upload">📄 Upload</label>
         </div>
         <button type="button" id="add-cancel" class="secondary" style="width:auto">Cancel</button>
       </div>
@@ -274,7 +279,7 @@
   <script src="device.js"></script>
   <script src="capture.js?v=1"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=142"></script>
+  <script src="menu.js?v=143"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     // Escape ALL HTML metacharacters (not just '<') so observer-supplied text is

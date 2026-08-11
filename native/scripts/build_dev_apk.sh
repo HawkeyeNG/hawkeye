@@ -49,14 +49,38 @@ chmod +x ./gradlew
 # change. Re-add armeabi-v7a for a pre-2018 device, or x86_64 for an emulator.
 # NOT minified on purpose: R8 renames the classes expo-dev-client looks up
 # reflectively, so a minified dev build fails to launch and loses stack traces.
-./gradlew --no-daemon --no-watch-fs --console=plain -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" assembleDebug 2>&1 | tail -20
-
 APK="app/build/outputs/apk/debug/app-debug.apk"
-if [ -f "$APK" ]; then
-  cp "$APK" /mnt/c/Users/HP/Downloads/hawkeye-native-dev.apk
-  ls -la /mnt/c/Users/HP/Downloads/hawkeye-native-dev.apk
-  echo "APK_OK"
-else
-  echo "APK_MISSING"
+# Stamp before building: a gradle failure leaves the PREVIOUS apk sitting here,
+# and copying that one out reports success while shipping a stale build.
+STAMP=/tmp/dev_apk_start.$$
+touch "$STAMP"
+
+set +e
+./gradlew --no-daemon --no-watch-fs --console=plain -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" assembleDebug 2>&1 | tail -20
+GRADLE=${PIPESTATUS[0]}
+set -e
+echo "gradle_exit=$GRADLE"
+[ "$GRADLE" -eq 0 ] || { echo "GATE_FAIL: gradle exited $GRADLE"; exit 1; }
+
+# `| tail` makes $? the status of tail, so `set -e` cannot see gradle fail —
+# this is exactly how a team APK once shipped as the unmodified RN template.
+# Hence PIPESTATUS above, and freshness + identity checks below.
+if [ ! -f "$APK" ]; then echo "APK_MISSING"; exit 1; fi
+if [ ! "$APK" -nt "$STAMP" ]; then
+  echo "GATE_FAIL: $APK is older than this build — stale artifact, not rebuilt"
+  exit 1
 fi
+rm -f "$STAMP"
+
+# Identity: the dev build MUST stay the .dev package. The Google Maps key is
+# registered against that package plus the debug SHA-1, so a build that came out
+# as the production variant (or as the bare RN template) blanks every map.
+BADGING=$("$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$APK" 2>/dev/null | head -3)
+echo "$BADGING"
+echo "$BADGING" | grep -q "ng.com.hawkeye.observer.dev" || {
+  echo "GATE_FAIL: wrong package — expected ng.com.hawkeye.observer.dev"; exit 1; }
+
+cp "$APK" /mnt/c/Users/HP/Downloads/hawkeye-native-dev.apk
+ls -la /mnt/c/Users/HP/Downloads/hawkeye-native-dev.apk
+echo "APK_OK"
 echo "=== DONE $(date +%T) ==="

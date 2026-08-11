@@ -138,7 +138,9 @@
             <option value="rejected">Rejected</option>
           </select>
         </label>
-        <span class="tab" data-s="_logout" style="margin-left:auto">Lock 🔒</span>
+        <!-- No Lock button here: the console-wide one in the top tab strip
+             covers every panel. This was a leftover from when incident review
+             was its own page, and rendered a second identical Lock on screen. -->
       </div>
       <div id="list"><p class="empty">Loading…</p></div>
 
@@ -436,14 +438,31 @@
       }
     }
 
+    // A throw in here is indistinguishable from a hung request: #list simply
+    // keeps its "Loading..." placeholder forever. That is exactly what happened
+    // when the Published/Rejected tabs were replaced by the Reviewed picker and
+    // this kept setting their counts — $('c-published') is null, so it threw
+    // straight after the Pending count rendered. Surface failures instead.
     async function load() {
+      try {
+        await loadIncidents();
+      } catch (e) {
+        $('list').innerHTML = `<p class="empty">Could not load incidents (${e.message})</p>`;
+      }
+    }
+
+    async function loadIncidents() {
       const r = await fetch(`/api/admin/incidents?status=${tab}`, { headers: hdr() });
       if (r.status === 401) { logout(); return; }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const { incidents, counts } = await r.json();
-      $('c-pending').textContent = counts.pending || 0;
-      $('c-published').textContent = counts.published || 0;
-      $('c-rejected').textContent = counts.rejected || 0;
-      if (!incidents.length) { $('list').innerHTML = `<p class="empty">Nothing ${tab}.</p>`; return; }
+      // Tolerate a count element that is not on the page — the tab strip has
+      // changed once already and will change again.
+      const setCount = (id, n) => { const el = $(id); if (el) el.textContent = n || 0; };
+      setCount('c-pending', counts?.pending);
+      setCount('c-published', counts?.published);
+      setCount('c-rejected', counts?.rejected);
+      if (!incidents?.length) { $('list').innerHTML = `<p class="empty">Nothing ${tab}.</p>`; return; }
       $('list').innerHTML = incidents.map((i) => {
         const media = (i.media || []).map((m) => m.type === 'video'
           ? `<video src="/uploads/${m.file}" controls muted></video>`

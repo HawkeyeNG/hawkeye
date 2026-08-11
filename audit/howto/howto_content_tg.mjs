@@ -53,9 +53,9 @@ export const CLIPS_TG = [
         screen: tgScreen(
           botMsg('Unit: <b>Ward 5 Primary School</b> · Governorship.<br>'
             + 'Now send the votes — one party per line or comma-separated, e.g.<br>'
-            + '<code>APC 341<br>PDP 220<br>LP 190</code>', '09:15')
-          + userMsg('<code>APC 341<br>PDP 220<br>LP 190</code>', '09:16'),
-          { typed: 'APC 341' },
+            + '<code>Party A 341<br>Party B 220<br>Party C 190</code>', '09:15')
+          + userMsg('<code>Party A 341<br>Party B 220<br>Party C 190</code>', '09:16'),
+          { typed: 'Party A 341' },
         ),
       },
       {
@@ -64,7 +64,7 @@ export const CLIPS_TG = [
         screen: tgScreen(
           botMsgKb(
             '✅ <b>Ward 5 Primary School (25-01-05-012)</b><br>Governorship<br>'
-            + 'APC — 341<br>PDP — 220<br>LP — 190<br><br>'
+            + 'Party A — 341<br>Party B — 220<br>Party C — 190<br><br>'
             + 'Last step — open the camera to photograph the result sheet. Photos are captured '
             + '<b>live</b> and signed on your phone; that is what makes the report trustworthy.',
             [[{ text: '📸 Open camera', kind: 'app' }]],

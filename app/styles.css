@@ -187,8 +187,11 @@ main.wrap { max-width: 840px; }
    broke the ☰ panel earlier. svh (not vh) so mobile browser chrome doesn't push
    the stats band under the fold. */
 .hero-fold {
-  min-height: calc(100svh - var(--hdr-h, 85px) - var(--bar-h, 0px));
-  min-height: calc(100dvh - var(--hdr-h, 85px) - var(--bar-h, 0px));
+  /* --disc-h is the government disclaimer, which sits above the hero on the
+     landing page and so eats the fold exactly as the header does. It is 0 on
+     pages that do not render the notice above the content. */
+  min-height: calc(100svh - var(--hdr-h, 85px) - var(--bar-h, 0px) - var(--disc-h, 0px));
+  min-height: calc(100dvh - var(--hdr-h, 85px) - var(--bar-h, 0px) - var(--disc-h, 0px));
   display: flex; flex-direction: column;
 }
 .hero-fold .hero-grid { flex: 1; align-content: center; }
@@ -1174,7 +1177,11 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
      makes one row of figures read as a quiet credibility strip. svh (not dvh) so
      visible browser chrome can't push the CTAs under the fold. */
   .hero-fold { min-height: 0; }
-  .hero-fold .hero-grid { min-height: calc(100svh - var(--hdr-h, 85px) - var(--bar-h, 0px) - 12px); }
+  /* --disc-h here too: on phones the fold is sized on the GRID rather than the
+     section, and the disclaimer is injected as the section's first child — so
+     the grid asking for a full viewport pushed itself exactly one disclaimer
+     (96px) below the fold. Desktop is handled on .hero-fold itself above. */
+  .hero-fold .hero-grid { min-height: calc(100svh - var(--hdr-h, 85px) - var(--bar-h, 0px) - var(--disc-h, 0px) - 12px); }
   .hero-fold .stats-band { margin-top: 0; }
   .hero-fold .hero-badge { margin-bottom: 12px; font-size: 0.72rem; padding: 5px 11px; }
   .hero-fold .hero-sub { margin-bottom: 18px; font-size: 0.97rem; }

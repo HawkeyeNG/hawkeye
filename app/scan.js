@@ -17,6 +17,15 @@ window.DocScanner = (() => {
   let video = null, canvas = null, hint = null, onAuto = null;
   const MISS_GRACE = 3; // ~0.4 s of dropouts tolerated before the lock is dropped
   let timer = null, quad = null, lastRaw = null, stable = 0, fired = false, misses = 0;
+  // RENDERING IS DECOUPLED FROM DETECTION. Detection is expensive, so it runs on
+  // the 140 ms timer below (~7 Hz) — but the overlay used to be painted from the
+  // same tick, which meant the outline redrew 7 times a second on top of a 30-60
+  // fps preview. Every hand movement made it visibly stutter and trail the sheet.
+  // `shown` is the quad actually drawn: it eases toward the newest detected quad
+  // on every animation frame, so the outline glides at display rate while the
+  // detector keeps its own pace.
+  let rafId = null, shown = null;
+  const RENDER_EASE = 0.35; // per animation frame; converges in ~5 frames
   let worker = null, workerDead = false, awaitingDetect = false, cvReady = false;
   const procBuf = document.createElement('canvas'); // reused downscale target
 
@@ -171,16 +180,21 @@ window.DocScanner = (() => {
     const dh = (box && box.clientHeight) || 0;
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!dw || !dh || !vw || !vh) return; // stream or layout not up yet
-    canvas.width = dw;
-    canvas.height = dh;
+    // Assigning canvas.width/height RESETS the surface, so doing it every frame
+    // reallocated the backing store 60 times a second once this moved to rAF.
+    // Only touch it when the box actually changed size (rotation, keyboard).
+    if (canvas.width !== dw || canvas.height !== dh) {
+      canvas.width = dw;
+      canvas.height = dh;
+    }
     const g = canvas.getContext('2d');
     g.clearRect(0, 0, dw, dh);
-    drawGuide(g, dw, dh, !!quad);
-    if (!quad) return;
+    drawGuide(g, dw, dh, !!shown);
+    if (!shown) return;
     const s = Math.max(dw / vw, dh / vh);            // cover: fill, crop overflow
     const ox = (dw - vw * s) / 2, oy = (dh - vh * s) / 2;
     g.beginPath();
-    quad.forEach((p, i) => {
+    shown.forEach((p, i) => {
       const x = p.x * s + ox, y = p.y * s + oy;
       return i ? g.lineTo(x, y) : g.moveTo(x, y);
     });
@@ -193,13 +207,35 @@ window.DocScanner = (() => {
     g.stroke();
   }
 
+  /**
+   * Display loop. Runs at the browser's frame rate and does no detection at all,
+   * so it stays cheap on a phone: ease `shown` toward the newest `quad`, paint.
+   * The easing is what removes the chop — between two detections (140 ms apart)
+   * the outline keeps moving toward where the sheet actually is instead of
+   * sitting still and then jumping.
+   */
+  function render() {
+    if (!video || !canvas) { rafId = null; return; }
+    if (quad) {
+      shown = shown && shown.length === quad.length
+        ? quad.map((p, i) => ({
+          x: shown[i].x + (p.x - shown[i].x) * RENDER_EASE,
+          y: shown[i].y + (p.y - shown[i].y) * RENDER_EASE,
+        }))
+        : quad.map((p) => ({ x: p.x, y: p.y })); // first lock: snap, don't fly in
+    } else {
+      shown = null;
+    }
+    draw();
+    rafId = requestAnimationFrame(render);
+  }
+
   function tick() {
     if (!video) return;
-    // Paint EVERY tick, not only on a worker reply. Detection is skipped until
-    // OpenCV is ready (and skipped entirely if the worker died), so a draw that
-    // only ran on detect messages left the overlay blank for the whole load —
-    // and forever on any device where the worker never comes up.
-    draw();
+    // Detection only. Painting is the rAF loop's job — when both lived here the
+    // overlay redrew at 7 Hz over a 60 fps preview, which is what made scanning
+    // look choppy on a moving hand. Detection is skipped until OpenCV is ready
+    // (and entirely if the worker died); the overlay still paints regardless.
     requestDetect();
     timer = setTimeout(tick, 140);
   }
@@ -207,7 +243,12 @@ window.DocScanner = (() => {
   function start(v, overlayCanvas, hintEl, onAutoCapture) {
     video = v; canvas = overlayCanvas; hint = hintEl; onAuto = onAutoCapture;
     quad = null; stable = 0; fired = false; awaitingDetect = false; misses = 0; lastRaw = null;
+    shown = null;
     canvas.hidden = false;
+    // Start painting immediately: the guide brackets should be up while OpenCV
+    // is still downloading, not only once detection begins.
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(render);
     if (hint) { hint.hidden = false; hint.textContent = 'Loading document detection…'; }
     makeWorker();
     if (workerDead || !worker) {
@@ -227,6 +268,8 @@ window.DocScanner = (() => {
 
   function stop() {
     clearTimeout(timer);
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null; shown = null;
     timer = null; video = null; onAuto = null;
     if (canvas) {
       const g = canvas.getContext('2d');

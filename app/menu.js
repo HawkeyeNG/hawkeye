@@ -303,6 +303,21 @@
     const r = document.documentElement.style;
     if (hdr) r.setProperty('--hdr-h', Math.round(hdr.getBoundingClientRect().height) + 'px');
     r.setProperty('--bar-h', barShown ? Math.round(bar.getBoundingClientRect().height) + 'px' : '0px');
+    // The government disclaimer sits ABOVE the landing hero, so it eats into the
+    // one-screen fold the same way the header does. It was pushing the hero 96px
+    // past the fold on a phone once the bar started rendering on index.html.
+    // Measure it for the same reason --hdr-h is measured: its height depends on
+    // how many lines the notice wraps to, which varies by width and font size,
+    // and a magic number here is exactly what broke the fold before.
+    const disc = document.querySelector('.gov-disclaimer');
+    if (disc && disc.offsetParent !== null) {
+      const cs = getComputedStyle(disc);
+      const h = disc.getBoundingClientRect().height
+        + parseFloat(cs.marginTop || 0) + parseFloat(cs.marginBottom || 0);
+      r.setProperty('--disc-h', Math.round(h) + 'px');
+    } else {
+      r.setProperty('--disc-h', '0px');
+    }
   }
   publishChromeVars();
   addEventListener('resize', publishChromeVars);
@@ -440,6 +455,10 @@
     // loudest thing on screen, overshadowing the brand.
     if (document.documentElement.classList.contains('auth-screen')) main.appendChild(bar);
     else main.insertBefore(bar, main.firstChild);
+    // publishChromeVars() already ran, before this bar existed, so --disc-h is
+    // still 0 and the one-screen hero would size itself as if the notice were
+    // not there. Re-measure now that it is in the document.
+    publishChromeVars();
     let dlg = document.getElementById('gov-disc-modal');
     if (!dlg) {
       dlg = document.createElement('dialog');

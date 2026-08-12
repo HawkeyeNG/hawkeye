@@ -24,6 +24,65 @@
       : u.locationTier || (u.lat != null ? 'verified' : u.crowd_lat != null ? 'crowd' : 'unmapped');
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+  /**
+   * SEARCH THE SHIPPED REGISTER BEFORE THE NETWORK.
+   *
+   * Every Osun polling unit is already on the device: the browse cascade ships
+   * app/register-osun.json, and its rows are the same shape /api/register/search
+   * returns. Searching still went to the server for all of them — so typing a
+   * PU code like "29-" (every Osun code starts with 29-) spent ~1.2s per query
+   * asking about rows sitting in local storage, on exactly the mobile links
+   * where that hurts most.
+   *
+   * Same URL and query string app.js uses, so this shares one HTTP/service
+   * worker cache entry with the cascade instead of pulling a second copy.
+   */
+  let flatRows = null, flatPending = null;
+  function loadFlatRegister() {
+    if (flatRows) return Promise.resolve(flatRows);
+    if (!flatPending) {
+      flatPending = fetch('register-osun.json?v=1')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((b) => {
+          const rows = [];
+          if (b) {
+            for (const st of Object.keys(b)) {
+              if (st === 'states' || st === 'generated' || !b[st] || typeof b[st] !== 'object') continue;
+              for (const lga of Object.keys(b[st])) {
+                for (const ward of Object.keys(b[st][lga])) {
+                  const units = b[st][lga][ward];
+                  if (Array.isArray(units)) rows.push(...units);
+                }
+              }
+            }
+          }
+          flatRows = rows;
+          return rows;
+        })
+        .catch(() => { flatRows = []; return flatRows; }); // tried and failed; never retry-loop
+    }
+    return flatPending;
+  }
+
+  const LOCAL_MAX = 50;
+  /** Returns {units,truncated} from the shipped register, or null if it can't answer. */
+  async function localSearch(term, o) {
+    // Scoped searches are the caller narrowing to a state/LGA we may not ship.
+    if (o.state && o.state !== 'Osun') return null;
+    const rows = await loadFlatRegister();
+    if (!rows.length) return null;
+    const t = term.toLowerCase();
+    const hits = [];
+    for (const u of rows) {
+      if (o.lga && u.lga !== o.lga) continue;
+      if (`${u.name} ${u.pu_code} ${u.ward}`.toLowerCase().includes(t)) {
+        hits.push(u);
+        if (hits.length > LOCAL_MAX) break;
+      }
+    }
+    return { units: hits.slice(0, LOCAL_MAX), truncated: hits.length > LOCAL_MAX };
+  }
+
   function mount(host, opts) {
     if (!host || host.dataset.puSearchMounted) return;
     host.dataset.puSearchMounted = '1';
@@ -82,6 +141,16 @@
               };
               break;
             }
+          }
+        }
+        // Then the shipped register: instant, offline, and it covers the whole
+        // election state. Only fall through to the network when it finds
+        // nothing — another state, or a field the bundle does not carry.
+        if (!r) {
+          const local = await localSearch(term, o);
+          if (local && local.units.length) {
+            r = local;
+            cache.set(key, { units: local.units, truncated: local.truncated });
           }
         }
         if (!r) {

@@ -1,6 +1,6 @@
 // Minimal service worker: cache the app shell so the observer app opens instantly
 // on flaky election-day networks. API calls always hit the network.
-const CACHE = 'hawkeye-v241'; // bump on any shell change so installed clients refresh
+const CACHE = 'hawkeye-v242'; // bump on any shell change so installed clients refresh
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every
@@ -10,15 +10,12 @@ const CACHE = 'hawkeye-v241'; // bump on any shell change so installed clients r
 // It was ~1.5 MB / 45 requests; the map data and Leaflet (~940 KB) are needed by
 // only 5 of ~25 pages, so they moved to LAZY below. Keep this lean: HTML +
 // core JS/CSS + fonts. Anything big and page-specific belongs in LAZY.
-const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/races.html', '/incident-reports.html', '/practice.html', '/practice.js?v=4', '/race.html', '/race.js?v=7', '/race.css?v=1', '/app.js?v=144', '/scan.js?v=7', '/capture.js?v=1', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=145', '/authgate.js?v=2', '/map-label.js?v=2', '/pu-code.js?v=3', '/pu-search.js?v=3', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=150', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/about.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2'];
+const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/races.html', '/incident-reports.html', '/race.html', '/race.js?v=7', '/race.css?v=1', '/app.js?v=144', '/scan.js?v=7', '/capture.js?v=1', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=146', '/authgate.js?v=2', '/map-label.js?v=2', '/pu-code.js?v=3', '/pu-search.js?v=3', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=151', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2'];
 
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.
 // og-image.png is here too — only crawlers fetch it, and they don't use the SW.
-const LAZY = ['/opencv.js', '/register-osun.json', '/nga_wards.geojson', '/states_geo.json', '/lga_geo.json',
-  '/district_geo.json', '/constituency_geo.json', '/political_data.json',
-  '/members.json', '/party_changes.json',
-  '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/og-image.png'];
+const LAZY = ['/opencv.js', '/register-osun.json', '/nga_wards.geojson', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/political_data.json', '/members.json', '/party_changes.json', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/og-image.png', '/about.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/practice.html', '/practice.js'];
 
 // Opened ONCE per worker lifetime. The global caches.match() searches every
 // cache in the origin, and re-opening the cache on each request adds latency to

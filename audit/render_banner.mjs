@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 const DL = '/mnt/c/Users/HP/Downloads';
 let html = fs.readFileSync(new URL('./banner.html', import.meta.url), 'utf8');
-const logo = fs.readFileSync(new URL('../design/hawk-mascot.png', import.meta.url).pathname).toString('base64');
+const logo = fs.readFileSync(new URL('../design/hawk-crest.png', import.meta.url).pathname).toString('base64');
 html = html.replace('LOGO', `data:image/png;base64,${logo}`);
 const b = await chromium.launch();
 for (const [w, h, name] of [

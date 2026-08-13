@@ -20,13 +20,24 @@
   .top img { width: 92px; height: 92px; }
   .top b { font-size: 46px; font-weight: 800; letter-spacing: 4px; display: block; line-height: 1; }
   .top span { font-size: 17px; letter-spacing: 3px; color: #7fd6a8; font-weight: 600; text-transform: uppercase; }
-  h1 { font-size: 52px; font-weight: 800; margin: 40px 0 6px; position: relative; text-align: center; }
-  .lede { font-size: 24px; color: #a8d9c1; text-align: center; margin-bottom: 34px; position: relative; }
-  ol { list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 15px;
+  h1 { font-size: 50px; font-weight: 800; margin: 30px 0 6px; position: relative; text-align: center; }
+  .lede { font-size: 23px; color: #a8d9c1; text-align: center; margin-bottom: 22px; position: relative; }
+  /* Two builds, one decision, made on the only axis an agent cares about: how
+     much data it costs. Presented side by side so neither reads as the
+     second-best option. */
+  .picks { display: flex; gap: 16px; width: 100%; position: relative; margin-bottom: 20px; }
+  .pick { flex: 1; background: rgba(46,224,138,.10); border: 1px solid rgba(46,224,138,.42);
+    border-radius: 18px; padding: 18px 22px; text-align: center; }
+  .pick b { display: block; font-size: 30px; font-weight: 800; }
+  .pick .sz { display: block; font-size: 34px; font-weight: 800; color: #2ee08a; margin: 2px 0 4px; }
+  .pick span { font-size: 19px; color: #a8d9c1; }
+  .same { text-align: center; font-size: 22px; color: #cfeede; margin-bottom: 22px; position: relative; }
+  .same b { color: #fff; }
+  ol { list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 13px;
     width: 100%; position: relative; }
   li { counter-increment: s; display: flex; gap: 20px; align-items: flex-start;
     background: rgba(255,255,255,.07); border: 1px solid rgba(120,230,175,.24);
-    border-radius: 18px; padding: 20px 26px; }
+    border-radius: 18px; padding: 17px 24px; }
   li:before { content: counter(s); flex: none; width: 46px; height: 46px; border-radius: 50%;
     background: #2ee08a; color: #05271a; font-size: 26px; font-weight: 800;
     display: flex; align-items: center; justify-content: center; }
@@ -49,17 +60,24 @@
   </div>
 
   <h1>Installing the App</h1>
-  <p class="lede">Android asks a few questions because this build does not come
-    from the Play Store. All of it is normal.</p>
+  <p class="lede">Pick whichever suits your phone and your data. Android asks a
+    few questions because it did not come from the Play Store — all of it is normal.</p>
+
+  <div class="picks">
+    <div class="pick"><b>Full</b><span class="sz">≈65 MB</span><span>Best if data is not tight</span></div>
+    <div class="pick"><b>Lite</b><span class="sz">≈30 MB</span><span>Half the download</span></div>
+  </div>
+  <p class="same"><b>Both do exactly the same job.</b> Same reporting, same ledger,
+    same verification — only the download size differs.</p>
 
   <ol>
-    <li><div>Tap <b>Hawkeye.apk</b> in this chat, or find it in your <b>Downloads</b>.</div></li>
+    <li><div>Tap the <b>Hawkeye</b> file in this chat, or find it in your <b>Downloads</b>.</div></li>
     <li><div>If Android asks, <b>allow installs from this app</b> — it applies to this one install.</div></li>
     <!-- Let Play Protect scan rather than talking people past it: it returns
          "This app looks safe", which is a stronger reassurance than any claim we
          could make ourselves, and it is what actually happens on device. -->
     <li><div>Let <b>Play Protect</b> scan it. It reports <b>“This app looks safe”</b> — then tap <b>Install</b>.</div></li>
-    <li><div>Open <b>Hawkeye</b> and sign in with your phone number.</div></li>
+    <li><div>Open <b>Hawkeye</b> and sign up with a phone number.</div></li>
   </ol>
 
   <div class="warn">

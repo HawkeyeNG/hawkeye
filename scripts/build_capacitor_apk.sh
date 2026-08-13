@@ -20,6 +20,12 @@ rm -f android/app/src/main/assets/public/opencv.js
 # assets/public/download/hawkeye.apk. Anything added to app/ for the WEB to
 # serve gets bundled here unless it is stripped.
 rm -rf android/app/src/main/assets/public/download
+# Store-listing artifacts also live under app/ (they are gitignored, but cap sync
+# copies whatever is on disk). ~4 MB of screenshots nobody installing the app
+# will ever open.
+rm -rf android/app/src/main/assets/public/play-shots
+rm -rf android/app/src/main/assets/public/ios-shots
+rm -f  android/app/src/main/assets/public/play-feature-graphic.png
 cd android || exit 1
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 chmod +x ./gradlew

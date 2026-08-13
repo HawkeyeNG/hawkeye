@@ -36,6 +36,16 @@ android {
         }
     }
     buildTypes {
+        debug {
+            // The DEBUG apk is what the website serves as a direct download, so
+            // unlike the Play bundle (which ships each device only its own ABI)
+            // every architecture in here is downloaded by every user. Dropping
+            // the ABI restriction for the AAB doubled this file from 31 MB to
+            // 61 MB. x86/x86_64 are emulators only; arm64 and armeabi-v7a cover
+            // every real phone, including the 32-bit devices the Play bundle was
+            // fixed to keep supporting.
+            ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' }
+        }
         release {
             minifyEnabled true
             shrinkResources true

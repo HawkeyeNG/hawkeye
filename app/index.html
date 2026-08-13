@@ -265,9 +265,15 @@
                  visitor can already check. Android blocks sideloading by default,
                  so the permission step is stated rather than left to be discovered. -->
             <p class="pwa-alt">Or install it directly:</p>
-            <p><a class="btn-ghost apk-dl" href="download/hawkeye.apk"
-                  download="hawkeye.apk" rel="nofollow">⬇ Download the Android App</a></p>
-            <p class="pwa-note">31&nbsp;MB. Android will ask you to allow installs from
+            <!-- VERSIONED FILENAME, deliberately. The APK is served with
+                 cache-control max-age=14400, so for four hours after a rebuild a
+                 CDN edge or the phone itself can hand back the previous file —
+                 which is how a debug build that Play Protect blocks kept being
+                 installed after it had already been replaced. A new name cannot
+                 be served stale. Bump it whenever the APK is rebuilt. -->
+            <p><a class="btn-ghost apk-dl" href="download/hawkeye-1.2-4.apk"
+                  download="hawkeye-1.2-4.apk" rel="nofollow">⬇ Download the Android App</a></p>
+            <p class="pwa-note">30&nbsp;MB. Android will ask you to allow installs from
               your browser — that prompt is normal for an app not yet on Play, and it
               only applies to this one install. The file is served from
               hawkeye.com.ng itself; do not install a Hawkeye APK from anywhere else.</p>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html><head><meta charset="utf-8" />
+<style>
+  /* Install card for the sideloaded test build going to party agents. Same
+     brand system as followus.html. The Play Protect step is stated PLAINLY and
+     up front: an agent who meets an unexplained "unknown app" warning while
+     being asked to trust an election tool will stop, and should. */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px; height: 1350px; display: flex; flex-direction: column;
+    align-items: center; padding: 66px 70px 96px; position: relative; overflow: hidden;
+    font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #fff;
+    background:
+      radial-gradient(1000px 620px at 50% 0%, #0f4d33 0%, transparent 62%),
+      linear-gradient(160deg, #0a3a26 0%, #06251a 52%, #0a3247 100%);
+  }
+  .hash { position: absolute; inset: 0; opacity: .05; font-family: ui-monospace, Menlo, monospace;
+    font-size: 21px; line-height: 2.05; word-break: break-all; color: #9ff5c6; padding: 18px 12px; }
+  .top { display: flex; align-items: center; gap: 20px; position: relative; }
+  .top img { width: 92px; height: 92px; }
+  .top b { font-size: 46px; font-weight: 800; letter-spacing: 4px; display: block; line-height: 1; }
+  .top span { font-size: 17px; letter-spacing: 3px; color: #7fd6a8; font-weight: 600; text-transform: uppercase; }
+  h1 { font-size: 52px; font-weight: 800; margin: 40px 0 6px; position: relative; text-align: center; }
+  .lede { font-size: 24px; color: #a8d9c1; text-align: center; margin-bottom: 34px; position: relative; }
+  ol { list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 15px;
+    width: 100%; position: relative; }
+  li { counter-increment: s; display: flex; gap: 20px; align-items: flex-start;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(120,230,175,.24);
+    border-radius: 18px; padding: 20px 26px; }
+  li:before { content: counter(s); flex: none; width: 46px; height: 46px; border-radius: 50%;
+    background: #2ee08a; color: #05271a; font-size: 26px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; }
+  li div { font-size: 25px; line-height: 1.4; padding-top: 6px; }
+  li b { font-weight: 800; }
+  .warn { margin-top: 26px; width: 100%; position: relative; background: rgba(245,166,35,.13);
+    border: 1px solid rgba(245,166,35,.5); border-left-width: 7px; border-radius: 16px;
+    padding: 22px 26px; font-size: 23px; line-height: 1.45; }
+  .warn b { color: #ffcc70; }
+  .foot { margin-top: auto; text-align: center; position: relative; }
+  .foot .site { font-size: 31px; font-weight: 800; }
+  .foot .site span { color: #2ee08a; }
+  .foot .dis { font-size: 18px; color: #6fae8d; margin-top: 10px; }
+</style></head>
+<body>
+  <div class="hash" id="hash"></div>
+  <div class="top">
+    <img src="LOGO" alt="" />
+    <div><b>HAWKEYE</b><span>Test build · for accredited agents</span></div>
+  </div>
+
+  <h1>Installing the test app</h1>
+  <p class="lede">Android asks a few questions because this build does not come
+    from the Play Store. All of it is normal.</p>
+
+  <ol>
+    <li><div>Tap <b>Hawkeye.apk</b> in this chat, or find it in your <b>Downloads</b>.</div></li>
+    <li><div>If Android asks, <b>allow installs from this app</b> — it applies to this one install.</div></li>
+    <li><div>Play Protect will say the app is <b>unknown</b>. Tap <b>More details</b>, then <b>Install anyway</b>.</div></li>
+    <li><div>Open <b>Hawkeye</b> and sign in with your phone number.</div></li>
+  </ol>
+
+  <div class="warn">
+    <b>Two Hawkeyes on your phone is expected.</b> This test build installs beside
+    the public app — same name, same crest. Neither replaces the other.
+  </div>
+
+  <div class="foot">
+    <div class="site">hawkeye<span>.com.ng</span></div>
+    <div class="dis">Independent · Not affiliated with INEC or any political party</div>
+  </div>
+<script>
+  // Lehmer RNG — the obvious LCG overflows 2^53 in a JS float and the low bits,
+  // the only ones used here, collapse into a wall of one character.
+  let s = 'abcdef0123456789', out = '', seed = 20260815;
+  for (let i = 0; i < 5200; i++) { seed = (seed * 16807) % 2147483647; out += s[seed % 16]; }
+  document.getElementById('hash').textContent = out;
+</script>
+</body></html>

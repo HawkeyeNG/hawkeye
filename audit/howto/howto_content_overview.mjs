@@ -80,7 +80,10 @@ export const CLIPS_OVERVIEW = [
       },
       {
         cap: "Then every result is screened as a set: Benford's first-digit test, round-number excess, turnout and vote-share outliers, and units that diverge from their neighbours.",
-        vo: 'Then every result is screened as a set. Benford, outliers, neighbours.',
+        // "digit outliers", not "digit-outliers": a hyphen between two words is
+        // a coin toss with edge-tts, and this clip has already lost one word to
+        // an unlucky reading.
+        vo: "Every report is screened as a set using Benford's law, digit outliers, and neighbour divergence.",
         screen: scr('Election integrity', h1("Benford's law")
           + lede('Real counts follow a known first-digit curve. Invented ones usually do not.')
           + card(benfordBars())

@@ -65,12 +65,22 @@
   }
 
   const LOCAL_MAX = 50;
-  /** Returns {units,truncated} from the shipped register, or null if it can't answer. */
-  async function localSearch(term, o) {
+  /**
+   * Returns {units,truncated} from the shipped register, or null if it cannot
+   * answer. SYNCHRONOUS on purpose: it reads whatever is already in memory and
+   * never waits.
+   *
+   * It used to await loadFlatRegister(), which meant the FIRST search blocked on
+   * a 1.7 MB download — measured at 954 ms on a good link, and far worse on the
+   * election-day mobile this was supposed to help. That made the offline path
+   * slower than the network call it replaced, for the one query that matters
+   * most: the first one.
+   */
+  function localSearch(term, o) {
     // Scoped searches are the caller narrowing to a state/LGA we may not ship.
     if (o.state && o.state !== 'Osun') return null;
-    const rows = await loadFlatRegister();
-    if (!rows.length) return null;
+    const rows = flatRows;
+    if (!rows || !rows.length) return null;
     const t = term.toLowerCase();
     const hits = [];
     for (const u of rows) {
@@ -95,6 +105,12 @@
     const q = host.querySelector('#pus-q');
     const status = host.querySelector('#pus-status');
     const list = host.querySelector('#pus-results');
+
+    // Start pulling the register the moment the box exists, not on the first
+    // keystroke. Someone reaching this pane is about to search, and there are
+    // usually a few seconds of reading and tapping first — enough for 1.7 MB on
+    // most links, so by the time they type it answers from memory.
+    loadFlatRegister();
 
     let timer = null;
     let seq = 0;
@@ -143,11 +159,10 @@
             }
           }
         }
-        // Then the shipped register: instant, offline, and it covers the whole
-        // election state. Only fall through to the network when it finds
-        // nothing — another state, or a field the bundle does not carry.
+        // Then the shipped register — but only if it is ALREADY in memory.
+        // Instant, offline, and it covers the whole election state.
         if (!r) {
-          const local = await localSearch(term, o);
+          const local = localSearch(term, o);
           if (local && local.units.length) {
             r = local;
             cache.set(key, { units: local.units, truncated: local.truncated });
@@ -155,6 +170,9 @@
         }
         if (!r) {
           status.textContent = 'Searching…';
+          // Warm the register for the NEXT keystroke without making this one
+          // wait for it. Deliberately not awaited.
+          loadFlatRegister();
           r = await fetch(`/api/register/search?${p}`).then((x) => x.json());
           if (r && !r.error) cache.set(key, { units: r.units || [], truncated: !!r.truncated });
         }

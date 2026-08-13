@@ -1,0 +1,37 @@
+# ⚠ VERIFIED INERT ON THIS HOST (2026-08-13). Deployed, then probed with a
+# cache-busting query to force a Cloudflare MISS: the origin still returned
+# max-age=14400, so these directives never ran. GO54 puts nginx in front of
+# Apache and nginx serves static files itself, which means .htaccess is not
+# consulted for a .apk at all. Changing the APK's cache lifetime needs either a
+# Cloudflare Cache Rule on /download/*.apk or a host-side nginx change — it
+# cannot be done from this repo. Kept only so the next person does not spend the
+# same hour rediscovering that.
+#
+# The working defence is the versioned filename (download/hawkeye-<version>.apk):
+# a URL that has never held older bytes cannot be served stale. Bump it on every
+# rebuild.
+#
+# The APK must not sit in a cache after it is rebuilt.
+#
+# The host's mod_expires gives application/vnd.android.package-archive a 4-hour
+# max-age (HTML gets max-age=0). That is how a debug build Play Protect blocks
+# kept being installed for hours after it had been replaced: origin bytes were
+# correct on every check, and the stale copy lived downstream at a CDN edge and
+# in the phone's own download cache.
+#
+# Five minutes with must-revalidate: still spares the origin a re-download for
+# anyone retrying a failed install, but a rebuild reaches people almost at once.
+# Versioned filenames (download/hawkeye-<version>.apk) remain the primary
+# defence; this is the backstop for when someone forgets to bump the name.
+<IfModule mod_expires.c>
+  <FilesMatch "\.apk$">
+    ExpiresActive On
+    ExpiresDefault "access plus 5 minutes"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.apk$">
+    Header set Cache-Control "public, max-age=300, must-revalidate"
+  </FilesMatch>
+</IfModule>

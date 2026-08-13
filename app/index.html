@@ -258,6 +258,18 @@
               <li>Tap <strong>Install app</strong> (or <strong>Add to Home screen</strong>).</li>
               <li>Tap <strong>Install</strong> to confirm.</li>
             </ol>
+            <!-- Samsung Internet is the default browser on every Samsung handset
+                 and is widely used here, so this is not an edge case. Its PWA
+                 install is blocked by Play Protect as "built for an older version
+                 of Android" — the wrapper it builds, not our site: the same
+                 manifest installs cleanly in Chrome and on iPhone. Said plainly,
+                 because an unexplained "unsafe app" warning on an election tool
+                 reads as proof of exactly what our critics claim. -->
+            <p class="pwa-note" style="border-left:3px solid var(--amber-border,#d4770c);padding-left:10px">
+              <strong>Use Chrome, not Samsung Internet.</strong> Samsung's browser
+              builds the home-screen app in a way Android rejects, so it shows an
+              “unsafe app” warning. Nothing is wrong with Hawkeye — Chrome installs
+              it cleanly, and so does the direct download below.</p>
             <!-- Direct APK, served from our OWN domain rather than a file-sharing
                  link. An election tool asking people to install software from a
                  third-party drive link is indistinguishable from the phishing it
@@ -499,6 +511,16 @@
       window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; });
       window.addEventListener('appinstalled', () => { btn.hidden = true; hint.hidden = true; });
       btn.hidden = false;                 // always offer it (iOS/Android have no auto-prompt)
+      // Samsung Internet's PWA install is blocked by Play Protect ("built for an
+      // older version of Android") — its wrapper, not our site; the same manifest
+      // installs cleanly in Chrome and on iPhone. Say so BEFORE they tap: a
+      // visitor who hits that warning on an election tool has every reason to
+      // conclude it is malware and never come back.
+      if (/SamsungBrowser/i.test(ua)) {
+        hint.innerHTML = '⚠ <strong>Open this page in Chrome to install.</strong> '
+          + 'Samsung Internet shows a false “unsafe app” warning — Chrome installs it cleanly.';
+        hint.hidden = false;
+      }
       btn.addEventListener('click', async () => {
         if (deferred) {                   // native one-tap install
           deferred.prompt();

@@ -62,9 +62,9 @@ TOTAL=340
 echo "▶ [3/3] copying APK to Downloads…"
 APK=app/build/outputs/apk/release/app-release.apk
 if [ -f "$APK" ]; then
-  cp "$APK" /mnt/c/Users/HP/Downloads/hawkeye-team-test.apk
-  ls -la /mnt/c/Users/HP/Downloads/hawkeye-team-test.apk
-  echo "✅ APK_OK — hawkeye-team-test.apk"
+  cp "$APK" /mnt/c/Users/HP/Downloads/Hawkeye.apk
+  ls -la /mnt/c/Users/HP/Downloads/Hawkeye.apk
+  echo "✅ APK_OK — Hawkeye.apk"
 else
   echo "❌ APK_MISSING — see the gradle output above"; exit 1
 fi

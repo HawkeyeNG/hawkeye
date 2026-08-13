@@ -48,8 +48,20 @@ export async function triageIncident(id) {
 }
 
 // >=3 reports, same state + kind, inside 6 hours -> hotspot flag (deduped per day).
+//
+// SELF-HEALING, because this flag is a statement about RIGHT NOW. It used to be
+// write-only: a cluster raised while reports were still pending stayed on the
+// public dashboard forever, even after every report behind it was rejected in
+// review. Test incidents filed against FCT left three "possible emerging
+// hotspot" flags for Abuja that nothing could retract — a false signal about a
+// real place, on the page whose entire job is being trustworthy.
+//
+// So the open cluster flags are cleared and re-derived from the current window
+// on every scan. An "emerging hotspot" that is six hours stale is not a record
+// worth keeping; it is just wrong. Resolved/actioned rows are left alone.
 export function scanIncidentClusters() {
   const since = Date.now() - 6 * 3_600_000;
+  db.prepare("DELETE FROM discrepancies WHERE type = 'incident_cluster' AND status = 'open'").run();
   const rows = db.prepare(`
     SELECT state, kind, COUNT(*) AS c FROM incidents
     WHERE created_at > ? AND state IS NOT NULL AND status != 'rejected'

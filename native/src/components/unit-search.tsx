@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
+import { localSearch, warmRegister } from '@/lib/register';
 import { useUi } from '@/lib/theme';
 
 /**
@@ -51,6 +52,11 @@ export function UnitSearch<T extends Row>({
   // Monotonic request id: a slow earlier response must never overwrite a newer one.
   const seq = useRef(0);
 
+  // Parse the bundled register as soon as the box exists, not on first
+  // keystroke: someone opening this is about to search, and there are a few
+  // seconds of tapping first — enough to be ready before they finish typing.
+  useEffect(() => { warmRegister(); }, []);
+
   useEffect(() => {
     const term = q.trim();
     if (term.length < 3) {
@@ -58,6 +64,20 @@ export function UnitSearch<T extends Row>({
       setNote(term ? 'Keep typing — at least 3 characters.' : '');
       return;
     }
+    // OFFLINE FIRST. If the bundled register is parsed, answer from it and do
+    // not touch the network at all — instant, and it still works at a polling
+    // unit with no signal. Only Osun is bundled, so anything else falls through.
+    const local = localSearch(term, { state, lga });
+    if (local && local.units.length) {
+      seq.current += 1; // supersede any request still in flight
+      setBusy(false);
+      setRows(local.units as T[]);
+      setNote(local.truncated
+        ? `First ${local.units.length} matches — keep typing to narrow it.`
+        : `${local.units.length} match${local.units.length === 1 ? '' : 'es'}.`);
+      return;
+    }
+
     // Debounced: every keystroke is a full-table LIKE scan server-side.
     const t = setTimeout(async () => {
       const mine = ++seq.current;

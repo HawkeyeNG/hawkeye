@@ -999,15 +999,46 @@ function resetReportState() {
  * The three fetches run together rather than in sequence; they were independent
  * all along.
  */
+/** Last known-good contests. Validated on READ too: a poisoned entry from an
+ *  older build must heal itself rather than need a manual reset. */
+function cachedContests() {
+  try {
+    const raw = localStorage.getItem('hk_contests1');
+    const v = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(v) && v.length && v.every((c) => c && typeof c.code === 'string')) return v;
+    if (raw) localStorage.removeItem('hk_contests1');
+  } catch { /* unreadable — fall through */ }
+  return [];
+}
+
 async function prepareReportUI() {
   const [p, c, l] = await Promise.all([
     parties.length === 0 ? api('/api/parties').then((r) => r.body).catch(() => []) : parties,
-    contests.length === 0 ? api('/api/contests').then((r) => r.body).catch(() => []) : contests,
+    // Fall back to the last known-good list rather than to [], because [] is
+    // not "no elections" here — it disables every race and makes step 3
+    // unusable. A stale list naming the open race beats a correct empty one.
+    contests.length === 0
+      ? api('/api/contests').then((r) => (Array.isArray(r.body) && r.body.length ? r.body : cachedContests()))
+        .catch(() => cachedContests())
+      : contests,
     logos === null ? fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})) : logos,
   ]);
   parties = p || [];
   contests = c || [];
   logos = l || {};
+  // A unit may already have been picked while these were still in flight, in
+  // which case step 3 was built from an empty list and every race rendered
+  // "not open yet". Re-fill it now that the real answer is here.
+  fillContests();
+  // Remember a GOOD contests list so a cold start on a dead network still
+  // offers the open race. Validated on write AND on read — caching a `{}` from
+  // a 500 once left the state dropdown permanently empty, and this is the same
+  // failure mode one screen further on.
+  try {
+    if (Array.isArray(contests) && contests.length) {
+      localStorage.setItem('hk_contests1', JSON.stringify(contests));
+    }
+  } catch { /* private mode / quota — the network path still works */ }
   const wrap = $('vote-inputs');
   wrap.innerHTML = '';
   for (const p of parties) {
@@ -1052,6 +1083,39 @@ async function prepareReportUI() {
   } catch { /* best-effort */ }
 }
 
+/**
+ * Build the "Which election?" picker for the selected unit.
+ *
+ * SEPARATE FUNCTION BECAUSE IT HAS TO RUN TWICE. HAWKEYE_RACES.fill() renders
+ * all five races and DISABLES every one that is not in the list handed to it,
+ * so calling it with an empty `contests` produces a picker where all five read
+ * "not open yet" and nothing can be selected. Step 3 is then a dead end.
+ *
+ * That is exactly what happened: bindUnit() runs the instant a unit is chosen,
+ * while prepareReportUI() is still fetching /api/contests, and nothing ever
+ * re-filled the picker when the answer arrived. It became reliable rather than
+ * intermittent when polling-unit search moved offline — selection went from a
+ * ~1.2 s round trip to ~30 ms, so the observer now always wins the race.
+ *
+ * Called again from prepareReportUI() once the contests land.
+ */
+function fillContests() {
+  if (!selectedPu) return;
+  const sel = $('sel-contest');
+  if (!sel) return;
+  // Full races list, unconfigured ones disabled — same picker as collation.html.
+  // See window.HAWKEYE_RACES in menu.js for why /api/contests alone is too short.
+  const applicableContests = contests.filter((c) => contestApplies(selectedPu, c.code, c.states));
+  if (window.HAWKEYE_RACES) {
+    window.HAWKEYE_RACES.fill(sel, applicableContests, { placeholder: '— Select election —' });
+  } else {
+    sel.innerHTML = '<option value="">— Select election —</option>'
+      + applicableContests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
+  }
+  updateScopeNotice();
+  updateSubmitState();
+}
+
 function bindUnit(u) {
   selectedPu = u;
   $('submit-pu-name').textContent = `${u.name} (${u.pu_code})`;
@@ -1062,15 +1126,7 @@ function bindUnit(u) {
     tier === 'crowd'
       ? '◌ This unit\'s location is crowd-confirmed, not yet officially verified.'
       : '⚠ This unit has no verified location. Your GPS position will be recorded with your report, and the result stays marked "location unverified" until independent reports from the same spot corroborate it.';
-  // Full races list, unconfigured ones disabled — same picker as collation.html.
-  // See window.HAWKEYE_RACES in menu.js for why /api/contests alone is too short.
-  const applicableContests = contests.filter((c) => contestApplies(selectedPu, c.code, c.states));
-  if (window.HAWKEYE_RACES) {
-    window.HAWKEYE_RACES.fill($('sel-contest'), applicableContests, { placeholder: '— Select election —' });
-  } else {
-    $('sel-contest').innerHTML = '<option value="">— Select election —</option>'
-      + applicableContests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
-  }
+  fillContests();
   updateScopeNotice();
   updateSubmitState();
 }

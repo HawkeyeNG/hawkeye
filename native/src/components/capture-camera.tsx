@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, type LayoutChangeEvent, Pressable, Text, View } from 'react-native';
 
 import { readSheet, type SheetRead } from '@/lib/ocr';
-import { scanSheet, scannerAvailable } from '@/lib/scan';
+import { scanSheet, scannerAvailable, scannerProven } from '@/lib/scan';
 import type { Shot } from '@/lib/submit';
 import { describeFixFailure, trySubmitFix, type FixFailure } from '@/lib/location';
 import { BRAND } from '@/lib/api';
@@ -324,10 +324,22 @@ export function CaptureCamera({
       return;
     }
     if (out.reason === 'cancelled') {
-      // Backing out of the scanner means backing out of the step. Dropping the
-      // observer into a different capture mode they did not ask for is how you
-      // end up with an uncropped sheet nobody intended to take.
-      cancel();
+      // Backing out of a WORKING scanner means backing out of the step. Dropping
+      // the observer into a different capture mode they did not ask for is how
+      // you end up with an uncropped sheet nobody intended to take.
+      //
+      // But if the module has never scanned on this device, the observer was not
+      // looking at our scanner at all — they were looking at Google's
+      // "Downloading updates to Google Play services…" screen, which stalls and
+      // offers only Cancel. That reports the same 'cancel' status, and treating
+      // it as intent closed the capture step and left an agent unable to report
+      // a result at all. Show the plain camera and the retry instead: the
+      // failure state below already explains itself honestly.
+      if (scannerProven()) {
+        cancel();
+        return;
+      }
+      setScanState('failed');
       return;
     }
     // Only a real failure exposes the plain camera, and it says which of the two

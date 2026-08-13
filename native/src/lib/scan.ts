@@ -78,6 +78,22 @@ try {
 
 export const scannerAvailable = () => DocumentScanner != null;
 
+/**
+ * Has the Play services module ever actually produced a scan on this device?
+ *
+ * The module is fetched on demand, and when that fetch stalls the observer sits
+ * on Google's own "Downloading updates to Google Play services…" screen with
+ * nothing but a Cancel button. Cancelling there reports the SAME 'cancel' status
+ * as deliberately backing out of a working scanner — so the two are
+ * indistinguishable from the status alone, and treating both as "leave the step"
+ * strands a reporter who never got a scanner at all.
+ *
+ * Until a scan has succeeded once, assume a cancel is that stall and offer the
+ * plain camera instead of closing the step.
+ */
+let proven = false;
+export const scannerProven = () => proven;
+
 export type ScanOutcome =
   | { ok: true; uri: string }
   | { ok: false; reason: 'cancelled' | 'unavailable' | 'failed' };
@@ -122,6 +138,7 @@ export async function scanSheet(): Promise<ScanOutcome> {
     if (res?.status === 'cancel') return { ok: false, reason: 'cancelled' };
     const uri = res?.scannedImages?.[0];
     if (!uri) return { ok: false, reason: 'failed' };
+    proven = true; // the module is on the device and works; a later cancel is a real cancel
     return { ok: true, uri: uri.startsWith('file://') ? uri : `file://${uri}` };
   } catch {
     // getStartScanIntent() rejected: the Play services module is absent or

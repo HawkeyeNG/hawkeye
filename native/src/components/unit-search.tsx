@@ -10,7 +10,7 @@ import { useUi } from '@/lib/theme';
  * Every native PU picker offered exactly two routes to a unit: GPS "near me",
  * and the state → LGA → ward cascade. Neither serves the common case of knowing
  * your unit's NAME but not the ward the register files it under. This matches
- * name, unit code and ward on partial input — "wonde" finds "Wonderland Estate".
+ * name, unit code and ward on partial input — "aso dr" finds "Aso Drive".
  *
  * It returns the row shape `/api/register/units` already returns, so each
  * screen's existing select handler takes it unchanged.

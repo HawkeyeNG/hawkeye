@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { CLIPS, PHONE_CSS, esc } from './howto_content.mjs';
 import { CLIPS_TG, TG_CSS } from './howto_content_tg.mjs';
 import { CLIPS_IOS, IOS_CSS } from './howto_content_ios.mjs';
+import { CLIPS_ANDROID, ANDROID_CSS } from './howto_content_android.mjs';
+import { CLIPS_OVERVIEW } from './howto_content_overview.mjs';
 
 const HOME = process.env.HOME;
 const BIN = `${HOME}/.local/bin`;
@@ -16,7 +18,7 @@ const sh = (cmd) => execSync(cmd, { stdio: ['ignore', 'pipe', 'pipe'], env: { ..
 const dur = (f) => parseFloat(sh(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${f}"`));
 
 const slug = process.argv[2];
-const c = [...CLIPS, ...CLIPS_TG, ...CLIPS_IOS].find((x) => x.slug === slug);
+const c = [...CLIPS, ...CLIPS_TG, ...CLIPS_IOS, ...CLIPS_ANDROID, ...CLIPS_OVERVIEW].find((x) => x.slug === slug);
 if (!c) { console.error('unknown slug', slug); process.exit(1); }
 
 const __dir = path.dirname(fileURLToPath(import.meta.url));
@@ -127,6 +129,7 @@ const html = `<!doctype html>
       ${PHONE_CSS}
       ${TG_CSS}
       ${IOS_CSS}
+      ${ANDROID_CSS}
     </style>
   </head>
   <body>

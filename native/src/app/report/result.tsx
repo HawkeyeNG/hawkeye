@@ -611,6 +611,15 @@ export default function ReportResult() {
 
   // -- step 1: which polling unit ------------------------------------------
   const [contests, setContests] = useState<Contest[]>([]);
+  /** Set when /api/contests failed AND no cached copy existed, so the header can
+   *  say so and offer a retry instead of pretending to still be loading. */
+  const [contestsFailed, setContestsFailed] = useState(false);
+  const loadContests = () => {
+    setContestsFailed(false);
+    api.contests()
+      .then((c) => { setContests(c); setContestsFailed(false); })
+      .catch(() => setContestsFailed(true));
+  };
   /**
    * The selected race, from the shared ContestPicker's authoritative catalogue
    * (races.ts). It is the selection's identity and the picker's controlled
@@ -669,7 +678,11 @@ export default function ReportResult() {
     // Every state is listed, not just the active contest's. Hiding the rest
     // of the country made the app look broken outside Osun; an observer should
     // be told "no election here yet", not shown an empty world.
-    api.contests().then(setContests).catch(() => {});
+    // Record the failure instead of swallowing it. Every screen here is gated on
+    // this list, and a silent catch rendered as "Loading election…" forever —
+    // an observer at a polling unit cannot tell that apart from a slow network,
+    // so they wait instead of retrying.
+    loadContests();
     fetch(`${REG}/states`)
       .then((r) => r.json())
       .then(setStates)
@@ -1740,8 +1753,22 @@ export default function ReportResult() {
              selection doesn't respond". The votes step already had this. */
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-1 text-xl font-bold text-ink">
-              {contests.length ? contests[0].election : 'Loading election…'}
+              {contests.length
+                ? contests[0].election
+                : contestsFailed
+                  ? 'Election details unavailable'
+                  : 'Loading election…'}
             </Text>
+            {/* A dead end needs a way out. Reporting does not depend on this
+                list — the unit steps below work regardless — so say that, and
+                offer the retry rather than leaving a spinner to be waited on. */}
+            {contestsFailed ? (
+              <Pressable onPress={loadContests} className="mb-2 self-start active:opacity-70">
+                <Text className="text-sm font-bold text-hawk-gold">
+                  Couldn’t reach the server — tap to retry
+                </Text>
+              </Pressable>
+            ) : null}
             <Text className="pb-3 text-sm text-muted">
               Report from the unit you are standing at.
             </Text>

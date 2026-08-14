@@ -549,13 +549,28 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
  * Fails closed: no answer, no SMS option. Never awaited by anything on the
  * critical path — the radio simply appears a moment later if it applies.
  */
-function revealSmsOptionIfEnabled() {
+function revealSmsOptionIfEnabled(tries = 2) {
   const opt = document.getElementById('otp-sms-opt');
   if (!opt) return;
-  fetch('/api/health')
+  // ADDRESS THE API HOST EXPLICITLY. In the Capacitor shell the page origin is
+  // localhost, so a leading-slash URL only reaches the server because native.js
+  // rewrites window.fetch — which makes this option depend on script order
+  // between two files that have no other reason to care about each other. The
+  // shell already publishes the host it uses; read it.
+  const base = (window.HAWKEYE && window.HAWKEYE.apiBase) || API || '';
+  fetch(base + '/api/health')
     .then((r) => (r.ok ? r.json() : null))
-    .then((h) => { if (h && h.smsOtp === true) opt.hidden = false; })
-    .catch(() => { /* stay hidden */ });
+    .then((h) => {
+      if (h && h.smsOtp === true) { opt.hidden = false; return; }
+      // A null body means the request completed but said nothing useful; only a
+      // THROWN failure is worth a second attempt.
+    })
+    .catch(() => {
+      // One retry. This is the first request the app makes on a cold start, so
+      // it is the one most likely to land while the radio is still warming up —
+      // and the cost of losing it is an option that silently never appears.
+      if (tries > 1) setTimeout(() => revealSmsOptionIfEnabled(tries - 1), 2500);
+    });
 }
 
 let smsProbed = false;

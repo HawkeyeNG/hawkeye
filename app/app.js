@@ -559,10 +559,29 @@ function revealSmsOptionIfEnabled() {
 }
 
 let smsProbed = false;
+function probeSmsOnce() {
+  if (smsProbed) return;
+  smsProbed = true;
+  revealSmsOptionIfEnabled();
+}
+/**
+ * Probe at LOAD, not only from syncChannelGate().
+ *
+ * syncChannelGate() runs on the returning-user branch and on auth-mode toggles,
+ * but NOT on first paint for a signed-out visitor — who is exactly the person
+ * being offered a delivery channel. Hanging the probe off it looked right and
+ * fired zero times: the option stayed hidden with the server answering
+ * smsOtp:true. revealSmsOptionIfEnabled() no-ops when the radio is absent, so
+ * this is safe on every page that loads app.js.
+ */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', probeSmsOnce, { once: true });
+} else {
+  probeSmsOnce();
+}
+
 function syncChannelGate() {
-  // Probe once, from the one function every auth path already calls, rather
-  // than picking one of several init sites and missing the others.
-  if (!smsProbed) { smsProbed = true; revealSmsOptionIfEnabled(); }
+  probeSmsOnce();
   const btn = document.getElementById('btn-auth');
   const pick = document.getElementById('channel-pick');
   if (!btn) return;

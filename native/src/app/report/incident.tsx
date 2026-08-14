@@ -246,7 +246,10 @@ const nothingFoundLine = (s: Searched): string => {
   if (s.registerM != null) {
     return `No polling unit within ${s.registerM}m of you, and the wider search for units with a mapped area did not answer — browse the register below.`;
   }
-  return 'Could not look up nearby units — browse the register below to find the one you are at.';
+  // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
+  // /units), so on a lookup failure it is the one other path that cannot work
+  // either. Search answers from the register bundled into the app.
+  return 'Could not look up nearby units. Search for the one you are at by name below — the polling unit list works without a connection.';
 };
 
 /** The tier's colour, sized for a line of text — so a row and the pin it refers
@@ -615,7 +618,7 @@ export default function ReportIncident() {
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
         setNearLine(
-          `Could not look up nearby units — browse the register below. (lookup_failed${status ? ` / HTTP ${status}` : ''})`,
+          `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (lookup_failed${status ? ` / HTTP ${status}` : ''})`,
         );
         setBrowse(true);
         return;
@@ -753,7 +756,7 @@ export default function ReportIncident() {
       );
     } catch (e) {
       setNearLine(
-        `Could not look up nearby units — browse the register below. (${e instanceof Error ? e.message : String(e)})`,
+        `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (${e instanceof Error ? e.message : String(e)})`,
       );
       setBrowse(true);
     } finally {

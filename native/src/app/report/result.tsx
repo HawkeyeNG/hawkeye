@@ -420,6 +420,20 @@ const nothingFoundLine = (s: Searched): string => {
   return 'Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection.';
 };
 
+/**
+ * The line for a lookup that FAILED rather than one that came back empty, and
+ * the one an observer whose DNS has just died actually sees. Same correction as
+ * above and for the same reason: browsing is network-backed (/lgas, /wards,
+ * /units), so on this failure it is the one other path that cannot work either,
+ * while search answers from the register bundled into the app.
+ *
+ * The detail stays. "lookup_failed" with nothing after it was unactionable — it
+ * could not be told apart from a timeout, a DNS failure or a 500, which cost a
+ * whole debugging round once.
+ */
+const lookupFailedLine = (detail: string): string =>
+  `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (${detail})`;
+
 /** The tier's colour, sized for a line of text — so a row, a receipt line and
  *  the pin they refer to all carry the same mark. */
 const TierDot = ({ tier }: { tier: UnitTier }) => (
@@ -890,12 +904,8 @@ export default function ReportResult() {
 
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
-        // Name the ACTUAL failure. "lookup_failed" with nothing after it was
-        // unactionable — it could not be told apart from a timeout, a DNS
-        // failure or a 500, which cost a whole debugging round.
         setNearLine(
-          `Could not look up nearby units — browse the register below. (${
-            status ? `HTTP ${status}` : lastNetErr || 'network unreachable'})`,
+          lookupFailedLine(status ? `HTTP ${status}` : lastNetErr || 'network unreachable'),
         );
         setBrowse(true);
         return;
@@ -1119,7 +1129,7 @@ export default function ReportResult() {
           : 'Tap the unit you are standing at:',
       );
     } catch (e) {
-      setNearLine(`Could not look up nearby units — browse the register below. (${e instanceof Error ? e.message : String(e)})`);
+      setNearLine(lookupFailedLine(e instanceof Error ? e.message : String(e)));
       setBrowse(true);
     } finally {
       setNearBusy(false);

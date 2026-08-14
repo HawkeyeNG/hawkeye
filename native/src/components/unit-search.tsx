@@ -1,7 +1,9 @@
+import { Feather } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
 import { RegisterTierBadge } from '@/components/unit-map';
+import { BRAND } from '@/lib/api';
 import { localSearch, warmRegister } from '@/lib/register';
 import { useUi } from '@/lib/theme';
 
@@ -40,6 +42,8 @@ export function UnitSearch<T extends Row>({
   lga,
   placeholder = 'Name, ward or unit number',
   onEngaged,
+  selectedCode,
+  onContinue,
 }: {
   onSelect: (unit: T) => void;
   /** Optional narrowing when the caller already knows where it is. */
@@ -49,6 +53,18 @@ export function UnitSearch<T extends Row>({
   /** Fires when the observer starts/stops using this search (typing), so the
    *  host screen can clear space — e.g. map-unit hides the map + nearby list. */
   onEngaged?: (active: boolean) => void;
+  /**
+   * THE SAME SELECTED TREATMENT THE NEARBY ROWS GET. Tapping a search result
+   * only sets the host's `unit`; nothing on the row changed, so the only
+   * evidence a choice had registered was a footer CTA that in a dense ward sits
+   * well below the row just tapped. The nearby list has shown a filled row and
+   * an inline Continue since launch — search simply never got it, and the two
+   * lists sit one above the other on the same screen.
+   */
+  selectedCode?: string | null;
+  /** Omit and the row still highlights — it just carries no inline button,
+   *  which is right on screens whose next step is not "continue". */
+  onContinue?: () => void;
 }) {
   const ui = useUi();
   const [q, setQ] = useState('');
@@ -130,14 +146,19 @@ export function UnitSearch<T extends Row>({
         {busy ? <ActivityIndicator size="small" /> : null}
       </View>
       {note ? <Text className="pt-1.5 text-xs text-muted">{note}</Text> : null}
-      {rows?.map((u) => (
+      {rows?.map((u) => {
+        const sel = selectedCode != null && selectedCode === u.pu_code;
+        return (
         <Pressable
           key={u.pu_code}
           onPress={() => onSelect(u)}
-          className="mt-2 rounded-2xl bg-card px-4 py-3 active:opacity-70"
+          className={`mt-2 flex-row items-center rounded-2xl px-4 py-3 active:opacity-70 ${
+            sel ? 'bg-hawk-green' : 'bg-card'
+          }`}
         >
-          <Text className="text-base font-semibold text-ink">{u.name}</Text>
-          <Text className="pt-0.5 text-xs text-muted">
+          <View className="flex-1 pr-2">
+          <Text className={`text-base font-semibold ${sel ? 'text-white' : 'text-ink'}`}>{u.name}</Text>
+          <Text className={`pt-0.5 text-xs ${sel ? 'text-emerald-100' : 'text-muted'}`}>
             {u.pu_code}
             {u.ward ? ` · ${u.ward}` : ''}
             {u.lga ? `, ${u.lga}` : ''}
@@ -150,9 +171,25 @@ export function UnitSearch<T extends Row>({
               website and said nothing here, and an observer picking from search
               could not tell a mapped unit from one nobody has stood at. That
               distinction decides whether the geofence can check them in. */}
-          <RegisterTierBadge u={u} />
+          <RegisterTierBadge u={u} selected={sel} />
+          </View>
+          {/* Inline Continue on the chosen row, for the same reason the nearby
+              list has one: in a dense ward the footer CTA can sit far below the
+              row just tapped. */}
+          {sel && onContinue ? (
+            <Pressable
+              className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
+              onPress={onContinue}
+            >
+              {/* Fixed ink on a fixed brand surface — the gold does not flip
+                  with the theme, so the text on it must not either. */}
+              <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
+              <Feather name="arrow-right" size={14} color={BRAND.ink} />
+            </Pressable>
+          ) : null}
         </Pressable>
-      ))}
+        );
+      })}
     </View>
   );
 }

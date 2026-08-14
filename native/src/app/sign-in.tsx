@@ -184,7 +184,17 @@ export default function SignIn() {
       // password-holder just goes straight in.
       const hp = purpose === 'no-password' ? false : await accountHasPassword();
       setHasPw(hp);
-      if (hp === false || purpose === 'reset') {
+      // A SIGN-UP THAT ENDS WITHOUT A PASSWORD IS THE FAILURE, and this status
+      // check is the only thing between the two. `null` means the check itself
+      // did not answer — and treating that as "already has one" sent a brand-new
+      // observer straight into the app with an account they can only ever get
+      // back into by requesting another code. So on sign-up, offer the step
+      // unless the server has explicitly said there is already a password.
+      //
+      // Nobody is stranded by this: mustSetPassword reads `hasPw === false`, so
+      // with null the step is optional and keeps its back arrow. That is the
+      // whole reason the fail-open existed, and it is preserved.
+      if (hp === false || purpose === 'reset' || (purpose === 'signup' && hp !== true)) {
         setNewPw('');
         setNewPw2('');
         setLine(null);

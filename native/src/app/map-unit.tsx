@@ -1202,7 +1202,7 @@ export default function MapUnit() {
             way: typing means "my unit is NOT in what you showed me", so keeping
             them pushes the observer's actual task off-screen. Clearing the
             search (or closing the drill) brings them straight back. */}
-        <UnitSearch<Unit> onSelect={(u) => setUnit(u)} onEngaged={setSearchTyping} />
+        <UnitSearch<Unit> onSelect={(u) => setUnit(u)} onEngaged={setSearchTyping} selectedCode={unit?.pu_code} />
         <Pressable
           onPress={() => setBrowse((b) => !b)}
           className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"

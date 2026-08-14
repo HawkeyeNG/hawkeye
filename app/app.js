@@ -537,7 +537,32 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
 // retired until a sender ID is approved); remembered for "Resend code". Radios
 // are required — no silent default.
 // Request OTP stays disabled (and greyed) until a delivery channel is chosen.
+/**
+ * Offer SMS only when the server can actually send it.
+ *
+ * Nigerian carriers drop SMS from unapproved sender IDs, so the option was
+ * hard-removed from the page while approval was pending — which meant the
+ * website, the APK and every cached copy each carried their own answer, and
+ * turning SMS on later needed a redeploy AND an APK rebuild. /api/health
+ * publishes the switch instead, so the server decides once for all of them.
+ *
+ * Fails closed: no answer, no SMS option. Never awaited by anything on the
+ * critical path — the radio simply appears a moment later if it applies.
+ */
+function revealSmsOptionIfEnabled() {
+  const opt = document.getElementById('otp-sms-opt');
+  if (!opt) return;
+  fetch('/api/health')
+    .then((r) => (r.ok ? r.json() : null))
+    .then((h) => { if (h && h.smsOtp === true) opt.hidden = false; })
+    .catch(() => { /* stay hidden */ });
+}
+
+let smsProbed = false;
 function syncChannelGate() {
+  // Probe once, from the one function every auth path already calls, rather
+  // than picking one of several init sites and missing the others.
+  if (!smsProbed) { smsProbed = true; revealSmsOptionIfEnabled(); }
   const btn = document.getElementById('btn-auth');
   const pick = document.getElementById('channel-pick');
   if (!btn) return;

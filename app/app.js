@@ -786,8 +786,12 @@ $('btn-locate').onclick = async () => {
   // Every exit from here on leaves the observer somewhere usable — a named
   // failure and an open register browser, never a status line that just stops.
   if (r.error) {
+    // Point at SEARCH, not browse. Browsing is network-backed (/lgas, /wards,
+    // /units), so on the failure this line actually reports it is the one other
+    // path that cannot work either — while pu-search.js answers from the Osun
+    // register bundled into the page and needs no connection at all.
     $('locate-status').textContent =
-      `Could not look up nearby units — use "Browse the register" below. (${r.error})`;
+      `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (${r.error})`;
     $('browse-block').open = true;
     $('btn-locate').textContent = 'Try Searching Near Me Again';
     return;

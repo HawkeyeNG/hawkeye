@@ -548,7 +548,6 @@ export default function Practice() {
           `${d.lead}, browse the register below, or just practise without a specific unit. (${d.code})`,
         );
         setGpsSettings(d.settings);
-        setBrowse(true);
         return;
       }
       const f = r.fix;
@@ -567,7 +566,6 @@ export default function Practice() {
         setNearLine(
           `Could not look up nearby units. Search for yours by name below (the list works without a connection), or practise without a specific unit. (lookup_failed${status ? ` / HTTP ${status}` : ''})`,
         );
-        setBrowse(true);
         return;
       }
 
@@ -665,7 +663,6 @@ export default function Practice() {
       setNearby(found);
       if (found.length === 0) {
         setNearLine(nothingFoundLine(scope));
-        setBrowse(true);
         return;
       }
       setNearLine(
@@ -677,7 +674,6 @@ export default function Practice() {
       setNearLine(
         `Could not look up nearby units. Search for yours by name below (the list works without a connection), or practise without a specific unit. (${e instanceof Error ? e.message : String(e)})`,
       );
-      setBrowse(true);
     } finally {
       setNearBusy(false);
     }
@@ -1172,21 +1168,21 @@ export default function Practice() {
             <UnitSearch<Unit> onSelect={chooseUnit} selectedCode={unit?.pu_code} />
             <Pressable
               onPress={() => setBrowse((b) => !b)}
-              className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"
+              className="mt-4 flex-row items-center rounded-2xl bg-hawk-green px-4 py-3.5 active:opacity-80"
             >
-              {/* good-ink, not hawk-leaf: this row sits on bg-card, and #0b6b3a
-                  measures 2.5:1 there in dark mode — the label and its chevron
-                  both disappeared. good-ink IS #0b6b3a in light mode, so light
-                  is unchanged; dark gets 9.5:1. */}
+              {/* Gold on hawk-green — the pairing Prompt uses, and it sidesteps the
+                  contrast trap this row used to have: hawk-leaf (#0b6b3a) on
+                  bg-card measured 2.5:1 in dark mode and the label and chevron
+                  both disappeared. On the filled green card that cannot recur. */}
               <Feather
                 name={browse ? 'chevron-down' : 'chevron-right'}
                 size={16}
-                color={ui.tint.good.ink}
+                color={BRAND.gold}
               />
-              <Text className="flex-1 pl-2 text-sm font-bold text-good-ink">
+              <Text className="flex-1 pl-2 text-base font-bold text-hawk-gold">
                 Browse the register instead
               </Text>
-              <Text className="text-xs text-faint">state › LGA › ward</Text>
+              <Text className="text-xs text-emerald-100">state › LGA › ward</Text>
             </Pressable>
 
             {browse ? (

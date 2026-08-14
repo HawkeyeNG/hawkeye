@@ -182,19 +182,33 @@ export default function SignIn() {
       // already knows the answer (the server said so), `reset` is here on
       // purpose, and a sign-up on a number that turns out to be an existing
       // password-holder just goes straight in.
+      // SIGN-UP ALWAYS ENDS ON THE PASSWORD STEP. Unconditionally, with no
+      // status check in front of it.
+      //
+      // This screen was asking the server whether the account already had a
+      // password and skipping the step when it said yes. That is a defensible
+      // answer to the wrong question: this is the SIGN-UP page, the password is
+      // part of signing up, and every condition put in front of it is another
+      // way for a new observer to end up with an account whose only way back in
+      // is another one-time code. Two attempts were lost to refining that
+      // condition instead of deleting it.
+      //
+      // Setting a password on a number that already has one is safe and is
+      // exactly what the reset flow does: the server accepts a new password
+      // alone inside the phone-proof window this OTP just opened. Skipping the
+      // check also drops a network round trip from the sign-up path.
+      if (purpose === 'signup') {
+        setHasPw(false);
+        setNewPw('');
+        setNewPw2('');
+        setLine(null);
+        setStep('set-password');
+        return;
+      }
+
       const hp = purpose === 'no-password' ? false : await accountHasPassword();
       setHasPw(hp);
-      // A SIGN-UP THAT ENDS WITHOUT A PASSWORD IS THE FAILURE, and this status
-      // check is the only thing between the two. `null` means the check itself
-      // did not answer — and treating that as "already has one" sent a brand-new
-      // observer straight into the app with an account they can only ever get
-      // back into by requesting another code. So on sign-up, offer the step
-      // unless the server has explicitly said there is already a password.
-      //
-      // Nobody is stranded by this: mustSetPassword reads `hasPw === false`, so
-      // with null the step is optional and keeps its back arrow. That is the
-      // whole reason the fail-open existed, and it is preserved.
-      if (hp === false || purpose === 'reset' || (purpose === 'signup' && hp !== true)) {
+      if (hp === false || purpose === 'reset') {
         setNewPw('');
         setNewPw2('');
         setLine(null);

@@ -196,7 +196,10 @@ const nothingFoundLine = (s: Searched): string => {
   if (s.registerM != null) {
     return `No polling unit within ${s.registerM}m of you — browse the register below, or practise without a specific unit.`;
   }
-  return 'Could not look up nearby units — browse the register below, or practise without a specific unit.';
+  // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
+  // /units), so on a lookup failure it is the one other path that cannot work
+  // either. Search answers from the register bundled into the app.
+  return 'Could not look up nearby units. Search for yours by name below (the list works without a connection), or practise without a specific unit.';
 };
 
 /** The tier's colour, sized for a line of text, so a row and the pin it refers
@@ -562,7 +565,7 @@ export default function Practice() {
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
         setNearLine(
-          `Could not look up nearby units — browse the register below, or practise without a specific unit. (lookup_failed${status ? ` / HTTP ${status}` : ''})`,
+          `Could not look up nearby units. Search for yours by name below (the list works without a connection), or practise without a specific unit. (lookup_failed${status ? ` / HTTP ${status}` : ''})`,
         );
         setBrowse(true);
         return;
@@ -672,7 +675,7 @@ export default function Practice() {
       );
     } catch (e) {
       setNearLine(
-        `Could not look up nearby units — browse the register below, or practise without a specific unit. (${e instanceof Error ? e.message : String(e)})`,
+        `Could not look up nearby units. Search for yours by name below (the list works without a connection), or practise without a specific unit. (${e instanceof Error ? e.message : String(e)})`,
       );
       setBrowse(true);
     } finally {

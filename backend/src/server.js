@@ -80,6 +80,13 @@ app.get('/api/health', (_req, res) =>
     service: 'hawkeye',
     env: config.env,
     push: pushConfigured(),
+    // Whether SMS OTP can actually be delivered right now. The sign-in form
+    // reads this to decide whether to OFFER SMS at all: hard-coding the radio in
+    // the page means the website, the APK and every cached copy can each
+    // disagree with what the server can deliver, and offering a channel that
+    // silently arrives over WhatsApp is worse than not offering it. One boolean,
+    // no secret — same contract as `push` above.
+    smsOtp: config.smsOtpEnabled,
     // Kept after the APP_ENV hunt that added it: a .env that silently fails to
     // load is indistinguishable from one whose values simply lost to the real
     // environment, and config.js swallows the error by design. One boolean here

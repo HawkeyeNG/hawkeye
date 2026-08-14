@@ -30,6 +30,15 @@ import { getIdentity } from '@/lib/identity';
 
 const BASE = 'https://hawkeye.com.ng';
 
+/** The reset-code routes, worded exactly as the sign-in screen words them —
+ *  the same three buttons on two screens must not read differently. */
+type ResetChannel = 'whatsapp' | 'telegram' | 'sms';
+const RESET_CHANNEL_LABEL: Record<ResetChannel, string> = {
+  whatsapp: 'WhatsApp',
+  telegram: 'Telegram',
+  sms: 'SMS',
+};
+
 type Me = {
   observerId: number;
   createdAt: number;
@@ -197,8 +206,19 @@ export default function Profile() {
   /** Only a verified OTP for THIS account's number may open the reset step. */
   const [resetProven, setResetProven] = useState(false);
   /** NO DEFAULT — the observer picks the route, so a reset can never fan out to a
-   *  channel they didn't choose. SMS is parked until the sender ID is approved. */
-  const [resetChannel, setResetChannel] = useState<'whatsapp' | 'telegram' | null>(null);
+   *  channel they didn't choose. */
+  const [resetChannel, setResetChannel] = useState<ResetChannel | null>(null);
+  /** SMS only when /api/health says the server can deliver it — same switch the
+   *  sign-in screen reads, so the two pickers can never disagree. */
+  const [smsOk, setSmsOk] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    api.smsOtpEnabled().then((ok) => { if (alive) setSmsOk(ok); });
+    return () => { alive = false; };
+  }, []);
+  const resetChannels: ResetChannel[] = smsOk
+    ? ['whatsapp', 'telegram', 'sms']
+    : ['whatsapp', 'telegram'];
 
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn') return;
@@ -302,7 +322,7 @@ export default function Profile() {
     setPwBusy(true);
     setPwMsg(null);
     try {
-      const r = await requestOtp(resetPhone.trim(), resetChannel as 'whatsapp' | 'telegram');
+      const r = await requestOtp(resetPhone.trim(), resetChannel as ResetChannel);
       if (r.ok || r.viaSms || r.viaWhatsapp) {
         setPwMode('reset-otp');
         setPwMsg(r.devOtp ? `DEV MODE — your code is ${r.devOtp}` : 'Code sent — check WhatsApp/SMS.');
@@ -800,7 +820,7 @@ export default function Profile() {
                 {/* Pick the route — nothing is pre-selected, so a reset never
                     sends on a channel the observer didn't choose. */}
                 <View className="flex-row gap-2 pt-3">
-                  {(['whatsapp', 'telegram'] as const).map((c) => (
+                  {resetChannels.map((c) => (
                     <Pressable
                       key={c}
                       onPress={() => setResetChannel(c)}
@@ -809,7 +829,7 @@ export default function Profile() {
                       <Text
                         className={`text-sm font-semibold ${resetChannel === c ? 'text-hawk-gold' : 'text-muted'}`}
                       >
-                        {c === 'whatsapp' ? 'WhatsApp' : 'Telegram (free)'}
+                        {RESET_CHANNEL_LABEL[c]}
                       </Text>
                     </Pressable>
                   ))}

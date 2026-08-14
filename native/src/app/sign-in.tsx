@@ -24,10 +24,10 @@ import {
   verifyOtp,
   type RegisterResult,
 } from '@/lib/auth';
-import { BRAND } from '@/lib/api';
+import { BRAND, api } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
-type Channel = 'whatsapp' | 'telegram';
+type Channel = 'whatsapp' | 'telegram' | 'sms';
 
 /**
  * Sign in — password-first, the way a normal app works.
@@ -65,8 +65,15 @@ export default function SignIn() {
   const [purpose, setPurpose] = useState<Purpose>('signup');
   const [phone, setPhone] = useState('');
   // NO DEFAULT: the user must pick a route, so a mistap can never send on a
-  // channel they didn't choose (SMS is parked until the sender ID is approved).
+  // channel they didn't choose.
   const [channel, setChannel] = useState<Channel | null>(null);
+  // Offered only when the SERVER says it can deliver it — see api.smsOtpEnabled.
+  const [smsOk, setSmsOk] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    api.smsOtpEnabled().then((ok) => { if (alive) setSmsOk(ok); });
+    return () => { alive = false; };
+  }, []);
   const [otp, setOtp] = useState('');
   const [password, setPasswordText] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -303,11 +310,14 @@ export default function SignIn() {
     router.replace('/welcome');
   };
 
-  // SMS is PARKED until the Sendchamp sender ID is approved — NG carriers drop
-  // codes from unapproved IDs, and it costs per message.
+  // SMS appears only when /api/health says the server can send it, so the
+  // sender-ID approval that turned it on did not need an app release — and a
+  // future suspension takes it away the same way. Appended last: it costs per
+  // message, so it is the fallback, not the first thing under the thumb.
   const CHANNELS: { key: Channel; label: string }[] = [
     { key: 'whatsapp', label: 'WhatsApp' },
-    { key: 'telegram', label: 'Telegram (free)' },
+    { key: 'telegram', label: 'Telegram' },
+    ...(smsOk ? [{ key: 'sms' as Channel, label: 'SMS' }] : []),
   ];
 
   const requestCopy =

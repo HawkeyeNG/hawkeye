@@ -68,14 +68,25 @@ chmod +x ./gradlew
 #   -Pandroid.enableShrinkResourcesInReleaseBuilds=true   strip unused resources
 # --no-watch-fs: without it gradle throws "Cannot start managing file contention"
 # on the WSL/NTFS mount and dies at "32 up-to-date".
+# KEEP THE WHOLE LOG. `| tail -20` alone showed the last 20 lines of a SUCCESS
+# nicely and threw away every failure: gradle prints "What went wrong" well
+# above that window, and when this is run as a background task even the tail can
+# arrive empty — a build died once with no recoverable reason at all, and the
+# only way to find out was to run gradle again by hand. Log to a file, print the
+# tail from it, and on failure print the part that actually says why.
 ./gradlew --no-daemon --no-watch-fs --console=plain \
   -PreactNativeArchitectures=arm64-v8a \
   -Pandroid.enableMinifyInReleaseBuilds=true \
   -Pandroid.enableShrinkResourcesInReleaseBuilds=true \
   -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" \
-  assembleRelease 2>&1 | tail -20
-# Same pipe trap as prebuild: check gradle's OWN status, not tail's.
-[ "${PIPESTATUS[0]}" -eq 0 ] || { echo "GRADLE FAILED"; exit 1; }
+  assembleRelease > /tmp/gradle_team.log 2>&1
+GRADLE=$?
+tail -20 /tmp/gradle_team.log
+if [ "$GRADLE" -ne 0 ]; then
+  echo "GRADLE FAILED (exit $GRADLE) — full log: /tmp/gradle_team.log"
+  grep -nE -A 12 'FAILURE:|What went wrong|OutOfMemoryError|error:' /tmp/gradle_team.log | head -60
+  exit 1
+fi
 
 APK="app/build/outputs/apk/release/app-release.apk"
 if [ -f "$APK" ]; then

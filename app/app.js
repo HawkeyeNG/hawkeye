@@ -786,10 +786,15 @@ $('btn-locate').onclick = async () => {
   // Every exit from here on leaves the observer somewhere usable — a named
   // failure and an open register browser, never a status line that just stops.
   if (r.error) {
-    // Point at SEARCH, not browse. Browsing is network-backed (/lgas, /wards,
-    // /units), so on the failure this line actually reports it is the one other
-    // path that cannot work either — while pu-search.js answers from the Osun
-    // register bundled into the page and needs no connection at all.
+    // Point at SEARCH first. Both paths survive here — refApi() consults the
+    // shipped register bundle before the network, so the cascade below works
+    // offline for Osun too — but search is one field against four sequential
+    // steps, and this line is read by someone whose connection just died.
+    //
+    // NOT TRUE ON NATIVE, where the cascade is a bare fetch of /lgas, /wards,
+    // /units with no bundle fallback and genuinely cannot work offline. Same
+    // sentence there, different and stronger reason. Closing that gap is the
+    // post-election "native browse offline" item.
     $('locate-status').textContent =
       `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (${r.error})`;
     $('browse-block').open = true;

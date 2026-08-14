@@ -412,7 +412,12 @@ const nothingFoundLine = (s: Searched): string => {
   if (s.registerM != null) {
     return `No polling unit within ${s.registerM}m of you, and the wider search for units with a mapped area did not answer — browse the register below to find yours by name.`;
   }
-  return 'Could not look up nearby units — browse the register below to find yours by name.';
+  // POINT AT SEARCH, NOT BROWSE. This is the NETWORK-failure case, and browsing
+  // the register is itself network-backed (/lgas, /wards, /units) — so the old
+  // copy sent an observer whose DNS had just failed to the one other path that
+  // could not work either. Search answers from the register bundled into the
+  // app, which is the only unit lookup that survives having no connection.
+  return 'Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection.';
 };
 
 /** The tier's colour, sized for a line of text — so a row, a receipt line and

@@ -543,7 +543,6 @@ export default function MapUnit() {
         const d = describeFixFailure(r);
         setNearLine(`${d.lead}, or browse the register below. (${d.code})`);
         setGpsSettings(d.settings);
-        setBrowse(true);
         return;
       }
       const fix = r.fix;
@@ -569,7 +568,6 @@ export default function MapUnit() {
         setNearLine(
           `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (lookup_failed${status ? ` / HTTP ${status}` : ''})`,
         );
-        setBrowse(true);
         return;
       }
 
@@ -707,7 +705,6 @@ export default function MapUnit() {
         // looked in — and would send an observer hunting for a unit the app
         // never asked about.
         setNearLine(nothingFoundLine(scope));
-        setBrowse(true);
         return;
       }
       setNearLine(
@@ -719,7 +716,6 @@ export default function MapUnit() {
       setNearLine(
         `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (${e instanceof Error ? e.message : String(e)})`,
       );
-      setBrowse(true);
     } finally {
       setNearBusy(false);
     }
@@ -1205,13 +1201,13 @@ export default function MapUnit() {
         <UnitSearch<Unit> onSelect={(u) => setUnit(u)} onEngaged={setSearchTyping} selectedCode={unit?.pu_code} />
         <Pressable
           onPress={() => setBrowse((b) => !b)}
-          className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"
+          className="mt-4 flex-row items-center rounded-2xl bg-hawk-green px-4 py-3.5 active:opacity-80"
         >
-          <Feather name={browse ? 'chevron-down' : 'chevron-right'} size={16} color={BRAND.leaf} />
-          <Text className="flex-1 pl-2 text-sm font-bold text-hawk-leaf">
+          <Feather name={browse ? 'chevron-down' : 'chevron-right'} size={16} color={BRAND.gold} />
+          <Text className="flex-1 pl-2 text-base font-bold text-hawk-gold">
             Browse the register instead
           </Text>
-          <Text className="text-xs text-faint">state › LGA › ward</Text>
+          <Text className="text-xs text-emerald-100">state › LGA › ward</Text>
         </Pressable>
 
         {browse ? (

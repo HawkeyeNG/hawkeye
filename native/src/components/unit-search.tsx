@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
+import { RegisterTierBadge } from '@/components/unit-map';
 import { localSearch, warmRegister } from '@/lib/register';
 import { useUi } from '@/lib/theme';
 
@@ -18,13 +19,19 @@ import { useUi } from '@/lib/theme';
  */
 const BASE = 'https://hawkeye.com.ng';
 
-/** Only the fields this component itself renders; callers keep their own types. */
+/** Only the fields this component itself renders; callers keep their own types.
+ *  The coordinate columns are here because the row states whether the unit's
+ *  LOCATION is known — see the badge in the list below. */
 type Row = {
   pu_code: string;
   name: string;
   ward?: string | null;
   lga?: string | null;
   state?: string | null;
+  coords_source?: string | null;
+  locationTier?: string;
+  lat?: number | null;
+  crowd_lat?: number | null;
 };
 
 export function UnitSearch<T extends Row>({
@@ -136,6 +143,14 @@ export function UnitSearch<T extends Row>({
             {u.lga ? `, ${u.lga}` : ''}
             {u.state ? `, ${u.state}` : ''}
           </Text>
+          {/* WHETHER THE UNIT'S LOCATION IS KNOWN, in the same words and the
+              same dot the browse lists, the nearby rows and the map legend use.
+              Search shipped without it while every other list on both platforms
+              carried one — so the same unit read "location verified" on the
+              website and said nothing here, and an observer picking from search
+              could not tell a mapped unit from one nobody has stood at. That
+              distinction decides whether the geofence can check them in. */}
+          <RegisterTierBadge u={u} />
         </Pressable>
       ))}
     </View>

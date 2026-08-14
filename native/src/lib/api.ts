@@ -126,8 +126,34 @@ async function contestsWithCache(): Promise<Contest[]> {
   }
 }
 
+/**
+ * Whether the server can actually deliver an SMS one-time code.
+ *
+ * Nigerian carriers drop SMS from unapproved sender IDs, so for months codes
+ * sent that way silently never arrived and the option was hard-removed from
+ * every client. That put the answer in three places — the website, the APK and
+ * whatever build a given observer had installed — and turning SMS on meant a
+ * redeploy AND two rebuilds. /api/health publishes the switch instead
+ * (`smsOtp`, a boolean, no secret), so one server flag turns it on everywhere.
+ *
+ * FAILS CLOSED. No answer, no SMS option: the backend quietly falls back to
+ * WhatsApp for an unroutable `sms` request, and an option that silently
+ * delivers somewhere else is worse than no option at all. `get()` already
+ * carries the 12s deadline and one retry, so a single dropped request on
+ * mobile data does not decide this.
+ */
+async function smsOtpEnabled(): Promise<boolean> {
+  try {
+    const h = await get<{ smsOtp?: boolean }>('/api/health');
+    return h?.smsOtp === true;
+  } catch {
+    return false;
+  }
+}
+
 export const api = {
   contests: contestsWithCache,
+  smsOtpEnabled,
   national: (contest: string) => get<National>(`/api/national/${contest}`),
   parties: () => get<Party[]>('/api/parties'),
   incidents: () => get<{ incidents: Incident[] }>('/api/incidents'),

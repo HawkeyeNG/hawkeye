@@ -3,6 +3,8 @@
  * Base is the production origin; the origin lock only guards non-public
  * routes, everything here is the same public API the website consumes.
  */
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const BASE = 'https://hawkeye.com.ng';
 
 export type Contest = {
@@ -55,16 +57,77 @@ export type IntegritySummary = {
   byType: { type: string; c: number }[];
 };
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { accept: 'application/json' },
-  });
-  if (!res.ok) throw new Error(`${path} -> ${res.status}`);
-  return (await res.json()) as T;
+/**
+ * React Native's fetch has NO default timeout, so a stalled connection hangs
+ * this promise indefinitely. Callers that swallow the rejection then render an
+ * eternal spinner — which is exactly how the report screen sat on "Loading
+ * election…" forever instead of ever saying something was wrong.
+ *
+ * 12s is past the ~6.4s a good link takes for the slowest of these, and short
+ * enough that an observer at a polling unit is not staring at nothing. One
+ * retry, because the common failure here is a single dropped request on mobile
+ * data rather than a dead server.
+ */
+const TIMEOUT_MS = 12_000;
+
+async function get<T>(path: string, tries = 2): Promise<T> {
+  let lastErr: unknown = null;
+  for (let i = 0; i < tries; i++) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+    try {
+      const res = await fetch(`${BASE}${path}`, {
+        headers: { accept: 'application/json' },
+        signal: ctl.signal,
+      });
+      if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+      return (await res.json()) as T;
+    } catch (e) {
+      lastErr = e;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(`${path} failed`);
+}
+
+/**
+ * Contests, remembered.
+ *
+ * Every report screen is gated on this one list: the race picker needs it to
+ * know what is open, and the header prints contests[0].election. When the fetch
+ * failed the screen showed "Loading election…" indefinitely — a permanent
+ * loading state standing in for an error, on the screen an observer opens at a
+ * polling unit with the worst connection they will have all day.
+ *
+ * One successful load is now enough forever. Cached on success, served from
+ * cache on any later failure, and validated on read so a bad entry from an
+ * older build heals itself instead of poisoning every launch.
+ */
+const CONTESTS_KEY = 'hk_contests_v1';
+
+const usableContests = (v: unknown): v is Contest[] =>
+  Array.isArray(v) && v.length > 0 && v.every((c) => c && typeof (c as Contest).code === 'string');
+
+async function contestsWithCache(): Promise<Contest[]> {
+  try {
+    const live = await get<Contest[]>('/api/contests');
+    if (!usableContests(live)) throw new Error('/api/contests returned nothing usable');
+    AsyncStorage.setItem(CONTESTS_KEY, JSON.stringify(live)).catch(() => {});
+    return live;
+  } catch (err) {
+    try {
+      const raw = await AsyncStorage.getItem(CONTESTS_KEY);
+      const cached: unknown = raw ? JSON.parse(raw) : null;
+      if (usableContests(cached)) return cached;
+      if (raw) await AsyncStorage.removeItem(CONTESTS_KEY);
+    } catch { /* unreadable cache — report the network failure instead */ }
+    throw err;
+  }
 }
 
 export const api = {
-  contests: () => get<Contest[]>('/api/contests'),
+  contests: contestsWithCache,
   national: (contest: string) => get<National>(`/api/national/${contest}`),
   parties: () => get<Party[]>('/api/parties'),
   incidents: () => get<{ incidents: Incident[] }>('/api/incidents'),

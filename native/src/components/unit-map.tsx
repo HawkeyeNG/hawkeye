@@ -61,10 +61,27 @@ export const mapAvailable = () => RNMaps != null;
  * were never handed.
  */
 const androidConfig = Constants.expoConfig?.android;
+/**
+ * READ THE FLAG, NOT `android.config`. That branch is stripped from the config
+ * embedded in the APK — prebuild consumes it to write the manifest entry and
+ * `Constants.expoConfig.android.config` then reads back `undefined` at runtime,
+ * on builds whose manifest holds a perfectly good key. This check "can only ever
+ * REMOVE a map, so a false positive is worse than the grey void it prevents" —
+ * and that is precisely what it did on every team APK: the key was in the
+ * manifest, the map would have drawn, and this hid it behind
+ * "This build has no Google Maps key".
+ *
+ * app.config.js now publishes `extra.mapsKeyPresent`, and `extra` is preserved
+ * verbatim into the runtime config. Undefined (an older build, or a config we
+ * were never handed) is treated as PRESENT, so the failure mode is the grey map
+ * this was written to explain rather than no map at all.
+ */
+const mapsKeyPresent = (Constants.expoConfig?.extra as { mapsKeyPresent?: boolean } | undefined)
+  ?.mapsKeyPresent;
 const KEY_MISSING =
   Platform.OS === 'android' &&
   androidConfig?.package != null &&
-  !androidConfig.config?.googleMaps?.apiKey;
+  mapsKeyPresent === false;
 
 /**
  * Confidence in a unit's coordinates. These are the three states

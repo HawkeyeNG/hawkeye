@@ -1287,7 +1287,7 @@ export default function ReportIncident() {
 
             {/* Search by name/code, above the cascade — knowing the unit's name
                 but not its ward is the case the cascade cannot serve. */}
-            <UnitSearch<PickedUnit> onSelect={choose} />
+            <UnitSearch<PickedUnit> onSelect={choose} selectedCode={unit?.pu_code} />
             <Pressable
               onPress={() => setBrowse((b) => !b)}
               className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"

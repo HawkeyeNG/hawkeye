@@ -248,9 +248,22 @@ export async function authedGet<T>(
   opts: { signOutOn401?: boolean } = {},
 ): Promise<T> {
   if (!state.token) throw new Error('not_signed_in');
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { accept: 'application/json', authorization: `Bearer ${state.token}` },
-  });
+  // React Native's fetch has NO default timeout, so a stalled socket leaves this
+  // promise pending forever. accountHasPassword() runs on the tick after a
+  // successful OTP verify and its answer decides whether a new observer is
+  // offered a password at all — a hang there holds the sign-up screen on its
+  // spinner with the account already created. Same 12s deadline api.ts uses.
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 12_000);
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      headers: { accept: 'application/json', authorization: `Bearer ${state.token}` },
+      signal: ctl.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
   if (res.status === 401) {
     // expireSession, never signOut: a rejected token clears the session but must
     // not set the opted-out flag. Background readers (unread counts, my-unit,

@@ -1934,7 +1934,12 @@ export default function ReportResult() {
 
             {/* Search by name/code, above the cascade — knowing the unit's name
                 but not its ward is the case the cascade cannot serve. */}
-            <UnitSearch<Unit> onSelect={chooseUnit} onEngaged={setSearchTyping} />
+            <UnitSearch<Unit>
+              onSelect={chooseUnit}
+              onEngaged={setSearchTyping}
+              selectedCode={unit?.pu_code}
+              onContinue={continueFromUnit}
+            />
             <Pressable
               onPress={() => setBrowse((b) => !b)}
               className="mt-4 flex-row items-center rounded-2xl bg-card px-4 py-3 active:opacity-70"

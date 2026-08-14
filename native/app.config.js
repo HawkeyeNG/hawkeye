@@ -53,5 +53,19 @@ module.exports = ({ config }) => {
       // in the server's environment, never here.
       googleServicesFile: './google-services.json',
     },
+    // WHETHER A KEY WAS INJECTED, published somewhere the RUNTIME can see it.
+    //
+    // `android.config.googleMaps.apiKey` above is consumed by prebuild to write
+    // com.google.android.geo.API_KEY into AndroidManifest, and is then DROPPED
+    // from the config embedded in the APK — `Constants.expoConfig.android.config`
+    // reads back `undefined` even on a build whose manifest carries a perfectly
+    // good key. unit-map.tsx tested exactly that and so declared "this build has
+    // no Google Maps key" on every team build ever made, hiding a map that would
+    // have rendered. `extra` is preserved verbatim, so the flag survives.
+    //
+    // A boolean, not the key: nothing in the JS layer needs the value, and the
+    // presence check is all the UI can honestly act on anyway — a key restricted
+    // to the wrong package or SHA-1 still renders grey and says nothing.
+    extra: { ...config.extra, mapsKeyPresent: !!apiKey },
   };
 };

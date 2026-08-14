@@ -1,0 +1,121 @@
+<!doctype html>
+<html><head><meta charset="utf-8" />
+<style>
+  /* "Sign up today" push for the day before the Osun governorship election.
+     Same brand system as followus.html / install-agents.html.
+
+     THE ASK IS THE POINT: every line here exists to get an account created
+     TONIGHT rather than at the polling unit tomorrow, because that is where
+     signing up actually fails — one code over a network carrying a whole ward
+     at once. Nothing about parties or candidates: the graphic states what the
+     tool does and what the reader should do, and nothing else.
+
+     Layout is height-agnostic. The middle block takes `margin: auto 0` so it
+     centres in whatever vertical space is left, and the footer stays pinned —
+     which is what lets one file render as 1080x1080, 1080x1350 and 1080x1920
+     without any size-specific rules. */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px; height: 1350px; display: flex; flex-direction: column;
+    align-items: center; padding: 62px 70px 70px; position: relative; overflow: hidden;
+    font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #fff;
+    background:
+      radial-gradient(1000px 620px at 50% 0%, #0f4d33 0%, transparent 62%),
+      linear-gradient(160deg, #0a3a26 0%, #06251a 52%, #0a3247 100%);
+  }
+  .hash { position: absolute; inset: 0; opacity: .05; font-family: ui-monospace, Menlo, monospace;
+    font-size: 21px; line-height: 2.05; word-break: break-all; color: #9ff5c6; padding: 18px 12px; }
+
+  .top { display: flex; align-items: center; gap: 20px; position: relative; }
+  .top img { width: 92px; height: 92px; }
+  .top b { font-size: 46px; font-weight: 800; letter-spacing: 4px; display: block; line-height: 1; }
+  .top span { font-size: 17px; letter-spacing: 3px; color: #7fd6a8; font-weight: 600; text-transform: uppercase; }
+
+  .main { margin: auto 0; width: 100%; position: relative; display: flex;
+    flex-direction: column; align-items: center; }
+
+  /* The date is the reason for the post, so it leads — and it is stated as a
+     deadline ("tomorrow"), not as a fact the reader has to do arithmetic on. */
+  /* TWO DELIBERATE LINES. As one string this wrapped wherever 940px happened to
+     fall and left "AUGUST" orphaned on its own line, directly under the widest
+     text on the card. Split at the meaning instead: what the election is, then
+     when it is. */
+  .kicker { font-size: 21px; letter-spacing: 3.2px; font-weight: 700; text-transform: uppercase;
+    color: #ffcc70; text-align: center; margin-top: 16px; line-height: 1.5; }
+  .kicker .when { color: #ffe0a3; }
+  h1 { font-size: 92px; font-weight: 800; letter-spacing: 1px; margin: 10px 0 4px; text-align: center; line-height: 1.02; }
+  h1 em { font-style: normal; color: #2ee08a; }
+  .lede { font-size: 25px; line-height: 1.45; color: #bfe6d3; text-align: center;
+    max-width: 830px; margin: 12px auto 24px; }
+  .lede b { color: #fff; font-weight: 700; }
+
+  ol { list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 13px; width: 100%; }
+  li { counter-increment: s; display: flex; gap: 20px; align-items: flex-start;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(120,230,175,.24);
+    border-radius: 18px; padding: 17px 24px; }
+  li:before { content: counter(s); flex: none; width: 46px; height: 46px; border-radius: 50%;
+    background: #2ee08a; color: #05271a; font-size: 26px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; }
+  li div { font-size: 25px; line-height: 1.4; padding-top: 6px; }
+  li b { font-weight: 800; }
+
+  /* Amber is a job, not a warning, exactly as on the install card: this is the
+     one instruction that changes the outcome. */
+  .tonight { margin-top: 20px; width: 100%; background: rgba(245,166,35,.13);
+    border: 1px solid rgba(245,166,35,.5); border-left-width: 7px; border-radius: 16px;
+    padding: 20px 26px; font-size: 23px; line-height: 1.45; }
+  .tonight b { color: #ffcc70; }
+
+  /* NO `margin-top: auto` HERE. With .main already taking `margin: auto 0`, a
+     second auto margin made three claimants on the free space instead of two —
+     so on the taller crops the slack split into thirds and left a dead band
+     between the amber box and the footer while the header sat tight. .main's
+     own auto margins centre it and push this to the bottom edge on their own.
+     padding-top, not margin, so this stays inside that arrangement. */
+  .foot { text-align: center; position: relative; padding-top: 18px; }
+  .foot .site { font-size: 34px; font-weight: 800; }
+  .foot .site span { color: #2ee08a; }
+  .foot .dis { font-size: 18px; color: #6fae8d; margin-top: 10px; }
+</style></head>
+<body>
+  <div class="hash" id="hash"></div>
+
+  <div class="top">
+    <img src="LOGO" alt="" />
+    <div><b>HAWKEYE</b><span>Independent Election Results Monitor</span></div>
+  </div>
+
+  <div class="main">
+    <div class="kicker">Osun Governorship Election<br /><span class="when">Tomorrow · Saturday 15 August</span></div>
+    <h1>Sign Up <em>Today</em></h1>
+    <p class="lede">Tomorrow, results are declared at thousands of polling units across
+      Osun. Hawkeye lets anyone publish what was on the sheet — <b>photographed,
+      timestamped and permanently public</b>, so a result can be checked against the
+      original later.</p>
+
+    <ol>
+      <li><div>Open <b>hawkeye.com.ng</b> or install the app.</div></li>
+      <li><div>Sign up with your <b>phone number</b> — one code, about a minute.</div></li>
+      <li><div>Tomorrow, photograph the <b>result sheet</b> at your polling unit and send it.</div></li>
+    </ol>
+
+    <div class="tonight">
+      <b>Do it tonight, not at the polling unit.</b> Networks are slowest exactly when
+      a whole ward needs them at once — and your account only has to be made once.
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="site">hawkeye<span>.com.ng</span></div>
+    <div class="dis">Independent · Not affiliated with INEC or any political party</div>
+  </div>
+
+<script>
+  // Deterministic filler so the backdrop is identical across renders and sizes.
+  // Lehmer RNG: the obvious LCG overflows 2^53 in a JS float and the low bits —
+  // the only ones used here — collapse into a wall of one character.
+  let s = 'abcdef0123456789', out = '', seed = 20260815;
+  for (let i = 0; i < 6400; i++) { seed = (seed * 16807) % 2147483647; out += s[seed % 16]; }
+  document.getElementById('hash').textContent = out;
+</script>
+</body></html>

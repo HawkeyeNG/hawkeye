@@ -1,3 +1,9 @@
 [
-  { "code": "GOV", "name": "Governorship", "election": "Osun Governorship Election 2026", "date": "2026-08-15", "states": ["Osun"] }
+  { "code": "PRES", "name": "Presidential", "election": "2027 Presidential Election", "date": "2027-01-16" },
+  { "code": "SEN", "name": "Senate", "election": "2027 National Assembly Election", "date": "2027-01-16" },
+  { "code": "REP", "name": "House of Representatives", "election": "2027 National Assembly Election", "date": "2027-01-16" },
+  { "code": "GOV", "name": "Governorship", "election": "2027 Governorship Election", "date": "2027-02-06",
+    "states": ["Abia", "Adamawa", "Akwa Ibom", "Bauchi", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Enugu", "Gombe", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"] },
+  { "code": "SHA", "name": "State House of Assembly", "election": "2027 State Assembly Election", "date": "2027-02-06",
+    "states": ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"] }
 ]

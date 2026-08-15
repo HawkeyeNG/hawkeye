@@ -30,7 +30,16 @@
       ? `<span class="av"><img src="${esc(c.photo)}" alt="${esc(c.name)}" loading="lazy" onerror="this.parentNode.textContent='${esc(c.initials || '')}'"></span>`
       : `<span class="av">${esc(c.initials || '')}</span>`;
 
-    const title = race.office ? `${esc(race.office)} — 2026` : esc(race.election || 'Race');
+    // THE YEAR COMES FROM THE DATA. It was the literal "2026", which was true
+    // for the only two races this template had ever rendered and wrong for every
+    // one after them — a 2027 Senate page would have announced itself as 2026.
+    // Prefer the polling date, fall back to a year inside dateText (races whose
+    // date INEC has not fixed carry "2027" there), and print no year rather than
+    // a guessed one.
+    const yearOf = (r) => (r.date ? String(new Date(`${r.date}T00:00:00`).getFullYear())
+      : (String(r.dateText || r.election || '').match(/\b(20\d{2})\b/) || [])[1] || '');
+    const yr = yearOf(race);
+    const title = race.office ? `${esc(race.office)}${yr ? ` — ${esc(yr)}` : ''}` : esc(race.election || 'Race');
     const dateStr = race.date ? new Date(race.date + 'T00:00:00').toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
     document.title = `Hawkeye — ${race.office || race.election || 'Race'}`;
 
@@ -58,6 +67,13 @@
     if (race.incumbentNote) parts.push(`<div class="race-ctx">${esc(race.incumbentNote)}</div>`);
 
     // Primary candidate cards
+    // SKIP THE SECTION ENTIRELY WHEN THERE ARE NO CARDS TO PUT IN IT. A
+    // down-ballot race carries no per-candidate prose — every name lives in
+    // others[] and the full ballot below says everything there is to say — so
+    // with candidates[] empty this printed a "Front-runners" heading, a
+    // nonpartisan disclaimer and then nothing at all. 470 Senate and House pages
+    // would each have opened on that.
+    if (race.candidates.length) {
     const heading = opts.frontLabel || (race.others ? 'Front-runners' : 'Declared candidates');
     parts.push(`<h2 style="margin-top:26px">${esc(heading)}</h2>`);
     parts.push('<p class="hint">Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.</p>');
@@ -71,6 +87,7 @@
             <dt>Bid</dt><dd>${esc(c.bids || '—')}</dd>
             <dt>Status</dt><dd>${esc(c.status || '—')}</dd></dl>
       </div>`).join('')}</div>`);
+    }
 
     // Full ballot (osun `others`) or minor candidates (presidential `minors`)
     const secondary = race.others || race.minors;
@@ -92,14 +109,21 @@
     if (race.notableAbsence) parts.push(`<p class="race-absence">${esc(race.notableAbsence)}</p>`);
 
     // Quick compare — a compact side-by-side of the front-runner cards (Candidate,
-    // Party, Home base, Bid, Status). Shown on EVERY race page now (presidency and
-    // governorship alike); the action buttons sit directly below it.
+    // Party, Home base, Bid, Status). Shown on every race page that HAS such
+    // cards: presidency and governorship alike.
+    //
+    // Guarded for the same reason as the front-runner grid above. Its rows map
+    // over race.candidates, so a down-ballot race — every name in others[], no
+    // per-candidate prose to compare — rendered the heading and a table with
+    // column headers and not one row beneath them.
+    if (race.candidates.length) {
     parts.push('<h2 style="margin-top:26px">Quick compare</h2>');
     parts.push(`<div class="race-compare"><table><thead>
       <tr><th>Candidate</th><th>Party</th><th>Home base</th><th>Bid</th><th>Status</th></tr></thead><tbody>${
       race.candidates.map((c) => `<tr><td><strong>${esc(c.name)}</strong></td>
         <td>${flagInline(c.party)}<span style="font-weight:700;color:${color(c.party)}">${esc(c.party)}</span></td>
         <td>${esc(c.home || '—')}</td><td>${esc(c.bids || '—')}</td><td>${esc(c.status || '—')}</td></tr>`).join('')}</tbody></table></div>`);
+    }
 
     // Calls to action. resultsHref lets a race page deep-link its own board
     // (e.g. Osun -> results.html?contest=GOV&scope=Osun preselects the race).

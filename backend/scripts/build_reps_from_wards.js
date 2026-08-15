@@ -153,12 +153,52 @@ const canonSenatorial = (s, st) => {
   return (toks.length ? toks : String(s).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)).sort().join('');
 };
 const canon = (s, st) => (levelArg === 'senatorial' ? canonSenatorial(s, st) : canonFederal(s));
+
+/**
+ * Are these two names the same seat under different spellings, or two seats?
+ *
+ * Fuzzy clustering alone cannot tell. At 0.72 it merged SEVEN PAIRS of genuinely
+ * distinct constituencies, because they differ by a single short token:
+ * Lagos Island I / Lagos Island II, Mushin I / Mushin II, Surulere I / II,
+ * Oshodi-Isolo I / II, Port Harcourt I / II, Akoko North East+North West /
+ * Akoko South East+South West, and Ibadan South West+North West / Ibadan North
+ * East+South East. Fourteen seats came out as seven polygons — the whole of the
+ * missing-geometry gap.
+ *
+ * A numeral or a compass word is never a spelling variant of another numeral or
+ * compass word, so if the two names carry different DISCRIMINATORS they are
+ * different seats and must never merge, whatever their string similarity.
+ * Spelling variants (Opke/Okpe, Agwu/Awgu) carry none, so they still cluster.
+ */
+/**
+ * Two constituencies are named by a bare administrative word in the raw CSV's
+ * house_of_rep column — Kano's is literally "Municipal" and the FCT's is
+ * "Municipal/Bwari" — while the register qualifies both with their state
+ * ("Kano Municipal", "Abuja Municipal/Bwari"). The polygons were always built
+ * correctly; they simply could not be joined to the register by name, which is
+ * what made them look like the last two missing seats. Qualify the label so the
+ * join works, keyed by state so nothing else is touched.
+ */
+const NAME_FIXUPS = {
+  'kano::Municipal': 'Kano Municipal',
+  'fct::Municipal/Bwari': 'Abuja Municipal/Bwari',
+};
+
+const DISCRIM = new Set(['i', 'ii', 'iii', 'iv', 'v', '1', '2', '3', '4', '5',
+  'north', 'south', 'east', 'west', 'central']);
+const discrimOf = (canonKey, raw) => {
+  const toks = String(raw ?? canonKey).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  return toks.filter((t) => DISCRIM.has(t)).sort().join(',');
+};
+const rawOfKey = new Map();     // canonKey -> a display name, for token inspection
+const sameSeat = (a, b) => discrimOf(a, rawOfKey.get(a)) === discrimOf(b, rawOfKey.get(b));
 const byState = new Map(); // st -> Map(canonKey -> Map(displayName -> count))
 for (const g of topo.objects.wards.geometries) {
   const { fed, st } = g.properties;
   if (!fed) continue;
   const sm = byState.get(st) || new Map();
   const k = canon(fed, st);
+  if (!rawOfKey.has(k)) rawOfKey.set(k, fed);   // keep an un-sorted name for discriminators
   const m = sm.get(k) || new Map();
   m.set(fed, (m.get(fed) || 0) + 1);
   sm.set(k, m);
@@ -172,6 +212,7 @@ for (const [st, sm] of byState) {
   const find = (k) => { while (parent.get(k) !== k) k = parent.get(k); return k; };
   if (LEVEL.cluster != null) {
     for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) {
+      if (!sameSeat(keys[i], keys[j])) continue;
       if (dice(bigrams(keys[i]), bigrams(keys[j])) >= LEVEL.cluster) parent.set(find(keys[j]), find(keys[i]));
     }
   }
@@ -192,7 +233,10 @@ for (const [st, sm] of byState) {
   // Kaduna district. That is a real cross-state anomaly worth chasing, but a
   // correct partition with one misspelled label beats a wrong one with tidy
   // labels. Fix the label at render time, or fix the register.
-  for (const [r, v] of votes) displayOf.set(`${st}::${r}`, [...v.entries()].sort((a, b) => b[1] - a[1])[0][0]);
+  for (const [r, v] of votes) {
+    const voted = [...v.entries()].sort((a, b) => b[1] - a[1])[0][0];
+    displayOf.set(`${st}::${r}`, NAME_FIXUPS[`${st}::${voted}`] || voted);
+  }
 }
 const groups = new Map();
 for (const g of topo.objects.wards.geometries) {

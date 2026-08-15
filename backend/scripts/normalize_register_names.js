@@ -89,17 +89,42 @@ for (const col of ['senatorial', 'federal_constituency']) {
     const e = byVal.get(r.v) || { units: 0, state: r.state };
     e.units += r.n; byVal.set(r.v, e);
   }
+  // GROUPING COMES FROM THE MAPS. build_reps_from_wards.js already collapses
+  // every register spelling to one region per seat — that is the whole job of
+  // the ward dissolve — and it does it better than re-deriving here: its
+  // senatorial pass yields 109 groups where a state+direction key yielded 110.
+  // Re-implementing that clustering was duplicated work with a worse answer.
+  //
+  // Fall back to the local key only if the map file is absent, so the script
+  // still runs before the maps have been built.
+  const level = col === 'senatorial' ? 'senatorial' : 'federal';
+  const mapFile = path.join(backend, 'src', 'data', `name_groups.${level}.json`);
   const groups = new Map();
-  for (const [v, e] of byVal) {
-    const st = new Set(tokens(e.state));
-    let key;
-    if (col === 'senatorial') {
-      const dirs = tokens(v).filter((t) => !st.has(t) && ![...st].some((s) => dice(t.toLowerCase(), s.toLowerCase()) >= 0.72));
-      key = `${(e.state || '?').slice(0, 3).toUpperCase()}|${dirs.sort().join('')}`;
-    } else {
-      key = tokens(v).sort().join('/');
+  if (fs.existsSync(mapFile)) {
+    const { map } = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+    const groupOf = (v) => map[v] || v;          // a value not listed is its own group
+    for (const [v, e] of byVal) {
+      const key = `MAP|${groupOf(v)}`;
+      (groups.get(key) ?? groups.set(key, []).get(key)).push({ v, ...e });
     }
-    (groups.get(key) ?? groups.set(key, []).get(key)).push({ v, ...e });
+    // The group's own name may not be a register value at all; include it as a
+    // spelling candidate so the authority can choose it.
+    for (const [key, vs] of groups) {
+      const name = key.slice(4);
+      if (!vs.some((x) => x.v === name)) vs.push({ v: name, units: 0, state: vs[0].state });
+    }
+  } else {
+    for (const [v, e] of byVal) {
+      const st = new Set(tokens(e.state));
+      let key;
+      if (col === 'senatorial') {
+        const dirs = tokens(v).filter((t) => !st.has(t) && ![...st].some((s) => dice(t.toLowerCase(), s.toLowerCase()) >= 0.72));
+        key = `${(e.state || '?').slice(0, 3).toUpperCase()}|${dirs.sort().join('')}`;
+      } else {
+        key = tokens(v).sort().join('/');
+      }
+      (groups.get(key) ?? groups.set(key, []).get(key)).push({ v, ...e });
+    }
   }
   for (const [, vs] of groups) {
     if (vs.length < 2) continue;

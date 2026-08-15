@@ -1,0 +1,18 @@
+{
+ "_note": "register spelling -> the group it belongs to, as the ward dissolve grouped them. The target name is a majority ward spelling and may itself be wrong; use it for GROUPING only and take the spelling from an authority.",
+ "level": "senatorial",
+ "groups": 109,
+ "map": {
+  "Rivers South East": "Rivers South-East",
+  "Delta North": "Deltal North",
+  "Delta Central": "Deltal Central",
+  "Delta South": "Deltal South",
+  "Akwa Ibom North-West": "Akwa Ibom North West",
+  "Niger East": "NIGER EAST",
+  "Akwa Ibom North-East": "Akwa Ibom North East",
+  "Nasarawa West": "Nassarawa West",
+  "Benue North-West": "Benue North West",
+  "Benue North-East": "Benue North East",
+  "Nasarawa South": "Nassarawa South"
+ }
+}

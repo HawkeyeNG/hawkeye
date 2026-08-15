@@ -41,6 +41,16 @@ const project = (lng, lat) => [((lng - 2.5) * 66).toFixed(1), ((14.1 - lat) * 66
 // identical as bigrams, so the same threshold merges THREE REAL DISTRICTS into
 // one. That is how the first senatorial run produced 103 regions instead of
 // 109. Exact canonical match only here; the 109 names are already canonical.
+// The same variant -> canonical map the register is normalised with, so the two
+// cannot drift apart. Absent on a first run (the file is produced from the name
+// groups this script emits), which is fine: the maps then carry the majority
+// spelling until the next build.
+let REGISTER_FIXES = {};
+try {
+  const f = JSON.parse(fs.readFileSync(path.join(backend, 'src', 'data', 'register_name_fixes.json'), 'utf8'));
+  REGISTER_FIXES = Object.fromEntries(f.fixes.map((x) => [x.from, x.to]));
+} catch { /* not built yet */ }
+
 const LEVELS = {
   federal: { csv: 'house_of_rep', idx: 'federal', out: 'constituency_geo.json', label: 'constituencies', cluster: 0.72 },
   senatorial: { csv: 'senatorial', idx: 'senatorial', out: 'district_geo.json', label: 'senatorial districts', cluster: null },
@@ -235,7 +245,14 @@ for (const [st, sm] of byState) {
   // labels. Fix the label at render time, or fix the register.
   for (const [r, v] of votes) {
     const voted = [...v.entries()].sort((a, b) => b[1] - a[1])[0][0];
-    displayOf.set(`${st}::${r}`, NAME_FIXUPS[`${st}::${voted}`] || voted);
+    // THE AUTHORITY SPELLING, NOT THE MAJORITY ONE. The vote says which ward
+    // spelling is commonest, which is not the same as which is right —
+    // "Ademawa Central", "Deltal North" and "Nassarawa West" all won their
+    // votes. The register is normalised to the NASS/INEC spelling, so a map
+    // that keeps the majority spelling diverges from it and the leaderboard
+    // finds no data for those regions. One source of truth on both sides.
+    const fixed = REGISTER_FIXES[voted] || voted;
+    displayOf.set(`${st}::${r}`, NAME_FIXUPS[`${st}::${fixed}`] || fixed);
   }
 }
 const groups = new Map();
@@ -262,5 +279,33 @@ for (const [name, members] of groups) {
   for (const [lng, lat] of big[0]) { const [x, y] = project(lng, lat); cx += +x; cy += +y; }
   regions.push({ name, path: dPath, cx: Math.round(cx / big[0].length), cy: Math.round(cy / big[0].length) });
 }
+// EMIT THE GROUPING, not just the shapes. Collapsing every register spelling to
+// one region per seat is the expensive part of this script, and the register
+// itself needs exactly that answer: which of its values are the same seat. It
+// was being re-derived elsewhere, worse — a separate pass keyed on state and
+// direction produced 110 senatorial groups where this produces 109.
+//
+// Names here are the majority ward spelling, so they can be the misspelling
+// ("Ademawa Central" won its vote). This file therefore says only WHICH values
+// belong together; normalize_register_names.js picks the correct spelling for
+// each group from the NASS roster and INEC's list.
+if (process.argv.includes('--emit-name-map')) {
+  const nameMap = {};
+  for (const g of topo.objects.wards.geometries) {
+    const { fed, st } = g.properties;
+    if (!fed) continue;
+    const canonical = displayOf.get(clusterOf.get(`${st}::${canon(fed, st)}`));
+    if (canonical && fed !== canonical) nameMap[fed] = canonical;
+  }
+  const p = path.join(backend, 'src', 'data', `name_groups.${levelArg}.json`);
+  fs.writeFileSync(p, `${JSON.stringify({
+    _note: 'register spelling -> the group it belongs to, as the ward dissolve grouped them. '
+      + 'The target name is a majority ward spelling and may itself be wrong; use it for '
+      + 'GROUPING only and take the spelling from an authority.',
+    level: levelArg, groups: regions.length, map: nameMap,
+  }, null, 1)}\n`);
+  console.log(`name map: ${Object.keys(nameMap).length} variants -> ${regions.length} groups -> ${path.relative(backend, p)}`);
+}
+
 fs.writeFileSync(path.join(appDir, LEVEL.out), JSON.stringify({ viewBox: '0 0 800 660', regions }));
 console.log(`${LEVEL.label}: ${regions.length} -> app/${LEVEL.out}`);

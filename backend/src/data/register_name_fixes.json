@@ -3,6 +3,356 @@
  "generated": "2026-08-15",
  "fixes": [
   {
+   "col": "federal_constituency",
+   "from": "Ado Ekiti/Irepodun-Ifelodun",
+   "to": "Ado Ekiti/Irepodun/Ifelodun"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Afijio/Oyo East/Oyo West/ Atiba",
+   "to": "Afijio/Atiba/Oyo East/Oyo West"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Akpabuyo/Bakassi/Calabar South",
+   "to": "Calabar South/Akpabuyo/Bakassi"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Anaocha/Njikoka/Dunukofia",
+   "to": "Njikoka/Dunukofia/Anaocha"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Andoni/Opobo/Nkoro",
+   "to": "Opobo/Nkoro/Andoni"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Asa/Ilorin West",
+   "to": "Ilorin West/Asa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Atigbo/Saki East/Saki West",
+   "to": "Saki East/Saki West/Atisbo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Bama/Ngala/Kala-Balge",
+   "to": "Bama/Ngala/Kalabalge"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Bassa/Jos North",
+   "to": "Jos North/Bassa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Baure/Zango",
+   "to": "Zango/Baure"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Bekwarra/Obudu/Obanliku",
+   "to": "Obanliku/Obudu/Bekwarra"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Birnin Gwari/Giwa",
+   "to": "Birnin-Gwari/Giwa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Biu/Kwaya-Kusar/Shani/Bayo",
+   "to": "Biu/Bayo/Shani/Kwaya Kusar"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Bodinga/Dange-Shuni/Tureta",
+   "to": "Dange-Shuni/Bodinga/Tureta"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Bosso/Paikoro",
+   "to": "Booso/Paikoro"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Calabar Municipality/Odukpani",
+   "to": "Calabar Municipal/Odukpani"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Damaturu/Gujba/Gulani/ Tarmuwa",
+   "to": "Damaturu/Gujba/Gulani/Tarmuwa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Dawakin Tofa/Tofa/Rimin Gado",
+   "to": "Dawakin-Tofa/Tofa/Rimin Gado"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Dikwa/Mafaf/Konduga",
+   "to": "Dikwa/Mafa/Konduga"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Doguwa/Tudun Wada",
+   "to": "Tudun-Wada/Doguwa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ehime Mbano/Ihite-Uboma/ Obowo",
+   "to": "Ehimembano/Ihitte Uboma/Obowo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Eket/Esit Eket/Onna/Ibeno",
+   "to": "Eket/Onna/Esit Eket/Ibeno"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ekiti South West/Ikere/Orun/ Ise",
+   "to": "Ekiti South West/Ikere/Ise/Orun"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Enugu East/Isi Uzo",
+   "to": "Enugu East/Isi-Uzo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Fakai/Sakaba/Wasagu/Danko/ Zuru",
+   "to": "Zuru/Fakai/Sakaba/D/Wasagu"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Fikpo North/Afikpo South",
+   "to": "Afikpo North/Afikpo South"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Gurara/Suleja/Tafa",
+   "to": "Gurara/Suleja/Tapa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Gwadabawa/Ilella",
+   "to": "Illela/Gwadabawa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ibeju Lekki",
+   "to": "Ibeju-Lekki"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ijebu Ode /Odogbolu /Ijebu North East",
+   "to": "Ijebu Ode/Odogbolu/Ijebu North East"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ikwo/Ezza South",
+   "to": "Ezza South/Ikwo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Imeko Afon/Egbado North",
+   "to": "Egbado North/Imeko-Afon"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Irepo/Olorunsogo/Orelope",
+   "to": "Irepo/Orelope/Olorunsogo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Iseyin/Itesiwaju/Kajola/ Iwajowa",
+   "to": "Iseyin/Itesiwaju/Kajola/Iwajowa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Iseyin/Kajola/Iwajowa/Itesiwaju",
+   "to": "Iseyin/Itesiwaju/Kajola/Iwajowa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Isuikwuato/Umu-Nneochi",
+   "to": "Isuikwuato/Umunneochi"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ivo-Ohaozara/Onicha",
+   "to": "Ivo/Ohaozara/Onicha"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Jahun/Miga",
+   "to": "Miga/Jahun"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Jama’Are/Itas-Gadau",
+   "to": "Jama\\are/Itas-Gadau"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Kaita/Jibia",
+   "to": "Jibia/Kaita"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Kankara/Sabuwa/Faskari",
+   "to": "Faskari/Kankara/Sabuwa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Karu/Keffi/Kokona",
+   "to": "Keffi/Karu/Kokona"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Kukawa/Mobbar/Abadam/ Guzamali",
+   "to": "Kukawa/Mobbar/Abadam/Guzamala"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Kura/Madobi/Garun Malam",
+   "to": "Kura/Madobi/Garun Mallam"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Lagelu/Akinyele",
+   "to": "Akinyele/Lagelu"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Machina/Nguru/Karasuwa/Yusufari",
+   "to": "Machina/Nguru/Yusufari/Karasuwa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Machina/Nguru/Yusufari/ Karasuwa",
+   "to": "Machina/Nguru/Yusufari/Karasuwa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Madagali/Michika",
+   "to": "Michika/Madagali"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Maiyama/Koko/Besse",
+   "to": "Koko-Besse/Maiyama"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "MalumFashi/Kafur",
+   "to": "Malumfashi/Kafur"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Mangu/Bokkos",
+   "to": "Bokkos/Mangu"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Mayo Belwa/Ganye/Jada /Toungo",
+   "to": "Jada/Ganye/Mayo Belwa/Toungo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Mbaitolu/ikeduru",
+   "to": "Ikeduru/Mbaitoli"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Monguno/Nganzai/Marte",
+   "to": "Monguno/Marte/Nganzai"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Municipal/Bwari",
+   "to": "Abuja Municipal/Bwari"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Nangere/Potiskm",
+   "to": "Nangere/Potiskum"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Nasarawa/Toto",
+   "to": "Nassarawa/Toto"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Nnewi North/Nnewi South/ Ekwusigo",
+   "to": "Nnewi North/Nnewi South/Ekwusigo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Offa/Oyun/Ifelodun",
+   "to": "Ifelodun/Offa/Oyun"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ogo-Oluwa/Surulere/Oluyole",
+   "to": "Ogo-Oluwa/Surulere"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ohaukwu/Ebonyi",
+   "to": "Ebonyi/Ohaukwu"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ona-Ara/Egbeda",
+   "to": "Egbeda/Ona-Ara"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Opke/Sapele/Uvwie",
+   "to": "Okpe/Sapele/Uvwie"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Pankshin/Kanke/Kanam",
+   "to": "Kanke/Pankshin/Kanam"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Rimi/Charanchi/Batagarawa",
+   "to": "Batagarawa/Charanchi/Rimi"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Sabon-Birni/Isa",
+   "to": "Isa/Sabon Birni"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Shagari/Yabo",
+   "to": "Yabo/Shagari"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ughelli North, Ughelli South/Udu",
+   "to": "Ughelli North/Ughelli South/Udu"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Yenagoa/Kolokuma/Opokuma",
+   "to": "Yenagoa/Kolokuna/Opokuma"
+  },
+  {
+   "col": "senatorial",
+   "from": "Abuja",
+   "to": "FCT"
+  },
+  {
    "col": "senatorial",
    "from": "Ademawa Central",
    "to": "Adamawa Central"
@@ -19,6 +369,16 @@
   },
   {
    "col": "senatorial",
+   "from": "Benue North East",
+   "to": "Benue North-East"
+  },
+  {
+   "col": "senatorial",
+   "from": "Benue North West",
+   "to": "Benue North-West"
+  },
+  {
+   "col": "senatorial",
    "from": "Deltal Central",
    "to": "Delta Central"
   },
@@ -29,48 +389,33 @@
   },
   {
    "col": "senatorial",
+   "from": "Deltal South",
+   "to": "Delta South"
+  },
+  {
+   "col": "senatorial",
+   "from": "Nassarawa North",
+   "to": "Nasarawa North"
+  },
+  {
+   "col": "senatorial",
+   "from": "Nassarawa South",
+   "to": "Nasarawa South"
+  },
+  {
+   "col": "senatorial",
+   "from": "Nassarawa West",
+   "to": "Nasarawa West"
+  },
+  {
+   "col": "senatorial",
+   "from": "NIGER EAST",
+   "to": "Niger East"
+  },
+  {
+   "col": "senatorial",
    "from": "Rivers South East",
    "to": "Rivers South-East"
-  },
-  {
-   "col": "federal_constituency",
-   "from": "Andoni/Opobo/Nkoro",
-   "to": "Opobo/Nkoro/Andoni"
-  },
-  {
-   "col": "federal_constituency",
-   "from": "Dawakin Tofa/Tofa/Rimin Gado",
-   "to": "Dawakin-Tofa/Tofa/Rimin Gado"
-  },
-  {
-   "col": "federal_constituency",
-   "from": "Irepo/Olorunsogo/Orelope",
-   "to": "Irepo/Orelope/Olorunsogo"
-  },
-  {
-   "col": "federal_constituency",
-   "from": "Sabon-Birni/Isa",
-   "to": "Isa/Sabon Birni"
-  },
-  {
-   "col": "federal_constituency",
-   "from": "Mayo Belwa/Ganye/Jada /Toungo",
-   "to": "Jada/Ganye/Mayo Belwa/Toungo"
-  },
-  {
-   "col": "federal_constituency",
-   "from": "Machina/Nguru/Karasuwa/Yusufari",
-   "to": "Machina/Nguru/Yusufari/Karasuwa"
-  },
-  {
-   "col": "federal_constituency",
-   "from": "Machina/Nguru/Yusufari/ Karasuwa",
-   "to": "Machina/Nguru/Yusufari/Karasuwa"
-  },
-  {
-   "col": "federal_constituency",
-   "from": "MalumFashi/Kafur",
-   "to": "Malumfashi/Kafur"
   }
  ]
 }

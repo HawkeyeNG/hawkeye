@@ -219,6 +219,52 @@ adminRouter.post('/admin/coords/load', requireAdmin, async (req, res) => {
 //   - refuses units whose crowd fix is bulk 'geocoded' data (GRID3 envelopes)
 //   - also drops any pu_mappings fixes for the unit, so it can't re-promote
 // The unit falls back to 'unmapped' (or its approx envelope) until re-mapped.
+/**
+ * Merge duplicate spellings of one seat in polling_units.
+ *
+ * The register carried 116 senatorial values for 109 districts and 393 federal
+ * for 360 — harmless while a single-state governorship was the only live
+ * contest, and visible the moment SEN/REP opened: the leaderboard drew a region
+ * per spelling.
+ *
+ * APPLIES A REVIEWED LIST, IT DOES NOT INFER. src/data/register_name_fixes.json
+ * is produced offline by scripts/normalize_register_names.js, which picks the
+ * canonical spelling by AUTHORITY (the NASS roster and INEC's published list)
+ * rather than by polling-unit count — counting picks 'Deltal North' (1,011
+ * units) over 'Delta North' (752) and writes the typo in as correct. Nothing
+ * fuzzy runs against live data.
+ *
+ * Idempotent: a second call matches no rows and reports zero changes.
+ */
+adminRouter.post('/admin/register/normalize', requireAdmin, (req, res) => {
+  const file = path.join(config.dataDir, 'register_name_fixes.json');
+  if (!fs.existsSync(file)) return res.status(404).json({ error: 'no_fixes_file' });
+  const { fixes } = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const COLS = new Set(['senatorial', 'federal_constituency']);
+  const distinct = (c) => db.prepare(
+    `SELECT COUNT(DISTINCT ${c}) AS n FROM polling_units WHERE ${c} IS NOT NULL AND ${c} <> ''`).get().n;
+  const before = { senatorial: distinct('senatorial'), federal: distinct('federal_constituency') };
+  const dryRun = req.body?.apply !== true;
+  let changed = 0;
+  const applied = [];
+  const run = db.transaction(() => {
+    for (const f of fixes) {
+      // Column name is interpolated, so it must come from the allow-list — never
+      // from the file, which would be an injection point on a privileged route.
+      if (!COLS.has(f.col)) continue;
+      const n = dryRun
+        ? db.prepare(`SELECT COUNT(*) AS n FROM polling_units WHERE ${f.col} = ?`).get(f.from).n
+        : db.prepare(`UPDATE polling_units SET ${f.col} = ? WHERE ${f.col} = ?`).run(f.to, f.from).changes;
+      if (n) applied.push({ ...f, units: n });
+      changed += n;
+    }
+  });
+  run();
+  const after = dryRun ? before : { senatorial: distinct('senatorial'), federal: distinct('federal_constituency') };
+  if (!dryRun) notifyMaster(`🧹 register normalised: ${changed} units across ${applied.length} spellings`);
+  res.json({ ok: true, dryRun, changed, applied, before, after, real: { senatorial: 109, federal: 360 } });
+});
+
 adminRouter.post('/admin/coords/clear-crowd', requireAdmin, (req, res) => {
   const puCode = String(req.body?.puCode || '').trim();
   const pu = db.prepare('SELECT pu_code, name, crowd_lat, crowd_lng, crowd_reports, coords_source FROM polling_units WHERE pu_code = ?').get(puCode);

@@ -1,0 +1,76 @@
+{
+ "_note": "Duplicate spellings of one seat, merged. Canonical chosen by authority (NASS roster / INEC published list), never by polling-unit count — frequency picks 'Deltal North' (1,011 units) over 'Delta North' (752). Whitespace is tidied on the winner; token ORDER always comes from the authority.",
+ "generated": "2026-08-15",
+ "fixes": [
+  {
+   "col": "senatorial",
+   "from": "Ademawa Central",
+   "to": "Adamawa Central"
+  },
+  {
+   "col": "senatorial",
+   "from": "Akwa Ibom North East",
+   "to": "Akwa Ibom North-East"
+  },
+  {
+   "col": "senatorial",
+   "from": "Akwa Ibom North West",
+   "to": "Akwa Ibom North-West"
+  },
+  {
+   "col": "senatorial",
+   "from": "Deltal Central",
+   "to": "Delta Central"
+  },
+  {
+   "col": "senatorial",
+   "from": "Deltal North",
+   "to": "Delta North"
+  },
+  {
+   "col": "senatorial",
+   "from": "Rivers South East",
+   "to": "Rivers South-East"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Andoni/Opobo/Nkoro",
+   "to": "Opobo/Nkoro/Andoni"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Dawakin Tofa/Tofa/Rimin Gado",
+   "to": "Dawakin-Tofa/Tofa/Rimin Gado"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Irepo/Olorunsogo/Orelope",
+   "to": "Irepo/Orelope/Olorunsogo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Sabon-Birni/Isa",
+   "to": "Isa/Sabon Birni"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Mayo Belwa/Ganye/Jada /Toungo",
+   "to": "Jada/Ganye/Mayo Belwa/Toungo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Machina/Nguru/Karasuwa/Yusufari",
+   "to": "Machina/Nguru/Yusufari/Karasuwa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Machina/Nguru/Yusufari/ Karasuwa",
+   "to": "Machina/Nguru/Yusufari/Karasuwa"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "MalumFashi/Kafur",
+   "to": "Malumfashi/Kafur"
+  }
+ ]
+}

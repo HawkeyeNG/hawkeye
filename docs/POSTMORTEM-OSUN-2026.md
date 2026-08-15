@@ -3,173 +3,184 @@
 **Outcome: Hawkeye received zero result reports.** INEC counted more than half
 the votes; the ledger holds nothing.
 
-This document separates what was measured from what is still unknown, and
-defines the checks that would have caught it. It is deliberately blunt: the
-software was healthy all day, which is the least comfortable version of this
-result, because it means the failure was upstream of anything a test suite was
-watching.
+**Cause: nobody reported.** Not a failure of the software — a failure to have
+observers standing at polling units willing and ready to file. Confirmed by the
+operator: the 7 incidents and 12 practice runs in the admin console were his own
+testing, not public activity.
+
+This document records the evidence that rules out a technical cause, states the
+size of the actual gap, and separates the work that matters (getting observers)
+from the instrumentation that would have answered this question in seconds
+instead of an evening.
 
 ---
 
-## 1. What was verified working (21:30–22:00, election night)
+## 1. The gap, in one line
+
+**12 organic observers. 3,763 polling units in Osun.**
+
+19 accounts exist; 7 of them are the team. Even with flawless software and a
+100% reporting rate, 12 people is **0.3%** coverage. The run could not have
+produced a meaningful result set under any circumstances. This is an
+order-of-magnitude recruitment problem, not a conversion problem, and no amount
+of engineering compensates for it.
+
+| | |
+|---|---|
+| observers registered | 19 — **7 are the team, so 12 organic** |
+| result submissions | **0** |
+| collation reports | 0 |
+| incidents filed | 7 — *operator's own tests* |
+| practice runs | 12 — *operator's own tests* |
+| saved a unit | 4 |
+| units crowd-mapped | 0 |
+| first signup | 2026-07-15, i.e. a month of recruitment |
+
+Read carefully, every "activity" number in the console is the team. Nothing in
+it is evidence of public use — which is worth stating plainly, because a
+dashboard that counts your own testing alongside real usage will flatter you at
+exactly the moment you need the truth.
+
+Both numbers have to move, and the second matters more: 12 people signed up over
+a month and **zero** reported. That is about who they are and whether they were
+ever going to be standing at a polling unit with a reason to file.
+
+---
+
+## 2. The software was verified healthy — so nobody re-litigates it
+
+Checked live on the night, 21:30–22:00:
 
 | Check | Result |
 |---|---|
-| `POST /api/submissions` reachable | Up — returns `missing_token` / `invalid_token` correctly |
-| Contest `GOV` open | `open: true`, `opensAt` 2026-08-15T08:30+01:00 |
-| Submissions in ledger | **0** — "Ledger intact — 0 entries" |
-| `/api/integrity/summary` | `total: 0, reports: 0, unitsFlagged: 0` |
-| Incidents | 0 |
-| Anchoring job | Alive — 462 anchors, latest 21:27 and 19:43, anchoring an empty ledger |
-| Sign-up page | Renders; all three OTP channels offered (Telegram / WhatsApp / SMS) |
-| `smsOtp` flag | `true` in production health |
+| `POST /api/submissions` | Up — correct `missing_token` / `invalid_token` rejection |
+| Contest `GOV` | `open: true` since 08:30 +01:00 |
+| Sign-up page | Renders; Telegram / WhatsApp / SMS all offered |
+| OTP + accounts | Working — 19 accounts exist, 2 created in the last 24h |
+| Anchoring | Alive — 462 anchors, latest 21:27, anchoring an empty ledger |
+| Ledger / integrity / incidents | 0 / 0 / 0 |
+| The day's two `app.js` deploys | Ruled out — no submit-path line changed |
 
-**Ruled out: the day's deploys.** `app.js` shipped twice on 15 Aug (v148, v149).
-The diff since the previous build touches only the auth/OTP block, the near-me
-copy, and `resetReportState` / `prepareReportUI` / `bindUnit`. No line in the
-submit path changed and the `/api/submissions` call is intact.
+Sign-up, auth, OTP delivery, incident filing and practice all demonstrably work.
+The result path was never exercised by a member of the public.
 
-**Conclusion:** the API was never reached by an authenticated client all day.
-The break is upstream of the server.
+**Two theories investigated and dropped**, recorded so they are not re-tried:
 
----
-
-## 2. What is still unknown
-
-Two facts settle the root cause and both need the admin console:
-
-1. **Were there any sign-ups today?**
-   Registered-but-never-reported and never-registered are different failures
-   with different fixes.
-2. **Were OTPs delivered?** `/api/admin/otp-diag`.
-   SMS went live only on 14 August. If delivery failed, nobody could create an
-   account and everything downstream follows.
-
-Until those are read, root cause is a ranked hypothesis, not a finding.
-
-### Ranked candidates, each with the check that discriminates it
-
-| # | Hypothesis | Discriminating check |
-|---|---|---|
-| 1 | Agents never completed sign-up (OTP not delivered, or the missing password step blocked them) | otp-diag + observer count for 15 Aug |
-| 2 | Agents signed up but never reached the report screen | observer count > 0 with zero submissions |
-| 3 | The APK never got into working hands in time | ask the agents directly; check download counts for `hawkeye-1.2-8.apk` |
-| 4 | Reports were attempted and rejected | server logs for 4xx on `/api/submissions` — **currently unobservable, see §3.C** |
-
-Note on #1: the sign-up flow on the native team APK was **never exercised
-end to end before agents received it**. The password step was missing until
-`f94e19a`, built at 15:46 — after any morning install. That is the only part of
-the chain that reached real users untested.
+- *OTP delivery failed, so nobody could sign up* — refuted by 19 accounts, 2 of
+  them in the last 24 hours.
+- *The 200 m geofence rejected reports from block-shifted coordinates* — the
+  register does carry ~33% wrong geocodes in production, but all 1,826
+  hard-fenced Osun units are `coords_source: inec_locator`; the corrupt geocodes
+  sit in the `approx` tier, which never hard-rejects. Clean theory, wrong.
 
 ---
 
-## 3. The checks to build
+## 3. What actually needs to happen before 2027
 
-### A. Pre-election device rehearsal — *the one that would have caught this*
+Ordered by leverage. The first item is worth more than everything below it.
 
-A scripted run on a real phone, on the real production backend, no earlier than
-7 days before polls and repeated 24 hours before. Practice mode does **not**
-substitute: it requires no sign-in and does not touch `/api/submissions`, so it
-exercises neither auth nor the ingest route.
+### A. Recruit observers to a coverage target, and count them weekly
 
-Pass criteria, each recorded with a screenshot:
+Set the target as a number of **confirmed, contactable people per LGA**, not a
+signup count. Osun's 30 LGAs at even 10 units each is 300 observers; the
+presidential run is 176k units nationwide, so the model has to be partnership,
+not individual signup:
 
-1. Install the published APK from `hawkeye.com.ng` (not a local build).
-2. Sign up with a real number — **on each channel in turn**: Telegram, WhatsApp, SMS.
-3. Set a password; sign out; sign back in with phone + password.
-4. Reach the report screen and select a unit by **search** and by **near me**.
-5. Capture both photos, enter votes, submit.
-6. Confirm the report appears in the public log and in the ledger.
-7. Delete the test report via admin before polls open.
+- Civil-society organisations that already field election observers.
+- Party agents — they are at every unit by law and already hold the sheet.
+  They have the strongest reason to want an independent copy of their own
+  result, which is the pitch.
+- Student and youth networks in university towns.
+- Existing observer bodies (YIAGA, TMG and similar) as institutional channels.
 
-If any step cannot be completed, the election-day plan is not ready — that is
-the whole point of the check, and it is a stop condition, not a warning.
+Track weekly against target from ~90 days out. A number that is not moving is a
+plan that is not working, and it is visible months ahead rather than on the day.
 
-### B. Ingest canary — proves the pipeline without writing anything
+### B. Convert a signup into a committed observer
 
-The submission route validates in a fixed order. A request that is valid in
-every respect **except that it carries no photos** walks the entire chain and
-stops one step short of persistence:
+12 organic signups over a month produced 0 reports; that ratio is the thing to
+attack, and at this N every single person is worth contacting individually:
+
+- Ask, at signup, which unit they will be at. 4 of 19 saved a unit.
+- Confirm attendance 48 hours before, by Telegram, and get a yes.
+- Require one practice run as part of onboarding — the flow exists and 12 runs
+  prove it works.
+- Send a reminder at poll-close, when the sheet is actually posted. That is the
+  single moment the whole product depends on, and nobody was told.
+
+### C. Make the day-of ask unmissable
+
+An observer who has the app and is standing at a unit still needs to know that
+*now* is the moment. Push and Telegram are already wired and free at any volume:
+6 Telegram-linked, 7 push-enabled out of 19 is itself too low to rely on.
+
+---
+
+## 4. Instrumentation worth building anyway
+
+None of this would have produced a single report. It would have answered "is it
+broken or is nobody using it?" in seconds rather than an evening of probing —
+and that question will recur.
+
+### Zero-reports alarm
+
+From poll-open + 2 hours, if `unitsReporting == 0`, notify by Telegram hourly.
+One query against the number the leaderboard already renders. Nothing alerted
+anyone that the count was zero all day; silence read exactly like no news.
+
+### 4xx counts on `/api/submissions`, by error code
+
+Tonight there was no way to distinguish "attempted and rejected" from "never
+attempted" — the two branches with completely different responses. It took the
+operator's own knowledge to settle it, which does not scale to a national run.
+
+### Ingest canary that writes nothing
+
+The route validates in a fixed order, so a request valid in every respect
+**except carrying no photos** walks auth, contest window, device, duplicate,
+rate limit, unit lookup, GPS, accuracy, photo-fix coherence and the geofence —
+then stops at `photo_required`:
 
 ```
-auth → contest known → reporting open → device header → not duplicate
-     → rate limit → unit known → contest applies → GPS present → accuracy
-     → photo GPS present → photo/fix coherence → geofence   ✅ all pass
-     → photos                                               ⛔ photo_required
+expect: 400 {"error":"photo_required"}     → everything upstream is healthy
+otherwise the error names the broken stage:
+  invalid_token       canary credential expired
+  reporting_not_open  contest window wrong
+  unknown_polling_unit register drift
+  outside_geofence    unit or canary coordinates moved
+  5xx / timeout       backend down
 ```
 
-**Expected response: `400 { error: "photo_required" }`.** Anything else is a
-real failure, and the error names the broken stage:
+Rejection happens before any insert, so it cannot reach the ledger. That
+property is non-negotiable here: fabricating a result is the exact harm this
+project exists to prevent, so a canary that writes a fake result — even a
+flagged one — is not acceptable. It is also idempotent by construction, since
+the duplicate-device check keys on completed reports and this never completes
+one. Run it every 15 minutes, always, so it is known-green before polls open.
 
-| Response | Meaning |
-|---|---|
-| `photo_required` | healthy — everything upstream passed |
-| `invalid_token` / `missing_token` | canary credential expired |
-| `reporting_not_open` | contest window wrong (this would have been visible from 08:30) |
-| `unknown_polling_unit` | register/unit drift |
-| `outside_geofence` | canary coordinates or unit coordinates moved |
-| 5xx / timeout | backend down |
+### Pre-election rehearsal on a real device
 
-Properties that make this safe to run continuously:
-
-- **Nothing is ever written.** Rejection happens before any insert, so the
-  ledger, tallies and public log cannot be polluted. This matters more here than
-  in an ordinary system: fabricating a result is the exact harm Hawkeye exists to
-  prevent, so a canary that writes a fake result — even a flagged one — is not
-  acceptable.
-- **Idempotent by construction.** The duplicate-device check keys on completed
-  reports; the canary never completes one, so it can run forever without
-  tripping `device_already_reported_race`.
-- **Negligible load.** The rate limit is 500 per 10 minutes; a canary every 15
-  minutes is noise.
-
-Needs: one dedicated observer account, its token in the server environment, and
-a designated canary polling unit with verified coordinates.
-
-Run it every 15 minutes always — not only on election day. The value is that it
-is already known-green before polls open.
-
-### C. Zero-reports alarm — independent of the canary
-
-The canary proves the pipeline is *able* to accept reports. It says nothing
-about whether any arrived. **Nothing alerted anyone that the count was zero all
-day**, and silence was indistinguishable from "no news". That is arguably the
-single biggest finding here.
-
-Alarm: from poll-open + 2 hours, if `unitsReporting == 0`, notify by Telegram
-every hour. Escalate wording after 4 hours. It is one query against the same
-number the leaderboard already renders.
-
-Also add: 4xx counts on `/api/submissions` by error code, exposed on an admin
-endpoint. Tonight I could not tell whether reports were attempted and rejected,
-or never attempted — the two most important branches of the diagnosis, and both
-invisible.
-
-### D. Distribution deadlines
-
-The tool worked and did not reach working hands in time. Treat that as a
-schedule requirement, not a comms afterthought:
-
-- Published APK frozen and downloadable **7 days** before polls.
-- Every agent confirms install **and one practice run** 48 hours before.
-- A named list of agents with confirmed sign-ups, checked 24 hours before —
-  a count, not an assumption.
+Install the published APK, sign up on each channel, set a password, sign out and
+back in, select a unit by search and by near-me, capture both photos, submit,
+confirm it appears in the public log, delete it before polls open. 7 days out and
+again at 24 hours, as a stop condition. Practice mode does **not** substitute: it
+needs no sign-in and never touches `/api/submissions`.
 
 ---
 
-## 4. Fair accounting of what this run produced
+## 5. Fair accounting
 
-Not everything here is a loss, and the post-mortem is more useful if it says so:
+What the run did produce, none of which is invalidated by zero reports:
 
-- A verified ingest path, auth, anchoring and public ledger, all live.
+- A verified ingest path, auth, anchoring and public ledger, live under real
+  conditions.
 - SMS OTP live and confirmed delivering on device.
 - Constituency and senatorial map partitions rebuilt at full precision
-  (364 + 109), off the network, from one dissolve implementation.
-- A candidate-list parser for the 2027 general, validated against INEC's 2022
-  publication: 18 presidential, 1,119 senate, 3,097 reps.
+  (364 + 109) from one offline dissolve implementation.
+- A candidate-list parser for 2027, validated against INEC's 2022 publication:
+  18 presidential, 1,119 senate, 3,097 reps.
 - The register audited as a side effect — ~40 junk constituency values and a
-  cross-state ward anomaly identified.
+  cross-state ward anomaly found.
 
-The gap was never the software. It was that nobody exercised the whole chain as
-a user, on a real device, before it mattered — and nothing was watching to say
-so.
+The product works. It has not yet been put in front of enough of the right
+people, and that is the whole of the 2027 problem.

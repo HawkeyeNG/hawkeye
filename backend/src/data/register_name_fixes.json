@@ -9,13 +9,38 @@
   },
   {
    "col": "federal_constituency",
+   "from": "Ado/Obadigbo/Okpokwu",
+   "to": "Ado/Obadigbo/Opkokwu"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Afijio/Oyo East/Oyo West/ Atiba",
    "to": "Afijio/Atiba/Oyo East/Oyo West"
   },
   {
    "col": "federal_constituency",
+   "from": "Ahiazu Mbaise/Ezinhitte",
+   "to": "Ahiazu Mbaise/Ezinihitte"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ahoada West/Ogba Egbema",
+   "to": "Ahoada-West/Ogba-Egbema-Ndoni"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Akpabuyo/Bakassi/Calabar South",
    "to": "Calabar South/Akpabuyo/Bakassi"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Akwanga/Nassarawa-Eggon/Wamba",
+   "to": "Akwanga/Nasarawa Eggon/Wamba"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Aleiro/Gwandu/Jega",
+   "to": "Gwandu/Aleiro/Jega"
   },
   {
    "col": "federal_constituency",
@@ -26,6 +51,16 @@
    "col": "federal_constituency",
    "from": "Andoni/Opobo/Nkoro",
    "to": "Opobo/Nkoro/Andoni"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Aniocha North/Aniocha South/Oshimili North & South",
+   "to": "Aniocha North/Aniocha South/Oshimili North/Oshimili South"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Anka/Talata Mafara",
+   "to": "Anka/Talata Marafa"
   },
   {
    "col": "federal_constituency",
@@ -64,6 +99,11 @@
   },
   {
    "col": "federal_constituency",
+   "from": "Birniwa Guri/Kirikasamma",
+   "to": "Birniwa/Guri/Kiri-Kasamma"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Biu/Kwaya-Kusar/Shani/Bayo",
    "to": "Biu/Bayo/Shani/Kwaya Kusar"
   },
@@ -71,6 +111,11 @@
    "col": "federal_constituency",
    "from": "Bodinga/Dange-Shuni/Tureta",
    "to": "Dange-Shuni/Bodinga/Tureta"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Boluwaduro/Ifedayo/Ila",
+   "to": "Boluwaduro/Ifedayo/Illa"
   },
   {
    "col": "federal_constituency",
@@ -104,6 +149,16 @@
   },
   {
    "col": "federal_constituency",
+   "from": "Edu/Moro/Pategi",
+   "to": "Patigi/Edu/Moro"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Edu/Moro/Patigi",
+   "to": "Patigi/Edu/Moro"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Ehime Mbano/Ihite-Uboma/ Obowo",
    "to": "Ehimembano/Ihitte Uboma/Obowo"
   },
@@ -134,6 +189,11 @@
   },
   {
    "col": "federal_constituency",
+   "from": "Fufore/Song",
+   "to": "Furore/Song"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Gurara/Suleja/Tafa",
    "to": "Gurara/Suleja/Tapa"
   },
@@ -144,8 +204,28 @@
   },
   {
    "col": "federal_constituency",
+   "from": "Gwandu/Aliero/Jega",
+   "to": "Gwandu/Aleiro/Jega"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Ibeju Lekki",
    "to": "Ibeju-Lekki"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Idah/Igalamela Odolu/Ibaji/ Ofu",
+   "to": "Idah/Ibaji/Igalamela/Ofu"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ido/Osi, Moba/Ilejeme",
+   "to": "Ido/Osi/Moba/Ilejeme"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Igbo-Eze North/Udenu",
+   "to": "Udenu/Igbo-Eze North"
   },
   {
    "col": "federal_constituency",
@@ -154,8 +234,28 @@
   },
   {
    "col": "federal_constituency",
+   "from": "Ijumu/Kabba-Bunu",
+   "to": "Kabba/Bunu/Ijumu"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ikot Ekpene/Essien Udim/ Obot Akara F",
+   "to": "Ikot Ekpene/Essien Udim/Obot Akara"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Ikwo/Ezza South",
    "to": "Ezza South/Ikwo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ileoluji-Okeigbo/Odigbo",
+   "to": "Ileoluji Okeigbo/Odigbo"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ileoluji/Okeigbo/Odigbo",
+   "to": "Ileoluji Okeigbo/Odigbo"
   },
   {
    "col": "federal_constituency",
@@ -214,6 +314,11 @@
   },
   {
    "col": "federal_constituency",
+   "from": "Kontagora/Wushishi/Mariga/Mashe/Gukgora",
+   "to": "Kontagora/Wushishi/Mariga/Mashegu"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Kukawa/Mobbar/Abadam/ Guzamali",
    "to": "Kukawa/Mobbar/Abadam/Guzamala"
   },
@@ -269,6 +374,11 @@
   },
   {
    "col": "federal_constituency",
+   "from": "Mikang/Qua Anpan/Shedam",
+   "to": "Mikang/Qua\\an Pan/Shendam"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Monguno/Nganzai/Marte",
    "to": "Monguno/Marte/Nganzai"
   },
@@ -286,6 +396,11 @@
    "col": "federal_constituency",
    "from": "Nasarawa/Toto",
    "to": "Nassarawa/Toto"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Nkokwa East/Ndokwa West/ Ukwuani",
+   "to": "Ndokwa East/Ndokwa West/Ukwani"
   },
   {
    "col": "federal_constituency",
@@ -319,6 +434,16 @@
   },
   {
    "col": "federal_constituency",
+   "from": "Orhionmwon/Uhunmwode",
+   "to": "Orhionmwon/Uhunmwonde"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Oron/Mbo/Okobo/Udung Uko/Urue Offong/Oruko",
+   "to": "Oron/Mbo/Okobo/UrueOffong/Oruko/Udung-Uko"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Pankshin/Kanke/Kanam",
    "to": "Kanke/Pankshin/Kanam"
   },
@@ -334,13 +459,43 @@
   },
   {
    "col": "federal_constituency",
+   "from": "Safana/Dan musa/Batsari",
+   "to": "Batsari/Safana/Danmusa"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Shagari/Yabo",
    "to": "Yabo/Shagari"
   },
   {
    "col": "federal_constituency",
+   "from": "Udenu/Igboeze North",
+   "to": "Udenu/Igbo-Eze North"
+  },
+  {
+   "col": "federal_constituency",
    "from": "Ughelli North, Ughelli South/Udu",
    "to": "Ughelli North/Ughelli South/Udu"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ukanafun/Oruk Anam",
+   "to": "Oruk Anam/Ukanafun"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Ukanafun/Orukanam",
+   "to": "Oruk Anam/Ukanafun"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Uyo/Uruan/Nsit Atai/ Ibesikpo Asutan",
+   "to": "Uyo/Uruan/Nsit Ata/Ibeskip Asutan"
+  },
+  {
+   "col": "federal_constituency",
+   "from": "Yagba East/Yagba West/ Mopamuro",
+   "to": "Yagba East/Yagba West/Mopa-muro"
   },
   {
    "col": "federal_constituency",

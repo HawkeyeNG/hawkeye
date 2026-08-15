@@ -46,6 +46,19 @@ from collections import Counter, defaultdict
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(ROOT, "backend", "storage", "hawkeye.db")
 PARTIES = os.path.join(ROOT, "backend", "src", "data", "parties.json")
+ALIAS_FILE = os.path.join(ROOT, "scripts", "data", "constituency_aliases.json")
+
+# INEC's spelling -> the register's own value, for the seats where the two
+# disagree. Matched WITHIN a state on the whole name and hand-reviewed; see the
+# file's own _note for why token-level fuzzy matching was rejected (it proposed
+# DAMBAM->DAMBOA, which is Bauchi against Borno). Rejections are kept in the
+# file with their reason, so "not aliased" is a recorded decision, not an
+# oversight.
+try:
+    _af = json.load(open(ALIAS_FILE))
+    NAME_ALIASES = {k: v["register"] for k, v in _af.get("aliases", {}).items()}
+except (FileNotFoundError, ValueError):
+    NAME_ALIASES = {}
 
 STATES = [
     "ABIA", "ADAMAWA", "AKWA IBOM", "ANAMBRA", "BAUCHI", "BAYELSA", "BENUE", "BORNO",
@@ -212,13 +225,17 @@ def parse(lines, parties, sen_keys, fed_keys):
         if not up or i in consumed:
             continue
 
-        # Constituency: longest window (3..1 lines) the register recognises.
+        # Constituency: longest window (3..1 lines) the register recognises,
+        # or that the alias table maps onto something the register recognises.
         matched = False
         for w in (3, 2, 1):
             if i - w + 1 < 0:
                 continue
             span = " ".join(lines[j].strip() for j in range(i - w + 1, i + 1))
             k = key_of(span)
+            if k not in sen_keys and k not in fed_keys and k in NAME_ALIASES:
+                span = NAME_ALIASES[k]          # rewrite to the register's own spelling
+                k = key_of(span)
             if k in sen_keys or k in fed_keys:
                 cur_con, cur_level = span, ("senatorial" if k in sen_keys else "federal_constituency")
                 position = "Senator" if cur_level == "senatorial" else "Representative"

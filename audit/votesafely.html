@@ -1,0 +1,118 @@
+<!doctype html>
+<html><head><meta charset="utf-8" />
+<style>
+  /* "Vote Safely" — election-day public-service card. Same brand system as
+     signup.html / followus.html / install-agents.html.
+
+     SQUARE IS THE POINT. Instagram crops a feed tile to a centre square in the
+     profile grid, so a 4:5 or 9:16 card loses its top and bottom there and a
+     landscape one loses its sides mid-word (which is what happened to the two
+     "install without the Play Store" posts). Authoring at 1:1 means the grid
+     thumbnail IS the whole card and nothing can be cut. The 9:16 story crop
+     keeps every element inside the middle square for the same reason.
+
+     THE SAFETY ADVICE LEADS AND THE PRODUCT DOES NOT INTERRUPT IT. A card that
+     opens with voter safety and then pivots to a pitch reads as advertising
+     wearing a safety jacket, and it earns the distrust that follows. The
+     recording line comes LAST, phrased as the final step of a day that has
+     already gone well, and it claims only what is true: a photo of the declared
+     sheet becomes a permanent public record. */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px; height: 1080px; display: flex; flex-direction: column;
+    align-items: center; padding: 54px 66px 56px; position: relative; overflow: hidden;
+    font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #fff;
+    background:
+      radial-gradient(1000px 620px at 50% 0%, #0f4d33 0%, transparent 62%),
+      linear-gradient(160deg, #0a3a26 0%, #06251a 52%, #0a3247 100%);
+  }
+  .hash { position: absolute; inset: 0; opacity: .05; font-family: ui-monospace, Menlo, monospace;
+    font-size: 21px; line-height: 2.05; word-break: break-all; color: #9ff5c6; padding: 18px 12px; }
+
+  .top { display: flex; align-items: center; gap: 18px; position: relative; }
+  .top img { width: 78px; height: 78px; }
+  .top b { font-size: 40px; font-weight: 800; letter-spacing: 4px; display: block; line-height: 1; }
+  .top span { font-size: 15px; letter-spacing: 2.6px; color: #7fd6a8; font-weight: 600; text-transform: uppercase; }
+
+  .main { margin: auto 0; width: 100%; position: relative; display: flex;
+    flex-direction: column; align-items: center; }
+
+  .kicker { font-size: 19px; letter-spacing: 3px; font-weight: 700; text-transform: uppercase;
+    color: #ffcc70; text-align: center; margin-top: 12px; line-height: 1.5; }
+  .kicker .when { color: #ffe0a3; }
+  h1 { font-size: 88px; font-weight: 800; letter-spacing: 1px; margin: 6px 0 18px;
+    text-align: center; line-height: 1.02; }
+  h1 em { font-style: normal; color: #2ee08a; }
+
+  ul { list-style: none; display: flex; flex-direction: column; gap: 11px; width: 100%; }
+  li { display: flex; gap: 16px; align-items: flex-start;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(120,230,175,.24);
+    border-radius: 16px; padding: 15px 22px; }
+  li .tick { flex: none; width: 34px; height: 34px; border-radius: 50%;
+    background: #2ee08a; display: flex; align-items: center; justify-content: center; }
+  li .tick svg { width: 20px; height: 20px; }
+  li div.t { font-size: 23px; line-height: 1.36; padding-top: 4px; }
+  li b { font-weight: 800; }
+
+  /* The one Hawkeye line, last, and stated as a fact about the sheet rather
+     than an instruction about an app. */
+  .record { margin-top: 18px; width: 100%; background: rgba(46,224,138,.11);
+    border: 1px solid rgba(46,224,138,.45); border-left-width: 7px; border-radius: 15px;
+    padding: 17px 22px; font-size: 21px; line-height: 1.42; }
+  .record b { color: #2ee08a; }
+
+  .foot { text-align: center; position: relative; padding-top: 16px; }
+  .foot .site { font-size: 30px; font-weight: 800; }
+  .foot .site span { color: #2ee08a; }
+  .foot .dis { font-size: 16px; color: #6fae8d; margin-top: 8px; }
+</style></head>
+<body>
+  <div class="hash" id="hash"></div>
+
+  <div class="top">
+    <img src="LOGO" alt="" />
+    <div><b>HAWKEYE</b><span>Independent Election Results Monitor</span></div>
+  </div>
+
+  <div class="main">
+    <div class="kicker">Osun Governorship Election<br /><span class="when">Saturday 15 August</span></div>
+    <h1>Vote <em>Safely</em></h1>
+
+    <ul>
+      <li>
+        <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#05271a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="t">Go early. Vote, then <b>move away from the crowd</b>.</div>
+      </li>
+      <li>
+        <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#05271a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="t"><b>Never argue or confront anyone.</b> Step back first — no result is worth your safety.</div>
+      </li>
+      <li>
+        <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#05271a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="t">Keep your <b>PVC and phone out of sight</b> in a crowd.</div>
+      </li>
+      <li>
+        <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#05271a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="t"><b>If it is safe</b>, stay for the count — your result is announced at your own unit.</div>
+      </li>
+    </ul>
+
+    <div class="record">
+      And when it is declared, <b>photograph the result sheet</b>. Sent through
+      Hawkeye it becomes a permanent public record — timestamped, and impossible
+      to change afterwards.
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="site">hawkeye<span>.com.ng</span></div>
+    <div class="dis">Independent · Not affiliated with INEC or any political party</div>
+  </div>
+
+<script>
+  // Deterministic filler so the backdrop is identical across renders and sizes.
+  let s = 'abcdef0123456789', out = '', seed = 20260815;
+  for (let i = 0; i < 5200; i++) { seed = (seed * 16807) % 2147483647; out += s[seed % 16]; }
+  document.getElementById('hash').textContent = out;
+</script>
+</body></html>

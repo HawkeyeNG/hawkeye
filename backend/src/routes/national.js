@@ -32,6 +32,18 @@ const LEVEL = {
 // not join to the register — 225 of Osun's 332 wards have no match, because the
 // two sources use different naming systems entirely. A ward map would be
 // two-thirds blank or, worse, confidently wrong.
+/**
+ * The register column behind each level name — the ONLY source of the identifier
+ * that gets interpolated into the tally SQL. `?level=` is checked against these
+ * keys, so a caller can choose a breakdown without ever choosing a column name.
+ */
+const LEVEL_COLS = {
+  state: 'state',
+  lga: 'lga',
+  senatorial: 'senatorial',
+  federal: 'federal_constituency',
+};
+
 const SCOPED = {
   PRES: { level: 'lga', col: 'lga' },
   GOV: { level: 'lga', col: 'lga' },
@@ -46,6 +58,29 @@ const soleState = (code) => {
   return Array.isArray(c?.states) && c.states.length === 1 ? c.states[0] : null;
 };
 
+/**
+ * A caller-supplied state to crop to, resolved to the REGISTER'S OWN SPELLING,
+ * or null if it names nothing.
+ *
+ * Needed because a race page is about one seat: a Kano governorship page wants
+ * Kano's LGAs, but the 2027 GOV contest runs in 28 states, so soleState() is
+ * null and the nationwide branch would hand back 28 state totals — a board for a
+ * page that is not asking about the other 27.
+ *
+ * RESOLVED, NOT TRUSTED. The value reaches the SQL as a bound parameter either
+ * way, but matching it against the register first means an unknown state
+ * produces a 404 rather than an empty board that looks like "no reports yet" —
+ * the difference between a wrong answer and no answer.
+ */
+const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+let stateNames = null;
+const resolveState = (q) => {
+  if (!q) return null;
+  stateNames ??= db.prepare(
+    "SELECT DISTINCT state FROM polling_units WHERE state IS NOT NULL AND state != ''").all().map((r) => r.state);
+  return stateNames.find((s) => norm(s) === norm(q)) ?? null;
+};
+
 // Tentative national tally for the leaderboard/map. Sums each unit's leading
 // (most-corroborated) vote set into regions: states for president/governor,
 // senatorial districts for Senate, federal constituencies for House of Reps.
@@ -53,8 +88,25 @@ const soleState = (code) => {
 nationalRouter.get('/national/:contest', (req, res) => {
   const contest = String(req.params.contest);
   if (!contestCodes.has(contest)) return res.status(404).json({ error: 'unknown_contest' });
-  const state = soleState(contest);
-  const { level, col } = (state ? SCOPED[contest] : LEVEL[contest]) || LEVEL.PRES;
+  // ?state= crops a nationwide contest to one state and subdivides it one level
+  // finer, exactly as a single-state contest is already treated — so a race page
+  // for one seat gets that seat's sub-units instead of the whole federation.
+  let asked = null;
+  if (req.query.state != null) {
+    asked = resolveState(req.query.state);
+    if (!asked) return res.status(404).json({ error: 'unknown_state' });
+  }
+  const state = asked ?? soleState(contest);
+  let { level, col } = (state ? SCOPED[contest] : LEVEL[contest]) || LEVEL.PRES;
+  // ?level= asks for a finer breakdown than the contest's default. A senatorial
+  // race page draws its district as LGAs — every district is a union of whole
+  // LGAs — so it needs LGA-keyed tallies, which SCOPED.SEN ('senatorial') does
+  // not give. The column is taken from THIS TABLE and never from the query, so
+  // the only strings that can reach the SQL are the four written here.
+  if (req.query.level && Object.hasOwn(LEVEL_COLS, req.query.level)) {
+    level = req.query.level;
+    col = LEVEL_COLS[level];
+  }
 
   const rows = state
     ? db.prepare(`

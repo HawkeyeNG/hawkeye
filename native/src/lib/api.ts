@@ -23,6 +23,22 @@ export type NationalRow = {
   units?: number;
 };
 
+/**
+ * One region of a board, as backend/src/routes/national.js actually sends it.
+ *
+ * This declaration used to read `{ name, rows }`, a shape the server has never
+ * sent, so every caller reached the real fields through a double cast and the
+ * type checked nothing. Corrected here once, at the boundary.
+ */
+export type NationalRegion = {
+  region: string;
+  leader: string | null;
+  leaders: string[];
+  votes: Record<string, number>;
+  unitsReporting: number;
+  unitsVerified: number;
+};
+
 export type National = {
   contest: string;
   level: string;
@@ -34,7 +50,7 @@ export type National = {
   unitsReporting: number;
   inDispute: number;
   national: NationalRow[];
-  regions: { name: string; rows: NationalRow[] }[];
+  regions: NationalRegion[];
 };
 
 export type Party = { code: string; name: string };
@@ -154,7 +170,18 @@ async function smsOtpEnabled(): Promise<boolean> {
 export const api = {
   contests: contestsWithCache,
   smsOtpEnabled,
-  national: (contest: string) => get<National>(`/api/national/${contest}`),
+  /**
+   * A contest's board. `state` crops it to one state and subdivides one level
+   * finer; `level` asks for a specific breakdown — a race map draws LGAs, and a
+   * senatorial contest's own breakdown is by district, so it has to say so.
+   */
+  national: (contest: string, opts?: { state?: string; level?: string }) => {
+    const q = new URLSearchParams();
+    if (opts?.state) q.set('state', opts.state);
+    if (opts?.level) q.set('level', opts.level);
+    const s = q.toString();
+    return get<National>(`/api/national/${encodeURIComponent(contest)}${s ? `?${s}` : ''}`);
+  },
   parties: () => get<Party[]>('/api/parties'),
   incidents: () => get<{ incidents: Incident[] }>('/api/incidents'),
   integrity: () => get<IntegritySummary>('/api/integrity/summary'),

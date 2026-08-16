@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { bboxViewBox, loadMapGeo } from '@/components/results-map';
-import type { RaceJoin } from '@/lib/political';
+import { api, type National, type NationalRegion } from '@/lib/api';
+import { partyColor, type RaceJoin } from '@/lib/political';
 import { useUi } from '@/lib/theme';
 
 /**
@@ -67,9 +68,76 @@ async function shapesFor(join: RaceJoin): Promise<{ shapes: Shape[]; caption: st
   return hit ? { shapes: [{ key: hit.key, name: hit.name, path: hit.path }], caption: join.value } : null;
 }
 
-export function RaceMap({ join }: { join?: RaceJoin }) {
+/**
+ * Register spellings and geo-file spellings disagree for a handful of LGAs per
+ * state ("Atakumosa" vs "atakunmosa"), so an exact match silently drops them and
+ * the map shows blanks where reports exist. Same two-tier fallback the board
+ * uses: exact normalised, then a first-four-letters-per-word stem, with
+ * ambiguous stems dropped rather than guessed at.
+ */
+function regionLookup(regions: NationalRegion[] | undefined) {
+  const stemOf = (s: string) => norm(s).replace(/([a-z0-9]{4})[a-z0-9]*/g, '$1');
+  const exact = new Map<string, NationalRegion>();
+  const stem = new Map<string, NationalRegion | null>();
+  for (const r of regions ?? []) {
+    exact.set(norm(r.region), r);
+    const k = stemOf(r.region);
+    stem.set(k, stem.has(k) ? null : r);
+  }
+  return (name: string) => exact.get(norm(name)) ?? stem.get(stemOf(name)) ?? null;
+}
+
+const fmtDay = (d: string) =>
+  new Date(`${d}T00:00:00`).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' });
+
+/**
+ * Why an area has no numbers. Three genuinely different states — an election
+ * still ahead, one under way, one finished — and a single "no data" for all
+ * three would read as a failure on polling day and as a silence months early.
+ */
+function silenceReason(date?: string): string {
+  if (!date) return 'No date has been set for this election yet.';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const day = new Date(`${date}T00:00:00`);
+  day.setHours(0, 0, 0, 0);
+  if (day > today) return `Polls open on ${fmtDay(date)}.`;
+  if (day.getTime() === today.getTime()) return 'Polls are open — no reports from here yet.';
+  return 'No reports were filed from here.';
+}
+
+/** One line per fact, most important first. Twin of app/race.js:inspectLines. */
+function inspectLines(date: string | undefined, name: string, row: NationalRegion | null): string[] {
+  if (!row || !row.unitsReporting) return [name, silenceReason(date)];
+  const L = row.leaders?.length ? row.leaders : row.leader ? [row.leader] : [];
+  const lead =
+    L.length > 2
+      ? `${L.length}-way tie`
+      : L.length === 2
+        ? `${L[0]} and ${L[1]} tied`
+        : L.length === 1
+          ? `${L[0]} leads`
+          : 'No votes counted yet';
+  // Typed empty fallback: `?? {}` widens the entries to `unknown` and the sort
+  // below stops being a number comparison.
+  const votes: Record<string, number> = row.votes ?? {};
+  const top = Object.entries(votes)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([p, v]) => `${p} ${Number(v).toLocaleString()}`)
+    .join(' · ');
+  return [
+    `${name} — ${lead}`,
+    `${row.unitsReporting} unit${row.unitsReporting === 1 ? '' : 's'} reporting, ${row.unitsVerified ?? 0} verified`,
+    top,
+  ].filter(Boolean);
+}
+
+export function RaceMap({ join, date }: { join?: RaceJoin; date?: string }) {
   const ui = useUi();
   const [data, setData] = useState<{ shapes: Shape[]; caption: string } | null>(null);
+  const [board, setBoard] = useState<National | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -83,6 +151,29 @@ export function RaceMap({ join }: { join?: RaceJoin }) {
       live = false;
     };
   }, [join]);
+
+  useEffect(() => {
+    let live = true;
+    const state = join?.state || join?.value;
+    if (!join?.contest || !state) return undefined;
+    // `level=lga` is asked for explicitly: a senatorial contest's own breakdown
+    // is by district, and this map draws LGAs. The map is still a map without a
+    // board, so a failure is silent by design.
+    api
+      .national(join.contest, { state, level: 'lga' })
+      .then((b) => live && setBoard(b))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [join]);
+
+  const find = useMemo(() => regionLookup(board?.regions), [board]);
+  const lines = useMemo(
+    () => (picked ? inspectLines(date, picked, find(picked)) : null),
+    [picked, find, date],
+  );
+  const onPick = useCallback((name: string) => setPicked(name), []);
 
   const viewBox = useMemo(
     () => (data ? bboxViewBox(data.shapes.map((s) => s.path)) : null),
@@ -108,28 +199,63 @@ export function RaceMap({ join }: { join?: RaceJoin }) {
   // instead, against the same 800 baseline.
   const border = 1.1 * Math.min(1, w / 800);
 
+  // A selected shape is drawn LAST. There is no z-index in SVG, so a neighbour
+  // painted afterwards covers half the outline meant to pick the selection out —
+  // and at 44-to-a-frame that outline is all there is to see.
+  const ordered = picked
+    ? [...data.shapes].sort((a, b) => Number(a.name === picked) - Number(b.name === picked))
+    : data.shapes;
+
   return (
     <View className="pt-4">
       <View style={{ aspectRatio: AR }}>
         <Svg width="100%" height="100%" viewBox={box}>
-          {data.shapes.map((s) => (
-            // The internal borders ARE the information — a seat drawn as one
-            // silhouette says nothing its title did not, so the stroke carries
-            // more weight than the fill.
-            <Path
-              key={s.key}
-              d={s.path}
-              fill={ui.ink}
-              fillOpacity={0.1}
-              stroke={ui.ink}
-              strokeOpacity={0.7}
-              strokeWidth={border}
-              strokeLinejoin="round"
-            />
-          ))}
+          {ordered.map((s) => {
+            const row = find(s.name);
+            // Tint by the LEADING PARTY — the one thing a results map exists to
+            // show. An exact tie is left untinted rather than credited to one side.
+            const lead = row?.unitsReporting && row.leaders?.length === 1 ? row.leaders[0] : null;
+            const on = s.name === picked;
+            return (
+              // The internal borders ARE the information — a seat drawn as one
+              // silhouette says nothing its title did not, so the stroke carries
+              // more weight than the fill.
+              <Path
+                key={s.key}
+                d={s.path}
+                fill={lead ? partyColor(lead) : ui.ink}
+                fillOpacity={lead ? 0.55 : 0.1}
+                stroke={on ? ui.tint.good.ink : ui.ink}
+                strokeOpacity={on ? 1 : 0.7}
+                strokeWidth={on ? border * 2.8 : border}
+                strokeLinejoin="round"
+                onPress={() => onPick(s.name)}
+              />
+            );
+          })}
         </Svg>
       </View>
       <Text className="pt-1 text-center text-xs text-muted">{data.caption}</Text>
+
+      {/* Tap-to-inspect. The web shows a tooltip on hover, which a phone cannot
+          trigger; this panel is what replaces it. It keeps its height so the
+          screen does not jump the first time an area is tapped. */}
+      <View className="mt-2 rounded-2xl bg-card px-3.5 py-3" style={{ minHeight: 62 }}>
+        {lines ? (
+          lines.map((l, i) => (
+            <Text
+              key={l}
+              className={i === 0 ? 'text-sm font-bold text-ink' : 'pt-0.5 text-xs text-muted'}
+            >
+              {l}
+            </Text>
+          ))
+        ) : (
+          <Text className="text-xs text-muted">
+            Tap an area of the map for what has been reported from it.
+          </Text>
+        )}
+      </View>
     </View>
   );
 }

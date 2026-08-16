@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,7 +27,14 @@ import {
   ResultsMap,
   type MapLevel,
 } from '@/components/results-map';
-import { api, BRAND, type Contest, type National, type Party } from '@/lib/api';
+import {
+  api,
+  BRAND,
+  type Contest,
+  type National,
+  type NationalRegion,
+  type Party,
+} from '@/lib/api';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import {
@@ -63,17 +70,13 @@ type Sub = { contest: string; state?: string };
 /**
  * One region row of GET /api/national/:contest as the BACKEND actually sends it
  * (backend/src/routes/national.js): region key, a party→votes map, and the
- * region's own reporting counts. `National.regions` in lib/api.ts still declares
- * an older `{ name, rows }` shape that the server does not send, so the read
- * below goes through this type deliberately rather than trusting that decl.
+ * region's own reporting counts. lib/api.ts used to declare an older
+ * `{ name, rows }` shape the server does not send, which is why this read went
+ * through a local type and a double cast; the declaration is now correct, so
+ * both are gone and the compiler checks these fields for real.
  */
-type ApiRegion = {
-  region: string;
-  votes: Record<string, number>;
-  unitsReporting: number;
-  unitsVerified: number;
-};
-const regionsOf = (n: National | null): ApiRegion[] => (n?.regions ?? []) as unknown as ApiRegion[];
+type ApiRegion = NationalRegion;
+const regionsOf = (n: National | null): ApiRegion[] => n?.regions ?? [];
 
 /**
  * The party or parties leading a region, from that region's own vote map — the
@@ -152,6 +155,27 @@ function matchContest(race: Race | null, contests: Contest[]): Contest | null {
  * existed (it read contests[0] directly), so the common path is unchanged — the
  * picker only adds a way to look somewhere else.
  */
+/**
+ * The race a deep link names, or null.
+ *
+ * "See Live Results" on a race screen has to land on THAT race's board. It used
+ * to push a bare /(tabs)/results, which seeds itself with the first contest —
+ * the presidency — so every governorship screen sent its readers to a
+ * presidential board. `scope` is matched against each race's own region, so it
+ * works for a state, a senatorial district or a federal constituency alike.
+ */
+function deepLinkRace(contest?: string, scope?: string): Race | null {
+  const type = ELECTION_TYPES.find((t) => t.code === contest);
+  if (!type) return null;
+  const state = (STATES as readonly string[]).includes(scope ?? '')
+    ? (scope as StateName)
+    : undefined;
+  const list = listRaces(type.code, state);
+  if (!list.length) return null;
+  if (!scope) return list[0];
+  return list.find((r) => scopeOf(r) === scope) ?? list[0];
+}
+
 function defaultRace(contests: Contest[]): Race | null {
   const c = contests[0];
   if (!c) return null;
@@ -204,6 +228,12 @@ export default function Results() {
   const insets = useSafeAreaInsets();
   const headerH = insets.top + HEADER_CONTENT_H;
 
+  /** ?contest=&scope= — set when a race screen sent the reader here. */
+  const { contest: linkContest, scope: linkScope } = useLocalSearchParams<{
+    contest?: string;
+    scope?: string;
+  }>();
+
   /** The full /api/contests list — the picker's only source of openness. */
   const [contests, setContests] = useState<Contest[]>([]);
   const [contestsLoaded, setContestsLoaded] = useState(false);
@@ -236,9 +266,10 @@ export default function Results() {
     setContestsLoaded(true);
     if (!cs) return;
     setContests(cs);
-    // Seed only when the observer has not chosen for themselves.
-    setRace((r) => r ?? defaultRace(cs));
-  }, []);
+    // Seed only when the observer has not chosen for themselves — and prefer the
+    // race a deep link asked for over this screen's own default.
+    setRace((r) => r ?? deepLinkRace(linkContest, linkScope) ?? defaultRace(cs));
+  }, [linkContest, linkScope]);
 
   /**
    * Only the newest fetch may write. Switching race mid-flight otherwise lets a

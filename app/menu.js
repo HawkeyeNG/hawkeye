@@ -1083,8 +1083,9 @@
    * unconfigured ones DISABLED. Disabled options cannot be submitted, so the
    * backend still only ever receives a code from `contestCodes`.
    *
-   * Mirrors BARE_RACE_NAME in backend/src/db.js and RACES in races.html — keep
-   * the three in step if a race is ever added.
+   * Mirrors BARE_RACE_NAME in backend/src/db.js — keep the two in step if a race
+   * is ever added. races.html no longer has a list to mirror: it builds itself
+   * from /api/contests and groups by polling date.
    */
   const RACE_ORDER = [
     { code: 'PRES', name: 'Presidency' },

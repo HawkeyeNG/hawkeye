@@ -153,99 +153,122 @@
   }
  },
  "race2027": {
-  "asOf": "2026-07-06",
-  "note": "Declared candidates so far — the field can change until INEC publishes the final nominated list; we update as official publications land.",
+  "asOf": "2026-08-01",
+  "note": "INEC's published field of 19 candidates and their running mates (personal particulars displayed from 1 August 2026). Compiled from public records — verify against INEC; official candidate lists and results are INEC’s.",
   "election": "Presidential · 2027 general election",
   "candidates": [
    {
     "name": "Bola Ahmed Tinubu",
     "party": "APC",
     "initials": "BAT",
-    "line": "Incumbent president seeking a second term; APGA has endorsed the bid.",
     "incumbent": true,
     "home": "Lagos (South-West)",
     "bids": "2nd bid — incumbent",
-    "status": "Nominee; APGA endorsement",
+    "line": "Incumbent president seeking a second term.",
+    "status": "Nominee (APC) — running mate Kashim Shettima",
     "photo": "photos/candidates/tinubu.jpg"
    },
    {
     "name": "Atiku Abubakar",
     "party": "ADC",
     "initials": "AA",
-    "line": "Former vice-president on a fourth presidential run; candidacy under court challenge.",
     "home": "Adamawa (North-East)",
     "bids": "4th bid",
-    "status": "Candidacy under court challenge",
+    "line": "Former vice-president, contesting on the ADC ticket.",
+    "status": "Nominee (ADC) — running mate Rotimi Amaechi",
     "photo": "photos/candidates/atiku.jpg"
    },
    {
     "name": "Peter Obi",
     "party": "NDC",
     "initials": "PO",
-    "line": "Second presidential run, candidacy depends on court ruling reinstating NDC.",
     "home": "Anambra (South-East)",
     "bids": "2nd bid — placed 3rd in 2023",
-    "status": "NDC status pending court ruling",
+    "line": "Second presidential run, contesting on the NDC ticket.",
+    "status": "Nominee (NDC) — running mate Rabiu Kwankwaso",
     "photo": "photos/candidates/obi.jpg"
-   },
-   {
-    "name": "Goodluck Jonathan",
-    "party": "PDP",
-    "initials": "GJ",
-    "line": "Former president attempting a return; nomination disputed within the party.",
-    "home": "Bayelsa (South-South)",
-    "bids": "Return bid — president 2010–2015",
-    "status": "Nomination disputed by Wike faction",
-    "photo": "photos/candidates/jonathan.jpg"
    }
   ],
   "minors": [
    {
+    "name": "Rufai Adekunle Omoaje",
+    "party": "AA",
+    "meta": "AA · running mate Shehu Hussaini"
+   },
+   {
+    "name": "Omoyele Sowore",
+    "party": "AAC",
+    "meta": "AAC · running mate Magashi Haruna Garba"
+   },
+   {
+    "name": "Abbas-Bin Aliyu",
+    "party": "ADP",
+    "meta": "ADP · running mate Ike Chinazam"
+   },
+   {
     "name": "Seyi Makinde",
     "party": "APM",
-    "meta": "Sitting Governor, Oyo — defected from PDP May 2026"
+    "meta": "APM · running mate Ibrahim Adamu Bala"
    },
    {
-    "name": "Yusuf Datti Baba-Ahmed",
+    "name": "Yusuf Kabiru",
+    "party": "APP",
+    "meta": "APP · running mate Ofordile Peace Egobia"
+   },
+   {
+    "name": "Adenuga Sunday",
+    "party": "BP",
+    "meta": "BP · running mate Mustapha Usman Turaki"
+   },
+   {
+    "name": "Memeh Samuel",
+    "party": "DLA",
+    "meta": "DLA · running mate Balogun Alex"
+   },
+   {
+    "name": "Okereke Sunday Chibuzor",
     "party": "LP",
-    "meta": "Senator; 2023 LP VP candidate (Kaduna)",
-    "photo": "photos/candidates/datti.jpg"
+    "meta": "LP · running mate Konto Hajja Bintu"
    },
    {
-    "name": "Prince Adewole Adebayo",
-    "party": "SDP",
-    "meta": "Lawyer; 2023 SDP candidate (Ondo)",
-    "photo": "photos/candidates/adebayo.jpg"
+    "name": "Okwori Ada Elizabeth Frederick",
+    "party": "NDP",
+    "meta": "NDP · running mate Chikwuemeka Uchenna Anthony"
    },
    {
-    "name": "Anita Zugwai-Chukwu",
-    "party": "YPP",
-    "meta": "YPP standard-bearer (Kaduna)"
+    "name": "Dikwa Suleiman Mohammed",
+    "party": "NNPP",
+    "meta": "NNPP · running mate Abubakar Isah"
    },
    {
-    "name": "Esther Okereke",
+    "name": "Okereke Iken Esther",
     "party": "NRM",
-    "meta": "Actress and producer (Imo)"
+    "meta": "NRM · running mate Samuel Magdalene Gali"
    },
    {
-    "name": "Aliyu Abbas",
-    "party": "ADP",
-    "meta": "ADP nominee"
+    "name": "Sandy Onor",
+    "party": "PDP",
+    "meta": "PDP · running mate Umaru Babangida"
    },
    {
-    "name": "Gbenga Hashim",
-    "party": "Accord",
-    "meta": "Accord standard-bearer"
+    "name": "Donald Duke",
+    "party": "PRP",
+    "meta": "PRP · running mate Buba Musa"
    },
    {
-    "name": "Sunday Adenuga",
-    "party": "BOOT",
-    "meta": "BOOT nominee"
+    "name": "Adebayo Adewole Ebenezer",
+    "party": "SDP",
+    "meta": "SDP · running mate Bugaje Usman Mohammed"
    },
    {
-    "name": "Adekunle Rufai Omoaje",
-    "party": "AA",
-    "meta": "AA flag bearer"
+    "name": "Chukwu Anita Zugwai",
+    "party": "YPP",
+    "meta": "YPP · running mate Egbeola Olawale Mertins"
+   },
+   {
+    "name": "Nwanyanwu Daniel Danerechukwu",
+    "party": "ZLP",
+    "meta": "ZLP · running mate Hassan Khalid"
    }
   ],
   "photoCredit": "Portraits via Wikipedia / Wikimedia Commons",

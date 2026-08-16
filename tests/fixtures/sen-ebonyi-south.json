@@ -1,0 +1,43 @@
+{
+ "asOf": null,
+ "office": "Senator — Ebonyi South",
+ "election": "Ebonyi State · Senate",
+ "dateText": "2023",
+ "dateLabel": "Election year",
+ "note": "FIXTURE — not real candidate data. Reproduces the shape of a race emitted by scripts/build_races_from_inec.py so the render test can run without the source PDF.",
+ "stats": {
+  "lgas": 4,
+  "pollingUnits": 700
+ },
+ "candidates": [],
+ "others": [
+  {
+   "name": "Test Candidate One",
+   "party": "APC"
+  },
+  {
+   "name": "Test Candidate Two",
+   "party": "LP"
+  },
+  {
+   "name": "Test Candidate Three",
+   "party": "PDP"
+  },
+  {
+   "name": "Test Candidate Four",
+   "party": "YPP"
+  }
+ ],
+ "join": {
+  "contest": "SEN",
+  "level": "senatorial",
+  "value": "Ebonyi South",
+  "state": "Ebonyi",
+  "lgas": [
+   "Afikpo North",
+   "Afikpo South",
+   "Ivo",
+   "Onicha"
+  ]
+ }
+}

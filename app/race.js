@@ -36,6 +36,8 @@
    */
   const geoCache = {};
   const getGeo = (f) => (geoCache[f] = geoCache[f] || fetch(f).then((r) => r.json()).catch(() => null));
+  const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const titleCase = (s) => String(s || '').replace(/\b[a-z]/g, (c) => c.toUpperCase());
 
   const bboxOf = (paths) => {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -52,7 +54,11 @@
     return { x0, y0, x1, y1 };
   };
 
-  const svgFor = (shapes, label) => {
+  // A CAPTION, because the alt text is not visible and the map has no other
+  // label. On a race with candidates the shape is read in the context of the
+  // names beside it; on a seat page with no ballot yet it is the whole content,
+  // and an uncaptioned outline asks the reader to recognise a state by sight.
+  const svgFor = (shapes, label, caption) => {
     const b = bboxOf(shapes.map((s) => s.path));
     if (!isFinite(b.x0)) return '';
     let w = b.x1 - b.x0, h = b.y1 - b.y0;
@@ -74,32 +80,64 @@
     // padding are) made it a hairline here and a slab on a small seat — the
     // bounding boxes differ by orders of magnitude between Kano Central and a
     // single-LGA constituency.
-    return `<svg class="race-map" viewBox="${vb}" role="img" aria-label="${esc(label)}"
+    const svg = `<svg class="race-map" viewBox="${vb}" role="img" aria-label="${esc(label)}"
       style="width:100%;height:auto;max-height:280px;display:block;margin:14px 0">
       ${shapes.map((s) => `<path d="${s.path}" fill="currentColor" fill-opacity="0.10"
         stroke="currentColor" stroke-opacity="0.7" stroke-width="1.1"
         stroke-linejoin="round" vector-effect="non-scaling-stroke"
         ><title>${esc(s.name || '')}</title></path>`).join('')}
     </svg>`;
+    return caption
+      ? `${svg}<p class="hint" style="margin:-6px 0 0;text-align:center">${esc(caption)}</p>`
+      : svg;
   };
 
   async function raceMapHtml(race) {
     const j = race.join;
     if (!j || !j.value) return '';
+
+    // A GOVERNORSHIP's seat is the whole state, and the state's LGAs are its
+    // subdivision — the same treatment every other level gets, and the one the
+    // Osun board already used.
+    //
+    // The members are read from lga_geo's OWN KEYS rather than listed on the race
+    // object. All 774 are in the file keyed "<state>|<lga>", so every one of the
+    // 36 states draws from the same two lines with nothing written down per
+    // state: a hand-listed membership could only go stale or disagree with the
+    // map it is supposed to describe.
+    if (j.level === 'state') {
+      const geo = await getGeo('lga_geo.json');
+      const want = norm(j.value);
+      const parts = ((geo && geo.lgas) || [])
+        .filter((x) => norm(String(x.key).split('|')[0]) === want)
+        .map((x) => ({ path: x.path, name: titleCase(String(x.key).split('|')[1] || '') }));
+      if (parts.length > 1) {
+        return svgFor(parts, `Map of ${j.value} State, by local government area`,
+          `${j.value} State — ${parts.length} local government areas`);
+      }
+      // No LGAs for this state means the key did not match, not that the state
+      // has one LGA — fall back to its outline rather than draw a lone shape.
+      const sgeo = await getGeo('states_geo.json');
+      const hit = ((sgeo && sgeo.states) || []).find((s) => norm(s.key) === want || norm(s.name) === want);
+      return hit ? svgFor([{ path: hit.path, name: hit.name }], `Map of ${j.value} State`) : '';
+    }
+
     if (j.lgas && j.lgas.length > 1 && j.state) {
       const geo = await getGeo('lga_geo.json');
       if (geo && geo.lgas) {
         const want = new Set(j.lgas.map((l) => `${j.state}|${l}`.toLowerCase()));
         const parts = geo.lgas.filter((x) => want.has(String(x.key).toLowerCase()))
-          .map((x) => ({ path: x.path, name: String(x.key).split('|')[1] || '' }));
+          .map((x) => ({ path: x.path, name: titleCase(String(x.key).split('|')[1] || '') }));
         // Only use the cut if it actually found the members; a partial cut would
         // draw a seat missing pieces of itself, which is worse than an outline.
-        if (parts.length === j.lgas.length) return svgFor(parts, `Map of ${j.value}, by LGA`);
+        if (parts.length === j.lgas.length) {
+          return svgFor(parts, `Map of ${j.value}, by LGA`,
+            `${j.value} — ${parts.length} local government area${parts.length === 1 ? '' : 's'}`);
+        }
       }
     }
     const file = j.level === 'senatorial' ? 'district_geo.json' : 'constituency_geo.json';
     const geo = await getGeo(file);
-    const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
     const hit = geo && geo.regions && geo.regions.find((r) => norm(r.name) === norm(j.value));
     return hit ? svgFor([{ path: hit.path, name: hit.name }], `Map of ${j.value}`) : '';
   }
@@ -146,7 +184,12 @@
     const cells = [];
     if (race.date) cells.push([new Date(race.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }), 'Election day']);
     else if (race.dateText) cells.push([race.dateText, race.dateLabel || 'Date']);
-    cells.push([candTotal, 'Candidates']);
+    // NO "0 Candidates" CELL. A race whose field INEC has not published yet is
+    // the normal state of every seat page until about a month out, and a zero in
+    // a stat bar reads as a claim about the ballot rather than about our data.
+    // The note below the map says what is actually true.
+    if (candTotal) cells.push([candTotal, 'Candidates']);
+    if (st.heldBy) cells.push([st.heldBy, 'Currently held by']);
     if (st.lgas != null) cells.push([st.lgas, 'LGAs']);
     if (st.pollingUnits != null) cells.push(['~' + Number(st.pollingUnits).toLocaleString(), 'Polling units']);
     if (cells.length) parts.push(`<div class="race-statbar">${cells.map(([n, l]) => `<div class="s"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('')}</div>`);
@@ -156,6 +199,14 @@
     // it as such, and awaiting a 800 KB map file before painting the candidates
     // would trade a fast page for a decorative one.
     parts.push('<div id="race-map-slot"></div>');
+
+    // WHERE THE NOTE GOES DEPENDS ON WHAT ELSE IS ON THE PAGE. On a race with
+    // candidates it is a source credit and belongs at the foot with `asOf`. On a
+    // race with none it is the only thing explaining why the page has no ballot
+    // on it — and printing that under two call-to-action buttons, as the foot
+    // position does, buries the answer to the reader's first question.
+    const noteLeads = !candTotal && !!race.note;
+    if (noteLeads) parts.push(`<div class="race-ctx">${esc(race.note)}</div>`);
 
     // Context / incumbent note (optional)
     if (race.incumbentNote) parts.push(`<div class="race-ctx">${esc(race.incumbentNote)}</div>`);
@@ -225,7 +276,7 @@
       <a class="btn-accent" href="observe.html?intent=observe">Become an Observer</a>
       <a class="btn-quiet" href="${esc(opts.resultsHref || 'results.html')}">See Live Results</a></div>`);
 
-    const credit = [race.note ? `${race.note}` : '', race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit || ''].filter(Boolean).join(' ');
+    const credit = [noteLeads ? '' : (race.note || ''), race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit || ''].filter(Boolean).join(' ');
     if (credit) parts.push(`<p class="hint">${esc(credit)}</p>`);
 
     main.innerHTML = parts.join('\n');
@@ -242,5 +293,74 @@
     }
   }
 
+  /**
+   * The hand-written race object for a (contest, region) pair, or null.
+   *
+   * Races declare where they sit via `join`, so this index is DERIVED from
+   * political_data.json rather than kept beside it. Adding a race with a join
+   * makes it linkable from the leaderboard automatically — the alternative, a
+   * second list of "races that have pages", is the kind of thing that is correct
+   * on the day it is written and wrong a month later. Same reasoning as
+   * contests.json being the one source for every picker.
+   */
+  function findRace(data, contest, region) {
+    if (!data || !contest || !region) return null;
+    const want = norm(region);
+    for (const key of Object.keys(data)) {
+      const r = data[key];
+      const j = r && r.join;
+      if (!j || j.contest !== contest) continue;
+      if (norm(j.value) === want) return { key, race: r };
+    }
+    return null;
+  }
+
+  /**
+   * A governorship page for a state Hawkeye has no candidate list for — which is
+   * every state until INEC publishes one, roughly a month out.
+   *
+   * The page is still worth having: it is the seat's map, its size, who holds it
+   * now, and when it is next voted on. What it must NEVER do is invent the part
+   * it does not have, so `date` is taken from the contest catalogue and is
+   * absent — not guessed — for the eight off-cycle states whose next governorship
+   * is not in the 2027 general election.
+   */
+  function stateRace(data, state, contest) {
+    const pd = data || {};
+    const known = findRace(pd, 'GOV', state);
+    if (known) return known.race; // Osun's real page beats a generated one.
+    // THE STATE MUST BE A REAL ONE. `state` arrives from the query string, and a
+    // page will happily render "Governor of <anything> State" from it. Resolving
+    // against the register's own state list means an unknown value produces no
+    // page at all rather than an official-looking one about a place that is not
+    // there.
+    const canon = Object.keys(pd.stateStats || {}).find((s) => norm(s) === norm(state));
+    if (!canon) return null;
+    // THE FCT HAS NO GOVERNOR. It is in every state-shaped map and dataset
+    // because it is a federal capital territory, administered by a minister, and
+    // a "Governor of FCT" page would be a page about an office that does not
+    // exist. app.js already excludes it from GOV and SHA when picking a unit's
+    // race; this is the same rule at the other end.
+    if (norm(canon) === 'fct') return null;
+    state = canon;
+    const stats = pd.stateStats[canon] || {};
+    const inCycle = contest && Array.isArray(contest.states) && contest.states.some((s) => norm(s) === norm(state));
+    const held = (pd.governors || {})[state];
+    return {
+      office: `Governor of ${state}${/^fct$/i.test(state) ? '' : ' State'}`,
+      election: `${state} State Governorship Election`,
+      date: inCycle && contest.date ? contest.date : undefined,
+      stats: { ...stats, heldBy: held || undefined },
+      note: inCycle
+        ? 'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.'
+        : `${state} votes for governor off the general-election cycle, so this race is not part of the 2027 general election and Hawkeye has no date for it yet. The map and seat facts on this page come from the electoral register and are current.`,
+      candidates: [],
+      others: [],
+      join: { contest: 'GOV', level: 'state', value: state, state },
+    };
+  }
+
   window.mountRace = mountRace;
+  window.findRace = findRace;
+  window.stateRace = stateRace;
 })();

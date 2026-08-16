@@ -1,6 +1,11 @@
 // Minimal service worker: cache the app shell so the observer app opens instantly
 // on flaky election-day networks. API calls always hit the network.
-const CACHE = 'hawkeye-v256'; // bump on any shell change so installed clients refresh
+// Bump on any shell change — and on a LAZY data change too. LAZY is cache-first
+// and never revalidates, so an installed client serves its stored
+// political_data.json forever; only a new CACHE name (activate drops the old
+// caches) makes it re-fetch. A candidate list that cannot reach installed users
+// is not published.
+const CACHE = 'hawkeye-v257';
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every

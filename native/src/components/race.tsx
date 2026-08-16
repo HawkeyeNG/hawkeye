@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { RaceMap } from '@/components/race-map';
 import { logoUrl, partyColor, photoUrl, type Candidate, type Race } from '@/lib/political';
 
 /** Party emblem, falling back to the code itself when there's no image. */
@@ -113,9 +114,19 @@ export function RaceView({
         year: 'numeric',
       })
     : '';
-  const ballot = race.others
+  const ballot = race.others?.length
     ? [...race.candidates, ...race.others].sort((a, b) => a.party.localeCompare(b.party))
     : null;
+  // A race whose field INEC has not published is the normal state of a seat page
+  // until about a month out. With no cards to put in them, the candidate
+  // sections printed a heading, a nonpartisan disclaimer and then nothing —
+  // which is what every governorship page outside Osun would have opened on.
+  const hasField = race.candidates.length > 0;
+  // WHERE THE NOTE GOES DEPENDS ON WHAT ELSE IS ON THE SCREEN. With candidates it
+  // is a source credit and belongs at the foot; with none it is the only thing
+  // explaining why there is no ballot, and the foot position puts that under two
+  // buttons, below the fold.
+  const noteLeads = !hasField && !!race.note;
 
   return (
     <View>
@@ -143,7 +154,10 @@ export function RaceView({
         } else if (race.dateText) {
           cells.push([race.dateText, race.dateLabel ?? 'Date']);
         }
-        cells.push([candTotal, 'Candidates']);
+        // No "0 Candidates" cell — a zero in a stat bar reads as a claim about
+        // the ballot rather than about what we have been given.
+        if (candTotal) cells.push([candTotal, 'Candidates']);
+        if (st?.heldBy) cells.push([st.heldBy, 'Held by']);
         if (st?.lgas != null) cells.push([st.lgas, 'LGAs']);
         if (st?.pollingUnits != null) cells.push([`~${st.pollingUnits.toLocaleString()}`, 'Units']);
         return (
@@ -160,21 +174,33 @@ export function RaceView({
         );
       })()}
 
+      <RaceMap join={race.join} />
+
+      {noteLeads ? (
+        <View className="mt-3 rounded-2xl bg-surface px-4 py-3">
+          <Text className="text-sm text-ink">{race.note}</Text>
+        </View>
+      ) : null}
+
       {race.incumbentNote ? (
         <View className="mt-3 rounded-2xl bg-surface px-4 py-3">
           <Text className="text-sm text-ink">{race.incumbentNote}</Text>
         </View>
       ) : null}
 
-      <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-        {race.others ? 'Front-runners' : 'Declared candidates'}
-      </Text>
-      <Text className="pb-2 text-xs text-muted">
-        Alphabetical by party. Not an endorsement or a prediction.
-      </Text>
-      {race.candidates.map((c) => (
-        <CandidateCard key={`${c.party}-${c.name}`} c={c} logos={logos} />
-      ))}
+      {hasField ? (
+        <>
+          <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
+            {race.others ? 'Front-runners' : 'Declared candidates'}
+          </Text>
+          <Text className="pb-2 text-xs text-muted">
+            Alphabetical by party. Not an endorsement or a prediction.
+          </Text>
+          {race.candidates.map((c) => (
+            <CandidateCard key={`${c.party}-${c.name}`} c={c} logos={logos} />
+          ))}
+        </>
+      ) : null}
 
       {ballot ? (
         <>
@@ -228,8 +254,11 @@ export function RaceView({
         <Text className="pt-3 text-sm italic text-muted">{race.notableAbsence}</Text>
       ) : null}
 
-      {/* Quick compare — front-runner cards side by side. On EVERY race page now
-          (presidency + governorship), with the action buttons directly below. */}
+      {/* Quick compare — front-runner cards side by side. On EVERY race page that
+          HAS front-runners, with the action buttons directly below; a seat with
+          no published field would otherwise show an empty table with headers. */}
+      {hasField ? (
+        <>
       <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
         Quick compare
       </Text>
@@ -269,6 +298,8 @@ export function RaceView({
           ))}
         </View>
       </ScrollView>
+        </>
+      ) : null}
 
       <View className="flex-row pt-5">
         <Pressable
@@ -290,11 +321,11 @@ export function RaceView({
         </Pressable>
       </View>
 
-      {[race.note, race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit]
+      {[noteLeads ? '' : race.note, race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit]
         .filter(Boolean)
         .join(' ') ? (
         <Text className="pt-4 text-xs text-faint">
-          {[race.note, race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit]
+          {[noteLeads ? '' : race.note, race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit]
             .filter(Boolean)
             .join(' ')}
         </Text>

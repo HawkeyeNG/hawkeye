@@ -8,7 +8,13 @@ import fs from 'node:fs';
 
 const RACE_JS = fs.readFileSync('/home/elrio/hawkeye/app/race.js', 'utf8');
 const POLITICAL = JSON.parse(fs.readFileSync('/home/elrio/hawkeye/app/political_data.json', 'utf8'));
-const SENATE = JSON.parse(fs.readFileSync('/tmp/races_out/sen-ebonyi-south.json', 'utf8'));
+// A COMMITTED FIXTURE, not the generator's scratch output. This read
+// /tmp/races_out/, which does not survive a reboot, and the test died on ENOENT
+// without ever exercising the code it exists to check. Regenerate with
+// tests/fixtures/make_sen_fixture.py; the shape is copied from the generator's
+// own emit block.
+const SENATE = JSON.parse(fs.readFileSync(
+  '/home/elrio/hawkeye/tests/fixtures/sen-ebonyi-south.json', 'utf8'));
 
 const b = await chromium.launch({
   executablePath: '/home/elrio/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',

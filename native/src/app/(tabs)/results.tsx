@@ -30,7 +30,13 @@ import {
 import { api, BRAND, type Contest, type National, type Party } from '@/lib/api';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
-import { partyColor, partyName } from '@/lib/political';
+import {
+  findRace,
+  loadPolitical,
+  partyColor,
+  partyName,
+  type Political,
+} from '@/lib/political';
 import { ELECTION_TYPES, listRaces, raceLabel, STATES, type Race, type StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import * as SecureStore from 'expo-secure-store';
@@ -640,6 +646,22 @@ export default function Results() {
    * tapped on, so changing race drops it without an effect — a highlight left
    * over from another contest misstates what is selected.
    */
+  /**
+   * political_data.json, read ONLY to resolve a region to its race page. It is
+   * an enrichment: a failed fetch costs the "View the race" button and nothing
+   * else, so the board still works offline exactly as it did before.
+   */
+  const [political, setPolitical] = useState<Political | null>(null);
+  useEffect(() => {
+    let live = true;
+    loadPolitical()
+      .then(({ data }) => live && setPolitical(data))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+
   const [tapped, setTapped] = useState<{ race: string | null; region: string } | null>(null);
   const tappedRegion = tapped && tapped.race === raceKey ? tapped.region : null;
   const onRegionPress = useCallback(
@@ -743,6 +765,28 @@ export default function Results() {
     if (!r || r.key === raceKey) return null;
     return matchContest(r, contests) ? r : null;
   }, [level, inspect, regionRaces, raceKey, contests]);
+
+  /**
+   * The tapped region's own race PAGE, or null when it has none.
+   *
+   * A governorship region is a state and every state has a page — the written
+   * one where we have candidates (Osun), otherwise one built from the register.
+   * Senate / Reps / State Assembly have no per-seat pages yet, so their regions
+   * offer nothing rather than a dead end. The FCT is on every state map and has
+   * no governor, so it is excluded here as it is everywhere else.
+   *
+   * Kept in step with the web through the same `join` index — see
+   * lib/political.ts:findRace and app/results.html:raceHrefFor.
+   */
+  const racePageHref = useMemo(() => {
+    if (raceType !== 'GOV' || level !== 'state' || !inspect?.name) return null;
+    const state = String(inspect.name).replace(/\s*\(.*\)$/, '').trim();
+    if (/^fct$/i.test(state)) return null;
+    const known = political ? findRace(political, 'GOV', state) : null;
+    return known
+      ? `/race?key=${encodeURIComponent(known.key)}`
+      : `/race?contest=GOV&state=${encodeURIComponent(state)}`;
+  }, [raceType, level, inspect, political]);
 
   /**
    * Tap targets that actually work. A federal constituency is a few pixels wide
@@ -897,6 +941,20 @@ export default function Results() {
               running counts.
             </Text>
           )}
+          {/* Two different destinations, and the difference matters: `jump` keeps
+              you on the board and re-ranks it for another race, this opens that
+              race's own page — its map, its size, its candidates when there are
+              any. Only shown where such a page exists. */}
+          {racePageHref ? (
+            <Pressable
+              onPress={() => router.push(racePageHref as never)}
+              className="mt-2.5 items-center rounded-xl border border-good-ink py-2.5 active:opacity-70"
+            >
+              <Text className="text-xs font-bold text-good-ink" numberOfLines={1}>
+                View the {regionLabel(inspect?.name ?? '')} race →
+              </Text>
+            </Pressable>
+          ) : null}
           {jump ? (
             <Pressable
               onPress={() => selectRace(jump)}

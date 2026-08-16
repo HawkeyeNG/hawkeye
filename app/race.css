@@ -40,3 +40,23 @@
 
 .race-absence { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
 .race-cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 6px; }
+
+/* The inspect panel under a race map. Reserves its own height so the page does
+   not jump the first time an area is tapped. */
+.race-map-info { min-height: 3.1em; margin: 8px 0 0; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 13px; }
+.race-map-info span { display: block; }
+.race-mi-lead { font-weight: 700; font-size: 0.92rem; }
+.race-mi-sub { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.race-map path[data-region] { transition: fill-opacity .12s ease; }
+.race-map path[data-region]:hover { fill-opacity: 0.32; }
+
+/* The same areas as a list, for keyboard and screen-reader users: the SVG is one
+   image with one label, so its parts are not reachable by tabbing. */
+.race-map-pickwrap { display: block; margin-top: 8px; }
+/* Defined here rather than assumed: styles.css has no sr-only, so the label
+   would otherwise print above the picker. */
+.race-map-pickwrap .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px;
+  padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.race-map-pick { width: 100%; padding: 8px 10px; font: inherit; font-size: 0.85rem;
+  color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 8px; }

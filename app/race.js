@@ -80,9 +80,13 @@
     // padding are) made it a hairline here and a slab on a small seat — the
     // bounding boxes differ by orders of magnitude between Kano Central and a
     // single-LGA constituency.
+    // `data-region` is what makes the map INSPECTABLE: it carries the register
+    // name of the area, so a click can be matched against the tally without
+    // re-deriving anything from the tooltip text.
     const svg = `<svg class="race-map" viewBox="${vb}" role="img" aria-label="${esc(label)}"
-      style="width:100%;height:auto;max-height:280px;display:block;margin:14px 0">
-      ${shapes.map((s) => `<path d="${s.path}" fill="currentColor" fill-opacity="0.10"
+      style="width:100%;height:auto;max-height:420px;display:block;margin:14px 0">
+      ${shapes.map((s) => `<path d="${s.path}" data-region="${esc(s.name || '')}"
+        fill="currentColor" fill-opacity="0.10"
         stroke="currentColor" stroke-opacity="0.7" stroke-width="1.1"
         stroke-linejoin="round" vector-effect="non-scaling-stroke"
         ><title>${esc(s.name || '')}</title></path>`).join('')}
@@ -270,11 +274,20 @@
         <td>${esc(c.home || '—')}</td><td>${esc(c.bids || '—')}</td><td>${esc(c.status || '—')}</td></tr>`).join('')}</tbody></table></div>`);
     }
 
-    // Calls to action. resultsHref lets a race page deep-link its own board
-    // (e.g. Osun -> results.html?contest=GOV&scope=Osun preselects the race).
+    // Calls to action.
+    //
+    // "See Live Results" GOES TO THIS RACE'S BOARD, not to the leaderboard's
+    // default — which is the presidency, so every governorship page used to send
+    // its readers to a nationwide presidential map. The link is DERIVED from the
+    // race's own `join` rather than passed in by each caller: osun.html
+    // remembered to pass one, race.html never did, and 36 generated state pages
+    // were never going to.
+    //
+    //   state= crops the board to the seat's state and subdivides it
+    //   scope= preselects the same region in the follow picker
     parts.push(`<div class="race-cta">
       <a class="btn-accent" href="observe.html?intent=observe">Become an Observer</a>
-      <a class="btn-quiet" href="${esc(opts.resultsHref || 'results.html')}">See Live Results</a></div>`);
+      <a class="btn-quiet" href="${esc(opts.resultsHref || resultsHrefFor(race))}">See Live Results</a></div>`);
 
     const credit = [noteLeads ? '' : (race.note || ''), race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit || ''].filter(Boolean).join(' ');
     if (credit) parts.push(`<p class="hint">${esc(credit)}</p>`);
@@ -288,8 +301,192 @@
     const slot = main.querySelector('#race-map-slot');
     if (slot) {
       raceMapHtml(race)
-        .then((html) => { if (html) slot.innerHTML = html; else slot.remove(); })
+        .then((html) => {
+          if (!html) { slot.remove(); return; }
+          slot.innerHTML = html;
+          // The map paints IMMEDIATELY and the reporting arrives after: the
+          // geometry is a static file and the tally is a live query, so waiting
+          // for the second would hold back the first for no reason.
+          if (slot.querySelectorAll('path[data-region]').length > 1) {
+            slot.insertAdjacentHTML('beforeend',
+              `<label class="race-map-pickwrap"><span class="sr-only">Jump to an area</span>
+                 <select class="race-map-pick"></select></label>
+               <p class="race-map-info" aria-live="polite"><span class="race-mi-sub">Tap an area of the map for what has been reported from it.</span></p>`);
+            boardFor(race)
+              .then((board) => wireRaceMap(slot, race, board))
+              .catch(() => wireRaceMap(slot, race, null));
+          }
+        })
         .catch(() => slot.remove());
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+   * Making the map INSPECTABLE.
+   *
+   * The map is a picture of a seat; these turn it into a picture of the seat's
+   * REPORTING. Tap an LGA and it says what has come in from there — or, when
+   * nothing has, why: an election still ahead says when polls open, one under
+   * way says no reports yet, and the two are not the same thing. A single "no
+   * data" for both would read as a failure on polling day and as a silence
+   * months early.
+   * --------------------------------------------------------------------- */
+
+  const PARTY_TINT = 0.55;
+
+  /**
+   * The leaderboard, showing THIS race — the destination of "See Live Results".
+   *
+   * A governorship's board is its state's, cropped and broken down by LGA. A
+   * senatorial or federal seat has no crop of its own (the API scopes by state),
+   * so it gets its state's board — which shows that state's districts — with the
+   * seat preselected in the follow picker. Both are the closest thing to "this
+   * race's board" the data model can express, and both beat the federation-wide
+   * presidential default a reader got before.
+   */
+  function resultsHrefFor(race) {
+    const j = race && race.join;
+    if (!j || !j.contest || !j.value) return 'results.html';
+    const q = new URLSearchParams({ contest: j.contest });
+    const state = j.state || (j.level === 'state' ? j.value : '');
+    if (state) q.set('state', state);
+    // `scope` ONLY when it is finer than the crop. Cropping to Osun already
+    // makes the follow choices Osun's own LGAs, so scope=Osun would name a
+    // region that is no longer in the list — the picker would silently fall back
+    // to its first option. A senatorial seat is genuinely finer than its state
+    // crop, and there it does the job it exists for.
+    if (j.value !== state) q.set('scope', j.value);
+    return `results.html?${q}`;
+  }
+
+  /**
+   * Register spellings and geo-file spellings disagree for a handful of LGAs per
+   * state ("Atakumosa" vs "atakunmosa", "Ilesa" vs "ilesha"), so an exact match
+   * silently drops them and the map shows blanks where reports exist. Same
+   * two-tier fallback results.html uses: exact normalised, then a
+   * first-four-letters-per-word stem, with ambiguous stems dropped rather than
+   * guessed at.
+   */
+  function regionLookup(regions) {
+    const stemOf = (s) => norm(s).replace(/([a-z0-9]{4})[a-z0-9]*/g, '$1');
+    const exact = new Map(), stem = new Map();
+    for (const r of regions || []) {
+      exact.set(norm(r.region), r);
+      const k = stemOf(r.region);
+      stem.set(k, stem.has(k) ? null : r);
+    }
+    return (name) => exact.get(norm(name)) || stem.get(stemOf(name)) || null;
+  }
+
+  const dayStart = (d) => { const x = new Date(`${d}T00:00:00`); x.setHours(0, 0, 0, 0); return x; };
+  const fmtDay = (d) => new Date(`${d}T00:00:00`).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  /**
+   * Why an area has no numbers. Three genuinely different states, and saying the
+   * wrong one is worse than saying nothing.
+   */
+  function silenceReason(race) {
+    if (!race.date) return 'No date has been set for this election yet.';
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const day = dayStart(race.date);
+    if (day > today) return `Polls open on ${fmtDay(race.date)}.`;
+    if (day.getTime() === today.getTime()) return 'Polls are open — no reports from here yet.';
+    return 'No reports were filed from here.';
+  }
+
+  /**
+   * The tally for this seat, broken down by LGA, or null.
+   *
+   * `level=lga` is asked for explicitly: a senatorial contest's own breakdown is
+   * by district, and this map draws LGAs. Failure is silent by design — the map
+   * is still a map without it, and a race page must not turn into an error
+   * message because a board could not be reached.
+   */
+  async function boardFor(race) {
+    const j = race.join;
+    if (!j || !j.contest || !(j.state || j.value)) return null;
+    const state = j.state || j.value;
+    const url = `/api/national/${encodeURIComponent(j.contest)}`
+      + `?state=${encodeURIComponent(state)}&level=lga`;
+    return fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  }
+
+  /** One line per fact, most important first. */
+  function inspectLines(race, name, row) {
+    if (!row || !row.unitsReporting) return [`${name}`, silenceReason(race)];
+    const L = row.leaders && row.leaders.length ? row.leaders : (row.leader ? [row.leader] : []);
+    const lead = L.length > 2 ? `${L.length}-way tie`
+      : L.length === 2 ? `${L[0]} and ${L[1]} tied`
+      : L.length === 1 ? `${L[0]} leads` : 'No votes counted yet';
+    const top = Object.entries(row.votes || {}).sort((a, b) => b[1] - a[1]).slice(0, 3)
+      .map(([p, v]) => `${p} ${Number(v).toLocaleString()}`).join(' · ');
+    return [
+      `${name} — ${lead}`,
+      `${row.unitsReporting} unit${row.unitsReporting === 1 ? '' : 's'} reporting, ${row.unitsVerified || 0} verified`,
+      top,
+    ].filter(Boolean);
+  }
+
+  /**
+   * Wire an already-rendered map: tint what has reported, and let a tap on any
+   * area explain itself.
+   */
+  function wireRaceMap(root, race, board) {
+    const svg = root.querySelector('.race-map');
+    if (!svg) return;
+    const paths = [...svg.querySelectorAll('path[data-region]')];
+    if (paths.length < 2) return;   // an outline has nothing to break down
+
+    const find = regionLookup(board && board.regions);
+    for (const p of paths) {
+      const row = find(p.dataset.region);
+      // Tint by the LEADING PARTY, the one thing a results map exists to show.
+      // As INLINE STYLE, not an attribute, so the :hover rule cannot lighten a
+      // region that is already carrying a colour with meaning.
+      if (row && row.unitsReporting && row.leader && (row.leaders || []).length === 1) {
+        p.style.fill = color(row.leader);
+        p.style.fillOpacity = String(PARTY_TINT);
+      }
+      p.style.cursor = 'pointer';
+    }
+
+    const panel = root.querySelector('.race-map-info');
+    if (!panel) return;
+    const paint = (p) => {
+      // A THICKER STROKE ALONE IS NOT ENOUGH. Kano's reporting LGAs are the four
+      // small metropolitan ones; at 44-to-a-frame a 2.4px outline in the same
+      // colour as every other border is invisible. So the selection changes
+      // COLOUR as well as weight, and the shape is moved to the end of the SVG —
+      // there is no z-index in SVG, and a neighbour drawn later was painting
+      // over half the outline meant to pick it out.
+      for (const q of paths) {
+        q.style.stroke = '';
+        q.style.strokeWidth = '';
+        q.style.strokeOpacity = '';
+      }
+      p.style.stroke = 'var(--link, #00693e)';
+      p.style.strokeWidth = '3';
+      p.style.strokeOpacity = '1';
+      p.parentNode.appendChild(p);
+      const name = p.dataset.region;
+      panel.innerHTML = inspectLines(race, name, find(name))
+        .map((l, i) => `<span class="${i ? 'race-mi-sub' : 'race-mi-lead'}">${esc(l)}</span>`).join('');
+    };
+    svg.addEventListener('click', (e) => {
+      const p = e.target.closest('path[data-region]');
+      if (p) paint(p);
+    });
+    // Keyboard and screen-reader parity: the SVG alone is one image, so the
+    // areas are reachable through a plain list rather than by faking focus on
+    // the paths.
+    const picker = root.querySelector('.race-map-pick');
+    if (picker) {
+      picker.innerHTML = `<option value="">Jump to an area…</option>`
+        + paths.map((p) => `<option value="${esc(p.dataset.region)}">${esc(p.dataset.region)}</option>`).join('');
+      picker.addEventListener('change', () => {
+        const p = paths.find((x) => x.dataset.region === picker.value);
+        if (p) paint(p);
+      });
     }
   }
 

@@ -411,7 +411,12 @@ def main():
                 [dict(c, **({"mate": r["mates"][c["party"]]} if c["party"] in r.get("mates", {}) else {}))
                  for c in r["cands"]],
                 key=lambda c: (c["party"], c["name"])),
-            "join": {"level": r["level"], "value": r["label"], "state": r["state"]},
+            # LGA NAMES, not just the count. The race map is cut from
+            # app/lga_geo.json, whose keys are "<state>|<lga>" lowercased, so the
+            # client needs the members — the same way the Osun board subdivides a
+            # state into its LGAs rather than drawing one flat outline.
+            "join": {"level": r["level"], "value": r["label"], "state": r["state"],
+                     "lgas": r["lgas"]},
         }
         json.dump(obj, open(os.path.join(a.out, f"{k}.json"), "w"), indent=1, ensure_ascii=False)
         index.append({"key": k, "office": office, "state": r["state"],

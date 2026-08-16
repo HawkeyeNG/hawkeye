@@ -78,11 +78,65 @@ const none = await render({ ...base_, office: 'House — Nowhere',
   join: { level: 'federal_constituency', value: 'Not A Real Seat', state: 'Lagos', lgas: [] } });
 check('no map, and the empty slot is removed', none.hasMap || none.slotLeft, false);
 
-console.log('\n=== Osun 2026 (no join block) must be untouched ===');
-const osun = JSON.parse(fs.readFileSync(`${APP}/political_data.json`, 'utf8')).raceOsun2026;
-const o = await render(osun);
-check('no map slot left behind', o.slotLeft, false);
-check('no map (race carries no join)', o.hasMap, false);
+const POL = JSON.parse(fs.readFileSync(`${APP}/political_data.json`, 'utf8'));
+
+console.log('\n=== governorship: the state, cut into its LGAs ===');
+const osun = await render(POL.raceOsun2026);
+check('Osun draws a map', osun.hasMap, true);
+check('one path per Osun LGA (30)', osun.shapes, 30);
+check('viewBox is cropped to Osun', osun.viewBox, (v) => v && v !== '0 0 800 660');
+
+console.log('\n=== a generated state page: every state, no data written per state ===');
+// The point of the state branch: 36 states + FCT all draw from lga_geo's own
+// keys, so this is the whole feature under test at once rather than a spot check.
+const govContest = JSON.parse(fs.readFileSync(
+  '/home/elrio/hawkeye/backend/src/data/contests.json', 'utf8')).find((c) => c.code === 'GOV');
+// FCT is in stateStats (it has LGAs and polling units) but has no governor, so
+// it is excluded here and asserted separately below.
+const expectLgas = Object.fromEntries(Object.entries(POL.stateStats)
+  .filter(([k]) => k !== 'FCT').map(([k, v]) => [k, v.lgas]));
+const sweep = await p.evaluate(async ([pol, contest, want]) => {
+  const out = [];
+  for (const state of Object.keys(want)) {
+    const race = window.stateRace(pol, state, contest);
+    const m = document.getElementById('race-main') || document.querySelector('main');
+    m.innerHTML = '';
+    window.mountRace(m, race, {}, {});
+    for (let i = 0; i < 60 && !m.querySelector('.race-map') && m.querySelector('#race-map-slot'); i++) {
+      await new Promise((z) => setTimeout(z, 50));
+    }
+    const svg = m.querySelector('.race-map');
+    out.push({ state, shapes: svg ? svg.querySelectorAll('path').length : 0, dated: !!race.date });
+  }
+  return out;
+}, [POL, govContest, expectLgas]);
+const wrong = sweep.filter((s) => s.shapes !== expectLgas[s.state]);
+check(`all ${sweep.length} states draw their own LGA count`, wrong.length, 0);
+if (wrong.length) console.log('      ', wrong.slice(0, 6));
+// Osun resolves to its WRITTEN race, which carries a date of its own; the other
+// eight off-cycle states have none, and must not borrow the general-election one.
+const dated = sweep.filter((s) => s.dated).map((s) => s.state);
+check('only the 28 in-cycle states + Osun are dated', dated.length, 29);
+check('Anambra (off-cycle) carries no date', dated.includes('Anambra'), false);
+check('Kano (in-cycle) is dated', dated.includes('Kano'), true);
+
+console.log('\n=== the guards ===');
+const guards = await p.evaluate((pol) => ({
+  unknown: window.stateRace(pol, 'Wakanda', null),
+  injected: window.stateRace(pol, '<img src=x onerror=alert(1)>', null),
+  fct: window.stateRace(pol, 'FCT', null),
+  fctGeoSpelling: window.stateRace(pol, 'Fct', null),
+  osunKey: (window.findRace(pol, 'GOV', 'Osun') || {}).key,
+  osunLower: (window.findRace(pol, 'GOV', 'osun') || {}).key,
+  senate: window.findRace(pol, 'SEN', 'Osun Central'),
+}), POL);
+check('an unknown state builds no page', guards.unknown, null);
+check('a query-string injection builds no page', guards.injected, null);
+check('the FCT gets no governorship page', guards.fct, null);
+check('nor under the geo files\' spelling', guards.fctGeoSpelling, null);
+check('GOV/Osun resolves to the written race', guards.osunKey, 'raceOsun2026');
+check('region match is case-insensitive', guards.osunLower, 'raceOsun2026');
+check('a contest with no pages resolves to nothing', guards.senate, null);
 
 await b.close();
 server.close();

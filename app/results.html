@@ -74,6 +74,10 @@
   <meta name="twitter:card" content="summary_large_image" />
   <script src="authgate.js?v=2"></script>
   <script src="map-label.js?v=2"></script>
+  <!-- For window.findRace only — the board resolves a clicked region to its race
+       page through the same index the race pages use, so the two can never
+       disagree about which races have pages. -->
+  <script src="race.js?v=10"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -248,6 +252,7 @@
     let DGEO = null;    // district_geo.json — 109 merged senatorial districts
     let CGEO = null;    // constituency_geo.json — federal constituencies
     let LOGOS = {};
+    let POLITICAL = {}; // political_data.json — read only to resolve region -> race page
 
     // One badge treatment across preview.html, political.html and here, so the
     // election-day map looks like the preview people were shown.
@@ -622,14 +627,18 @@
     }
 
     (async () => {
-      const [states, lgas, dgeo, cgeo, logos, contests] = await Promise.all([
+      const [states, lgas, dgeo, cgeo, logos, contests, political] = await Promise.all([
         fetch('states_geo.json').then((r) => r.json()),
         fetch('lga_geo.json').then((r) => r.json()),
         fetch('district_geo.json').then((r) => r.json()),
         fetch('constituency_geo.json').then((r) => r.json()),
         fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
         fetch('/api/contests').then((r) => r.json()),
+        // Only for the region -> race-page links. A failure costs the links and
+        // nothing else, so the board still loads without it.
+        fetch('political_data.json').then((r) => r.json()).catch(() => ({})),
       ]);
+      POLITICAL = political;
       STATES = states;
       LGAS = lgas;
       DGEO = dgeo;
@@ -660,19 +669,60 @@
       setInterval(refresh, 30000);
     })();
 
+    /**
+     * The race page for a region of the board, or null if it has none.
+     *
+     * A governorship region IS a state, and every state now has a page — either
+     * a written one (Osun) or one built from the register, both reached the same
+     * way. Senate / Reps / State Assembly have no per-seat pages yet, so their
+     * regions stay unlinked rather than pointing at a page that would 404.
+     */
+    function raceHrefFor(contest, regionName) {
+      if (contest !== 'GOV' || !regionName) return null;
+      const state = String(regionName).replace(/\s*\(.*\)$/, '').trim();  // "FCT (Abuja)" -> "FCT"
+      // The FCT is drawn on every state map but has no governor — it is run by a
+      // minister. Offering it a governorship page would invent an office.
+      if (/^fct$/i.test(state)) return null;
+      const known = window.findRace ? window.findRace(POLITICAL, 'GOV', state) : null;
+      return known
+        ? `race.html?race=${encodeURIComponent(known.key)}`
+        : `race.html?contest=GOV&state=${encodeURIComponent(state)}`;
+    }
+
+    /**
+     * The region name a shape stands for, taken from its <title> — which every
+     * branch of renderMap writes as "<region>: <detail>". Reading it back beats
+     * threading a data-region attribute through five separate shape builders,
+     * and it cannot drift out of sync with what the reader is looking at.
+     */
+    const regionOfTitle = (t) => String(t || '').split(':')[0].trim();
+
     // Opt-in race-follow notifications (Telegram). Needs a verified observer token.
     // Tap/click a region for its details — <title> tooltips are hover-only, so
     // touch users had no way in. Delegated: survives every map re-render.
+    //
+    // A SECOND CLICK ON THE SAME REGION OPENS ITS RACE. Navigating on the first
+    // click would take the details away from exactly the touch users this handler
+    // exists for — they would never see the tooltip at all. So the first click
+    // still selects and reveals, and both the repeat click and the explicit link
+    // in the caption go to the race.
     document.getElementById('map').addEventListener('click', (e) => {
       const p = e.target.closest('path');
       if (!p || p.classList.contains('tie-fill')) return;
       const t = p.querySelector('title');
       if (!t) return;
+      const info = document.getElementById('map-info');
+      const contest = document.getElementById('sel-contest').value;
+      const href = raceHrefFor(contest, regionOfTitle(t.textContent));
+      if (p.classList.contains('sel') && href) { location.href = href; return; }
       const prev = document.querySelector('#map path.sel');
       if (prev) prev.classList.remove('sel');
       p.classList.add('sel');
-      const info = document.getElementById('map-info');
       info.textContent = '📍 ' + t.textContent;
+      if (href) {
+        info.insertAdjacentHTML('beforeend',
+          ` · <a href="${href}">View this race →</a>`);
+      }
       info.hidden = false;
     });
 

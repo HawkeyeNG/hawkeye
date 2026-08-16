@@ -55,18 +55,39 @@
   <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
   </div></footer>
 
-  <script src="race.js?v=9"></script>
+  <script src="race.js?v=10"></script>
   <script>
-    // Generic race page: ?race=<key> selects the race object in political_data.json
-    // (default: the active Osun pilot). Any future race = add data + link here,
-    // no new HTML file needed. Compare table auto-shows for races that carry `minors`.
+    // Generic race page. Two ways in:
+    //
+    //   ?race=<key>              a hand-written race object in political_data.json
+    //   ?contest=GOV&state=Kano  a governorship page BUILT from the register
+    //
+    // The second form is why all 36 states have a page without 36 files or 36
+    // data blocks: the seat's map, size, holder and date are all facts we already
+    // have, and the only missing piece — the candidate list — is missing for a
+    // reason the page states plainly. A state that DOES have a written race
+    // (Osun) resolves to it, so the generated page never shadows a real one.
     (async () => {
-      const key = new URLSearchParams(location.search).get('race') || 'raceOsun2026';
+      const QP = new URLSearchParams(location.search);
       const [data, LOGOS] = await Promise.all([
         fetch('political_data.json').then((r) => r.json()),
         fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
       ]);
-      const race = data[key];
+
+      let race = null;
+      const state = QP.get('state');
+      if (QP.get('contest') === 'GOV' && state) {
+        // Contests are the backend's to define; a page is not the place to decide
+        // when an election is. If the catalogue is unreachable the page still
+        // renders — undated, which is the truthful degradation.
+        const contest = await fetch('/api/contests')
+          .then((r) => r.json())
+          .then((cs) => cs.find((c) => c.code === 'GOV'))
+          .catch(() => null);
+        race = window.stateRace(data, state, contest);
+      } else {
+        race = data[QP.get('race') || 'raceOsun2026'];
+      }
       window.mountRace(document.getElementById('race-main'), race, LOGOS, { compare: !!(race && race.minors) });
     })();
   </script>

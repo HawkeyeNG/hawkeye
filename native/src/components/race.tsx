@@ -2,7 +2,14 @@ import { router } from 'expo-router';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { RaceMap } from '@/components/race-map';
-import { logoUrl, partyColor, photoUrl, type Candidate, type Race } from '@/lib/political';
+import {
+  logoUrl,
+  partyColor,
+  photoUrl,
+  resultsHrefFor,
+  type Candidate,
+  type Race,
+} from '@/lib/political';
 
 /** Party emblem, falling back to the code itself when there's no image. */
 export function PartyMark({
@@ -174,7 +181,7 @@ export function RaceView({
         );
       })()}
 
-      <RaceMap join={race.join} />
+      <RaceMap join={race.join} date={race.date} />
 
       {noteLeads ? (
         <View className="mt-3 rounded-2xl bg-surface px-4 py-3">
@@ -315,7 +322,7 @@ export function RaceView({
             brand pair because gold on dark green reads the same in both themes. */}
         <Pressable
           className="flex-1 items-center rounded-2xl border border-good-ink py-3.5 active:opacity-70"
-          onPress={() => router.push((resultsHref ?? '/(tabs)/results') as never)}
+          onPress={() => router.push((resultsHref ?? resultsHrefFor(race)) as never)}
         >
           <Text className="text-sm font-bold text-good-ink">Live results</Text>
         </Pressable>

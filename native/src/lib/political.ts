@@ -190,6 +190,21 @@ export function findRace(
   return null;
 }
 
+/**
+ * The results tab, showing THIS race — where "See Live Results" goes.
+ *
+ * Derived from the race's own `join` rather than passed in by each caller: the
+ * Osun screen never passed one and the generated state screens never would, so
+ * every one of them pushed a bare results tab, which seeds itself with the first
+ * contest — the presidency. Twin of app/race.js:resultsHrefFor.
+ */
+export function resultsHrefFor(race: Race | null | undefined): string {
+  const j = race?.join;
+  if (!j?.contest || !j.value) return '/(tabs)/results';
+  const q = new URLSearchParams({ contest: j.contest, scope: j.value });
+  return `/(tabs)/results?${q.toString()}`;
+}
+
 /** A contest as GET /api/contests reports it — only the fields a race page needs. */
 export type ContestLite = { code: string; name: string; date?: string; states?: string[] };
 

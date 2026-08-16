@@ -14,7 +14,13 @@
   <style>
     .race-item { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
     a.race-item { text-decoration: none; color: inherit; }
-    button.race-item { width: 100%; text-align: left; }
+    /* `color: inherit` matters as much here as on the anchor: without it the
+       card inherits the BUTTON default, which is white — so every "Soon" race
+       rendered its title in white on a white card and only the grey description
+       was readable. Measured, not guessed: the h2 was 40px tall and invisible.
+       Same for `font`: the button default is bold, so the description and date
+       came out as heavy as the title they sit under. */
+    button.race-item { width: 100%; text-align: left; color: inherit; font: inherit; }
     .rc-body { flex: 1; min-width: 0; }
     .race-item h2 { margin: 0 0 2px; font-size: 1.05rem; border: 0; padding: 0; }
     .race-item .rc-desc { margin: 0; font-size: 0.85rem; color: var(--muted); }
@@ -22,6 +28,30 @@
     .rc-pill.live { background: var(--tint-ok); color: var(--link); }
     .rc-pill.soon { background: var(--tint); color: var(--muted); }
     .soon-msg { color: var(--text-warn); font-size: 0.85rem; margin: 8px 0 0; }
+
+    /* Filter chips. A radio group, not buttons: the browser gives keyboard
+       arrow-key movement and a single-selection contract for free, and the
+       checked state survives without any script. */
+    .rc-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+    .rc-filter input { position: absolute; opacity: 0; pointer-events: none; }
+    .rc-filter label { font-size: 0.82rem; font-weight: 600; padding: 6px 14px; border-radius: 999px;
+      background: var(--tint); color: var(--muted); border: 1px solid var(--border); cursor: pointer; }
+    .rc-filter input:checked + label { background: var(--green); color: #fff; border-color: var(--green); }
+    .rc-filter input:focus-visible + label { outline: 2px solid var(--link); outline-offset: 2px; }
+
+    .rc-group { margin-top: 22px; }
+    .rc-group > h2 { font-size: 0.72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--muted); border: 0; padding: 0; margin: 0 0 8px; }
+    .rc-empty { color: var(--muted); font-size: 0.85rem; margin: 0; }
+
+    /* The state list under Governorship — 36 seats is a directory, so it is
+       behind a disclosure rather than 36 cards on first paint. */
+    .rc-states { margin: 2px 0 10px; }
+    .rc-states summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--link); padding: 6px 0; }
+    .rc-sub { font-size: 0.75rem; color: var(--muted); margin: 8px 0 4px; }
+    .rc-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+    .rc-grid a { font-size: 0.82rem; padding: 6px 12px; border-radius: 999px; text-decoration: none;
+      background: var(--tint); color: var(--link); border: 1px solid var(--border); }
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -61,9 +91,11 @@
 <main class="wrap">
     <h1>Races</h1>
     <p class="lede">Pick a race to follow, report on, or verify.<button
-      class="info-i" data-info-title="Why some races say “Soon”"
-      data-info="We publish each race's page as its election nears — roughly 28 days out — so a race without a page yet simply isn't open for reporting. Listed in order: Presidency, Governorship, Senate, House of Representatives, State Assembly." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
-    <div id="races"></div>
+      class="info-i" data-info-title="How races are grouped"
+      data-info="Ongoing is an election being reported today. Upcoming is one whose polling day is still ahead. Completed is one whose polling day has passed — its page stays up, because the record is the point. Candidate lists appear on each race's page as INEC publishes them, roughly 28 days out." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
+
+    <div class="rc-filter" id="rc-filter" role="radiogroup" aria-label="Filter races by status"></div>
+    <div id="races"><p class="hint">Loading races…</p></div>
   </main>
 
   <footer class="gov-footer"><div class="wrap">
@@ -74,31 +106,160 @@
   </div></footer>
 
   <script>
-    // Canonical order: Presidency, Governorship, Senate, House of Reps, State Assembly.
-    // A race is "live" only once its page has been built (about 28 days out); the
-    // rest error politely on tap rather than 404.
-    const RACES = [
-      // `<race> (<year>)` — the app-wide naming convention. The entries below it
-      // are race CATEGORIES spanning many states and years, so they stay bare and
-      // carry their year in the pill instead.
-      { name: 'Presidency (2027)', desc: 'The declared presidential field, quick compare and live results.', href: 'candidates.html', live: true, pill: 'Live' },
-      { name: 'Governorship', desc: 'Osun 2026 is live now. Other states open closer to each election.', href: 'osun.html', live: true, pill: 'Osun 2026' },
-      { name: 'Senate', desc: '109 seats across 36 states and the FCT.', live: false },
-      { name: 'House of Representatives', desc: '360 federal constituencies.', live: false },
-      { name: 'State Houses of Assembly', desc: 'The 36 state legislatures.', live: false },
-    ];
+    /**
+     * Every race Hawkeye watches, grouped by where it sits in time.
+     *
+     * THE GROUPING IS DERIVED, NOT WRITTEN DOWN. Status comes from the polling
+     * date against today, so a race moves from upcoming to ongoing to completed
+     * on its own — the previous list said "Osun 2026 is live now" in prose, which
+     * was true for exactly one day and wrong from the next morning. The same rule
+     * runs on native (src/app/races.tsx).
+     *
+     * Two sources, because neither alone is complete:
+     *   /api/contests        the scheduled catalogue — the backend owns dates
+     *   political_data.json  races we have written pages for, including finished
+     *                        ones like Osun, which the catalogue no longer lists
+     */
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    document.getElementById('races').innerHTML = RACES.map((r, i) => r.live
-      ? `<a class="card race-item" href="${r.href}"><div class="rc-body"><h2>${esc(r.name)}</h2><p class="rc-desc">${esc(r.desc)}</p></div><span class="rc-pill live">${esc(r.pill)} ›</span></a>`
-      : `<button class="card race-item" type="button" data-i="${i}"><div class="rc-body"><h2>${esc(r.name)}</h2><p class="rc-desc">${esc(r.desc)}</p></div><span class="rc-pill soon">Soon</span></button>`
-    ).join('');
-    document.getElementById('races').addEventListener('click', (e) => {
-      const b = e.target.closest('button.race-item');
-      if (!b) return;
-      let m = b.querySelector('.soon-msg');
-      if (!m) { m = document.createElement('p'); m.className = 'soon-msg'; b.querySelector('.rc-body').appendChild(m); }
-      m.textContent = 'This race becomes available closer to the election — we publish each race page about 28 days out. Follow the presidency or Osun 2026 in the meantime.';
-    });
+    const GENERAL_ELECTION_YEAR = 2027;
+    const DESC = {
+      PRES: 'The declared presidential field, quick compare and live results.',
+      GOV: 'One governorship per state. Each state has its own page and map.',
+      SEN: '109 seats across 36 states and the FCT.',
+      REP: '360 federal constituencies.',
+      SHA: 'The 36 state legislatures.',
+    };
+    const ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
+    const fmt = (d) => new Date(`${d}T00:00:00`).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' });
+    /** Today at midnight — comparing dates, never instants, so a race is not
+     *  "completed" at 00:01 on the morning of its own polling day. */
+    const today = () => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; };
+    const dayOf = (d) => (d ? new Date(`${d}T00:00:00`) : null);
+
+    /**
+     * Where a race sits: completed / ongoing / upcoming.
+     *
+     * `open` alone cannot answer this — the backend's reportingOpen() is true
+     * from poll-open ONWARDS and never goes false again, so Osun would still
+     * read as open today. The polling DAY is what separates the three.
+     */
+    function statusOf(date) {
+      if (!date) return 'upcoming';           // a real race with no date yet is still ahead
+      const d = dayOf(date), t = today();
+      if (d < t) return 'completed';
+      if (d > t) return 'upcoming';
+      return 'ongoing';                        // polling day is today
+    }
+
+    /** `<race> (<year>)` — the app-wide naming convention. Mirrors results.html. */
+    const raceLabel = (c) => {
+      const year = Number(String(c.date || '').slice(0, 4)) || GENERAL_ELECTION_YEAR;
+      const where = Array.isArray(c.states) && c.states.length === 1 ? `${c.states[0]} ` : '';
+      return `${where}${c.name} (${year})`;
+    };
+
+    (async () => {
+      const [contests, political] = await Promise.all([
+        fetch('/api/contests').then((r) => r.json()).catch(() => []),
+        fetch('political_data.json').then((r) => r.json()).catch(() => ({})),
+      ]);
+
+      const items = [];
+
+      // The scheduled catalogue, in seat-magnitude order.
+      for (const c of [...contests].sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code))) {
+        items.push({
+          name: raceLabel(c),
+          desc: DESC[c.code] || '',
+          date: c.date,
+          status: statusOf(c.date),
+          // Presidency has a page; governorship has one PER STATE and expands
+          // below rather than linking anywhere itself; the rest have none yet.
+          href: c.code === 'PRES' ? 'candidates.html' : null,
+          states: c.code === 'GOV' ? (c.states || []) : null,
+        });
+      }
+
+      // Races we hold a written page for. A finished election leaves the
+      // catalogue — Osun is not in /api/contests any more — but its page stays
+      // up, because a record nobody can reach is not a record.
+      for (const [key, r] of Object.entries(political)) {
+        const j = r && r.join;
+        if (!j || !j.value || !r.date) continue;
+        const st = statusOf(r.date);
+        if (st !== 'completed') continue;   // live ones are already in the catalogue
+        items.push({
+          name: `${j.value} ${(political[key].office || '').includes('Governor') ? 'Governorship' : 'Race'} (${String(r.date).slice(0, 4)})`,
+          desc: r.stats && r.stats.candidates
+            ? `${r.stats.candidates} candidates · ${r.stats.lgas} LGAs · the full result, permanently.`
+            : 'The full result, permanently.',
+          date: r.date,
+          status: st,
+          href: key === 'raceOsun2026' ? 'osun.html' : `race.html?race=${encodeURIComponent(key)}`,
+        });
+      }
+
+      const GROUPS = [
+        ['ongoing', 'Being reported now', 'No election is being reported today. The next one is listed under Upcoming.'],
+        ['upcoming', 'Upcoming', 'Nothing scheduled.'],
+        ['completed', 'Completed', 'No election has been reported through Hawkeye yet.'],
+      ];
+
+      const stateList = (it, political) => {
+        const all = Object.keys(political.stateStats || {}).filter((s) => s !== 'FCT').sort();
+        const inCycle = new Set((it.states || []).map((s) => s.toLowerCase()));
+        const chip = (s) => `<a href="race.html?contest=GOV&amp;state=${encodeURIComponent(s)}">${esc(s)}</a>`;
+        const on = all.filter((s) => inCycle.has(s.toLowerCase()));
+        const off = all.filter((s) => !inCycle.has(s.toLowerCase()));
+        return `<details class="rc-states"><summary>Pick a state — all ${all.length} governorships</summary>
+          ${on.length ? `<p class="rc-sub">On the ${it.date ? fmt(it.date) : 'general-election'} ballot — ${on.length} states</p>
+            <div class="rc-grid">${on.map(chip).join('')}</div>` : ''}
+          ${off.length ? `<p class="rc-sub">Off-cycle — these states vote for governor separately, and Hawkeye has no date for them yet</p>
+            <div class="rc-grid">${off.map(chip).join('')}</div>` : ''}
+        </details>`;
+      };
+
+      const card = (it, i) => {
+        const when = it.date ? `<p class="rc-desc">${esc(fmt(it.date))}</p>` : '';
+        const body = `<div class="rc-body"><h2>${esc(it.name)}</h2><p class="rc-desc">${esc(it.desc)}</p>${when}</div>`;
+        if (it.href) {
+          const pill = it.status === 'completed' ? 'Result' : it.status === 'ongoing' ? 'Live' : 'Open';
+          return `<a class="card race-item" href="${esc(it.href)}">${body}<span class="rc-pill live">${pill} ›</span></a>`;
+        }
+        if (it.states) {
+          return `<div class="card"><div class="race-item">${body}<span class="rc-pill live">${it.states.length} states</span></div>${stateList(it, political)}</div>`;
+        }
+        return `<button class="card race-item" type="button" data-i="${i}">${body}<span class="rc-pill soon">Soon</span></button>`;
+      };
+
+      document.getElementById('races').innerHTML = GROUPS.map(([key, title, empty]) => {
+        const mine = items.filter((it) => it.status === key);
+        return `<section class="rc-group" data-status="${key}"><h2>${esc(title)}</h2>`
+          + (mine.length ? mine.map(card).join('') : `<p class="rc-empty">${esc(empty)}</p>`)
+          + '</section>';
+      }).join('');
+
+      // Filter chips, counted from what is actually on the page.
+      const counts = Object.fromEntries(GROUPS.map(([k]) => [k, items.filter((i) => i.status === k).length]));
+      const CHIPS = [['all', 'All', items.length], ...GROUPS.map(([k, t]) => [k, t === 'Being reported now' ? 'Ongoing' : t, counts[k]])];
+      document.getElementById('rc-filter').innerHTML = CHIPS.map(([k, label, n], i) => `
+        <input type="radio" name="rc-status" id="rc-${k}" value="${k}"${i === 0 ? ' checked' : ''}>
+        <label for="rc-${k}">${esc(label)} ${n}</label>`).join('');
+      document.getElementById('rc-filter').addEventListener('change', (e) => {
+        const want = e.target.value;
+        for (const s of document.querySelectorAll('.rc-group')) {
+          s.hidden = want !== 'all' && s.dataset.status !== want;
+        }
+      });
+
+      document.getElementById('races').addEventListener('click', (e) => {
+        const b = e.target.closest('button.race-item');
+        if (!b) return;
+        let m = b.querySelector('.soon-msg');
+        if (!m) { m = document.createElement('p'); m.className = 'soon-msg'; b.querySelector('.rc-body').appendChild(m); }
+        m.textContent = 'This race has no page yet — we publish each one as its election nears, about 28 days out, once INEC has released the candidate list. Follow the presidency or a governorship in the meantime.';
+      });
+    })();
   </script>
   <script src="tg.js?v=95"></script>
   <script src="menu.js?v=146"></script>

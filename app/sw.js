@@ -5,7 +5,7 @@
 // political_data.json forever; only a new CACHE name (activate drops the old
 // caches) makes it re-fetch. A candidate list that cannot reach installed users
 // is not published.
-const CACHE = 'hawkeye-v258';
+const CACHE = 'hawkeye-v259';
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every

@@ -1366,6 +1366,14 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
 .gov-disc-modal h2 { font-size: 1.05rem; margin: 0 0 10px; }
 .gov-disc-modal p { font-size: 0.9rem; line-height: 1.5; margin: 0 0 10px; }
 .gov-disc-modal a { color: var(--link); font-weight: 700; }
+/* Google Play badge. Their brand guidelines require CLEAR SPACE around it of at
+   least a quarter of the badge's height, and forbid altering the artwork — so no
+   background, border, radius or shadow of ours goes near it, which is exactly
+   what the .btn-accent class it replaces would have applied. */
+.play-badge-link { display: inline-block; padding: 14px 14px 14px 0; background: none;
+  border: 0; box-shadow: none; line-height: 0; }
+.play-badge-link img { display: block; height: 56px; width: auto; }
+
 .gov-disc-close {
   margin-top: 4px; width: 100%; border: 0; border-radius: 999px; padding: 12px;
   background: #008751; color: #fff; font-weight: 800; font-size: 0.95rem; cursor: pointer;

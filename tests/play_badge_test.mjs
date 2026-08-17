@@ -47,6 +47,12 @@ async function on(uaLabel, ua) {
       href: a ? a.getAttribute('href') : null,
       text: a ? a.textContent.trim() : null,
       isImage: a ? !!a.querySelector('img') : false,
+      imgAlt: a?.querySelector('img')?.getAttribute('alt') ?? null,
+      ratio: (() => {
+        const im = a?.querySelector('img');
+        return im && im.naturalHeight ? im.naturalWidth / im.naturalHeight : null;
+      })(),
+      hasButtonClass: a ? /btn-/.test(a.className) : false,
       opensNewTab: a ? a.getAttribute('target') === '_blank' && /noopener/.test(a.getAttribute('rel') || '') : false,
     };
   });
@@ -64,8 +70,10 @@ const a = await on('Android', ANDROID);
 check('the Play route is offered', a.shown, true);
 check('pointing at the right package', a.href, PLAY);
 check('opening safely in a new tab', a.opensNewTab, true);
-check('as a text link, since no official badge asset is present', a.isImage, false);
-check('and it reads as Play', a.text, (t) => /Google Play/.test(t));
+check('rendered as the official badge image', a.isImage, true);
+check('with alt text, since the badge carries the words as pixels', a.imgAlt, 'Get it on Google Play');
+check('unaltered aspect ratio (Google forbids redrawing it)', a.ratio, (r) => Math.abs(r - 646 / 250) < 0.02);
+check('and no button chrome of ours around it', a.hasButtonClass, false);
 
 console.log('\n=== iPhone — there is no iOS build ===');
 const i = await on('iPhone', IPHONE);

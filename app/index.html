@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=152" />
+  <link rel="stylesheet" href="styles.css?v=153" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -546,11 +546,16 @@
         // Swap in Google's OFFICIAL badge if it has been added. Drawing a
         // lookalike would breach their brand guidelines, so until the real PNG
         // is in place the text link stands — which their guidelines allow.
+        // Google's OFFICIAL badge (play.google.com/intl/en_us/badges), used
+        // unmodified and at its own aspect ratio — their brand guidelines forbid
+        // recolouring, cropping or redrawing it, and require clear space around
+        // it, which .play-badge-link provides. If the file is ever missing the
+        // text link stays, which their guidelines also allow.
         const badge = new Image();
         badge.onload = () => {
           play.textContent = '';
           badge.alt = 'Get it on Google Play';
-          badge.style.height = '52px';
+          badge.height = 56;
           badge.style.display = 'block';
           play.className = 'play-badge-link';
           play.appendChild(badge);

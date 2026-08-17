@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -233,10 +233,12 @@ export default function Results() {
   const insets = useSafeAreaInsets();
   const headerH = insets.top + HEADER_CONTENT_H;
 
-  /** ?contest=&scope= — set when a race screen sent the reader here. */
-  const { contest: linkContest, scope: linkScope } = useLocalSearchParams<{
+  /** ?contest=&scope= — set when a race screen or a Home card sent the reader
+   *  here. `n` is a per-tap nonce; see the applied-link effect below. */
+  const { contest: linkContest, scope: linkScope, n: linkNonce } = useLocalSearchParams<{
     contest?: string;
     scope?: string;
+    n?: string;
   }>();
 
   /** The full /api/contests list — the picker's only source of openness. */
@@ -292,13 +294,10 @@ export default function Results() {
     setContests(cs);
     // Seed only when the observer has not chosen for themselves — and prefer the
     // race a deep link asked for over this screen's own default.
-    // A contest named with NO scope means the whole election — that is what a
-    // Home card sends. Only a named scope resolves to a seat.
-    if (linkContest && !linkScope && cs.some((c) => c.code === linkContest)) {
-      setWholeContest((w) => w ?? linkContest);
-      return;
-    }
-    setRace((r) => r ?? deepLinkRace(linkContest, linkScope) ?? defaultRace(cs));
+    // Seeding for a visit that names nothing. A link is applied by the effect
+    // below instead, which can also act on a SECOND arrival — this one cannot,
+    // by design: `?? ` keeps whatever the reader has already chosen.
+    if (!linkContest) setRace((r) => r ?? defaultRace(cs));
   }, [linkContest, linkScope]);
 
   /**
@@ -307,6 +306,47 @@ export default function Results() {
    * a leaderboard cannot have.
    */
   const reqId = useRef(0);
+
+  /**
+   * APPLY A LINK EVERY TIME ONE ARRIVES, not just the first.
+   *
+   * This screen is a tab and stays mounted, so a second card tap only changes
+   * route params on a screen already showing something. Seeding is guarded with
+   * `?? ` so a race picked inside the screen survives — which also meant every
+   * card after the first was ignored and the reader stayed on whichever contest
+   * they opened first.
+   *
+   * The guard is a ref holding the last link APPLIED, keyed on the nonce as well
+   * as the params. Without the nonce, tapping the same card twice, or simply
+   * returning to this tab, is indistinguishable from doing nothing — and keying
+   * on focus alone would clobber a choice made here whenever the reader switched
+   * tabs and came back.
+   */
+  const appliedLink = useRef<string | null>(null);
+  const applyLink = useCallback(() => {
+    if (!contests.length || !linkContest) return;
+    const key = `${linkContest}|${linkScope ?? ''}|${linkNonce ?? ''}`;
+    if (appliedLink.current === key) return;
+    appliedLink.current = key;
+    if (!contests.some((c) => c.code === linkContest)) return;
+    // No scope means the whole election; a scope resolves to one seat.
+    if (!linkScope) {
+      setRace(null);
+      setWholeContest(linkContest);
+      return;
+    }
+    const r = deepLinkRace(linkContest, linkScope);
+    if (r) {
+      setWholeContest(null);
+      setRace(r);
+    }
+  }, [contests, linkContest, linkScope, linkNonce]);
+  // useFocusEffect, not useEffect: "apply the link when this screen is shown" is
+  // exactly what it means, and it fires on a return to the tab as well as on a
+  // params change. The nonce guard above is what keeps that safe — a return with
+  // unchanged params matches the applied key and does nothing, so a race picked
+  // here is not clobbered by switching tabs and coming back.
+  useFocusEffect(applyLink);
 
   const load = useCallback(async () => {
     const mine = ++reqId.current;

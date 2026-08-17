@@ -22,6 +22,7 @@ import { CaptureCamera } from '@/components/capture-camera';
 import { ContestPicker } from '@/components/contest-picker';
 import { NoElection } from '@/components/no-election';
 import { RekorAnchor } from '@/components/rekor-anchor';
+import { SheetReference } from '@/components/sheet-reference';
 import {
   envelopeText,
   mapAvailable,
@@ -2115,6 +2116,13 @@ export default function ReportResult() {
             <Text className="pb-3 text-sm text-muted">
               Copy the figures exactly as written on the sheet. Leave blank for parties not listed.
             </Text>
+            {/* THE SHEET COMES WITH THEM. Capture-first is deliberate — the EC8A
+                is the perishable thing and the tally can be typed later from
+                somewhere safer — but "somewhere safer" is precisely where the
+                sheet is no longer in front of the observer, and this step used
+                to say "copy the figures exactly as written on the sheet" while
+                showing no sheet. The photograph is already on the device. */}
+            {sheet ? <SheetReference uri={sheet.uri} /> : null}
             <TextInput
               className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Search party (APC, PDP, LP…)"

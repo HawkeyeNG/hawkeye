@@ -79,6 +79,39 @@
        an author display rule outranks the UA sheet's [hidden]{display:none}.
        Same trap as #media-cam and the profile/receipt modals. */
     #preview-sheet[hidden], #preview-venue[hidden] { display: none; }
+    /* The sheet, referenced while the figures are typed. [hidden] first, for the
+       same reason as the previews above: an author `display` beats the UA rule. */
+    .sheet-ref[hidden] { display: none; }
+    .sheet-ref {
+      display: block; width: 100%; margin: 0 0 10px; padding: 0; overflow: hidden;
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      font: inherit; color: var(--muted); text-align: left; cursor: zoom-in;
+    }
+    .sheet-ref img { display: block; width: 100%; height: 108px; object-fit: cover; }
+    .sheet-ref span { display: block; padding: 8px 12px; font-size: .78rem; }
+    /* Full-screen viewer. Black field so the paper is the only thing lit, and the
+       image is free to overflow its box so the browser's own pinch-zoom and the
+       scroll container both have somewhere to go. */
+    #sheet-zoom[hidden] { display: none; }
+    #sheet-zoom {
+      position: fixed; inset: 0; z-index: 1000; background: #000;
+      display: flex; align-items: center; justify-content: center;
+      overflow: auto; touch-action: pinch-zoom;
+    }
+    #sheet-zoom img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    /* Tapped once more: 250% and scrollable, for reading a dense grid on a phone
+       where a pinch is awkward one-handed. */
+    #sheet-zoom.big { align-items: flex-start; justify-content: flex-start; }
+    #sheet-zoom.big img { max-width: none; max-height: none; width: 250%; cursor: zoom-out; }
+    #sheet-zoom .zoom-x {
+      position: fixed; top: max(12px, env(safe-area-inset-top)); right: 14px; z-index: 1;
+      width: 44px; height: 44px; border-radius: 999px; border: 0;
+      background: rgba(0,0,0,.6); color: #fff; font-size: 1.3rem; line-height: 1; cursor: pointer;
+    }
+    #sheet-zoom .zoom-tip {
+      position: fixed; left: 0; right: 0; bottom: max(14px, env(safe-area-inset-bottom));
+      text-align: center; color: rgba(255,255,255,.7); font-size: .75rem; pointer-events: none;
+    }
     #preview-sheet, #preview-venue {
       display: block; max-height: 26vh; max-width: 100%;
       width: auto; height: auto; object-fit: contain;
@@ -347,6 +380,17 @@
           <h2 style="display:inline-block;margin:0"><span class="step-no">4</span> The Announced Counts</h2>
           <span id="counts-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
+        <!-- THE SHEET, WHERE THE FIGURES ARE TYPED. Capture comes first because
+             the EC8A is the perishable thing; but by the time an observer is
+             typing they have usually left the crowd, and their photo was two
+             collapsed steps up the page. This is the same photo, in reach, and
+             enlargeable — an EC8A is a dense grid and a thumbnail proves one
+             exists without letting anyone read a number off it. Twin of
+             native/src/components/sheet-reference.tsx. -->
+        <button type="button" id="counts-sheet" class="sheet-ref" hidden>
+          <img id="counts-sheet-img" alt="Your photo of the result sheet" />
+          <span>Your result sheet — tap to enlarge and read the figures off it.</span>
+        </button>
         <!-- ~20 parties, three-line names: the list is taller than the screen and
              finding one meant scrolling past all of it. Native has had this
              filter; web/Capacitor did not. -->
@@ -383,6 +427,14 @@
       <button id="btn-another" class="secondary">Report Another Unit</button>
     </section>
   </main>
+
+  <!-- The sheet, full screen. Outside <main> so it can sit over everything, and
+       inert until the reference button above opens it. -->
+  <div id="sheet-zoom" hidden>
+    <button type="button" class="zoom-x" id="sheet-zoom-x" aria-label="Close the sheet">&times;</button>
+    <img id="sheet-zoom-img" alt="Your photo of the result sheet" />
+    <p class="zoom-tip">Pinch or tap the sheet to zoom · drag to move</p>
+  </div>
 
   <!-- Camera: opens only when a "Take photo" button is pressed -->
   <div id="camera-overlay" hidden>
@@ -427,7 +479,7 @@
        sheet. Must load before app.js, which calls into it. -->
   <script src="pu-code.js?v=3"></script>
   <script src="capture.js?v=1"></script>
-  <script src="app.js?v=149" defer></script>
+  <script src="app.js?v=150" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="menu.js?v=148" defer></script>
 </body>

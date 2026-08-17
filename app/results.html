@@ -74,10 +74,13 @@
   <meta name="twitter:card" content="summary_large_image" />
   <script src="authgate.js?v=2"></script>
   <script src="map-label.js?v=2"></script>
+  <!-- For window.followSubject — the Follow button here and the one on a race
+       page describe their subscriptions with the same words, from one place. -->
+  <script src="follow.js?v=1"></script>
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
-  <script src="race.js?v=13"></script>
+  <script src="race.js?v=14"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -172,7 +175,10 @@
       .race-pick .race-ico { flex: none; font-size: .95rem; }
       .race-pick #race-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .race-change { flex: none; font-size: .8rem; font-weight: 800; color: var(--link); }
-      .race-card .updated { margin: 6px 2px 0; font-size: .82rem; color: var(--muted, #5b6b62); }
+      /* Indented to the race card's own 14px padding so it starts under the
+         badge, not out at the page margin — it is a caption for the card above
+         it, and a near-flush 2px read as an unrelated line. */
+      .race-card .updated { margin: 6px 0 0 14px; font-size: .82rem; color: var(--muted, #5b6b62); }
       #race-list { display: flex; flex-direction: column; gap: 8px; }
       .race-opt {
         width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
@@ -566,10 +572,23 @@
         <div><p class="hint" style="margin:0 0 6px">Most-reporting ${word}s (units)</p>${bars}</div>`;
     }
 
-    async function loadGaps(contest) {
+    /**
+     * @param region  the state the board is cropped to, if any. GAPS FOLLOW THE
+     *   CROP: asking contest-wide under a board cropped to one state printed "0
+     *   of 28 states ... Abia, Adamawa, Akwa Ibom" while the reader was looking
+     *   at Jigawa — recruiting them to cover 27 states running a different race.
+     *   Narrowed, the server answers in that state's own LGAs.
+     */
+    async function loadGaps(contest, region) {
       try {
-        const g = await fetch(`/api/coverage/gaps?contest=${contest}`).then((r) => r.json());
+        const url = `/api/coverage/gaps?contest=${encodeURIComponent(contest)}`
+          + (region ? `&region=${encodeURIComponent(region)}` : '');
+        const r = await fetch(url);
         const card = document.getElementById('gaps-card');
+        // An unknown region is a 404, not an empty list — hide rather than leave
+        // the previous crop's places on screen under this one's heading.
+        if (!r.ok) { card.hidden = true; return; }
+        const g = await r.json();
         if (!g.missing || !g.missing.length) { card.hidden = true; return; }
         // The noun follows the contest's LEVEL, and the server names it — a
         // governorship's gaps are LGAs inside its own state, and a Senate
@@ -579,8 +598,10 @@
         // The PLURAL comes from the server too: `unit + 's'` printed "federal
         // constituencys" on the House board.
         const units = g.unitPlural || `${unit}s`;
-        const where = g.scope && g.scope.state ? ` in ${g.scope.state}` : '';
-        document.getElementById('gaps-title').textContent = `Help cover these ${units}`;
+        const place = (g.scope && (g.scope.region || g.scope.state)) || '';
+        const where = place ? ` in ${place}` : '';
+        document.getElementById('gaps-title').textContent =
+          place ? `Help cover ${place}` : `Help cover these ${units}`;
         document.getElementById('gaps-hint').innerHTML =
           `These ${units}${where} have no reports yet for this election. Voting or observing in one? Be the first. `
           + `<a href="observe.html?intent=observe">Become an observer →</a>`;
@@ -664,9 +685,29 @@
     // job of naming the region to follow.
     document.getElementById('sel-scope').addEventListener('change', (e) => {
       const sel = e.target;
-      if (sel.value === '__all') { STATE_CROP = null; sel.value = ''; refresh(); return; }
+      if (sel.value === '__all') { STATE_CROP = null; sel.value = ''; paintFollowBtn(); refresh(); return; }
       if (sel.dataset.canCrop && sel.value) { STATE_CROP = sel.value; refresh(); }
+      paintFollowBtn();
     });
+
+    /**
+     * SAY WHAT THE BUTTON WOULD ACTUALLY FOLLOW.
+     *
+     * It read "🔔 Follow" against a scope picker defaulting to "Everywhere", so
+     * on the Senate board it silently meant all 109 districts — the newsroom
+     * subscription, offered as if it were "my senator". A region picked here
+     * names itself; "Everywhere" names the whole election, which is a real
+     * choice and now looks like one. Following a SINGLE race without hunting
+     * through this picker is on the race's own page.
+     */
+    function paintFollowBtn() {
+      const contest = document.getElementById('sel-contest').value;
+      const scope = document.getElementById('sel-scope').value;
+      const subject = scope && scope !== '__all'
+        ? scope
+        : (window.followSubject ? window.followSubject(contest, '') : 'this race');
+      document.getElementById('btn-follow').textContent = `🔔 Follow ${subject}`;
+    }
 
     function togglePicker(open) {
       const panel = document.getElementById('race-picker');
@@ -679,7 +720,7 @@
 
     async function refresh() {
       const contest = document.getElementById('sel-contest').value || 'PRES';
-      loadGaps(contest);
+      loadGaps(contest, STATE_CROP);
       const picked = CONTESTS.find((c) => c.code === contest);
       document.getElementById('race-name').textContent = raceLabel(picked);
       renderRaceList(contest);
@@ -730,6 +771,9 @@
         `<option value="">${anywhere}</option>${back}`
         + [...names].sort().map((n) => `<option>${n}</option>`).join('');
       document.getElementById('sel-scope').dataset.canCrop = canCrop ? '1' : '';
+      // The options were just rebuilt, so the selection may have reset — relabel
+      // from what the picker now actually says.
+      paintFollowBtn();
       renderMap(data);
       document.getElementById('updated').textContent = data.unitsReporting > 0
         ? `${data.unitsReporting} unit(s) reporting · updated ${new Date(data.updatedAt).toLocaleTimeString()}`
@@ -874,8 +918,11 @@
         method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
         body: JSON.stringify({ contest, state: scope }),
       });
+      // Names the same subject the button does — "everywhere" left the reader to
+      // work out what they had just signed up for.
+      const subject = scope || (window.followSubject ? window.followSubject(contest, '') : 'this race');
       msg.textContent = r.ok
-        ? `🔔 Following ${scope || 'everywhere'}. You'll be alerted on every new report (Telegram or WhatsApp, your choice, plus the in-app feed).`
+        ? `🔔 Following ${subject}. You'll be alerted on every new report (Telegram or WhatsApp, your choice, plus the in-app feed).`
         : 'Could not set up following — make sure your phone is verified.';
     };
   </script>

@@ -251,7 +251,11 @@ export function ContestPicker({
   if (needsState && !effectiveState) {
     const options = statesFor(type.code);
     const stateHasOpen = (s: StateName) => listRaces(type.code, s).some(isOpen);
-    const shown = onlyOpen ? options.filter(stateHasOpen) : options;
+    // A state with no COVERED race is not a browsable option either. Turning off
+    // "open races only" is meant to reveal races Hawkeye covers but that are not
+    // open yet — not races it does not collect at all.
+    const stateHasCovered = (s: StateName) => listRaces(type.code, s).some((r) => !!match(r));
+    const shown = options.filter(onlyOpen ? stateHasOpen : stateHasCovered);
     return (
       <View>
         {filterToggle}
@@ -311,7 +315,15 @@ export function ContestPicker({
   // ── Stage 3b: the concrete races for this type (+ state). One row for GOV/PRES,
   // a list for SEN/REP. ──
   const races = listRaces(type.code, effectiveState ?? undefined);
-  const shown = onlyOpen ? races.filter(isOpen) : races;
+  // NEVER OFFER A RACE NO CONTEST COVERS. listRaces() enumerates the whole
+  // constitutional catalogue — all 36 governorships, all 109 districts — while
+  // /api/contests says which of them Hawkeye is actually collecting. The 2027
+  // governorship runs in 28 states, so the other eight were being offered here
+  // and led to a board that could only ever say "Not covered yet": Osun's
+  // governorship is off-cycle and was appearing, wrongly, as "Osun Governorship
+  // (2027)" — a race that does not exist. Same rule the results screen already
+  // applies before offering to re-rank the board.
+  const shown = races.filter(onlyOpen ? isOpen : (r) => !!match(r));
   return (
     <View>
       {filterToggle}

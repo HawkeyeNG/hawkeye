@@ -242,7 +242,7 @@
                NO HOMEMADE BADGE ARTWORK. Google's badge is a trademark with its
                own brand guidelines, and a lookalike drawn here would breach them;
                a plain text link to the listing is expressly allowed. Drop the
-               official PNG at app/badges/google-play.png and the script below
+               official PNG at app/play-badge.png and the script below
                swaps it in on its own. -->
           <a class="btn-accent" id="play-cta" hidden rel="noopener" target="_blank"
              href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer">Get it on Google Play ↗</a>
@@ -560,7 +560,7 @@
           play.className = 'play-badge-link';
           play.appendChild(badge);
         };
-        badge.src = 'badges/google-play.png';
+        badge.src = 'play-badge.png';
       }
       // Samsung Internet's PWA install is blocked by Play Protect ("built for an
       // older version of Android") — its wrapper, not our site; the same manifest

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Linking, Modal, Pressable, Text, View } from 'react-native';
+import { Linking, Pressable, Text, View } from 'react-native';
+
+import { ModalCard } from '@/components/modal-card';
 
 /**
  * Google Play "Misleading Claims" compliance (Capacitor app rejection,
@@ -35,34 +37,26 @@ export function GovDisclaimer() {
         </Text>
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        {/* Backdrop tap closes; inner Pressable swallows the tap so the card stays. */}
-        <Pressable
-          onPress={() => setOpen(false)}
-          className="flex-1 items-center justify-center bg-black/50 px-6"
-        >
-          <Pressable onPress={() => {}} className="w-full max-w-md rounded-2xl bg-card p-5">
-            <Text className="pb-2 text-lg font-bold text-ink">Not a government service</Text>
-            <Text className="pb-3 text-sm leading-5 text-ink">
-              Hawkeye is an independent, citizen-run transparency tool. It is not affiliated with,
-              endorsed by, or acting on behalf of INEC or any government entity, and it does not
-              declare election results. Figures here are unofficial crowd reports. Official results
-              and electoral information come from INEC:
-            </Text>
-            <View className="flex-row gap-4 pb-4">
-              <Pressable onPress={() => Linking.openURL('https://www.inecnigeria.org')}>
-                <Text className="text-sm font-bold text-good-ink underline">inecnigeria.org</Text>
-              </Pressable>
-              <Pressable onPress={() => Linking.openURL('https://www.inecelectionresults.ng')}>
-                <Text className="text-sm font-bold text-good-ink underline">inecelectionresults.ng</Text>
-              </Pressable>
-            </View>
-            <Pressable onPress={() => setOpen(false)} className="rounded-full bg-good py-3">
-              <Text className="text-center text-sm font-bold text-good-ink">Close</Text>
-            </Pressable>
+      {/* Through ModalCard so the statement and its official links stay
+          reachable on a small screen. This is a Play compliance notice — a
+          reader must be able to get to the whole of it and to the INEC links,
+          which sit at the BOTTOM of the text. */}
+      <ModalCard visible={open} onClose={() => setOpen(false)} title="Not a government service">
+        <Text className="pb-3 text-sm leading-5 text-ink">
+          Hawkeye is an independent, citizen-run transparency tool. It is not affiliated with,
+          endorsed by, or acting on behalf of INEC or any government entity, and it does not
+          declare election results. Figures here are unofficial crowd reports. Official results
+          and electoral information come from INEC:
+        </Text>
+        <View className="flex-row gap-4">
+          <Pressable onPress={() => Linking.openURL('https://www.inecnigeria.org')}>
+            <Text className="text-sm font-bold text-good-ink underline">inecnigeria.org</Text>
           </Pressable>
-        </Pressable>
-      </Modal>
+          <Pressable onPress={() => Linking.openURL('https://www.inecelectionresults.ng')}>
+            <Text className="text-sm font-bold text-good-ink underline">inecelectionresults.ng</Text>
+          </Pressable>
+        </View>
+      </ModalCard>
     </>
   );
 }

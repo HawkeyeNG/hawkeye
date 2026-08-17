@@ -7,6 +7,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -101,7 +102,12 @@ export function ReportContent({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="flex-1 justify-end bg-black/40"
         >
-          <View className="rounded-t-3xl bg-surface px-5 pb-8 pt-5">
+          {/* CAPPED, and the middle scrolls. Six reasons plus a multiline box
+              plus two buttons does not fit a small phone with the keyboard up —
+              "Send report" was the part that went off the bottom, which is the
+              one control this sheet exists for. Header and actions stay put; the
+              list between them scrolls. Same shape practice.tsx already uses. */}
+          <View className="rounded-t-3xl bg-surface px-5 pb-8 pt-5" style={{ maxHeight: '90%' }}>
             <View className="flex-row items-center pb-3">
               <Text className="flex-1 text-lg font-bold text-ink">Report This Content</Text>
               <Pressable
@@ -116,6 +122,7 @@ export function ReportContent({
               Tell us what is wrong with it. A moderator reviews every report.
             </Text>
 
+            <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
             {REASONS.map((r) => (
               <Pressable
                 key={r.key}
@@ -151,6 +158,7 @@ export function ReportContent({
             {msg ? (
               <Text className="pt-2 text-sm font-semibold text-warn-ink">{msg}</Text>
             ) : null}
+            </ScrollView>
 
             <Pressable
               disabled={!reason || busy}

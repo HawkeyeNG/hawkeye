@@ -260,6 +260,8 @@ export default function Results() {
    *  are NOT the same thing — see `load` and `selectRace`. */
   const contestCode = contest?.code ?? null;
   const raceKey = race?.key ?? null;
+  /** The state to crop the board to, or null for a race with no state (PRES). */
+  const raceState = race?.state ?? null;
 
   const loadContests = useCallback(async () => {
     const cs = await api.contests().catch(() => null);
@@ -298,7 +300,11 @@ export default function Results() {
       return;
     }
     const [n, p, g] = await Promise.all([
-      api.national(contestCode).catch(() => null),
+      // CROP TO THE RACE'S STATE. Fetched nationwide, `subunits` comes back as
+      // all 109 senatorial districts (or 37 states), which is why an Imo East
+      // board drew the whole federation with one outline highlighted instead of
+      // Imo's three districts. The server crops and subdivides when asked.
+      api.national(contestCode, raceState ? { state: raceState } : undefined).catch(() => null),
       api.parties().catch(() => [] as Party[]),
       fetch(`${BASE}/api/coverage/gaps?contest=${encodeURIComponent(contestCode)}`)
         .then((r) => (r.ok ? (r.json() as Promise<Gaps>) : null))
@@ -316,7 +322,7 @@ export default function Results() {
     // "updated HH:MM:SS" keeps telling the truth about when that was. Same for
     // gaps — null there means the request failed, not that no states are missing.
     if (g) setGaps(g);
-  }, [contestCode, raceKey, contests.length, loadContests]);
+  }, [contestCode, raceKey, raceState, contests.length, loadContests]);
 
   useEffect(() => {
     load();
@@ -463,8 +469,22 @@ export default function Results() {
     return matchRegion(level, scope, regionsOf(data), (r) => r.region);
   }, [data, scope, level]);
 
+  /**
+   * The board is cropped to EXACTLY this race's own region.
+   *
+   * A governorship's region IS its state, so cropping to that state makes the
+   * server's contest-wide totals this race's totals — and its per-region rows
+   * become LGAs, among which nothing is named "Osun". Reading `region` there
+   * would find no match and rank a real election as empty. A senatorial race is
+   * one district INSIDE the state crop, so it still ranks on its own region row.
+   */
+  const croppedToRace = useMemo(() => {
+    const cropped = data?.scope?.state;
+    return !!cropped && !!scope && regionKey('state', cropped) === regionKey('state', scope);
+  }, [data, scope]);
+
   const rows: Row[] = useMemo(() => {
-    const raw = scope
+    const raw = scope && !croppedToRace
       ? Object.entries(region?.votes ?? {}).map(([party, votes]) => ({ party, votes }))
       : (data?.national ?? []).map((r) => ({ party: r.party, votes: r.votes }));
     const ranked = raw.filter((r) => r.votes > 0).sort((a, b) => b.votes - a.votes);
@@ -477,7 +497,7 @@ export default function Results() {
       votes: r.votes,
       share: r.votes / total,
     }));
-  }, [data, region, scope, parties]);
+  }, [data, region, scope, croppedToRace, parties]);
 
   /** Units behind the board actually on screen — scoped when the board is. */
   const unitsReporting = scope ? (region?.unitsReporting ?? 0) : (data?.unitsReporting ?? 0);
@@ -541,8 +561,12 @@ export default function Results() {
     // client-side narrowing by contest.states only worked while gaps were always
     // states; it would have filtered LGA names against a list of state names and
     // emptied the card.
-    const unit = gaps.unit === 'LGA' ? 'LGA' : 'state';
-    const scoped = gaps.unit === 'LGA' || gaps.scope?.state;
+    // The server names the noun now — "state", "LGA", "senatorial district",
+    // "federal constituency" — instead of the client picking between two. A
+    // Senate board said "Help cover these states" and counted 37 of them for an
+    // election fought in 109 districts.
+    const unit = gaps.unit || 'state';
+    const scoped = unit !== 'state' || gaps.scope?.state;
     const only = !scoped && contest?.states?.length ? contest.states : null;
     const missing = only ? gaps.missing.filter((s) => only.includes(s)) : gaps.missing;
     const total = only ? only.length : gaps.statesTotal;
@@ -979,7 +1003,7 @@ export default function Results() {
           {racePageHref ? (
             <Pressable
               onPress={() => router.push(racePageHref as never)}
-              className="mt-2.5 items-center rounded-xl border border-good-ink py-2.5 active:opacity-70"
+              className="mt-2.5 items-center rounded-xl border border-good-ink px-3.5 py-2.5 active:opacity-70"
             >
               <Text className="text-xs font-bold text-good-ink" numberOfLines={1}>
                 View the {regionLabel(inspect?.name ?? '')} race →
@@ -989,7 +1013,7 @@ export default function Results() {
           {jump ? (
             <Pressable
               onPress={() => selectRace(jump)}
-              className="mt-2.5 items-center rounded-xl bg-hawk-green py-2.5 active:opacity-80"
+              className="mt-2.5 items-center rounded-xl bg-hawk-green px-3.5 py-2.5 active:opacity-80"
             >
               <Text className="text-xs font-bold text-hawk-gold" numberOfLines={1}>
                 Rank {raceLabel(jump, contests)} instead
@@ -1067,14 +1091,25 @@ export default function Results() {
               color={following ? BRAND.leaf : BRAND.gold}
             />
           )}
+          {/* THE LABEL MUST NOT BE THE FLEXIBLE ONE. It carried `flex-1`, which
+              in React Native means basis 0 AND shrink — so the sibling took its
+              full natural width and the label collapsed to a single character
+              per line, printing "Follow this race" as a vertical column of
+              letters. It only showed up on long region names ("Benue
+              North-East"); short ones left just enough room to look fine.
+              The label now takes its own width, and the line that varies in
+              length is the one allowed to flex and wrap. */}
           <Text
-            className={`flex-1 pl-3 text-sm font-bold ${
+            className={`pl-3 text-sm font-bold ${
               following ? 'text-hawk-leaf' : 'text-hawk-gold'
             }`}
           >
             {following ? 'Following this race' : 'Follow this race'}
           </Text>
-          <Text className={`text-xs ${following ? 'text-faint' : 'text-emerald-200'}`}>
+          <Text
+            className={`flex-1 pl-3 text-right text-xs ${following ? 'text-faint' : 'text-emerald-200'}`}
+            numberOfLines={2}
+          >
             {following
               ? followsEverywhere
                 ? 'Alerts on · every state'

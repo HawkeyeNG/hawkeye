@@ -246,6 +246,18 @@ export default function Results() {
   const [race, setRace] = useState<Race | null>(null);
   const [picking, setPicking] = useState(false);
 
+  /**
+   * A WHOLE CONTEST, with no seat chosen inside it — "Senate (2027)", not "Abia
+   * Central". This screen could only ever be about one seat, so a card that
+   * meant "show me the Senate" had to pick a race, and the first one
+   * alphabetically is Abia Central: every contest card on Home landed there,
+   * ranking one district of 109 and highlighting Abia on the map.
+   *
+   * With this set the board ranks the contest-wide totals and the map draws
+   * every region of it. Choosing a seat from the picker clears it.
+   */
+  const [wholeContest, setWholeContest] = useState<string | null>(null);
+
   const [data, setData] = useState<National | null>(null);
   const [parties, setParties] = useState<Party[]>([]);
   const [gaps, setGaps] = useState<Gaps | null>(null);
@@ -259,12 +271,19 @@ export default function Results() {
 
   /** The contest the selected race resolves to — null when Hawkeye does not
    *  collect this race yet, which the empty state has to say out loud. */
-  const contest = useMemo(() => matchContest(race, contests), [race, contests]);
-  const scope = useMemo(() => scopeOf(race), [race]);
+  const contest = useMemo(
+    () => (wholeContest ? contests.find((c) => c.code === wholeContest) : matchContest(race, contests)),
+    [race, contests, wholeContest],
+  );
+  // Empty scope on a whole-contest view: the board then ranks `data.national`
+  // and nothing on the map is singled out.
+  const scope = useMemo(() => (wholeContest ? '' : scopeOf(race)), [race, wholeContest]);
   /** What the fetch is actually keyed by, and what the board is keyed by. They
    *  are NOT the same thing — see `load` and `selectRace`. */
   const contestCode = contest?.code ?? null;
-  const raceKey = race?.key ?? null;
+  // `load` keys on this so a selection always refetches; a whole-contest view has
+  // no race, so the contest code stands in for it.
+  const raceKey = race?.key ?? (wholeContest ? `ALL:${wholeContest}` : null);
 
   const loadContests = useCallback(async () => {
     const cs = await api.contests().catch(() => null);
@@ -273,6 +292,12 @@ export default function Results() {
     setContests(cs);
     // Seed only when the observer has not chosen for themselves — and prefer the
     // race a deep link asked for over this screen's own default.
+    // A contest named with NO scope means the whole election — that is what a
+    // Home card sends. Only a named scope resolves to a seat.
+    if (linkContest && !linkScope && cs.some((c) => c.code === linkContest)) {
+      setWholeContest((w) => w ?? linkContest);
+      return;
+    }
     setRace((r) => r ?? deepLinkRace(linkContest, linkScope) ?? defaultRace(cs));
   }, [linkContest, linkScope]);
 
@@ -429,6 +454,10 @@ export default function Results() {
       // in the window before the effect's own fetch claims the id.
       reqId.current++;
     }
+    // Picking a seat leaves the whole-contest view — the board is about that
+    // seat now, and leaving the flag set would keep ranking the whole election
+    // under the seat's name.
+    setWholeContest(null);
     setRace(r);
     setPicking(false);
   };
@@ -847,16 +876,22 @@ export default function Results() {
   const racePageHref = useMemo(() => {
     const name = inspect?.name && String(inspect.name).replace(/\s*\(.*\)$/, '').trim();
     if (!name) return null;
+    // Keyed on the CONTEST, not on the selected race's type. A whole-contest
+    // board has no selected race, and that is exactly the screen where tapping a
+    // region to reach its page matters most — the national map of 109 districts.
     // Every senatorial district and federal constituency has its own screen,
-    // built from the register — which is what makes a national map of 109
-    // districts worth tapping.
-    if (raceType === 'SEN' && level === 'senatorial') {
+    // built from the register.
+    if (contestCode === 'SEN' && level === 'senatorial') {
       return `/race?contest=SEN&seat=${encodeURIComponent(name)}`;
     }
-    if (raceType === 'REP' && level === 'federal') {
+    if (contestCode === 'REP' && level === 'federal') {
       return `/race?contest=REP&seat=${encodeURIComponent(name)}`;
     }
-    if (raceType !== 'GOV' || level !== 'state') return null;
+    // SHA is deliberately absent: state-assembly constituencies are not in the
+    // register at all, so its board is drawn by LGA and an LGA has no seat page
+    // to go to. PRES is one national race — a state is a breakdown of it, not a
+    // race of its own.
+    if (contestCode !== 'GOV' || level !== 'state') return null;
     // The FCT is on every state map and has no governor — it is run by a
     // minister, so it is excluded here as it is everywhere else.
     if (/^fct$/i.test(name)) return null;
@@ -864,7 +899,7 @@ export default function Results() {
     return known
       ? `/race?key=${encodeURIComponent(known.key)}`
       : `/race?contest=GOV&state=${encodeURIComponent(name)}`;
-  }, [raceType, level, inspect, political]);
+  }, [contestCode, level, inspect, political]);
 
   /**
    * Tap targets that actually work. A federal constituency is a few pixels wide
@@ -1194,9 +1229,12 @@ export default function Results() {
           <Text className="flex-1 px-2.5 text-sm font-semibold text-ink" numberOfLines={1}>
             {picking
               ? 'Keep the current race'
-              : race
-                ? raceLabel(race, contests)
-                : 'Choose a race'}
+              : wholeContest && contest
+                // The whole election, named the way every other surface names it.
+                ? `${contest.name} (${Number(String(contest.date ?? '').slice(0, 4)) || 2027})`
+                : race
+                  ? raceLabel(race, contests)
+                  : 'Choose a race'}
           </Text>
           <Text className="text-xs font-bold text-hawk-leaf">{picking ? 'Cancel' : 'Change'}</Text>
         </Pressable>

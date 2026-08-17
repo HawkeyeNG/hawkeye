@@ -26,8 +26,22 @@ function cardHref(c: Contest): string {
   if (c.code === 'GOV' && c.states?.length === 1) {
     return `/race?contest=GOV&state=${encodeURIComponent(c.states[0])}`;
   }
+  // The contest's OWN national board — all 37 states for a governorship, all 109
+  // districts for the Senate. Without `scope` the results screen used to seed
+  // itself with whichever seat sorted first, so every one of these cards landed
+  // on Abia.
   return `/(tabs)/results?contest=${encodeURIComponent(c.code)}`;
 }
+
+/**
+ * Seat magnitude: Presidency, Governorship, Senate, House of Representatives,
+ * State Assembly — the order used everywhere else (races.html, the leaderboard
+ * picker, menu.js:RACE_ORDER). /api/contests returns catalogue order, which put
+ * the two National Assembly cards above the governorship here and nowhere else.
+ */
+const CARD_ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
+const orderedContests = (cs: Contest[] | null) =>
+  [...(cs ?? [])].sort((a, b) => CARD_ORDER.indexOf(a.code) - CARD_ORDER.indexOf(b.code));
 
 /**
  * The card's headline. `election` alone is ambiguous where two contests share
@@ -250,7 +264,7 @@ export default function Home() {
         </View>
       ) : null}
 
-      {contests?.map((c) => (
+      {orderedContests(contests).map((c) => (
         <Pressable
           key={c.code}
           className="mb-3 overflow-hidden rounded-3xl bg-hawk-green active:opacity-90"

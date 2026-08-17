@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db, contests, contestCodes } from '../db.js';
-import { reportingOpen, reportingOpensAt } from '../services/scope.js';
+import { LEVEL_COLS, regionLevelFor, reportingOpen, reportingOpensAt } from '../services/scope.js';
 
 export const nationalRouter = Router();
 
@@ -10,19 +10,9 @@ nationalRouter.get('/contests', (_req, res) => res.json(
   contests.map((c) => ({ ...c, open: reportingOpen(c), opensAt: reportingOpensAt(c) })),
 ));
 
-// Which region a contest divides into, and the polling_units column that keys it.
-// This is the NATIONWIDE shape — used when a contest is not confined to one state.
-const LEVEL = {
-  PRES: { level: 'state', col: 'state' },
-  GOV: { level: 'state', col: 'state' },
-  // Was `col: 'state'` while claiming level 'lga' — it labelled the level LGA but
-  // bucketed by STATE, which is why the map painted every LGA in a state one flat
-  // colour. State-assembly constituencies are genuinely absent from the register
-  // (services/scope.js says so), so LGA is the honest finest grain for SHA.
-  SHA: { level: 'lga', col: 'lga' },
-  SEN: { level: 'senatorial', col: 'senatorial' },
-  REP: { level: 'federal', col: 'federal_constituency' },
-};
+// The level tables MOVED to services/scope.js. They were duplicated here only,
+// so /api/coverage/gaps could not use them and counted states for a Senate
+// election. See scope.js:regionLevelFor.
 
 // A contest that runs in exactly ONE state is not a national contest, and a board
 // showing all 36 other states is answering a question nobody asked. Crop to that
@@ -32,25 +22,6 @@ const LEVEL = {
 // not join to the register — 225 of Osun's 332 wards have no match, because the
 // two sources use different naming systems entirely. A ward map would be
 // two-thirds blank or, worse, confidently wrong.
-/**
- * The register column behind each level name — the ONLY source of the identifier
- * that gets interpolated into the tally SQL. `?level=` is checked against these
- * keys, so a caller can choose a breakdown without ever choosing a column name.
- */
-const LEVEL_COLS = {
-  state: 'state',
-  lga: 'lga',
-  senatorial: 'senatorial',
-  federal: 'federal_constituency',
-};
-
-const SCOPED = {
-  PRES: { level: 'lga', col: 'lga' },
-  GOV: { level: 'lga', col: 'lga' },
-  SHA: { level: 'lga', col: 'lga' },
-  SEN: { level: 'senatorial', col: 'senatorial' },
-  REP: { level: 'federal', col: 'federal_constituency' },
-};
 
 /** The single state a contest is confined to, or null if it is nationwide. */
 const soleState = (code) => {
@@ -97,7 +68,7 @@ nationalRouter.get('/national/:contest', (req, res) => {
     if (!asked) return res.status(404).json({ error: 'unknown_state' });
   }
   const state = asked ?? soleState(contest);
-  let { level, col } = (state ? SCOPED[contest] : LEVEL[contest]) || LEVEL.PRES;
+  let { level, col } = regionLevelFor(contest, state);
   // ?level= asks for a finer breakdown than the contest's default. A senatorial
   // race page draws its district as LGAs — every district is a union of whole
   // LGAs — so it needs LGA-keyed tallies, which SCOPED.SEN ('senatorial') does

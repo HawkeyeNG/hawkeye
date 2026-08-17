@@ -55,7 +55,7 @@ const b = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwri
 const p = await b.newPage({ viewport: { width: 900, height: 1100 } });
 const errs = [];
 p.on('pageerror', (e) => errs.push(String(e)));
-const ctaHref = () => p.$eval('.race-cta a.btn-quiet', (a) => a.getAttribute('href'));
+const ctaHref = () => p.$eval('.race-cta a[data-cta="results"]', (a) => a.getAttribute('href'));
 
 console.log('=== the link carries the race ===');
 await p.goto(`${base}/race.html?contest=GOV&state=Kano`, { waitUntil: 'networkidle' });
@@ -65,7 +65,13 @@ check('a generated state page points at its own board', await ctaHref(),
 
 await p.goto(`${base}/osun.html`, { waitUntil: 'networkidle' });
 await p.waitForSelector('.race-cta', { timeout: 10000 });
-check('osun.html keeps working (it passes its own href)', await ctaHref(), (h) => /contest=GOV/.test(h) && /Osun/.test(h));
+check('osun.html derives the same link (its override is gone)', await ctaHref(),
+  'results.html?contest=GOV&state=Osun');
+// Osun 2026 is past, so it must not still be recruiting observers for it.
+check('a completed race drops the recruitment CTA', await p.$$eval('.race-cta a', (a) => a.map((x) => x.dataset.cta)),
+  ['results', 'verify']);
+check('and offers the record instead of a live count',
+  await p.textContent('.race-cta a[data-cta="results"]'), (t) => /Review the Results/.test(t));
 
 // The page that had NO href of its own — the bug as reported.
 await p.goto(`${base}/race.html?race=raceOsun2026`, { waitUntil: 'networkidle' });
@@ -81,7 +87,7 @@ check('a senatorial seat scopes within its state', await p.evaluate(() => window
     office: 'Senator — Ebonyi South', election: '2027', candidates: [], others: [],
     join: { contest: 'SEN', level: 'senatorial', value: 'Ebonyi South', state: 'Ebonyi' },
   }, {}, {});
-  return el.querySelector('.race-cta a.btn-quiet').getAttribute('href');
+  return el.querySelector('.race-cta a[data-cta="results"]').getAttribute('href');
 })()), 'results.html?contest=SEN&state=Ebonyi&scope=Ebonyi+South');
 
 console.log('\n=== following it crops the board ===');
@@ -98,7 +104,10 @@ check('and draws its 30 LGAs', await p.$$eval('#map path', (n) => n.length), 30)
 check('follow defaults to the whole state, not a stale region',
   await p.$eval('#sel-scope', (s) => ({ value: s.value, label: s.options[0].textContent })),
   { value: '', label: 'Everywhere in Osun' });
-check('and its choices are Osun LGAs', await p.$$eval('#sel-scope option', (n) => n.length), 31);
+// 30 LGAs + "Everywhere in Osun" + the "← All states" way back out of the crop.
+check('and its choices are Osun LGAs', await p.$$eval('#sel-scope option', (n) => n.length), 32);
+check('with an escape from the crop', await p.$$eval('#sel-scope option', (o) => o.map((x) => x.value)),
+  (v) => v.includes('__all'));
 
 console.log('\n=== choosing another race drops the crop ===');
 asked.length = 0;

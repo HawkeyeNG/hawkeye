@@ -11,6 +11,21 @@ import {
   type Race,
 } from '@/lib/political';
 
+/**
+ * Has polling day passed? Deliberately not the contest's `open` flag —
+ * reportingOpen() is true from poll-open onwards and never goes false again, so
+ * every finished election would read as live forever. Compared at midnight, so a
+ * race is not "completed" at 00:01 on its own polling day.
+ */
+function isCompleted(race: Race): boolean {
+  if (!race.date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const day = new Date(`${race.date}T00:00:00`);
+  day.setHours(0, 0, 0, 0);
+  return day < today;
+}
+
 /** Party emblem, falling back to the code itself when there's no image. */
 export function PartyMark({
   party,
@@ -308,13 +323,20 @@ export function RaceView({
         </>
       ) : null}
 
+      {/* A FINISHED RACE ASKS FOR NOTHING. Recruiting observers for an election
+          that is over sends people to a flow they cannot complete, and "Live
+          results" promises a count that stopped moving. Standing rule: past
+          polling day, no recruitment CTA, and the results button says what it
+          now is. Twin of app/race.js. */}
       <View className="flex-row pt-5">
+        {isCompleted(race) ? null : (
         <Pressable
           className="mr-2 flex-1 items-center rounded-2xl bg-hawk-green py-3.5 active:opacity-80"
           onPress={() => router.push('/report/result')}
         >
           <Text className="text-sm font-bold text-hawk-gold">Become an observer</Text>
         </Pressable>
+        )}
         {/* good-ink, not hawk-green: the fixed #004225 sat at 1.6:1 on the dark
             surface — an outline and a label that both disappeared. The semantic
             pair is 5.8:1 light / 11.0:1 dark, and matches every other secondary
@@ -324,7 +346,9 @@ export function RaceView({
           className="flex-1 items-center rounded-2xl border border-good-ink py-3.5 active:opacity-70"
           onPress={() => router.push((resultsHref ?? resultsHrefFor(race)) as never)}
         >
-          <Text className="text-sm font-bold text-good-ink">Live results</Text>
+          <Text className="text-sm font-bold text-good-ink">
+            {isCompleted(race) ? 'Review the results' : 'Live results'}
+          </Text>
         </Pressable>
       </View>
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { db, parties, contests } from '../db.js';
 import { config } from '../config.js';
 import { haversineM } from '../services/geo.js';
+import { regionLevelFor } from '../services/scope.js';
 
 export const pollingUnitsRouter = Router();
 
@@ -228,7 +229,11 @@ pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
   const contest = String(req.query.contest || 'PRES').toUpperCase();
   const c = contests.find((x) => x.code === contest);
   const state = Array.isArray(c?.states) && c.states.length === 1 ? c.states[0] : null;
-  const col = state ? 'lga' : 'state';
+  // THE LEVEL FOLLOWS THE CONTEST, not just whether it is state-scoped. `col`
+  // was hardcoded to state/lga, so a Senate board read "0 of 37 states in this
+  // election have reports" — counting states for an election fought in 109
+  // senatorial districts, and naming the wrong places to go and cover.
+  const { level, col, noun } = regionLevelFor(contest, state);
 
   const all = (state
     ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE state = ? AND ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all(state)
@@ -244,7 +249,10 @@ pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
   res.json({
     contest,
     scope: state ? { state } : null,
-    unit: state ? 'LGA' : 'state',
+    level,
+    // The noun clients print. Was 'LGA' | 'state' only; it is now whatever the
+    // contest's level is actually called, so no client has to infer it.
+    unit: noun,
     // statesTotal/statesReported kept under their original names so existing
     // callers (native's coverage card, the assistant tool) keep working — they
     // now count LGAs when the contest is state-scoped.

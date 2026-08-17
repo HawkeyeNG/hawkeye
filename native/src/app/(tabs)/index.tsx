@@ -12,6 +12,33 @@ import { useUi, type Tone } from '@/lib/theme';
 const BASE = 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;
 
+/**
+ * Where an election card goes.
+ *
+ * The presidency has its own screen; a governorship confined to ONE state has a
+ * per-state race screen; everything else (a nationwide governorship across 28
+ * states, National Assembly, State Assembly) has no single page to open, so the
+ * board for that contest is the honest destination — it is the screen that is
+ * actually about that election.
+ */
+function cardHref(c: Contest): string {
+  if (c.code === 'PRES') return '/candidates';
+  if (c.code === 'GOV' && c.states?.length === 1) {
+    return `/race?contest=GOV&state=${encodeURIComponent(c.states[0])}`;
+  }
+  return `/(tabs)/results?contest=${encodeURIComponent(c.code)}`;
+}
+
+/**
+ * The card's headline. `election` alone is ambiguous where two contests share
+ * one — Senate and House of Representatives are both the "2027 National Assembly
+ * Election" — so the office is appended only when it is needed to tell them apart.
+ */
+function cardTitle(c: Contest, all: Contest[] | null): string {
+  const shared = (all ?? []).filter((x) => x.election === c.election).length > 1;
+  return shared ? `${c.election} — ${c.name}` : c.election;
+}
+
 function daysUntil(iso: string) {
   const ms = new Date(`${iso}T00:00:00+01:00`).getTime() - Date.now();
   return Math.max(0, Math.ceil(ms / 86_400_000));
@@ -212,6 +239,11 @@ export default function Home() {
         Independent election observation — every report public, signed and verifiable.
       </Text>
 
+      {/* Two contests can share one election NAME — Senate and House of
+          Representatives are both the "2027 National Assembly Election" — so
+          without the office appended this screen showed two identical cards and
+          no way to tell which was which. */}
+
       {error ? (
         <View className="mb-3 rounded-2xl bg-warn px-4 py-3">
           <Text className="text-sm text-ink">{error}</Text>
@@ -227,13 +259,19 @@ export default function Home() {
           // it announces and let the observer decide to report from there —
           // dropping someone into a capture flow they did not ask for is wrong,
           // and before polls open it is a dead end.
-          onPress={() => router.push('/osun')}
+          //
+          // IT OPENS THE ELECTION IT NAMES. This was a hardcoded '/osun' from
+          // when Osun was the only race Hawkeye ran, so every card on this
+          // screen — presidential, National Assembly, governorship — landed on a
+          // finished governorship in a state most of them have nothing to do
+          // with.
+          onPress={() => router.push(cardHref(c) as never)}
         >
           <View className="px-5 pb-4 pt-5">
             <Text className="text-xs font-semibold uppercase tracking-wider text-hawk-gold">
               {c.open ? 'Reporting open' : 'Upcoming election'}
             </Text>
-            <Text className="pt-1 text-xl font-bold text-white">{c.election}</Text>
+            <Text className="pt-1 text-xl font-bold text-white">{cardTitle(c, contests)}</Text>
             <Text className="pt-1 text-sm text-emerald-100">
               {new Date(`${c.date}T12:00:00`).toLocaleDateString('en-GB', {
                 weekday: 'long',

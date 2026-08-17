@@ -150,6 +150,12 @@
       <div id="race-list"></div>
     </div>
 
+    <!-- EVERYTHING BELOW IS ABOUT ONE CHOSEN RACE, so none of it is shown until
+         one is chosen. Arriving at the leaderboard used to drop you straight
+         into the presidency — a board nobody asked for, which reads as "these
+         are the results" rather than "this is the race you happen to be looking
+         at". A deep link (?contest=) still opens its board directly. -->
+    <div id="board" hidden>
     <div class="toolbar" id="follow">
       <select id="sel-scope" aria-label="Filter the leaderboard by state or district" style="width:auto;min-width:200px"><option value="">Everywhere</option></select>
       <button id="btn-follow" class="secondary" style="width:auto;margin:0">🔔 Follow</button>
@@ -214,9 +220,10 @@
           <thead>
             <tr><th>#</th><th>Party</th><th class="num">Votes</th><th class="num">Share</th><th class="num" id="led-col">States&nbsp;led</th></tr>
           </thead>
-          <tbody id="board"><tr><td colspan="5" class="meta">No reports yet.</td></tr></tbody>
+          <tbody id="board-rows"><tr><td colspan="5" class="meta">No reports yet.</td></tr></tbody>
         </table>
       </div>
+    </div>
     </div>
   </main>
 
@@ -475,7 +482,9 @@
       const total = data.national.reduce((s, r) => s + r.votes, 0);
       const ledCount = {};
       for (const s of data.regions) if (s.leader) ledCount[s.leader] = (ledCount[s.leader] || 0) + 1;
-      const body = document.getElementById('board');
+      // `board-rows`, not `board`: the id now belongs to the wrapper that hides
+      // the whole board until a race is chosen.
+      const body = document.getElementById('board-rows');
       if (!data.national.length) {
         body.innerHTML = '<tr><td colspan="5" class="meta">No reports yet for this election.</td></tr>';
         return;
@@ -526,9 +535,11 @@
         const g = await fetch(`/api/coverage/gaps?contest=${contest}`).then((r) => r.json());
         const card = document.getElementById('gaps-card');
         if (!g.missing || !g.missing.length) { card.hidden = true; return; }
-        // The noun follows the contest's scope — a governorship's gaps are LGAs
-        // inside its own state, not the 36 states it was never held in.
-        const unit = g.unit === 'LGA' ? 'LGA' : 'state';
+        // The noun follows the contest's LEVEL, and the server names it — a
+        // governorship's gaps are LGAs inside its own state, and a Senate
+        // election's are senatorial districts, not the 37 states it is counted
+        // across. Taking the string rather than choosing between two.
+        const unit = g.unit || 'state';
         const where = g.scope && g.scope.state ? ` in ${g.scope.state}` : '';
         document.getElementById('gaps-title').textContent = `Help cover these ${unit}s`;
         document.getElementById('gaps-hint').innerHTML =
@@ -597,7 +608,25 @@
       // page that sent you here would quietly limit it.
       STATE_CROP = null;
       togglePicker(false);
+      // The board only exists once a race has been picked, and only then is
+      // there anything worth polling for.
+      document.getElementById('board').hidden = false;
+      startPolling();
       refresh();
+    });
+
+    /** The 30s refresh, started at most once. */
+    let POLL = null;
+    const startPolling = () => { POLL = POLL || setInterval(refresh, 30000); };
+
+    // Choosing a state on a state-level board crops it; "← All states" undoes
+    // that. On a board that is already cropped (or one whose regions are
+    // districts, which the API cannot crop to) the control keeps its original
+    // job of naming the region to follow.
+    document.getElementById('sel-scope').addEventListener('change', (e) => {
+      const sel = e.target;
+      if (sel.value === '__all') { STATE_CROP = null; sel.value = ''; refresh(); return; }
+      if (sel.dataset.canCrop && sel.value) { STATE_CROP = sel.value; refresh(); }
     });
 
     function togglePicker(open) {
@@ -635,8 +664,18 @@
         : data.level === 'federal' ? CGEO.regions.map((r) => r.name)
         : STATES.states.map((s) => s.name);
       const anywhere = data.scope && data.scope.state ? `Everywhere in ${data.scope.state}` : 'Everywhere';
+      // THE PICKER SAYS "filter the leaderboard", so it has to filter it. It only
+      // ever set which region to FOLLOW: choosing Osun on the governorship board
+      // left a map of all 37 states on screen, which is not what picking one
+      // state means to anyone reading it. On a state-level board a choice now
+      // crops the board to that state, and the crop can be undone from the same
+      // control — a filter you cannot clear is a trap.
+      const canCrop = !data.scope && data.level === 'state';
+      const back = STATE_CROP ? '<option value="__all">← All states</option>' : '';
       document.getElementById('sel-scope').innerHTML =
-        `<option value="">${anywhere}</option>` + [...names].sort().map((n) => `<option>${n}</option>`).join('');
+        `<option value="">${anywhere}</option>${back}`
+        + [...names].sort().map((n) => `<option>${n}</option>`).join('');
+      document.getElementById('sel-scope').dataset.canCrop = canCrop ? '1' : '';
       // Name the area the map actually shows, so a governorship board does not
       // claim to be "by state" while drawing one state's LGAs.
       const where = data.scope && data.scope.state ? ` in ${data.scope.state}` : '';
@@ -676,26 +715,41 @@
       CONTESTS = ordered;
       sel.innerHTML = ordered.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
       sel.onchange = refresh;
-      // Default: the first configured race — today the Osun governorship, since
-      // it is the only contest on the wire. Derived from the list, not pinned to
-      // a code, so it stays right as contests are added.
-      if (ordered.length) sel.value = ordered[0].code;
-      // Deep-link preselect (e.g. results.html?contest=GOV&scope=Osun from the
+
+      // Deep-link preselect (e.g. results.html?contest=GOV&state=Osun from the
       // Osun race page): pick the race before the first load, and the region
       // scope after refresh() has populated the scope options.
       const QP = new URLSearchParams(location.search);
-      if (QP.get('contest') && ordered.some((c) => c.code === QP.get('contest'))) sel.value = QP.get('contest');
+      const asked = QP.get('contest');
+      const deepLinked = !!asked && ordered.some((c) => c.code === asked);
+      if (deepLinked) sel.value = asked;
       // ?state= crops the board before the first load. An unknown name is
       // rejected by the API with a 404 rather than silently drawing an empty
       // board, so it is passed through as given.
       STATE_CROP = QP.get('state') || null;
+
+      // NO DEFAULT RACE. This used to select the first contest on the wire and
+      // paint its board, so opening the leaderboard showed the presidency —
+      // which reads as "the results" rather than as one race among five, and
+      // hid the fact that there is a choice at all. With nothing asked for, the
+      // chooser IS the page.
+      if (!deepLinked) {
+        renderRaceList('');
+        document.getElementById('race-name').textContent = 'Choose a race';
+        document.getElementById('race-change').textContent = 'Cancel';
+        document.getElementById('race-picker').hidden = false;
+        document.getElementById('btn-race').setAttribute('aria-expanded', 'true');
+        return;   // no board, and no polling for a race nobody has picked
+      }
+
+      document.getElementById('board').hidden = false;
       await refresh();
       const wantScope = QP.get('scope');
       if (wantScope) {
         const ss = document.getElementById('sel-scope');
         if ([...ss.options].some((o) => o.value === wantScope)) ss.value = wantScope;
       }
-      setInterval(refresh, 30000);
+      startPolling();
     })();
 
     /**

@@ -285,9 +285,20 @@
     //
     //   state= crops the board to the seat's state and subdivides it
     //   scope= preselects the same region in the follow picker
+    //
+    // A FINISHED RACE ASKS FOR NOTHING. "Become an Observer" on an election that
+    // is over recruits people for a thing they cannot do — and "See Live
+    // Results" promises a count that stopped moving. A completed race offers its
+    // record instead, and the standing rule is: no recruitment CTA once polling
+    // day has passed, and the results link says what it now is.
+    const done = statusOf(race) === 'completed';
+    // `data-cta` names each button's JOB, so styling can change without a test
+    // or a caller having to guess which anchor is which.
     parts.push(`<div class="race-cta">
-      <a class="btn-accent" href="observe.html?intent=observe">Become an Observer</a>
-      <a class="btn-quiet" href="${esc(opts.resultsHref || resultsHrefFor(race))}">See Live Results</a></div>`);
+      ${done ? '' : '<a class="btn-accent" data-cta="observe" href="observe.html?intent=observe">Become an Observer</a>'}
+      <a class="${done ? 'btn-accent' : 'btn-quiet'}" data-cta="results" href="${esc(opts.resultsHref || resultsHrefFor(race))}">${
+        done ? 'Review the Results' : 'See Live Results'}</a>
+      ${done ? '<a class="btn-quiet" data-cta="verify" href="ledger.html">Verify the Record</a>' : ''}</div>`);
 
     const credit = [noteLeads ? '' : (race.note || ''), race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit || ''].filter(Boolean).join(' ');
     if (credit) parts.push(`<p class="hint">${esc(credit)}</p>`);
@@ -376,6 +387,22 @@
       stem.set(k, stem.has(k) ? null : r);
     }
     return (name) => exact.get(norm(name)) || stem.get(stemOf(name)) || null;
+  }
+
+  /**
+   * Where a race sits in time: completed / ongoing / upcoming. Same rule
+   * races.html groups by, and deliberately NOT the contest's `open` flag —
+   * reportingOpen() is true from poll-open onwards and never goes false again,
+   * so every finished election would read as live forever.
+   */
+  function statusOf(race) {
+    const d = race && race.date;
+    if (!d) return 'upcoming';
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const day = dayStart(d);
+    if (day < today) return 'completed';
+    if (day > today) return 'upcoming';
+    return 'ongoing';
   }
 
   const dayStart = (d) => { const x = new Date(`${d}T00:00:00`); x.setHours(0, 0, 0, 0); return x; };

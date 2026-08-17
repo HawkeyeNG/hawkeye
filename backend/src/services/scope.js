@@ -47,6 +47,62 @@ export function contestScope(pu, contest) {
 // only from poll-open on election day — 08:30 WAT (INEC accreditation/voting
 // start). Dateless contests (mock elections) are always open. Returns the ISO
 // opening instant, or null for always-open.
+/**
+ * WHICH REGION A CONTEST DIVIDES INTO — the one table, used by every endpoint
+ * that buckets reports.
+ *
+ * It lived only in routes/national.js, so /api/coverage/gaps grouped by STATE
+ * for every nationwide contest whatever its level. A Senate board therefore read
+ * "0 of 37 states in this election have reports", counting states for an
+ * election fought in 109 senatorial districts.
+ *
+ * `col` is the register column and is interpolated into SQL, so it may only ever
+ * come from HERE — never from a request.
+ */
+export const LEVEL_COLS = {
+  state: 'state',
+  lga: 'lga',
+  senatorial: 'senatorial',
+  federal: 'federal_constituency',
+};
+
+/** What one region of each level is called, for headings and sentences. */
+export const LEVEL_NOUN = {
+  state: 'state',
+  lga: 'LGA',
+  senatorial: 'senatorial district',
+  federal: 'federal constituency',
+};
+
+/** Nationwide shape — used when a contest is not confined to one state. */
+export const REGION_LEVEL = {
+  PRES: 'state',
+  GOV: 'state',
+  // State-assembly constituencies are genuinely absent from the register, so LGA
+  // is the honest finest grain for SHA.
+  SHA: 'lga',
+  SEN: 'senatorial',
+  REP: 'federal',
+};
+
+/**
+ * Cropped to one state, subdivided one level finer: a governorship becomes its
+ * LGAs. LGA is the floor — ward names do not join to the register.
+ */
+export const REGION_LEVEL_SCOPED = {
+  PRES: 'lga',
+  GOV: 'lga',
+  SHA: 'lga',
+  SEN: 'senatorial',
+  REP: 'federal',
+};
+
+/** `{ level, col, noun }` for a contest, cropped to `state` or nationwide. */
+export function regionLevelFor(code, state) {
+  const level = (state ? REGION_LEVEL_SCOPED[code] : REGION_LEVEL[code]) || REGION_LEVEL.PRES;
+  return { level, col: LEVEL_COLS[level], noun: LEVEL_NOUN[level] };
+}
+
 export const reportingOpensAt = (c) => (c && c.date ? `${c.date}T08:30:00+01:00` : null);
 export const reportingOpen = (c) => {
   const at = reportingOpensAt(c);

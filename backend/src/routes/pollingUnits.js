@@ -2,7 +2,13 @@ import { Router } from 'express';
 import { db, parties, contests } from '../db.js';
 import { config } from '../config.js';
 import { haversineM } from '../services/geo.js';
-import { regionLevelFor } from '../services/scope.js';
+import {
+  LEVEL_COLS,
+  LEVEL_NOUN,
+  LEVEL_NOUN_PLURAL,
+  regionLevelFor,
+  scopeColFor,
+} from '../services/scope.js';
 
 export const pollingUnitsRouter = Router();
 
@@ -229,26 +235,65 @@ pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
   const contest = String(req.query.contest || 'PRES').toUpperCase();
   const c = contests.find((x) => x.code === contest);
   const state = Array.isArray(c?.states) && c.states.length === 1 ? c.states[0] : null;
+
+  /**
+   * NARROWED TO THE RACE ON SCREEN.
+   *
+   * A board showing ONE governorship still asked for the whole contest's gaps,
+   * so a reader looking at Jigawa was told "0 of 28 states in this election have
+   * reports" and asked to go and cover Abia, Adamawa, Akwa Ibom — 27 states
+   * holding a different race from the one they were reading about.
+   *
+   * `region` is one region of this contest's own partition: a state for
+   * GOV/SHA/PRES, a senatorial district for SEN, a federal constituency for REP
+   * — the same value a race's `join.value` carries and a subscription is scoped
+   * by. Inside one of those the honest unit is the LGA, which is also the finest
+   * grain the register joins to.
+   *
+   * Resolved against the register rather than trusted: an unknown name is a 404,
+   * not a silent "0 of 0" that would read as full coverage.
+   */
+  const asked = String(req.query.region || '').trim();
+  const scopeCol = scopeColFor(contest);
+  const region = asked
+    ? (db.prepare(
+        `SELECT DISTINCT ${scopeCol} AS r FROM polling_units
+          WHERE ${scopeCol} IS NOT NULL AND lower(${scopeCol}) = lower(?)`,
+      ).get(asked)?.r ?? null)
+    : null;
+  if (asked && !region) return res.status(404).json({ error: 'unknown_region' });
+
   // THE LEVEL FOLLOWS THE CONTEST, not just whether it is state-scoped. `col`
   // was hardcoded to state/lga, so a Senate board read "0 of 37 states in this
   // election have reports" — counting states for an election fought in 109
   // senatorial districts, and naming the wrong places to go and cover.
-  const { level, col, noun, nounPlural } = regionLevelFor(contest, state);
+  const { level, col, noun, nounPlural } = region
+    ? { level: 'lga', col: LEVEL_COLS.lga, noun: LEVEL_NOUN.lga, nounPlural: LEVEL_NOUN_PLURAL.lga }
+    : regionLevelFor(contest, state);
 
-  const all = (state
-    ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE state = ? AND ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all(state)
+  // One filter, its COLUMN from the allow-lists above and its VALUE bound.
+  const filter = region ? { sql: `${scopeCol} = ?`, val: region }
+    : state ? { sql: 'state = ?', val: state }
+    : null;
+
+  const all = (filter
+    ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${filter.sql} AND ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all(filter.val)
     : db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all()
   ).map((r) => r.r);
 
-  const reported = new Set((state
-    ? db.prepare(`SELECT DISTINCT p.${col} AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ? AND p.state = ?`).all(contest, state)
+  const reported = new Set((filter
+    ? db.prepare(`SELECT DISTINCT p.${col} AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ? AND p.${filter.sql}`).all(contest, filter.val)
     : db.prepare(`SELECT DISTINCT p.${col} AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ?`).all(contest)
   ).map((r) => r.s));
 
   const missing = all.filter((s) => !reported.has(s));
   res.json({
     contest,
-    scope: state ? { state } : null,
+    // `region` is the name to print ("in Jigawa"); `state` is kept for callers
+    // that read it, and is only ever an actual state.
+    scope: region
+      ? { region, level: scopeCol, state: scopeCol === 'state' ? region : null }
+      : state ? { state, region: state, level: 'state' } : null,
     level,
     // The noun clients print. Was 'LGA' | 'state' only; it is now whatever the
     // contest's level is actually called, so no client has to infer it — plural

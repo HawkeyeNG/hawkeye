@@ -1033,6 +1033,9 @@ function resetReportState() {
     $(`preview-${t}`).hidden = true;
     $(`btn-cam-${t}`).textContent = 'Take photo';
   }
+  // A new report has no sheet yet, so the counts step must not still be offering
+  // the PREVIOUS report's — the worst possible thing to type figures from.
+  showSheetReference(null);
   // Empty, not 'Report a result': the page header already says that, so a
   // matching h1 was the same words twice. .is-empty collapses the element so
   // nothing reserves space for a heading that has not arrived.
@@ -1599,6 +1602,59 @@ async function compressCapture(blob, maxDim, quality) {
 // require a GPS fix, then store + preview. Sheet 1500 px / q0.76 (the tuned point
 // that stays OCR-legible while pushing capacity toward ~10k observers); venue
 // smaller (1280 px / q0.72). Returns false if the GPS fix failed.
+/**
+ * The sheet, kept in reach of the figures.
+ *
+ * Capture comes first because the EC8A is the perishable thing on election day
+ * (docs/REPORT-FLOW-CAPTURE-FIRST.md) — but "type it up later from somewhere
+ * safer" is exactly the moment the paper is no longer in front of the observer,
+ * and step 4 told them to copy the figures off a sheet it did not show. Their
+ * own photograph was already on the device, in a step that had folded shut.
+ *
+ * Enlarging matters as much as showing: an EC8A is a dense grid of party rows,
+ * and a 108px strip proves a photo exists without letting anyone read a number
+ * off it. Twin of native/src/components/sheet-reference.tsx.
+ *
+ * @param src object URL of the sheet, or null to withdraw it.
+ */
+function showSheetReference(src) {
+  const box = document.getElementById('counts-sheet');
+  const img = document.getElementById('counts-sheet-img');
+  if (!box || !img) return;
+  if (!src) {
+    box.hidden = true;
+    img.removeAttribute('src');
+    const z = document.getElementById('sheet-zoom');
+    if (z) z.hidden = true;
+    return;
+  }
+  img.src = src;
+  box.hidden = false;
+}
+
+// Delegated and registered once: the reference button and the viewer both exist
+// in the markup from the start, so nothing here depends on a photo having been
+// taken yet.
+document.addEventListener('DOMContentLoaded', () => {
+  const box = document.getElementById('counts-sheet');
+  const zoom = document.getElementById('sheet-zoom');
+  const zimg = document.getElementById('sheet-zoom-img');
+  const close = document.getElementById('sheet-zoom-x');
+  if (!box || !zoom || !zimg || !close) return;
+  const shut = () => { zoom.hidden = true; zoom.classList.remove('big'); };
+  box.addEventListener('click', () => {
+    const src = document.getElementById('counts-sheet-img').getAttribute('src');
+    if (!src) return;
+    zimg.src = src;
+    zoom.hidden = false;
+  });
+  // Tap the paper to go to 250% and back — a pinch is awkward one-handed, and
+  // this is a one-handed moment.
+  zimg.addEventListener('click', () => zoom.classList.toggle('big'));
+  close.addEventListener('click', shut);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !zoom.hidden) shut(); });
+});
+
 async function finalizeShot(target, blob) {
   // SHOW THE PHOTO FIRST. The preview used to be set only after compression AND
   // the GPS await, so between the shutter and the fix there was nothing on screen
@@ -1625,6 +1681,10 @@ async function finalizeShot(target, blob) {
   img.src = URL.createObjectURL(blob);
   URL.revokeObjectURL(raw);
   img.hidden = false;
+  // The counts step gets the sheet too. By the time the figures are typed the
+  // observer has usually left the crowd, and their own photo was two collapsed
+  // steps up the page — while the step said to copy the figures off it.
+  if (target === 'sheet') showSheetReference(img.src);
   $(`btn-cam-${target}`).textContent = 'Retake photo';
   updateSubmitState();
   return true;

@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { FollowRace } from '@/components/follow-race';
 import { RaceMap } from '@/components/race-map';
 import {
   logoUrl,
@@ -321,6 +322,22 @@ export function RaceView({
         </View>
       </ScrollView>
         </>
+      ) : null}
+
+      {/* FOLLOWING ONE SEAT — the size of subscription most people actually
+          want, and until now the one there was no way to ask for. The board
+          could only offer the whole election; wanting every governorship in the
+          federation is a newsroom's interest, not a voter's. `join.value` is the
+          seat's own region key — the state, senatorial district or federal
+          constituency the backend buckets its reports by — so this follows
+          exactly this race and nothing else.
+
+          Not on a finished race, by the same rule as the CTA below: there will
+          be no further reports to alert anyone about. */}
+      {race.join?.contest && race.join?.value && !isCompleted(race) ? (
+        <View className="pt-5">
+          <FollowRace contest={race.join.contest} scope={race.join.value} />
+        </View>
       ) : null}
 
       {/* A FINISHED RACE ASKS FOR NOTHING. Recruiting observers for an election

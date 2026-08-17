@@ -100,5 +100,34 @@ check('cropped as asked', asked.map((a) => a.state), (s) => s.includes('Osun'));
 check('no page errors', errs, []);
 await b.close();
 server.close();
+
+// ── The app must ask the same question ────────────────────────────────────────
+// This page stopped defaulting to the presidency; the native Results tab did
+// not, and kept opening on a presidential map for weeks after. Nobody noticed
+// because nothing tied the two together. These are source checks — there is no
+// RN harness here — but they are checks on the exact things that drifted.
+console.log('\n=== native asks the same question ===');
+const nat = fsReadNative();
+function fsReadNative() {
+  return require_('node:fs').readFileSync('/home/elrio/hawkeye/native/src/app/(tabs)/results.tsx', 'utf8');
+}
+// NO DEFAULT RACE. `defaultRace()` resolved contests[0] to a concrete race and
+// seeded it, which is precisely how the tab landed on the presidency.
+check('native seeds no default race', /defaultRace/.test(nat), false);
+// The chooser is DERIVED from "nothing chosen", not opened by an effect — an
+// effect would paint one empty board first and re-fire on every dep change.
+check('its chooser is derived, not an effect', /const nothingChosen = !race && !wholeContest;/.test(nat), true);
+check('and it is what the screen shows', /const choosing = picking \|\| nothingChosen;/.test(nat), true);
+// Both platforms order the five elections by seat magnitude. Two different
+// orders is the kind of difference a reader reads as a bug in one of them.
+const webOrder = fsReadWeb().match(/const ORDER = \[([^\]]*)\]/);
+const natOrder = nat.match(/const CHOOSER_ORDER = \[([^\]]*)\]/);
+function fsReadWeb() {
+  return require_('node:fs').readFileSync('/home/elrio/hawkeye/app/results.html', 'utf8');
+}
+const parse = (m) => (m ? m[1].match(/'(\w+)'/g).map((s) => s.replace(/'/g, '')) : null);
+check('web lists five elections by seat magnitude', parse(webOrder), ['PRES', 'GOV', 'SEN', 'REP', 'SHA']);
+check('native lists them identically', parse(natOrder), parse(webOrder));
+
 console.log(fail ? `\n${fail} FAILED` : '\nall passed');
 process.exitCode = fail ? 1 : 0;

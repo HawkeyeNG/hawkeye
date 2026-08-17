@@ -108,6 +108,15 @@ export const REGION_LEVEL_SCOPED = {
   REP: 'federal',
 };
 
+/**
+ * The register column holding the region a report for this contest is filed
+ * INTO — the partition /api/national buckets by, subscriptions.js:reportScope
+ * pings on, and a race's own `join.value` names. Interpolated into SQL, so it
+ * may only ever come from here.
+ */
+export const SCOPE_COLS = { SEN: 'senatorial', REP: 'federal_constituency' };
+export const scopeColFor = (code) => SCOPE_COLS[code] || 'state';
+
 /** `{ level, col, noun, nounPlural }` for a contest, cropped to `state` or not. */
 export function regionLevelFor(code, state) {
   const level = (state ? REGION_LEVEL_SCOPED[code] : REGION_LEVEL[code]) || REGION_LEVEL.PRES;

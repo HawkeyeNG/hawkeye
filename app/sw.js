@@ -5,7 +5,7 @@
 // political_data.json forever; only a new CACHE name (activate drops the old
 // caches) makes it re-fetch. A candidate list that cannot reach installed users
 // is not published.
-const CACHE = 'hawkeye-v266';
+const CACHE = 'hawkeye-v267';
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every
@@ -20,7 +20,7 @@ const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html'
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.
 // og-image.png is here too — only crawlers fetch it, and they don't use the SW.
-const LAZY = ['/opencv.js', '/register-osun.json', '/nga_wards.geojson', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/badges/google-play.png', '/seat_lgas.json', '/political_data.json', '/members.json', '/party_changes.json', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/og-image.png', '/about.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/practice.html', '/practice.js'];
+const LAZY = ['/opencv.js', '/register-osun.json', '/nga_wards.geojson', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/play-badge.png', '/seat_lgas.json', '/political_data.json', '/members.json', '/party_changes.json', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/og-image.png', '/about.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/practice.html', '/practice.js'];
 
 // Opened ONCE per worker lifetime. The global caches.match() searches every
 // cache in the origin, and re-opening the cache on each request adds latency to

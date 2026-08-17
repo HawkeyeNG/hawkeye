@@ -265,8 +265,6 @@ export default function Results() {
    *  are NOT the same thing — see `load` and `selectRace`. */
   const contestCode = contest?.code ?? null;
   const raceKey = race?.key ?? null;
-  /** The state to crop the board to, or null for a race with no state (PRES). */
-  const raceState = race?.state ?? null;
 
   const loadContests = useCallback(async () => {
     const cs = await api.contests().catch(() => null);
@@ -305,11 +303,13 @@ export default function Results() {
       return;
     }
     const [n, p, g] = await Promise.all([
-      // CROP TO THE RACE'S STATE. Fetched nationwide, `subunits` comes back as
-      // all 109 senatorial districts (or 37 states), which is why an Imo East
-      // board drew the whole federation with one outline highlighted instead of
-      // Imo's three districts. The server crops and subdivides when asked.
-      api.national(contestCode, raceState ? { state: raceState } : undefined).catch(() => null),
+      // NATIONWIDE. Cropping to the selected race's state was wrong: choosing
+      // "Senate" lands on whichever district sorts first (Abia North), and
+      // cropping to its state turned the Senate board into a map of Abia — three
+      // districts out of 109, with no way to see the election. The board is the
+      // CONTEST's, at the contest's own level; the seat's own map lives on the
+      // seat's page, which is where a reader goes by tapping the region.
+      api.national(contestCode).catch(() => null),
       api.parties().catch(() => [] as Party[]),
       fetch(`${BASE}/api/coverage/gaps?contest=${encodeURIComponent(contestCode)}`)
         .then((r) => (r.ok ? (r.json() as Promise<Gaps>) : null))
@@ -327,7 +327,7 @@ export default function Results() {
     // "updated HH:MM:SS" keeps telling the truth about when that was. Same for
     // gaps — null there means the request failed, not that no states are missing.
     if (g) setGaps(g);
-  }, [contestCode, raceKey, raceState, contests.length, loadContests]);
+  }, [contestCode, raceKey, contests.length, loadContests]);
 
   useEffect(() => {
     load();
@@ -452,10 +452,12 @@ export default function Results() {
    * 36 other states was the clearest sign it still thought it was presidential.
    * `race.state` is the fallback for the moment before the tally arrives.
    */
-  const mapScope = useMemo<string | null>(
-    () => data?.scope?.state ?? (race?.state ?? null),
-    [data, race],
-  );
+  // THE SERVER'S ANSWER ONLY. `race.state` used to stand in for it, which made
+  // the map claim "in Imo" while drawing the whole federation — the title and
+  // the picture disagreed. A crop is a fact about the PAYLOAD, so it comes from
+  // the payload; a contest confined to one state has `scope` set by the server
+  // and still crops.
+  const mapScope = useMemo<string | null>(() => data?.scope?.state ?? null, [data]);
 
   /**
    * The region row for the selected race. A race that is one seat inside a
@@ -843,13 +845,25 @@ export default function Results() {
    * lib/political.ts:findRace and app/results.html:raceHrefFor.
    */
   const racePageHref = useMemo(() => {
-    if (raceType !== 'GOV' || level !== 'state' || !inspect?.name) return null;
-    const state = String(inspect.name).replace(/\s*\(.*\)$/, '').trim();
-    if (/^fct$/i.test(state)) return null;
-    const known = political ? findRace(political, 'GOV', state) : null;
+    const name = inspect?.name && String(inspect.name).replace(/\s*\(.*\)$/, '').trim();
+    if (!name) return null;
+    // Every senatorial district and federal constituency has its own screen,
+    // built from the register — which is what makes a national map of 109
+    // districts worth tapping.
+    if (raceType === 'SEN' && level === 'senatorial') {
+      return `/race?contest=SEN&seat=${encodeURIComponent(name)}`;
+    }
+    if (raceType === 'REP' && level === 'federal') {
+      return `/race?contest=REP&seat=${encodeURIComponent(name)}`;
+    }
+    if (raceType !== 'GOV' || level !== 'state') return null;
+    // The FCT is on every state map and has no governor — it is run by a
+    // minister, so it is excluded here as it is everywhere else.
+    if (/^fct$/i.test(name)) return null;
+    const known = political ? findRace(political, 'GOV', name) : null;
     return known
       ? `/race?key=${encodeURIComponent(known.key)}`
-      : `/race?contest=GOV&state=${encodeURIComponent(state)}`;
+      : `/race?contest=GOV&state=${encodeURIComponent(name)}`;
   }, [raceType, level, inspect, political]);
 
   /**

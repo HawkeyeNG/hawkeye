@@ -584,7 +584,48 @@
     };
   }
 
+  /**
+   * A page for ONE senatorial district or federal constituency.
+   *
+   * The board links here: a national map of 109 districts is only useful if a
+   * district goes somewhere. Built from the register the same way the state
+   * pages are — the seat's LGAs, its size, and the date from the contest
+   * catalogue — with the candidate list the one thing missing, for a reason the
+   * page states.
+   *
+   * `seats` is app/seat_lgas.json, fetched only by this page: 471 seats with
+   * their LGA membership is ~46 KB no other page needs.
+   */
+  function seatRace(seats, code, seatName, contest) {
+    const table = (seats || {})[code];
+    if (!table || !seatName) return null;
+    // Map spellings and register spellings differ on a handful of seats, so the
+    // name is RESOLVED rather than trusted — and an unknown one builds no page
+    // rather than an official-looking one about a seat that is not there.
+    const canon = Object.keys(table).find((s) => norm(s) === norm(seatName));
+    if (!canon) return null;
+    const s = table[canon];
+    const senate = code === 'SEN';
+    return {
+      office: `${senate ? 'Senator' : 'House of Representatives'} — ${canon}`,
+      election: `${s.state} State · ${senate ? 'Senate' : 'House of Representatives'}`,
+      date: contest && contest.date ? contest.date : undefined,
+      stats: { lgas: s.lgas.length, pollingUnits: s.pollingUnits },
+      note: 'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.',
+      candidates: [],
+      others: [],
+      join: {
+        contest: code,
+        level: senate ? 'senatorial' : 'federal_constituency',
+        value: canon,
+        state: s.state,
+        lgas: s.lgas,
+      },
+    };
+  }
+
   window.mountRace = mountRace;
   window.findRace = findRace;
   window.stateRace = stateRace;
+  window.seatRace = seatRace;
 })();

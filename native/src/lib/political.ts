@@ -205,6 +205,72 @@ export function resultsHrefFor(race: Race | null | undefined): string {
   return `/(tabs)/results?${q.toString()}`;
 }
 
+/** One seat's register facts, from app/seat_lgas.json. */
+export type SeatInfo = { state: string; lgas: string[]; pollingUnits: number };
+export type SeatTable = Record<string, Record<string, SeatInfo>>;
+
+let seatCache: Promise<SeatTable> | null = null;
+
+/**
+ * seat_lgas.json — 471 seats with their LGA membership, ~46 KB.
+ *
+ * Fetched only by a seat's own screen and memoised for the run. It is not part
+ * of political_data.json on purpose: every screen fetches that, and none of the
+ * others has any use for this. A failed fetch clears the cache so the next mount
+ * retries rather than replaying one rejection forever.
+ */
+export function loadSeats(): Promise<SeatTable> {
+  if (!seatCache) {
+    seatCache = fetch(`${BASE}/seat_lgas.json`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`seat_lgas.json → HTTP ${r.status}`);
+        return (await r.json()) as SeatTable;
+      })
+      .catch((e) => {
+        seatCache = null;
+        throw e;
+      });
+  }
+  return seatCache;
+}
+
+/**
+ * A screen for ONE senatorial district or federal constituency. Twin of
+ * app/race.js:seatRace, and the destination of a tap on the national board — a
+ * map of 109 districts is only worth having if a district goes somewhere.
+ */
+export function seatRace(
+  seats: SeatTable | null | undefined,
+  code: 'SEN' | 'REP',
+  seatName: string,
+  contest?: ContestLite | null,
+): Race | null {
+  const table = seats?.[code];
+  if (!table || !seatName) return null;
+  // Map spellings and register spellings differ on a handful of seats, so the
+  // name is resolved rather than trusted.
+  const canon = Object.keys(table).find((s) => normRegion(s) === normRegion(seatName));
+  if (!canon) return null;
+  const s = table[canon];
+  const senate = code === 'SEN';
+  return {
+    office: `${senate ? 'Senator' : 'House of Representatives'} — ${canon}`,
+    election: `${s.state} State · ${senate ? 'Senate' : 'House of Representatives'}`,
+    date: contest?.date,
+    stats: { lgas: s.lgas.length, pollingUnits: s.pollingUnits },
+    note: 'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.',
+    candidates: [],
+    others: [],
+    join: {
+      contest: code,
+      level: senate ? 'senatorial' : 'federal_constituency',
+      value: canon,
+      state: s.state,
+      lgas: s.lgas,
+    },
+  };
+}
+
 /** A contest as GET /api/contests reports it — only the fields a race page needs. */
 export type ContestLite = { code: string; name: string; date?: string; states?: string[] };
 

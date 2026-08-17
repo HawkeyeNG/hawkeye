@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=153" />
+  <link rel="stylesheet" href="styles.css?v=154" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -234,8 +234,9 @@
              past a phone screen. Practice lives in the ☰ menu, the sign-up page
              and the how-it-works section; Alerts live on results.html and (once
              signed in) the header bell. -->
-        <div class="hero-cta" style="margin-top: 14px; flex-direction: column; align-items: flex-start; gap: 8px">
-          <p id="install-hint" hidden class="hint" style="margin: 0"></p>
+        <div style="margin-top: 14px">
+          <p id="install-hint" hidden class="hint" style="margin: 0 0 8px"></p>
+          <div class="install-row">
           <!-- Google Play, once the listing went live. Hidden until JS confirms
                this is not an iPhone: there is no iOS build yet, and a Play badge
                on an iPhone is an offer the visitor cannot take.
@@ -254,7 +255,13 @@
              href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer"><img
              src="play-badge.png" alt="Get it on Google Play" height="56"
              onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Get it on Google Play ↗'" /></a>
-          <button class="btn-ghost" id="install-cta" hidden type="button">Install Mobile App</button>
+          <!-- The web-app route, beside Play rather than under it: on Android
+               they are two ways to get the same thing and reading as a pair is
+               the honest presentation. Its LABEL is set by script, because this
+               one button means different things per platform — on iPhone it is
+               the only route there is. -->
+          <button class="btn-ghost install-alt" id="install-cta" hidden type="button">Install Web App</button>
+          </div>
         </div>
 
         <!-- Manual install steps. Chromium's one-tap prompt covers most Android
@@ -555,6 +562,13 @@
       // ours, only the clear space they require.
       const play = document.getElementById('play-cta');
       if (play && !isIOS) play.hidden = false;
+
+      // ONE BUTTON, TWO MEANINGS. On iPhone there is no store build, so this is
+      // the only way in and the label says which platform it is for. On Android
+      // and desktop it sits beside the Play badge as the alternative that needs
+      // no store, no download and no sideload prompt — calling it "for iPhone"
+      // there would be simply wrong.
+      btn.textContent = isIOS ? 'Web App for iPhone' : 'Install Web App';
       // Samsung Internet's PWA install is blocked by Play Protect ("built for an
       // older version of Android") — its wrapper, not our site; the same manifest
       // installs cleanly in Chrome and on iPhone. Say so BEFORE they tap: a

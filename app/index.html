@@ -236,6 +236,16 @@
              signed in) the header bell. -->
         <div class="hero-cta" style="margin-top: 14px; flex-direction: column; align-items: flex-start; gap: 8px">
           <p id="install-hint" hidden class="hint" style="margin: 0"></p>
+          <!-- Google Play, once the listing went live. Hidden until JS confirms
+               this is not an iPhone: there is no iOS build yet, and a Play badge
+               on an iPhone is an offer the visitor cannot take.
+               NO HOMEMADE BADGE ARTWORK. Google's badge is a trademark with its
+               own brand guidelines, and a lookalike drawn here would breach them;
+               a plain text link to the listing is expressly allowed. Drop the
+               official PNG at app/badges/google-play.png and the script below
+               swaps it in on its own. -->
+          <a class="btn-accent" id="play-cta" hidden rel="noopener" target="_blank"
+             href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer">Get it on Google Play ↗</a>
           <button class="btn-ghost" id="install-cta" hidden type="button">Install Mobile App</button>
         </div>
 
@@ -252,6 +262,15 @@
 
           <section class="pwa-os" id="pwa-android">
             <h3>📱 Android</h3>
+            <!-- Play FIRST. It is the route that needs no explanation, no
+                 "allow installs from this source" prompt, and no Play Protect
+                 warning — the three things every other option below has to spend
+                 a paragraph on. The web-app and direct-download routes stay,
+                 because they are what a low-storage or low-data phone needs. -->
+            <p class="pwa-alt" style="margin-top:0"><strong>Easiest: install from Google Play.</strong></p>
+            <p><a class="btn-ghost" rel="noopener" target="_blank"
+                  href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer">Get it on Google Play ↗</a></p>
+            <p class="pwa-note">Or run it from your home screen with no store and no download:</p>
             <ol>
               <li>Open <strong>hawkeye.com.ng</strong> in <strong>Chrome</strong>.</li>
               <li>Tap the <strong>⋮</strong> menu, top-right.</li>
@@ -293,6 +312,12 @@
 
           <section class="pwa-os" id="pwa-ios">
             <h3>🍎 iPhone &amp; iPad</h3>
+            <!-- Said plainly rather than left to be inferred from the absence of
+                 a badge. An iPhone user who has just seen "Get it on Google Play"
+                 will look for the App Store equivalent, and "there isn't one yet"
+                 is a better answer than a hunt. -->
+            <p class="pwa-note" style="margin-top:0">There is no App Store version yet — on iPhone,
+              Safari installs it to your home screen and it works the same way.</p>
             <ol>
               <li>Open <strong>hawkeye.com.ng</strong> in <strong>Safari</strong>.
                 <em>Chrome and Firefox on iPhone cannot install it — it must be Safari.</em></li>
@@ -511,6 +536,27 @@
       window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; });
       window.addEventListener('appinstalled', () => { btn.hidden = true; hint.hidden = true; });
       btn.hidden = false;                 // always offer it (iOS/Android have no auto-prompt)
+
+      // GOOGLE PLAY, everywhere except iPhone. There is no iOS build, and a Play
+      // link on an iPhone is an offer that cannot be taken — the iOS section of
+      // the dialog says so in words instead.
+      const play = document.getElementById('play-cta');
+      if (play && !isIOS) {
+        play.hidden = false;
+        // Swap in Google's OFFICIAL badge if it has been added. Drawing a
+        // lookalike would breach their brand guidelines, so until the real PNG
+        // is in place the text link stands — which their guidelines allow.
+        const badge = new Image();
+        badge.onload = () => {
+          play.textContent = '';
+          badge.alt = 'Get it on Google Play';
+          badge.style.height = '52px';
+          badge.style.display = 'block';
+          play.className = 'play-badge-link';
+          play.appendChild(badge);
+        };
+        badge.src = 'badges/google-play.png';
+      }
       // Samsung Internet's PWA install is blocked by Play Protect ("built for an
       // older version of Android") — its wrapper, not our site; the same manifest
       // installs cleanly in Chrome and on iPhone. Say so BEFORE they tap: a

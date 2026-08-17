@@ -465,7 +465,12 @@ export const ResultsMap = memo(function ResultsMap({
           fillRule="evenodd"
           fillOpacity={fill ? 0.92 : 1}
           stroke={sel ? ui.tint.good.ink : ui.mapLine}
-          strokeWidth={sel ? 2.5 : border}
+          // THE SELECTION MUST SCALE TOO. `border` is divided down by the
+          // viewBox above; this was a raw 2.5 beside it, so on a state-cropped
+          // map (~60 units wide against 800) the highlight came out roughly 30x
+          // the hairline around it — a fat blob that buried the district it was
+          // pointing at. Same units trap the comment above describes.
+          strokeWidth={sel ? border * 3 : border}
           strokeLinejoin="round"
           onPress={onPress ? () => onPress(s.name) : undefined}
         />

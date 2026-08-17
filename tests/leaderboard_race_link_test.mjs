@@ -103,12 +103,14 @@ const landed = await p.evaluate(() => ({
 check('lands on the Kano governorship', landed.h1, (t) => /Kano/.test(t));
 check('with its 44 LGAs drawn', landed.shapes, 44);
 
-console.log('\n=== a contest with no seat pages offers no link ===');
+console.log('\n=== senatorial districts now have pages of their own ===');
 await p.goto(`${base}/results.html?contest=SEN`, { waitUntil: 'networkidle' });
 await p.waitForSelector('#map path', { timeout: 10000 });
 const sen = await clickRegion('Ebonyi South');
 check('senatorial region still shows its detail', sen.text, (t) => /Ebonyi South/.test(t));
-check('but offers no race link', sen.href, null);
+// This asserted "no link" while SEN had no seat pages. It has them now — every
+// one of the 109 districts is built from the register — so the board links there.
+check('and offers its seat page', sen.href, 'race.html?contest=SEN&seat=Ebonyi%20South');
 
 await b.close();
 server.close();

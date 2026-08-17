@@ -7,7 +7,14 @@ import { RaceView } from '@/components/race';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api } from '@/lib/api';
-import { findRace, loadPolitical, stateRace, type Race } from '@/lib/political';
+import {
+  findRace,
+  loadPolitical,
+  loadSeats,
+  seatRace,
+  stateRace,
+  type Race,
+} from '@/lib/political';
 import { useUi } from '@/lib/theme';
 
 /**
@@ -25,10 +32,11 @@ import { useUi } from '@/lib/theme';
  */
 export default function RaceScreen() {
   const ui = useUi();
-  const { key, contest, state } = useLocalSearchParams<{
+  const { key, contest, state, seat } = useLocalSearchParams<{
     key?: string;
     contest?: string;
     state?: string;
+    seat?: string;
   }>();
   const [race, setRace] = useState<Race | null>(null);
   const [logos, setLogos] = useState<Record<string, string>>({});
@@ -48,6 +56,13 @@ export default function RaceScreen() {
         const cs = await api.contests().catch(() => []);
         if (!live) return;
         setRace(stateRace(data, state, cs.find((c) => c.code === 'GOV')));
+      } else if ((contest === 'SEN' || contest === 'REP') && seat) {
+        const [seats, cs] = await Promise.all([
+          loadSeats().catch(() => null),
+          api.contests().catch(() => []),
+        ]);
+        if (!live) return;
+        setRace(seatRace(seats, contest, seat, cs.find((c) => c.code === contest)));
       } else if (contest && state) {
         const hit = findRace(data, contest, state);
         setRace(hit ? hit.race : null);
@@ -64,7 +79,7 @@ export default function RaceScreen() {
     return () => {
       live = false;
     };
-  }, [key, contest, state]);
+  }, [key, contest, state, seat]);
 
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const title = race?.office || race?.election || 'Race';

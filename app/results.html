@@ -77,7 +77,7 @@
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
-  <script src="race.js?v=12"></script>
+  <script src="race.js?v=13"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -764,15 +764,22 @@
      * regions stay unlinked rather than pointing at a page that would 404.
      */
     function raceHrefFor(contest, regionName) {
-      if (contest !== 'GOV' || !regionName) return null;
-      const state = String(regionName).replace(/\s*\(.*\)$/, '').trim();  // "FCT (Abuja)" -> "FCT"
+      if (!regionName) return null;
+      const name = String(regionName).replace(/\s*\(.*\)$/, '').trim();  // "FCT (Abuja)" -> "FCT"
+      // A senatorial district and a federal constituency each have their own
+      // page now, built from the register — which is the point of a national map
+      // of 109 districts: every one of them goes somewhere.
+      if (contest === 'SEN' || contest === 'REP') {
+        return `race.html?contest=${contest}&seat=${encodeURIComponent(name)}`;
+      }
+      if (contest !== 'GOV') return null;   // PRES is one national race; SHA has no seat pages
       // The FCT is drawn on every state map but has no governor — it is run by a
       // minister. Offering it a governorship page would invent an office.
-      if (/^fct$/i.test(state)) return null;
-      const known = window.findRace ? window.findRace(POLITICAL, 'GOV', state) : null;
+      if (/^fct$/i.test(name)) return null;
+      const known = window.findRace ? window.findRace(POLITICAL, 'GOV', name) : null;
       return known
         ? `race.html?race=${encodeURIComponent(known.key)}`
-        : `race.html?contest=GOV&state=${encodeURIComponent(state)}`;
+        : `race.html?contest=GOV&state=${encodeURIComponent(name)}`;
     }
 
     /**

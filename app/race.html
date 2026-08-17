@@ -55,12 +55,14 @@
   <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
   </div></footer>
 
-  <script src="race.js?v=12"></script>
+  <script src="race.js?v=13"></script>
   <script>
     // Generic race page. Two ways in:
     //
-    //   ?race=<key>              a hand-written race object in political_data.json
-    //   ?contest=GOV&state=Kano  a governorship page BUILT from the register
+    //   ?race=<key>                    a hand-written race in political_data.json
+    //   ?contest=GOV&state=Kano        a governorship BUILT from the register
+    //   ?contest=SEN&seat=Abia North   a senatorial district, likewise
+    //   ?contest=REP&seat=...          a federal constituency
     //
     // The second form is why all 36 states have a page without 36 files or 36
     // data blocks: the seat's map, size, holder and date are all facts we already
@@ -75,16 +77,25 @@
       ]);
 
       let race = null;
+      const code = QP.get('contest');
       const state = QP.get('state');
-      if (QP.get('contest') === 'GOV' && state) {
-        // Contests are the backend's to define; a page is not the place to decide
-        // when an election is. If the catalogue is unreachable the page still
-        // renders — undated, which is the truthful degradation.
-        const contest = await fetch('/api/contests')
-          .then((r) => r.json())
-          .then((cs) => cs.find((c) => c.code === 'GOV'))
-          .catch(() => null);
-        race = window.stateRace(data, state, contest);
+      const seat = QP.get('seat');
+      // Contests are the backend's to define; a page is not the place to decide
+      // when an election is. If the catalogue is unreachable the page still
+      // renders — undated, which is the truthful degradation.
+      const contestOf = (c) => fetch('/api/contests')
+        .then((r) => r.json()).then((cs) => cs.find((x) => x.code === c)).catch(() => null);
+
+      if (code === 'GOV' && state) {
+        race = window.stateRace(data, state, await contestOf('GOV'));
+      } else if ((code === 'SEN' || code === 'REP') && seat) {
+        // seat_lgas.json is fetched ONLY here — 471 seats with their LGA
+        // membership is ~46 KB that no other page has any use for.
+        const [seats, contest] = await Promise.all([
+          fetch('seat_lgas.json').then((r) => r.json()).catch(() => null),
+          contestOf(code),
+        ]);
+        race = window.seatRace(seats, code, seat, contest);
       } else {
         race = data[QP.get('race') || 'raceOsun2026'];
       }

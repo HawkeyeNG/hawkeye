@@ -89,20 +89,27 @@
   const GROUPS = [
     ['Take part', ['profile.html', { acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'practice.html', 'map-unit.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html', 'incident-reports.html']],
-    ['Live data', ['results.html', { acc: 'Races', hrefs: ['races.html', 'osun.html', 'candidates.html'] }, 'dashboard.html', 'political.html']],
+    // Races is ONE LINK, not an accordion. It listed All Races / Osun 2026 /
+    // Presidency 2027 — a hand-kept list of three, hardcoded in the menu, while
+    // races.html itself now derives every race from /api/contests, groups them
+    // completed / ongoing / upcoming and offers all 36 governorships. The
+    // accordion could only ever be a stale subset of the page it sat above, and
+    // "Osun 2026" was already a finished election pinned to the menu.
+    ['Live data', ['results.html', 'races.html', 'dashboard.html', 'political.html']],
     // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
     // aren't in the panel, the group finds no members and is skipped.
     ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'support.html', 'privacy.html', 'terms.html']],
   ];
   if (panel && !panel.querySelector('.menu-group')) {
-    // Osun 2026 is the active pilot race — inject it once so it appears in the
-    // menu on every page without editing each page's static link list.
-    // All Races selector — leads the Races accordion; where every contest will live
-    // as it opens. Injected so it appears on every page.
+    // The races selector. Injected so it appears on every page. Osun 2026 and
+    // Presidency 2027 used to be injected beside it; races.html now derives
+    // every race from the contest catalogue and groups them by whether they
+    // are completed, ongoing or upcoming, so a hand-kept pair in the menu was
+    // a stale subset of it — and one of them was a finished election.
     if (!panel.querySelector('a[href="races.html"]')) {
       const ra = document.createElement('a');
       ra.href = 'races.html';
-      ra.textContent = 'All Races';
+      ra.textContent = 'Races';
       panel.appendChild(ra);
     }
     // My Profile leads Take part (mirrors native); injected so it appears on every
@@ -127,21 +134,6 @@
       ir.href = 'incident-reports.html';
       ir.textContent = 'Incident Reports';
       panel.appendChild(ir);
-    }
-    if (!panel.querySelector('a[href="osun.html"]')) {
-      const o = document.createElement('a');
-      o.href = 'osun.html';
-      o.textContent = 'Osun 2026';
-      panel.appendChild(o);
-    }
-    // Presidency 2027 — the presidential race (candidates.html). Injected like
-    // Osun so it lands in the Races group on every page, even the two whose
-    // static list omits it.
-    if (!panel.querySelector('a[href="candidates.html"]')) {
-      const c = document.createElement('a');
-      c.href = 'candidates.html';
-      c.textContent = 'Presidency 2027';
-      panel.appendChild(c);
     }
     // Practice run — injected everywhere (like Osun) so new users can find it
     // without editing every page's static list.

@@ -55,14 +55,19 @@ const REFRESH_MS = 30_000;
 type Row = { party: string; name: string; votes: number; share: number };
 /**
  * `statesTotal`/`statesReported` keep their original names but now count
- * whatever `unit` says: LGAs for a contest held in one state, states otherwise.
+ * whatever `unit` says — which follows the CONTEST'S LEVEL, not just whether it
+ * is state-scoped: senatorial districts for the Senate, federal constituencies
+ * for the House, LGAs for a one-state contest, states otherwise. The server
+ * sends the plural too, because `unit + 's'` gives "federal constituencys".
  */
 type Gaps = {
   contest: string;
   statesTotal: number;
   statesReported: number;
   missing: string[];
-  unit?: 'LGA' | 'state';
+  level?: string;
+  unit?: string;
+  unitPlural?: string;
   scope?: { state: string } | null;
 };
 type Sub = { contest: string; state?: string };
@@ -566,6 +571,9 @@ export default function Results() {
     // Senate board said "Help cover these states" and counted 37 of them for an
     // election fought in 109 districts.
     const unit = gaps.unit || 'state';
+    // Plural from the server as well: `unit + 's'` printed "federal
+    // constituencys" on the House board.
+    const units = gaps.unitPlural || `${unit}s`;
     const scoped = unit !== 'state' || gaps.scope?.state;
     const only = !scoped && contest?.states?.length ? contest.states : null;
     const missing = only ? gaps.missing.filter((s) => only.includes(s)) : gaps.missing;
@@ -575,6 +583,7 @@ export default function Results() {
       total,
       reported: Math.max(0, total - missing.length),
       unit,
+      units,
       where: gaps.scope?.state ?? null,
     };
   }, [gaps, contest]);
@@ -1131,9 +1140,10 @@ export default function Results() {
   const coverageCard =
     coverage && coverage.missing.length ? (
       <View className="mt-4 rounded-2xl bg-card px-4 py-4">
-        <Text className="text-sm font-bold text-ink">Help cover these {coverage.unit}s</Text>
+        <Text className="text-sm font-bold text-ink">Help cover these {coverage.units}</Text>
         <Text className="pt-1 text-xs text-muted">
-          {coverage.reported} of {coverage.total} {coverage.unit}(s)
+          {coverage.reported} of {coverage.total}{' '}
+          {coverage.total === 1 ? coverage.unit : coverage.units}
           {coverage.where ? ` in ${coverage.where}` : ''} in this election have reports so far.
           Nothing has come in from:
         </Text>

@@ -77,7 +77,7 @@
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
-  <script src="race.js?v=11"></script>
+  <script src="race.js?v=12"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -540,10 +540,13 @@
         // election's are senatorial districts, not the 37 states it is counted
         // across. Taking the string rather than choosing between two.
         const unit = g.unit || 'state';
+        // The PLURAL comes from the server too: `unit + 's'` printed "federal
+        // constituencys" on the House board.
+        const units = g.unitPlural || `${unit}s`;
         const where = g.scope && g.scope.state ? ` in ${g.scope.state}` : '';
-        document.getElementById('gaps-title').textContent = `Help cover these ${unit}s`;
+        document.getElementById('gaps-title').textContent = `Help cover these ${units}`;
         document.getElementById('gaps-hint').innerHTML =
-          `These ${unit}s${where} have no reports yet for this election. Voting or observing in one? Be the first. `
+          `These ${units}${where} have no reports yet for this election. Voting or observing in one? Be the first. `
           + `<a href="observe.html?intent=observe">Become an observer →</a>`;
         document.getElementById('gaps').innerHTML = g.missing.map((s) =>
           `<span style="font-size:.85rem;padding:5px 11px;border-radius:999px;background:var(--tint);border:1px solid var(--border);color:var(--link)">${s}</span>`).join('');

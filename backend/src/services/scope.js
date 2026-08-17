@@ -66,12 +66,23 @@ export const LEVEL_COLS = {
   federal: 'federal_constituency',
 };
 
-/** What one region of each level is called, for headings and sentences. */
+/**
+ * What one region of each level is called, for headings and sentences — and its
+ * PLURAL, because clients were building one with `noun + 's'` and printing
+ * "federal constituencys". English plurals are not a client's problem to solve.
+ */
 export const LEVEL_NOUN = {
   state: 'state',
   lga: 'LGA',
   senatorial: 'senatorial district',
   federal: 'federal constituency',
+};
+
+export const LEVEL_NOUN_PLURAL = {
+  state: 'states',
+  lga: 'LGAs',
+  senatorial: 'senatorial districts',
+  federal: 'federal constituencies',
 };
 
 /** Nationwide shape — used when a contest is not confined to one state. */
@@ -97,10 +108,15 @@ export const REGION_LEVEL_SCOPED = {
   REP: 'federal',
 };
 
-/** `{ level, col, noun }` for a contest, cropped to `state` or nationwide. */
+/** `{ level, col, noun, nounPlural }` for a contest, cropped to `state` or not. */
 export function regionLevelFor(code, state) {
   const level = (state ? REGION_LEVEL_SCOPED[code] : REGION_LEVEL[code]) || REGION_LEVEL.PRES;
-  return { level, col: LEVEL_COLS[level], noun: LEVEL_NOUN[level] };
+  return {
+    level,
+    col: LEVEL_COLS[level],
+    noun: LEVEL_NOUN[level],
+    nounPlural: LEVEL_NOUN_PLURAL[level],
+  };
 }
 
 export const reportingOpensAt = (c) => (c && c.date ? `${c.date}T08:30:00+01:00` : null);

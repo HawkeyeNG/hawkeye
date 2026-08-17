@@ -233,7 +233,7 @@ pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
   // was hardcoded to state/lga, so a Senate board read "0 of 37 states in this
   // election have reports" — counting states for an election fought in 109
   // senatorial districts, and naming the wrong places to go and cover.
-  const { level, col, noun } = regionLevelFor(contest, state);
+  const { level, col, noun, nounPlural } = regionLevelFor(contest, state);
 
   const all = (state
     ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE state = ? AND ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all(state)
@@ -251,8 +251,10 @@ pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
     scope: state ? { state } : null,
     level,
     // The noun clients print. Was 'LGA' | 'state' only; it is now whatever the
-    // contest's level is actually called, so no client has to infer it.
+    // contest's level is actually called, so no client has to infer it — plural
+    // included, because `unit + 's'` produced "federal constituencys".
     unit: noun,
+    unitPlural: nounPlural,
     // statesTotal/statesReported kept under their original names so existing
     // callers (native's coverage card, the assistant tool) keep working — they
     // now count LGAs when the contest is state-scoped.

@@ -43,7 +43,23 @@ async function on(uaLabel, ua) {
   const r = await p.evaluate(() => {
     const a = document.getElementById('play-cta');
     return {
-      shown: a ? !a.hidden : false,
+      // RENDERED, not the property. `.hidden` read true on iPhone while the badge
+      // was still on screen: .play-badge-link sets `display: inline-block`, and an
+      // author display rule beats the [hidden] UA style. Asking the element
+      // whether it is hidden gave the wrong answer; asking the layout does not.
+      shown: a ? a.getClientRects().length > 0 : false,
+      label: document.getElementById('install-cta')?.textContent?.trim() ?? null,
+      sameRow: (() => {
+        const btn = document.getElementById('install-cta');
+        if (!a || !btn || !a.getClientRects().length) return null;
+        const x = a.getBoundingClientRect(); const y = btn.getBoundingClientRect();
+        return Math.abs((x.top + x.height / 2) - (y.top + y.height / 2)) < 6;
+      })(),
+      sameHeight: (() => {
+        const img = a?.querySelector('img'); const btn = document.getElementById('install-cta');
+        if (!img || !btn || !img.getClientRects().length) return null;
+        return Math.abs(img.getBoundingClientRect().height - btn.getBoundingClientRect().height) < 2;
+      })(),
       href: a ? a.getAttribute('href') : null,
       text: a ? a.textContent.trim() : null,
       isImage: a ? !!a.querySelector('img') : false,
@@ -68,6 +84,9 @@ const DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (K
 console.log('=== Android ===');
 const a = await on('Android', ANDROID);
 check('the Play route is offered', a.shown, true);
+check('the web-app button sits on the same line', a.sameRow, true);
+check('and matches the badge height', a.sameHeight, true);
+check('labelled for a platform that has a store', a.label, 'Install Web App');
 check('pointing at the right package', a.href, PLAY);
 check('opening safely in a new tab', a.opensNewTab, true);
 check('rendered as the official badge image', a.isImage, true);
@@ -77,7 +96,8 @@ check('and no button chrome of ours around it', a.hasButtonClass, false);
 
 console.log('\n=== iPhone — there is no iOS build ===');
 const i = await on('iPhone', IPHONE);
-check('NOT offered on iPhone', i.shown, false);
+check('the badge does not RENDER on iPhone', i.shown, false);
+check('and the button says which platform it is for', i.label, 'Web App for iPhone');
 
 console.log('\n=== desktop (people install on a phone from a laptop link) ===');
 const d = await on('desktop', DESKTOP);

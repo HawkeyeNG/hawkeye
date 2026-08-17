@@ -21,8 +21,10 @@ const REFRESH_MS = 30_000;
  * board for that contest is the honest destination — it is the screen that is
  * actually about that election.
  */
+// Every branch ends in a query string, so the caller can append `&n=` without
+// having to know which one it got.
 function cardHref(c: Contest): string {
-  if (c.code === 'PRES') return '/candidates';
+  if (c.code === 'PRES') return '/candidates?from=home';
   if (c.code === 'GOV' && c.states?.length === 1) {
     return `/race?contest=GOV&state=${encodeURIComponent(c.states[0])}`;
   }
@@ -279,7 +281,17 @@ export default function Home() {
           // screen — presidential, National Assembly, governorship — landed on a
           // finished governorship in a state most of them have nothing to do
           // with.
-          onPress={() => router.push(cardHref(c) as never)}
+          // The `n` is a NAVIGATION NONCE, and it is load-bearing. The results
+          // screen is a tab: it stays mounted, so tapping a second card only
+          // changes the route params of a screen that is already showing
+          // something. Its seeding is deliberately "apply only if nothing is
+          // chosen" — which preserves a race picked inside the screen, and also
+          // swallowed every card tap after the first, leaving the reader on
+          // whichever contest they opened first. A value that differs per tap
+          // tells the screen a new navigation happened, which a changed
+          // `contest` alone cannot (tapping the same card twice, or returning
+          // to a tab, look identical without it).
+          onPress={() => router.push(`${cardHref(c)}&n=${Date.now()}` as never)}
         >
           <View className="px-5 pb-4 pt-5">
             <Text className="text-xs font-semibold uppercase tracking-wider text-hawk-gold">

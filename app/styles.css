@@ -1344,9 +1344,23 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
   border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; }
 .info-links a:hover { border-color: var(--green); background: var(--tint); }
 
+/* THE BODY SCROLLS, THE CLOSE BUTTON DOES NOT.
+   These dialogs carry explanatory prose of any length — the docket's runs to
+   four paragraphs — and with no height cap a long one either overflows the
+   viewport or (once the UA clamps it) scrolls the Close button away with the
+   text. A primary action reachable only by scrolling is the rule this codebase
+   has broken before. Flex column: heading pinned, .info-body scrolls, button
+   pinned. `min-height: 0` is what actually lets the middle shrink — without it
+   a flex child refuses to go below its content height and nothing scrolls. */
 .gov-disc-modal {
   border: 0; border-radius: 16px; padding: 22px; max-width: min(92vw, 440px);
   color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+  display: flex; flex-direction: column; max-height: min(85vh, 720px);
+}
+.gov-disc-modal .info-body {
+  overflow-y: auto; flex: 1 1 auto; min-height: 0;
+  /* Keeps a flick at the end of the text from scrolling the page behind it. */
+  overscroll-behavior: contain;
 }
 .gov-disc-modal::backdrop { background: rgba(10, 20, 15, .5); }
 .gov-disc-modal h2 { font-size: 1.05rem; margin: 0 0 10px; }

@@ -75,7 +75,10 @@ check('named on the card', await p.textContent('#race-name'), 'Governorship (202
 console.log('\n=== the scope picker now FILTERS, as its label claims ===');
 asked.length = 0;
 await p.selectOption('#sel-scope', 'Osun');
-await p.waitForFunction(() => /in Osun/.test(document.getElementById('map-title').textContent), { timeout: 10000 });
+// WAIT ON THE MAP, not the title. The board now paints its numbers and headings
+// BEFORE awaiting the geometry, so the title says "in Osun" while the previous
+// map is still on screen — synchronising on the title caught the old 37 states.
+await p.waitForFunction(() => document.querySelectorAll('#map path').length === 30, { timeout: 15000 });
 check('choosing a state crops the board to it', asked.map((a) => a.state), (s) => s.includes('Osun'));
 check('the map says which state', await p.textContent('#map-title'), (t) => /in Osun/.test(t));
 check('and draws its LGAs', await p.$$eval('#map path', (n) => n.length), 30);
@@ -83,7 +86,7 @@ check('a way back is offered', await p.$$eval('#sel-scope option', (o) => o.map(
 
 asked.length = 0;
 await p.selectOption('#sel-scope', '__all');
-await p.waitForFunction(() => !/in Osun/.test(document.getElementById('map-title').textContent), { timeout: 10000 });
+await p.waitForFunction(() => document.querySelectorAll('#map path').length > 30, { timeout: 15000 });
 check('and it uncrops', asked.map((a) => a.state), (s) => s.every((x) => x === null));
 
 console.log('\n=== a deep link still opens its board directly ===');

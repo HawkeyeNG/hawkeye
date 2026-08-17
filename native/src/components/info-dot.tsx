@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
+import { ModalCard } from '@/components/modal-card';
 import { useUi } from '@/lib/theme';
 
 /**
@@ -40,23 +41,12 @@ export function InfoDot({ title, text }: { title?: string; text: string }) {
         </View>
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        {/* Backdrop closes; the inner Pressable swallows the tap so the card stays. */}
-        <Pressable
-          onPress={() => setOpen(false)}
-          className="flex-1 items-center justify-center bg-black/50 px-6"
-        >
-          <Pressable onPress={() => {}} className="w-full max-w-md rounded-2xl bg-card p-5">
-            {title ? <Text className="pb-2 text-lg font-bold text-ink">{title}</Text> : null}
-            <ScrollView className="max-h-96">
-              <Text className="text-sm leading-5 text-ink">{text}</Text>
-            </ScrollView>
-            <Pressable onPress={() => setOpen(false)} className="mt-4 rounded-full bg-good py-3">
-              <Text className="text-center text-sm font-bold text-good-ink">Close</Text>
-            </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {/* The card and its scrolling now come from ModalCard. The fixed
+          `max-h-96` this used to carry is exactly what cut the docket's
+          explanation off mid-sentence on a long dot. */}
+      <ModalCard visible={open} onClose={() => setOpen(false)} title={title}>
+        <Text className="text-sm leading-5 text-ink">{text}</Text>
+      </ModalCard>
     </>
   );
 }

@@ -292,18 +292,46 @@
     // record instead, and the standing rule is: no recruitment CTA once polling
     // day has passed, and the results link says what it now is.
     const done = statusOf(race) === 'completed';
+    /**
+     * FOLLOWING ONE SEAT — the size of subscription most people actually want,
+     * and until now the one there was no way to ask for. The leaderboard could
+     * only offer the whole election; wanting every governorship in the
+     * federation is a newsroom's interest, not a voter's.
+     *
+     * `join.value` is the seat's own region key — the state, senatorial district
+     * or federal constituency the backend buckets its reports by — so this
+     * follows exactly this race and nothing else. Not offered on a finished
+     * race, by the same rule as the CTAs: there will be no further reports.
+     */
+    const j = race.join || {};
+    const canFollow = !done && !!j.contest && !!j.value;
     // `data-cta` names each button's JOB, so styling can change without a test
     // or a caller having to guess which anchor is which.
     parts.push(`<div class="race-cta">
+      ${canFollow ? '<button type="button" class="btn-quiet" data-cta="follow" id="race-follow-btn">🔔 Follow this race</button>' : ''}
       ${done ? '' : '<a class="btn-accent" data-cta="observe" href="observe.html?intent=observe">Become an Observer</a>'}
       <a class="${done ? 'btn-accent' : 'btn-quiet'}" data-cta="results" href="${esc(opts.resultsHref || resultsHrefFor(race))}">${
         done ? 'Review the Results' : 'See Live Results'}</a>
-      ${done ? '<a class="btn-quiet" data-cta="verify" href="ledger.html">Verify the Record</a>' : ''}</div>`);
+      ${done ? '<a class="btn-quiet" data-cta="verify" href="ledger.html">Verify the Record</a>' : ''}</div>
+      ${canFollow ? '<p class="hint" id="race-follow-msg" hidden></p>' : ''}`);
 
     const credit = [noteLeads ? '' : (race.note || ''), race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit || ''].filter(Boolean).join(' ');
     if (credit) parts.push(`<p class="hint">${esc(credit)}</p>`);
 
     main.innerHTML = parts.join('\n');
+
+    // The Follow toggle, wired once the markup exists. follow.js owns the
+    // wording and the request so this page and the leaderboard cannot describe
+    // the same subscription differently; a page that has not loaded it simply
+    // keeps a button that does nothing rather than throwing during mount.
+    if (canFollow && typeof window.mountFollow === 'function') {
+      window.mountFollow({
+        button: main.querySelector('#race-follow-btn'),
+        message: main.querySelector('#race-follow-msg'),
+        contest: j.contest,
+        scope: j.value,
+      });
+    }
 
     // Fill the map slot behind the paint. A failure here must cost nothing: the
     // page is about candidates, the map is context, and a race with no matching

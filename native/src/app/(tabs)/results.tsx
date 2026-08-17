@@ -2,17 +2,10 @@ import { Feather } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { ContestPicker } from '@/components/contest-picker';
+import { FollowRace } from '@/components/follow-race';
 import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
@@ -35,8 +28,6 @@ import {
   type NationalRegion,
   type Party,
 } from '@/lib/api';
-import { authedGet, useAuth } from '@/lib/auth';
-import { getIdentity } from '@/lib/identity';
 import {
   findRace,
   loadPolitical,
@@ -46,7 +37,6 @@ import {
 } from '@/lib/political';
 import { ELECTION_TYPES, listRaces, raceLabel, STATES, type Race, type StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
-import * as SecureStore from 'expo-secure-store';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -68,10 +58,11 @@ type Gaps = {
   level?: string;
   unit?: string;
   unitPlural?: string;
-  scope?: { state: string } | null;
+  /** `region` is the name to print; `state` is only ever an actual state. */
+  scope?: { region?: string; state?: string | null; level?: string } | null;
+  /** Client-side: the raceKey this answer was fetched for. Not on the wire. */
+  forRace?: string | null;
 };
-type Sub = { contest: string; state?: string };
-
 /**
  * One region row of GET /api/national/:contest as the BACKEND actually sends it
  * (backend/src/routes/national.js): region key, a party→votes map, and the
@@ -181,15 +172,22 @@ function deepLinkRace(contest?: string, scope?: string): Race | null {
   return list.find((r) => scopeOf(r) === scope) ?? list[0];
 }
 
-function defaultRace(contests: Contest[]): Race | null {
-  const c = contests[0];
-  if (!c) return null;
-  const type = ELECTION_TYPES.find((t) => t.code === c.code);
-  if (!type) return null;
-  const state = (c.states ?? []).find((s): s is StateName =>
-    (STATES as readonly string[]).includes(s),
-  );
-  return listRaces(type.code, state)[0] ?? null;
+/**
+ * Seat magnitude — the order every other surface uses (races.html, Home's cards,
+ * menu.js:RACE_ORDER). /api/contests returns catalogue order, which puts the two
+ * National Assembly rows above the governorship here and nowhere else.
+ */
+const CHOOSER_ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
+const orderedContests = (cs: Contest[]) =>
+  [...cs].sort((a, b) => CHOOSER_ORDER.indexOf(a.code) - CHOOSER_ORDER.indexOf(b.code));
+
+/** "Opens 16 Jan 2027" for a race that has not started, from the contest itself. */
+function opensTag(c: Contest): string {
+  const raw = c.opensAt || c.date;
+  if (!raw) return 'Not open yet';
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return 'Not open yet';
+  return `Opens ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 }
 
 /** "15 Aug" from an ISO date / opensAt, or the raw string if it will not parse. */
@@ -222,7 +220,6 @@ function whenLine(c: Contest): string {
  * app refuses to show.
  */
 export default function Results() {
-  const auth = useAuth();
   const ui = useUi();
   /**
    * STATIC header (assistant.tsx's pattern), not hide-on-scroll. The race card
@@ -247,6 +244,8 @@ export default function Results() {
   /** The race being ranked. The picker's controlled value and this screen's subject. */
   const [race, setRace] = useState<Race | null>(null);
   const [picking, setPicking] = useState(false);
+  /** Inside the chooser: browsing seats rather than whole elections. */
+  const [pickSeat, setPickSeat] = useState(false);
 
   /**
    * A WHOLE CONTEST, with no seat chosen inside it — "Senate (2027)", not "Abia
@@ -263,13 +262,11 @@ export default function Results() {
   const [data, setData] = useState<National | null>(null);
   const [parties, setParties] = useState<Party[]>([]);
   const [gaps, setGaps] = useState<Gaps | null>(null);
-  const [subs, setSubs] = useState<Sub[]>([]);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   /** The last completed fetch could not reach the tally. Kept apart from "no
    *  results", which is a fact about the election, not about the network. */
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [busy, setBusy] = useState(false);
 
   /** The contest the selected race resolves to — null when Hawkeye does not
    *  collect this race yet, which the empty state has to say out loud. */
@@ -287,18 +284,32 @@ export default function Results() {
   // no race, so the contest code stands in for it.
   const raceKey = race?.key ?? (wholeContest ? `ALL:${wholeContest}` : null);
 
+  /**
+   * THE CHOOSER IS THE SCREEN WHEN NOTHING IS CHOSEN.
+   *
+   * DERIVED, not a `setPicking(true)` in an effect: opening it as a side effect
+   * means one render of an empty board first, and it would re-open every time
+   * the effect's deps moved. This is simply what the screen shows while there is
+   * no race — the same rule app/results.html applies by keeping #board hidden.
+   */
+  const nothingChosen = !race && !wholeContest;
+  const choosing = picking || nothingChosen;
+
   const loadContests = useCallback(async () => {
     const cs = await api.contests().catch(() => null);
     setContestsLoaded(true);
     if (!cs) return;
     setContests(cs);
-    // Seed only when the observer has not chosen for themselves — and prefer the
-    // race a deep link asked for over this screen's own default.
-    // Seeding for a visit that names nothing. A link is applied by the effect
-    // below instead, which can also act on a SECOND arrival — this one cannot,
-    // by design: `?? ` keeps whatever the reader has already chosen.
-    if (!linkContest) setRace((r) => r ?? defaultRace(cs));
-  }, [linkContest, linkScope]);
+    // NO DEFAULT RACE. This used to resolve the first contest on the wire to a
+    // concrete race, so opening the Results tab painted the presidency — which
+    // reads as "the results" rather than as one election among five, and hid the
+    // fact that there is a choice at all. With nothing asked for, the chooser IS
+    // the screen (see `choosing` below). Twin of app/results.html, which made
+    // this change first and is why the two disagreed.
+    //
+    // A deep link still opens its board directly; it is applied by the effect
+    // below, which can also act on a SECOND arrival.
+  }, []);
 
   /**
    * Only the newest fetch may write. Switching race mid-flight otherwise lets a
@@ -376,7 +387,17 @@ export default function Results() {
       // seat's page, which is where a reader goes by tapping the region.
       api.national(contestCode).catch(() => null),
       api.parties().catch(() => [] as Party[]),
-      fetch(`${BASE}/api/coverage/gaps?contest=${encodeURIComponent(contestCode)}`)
+      // GAPS FOLLOW THE SELECTION, unlike the tally above. The board is
+      // deliberately the whole contest's, but "help cover these" is a call to
+      // action about somewhere specific — and asking contest-wide printed "0 of
+      // 28 states ... Abia, Adamawa, Akwa Ibom" under a Jigawa governorship,
+      // recruiting a reader in Jigawa to cover 27 states running a different
+      // race. With a seat selected the server narrows to it and answers in LGAs.
+      fetch(
+        `${BASE}/api/coverage/gaps?contest=${encodeURIComponent(contestCode)}${
+          scope ? `&region=${encodeURIComponent(scope)}` : ''
+        }`,
+      )
         .then((r) => (r.ok ? (r.json() as Promise<Gaps>) : null))
         .catch(() => null),
     ]);
@@ -391,82 +412,20 @@ export default function Results() {
     // screen are still the ones we last really received, and the header's
     // "updated HH:MM:SS" keeps telling the truth about when that was. Same for
     // gaps — null there means the request failed, not that no states are missing.
-    if (g) setGaps(g);
-  }, [contestCode, raceKey, contests.length, loadContests]);
+    //
+    // STAMPED WITH THE RACE IT DESCRIBES. Holding gaps through a failure is
+    // right; holding them through a race CHANGE is not, and the two used to be
+    // indistinguishable — a 404 for the new race left the previous one's list on
+    // screen under the new race's name. `coverage` below drops any that do not
+    // match the race being shown.
+    if (g) setGaps({ ...g, forRace: raceKey });
+  }, [contestCode, raceKey, scope, contests.length, loadContests]);
 
   useEffect(() => {
     load();
     const t = setInterval(load, REFRESH_MS);
     return () => clearInterval(t);
   }, [load]);
-
-  // Which races this observer already follows, so the control can say "Following".
-  useEffect(() => {
-    if (auth.status !== 'signedIn') {
-      setSubs([]);
-      return;
-    }
-    authedGet<{ subscriptions?: Sub[] }>('/api/observers/me')
-      .then((me) => setSubs(me.subscriptions ?? []))
-      .catch(() => {});
-  }, [auth.status]);
-
-  /**
-   * The subscription that already covers this race, if any. A nationwide row
-   * (state '') counts: the backend pings it for every region, so claiming "not
-   * following" would be false. It is kept as the ROW, not a boolean, because
-   * DELETE matches on (contest, state) exactly — unfollowing a nationwide row
-   * with this race's region would delete nothing and silently leave the alerts on.
-   */
-  const followed = useMemo(() => {
-    if (!contest) return null;
-    return (
-      subs.find(
-        (s) => s.contest === contest.code && ((s.state ?? '') === scope || (s.state ?? '') === ''),
-      ) ?? null
-    );
-  }, [subs, contest, scope]);
-  const following = !!followed;
-  /** Following, but through an everywhere-row rather than this race's region. */
-  const followsEverywhere = !!followed && (followed.state ?? '') === '' && scope !== '';
-
-  const toggleFollow = async () => {
-    if (!contest) return;
-    if (auth.status !== 'signedIn') {
-      router.push('/sign-in');
-      return;
-    }
-    // Unfollow removes the exact row that is doing the following; follow adds
-    // one scoped to the race on screen.
-    const state = following ? (followed?.state ?? '') : scope;
-    setBusy(true);
-    try {
-      const token = await SecureStore.getItemAsync('hawkeye.auth.token');
-      const id = await getIdentity();
-      const res = await fetch(`${BASE}/api/subscriptions`, {
-        method: following ? 'DELETE' : 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${token}`,
-          'x-device-id': id.deviceId,
-        },
-        body: JSON.stringify({ contest: contest.code, state }),
-      });
-      if (!res.ok) {
-        Alert.alert('Could not update', `Try again. (HTTP ${res.status})`);
-        return;
-      }
-      setSubs((s) =>
-        following
-          ? s.filter((x) => !(x.contest === contest.code && (x.state ?? '') === state))
-          : [...s, { contest: contest.code, state }],
-      );
-    } catch (e) {
-      Alert.alert('Could not update', e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  };
 
   /**
    * A board is never allowed to show one race's votes under another's name —
@@ -484,6 +443,26 @@ export default function Results() {
    * numbers stay up and the region rows re-derive from the new scope on the
    * spot; a refresh follows either way, because `load` is keyed on race.
    */
+  /**
+   * A WHOLE ELECTION, chosen from the opening list — one tap from the Results
+   * tab to the national Senate board, the same destination Home's Senate card
+   * reaches. Identical bookkeeping to `selectRace`: only clear the held tally
+   * when the CONTEST actually changes.
+   */
+  const selectWholeContest = (code: string) => {
+    if (code !== contestCode) {
+      setData(null);
+      setGaps(null);
+      setUpdatedAt(null);
+      setFailed(false);
+      reqId.current++;
+    }
+    setRace(null);
+    setWholeContest(code);
+    setPicking(false);
+    setPickSeat(false);
+  };
+
   const selectRace = (r: Race) => {
     if ((matchContest(r, contests)?.code ?? null) !== contestCode) {
       setData(null);
@@ -500,6 +479,7 @@ export default function Results() {
     setWholeContest(null);
     setRace(r);
     setPicking(false);
+    setPickSeat(false);
   };
 
   /**
@@ -588,12 +568,22 @@ export default function Results() {
         title: 'Could not load the races',
         body: 'Pull down to try again — the list of elections did not reach this device.',
       };
-    if (!race)
+    // A WHOLE CONTEST IS A CHOICE. `race` is null on a whole-election board by
+    // design — "Senate (2027)", all 109 districts at once — so testing it alone
+    // told a reader who had just tapped the Senate card that they had chosen
+    // nothing, on a board plainly labelled Senate. It also buried the real
+    // reason that board is empty, which the branches below state properly: the
+    // election has not been held yet.
+    if (!race && !wholeContest)
       return { title: 'Choose a race', body: 'Tap “Change” above to pick the race to rank.' };
     if (!contest)
       return {
         title: 'Not covered yet',
-        body: `Hawkeye is not collecting results for ${raceLabel(race, contests)} yet, so there is nothing to rank. It will appear here once the race is added.`,
+        // `race` can be null here only on a whole-contest view, and that view is
+        // only ever set to a code /api/contests listed — so this branch is the
+        // per-seat one in practice. The fallback keeps the sentence readable
+        // rather than printing "undefined" if that ever stops being true.
+        body: `Hawkeye is not collecting results for ${race ? raceLabel(race, contests) : 'this election'} yet, so there is nothing to rank. It will appear here once the race is added.`,
       };
     // Closed is checked BEFORE the fetch state on purpose: for a race that has
     // not opened, "nothing can be reported yet" is the whole truth, and it stays
@@ -622,7 +612,7 @@ export default function Results() {
       title: 'No results yet',
       body: 'Accepted reports appear here live, ranked by verified votes.',
     };
-  }, [contestsLoaded, contests.length, race, contest, scope, elsewhere, failed, updatedAt]);
+  }, [contestsLoaded, contests.length, race, wholeContest, contest, scope, elsewhere, failed, updatedAt]);
 
   /**
    * Coverage narrowed to the states this contest is actually run in. The server
@@ -632,6 +622,10 @@ export default function Results() {
    */
   const coverage = useMemo(() => {
     if (!gaps) return null;
+    // Belongs to a race that is no longer on screen — see `load`. Showing it
+    // would name places to cover for an election the reader has navigated away
+    // from, under the heading of the one they are looking at.
+    if (gaps.forRace !== raceKey) return null;
     // The server now scopes gaps to the contest itself and says which noun it is
     // counting (`unit`: "LGA" for a one-state contest, else "state"). The old
     // client-side narrowing by contest.states only worked while gaps were always
@@ -645,7 +639,10 @@ export default function Results() {
     // Plural from the server as well: `unit + 's'` printed "federal
     // constituencys" on the House board.
     const units = gaps.unitPlural || `${unit}s`;
-    const scoped = unit !== 'state' || gaps.scope?.state;
+    // `scope` set at all means the server already narrowed — to a one-state
+    // contest, or now to the selected seat — so the client must not narrow again.
+    const where = gaps.scope?.region ?? gaps.scope?.state ?? null;
+    const scoped = unit !== 'state' || !!where;
     const only = !scoped && contest?.states?.length ? contest.states : null;
     const missing = only ? gaps.missing.filter((s) => only.includes(s)) : gaps.missing;
     const total = only ? only.length : gaps.statesTotal;
@@ -655,9 +652,9 @@ export default function Results() {
       reported: Math.max(0, total - missing.length),
       unit,
       units,
-      where: gaps.scope?.state ?? null,
+      where,
     };
-  }, [gaps, contest]);
+  }, [gaps, contest, raceKey]);
 
   // ── The results map ────────────────────────────────────────────────────────
   // Everything from here to `mapCard` serves one rule: the map and the board
@@ -1172,50 +1169,11 @@ export default function Results() {
           both. */}
       <GovDisclaimer />
 
-      {contest ? (
-        <Pressable
-          disabled={busy}
-          onPress={toggleFollow}
-          className={`mb-3 flex-row items-center rounded-2xl px-4 py-3 active:opacity-80 ${
-            following ? 'bg-card' : 'bg-hawk-green'
-          }`}
-        >
-          {busy ? (
-            <ActivityIndicator color={following ? BRAND.leaf : BRAND.gold} />
-          ) : (
-            <Feather
-              name={following ? 'bell' : 'bell-off'}
-              size={16}
-              color={following ? BRAND.leaf : BRAND.gold}
-            />
-          )}
-          {/* THE LABEL MUST NOT BE THE FLEXIBLE ONE. It carried `flex-1`, which
-              in React Native means basis 0 AND shrink — so the sibling took its
-              full natural width and the label collapsed to a single character
-              per line, printing "Follow this race" as a vertical column of
-              letters. It only showed up on long region names ("Benue
-              North-East"); short ones left just enough room to look fine.
-              The label now takes its own width, and the line that varies in
-              length is the one allowed to flex and wrap. */}
-          <Text
-            className={`pl-3 text-sm font-bold ${
-              following ? 'text-hawk-leaf' : 'text-hawk-gold'
-            }`}
-          >
-            {following ? 'Following this race' : 'Follow this race'}
-          </Text>
-          <Text
-            className={`flex-1 pl-3 text-right text-xs ${following ? 'text-faint' : 'text-emerald-200'}`}
-            numberOfLines={2}
-          >
-            {following
-              ? followsEverywhere
-                ? 'Alerts on · every state'
-                : 'Alerts on'
-              : `Get alerts on every report${scope ? ` in ${scope}` : ''}`}
-          </Text>
-        </Pressable>
-      ) : null}
+      {/* A CATEGORY BOARD FOLLOWS THE CATEGORY. `scope` is '' on a whole-contest
+          view, so this reads "Follow all Senate races" — which is what the
+          subscription actually is. Following ONE seat is offered on that seat's
+          own page, where it is the obvious thing to want; see components/race.tsx. */}
+      <FollowRace contest={contestCode} scope={scope} />
     </View>
   );
 
@@ -1229,11 +1187,15 @@ export default function Results() {
   const coverageCard =
     coverage && coverage.missing.length ? (
       <View className="mt-4 rounded-2xl bg-card px-4 py-4">
-        <Text className="text-sm font-bold text-ink">Help cover these {coverage.units}</Text>
+        <Text className="text-sm font-bold text-ink">
+          Help cover {coverage.where ? `${coverage.where}` : `these ${coverage.units}`}
+        </Text>
         <Text className="pt-1 text-xs text-muted">
           {coverage.reported} of {coverage.total}{' '}
           {coverage.total === 1 ? coverage.unit : coverage.units}
-          {coverage.where ? ` in ${coverage.where}` : ''} in this election have reports so far.
+          {/* "in Jigawa in this election" read as a stutter once the card could
+              actually be about one race. Narrowed, the place IS the subject. */}
+          {coverage.where ? ` in ${coverage.where}` : ' in this election'} have reports so far.
           Nothing has come in from:
         </Text>
         <Text className="pt-2 text-xs text-muted">{coverage.missing.join(' · ')}</Text>
@@ -1261,29 +1223,48 @@ export default function Results() {
             header so the control is never something you have to scroll to find.
             It leads now: the detail line under it describes THIS race, and a
             sub-line above its own subject read as a stray sentence. */}
+        {/* With nothing chosen there is nothing to go back to, so the card is a
+            heading rather than a control — pressing "Cancel" would have had
+            nowhere to land. */}
         <Pressable
-          onPress={() => setPicking((v) => !v)}
+          disabled={nothingChosen}
+          onPress={() => {
+            setPicking((v) => !v);
+            setPickSeat(false);
+          }}
           className="flex-row items-center rounded-2xl bg-card px-3.5 py-2.5 active:opacity-80"
         >
-          <Feather name={picking ? 'x' : 'award'} size={15} color={ui.muted} />
+          <Feather name={choosing && !nothingChosen ? 'x' : 'award'} size={15} color={ui.muted} />
           <Text className="flex-1 px-2.5 text-sm font-semibold text-ink" numberOfLines={1}>
-            {picking
+            {choosing && !nothingChosen
               ? 'Keep the current race'
               : wholeContest && contest
                 // The whole election, named the way every other surface names it.
                 ? `${contest.name} (${Number(String(contest.date ?? '').slice(0, 4)) || 2027})`
                 : race
                   ? raceLabel(race, contests)
-                  : 'Choose a race'}
+                  : 'Choose an election'}
           </Text>
-          <Text className="text-xs font-bold text-hawk-leaf">{picking ? 'Cancel' : 'Change'}</Text>
+          {nothingChosen ? null : (
+            <Text className="text-xs font-bold text-hawk-leaf">{choosing ? 'Cancel' : 'Change'}</Text>
+          )}
         </Pressable>
         {/* Deliberately no longer opens with `contest.election` ("Osun State
             Governorship Election 2026"): that restated, at greater length, the
             race named directly above it. What is left is the part the line
             exists to carry — how much has come in, and how fresh it is. */}
-        <Text className="pt-1.5 text-sm text-muted" numberOfLines={1}>
-          {contest ? `${unitsReporting} unit(s) reporting` : race ? 'Not covered yet' : 'Loading…'}
+        {/* pl-3.5 matches the card's own px-3.5, so this line starts exactly
+            under the badge icon rather than out at the screen margin — it is a
+            caption for the card above it, and hanging further left read as a
+            separate, unrelated line. */}
+        <Text className="pl-3.5 pt-1.5 text-sm text-muted" numberOfLines={1}>
+          {contest
+            ? `${unitsReporting} unit(s) reporting`
+            : race
+              ? 'Not covered yet'
+              : nothingChosen
+                ? 'Nothing is being ranked yet'
+                : 'Loading…'}
           {contest && updatedAt
             ? ` · updated ${new Date(updatedAt).toLocaleTimeString([], {
                 hour: '2-digit',
@@ -1294,15 +1275,80 @@ export default function Results() {
         </Text>
       </View>
 
-      {picking ? (
+      {choosing ? (
         <ScrollView contentContainerClassName="px-4 pb-8 pt-1">
-          <Text className="pb-2 text-sm text-muted">
-            Choose any race to see its board. A race that has not opened can be viewed too — it
-            will simply have no results yet.
+          <Text className="pb-3 text-sm text-muted">
+            {pickSeat
+              ? 'Narrow to one seat. A race that has not opened can be viewed too — it will simply have no results yet.'
+              : 'Choose an election to see its board. A race that has not opened can be viewed too — it will simply have no results yet.'}
           </Text>
-          {/* allowClosed: viewing is not reporting. No lockedState: the board is
-              nationwide, so the full type → state → race path applies. */}
-          <ContestPicker contests={contests} value={race} onSelect={selectRace} allowClosed />
+
+          {pickSeat ? (
+            <>
+              {/* allowClosed: viewing is not reporting. No lockedState: the board
+                  is nationwide, so the full type → state → race path applies. */}
+              <ContestPicker contests={contests} value={race} onSelect={selectRace} allowClosed />
+              <Pressable
+                onPress={() => setPickSeat(false)}
+                className="mt-3 items-center rounded-2xl border border-good-ink py-3 active:opacity-70"
+              >
+                <Text className="text-sm font-bold text-good-ink">← Back to the whole elections</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              {/* FIVE ELECTIONS, ONE TAP EACH — the same list app/results.html
+                  opens with, and the same destination Home's cards reach: the
+                  whole election's national board, not a seat inside it. */}
+              {orderedContests(contests).map((c) => {
+                const on = wholeContest === c.code;
+                return (
+                  <Pressable
+                    key={c.code}
+                    onPress={() => selectWholeContest(c.code)}
+                    className={`mb-2 flex-row items-center rounded-2xl px-4 py-3.5 active:opacity-80 ${
+                      on ? 'bg-hawk-green' : 'bg-card'
+                    }`}
+                  >
+                    <View className="flex-1 pr-3">
+                      <Text className={`text-base font-bold ${on ? 'text-hawk-gold' : 'text-ink'}`}>
+                        {c.name} ({Number(String(c.date ?? '').slice(0, 4)) || 2027})
+                      </Text>
+                      <Text className={`pt-0.5 text-xs ${on ? 'text-emerald-200' : 'text-muted'}`}>
+                        {c.election}
+                      </Text>
+                    </View>
+                    {c.open ? (
+                      <View className="mr-1.5 rounded-full bg-good px-2.5 py-1">
+                        <Text className="text-[11px] font-bold text-good-ink">Open</Text>
+                      </View>
+                    ) : (
+                      <Text className="mr-1.5 text-[11px] font-semibold text-faint">
+                        {opensTag(c)}
+                      </Text>
+                    )}
+                    <Feather name="chevron-right" size={18} color={on ? BRAND.gold : ui.faint} />
+                  </Pressable>
+                );
+              })}
+              {!contests.length ? (
+                <Text className="px-1 py-2 text-sm text-muted">
+                  {contestsLoaded
+                    ? 'The list of elections did not reach this device. Pull down on the board to try again.'
+                    : 'Loading the elections Hawkeye covers…'}
+                </Text>
+              ) : null}
+              {/* The finer grain, one level down rather than in the way: most
+                  readers want the election, and the ones who want their own
+                  senator can say so. */}
+              <Pressable
+                onPress={() => setPickSeat(true)}
+                className="mt-3 items-center rounded-2xl border border-good-ink py-3 active:opacity-70"
+              >
+                <Text className="text-sm font-bold text-good-ink">Rank a single seat instead →</Text>
+              </Pressable>
+            </>
+          )}
         </ScrollView>
       ) : (
         <FlashList

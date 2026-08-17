@@ -467,13 +467,19 @@
       // tabindex on the heading so focus can land HERE on open. <dialog>.showModal()
       // otherwise focuses the first focusable child — the inecnigeria.org link —
       // which renders as a preselected link nobody asked for.
+      // Same pinned-heading / scrolling-body / pinned-Close shape as the info
+      // dialog — this one carries the INEC links at the BOTTOM of its text, and
+      // a Play compliance notice whose sources scroll out of reach is worse than
+      // one that is merely long.
       dlg.innerHTML = '<h2 tabindex="-1">Not a government service</h2>'
+        + '<div class="info-body">'
         + '<p>Hawkeye is an independent, citizen-run transparency tool. It is not affiliated with, '
         + 'endorsed by, or acting on behalf of INEC or any government entity, and it does not declare '
         + 'election results. Figures here are unofficial crowd reports. Official results and electoral '
         + 'information come from INEC:</p>'
         + '<p class="gov-disc-links"><a href="https://www.inecnigeria.org" target="_blank" rel="noopener">inecnigeria.org</a> '
         + '&middot; <a href="https://www.inecelectionresults.ng" target="_blank" rel="noopener">inecelectionresults.ng</a></p>'
+        + '</div>'
         + '<button type="button" class="gov-disc-close">Close</button>';
       document.body.appendChild(dlg);
       dlg.querySelector('.gov-disc-close').onclick = () => dlg.close();
@@ -511,7 +517,13 @@
       if (!dlg) {
         dlg = document.createElement('dialog');
         dlg.className = 'gov-disc-modal info-modal';
-        dlg.innerHTML = '<h2 tabindex="-1"></h2><p></p><div class="info-links"></div><button type="button" class="gov-disc-close">Close</button>';
+        // The prose and its links live in .info-body, which is the part that
+        // SCROLLS — the heading and Close stay pinned either side of it. A dot
+        // carrying four paragraphs (the docket) otherwise pushed Close off the
+        // screen, or was clipped outright.
+        dlg.innerHTML = '<h2 tabindex="-1"></h2>'
+          + '<div class="info-body"><p></p><div class="info-links"></div></div>'
+          + '<button type="button" class="gov-disc-close">Close</button>';
         document.body.appendChild(dlg);
         dlg.querySelector('.gov-disc-close').onclick = () => dlg.close();
         dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });

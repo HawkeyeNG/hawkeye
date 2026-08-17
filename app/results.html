@@ -259,6 +259,42 @@
     let DGEO = null;    // district_geo.json — 109 merged senatorial districts
     let CGEO = null;    // constituency_geo.json — federal constituencies
     let LOGOS = {};
+
+    /**
+     * ONE GEO FILE PER BOARD, FETCHED WHEN IT IS NEEDED.
+     *
+     * All four used to be awaited in the page's opening Promise.all before
+     * anything rendered: 1.8 MB raw / ~600 KB gzipped, on a page whose default
+     * board needs 23 KB of it. Measured against production, first paint took
+     * 30-40 seconds — long enough to read as a broken site, which on election
+     * day is the worst possible failure. A Senate board never needs lga_geo.json
+     * (249 KB gzipped) and a presidential board needs none of the big three.
+     */
+    const GEOFILE = {
+      state: 'states_geo.json',
+      lga: 'lga_geo.json',
+      senatorial: 'district_geo.json',
+      federal: 'constituency_geo.json',
+    };
+    const GEOCACHE = {};
+    const loadGeo = (f) => (GEOCACHE[f] = GEOCACHE[f] || fetch(f).then((r) => r.json()));
+
+    /**
+     * Make sure the layers THIS board draws are in hand. states_geo is always
+     * needed — it carries the shared viewBox every other layer is projected into,
+     * and at 23 KB it is not worth being clever about.
+     */
+    async function ensureGeo(level) {
+      const want = new Set(['states_geo.json']);
+      if (GEOFILE[level]) want.add(GEOFILE[level]);
+      const loaded = await Promise.all([...want].map((f) => loadGeo(f).then((g) => [f, g])));
+      for (const [f, g] of loaded) {
+        if (f === 'states_geo.json') STATES = g;
+        else if (f === 'lga_geo.json') LGAS = g;
+        else if (f === 'district_geo.json') DGEO = g;
+        else if (f === 'constituency_geo.json') CGEO = g;
+      }
+    }
     let POLITICAL = {}; // political_data.json — read only to resolve region -> race page
 
     /**
@@ -658,6 +694,21 @@
       }
       if (!data) data = await fetch(`/api/national/${contest}`).then((r) => r.json());
       const word = REGION_WORD[data.level] || 'region';
+
+      // THE NUMBERS FIRST, THE MAP WHEN ITS GEOMETRY ARRIVES. The tally is a few
+      // KB and is the thing a reader came for; the outlines are hundreds of KB of
+      // decoration by comparison. Painting the board before awaiting them turns a
+      // half-minute blank page into an immediate answer.
+      renderBoard(data);
+      renderGlance(data, word);
+      const plural = word.endsWith('y') ? `${word.slice(0, -1)}ies` : `${word}s`;
+      document.getElementById('led-col').textContent = `${plural[0].toUpperCase()}${plural.slice(1)} led`;
+      // Name the area the map actually shows, so a governorship board does not
+      // claim to be "by state" while drawing one state's LGAs.
+      const where = data.scope && data.scope.state ? ` in ${data.scope.state}` : '';
+      document.getElementById('map-title').textContent = `Leading party by ${word}${where}`;
+
+      await ensureGeo(data.level);
       // Populate the follow-scope picker with the regions for this contest. When
       // the contest is confined to one state, its own sub-units ARE the choices —
       // offering all 36 states to follow on an Osun-only race was the clearest
@@ -679,26 +730,19 @@
         `<option value="">${anywhere}</option>${back}`
         + [...names].sort().map((n) => `<option>${n}</option>`).join('');
       document.getElementById('sel-scope').dataset.canCrop = canCrop ? '1' : '';
-      // Name the area the map actually shows, so a governorship board does not
-      // claim to be "by state" while drawing one state's LGAs.
-      const where = data.scope && data.scope.state ? ` in ${data.scope.state}` : '';
-      document.getElementById('map-title').textContent = `Leading party by ${word}${where}`;
-      const plural = word.endsWith('y') ? `${word.slice(0, -1)}ies` : `${word}s`;
-      document.getElementById('led-col').textContent = `${plural[0].toUpperCase()}${plural.slice(1)} led`;
       renderMap(data);
-      renderBoard(data);
-      renderGlance(data, word);
       document.getElementById('updated').textContent = data.unitsReporting > 0
         ? `${data.unitsReporting} unit(s) reporting · updated ${new Date(data.updatedAt).toLocaleTimeString()}`
         : `No reports yet · updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
     }
 
     (async () => {
-      const [states, lgas, dgeo, cgeo, logos, contests, political] = await Promise.all([
-        fetch('states_geo.json').then((r) => r.json()),
-        fetch('lga_geo.json').then((r) => r.json()),
-        fetch('district_geo.json').then((r) => r.json()),
-        fetch('constituency_geo.json').then((r) => r.json()),
+      // SMALL THINGS ONLY. The map layers are NOT here: they are loaded per board
+      // by ensureGeo(), so this opening await is ~13 KB rather than 1.8 MB and the
+      // race chooser appears at once. states_geo is pre-warmed without being
+      // waited on, since every board wants it.
+      loadGeo('states_geo.json');
+      const [logos, contests, political] = await Promise.all([
         fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
         fetch('/api/contests').then((r) => r.json()),
         // Only for the region -> race-page links. A failure costs the links and
@@ -706,10 +750,6 @@
         fetch('political_data.json').then((r) => r.json()).catch(() => ({})),
       ]);
       POLITICAL = political;
-      STATES = states;
-      LGAS = lgas;
-      DGEO = dgeo;
-      CGEO = cgeo;
       LOGOS = logos;
       const sel = document.getElementById('sel-contest');
       // Order by seat magnitude: Presidential > Governorship > Senate > Reps > State Assembly.

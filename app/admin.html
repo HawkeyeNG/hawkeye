@@ -108,7 +108,7 @@
 
     <section id="console" hidden>
       <div class="panelbar" id="panelbar">
-        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="social">Social</span>
+        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="social">Social</span><span class="tab" data-p="register">Register</span>
         <span class="tab" data-p="_logout" style="margin-left:auto">Lock 🔒</span>
       </div>
       <div class="panel" data-p="reach">
@@ -218,6 +218,25 @@
 
     <button id="post" style="margin-top:14px">Post to Selected</button>
     <div id="result"></div>
+  </div><div class="panel" data-p="register" hidden>
+    <h1 style="margin-top:34px">Register Maintenance</h1>
+    <p class="hint">The INEC register spells some seats more than one way, so a single
+      constituency can appear as two. That inflates every count derived from it — the
+      Senate board once listed 116 districts for an election with 109, and the coverage
+      card sent observers to districts that were duplicates of ones already covered.
+      This applies the known corrections from
+      <code>backend/src/data/register_name_fixes.json</code>.</p>
+    <p class="hint">It was a hand-written <code>curl</code> until now, which meant it did not
+      get run. It is <strong>idempotent</strong> — it matches on the wrong spelling, so a
+      second run finds nothing left to change and is harmless.</p>
+
+    <div class="row" style="margin-top:12px;gap:8px">
+      <button id="reg-dry" class="secondary" style="width:auto;margin:0">Dry run</button>
+      <button id="reg-apply" style="width:auto;margin:0" disabled>Apply</button>
+    </div>
+    <p class="hint" id="reg-note" style="margin-top:6px">Dry run first — Apply unlocks once it has
+      reported what would change.</p>
+    <div id="reg-out"></div>
   </div>
     </section>
   </main>
@@ -593,6 +612,91 @@
         if (window.__socialRefresh) try { window.__socialRefresh(); } catch {}
       }
     });
+  })();
+  </script>
+
+  <script>
+  /**
+   * Register maintenance. The endpoint has existed for a while and was only ever
+   * reachable by hand-writing a curl with the console secret — so it did not get
+   * run, and production carried duplicate seat spellings for weeks while every
+   * count derived from them was wrong.
+   *
+   * DRY RUN IS THE ONLY WAY IN. Apply stays disabled until a dry run has
+   * reported what it would touch: this rewrites thousands of register rows, and
+   * a button that does that on one click, next to four harmless tabs, is the
+   * wrong shape. The dry run is also the server's default, so the safe call is
+   * the one that happens if anything about this form goes wrong.
+   */
+  (function () {
+    const out = document.getElementById('reg-out');
+    const note = document.getElementById('reg-note');
+    const dryBtn = document.getElementById('reg-dry');
+    const applyBtn = document.getElementById('reg-apply');
+    if (!out) return;
+
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const row = (k, v) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:3px 0"><span class="muted">${esc(k)}</span><b>${esc(v)}</b></div>`;
+
+    async function call(apply) {
+      const secret = sessionStorage.getItem('hawkeye_admin') || '';
+      if (!secret) { out.innerHTML = '<p class="status bad">Unlock the console first.</p>'; return; }
+      dryBtn.disabled = applyBtn.disabled = true;
+      out.innerHTML = '<p class="empty">Working…</p>';
+      try {
+        const r = await fetch('/api/admin/register/normalize', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-admin-secret': secret },
+          body: JSON.stringify(apply ? { apply: true } : {}),
+        });
+        const d = await r.json().catch(() => null);
+        if (!r.ok || !d) {
+          const why = d && d.error === 'no_fixes_file'
+            ? 'The server has no register_name_fixes.json — deploy it to backend/src/data first.'
+            : d && d.error === 'console_disabled'
+              ? 'No passphrase is set on the server.'
+              : (d && d.error) || `HTTP ${r.status}`;
+          out.innerHTML = `<p class="status bad">${esc(why)}</p>`;
+          return;
+        }
+        // The seat COUNTS are the thing to read, not the row count: the point is
+        // that 116 spellings collapse to the 109 districts that exist.
+        const html = [
+          row(d.dryRun ? 'Units that would change' : 'Units changed', Number(d.changed).toLocaleString()),
+          row('Spellings affected', (d.applied || []).length),
+          row('Senatorial', `${d.before.senatorial} → ${d.dryRun ? '?' : d.after.senatorial}  (real ${d.real.senatorial})`),
+          row('Federal', `${d.before.federal} → ${d.dryRun ? '?' : d.after.federal}  (real ${d.real.federal})`),
+        ].join('');
+        const done = !d.dryRun
+          && d.after.senatorial === d.real.senatorial;
+        out.innerHTML = `<div class="statgrid" style="margin-top:10px"><div class="card" style="padding:12px">${html}</div></div>`
+          + (d.dryRun
+            ? '<p class="status">Dry run — nothing was written. Apply is now unlocked.</p>'
+            : `<p class="status ${done ? 'ok' : 'bad'}">${done
+              ? 'Applied. Senatorial now matches the real count.'
+              : 'Applied, but the counts did not reach their targets — check the fixes file.'}</p>`);
+        // Federal lands near 362, not 360: the register never distinguished the
+        // two numbered seats that share a name. Said out loud so it does not read
+        // as a failure every time.
+        if (!d.dryRun && d.after.federal !== d.real.federal) {
+          out.insertAdjacentHTML('beforeend',
+            `<p class="hint">Federal sits at ${esc(d.after.federal)} against a target of ${esc(d.real.federal)}. `
+            + 'That gap is the numbered seats the register never told apart — a known register limitation, not this pass failing.</p>');
+        }
+        if (d.dryRun) { applyBtn.disabled = false; note.textContent = 'Reviewed the numbers? Apply writes them.'; }
+        else { applyBtn.disabled = true; note.textContent = 'Done. Re-running changes nothing.'; }
+      } catch (e) {
+        out.innerHTML = `<p class="status bad">${esc(e.message || e)}</p>`;
+      } finally {
+        dryBtn.disabled = false;
+      }
+    }
+
+    dryBtn.onclick = () => call(false);
+    applyBtn.onclick = () => {
+      if (!confirm('Rewrite the register spellings on PRODUCTION?\n\nThis updates thousands of polling-unit rows. It is idempotent and safe to repeat, but it is a live write.')) return;
+      call(true);
+    };
   })();
   </script>
 </body>

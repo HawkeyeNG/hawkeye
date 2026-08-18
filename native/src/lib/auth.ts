@@ -62,9 +62,28 @@ export function requestOtp(phone: string, channel: 'whatsapp' | 'sms' | 'telegra
 }
 
 /** Step 2 — confirm the OTP; binds this device's keypair and stores the session. */
-export async function verifyOtp(phone: string, otp: string): Promise<{ ok: boolean; error?: string; hint?: string }> {
+/**
+ * `isNew` / `hadPassword` describe the account AS IT WAS when the code was
+ * accepted, so a sign-up can tell someone their account already exists rather
+ * than silently signing them into it. The server answers this only after a
+ * correct OTP — there is no way to ask beforehand, by design: a pre-check would
+ * turn the observer list into something anyone could enumerate by typing
+ * numbers, which is the whole reason only a phone HASH is stored.
+ */
+export async function verifyOtp(
+  phone: string,
+  otp: string,
+): Promise<{ ok: boolean; error?: string; hint?: string; isNew?: boolean; hadPassword?: boolean }> {
   const id = await getIdentity();
-  const r = await post<{ ok?: boolean; observerId?: number; token?: string; error?: string; hint?: string }>(
+  const r = await post<{
+    ok?: boolean;
+    observerId?: number;
+    token?: string;
+    error?: string;
+    hint?: string;
+    isNew?: boolean;
+    hasPassword?: boolean;
+  }>(
     '/api/observers/verify',
     { phone, otp, publicKeyJwk: id.publicKeyJwk },
     { 'x-device-id': id.deviceId },
@@ -74,10 +93,14 @@ export async function verifyOtp(phone: string, otp: string): Promise<{ ok: boole
     await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
     await SecureStore.deleteItemAsync(K_OPTED_OUT);
     set({ status: 'signedIn', observerId: r.observerId, token: r.token });
-    return { ok: true };
+    // An older server sends neither field. `undefined` then means "not stated",
+    // and the caller falls back to the ordinary sign-up path rather than
+    // claiming an account is new when it does not know.
+    return { ok: true, isNew: r.isNew, hadPassword: r.hasPassword };
   }
   return { ok: false, error: r.error, hint: r.hint };
 }
+
 
 /**
  * Password sign-in — phone + password on any device, no OTP. The server treats

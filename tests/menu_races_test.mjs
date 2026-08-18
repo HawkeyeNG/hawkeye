@@ -87,5 +87,24 @@ for (const [name, src] of [['races.html', webRaces], ['races.tsx', racesSrc]]) {
     ['completed', 'ongoing', 'upcoming'].every((k) => src.includes("'" + k + "'")), true);
 }
 
+
+// Every category on /races must go somewhere. "Soon" was the pill for a contest
+// with no page, written when only the presidency had one — Senate, Reps and
+// State Assembly all have national boards now, so a dead row was stale UI, not a
+// statement about the election.
+const racesScreen = readFileSync('/home/elrio/hawkeye/native/src/app/races.tsx', 'utf8');
+check('Senate/Reps/SHA link to their own board',
+  racesScreen.includes('(tabs)/results?contest=${encodeURIComponent(c.code)}'), true);
+check('the presidency still opens its field page', racesScreen.includes("'/candidates'"), true);
+// A governorship is 28 separate elections; it expands rather than linking.
+check('a governorship still expands instead', /c\.code === 'GOV'\s*\?\s*null/.test(racesScreen), true);
+// "Open" beside a January 2027 date read as "reporting is open", which on an
+// election app is the wrong thing to leave ambiguous.
+check('no pill claims an unopened election is open', racesScreen.includes(": 'Open';"), false);
+check('it says what tapping does', racesScreen.includes(": 'View';"), true);
+// ScreenHeader already prints the title; the page printed it again one line down.
+check('the page does not print its own title twice',
+  /className="text-2xl font-bold text-ink">Races</.test(racesScreen), false);
+
 console.log(fail ? `\n${fail} FAILED` : '\nall passed');
 process.exitCode = fail ? 1 : 0;

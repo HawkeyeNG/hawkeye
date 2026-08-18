@@ -52,7 +52,7 @@ type Channel = 'whatsapp' | 'telegram' | 'sms';
  * made the button spin for a whole round-trip, which reads as a slow app. On
  * failure we drop back to the request step with the error line.
  */
-type Step = 'password' | 'request' | 'otp' | 'set-password';
+type Step = 'password' | 'request' | 'otp' | 'set-password' | 'exists';
 /** Why we're sending a code: sign-up proof / forgot-password / no password yet. */
 type Purpose = 'signup' | 'reset' | 'no-password';
 
@@ -198,6 +198,19 @@ export default function SignIn() {
       // alone inside the phone-proof window this OTP just opened. Skipping the
       // check also drops a network round trip from the sign-up path.
       if (purpose === 'signup') {
+        // ALREADY AN OBSERVER? Then this was not a sign-up, and quietly
+        // creating "a second account" is impossible anyway — a phone number is
+        // the identity, so /verify returned the SAME observer row with all its
+        // history. Saying so is the honest outcome: the reader gets their
+        // account back, not a new one, and is told which door they were in.
+        //
+        // Only when the account also has a password. An account without one
+        // still needs the create-password step below, whatever its age.
+        if (r.isNew === false && r.hadPassword) {
+          setLine(null);
+          setStep('exists');
+          return;
+        }
         setHasPw(false);
         setNewPw('');
         setNewPw2('');
@@ -390,7 +403,13 @@ export default function SignIn() {
             </Pressable>
           )}
           <Text className="pl-3 text-lg font-bold text-ink">
-            {step === 'set-password' ? 'Your Password' : purpose === 'signup' && step !== 'password' ? 'Create Account' : 'Sign In'}
+            {step === 'set-password'
+              ? 'Your Password'
+              : step === 'exists'
+                ? 'You Already Have an Account'
+                : purpose === 'signup' && step !== 'password'
+                  ? 'Create Account'
+                  : 'Sign In'}
           </Text>
         </View>
 
@@ -505,6 +524,62 @@ export default function SignIn() {
               >
                 <Text className="text-sm font-semibold text-good-ink">
                   {purpose === 'signup' ? 'Already have an account? Sign in' : 'Back to password sign-in'}
+                </Text>
+              </Pressable>
+            </>
+          ) : step === 'exists' ? (
+            <>
+              {/* A phone number IS the identity here, so there was never a
+                  second account to create — /verify handed back the same
+                  observer row, history intact. What went wrong is only that
+                  they walked in the sign-up door, so the screen says which door
+                  it should have been and offers both ways on. They are already
+                  signed in at this point: the code proved the number. */}
+              <Text className="text-2xl font-bold text-ink">This account already exists</Text>
+              <Text className="pb-5 pt-2 text-sm text-muted">
+                {phone.trim()} is already registered as an observer, and it already has a
+                password. Nothing new was created — your reports and your observer ID are as
+                you left them.
+              </Text>
+              <Pressable
+                onPress={() => router.replace('/(tabs)')}
+                className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
+              >
+                <Text className="text-base font-bold text-hawk-gold">Continue to Hawkeye</Text>
+              </Pressable>
+              {/* The forgot-password route, which is the reason most people end
+                  up on a sign-up screen with an existing number: they could not
+                  get in. The OTP just proved the phone, so this window is
+                  exactly when a new password can be set without another code. */}
+              <Pressable
+                className="mt-4 items-center"
+                onPress={() => {
+                  setPurpose('reset');
+                  setHasPw(true);
+                  setNewPw('');
+                  setNewPw2('');
+                  setLine(null);
+                  setStep('set-password');
+                }}
+              >
+                <Text className="text-sm font-semibold text-good-ink">
+                  Forgot your password? Set a new one
+                </Text>
+              </Pressable>
+              <Pressable
+                className="mt-3 items-center"
+                onPress={async () => {
+                  // Someone else's number typed by mistake: do not leave that
+                  // session signed in on this device.
+                  await signOut();
+                  setOtp('');
+                  setPasswordText('');
+                  setLine(null);
+                  setStep('password');
+                }}
+              >
+                <Text className="text-sm font-semibold text-muted">
+                  Not your number? Sign out and start again
                 </Text>
               </Pressable>
             </>

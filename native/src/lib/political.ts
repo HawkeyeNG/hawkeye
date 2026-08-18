@@ -228,7 +228,19 @@ export function resultsHrefFor(race: Race | null | undefined): string {
 }
 
 /** One seat's register facts, from app/seat_lgas.json. */
-export type SeatInfo = { state: string; lgas: string[]; pollingUnits: number };
+export type SeatInfo = {
+  state: string;
+  lgas: string[];
+  pollingUnits: number;
+  /**
+   * Two federal seats share this LGA and the register does not separate them,
+   * so these figures cover both. Four dense Lagos LGAs elect two members each
+   * while polling_units records only the LGA — see backend/scripts/
+   * build_seat_lgas.js. The page prints the caveat rather than presenting a
+   * shared number as the seat's own.
+   */
+  sharedRegister?: boolean;
+};
 export type SeatTable = Record<string, Record<string, SeatInfo>>;
 
 let seatCache: Promise<SeatTable> | null = null;
@@ -261,6 +273,53 @@ export function loadSeats(): Promise<SeatTable> {
  * app/race.js:seatRace, and the destination of a tap on the national board — a
  * map of 109 districts is only worth having if a district goes somewhere.
  */
+
+/**
+ * Resolve a seat name against a table of seats: exact first, then by the SET of
+ * LGAs the name lists, so ordering and punctuation stop mattering. Ambiguous
+ * keys resolve to nothing rather than to a guess — sending a reader to the wrong
+ * seat is worse than telling them there is no page.
+ *
+ * Twin of app/race.js:matchSeatName. Keep the two in step.
+ */
+function matchSeatName<T>(table: Record<string, T> | undefined, name: string): string | null {
+  if (!table || !name) return null;
+  const keys = Object.keys(table);
+  const exact = keys.find((s) => normRegion(s) === normRegion(name));
+  if (exact) return exact;
+  const parts = (s: string) => String(s ?? '').split('/').map(normRegion).filter(Boolean).sort().join('|');
+  const want = parts(name);
+  if (!want) return null;
+  const index = new Map<string, string | null>();
+  for (const k of keys) {
+    const p = parts(k);
+    index.set(p, index.has(p) ? null : k);
+  }
+  const byParts = index.get(want);
+  if (byParts) return byParts;
+
+  // THIRD TIER: THE SEAT'S OWN LGA LIST, not its label. The register calls one
+  // Delta seat "Warri"; the boundary file spells it out as its three LGAs.
+  // Comparing against `lgas` resolves those, because that array is the fact
+  // both names are trying to express. Exactly one match, or none.
+  const wantSet = new Set(String(name).split('/').map(normRegion).filter(Boolean));
+  let hit: string | null = null;
+  let hits = 0;
+  for (const k of keys) {
+    const lgas = (table[k] as { lgas?: string[] })?.lgas ?? [];
+    if (!lgas.length) continue;
+    // An LGA name can itself contain a slash — Ogun's "Obafemi/Owode" is one
+    // LGA — so index each seat's components both whole and split.
+    const have = new Set<string>();
+    for (const l of lgas) {
+      have.add(normRegion(l));
+      for (const piece of String(l).split('/')) if (normRegion(piece)) have.add(normRegion(piece));
+    }
+    if ([...wantSet].every((w) => have.has(w))) { hits++; hit = k; }
+  }
+  return hits === 1 ? hit : null;
+}
+
 export function seatRace(
   seats: SeatTable | null | undefined,
   code: 'SEN' | 'REP',
@@ -271,7 +330,13 @@ export function seatRace(
   if (!table || !seatName) return null;
   // Map spellings and register spellings differ on a handful of seats, so the
   // name is resolved rather than trusted.
-  const canon = Object.keys(table).find((s) => normRegion(s) === normRegion(seatName));
+  // MATCH ON COMPONENTS, NOT THE EXACT STRING. A federal constituency is named
+  // by listing its LGAs and the register and the boundary file list them in
+  // different orders — the map's "Abaji/Gwagwalada/Kwali/Kuje" is seat_lgas'
+  // "Kuje/Abaji/Gwagwalada/Kwali". Exact matching saw two strangers, so 29 of
+  // 360 constituencies reached "Hawkeye has no page for this race yet" about a
+  // seat we hold every fact for. Web twin: app/race.js:matchSeatName.
+  const canon = matchSeatName(table, seatName);
   if (!canon) return null;
   const s = table[canon];
   const senate = code === 'SEN';
@@ -280,7 +345,13 @@ export function seatRace(
     election: `${s.state} State · ${senate ? 'Senate' : 'House of Representatives'}`,
     date: contest?.date,
     stats: { lgas: s.lgas.length, pollingUnits: s.pollingUnits },
-    note: 'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.',
+    // A seat the register cannot tell from its neighbour says so, rather than
+    // presenting a shared figure as its own.
+    note:
+      (s.sharedRegister
+        ? "INEC's register does not separate this seat from the other constituency in the same LGA, so the LGA and polling-unit figures on this page cover both. "
+        : '') +
+      'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.',
     candidates: [],
     others: [],
     join: {

@@ -1,0 +1,65 @@
+[
+  {
+    "name": "01-welcome",
+    "route": "/welcome",
+    "caption": "What Hawkeye is, in three lines",
+    "hasDisclaimer": true,
+    "chars": 375,
+    "width": 540,
+    "height": 960
+  },
+  {
+    "name": "02-home",
+    "route": "/",
+    "caption": "Every election Hawkeye covers",
+    "hasDisclaimer": true,
+    "chars": 375,
+    "width": 540,
+    "height": 960
+  },
+  {
+    "name": "03-leaderboard",
+    "route": "/(tabs)/results",
+    "caption": "Pick an election, see its board",
+    "hasDisclaimer": true,
+    "chars": 375,
+    "width": 540,
+    "height": 960
+  },
+  {
+    "name": "04-race-declared",
+    "route": "/race?key=raceOsun2026",
+    "caption": "The declared result, with sources",
+    "hasDisclaimer": true,
+    "chars": 375,
+    "width": 540,
+    "height": 960
+  },
+  {
+    "name": "05-races",
+    "route": "/races",
+    "caption": "Completed, ongoing and upcoming",
+    "hasDisclaimer": true,
+    "chars": 375,
+    "width": 540,
+    "height": 960
+  },
+  {
+    "name": "06-seat",
+    "route": "/race?contest=SEN&seat=Kano%20Central",
+    "caption": "Every seat has its own page",
+    "hasDisclaimer": true,
+    "chars": 375,
+    "width": 540,
+    "height": 960
+  },
+  {
+    "name": "07-integrity",
+    "route": "/integrity",
+    "caption": "Signed, chained, publicly verifiable",
+    "hasDisclaimer": true,
+    "chars": 375,
+    "width": 540,
+    "height": 960
+  }
+]

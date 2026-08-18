@@ -6,7 +6,7 @@ import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
-import { api, BRAND, type Contest, type IntegritySummary } from '@/lib/api';
+import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
 
 const BASE = 'https://hawkeye.com.ng';
@@ -46,14 +46,11 @@ const orderedContests = (cs: Contest[] | null) =>
   [...(cs ?? [])].sort((a, b) => CARD_ORDER.indexOf(a.code) - CARD_ORDER.indexOf(b.code));
 
 /**
- * The card's headline. `election` alone is ambiguous where two contests share
- * one — Senate and House of Representatives are both the "2027 National Assembly
- * Election" — so the office is appended only when it is needed to tell them apart.
+ * The card's headline — see lib/api.ts:electionTitle. It lives there because the
+ * naming rule (plural for everything but the presidency, NASS for the National
+ * Assembly) is about the elections themselves, not about this screen.
  */
-function cardTitle(c: Contest, all: Contest[] | null): string {
-  const shared = (all ?? []).filter((x) => x.election === c.election).length > 1;
-  return shared ? `${c.election} — ${c.name}` : c.election;
-}
+const cardTitle = (c: Contest, all: Contest[] | null): string => electionTitle(c, all);
 
 function daysUntil(iso: string) {
   const ms = new Date(`${iso}T00:00:00+01:00`).getTime() - Date.now();

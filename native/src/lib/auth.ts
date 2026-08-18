@@ -57,8 +57,19 @@ async function post<T>(path: string, body: object, headers: Record<string, strin
 }
 
 /** Step 1 — request an OTP for a phone via the chosen channel. */
-export function requestOtp(phone: string, channel: 'whatsapp' | 'sms' | 'telegram'): Promise<RegisterResult> {
-  return post<RegisterResult>('/api/observers/register', { phone, channel });
+/**
+ * `intent` tells the server which door this is. On 'signup' it refuses a number
+ * that is already a password-holding observer and sends NO code — an OTP costs
+ * money and a sign-up on a registered number has only one possible outcome.
+ * Every other purpose (reset, no-password rescue) must still get a code on a
+ * registered number, so only sign-up passes the flag.
+ */
+export function requestOtp(
+  phone: string,
+  channel: 'whatsapp' | 'sms' | 'telegram',
+  intent?: 'signup',
+): Promise<RegisterResult> {
+  return post<RegisterResult>('/api/observers/register', { phone, channel, intent });
 }
 
 /** Step 2 — confirm the OTP; binds this device's keypair and stores the session. */

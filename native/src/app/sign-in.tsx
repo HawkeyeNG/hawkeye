@@ -75,6 +75,14 @@ export default function SignIn() {
     return () => { alive = false; };
   }, []);
   const [otp, setOtp] = useState('');
+  /**
+   * How the 'exists' step was reached. BEFORE a code the server refused to send
+   * one and nobody is signed in; AFTER a code the phone is proved and the
+   * session is live. The pane offers different things in each case, and getting
+   * it wrong would put a "Continue to Hawkeye" button in front of someone who
+   * is not signed in.
+   */
+  const [existsAfterOtp, setExistsAfterOtp] = useState(false);
   const [password, setPasswordText] = useState('');
   const [newPw, setNewPw] = useState('');
   const [newPw2, setNewPw2] = useState('');
@@ -119,7 +127,11 @@ export default function SignIn() {
     setLine(`${verb} code to ${phone.trim()}…`);
     setCooldown(30);
     // Non-null: Send code is disabled until a channel is picked.
-    requestOtp(phone.trim(), channel as Channel)
+    // `signup` lets the server refuse a registered number WITHOUT sending —
+    // an OTP costs money and that sign-up has only one possible outcome. Reset
+    // and rescue deliberately do not pass it: they need a code on a number that
+    // IS registered.
+    requestOtp(phone.trim(), channel as Channel, purpose === 'signup' ? 'signup' : undefined)
       .then((r) => {
         if (r.telegramLink && !r.viaSms) {
           // Telegram needs a one-time bot link — that UI lives on the request step.
@@ -128,6 +140,12 @@ export default function SignIn() {
           setLine('Open Telegram, tap Start, then Share my phone number.');
         } else if (r.ok) {
           setLine(sentLine(r));
+        } else if (r.error === 'account_exists') {
+          // Nothing was sent. The reader is NOT signed in — they are simply on
+          // the wrong door.
+          setExistsAfterOtp(false);
+          setLine(null);
+          setStep('exists');
         } else {
           setStep('request');
           setLine(
@@ -207,6 +225,9 @@ export default function SignIn() {
         // Only when the account also has a password. An account without one
         // still needs the create-password step below, whatever its age.
         if (r.isNew === false && r.hadPassword) {
+          // Reached only when the pre-send refusal did not fire: an older
+          // server, or the account gained a password between the two calls.
+          setExistsAfterOtp(true);
           setLine(null);
           setStep('exists');
           return;
@@ -529,59 +550,98 @@ export default function SignIn() {
             </>
           ) : step === 'exists' ? (
             <>
-              {/* A phone number IS the identity here, so there was never a
-                  second account to create — /verify handed back the same
-                  observer row, history intact. What went wrong is only that
-                  they walked in the sign-up door, so the screen says which door
-                  it should have been and offers both ways on. They are already
-                  signed in at this point: the code proved the number. */}
+              {/* A phone number IS the identity here, so signing up with a
+                  registered one never creates a second account. Two ways in:
+
+                  BEFORE a code — the server refused to send one, because an OTP
+                  costs money and this sign-up had only one possible outcome.
+                  Nobody is signed in, so the offer is the sign-in door.
+
+                  AFTER a code — an older server, or the account gained a
+                  password between the two calls. The phone is proved and the
+                  session is live, so the offer is to carry on. */}
               <Text className="text-2xl font-bold text-ink">This account already exists</Text>
               <Text className="pb-5 pt-2 text-sm text-muted">
-                {phone.trim()} is already registered as an observer, and it already has a
-                password. Nothing new was created — your reports and your observer ID are as
-                you left them.
+                {existsAfterOtp
+                  ? `${phone.trim()} is already registered as an observer, and it already has a password. Nothing new was created — your reports and your observer ID are as you left them.`
+                  : `${phone.trim()} is already registered as an observer. Sign in with your password — no code was sent, and nothing new was created.`}
               </Text>
-              <Pressable
-                onPress={() => router.replace('/(tabs)')}
-                className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
-              >
-                <Text className="text-base font-bold text-hawk-gold">Continue to Hawkeye</Text>
-              </Pressable>
-              {/* The forgot-password route, which is the reason most people end
-                  up on a sign-up screen with an existing number: they could not
-                  get in. The OTP just proved the phone, so this window is
-                  exactly when a new password can be set without another code. */}
+
+              {existsAfterOtp ? (
+                <Pressable
+                  onPress={() => router.replace('/(tabs)')}
+                  className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
+                >
+                  <Text className="text-base font-bold text-hawk-gold">Continue to Hawkeye</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={() => {
+                    setPurpose('signup');
+                    setPasswordText('');
+                    setLine(null);
+                    setStep('password');
+                  }}
+                  className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
+                >
+                  <Text className="text-base font-bold text-hawk-gold">Sign in instead</Text>
+                </Pressable>
+              )}
+
+              {/* The reason most people arrive here with a registered number:
+                  they could not get in. After a code this window can set a new
+                  password directly; before one, it has to send a code first —
+                  which is a legitimate send, so `reset` does not pass the
+                  sign-up flag and the server will deliver it. */}
               <Pressable
                 className="mt-4 items-center"
                 onPress={() => {
-                  setPurpose('reset');
-                  setHasPw(true);
-                  setNewPw('');
-                  setNewPw2('');
-                  setLine(null);
-                  setStep('set-password');
+                  if (existsAfterOtp) {
+                    setPurpose('reset');
+                    setHasPw(true);
+                    setNewPw('');
+                    setNewPw2('');
+                    setLine(null);
+                    setStep('set-password');
+                    return;
+                  }
+                  startOtp('reset');
                 }}
               >
                 <Text className="text-sm font-semibold text-good-ink">
-                  Forgot your password? Set a new one
+                  Forgot your password? {existsAfterOtp ? 'Set a new one' : 'Reset it'}
                 </Text>
               </Pressable>
-              <Pressable
-                className="mt-3 items-center"
-                onPress={async () => {
-                  // Someone else's number typed by mistake: do not leave that
-                  // session signed in on this device.
-                  await signOut();
-                  setOtp('');
-                  setPasswordText('');
-                  setLine(null);
-                  setStep('password');
-                }}
-              >
-                <Text className="text-sm font-semibold text-muted">
-                  Not your number? Sign out and start again
-                </Text>
-              </Pressable>
+
+              {existsAfterOtp ? (
+                <Pressable
+                  className="mt-3 items-center"
+                  onPress={async () => {
+                    // Someone else's number typed by mistake: do not leave that
+                    // session signed in on this device.
+                    await signOut();
+                    setOtp('');
+                    setPasswordText('');
+                    setLine(null);
+                    setStep('password');
+                  }}
+                >
+                  <Text className="text-sm font-semibold text-muted">
+                    Not your number? Sign out and start again
+                  </Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  className="mt-3 items-center"
+                  onPress={() => {
+                    setPhone('');
+                    setLine(null);
+                    setStep('request');
+                  }}
+                >
+                  <Text className="text-sm font-semibold text-muted">Use a different number</Text>
+                </Pressable>
+              )}
             </>
           ) : step === 'otp' ? (
             <>

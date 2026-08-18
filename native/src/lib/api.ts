@@ -17,6 +17,51 @@ export type Contest = {
   opensAt?: string;
 };
 
+/**
+ * How an election is named on a card.
+ *
+ * The catalogue's `election` string is singular — "2027 Governorship Election"
+ * — which is true of the presidency and of nothing else on the list. There are
+ * 28 governorships in the 2027 cycle, 109 Senate seats, 360 federal seats and
+ * 993 state-assembly seats; calling any of those "Election" reads as one race
+ * being announced.
+ *
+ * "NASS" for the National Assembly because the full name plus a chamber ran to
+ * three lines on a phone, and NASS is what the institution is called in Nigeria
+ * — this is not an abbreviation a reader here has to decode.
+ *
+ * Keyed by CODE, not by munging the server's text: a wording change upstream
+ * would silently stop matching a string rule and quietly restore the singular.
+ */
+const CARD_ELECTION: Record<string, string> = {
+  PRES: '2027 Presidential Election',      // one race, nationwide — singular is right
+  GOV: '2027 Governorship Elections',
+  SEN: '2027 NASS Elections',
+  REP: '2027 NASS Elections',
+  SHA: '2027 State Assembly Elections',
+};
+
+/** Shorter chamber labels; "House of Representatives" alone wraps a card. */
+const CARD_CHAMBER: Record<string, string> = {
+  SEN: 'Senate',
+  REP: 'House of Reps',
+};
+
+/**
+ * The card headline. Senate and Reps share one election, so the chamber is
+ * appended only where it is needed to tell two cards apart — the same rule as
+ * before, applied to the plural names.
+ */
+export function electionTitle(c: Contest, all?: Contest[] | null): string {
+  const base = CARD_ELECTION[c.code] ?? c.election;
+  const shared = (all ?? []).filter(
+    (x) => (CARD_ELECTION[x.code] ?? x.election) === base,
+  ).length > 1;
+  if (!shared) return base;
+  return `${base} — ${CARD_CHAMBER[c.code] ?? c.name}`;
+}
+
+
 export type NationalRow = {
   party: string;
   votes: number;

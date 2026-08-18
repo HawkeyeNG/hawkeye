@@ -92,6 +92,37 @@ observersRouter.post('/register', async (req, res) => {
     return res.status(400).json({ error: 'invalid_phone', hint: 'Nigerian mobile, e.g. 08031234567' });
   }
   const hash = phoneHash(phone);
+
+  // A SIGN-UP ON A NUMBER THAT IS ALREADY AN OBSERVER SENDS NOTHING.
+  //
+  // Every OTP costs real money (Sendchamp bills per WhatsApp/SMS send), and a
+  // sign-up with an existing number can only ever end one way — a phone number
+  // IS the identity here, so /verify would hand back the same observer row.
+  // Spending a send to reach a conclusion already known from the phone hash is
+  // pure waste, and it scales with every person who forgets they signed up.
+  //
+  // ONLY for `intent: 'signup'`. Password reset, the no-password rescue and
+  // legacy accounts all legitimately need a code on a registered number, and
+  // refusing those would lock people out of their own accounts.
+  //
+  // On the privacy question: this does tell a caller whether a number is
+  // registered. That was already true — POST /observers/login answers
+  // `password_login_unavailable` for an unknown number and a different error
+  // for a known one — so this adds no exposure that a probe could not already
+  // get. It is still behind the same per-IP limiter as a real send, since
+  // otpRateLimited() counts the call before this point.
+  if (String(req.body?.intent || '') === 'signup') {
+    const existing = db.prepare('SELECT status, password_hash FROM observers WHERE phone_hash = ?').get(hash);
+    // With no password there is nothing to sign in WITH, so those accounts must
+    // still get a code — that is the rescue path, not a duplicate sign-up.
+    if (existing && existing.status === 'active' && existing.password_hash) {
+      return res.status(409).json({
+        error: 'account_exists',
+        hint: 'This number is already registered. Sign in with your password, or reset it.',
+      });
+    }
+  }
+
   const code = String(crypto.randomInt(100000, 1000000));
   db.prepare(`
     INSERT INTO otps (phone_hash, code, expires_at, attempts, sc_reference) VALUES (?, ?, ?, 0, NULL)

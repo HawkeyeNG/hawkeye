@@ -67,6 +67,14 @@
   --disabled: #d4d4d4;
   --caution: #f5d90a;      /* SAFETY-OF-PERSON hazard yellow only */
   --caution-ink: #7a3e00;
+  /* Header DEFAULT = the green gov bar (public website in both themes, and the
+     app in dark mode). The APP in light mode overrides these to white, below. */
+  --header-bg: rgba(0, 37, 26, 0.94);
+  --header-ink: #ffffff;
+  --header-sub: #9fbfae;
+  --header-line: rgba(255, 255, 255, 0.09);
+  --header-ctl-border: rgba(255, 255, 255, 0.35);
+  --header-ctl-hover: rgba(255, 255, 255, 0.12);
   color-scheme: only light;
 }
 /* Dark theme is OPT-IN ONLY via the header toggle (html[data-theme="dark"], set
@@ -91,6 +99,17 @@
   --caution: #6b5200;
   --caution-ink: #fae014;
   color-scheme: only dark;   /* see the "only light" note above */
+}
+/* APP ONLY (Capacitor/native shell): light mode gets a WHITE header instead of
+   the green gov bar, and the transparent crest reads on it. The public website
+   keeps the green header in both themes. native.js adds .native-app app-side only. */
+html.native-app:not([data-theme="dark"]) {
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --header-ink: #0b2c1e;
+  --header-sub: #5f7a6d;
+  --header-line: rgba(0, 0, 0, 0.1);
+  --header-ctl-border: rgba(0, 0, 0, 0.18);
+  --header-ctl-hover: rgba(0, 0, 0, 0.06);
 }
 /* Self-hosted type: Inter for UI/body, Lora serif for headings. */
 @font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
@@ -123,10 +142,10 @@ main.wrap { max-width: 840px; }
 /* ---------- header (sticky, translucent) ---------- */
 .gov-header {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(0, 37, 26, 0.94);
+  background: var(--header-bg);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  color: #fff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--header-ink);
+  border-bottom: 1px solid var(--header-line);
   /* Edge-to-edge apps (Android 15+, notched phones) draw under the status bar —
      extend the green header up into that inset so time/battery sit on green and
      content isn't clipped. env() is 0 on browsers without an inset, so no-op there. */
@@ -163,9 +182,15 @@ main.wrap { max-width: 840px; }
 .hero-fold #install-cta { display: inline-block; width: auto; margin: 0; padding: 9px 15px; font-size: 0.85rem; box-shadow: none; }
 .brand-text { display: flex; flex-direction: column; }
 .brand-text strong { font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; font-size: 1.08rem; letter-spacing: 0.07em; }
-.brand-text span { font-size: 0.68rem; color: #9fbfae; letter-spacing: 0.03em; }
-.gov-header nav a { color: #fff; font-weight: 700; text-decoration: none; border-bottom: 2px solid transparent; }
+.brand-text span { font-size: 0.68rem; color: var(--header-sub); letter-spacing: 0.03em; }
+.gov-header nav a { color: var(--header-ink); font-weight: 700; text-decoration: none; border-bottom: 2px solid transparent; }
 .gov-header nav a:hover { border-bottom-color: var(--accent); }
+/* Header controls were hardcoded white for the old always-green bar; retint them
+   from the --header-* tokens so they stay legible on the light header too. */
+.gov-header button.menu-btn, .gov-header button.theme-btn,
+.gov-header a.bell-btn, .gov-header a.signin-btn { color: var(--header-ink); border-color: var(--header-ctl-border); }
+.gov-header button.menu-btn:hover, .gov-header button.theme-btn:hover,
+.gov-header a.bell-btn:hover, .gov-header a.signin-btn:hover { background: var(--header-ctl-hover); border-color: var(--header-ink); }
 .phase-banner { background: var(--amber); border-bottom: 1px solid #f1e3ae; font-size: 0.84rem; color: #5c4d0a; }
 .phase-banner .wrap { padding-top: 7px; padding-bottom: 7px; }
 

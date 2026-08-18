@@ -13,6 +13,22 @@
   // CTA) with no race against page scripts.
   document.documentElement.classList.add('native-app');
 
+  // Status-bar icons must contrast the themed header: it is a WHITE bar in light
+  // mode (needs DARK icons) and a dark-green bar in dark mode (needs light icons).
+  // Follow html[data-theme]. Capacitor names the style by BACKGROUND: Style.Light
+  // = dark icons for a light bg; Style.Dark = light icons for a dark bg.
+  (function () {
+    const SB = Cap.Plugins && Cap.Plugins.StatusBar;
+    if (!SB) return;
+    const applyBar = () => {
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      SB.setStyle({ style: dark ? 'DARK' : 'LIGHT' }).catch(() => {});
+      if (SB.setBackgroundColor) SB.setBackgroundColor({ color: dark ? '#00251a' : '#ffffff' }).catch(() => {});
+    };
+    applyBar();
+    new MutationObserver(applyBar).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  })();
+
   /**
    * BOOT SPLASH IN THE WEB LAYER — the only place the mark can be shown on the
    * FIRST launch after install.

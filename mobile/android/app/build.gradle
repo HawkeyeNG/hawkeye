@@ -13,7 +13,7 @@ android {
     namespace = "ng.com.hawkeye.observer"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "ng.com.hawkeye.observer"
+        applicationId "ng.com.hawkeye.lite"
         minSdkVersion rootProject.ext.minSdkVersion
         // The website serves a single APK as a direct download, so every ABI in
         // it is bytes every user pays for. The Play BUNDLE must keep them all —
@@ -22,8 +22,8 @@ android {
         // x86/x86_64 are emulators; arm64 + armeabi-v7a covers every real phone.
         if (project.hasProperty('webApk')) { ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' } }
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "1.2"
+        versionCode 1
+        versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

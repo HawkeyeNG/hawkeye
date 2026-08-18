@@ -1,6 +1,6 @@
 {
-  "appId": "ng.com.hawkeye.observer",
-  "appName": "Hawkeye",
+  "appId": "ng.com.hawkeye.lite",
+  "appName": "Hawkeye Lite",
   "webDir": "../app",
   "server": {
     "androidScheme": "https"

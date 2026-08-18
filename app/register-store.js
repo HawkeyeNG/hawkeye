@@ -238,7 +238,10 @@
   function buildSearchIndex(pack) {
     if (pack.folded) return pack;
     var t0 = now();
-    var N = pack.unitCount;
+    var N = pack.unitCount, G = pack.groups.counts.length;
+
+    // 1. folded NAME blob + its own offsets (folding changes lengths, so it
+    //    cannot share the display offsets).
     var parts = new Array(N);
     var fOffs = new Uint32Array(N + 1);
     var acc = 0;
@@ -251,9 +254,28 @@
     fOffs[N] = acc;
     pack.folded = parts.join('\n');
     pack.fOffs = fOffs;
+
+    // 2. CODE blob. Every code is exactly 12 characters (DD-DD-DD-DDD), so a
+    //    fixed stride replaces an offsets array entirely: code i starts at
+    //    i * CODE_STRIDE. The server matches codes raw, so these are not folded.
+    var codes = new Array(N);
+    for (var i2 = 0; i2 < N; i2++) {
+      var g2 = pack.gOf[i2];
+      codes[i2] = pad2(pack.stateCode) + '-' + pad2(pack.groups.lgaCodes[g2]) + '-' +
+                  pad2(pack.groups.wardCodes[g2]) + '-' + pad3(pack.serials[i2]);
+    }
+    pack.codes = codes.join('\n');
+
+    // 3. folded WARD per group — a few hundred strings, not one per unit.
+    var wf = new Array(G);
+    for (var g3 = 0; g3 < G; g3++) wf[g3] = fold(pack.tables.wards[pack.groups.wardIds[g3]]);
+    pack.wardFold = wf;
+
     pack.timings.fold = now() - t0;
     return pack;
   }
+
+  var CODE_STRIDE = 13; // 12 characters + the newline
 
   var idle = (typeof requestIdleCallback === 'function')
     ? function (fn) { requestIdleCallback(fn, { timeout: 2000 }); }
@@ -303,41 +325,109 @@
   }
 
   /**
-   * Ranked the same way the server ranks (pollingUnits.js): exact code, then
-   * prefix, then anything containing the term. Offline and online must not
-   * disagree about what the best answer is.
+   * A FAITHFUL MIRROR of GET /api/register/search (backend/src/routes/pollingUnits.js).
+   *
+   * Not "similar to" — the same matched columns, the same two passes and the
+   * same ordering, because an observer who loses signal mid-search must not see
+   * the list reshuffle underneath them. Step 3 of docs/PU-SEARCH-2027.md diffs
+   * the two implementations over a 500-query corpus and fails on any difference.
+   *
+   * The server:
+   *   1. matches name / pu_code / ward,
+   *   2. tries PREFIX first and only falls back to CONTAINS when that finds
+   *      nothing (a leading wildcard cannot use an index, so it full-scans),
+   *   3. orders by exact-code, then name-prefix, then code-prefix, then the
+   *      rest, and alphabetically by name inside each tier.
+   *
+   * Names and wards are compared FOLDED on both sides (the server has
+   * name_fold/ward_fold columns for exactly this); codes are compared raw,
+   * since digits and hyphens have no case or punctuation to normalise.
    */
   function search(pack, term, opts) {
     opts = opts || {};
     var limit = opts.limit || 25;
-    var q = fold(term);
-    if (q.length < 3) return { units: [], truncated: false, tookMs: 0 };
-    // The user beat the idle callback: pay for the index now rather than miss
-    // the keystroke. Costs once, not per query.
+    // The server's minimum is on the RAW query, before folding.
+    var qRaw = String(term == null ? '' : term).trim();
+    if (qRaw.length < 3) return { units: [], truncated: false, tookMs: 0 };
     if (!pack.folded) buildSearchIndex(pack);
     var t0 = now();
 
-    var hits = [], seen = {};
-    var at = pack.folded.indexOf(q);
-    while (at !== -1 && hits.length < limit * 8) {
-      var i = unitAt(pack, at);
-      if (!seen[i]) {
-        seen[i] = 1;
-        hits.push({ i: i, atLineStart: pack.fOffs[i] === at });
-      }
-      at = pack.folded.indexOf(q, at + 1);
+    var qf = fold(term);
+    var N = pack.unitCount;
+    var hit = new Uint8Array(N);
+    var found = [];
+
+    function addUnit(i) { if (!hit[i]) { hit[i] = 1; found.push(i); } }
+    function addGroup(g) {
+      // units are stored grouped, so a ward match is a contiguous run
+      var startIx = 0;
+      for (var k = 0; k < g; k++) startIx += pack.groups.counts[k];
+      for (var n = 0; n < pack.groups.counts[g]; n++) addUnit(startIx + n);
     }
 
-    hits.sort(function (a, b) {
-      if (a.atLineStart !== b.atLineStart) return a.atLineStart ? -1 : 1;
-      return a.i - b.i;
+    function collect(prefixOnly) {
+      // --- names, over the folded blob
+      if (qf) {
+        if (prefixOnly) {
+          if (pack.folded.lastIndexOf(qf, 0) === 0) addUnit(0);
+          var needle = '\n' + qf;
+          var at = pack.folded.indexOf(needle);
+          while (at !== -1) { addUnit(unitAt(pack, at + 1)); at = pack.folded.indexOf(needle, at + 1); }
+        } else {
+          var at2 = pack.folded.indexOf(qf);
+          while (at2 !== -1) { addUnit(unitAt(pack, at2)); at2 = pack.folded.indexOf(qf, at2 + 1); }
+        }
+      }
+      // --- codes, raw, fixed stride
+      for (var i = 0; i < N; i++) {
+        var base = i * CODE_STRIDE;
+        var ok = prefixOnly
+          ? pack.codes.startsWith(qRaw, base)
+          : pack.codes.indexOf(qRaw, base) !== -1 && pack.codes.indexOf(qRaw, base) < base + 12;
+        if (ok) addUnit(i);
+      }
+      // --- wards, folded, per group
+      if (qf) {
+        for (var g = 0; g < pack.wardFold.length; g++) {
+          var w = pack.wardFold[g];
+          if (prefixOnly ? w.lastIndexOf(qf, 0) === 0 : w.indexOf(qf) !== -1) addGroup(g);
+        }
+      }
+    }
+
+    collect(true);
+    if (!found.length) collect(false);
+
+    var codeAt = function (i) { return pack.codes.substr(i * CODE_STRIDE, 12); };
+    var nameAt = function (i) { return displayName(pack, i); };
+    var foldedAt = function (i) { return pack.folded.slice(pack.fOffs[i], pack.fOffs[i + 1] - 1); };
+
+    var ranked = found.map(function (i) {
+      var code = codeAt(i);
+      var rank = 3;
+      if (code === qRaw) rank = 0;
+      else if (qf && foldedAt(i).lastIndexOf(qf, 0) === 0) rank = 1;
+      else if (code.lastIndexOf(qRaw, 0) === 0) rank = 2;
+      return { i: i, rank: rank, name: nameAt(i) };
+    });
+
+    // rank, then name — the server's ORDER BY, and SQLite's BINARY collation is
+    // JavaScript's default string comparison, so the tie-break agrees too.
+    ranked.sort(function (a, b) {
+      if (a.rank !== b.rank) return a.rank - b.rank;
+      if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+      // Units do share names, and the server breaks that tie on pu_code so the
+      // two implementations return the same page rather than the same set.
+      var ca = codeAt(a.i), cb = codeAt(b.i);
+      return ca < cb ? -1 : ca > cb ? 1 : 0;
     });
 
     var out = [];
-    for (var n = 0; n < hits.length && out.length < limit; n++) {
-      out.push(materialise(pack, hits[n].i, opts.stateName));
+    for (var n2 = 0; n2 < ranked.length && out.length < limit; n2++) {
+      out.push(materialise(pack, ranked[n2].i, opts.stateName));
     }
-    return { units: out, truncated: hits.length > out.length, tookMs: now() - t0 };
+    // The server reports truncation as "we filled the page", not "more exist".
+    return { units: out, truncated: out.length === limit, tookMs: now() - t0 };
   }
 
   /* --------------------------------------------------------- transport */

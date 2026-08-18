@@ -61,5 +61,31 @@ for (const page of ['index.html', 'results.html']) {
 check('no page errors', errs, []);
 await b.close();
 server.close();
+
+// The app's menu must make the same call.
+// The web dropped the Races accordion; native kept it, listing All Races / Osun
+// 2026 / Presidency 2027 for weeks after - a hand-kept list of three above a
+// screen that derives every race and already groups them completed / ongoing /
+// upcoming. Same class of drift as the leaderboard's default race, so it gets
+// the same kind of pin. Source checks: there is no RN harness here.
+console.log('\n=== the app menu matches ===');
+const { readFileSync } = await import('node:fs');
+const more = readFileSync('/home/elrio/hawkeye/native/src/app/(tabs)/more.tsx', 'utf8');
+check('no Races accordion in the app menu', /acc:\s*'Races'/.test(more), false);
+check('one plain Races row instead', /\{ label: 'Races', href: 'native:\/races'/.test(more), true);
+// Osun was a finished election pinned to a menu. It stays REACHABLE - races.tsx
+// links to it - it just is not a permanent menu entry any more.
+check('Osun 2026 is not pinned in the app menu', /label: 'Osun 2026'/.test(more), false);
+check('Report still collapses', /acc:\s*'Report'/.test(more), true);
+const racesSrc = readFileSync('/home/elrio/hawkeye/native/src/app/races.tsx', 'utf8');
+check('and /races still reaches Osun, so nothing is orphaned', /'\/osun'/.test(racesSrc), true);
+check('and still reaches the presidency', /'\/candidates'/.test(racesSrc), true);
+// Both platforms group by the same three statuses, derived from the date.
+const webRaces = readFileSync('/home/elrio/hawkeye/app/races.html', 'utf8');
+for (const [name, src] of [['races.html', webRaces], ['races.tsx', racesSrc]]) {
+  check(name + ' groups completed/ongoing/upcoming',
+    ['completed', 'ongoing', 'upcoming'].every((k) => src.includes("'" + k + "'")), true);
+}
+
 console.log(fail ? `\n${fail} FAILED` : '\nall passed');
 process.exitCode = fail ? 1 : 0;

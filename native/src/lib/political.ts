@@ -53,6 +53,28 @@ export type Race = {
   others?: Candidate[];
   minors?: Minor[];
   join?: RaceJoin;
+  /**
+   * What the electoral commission ANNOUNCED, recorded by hand from the returning
+   * officer's declaration. Not derivable: IReV publishes photographs of EC8A
+   * sheets, never numbers, so there is no endpoint to read this from — an absent
+   * block means nobody has recorded the declaration, not that a race is
+   * undecided. Kept separate from `candidates` because this is someone else's
+   * claim that Hawkeye is citing, not Hawkeye's own count.
+   */
+  declared?: {
+    by?: string;
+    date?: string;
+    place?: string;
+    returningOfficer?: string;
+    winner: string;
+    party?: string;
+    votes?: number;
+    runnerUp?: { name: string; party: string; votes: number };
+    results?: { party: string; name?: string; votes: number }[];
+    lgasWon?: Record<string, number>;
+    sources?: string[];
+    note?: string;
+  };
 };
 
 export type Political = {

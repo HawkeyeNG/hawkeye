@@ -5,7 +5,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE = 'https://hawkeye.com.ng';
+export const BASE = 'https://hawkeye.com.ng';
 
 export type Contest = {
   code: string;

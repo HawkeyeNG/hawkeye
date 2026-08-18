@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Register pack bench — Hawkeye</title>
+<!--
+  Step 2 of docs/PU-SEARCH-2027.md: prove the pack design on a REAL phone.
+
+  Every timing in that document is extrapolated from a laptop at an assumed 6x
+  Android-Go penalty. That multiplier is a guess. This page replaces it with a
+  measurement, on the device an observer will actually be holding.
+
+  Not linked from anywhere and not in the service worker's shell — it is a
+  developer tool, open it directly.
+-->
+<style>
+  :root { color-scheme: light dark; --ok: #0a7c42; --bad: #b3261e; --warn: #8a6d00; }
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 0; padding: 16px; max-width: 760px; }
+  h1 { font-size: 1.15rem; margin: 0 0 4px; }
+  p.sub { margin: 0 0 16px; opacity: .7; font-size: .88rem; }
+  fieldset { border: 1px solid rgba(128,128,128,.35); border-radius: 10px; margin: 0 0 14px; padding: 12px; }
+  legend { font-weight: 700; font-size: .85rem; padding: 0 6px; }
+  button { font: inherit; padding: 9px 14px; border-radius: 9px; border: 1px solid rgba(128,128,128,.5);
+           background: transparent; color: inherit; cursor: pointer; margin: 0 6px 6px 0; }
+  button:disabled { opacity: .5; cursor: default; }
+  select, input { font: inherit; padding: 8px; border-radius: 8px; border: 1px solid rgba(128,128,128,.5);
+                  background: transparent; color: inherit; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid rgba(128,128,128,.2); }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .ok { color: var(--ok); font-weight: 700; }
+  .bad { color: var(--bad); font-weight: 700; }
+  .warn { color: var(--warn); font-weight: 700; }
+  pre { white-space: pre-wrap; word-break: break-word; font-size: .82rem;
+        background: rgba(128,128,128,.1); padding: 10px; border-radius: 8px; }
+  .res { font-size: .85rem; }
+  .res li { margin-bottom: 3px; }
+</style>
+</head>
+<body>
+<h1>Register pack bench</h1>
+<p class="sub">docs/PU-SEARCH-2027.md step 2 — measure on the real device, not the laptop.</p>
+
+<fieldset>
+  <legend>Environment</legend>
+  <div id="env">checking…</div>
+</fieldset>
+
+<fieldset>
+  <legend>Load a state pack</legend>
+  <select id="state"><option value="">loading manifest…</option></select>
+  <button id="load">Load</button>
+  <button id="reload" title="Ignore the cached copy and re-fetch">Re-fetch</button>
+  <button id="clear" title="Delete every stored pack">Clear storage</button>
+  <div id="loadOut"></div>
+</fieldset>
+
+<fieldset>
+  <legend>Search</legend>
+  <input id="q" placeholder="e.g. primary school" size="26" />
+  <button id="run">Search</button>
+  <button id="bench">Bench 200 queries</button>
+  <div id="searchOut"></div>
+</fieldset>
+
+<fieldset>
+  <legend>Verdict against the acceptance targets</legend>
+  <div id="verdict">load a state pack first</div>
+</fieldset>
+
+<script src="register-store.js?v=1"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ms = function (v) { return v == null ? '—' : (Math.round(v * 100) / 100) + ' ms'; };
+  var kb = function (v) { return (v / 1024).toFixed(1) + ' KB'; };
+  var pack = null;
+
+  // ---- environment. A phone that cannot inflate cannot use packs at all.
+  (function () {
+    var rows = [
+      ['DecompressionStream (gzip)', typeof DecompressionStream === 'function'],
+      ['IndexedDB', typeof indexedDB !== 'undefined'],
+      ['TextDecoder', typeof TextDecoder === 'function'],
+      ['performance.now', !!(window.performance && performance.now)],
+    ];
+    var dm = navigator.deviceMemory, hc = navigator.hardwareConcurrency;
+    var html = '<table>';
+    rows.forEach(function (r) {
+      html += '<tr><td>' + r[0] + '</td><td class="' + (r[1] ? 'ok' : 'bad') + '">' + (r[1] ? 'yes' : 'NO') + '</td></tr>';
+    });
+    html += '<tr><td>device memory</td><td>' + (dm ? dm + ' GB' : 'not reported') + '</td></tr>';
+    html += '<tr><td>cores</td><td>' + (hc || 'not reported') + '</td></tr>';
+    html += '<tr><td>UA</td><td style="font-size:.75rem">' + navigator.userAgent + '</td></tr>';
+    html += '</table>';
+    if (dm && dm <= 2) html += '<p class="warn">Low-memory device — this is exactly the target for these numbers.</p>';
+    $('env').innerHTML = html;
+  })();
+
+  // ---- manifest -> state picker
+  registerStore.manifest().then(function (m) {
+    var sel = $('state');
+    sel.innerHTML = '';
+    var codes = Object.keys(m.states).sort(function (a, b) {
+      return m.states[b].bytes - m.states[a].bytes; // biggest first: worst case up top
+    });
+    codes.forEach(function (c) {
+      var s = m.states[c];
+      var o = document.createElement('option');
+      o.value = c;
+      o.textContent = s.name + ' — ' + s.units + ' units, ' + kb(s.bytes);
+      sel.appendChild(o);
+    });
+    $('loadOut').innerHTML = '<p class="sub">manifest ok — index ' + kb(m.index.bytes) +
+      ', ' + codes.length + ' states, registerVersion ' + m.registerVersion + '</p>';
+  }).catch(function (e) {
+    $('loadOut').innerHTML = '<p class="bad">manifest failed: ' + e.message +
+      '<br>Run <code>node backend/scripts/build_register_packs.mjs</code> first.</p>';
+  });
+
+  function report(p) {
+    var t = p.timings || {};
+    var html = '<table>' +
+      row('network fetch', t.network) +
+      row('gunzip', t.inflate) +
+      row('utf-8 decode', t.utf8_decode) +
+      row('line offsets', t.offsets) +
+      row('fold (build search blob)', t.fold) +
+      row('header + structure', t.header_struct) +
+      '<tr><th>total</th><th class="n">' + ms(t.total) + '</th></tr>' +
+      '</table>' +
+      '<p class="sub">' + p.unitCount + ' units · ' + kb(p.bytes.gz) + ' gz → ' + kb(p.bytes.raw) +
+      ' raw · loaded from <strong>' + p.source + '</strong></p>';
+    $('loadOut').innerHTML = html;
+    verdict(p);
+  }
+  function row(label, v) { return '<tr><td>' + label + '</td><td class="n">' + ms(v) + '</td></tr>'; }
+
+  function load(opts) {
+    var code = $('state').value;
+    if (!code) return;
+    $('loadOut').innerHTML = 'loading…';
+    var t0 = performance.now();
+    registerStore.loadState(code, opts).then(function (p) {
+      pack = p;
+      p.timings.wall = performance.now() - t0;
+      report(p);
+    }).catch(function (e) {
+      $('loadOut').innerHTML = '<p class="bad">load failed: ' + e.message + '</p>';
+    });
+  }
+
+  $('load').onclick = function () { load(); };
+  $('reload').onclick = function () { load({ forceNetwork: true }); };
+  $('clear').onclick = function () {
+    indexedDB.deleteDatabase('hawkeye-reg');
+    location.reload();
+  };
+
+  $('run').onclick = function () {
+    if (!pack) return ($('searchOut').innerHTML = '<p class="bad">load a pack first</p>');
+    var r = registerStore.search(pack.stateCode < 10 ? '0' + pack.stateCode : '' + pack.stateCode, $('q').value);
+    if (!r) return ($('searchOut').innerHTML = '<p class="bad">pack not loaded</p>');
+    var html = '<p>' + r.units.length + ' shown' + (r.truncated ? ' (more matched)' : '') +
+      ' in <strong>' + ms(r.tookMs) + '</strong></p><ul class="res">';
+    r.units.forEach(function (u) {
+      html += '<li><code>' + u.pu_code + '</code> ' + u.name + ' <span class="sub">— ' + u.ward + ', ' + u.lga + '</span></li>';
+    });
+    $('searchOut').innerHTML = html + '</ul>';
+  };
+
+  // Per-keystroke cost is what the user actually feels; one query can mislead.
+  $('bench').onclick = function () {
+    if (!pack) return ($('searchOut').innerHTML = '<p class="bad">load a pack first</p>');
+    var terms = ['pri', 'prim', 'prima', 'primar', 'primary', 'primary s', 'primary sch', 'primary school',
+                 'open', 'open sp', 'open spa', 'open space', 'mkt', 'market', 'hall', 'town hall',
+                 'squ', 'square', 'village', 'central'];
+    var code = pack.stateCode < 10 ? '0' + pack.stateCode : '' + pack.stateCode;
+    var times = [];
+    for (var rep = 0; rep < 10; rep++) {
+      for (var i = 0; i < terms.length; i++) {
+        var t0 = performance.now();
+        registerStore.search(code, terms[i]);
+        times.push(performance.now() - t0);
+      }
+    }
+    times.sort(function (a, b) { return a - b; });
+    var p50 = times[Math.floor(times.length * 0.5)];
+    var p95 = times[Math.floor(times.length * 0.95)];
+    var max = times[times.length - 1];
+    $('searchOut').innerHTML = '<table>' +
+      '<tr><td>queries</td><td class="n">' + times.length + '</td></tr>' +
+      '<tr><td>median</td><td class="n">' + ms(p50) + '</td></tr>' +
+      '<tr><td>p95</td><td class="n">' + ms(p95) + '</td></tr>' +
+      '<tr><td>worst</td><td class="n">' + ms(max) + '</td></tr></table>';
+    window.__benchP95 = p95;
+    verdict(pack);
+  };
+
+  // The targets from the design doc, checked rather than assumed.
+  function verdict(p) {
+    var t = p.timings || {};
+    var checks = [
+      ['cold load (gunzip+decode+index+fold) ≤ 150 ms', t.total, 150],
+      ['per-keystroke search ≤ 20 ms', window.__benchP95, 20],
+    ];
+    var html = '<table>';
+    checks.forEach(function (c) {
+      var v = c[1];
+      var pass = v != null && v <= c[2];
+      html += '<tr><td>' + c[0] + '</td><td class="n">' + ms(v) + '</td><td class="' +
+        (v == null ? 'sub' : pass ? 'ok' : 'bad') + '">' +
+        (v == null ? 'not measured' : pass ? 'PASS' : 'FAIL') + '</td></tr>';
+    });
+    html += '</table><p class="sub">The doc assumed a 6× penalty over a laptop. ' +
+      'Whatever this device reports is the number to re-baseline against.</p>';
+    $('verdict').innerHTML = html;
+  }
+})();
+</script>
+</body>
+</html>

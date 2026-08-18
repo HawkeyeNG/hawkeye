@@ -124,9 +124,25 @@ export default function Races() {
         desc: DESC[c.code] ?? '',
         date: c.date,
         status: statusOf(c.date),
-        // The presidency has a screen; a governorship has one PER STATE and
-        // expands below rather than linking anywhere itself.
-        href: c.code === 'PRES' ? '/candidates' : null,
+        // WHERE THIS CATEGORY GOES.
+        //
+        // This used to be "the presidency, or nowhere", which was true when only
+        // the presidency had a page — so Senate, House of Reps and State
+        // Assembly each showed a "Soon" pill and did nothing when tapped. They
+        // all have somewhere to go now: a national board at the contest's own
+        // level (109 districts for the Senate, 360 constituencies for the House),
+        // and per-seat pages beneath it. "Soon" was describing the app of a
+        // month ago.
+        //
+        // Same destinations Home's cards use — see (tabs)/index.tsx:cardHref, and
+        // keep the two in step. A governorship still expands to its 28 states
+        // rather than linking anywhere itself.
+        href:
+          c.code === 'PRES'
+            ? '/candidates'
+            : c.code === 'GOV'
+              ? null
+              : `/(tabs)/results?contest=${encodeURIComponent(c.code)}`,
         states: c.code === 'GOV' ? (c.states ?? []) : undefined,
       });
     }
@@ -200,7 +216,10 @@ export default function Races() {
 
   const renderItem = (r: Item) => {
     const open = soonOpen === r.name;
-    const pill = r.status === 'completed' ? 'Result' : r.status === 'ongoing' ? 'Live' : 'Open';
+    // "Open" read as "reporting is open" on a row whose own date says January
+    // 2027 — on an election app that is the wrong thing to be ambiguous about.
+    // It was only ever meant as "open this page", so it says what it does.
+    const pill = r.status === 'completed' ? 'Result' : r.status === 'ongoing' ? 'Live' : 'View';
     const body = (
       <View className="flex-1 pr-3">
         <Text className="text-base font-bold text-ink">{r.name}</Text>
@@ -290,8 +309,9 @@ export default function Races() {
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
       >
-        <Text className="text-2xl font-bold text-ink">Races</Text>
-        <View className="flex-row items-center pt-1">
+        {/* No in-page "Races" heading: ScreenHeader above already says it, and
+            the two sat one line apart. The subtitle is what this space is for. */}
+        <View className="flex-row items-center">
           <Text className="flex-1 text-sm text-muted">
             Pick a race to follow, report on, or verify.
           </Text>

@@ -887,77 +887,64 @@ if ($('pu-search-host') && window.puSearch) {
 const refUsable = (b) => Array.isArray(b) ? b.length > 0 : !!(b && Array.isArray(b.units) && b.units.length);
 
 /**
- * THE ELECTION-STATE REGISTER IS SHIPPED, NOT FETCHED.
+ * THE BROWSE CASCADE READS THE TIER-0 PACK (docs/PU-SEARCH-2027.md).
  *
- * The browse cascade is four sequential round trips — states, LGAs, wards, then
- * units — and each measured ~1-2.5s against production on a good link. That is
- * where observers get stuck, and election-day mobile is the worst case of it.
- * The register does not change, so asking a server for it is avoidable work.
+ * This used to fetch app/register-osun.json — one state, 1.7 MB, and the same
+ * file pu-search.js fetched separately into a second copy. Two problems for
+ * 2027: it covers one state out of 37, and 176,846 units cannot arrive that way
+ * at all.
  *
- * app/register-osun.json (built by scripts/build_register_bundle.mjs) holds the
- * whole Osun tree — 30 LGAs, 332 wards, 3,763 units — as the SAME row shape the
- * API returns, so tiers, coordinates and the geofence behave identically. 1.7 MB
- * raw but ~98 KB over the wire, fetched once and then cached by the service
- * worker, so the cascade is instant and works with no signal at all.
+ * The ~56 KB index pack carries every state, LGA and ward in the country with a
+ * unit count on each, and it is precached — so state -> LGA -> ward now works
+ * offline ANYWHERE from install, not just in the election state. Only the last
+ * step needs more: the units inside a ward come from that state's own pack
+ * (~32 KB, fetched once), or the server if it is not held.
  *
- * Deliberately NOT in the SW precache SHELL: that list is re-downloaded in full
- * on every deploy, and this is too heavy to pay repeatedly. It is in LAZY, so it
- * lands on first use and stays.
- *
- * Other states still go to the network — Osun is the election.
+ * The hk_ref2 localStorage layer is gone with it. It cached one payload per
+ * /api/register/* path, which could never cover 8,432 wards inside a ~5 MB
+ * origin quota — it degraded quietly instead of failing, which is worse.
  */
-let regBundle = null;
-let regPending = null;
-function loadRegisterBundle() {
-  if (regBundle !== null) return Promise.resolve(regBundle);
-  if (!regPending) {
-    regPending = fetch('register-osun.json?v=1')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { regBundle = j || false; return regBundle; })
-      .catch(() => { regBundle = false; return false; }); // false = tried and failed; never retry-loop
+const regStore = () => (typeof window !== 'undefined' ? window.registerStore : null);
+let regIndexPending = null;
+function loadRegisterIndex() {
+  const st = regStore();
+  if (!st || !st.available()) return Promise.resolve(null);
+  if (!regIndexPending) {
+    regIndexPending = st.loadIndex().catch(() => null); // offline first-run: fall through to the API
   }
-  return regPending;
+  return regIndexPending;
 }
 
-/** Answer a /api/register/* path from the bundle, or null if it cannot. */
-function registerFromBundle(b, path) {
-  if (!b) return null;
+/** Answer a /api/register/* path from the packs, or null if they cannot. */
+function registerFromPacks(path) {
+  const st = regStore();
+  if (!st) return null;
   const u = new URL(path, location.origin);
   const p = u.pathname;
-  const st = u.searchParams.get('state');
+  const state = u.searchParams.get('state');
   const lga = u.searchParams.get('lga');
   const ward = u.searchParams.get('ward');
-  if (p.endsWith('/states')) return b.states || null;
-  if (!st || !b[st]) return null; // only the bundled state is served locally
-  if (p.endsWith('/lgas')) return Object.keys(b[st]);
-  if (p.endsWith('/wards')) return b[st][lga] ? Object.keys(b[st][lga]) : null;
+  if (p.endsWith('/states')) return st.states();
+  if (p.endsWith('/lgas')) return st.lgas(state);
+  if (p.endsWith('/wards')) return st.wards(state, lga);
   if (p.endsWith('/units')) {
-    const rows = b[st][lga] && b[st][lga][ward];
-    return rows ? { units: rows } : null;
+    const units = st.units(state, lga, ward);
+    if (units) return { units };
+    // We know the state but not its units yet — pull the pack for next time.
+    const code = st.stateCode(state);
+    if (code && !st.isLoaded(code)) st.loadState(code).catch(() => {});
+    return null;
   }
   return null;
 }
 
 async function refApi(path) {
-  // Shipped register first — no network, no localStorage, no staleness.
-  const local = registerFromBundle(await loadRegisterBundle(), path);
+  await loadRegisterIndex();
+  const local = registerFromPacks(path);
   if (refUsable(local)) return { status: 200, body: local };
-
-  const key = 'hk_ref2:' + path;
-  try {
-    const hit = localStorage.getItem(key);
-    if (hit) {
-      const body = JSON.parse(hit);
-      if (refUsable(body)) return { status: 200, body };
-      localStorage.removeItem(key); // poisoned or empty — drop it and refetch
-    }
-  } catch { try { localStorage.removeItem(key); } catch { /* nothing to do */ } }
-  const r = await apiTry(path);
-  if (r.status === 200 && refUsable(r.body)) {
-    try { localStorage.setItem(key, JSON.stringify(r.body)); } catch { /* quota — fine */ }
-  }
-  return r;
+  return apiTry(path);
 }
+
 
 $('browse-block').addEventListener('toggle', async () => {
   if ($('browse-block').open && $('sel-state').options.length <= 1) {

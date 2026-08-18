@@ -506,7 +506,9 @@
     return manifestP;
   }
 
-  var loaded = {}; // stateCode -> decoded pack
+  var loaded = {};   // stateCode -> decoded pack
+  var pending = {};  // stateCode -> in-flight load, so two callers share one fetch
+  var indexPack = null;
 
   /**
    * Load one pack. Cached bytes are used only if they still verify AND match the
@@ -563,16 +565,108 @@
 
     /** The tier-0 index: every state/LGA/ward, so browse works offline. */
     loadIndex: function (opts) {
+      if (indexPack && !(opts && opts.forceNetwork)) return Promise.resolve(indexPack);
       return manifest().then(function (m) {
-        return loadPack('index', m.index, decodeIndex, opts);
+        return loadPack('index', m.index, decodeIndex, opts).then(function (p) {
+          indexPack = p;
+          return p;
+        });
       });
+    },
+
+    /**
+     * State NAME -> the 2-digit code the packs are keyed by. Callers work in
+     * names ("Lagos") because that is what the register and the UI use; packs
+     * are keyed by code because that is what a pu_code contains.
+     */
+    stateCode: function (name) {
+      if (!indexPack || !name) return null;
+      var want = String(name).trim().toLowerCase();
+      for (var i = 0; i < indexPack.groupCount; i++) {
+        var st = indexPack.tables.states[indexPack.stateIds[i]];
+        if (st && st.trim().toLowerCase() === want) return pad2(indexPack.stateCodes[i]);
+      }
+      return null;
+    },
+
+    /**
+     * THE BROWSE CASCADE, OFFLINE AND NATIONWIDE.
+     *
+     * states -> LGAs -> wards all come from the ~56 KB tier-0 index, which is
+     * precached, so the cascade works from install with no network anywhere in
+     * the country. Only the last step (the units inside a ward) needs that
+     * state's pack, because the index deliberately carries counts and not names.
+     */
+    states: function () {
+      if (!indexPack) return null;
+      var seen = {}, out = [];
+      for (var i = 0; i < indexPack.groupCount; i++) {
+        var v = indexPack.tables.states[indexPack.stateIds[i]];
+        if (v && !seen[v]) { seen[v] = 1; out.push(v); }
+      }
+      return out.sort();
+    },
+
+    lgas: function (stateName) {
+      if (!indexPack || !stateName) return null;
+      var seen = {}, out = [];
+      for (var i = 0; i < indexPack.groupCount; i++) {
+        if (indexPack.tables.states[indexPack.stateIds[i]] !== stateName) continue;
+        var v = indexPack.tables.lgas[indexPack.lgaIds[i]];
+        if (v && !seen[v]) { seen[v] = 1; out.push(v); }
+      }
+      return out.length ? out.sort() : null;
+    },
+
+    wards: function (stateName, lgaName) {
+      if (!indexPack || !stateName || !lgaName) return null;
+      var seen = {}, out = [];
+      for (var i = 0; i < indexPack.groupCount; i++) {
+        if (indexPack.tables.states[indexPack.stateIds[i]] !== stateName) continue;
+        if (indexPack.tables.lgas[indexPack.lgaIds[i]] !== lgaName) continue;
+        var v = indexPack.tables.wards[indexPack.wardIds[i]];
+        if (v && !seen[v]) { seen[v] = 1; out.push(v); }
+      }
+      return out.length ? out.sort() : null;
+    },
+
+    /** The units in one ward, from that state's pack. null if it is not held. */
+    units: function (stateName, lgaName, wardName) {
+      var code = api.stateCode(stateName);
+      var p = code && loaded[code];
+      if (!p) return null;
+      var out = [];
+      var startIx = 0;
+      for (var g = 0; g < p.groups.counts.length; g++) {
+        var n = p.groups.counts[g];
+        if (p.tables.lgas[p.groups.lgaIds[g]] === lgaName &&
+            p.tables.wards[p.groups.wardIds[g]] === wardName) {
+          for (var k = 0; k < n; k++) out.push(materialise(p, startIx + k, p.stateName));
+        }
+        startIx += n;
+      }
+      return out.length ? out : null;
+    },
+
+    /** What the UI needs to say: ready / downloading / absent, and how big. */
+    stateStatus: function (code) {
+      if (!code) return Promise.resolve({ state: 'unknown' });
+      if (loaded[code]) return Promise.resolve({ state: 'ready', name: loaded[code].stateName });
+      if (pending[code]) return Promise.resolve({ state: 'downloading' });
+      return manifest().then(function (m) {
+        var e = m.states[code];
+        return e ? { state: 'absent', bytes: e.bytes, name: e.name, units: e.units } : { state: 'unknown' };
+      }).catch(function () { return { state: 'unknown' }; });
     },
 
     /** One state's units. `state` is the 2-digit code, e.g. '25'. */
     loadState: function (state, opts) {
       var key = 'state:' + state;
       if (loaded[state] && !(opts && opts.forceNetwork)) return Promise.resolve(loaded[state]);
-      return manifest().then(function (m) {
+      // Two callers (the search box mounting, and the cascade picking a state)
+      // must not start two downloads of the same 32 KB.
+      if (pending[state] && !(opts && opts.forceNetwork)) return pending[state];
+      pending[state] = manifest().then(function (m) {
         var entry = m.states[state];
         if (!entry) throw new Error('no pack for state ' + state);
         return loadPack(key, entry, decodeState, opts).then(function (p) {
@@ -582,6 +676,8 @@
           return p;
         });
       });
+      pending[state]['finally'](function () { delete pending[state]; });
+      return pending[state];
     },
 
     isLoaded: function (state) { return !!loaded[state]; },

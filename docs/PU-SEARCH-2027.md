@@ -1,8 +1,9 @@
 # Polling-unit search for 2027 (176,846 units)
 
-**Status:** design agreed. **Step 1 (generator + verifier) is BUILT and its gate
-passes** — see "Build status" below. Supersedes the Osun-only
-`app/register-osun.json` approach.
+**Status: BUILT.** Steps 1–7 are done and their gates pass; `register-osun.json`
+and its crawler are deleted. The one thing still outstanding is the **real-device
+measurement** (step 2's gate) — every timing below is extrapolated from a laptop.
+See "Build status".
 
 ## The problem
 
@@ -165,6 +166,30 @@ rejected and re-fetched, never rendered.
 
 ## Build status
 
+| Step | State |
+|---|---|
+| 1. Generator + verifier | **done** — 176,846/176,846 round-trip byte-identical |
+| 2. Store + bench page | **built**; the on-device measurement is still owed |
+| 3. Correctness diff | **done** — 7,291/7,291 identical top-10 across 37 states |
+| 4. Server fold + manifest | **done** — `name_fold`/`ward_fold`, `/api/register/manifest` |
+| 5. Client cutover | **done** — cascade offline nationwide, verified with the network cut |
+| 6. Native + Lite | **done** — pure TS decoder, checked unit-for-unit in Node |
+| 7. Delete the old path | **done** |
+
+**What still has to happen before this ships:**
+
+1. **Measure on a real Android Go phone** (`/bench.html` → Load → Bench). Every
+   number here is a laptop extrapolated by an assumed 6×. That multiplier is a
+   guess and step 2 exists to replace it.
+2. **Run the name repair on production** —
+   `HAWKEYE_DB=… node backend/scripts/fix_register_mojibake.mjs --apply`. The API
+   and the packs must return identical strings.
+3. **Decide the authoritative register snapshot**, then generate and commit the
+   packs (they are gitignored today, see below) and deploy them *before* any
+   client that expects them.
+4. **Deploy order matters**: server fold columns first (a client folding against
+   an unfolded server disagrees), then the packs, then the app.
+
 **Step 1 — generator + verifier: DONE.** `backend/scripts/build_register_packs.mjs`
 (`--verify`). Runs in ~2 s against `backend/storage/hawkeye.db`, replacing the old
 `scripts/build_register_bundle.mjs`, which crawled production with one HTTP GET
@@ -215,12 +240,34 @@ then regenerate.
 - **Not fixing the corrupt production geocode here.** Real bug, different clock;
   this design is built so search does not depend on it.
 
+## Settled during the build
+
+- **The fold cannot ship in the pack.** Precomputing it was measured and rejected:
+  it nearly doubles a state pack (Lagos 113 → 214 KB). It is built on the client,
+  deferred to idle, and forced only if the user types first — so it costs once,
+  never per keystroke.
+- **Whole-blob folding is slower than per-name**, not faster: one regex over
+  400 K characters loses to 13,325 small ones. It is the obvious optimisation to
+  reach for; don't.
+- **Both sides must break name ties on `pu_code`.** Units really do share names
+  ("13, Agboyele Street" twice in one ward) and SQLite leaves a tie unordered, so
+  without it the two paths return the same rows in a different order.
+- **The prefix-narrowing shortcut in the search box is gone.** It was a third
+  definition of "matches" beside the pack and the API, and those two are now
+  proved identical. With a pack loaded a search costs ~0.5 ms, so it bought
+  nothing.
+- **`registerVersion` must come from the register, not the clock**, or unchanged
+  data regenerates as new filenames and every client re-downloads 1.4 MB.
+
 ## Open questions
 
-1. **Which register snapshot is authoritative for 2027?** The pack bakes in a
-   `registerVersion` and INEC will add/rename units before election day. Who signs
-   off on a regeneration — and should the manifest be **signed** (the app already
-   has an IndexedDB keypair) so a MITM cannot serve a doctored unit list?
+1. **Which register snapshot is authoritative for 2027?** The pack carries a
+   `registerVersion` derived from the register's own contents, and INEC will add
+   or rename units before election day. Who signs off on a regeneration — and
+   should the manifest be **signed** (the app already has an IndexedDB keypair)
+   so nobody can serve an observer a doctored unit list? This is the one open
+   question that changes the pack header, so it wants deciding before the format
+   is frozen in shipped clients.
 2. **Request `navigator.storage.persist()`?** Without it a low-storage Go phone
    can silently evict IDB. Default: request silently at pin time, treat denial as
    "pack may vanish, re-check on launch".

@@ -25,72 +25,29 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /**
-   * SEARCH THE SHIPPED REGISTER BEFORE THE NETWORK.
+   * OFFLINE SEARCH COMES FROM THE PACKS NOW (docs/PU-SEARCH-2027.md).
    *
-   * Every Osun polling unit is already on the device: the browse cascade ships
-   * app/register-osun.json, and its rows are the same shape /api/register/search
-   * returns. Searching still went to the server for all of them — so typing a
-   * PU code like "29-" (every Osun code starts with 29-) spent ~1.2s per query
-   * asking about rows sitting in local storage, on exactly the mobile links
-   * where that hurts most.
+   * This used to fetch register-osun.json — the same 1.7 MB file app.js already
+   * had in memory — and flatten it into a SECOND copy, then scan it with a third
+   * matching rule of its own. That was affordable for one state's 3,763 units.
+   * For 2027's 176,846 it is not, and the third rule is worse than the cost: the
+   * pack search and the API now return byte-identical pages (proved over 7,291
+   * queries in backend/scripts/diff_register_search.mjs), and a local filter
+   * that agrees with neither would quietly undo that.
    *
-   * Same URL and query string app.js uses, so this shares one HTTP/service
-   * worker cache entry with the cascade instead of pulling a second copy.
+   * So: one owner (register-store.js), one state pack at a time, and the server
+   * for anything we do not hold.
    */
-  let flatRows = null, flatPending = null;
-  function loadFlatRegister() {
-    if (flatRows) return Promise.resolve(flatRows);
-    if (!flatPending) {
-      flatPending = fetch('register-osun.json?v=1')
-        .then((r) => (r.ok ? r.json() : null))
-        .then((b) => {
-          const rows = [];
-          if (b) {
-            for (const st of Object.keys(b)) {
-              if (st === 'states' || st === 'generated' || !b[st] || typeof b[st] !== 'object') continue;
-              for (const lga of Object.keys(b[st])) {
-                for (const ward of Object.keys(b[st][lga])) {
-                  const units = b[st][lga][ward];
-                  if (Array.isArray(units)) rows.push(...units);
-                }
-              }
-            }
-          }
-          flatRows = rows;
-          return rows;
-        })
-        .catch(() => { flatRows = []; return flatRows; }); // tried and failed; never retry-loop
-    }
-    return flatPending;
-  }
+  const store = () => (typeof window !== 'undefined' ? window.registerStore : null);
 
-  const LOCAL_MAX = 50;
-  /**
-   * Returns {units,truncated} from the shipped register, or null if it cannot
-   * answer. SYNCHRONOUS on purpose: it reads whatever is already in memory and
-   * never waits.
-   *
-   * It used to await loadFlatRegister(), which meant the FIRST search blocked on
-   * a 1.7 MB download — measured at 954 ms on a good link, and far worse on the
-   * election-day mobile this was supposed to help. That made the offline path
-   * slower than the network call it replaced, for the one query that matters
-   * most: the first one.
-   */
-  function localSearch(term, o) {
-    // Scoped searches are the caller narrowing to a state/LGA we may not ship.
-    if (o.state && o.state !== 'Osun') return null;
-    const rows = flatRows;
-    if (!rows || !rows.length) return null;
-    const t = term.toLowerCase();
-    const hits = [];
-    for (const u of rows) {
-      if (o.lga && u.lga !== o.lga) continue;
-      if (`${u.name} ${u.pu_code} ${u.ward}`.toLowerCase().includes(t)) {
-        hits.push(u);
-        if (hits.length > LOCAL_MAX) break;
-      }
-    }
-    return { units: hits.slice(0, LOCAL_MAX), truncated: hits.length > LOCAL_MAX };
+  // The state whose units we hold. Set when the cascade picks one, remembered
+  // across sessions so a returning observer searches offline immediately.
+  const STATE_KEY = 'hk_reg_state';
+  function rememberedState() {
+    try { return localStorage.getItem(STATE_KEY) || ''; } catch { return ''; }
+  }
+  function rememberState(name) {
+    try { if (name) localStorage.setItem(STATE_KEY, name); } catch { /* private mode */ }
   }
 
   function mount(host, opts) {
@@ -106,11 +63,21 @@
     const status = host.querySelector('#pus-status');
     const list = host.querySelector('#pus-results');
 
-    // Start pulling the register the moment the box exists, not on the first
-    // keystroke. Someone reaching this pane is about to search, and there are
-    // usually a few seconds of reading and tapping first — enough for 1.7 MB on
-    // most links, so by the time they type it answers from memory.
-    loadFlatRegister();
+    // Warm what we can the moment the box exists, not on the first keystroke:
+    // someone who reaches this pane is about to type, and there are usually a
+    // few seconds of reading first. The index is ~56 KB and precached; the state
+    // pack is ~32 KB and only fetched when we know which state to get.
+    const st = store();
+    let stateName = o.state || rememberedState();
+    let stateCode = null;
+    if (st && st.available()) {
+      st.loadIndex()
+        .then(() => {
+          stateCode = st.stateCode(stateName);
+          if (stateCode) return st.loadState(stateCode);
+        })
+        .catch(() => { /* offline with nothing stored: the server path still works */ });
+    }
 
     let timer = null;
     let seq = 0;
@@ -143,36 +110,31 @@
          * truncated is narrowed locally — every match for "osogb" is contained
          * in the matches for "osog", so the server has nothing to add.
          */
+        /**
+         * The old prefix-narrowing shortcut is gone on purpose. It filtered an
+         * earlier untruncated result with its own matching rule, which was a
+         * THIRD definition of "matches" next to the pack and the API — and those
+         * two are now proved identical. With a pack loaded a search costs about
+         * half a millisecond, so the shortcut bought nothing and risked showing
+         * a page neither path would have returned.
+         */
         let r = cache.get(key);
+
+        // The pack, when we hold the right state. Instant and offline.
         if (!r) {
-          for (const [k, v] of cache) {
-            if (v.truncated || !k.startsWith('q=')) continue;
-            const prev = decodeURIComponent(k.slice(2).split('&')[0]).toLowerCase();
-            if (prev.length >= 3 && term.toLowerCase().startsWith(prev)
-                && k.slice(k.indexOf('&') + 1) === key.slice(key.indexOf('&') + 1)) {
-              const t = term.toLowerCase();
-              r = {
-                units: (v.units || []).filter((u) => `${u.name} ${u.pu_code} ${u.ward}`.toLowerCase().includes(t)),
-                truncated: false,
-              };
-              break;
+          const sx = store();
+          const code = stateCode || (sx && sx.stateCode(stateName));
+          if (sx && code && sx.isLoaded(code)) {
+            const local = sx.search(code, term, { limit: 25 });
+            if (local) {
+              r = local;
+              cache.set(key, { units: local.units, truncated: local.truncated });
             }
           }
         }
-        // Then the shipped register — but only if it is ALREADY in memory.
-        // Instant, offline, and it covers the whole election state.
+
         if (!r) {
-          const local = localSearch(term, o);
-          if (local && local.units.length) {
-            r = local;
-            cache.set(key, { units: local.units, truncated: local.truncated });
-          }
-        }
-        if (!r) {
-          status.textContent = 'Searching…';
-          // Warm the register for the NEXT keystroke without making this one
-          // wait for it. Deliberately not awaited.
-          loadFlatRegister();
+          status.textContent = navigator.onLine ? 'Searching…' : 'Looking on this device…';
           r = await fetch(`/api/register/search?${p}`).then((x) => x.json());
           if (r && !r.error) cache.set(key, { units: r.units || [], truncated: !!r.truncated });
         }
@@ -193,7 +155,22 @@
           b.onclick = () => o.onSelect && o.onSelect(units[+b.dataset.i]);
         });
       } catch {
-        if (mine === seq) status.textContent = 'Could not search just now — check your connection, or browse by state below.';
+        if (mine !== seq) return;
+        // Say which of the two things went wrong, and what fixes it. An
+        // indefinite "could not search" on a phone with no signal is the failure
+        // mode docs/PU-SEARCH-2027.md calls a regression rather than degradation.
+        const sx = store();
+        const code = stateCode || (sx && sx.stateCode(stateName));
+        if (sx && code && !sx.isLoaded(code)) {
+          sx.stateStatus(code).then((info) => {
+            if (mine !== seq) return;
+            status.textContent = info.state === 'absent'
+              ? `The unit list for ${info.name} is not on this device yet (${Math.round(info.bytes / 1024)} KB). Connect once to download it, then search works offline.`
+              : 'Could not search just now — browse by state below.';
+          });
+        } else {
+          status.textContent = 'Could not search just now — browse by state below.';
+        }
       }
     }
     // Debounced: each keystroke would otherwise be a full-table LIKE scan.

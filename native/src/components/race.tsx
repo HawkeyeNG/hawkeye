@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { FollowRace } from '@/components/follow-race';
+import { BRAND } from '@/lib/api';
 import { RaceMap } from '@/components/race-map';
 import {
   logoUrl,
@@ -199,6 +200,20 @@ export function RaceView({
 
       <RaceMap join={race.join} date={race.date} />
 
+      {/* WHO INEC DECLARED — on a finished race, the first thing a reader wants.
+
+          DELIBERATELY NOT AN INEC-LOOKING BADGE. No crest, no emblem, nothing
+          that could pass for a mark INEC issued: this app says "Not government
+          or INEC affiliated" on every board, and a screen wearing INEC's
+          insignia would contradict that on sight — quite apart from being
+          someone else's mark to use. Hawkeye's own badge, CITING INEC in words.
+
+          It renders only from a hand-recorded `declared` block. IReV publishes
+          sheet IMAGES, never numbers, so there is no endpoint this could be
+          derived from — an absent block means nobody has recorded the
+          declaration yet, not that the race was undecided. */}
+      {race.declared?.winner ? <Declared d={race.declared} logos={logos} /> : null}
+
       {noteLeads ? (
         <View className="mt-3 rounded-2xl bg-surface px-4 py-3">
           <Text className="text-sm text-ink">{race.note}</Text>
@@ -377,6 +392,91 @@ export function RaceView({
             .filter(Boolean)
             .join(' ')}
         </Text>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * The declared result. Web twin: app/race.js's `.declared` section and the
+ * matching block in app/race.css — same wording, same ordering, same refusal to
+ * dress itself as an INEC artefact.
+ */
+function Declared({ d, logos }: { d: NonNullable<Race['declared']>; logos: Record<string, string> }) {
+  const rows = d.results ?? [];
+  const top = rows.reduce((m, r) => Math.max(m, r.votes || 0), 0);
+  const when = d.date
+    ? new Date(`${d.date}T00:00:00`).toLocaleDateString('en-NG', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : '';
+  return (
+    <View className="mt-4 rounded-2xl bg-card px-4 py-4" style={{ borderLeftWidth: 4, borderLeftColor: BRAND.leaf }}>
+      {/* The SECTION is what gets the heading role, not the person: a screen
+          reader jumping by heading should land on "Declared result", not on a
+          candidate's name — which would also read as Hawkeye announcing him
+          rather than recording INEC's declaration. Web twin does the same. */}
+      <View
+        accessibilityRole="header"
+        className="self-start rounded-full border border-good-ink px-2.5 py-1"
+      >
+        <Text className="text-[10px] font-bold uppercase tracking-widest text-good-ink">
+          Declared result
+        </Text>
+      </View>
+      <View className="flex-row items-center pt-2">
+        <Text className="flex-1 pr-2 text-lg font-bold text-ink">{d.winner}</Text>
+        {d.party ? (
+          <View className="flex-row items-center">
+            <PartyMark party={d.party} logos={logos} size={18} />
+            <Text className="pl-1.5 text-sm font-bold text-muted">{d.party}</Text>
+          </View>
+        ) : null}
+      </View>
+      <Text className="pt-1 text-xs text-muted">
+        Declared by {d.by || 'INEC'}
+        {when ? ` on ${when}` : ''}
+        {d.place ? `, ${d.place}` : ''}
+        {d.returningOfficer ? ` · Returning Officer ${d.returningOfficer}` : ''}.
+      </Text>
+
+      {rows.map((r) => (
+        <View key={r.party} className="flex-row items-center pt-2.5">
+          <View className="w-14 flex-row items-center">
+            <PartyMark party={r.party} logos={logos} size={14} />
+            <Text className="pl-1 text-xs font-bold text-ink">{r.party}</Text>
+          </View>
+          <View className="flex-1 px-2">
+            <Text className="text-[11px] text-muted" numberOfLines={1}>{r.name}</Text>
+            <View className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface">
+              <View
+                className="h-1.5 rounded-full"
+                style={{
+                  width: `${top ? Math.max(3, Math.round(((r.votes || 0) / top) * 100)) : 0}%`,
+                  backgroundColor: r.party === d.party ? BRAND.leaf : '#8aa79a',
+                }}
+              />
+            </View>
+          </View>
+          <Text className="text-sm font-bold text-ink">{(r.votes || 0).toLocaleString()}</Text>
+        </View>
+      ))}
+
+      {d.note ? <Text className="pt-3 text-[11px] text-muted">{d.note}</Text> : null}
+      {d.sources?.length ? (
+        <View className="flex-row flex-wrap pt-1.5">
+          <Text className="text-[11px] text-muted">Recorded from: </Text>
+          {d.sources.map((u, i) => (
+            <Pressable key={u} onPress={() => Linking.openURL(u)}>
+              <Text className="text-[11px] font-semibold text-good-ink">
+                source {i + 1}
+                {i < d.sources!.length - 1 ? ' · ' : ''}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       ) : null}
     </View>
   );

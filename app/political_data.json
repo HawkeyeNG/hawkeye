@@ -1,528 +1,569 @@
 {
- "note": "Incumbent office-holders and their parties. Verify against INEC before relying on it.",
- "president": {
-  "name": "President of Nigeria",
-  "party": "APC"
- },
- "governors": {
-  "Abia": "LP",
-  "Adamawa": "APC",
-  "Akwa Ibom": "APC",
-  "Anambra": "APGA",
-  "Bauchi": "PDP",
-  "Bayelsa": "APC",
-  "Benue": "APC",
-  "Borno": "APC",
-  "Cross River": "APC",
-  "Delta": "APC",
-  "Ebonyi": "APC",
-  "Edo": "APC",
-  "Ekiti": "APC",
-  "Enugu": "APC",
-  "Gombe": "APC",
-  "Imo": "APC",
-  "Jigawa": "APC",
-  "Kaduna": "APC",
-  "Kano": "APC",
-  "Katsina": "APC",
-  "Kebbi": "APC",
-  "Kogi": "APC",
-  "Kwara": "APC",
-  "Lagos": "APC",
-  "Nasarawa": "APC",
-  "Niger": "APC",
-  "Ogun": "APC",
-  "Ondo": "APC",
-  "Osun": "A",
-  "Oyo": "PDP",
-  "Plateau": "APC",
-  "Rivers": "APC",
-  "Sokoto": "APC",
-  "Taraba": "APC",
-  "Yobe": "APC",
-  "Zamfara": "APC",
-  "FCT": null
- },
- "upcoming": {
-  "note": "Next general election cycle. Exact INEC dates to be confirmed nearer the time.",
-  "elections": [
-   {
-    "office": "Presidential",
-    "seats": "1",
-    "when": "2027 general election",
-    "scope": "National"
-   },
-   {
-    "office": "Senate",
-    "seats": "109",
-    "when": "2027 general election",
-    "scope": "All senatorial districts"
-   },
-   {
-    "office": "House of Representatives",
-    "seats": "360",
-    "when": "2027 general election",
-    "scope": "All federal constituencies"
-   },
-   {
-    "office": "Governorship",
-    "seats": "28",
-    "when": "2027 general election",
-    "scope": "28 states (8 off-cycle states vote separately: Anambra, Bayelsa, Edo, Ekiti, Imo, Kogi, Ondo, Osun)"
-   },
-   {
-    "office": "State Houses of Assembly",
-    "seats": "993",
-    "when": "2027 general election",
-    "scope": "All 36 states (FCT has no State Assembly — it has Area Councils)"
-   }
-  ]
- },
- "composition": {
-  "asOf": "2026-08-05",
-  "note": "Current seat composition by party, compiled from public records (NASS/INEC declarations incl. defections). Vacant/undeclared seats make totals fall short of chamber size. House figures were corrected on 2026-08-05: the previous set gave Labour 37 of 360, which the party has never held — it won 34-35 seats in 2023 and has lost members since — and totalled only 325, omitting the 2025-26 wave of defections to the APC. They now follow the current House of Representatives (Nigeria) infobox, which totals 360. Caveat: that source still shows ADC on 1 and so probably lags the 2026 ADC defections, among them Kaduna North's Mohammed Bello El-Rufai.",
-  "chambers": {
-   "senate": {
-    "label": "Senate",
-    "size": 109,
-    "total": 108,
-    "parties": {
-     "APC": 68,
-     "ADC": 9,
-     "PDP": 24,
-     "YPP": 1,
-     "NDC": 1,
-     "LP": 1,
-     "NNPP": 2,
-     "SDP": 2
+  "note": "Incumbent office-holders and their parties. Verify against INEC before relying on it.",
+  "president": {
+    "name": "President of Nigeria",
+    "party": "APC"
+  },
+  "governors": {
+    "Abia": "LP",
+    "Adamawa": "APC",
+    "Akwa Ibom": "APC",
+    "Anambra": "APGA",
+    "Bauchi": "PDP",
+    "Bayelsa": "APC",
+    "Benue": "APC",
+    "Borno": "APC",
+    "Cross River": "APC",
+    "Delta": "APC",
+    "Ebonyi": "APC",
+    "Edo": "APC",
+    "Ekiti": "APC",
+    "Enugu": "APC",
+    "Gombe": "APC",
+    "Imo": "APC",
+    "Jigawa": "APC",
+    "Kaduna": "APC",
+    "Kano": "APC",
+    "Katsina": "APC",
+    "Kebbi": "APC",
+    "Kogi": "APC",
+    "Kwara": "APC",
+    "Lagos": "APC",
+    "Nasarawa": "APC",
+    "Niger": "APC",
+    "Ogun": "APC",
+    "Ondo": "APC",
+    "Osun": "A",
+    "Oyo": "PDP",
+    "Plateau": "APC",
+    "Rivers": "APC",
+    "Sokoto": "APC",
+    "Taraba": "APC",
+    "Yobe": "APC",
+    "Zamfara": "APC",
+    "FCT": null
+  },
+  "upcoming": {
+    "note": "Next general election cycle. Exact INEC dates to be confirmed nearer the time.",
+    "elections": [
+      {
+        "office": "Presidential",
+        "seats": "1",
+        "when": "2027 general election",
+        "scope": "National"
+      },
+      {
+        "office": "Senate",
+        "seats": "109",
+        "when": "2027 general election",
+        "scope": "All senatorial districts"
+      },
+      {
+        "office": "House of Representatives",
+        "seats": "360",
+        "when": "2027 general election",
+        "scope": "All federal constituencies"
+      },
+      {
+        "office": "Governorship",
+        "seats": "28",
+        "when": "2027 general election",
+        "scope": "28 states (8 off-cycle states vote separately: Anambra, Bayelsa, Edo, Ekiti, Imo, Kogi, Ondo, Osun)"
+      },
+      {
+        "office": "State Houses of Assembly",
+        "seats": "993",
+        "when": "2027 general election",
+        "scope": "All 36 states (FCT has no State Assembly — it has Area Councils)"
+      }
+    ]
+  },
+  "composition": {
+    "asOf": "2026-08-05",
+    "note": "Current seat composition by party, compiled from public records (NASS/INEC declarations incl. defections). Vacant/undeclared seats make totals fall short of chamber size. House figures were corrected on 2026-08-05: the previous set gave Labour 37 of 360, which the party has never held — it won 34-35 seats in 2023 and has lost members since — and totalled only 325, omitting the 2025-26 wave of defections to the APC. They now follow the current House of Representatives (Nigeria) infobox, which totals 360. Caveat: that source still shows ADC on 1 and so probably lags the 2026 ADC defections, among them Kaduna North's Mohammed Bello El-Rufai.",
+    "chambers": {
+      "senate": {
+        "label": "Senate",
+        "size": 109,
+        "total": 108,
+        "parties": {
+          "APC": 68,
+          "ADC": 9,
+          "PDP": 24,
+          "YPP": 1,
+          "NDC": 1,
+          "LP": 1,
+          "NNPP": 2,
+          "SDP": 2
+        }
+      },
+      "house": {
+        "label": "House of Representatives",
+        "size": 360,
+        "total": 360,
+        "parties": {
+          "APC": 242,
+          "PDP": 72,
+          "LP": 22,
+          "NNPP": 15,
+          "APGA": 5,
+          "SDP": 2,
+          "ADC": 1,
+          "YPP": 1
+        }
+      },
+      "governors": {
+        "label": "Governors",
+        "size": 36,
+        "total": 36,
+        "parties": {
+          "LP": 1,
+          "APC": 31,
+          "APGA": 1,
+          "PDP": 2,
+          "A": 1
+        }
+      },
+      "assembly": {
+        "label": "State Houses of Assembly",
+        "size": 993,
+        "total": 924,
+        "parties": {
+          "LP": 39,
+          "PDP": 260,
+          "YPP": 5,
+          "APC": 530,
+          "APGA": 20,
+          "SDP": 7,
+          "ADC": 34,
+          "NNPP": 29
+        }
+      },
+      "lga": {
+        "label": "LGA Chairmen",
+        "size": 774,
+        "total": 744,
+        "parties": {
+          "LP": 17,
+          "APC": 653,
+          "APGA": 21,
+          "PDP": 53
+        }
+      }
     }
-   },
-   "house": {
-    "label": "House of Representatives",
-    "size": 360,
-    "total": 360,
-    "parties": {
-     "APC": 242,
-     "PDP": 72,
-     "LP": 22,
-     "NNPP": 15,
-     "APGA": 5,
-     "SDP": 2,
-     "ADC": 1,
-     "YPP": 1
+  },
+  "race2027": {
+    "asOf": "2026-08-01",
+    "note": "INEC's published field of 19 candidates and their running mates (personal particulars displayed from 1 August 2026). Compiled from public records — verify against INEC; official candidate lists and results are INEC’s.",
+    "election": "Presidential · 2027 general election",
+    "candidates": [
+      {
+        "name": "Bola Ahmed Tinubu",
+        "party": "APC",
+        "initials": "BAT",
+        "incumbent": true,
+        "home": "Lagos (South-West)",
+        "bids": "2nd bid — incumbent",
+        "line": "Incumbent president seeking a second term.",
+        "status": "Nominee (APC) — running mate Kashim Shettima",
+        "photo": "photos/candidates/tinubu.jpg"
+      },
+      {
+        "name": "Atiku Abubakar",
+        "party": "ADC",
+        "initials": "AA",
+        "home": "Adamawa (North-East)",
+        "bids": "4th bid",
+        "line": "Former vice-president, contesting on the ADC ticket.",
+        "status": "Nominee (ADC) — running mate Rotimi Amaechi",
+        "photo": "photos/candidates/atiku.jpg"
+      },
+      {
+        "name": "Peter Obi",
+        "party": "NDC",
+        "initials": "PO",
+        "home": "Anambra (South-East)",
+        "bids": "2nd bid — placed 3rd in 2023",
+        "line": "Second presidential run, contesting on the NDC ticket.",
+        "status": "Nominee (NDC) — running mate Rabiu Kwankwaso",
+        "photo": "photos/candidates/obi.jpg"
+      }
+    ],
+    "minors": [
+      {
+        "name": "Rufai Adekunle Omoaje",
+        "party": "AA",
+        "meta": "AA · running mate Shehu Hussaini"
+      },
+      {
+        "name": "Omoyele Sowore",
+        "party": "AAC",
+        "meta": "AAC · running mate Magashi Haruna Garba"
+      },
+      {
+        "name": "Abbas-Bin Aliyu",
+        "party": "ADP",
+        "meta": "ADP · running mate Ike Chinazam"
+      },
+      {
+        "name": "Seyi Makinde",
+        "party": "APM",
+        "meta": "APM · running mate Ibrahim Adamu Bala"
+      },
+      {
+        "name": "Yusuf Kabiru",
+        "party": "APP",
+        "meta": "APP · running mate Ofordile Peace Egobia"
+      },
+      {
+        "name": "Adenuga Sunday",
+        "party": "BP",
+        "meta": "BP · running mate Mustapha Usman Turaki"
+      },
+      {
+        "name": "Memeh Samuel",
+        "party": "DLA",
+        "meta": "DLA · running mate Balogun Alex"
+      },
+      {
+        "name": "Okereke Sunday Chibuzor",
+        "party": "LP",
+        "meta": "LP · running mate Konto Hajja Bintu"
+      },
+      {
+        "name": "Okwori Ada Elizabeth Frederick",
+        "party": "NDP",
+        "meta": "NDP · running mate Chikwuemeka Uchenna Anthony"
+      },
+      {
+        "name": "Dikwa Suleiman Mohammed",
+        "party": "NNPP",
+        "meta": "NNPP · running mate Abubakar Isah"
+      },
+      {
+        "name": "Okereke Iken Esther",
+        "party": "NRM",
+        "meta": "NRM · running mate Samuel Magdalene Gali"
+      },
+      {
+        "name": "Sandy Onor",
+        "party": "PDP",
+        "meta": "PDP · running mate Umaru Babangida"
+      },
+      {
+        "name": "Donald Duke",
+        "party": "PRP",
+        "meta": "PRP · running mate Buba Musa"
+      },
+      {
+        "name": "Adebayo Adewole Ebenezer",
+        "party": "SDP",
+        "meta": "SDP · running mate Bugaje Usman Mohammed"
+      },
+      {
+        "name": "Chukwu Anita Zugwai",
+        "party": "YPP",
+        "meta": "YPP · running mate Egbeola Olawale Mertins"
+      },
+      {
+        "name": "Nwanyanwu Daniel Danerechukwu",
+        "party": "ZLP",
+        "meta": "ZLP · running mate Hassan Khalid"
+      }
+    ],
+    "photoCredit": "Portraits via Wikipedia / Wikimedia Commons",
+    "dateText": "2027",
+    "dateLabel": "Election year",
+    "stats": {
+      "lgas": 774,
+      "pollingUnits": 176846
     }
-   },
-   "governors": {
-    "label": "Governors",
-    "size": 36,
-    "total": 36,
-    "parties": {
-     "LP": 1,
-     "APC": 31,
-     "APGA": 1,
-     "PDP": 2,
-     "A": 1
+  },
+  "raceOsun2026": {
+    "asOf": "2026-07-16",
+    "office": "Governor of Osun State",
+    "election": "Osun State Governorship Election 2026",
+    "date": "2026-08-15",
+    "note": "INEC's final list of 14 candidates. Compiled from public records — verify against INEC; official results are INEC's.",
+    "stats": {
+      "lgas": 30,
+      "pollingUnits": 3763,
+      "candidates": 14
+    },
+    "incumbentNote": "Gov. Ademola Adeleke is seeking a second term. Elected in 2022 on the PDP, he is contesting this election on the Accord Party ticket after a PDP nomination dispute — and the PDP fielded no candidate.",
+    "candidates": [
+      {
+        "name": "Ademola Adeleke",
+        "party": "A",
+        "initials": "AA",
+        "incumbent": true,
+        "home": "Ede (Osun West)",
+        "line": "Incumbent governor seeking a second term; contesting on Accord after leaving the PDP.",
+        "bids": "2nd bid — incumbent",
+        "status": "Nominee (Accord)"
+      },
+      {
+        "name": "Bola Oyebamiji",
+        "party": "APC",
+        "initials": "BO",
+        "home": "Osun State",
+        "line": "APC nominee; Managing Director/CEO of the National Inland Waterways Authority (NIWA).",
+        "bids": "1st gubernatorial bid",
+        "status": "Nominee (APC)"
+      },
+      {
+        "name": "Najeem Salam",
+        "party": "ADC",
+        "initials": "NS",
+        "home": "Osun State",
+        "line": "ADC nominee; former Speaker of the Osun State House of Assembly.",
+        "bids": "1st gubernatorial bid",
+        "status": "Nominee (ADC)"
+      }
+    ],
+    "others": [
+      {
+        "name": "Farinloye Olarenwaju",
+        "party": "AA"
+      },
+      {
+        "name": "Esan Olajide",
+        "party": "AAC"
+      },
+      {
+        "name": "Adeagbo Opawoye",
+        "party": "ADP"
+      },
+      {
+        "name": "Adesina Adeyemi-Doro",
+        "party": "APGA"
+      },
+      {
+        "name": "Adewale Adebayo",
+        "party": "APM"
+      },
+      {
+        "name": "Clement Adesuyi",
+        "party": "APP"
+      },
+      {
+        "name": "Masilo Adeleke",
+        "party": "BP"
+      },
+      {
+        "name": "Taofeek Adeleke",
+        "party": "NNPP"
+      },
+      {
+        "name": "Saliu Oyelami",
+        "party": "PRP"
+      },
+      {
+        "name": "Ogunsakin Olalekan",
+        "party": "YPP"
+      },
+      {
+        "name": "Adefemi Adesuyi",
+        "party": "ZLP"
+      }
+    ],
+    "notableAbsence": "The Peoples Democratic Party (PDP) did not field a candidate.",
+    "join": {
+      "contest": "GOV",
+      "level": "state",
+      "value": "Osun",
+      "state": "Osun"
+    },
+    "declared": {
+      "by": "INEC",
+      "date": "2026-08-16",
+      "place": "State collation centre, Osogbo",
+      "returningOfficer": "Prof. Joshua Ogunwole",
+      "winner": "Ademola Adeleke",
+      "party": "A",
+      "votes": 511067,
+      "runnerUp": {
+        "name": "Bola Oyebamiji",
+        "party": "APC",
+        "votes": 444815
+      },
+      "results": [
+        {
+          "party": "A",
+          "name": "Ademola Adeleke",
+          "votes": 511067
+        },
+        {
+          "party": "APC",
+          "name": "Bola Oyebamiji",
+          "votes": 444815
+        },
+        {
+          "party": "ADC",
+          "name": "Najeem Salam",
+          "votes": 17180
+        }
+      ],
+      "lgasWon": {
+        "A": 19,
+        "APC": 11
+      },
+      "sources": [
+        "https://www.channelstv.com/2026/08/16/imole-de-accords-adeleke-wins-osun-governorship-election-returns-for-second-term/",
+        "https://www.thisdaylive.com/2026/08/16/osun-governorship-election-results-2026-as-announced-by-inec/",
+        "https://en.wikipedia.org/wiki/2026_Osun_State_gubernatorial_election"
+      ],
+      "note": "As announced by INEC's returning officer. Hawkeye is not INEC and does not certify results - this records INEC's declaration so it can be checked against INEC's own published sheets."
     }
-   },
-   "assembly": {
-    "label": "State Houses of Assembly",
-    "size": 993,
-    "total": 924,
-    "parties": {
-     "LP": 39,
-     "PDP": 260,
-     "YPP": 5,
-     "APC": 530,
-     "APGA": 20,
-     "SDP": 7,
-     "ADC": 34,
-     "NNPP": 29
+  },
+  "stateStats": {
+    "Abia": {
+      "lgas": 17,
+      "pollingUnits": 4062
+    },
+    "Adamawa": {
+      "lgas": 21,
+      "pollingUnits": 4104
+    },
+    "Akwa Ibom": {
+      "lgas": 31,
+      "pollingUnits": 4353
+    },
+    "Anambra": {
+      "lgas": 21,
+      "pollingUnits": 5720
+    },
+    "Bauchi": {
+      "lgas": 20,
+      "pollingUnits": 5423
+    },
+    "Bayelsa": {
+      "lgas": 8,
+      "pollingUnits": 2244
+    },
+    "Benue": {
+      "lgas": 23,
+      "pollingUnits": 5102
+    },
+    "Borno": {
+      "lgas": 27,
+      "pollingUnits": 5071
+    },
+    "Cross River": {
+      "lgas": 18,
+      "pollingUnits": 3281
+    },
+    "Delta": {
+      "lgas": 25,
+      "pollingUnits": 5863
+    },
+    "Ebonyi": {
+      "lgas": 13,
+      "pollingUnits": 2946
+    },
+    "Edo": {
+      "lgas": 18,
+      "pollingUnits": 4519
+    },
+    "Ekiti": {
+      "lgas": 16,
+      "pollingUnits": 2445
+    },
+    "Enugu": {
+      "lgas": 17,
+      "pollingUnits": 4145
+    },
+    "FCT": {
+      "lgas": 6,
+      "pollingUnits": 2822
+    },
+    "Gombe": {
+      "lgas": 11,
+      "pollingUnits": 2988
+    },
+    "Imo": {
+      "lgas": 27,
+      "pollingUnits": 4758
+    },
+    "Jigawa": {
+      "lgas": 27,
+      "pollingUnits": 4522
+    },
+    "Kaduna": {
+      "lgas": 23,
+      "pollingUnits": 8012
+    },
+    "Kano": {
+      "lgas": 44,
+      "pollingUnits": 11222
+    },
+    "Katsina": {
+      "lgas": 34,
+      "pollingUnits": 6652
+    },
+    "Kebbi": {
+      "lgas": 21,
+      "pollingUnits": 3743
+    },
+    "Kogi": {
+      "lgas": 21,
+      "pollingUnits": 3508
+    },
+    "Kwara": {
+      "lgas": 16,
+      "pollingUnits": 2887
+    },
+    "Lagos": {
+      "lgas": 20,
+      "pollingUnits": 13325
+    },
+    "Nasarawa": {
+      "lgas": 13,
+      "pollingUnits": 3256
+    },
+    "Niger": {
+      "lgas": 25,
+      "pollingUnits": 4950
+    },
+    "Ogun": {
+      "lgas": 20,
+      "pollingUnits": 5042
+    },
+    "Ondo": {
+      "lgas": 18,
+      "pollingUnits": 3933
+    },
+    "Osun": {
+      "lgas": 30,
+      "pollingUnits": 3763
+    },
+    "Oyo": {
+      "lgas": 33,
+      "pollingUnits": 6390
+    },
+    "Plateau": {
+      "lgas": 17,
+      "pollingUnits": 4989
+    },
+    "Rivers": {
+      "lgas": 23,
+      "pollingUnits": 6866
+    },
+    "Sokoto": {
+      "lgas": 23,
+      "pollingUnits": 3991
+    },
+    "Taraba": {
+      "lgas": 16,
+      "pollingUnits": 3597
+    },
+    "Yobe": {
+      "lgas": 17,
+      "pollingUnits": 2823
+    },
+    "Zamfara": {
+      "lgas": 14,
+      "pollingUnits": 3529
     }
-   },
-   "lga": {
-    "label": "LGA Chairmen",
-    "size": 774,
-    "total": 744,
-    "parties": {
-     "LP": 17,
-     "APC": 653,
-     "APGA": 21,
-     "PDP": 53
-    }
-   }
   }
- },
- "race2027": {
-  "asOf": "2026-08-01",
-  "note": "INEC's published field of 19 candidates and their running mates (personal particulars displayed from 1 August 2026). Compiled from public records — verify against INEC; official candidate lists and results are INEC’s.",
-  "election": "Presidential · 2027 general election",
-  "candidates": [
-   {
-    "name": "Bola Ahmed Tinubu",
-    "party": "APC",
-    "initials": "BAT",
-    "incumbent": true,
-    "home": "Lagos (South-West)",
-    "bids": "2nd bid — incumbent",
-    "line": "Incumbent president seeking a second term.",
-    "status": "Nominee (APC) — running mate Kashim Shettima",
-    "photo": "photos/candidates/tinubu.jpg"
-   },
-   {
-    "name": "Atiku Abubakar",
-    "party": "ADC",
-    "initials": "AA",
-    "home": "Adamawa (North-East)",
-    "bids": "4th bid",
-    "line": "Former vice-president, contesting on the ADC ticket.",
-    "status": "Nominee (ADC) — running mate Rotimi Amaechi",
-    "photo": "photos/candidates/atiku.jpg"
-   },
-   {
-    "name": "Peter Obi",
-    "party": "NDC",
-    "initials": "PO",
-    "home": "Anambra (South-East)",
-    "bids": "2nd bid — placed 3rd in 2023",
-    "line": "Second presidential run, contesting on the NDC ticket.",
-    "status": "Nominee (NDC) — running mate Rabiu Kwankwaso",
-    "photo": "photos/candidates/obi.jpg"
-   }
-  ],
-  "minors": [
-   {
-    "name": "Rufai Adekunle Omoaje",
-    "party": "AA",
-    "meta": "AA · running mate Shehu Hussaini"
-   },
-   {
-    "name": "Omoyele Sowore",
-    "party": "AAC",
-    "meta": "AAC · running mate Magashi Haruna Garba"
-   },
-   {
-    "name": "Abbas-Bin Aliyu",
-    "party": "ADP",
-    "meta": "ADP · running mate Ike Chinazam"
-   },
-   {
-    "name": "Seyi Makinde",
-    "party": "APM",
-    "meta": "APM · running mate Ibrahim Adamu Bala"
-   },
-   {
-    "name": "Yusuf Kabiru",
-    "party": "APP",
-    "meta": "APP · running mate Ofordile Peace Egobia"
-   },
-   {
-    "name": "Adenuga Sunday",
-    "party": "BP",
-    "meta": "BP · running mate Mustapha Usman Turaki"
-   },
-   {
-    "name": "Memeh Samuel",
-    "party": "DLA",
-    "meta": "DLA · running mate Balogun Alex"
-   },
-   {
-    "name": "Okereke Sunday Chibuzor",
-    "party": "LP",
-    "meta": "LP · running mate Konto Hajja Bintu"
-   },
-   {
-    "name": "Okwori Ada Elizabeth Frederick",
-    "party": "NDP",
-    "meta": "NDP · running mate Chikwuemeka Uchenna Anthony"
-   },
-   {
-    "name": "Dikwa Suleiman Mohammed",
-    "party": "NNPP",
-    "meta": "NNPP · running mate Abubakar Isah"
-   },
-   {
-    "name": "Okereke Iken Esther",
-    "party": "NRM",
-    "meta": "NRM · running mate Samuel Magdalene Gali"
-   },
-   {
-    "name": "Sandy Onor",
-    "party": "PDP",
-    "meta": "PDP · running mate Umaru Babangida"
-   },
-   {
-    "name": "Donald Duke",
-    "party": "PRP",
-    "meta": "PRP · running mate Buba Musa"
-   },
-   {
-    "name": "Adebayo Adewole Ebenezer",
-    "party": "SDP",
-    "meta": "SDP · running mate Bugaje Usman Mohammed"
-   },
-   {
-    "name": "Chukwu Anita Zugwai",
-    "party": "YPP",
-    "meta": "YPP · running mate Egbeola Olawale Mertins"
-   },
-   {
-    "name": "Nwanyanwu Daniel Danerechukwu",
-    "party": "ZLP",
-    "meta": "ZLP · running mate Hassan Khalid"
-   }
-  ],
-  "photoCredit": "Portraits via Wikipedia / Wikimedia Commons",
-  "dateText": "2027",
-  "dateLabel": "Election year",
-  "stats": {
-   "lgas": 774,
-   "pollingUnits": 176846
-  }
- },
- "raceOsun2026": {
-  "asOf": "2026-07-16",
-  "office": "Governor of Osun State",
-  "election": "Osun State Governorship Election 2026",
-  "date": "2026-08-15",
-  "note": "INEC's final list of 14 candidates. Compiled from public records — verify against INEC; official results are INEC's.",
-  "stats": {
-   "lgas": 30,
-   "pollingUnits": 3763,
-   "candidates": 14
-  },
-  "incumbentNote": "Gov. Ademola Adeleke is seeking a second term. Elected in 2022 on the PDP, he is contesting this election on the Accord Party ticket after a PDP nomination dispute — and the PDP fielded no candidate.",
-  "candidates": [
-   {
-    "name": "Ademola Adeleke",
-    "party": "A",
-    "initials": "AA",
-    "incumbent": true,
-    "home": "Ede (Osun West)",
-    "line": "Incumbent governor seeking a second term; contesting on Accord after leaving the PDP.",
-    "bids": "2nd bid — incumbent",
-    "status": "Nominee (Accord)"
-   },
-   {
-    "name": "Bola Oyebamiji",
-    "party": "APC",
-    "initials": "BO",
-    "home": "Osun State",
-    "line": "APC nominee; Managing Director/CEO of the National Inland Waterways Authority (NIWA).",
-    "bids": "1st gubernatorial bid",
-    "status": "Nominee (APC)"
-   },
-   {
-    "name": "Najeem Salam",
-    "party": "ADC",
-    "initials": "NS",
-    "home": "Osun State",
-    "line": "ADC nominee; former Speaker of the Osun State House of Assembly.",
-    "bids": "1st gubernatorial bid",
-    "status": "Nominee (ADC)"
-   }
-  ],
-  "others": [
-   {
-    "name": "Farinloye Olarenwaju",
-    "party": "AA"
-   },
-   {
-    "name": "Esan Olajide",
-    "party": "AAC"
-   },
-   {
-    "name": "Adeagbo Opawoye",
-    "party": "ADP"
-   },
-   {
-    "name": "Adesina Adeyemi-Doro",
-    "party": "APGA"
-   },
-   {
-    "name": "Adewale Adebayo",
-    "party": "APM"
-   },
-   {
-    "name": "Clement Adesuyi",
-    "party": "APP"
-   },
-   {
-    "name": "Masilo Adeleke",
-    "party": "BP"
-   },
-   {
-    "name": "Taofeek Adeleke",
-    "party": "NNPP"
-   },
-   {
-    "name": "Saliu Oyelami",
-    "party": "PRP"
-   },
-   {
-    "name": "Ogunsakin Olalekan",
-    "party": "YPP"
-   },
-   {
-    "name": "Adefemi Adesuyi",
-    "party": "ZLP"
-   }
-  ],
-  "notableAbsence": "The Peoples Democratic Party (PDP) did not field a candidate.",
-  "join": {
-   "contest": "GOV",
-   "level": "state",
-   "value": "Osun",
-   "state": "Osun"
-  }
- },
- "stateStats": {
-  "Abia": {
-   "lgas": 17,
-   "pollingUnits": 4062
-  },
-  "Adamawa": {
-   "lgas": 21,
-   "pollingUnits": 4104
-  },
-  "Akwa Ibom": {
-   "lgas": 31,
-   "pollingUnits": 4353
-  },
-  "Anambra": {
-   "lgas": 21,
-   "pollingUnits": 5720
-  },
-  "Bauchi": {
-   "lgas": 20,
-   "pollingUnits": 5423
-  },
-  "Bayelsa": {
-   "lgas": 8,
-   "pollingUnits": 2244
-  },
-  "Benue": {
-   "lgas": 23,
-   "pollingUnits": 5102
-  },
-  "Borno": {
-   "lgas": 27,
-   "pollingUnits": 5071
-  },
-  "Cross River": {
-   "lgas": 18,
-   "pollingUnits": 3281
-  },
-  "Delta": {
-   "lgas": 25,
-   "pollingUnits": 5863
-  },
-  "Ebonyi": {
-   "lgas": 13,
-   "pollingUnits": 2946
-  },
-  "Edo": {
-   "lgas": 18,
-   "pollingUnits": 4519
-  },
-  "Ekiti": {
-   "lgas": 16,
-   "pollingUnits": 2445
-  },
-  "Enugu": {
-   "lgas": 17,
-   "pollingUnits": 4145
-  },
-  "FCT": {
-   "lgas": 6,
-   "pollingUnits": 2822
-  },
-  "Gombe": {
-   "lgas": 11,
-   "pollingUnits": 2988
-  },
-  "Imo": {
-   "lgas": 27,
-   "pollingUnits": 4758
-  },
-  "Jigawa": {
-   "lgas": 27,
-   "pollingUnits": 4522
-  },
-  "Kaduna": {
-   "lgas": 23,
-   "pollingUnits": 8012
-  },
-  "Kano": {
-   "lgas": 44,
-   "pollingUnits": 11222
-  },
-  "Katsina": {
-   "lgas": 34,
-   "pollingUnits": 6652
-  },
-  "Kebbi": {
-   "lgas": 21,
-   "pollingUnits": 3743
-  },
-  "Kogi": {
-   "lgas": 21,
-   "pollingUnits": 3508
-  },
-  "Kwara": {
-   "lgas": 16,
-   "pollingUnits": 2887
-  },
-  "Lagos": {
-   "lgas": 20,
-   "pollingUnits": 13325
-  },
-  "Nasarawa": {
-   "lgas": 13,
-   "pollingUnits": 3256
-  },
-  "Niger": {
-   "lgas": 25,
-   "pollingUnits": 4950
-  },
-  "Ogun": {
-   "lgas": 20,
-   "pollingUnits": 5042
-  },
-  "Ondo": {
-   "lgas": 18,
-   "pollingUnits": 3933
-  },
-  "Osun": {
-   "lgas": 30,
-   "pollingUnits": 3763
-  },
-  "Oyo": {
-   "lgas": 33,
-   "pollingUnits": 6390
-  },
-  "Plateau": {
-   "lgas": 17,
-   "pollingUnits": 4989
-  },
-  "Rivers": {
-   "lgas": 23,
-   "pollingUnits": 6866
-  },
-  "Sokoto": {
-   "lgas": 23,
-   "pollingUnits": 3991
-  },
-  "Taraba": {
-   "lgas": 16,
-   "pollingUnits": 3597
-  },
-  "Yobe": {
-   "lgas": 17,
-   "pollingUnits": 2823
-  },
-  "Zamfara": {
-   "lgas": 14,
-   "pollingUnits": 3529
-  }
- }
 }

@@ -58,17 +58,15 @@ const GROUPS: { title: string; items: MenuItem[] }[] = [
       // name in the menu found nothing. "Leaderboard", not "National
       // Leaderboard" — the word matches results.html's nav and <h1>.
       { label: 'Leaderboard', href: 'native:/(tabs)/results', icon: 'bar-chart-2' },
-      // Races accordion — Osun + Presidency; other race categories join as built.
-      {
-        acc: 'Races',
-        icon: 'trending-up',
-        items: [
-          // All Races — the selector where every contest will live as it opens.
-          { label: 'All Races', href: 'native:/races', icon: 'grid' },
-          { label: 'Osun 2026', href: 'native:/osun', icon: 'trending-up' },
-          { label: 'Presidency 2027', href: 'native:/candidates', icon: 'users' },
-        ],
-      },
+      // RACES IS ONE LINK, NOT AN ACCORDION — the same call app/menu.js made.
+      // It listed All Races / Osun 2026 / Presidency 2027: a hand-kept list of
+      // three, hardcoded in a menu, sitting above a screen that derives every
+      // race from /api/contests, groups them completed / ongoing / upcoming and
+      // offers all 36 governorships. The accordion could only ever be a stale
+      // subset of the page beneath it, and "Osun 2026" was a finished election
+      // pinned to the menu. The filter the accordion was reaching for already
+      // lives on /races.
+      { label: 'Races', href: 'native:/races', icon: 'trending-up' },
       { label: 'Public Reports Log', href: 'native:/reports-log', icon: 'list' },
       { label: 'Political Data', href: 'native:/political', icon: 'pie-chart' },
     ],
@@ -182,9 +180,12 @@ function AppearanceGroup() {
   );
 }
 
-// A collapsible menu entry (Report, Races): a normal-looking row whose chevron
-// flips and whose sub-links reveal below, indented. Default closed — the point is
-// a shorter menu. Only these two groups collapse; sections stay flat.
+// A collapsible menu entry — Report is now the only one, since Races became a
+// single link: a normal-looking row whose chevron flips and whose sub-links
+// reveal below, indented. Default closed — the point is a shorter menu. Report
+// earns it because its three children are three genuinely different filings
+// (result, collation, incident) with no page above them that lists all three;
+// Races did not, because /races already is that page.
 function MenuAccordion({
   title,
   icon,

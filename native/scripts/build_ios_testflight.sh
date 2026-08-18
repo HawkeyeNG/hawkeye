@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Build the iOS app on EAS and (optionally) send it to TestFlight.
+#
+# NO MAC REQUIRED. EAS compiles on Expo's macOS machines and hands back a signed
+# .ipa; this host only orchestrates. That is the whole reason iOS is reachable
+# from a Windows/WSL workstation at all.
+#
+#   scripts/build_ios_testflight.sh              build only
+#   scripts/build_ios_testflight.sh --submit     build, then upload to TestFlight
+#
+# Everything Apple-side needs an active Apple Developer Program membership
+# ($99/yr). Without it, EAS cannot create the distribution certificate or the
+# provisioning profile and the build stops at the credentials step.
+set -uo pipefail
+cd "$(dirname "$0")/.."
+
+SUBMIT=0
+[ "${1:-}" = "--submit" ] && SUBMIT=1
+
+step() { printf '\n\033[1;36m==> %s\033[0m\n' "$1"; }
+die()  { printf '\033[1;31mFAIL: %s\033[0m\n' "$1" >&2; exit 1; }
+note() { printf '  %s\n' "$1"; }
+
+step "Preflight"
+WHO=$(npx eas whoami 2>/dev/null | grep -viE 'eas-cli@|upgrade|npm install|Proceeding|Deprecation|trace-deprecation' | head -1 | tr -d ' ')
+[ -n "$WHO" ] || die "not logged into EAS — run: npx eas login"
+note "eas account : $WHO"
+
+BUNDLE=$(node -p "require('./app.json').expo.ios.bundleIdentifier")
+VER=$(node -p "require('./app.json').expo.version")
+BUILDNO=$(node -p "require('./app.json').expo.ios.buildNumber ?? '(auto)'")
+note "bundle id   : $BUNDLE"
+note "version     : $VER (buildNumber $BUILDNO)"
+[ "$BUNDLE" = "ng.com.hawkeye.observer" ] || die "unexpected bundle identifier"
+
+# eas.json's production profile sets autoIncrement, so buildNumber climbs on its
+# own — App Store Connect rejects a repeat, and hand-editing it is how that gets
+# forgotten.
+node -p "require('./eas.json').build.production.autoIncrement === true ? '' : (()=>{throw 0})()" >/dev/null 2>&1 \
+  || die "eas.json production.autoIncrement is not true — buildNumber would collide"
+note "autoIncrement: on"
+
+# The four Info.plist strings Apple rejects a build for omitting.
+for k in NSCameraUsageDescription NSMicrophoneUsageDescription \
+         NSLocationWhenInUseUsageDescription NSPhotoLibraryUsageDescription; do
+  node -p "require('./app.json').expo.ios.infoPlist['$k'] ? '' : (()=>{throw 0})()" >/dev/null 2>&1 \
+    || die "app.json is missing ios.infoPlist.$k — App Review rejects that"
+done
+note "usage strings: all four present"
+node -p "require('./app.json').expo.ios.infoPlist.ITSAppUsesNonExemptEncryption === false ? '' : (()=>{throw 0})()" >/dev/null 2>&1 \
+  && note "encryption   : declared exempt (saves a review round-trip)" \
+  || note "encryption   : NOT declared — every upload will ask"
+
+step "Project link"
+LINKED=$(node -p "require('./app.json').expo.extra?.eas?.projectId ?? ''" 2>/dev/null)
+if [ -z "$LINKED" ]; then
+  note "not linked to an EAS project yet — creating one under $WHO"
+  npx eas init --non-interactive || die "eas init failed"
+  LINKED=$(node -p "require('./app.json').expo.extra?.eas?.projectId ?? ''")
+fi
+note "project id  : $LINKED"
+
+step "Build (runs on Expo's macOS machines — minutes to hours, queue depending)"
+# --profile production: the profile eas.json already points at TestFlight.
+# Credentials are managed by EAS: on the first run it will offer to create the
+# distribution certificate, the provisioning profile and the APNs key, which
+# needs your Apple login. That prompt is interactive by design — it is asking
+# for someone else's account, so it is not something this script should carry.
+npx eas build --platform ios --profile production
+RC=$?
+[ $RC -eq 0 ] || die "eas build exited $RC"
+
+if [ "$SUBMIT" = "1" ]; then
+  step "Submit to TestFlight"
+  npx eas submit --platform ios --profile production --latest
+fi
+
+cat <<'DONE'
+
+TestFlight, once the build lands:
+  1. App Store Connect -> your app -> TestFlight. Processing takes ~10-30 min.
+  2. INTERNAL testing: up to 100 testers, NO review, usable immediately. This is
+     the one for your own phone.
+  3. EXTERNAL testing: up to 10,000, needs a Beta App Review (lighter than App
+     Store review, usually about a day).
+
+Known iOS gaps, neither of which blocks testing:
+  - PUSH. The app calls getDevicePushTokenAsync(), which on iOS returns an APNs
+    token, while the server sends through FCM v1. iOS notifications will not
+    arrive until either the iOS app is added to Firebase (so the token is an FCM
+    one) or the server gains an APNs path. Everything else works regardless.
+  - MAPS. No iOS Google Maps key is set, deliberately: react-native-maps falls
+    back to Apple Maps, which needs no key and is good at exactly the thing this
+    app uses it for. Worth eyeballing the map screens before deciding to keep it.
+DONE

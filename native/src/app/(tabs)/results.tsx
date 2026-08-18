@@ -1243,7 +1243,7 @@ export default function Results() {
                 ? `${contest.name} (${Number(String(contest.date ?? '').slice(0, 4)) || 2027})`
                 : race
                   ? raceLabel(race, contests)
-                  : 'Choose an election'}
+                  : 'Choose an election type'}
           </Text>
           {nothingChosen ? null : (
             <Text className="text-xs font-bold text-hawk-leaf">{choosing ? 'Cancel' : 'Change'}</Text>
@@ -1278,9 +1278,7 @@ export default function Results() {
       {choosing ? (
         <ScrollView contentContainerClassName="px-4 pb-8 pt-1">
           <Text className="pb-3 text-sm text-muted">
-            {pickSeat
-              ? 'Narrow to one seat. A race that has not opened can be viewed too — it will simply have no results yet.'
-              : 'Choose an election to see its board. A race that has not opened can be viewed too — it will simply have no results yet.'}
+            {pickSeat ? 'Narrow to one seat.' : 'Pick one to see its board.'}
           </Text>
 
           {pickSeat ? (
@@ -1313,9 +1311,6 @@ export default function Results() {
                     <View className="flex-1 pr-3">
                       <Text className={`text-base font-bold ${on ? 'text-hawk-gold' : 'text-ink'}`}>
                         {c.name} ({Number(String(c.date ?? '').slice(0, 4)) || 2027})
-                      </Text>
-                      <Text className={`pt-0.5 text-xs ${on ? 'text-emerald-200' : 'text-muted'}`}>
-                        {c.election}
                       </Text>
                     </View>
                     {c.open ? (

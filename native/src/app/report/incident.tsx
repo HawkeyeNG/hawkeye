@@ -47,6 +47,7 @@ import {
 } from '@/lib/location';
 import { queueJob } from '@/lib/outbox';
 import { filePart } from '@/lib/submit';
+import { regFetch } from '@/lib/register-fetch';
 
 const BASE = 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
@@ -493,7 +494,7 @@ export default function ReportIncident() {
    * somewhere no election is scheduled.
    */
   useEffect(() => {
-    fetch(`${REG}/states`)
+    regFetch(`${REG}/states`)
       .then((r) => r.json())
       .then(setStates)
       .catch(() => {});
@@ -501,7 +502,7 @@ export default function ReportIncident() {
 
   useEffect(() => {
     if (!stateSel) return;
-    fetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
+    regFetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
       .then((r) => r.json())
       .then(setLgas)
       .catch(() => {});
@@ -509,7 +510,7 @@ export default function ReportIncident() {
 
   useEffect(() => {
     if (!stateSel || !lgaSel) return;
-    fetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
+    regFetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
       .then((r) => r.json())
       .then(setWards)
       .catch(() => {});

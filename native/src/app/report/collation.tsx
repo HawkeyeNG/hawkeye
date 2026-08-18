@@ -30,6 +30,7 @@ import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { describeFixFailure, trySubmitFix } from '@/lib/location';
 import { submitCollation, type CollationLevel, type Receipt, type Shot, type Vote } from '@/lib/submit';
+import { regFetch } from '@/lib/register-fetch';
 
 const BASE = 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
@@ -120,7 +121,7 @@ export default function ReportCollation() {
     // Every state is listed, not just the covered ones — an observer outside the
     // active election should be told "nothing here yet", not shown an empty world.
     api.contests().then(setContests).catch(() => {});
-    fetch(`${REG}/states`)
+    regFetch(`${REG}/states`)
       .then((r) => r.json())
       .then(setStates)
       .catch(() => {});
@@ -132,7 +133,7 @@ export default function ReportCollation() {
   // the scope further down, which is the direction the scope rule runs anyway.
   useEffect(() => {
     if (!stateSel) return;
-    fetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
+    regFetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
       .then((r) => r.json())
       .then(setLgas)
       .catch(() => {});
@@ -140,7 +141,7 @@ export default function ReportCollation() {
 
   useEffect(() => {
     if (!stateSel || !lgaSel) return;
-    fetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
+    regFetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
       .then((r) => r.json())
       .then(setWards)
       .catch(() => {});

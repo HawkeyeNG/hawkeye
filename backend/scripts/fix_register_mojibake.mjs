@@ -31,6 +31,29 @@
  * repair is unambiguous (the character is not text anyone typed), so it is done
  * here rather than left for a human. Collapses the doubled space it can leave.
  *
+ * THIRD RULE — the stranded no-break space. 16 names carry a lone U+00E2 (â)
+ * immediately before a space:
+ *
+ *   "18,â Thomasâ Salakoâ St.â Ogba"  ->  "18, Thomas Salako St. Ogba"
+ *
+ * That â is the wreckage of a NO-BREAK SPACE. U+00A0 is C2 A0 in UTF-8, which
+ * mis-decodes to "Â"+NBSP; the register was then title-cased (lowering Â to â)
+ * and its whitespace normalised (turning the NBSP into a plain space), leaving
+ * the lead byte behind with nothing to pair with. The bytes cannot round-trip
+ * any more — the second half is gone — so this is the one repair here that is
+ * inference rather than arithmetic. It is a safe one: â never appears in this
+ * register as a letter, only ever adjacent to a space.
+ *
+ * FOURTH RULE — mojibake that was title-cased afterwards. Three names only round
+ * trip once the case change is undone: "Cafã‰" -> "CafÉ" -> "Café". Uppercase the
+ * non-ASCII characters, re-run rule 1, then restore the register's Title Case by
+ * lowering a recovered letter that sits mid-word.
+ *
+ * FIFTH RULE — residue. What survives the above and still is not text (a stray
+ * ©, a doubled ê at the end of a name) is deleted. These are not characters
+ * anyone typed and they are not recoverable; leaving them only makes the name
+ * read as broken.
+ *
  * Idempotent: repaired text no longer round-trips, so a second run is a no-op.
  *
  *   node scripts/fix_register_mojibake.mjs            # dry run, prints the diff
@@ -88,15 +111,59 @@ export function repairMojibake(s) {
     if (fixed !== s) return fixed;
   }
 
+  let fixed = null;
   const bytes = toCp1252(s);
-  if (!bytes) return null;
-  let fixed;
-  try { fixed = strictUtf8.decode(bytes); } catch { return null; }
-  if (fixed === s) return null;
-  // Guard: the repair must REDUCE the damage. Every mojibake sequence is 2-3
-  // chars collapsing to 1, so a repair that grows the string is not one.
-  // (Rule 2 returns earlier and is not subject to this.)
-  if (fixed.length >= s.length) return null;
+  if (bytes) {
+    try { fixed = strictUtf8.decode(bytes); } catch { fixed = null; }
+    if (fixed === s) fixed = null;
+  }
+
+  // Rule 4: the same corruption, but title-cased after the fact, so the lead
+  // byte was lowered (Â -> â, Ã -> ã) and no longer decodes. Undo the case, run
+  // rule 1, then put the register's Title Case back on the recovered letter.
+  if (fixed === null) {
+    const unTitled = Array.from(s).map((c) => (c.codePointAt(0) > 127 ? c.toUpperCase() : c)).join('');
+    const b2 = toCp1252(unTitled);
+    if (b2) {
+      let cand = null;
+      try { cand = strictUtf8.decode(b2); } catch { cand = null; }
+      if (cand && cand !== s) {
+        // A letter recovered mid-word belongs in lower case: "CafÉ" -> "Café".
+        fixed = cand.replace(/([a-z])([^\x00-\x7F])/g, (m, prev, ch) => prev + ch.toLowerCase());
+      }
+    }
+  }
+
+  // Rule 3: a lone â left where a no-break space used to be. Its partner byte is
+  // gone, so nothing can decode it — drop it and keep the space it sits against.
+  if (fixed === null && /\u00e2/.test(s)) {
+    const cand = s
+      .replace(/\u00e2(?=[\s\u00a0])/g, '')   // "Openâ Space" -> "Open Space"
+      .replace(/(?<=[\s\u00a0])\u00e2/g, '')  // "Str. â Ogba"  -> "Str. Ogba"
+      .replace(/\u00e2$/g, '')                  // trailing
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    if (cand !== s && !/\u00e2/.test(cand)) fixed = cand;
+  }
+
+  // Rule 5, deliberately AFTER rule 4 and allowed to overrule it. One row,
+  // "Rabi(gibberish) Magaji", decodes to "Rabie-circumflex" — faithful to the
+  // bytes, but the circumflex is not Hausa orthography (so it was already
+  // corrupt upstream) and, worse, "RABIE MAGAJI" does not contain "RABI MAGAJI",
+  // so the obvious search misses the unit entirely. Findability wins over
+  // fidelity here: this app exists so somebody can find their polling unit.
+  // A letter that IS plausible survives — "Cafe-acute" keeps its accent.
+  // Rule 5: residue that is not text and cannot be recovered.
+  if (fixed === null || /[\u00a9\u00ea]/.test(fixed || s)) {
+    const base = fixed === null ? s : fixed;
+    const cand = base.replace(/[\u00a9\u00ea]+/g, '').replace(/\s{2,}/g, ' ').trim();
+    if (cand !== base && cand.length) fixed = cand;
+  }
+
+  if (fixed === null || fixed === s) return null;
+  // Guard: a repair removes damage, so it never lengthens the name. (Rule 2
+  // returns earlier; rules 3-5 shorten by construction.)
+  if (fixed.length > s.length) return null;
   return fixed;
 }
 

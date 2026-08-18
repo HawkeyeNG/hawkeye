@@ -18,27 +18,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
-            <!-- Android App Link (docs/DEEP-LINKS.md). Lets a Telegram button —
-                 which may only carry http(s), never the app's own scheme — open
-                 this app directly at https://hawkeye.com.ng/open?to=…, falling
-                 back to the website when the app is not installed.
-
-                 Verified against /.well-known/assetlinks.json, whose entry for
-                 ng.com.hawkeye.observer carries the PLAY APP SIGNING cert
-                 (DE:AC:3A:94…) — Play re-signs every AAB, so the upload cert
-                 alone would never verify for a Store install.
-
-                 Scoped to /open, not the bare host: verifying the whole domain
-                 would make every hawkeye.com.ng link anywhere try to open the
-                 app. Note the native app declares the same path, so with both
-                 installed Android shows a chooser. -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="hawkeye.com.ng" android:pathPrefix="/open" />
-            </intent-filter>
         </activity>
 
         <provider

@@ -9,6 +9,10 @@
     t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
   }
   document.documentElement.dataset.theme = t;
+  if (document.documentElement.classList.contains('native-app')) {
+    var mtc = document.querySelector('meta[name="theme-color"]');
+    if (mtc) mtc.content = t === 'dark' ? '#00251a' : '#ffffff';
+  }
 })();
 
 // Shared header-menu behaviour: close the dropdown when clicking anywhere
@@ -235,6 +239,10 @@
       const next = effective() === 'dark' ? 'light' : 'dark';
       document.documentElement.dataset.theme = next;
       localStorage.setItem('hawkeye_theme', next);
+      if (document.documentElement.classList.contains('native-app')) {
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.content = next === 'dark' ? '#00251a' : '#ffffff';
+      }
       paint();
     });
     paint();
@@ -363,12 +371,13 @@
   // so all pages get it without touching 25 files.
   document.querySelectorAll('.crest').forEach((c) => {
     if (!/[\u{1F300}-\u{1FAFF}]/u.test(c.textContent)) return;
-    // THE SAME ARTWORK NATIVE USES (native/assets/images/icon.png == icon-192.png).
-    // logo-crest.svg is drawn in dark greens for light backgrounds, which is why
-    // web needed a white plate behind it and native did not — the plate was the
-    // whole visual difference between the platforms. The icon carries its own
-    // background, so it sits on the header exactly as it does in the app.
-    c.innerHTML = '<img src="icon-192.png?v=hawk2" alt="" width="30" height="30" style="display:block;border-radius:7px" />';
+    // APP-ONLY divergence: inside the native shell the header follows the theme
+    // (white bar in light mode - styles.css html.native-app), so the app uses the
+    // TRANSPARENT crest (logo-crest.svg). The public website keeps its green bar
+    // and its green badge (icon-192.png), which reads on green.
+    c.innerHTML = document.documentElement.classList.contains('native-app')
+      ? '<img src="logo-crest.svg?v=hdr1" alt="" width="30" height="30" style="display:block" />'
+      : '<img src="icon-192.png?v=hawk2" alt="" width="30" height="30" style="display:block;border-radius:7px" />';
   });
 
   // Bottom tab bar (mobile app pattern) — one raised center action, 5 slots,
@@ -668,7 +677,9 @@
     // APP-SHELL header (the Capacitor/tab-bar chrome) — same swap as the website
     // header above, and it must use the same artwork or the two disagree. This is
     // the one the phone actually shows.
-    c.innerHTML = '<img src="icon-192.png?v=hawk2" alt="" style="width:36px;height:36px;display:block;border-radius:8px" />';
+    c.innerHTML = document.documentElement.classList.contains('native-app')
+      ? '<img src="logo-crest.svg?v=hdr1" alt="" style="width:36px;height:36px;display:block" />'
+      : '<img src="icon-192.png?v=hawk2" alt="" style="width:36px;height:36px;display:block;border-radius:8px" />';
   }
 
   // Accessibility: skip-to-content link, first in the tab order.

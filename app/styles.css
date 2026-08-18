@@ -1355,6 +1355,20 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
 .gov-disc-modal {
   border: 0; border-radius: 16px; padding: 22px; max-width: min(92vw, 440px);
   color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+}
+/* THE FLEX LAYOUT ONLY WHILE OPEN — and this is not a nicety.
+   A <dialog> is display:none until showModal(); an unconditional `display: flex`
+   here OVERRODE that, so the dialog rendered inline at the end of the page from
+   first paint. It looked like the disclaimer auto-opening and refusing to close:
+   close() ran fine and dropped the `open` attribute, but the element was never
+   hidden by it, so nothing changed on screen.
+   The same class is applied to the info-dot dialogs (menu.js builds both), so
+   every one of them was doing it too.
+   This is the identical trap to `[hidden]` being beaten by an author display
+   rule, documented for the Play badge further down this file — twice now. If a
+   rule sets `display` on something the browser hides for you, scope it to the
+   state where it is actually shown. */
+.gov-disc-modal[open] {
   display: flex; flex-direction: column; max-height: min(85vh, 720px);
 }
 .gov-disc-modal .info-body {

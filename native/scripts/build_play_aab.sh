@@ -40,12 +40,26 @@ step "Preflight"
 echo "  jdk       : $("$JAVA_HOME/bin/java" -version 2>&1 | head -1)"
 [ -f "$NOTE" ] || die "no keystore note at $NOTE"
 # `field name` pulls one value out of the note without ever echoing it.
-field() { sed -n "s/^$1:[[:space:]]*//p" "$NOTE" | head -1; }
+#
+# FIRST TOKEN ONLY. The note is written for a human and annotates its values —
+# the password line reads `password: <secret>  (store + key)` — so taking
+# everything after the colon handed gradle a 43-character string for a
+# 28-character password and the build died at signReleaseBundle with
+# "keystore password was incorrect", twenty minutes in. None of the three values
+# contains a space, so the first token is the value.
+field() { sed -n "s/^$1:[[:space:]]*//p" "$NOTE" | head -1 | awk '{print $1}'; }
 KS_FILE=$(field file); KS_ALIAS=$(field alias); KS_PASS=$(field password)
 case "$KS_FILE" in /*) ;; *) KS_FILE="$SECRETS/$KS_FILE" ;; esac
 [ -f "$KS_FILE" ] || die "keystore not found at the path in the note"
 [ -n "$KS_ALIAS" ] && [ -n "$KS_PASS" ] || die "alias or password missing from the note"
 echo "  keystore  : found ($(basename "$KS_FILE")), alias ${KS_ALIAS:0:2}***"
+# CHECK THE PASSWORD NOW, not at signReleaseBundle. Signing is the LAST task in
+# the graph, so a bad secret costs the entire compile before it is discovered.
+# keytool answers in milliseconds and prints nothing sensitive.
+if ! keytool -list -keystore "$KS_FILE" -storepass "$KS_PASS" -alias "$KS_ALIAS" >/dev/null 2>&1; then
+  die "the keystore rejected that password/alias — check $NOTE before rebuilding"
+fi
+echo "  credentials: verified against the keystore"
 [ -f .env.local ] && grep -q '^GOOGLE_MAPS_API_KEY_PROD=' .env.local \
   || die "GOOGLE_MAPS_API_KEY_PROD not set in native/.env.local"
 echo "  prod maps : present"
@@ -54,6 +68,20 @@ VC=$(node -p "require('./app.json').expo.android.versionCode")
 VN=$(node -p "require('./app.json').expo.version")
 echo "  version   : $VN (versionCode $VC)"
 [ "$VC" -ge 5 ] || die "versionCode $VC would be rejected — the live listing is at 4"
+
+SKIP_PREBUILD=0
+[ "${1:-}" = "--skip-prebuild" ] && SKIP_PREBUILD=1
+
+# Skipping is guarded, not trusted: android/ has to already be the production
+# package, carry the signing plugin's output, and match app.json's versionCode.
+# A stale native directory is the trap this whole script exists to avoid, so the
+# flag cannot bypass those three invariants — it only avoids re-deriving them.
+if [ "$SKIP_PREBUILD" = "1" ] \
+   && grep -q "applicationId 'ng.com.hawkeye.observer'" android/app/build.gradle 2>/dev/null \
+   && grep -q 'HAWKEYE_UPLOAD_STORE_FILE' android/app/build.gradle 2>/dev/null \
+   && grep -q "versionCode $VC" android/app/build.gradle 2>/dev/null; then
+  step "Prebuild SKIPPED — android/ already matches (package, signing, versionCode $VC)"
+else
 
 step "Prebuild (production variant)"
 # --clean because the tree normally holds a .dev build: a stale android/ would
@@ -85,6 +113,8 @@ fi
 # dies seven minutes in on a missing drawable.
 [ -f android/app/src/main/res/drawable-hdpi/splashscreen_logo.png ] \
   || die "splashscreen_logo missing after prebuild — re-run, the mod did not apply"
+
+fi   # end of the prebuild-or-skip branch
 
 step "Bundle (this takes a while)"
 cd android

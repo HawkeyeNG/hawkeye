@@ -49,7 +49,11 @@ console.log('=== Osun 2026 — the LIVE page, must be unchanged ===');
 const osun = await render(POLITICAL.raceOsun2026, { compare: false });
 check('title still carries 2026', osun.h1, 'Governor of Osun State — 2026');
 check('3 front-runner cards', osun.cards, 3);
-check('headings unchanged', osun.headings, ['Front-runners', 'Full ballot — 14 candidates', 'Quick compare']);
+// 'Declared result' leads now: a finished race says who won before it lists who
+// stood. It is a SECTION name, not the winner's name — an <h2> reading "Ademola
+// Adeleke" would put a person in the page outline where a section belongs, and
+// would read as Hawkeye announcing him rather than recording INEC's declaration.
+check('headings, declaration first', osun.headings, ['Declared result', 'Front-runners', 'Full ballot — 14 candidates', 'Quick compare']);
 check('compare table has its 3 rows', osun.compareRows, 3);
 check('full ballot 14', osun.ballotRows, 14);
 

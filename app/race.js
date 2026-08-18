@@ -198,6 +198,54 @@
     if (st.pollingUnits != null) cells.push(['~' + Number(st.pollingUnits).toLocaleString(), 'Polling units']);
     if (cells.length) parts.push(`<div class="race-statbar">${cells.map(([n, l]) => `<div class="s"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('')}</div>`);
 
+    // WHO INEC DECLARED — on a finished race, the first thing a reader wants.
+    //
+    // DELIBERATELY NOT AN INEC-LOOKING BADGE. No crest, no emblem, nothing that
+    // could pass for a mark INEC issued: this product says "Not government or
+    // INEC affiliated" on every board, and a page wearing INEC's insignia would
+    // contradict that on sight — quite apart from being someone else's mark to
+    // use. It is Hawkeye's own badge, in Hawkeye's own colours, CITING INEC in
+    // words, with the sources it was taken from.
+    //
+    // And it only claims what it can support: `declared` is written by hand from
+    // the returning officer's announcement, and the page renders nothing at all
+    // without it. IReV publishes sheet IMAGES, never numbers — there is no
+    // endpoint that would let this be derived, so an absent block means nobody
+    // has recorded the declaration yet, not that the race was undecided.
+    if (race.declared && race.declared.winner) {
+      const D = race.declared;
+      const rows = Array.isArray(D.results) ? D.results : [];
+      const top = rows.length ? Math.max(...rows.map((r) => Number(r.votes) || 0)) : 0;
+      parts.push(`<section class="declared" aria-labelledby="declared-h">
+        <div class="declared-head">
+          <!-- THE HEADING NAMES THE SECTION, NOT THE PERSON. As an <h2> the
+               winner's name alone put "Ademola Adeleke A" in the page outline,
+               which tells someone navigating by heading nothing about what the
+               section is — and read as Hawkeye announcing a person rather than
+               recording a declaration. The pill IS the heading now; the name is
+               the content under it. -->
+          <h2 class="declared-tag" id="declared-h">Declared result</h2>
+          <p class="declared-winner">${esc(D.winner)}${D.party ? ` <span class="declared-party">${flagInline(D.party, 18)}${esc(D.party)}</span>` : ''}</p>
+          <p class="declared-by">Declared by ${esc(D.by || 'INEC')}${
+            D.date ? ` on ${esc(new Date(D.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }))}` : ''
+          }${D.place ? `, ${esc(D.place)}` : ''}${D.returningOfficer ? ` · Returning Officer ${esc(D.returningOfficer)}` : ''}.</p>
+        </div>
+        ${rows.length ? `<ol class="declared-rows">${rows.map((r) => {
+          const v = Number(r.votes) || 0;
+          const pct = top ? Math.max(3, Math.round((v / top) * 100)) : 0;
+          return `<li${r.party === D.party ? ' class="won"' : ''}>
+            <span class="dp">${flagInline(r.party, 16)}${esc(r.party)}</span>
+            <span class="dn">${esc(r.name || '')}</span>
+            <span class="dbar"><i style="width:${pct}%"></i></span>
+            <span class="dv">${v.toLocaleString()}</span></li>`;
+        }).join('')}</ol>` : ''}
+        <p class="declared-note">${esc(D.note || '')}</p>
+        ${Array.isArray(D.sources) && D.sources.length ? `<p class="declared-src">Recorded from: ${
+          D.sources.map((u, i) => `<a href="${esc(u)}" rel="noopener noreferrer" target="_blank">source ${i + 1}</a>`).join(' · ')
+        }</p>` : ''}
+      </section>`);
+    }
+
     // A placeholder, filled once the geometry arrives. mountRace stays
     // SYNCHRONOUS — every caller (osun.html, candidates.html, race.html) treats
     // it as such, and awaiting a 800 KB map file before painting the candidates

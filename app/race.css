@@ -60,3 +60,47 @@
   padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .race-map-pick { width: 100%; padding: 8px 10px; font: inherit; font-size: 0.85rem;
   color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+
+/* ── The declared result ──────────────────────────────────────────────────────
+   Hawkeye's OWN badge citing INEC, never a facsimile of an INEC one. No crest,
+   no emblem, no seal: every board in this product carries "Not government or
+   INEC affiliated", and a page wearing INEC's insignia would contradict that at
+   a glance — besides being someone else's mark to use. Attribution is carried in
+   words and in the sources line, which is also what makes it checkable. */
+.declared {
+  margin: 18px 0 4px; padding: 16px 18px 14px;
+  background: var(--card); border: 1px solid var(--line);
+  border-left: 4px solid var(--green); border-radius: 12px;
+}
+/* The pill is the section's <h2>: heading margins and weight have to be reset
+   or it inherits h2 sizing and stops looking like a pill. */
+.declared-winner { margin: 8px 0 0; font-size: 1.18rem; font-weight: 700; line-height: 1.25; }
+h2.declared-tag {
+  display: inline-block; margin: 0; font-size: 0.68rem; font-weight: 800; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--green);
+  border: 1px solid var(--green); border-radius: 999px; padding: 3px 9px;
+}
+.declared-party { font-size: 0.86rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.declared-by { margin: 6px 0 0; font-size: 0.8rem; color: var(--muted); }
+
+.declared-rows { list-style: none; margin: 13px 0 0; padding: 0; }
+.declared-rows li {
+  display: grid; grid-template-columns: auto 1fr 1fr auto; align-items: center;
+  gap: 8px; padding: 5px 0; font-size: 0.85rem;
+}
+.declared-rows .dp { font-weight: 700; white-space: nowrap; }
+.declared-rows .dn { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.declared-rows .dbar { height: 7px; background: var(--tint); border-radius: 999px; overflow: hidden; }
+.declared-rows .dbar i { display: block; height: 100%; background: var(--muted); border-radius: 999px; }
+.declared-rows li.won .dbar i { background: var(--green); }
+.declared-rows .dv { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* On a phone the four columns crush the name to two characters; the bar is the
+   least informative of them, so it is the one that goes. */
+@media (max-width: 520px) {
+  .declared-rows li { grid-template-columns: auto 1fr auto; }
+  .declared-rows .dbar { display: none; }
+}
+
+.declared-note { margin: 12px 0 0; font-size: 0.76rem; color: var(--muted); }
+.declared-src { margin: 5px 0 0; font-size: 0.74rem; color: var(--muted); }
+.declared-src a { color: var(--link); }

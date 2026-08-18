@@ -221,6 +221,13 @@ for (const ddl of [
   'ALTER TABLE polling_units ADD COLUMN approx_lng REAL',
   'ALTER TABLE polling_units ADD COLUMN approx_radius_m REAL',
   'ALTER TABLE polling_units ADD COLUMN approx_source TEXT',
+  // Search-fold of name/ward — see docs/PU-SEARCH-2027.md. The offline packs
+  // search folded text, so the server must fold identically or the same query
+  // gives two answers at the same polling unit depending on signal. NOT a
+  // GENERATED column: the fold needs Unicode NFKD and SQLite has no normalize(),
+  // so these are populated below in JS and refreshed whenever a name changes.
+  'ALTER TABLE polling_units ADD COLUMN name_fold TEXT',
+  'ALTER TABLE polling_units ADD COLUMN ward_fold TEXT',
   'ALTER TABLE submissions ADD COLUMN location_plausible INTEGER',
   'ALTER TABLE submissions ADD COLUMN sheet_lat REAL',
   'ALTER TABLE submissions ADD COLUMN sheet_lng REAL',
@@ -420,6 +427,10 @@ for (const ddl of [
   'CREATE INDEX IF NOT EXISTS idx_pu_name_nocase ON polling_units(name COLLATE NOCASE)',
   'CREATE INDEX IF NOT EXISTS idx_pu_code_nocase ON polling_units(pu_code COLLATE NOCASE)',
   'CREATE INDEX IF NOT EXISTS idx_pu_ward_nocase ON polling_units(ward COLLATE NOCASE)',
+  // The fold columns are what /register/search actually matches now, so they
+  // need the same NOCASE treatment for the prefix pass to be an index seek.
+  'CREATE INDEX IF NOT EXISTS idx_pu_namefold_nocase ON polling_units(name_fold COLLATE NOCASE)',
+  'CREATE INDEX IF NOT EXISTS idx_pu_wardfold_nocase ON polling_units(ward_fold COLLATE NOCASE)',
   // Existing DBs: add the Merkle columns to a pre-existing anchors table.
   'ALTER TABLE anchors ADD COLUMN races_root TEXT',
   'ALTER TABLE anchors ADD COLUMN races_count INTEGER',
@@ -476,6 +487,36 @@ for (const ddl of [
 // with demo coordinates on first boot, so the app works out of the box.
 // Load the full register with scripts/load_inec_register.js --replace, then attach
 // verified coordinates with scripts/attach_coordinates.js.
+/**
+ * THE SEARCH FOLD — must stay character-for-character identical to fold() in
+ * app/register-store.js. Offline packs and this API have to agree on what a
+ * query matches; scripts/diff_register_search.mjs runs a corpus through both
+ * and fails on any divergence.
+ */
+export function searchFold(s) {
+  return String(s == null ? '' : s)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^0-9A-Z]+/g, ' ')
+    .trim();
+}
+
+// Backfill the fold columns for any row that lacks them. Incremental, so a
+// normal boot does no work; a fresh register load pays it once (~2s for 176k).
+{
+  const stale = db
+    .prepare('SELECT pu_code, name, ward FROM polling_units WHERE name_fold IS NULL OR ward_fold IS NULL')
+    .all();
+  if (stale.length) {
+    const upd = db.prepare('UPDATE polling_units SET name_fold = ?, ward_fold = ? WHERE pu_code = ?');
+    db.transaction((rows) => {
+      for (const r of rows) upd.run(searchFold(r.name), searchFold(r.ward), r.pu_code);
+    })(stale);
+    console.log(`[db] populated search fold for ${stale.length} polling units`);
+  }
+}
+
 const puCount = db.prepare('SELECT COUNT(*) AS c FROM polling_units').get().c;
 if (puCount === 0) {
   const sample = JSON.parse(

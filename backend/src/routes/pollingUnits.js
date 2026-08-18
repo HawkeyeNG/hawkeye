@@ -1,6 +1,12 @@
 import { Router } from 'express';
-import { db, parties, contests } from '../db.js';
+import { db, parties, contests, searchFold } from '../db.js';
 import { config } from '../config.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// app/ sits beside backend/ in the repo and is what the site serves.
+const APP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'app');
 import { haversineM } from '../services/geo.js';
 import {
   LEVEL_COLS,
@@ -172,10 +178,23 @@ pollingUnitsRouter.get('/register/search', (req, res) => {
   const state = String(req.query.state || '').trim();
   const lga = String(req.query.lga || '').trim();
 
-  const like = `%${q.replace(/[%_]/g, (c) => `\\${c}`)}%`;
-  const pre = `${q.replace(/[%_]/g, (c) => `\\${c}`)}%`;
-  const where = ["(name LIKE ? ESCAPE '\\' OR pu_code LIKE ? ESCAPE '\\' OR ward LIKE ? ESCAPE '\\')"];
-  const args = [like, like, like];
+  /**
+   * Names and wards are matched on their FOLDED form, codes raw.
+   *
+   * The offline packs (docs/PU-SEARCH-2027.md) search folded text, and an
+   * observer who loses signal mid-search must not watch the results reshuffle.
+   * Codes stay raw because digits and hyphens have no case or punctuation to
+   * normalise. searchFold() here and fold() in app/register-store.js are the
+   * same function and must stay that way.
+   */
+  const esc = (v) => v.replace(/[%_]/g, (c) => `\\${c}`);
+  const qf = searchFold(q);
+  const like = `%${esc(qf)}%`;
+  const pre = `${esc(qf)}%`;
+  const likeRaw = `%${esc(q)}%`;
+  const preRaw = `${esc(q)}%`;
+  const where = ["(name_fold LIKE ? ESCAPE '\\' OR pu_code LIKE ? ESCAPE '\\' OR ward_fold LIKE ? ESCAPE '\\')"];
+  const args = [like, likeRaw, like];
   if (state) { where.push('state = ?'); args.push(state); }
   if (lga) { where.push('lga = ?'); args.push(lga); }
 
@@ -197,23 +216,45 @@ pollingUnitsRouter.get('/register/search', (req, res) => {
       WHERE ${clause}
       ORDER BY
         CASE WHEN pu_code = ? THEN 0
-             WHEN name LIKE ? ESCAPE '\\' THEN 1
+             WHEN name_fold LIKE ? ESCAPE '\\' THEN 1
              WHEN pu_code LIKE ? ESCAPE '\\' THEN 2
              ELSE 3 END,
-        name
+        name,
+        -- Units DO share names ("13, Agboyele Street" twice in one ward), and a
+        -- tie here is an order SQLite leaves unspecified. The offline packs have
+        -- to produce the same page, so break the tie on something unique.
+        pu_code
       LIMIT ?`)
-    .all(...clauseArgs, q, pre, pre, limit)
+    .all(...clauseArgs, q, pre, preRaw, limit)
     .map((u) => ({ ...u, locationTier: tierOf(u) }));
 
   const scoped = where.slice(1); // the state/lga filters, without the match term
-  const prefixWhere = ["(name LIKE ? ESCAPE '\\' OR pu_code LIKE ? ESCAPE '\\' OR ward LIKE ? ESCAPE '\\')", ...scoped]
+  const prefixWhere = ["(name_fold LIKE ? ESCAPE '\\' OR pu_code LIKE ? ESCAPE '\\' OR ward_fold LIKE ? ESCAPE '\\')", ...scoped]
     .join(' AND ');
-  const prefixArgs = [pre, pre, pre, ...args.slice(3)];
+  const prefixArgs = [pre, preRaw, pre, ...args.slice(3)];
 
   let units = runQuery(prefixWhere, prefixArgs);
   if (!units.length) units = runQuery(where.join(' AND '), args);
 
   res.json({ units, query: q, truncated: units.length === limit });
+});
+
+/**
+ * The offline search packs manifest (docs/PU-SEARCH-2027.md).
+ *
+ * Served from the API as well as from app/reg/, so a client already talking to
+ * the backend can discover a new registerVersion without waiting on a service
+ * worker cache bump. The packs are content-hashed, so a stale manifest is the
+ * one thing that would pin a device to an old unit list.
+ */
+pollingUnitsRouter.get('/register/manifest', (_req, res) => {
+  try {
+    const raw = fs.readFileSync(path.join(APP_DIR, 'reg', 'manifest.json'), 'utf8');
+    res.set('Cache-Control', 'no-cache').type('application/json').send(raw);
+  } catch {
+    // Packs not generated in this environment: say so plainly rather than 500.
+    res.status(404).json({ error: 'no_packs', hint: 'run backend/scripts/build_register_packs.mjs' });
+  }
 });
 
 // Single unit by code — used by the Telegram hybrid /report handoff to prefill

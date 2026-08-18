@@ -53,6 +53,21 @@ module.exports = ({ config }) => {
       // in the server's environment, never here.
       googleServicesFile: './google-services.json',
     },
+    // iOS DELIBERATELY HAS NO GOOGLE MAPS KEY.
+    //
+    // react-native-maps falls back to Apple Maps when `ios.config.
+    // googleMapsApiKey` is absent, and Apple Maps needs no key, no billing
+    // account and no per-build wiring — which for a map that exists to pinpoint
+    // a polling unit is the whole job done for nothing. Setting a key here would
+    // also mean a SECOND restricted key to keep in step with a second bundle id,
+    // and the Android one has already proved that is where releases break.
+    //
+    // Left as a decision rather than an omission: if the iOS map is ever judged
+    // worse than Android's for this, add `ios: { config: { googleMapsApiKey } }`
+    // — and restrict that key to the iOS bundle id, not the Android package.
+    ios: {
+      ...config.ios,
+    },
     // WHETHER A KEY WAS INJECTED, published somewhere the RUNTIME can see it.
     //
     // `android.config.googleMaps.apiKey` above is consumed by prebuild to write

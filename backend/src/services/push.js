@@ -101,7 +101,29 @@ async function fcmAccessToken() {
   return cachedToken;
 }
 
+/**
+ * A RAW APNs DEVICE TOKEN, which FCM cannot deliver to.
+ *
+ * iOS builds call expo-notifications' getDevicePushTokenAsync(), which
+ * registers with APNs directly and resolves Apple's own 64-hex device token —
+ * confirmed in that package's PushTokenModule.swift. FCM v1 only accepts FCM
+ * REGISTRATION tokens, so such a token comes back 404 UNREGISTERED, and the
+ * handler below would then DELETE it: an iOS device would register, be dropped,
+ * register again, be dropped, forever.
+ *
+ * Recognised by SHAPE rather than by the stored `platform`, on purpose. Once the
+ * iOS app is added to Firebase it will hand over a real FCM token while still
+ * reporting platform 'ios' — a platform check would keep skipping it. This test
+ * stops being true exactly when the token stops being an APNs one.
+ */
+const isRawApnsToken = (t) => /^[0-9a-f]{64}$/i.test(String(t || ''));
+
 async function fcmSend(accessToken, deviceToken, title, body, data) {
+  if (isRawApnsToken(deviceToken)) {
+    // Not an error and not the device's fault: iOS push is not wired to FCM
+    // yet. Kept, not deleted — it becomes deliverable the moment it is.
+    return false;
+  }
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${config.fcmProjectId}/messages:send`, {
     method: 'POST',
     headers: { authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
@@ -111,6 +133,15 @@ async function fcmSend(accessToken, deviceToken, title, body, data) {
         notification: { title, body },
         data: Object.fromEntries(Object.entries(data || {}).map(([k, v]) => [k, String(v)])),
         android: { priority: 'high' },
+        // APNS RELAY SETTINGS. FCM ignores this block for an Android target, so
+        // it costs Android nothing — but for an iOS target it is not optional:
+        // without `apns-push-type` Apple rejects the relay outright, and without
+        // `apns-priority` an alert can be delayed or coalesced away. `sound`
+        // is what makes it an alert rather than a silent arrival.
+        apns: {
+          headers: { 'apns-push-type': 'alert', 'apns-priority': '10' },
+          payload: { aps: { sound: 'default', 'content-available': 1 } },
+        },
       },
     }),
   });

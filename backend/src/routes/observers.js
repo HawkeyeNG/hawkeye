@@ -176,7 +176,25 @@ observersRouter.post('/verify', async (req, res) => {
   if (isNew) { try { noteRegistration(); } catch { /* informational only */ } }
 
   const token = issueToken(observer.id, deviceId, 'otp');
-  res.json({ ok: true, observerId: observer.id, token });
+  // WAS THIS NUMBER ALREADY AN OBSERVER, and did it already have a password?
+  //
+  // Told ONLY here, after a correct one-time code. There is deliberately no
+  // endpoint answering "is this number registered" BEFORE the OTP: Hawkeye
+  // stores a phone HASH and never the number, precisely so this database cannot
+  // become a list of who is observing, and a pre-check would hand that list to
+  // anyone willing to type numbers. Once the code is right the caller has proved
+  // they hold the phone, so telling them about their own account reveals nothing
+  // they did not already know.
+  //
+  // `observer` was read BEFORE the row was updated above, so password_hash here
+  // is the state on arrival — which is the question being asked.
+  res.json({
+    ok: true,
+    observerId: observer.id,
+    token,
+    isNew,
+    hasPassword: !!observer.password_hash,
+  });
 });
 
 // Telegram Mini App sign-in: no OTP. Telegram itself vouches for the phone —

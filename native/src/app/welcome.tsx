@@ -1,8 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -25,11 +25,29 @@ const POINTS: { icon: keyof typeof Feather.glyphMap; text: string }[] = [
  */
 export default function Welcome() {
   const auth = useAuth();
-  // A signed-in session must never sit on the door: resuming into welcome (or
-  // signing in from it) would otherwise offer sign-in again, forever.
-  useEffect(() => {
-    if (auth.status === 'signedIn') router.replace('/(tabs)');
-  }, [auth.status]);
+  /**
+   * A signed-in session must never sit on the door: resuming into welcome would
+   * otherwise offer sign-in again, forever.
+   *
+   * ONLY WHILE THIS SCREEN IS THE ONE ON SCREEN. As a plain effect this fired
+   * from UNDERNEATH the sign-in screen, which is pushed on top and leaves
+   * welcome mounted. The moment an OTP verified, `auth.status` flipped here too,
+   * this replace() ran, and the whole stack — including the sign-in screen that
+   * was about to show the create-a-password step — was torn down. Sign-up
+   * therefore ended at the code screen and dropped the new observer straight
+   * into the app with no password, which is an account whose only way back in is
+   * another one-time code.
+   *
+   * The bug was invisible in sign-in.tsx, where every branch reads correctly;
+   * the navigation was being done by a screen nobody was looking at. useFocusEffect
+   * scopes it to "welcome is what the user is on", which is the only case the
+   * redirect was ever meant for.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      if (auth.status === 'signedIn') router.replace('/(tabs)');
+    }, [auth.status]),
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-hawk-green">

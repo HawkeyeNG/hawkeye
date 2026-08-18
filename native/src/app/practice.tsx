@@ -40,6 +40,7 @@ import { getIdentity } from '@/lib/identity';
 import { describeFixFailure, DISCOVERY_RADIUS_M, tryQuickFix, type Fix } from '@/lib/location';
 import { STATES, type Race, type StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
+import { regFetch } from '@/lib/register-fetch';
 
 const BASE = 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
@@ -471,7 +472,7 @@ export default function Practice() {
 
   useEffect(() => {
     api.contests().then(setContests).catch(() => {});
-    fetch(`${REG}/states`)
+    regFetch(`${REG}/states`)
       .then((r) => r.json())
       .then(setStates)
       .catch(() => {});
@@ -481,7 +482,7 @@ export default function Practice() {
   // live election), exactly the state/lga/ward selects the server understands.
   useEffect(() => {
     if (!stateSel) return;
-    fetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
+    regFetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
       .then((r) => r.json())
       .then(setLgas)
       .catch(() => {});
@@ -489,7 +490,7 @@ export default function Practice() {
 
   useEffect(() => {
     if (!stateSel || !lgaSel) return;
-    fetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
+    regFetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
       .then((r) => r.json())
       .then(setWards)
       .catch(() => {});

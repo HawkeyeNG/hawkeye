@@ -57,6 +57,7 @@ import {
   type Fix,
 } from '@/lib/location';
 import { submitResult, type Receipt, type Shot, type Vote } from '@/lib/submit';
+import { regFetch } from '@/lib/register-fetch';
 
 const BASE = 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
@@ -703,7 +704,7 @@ export default function ReportResult() {
     // an observer at a polling unit cannot tell that apart from a slow network,
     // so they wait instead of retrying.
     loadContests();
-    fetch(`${REG}/states`)
+    regFetch(`${REG}/states`)
       .then((r) => r.json())
       .then(setStates)
       .catch(() => {});
@@ -715,19 +716,19 @@ export default function ReportResult() {
   // the unit further down, which is the direction the scope rule runs anyway.
   useEffect(() => {
     if (!stateSel) return;
-    fetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
+    regFetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
       .then((r) => r.json()).then(setLgas).catch(() => {});
   }, [stateSel]);
 
   useEffect(() => {
     if (!stateSel || !lgaSel) return;
-    fetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
+    regFetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
       .then((r) => r.json()).then(setWards).catch(() => {});
   }, [stateSel, lgaSel]);
 
   useEffect(() => {
     if (!stateSel || !lgaSel || !wardSel) return;
-    fetch(`${REG}/units?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}&ward=${encodeURIComponent(wardSel)}`)
+    regFetch(`${REG}/units?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}&ward=${encodeURIComponent(wardSel)}`)
       .then((r) => r.json()).then((d) => setUnits(d.units ?? [])).catch(() => {});
   }, [stateSel, lgaSel, wardSel]);
 

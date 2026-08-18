@@ -44,6 +44,7 @@ import {
   tryQuickFix,
   type Fix,
 } from '@/lib/location';
+import { regFetch } from '@/lib/register-fetch';
 
 type Unit = {
   pu_code: string;
@@ -398,7 +399,7 @@ export default function MapUnit() {
   // a contest narrows the register to that race's states (today: Osun only),
   // which made the whole rest of the country unmappable for no reason.
   useEffect(() => {
-    fetch(`${REG}/states`)
+    regFetch(`${REG}/states`)
       .then((r) => r.json())
       .then(setStates)
       .catch(() => {});
@@ -430,7 +431,7 @@ export default function MapUnit() {
 
   useEffect(() => {
     if (!stateSel) return;
-    fetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
+    regFetch(`${REG}/lgas?state=${encodeURIComponent(stateSel)}`)
       .then((r) => r.json())
       .then(setLgas)
       .catch(() => {});
@@ -438,7 +439,7 @@ export default function MapUnit() {
 
   useEffect(() => {
     if (!stateSel || !lgaSel) return;
-    fetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
+    regFetch(`${REG}/wards?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}`)
       .then((r) => r.json())
       .then(setWards)
       .catch(() => {});

@@ -414,7 +414,22 @@ function main() {
   const db = new Database(DB_PATH, { readonly: true });
   const rows = loadRows(db);
   const groups = groupRows(rows);
-  const registerVersion = Math.floor(Date.now() / 1000);
+  /**
+   * CONTENT-DERIVED, NOT THE CLOCK. registerVersion goes into every pack header,
+   * so a wall-clock value changes the bytes on every run, which changes each
+   * content hash, which changes every filename — making 176k unchanged units
+   * look like a fresh 1.4 MB download to every installed client. Deriving it
+   * from the rows means identical data regenerates byte-identical packs.
+   */
+  const registerVersion = createHash('sha256')
+    .update(String(rows.length) + '|')
+    .update(
+      rows
+        .map((r) => [r.pu_code, r.name, r.ward, r.lga, r.state, r.senatorial, r.federal_constituency].join('\u0001'))
+        .join('\n'),
+    )
+    .digest()
+    .readUInt32LE(0);
 
   console.log(`register: ${rows.length} units, ${groups.length} (state,lga,ward) groups`);
 
@@ -440,7 +455,8 @@ function main() {
     return { file, bytes: gz.length, raw: pack.length, sha: sha8(gz) };
   };
 
-  const manifest = { formatVersion: FORMAT_VERSION, registerVersion, generated: new Date().toISOString(), index: null, states: {} };
+  const manifest = { formatVersion: FORMAT_VERSION, registerVersion, generated: new Date().toISOString(), // display only; identity is registerVersion
+     index: null, states: {} };
 
   const indexPack = buildIndexPack(groups, registerVersion);
   manifest.index = { ...emit('index', indexPack), groups: groups.length, units: rows.length };

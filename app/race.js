@@ -672,13 +672,87 @@
    * `seats` is app/seat_lgas.json, fetched only by this page: 471 seats with
    * their LGA membership is ~46 KB no other page needs.
    */
+
+  /**
+   * Resolve a seat name against a table of seats: exact first, then by the SET
+   * of LGAs the name lists. Shared by race.js and native's political.ts — keep
+   * the two in step, they are the only two implementations of this rule.
+   */
+  function matchSeatName(table, name) {
+    if (!table || !name) return null;
+    const keys = Object.keys(table);
+    const exact = keys.find((s) => norm(s) === norm(name));
+    if (exact) return exact;
+    // Components, sorted, so order stops mattering. Hyphens and stray spaces are
+    // already gone: norm strips every non-alphanumeric.
+    const parts = (s) => String(s || '').split('/').map(norm).filter(Boolean).sort().join('|');
+    const want = parts(name);
+    if (!want) return null;
+    const index = new Map();
+    for (const k of keys) {
+      const p = parts(k);
+      index.set(p, index.has(p) ? null : k);   // a repeat poisons the key
+    }
+    if (index.get(want)) return index.get(want);
+
+    // THIRD TIER: THE SEAT'S OWN LGA LIST, not its label.
+    //
+    // Some names are not a list of LGAs at all. The register calls one Delta
+    // seat "Warri"; the boundary file spells the same seat out as
+    // "Warri North/Warri South/Warri South West" — which are exactly that
+    // seat's three LGAs. Likewise the register's "Donga/Ussa/Takum/Special
+    // Area" carries a fourth component the map does not, and its "Katsina
+    // Central" is the map's plain "Katsina". Comparing the request against
+    // each seat's `lgas` array resolves all of them, because that array is the
+    // fact both names are trying to express.
+    const wantSet = new Set(String(name).split('/').map(norm).filter(Boolean));
+    let hit = null, hits = 0;
+    for (const k of keys) {
+      const lgas = (table[k] && table[k].lgas) || [];
+      if (!lgas.length) continue;
+      // An LGA NAME CAN ITSELF CONTAIN A SLASH — Ogun's "Obafemi/Owode" is one
+      // LGA, not two — so the seat's own components are indexed both whole and
+      // split. Without this the map's "Owode/Odeda" matches nothing, because
+      // "owode" never equals "obafemiowode".
+      const have = new Set();
+      for (const l of lgas) {
+        have.add(norm(l));
+        for (const piece of String(l).split('/')) if (norm(piece)) have.add(norm(piece));
+      }
+      // Every component the caller named is one of this seat's LGAs. Subset,
+      // not equality: the map may name fewer than the register records.
+      const covered = [...wantSet].every((w) => have.has(w));
+      if (covered) { hits++; hit = k; }
+    }
+    // Exactly one seat, or none. Two candidates means the name does not
+    // identify a seat and a guess would send the reader to the wrong one.
+    return hits === 1 ? hit : null;
+  }
+
   function seatRace(seats, code, seatName, contest) {
     const table = (seats || {})[code];
     if (!table || !seatName) return null;
     // Map spellings and register spellings differ on a handful of seats, so the
     // name is RESOLVED rather than trusted — and an unknown one builds no page
     // rather than an official-looking one about a seat that is not there.
-    const canon = Object.keys(table).find((s) => norm(s) === norm(seatName));
+    // MATCH ON COMPONENTS, NOT THE EXACT STRING.
+    //
+    // A federal constituency is named by listing its LGAs, and the register and
+    // the boundary file list them in DIFFERENT ORDERS: the map says
+    // "Abaji/Gwagwalada/Kwali/Kuje", seat_lgas.json says
+    // "Kuje/Abaji/Gwagwalada/Kwali". Both name the same seat. Exact matching saw
+    // two strangers, so tapping that region on the national map reached a page
+    // that said "Hawkeye has no page for this race yet" — about a seat we have
+    // every fact for. 29 of 360 constituencies were dead ends this way.
+    //
+    // Same rule the register normalisation settled on for the same reason
+    // (sorted-component matching found 15 authorities where exact found 6), and
+    // the same tiering matchRegion uses on the board.
+    //
+    // AMBIGUOUS KEYS ARE DROPPED, NOT GUESSED. If two seats ever share an LGA
+    // set, sending a reader to whichever sorted first would be worse than the
+    // absence message — so such a key resolves to nothing.
+    const canon = matchSeatName(table, seatName);
     if (!canon) return null;
     const s = table[canon];
     const senate = code === 'SEN';
@@ -687,7 +761,12 @@
       election: `${s.state} State · ${senate ? 'Senate' : 'House of Representatives'}`,
       date: contest && contest.date ? contest.date : undefined,
       stats: { lgas: s.lgas.length, pollingUnits: s.pollingUnits },
-      note: 'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.',
+      // A seat the register cannot tell from its neighbour says so, rather than
+      // presenting a shared figure as its own. Four Lagos LGAs elect two members
+      // each and polling_units records only the LGA.
+      note: (s.sharedRegister
+        ? "INEC's register does not separate this seat from the other constituency in the same LGA, so the LGA and polling-unit figures on this page cover both. "
+        : '') + 'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.',
       candidates: [],
       others: [],
       join: {

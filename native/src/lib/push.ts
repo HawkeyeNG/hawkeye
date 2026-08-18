@@ -221,13 +221,34 @@ export async function registerForPush(): Promise<void> {
 // once it has been.
 let handled: string | null = null;
 
+
+/**
+ * useLastNotificationResponse, or null on web.
+ *
+ * expo-notifications has no web implementation of getLastNotificationResponse
+ * and THROWS rather than returning null. That throw is in the ROOT LAYOUT, which
+ * the app cannot survive: its own error boundary catches it and every route
+ * renders "This screen hit a problem" instead of the app.
+ *
+ * It matters beyond curiosity, because `expo export --platform web` is how the
+ * Play listing's screenshots are taken (scripts/play_screenshots_native.mjs) —
+ * a root-layout throw makes every frame an error page. There is no push on web
+ * to lose: this app ships on Android, and iOS next.
+ *
+ * Bound at MODULE LOAD, not per render. Platform.OS cannot change while the app
+ * is running, so this is one implementation for the process — which keeps the
+ * call site unconditional and the hook order identical on every render.
+ */
+const useLastNotificationResponse: () => Notifications.NotificationResponse | null | undefined =
+  Platform.OS === 'web' ? () => null : Notifications.useLastNotificationResponse;
+
 /**
  * The root layout's one call: registers for push once signed in, keeps the
  * unread badge honest, and routes a notification tap to what it is about.
  */
 export function usePushNotifications(): void {
   const auth = useAuth();
-  const response = Notifications.useLastNotificationResponse();
+  const response = useLastNotificationResponse();
 
   useEffect(() => {
     if (auth.status !== 'signedIn') {

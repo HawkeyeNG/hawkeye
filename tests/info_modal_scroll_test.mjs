@@ -104,6 +104,56 @@ check('it fits the screen', disc.fits, true);
 check('Close is reachable', disc.closeVisible, true);
 check('and the INEC links are inside the scroll area', disc.linksInsideBody, 2);
 
+console.log('\n=== A CLOSED DIALOG MUST BE INVISIBLE ===');
+// This is the check whose absence shipped the bug. `display: flex` was set on
+// .gov-disc-modal unconditionally, which overrides the UA's display:none for a
+// closed <dialog> — so it rendered inline at the foot of every page from first
+// paint, and close() changed nothing on screen. Every assertion here was about
+// the OPEN state, so all of them passed.
+//
+// Measured, not read off the property: `open === false` was TRUE the whole time
+// the thing was on screen. Only geometry catches this.
+{
+  const before = await p.evaluate(() => {
+    const seen = [];
+    for (const d of document.querySelectorAll('dialog')) {
+      seen.push({
+        cls: d.className,
+        open: d.open,
+        rects: d.getClientRects().length,
+        display: getComputedStyle(d).display,
+      });
+    }
+    return seen;
+  });
+  for (const d of before) {
+    check(`closed dialog "${d.cls || '(no class)'}" renders nothing`,
+      { open: d.open, rects: d.rects }, (v) => v.open === true || v.rects === 0);
+    check(`  and is not forced visible by a display rule`,
+      d.open === true || d.display === 'none', true);
+  }
+  check('at least one dialog exists to check', before.length > 0, true);
+}
+
+// And the round trip: open it, close it, and prove it left the screen.
+{
+  const roundTrip = await p.evaluate(() => {
+    const d = document.querySelector('dialog.gov-disc-modal') || document.querySelector('dialog');
+    if (!d) return null;
+    d.showModal();
+    const openRects = d.getClientRects().length;
+    const openDisplay = getComputedStyle(d).display;
+    d.close();
+    const closedRects = d.getClientRects().length;
+    return { openRects, openDisplay, closedRects };
+  });
+  check('a dialog can be opened', roundTrip && roundTrip.openRects > 0, true);
+  // The flex layout is what pins Close while the body scrolls — it must still
+  // apply once open, or the fix would have traded one bug for another.
+  check('and is still laid out as a flex column while open', roundTrip?.openDisplay, 'flex');
+  check('and is GONE after close()', roundTrip?.closedRects, 0);
+}
+
 check('no page errors', errs, []);
 await b.close();
 server.close();

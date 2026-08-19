@@ -180,15 +180,18 @@ rejected and re-fetched, never rendered.
 
 1. **Measure on a real Android Go phone** (`/bench.html` → Load → Bench). Every
    number here is a laptop extrapolated by an assumed 6×. That multiplier is a
-   guess and step 2 exists to replace it.
-2. **Run the name repair on production** —
-   `HAWKEYE_DB=… node backend/scripts/fix_register_mojibake.mjs --apply`. The API
-   and the packs must return identical strings.
-3. **Decide the authoritative register snapshot**, then generate and commit the
-   packs (they are gitignored today, see below) and deploy them *before* any
-   client that expects them.
-4. **Deploy order matters**: server fold columns first (a client folding against
-   an unfolded server disagrees), then the packs, then the app.
+   guess and step 2 exists to replace it. **This is the one remaining blocker
+   that nobody can do from a desk.**
+2. **Deploy, in the order in [PU-SEARCH-DEPLOY.md](PU-SEARCH-DEPLOY.md)** —
+   backend, then packs, then app, with `sw.js` last.
+3. **Decide whether the manifest is signed** (see Open questions). It changes the
+   pack header, so it wants deciding before the format is frozen in shipped
+   clients.
+
+Two things that used to be on this list are done: the name repair now runs as a
+**boot migration**, so deploying the backend fixes production (there is no shell
+on that box to run a script with), and the packs are **committed** under
+`app/reg/` because the database is not in the repo and deploys are file uploads.
 
 **Step 1 — generator + verifier: DONE.** `backend/scripts/build_register_packs.mjs`
 (`--verify`). Runs in ~2 s against `backend/storage/hawkeye.db`, replacing the old

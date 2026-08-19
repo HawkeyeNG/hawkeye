@@ -184,9 +184,8 @@ rejected and re-fetched, never rendered.
    that nobody can do from a desk.**
 2. **Deploy, in the order in [PU-SEARCH-DEPLOY.md](PU-SEARCH-DEPLOY.md)** —
    backend, then packs, then app, with `sw.js` last.
-3. **Decide whether the manifest is signed** (see Open questions). It changes the
-   pack header, so it wants deciding before the format is frozen in shipped
-   clients.
+3. ~~Decide whether the manifest is signed~~ **DONE — it is.** See "Authenticity"
+   below. It did not need a pack-header change after all.
 
 Two things that used to be on this list are done: the name repair now runs as a
 **boot migration**, so deploying the backend fixes production (there is no shell
@@ -242,6 +241,29 @@ then regenerate.
   already fast and stay as the online path and the correctness oracle.
 - **Not fixing the corrupt production geocode here.** Real bug, different clock;
   this design is built so search does not depend on it.
+
+## Authenticity
+
+The manifest is signed (ECDSA P-256 / SHA-256, the primitive already used for
+observer signatures and the anchor) and carries a full sha256 for every pack, so
+verifying one signature binds all 38. `backend/scripts/sign_register_manifest.mjs`
+signs; the public key is **pinned** in both clients.
+
+Signing the manifest rather than each pack avoided a format-version bump: a
+signature does not fit in the 32-byte header, and `readHeader` refuses a version
+it does not know, so per-pack signing would have made every installed client
+reject the new packs until it updated.
+
+It **fails closed**: no signature, or an invalid one, means no packs are used and
+the caller falls back to the API — degraded offline search, never a false unit
+list. Both verifiers are tested against tampering, not just success.
+
+One trap worth remembering: an ECDSA signature `(r, s)` is equally valid as
+`(r, n - s)`. OpenSSL (so Node, so WebCrypto) emits either and accepts both;
+`@noble/curves`, which the native app uses, rejects the high form by default. The
+signer therefore emits the canonical **low-S** form and the test asserts it —
+otherwise roughly half of all regenerations would verify in the browser and be
+refused by the native app, at random.
 
 ## Settled during the build
 

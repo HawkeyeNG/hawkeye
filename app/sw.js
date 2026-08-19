@@ -5,7 +5,7 @@
 // political_data.json forever; only a new CACHE name (activate drops the old
 // caches) makes it re-fetch. A candidate list that cannot reach installed users
 // is not published.
-const CACHE = 'hawkeye-v277';
+const CACHE = 'hawkeye-v278';
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every
@@ -15,7 +15,7 @@ const CACHE = 'hawkeye-v277';
 // It was ~1.5 MB / 45 requests; the map data and Leaflet (~940 KB) are needed by
 // only 5 of ~25 pages, so they moved to LAZY below. Keep this lean: HTML +
 // core JS/CSS + fonts. Anything big and page-specific belongs in LAZY.
-const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/races.html', '/incident-reports.html', '/race.html', '/race.js?v=16', '/follow.js?v=1', '/race.css?v=4', '/app.js?v=151', '/scan.js?v=8', '/capture.js?v=1', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=148', '/authgate.js?v=2', '/map-label.js?v=2', '/pu-code.js?v=3', '/pu-search.js?v=6', '/register-store.js?v=1', '/reg/manifest.json', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=155', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2'];
+const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/races.html', '/incident-reports.html', '/race.html', '/race.js?v=16', '/follow.js?v=1', '/race.css?v=4', '/app.js?v=151', '/scan.js?v=8', '/capture.js?v=1', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=148', '/authgate.js?v=2', '/map-label.js?v=2', '/pu-code.js?v=3', '/pu-search.js?v=6', '/register-store.js?v=1', '/reg/manifest.json', '/reg/manifest.sig', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=155', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2'];
 
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.
@@ -63,16 +63,19 @@ self.addEventListener('fetch', (e) => {
   /**
    * The register packs (docs/PU-SEARCH-2027.md).
    *
-   * manifest.json is NETWORK-FIRST: it is how a client learns a new
-   * registerVersion exists, and making that wait for a CACHE bump would pin a
-   * device to an old unit list — the one staleness this design cannot tolerate.
+   * manifest.json AND manifest.sig are NETWORK-FIRST, and must stay a matched
+   * pair. The manifest is how a client learns a new registerVersion exists, so
+   * making it wait for a CACHE bump would pin a device to an old unit list. The
+   * signature has to travel with it: a fresh manifest checked against a cached
+   * signature does not read as stale, it reads as TAMPERED, and the client would
+   * refuse its own register.
    *
    * The packs themselves are CACHE-FIRST and matched by PREFIX, not by an exact
    * list entry: their filenames carry a content hash, so a given URL is
    * immutable and a changed register is a different URL. (LAZY's exact-match
    * membership test would have missed them entirely.)
    */
-  if (url.pathname === '/reg/manifest.json') {
+  if (url.pathname === '/reg/manifest.json' || url.pathname === '/reg/manifest.sig') {
     e.respondWith(
       fetch(e.request)
         .then((r) => { if (r.ok) cacheP.then((c) => c.put(e.request, r.clone())); return r; })

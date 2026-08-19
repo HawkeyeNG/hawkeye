@@ -38,8 +38,25 @@
   var HEADER_BYTES = 32;
   var DB_NAME = 'hawkeye-reg';
   var DB_STORE = 'packs';
-  var MANIFEST_URL = 'reg/manifest.json';
-  var MANIFEST_SIG_URL = 'reg/manifest.sig';
+  /**
+   * ABSOLUTE, NOT RELATIVE — this matters inside the Capacitor shell (Hawkeye
+   * Lite), which has no same-origin server.
+   *
+   * native.js rewrites LEADING-SLASH urls to hawkeye.com.ng and leaves relative
+   * ones alone, so 'reg/manifest.json' resolved against the app's own asset
+   * server: the shell read the manifest BUNDLED INTO THE APK and never asked the
+   * site. A register correction would then reach every platform except the one
+   * that cannot be updated without a store review — and the packs 404'd locally
+   * rather than falling back, because Android's asset packer renames
+   * `index.<sha>.pack.gz` to `.pack` and inflates it on the way in.
+   *
+   * apiBase is '' on the web (so this stays a same-origin absolute path, which
+   * is what the service worker's SHELL entry matches) and the site's origin in
+   * the shell.
+   */
+  var ORIGIN = (typeof window !== 'undefined' && window.HAWKEYE && window.HAWKEYE.apiBase) || '';
+  var MANIFEST_URL = ORIGIN + '/reg/manifest.json';
+  var MANIFEST_SIG_URL = ORIGIN + '/reg/manifest.sig';
 
   /**
    * The register signing key, PINNED — never fetched. A key collected from the
@@ -639,7 +656,7 @@
     }).then(function (hit) {
       if (hit) return hit;
       var tNet0 = now();
-      return fetch('reg/' + entry.file, { cache: 'no-store' }).then(function (r) {
+      return fetch(ORIGIN + '/reg/' + entry.file, { cache: 'no-store' }).then(function (r) {
         if (!r.ok) throw new Error('pack ' + r.status);
         return r.arrayBuffer();
       }).then(function (ab) {

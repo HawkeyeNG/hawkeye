@@ -69,10 +69,3 @@ app/play-shots/
 # iOS listing screenshots — regenerable via scripts/ios_screenshots.mjs
 app/ios-shots/
 
-# Generated polling-unit search packs (docs/PU-SEARCH-2027.md). Reproducible in
-# ~2s from backend/storage/hawkeye.db via backend/scripts/build_register_packs.mjs.
-# NOT committed yet on purpose: the packs must ship with the site (the DB is not
-# in the repo and deploys are file-upload), but which register SNAPSHOT is
-# authoritative for 2027 is still open — committing 1.4MB of a provisional one
-# would bake it into history. Decide at the client-cutover step.
-app/reg/

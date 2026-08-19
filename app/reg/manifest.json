@@ -1,0 +1,348 @@
+{
+  "formatVersion": 1,
+  "registerVersion": 345030839,
+  "generated": "2026-08-19T07:06:13.620Z",
+  "index": {
+    "file": "index.da838130.pack.gz",
+    "bytes": 56983,
+    "raw": 192632,
+    "sha": "da838130",
+    "groups": 8809,
+    "units": 176846
+  },
+  "states": {
+    "10": {
+      "file": "10.3def3b2b.pack.gz",
+      "bytes": 51724,
+      "raw": 205655,
+      "sha": "3def3b2b",
+      "name": "Delta",
+      "units": 5863,
+      "groups": 270
+    },
+    "11": {
+      "file": "11.ee8d2055.pack.gz",
+      "bytes": 20078,
+      "raw": 76870,
+      "sha": "ee8d2055",
+      "name": "Ebonyi",
+      "units": 2946,
+      "groups": 171
+    },
+    "12": {
+      "file": "12.c4d6720c.pack.gz",
+      "bytes": 42525,
+      "raw": 177740,
+      "sha": "c4d6720c",
+      "name": "Edo",
+      "units": 4519,
+      "groups": 192
+    },
+    "13": {
+      "file": "13.697a0a8d.pack.gz",
+      "bytes": 28812,
+      "raw": 99250,
+      "sha": "697a0a8d",
+      "name": "Ekiti",
+      "units": 2445,
+      "groups": 177
+    },
+    "14": {
+      "file": "14.3b6cbbb1.pack.gz",
+      "bytes": 27411,
+      "raw": 111232,
+      "sha": "3b6cbbb1",
+      "name": "Enugu",
+      "units": 4145,
+      "groups": 260
+    },
+    "15": {
+      "file": "15.422314b6.pack.gz",
+      "bytes": 25813,
+      "raw": 88084,
+      "sha": "422314b6",
+      "name": "Gombe",
+      "units": 2988,
+      "groups": 114
+    },
+    "16": {
+      "file": "16.ab509c6c.pack.gz",
+      "bytes": 32796,
+      "raw": 122599,
+      "sha": "ab509c6c",
+      "name": "Imo",
+      "units": 4758,
+      "groups": 305
+    },
+    "17": {
+      "file": "17.488d1dda.pack.gz",
+      "bytes": 34958,
+      "raw": 124549,
+      "sha": "488d1dda",
+      "name": "Jigawa",
+      "units": 4522,
+      "groups": 287
+    },
+    "18": {
+      "file": "18.6546de32.pack.gz",
+      "bytes": 65892,
+      "raw": 221318,
+      "sha": "6546de32",
+      "name": "Kaduna",
+      "units": 8012,
+      "groups": 255
+    },
+    "19": {
+      "file": "19.99a384dd.pack.gz",
+      "bytes": 61782,
+      "raw": 279870,
+      "sha": "99a384dd",
+      "name": "Kano",
+      "units": 11222,
+      "groups": 484
+    },
+    "20": {
+      "file": "20.f4f507b3.pack.gz",
+      "bytes": 54255,
+      "raw": 188935,
+      "sha": "f4f507b3",
+      "name": "Katsina",
+      "units": 6652,
+      "groups": 361
+    },
+    "21": {
+      "file": "21.4bbb0ed4.pack.gz",
+      "bytes": 31897,
+      "raw": 102990,
+      "sha": "4bbb0ed4",
+      "name": "Kebbi",
+      "units": 3743,
+      "groups": 225
+    },
+    "22": {
+      "file": "22.b9e02883.pack.gz",
+      "bytes": 33475,
+      "raw": 117502,
+      "sha": "b9e02883",
+      "name": "Kogi",
+      "units": 3508,
+      "groups": 239
+    },
+    "23": {
+      "file": "23.18546c83.pack.gz",
+      "bytes": 22034,
+      "raw": 76671,
+      "sha": "18546c83",
+      "name": "Kwara",
+      "units": 2887,
+      "groups": 193
+    },
+    "24": {
+      "file": "24.6970f951.pack.gz",
+      "bytes": 116036,
+      "raw": 443892,
+      "sha": "6970f951",
+      "name": "Lagos",
+      "units": 13325,
+      "groups": 245
+    },
+    "25": {
+      "file": "25.20279a4c.pack.gz",
+      "bytes": 24046,
+      "raw": 73621,
+      "sha": "20279a4c",
+      "name": "Nasarawa",
+      "units": 3256,
+      "groups": 147
+    },
+    "26": {
+      "file": "26.febf80a9.pack.gz",
+      "bytes": 31731,
+      "raw": 95422,
+      "sha": "febf80a9",
+      "name": "Niger",
+      "units": 4950,
+      "groups": 274
+    },
+    "27": {
+      "file": "27.e7be4b19.pack.gz",
+      "bytes": 46888,
+      "raw": 162269,
+      "sha": "e7be4b19",
+      "name": "Ogun",
+      "units": 5042,
+      "groups": 236
+    },
+    "28": {
+      "file": "28.41bb658f.pack.gz",
+      "bytes": 45466,
+      "raw": 159793,
+      "sha": "41bb658f",
+      "name": "Ondo",
+      "units": 3933,
+      "groups": 203
+    },
+    "29": {
+      "file": "29.02be91cf.pack.gz",
+      "bytes": 34781,
+      "raw": 121043,
+      "sha": "02be91cf",
+      "name": "Osun",
+      "units": 3763,
+      "groups": 332
+    },
+    "30": {
+      "file": "30.79d34392.pack.gz",
+      "bytes": 47672,
+      "raw": 180239,
+      "sha": "79d34392",
+      "name": "Oyo",
+      "units": 6390,
+      "groups": 351
+    },
+    "31": {
+      "file": "31.e5ee1c89.pack.gz",
+      "bytes": 29112,
+      "raw": 85799,
+      "sha": "e5ee1c89",
+      "name": "Plateau",
+      "units": 4989,
+      "groups": 207
+    },
+    "32": {
+      "file": "32.3dda6c0b.pack.gz",
+      "bytes": 54307,
+      "raw": 206980,
+      "sha": "3dda6c0b",
+      "name": "Rivers",
+      "units": 6866,
+      "groups": 319
+    },
+    "33": {
+      "file": "33.afe58d49.pack.gz",
+      "bytes": 31255,
+      "raw": 98524,
+      "sha": "afe58d49",
+      "name": "Sokoto",
+      "units": 3991,
+      "groups": 244
+    },
+    "34": {
+      "file": "34.9cb9736b.pack.gz",
+      "bytes": 30927,
+      "raw": 106399,
+      "sha": "9cb9736b",
+      "name": "Taraba",
+      "units": 3597,
+      "groups": 168
+    },
+    "35": {
+      "file": "35.990da119.pack.gz",
+      "bytes": 21479,
+      "raw": 78795,
+      "sha": "990da119",
+      "name": "Yobe",
+      "units": 2823,
+      "groups": 178
+    },
+    "36": {
+      "file": "36.015df0b7.pack.gz",
+      "bytes": 29566,
+      "raw": 105243,
+      "sha": "015df0b7",
+      "name": "Zamfara",
+      "units": 3529,
+      "groups": 147
+    },
+    "37": {
+      "file": "37.0604f42a.pack.gz",
+      "bytes": 24861,
+      "raw": 93144,
+      "sha": "0604f42a",
+      "name": "FCT",
+      "units": 2822,
+      "groups": 62
+    },
+    "01": {
+      "file": "01.932ad16c.pack.gz",
+      "bytes": 30822,
+      "raw": 138271,
+      "sha": "932ad16c",
+      "name": "Abia",
+      "units": 4062,
+      "groups": 184
+    },
+    "02": {
+      "file": "02.978d1a13.pack.gz",
+      "bytes": 35026,
+      "raw": 121154,
+      "sha": "978d1a13",
+      "name": "Adamawa",
+      "units": 4104,
+      "groups": 226
+    },
+    "03": {
+      "file": "03.6d10c626.pack.gz",
+      "bytes": 33023,
+      "raw": 143575,
+      "sha": "6d10c626",
+      "name": "Akwa Ibom",
+      "units": 4353,
+      "groups": 329
+    },
+    "04": {
+      "file": "04.1f2d3897.pack.gz",
+      "bytes": 34815,
+      "raw": 147291,
+      "sha": "1f2d3897",
+      "name": "Anambra",
+      "units": 5720,
+      "groups": 326
+    },
+    "05": {
+      "file": "05.0be32a2d.pack.gz",
+      "bytes": 42475,
+      "raw": 163487,
+      "sha": "0be32a2d",
+      "name": "Bauchi",
+      "units": 5423,
+      "groups": 212
+    },
+    "06": {
+      "file": "06.2a188164.pack.gz",
+      "bytes": 16749,
+      "raw": 57401,
+      "sha": "2a188164",
+      "name": "Bayelsa",
+      "units": 2244,
+      "groups": 105
+    },
+    "07": {
+      "file": "07.f1ce0220.pack.gz",
+      "bytes": 45771,
+      "raw": 162630,
+      "sha": "f1ce0220",
+      "name": "Benue",
+      "units": 5102,
+      "groups": 276
+    },
+    "08": {
+      "file": "08.b8b7812b.pack.gz",
+      "bytes": 32097,
+      "raw": 101439,
+      "sha": "b8b7812b",
+      "name": "Borno",
+      "units": 5071,
+      "groups": 312
+    },
+    "09": {
+      "file": "09.45c02913.pack.gz",
+      "bytes": 26609,
+      "raw": 94748,
+      "sha": "45c02913",
+      "name": "Cross River",
+      "units": 3281,
+      "groups": 193
+    }
+  }
+}

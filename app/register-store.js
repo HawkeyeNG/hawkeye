@@ -39,6 +39,18 @@
   var DB_NAME = 'hawkeye-reg';
   var DB_STORE = 'packs';
   var MANIFEST_URL = 'reg/manifest.json';
+  var MANIFEST_SIG_URL = 'reg/manifest.sig';
+
+  /**
+   * The register signing key, PINNED — never fetched. A key collected from the
+   * same host it is meant to authenticate would prove nothing.
+   *
+   * ECDSA P-256 over SHA-256, raw IEEE P1363: the primitive this codebase
+   * already uses for observer signatures and the anchor, so there is one
+   * algorithm here rather than two. Private half lives in ~/hawkeye-secrets and
+   * signs via backend/scripts/sign_register_manifest.mjs.
+   */
+  var REGISTER_PUBLIC_KEY = 'BPEt4J9qwyTe0JI1ykyg7swuUMTsXp0orbcLV9pHr4m7liHXDtr4pzdUaMkfZWX61C+cpdKe+hg4eGnpW3Q3cLU=';
 
   /* ------------------------------------------------------------ crc32 */
 
@@ -430,6 +442,66 @@
     return { units: out, truncated: out.length === limit, tookMs: now() - t0 };
   }
 
+  /* ------------------------------------------------------ authenticity */
+
+  /**
+   * WHY THE PACKS ARE SIGNED AT ALL.
+   *
+   * On a phone with no signal the packs ARE the register — there is no server
+   * left to contradict them. The CRC32 in each pack header catches a truncated
+   * download; it is not a security check, since anyone able to serve bytes can
+   * recompute it. HTTPS covers the wire. What remains is a compromised host, or
+   * a network terminating TLS, handing an observer a unit list with units
+   * quietly renamed or missing — and they would have no way to tell.
+   *
+   * So: the manifest is signed, and it carries a sha256 for every pack. Verify
+   * the signature once, then every pack is bound to it by hash.
+   *
+   * FAILS CLOSED, AND THAT IS SAFE HERE. If the signature is missing or wrong we
+   * refuse to use packs at all and the caller falls back to the API. Stripping
+   * the signature therefore buys an attacker nothing except degraded offline
+   * search — never a false unit list.
+   */
+  function b64ToBytes(b64) {
+    var bin = atob(String(b64).trim());
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  var pubKeyP = null;
+  function signingKey() {
+    if (!pubKeyP) {
+      var pt = b64ToBytes(REGISTER_PUBLIC_KEY); // 0x04 || X || Y
+      var b64u = function (u8) {
+        var s2 = btoa(String.fromCharCode.apply(null, u8));
+        return s2.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      };
+      pubKeyP = crypto.subtle.importKey(
+        'jwk',
+        { kty: 'EC', crv: 'P-256', x: b64u(pt.subarray(1, 33)), y: b64u(pt.subarray(33, 65)), ext: true },
+        { name: 'ECDSA', namedCurve: 'P-256' },
+        false,
+        ['verify'],
+      );
+    }
+    return pubKeyP;
+  }
+
+  function verifyManifest(bytes, sigB64) {
+    return signingKey().then(function (key) {
+      return crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, b64ToBytes(sigB64), bytes);
+    });
+  }
+
+  function sha256Hex(bytes) {
+    return crypto.subtle.digest('SHA-256', bytes).then(function (buf) {
+      var v = new Uint8Array(buf), out = '';
+      for (var i = 0; i < v.length; i++) out += (v[i] < 16 ? '0' : '') + v[i].toString(16);
+      return out;
+    });
+  }
+
   /* --------------------------------------------------------- transport */
 
   var now = (typeof performance !== 'undefined' && performance.now)
@@ -494,15 +566,31 @@
     if (manifestP && !force) return manifestP;
     // Network-first so a register correction does not wait on a cache bump, with
     // the stored copy as the offline answer.
-    manifestP = fetch(MANIFEST_URL, { cache: 'no-cache' })
-      .then(function (r) { if (!r.ok) throw new Error('manifest ' + r.status); return r.json(); })
-      .then(function (m) { idbPut('manifest', m); return m; })
-      .catch(function () {
-        return idbGet('manifest').then(function (m) {
-          if (!m) throw new Error('no manifest, and offline');
-          return m;
-        });
+    manifestP = Promise.all([
+      fetch(MANIFEST_URL, { cache: 'no-cache' }).then(function (r) {
+        if (!r.ok) throw new Error('manifest ' + r.status);
+        return r.arrayBuffer();
+      }),
+      fetch(MANIFEST_SIG_URL, { cache: 'no-cache' }).then(function (r) {
+        if (!r.ok) throw new Error('manifest.sig ' + r.status);
+        return r.text();
+      }),
+    ]).then(function (both) {
+      var bytes = new Uint8Array(both[0]);
+      return verifyManifest(bytes, both[1]).then(function (ok) {
+        if (!ok) throw new Error('manifest signature invalid');
+        var m = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+        // Cache only what verified, so the offline path cannot be poisoned by a
+        // bad manifest that happened to arrive once.
+        idbPut('manifest', m);
+        return m;
       });
+    }).catch(function (err) {
+      return idbGet('manifest').then(function (m) {
+        if (!m) throw new Error('no verified manifest available (' + err.message + ')');
+        return m;
+      });
+    });
     return manifestP;
   }
 
@@ -521,7 +609,14 @@
 
     function fromBytes(gzBytes, source) {
       var tInflate0 = now();
-      return inflateGzip(gzBytes).then(function (pack) {
+      // The signed manifest names each pack's sha256. A pack that does not hash
+      // to it is not the pack we published, whatever else is true of it.
+      var bound = entry.sha256
+        ? sha256Hex(gzBytes).then(function (h) {
+            if (h !== entry.sha256) throw new Error('pack hash does not match the signed manifest');
+          })
+        : Promise.reject(new Error('manifest entry has no sha256 — refusing to trust this pack'));
+      return bound.then(function () { return inflateGzip(gzBytes); }).then(function (pack) {
         timings.inflate = now() - tInflate0;
         var decoded = decode(pack);
         timings.decode = decoded.timings ? decoded.timings.total : null;

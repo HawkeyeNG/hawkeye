@@ -68,3 +68,6 @@ app/play-shots/
 
 # iOS listing screenshots — regenerable via scripts/ios_screenshots.mjs
 app/ios-shots/
+
+# Register manifest signing key (private half lives in ~/hawkeye-secrets)
+register-signing.key

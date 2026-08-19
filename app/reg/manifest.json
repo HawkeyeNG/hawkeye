@@ -1,12 +1,13 @@
 {
   "formatVersion": 1,
   "registerVersion": 345030839,
-  "generated": "2026-08-19T07:06:13.620Z",
+  "generated": "2026-08-19T08:51:31.785Z",
   "index": {
     "file": "index.da838130.pack.gz",
     "bytes": 56983,
     "raw": 192632,
     "sha": "da838130",
+    "sha256": "da83813071d51c2b7aa870101b83c0f54a35fad73fd5e98af41cb5ac04fb155c",
     "groups": 8809,
     "units": 176846
   },
@@ -16,6 +17,7 @@
       "bytes": 51724,
       "raw": 205655,
       "sha": "3def3b2b",
+      "sha256": "3def3b2bf4eb2b7bc183bb2ad8c31003769477a21b60842631c6213136436be7",
       "name": "Delta",
       "units": 5863,
       "groups": 270
@@ -25,6 +27,7 @@
       "bytes": 20078,
       "raw": 76870,
       "sha": "ee8d2055",
+      "sha256": "ee8d20551b3f3cc6639f0ed8fd5026da5cfe788cd0c582db8e930d3f971f9d60",
       "name": "Ebonyi",
       "units": 2946,
       "groups": 171
@@ -34,6 +37,7 @@
       "bytes": 42525,
       "raw": 177740,
       "sha": "c4d6720c",
+      "sha256": "c4d6720c36de38f36d27bf015a4137fa0eccbad4ce5567020c14a14edb55c76a",
       "name": "Edo",
       "units": 4519,
       "groups": 192
@@ -43,6 +47,7 @@
       "bytes": 28812,
       "raw": 99250,
       "sha": "697a0a8d",
+      "sha256": "697a0a8d6f19251e9f831e1dfe7f85952c0945e416ab40daaac2d6f9d509e757",
       "name": "Ekiti",
       "units": 2445,
       "groups": 177
@@ -52,6 +57,7 @@
       "bytes": 27411,
       "raw": 111232,
       "sha": "3b6cbbb1",
+      "sha256": "3b6cbbb14dad0b600c3ecec7ad64183d500c693be485578305ca763216d65c6a",
       "name": "Enugu",
       "units": 4145,
       "groups": 260
@@ -61,6 +67,7 @@
       "bytes": 25813,
       "raw": 88084,
       "sha": "422314b6",
+      "sha256": "422314b6154ed8120382c69221e4c738ee1d9b20024db4d40c5e2e1bda5d509f",
       "name": "Gombe",
       "units": 2988,
       "groups": 114
@@ -70,6 +77,7 @@
       "bytes": 32796,
       "raw": 122599,
       "sha": "ab509c6c",
+      "sha256": "ab509c6cdc7ec2c9bf7e04953401c83b98a028fb26bfb4bd4d383bce1b0502c1",
       "name": "Imo",
       "units": 4758,
       "groups": 305
@@ -79,6 +87,7 @@
       "bytes": 34958,
       "raw": 124549,
       "sha": "488d1dda",
+      "sha256": "488d1dda61bf645b35a2c96717c45106ac64025c4b064777b62bf478b292216c",
       "name": "Jigawa",
       "units": 4522,
       "groups": 287
@@ -88,6 +97,7 @@
       "bytes": 65892,
       "raw": 221318,
       "sha": "6546de32",
+      "sha256": "6546de3204ee53942206cd469234fbcf71d192c87b17678bc3b67ac1f039e253",
       "name": "Kaduna",
       "units": 8012,
       "groups": 255
@@ -97,6 +107,7 @@
       "bytes": 61782,
       "raw": 279870,
       "sha": "99a384dd",
+      "sha256": "99a384ddcddf8264e461cc1a69c83994dda3ff715f1f09f0078cec2225a00fd4",
       "name": "Kano",
       "units": 11222,
       "groups": 484
@@ -106,6 +117,7 @@
       "bytes": 54255,
       "raw": 188935,
       "sha": "f4f507b3",
+      "sha256": "f4f507b39fd89f5cb2339a6137869d13e03f13bed98640dc40684d5fdd76e4c5",
       "name": "Katsina",
       "units": 6652,
       "groups": 361
@@ -115,6 +127,7 @@
       "bytes": 31897,
       "raw": 102990,
       "sha": "4bbb0ed4",
+      "sha256": "4bbb0ed48e82bf09a6f902335865f72c077790349ab2adabe075e8f05ca1545c",
       "name": "Kebbi",
       "units": 3743,
       "groups": 225
@@ -124,6 +137,7 @@
       "bytes": 33475,
       "raw": 117502,
       "sha": "b9e02883",
+      "sha256": "b9e02883a22a189e25b8b1720761cd36de6f6dde0653d704a9f180f9da0252a3",
       "name": "Kogi",
       "units": 3508,
       "groups": 239
@@ -133,6 +147,7 @@
       "bytes": 22034,
       "raw": 76671,
       "sha": "18546c83",
+      "sha256": "18546c8341ec25c3c5a2d488bcac03b0ea97946d9a5c6feb8b6f0c63e9d89a4f",
       "name": "Kwara",
       "units": 2887,
       "groups": 193
@@ -142,6 +157,7 @@
       "bytes": 116036,
       "raw": 443892,
       "sha": "6970f951",
+      "sha256": "6970f9518e6ed357501f440d0ff80ba5af49917603fdfa544d7c1cada26c6f38",
       "name": "Lagos",
       "units": 13325,
       "groups": 245
@@ -151,6 +167,7 @@
       "bytes": 24046,
       "raw": 73621,
       "sha": "20279a4c",
+      "sha256": "20279a4ceaaccede084f213f9a6981c34024167b90e5a99cf21e232bb5f939f3",
       "name": "Nasarawa",
       "units": 3256,
       "groups": 147
@@ -160,6 +177,7 @@
       "bytes": 31731,
       "raw": 95422,
       "sha": "febf80a9",
+      "sha256": "febf80a9ec6f22832eef23eed726b73101341ea7760441f9a5fe9ef69d5f2073",
       "name": "Niger",
       "units": 4950,
       "groups": 274
@@ -169,6 +187,7 @@
       "bytes": 46888,
       "raw": 162269,
       "sha": "e7be4b19",
+      "sha256": "e7be4b1959c055c04c333a676471c9e40fb5578ab08ec57a782465ca127e6c64",
       "name": "Ogun",
       "units": 5042,
       "groups": 236
@@ -178,6 +197,7 @@
       "bytes": 45466,
       "raw": 159793,
       "sha": "41bb658f",
+      "sha256": "41bb658fe340d01d7bb3bc8ca1cbf4308b49e369409690fc25d4e6f8bd221a23",
       "name": "Ondo",
       "units": 3933,
       "groups": 203
@@ -187,6 +207,7 @@
       "bytes": 34781,
       "raw": 121043,
       "sha": "02be91cf",
+      "sha256": "02be91cf647023968fc3d90726817356686cc0386ddf8efcd5820891eaa578fd",
       "name": "Osun",
       "units": 3763,
       "groups": 332
@@ -196,6 +217,7 @@
       "bytes": 47672,
       "raw": 180239,
       "sha": "79d34392",
+      "sha256": "79d343929cf44bcfd78cff589bc1783af7a9dc557f84bae20e86af1b3eb94494",
       "name": "Oyo",
       "units": 6390,
       "groups": 351
@@ -205,6 +227,7 @@
       "bytes": 29112,
       "raw": 85799,
       "sha": "e5ee1c89",
+      "sha256": "e5ee1c895c93cb577980eee7ca0860291790f2b8942a72ba5e419830b948c6c8",
       "name": "Plateau",
       "units": 4989,
       "groups": 207
@@ -214,6 +237,7 @@
       "bytes": 54307,
       "raw": 206980,
       "sha": "3dda6c0b",
+      "sha256": "3dda6c0b944f620fb1f8d2c04fdb38f9e299d1d7818d040e10d05f4cca4c8307",
       "name": "Rivers",
       "units": 6866,
       "groups": 319
@@ -223,6 +247,7 @@
       "bytes": 31255,
       "raw": 98524,
       "sha": "afe58d49",
+      "sha256": "afe58d4917f6847b178fab7b8c6b272a4744ae380c110c8f304d94e4df17220d",
       "name": "Sokoto",
       "units": 3991,
       "groups": 244
@@ -232,6 +257,7 @@
       "bytes": 30927,
       "raw": 106399,
       "sha": "9cb9736b",
+      "sha256": "9cb9736b06398d4abcc1d429b31a2b17e42a2eed1fd97ec2766fe0c64b027bd2",
       "name": "Taraba",
       "units": 3597,
       "groups": 168
@@ -241,6 +267,7 @@
       "bytes": 21479,
       "raw": 78795,
       "sha": "990da119",
+      "sha256": "990da119a4aa33292fac1da108b8825364a575e5f7c87ae48c1e02e8f0b96d5f",
       "name": "Yobe",
       "units": 2823,
       "groups": 178
@@ -250,6 +277,7 @@
       "bytes": 29566,
       "raw": 105243,
       "sha": "015df0b7",
+      "sha256": "015df0b7fc3c7cd2a7e1b446ca5cb76693cd3dadd9418207147b68b5504220b6",
       "name": "Zamfara",
       "units": 3529,
       "groups": 147
@@ -259,6 +287,7 @@
       "bytes": 24861,
       "raw": 93144,
       "sha": "0604f42a",
+      "sha256": "0604f42a9eab5ecc198b5c97327c86ab6e730d1e4f4eafd60e1208c96d49ff33",
       "name": "FCT",
       "units": 2822,
       "groups": 62
@@ -268,6 +297,7 @@
       "bytes": 30822,
       "raw": 138271,
       "sha": "932ad16c",
+      "sha256": "932ad16cd0678a76dad85aeacd98c1502a01d2116f5016046b0f842e26a25997",
       "name": "Abia",
       "units": 4062,
       "groups": 184
@@ -277,6 +307,7 @@
       "bytes": 35026,
       "raw": 121154,
       "sha": "978d1a13",
+      "sha256": "978d1a13801a326566e51e455567f5a5cac85a331280035339d9c7913b99559b",
       "name": "Adamawa",
       "units": 4104,
       "groups": 226
@@ -286,6 +317,7 @@
       "bytes": 33023,
       "raw": 143575,
       "sha": "6d10c626",
+      "sha256": "6d10c626d236aef811df13626bdbdc541cac2a56877c1c4f7fd0b758e675fc4a",
       "name": "Akwa Ibom",
       "units": 4353,
       "groups": 329
@@ -295,6 +327,7 @@
       "bytes": 34815,
       "raw": 147291,
       "sha": "1f2d3897",
+      "sha256": "1f2d3897434fb973a8a67effb59ff4733e24a6ea2b4dc64bd9f7bd23645bbce2",
       "name": "Anambra",
       "units": 5720,
       "groups": 326
@@ -304,6 +337,7 @@
       "bytes": 42475,
       "raw": 163487,
       "sha": "0be32a2d",
+      "sha256": "0be32a2da55e0abed2c96c287368da7c1aadfbb0e33f3868b02fe3236643783b",
       "name": "Bauchi",
       "units": 5423,
       "groups": 212
@@ -313,6 +347,7 @@
       "bytes": 16749,
       "raw": 57401,
       "sha": "2a188164",
+      "sha256": "2a1881648259a376b14507556a3fdc13cf9329249459b4e9915d3dfbefd418b0",
       "name": "Bayelsa",
       "units": 2244,
       "groups": 105
@@ -322,6 +357,7 @@
       "bytes": 45771,
       "raw": 162630,
       "sha": "f1ce0220",
+      "sha256": "f1ce022022d51b71a1e6b5bc2d9f85318bd4b8545bcfdeb115bb46ef33a01fec",
       "name": "Benue",
       "units": 5102,
       "groups": 276
@@ -331,6 +367,7 @@
       "bytes": 32097,
       "raw": 101439,
       "sha": "b8b7812b",
+      "sha256": "b8b7812bb50380973a2ca5a2508b264f294e9663b73f1da26f3b0e7ab78f6f50",
       "name": "Borno",
       "units": 5071,
       "groups": 312
@@ -340,6 +377,7 @@
       "bytes": 26609,
       "raw": 94748,
       "sha": "45c02913",
+      "sha256": "45c029134fdab54a176b66401254428d4599a7a10035aa89be265118e4b78abc",
       "name": "Cross River",
       "units": 3281,
       "groups": 193

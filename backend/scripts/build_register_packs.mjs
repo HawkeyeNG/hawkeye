@@ -447,12 +447,18 @@ function main() {
     if (/\.pack\.gz$/.test(f) || f === 'manifest.json') unlinkSync(path.join(OUT_DIR, f));
   }
 
-  const sha8 = (buf) => createHash('sha256').update(buf).digest('hex').slice(0, 8);
+  const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
   const emit = (name, pack) => {
     const gz = gzipSync(pack, { level: 9 });
-    const file = `${name}.${sha8(gz)}.pack.gz`;
+    const full = sha256(gz);
+    const file = `${name}.${full.slice(0, 8)}.pack.gz`;
     writeFileSync(path.join(OUT_DIR, file), gz);
-    return { file, bytes: gz.length, raw: pack.length, sha: sha8(gz) };
+    // TWO HASHES, DIFFERENT JOBS. `sha` is 8 hex characters in the FILENAME and
+    // exists to bust caches — 32 bits, trivially collided on purpose, and no use
+    // as a security check. `sha256` is the full digest the signed manifest binds
+    // each pack to, which is what makes a tampered pack detectable
+    // (scripts/sign_register_manifest.mjs).
+    return { file, bytes: gz.length, raw: pack.length, sha: full.slice(0, 8), sha256: full };
   };
 
   const manifest = { formatVersion: FORMAT_VERSION, registerVersion, generated: new Date().toISOString(), // display only; identity is registerVersion

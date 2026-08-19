@@ -21,6 +21,8 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { gunzipSync } from 'fflate';
+import { p256 } from '@noble/curves/nist.js';
+import { sha256 } from '@noble/hashes/sha2.js';
 import { BASE } from '@/lib/api';
 import {
   decodeIndex, decodeState, buildSearchIndex, search as packSearch,
@@ -31,13 +33,71 @@ import {
 export type { RegisterRow } from '@/lib/register-pack';
 
 const KEY = (k: string) => `hk_reg:${k}`;
-const MANIFEST_URL = `${BASE}/api/register/manifest`;
+// The STATIC manifest, not the API mirror of it: the signature is over these
+// exact bytes, and one fewer thing between the file and its signature is one
+// fewer way for them to disagree.
+const MANIFEST_URL = `${BASE}/reg/manifest.json`;
+const MANIFEST_SIG_URL = `${BASE}/reg/manifest.sig`;
 const PACK_URL = (file: string) => `${BASE}/reg/${file}`;
 
+/**
+ * The register signing key, PINNED — never fetched. A key collected from the
+ * host it is meant to authenticate would prove nothing. Same key and same
+ * primitive as the web store (ECDSA P-256 over SHA-256, raw IEEE P1363), which
+ * is also what this codebase already uses for observer signatures.
+ *
+ * Hermes has no WebCrypto, so verification runs on @noble/curves — already a
+ * dependency here, and pure JS, so it behaves the same on every device.
+ */
+const REGISTER_PUBLIC_KEY = 'BPEt4J9qwyTe0JI1ykyg7swuUMTsXp0orbcLV9pHr4m7liHXDtr4pzdUaMkfZWX61C+cpdKe+hg4eGnpW3Q3cLU=';
+
+function b64ToBytes(b64: string): Uint8Array {
+  const B = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const clean = String(b64).replace(/[^A-Za-z0-9+/]/g, '');
+  const out = new Uint8Array((clean.length * 3) >> 2);
+  let p = 0;
+  for (let i = 0; i < clean.length; i += 4) {
+    const n = (B.indexOf(clean[i]) << 18) | (B.indexOf(clean[i + 1]) << 12)
+      | ((B.indexOf(clean[i + 2]) & 63) << 6) | (B.indexOf(clean[i + 3]) & 63);
+    out[p++] = (n >> 16) & 255;
+    if (i + 2 < clean.length) out[p++] = (n >> 8) & 255;
+    if (i + 3 < clean.length) out[p++] = n & 255;
+  }
+  return out.subarray(0, p);
+}
+
+function hex(b: Uint8Array): string {
+  let out = '';
+  for (let i = 0; i < b.length; i++) out += (b[i] < 16 ? '0' : '') + b[i].toString(16);
+  return out;
+}
+
+/**
+ * FAILS CLOSED, AND THAT IS SAFE HERE. A missing or wrong signature means we do
+ * not use packs at all and the caller falls back to the API, so stripping the
+ * signature buys an attacker degraded offline search — never a false unit list.
+ */
+function verifyManifestBytes(bytes: Uint8Array, sigB64: string): boolean {
+  try {
+    // lowS:false — an ECDSA signature (r, s) is equally valid as (r, n - s), and
+    // OpenSSL (so Node, so WebCrypto) emits and accepts either. noble rejects the
+    // high form by default as malleable. The signer now emits the canonical low
+    // form, but accepting both means an older signature still verifies rather
+    // than the app silently refusing its own register.
+    return p256.verify(b64ToBytes(sigB64), bytes, b64ToBytes(REGISTER_PUBLIC_KEY), {
+      prehash: true,
+      lowS: false,
+    });
+  } catch {
+    return false;
+  }
+}
+
+type PackEntry = { file: string; sha: string; sha256?: string; bytes: number };
 type Manifest = {
   registerVersion: number;
-  index: { file: string; sha: string; bytes: number };
-  states: Record<string, { file: string; sha: string; bytes: number; name: string; units: number }>;
+  index: PackEntry;
+  states: Record<string, PackEntry & { name: string; units: number }>;
 };
 
 let manifest: Manifest | null = null;
@@ -79,9 +139,15 @@ function fromBase64(s: string): Uint8Array {
 async function getManifest(force = false): Promise<Manifest | null> {
   if (manifest && !force) return manifest;
   try {
-    const r = await fetch(MANIFEST_URL);
-    if (!r.ok) throw new Error(String(r.status));
-    manifest = (await r.json()) as Manifest;
+    const [mRes, sRes] = await Promise.all([fetch(MANIFEST_URL), fetch(MANIFEST_SIG_URL)]);
+    if (!mRes.ok) throw new Error(`manifest ${mRes.status}`);
+    if (!sRes.ok) throw new Error(`manifest.sig ${sRes.status}`);
+    const bytes = new Uint8Array(await mRes.arrayBuffer());
+    const sig = await sRes.text();
+    if (!verifyManifestBytes(bytes, sig)) throw new Error('manifest signature invalid');
+    manifest = JSON.parse(new TextDecoder('utf-8').decode(bytes)) as Manifest;
+    // Only a VERIFIED manifest is cached, so the offline path cannot be poisoned
+    // by a bad one that happened to arrive once.
     await AsyncStorage.setItem(KEY('manifest'), JSON.stringify(manifest));
   } catch {
     // Offline: the stored manifest is what lets a cached pack still be used.
@@ -98,20 +164,29 @@ async function getManifest(force = false): Promise<Manifest | null> {
  * are checked. A cached copy that no longer verifies is deleted rather than
  * used: rendering a truncated pack is worse than having none.
  */
-async function loadBytes(key: string, file: string, sha: string): Promise<Uint8Array | null> {
+async function loadBytes(key: string, entry: PackEntry): Promise<Uint8Array | null> {
+  // The signed manifest names each pack's sha256. A pack that does not hash to
+  // it is not the pack we published, whatever else is true of it — and that
+  // applies to a cached copy just as much as a freshly downloaded one.
+  const bound = (b: Uint8Array) => {
+    if (!entry.sha256) throw new Error('manifest entry has no sha256 — refusing to trust this pack');
+    if (hex(sha256(b)) !== entry.sha256) throw new Error('pack hash does not match the signed manifest');
+    return b;
+  };
+
   try {
     const rawSha = await AsyncStorage.getItem(KEY(`${key}:sha`));
-    if (rawSha === sha) {
+    if (rawSha === entry.sha) {
       const b64 = await AsyncStorage.getItem(KEY(`${key}:gz`));
-      if (b64) return fromBase64(b64);
+      if (b64) return bound(fromBase64(b64));
     }
-  } catch { /* fall through to the network */ }
+  } catch { /* a cached copy that no longer verifies: fall through and re-fetch */ }
 
-  const res = await fetch(PACK_URL(file));
+  const res = await fetch(PACK_URL(entry.file));
   if (!res.ok) throw new Error(`pack ${res.status}`);
-  const buf = new Uint8Array(await res.arrayBuffer());
+  const buf = bound(new Uint8Array(await res.arrayBuffer()));
   try {
-    await AsyncStorage.multiSet([[KEY(`${key}:gz`), toBase64(buf)], [KEY(`${key}:sha`), sha]]);
+    await AsyncStorage.multiSet([[KEY(`${key}:gz`), toBase64(buf)], [KEY(`${key}:sha`), entry.sha]]);
   } catch { /* storage full: it still works this session */ }
   return buf;
 }
@@ -128,7 +203,7 @@ export async function loadIndex(): Promise<IndexPack | null> {
       const m = await getManifest();
       if (!m) return null;
       try {
-        const gz = await loadBytes('index', m.index.file, m.index.sha);
+        const gz = await loadBytes('index', m.index);
         indexPack = gz ? decodeIndex(gunzipSync(gz)) : null;
       } catch {
         await dropPack('index');
@@ -150,7 +225,7 @@ export async function loadState(code: string): Promise<StatePack | null> {
       const entry = m?.states?.[code];
       if (!entry) return null;
       try {
-        const gz = await loadBytes(k, entry.file, entry.sha);
+        const gz = await loadBytes(k, entry);
         if (!gz) return null;
         const p = decodeState(gunzipSync(gz));
         p.stateName = entry.name;

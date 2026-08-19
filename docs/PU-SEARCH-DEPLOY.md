@@ -43,7 +43,20 @@ divergence this design exists to prevent.
 
 ## 2. The packs
 
-`app/reg/` — 38 files, 1.4 MB — deploy with the rest of `app/` via
+**They must be signed, or every client refuses them.** `manifest.sig` is
+committed alongside the packs, but if you regenerate you must re-sign, because
+the signature is over the manifest's exact bytes:
+
+```bash
+node backend/scripts/build_register_packs.mjs --verify
+node backend/scripts/sign_register_manifest.mjs
+```
+
+The clients fail closed: no signature, or one that does not verify, means they
+use no packs at all and fall back to the API. That degrades offline search; it
+never shows a wrong unit list.
+
+`app/reg/` — 39 files, 1.4 MB — deploy with the rest of `app/` via
 `scripts/deploy_app.sh`. Never batch or hand-copy: batching has truncated files
 and nested paths have overwritten the homepage, both of which caused real
 outages.
@@ -52,8 +65,12 @@ Verify from the outside before moving on:
 
 ```bash
 curl -sI https://hawkeye.com.ng/reg/manifest.json | head -3
-curl -s  https://hawkeye.com.ng/reg/manifest.json | head -5
+curl -sI https://hawkeye.com.ng/reg/manifest.sig  | head -3   # must be 200
 ```
+
+`manifest.sig` reaching production matters as much as the packs: without it the
+site silently drops to API-only search, which looks like "offline stopped
+working" rather than an error.
 
 The pack files must be served as bytes with **no `Content-Encoding`** — they are
 already gzip and are stored compressed on the device. If the server helpfully
@@ -62,8 +79,12 @@ re-compresses or transparently inflates them, the client stores ~5 MB instead of
 
 ## 3. The app
 
-`app/` — `sw.js` is at **v277**, and the pins moved: `app.js?v=151`,
+`app/` — `sw.js` is at **v278**, and the pins moved: `app.js?v=151`,
 `pu-search.js?v=6`, plus the new `register-store.js?v=1`.
+
+`manifest.json` and `manifest.sig` are fetched **network-first as a pair**. A
+fresh manifest checked against a cached signature does not read as stale, it
+reads as tampered — and the client would refuse its own register.
 
 **`sw.js` goes last.** A wrong cache rule is the one mistake installed clients
 cannot be told about. The activate handler now preserves any cache named
@@ -91,8 +112,10 @@ two columns, and both are things the old code simply ignores.
 INEC will add and rename units before 2027.
 
 ```bash
-node backend/scripts/build_register_packs.mjs --verify   # ~2s
-node backend/scripts/diff_register_search.mjs            # the gate, ~5 min
+node backend/scripts/build_register_packs.mjs --verify        # ~2s
+node backend/scripts/sign_register_manifest.mjs               # REQUIRED after any regen
+node backend/scripts/diff_register_search.mjs                 # the gate, ~5 min
+node native/scripts/verify_register_signature.mjs             # signature + pack hashes
 ```
 
 Delete the superseded `app/reg/*.pack.gz` in the same commit — filenames carry a
@@ -100,8 +123,14 @@ content hash, so old ones linger otherwise. `registerVersion` is derived from th
 register's contents, so an unchanged register regenerates byte-identical packs
 and costs installed clients nothing.
 
-## Still open
+## The signing key
 
-Whether the manifest should be **signed** with the keypair the app already has,
-so nobody can serve an observer a doctored unit list. It changes the pack header,
-so it is best decided before the format is frozen in shipped clients.
+`~/hawkeye-secrets/register-signing.key` (ECDSA P-256, mode 600). **Back it up
+off-machine.** Losing it means generating a new key and shipping a client update
+to every platform before the register can be updated again, because the public
+key is pinned in `app/register-store.js` and `native/src/lib/register.ts` — a key
+fetched from the host it authenticates would prove nothing.
+
+The signer emits the canonical **low-S** form. If that ever changes, strict
+verifiers (the native app's) start refusing signatures that the browser still
+accepts, at random, roughly half the time.

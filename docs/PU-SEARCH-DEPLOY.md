@@ -123,6 +123,34 @@ content hash, so old ones linger otherwise. `registerVersion` is derived from th
 register's contents, so an unchanged register regenerates byte-identical packs
 and costs installed clients nothing.
 
+## Deployed 2026-08-19
+
+Live. registerVersion 345030839; the signature verifies against the manifest as
+actually served, 38/38 packs match it, and browse + search were confirmed working
+in a browser with the network cut (37 states, Kano 44 LGAs).
+
+Two things this deploy turned up, worth knowing next time:
+
+**The remote `app/reg/` directory did not exist**, and the upload fails rather
+than creating it. Create it once:
+
+```bash
+curl -sk -u "$U:$P" -d action=folder -d path=/hawkeye/app -d name=reg \
+  https://da32.host-ww.net:2222/CMD_API_FILE_MANAGER
+```
+
+**The host double-gzips `.gz` files** — it re-compresses them for transport and
+sets `Content-Encoding: gzip`. That looks like corruption and is not: the client's
+transport layer strips the outer layer and the original bytes come back intact,
+which is why all 38 hashes still match. Do NOT "fix" it by renaming the packs.
+Verify the BYTES, as the scripts do, not the header.
+
+**Pins.** `menu.js`, `styles.css` and `native.js` had changed content but kept
+their old `?v=` pins, which would have left every Cloudflare edge serving the
+previous file. Bumped to 149 / 156 / 110 before deploying. If the content
+changes, the pin changes — the CACHE bump does not save you, because it re-fetches
+the same URLs.
+
 ## The signing key
 
 `~/hawkeye-secrets/register-signing.key` (ECDSA P-256, mode 600). **Back it up

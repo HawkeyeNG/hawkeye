@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { config } from './config.js';
+import { repairName, searchFold } from './services/register-names.mjs';
 
 fs.mkdirSync(path.dirname(config.dbPath), { recursive: true });
 fs.mkdirSync(config.uploadDir, { recursive: true });
@@ -488,22 +489,44 @@ for (const ddl of [
 // Load the full register with scripts/load_inec_register.js --replace, then attach
 // verified coordinates with scripts/attach_coordinates.js.
 /**
- * THE SEARCH FOLD — must stay character-for-character identical to fold() in
- * app/register-store.js. Offline packs and this API have to agree on what a
- * query matches; scripts/diff_register_search.mjs runs a corpus through both
- * and fails on any divergence.
+ * NAME REPAIR AND SEARCH FOLD, IN THAT ORDER, AT BOOT.
+ *
+ * Both are migrations, and the order between them is load-bearing: the fold is
+ * computed FROM the name, so folding first and repairing later would leave the
+ * fold describing text that no longer exists — and a stale fold means the
+ * offline packs and this API disagree about what a query matches, which is the
+ * failure docs/PU-SEARCH-2027.md exists to prevent.
+ *
+ * Doing it here rather than as a manual script is deliberate. Deploys to this
+ * app are file uploads; there is no shell on the box to run a one-off migration
+ * with. A repair that only ever ran on a developer's copy would ship packs whose
+ * names did not match the API's — exactly the divergence we are guarding.
+ *
+ * Both passes are idempotent and incremental, so a normal boot does no work.
  */
-export function searchFold(s) {
-  return String(s == null ? '' : s)
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toUpperCase()
-    .replace(/[^0-9A-Z]+/g, ' ')
-    .trim();
+export { searchFold } from './services/register-names.mjs';
+{
+  // Only a name containing a non-ASCII character can possibly need repairing,
+  // and SQLite decides that far faster than 176,846 round trips into JS: 775 ms
+  // of no-op work on every boot becomes 176 ms, with 110 rows reaching the rules
+  // instead of all of them.
+  const damaged = db
+    .prepare("SELECT pu_code, name FROM polling_units WHERE name GLOB '*[^ -~]*'")
+    .all()
+    .map((r) => ({ pu_code: r.pu_code, from: r.name, to: repairName(r.name) }))
+    .filter((r) => r.to);
+
+  if (damaged.length) {
+    // NULL the fold of anything repaired so the pass below recomputes it from
+    // the corrected name rather than leaving it describing the damage.
+    const upd = db.prepare('UPDATE polling_units SET name = ?, name_fold = NULL WHERE pu_code = ?');
+    db.transaction((rows) => { for (const r of rows) upd.run(r.to, r.pu_code); })(damaged);
+    console.log(`[db] repaired ${damaged.length} damaged polling-unit names (e.g. ${JSON.stringify(damaged[0].from)} -> ${JSON.stringify(damaged[0].to)})`);
+  }
 }
 
-// Backfill the fold columns for any row that lacks them. Incremental, so a
-// normal boot does no work; a fresh register load pays it once (~2s for 176k).
+// Backfill the fold columns for any row that lacks them — a fresh register load
+// or a name just repaired above. Incremental, so a normal boot does no work.
 {
   const stale = db
     .prepare('SELECT pu_code, name, ward FROM polling_units WHERE name_fold IS NULL OR ward_fold IS NULL')

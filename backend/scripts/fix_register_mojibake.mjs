@@ -76,7 +76,7 @@ const Database = require('better-sqlite3');
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..');
-const DB_PATH = process.env.HAWKEYE_DB || path.join(REPO, 'backend', 'storage', 'hawkeye.db');
+const DB_PATH = process.env.DB_PATH || process.env.HAWKEYE_DB || path.join(REPO, 'backend', 'storage', 'hawkeye.db');
 const APPLY = process.argv.includes('--apply');
 
 /** CP1252's 0x80-0x9F block; every other byte matches latin1. */

@@ -28,7 +28,10 @@
       "ios": {
         "resourceClass": "m-medium"
       },
-      "credentialsSource": "local"
+      "credentialsSource": "local",
+      "env": {
+        "APP_VARIANT": "production"
+      }
     }
   },
   "submit": {

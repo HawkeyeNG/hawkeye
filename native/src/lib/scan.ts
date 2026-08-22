@@ -42,7 +42,7 @@
  * documentscanner/DocumentScannerModule.kt and ios/DocScanner/DocScanner.swift):
  *
  *   croppedImageQuality  0-100 JPEG quality. iOS only in practice — see below.
- *   maxNumDocuments      Android only; maps to setPageLimit().
+ *   maxNumDocuments      both platforms, but only via our patch — see below.
  *   responseType         'imageFilePath' | 'base64'.
  *
  * Those three are everything the native side reads. The scanner's APPEARANCE is
@@ -114,8 +114,26 @@ export type ScanOutcome =
 /**
  * Scan exactly one sheet.
  *
- * One document only — an EC8A is one page, and a multi-page return would
- * silently drop everything after the first.
+ * One document only — an EC8A is one page.
+ *
+ * ONE PAGE IS ENFORCED ON THE WAY OUT, NOT IN THE UI, and on iOS that is a
+ * platform limit rather than a choice. `VNDocumentCameraViewController` exposes
+ * no page cap: after the first capture it always says "Ready for next scan" and
+ * waits for the observer to tap the tick, and there is no property, delegate or
+ * option that changes that. So the scanner will keep offering another sheet no
+ * matter what we pass.
+ *
+ * What we can do is stop the extra pages existing. `maxNumDocuments` was
+ * Android-only — the stock iOS bridge reads `responseType` and
+ * `croppedImageQuality` and drops the rest on the floor, so every page VisionKit
+ * captured was written to disk and returned, and everything after the first was
+ * silently discarded here. patch-package now passes it through and caps the
+ * write loop, matching what setPageLimit() already did on Android.
+ *
+ * If a second page still arrives — an older build, or a future module version —
+ * the first is the one kept: it is the sheet the observer framed and reviewed
+ * first, and the confirm step that follows shows exactly what is about to be
+ * sent, so a wrong pick is visible and retakeable rather than silent.
  *
  * croppedImageQuality is iOS-only and a NO-OP on Android — worth knowing before
  * anyone tunes it hoping to sharpen the OCR. The Android module only applies it

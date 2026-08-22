@@ -1,13 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useUi } from '@/lib/theme';
 
 const POINTS: { icon: keyof typeof Feather.glyphMap; text: string }[] = [
   { icon: 'camera', text: 'Photograph the result sheet where it was announced' },
@@ -25,6 +26,9 @@ const POINTS: { icon: keyof typeof Feather.glyphMap; text: string }[] = [
  */
 export default function Welcome() {
   const auth = useAuth();
+  // Only for restoring the status-bar style on the way out — this screen is
+  // fixed brand green and does not otherwise follow the theme.
+  const { dark } = useUi();
   /**
    * A signed-in session must never sit on the door: resuming into welcome would
    * otherwise offer sign-in again, forever.
@@ -49,10 +53,33 @@ export default function Welcome() {
     }, [auth.status]),
   );
 
+  /**
+   * LIGHT STATUS-BAR ICONS ONLY WHILE THIS SCREEN IS THE ONE ON SCREEN.
+   *
+   * This used to be a plain `<StatusBar style="light" />` in the tree below, and
+   * that made the clock and battery invisible across the whole app in light
+   * mode. expo-status-bar is IMPERATIVE: mounting sets the style globally, and
+   * unmounting does not put it back. So welcome set light-on-dark icons, the
+   * user signed in, and the root layout's `<StatusBar style={dark ? 'light' :
+   * 'dark'} />` never re-ran — its props had not changed — leaving white icons
+   * on the white light-mode background for the rest of the session.
+   *
+   * Scoping to focus restores the theme's own style on the way out, which is
+   * the same rule the Capacitor shell follows in app/native.js: pick the style
+   * from the theme, and re-apply it whenever the theme changes.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle(dark ? 'light' : 'dark');
+    }, [dark]),
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-hawk-green">
-      {/* Brand-green fills the screen — the clock and battery need light icons. */}
-      <StatusBar style="light" />
+      {/* Brand-green fills the screen — the clock and battery need light icons.
+          Scoped to FOCUS, not to render: see the effect above for why a plain
+          <StatusBar style="light" /> here made the icons vanish app-wide. */}
       {/* The whole screen is the fixed brand green, so every scrim on it is
           fixed white at low alpha — bg-card/10 followed the theme and turned
           into a dark plate on dark green. */}

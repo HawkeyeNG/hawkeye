@@ -111,6 +111,28 @@ governorships by party, shipping in `political_data.json`). Use those.
 Captions carry the message; the UI behind them is texture. Never ship an empty
 state.
 
+### Capturing them without a phone (mostly)
+
+The native app runs in a desktop browser — `npm run web` in `native/` starts
+Metro and serves the real React Native app through react-native-web at
+`localhost:8081`. Screens captured there are the actual app, not the PWA twin,
+and the compositor draws its own device frame so the missing OS status bar does
+not matter.
+
+Two hard limits, and they are the reason this is "mostly":
+
+- **Auth.** `_layout.tsx` allows only `welcome` and `sign-in` when signed out;
+  everything else bounces. That is deliberate — practice is signed-in on the
+  app and open only on the web, "because people who downloaded it came to
+  observe". So the browser has to be signed in by a person before any other
+  screen can be reached.
+- **Camera.** Shots 1 and 2 are the capture flow. A browser has no camera
+  pointed at a printed sheet, so those two are a physical act: print the
+  specimen, open the app on a real phone, photograph it.
+
+So four of the six (`3-published`, `4-result`, `5-map`, `6-practice`) can be
+captured from a signed-in desktop browser; the two camera shots cannot.
+
 ### 2.3 The long description opens with a denial
 
 It currently begins:

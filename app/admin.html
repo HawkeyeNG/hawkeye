@@ -55,6 +55,29 @@
     .lab .qa { display: flex; gap: 8px; margin-top: 8px; }
     .lab .qa button { margin: 0; width: auto; flex: 1; padding: 7px 0; font-size: 0.84rem; }
     .lab .okchip { font-size: 0.76rem; font-weight: 700; color: var(--link); }
+    .lab .boxes { display: flex; flex-wrap: wrap; gap: 1px 8px; margin-top: 5px;
+                  font-size: 0.71rem; color: var(--muted); }
+    .lab .boxes b { color: var(--ink); font-variant-numeric: tabular-nums; }
+    /* The arithmetic line is the point of showing the boxes at all: it tells
+       the reviewer WHERE to look on the image instead of re-adding 15 rows. */
+    .lab .arith { font-size: 0.71rem; font-weight: 700; margin-top: 4px; }
+    .lab .arith.ok { color: var(--link); }
+    .lab .arith.bad { color: var(--danger); }
+    .lab .note { font-size: 0.69rem; color: var(--muted); margin-top: 4px; font-style: italic; }
+    /* "Can't read" is a third OUTCOME, not a destructive variant of Deny, so it
+       is styled as its own neutral action rather than as another red button —
+       a reviewer should not feel they are rejecting someone's work by using it. */
+    .lab .qa .btn-illegible { background: transparent; color: var(--muted);
+                              border: 1px solid var(--line, #d7ded9); font-weight: 600; }
+    .lab .qa .btn-illegible:hover { color: var(--ink); border-color: var(--ink); }
+    .lab .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 2px; }
+    .lab .chip { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.02em;
+                 text-transform: uppercase; padding: 1px 6px; border-radius: 999px;
+                 border: 1px solid var(--line, #d7ded9); color: var(--muted); }
+    .lab .chip.good { color: var(--link); border-color: currentColor; }
+    .lab .chip.warn { color: var(--danger); border-color: currentColor; }
+    .stream-ok { font-size: 0.78rem; color: var(--muted); }
+    .stream-warn { font-size: 0.78rem; font-weight: 700; color: var(--danger); }
     label.seen { display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; color: var(--muted); }
     label.seen select { width: auto; margin: 0; padding: 5px 8px; font-size: 0.86rem; }
     details.seen-wrap { margin-top: 16px; border-top: 1px solid var(--line, #e3e8e4); padding-top: 10px; }
@@ -151,6 +174,7 @@
         <span class="tab" data-set="4">Davina <b id="s4"></b></span>
         <span class="tab" data-set="1">Set 1 <b id="s1"></b></span>
         <span class="tab" data-set="2">Set 2 <b id="s2"></b></span>
+        <span class="tab" data-set="5">Claude <b id="s5"></b></span>
       </div>
       <p class="meta" id="lab-summary"></p>
       <div id="lab-list"><p class="empty">Loading…</p></div>
@@ -513,15 +537,27 @@
     let labSet = '3';
     async function loadLabels() {
       const bust = `?t=${Date.now()}`;
-      const [truth, sets, dropped, approved] = await Promise.all([
+      const [truth, sets, dropped, approved, boxes, auditMeta] = await Promise.all([
         fetch('/training/truth.json' + bust).then((r) => r.json()).catch(() => ({})),
         fetch('/training/sets.json' + bust).then((r) => r.json()).catch(() => ({})),
         fetch('/training/dropped.json' + bust).then((r) => r.json()).catch(() => ({})),
         fetch('/training/approved.json' + bust).then((r) => r.json()).catch(() => ({})),
+        // Sidecar: truth.json has no room for the summary boxes and is read by
+        // four other consumers, so reshaping it to fit them is not on.
+        fetch('/training/boxes.json' + bust).then((r) => r.json()).catch(() => ({})),
+        // The audit's own working files come through ONE authenticated call,
+        // not as static JSON: they hold reviewer names, free-text notes and a
+        // map of which sheets we suspect before anyone has confirmed a single
+        // one. This is an internal evidence base, so /training refuses to serve
+        // them and the passphrase is required.
+        fetch('/api/training/meta' + bust, { headers: hdr() })
+          .then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
       ]);
+      const meta = auditMeta.labelMeta || {};
+      const streams = auditMeta.streams || {};
       const bySet = {};
       for (const [file, s] of Object.entries(sets)) (bySet[s] = bySet[s] || []).push(file);
-      for (const s of ['1', '2', '3', '4']) {
+      for (const s of ['1', '2', '3', '4', '5']) {
         const files = bySet[s] || [];
         const done = files.filter((f) => truth[f.replace(/\.[^.]+$/, '')]).length;
         const el = $('s' + s); if (el) el.textContent = `${done}/${files.length}`;
@@ -539,17 +575,77 @@
         const isOk = Boolean(approved[key]);
         if (isOk) ok++;
         const counts = Object.entries(t).map(([p, n]) => `${p} ${n}`).join(', ') || '<em>all zero</em>';
+        // A labeller's own boxes win over the synced sidecar: they were read
+        // off the sheet by the person whose label is being reviewed, and the
+        // job here is to check THAT reading.
+        const b = (meta[key] && meta[key].boxes) ? { ...(boxes[key] || {}), ...meta[key].boxes } : boxes[key];
+        const stream = streams[key];
+        const chips = [
+          meta[key] && meta[key].complete
+            ? '<span class="chip good" title="The labeller asserts every row was read, so any party not listed is a definite zero">all rows read</span>'
+            : '<span class="chip warn" title="Only non-zero counts were recorded — an unlisted party may be a zero OR may never have been looked at">rows not confirmed</span>',
+          stream ? `<span class="chip" title="Which queue this sheet came from. Accuracy rates can only be computed from the random stream.">${stream}</span>` : '',
+        ].join('');
+        let boxHtml = '';
+        if (b) {
+          const cell = (lab, v) => `<span>${lab} <b>${v ?? '--'}</b></span>`;
+          // Re-derive from the label being reviewed, not from anything stored:
+          // the whole job here is to check the label, so a cached verdict would
+          // be checking the checker.
+          const colSum = Object.values(t).reduce((a, n) => a + Number(n || 0), 0);
+          const bad = [];
+          if (Number.isInteger(b.totalValid) && colSum !== b.totalValid) bad.push(`column ${colSum} != valid ${b.totalValid}`);
+          if ([b.spoiled, b.rejected, b.totalValid, b.usedBallots].every(Number.isInteger)
+              && b.spoiled + b.rejected + b.totalValid !== b.usedBallots) {
+            bad.push(`account ${b.spoiled + b.rejected + b.totalValid} != used ${b.usedBallots}`);
+          }
+          // Ballots CAST, not ballots used: a spoiled paper is replaced, so the
+          // same voter legitimately consumes two and #8 routinely exceeds #2.
+          if ([b.totalValid, b.rejected, b.accredited].every(Number.isInteger)
+              && b.totalValid + b.rejected > b.accredited) {
+            bad.push(`cast ${b.totalValid + b.rejected} > accredited ${b.accredited}`);
+          }
+          boxHtml = `<div class="boxes">${cell('reg', b.registered)}${cell('acc', b.accredited)}`
+            + `${cell('spoiled', b.spoiled)}${cell('rej', b.rejected)}${cell('valid', b.totalValid)}${cell('used', b.usedBallots)}</div>`
+            + (bad.length
+              ? `<div class="arith bad">! ${bad.join(' · ')}</div>`
+              : '<div class="arith ok">&check; sums check out</div>')
+            + (b.note ? `<div class="note">${String(b.note).replace(/[<>]/g, '')}</div>` : '');
+        }
+        // THREE outcomes, not two. Approve and Deny both assume the sheet is
+        // readable and only the label is in question; on a genuinely illegible
+        // scan Deny just recycles it for the next person to fail on
+        // identically. "Can't read it" is a statement about the PAPER — a
+        // finding about the quality of what INEC published — and it needs its
+        // own exit or the queue never terminates.
+        const illegibleBtn = `<button class="btn-illegible" onclick="qa('${key}','illegible')"
+             title="The sheet itself cannot be read — records a finding and removes it from every queue">Can't read</button>`;
         const qa = isOk
           ? `<div class="qa"><span class="okchip">✓ Approved for ML</span>
-             <button class="btn-reject" onclick="qa('${key}','deny')">Deny</button></div>`
+             <button class="btn-reject" onclick="qa('${key}','deny')">Deny</button>${illegibleBtn}</div>`
           : `<div class="qa"><button onclick="qa('${key}','approve')">Approve</button>
-             <button class="btn-reject" onclick="qa('${key}','deny')">Deny</button></div>`;
+             <button class="btn-reject" onclick="qa('${key}','deny')">Deny</button>${illegibleBtn}</div>`;
         (isOk ? doneRows : rows).push(`<div class="lab${isOk ? ' ok' : ''}"><a href="/training/${f}" target="_blank" rel="noopener">
           <img loading="lazy" src="/training/${f}" alt="sheet ${key}"></a>
-          <div class="key">${key}</div><div class="counts">${counts}</div>${qa}</div>`);
+          <div class="key">${key}</div><div class="chips">${chips}</div>
+          <div class="counts">${counts}</div>${boxHtml}${qa}</div>`);
       }
-      $('lab-summary').textContent =
-        `${done} labeled (${ok} approved for ML) · ${skipped} skipped as unusable · ${files.length - done - skipped} still in queue (of ${files.length} claimed)`;
+      // The stream split is stated here, not buried, because it is the number
+      // that decides whether any accuracy figure from this set means anything.
+      // Label only the sheets the audit flags and the calibration set quietly
+      // becomes a catalogue of broken paper — at which point the model's error
+      // rate on ordinary sheets stops being measurable, and nothing on screen
+      // would show it.
+      const sTally = { random: 0, audit: 0, untagged: 0 };
+      for (const k of Object.keys(approved)) sTally[streams[k] || 'untagged'] += 1;
+      const biased = sTally.audit > sTally.random * 2;
+      $('lab-summary').innerHTML =
+        `${done} labeled (${ok} approved for ML) · ${skipped} skipped as unusable · `
+        + `${files.length - done - skipped} still in queue (of ${files.length} claimed)`
+        + `<br><span class="${biased ? 'stream-warn' : 'stream-ok'}">approved by stream — `
+        + `random ${sTally.random} · audit ${sTally.audit} · untagged ${sTally.untagged}`
+        + (biased ? ' &nbsp;!! audit-selected sheets dominate: figures from this set are not a rate' : '')
+        + '</span>';
       // Same split as incidents: what still needs a decision stays on screen,
       // what has been decided goes in a dropdown. With hundreds of sheets per
       // set the approved ones otherwise bury the handful still awaiting review.
@@ -560,13 +656,27 @@
              <div class="lab-grid">${doneRows.join('')}</div></details>` : '');
     }
     window.qa = async (key, action) => {
+      const body = { key };
       if (action === 'deny' && !confirm('Deny this label? It is deleted and the sheet returns to the open pool for re-labeling.')) return;
+      if (action === 'illegible') {
+        // The reason is the finding. "Unreadable" on its own tells a reader
+        // nothing about whether INEC published a bad scan, a dark photograph or
+        // a genuinely blank form, and those are different claims.
+        const reason = prompt(
+          'Why can this sheet not be read? (e.g. "scan cut off at the party table", '
+          + '"too dark to resolve figures", "photographed at an angle, words column unreadable")\n\n'
+          + 'This is recorded as a finding about the published record, and the sheet leaves every queue.',
+        );
+        if (reason === null) return;
+        body.reason = reason;
+      }
       const r = await fetch(`/api/training/${action}`, {
         method: 'POST',
         headers: { ...hdr(), 'content-type': 'application/json' },
-        body: JSON.stringify({ key }),
+        body: JSON.stringify(body),
       });
       if (r.status === 401) { logout(); return; }
+      if (!r.ok) { alert(`Failed: ${r.status}`); return; }
       loadLabels();
     };
 

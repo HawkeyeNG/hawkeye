@@ -366,7 +366,29 @@
     const credit = [noteLeads ? '' : (race.note || ''), race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit || ''].filter(Boolean).join(' ');
     if (credit) parts.push(`<p class="hint">${esc(credit)}</p>`);
 
+    /**
+     * KEEP THE NOT-AFFILIATED NOTICE. menu.js prepends the `.gov-disclaimer`
+     * bar INSIDE <main> (`main.insertBefore(bar, main.firstChild)`), and this
+     * line replaces main's entire contents — so the bar was created, then
+     * silently destroyed, on every race page.
+     *
+     * That is the worst possible page to lose it on. Race pages are the ones
+     * carrying INEC-declared results, they are generated in the hundreds (36
+     * governorships, 109 senatorial, 362 federal), and Google Play rejected
+     * this app twice under Misleading Claims for showing government
+     * information without a visible statement of non-affiliation and a link to
+     * the source. The bar is that statement. The web app is also what Hawkeye
+     * Lite wraps, so a missing notice here is a missing notice in a shipped
+     * Play app.
+     *
+     * Carried across rather than re-injected: menu.js has already run, and its
+     * guard is `if (document.querySelector('.gov-disclaimer')) return` — so
+     * asking it to run again would do nothing while the node still existed, and
+     * nothing again once it did not.
+     */
+    const disclaimer = main.querySelector('.gov-disclaimer');
     main.innerHTML = parts.join('\n');
+    if (disclaimer) main.insertBefore(disclaimer, main.firstChild);
 
     // The Follow toggle, wired once the markup exists. follow.js owns the
     // wording and the request so this page and the leaderboard cannot describe

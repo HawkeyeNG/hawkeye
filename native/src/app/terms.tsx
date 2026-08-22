@@ -2,7 +2,6 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  Animated,
   Image,
   Pressable,
   ScrollView,
@@ -167,20 +166,18 @@ const TERMS: Page = {
 export default function Terms() {
   const ui = useUi();
   const scroll = useRef<ScrollView>(null);
-  const y = useRef(new Animated.Value(0)).current;
   /** Measured tops of each 'label' block, so a chip can scroll to it. */
   const [anchors, setAnchors] = useState<Record<string, number>>({});
   const [active, setActive] = useState(0);
 
   const { title, kicker, sections, blocks } = TERMS;
 
-  // Header title fades in only once the big title has scrolled away — one title
-  // on screen at a time, the way a native detail screen behaves.
-  const compact = y.interpolate({ inputRange: [40, 90], outputRange: [0, 1], extrapolate: 'clamp' });
-  const heroFade = y.interpolate({ inputRange: [0, 80], outputRange: [1, 0], extrapolate: 'clamp' });
+  // ONE TITLE, IN THE HEADER, ALWAYS THERE — see the note in page.tsx, of
+  // which this screen is a near-copy. The cross-fade opened the page on a
+  // header holding a mark and two buttons but no title, which reads as a
+  // header that failed to render, and said the same words twice either way.
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    y.setValue(e.nativeEvent.contentOffset.y);
     const pos = e.nativeEvent.contentOffset.y + 120;
     const idx = sections.reduce((acc, s, i) => (anchors[s] != null && anchors[s] <= pos ? i : acc), 0);
     if (idx !== active) setActive(idx);
@@ -198,9 +195,9 @@ export default function Terms() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
-      {/* Collapsing header — the hawkeye mark (tap → Home) leads, matching the
-          shared ScreenHeader convention; the collapsing title, share and close
-          are this screen's own richer variant of it. */}
+      {/* The hawkeye mark (tap → Home) leads, matching the shared ScreenHeader
+          convention; the persistent title, share, close and jump chips are this
+          screen's own richer variant of it. */}
       <View className="border-b border-line bg-surface px-4 pb-2 pt-2">
         <View className="flex-row items-center">
           <Pressable
@@ -215,13 +212,11 @@ export default function Terms() {
               style={{ width: 30, height: 30, borderRadius: 8 }}
             />
           </Pressable>
-          <Animated.Text
-            numberOfLines={1}
-            style={{ opacity: compact }}
-            className="flex-1 px-3 text-base font-bold text-ink"
-          >
+          {/* text-lg: the page's only title now. Not ScreenHeader's text-xl,
+              because this header also holds share, close and jump chips. */}
+          <Text numberOfLines={1} className="flex-1 px-3 text-lg font-bold text-ink">
             {title}
-          </Animated.Text>
+          </Text>
           <Pressable
             hitSlop={12}
             className="mr-2 h-9 w-9 items-center justify-center rounded-full bg-card"
@@ -271,12 +266,9 @@ export default function Terms() {
         onScroll={onScroll}
         contentContainerClassName="px-4 pb-12 pt-3"
       >
-        <Animated.View style={{ opacity: heroFade }}>
-          <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-good-ink">
-            {kicker}
-          </Text>
-          <Text className="pt-1 text-3xl font-bold leading-9 text-ink">{title}</Text>
-        </Animated.View>
+        <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-good-ink">
+          {kicker}
+        </Text>
 
         {blocks.map((b, i) =>
           b.kind === 'label' ? (

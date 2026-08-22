@@ -1,11 +1,16 @@
 // Minimal service worker: cache the app shell so the observer app opens instantly
 // on flaky election-day networks. API calls always hit the network.
 // Bump on any shell change — and on a LAZY data change too. LAZY is cache-first
-// and never revalidates, so an installed client serves its stored
-// political_data.json forever; only a new CACHE name (activate drops the old
-// caches) makes it re-fetch. A candidate list that cannot reach installed users
-// is not published.
-const CACHE = 'hawkeye-v279';
+// and never revalidates, so an installed client serves its stored copy forever;
+// only a new CACHE name (activate drops the old caches) makes it re-fetch.
+//
+// political_data.json / members.json / party_changes.json USED to sit in LAZY
+// and no longer do: a candidate list that cannot reach installed users is not
+// published, and INEC amended its 2023 list seven times AFTER publication. They
+// are network-first below, so they update on their own. Nothing else volatile
+// belongs in LAZY either — if a file can change between deploys, it goes in the
+// network-first branch, not here.
+const CACHE = 'hawkeye-v280';
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every
@@ -20,7 +25,7 @@ const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html'
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.
 // og-image.png is here too — only crawlers fetch it, and they don't use the SW.
-const LAZY = ['/opencv.js', '/nga_wards.geojson', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/play-badge.png', '/seat_lgas.json', '/political_data.json', '/members.json', '/party_changes.json', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/og-image.png', '/about.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/practice.html', '/practice.js'];
+const LAZY = ['/opencv.js', '/nga_wards.geojson', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/play-badge.png', '/seat_lgas.json', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/og-image.png', '/about.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/practice.html', '/practice.js'];
 
 // Opened ONCE per worker lifetime. The global caches.match() searches every
 // cache in the origin, and re-opening the cache on each request adds latency to
@@ -75,6 +80,22 @@ self.addEventListener('fetch', (e) => {
    * immutable and a changed register is a different URL. (LAZY's exact-match
    * membership test would have missed them entirely.)
    */
+  /**
+   * The political data files, NETWORK-FIRST for exactly the reason the register
+   * manifest above is: they were cache-first, and cache-first never revalidates,
+   * so an installed client served its stored candidate list forever and only a
+   * CACHE bump could dislodge it. A candidate list that cannot reach installed
+   * users is not published. Cached on success, so offline still works.
+   */
+  if (url.pathname === '/political_data.json' || url.pathname === '/members.json'
+      || url.pathname === '/party_changes.json') {
+    e.respondWith(
+      fetch(e.request)
+        .then((r) => { if (r.ok) cacheP.then((c) => c.put(e.request, r.clone())); return r; })
+        .catch(() => caches.match(e.request).then((hit) => hit || Response.error())),
+    );
+    return;
+  }
   if (url.pathname === '/reg/manifest.json' || url.pathname === '/reg/manifest.sig') {
     e.respondWith(
       fetch(e.request)

@@ -44,8 +44,41 @@ function cardHref(c: Contest): string {
  * the two National Assembly cards above the governorship here and nowhere else.
  */
 const CARD_ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
-const orderedContests = (cs: Contest[] | null) =>
-  [...(cs ?? [])].sort((a, b) => CARD_ORDER.indexOf(a.code) - CARD_ORDER.indexOf(b.code));
+/** Unknown codes sort after the five known ones rather than before them, which
+ *  is where indexOf's -1 would put them. */
+const magnitude = (code: string) => {
+  const i = CARD_ORDER.indexOf(code);
+  return i === -1 ? CARD_ORDER.length : i;
+};
+
+/**
+ * SOONEST FIRST — date, then seat magnitude, then name.
+ *
+ * This used to sort by magnitude alone, which is right for a catalogue and
+ * wrong for a list headed "upcoming": it put a presidential election eleven
+ * months out above a by-election happening in three weeks. INEC runs
+ * by-elections between the general rounds (there are some in September), and
+ * those are exactly the ones an observer can act on next.
+ *
+ * Dates are ISO, so a string compare is a date compare. Anything already past
+ * sorts to the very end regardless — a finished election is not upcoming, and
+ * a plain ascending sort would have led with the oldest one.
+ */
+const CARDS_SHOWN = 2;
+const orderedContests = (cs: Contest[] | null) => {
+  const today = new Date().toISOString().slice(0, 10);
+  return [...(cs ?? [])].sort((a, b) => {
+    const ad = a.date ?? '';
+    const bd = b.date ?? '';
+    const apast = ad !== '' && ad < today;
+    const bpast = bd !== '' && bd < today;
+    if (apast !== bpast) return apast ? 1 : -1;
+    if (ad !== bd) return ad === '' ? 1 : bd === '' ? -1 : ad.localeCompare(bd);
+    const m = magnitude(a.code) - magnitude(b.code);
+    if (m !== 0) return m;
+    return electionTitle(a, cs).localeCompare(electionTitle(b, cs));
+  });
+};
 
 /**
  * The card's headline — see lib/api.ts:electionTitle. It lives there because the
@@ -135,6 +168,10 @@ export default function Home() {
   const [integrity, setIntegrity] = useState<IntegritySummary | null>(null);
   const [items, setItems] = useState<Item[] | null>(null);
   const [filter, setFilter] = useState<Kind | 'all'>('all');
+  /** Two election cards by default; the rest are one tap away. Five full-width
+   *  cards pushed the live activity feed — the thing that changes hour to hour —
+   *  entirely below the fold on a phone. */
+  const [allElections, setAllElections] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -265,7 +302,10 @@ export default function Home() {
         </View>
       ) : null}
 
-      {orderedContests(contests).map((c) => (
+      {(allElections
+        ? orderedContests(contests)
+        : orderedContests(contests).slice(0, CARDS_SHOWN)
+      ).map((c) => (
         <Pressable
           key={c.code}
           className="mb-3 overflow-hidden rounded-3xl bg-hawk-green active:opacity-90"
@@ -314,6 +354,31 @@ export default function Home() {
           </View>
         </Pressable>
       ))}
+
+      {/* Directly under the second card, so it reads as the end of the list
+          rather than a control belonging to whatever follows. Named counts, not
+          "More": how many are hidden is the thing worth knowing before tapping. */}
+      {(contests?.length ?? 0) > CARDS_SHOWN ? (
+        <Pressable
+          onPress={() => setAllElections((v) => !v)}
+          className="mb-3 -mt-1 flex-row items-center justify-center rounded-2xl bg-card py-3 active:opacity-80"
+          accessibilityRole="button"
+        >
+          <Text className="text-sm font-bold text-good-ink">
+            {allElections
+              ? 'Show fewer elections'
+              : `Show ${(contests?.length ?? 0) - CARDS_SHOWN} more election${
+                  (contests?.length ?? 0) - CARDS_SHOWN === 1 ? '' : 's'
+                }`}
+          </Text>
+          <Feather
+            name={allElections ? 'chevron-up' : 'chevron-down'}
+            size={16}
+            color={ui.tint.good.ink}
+            style={{ marginLeft: 6 }}
+          />
+        </Pressable>
+      ) : null}
 
       <View className="flex-row gap-3">
         <Pressable

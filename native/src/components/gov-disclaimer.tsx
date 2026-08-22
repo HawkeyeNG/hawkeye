@@ -12,19 +12,24 @@ import { RuleLink } from '@/components/rule-link';
  * are rows with an external-link glyph, and race sources are bold green; none
  * of them draw a rule.
  *
- * WHAT WAS ACTUALLY WRONG: iOS draws textDecorationLine tight to the baseline,
- * and descenders cross it. "inecnigeria.org" has a g in the middle and another
- * in the suffix, and the rule was broken at each one — not clipped, punched
- * through. There is no React Native API for underline offset or thickness, so
- * it cannot be tuned; the rule has to leave the glyphs' path entirely. Those
- * two links are now RuleLink, which draws a border below the line box.
+ * NOTHING HERE USES textDecorationLine ANY MORE, and that took two goes.
  *
- * "Details" stays an underlined Text because it is INSIDE a flowing sentence —
- * a nested Text cannot carry a View, so a border is not available to it. It
- * survives on two counts: the word has no descenders for a rule to collide
- * with, and leading-5 gives the line box room so the rule is not clipped at its
- * edge either. Any NEW link should be a RuleLink; reach for the inline form
- * only when the link genuinely sits mid-sentence, and keep it descender-free.
+ * The first attempt gave the underlined text more leading, on the theory that a
+ * tight line box was clipping the rule. That was wrong, or at best half of it:
+ * the links read "inecnigeria.org" and "inecelectionresults.ng", and iOS draws
+ * its rule tight to the baseline where every descender crosses it — the g in
+ * "nigeria", the g in "org" — so the rule was punched through, not clipped.
+ * There is no React Native API for underline offset or thickness, so it cannot
+ * be tuned.
+ *
+ * "Details" was then kept as an underlined Text on the grounds that it has no
+ * descenders to collide with. It still came out ragged. At 12px bold on iOS
+ * textDecorationLine is simply not dependable, so it is a RuleLink too, and
+ * every rule in this app is now a border on a View.
+ *
+ * Any NEW link should be a RuleLink. If one has to sit mid-sentence, put the
+ * sentence in a flex-row and wrap, as the banner below does — do not reach back
+ * for the underline class.
  *
  * Google Play "Misleading Claims" compliance (Capacitor app rejection,
  * 2026-08-03): an app presenting government-related information must state
@@ -53,15 +58,23 @@ export function GovDisclaimer() {
       <Pressable onPress={() => setOpen(true)} className="mb-3 rounded-xl bg-hawk-gold px-3.5 py-2">
         {/* One line. The modal carries the full statement, so the bar only has to
             make the claim itself — neither government nor INEC. */}
-        {/* leading-5, not leading-4: a 16px line box on a 12px font left the
-            rule sitting on the box's edge, where it clipped. 20px gives it room
-            inside the line. This is the SECOND of the two things that made
-            underlines look ragged on iOS — the other, descenders punching
-            through, is why the links below are RuleLinks instead. */}
-        <Text className="text-xs leading-5 text-[#2b1f00]" numberOfLines={1}>
-          <Text className="font-bold text-[#2b1f00]">Not government or INEC affiliated.</Text>{' '}
-          <Text className="font-bold text-[#2b1f00] underline">Details</Text>
-        </Text>
+        {/* "Details" is a RuleLink now too. More leading did not save it: the
+            word has no descenders, so nothing was punching through it, and it
+            still came out ragged — textDecorationLine simply is not dependable
+            at 12px bold on iOS, and there is no knob for offset or thickness.
+            So the last underline in the app is gone and every rule is a border.
+
+            flex-row + flex-wrap rather than one Text with numberOfLines={1}:
+            the sentence is a compliance statement and must never be truncated,
+            so on a narrow screen it wraps instead. No onPress on the RuleLink —
+            the whole banner is already the tap target, and nesting a second one
+            inside it competes for the touch. */}
+        <View className="flex-row flex-wrap items-center">
+          <Text className="text-xs font-bold leading-5 text-[#2b1f00]">
+            Not government or INEC affiliated.{' '}
+          </Text>
+          <RuleLink label="Details" className="text-xs font-bold leading-5 text-[#2b1f00]" color="#2b1f00" />
+        </View>
       </Pressable>
 
       {/* Through ModalCard so the statement and its official links stay
@@ -79,7 +92,11 @@ export function GovDisclaimer() {
             — the g in "nigeria", the g in "org" — and iOS drew its rule through
             them, breaking it into pieces. The border sits below the line box
             where no glyph reaches. */}
-        <View className="flex-row gap-4">
+        {/* flex-wrap: the two URLs are ~250dp side by side and the card is
+            narrower than that at a large font scale, and neither shrinks
+            (Yoga defaults flexShrink to 0). These are the Play "Misleading
+            Claims" remedy — the worst text in the app to truncate. */}
+        <View className="flex-row flex-wrap gap-4">
           <RuleLink
             label="inecnigeria.org"
             onPress={() => Linking.openURL('https://www.inecnigeria.org')}

@@ -88,15 +88,19 @@ export function providerChain() {
 
 // One OpenAI-format chat call against a specific provider. Throws on failure so
 // the chain can fall through. Exported for other AI features (triage etc.).
-export async function chatComplete(provider, messages, { tools = null, maxTokens = 700 } = {}) {
+export async function chatComplete(provider, messages, { tools = null, maxTokens = 700, extra = null, timeoutMs = 30_000 } = {}) {
   const body = { model: provider.model, max_tokens: maxTokens, messages };
   if (tools) body.tools = tools;
+  // Escape hatch for provider-specific body fields — vLLM's guided_json, a
+  // temperature override. Both options default to the previous behaviour, so
+  // every existing caller sends byte-identical requests.
+  if (extra) Object.assign(body, extra);
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(`${provider.base}/chat/completions`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${provider.key}` },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (res.status >= 500 && attempt === 0) { await new Promise((r) => setTimeout(r, 2500)); continue; }
     if (!res.ok) throw new Error(`${provider.name} ${res.status}`);

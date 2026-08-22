@@ -14,7 +14,11 @@
  *   Governorship           36   states (FCT elects no governor)
  *   Senate                109   senatorial districts (36 states x 3 + FCT "Abuja")
  *   House of Reps         360   federal constituencies
- *   State Assembly        993   state constituencies (FCT has none — Area Councils)
+ *   State Assembly      1019   state constituencies (FCT has none — Area Councils)
+ *                             993 until 2026, then 26 suppressed seats were
+ *                             restored by court judgment across Benue, Delta,
+ *                             Jigawa and Kogi — INEC press releases of 10 June
+ *                             and 14 August 2026.
  *
  * ── Contest matching ──
  * Each concrete race carries `contestCode` (one of PRES/GOV/SEN/REP/SHA) and,
@@ -431,10 +435,10 @@ export const STATE_ASSEMBLY: Record<StateName, AssemblyInfo> = {
   'Anambra': { seats: 30, constituencies: ['Awka North', 'Onitsha North II', 'Ogbaru II', 'Onitsha North I', 'Aguata I', 'Ihiala II', 'Oyi', 'Idemili North', 'Orumba North', 'Nnewi South II', 'Awka South II', 'Ihiala I', 'Ayamelum', 'Nnewi South I', 'Orumba South', 'Anaocha II', 'Nnewi North', 'Aguata II', 'Anambra West', 'Ogbaru I', 'Anaocha I', 'Njikoka I', 'Ekwusigo', 'Njikoka II', 'Idemili South', 'Awka South I', 'Anambra East', 'Onitsha South II', 'Onitsha South I', 'Dunukofia'] },
   'Bauchi': { seats: 31, constituencies: ['Zungur/Galambi (Bauchi II)', 'Bauchi (Bauchi I)', 'Sakwa (Zaki I)', 'Jama\'are', 'Ganjuwa West', 'Ganjuwa East', 'Sade (Darazo II)', 'Lere/Bula (Tafawa/balewa)', 'Katagum (Katagum I)', 'Darazo (Darazo I)', 'Dambam/Dagauda/Jalam', 'Burra (Ningi II)', 'Ningi (Ningi I)', 'Jama\'a/Toro (Toro II)', 'Bogoro', 'Kirfi', 'Azare (Zaki II)', 'Lame (Toro I)', 'Giade', 'Udubo (Gamawa I)', 'Madara/Chinade (Katagum II)', 'Gamawa (Gamawa II)', 'Duguri/Gwana (Alkaleri II)', 'Pali (Alkaleri I)', 'Warji', 'Shira I (Disina)', 'Dass', 'Itas/Gadau', 'Hardawa (Misau II)', 'Chiroma (Misau I)', 'Shira II (Shira)'] },
   'Bayelsa': { seats: 24, constituencies: ['Brass II', 'Kolokuma/Opokuma II', 'Brass III', 'Yenagoa III', 'Ekeremor I', 'Nembe III', 'Yenagoa I', 'Yenagoa II', 'Nembe I', 'Ekeremor II', 'Ogbia III', 'Nembe II', 'Ogbia II', 'Ogbia I', 'Kolokuma/Opokuma I', 'Sagbama III', 'Southern Ijaw IV', 'Ekeremor III', 'Sagbama I', 'Sagbama II', 'Southern Ijaw II', 'Southern Ijaw I', 'Southern Ijaw III', 'Brass I'] },
-  'Benue': { seats: 32, constituencies: ['Adoka/Ugboju', 'Okpokwu', 'Kwande East', 'Otukpo/Akpa', 'Ogbadibo', 'Ado', 'Gwer East', 'Makurdi I (North)', 'Logo', 'Makurdi South', 'Vandeikya I', 'Kwande West', 'Tarka', 'Gboko West', 'Katsina-Ala West', 'Ukum I (Ngenev)', 'Mata (Ushongo I)', 'Katsina Ala East', 'Vandeikya II', 'Mbagwa (Ushongo II)', 'Obi', 'Oju I', 'Oju II', 'Agbatu', 'Guma (Guma I)', 'Ohimini', 'Konshisha I (Gaav)', 'Buruku', 'Agasha (Guma II)', 'Apa', 'Gboko I (East)', 'Gwer West'] },
+  'Benue': { seats: 37, constituencies: ['Adoka/Ugboju', 'Okpokwu', 'Kwande East', 'Otukpo/Akpa', 'Ogbadibo', 'Ado', 'Gwer East', 'Makurdi I (North)', 'Logo', 'Makurdi South', 'Vandeikya I', 'Kwande West', 'Tarka', 'Gboko West', 'Katsina-Ala West', 'Ukum I (Ngenev)', 'Mata (Ushongo I)', 'Katsina Ala East', 'Vandeikya II', 'Mbagwa (Ushongo II)', 'Obi', 'Oju I', 'Oju II', 'Agbatu', 'Guma (Guma I)', 'Ohimini', 'Konshisha I (Gaav)', 'Buruku', 'Agasha (Guma II)', 'Apa', 'Gboko I (East)', 'Gwer West', 'Nyamatsor', 'Ukum Afia', 'Konshisha III (Shangev-Tiev)', 'Makurdi III (South East)', 'Gboko III'] },
   'Borno': { seats: 28, constituencies: ['Maiduguri M.C', 'Konduga', 'Gwoza', 'Hawul', 'Askira', 'Bayo', 'Kukawa', 'Biu', 'Kwaya Kusar', 'Kala Balge', 'Kaga', 'Chibok', 'Jere', 'Damaboa', 'Mafa', 'Guzamala', 'Dikwa', 'Abadam', 'Ngala', 'Nganzai', 'Mobbar', 'Marte', 'Monguno', 'Bama II (Gulumba)', 'Bama I (Bama)', 'Magumeri', 'Gubio', 'Shani'] },
   'Cross River': { seats: 25, constituencies: ['Boki II', 'Calabar South I', 'Yala I', 'Yakurr I', 'Odukpani', 'Obudu', 'Obubra II', 'Obubra I', 'Obanleku', 'Ikom II', 'Ikom I', 'Etung', 'Calabar South II', 'Yakurr II', 'Akpabuyo', 'Abi', 'Bekwarra', 'Akamkpa II', 'Boki I', 'Calabar Municipal', 'Bakassi', 'Ogoja', 'Akamkpa I', 'Biase', 'Yala II'] },
-  'Delta': { seats: 29, constituencies: ['Ughelli South', 'Burutu', 'Ndokwa East', 'Aniocha North', 'Ika North East', 'Burutu North', 'Ndokwa West', 'Ika South', 'Oshimili North', 'Aniocha South', 'Oshimili South', 'Udu', 'Uvwie', 'Isoko South I', 'Isoko South II', 'Patani', 'Ethiope West', 'Isoko North', 'Warri South II', 'Ughelli North I', 'Warri South-West', 'Warri South I', 'Ethiope East', 'Sapele', 'Warri North', 'Ukwuani', 'Ughelli North II', 'Bomadi', 'Okpe'] },
+  'Delta': { seats: 38, constituencies: ['Ughelli South', 'Burutu', 'Ndokwa East', 'Aniocha North', 'Ika North East', 'Burutu North', 'Ndokwa West', 'Ika South', 'Oshimili North', 'Aniocha South', 'Oshimili South', 'Udu', 'Uvwie', 'Isoko South I', 'Isoko South II', 'Patani', 'Ethiope West', 'Isoko North', 'Warri South II', 'Ughelli North I', 'Warri South-West', 'Warri South I', 'Ethiope East', 'Sapele', 'Warri North', 'Ukwuani', 'Ughelli North II', 'Bomadi', 'Okpe', 'Aniocha North II', 'Ika North East II', 'Sapele II', 'Ethiope West II', 'Warri South West II', 'Warri North II', 'Abraka', 'Isoko North II', 'Ughelli South II'] },
   'Ebonyi': { seats: 24, constituencies: ['Izzi West', 'Ezza South', 'Afikpo North West', 'Ikwo North', 'Ohaozara West', 'Afikpo North East', 'Ikwo South', 'Afikpo South East', 'Ishielu North', 'Izzi East', 'Ishielu South', 'Onicha West', 'Ohaozara East', 'Ezza North East', 'Abakaliki South', 'Ebonyi North West', 'Ohaukwu North', 'Ezza North West', 'Onicha East', 'Ohaukwu South', 'Afikpo South West', 'Abakaliki North', 'Ebonyi North East', 'Ivo'] },
   'Edo': { seats: 24, constituencies: ['Esan South East', 'Owan East', 'Uhunmwode', 'Esan Central', 'Orhionmwon II', 'Owan West', 'Ikpoba-Okha', 'Ovia North East I', 'Egor', 'Oredo West', 'Ovia North East II', 'Oredo East', 'Etsako West II', 'Etsako East', 'Esan North East II', 'Orhionmwon I', 'Akoko Edo II', 'Akoko Edo I', 'Esan North East I', 'Etsako Central', 'Etsako West I', 'Igueben', 'Esan West', 'Ovia South West'] },
   'Ekiti': { seats: 26, constituencies: ['Ekiti West II', 'Ado I', 'Ekiti East I', 'Moba II', 'Ekiti East II', 'Ado II', 'Irepodun/Ifelodun II', 'Ekiti South West I', 'Efon', 'Ido/Osi II', 'Ilejemeje', 'Ekiti South West II', 'Moba I', 'Emure', 'Ekiti West I', 'Irepodun/Ifelodun I', 'Ido/Osi I', 'Oye I', 'Ikere I', 'Oye II', 'Ikere II', 'Ijero', 'Gbonyin', 'Ise/Orun', 'Ikole I', 'Ikole II'] },
@@ -442,12 +446,12 @@ export const STATE_ASSEMBLY: Record<StateName, AssemblyInfo> = {
   'FCT': { seats: 0, constituencies: null, note: 'FCT has no State House of Assembly — it is governed via six Area Councils.' },
   'Gombe': { seats: 24, constituencies: ['Kwami West', 'Kwami East', 'Akko North', 'Deba', 'Akko Central', 'Gombe North', 'Funakaye South', 'Yamaltu West', 'Billiri East', 'Funakaye North', 'Dukku South', 'Balanga South', 'Dukku North', 'Billiri West', 'Gombe South', 'Kaltungo West', 'Yamaltu East', 'Shongom', 'Balanga North', 'Nafada South', 'Nafada North', 'Kaltungo East', 'Pero Chonge', 'Akko West'] },
   'Imo': { seats: 27, constituencies: ['Ezinihitte', 'Orlu', 'Ideato South', 'Oguta', 'Owerri West', 'Ehime Mbano', 'Ngor Okpala', 'Nwangele', 'Owerri North', 'Ohaji/Egbema', 'Ikeduru', 'Owerri Municipal', 'Mbaitoli', 'Ideato North', 'Orsu', 'Oru East', 'Obowo', 'Okigwe', 'Onuimo', 'Ahiazu Mbaise', 'Isiala Mbano', 'Ihite/Uboma', 'Aboh Mbaise', 'Njaba', 'Nkwerre', 'Isu', 'Oru West'] },
-  'Jigawa': { seats: 30, constituencies: ['Dutse', 'Gumel', 'Garki', 'Babura', 'Gwiwa', 'Kazaure', 'Kaugama', 'Kiri-Kasamma', 'Birniwa', 'Balangu', 'Kafin Hausa', 'Jahun', 'Hadejia', 'Fagam', 'Gwaram', 'Birnin Kudu', 'Guri', 'Buji', 'Kanya', 'Taura', 'Gagarawa', 'Maigatari', 'Roni', 'Auyo', 'Yankwashi', 'Mallam Madori', 'Ringim', 'Kiyawa', 'Miga', 'Sule-Tankarkar'] },
+  'Jigawa': { seats: 31, constituencies: ['Dutse', 'Gumel', 'Garki', 'Babura', 'Gwiwa', 'Kazaure', 'Kaugama', 'Kiri-Kasamma', 'Birniwa', 'Balangu', 'Kafin Hausa', 'Jahun', 'Hadejia', 'Fagam', 'Gwaram', 'Birnin Kudu', 'Guri', 'Buji', 'Kanya', 'Taura', 'Gagarawa', 'Maigatari', 'Roni', 'Auyo', 'Yankwashi', 'Mallam Madori', 'Ringim', 'Kiyawa', 'Miga', 'Sule-Tankarkar', 'Aujara'] },
   'Kaduna': { seats: 34, constituencies: ['Zaria Kewaye', 'Doka/Gabasawa', 'Unguwar Sanusi', 'Makera', 'Zaria City', 'Soba', 'Lere West', 'Igabi West', 'Kachia', 'Chikun I', 'Kawo', 'Tudun Wada', 'Jaba', 'Sabon Gari', 'Kudan', 'Sanga', 'Makarfi', 'Giwa West', 'Chawai/Kauru', 'Lere East', 'Igabi East', 'Kubau', 'Jema\'a', 'Basawa', 'Magajin Gari', 'Ikara', 'Zangon Kataf', 'Kakangi', 'Kajuru', 'Kagarko', 'Zonkwa', 'Giwa East', 'Kaura', 'Maigana'] },
   'Kano': { seats: 40, constituencies: ['Munjibir', 'Ajingi', 'Ungogo', 'Dawakin Kudu', 'Madobi', 'Bichi', 'Rimi Gado/Tofa', 'Dawakin Tofa', 'Bunkure', 'Takai', 'Kura/Gurun Mallam', 'Gaya', 'Nassarawa', 'Karaye', 'Kumbotso', 'Gabasawa', 'Gwarzo', 'Dala', 'Fagge', 'Rano', 'Gwale', 'Tsanyawa/Kunchi', 'Kibiya', 'Sumaila', 'Bebeji', 'Albasu', 'Kabo', 'Wudil', 'Shanono/Bagwai', 'Kano Municipal', 'Kiru', 'Rogo', 'Makoda', 'Tudun Wada', 'Tarauni', 'Dambatta', 'Doguwa', 'Gezawa', 'Garko', 'Warawa'] },
   'Katsina': { seats: 34, constituencies: ['Malumfashi East', 'Bakori', 'Batsari', 'Funtua', 'Mashi', 'Rimi', 'Kurfi', 'Dutsin-Ma', 'Safana', 'Faskari', 'Katsina', 'Mai\'adua', 'Sandamu', 'Bindawa', 'Dutsi', 'Musawa', 'Charanchi', 'Baure', 'Daura', 'Danja', 'Batagarawa', 'Sabuwa', 'Kusada', 'Zango', 'Kankia', 'Danmusa', 'Kafur', 'Kankara', 'Ingawa', 'Mani', 'Jibia', 'Kaita', 'Dandume', 'Matazu'] },
   'Kebbi': { seats: 24, constituencies: ['Yauri', 'Shanga', 'Fakai', 'Birnin Kebbi South', 'Birnin Kebbi North', 'Bagudo East', 'Wasagu/Danko East', 'Zuru', 'Jega', 'Sakaba', 'Ngaski', 'Gwandu', 'Koko/Besse', 'Wasagu/Danko West', 'Arewa', 'Bunza', 'Dandi', 'Kalgo', 'Argungu', 'Aleiro', 'Maiyama', 'Suru', 'Augie', 'Bagudo West'] },
-  'Kogi': { seats: 25, constituencies: ['Kabba/Bunu', 'Ofu', 'Ankpa II', 'Bassa', 'Igalamela-Odolu', 'Idah', 'Adavi', 'Ibaji', 'Okene II (South)', 'Yagba West', 'Kogi (K.K)', 'Omala', 'Ijumu', 'Lokoja I', 'Okura', 'Yagba East', 'Mopamuro', 'Lokoja II', 'Olamaboro I', 'Dekina/Biraidu', 'Ajaokuta', 'Okene Town', 'Ankpa I', 'Okehi', 'Ogori/Magongo'] },
+  'Kogi': { seats: 36, constituencies: ['Kabba/Bunu', 'Ofu', 'Ankpa II', 'Bassa', 'Igalamela-Odolu', 'Idah', 'Adavi', 'Ibaji', 'Okene II (South)', 'Yagba West', 'Kogi (K.K)', 'Omala', 'Ijumu', 'Lokoja I', 'Okura', 'Yagba East', 'Mopamuro', 'Lokoja II', 'Olamaboro I', 'Dekina/Biraidu', 'Ajaokuta', 'Okene Town', 'Ankpa I', 'Okehi', 'Ogori/Magongo', 'Adavi East', 'Eika', 'Ajaokuta North', 'Bassa-Komu', 'Dekina Town & District', 'Ijumu II', 'Kabba-Bunu II', 'Koton Karfe II', 'Igalaogwa', 'Ogugu', 'Yagba West II'] },
   'Kwara': { seats: 24, constituencies: ['Oke-Ogun/Oyun II', 'Balogun/Ojumu/Offa I', 'Isin', 'Share/Oke-Ode Ifelodun II', 'Irepodun', 'Ekiti', 'Shawo/Essa/Offa II', 'Oke-Ero', 'Odo-Ogun/Oyun I', 'Omupo/Igbaja Ifelodun I', 'Patigi', 'Okuta/Ayashkira Barutin II', 'Oloru/Malete/Ipaiye/Moro II', 'Lanwa/Ejidongari/Moro I', 'Lafiagi/Edu', 'Kaiama/Wajibe/Kemanji/Kaiama II', 'Ilorin South', 'Ilorin East', 'Ilorin West/Ilorin West II', 'Ilorin Central/Ilorin West I', 'Gwanabe/Adena/Banni/Kaiama I', 'Onire/Owode', 'Afon', 'Ilesha/Gwanara Barutin I'] },
   'Lagos': { seats: 40, constituencies: ['Shomolu II', 'Agege I', 'Agege II', 'Ojo II', 'Amuwo Odofin I', 'Lagos Island II', 'Ifako/Ijaiye I', 'Ajeromi/Ifelodun II', 'Badagry II', 'Lagos Mainland II', 'Ikorodu I', 'Oshodi/Isolo I', 'Lagos Mainland I', 'Ifako/Ijaiye II', 'Ojo I', 'Oshodi/Isolo II', 'Apapa II', 'Eti-Osa II', 'Ikeja II', 'Alimosho II', 'Mushin II', 'Badagry I', 'Ikeja I', 'Alimosho I', 'Surulere II', 'Mushin I', 'Eti-Osa I', 'Epe II', 'Ikorodu II', 'Ajeromi/Ifelodun I', 'Amuwo Odofin II', 'Epe I', 'Kosofe I', 'Apapa I', 'Kosofe II', 'Shomolu I', 'Ibeju-Lekki I', 'Lagos Island I', 'Surulere I', 'Ibeju-Lekki II'] },
   'Nasarawa': { seats: 24, constituencies: ['Karshi/Uke', 'Akwanga South', 'Nasarawa-Eggon West', 'Keffi West', 'Keffi East', 'Wamba', 'Nasarawa-Eggon East', 'Karu/Gitata', 'Lafia North', 'Lafia Central', 'Akwanga North', 'Keana', 'Kokona East', 'Doma South', 'Kokona West', 'Obi I', 'Awe North', 'Awe South', 'Nasarawa West (Loki/udege)', 'Gadabuke/Toto (Toto I)', 'Nasarawa Central', 'Doma North', 'Obi II', 'Umaisha/Dausu (Toto II)'] },
@@ -480,6 +484,16 @@ export type LocationProvenance =
   | 'researched'
   /** Auto-match was wrong; the match audit replaced it. */
   | 'corrected'
+  /**
+   * A seat restored by court judgment in 2026, taking the LGA and centroid of
+   * the seat its name reduces to — "Ughelli South II" to the Ughelli South LGA.
+   * Mechanical and checkable, but WEAKER than auto-matched: the restored seat is
+   * a split of its parent, so the LGA is right while the centroid is the
+   * parent's midpoint rather than this seat's. Fine for "roughly where", wrong
+   * for anything that needs the boundary. The 14 whose names reduce to nothing
+   * the register knows have no entry at all.
+   */
+  | 'restored-2026'
   /** Not established on evidence — carries a `note`. Do not rely on it blind. */
   | 'suspect'
   /** No LGA could be established at all; `lgas` is empty. */
@@ -534,6 +548,24 @@ export interface AssemblyLocation {
  * one over 500, and a `suspect` provenance means the LGA itself is unconfirmed.
  */
 export const ASSEMBLY_LOCATIONS: Record<string, AssemblyLocation> = {
+  // RESTORED 2026 — 26 state constituencies returned by court judgment,
+  // announced by INEC on 10 June and 14 August 2026. Each takes the LGA and
+  // centroid of the seat its name reduces to ("Ughelli South II" -> the
+  // Ughelli South LGA), which is mechanical and checkable. Seats whose name
+  // reduces to nothing the register knows are deliberately absent rather
+  // than guessed — see backend/src/data/restored-constituencies.json.
+  'Benue|Konshisha III (Shangev-Tiev)': { lgas: ['Konshisha'], centroid: { lat: 7.00008, lng: 8.78883 }, unitsBacking: 250, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Benue|Makurdi III (South East)': { lgas: ['Makurdi'], centroid: { lat: 7.73214, lng: 8.53161 }, unitsBacking: 562, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Benue|Gboko III': { lgas: ['Gboko'], centroid: { lat: 7.33333, lng: 9.00047 }, unitsBacking: 475, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Delta|Aniocha North II': { lgas: ['Aniocha North'], centroid: { lat: 6.33979, lng: 6.47645 }, unitsBacking: 153, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Delta|Sapele II': { lgas: ['Sapele'], centroid: { lat: 5.881, lng: 5.68294 }, unitsBacking: 264, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Delta|Ethiope West II': { lgas: ['Ethiope West'], centroid: { lat: 5.93186, lng: 5.72018 }, unitsBacking: 220, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Delta|Warri South West II': { lgas: ['Warri South West'], centroid: { lat: 5.60771, lng: 5.21306 }, unitsBacking: 316, coordTier: 'approx', provenance: 'restored-2026' },
+  'Delta|Warri North II': { lgas: ['Warri North'], centroid: { lat: 5.97255, lng: 5.18688 }, unitsBacking: 192, coordTier: 'approx', provenance: 'restored-2026' },
+  'Delta|Isoko North II': { lgas: ['Isoko North'], centroid: { lat: 5.54135, lng: 6.22504 }, unitsBacking: 263, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Delta|Ughelli South II': { lgas: ['Ughelli South'], centroid: { lat: 5.428, lng: 5.90673 }, unitsBacking: 244, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Kogi|Ijumu II': { lgas: ['Ijumu'], centroid: { lat: 7.84381, lng: 5.9615 }, unitsBacking: 118, coordTier: 'approx', provenance: 'restored-2026' },
+  'Kogi|Yagba West II': { lgas: ['Yagba West'], centroid: { lat: 8.22664, lng: 5.51327 }, unitsBacking: 96, coordTier: 'approx', provenance: 'restored-2026' },
   // Abia ----------------------------------------------------
   'Abia|Aba South': { lgas: ['Aba South'], centroid: { lat: 5.101, lng: 7.367 }, unitsBacking: 518, coordTier: 'crowd', provenance: 'auto-matched' },
   'Abia|Ukwa East': { lgas: ['Ukwa East'], centroid: { lat: 4.9412, lng: 7.4065 }, unitsBacking: 85, coordTier: 'crowd', provenance: 'auto-matched' },
@@ -1785,6 +1817,15 @@ export function catalogueTotals() {
   const assemblyLocated = locs.length;
   const assemblyWithCentroid = locs.filter((l) => l.centroid).length;
   const assemblyUnresolved = locs.filter((l) => l.lgas.length === 0).length;
+  /**
+   * Seats with NO location entry at all — distinct from `assemblyUnresolved`,
+   * which counts entries that exist but carry an empty `lgas`. The 2026
+   * restorations produced the first seats in the second category: 14 whose
+   * names reduce to nothing the register knows, deliberately given no entry
+   * rather than a guessed one. Without this they were invisible here, since
+   * every other total counts what IS present.
+   */
+  const assemblyWithoutLocation = assembly - assemblyLocated;
   return {
     presidential: 1,
     governorships,
@@ -1794,10 +1835,11 @@ export function catalogueTotals() {
     assemblyLocated,
     assemblyWithCentroid,
     assemblyUnresolved,
+    assemblyWithoutLocation,
     ok:
       senatorial === 109 &&
       federal === 360 &&
-      assembly === 993 &&
+      assembly === 1019 &&
       governorships === 36 &&
       !GOVERNORSHIP_STATES.includes('FCT'),
   };

@@ -6,11 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import {
-  SafeAreaProvider,
-  SafeAreaView,
-  initialWindowMetrics,
-} from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AskFab } from '@/components/ask-fab';
@@ -71,28 +67,26 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Pro
  * cannot consume a context it renders itself — so the root is split in two:
  * this shell owns the preference, RootShell below consumes it.
  */
+/**
+ * DO NOT ADD A SafeAreaProvider HERE.
+ *
+ * expo-router already renders one above this component
+ * (expo-router/build/ExpoRoot.js), and a second, nested provider measures its
+ * OWN frame rather than the window. Inside a screen presented as a
+ * fullScreenModal that frame excludes the status bar, so the nested provider
+ * reports a top inset of ZERO and every header on those screens — How Hawkeye
+ * Works, the FAQ, Terms, integrity — rides up under the clock and stays there.
+ *
+ * It was added to give the first frame correct insets via initialMetrics, which
+ * is a real problem but not one to solve from here: the flash is handled in
+ * lib/safe-area.ts, which falls back to initialWindowMetrics only while the
+ * measured value is still zero.
+ */
 export default function RootLayout() {
   return (
-    /* initialMetrics is why a header no longer lands on the clock for one beat
-       when a screen first opens.
-
-       Without it, safe-area-context starts every provider at ZERO insets and
-       fills them in once the native side reports back. A screen mounting inside
-       that window paints its header at y = 0 — over the status bar — and then
-       jumps down. It showed on the report wizard because that screen is a
-       fullScreenModal: a modal gets its own window, so the measurement happens
-       again at presentation and the reader watches it happen. Reopen the same
-       screen and the values are cached, which is exactly the "it looked normal
-       the second time" report.
-
-       initialWindowMetrics is read synchronously at startup, so the first frame
-       is already correct. It sits here, above the theme provider, so every
-       screen and every modal inherits it. */
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <ThemePrefProvider>
-        <RootShell />
-      </ThemePrefProvider>
-    </SafeAreaProvider>
+    <ThemePrefProvider>
+      <RootShell />
+    </ThemePrefProvider>
   );
 }
 

@@ -31,7 +31,14 @@ export function GovDisclaimer() {
       <Pressable onPress={() => setOpen(true)} className="mb-3 rounded-xl bg-hawk-gold px-3.5 py-2">
         {/* One line. The modal carries the full statement, so the bar only has to
             make the claim itself — neither government nor INEC. */}
-        <Text className="text-xs leading-4 text-[#2b1f00]" numberOfLines={1}>
+        {/* leading-5, not leading-4. iOS draws an underline a pixel or two below
+            the baseline, and a 16px line box on a 12px font leaves almost
+            nothing under it — so the rule under "Details" landed on the edge of
+            the line box and came out clipped and broken-looking, present under
+            some glyphs and missing under others. 20px gives the descender and
+            the rule room to sit inside the line. Android was unaffected, which
+            is why it only showed up on the phone. */}
+        <Text className="text-xs leading-5 text-[#2b1f00]" numberOfLines={1}>
           <Text className="font-bold text-[#2b1f00]">Not government or INEC affiliated.</Text>{' '}
           <Text className="font-bold text-[#2b1f00] underline">Details</Text>
         </Text>

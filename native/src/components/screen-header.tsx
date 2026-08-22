@@ -11,9 +11,22 @@ import { useUi } from '@/lib/theme';
  * Shared top pane for native screens — the native twin of the web's .gov-header:
  * the hawkeye mark (tap -> Home) on the left, the screen title, and a right
  * action (close/back, or the menu). Absolutely positioned and driven by
- * useHideOnScroll's translateY, so the whole pane slides away on scroll-down and
+ * useHideOnScroll's translateY, so the row slides away on scroll-down and
  * returns on scroll-up. Screens pad their scroll content by the hook's headerH so
  * nothing starts underneath it.
+ *
+ * TWO PIECES, AND ONLY ONE OF THEM MOVES. The status-bar inset is an opaque
+ * strip pinned at the top; the row slides underneath it.
+ *
+ * It used to be one pane — inset padding and row together — translated as a
+ * unit. Scrolling down therefore carried the mark and the title UP THROUGH the
+ * status bar, where they overlapped the clock and the carrier text with nothing
+ * opaque behind them, because the pane's own background had moved up too. It
+ * looked like the header was drawing over the system UI; it was the header
+ * leaving, in full view. Splitting them means the row disappears BEHIND the
+ * strip, which is what every iOS app does and what the animation always meant.
+ *
+ * The strip therefore sits above the row in z-order. Both stay above content.
  */
 export function ScreenHeader({
   title,
@@ -36,18 +49,24 @@ export function ScreenHeader({
   const insets = useSafeAreaInsets();
   const rightKind = right ?? (onClose ? 'close' : 'none');
   return (
-    <Animated.View
-      className="border-b border-line bg-surface"
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 10,
-        transform: translateY ? [{ translateY }] : [],
-      }}
-    >
-      <View style={{ paddingTop: insets.top }}>
+    <>
+      {/* The pinned strip. Never translates, so there is always something opaque
+          between the sliding row and the system clock. */}
+      <View
+        className="bg-surface"
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, zIndex: 11 }}
+      />
+      <Animated.View
+        className="border-b border-line bg-surface"
+        style={{
+          position: 'absolute',
+          top: insets.top,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          transform: translateY ? [{ translateY }] : [],
+        }}
+      >
         <View className="flex-row items-center px-4" style={{ height: HEADER_CONTENT_H }}>
           <Pressable
             onPress={() => router.navigate('/(tabs)' as never)}
@@ -85,7 +104,7 @@ export function ScreenHeader({
             </Pressable>
           ) : null}
         </View>
-      </View>
-    </Animated.View>
+      </Animated.View>
+    </>
   );
 }

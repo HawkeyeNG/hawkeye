@@ -288,3 +288,36 @@
     }
   });
 })();
+
+/**
+ * fetchData(name) — read a volatile data file from the LIVE site.
+ *
+ * WHY THIS EXISTS. Hawkeye Lite is a Capacitor wrapper with no `server.url`, so
+ * app/ is served from https://localhost and a relative fetch reads the copy
+ * BAKED INTO THE APK. That copy only changes with a Play release, and INEC
+ * amended its 2023 candidate list SEVEN times after publication. Seven store
+ * releases to correct a JSON file is not a pipeline.
+ *
+ * Off-origin (Lite): fetch the live file, fall back to the bundled copy if the
+ * network is unavailable — so the app still opens at a polling unit with no
+ * signal, just with whatever data it shipped with.
+ * On hawkeye.com.ng: same-origin, behaves exactly as before.
+ *
+ * CapacitorHttp is enabled, which routes fetch through native code and is
+ * therefore not subject to CORS — the live files send no
+ * access-control-allow-origin header, so a plain browser cross-origin fetch
+ * would be blocked. If that plugin is ever disabled this silently falls back to
+ * the bundle, which looks like "the app works" while showing stale candidates.
+ */
+window.HAWKEYE_LIVE_ORIGIN = 'https://hawkeye.com.ng';
+window.fetchData = function (name) {
+  var onLive = /(^|\.)hawkeye\.com\.ng$/i.test(location.hostname);
+  // Capacitor serves the app over https://localhost; a dev server is http on a
+  // port. Without this, `npm run dev` would silently read PRODUCTION data and a
+  // locally-edited political_data.json would appear to have no effect.
+  var isDev = location.protocol !== 'https:';
+  if (onLive || isDev) return fetch(name);
+  return fetch(window.HAWKEYE_LIVE_ORIGIN + '/' + name.replace(/^\/+/, ''))
+    .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r; })
+    .catch(function () { return fetch(name); });
+};

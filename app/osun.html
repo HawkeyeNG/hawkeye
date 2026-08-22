@@ -11,7 +11,7 @@
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=156" />
   <link rel="stylesheet" href="race.css?v=4" />
-  <script src="native.js?v=110"></script>
+  <script src="native.js?v=111"></script>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
   <meta property="og:title" content="Hawkeye — Osun 2026 Governorship" />
@@ -62,8 +62,8 @@
   <script>
     (async () => {
       const [data, LOGOS] = await Promise.all([
-        fetch('political_data.json').then((r) => r.json()),
-        fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
+        fetchData('political_data.json').then((r) => r.json()),
+        fetchData('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
       ]);
       // No resultsHref override: race.js derives the board link from the race's
       // own `join`, so this page and the 36 generated ones cannot disagree about

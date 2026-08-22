@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=156" />
-  <script src="native.js?v=110"></script>
+  <script src="native.js?v=111"></script>
   <style>
     .map-card svg { width: 100%; height: auto; }
     .st { stroke: #fff; stroke-width: 1; }
@@ -320,15 +320,15 @@
     (async () => {
       const [geo, data, logos, live, own] = await Promise.all([
         fetch('states_geo.json').then(r=>r.json()),
-        fetch('political_data.json').then(r=>r.json()),
-        fetch('logos/manifest.json').then(r=>r.json()).catch(()=>({})),
+        fetchData('political_data.json').then(r=>r.json()),
+        fetchData('logos/manifest.json').then(r=>r.json()).catch(()=>({})),
         // Server-refreshed upstream (Wikipedia/NASS). Enrichment only — the page
         // renders fully from the committed JSON if this is unavailable.
         fetch('/api/political').then(r=>r.json()).catch(()=>({ok:false})),
         // Our own roster: every seat, its party, and which source produced it.
         // This is the authority for both the names AND the counts, so the
         // chart can never disagree with the people standing in it.
-        fetch('members.json').then(r=>r.json()).catch(()=>null),
+        fetchData('members.json').then(r=>r.json()).catch(()=>null),
       ]);
       const roster = (own && own.chambers) || {};
       const byKey = {}; for (const [st,p] of Object.entries(data.governors)) byKey[norm(st)] = { st, p };

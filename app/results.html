@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=156" />
-  <script src="native.js?v=110"></script>
+  <script src="native.js?v=111"></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
     /* Stears-style: regions awaiting reports are neutral grey; reporting regions green-tinted */
@@ -787,11 +787,11 @@
       // waited on, since every board wants it.
       loadGeo('states_geo.json');
       const [logos, contests, political] = await Promise.all([
-        fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
+        fetchData('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
         fetch('/api/contests').then((r) => r.json()),
         // Only for the region -> race-page links. A failure costs the links and
         // nothing else, so the board still loads without it.
-        fetch('political_data.json').then((r) => r.json()).catch(() => ({})),
+        fetchData('political_data.json').then((r) => r.json()).catch(() => ({})),
       ]);
       POLITICAL = political;
       LOGOS = logos;

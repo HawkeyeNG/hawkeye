@@ -94,6 +94,25 @@ index 251c633..3e19c97 100644
              
              // convert scan UIImage to jpeg data
              guard let scannedDocumentImage: Data = scan
+diff --git a/node_modules/react-native-document-scanner-plugin/ios/DocumentScanner.mm b/node_modules/react-native-document-scanner-plugin/ios/DocumentScanner.mm
+index 3cd9f0f..328850c 100644
+--- a/node_modules/react-native-document-scanner-plugin/ios/DocumentScanner.mm
++++ b/node_modules/react-native-document-scanner-plugin/ios/DocumentScanner.mm
+@@ -24,6 +24,14 @@ RCT_EXPORT_MODULE()
+     scanDocumentOptions[@"croppedImageQuality"] = @(options.croppedImageQuality().value());
+   }
+ 
++  // HAWKEYE PATCH (patch-package): the stock bridge copies only responseType and
++  // croppedImageQuality out of the codegen struct, so maxNumDocuments never
++  // reached Swift no matter what JS passed. Patching DocScanner.swift alone was
++  // therefore dead code — this is the line that makes the page limit real.
++  if (options.maxNumDocuments().has_value()) {
++    scanDocumentOptions[@"maxNumDocuments"] = @(options.maxNumDocuments().value());
++  }
++
+   RNDocumentScanner *documentScanner = [RNDocumentScanner new];
+   [documentScanner scanDocument:scanDocumentOptions resolve:resolve reject:reject];
+ }
 diff --git a/node_modules/react-native-document-scanner-plugin/ios/DocumentScanner.swift b/node_modules/react-native-document-scanner-plugin/ios/DocumentScanner.swift
 index 49d49e2..5aba242 100644
 --- a/node_modules/react-native-document-scanner-plugin/ios/DocumentScanner.swift

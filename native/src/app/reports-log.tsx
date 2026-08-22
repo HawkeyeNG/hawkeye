@@ -8,7 +8,9 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 
-const BASE = 'https://hawkeye.com.ng';
+// Overridable so the app can run in a desktop browser against a local
+// backend; production blocks cross-origin calls. See lib/api.ts.
+const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;
 
 type Vote = { party: string; count: number };

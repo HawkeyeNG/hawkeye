@@ -5,7 +5,9 @@ import Svg, { Path } from 'react-native-svg';
 import { loadStatesGeo } from '@/components/nigeria-map';
 import { useUi } from '@/lib/theme';
 
-const BASE = 'https://hawkeye.com.ng';
+// Overridable so the app can run in a desktop browser against a local
+// backend; production blocks cross-origin calls. See lib/api.ts.
+const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
 /**
  * The region a contest divides into, exactly as GET /api/national/:contest

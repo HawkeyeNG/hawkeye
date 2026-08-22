@@ -5,7 +5,20 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const BASE = 'https://hawkeye.com.ng';
+/**
+ * Production, unless a dev build points somewhere else.
+ *
+ * EXPO_PUBLIC_API_BASE exists for one job: running the app in a desktop browser
+ * via `npm run web`. There the app's calls become real cross-origin browser
+ * requests, and production sends no Access-Control-Allow-Origin — so every one
+ * is blocked and the app can only say "network error, try again", which looks
+ * exactly like the connection being down.
+ *
+ * Pointed at a local backend (which allows loopback origins in dev; see
+ * server.js) the same build works in a browser. Unset in every real build, so
+ * devices are unaffected.
+ */
+export const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
 export type Contest = {
   code: string;

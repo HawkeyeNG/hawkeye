@@ -39,7 +39,9 @@ import { ELECTION_TYPES, listRaces, raceLabel, STATES, type Race, type StateName
 import { useUi } from '@/lib/theme';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 
-const BASE = 'https://hawkeye.com.ng';
+// Overridable so the app can run in a desktop browser against a local
+// backend; production blocks cross-origin calls. See lib/api.ts.
+const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const REFRESH_MS = 30_000;
 
 type Row = { party: string; name: string; votes: number; share: number };

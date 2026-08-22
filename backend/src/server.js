@@ -61,9 +61,10 @@ app.use(securityHeaders);
  * DEV-ONLY CORS, for running the native app in a desktop browser.
  *
  * `npm run web` in native/ serves the real React Native app through
- * react-native-web at localhost:8081. On a phone the app's API calls are not
- * browser requests and the same-origin policy does not apply; through
- * react-native-web they are, and every call to the API is cross-origin.
+ * react-native-web at localhost:8081 — or another port, since 8081 is inside
+ * a Windows reserved range and cannot be bound there. On a phone the app's
+ * API calls are not browser requests and the same-origin policy does not
+ * apply; through react-native-web they are, and every call is cross-origin.
  *
  * With no Access-Control-Allow-Origin the browser blocks the response before
  * any app code sees it, and the app can only report "network error, try again"
@@ -85,7 +86,18 @@ if (config.env !== 'production') {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Vary', 'Origin');
       res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.setHeader('Access-Control-Allow-Headers', 'content-type, authorization, x-observer-token, x-admin-pass');
+      // Echo whatever the preflight asks for, rather than keeping a list by hand.
+      // The app sends x-device-id on /login and /verify (device binding) and that
+      // was missing here, so the preflight passed and the real request was blocked
+      // — surfacing in the app as 'Network error - try again' with NOTHING in the
+      // server log, because a blocked response never reaches a handler. Any header
+      // added later would fail the same silent way. Safe to reflect: this block is
+      // already gated to loopback origins on a non-production process.
+      const asked = req.headers['access-control-request-headers'];
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        asked || 'content-type, authorization, x-device-id, x-observer-token, x-admin-pass',
+      );
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
       // Terminate the preflight here: falling through reaches the SPA catch-all,
       // which answers 404 and fails the browser's check.

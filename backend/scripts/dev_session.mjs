@@ -69,9 +69,9 @@ if (!observerId) {
 // x-device-id, and a browser does not.
 const token = jwt.sign({ sub: String(observerId), via: 'dev' }, config.jwtSecret, { expiresIn: '7d' });
 
-console.log('\npaste into the browser console at http://localhost:8081 :\n');
+console.log('\npaste into the browser console at http://localhost:8092 :\n');
 console.log(`localStorage.setItem('hawkeye.auth.token', ${JSON.stringify(token)});`);
 console.log(`localStorage.setItem('hawkeye.auth.observer', '${observerId}');`);
 console.log("localStorage.removeItem('hawkeye.auth.optedOut');");
 console.log('location.href = "/";');
-console.log('\n(expo-secure-store falls back to localStorage on web, so these are the real keys.)');
+console.log('\n(lib/secure-store.ts routes to localStorage on web, so these are the real keys.)');

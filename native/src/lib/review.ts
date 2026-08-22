@@ -12,6 +12,16 @@
  * person standing at a polling unit on election day has exactly one job and it
  * is not rating an app.
  *
+ * PINNED TO 57.0.1, EXACTLY — do not widen this to ~57.0.1 or bump it on its
+ * own. expo-store-review 57.0.2's iOS module calls `SceneGeometry`, a helper
+ * added to ExpoModulesCore after the 57.0.7 this project has, so it fails the
+ * iOS build with "cannot find 'SceneGeometry' in scope" — a Swift error that
+ * says nothing about which package caused it. It only bites on iOS; Android
+ * builds fine either way, which is why it went unnoticed. The real fix is to
+ * bring the whole SDK up to its current patch level (`npx expo install --fix`
+ * moves 18 packages, react-native included) — worth doing deliberately, with
+ * an Android regression pass, not as a side effect of a store listing change.
+ *
  * HOW IT BEHAVES. `expo-store-review` shows Google's own in-app review sheet,
  * which never leaves the app. Google decides whether to actually display it and
  * silently ignores the request when quota is spent — there is no callback and

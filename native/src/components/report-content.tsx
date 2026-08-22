@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '@/lib/secure-store';
 import { useState } from 'react';
 import {
   ActivityIndicator,

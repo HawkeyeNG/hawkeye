@@ -24,22 +24,33 @@ import { useUi } from '@/lib/theme';
 export function RuleLink({
   label,
   onPress,
-  className = 'text-sm font-bold leading-6',
+  className = 'text-sm font-bold leading-6 text-good-ink',
+  color,
 }: {
   label: string;
-  onPress: () => void;
-  /** Type styles for the label. The colour comes from the theme's link tone. */
+  /** Omit when a parent Pressable already handles the tap — the rule is then
+   *  drawn without nesting a second pressable inside it, which iOS treats as a
+   *  competing touch target. */
+  onPress?: () => void;
+  /** Type styles AND colour for the label. */
   className?: string;
+  /** Rule colour. Defaults to the theme's link tone; pass one when the link
+   *  sits on a non-surface background, such as the gold compliance banner. */
+  color?: string;
 }) {
   const ui = useUi();
+  const rule = (
+    <View
+      className="self-start"
+      style={{ borderBottomWidth: 1, borderBottomColor: color ?? ui.tint.good.ink, paddingBottom: 1 }}
+    >
+      <Text className={className}>{label}</Text>
+    </View>
+  );
+  if (!onPress) return rule;
   return (
     <Pressable onPress={onPress} hitSlop={8} accessibilityRole="link">
-      <View
-        className="self-start"
-        style={{ borderBottomWidth: 1, borderBottomColor: ui.tint.good.ink, paddingBottom: 1 }}
-      >
-        <Text className={`${className} text-good-ink`}>{label}</Text>
-      </View>
+      {rule}
     </Pressable>
   );
 }

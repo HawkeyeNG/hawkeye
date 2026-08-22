@@ -130,7 +130,11 @@ export default function StaticPage() {
               it is the page's only title now and has to carry that weight. Not
               ScreenHeader's text-xl, because this header also holds share and
               close buttons and a row of jump chips. */}
-          <Text numberOfLines={1} className="flex-1 px-3 text-lg font-bold text-ink">
+          <Text
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.2}
+            className="flex-1 px-3 text-lg font-bold text-ink"
+          >
             {title}
           </Text>
           <Pressable
@@ -184,7 +188,10 @@ export default function StaticPage() {
         onScroll={onScroll}
         contentContainerClassName="px-4 pb-12 pt-3"
       >
-        <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-good-ink">
+        {/* pb-4 replaces the space the deleted hero title used to provide.
+            Without it the kicker sits 4dp off the lede and reads as a section
+            label for it — its type treatment is identical to SectionLabel. */}
+        <Text className="pb-4 text-[11px] font-bold uppercase tracking-[1.5px] text-good-ink">
           {kicker}
         </Text>
 

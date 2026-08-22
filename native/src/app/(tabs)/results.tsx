@@ -1234,10 +1234,28 @@ export default function Results() {
             setPicking((v) => !v);
             setPickSeat(false);
           }}
-          className="flex-row items-center rounded-2xl bg-card px-3.5 py-2.5 active:opacity-80"
+          className={`flex-row items-center rounded-2xl px-3.5 py-2.5 active:opacity-80 ${
+            nothingChosen ? 'bg-hawk-gold' : 'bg-card'
+          }`}
         >
-          <Feather name={choosing && !nothingChosen ? 'x' : 'award'} size={15} color={ui.muted} />
-          <Text className="flex-1 px-2.5 text-sm font-semibold text-ink" numberOfLines={1}>
+          {/* Gold while nothing is chosen. This card is the only thing on the
+              screen worth doing at that moment, and as a bg-card chip among
+              bg-card rows it read as one more row rather than the way in. Once
+              a race IS chosen it steps back to bg-card: it has become a label
+              for what is on screen, not a call to act. Near-black ink on the
+              gold, the same pairing the compliance banner uses — white would
+              sit near 1.9:1 and fail. */}
+          <Feather
+            name={choosing && !nothingChosen ? 'x' : 'award'}
+            size={15}
+            color={nothingChosen ? '#2b1f00' : ui.muted}
+          />
+          <Text
+            className={`flex-1 px-2.5 text-sm font-semibold ${
+              nothingChosen ? 'text-[#2b1f00]' : 'text-ink'
+            }`}
+            numberOfLines={1}
+          >
             {choosing && !nothingChosen
               ? 'Keep the current race'
               : wholeContest && contest
@@ -1259,14 +1277,15 @@ export default function Results() {
             under the badge icon rather than out at the screen margin — it is a
             caption for the card above it, and hanging further left read as a
             separate, unrelated line. */}
+        {/* Nothing here until there is something to say about a chosen race.
+            With nothing chosen this line read "Nothing is being ranked yet",
+            which announced an absence nobody asked about — the screen's job at
+            that moment is to get a race picked, and the gold card above is what
+            does that. An empty state is only worth drawing when the reader
+            expected content; here they have not chosen any yet. */}
+        {nothingChosen ? null : (
         <Text className="pl-3.5 pt-1.5 text-sm text-muted" numberOfLines={1}>
-          {contest
-            ? `${unitsReporting} unit(s) reporting`
-            : race
-              ? 'Not covered yet'
-              : nothingChosen
-                ? 'Nothing is being ranked yet'
-                : 'Loading…'}
+          {contest ? `${unitsReporting} unit(s) reporting` : race ? 'Not covered yet' : 'Loading…'}
           {contest && updatedAt
             ? ` · updated ${new Date(updatedAt).toLocaleTimeString([], {
                 hour: '2-digit',
@@ -1275,13 +1294,17 @@ export default function Results() {
               })}`
             : ''}
         </Text>
+        )}
       </View>
 
       {choosing ? (
         <ScrollView contentContainerClassName="px-4 pb-8 pt-1">
-          <Text className="pb-3 text-sm text-muted">
-            {pickSeat ? 'Narrow to one seat.' : 'Pick one to see its board.'}
-          </Text>
+          {/* "Pick one to see its board." is gone: the card directly above
+              already says "Choose an election type", and repeating the
+              instruction one line below it just moved the reader's eye twice
+              to learn the same thing. The seat path keeps its line because it
+              says something the card does not. */}
+          {pickSeat ? <Text className="pb-3 text-sm text-muted">Narrow to one seat.</Text> : null}
 
           {pickSeat ? (
             <>

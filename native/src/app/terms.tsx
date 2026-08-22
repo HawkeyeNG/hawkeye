@@ -214,7 +214,11 @@ export default function Terms() {
           </Pressable>
           {/* text-lg: the page's only title now. Not ScreenHeader's text-xl,
               because this header also holds share, close and jump chips. */}
-          <Text numberOfLines={1} className="flex-1 px-3 text-lg font-bold text-ink">
+          <Text
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.2}
+            className="flex-1 px-3 text-lg font-bold text-ink"
+          >
             {title}
           </Text>
           <Pressable
@@ -266,7 +270,8 @@ export default function Terms() {
         onScroll={onScroll}
         contentContainerClassName="px-4 pb-12 pt-3"
       >
-        <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-good-ink">
+        {/* pb-4 — see page.tsx: replaces the gap the hero title used to make. */}
+        <Text className="pb-4 text-[11px] font-bold uppercase tracking-[1.5px] text-good-ink">
           {kicker}
         </Text>
 

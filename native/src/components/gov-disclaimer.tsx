@@ -4,6 +4,21 @@ import { Linking, Pressable, Text, View } from 'react-native';
 import { ModalCard } from '@/components/modal-card';
 
 /**
+ * THIS IS THE ONLY COMPONENT IN THE APP THAT UNDERLINES TEXT — checked, and the
+ * reason a rendering fault here reads as "every hyperlink in the app is
+ * choppy": the banner is mounted on results, races, integrity, the reports log
+ * and More, so one bad rule appears almost everywhere. Content links elsewhere
+ * are rows with an external-link glyph, and race sources are bold green; none
+ * of them draw a rule.
+ *
+ * Every underlined Text here therefore carries explicit, generous leading. iOS
+ * draws the rule a pixel or two below the baseline, and a line box only a
+ * little taller than the font leaves nothing for it to sit in — so it lands on
+ * the edge and comes out clipped, present under some glyphs and missing under
+ * others. Android is unaffected. If a rule ever needs to be added elsewhere,
+ * give it the same headroom, or draw it as a border on a View and stop relying
+ * on textDecorationLine altogether.
+ *
  * Google Play "Misleading Claims" compliance (Capacitor app rejection,
  * 2026-08-03): an app presenting government-related information must state
  * in-app that it does not represent the government entity and link the official
@@ -57,10 +72,10 @@ export function GovDisclaimer() {
         </Text>
         <View className="flex-row gap-4">
           <Pressable onPress={() => Linking.openURL('https://www.inecnigeria.org')}>
-            <Text className="text-sm font-bold text-good-ink underline">inecnigeria.org</Text>
+            <Text className="text-sm font-bold leading-6 text-good-ink underline">inecnigeria.org</Text>
           </Pressable>
           <Pressable onPress={() => Linking.openURL('https://www.inecelectionresults.ng')}>
-            <Text className="text-sm font-bold text-good-ink underline">inecelectionresults.ng</Text>
+            <Text className="text-sm font-bold leading-6 text-good-ink underline">inecelectionresults.ng</Text>
           </Pressable>
         </View>
       </ModalCard>

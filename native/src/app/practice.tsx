@@ -43,7 +43,9 @@ import { maybeAskForReview } from '@/lib/review';
 import { useUi } from '@/lib/theme';
 import { regFetch } from '@/lib/register-fetch';
 
-const BASE = 'https://hawkeye.com.ng';
+// Overridable so the app can run in a desktop browser against a local
+// backend; production blocks cross-origin calls. See lib/api.ts.
+const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
 
 type PracticeConfig = {

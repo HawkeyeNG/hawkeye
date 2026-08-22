@@ -19,7 +19,9 @@ import { useUi } from '@/lib/theme';
  * It returns the row shape `/api/register/units` already returns, so each
  * screen's existing select handler takes it unchanged.
  */
-const BASE = 'https://hawkeye.com.ng';
+// Overridable so the app can run in a desktop browser against a local
+// backend; production blocks cross-origin calls. See lib/api.ts.
+const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
 /** Only the fields this component itself renders; callers keep their own types.
  *  The coordinate columns are here because the row states whether the unit's

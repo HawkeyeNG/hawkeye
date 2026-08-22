@@ -50,6 +50,51 @@ if (config.originAuthSecret) {
 }
 
 app.use(securityHeaders);
+/**
+ * MOVED-UP NOTE: this block sits ABOVE every route on purpose. It was first
+ * placed down beside the static handlers, where the OPTIONS preflight passed
+ * (nothing else answers OPTIONS) while ordinary GETs did not — the API routers
+ * had already replied and returned before the middleware ran. A CORS check that
+ * passes its preflight and then fails every real request is the worst version
+ * of this bug, because the preflight is what people test.
+ *
+ * DEV-ONLY CORS, for running the native app in a desktop browser.
+ *
+ * `npm run web` in native/ serves the real React Native app through
+ * react-native-web at localhost:8081. On a phone the app's API calls are not
+ * browser requests and the same-origin policy does not apply; through
+ * react-native-web they are, and every call to the API is cross-origin.
+ *
+ * With no Access-Control-Allow-Origin the browser blocks the response before
+ * any app code sees it, and the app can only report "network error, try again"
+ * — indistinguishable from the connection actually being down, which is exactly
+ * how this presented. (Production also answers the OPTIONS preflight with a
+ * 404, so the request never even reaches a handler.)
+ *
+ * LOCALHOST ONLY, AND NOT IN PRODUCTION. Widening CORS on a public
+ * election-integrity API is not something to do for developer convenience, so
+ * this is gated twice: the origin must be a loopback address, and the process
+ * must not be running in production. A deployed instance therefore behaves
+ * exactly as it does today.
+ */
+const LOOPBACK_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
+if (config.env !== 'production') {
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && LOOPBACK_ORIGIN.test(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Headers', 'content-type, authorization, x-observer-token, x-admin-pass');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+      // Terminate the preflight here: falling through reaches the SPA catch-all,
+      // which answers 404 and fails the browser's check.
+      if (req.method === 'OPTIONS') return res.sendStatus(204);
+    }
+    return next();
+  });
+}
+
 app.use(express.json({ limit: '100kb' }));
 
 // Rate limits — CGNAT-aware: Nigerian carriers put THOUSANDS of users behind one

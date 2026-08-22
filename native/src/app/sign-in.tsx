@@ -24,7 +24,7 @@ import {
   verifyOtp,
   type RegisterResult,
 } from '@/lib/auth';
-import { BRAND, api } from '@/lib/api';
+import { BASE, BRAND, api } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
 type Channel = 'whatsapp' | 'telegram' | 'sms';
@@ -112,7 +112,10 @@ export default function SignIn() {
   // Warm the server while the user is still typing: the shared host parks the
   // Node worker when idle and the first request pays a ~5s boot. Fire-and-forget.
   useEffect(() => {
-    fetch('https://hawkeye.com.ng/api/health').catch(() => {});
+    // Through BASE, not hardcoded: this was the one call that still went to
+    // production after every other base was made overridable, so running in a
+    // browser warmed the wrong server and failed CORS on the way.
+    fetch(`${BASE}/api/health`).catch(() => {});
   }, []);
 
   const sentLine = (r: RegisterResult) => {

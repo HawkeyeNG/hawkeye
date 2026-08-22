@@ -14,7 +14,9 @@ import { bootstrapAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import { queueJob, type JobFile } from '@/lib/outbox';
 
-const BASE = 'https://hawkeye.com.ng';
+// Overridable so the app can run in a desktop browser against a local
+// backend; production blocks cross-origin calls. See lib/api.ts.
+const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const K_TOKEN = 'hawkeye.auth.token';
 
 export type Vote = { party: string; count: number };

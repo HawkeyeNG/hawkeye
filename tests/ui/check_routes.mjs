@@ -78,17 +78,35 @@ const text = () =>
  * rendering, and cost a false alarm. A cold bundle is slow once; a genuinely
  * broken screen is broken twice.
  */
-async function load(route) {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 90000 });
-    await page.waitForLoadState('networkidle').catch(() => {});
-    await page.waitForTimeout(2500);
-    const body = await text();
-    if (body.replace(/\|/g, '').trim().length >= 40 && !/^\s*Bundling/i.test(body)) return body;
-    if (attempt === 0) await page.waitForTimeout(4000);
-    else return body;
+const READY = (body) =>
+  body.replace(/\|/g, '').trim().length >= 40 && !/^\s*Bundling/i.test(body);
+
+/**
+ * Wait for the screen to actually render, rather than for a fixed number of
+ * seconds.
+ *
+ * Metro bundles each route on first request, and a cold one regularly takes
+ * longer than any timeout worth hard-coding — the previous version waited 2.5s,
+ * retried once, and reported "renders (almost) nothing" for a screen that was
+ * merely still compiling. That is a checker inventing a bug, which is worse
+ * than no checker: it sent me hunting through a file the screen does not even
+ * import.
+ *
+ * So: poll until the body stops saying "Bundling…" and has real content, up to
+ * a deadline generous enough for a cold bundle. A screen that is genuinely
+ * broken still fails — it just takes the full wait to say so.
+ */
+async function load(route, deadlineMs = 60000) {
+  await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 90000 });
+  await page.waitForLoadState('networkidle').catch(() => {});
+  const until = Date.now() + deadlineMs;
+  let body = '';
+  while (Date.now() < until) {
+    await page.waitForTimeout(1500);
+    body = await text();
+    if (READY(body)) return body;
   }
-  return '';
+  return body;
 }
 
 let failures = 0;

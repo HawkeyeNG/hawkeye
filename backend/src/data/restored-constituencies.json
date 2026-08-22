@@ -1,0 +1,32 @@
+{
+  "_source": {
+    "pulledAt": "2026-08-22",
+    "releases": [
+      {
+        "date": "2026-06-10",
+        "title": "CONDUCT OF PARTY PRIMARIES IN THE RESTORED CONSTITUENCIES IN BENUE, DELTA, JIGAWA AND KOGI STATES FOR THE 2027 GENERAL ELECTION",
+        "url": "https://www.inecnigeria.org/conduct-of-party-primaries-in-the-restored-constituencies-in-benue-delta-jigawa-and-kogi-states-for-the-2027-general-election/",
+        "image": "https://www.inecnigeria.org/wp-content/uploads/New-Constituencies-.jpeg",
+        "primaries": "2026-06-16/2026-06-25"
+      },
+      {
+        "date": "2026-08-14",
+        "title": "RESTORATION OF CONSTITUENCIES IN DELTA AND KOGI STATES",
+        "url": "https://www.inecnigeria.org/restoration-of-constituencies-in-delta-and-kogi-states/",
+        "image": "https://www.inecnigeria.org/wp-content/uploads/WhatsApp-Image-2026-08-14-at-16.05.31.jpeg",
+        "primaries": "2026-08-21/2026-08-25"
+      }
+    ],
+    "note": "Both releases are PHOTOGRAPHS of a press statement with no text layer; these entries were transcribed by reading the images. Restored by court judgment, under the 1999 Constitution (as amended) and the Electoral Act 2026. All are STATE House of Assembly constituencies.",
+    "whenTheyVote": "The 2027 general election. Both releases say the already-published revised 2027 timetable applies to the restored constituencies. The 14 August release's sentence 'Elections into these constituencies have been fixed for 19th September, 2026' sits immediately after the list of BYE-ELECTION constituencies and refers to those; INEC's own Upcoming Elections table lists only the four bye-elections for 19 September, not these. Flagged rather than assumed — confirm before scheduling anything against it.",
+    "hawkeyeGap": "As at 2026-08-22 NONE of these 26 appear in Hawkeye's seat data (native/src/lib/races.ts, app/*.json). Verified with a control of 9 known-good seats, all found. The SHA seat total of 993 in races.ts is therefore stale by 26."
+  },
+  "restored": [
+    { "state": "Benue", "announced": "2026-06-10", "constituencies": ["Nyamatsor", "Ukum Afia", "Konshisha III (Shangev-Tiev)", "Makurdi III (South East)", "Gboko III"] },
+    { "state": "Delta", "announced": "2026-06-10", "constituencies": ["Aniocha North II", "Ika North East II", "Sapele II", "Ethiope West II", "Warri South West II", "Warri North II"] },
+    { "state": "Jigawa", "announced": "2026-06-10", "constituencies": ["Aujara"] },
+    { "state": "Kogi", "announced": "2026-06-10", "constituencies": ["Adavi East", "Eika", "Ajaokuta North", "Bassa-Komu", "Dekina Town & District", "Ijumu II", "Kabba-Bunu II", "Koton Karfe II", "Igalaogwa", "Ogugu"] },
+    { "state": "Delta", "announced": "2026-08-14", "constituencies": ["Abraka", "Isoko North II", "Ughelli South II"] },
+    { "state": "Kogi", "announced": "2026-08-14", "constituencies": ["Yagba West II"] }
+  ]
+}

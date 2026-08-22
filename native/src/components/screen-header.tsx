@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { type ReactNode } from 'react';
 import { Animated, Image, Pressable, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTopInset } from '@/lib/safe-area';
 
 import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
@@ -46,7 +46,9 @@ export function ScreenHeader({
   rightSlot?: ReactNode;
 }) {
   const ui = useUi();
-  const insets = useSafeAreaInsets();
+  // Falls back to the startup window metrics while the measured value is
+  // still zero, so the row never paints over the clock on a first mount.
+  const topInset = useTopInset();
   const rightKind = right ?? (onClose ? 'close' : 'none');
   return (
     <>
@@ -54,7 +56,7 @@ export function ScreenHeader({
           between the sliding row and the system clock. */}
       <View
         className="bg-surface"
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, zIndex: 11 }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: topInset, zIndex: 11 }}
       />
       {/* Explicit height, and the hairline on the INNER row.
           With the border on this outer View and no height set, Yoga sized it
@@ -68,7 +70,7 @@ export function ScreenHeader({
         className="bg-surface"
         style={{
           position: 'absolute',
-          top: insets.top,
+          top: topInset,
           left: 0,
           right: 0,
           height: HEADER_CONTENT_H,

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Animated, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTopInset } from '@/lib/safe-area';
 
 /** Height of the header row under the status-bar inset. Shared with ScreenHeader
  *  so the value the content pads by always matches the value the header renders. */
@@ -79,8 +79,7 @@ function clampToRange(scrollY: Animated.Value, maxScroll: number) {
  * slide runs off the JS thread — smooth even while the list is busy.
  */
 export function useHideOnScroll() {
-  const insets = useSafeAreaInsets();
-  const headerH = insets.top + HEADER_CONTENT_H;
+  const headerH = useTopInset() + HEADER_CONTENT_H;
   const scrollY = useRef(new Animated.Value(0)).current;
   const { maxScroll, note } = useScrollRange();
   const { translateY, onScroll } = useMemo(
@@ -119,8 +118,7 @@ export function useHideOnScroll() {
  * thread — fine for a header slide). Same return shape; attach to a FlashList.
  */
 export function useHideOnScrollList() {
-  const insets = useSafeAreaInsets();
-  const headerH = insets.top + HEADER_CONTENT_H;
+  const headerH = useTopInset() + HEADER_CONTENT_H;
   const scrollY = useRef(new Animated.Value(0)).current;
   const translateY = useMemo(
     () =>

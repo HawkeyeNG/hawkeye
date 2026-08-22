@@ -124,11 +124,14 @@ export type ScanOutcome =
  * matter what we pass.
  *
  * What we can do is stop the extra pages existing. `maxNumDocuments` was
- * Android-only — the stock iOS bridge reads `responseType` and
- * `croppedImageQuality` and drops the rest on the floor, so every page VisionKit
- * captured was written to disk and returned, and everything after the first was
- * silently discarded here. patch-package now passes it through and caps the
- * write loop, matching what setPageLimit() already did on Android.
+ * Android-only, and making it work on iOS took THREE files, which is why the
+ * first attempt at this was dead code: DocumentScanner.mm builds the options
+ * dictionary by hand and copied only `responseType` and `croppedImageQuality`
+ * out of the codegen struct, so patching the Swift below it changed nothing at
+ * all. The patch now covers the .mm bridge, DocScanner.swift's page loop, and
+ * the startScan overload between them — matching what setPageLimit() has always
+ * done on Android. If this ever regresses, check the .mm first: it is the hop
+ * nobody expects.
  *
  * If a second page still arrives — an older build, or a future module version —
  * the first is the one kept: it is the sheet the observer framed and reviewed

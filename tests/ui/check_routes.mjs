@@ -70,14 +70,32 @@ const text = () =>
     return out.join(' | ');
   });
 
+/**
+ * Load once, and load AGAIN if the first attempt came back empty.
+ *
+ * The first route hit after a code change catches Metro mid-rebuild and can
+ * return a blank body — which looked exactly like a screen that had stopped
+ * rendering, and cost a false alarm. A cold bundle is slow once; a genuinely
+ * broken screen is broken twice.
+ */
+async function load(route) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.waitForLoadState('networkidle').catch(() => {});
+    await page.waitForTimeout(2500);
+    const body = await text();
+    if (body.replace(/\|/g, '').trim().length >= 40 && !/^\s*Bundling/i.test(body)) return body;
+    if (attempt === 0) await page.waitForTimeout(4000);
+    else return body;
+  }
+  return '';
+}
+
 let failures = 0;
 for (const [route, needle] of ROUTES) {
   let body = '';
   try {
-    await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 90000 });
-    await page.waitForLoadState('networkidle').catch(() => {});
-    await page.waitForTimeout(2500);
-    body = await text();
+    body = await load(route);
   } catch (e) {
     console.log(`FAIL  ${route}  (${e.message.split('\n')[0].slice(0, 60)})`);
     failures++;

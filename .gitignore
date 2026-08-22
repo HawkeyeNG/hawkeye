@@ -101,3 +101,12 @@ audits/*/labelled_20.json
 # is not an account credential but is still a live key to a running machine, and
 # this repo is public.
 backend/scripts/pod_env.sh
+
+# iOS signing material. credentials.json holds the .p12 password in clear text
+# (EAS defines the format), and this repo is public.
+credentials.json
+native/credentials.json
+*.p12
+*.mobileprovision
+*.p8
+*.certSigningRequest

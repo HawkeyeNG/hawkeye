@@ -27,14 +27,16 @@
       "autoIncrement": true,
       "ios": {
         "resourceClass": "m-medium"
-      }
+      },
+      "credentialsSource": "local"
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "appleId": "dev.inixien@gmail.com",
-        "language": "en-US"
+        "language": "en-US",
+        "ascAppId": "6804218478",
+        "appleTeamId": "G99KD9RW94"
       }
     }
   }

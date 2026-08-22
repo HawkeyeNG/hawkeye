@@ -56,18 +56,30 @@ export function ScreenHeader({
         className="bg-surface"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, zIndex: 11 }}
       />
+      {/* Explicit height, and the hairline on the INNER row.
+          With the border on this outer View and no height set, Yoga sized it
+          52 + 1 = 53 while the slide travels exactly 52 — so the hairline stopped
+          one pixel below the pinned strip and stayed there, drawn over the
+          scrolling content, for as long as the header was hidden. Before the
+          split the same pixel existed but landed inside the status bar where
+          nothing showed it. Pinning the height also makes the headerH callers
+          pad by exact rather than one short. */}
       <Animated.View
-        className="border-b border-line bg-surface"
+        className="bg-surface"
         style={{
           position: 'absolute',
           top: insets.top,
           left: 0,
           right: 0,
+          height: HEADER_CONTENT_H,
           zIndex: 10,
           transform: translateY ? [{ translateY }] : [],
         }}
       >
-        <View className="flex-row items-center px-4" style={{ height: HEADER_CONTENT_H }}>
+        <View
+          className="flex-row items-center border-b border-line px-4"
+          style={{ height: HEADER_CONTENT_H }}
+        >
           <Pressable
             onPress={() => router.navigate('/(tabs)' as never)}
             hitSlop={8}

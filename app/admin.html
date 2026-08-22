@@ -78,6 +78,27 @@
     .lab .chip.warn { color: var(--danger); border-color: currentColor; }
     .stream-ok { font-size: 0.78rem; color: var(--muted); }
     .stream-warn { font-size: 0.78rem; font-weight: 700; color: var(--danger); }
+    /* ---- push ---- */
+    .push-audience { font-weight: 700; padding: 10px 14px; border-radius: 10px;
+                     background: var(--surface, #eef3f0); margin: 10px 0 4px; }
+    .push-presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
+    .push-presets .preset { width: auto; margin: 0; padding: 7px 12px; font-size: 0.84rem;
+                            background: transparent; color: var(--link);
+                            border: 1px solid var(--line, #d7ded9); font-weight: 600; }
+    /* The preview is the point of the compose pane: a notification is read on a
+       lock screen in one glance, and copy that looks fine in a textarea is
+       routinely truncated there. Showing it at roughly the real width is the
+       only way to notice before sending. */
+    .push-preview { max-width: 380px; margin: 16px 0; padding: 12px 14px; border-radius: 14px;
+                    background: #1c1c1e; color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+    .push-preview .pp-app { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+                            opacity: 0.6; margin-bottom: 3px; }
+    .push-preview .pp-title { font-weight: 700; font-size: 0.92rem; }
+    .push-preview .pp-body { font-size: 0.86rem; opacity: 0.85; margin-top: 2px;
+                             display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+                             overflow: hidden; }
+    .btn-danger { background: var(--danger, #b3261e); color: #fff; }
+    .btn-danger:disabled { opacity: 0.45; cursor: not-allowed; }
     label.seen { display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; color: var(--muted); }
     label.seen select { width: auto; margin: 0; padding: 5px 8px; font-size: 0.86rem; }
     details.seen-wrap { margin-top: 16px; border-top: 1px solid var(--line, #e3e8e4); padding-top: 10px; }
@@ -131,7 +152,7 @@
 
     <section id="console" hidden>
       <div class="panelbar" id="panelbar">
-        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="social">Social</span><span class="tab" data-p="register">Register</span>
+        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="push">Push</span><span class="tab" data-p="social">Social</span><span class="tab" data-p="register">Register</span>
         <span class="tab" data-p="_logout" style="margin-left:auto">Lock 🔒</span>
       </div>
       <div class="panel" data-p="reach">
@@ -178,6 +199,47 @@
       </div>
       <p class="meta" id="lab-summary"></p>
       <div id="lab-list"><p class="empty">Loading…</p></div>
+    </div><div class="panel" data-p="push" hidden>
+    <h1>Send a Push</h1>
+    <p class="hint">Goes to <strong>every registered device</strong> — Android (FCM) and browser
+    (Web Push) together. <strong>A push cannot be recalled.</strong> The dry run below is not
+    optional: the Send button stays disabled until you have run one, so the audience you are
+    about to message is a number you have actually seen.</p>
+
+    <div class="push-audience" id="push-audience">Checking who is reachable…</div>
+
+    <label for="push-title">Title</label>
+    <input id="push-title" maxlength="120" placeholder="Update Hawkeye from the Play Store" />
+    <p class="hint" id="push-title-count"></p>
+
+    <label for="push-body">Message</label>
+    <textarea id="push-body" rows="4" maxlength="400"
+      placeholder="The scanner is fixed in the latest version. Update from Google Play to get it."></textarea>
+    <p class="hint" id="push-body-count"></p>
+
+    <label for="push-url">Opens (optional)</label>
+    <input id="push-url" maxlength="500"
+      placeholder="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer" />
+    <p class="hint">Must be a hawkeye.com.ng or play.google.com link. A push that opens anywhere
+    else is a phishing vector pointed at the people who trust this app most, so the server
+    refuses it.</p>
+
+    <div class="push-presets">
+      <button type="button" class="preset" data-preset="play">Play Store migration</button>
+      <button type="button" class="preset" data-preset="scanner">Scanner fix</button>
+    </div>
+
+    <div class="push-preview" id="push-preview" hidden>
+      <div class="pp-app">Hawkeye</div>
+      <div class="pp-title"></div>
+      <div class="pp-body"></div>
+    </div>
+
+    <div class="row">
+      <button type="button" id="push-dry">Dry run — count only</button>
+      <button type="button" id="push-send" class="btn-danger" disabled>Send for real</button>
+    </div>
+    <p class="out" id="push-out"></p>
     </div><div class="panel" data-p="social" hidden>
     <h1>Post to All Channels</h1>
     <p class="hint">Owner-only. One caption + one public media URL fans out to TikTok, the Facebook Page,
@@ -680,6 +742,130 @@
       loadLabels();
     };
 
+    // ---- push broadcast -----------------------------------------------------
+    //
+    // THE DRY RUN IS A GATE, NOT A CONVENIENCE. Send stays disabled until a dry
+    // run has returned an audience for the CURRENT copy, and any edit disables
+    // it again. A push cannot be recalled, so the number you are about to
+    // message should be one you have actually looked at — and the guard has to
+    // live here AND on the server, because a check that exists only in a form
+    // is not a check.
+    const PRESETS = {
+      play: {
+        title: 'Hawkeye is now on Google Play',
+        body: 'Install the Play Store version — it is half the size, updates itself, and opens '
+          + 'faster. Your account and saved units come with you.',
+        url: 'https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer',
+      },
+      scanner: {
+        title: 'Update Hawkeye — scanner fix',
+        body: 'The sheet scanner is fixed in the latest version. Update from Google Play, then '
+          + 'try Report again.',
+        url: 'https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer',
+      },
+    };
+
+    let pushDryFor = null;   // the exact copy the last dry run was for
+
+    const pushCopy = () => ({
+      title: $('push-title').value.trim(),
+      body: $('push-body').value.trim(),
+      url: $('push-url').value.trim(),
+    });
+    const pushKey = (c) => `${c.title} ${c.body} ${c.url}`;
+
+    function pushRefresh() {
+      const c = pushCopy();
+      const pv = $('push-preview');
+      if (c.title || c.body) {
+        pv.hidden = false;
+        pv.querySelector('.pp-title').textContent = c.title || '(no title)';
+        pv.querySelector('.pp-body').textContent = c.body || '';
+      } else pv.hidden = true;
+
+      $('push-title-count').textContent = `${c.title.length}/120`
+        + (c.title.length > 65 ? ' — Android truncates around 65 on a lock screen' : '');
+      $('push-body-count').textContent = `${c.body.length}/400`
+        + (c.body.length > 240 ? ' — long bodies are collapsed until expanded' : '');
+
+      // Any edit invalidates the dry run: the audience was counted for other copy.
+      const stale = pushDryFor !== pushKey(c);
+      $('push-send').disabled = stale || !c.title || !c.body;
+      $('push-send').textContent = stale ? 'Dry run first' : 'Send for real';
+    }
+
+    async function pushAudience() {
+      try {
+        const r = await fetch('/api/push/audience', { headers: hdr() });
+        if (r.status === 401) return logout();
+        const j = await r.json();
+        $('push-audience').textContent = j.audience
+          ? `${j.audience} device(s) reachable — ${j.android} Android, ${j.web} browser`
+          : 'No devices are registered for push yet — a send would reach nobody.';
+      } catch { $('push-audience').textContent = 'Could not read the audience.'; }
+    }
+
+    async function pushPost(dryRun) {
+      const c = pushCopy();
+      if (!c.title || !c.body) { $('push-out').textContent = 'Title and message are both required.'; return; }
+      const audienceNow = Number(($('push-audience').textContent.match(/^(\d+)/) || [])[1] || 0);
+      if (!dryRun) {
+        // Typed confirmation, not a click. The audience is in the prompt so the
+        // last thing seen before sending is how many people this reaches.
+        const typed = prompt(
+          `Send to ${audienceNow} device(s)? This cannot be undone.\n\n`
+          + `"${c.title}"\n${c.body}\n\nType SEND to confirm.`,
+        );
+        if (typed !== 'SEND') { $('push-out').textContent = 'Not sent.'; return; }
+      }
+      $('push-out').textContent = dryRun ? 'Counting…' : 'Sending…';
+      try {
+        const r = await fetch('/api/push/broadcast', {
+          method: 'POST',
+          headers: { ...hdr(), 'content-type': 'application/json' },
+          body: JSON.stringify({
+            ...c, dryRun, confirm: dryRun ? undefined : 'SEND',
+            // State the audience we believe we are addressing. The server
+            // refuses if reality is larger — that is what stops a message
+            // meant for 19 observers reaching 19,000 people.
+            maxAudience: dryRun ? 0 : Math.max(audienceNow, 1),
+          }),
+        });
+        if (r.status === 401) return logout();
+        const j = await r.json();
+        if (!r.ok) { $('push-out').textContent = `Refused: ${j.error || r.status}`; return; }
+        if (j.dryRun) {
+          pushDryFor = pushKey(c);
+          $('push-out').textContent =
+            `Dry run — nothing sent. Would reach ${j.audience} device(s) (${j.android} Android, ${j.web} browser).`;
+          pushRefresh();
+        } else {
+          pushDryFor = null;
+          $('push-out').textContent = `Sent to ${j.sent} of ${j.audience}. ${j.failed} failed.`
+            + (j.failed ? ' Failures are usually stale tokens from uninstalled apps.' : '');
+          pushRefresh();
+          pushAudience();
+        }
+      } catch (e) { $('push-out').textContent = `Failed: ${e.message}`; }
+    }
+
+    for (const id of ['push-title', 'push-body', 'push-url']) {
+      $(id).addEventListener('input', pushRefresh);
+    }
+    document.querySelectorAll('.push-presets .preset').forEach((b) => {
+      b.addEventListener('click', () => {
+        const p = PRESETS[b.dataset.preset];
+        if (!p) return;
+        $('push-title').value = p.title;
+        $('push-body').value = p.body;
+        $('push-url').value = p.url;
+        pushDryFor = null;
+        pushRefresh();
+      });
+    });
+    $('push-dry').addEventListener('click', () => pushPost(true));
+    $('push-send').addEventListener('click', () => pushPost(false));
+
     $('set-tabs').addEventListener('click', (e) => {
       const t = e.target.closest('.tab'); if (!t) return;
       labSet = t.dataset.set;
@@ -696,7 +882,10 @@
       load();
     });
 
-    if (secret) { $('login').hidden = true; $('console').hidden = false; load(); loadLabels(); loadStats(); }
+    if (secret) {
+      $('login').hidden = true; $('console').hidden = false;
+      load(); loadLabels(); loadStats(); pushAudience(); pushRefresh();
+    }
   
   })();
   </script>

@@ -33,7 +33,9 @@ import { getIdentity } from '@/lib/identity';
 // made at runtime, never at module-evaluation time, so the cycle resolves.
 import { filePart, remintSession } from '@/lib/submit';
 
-const BASE = 'https://hawkeye.com.ng';
+// Overridable so the app can run in a desktop browser against a local
+// backend; production blocks cross-origin calls. See lib/api.ts.
+const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const K_TOKEN = 'hawkeye.auth.token';
 const K_JOBS = 'hawkeye.outbox.jobs.v1';
 const K_DROPPED = 'hawkeye.outbox.dropped.v1';

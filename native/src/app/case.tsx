@@ -25,7 +25,9 @@ import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 
-const BASE = 'https://hawkeye.com.ng';
+// Overridable so the app can run in a desktop browser against a local
+// backend; production blocks cross-origin calls. See lib/api.ts.
+const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
 type Flag = {
   id: number;

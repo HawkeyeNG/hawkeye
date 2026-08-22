@@ -3,7 +3,9 @@
  * the website reads. Fetched once per app run and memoised: the data changes on
  * the order of weeks, and three screens want it.
  */
-const BASE = 'https://hawkeye.com.ng';
+// Same override as lib/api.ts, and for the same reason: in a browser these two
+// fetches are cross-origin and production blocks them. See the note there.
+const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
 export type Candidate = {
   name: string;

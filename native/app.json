@@ -12,13 +12,13 @@
       "bundleIdentifier": "ng.com.hawkeye.observer",
       "supportsTablet": false,
       "infoPlist": {
-        "NSCameraUsageDescription": "Hawkeye uses the camera to photograph the official result sheet and the polling unit itself — the evidence behind every report.",
+        "NSCameraUsageDescription": "Hawkeye uses the camera to photograph the official result sheet and the polling unit itself \u2014 the evidence behind every report.",
         "NSMicrophoneUsageDescription": "Hawkeye uses the microphone only when you record a video of an incident, so the recording has sound.",
         "NSLocationWhenInUseUsageDescription": "Hawkeye records a GPS fix when you capture evidence or map a polling unit, to prove reports come from where they claim.",
         "NSPhotoLibraryUsageDescription": "Hawkeye lets you attach existing photos or videos from your library to an incident report.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "1",
+      "buildNumber": "3",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
           {
@@ -103,7 +103,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Hawkeye uses the camera to photograph the official result sheet and the polling unit itself — the evidence behind every report.",
+          "cameraPermission": "Hawkeye uses the camera to photograph the official result sheet and the polling unit itself \u2014 the evidence behind every report.",
           "microphonePermission": "Hawkeye uses the microphone only when you record a video of an incident, so the recording has sound.",
           "recordAudioAndroid": true
         }
@@ -123,6 +123,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "51397c6b-30ae-4bfb-8c34-589e5ff3a76d"
+      }
+    },
+    "owner": "elrio91"
   }
 }

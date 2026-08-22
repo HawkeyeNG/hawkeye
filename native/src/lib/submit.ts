@@ -8,7 +8,7 @@
  */
 import { sha256 } from '@noble/hashes/sha2.js';
 import { File } from 'expo-file-system';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '@/lib/secure-store';
 
 import { bootstrapAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';

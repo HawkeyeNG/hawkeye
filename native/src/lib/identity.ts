@@ -12,7 +12,7 @@
  */
 import { p256 } from '@noble/curves/nist.js';
 import * as Crypto from 'expo-crypto';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '@/lib/secure-store';
 
 const K_PRIV = 'hawkeye.identity.priv';
 const K_DEVICE = 'hawkeye.identity.device';

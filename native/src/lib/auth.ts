@@ -2,7 +2,7 @@
  * Auth — OTP sign-in against /api/observers, token in SecureStore, and a tiny
  * subscribable store so screens react to sign-in state without a state lib.
  */
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '@/lib/secure-store';
 import { useSyncExternalStore } from 'react';
 
 import { getIdentity } from '@/lib/identity';

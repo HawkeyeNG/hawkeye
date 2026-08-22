@@ -23,9 +23,14 @@ export function useHideOnScroll() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const { translateY, onScroll } = useMemo(
     () => ({
-      translateY: Animated.diffClamp(scrollY, 0, headerH).interpolate({
-        inputRange: [0, headerH],
-        outputRange: [0, -headerH],
+      // Travel is the ROW's height, not the whole header's. ScreenHeader pins an
+      // opaque strip over the status-bar inset and slides only the row beneath
+      // it, so the row is fully hidden once it has moved its own height —
+      // sliding the full insets.top + row would just push it further behind the
+      // strip and make the gesture feel heavier than it needs to be.
+      translateY: Animated.diffClamp(scrollY, 0, HEADER_CONTENT_H).interpolate({
+        inputRange: [0, HEADER_CONTENT_H],
+        outputRange: [0, -HEADER_CONTENT_H],
         extrapolate: 'clamp',
       }),
       onScroll: Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
@@ -49,9 +54,10 @@ export function useHideOnScrollList() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const translateY = useMemo(
     () =>
-      Animated.diffClamp(scrollY, 0, headerH).interpolate({
-        inputRange: [0, headerH],
-        outputRange: [0, -headerH],
+      // Same as above: the row's height, because only the row moves.
+      Animated.diffClamp(scrollY, 0, HEADER_CONTENT_H).interpolate({
+        inputRange: [0, HEADER_CONTENT_H],
+        outputRange: [0, -HEADER_CONTENT_H],
         extrapolate: 'clamp',
       }),
     [scrollY, headerH],

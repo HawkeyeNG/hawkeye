@@ -6,7 +6,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+  initialWindowMetrics,
+} from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AskFab } from '@/components/ask-fab';
@@ -69,9 +73,26 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Pro
  */
 export default function RootLayout() {
   return (
-    <ThemePrefProvider>
-      <RootShell />
-    </ThemePrefProvider>
+    /* initialMetrics is why a header no longer lands on the clock for one beat
+       when a screen first opens.
+
+       Without it, safe-area-context starts every provider at ZERO insets and
+       fills them in once the native side reports back. A screen mounting inside
+       that window paints its header at y = 0 — over the status bar — and then
+       jumps down. It showed on the report wizard because that screen is a
+       fullScreenModal: a modal gets its own window, so the measurement happens
+       again at presentation and the reader watches it happen. Reopen the same
+       screen and the values are cached, which is exactly the "it looked normal
+       the second time" report.
+
+       initialWindowMetrics is read synchronously at startup, so the first frame
+       is already correct. It sits here, above the theme provider, so every
+       screen and every modal inherits it. */
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <ThemePrefProvider>
+        <RootShell />
+      </ThemePrefProvider>
+    </SafeAreaProvider>
   );
 }
 

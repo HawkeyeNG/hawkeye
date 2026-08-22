@@ -1,0 +1,37 @@
+{
+  "_source": {
+    "url": "https://www.inecnigeria.org/upcoming-elections/",
+    "pulledAt": "2026-08-22",
+    "note": "Transcribed verbatim from INEC's Upcoming Elections table. Constituency spellings are INEC's own and have NOT yet been matched against the polling-unit register — do not join on these strings without checking them first. Nothing consumes this file yet; see docs and the contests.json note."
+  },
+  "byElections": [
+    {
+      "date": "2026-09-19",
+      "state": "Gombe",
+      "tier": "REP",
+      "constituencies": ["Gombe/Kwami/Funakaye Federal Constituency"],
+      "inecTitle": "GOMBE (Gombe/kwami/funakaye Federal Constituencies) Bye-Election"
+    },
+    {
+      "date": "2026-09-19",
+      "state": "Bauchi",
+      "tier": "SHA",
+      "constituencies": ["Disina State Constituency", "Sakwa State Constituency"],
+      "inecTitle": "BAUCHI (Disina and Sakwa State Constituencies) Bye-Election"
+    },
+    {
+      "date": "2026-09-19",
+      "state": "Delta",
+      "tier": "SHA",
+      "constituencies": ["Udu State Constituency"],
+      "inecTitle": "DELTA (Udu State Constituency) Bye-Election"
+    },
+    {
+      "date": "2026-09-19",
+      "state": "Kano",
+      "tier": "SHA",
+      "constituencies": ["Dawakin Kudu State Constituency"],
+      "inecTitle": "KANO (Dawakin kudu State Constituency) Bye-Election"
+    }
+  ]
+}

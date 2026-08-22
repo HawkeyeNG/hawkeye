@@ -39,6 +39,7 @@ import { api, BRAND, type Contest } from '@/lib/api';
 import { getIdentity } from '@/lib/identity';
 import { describeFixFailure, DISCOVERY_RADIUS_M, tryQuickFix, type Fix } from '@/lib/location';
 import { STATES, type Race, type StateName } from '@/lib/races';
+import { maybeAskForReview } from '@/lib/review';
 import { useUi } from '@/lib/theme';
 import { regFetch } from '@/lib/register-fetch';
 
@@ -808,6 +809,12 @@ export default function Practice() {
         setDone({ entryHash: body.entryHash, recordedAt: body.recordedAt });
         setStep('done');
         loadHistory();
+        // A finished practice run is the one moment in this app where someone
+        // has succeeded at something and is not standing in a polling station.
+        // `history` is the count BEFORE this run, so +1 counts the one just
+        // filed. Fails soft and shows nothing if the platform declines — see
+        // lib/review.ts.
+        void maybeAskForReview((history?.length ?? 0) + 1);
       } else {
         setLine(
           body.error === 'practice_closed'

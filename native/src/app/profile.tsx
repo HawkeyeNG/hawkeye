@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '@/lib/secure-store';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,

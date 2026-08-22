@@ -191,6 +191,69 @@ export async function sendToObserver(observerId, { title, body, data } = {}) {
   return sent;
 }
 
+/**
+ * Push to EVERY registered device. Use sparingly and deliberately.
+ *
+ * This is the only send in this file with no natural audience limit, so it is
+ * the only one that can annoy every user at once, and a push cannot be
+ * unsent. Three guards, all of which exist because the failure is
+ * irreversible:
+ *
+ *   `dryRun`   default TRUE. Counts and returns the audience without sending
+ *              anything. A broadcast should always be dry-run first, and making
+ *              that the default means forgetting to costs nothing.
+ *   `confirm`  a real send must pass the exact string 'SEND'. A truthy flag is
+ *              too easy to set by accident from a form or a stray default.
+ *   `maxAudience` refuses if the audience is larger than the caller expected.
+ *              The caller states the number it believes it is sending to; if
+ *              reality disagrees, nothing goes out.
+ *
+ * Returns { audience, sent, failed, dryRun } so a caller can report honestly
+ * rather than assuming success.
+ */
+export async function broadcast({
+  title, body, data, dryRun = true, confirm = null, maxAudience = 0,
+} = {}) {
+  if (!title || !body) throw new Error('broadcast needs a title and body');
+
+  const android = FCM_ENABLED
+    ? db.prepare(`
+        SELECT t.token FROM device_push_tokens t
+        LEFT JOIN observers o ON o.id = t.observer_id
+        WHERE t.platform = 'android' AND (o.id IS NULL OR o.status = 'active')`).all()
+    : [];
+  const web = VAPID_ENABLED
+    ? db.prepare(`
+        SELECT t.token FROM device_push_tokens t
+        LEFT JOIN observers o ON o.id = t.observer_id
+        WHERE t.platform = 'web' AND (o.id IS NULL OR o.status = 'active')`).all()
+    : [];
+  const audience = android.length + web.length;
+
+  if (dryRun) return { audience, android: android.length, web: web.length, sent: 0, failed: 0, dryRun: true };
+  if (confirm !== 'SEND') throw new Error("broadcast refused: pass confirm:'SEND' for a real send");
+  if (maxAudience && audience > maxAudience) {
+    throw new Error(`broadcast refused: audience ${audience} exceeds the expected maximum ${maxAudience}`);
+  }
+
+  let sent = 0;
+  let failed = 0;
+  if (android.length) {
+    try {
+      const at = await fcmAccessToken();
+      for (const r of android) {
+        // eslint-disable-next-line no-await-in-loop
+        if (await fcmSend(at, r.token, title, body, data).catch(() => false)) sent++; else failed++;
+      }
+    } catch { failed += android.length; }
+  }
+  for (const r of web) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await webPushSend(r.token, title, body, data)) sent++; else failed++;
+  }
+  return { audience, android: android.length, web: web.length, sent, failed, dryRun: false };
+}
+
 // Fan out a push to everyone who saved this polling unit (Android only for now).
 export async function pushUnitSavers(puCode, { title, body, data } = {}) {
   if (!FCM_ENABLED || !puCode) return 0;

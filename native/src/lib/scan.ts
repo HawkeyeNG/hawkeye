@@ -94,6 +94,19 @@ export const scannerAvailable = () => DocumentScanner != null;
 let proven = false;
 export const scannerProven = () => proven;
 
+/**
+ * Why the scanner last failed, if it did.
+ *
+ * Surfaced through the support screen rather than to the observer mid-report.
+ * The scanner is currently broken on the Play build — every attempt lands on
+ * Google's "Downloading updates to Google Play services…" dialog — and without
+ * this the app has no way to tell us whether the module is absent, the device
+ * is out of space, or Play services is too old to fetch it. Those need
+ * different fixes and look identical from the outside.
+ */
+let lastError: string | null = null;
+export const scannerLastError = () => lastError;
+
 export type ScanOutcome =
   | { ok: true; uri: string }
   | { ok: false; reason: 'cancelled' | 'unavailable' | 'failed' };
@@ -140,9 +153,17 @@ export async function scanSheet(): Promise<ScanOutcome> {
     if (!uri) return { ok: false, reason: 'failed' };
     proven = true; // the module is on the device and works; a later cancel is a real cancel
     return { ok: true, uri: uri.startsWith('file://') ? uri : `file://${uri}` };
-  } catch {
+  } catch (e) {
     // getStartScanIntent() rejected: the Play services module is absent or
     // could not be fetched — see the failure note at the top of this file.
+    //
+    // KEEP THE MESSAGE. This used to be a bare `catch {}`, which threw away the
+    // one piece of evidence that distinguishes "module not installed" from
+    // "device out of storage" from "Play services too old". The scanner is
+    // broken on the current Play build and the swallowed exception is exactly
+    // what would have said why. Recorded, not shown: an observer at a polling
+    // unit needs the plain camera, not a stack trace.
+    lastError = e instanceof Error ? e.message : String(e);
     return { ok: false, reason: 'failed' };
   }
 }

@@ -15,6 +15,7 @@ run "ec8a arithmetic verifier"  node scripts/test_ec8a_verify.mjs
 run "words parser"              node scripts/test_ec8a_words.mjs
 run "party-pass merge"          node scripts/test_party_merge.mjs
 run "training routes"           node scripts/test_training_routes.mjs
+run "push broadcast guards"     node scripts/test_push_broadcast.mjs
 run "fetchData (Lite)"          node scripts/test_fetchdata.mjs
 run "console scripts parse"     node scripts/check_html_scripts.mjs ../app/admin.html ../app/review.html
 
@@ -29,6 +30,7 @@ for _ in $(seq 1 20); do
 done
 if [ "$READY" = 1 ]; then
   run "audit files are not public" bash scripts/test_audit_privacy.sh
+  run "push endpoints are admin-gated" bash scripts/check_push_endpoints.sh
 else
   echo "    server never became ready — privacy test NOT RUN"
   tail -5 /tmp/hk_test_server.log

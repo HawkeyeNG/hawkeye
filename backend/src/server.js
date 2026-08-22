@@ -136,6 +136,36 @@ app.get(/^\/training\/(.+\.(?:jpe?g|png))$/i, async (req, res, next) => {
     return res.type('jpeg').sendFile(thumb);
   } catch { return next(); } // fall through to the original on any failure
 });
+/**
+ * AUDIT-INTERNAL FILES ARE NOT PUBLIC.
+ *
+ * The line below serves the whole training directory, which is right for the
+ * sheet images — they are INEC's own published documents — and wrong for the
+ * audit's working notes. Three files written by the review console hold
+ * material that belongs to an internal evidence base, not to the open web:
+ *
+ *   illegible.json   findings about the quality of the published record, with
+ *                    the reviewer's name and the time they said it
+ *   label_meta.json  free-text notes a labeller typed while reading a sheet
+ *   streams.json     which sheets the audit singled out as suspect, which is a
+ *                    map of where we think the problems are before any human
+ *                    has confirmed a single one
+ *
+ * They are reachable through GET /api/training/meta, behind the admin
+ * passphrase. Blocked with 404 rather than 403 so the endpoint does not
+ * advertise that the files exist.
+ *
+ * NOTE: truth.json, sets.json, approved.json, dropped.json and boxes.json
+ * remain public — they predate this and both review pages fetch them without
+ * credentials. That is a deliberate limit on this change, not an endorsement.
+ */
+const AUDIT_INTERNAL = new Set(['illegible.json', 'label_meta.json', 'streams.json']);
+app.use('/training', (req, res, next) => {
+  if (AUDIT_INTERNAL.has(path.basename(req.path))) {
+    return res.status(404).json({ error: 'not_found' });
+  }
+  return next();
+});
 // truth.json / sets.json and any non-image path fall through to the raw files.
 app.use('/training', express.static(trainRoot));
 

@@ -37,6 +37,33 @@
  * survive lives in plugins/, which is why with-allow-backup-override and
  * with-release-signing are there too.
  *
+ * ── DISABLED 2026-08-23: IT DOES NOT COMPILE ──────────────────────────────
+ *
+ * Removed from app.json's plugins array. Re-enabling it as-is fails the build:
+ *
+ *   :app:compileReleaseKotlin
+ *   e: MainApplication.kt:5:48 Unresolved reference 'GmsDocumentScannerOptions'
+ *   e: MainApplication.kt:6:48 Unresolved reference 'GmsDocumentScanning'
+ *   BUILD FAILED in 25m 3s
+ *
+ * The scanner artifact is declared implementation-scoped inside the
+ * react-native-document-scanner-plugin library, so it is on that module's
+ * compile path and not on the app module's. The imports this plugin injects into
+ * MainApplication.kt therefore cannot resolve.
+ *
+ * TO REVIVE IT, two things, in this order:
+ *   1. Have the plugin also add the dependency to the APP module, e.g. via
+ *      withAppBuildGradle appending
+ *      `implementation 'com.google.android.gms:play-services-mlkit-document-scanner:...'`
+ *      at the version the library already resolves, so the two cannot diverge.
+ *   2. Prove it on a phone that currently reproduces the stall. Compiling is not
+ *      the same as fixing; scannerLastError() in lib/scan.ts exists to say which
+ *      it is.
+ *
+ * Until both are done this stays out of release builds. The scanner stall it
+ * targets is present in the live listing too, so shipping without it is not a
+ * regression — it is the status quo, minus twenty-five minutes of failed build.
+ *
  * ── NOT VERIFIED ON A DEVICE ──────────────────────────────────────────────
  *
  * This is a candidate fix, not a confirmed one. It compiles or it does not, and

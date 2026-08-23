@@ -116,7 +116,6 @@
       ],
       "expo-notifications",
       "react-native-document-scanner-plugin",
-      "./plugins/with-mlkit-scanner-prewarm",
       "./plugins/with-allow-backup-override",
       "./plugins/with-release-signing"
     ],

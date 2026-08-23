@@ -69,16 +69,26 @@ const CAPTIONS = [
   {
     file: '1-capture.png',
     lines: ['Photograph the', 'result sheet'],
-    shoot: 'The capture screen with the SPECIMEN sheet in frame — generate it with '
-      + 'make_specimen_ec8a.mjs and print it. A real EC8A cannot be used: it carries a real '
-      + "unit's real votes, and putting that on a store listing shows results Hawkeye has no "
-      + 'business publishing. The specimen is blank by design.',
+    shoot: 'The capture screen with the SPECIMEN sheet in frame. NO PRINTER AND NO PHONE '
+      + 'NEEDED: tests/ui/capture_camera_shots.mjs feeds the specimen to Chromium as a fake '
+      + 'capture device, so expo-camera renders it through the camera path the app itself '
+      + 'uses. The screenshot is a real screen, not a sheet pasted over one afterwards. The '
+      + 'note saying this had to be printed and photographed went unchallenged for weeks '
+      + 'and was simply wrong. '
+      + 'A real EC8A cannot be used: it carries a real polling unit and real votes, and '
+      + 'putting that on a store listing publishes a result Hawkeye has no business '
+      + 'publishing. The specimen is blank, struck SPECIMEN, and names unit 00-00-00-000, '
+      + 'which is in no register.',
   },
   {
-    file: '2-figures.png',
-    lines: ['Type what you', 'see on the sheet'],
-    shoot: 'The entry step with the sheet photo still on screen. Counts may be blank or nominal — '
-      + 'the message is that the photo stays visible while you type, not what the numbers say.',
+    file: '2-home.png',
+    lines: ['Every election,', 'and when it opens'],
+    shoot: 'The home screen: the next election with its countdown, and the observation '
+      + 'promise above it. Captured headlessly, shot 2 of capture_store_shots.mjs. '
+      + 'This slot used to be the vote-entry step, captioned Type what you see on the '
+      + 'sheet. It went because it is the same screen as 6-practice, and two pictures of '
+      + 'one screen is a wasted slot in a list most people never scroll past — while the '
+      + 'app had no front door in the set at all.',
   },
   {
     file: '3-published.png',
@@ -167,12 +177,24 @@ async function build(spec) {
 
   const out = path.join(outDir, spec.file.replace(/\.[^.]+$/, '.png'));
   const left = Math.round((W - deviceW) / 2);
+  // FLATTEN, THEN REMOVE THE CHANNEL. flatten() composites alpha onto the
+  // background but leaves a 4-channel PNG behind; removeAlpha() is what actually
+  // drops it. Both are needed, and only the second one shows up in a metadata
+  // check — which is why the first attempt at this reported twelve files fixed
+  // and twelve files still carrying alpha.
+  //
+  // Not strictly required: Play's no-alpha rule is for the ICON and the feature
+  // graphic, not screenshots, which take PNG or JPEG either way. The background
+  // here is fully opaque, so this changes no pixel and removes one thing for a
+  // store's validator to have an opinion about.
   await sharp({ create: { width: W, height: H, channels: 4, background: BG } })
     .composite([
       { input: shot, top: deviceTop, left },
       { input: rim, top: deviceTop, left },
       { input: captionSvg(spec.lines), top: 0, left: 0 },
     ])
+    .flatten({ background: BG })
+    .removeAlpha()
     .png()
     .toFile(out);
   return { file: spec.file, out };

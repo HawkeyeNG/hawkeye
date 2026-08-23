@@ -193,6 +193,49 @@
     return hit ? svgFor([{ path: hit.path, name: hit.name }], `Map of ${j.value}`) : '';
   }
 
+  /**
+   * A SEAT LISTS ITS FIELD; A REGION PROFILES IT.
+   *
+   * The presidency and a governorship are races a reader follows as a contest
+   * between named people — so they keep the front-runner cards, the full ballot
+   * and the quick-compare table. A Senate, House or state-assembly seat is not
+   * read that way: there are 1,480 of them, the field is a list of names, and
+   * there is no per-candidate prose to profile or compare. Giving one of those
+   * the presidential treatment would produce a page of cards with "—" in every
+   * field and a compare table whose five columns are all empty.
+   *
+   * So a seat gets ONE section, "Declared candidates", in the same compact row
+   * format the presidential page already uses for "Other declared candidates" —
+   * which is what that format is good at: many names, one line each,
+   * party-marked.
+   *
+   * Keyed off `join.level`, the same field the map, the board and the stat bar
+   * key on, so a page cannot draw itself as one kind of race and list itself as
+   * another. No join at all means the presidency, which has none.
+   *
+   * A FUNCTION, not an expression inside the renderer, because the native twin
+   * needs the identical answer and a rule buried in JSX cannot be compared to
+   * one buried in template strings. Twin: political.ts:seatFieldOf.
+   */
+  const seatFieldOf = (race) => {
+    const lvl = race && race.join && race.join.level;
+    return lvl === 'senatorial' || lvl === 'federal_constituency' || lvl === 'lga';
+  };
+
+  /**
+   * Every declared name on a seat's page, in one list.
+   *
+   * `candidates`/`others`/`minors` are three shapes of the same fact and a seat
+   * has no reason to separate them — merging is what lets one heading be honest
+   * about being the whole field. Sorted by party like every other list here, so
+   * the order is not a ranking.
+   */
+  const wholeFieldOf = (race) => [
+    ...((race && race.candidates) || []),
+    ...((race && race.others) || []),
+    ...((race && race.minors) || []),
+  ].sort((a, b) => String(a.party).localeCompare(String(b.party)));
+
   function mountRace(main, race, LOGOS, opts) {
     opts = opts || {};
     LOGOS = LOGOS || {};
@@ -231,7 +274,16 @@
     // is a fixed day where INEC has set one (Osun), else a verbatim label (the 2027
     // presidential date is not yet fixed). Rendered on every race page.
     const st = race.stats || {};
-    const candTotal = race.candidates.length + ((race.others || race.minors || []).length);
+    const seatField = seatFieldOf(race);
+    const wholeField = seatField ? wholeFieldOf(race) : null;
+    // COUNTED FROM THE LIST THAT IS ACTUALLY PRINTED. The old expression added
+    // `others || minors`, which silently dropped one of them if a race ever
+    // carried both — and on a seat page the merged list is the only list, so
+    // deriving the number from anything else could disagree with what is on
+    // screen directly beneath it.
+    const candTotal = seatField
+      ? wholeField.length
+      : race.candidates.length + ((race.others || race.minors || []).length);
     const cells = [];
     /**
      * THE YEAR IS A FALLBACK, NOT A FIFTH CELL.
@@ -345,6 +397,17 @@
     // Context / incumbent note (optional)
     if (race.incumbentNote) parts.push(`<div class="race-ctx">${esc(race.incumbentNote)}</div>`);
 
+    // THE SEAT'S WHOLE FIELD, one heading, one row each. `wholeField` and the
+    // rule behind it are derived up with the stat bar, so the count in the card
+    // and the list beneath it come from the same array.
+    if (seatField && wholeField.length) {
+      parts.push('<h2 style="margin-top:26px">Declared candidates</h2>');
+      parts.push('<p class="hint">Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.</p>');
+      parts.push(`<div class="ballot">${wholeField.map((c) => `
+        <div class="b" style="--pc:${color(c.party)}">${flagIcon(c.party)}
+          <div><strong>${esc(c.name)}</strong><span>${esc(c.meta || c.party)}${!c.meta && c.incumbent ? ' · incumbent' : ''}</span></div></div>`).join('')}</div>`);
+    }
+
     // Primary candidate cards
     // SKIP THE SECTION ENTIRELY WHEN THERE ARE NO CARDS TO PUT IN IT. A
     // down-ballot race carries no per-candidate prose — every name lives in
@@ -352,7 +415,7 @@
     // with candidates[] empty this printed a "Front-runners" heading, a
     // nonpartisan disclaimer and then nothing at all. 470 Senate and House pages
     // would each have opened on that.
-    if (race.candidates.length) {
+    if (!seatField && race.candidates.length) {
     const heading = opts.frontLabel || (race.others ? 'Front-runners' : 'Declared candidates');
     parts.push(`<h2 style="margin-top:26px">${esc(heading)}</h2>`);
     parts.push('<p class="hint">Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.</p>');
@@ -368,8 +431,10 @@
       </div>`).join('')}</div>`);
     }
 
-    // Full ballot (osun `others`) or minor candidates (presidential `minors`)
-    const secondary = race.others || race.minors;
+    // Full ballot (osun `others`) or minor candidates (presidential `minors`).
+    // Not on a seat page: `wholeField` above already printed every one of these
+    // names, and reprinting them under a second heading would double the field.
+    const secondary = seatField ? null : (race.others || race.minors);
     if (secondary && secondary.length) {
       if (race.others) {
         const all = [...race.candidates, ...race.others].sort((a, b) => a.party.localeCompare(b.party));
@@ -388,14 +453,13 @@
     if (race.notableAbsence) parts.push(`<p class="race-absence">${esc(race.notableAbsence)}</p>`);
 
     // Quick compare — a compact side-by-side of the front-runner cards (Candidate,
-    // Party, Home base, Bid, Status). Shown on every race page that HAS such
-    // cards: presidency and governorship alike.
+    // Party, Home base, Bid, Status). The presidency and a governorship, which
+    // are the races read as a contest between named people.
     //
-    // Guarded for the same reason as the front-runner grid above. Its rows map
-    // over race.candidates, so a down-ballot race — every name in others[], no
-    // per-candidate prose to compare — rendered the heading and a table with
-    // column headers and not one row beneath them.
-    if (race.candidates.length) {
+    // Guarded for the same reason as the front-runner grid above, plus the seat
+    // rule: its columns are Home base / Bid / Status, three facts a seat's field
+    // does not carry, so on a seat page every cell would be an em dash.
+    if (!seatField && race.candidates.length) {
     parts.push('<h2 style="margin-top:26px">Quick compare</h2>');
     parts.push(`<div class="race-compare"><table><thead>
       <tr><th>Candidate</th><th>Party</th><th>Home base</th><th>Bid</th><th>Status</th></tr></thead><tbody>${
@@ -1088,4 +1152,8 @@
   window.assemblySeats = assemblySeats;
   window.assemblySeatsInLga = assemblySeatsInLga;
   window.shaStats = shaStats;
+  // Exposed so tests/native_race_parity_test.mjs can hold this rule against the
+  // native twin. The renderers are not comparable; these two functions are.
+  window.seatFieldOf = seatFieldOf;
+  window.wholeFieldOf = wholeFieldOf;
 })();

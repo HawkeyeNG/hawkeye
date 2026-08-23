@@ -33,7 +33,17 @@ const render = (race, opts) => p.evaluate(([r, o]) => {
     cards: m.querySelectorAll('.cand').length,
     compareRows: m.querySelectorAll('.race-compare tbody tr').length,
     ballotRows: m.querySelectorAll('.ballot .b').length,
+    // The NAMES, not just the count — a section printed twice is the failure
+    // mode the seat rule can produce, and two lists of four look like one list
+    // of eight only if you read the names.
+    ballotNames: [...m.querySelectorAll('.ballot .b strong')].map((e) => e.textContent),
+    // `> div > span`, not `.b span`: with no logo map, flagIcon emits its own
+    // <span class="fallback"> as a direct child of .b, so the looser selector
+    // returned two spans per row and read as eight candidates where there are
+    // four.
+    ballotSubs: [...m.querySelectorAll('.ballot .b > div > span')].map((e) => e.textContent),
     statCells: [...m.querySelectorAll('.race-statbar .l')].map((e) => e.textContent),
+    statValues: [...m.querySelectorAll('.race-statbar .n')].map((e) => e.textContent),
   };
 }, [race, opts]);
 
@@ -70,11 +80,69 @@ const senYear = String(SENATE.dateText);
 const senCount = SENATE.others.length;
 const sen = await render(SENATE, {});
 check(`title derives ${senYear} from dateText`, sen.h1, `${SENATE.office} — ${senYear}`);
-check('no empty Front-runners / Quick compare', sen.headings, [`Full ballot — ${senCount} candidates`]);
+// ONE SECTION ON A SEAT. The presidency and a governorship are read as a
+// contest between named people and keep cards + full ballot + quick compare; a
+// seat's field is a list of names with no prose to profile, so it gets a single
+// "Declared candidates" list in the compact format. See race.js:seatField.
+check('a seat gets one heading', sen.headings, ['Declared candidates']);
 check('no empty candidate cards', sen.cards, 0);
 check('no empty compare rows', sen.compareRows, 0);
-check('full ballot rendered', sen.ballotRows, senCount);
+check('every name is listed', sen.ballotRows, senCount);
+check('and listed exactly once', new Set(sen.ballotNames).size, senCount);
 check('stat bar keeps LGAs + polling units', sen.statCells, ['Election year', 'Candidates', 'LGAs', 'Polling units']);
+
+console.log('\n=== A seat WITH a published field — the case this rule is for ===');
+// Nothing in the repo exercises this: no seat has candidate data yet, so the
+// restructure is invisible until INEC publishes and then it is everywhere at
+// once. Synthetic, and deliberately carrying ALL THREE shapes — candidates,
+// others and minors — because a seat merges them and a region does not.
+const seatWithField = {
+  ...SENATE,
+  candidates: [
+    { name: 'Ada Nwosu', party: 'LP', home: 'Ivo', bids: '1st bid', status: 'Nominee', incumbent: true },
+  ],
+  others: [{ name: 'Bello Musa', party: 'APC' }, { name: 'Chidi Eze', party: 'PDP' }],
+  minors: [{ name: 'Dele Okon', party: 'SDP', meta: 'SDP · running mate N. Bala' }],
+};
+const seatFull = await render(seatWithField, {});
+check('still one heading', seatFull.headings, ['Declared candidates']);
+check('no front-runner cards on a seat', seatFull.cards, 0);
+check('no quick compare on a seat', seatFull.compareRows, 0);
+check('all four names, merged', seatFull.ballotRows, 4);
+check('sorted by party', seatFull.ballotNames, ['Bello Musa', 'Ada Nwosu', 'Chidi Eze', 'Dele Okon']);
+check('nobody listed twice', new Set(seatFull.ballotNames).size, 4);
+// The sub-line: a minor's own `meta` wins, otherwise party (+ incumbent).
+check('sub-lines carry party or meta', seatFull.ballotSubs,
+  ['APC', 'LP · incumbent', 'PDP', 'SDP · running mate N. Bala']);
+// The card must agree with the list directly beneath it. The old expression
+// added `others || minors` and would have said 3 where the list shows 4.
+check('the count matches the list', seatFull.statValues[1], '4');
+
+console.log('\n=== A state constituency (level lga) follows the same rule ===');
+const sha = await render({
+  ...seatWithField,
+  office: 'Southern Ijaw II State Constituency',
+  stats: { lgas: 1, wards: 17, pollingUnits: 466 },
+  join: { contest: 'SHA', level: 'lga', value: 'Southern Ijaw', state: 'Bayelsa', lgas: ['Southern Ijaw'] },
+}, {});
+check('one heading', sha.headings, ['Declared candidates']);
+check('no cards', sha.cards, 0);
+check('measured in wards', sha.statCells, ['Election year', 'Candidates', 'Wards', 'Polling units']);
+
+console.log('\n=== CONTROL: a governorship keeps all four sections ===');
+// If seatField ever went true for a region, this is what would catch it.
+const gov = await render(POLITICAL.raceOsun2026, {});
+check('governorship still has its cards', gov.cards, 3);
+check('and its compare table', gov.compareRows, 3);
+check('and both headings', gov.headings.includes('Front-runners')
+  && gov.headings.some((h) => h.startsWith('Full ballot')), true);
+
+console.log('\n=== CONTROL: the presidency keeps "Other declared candidates" ===');
+const pres2 = await render(POLITICAL.race2027, {});
+check('presidency keeps its minors heading',
+  pres2.headings.includes('Other declared candidates'), true);
+check('and its front-runner cards', pres2.cards, POLITICAL.race2027.candidates.length);
+check('and its compare rows', pres2.compareRows, POLITICAL.race2027.candidates.length);
 
 await b.close();
 console.log(fail ? `\n${fail} FAILED` : '\nall passed');

@@ -10,6 +10,7 @@ import { useThemePref, type ThemePref } from '@/lib/theme-pref';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { SocialRow } from '@/components/social-row';
+import { Tour } from '@/components/tour';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 
@@ -74,6 +75,12 @@ const GROUPS: { title: string; items: MenuItem[] }[] = [
   {
     title: 'Learn & about',
     items: [
+      // A WAY BACK TO THE TOUR. It runs itself once, on first arrival at Home,
+      // and its Skip button is meant to be pressed — which would make a
+      // first-run-only tour unreachable forever for exactly the people who
+      // later wish they had watched it. `action:` rather than `native:` because
+      // this row opens a modal on THIS screen instead of navigating.
+      { label: 'Take the tour', href: 'action:tour', icon: 'compass' },
       { label: 'Ask Hawkeye', href: 'native:/assistant', icon: 'message-square' },
       { label: 'How Hawkeye Works', href: 'native:/page?slug=how', icon: 'help-circle' },
       { label: 'Observer Guide', href: 'native:/page?slug=guide', icon: 'book-open' },
@@ -236,8 +243,12 @@ function MenuAccordion({
 export default function More() {
   const ui = useUi();
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
+  const [tourOpen, setTourOpen] = useState(false);
   return (
     <View className="flex-1 bg-surface">
+      {/* Controlled, not `auto`: this is the replay, and it must open when the
+          row is tapped regardless of whether the device has seen it before. */}
+      <Tour visible={tourOpen} onClose={() => setTourOpen(false)} />
       {/* Tab screen: right="none" — the tab bar owns navigation, and this IS the
           menu the shared header's menu button points at. The big in-scroll
           "More" title is gone; the header carries it now. */}
@@ -268,9 +279,11 @@ export default function More() {
                       i > 0 ? 'border-t border-line' : ''
                     }`}
                     onPress={() =>
-                      it.href.startsWith('native:')
-                        ? router.push(it.href.slice(7) as never)
-                        : WebBrowser.openBrowserAsync(`https://hawkeye.com.ng/${it.href}`)
+                      it.href === 'action:tour'
+                        ? setTourOpen(true)
+                        : it.href.startsWith('native:')
+                          ? router.push(it.href.slice(7) as never)
+                          : WebBrowser.openBrowserAsync(`https://hawkeye.com.ng/${it.href}`)
                     }
                   >
                     <Feather name={it.icon} size={17} color="#0b6b3a" />

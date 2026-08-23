@@ -64,9 +64,11 @@ throughout. Source of truth for the wording: `app/privacy.html`.
   E174.1).
 - **Content rights**: the app publishes user-submitted content; moderation and
   reporting are in place (below).
-- **Age rating**: 17+ is the safe answer — the app carries
-  unmoderated-at-source user content and covers political/election material.
-  Do not claim 4+.
+- **Age rating**: answer the FIELDS, do not pick a band. Apple's questionnaire
+  is field-based now and computes the band itself; this file used to say "17+ is
+  the safe answer" while APP-STORE-LISTING.md said 12+, and neither is enterable.
+  The field-by-field answers live in `docs/APP-STORE-LISTING.md` §5, taken from
+  the live `ageRatingDeclaration` schema. One source, not two.
 
 ## 5. Guideline 1.2 (user-generated content) — what a reviewer looks for
 

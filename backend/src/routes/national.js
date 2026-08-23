@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db, contests, contestCodes } from '../db.js';
-import { LEVEL_COLS, regionLevelFor, reportingOpen, reportingOpensAt } from '../services/scope.js';
+import { LEVEL_COLS, regionLevelFor, reportingOpen, reportingOpensAt, contestTier } from '../services/scope.js';
 
 export const nationalRouter = Router();
 
@@ -67,6 +67,7 @@ nationalRouter.get('/national/:contest', (req, res) => {
     asked = resolveState(req.query.state);
     if (!asked) return res.status(404).json({ error: 'unknown_state' });
   }
+  const contestDef = contests.find((c) => c.code === contest);
   const state = asked ?? soleState(contest);
   let { level, col } = regionLevelFor(contest, state);
   // ?level= asks for a finer breakdown than the contest's default. A senatorial
@@ -79,15 +80,40 @@ nationalRouter.get('/national/:contest', (req, res) => {
     col = LEVEL_COLS[level];
   }
 
+  /**
+   * A contest confined to named constituencies is narrowed HERE as well as on
+   * the write path. The write path has always gated correctly — only a unit
+   * inside Gombe/Kwami/Funakaye can file into that by-election — but this
+   * endpoint listed every federal constituency in the state, so the board read
+   * "0 of 6 constituencies reporting" for an election held in exactly one.
+   *
+   * The values are register spellings for the contest's own column, which is
+   * why they are compared against `only` rather than re-derived: see
+   * services/scope.js contestApplies.
+   *
+   * Only applied when the board is drawn at the SAME level the gate names —
+   * ?level= can ask for a finer breakdown (a seat's LGAs), and filtering LGA
+   * names against a list of constituency names would empty the board.
+   */
+  const gate = contestDef?.constituencies;
+  const gateCol = gate && gate.length ? regionLevelFor(contestTier(contest)).col : null;
+  const only = gateCol === col ? gate : null;
+  const holes = only ? only.map(() => '?').join(',') : '';
+  // TWO forms, because the two queries below are shaped differently: the
+  // results query joins polling_units as `p`, the subunits query selects
+  // from it unaliased. Sharing one string gave "no such column: p.lga".
+  const inList = only ? ` AND p.${col} IN (${holes})` : '';
+  const inListBare = only ? ` AND ${col} IN (${holes})` : '';
+
   const rows = state
     ? db.prepare(`
         SELECT r.votes_json, r.status, r.disputed, p.${col} AS region
         FROM results r JOIN polling_units p ON p.pu_code = r.pu_code
-        WHERE r.contest = ? AND p.state = ?`).all(contest, state)
+        WHERE r.contest = ? AND p.state = ?${inList}`).all(contest, state, ...(only || []))
     : db.prepare(`
         SELECT r.votes_json, r.status, r.disputed, p.${col} AS region
         FROM results r JOIN polling_units p ON p.pu_code = r.pu_code
-        WHERE r.contest = ?`).all(contest);
+        WHERE r.contest = ?${inList}`).all(contest, ...(only || []));
 
   // Every sub-unit in scope, reported or not. The clients draw the map from THIS,
   // not from `regions` — otherwise a board with no reports yet (the normal state
@@ -96,8 +122,8 @@ nationalRouter.get('/national/:contest', (req, res) => {
   // which the geo files cannot answer: district/constituency shapes carry no
   // state property.
   const subunits = (state
-    ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE state = ? AND ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all(state)
-    : db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all()
+    ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE state = ? AND ${col} IS NOT NULL AND ${col} != ''${inListBare} ORDER BY r`).all(state, ...(only || []))
+    : db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${col} IS NOT NULL AND ${col} != ''${inListBare} ORDER BY r`).all(...(only || []))
   ).map((x) => x.r);
 
   const national = {};

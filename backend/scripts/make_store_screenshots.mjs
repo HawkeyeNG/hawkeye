@@ -32,8 +32,18 @@ const arg = (n, d = null) => { const i = argv.indexOf(`--${n}`); return i > -1 ?
 const inDir = arg('in', 'raw');
 const outDir = arg('out', '../app/play-shots');
 
-const W = 1080;
-const H = 1920;
+/**
+ * CANVAS SIZE IS AN ARGUMENT, because the two stores want different ones and
+ * the design should not be redrawn twice. Play takes 1080x1920 (9:16); Apple's
+ * 6.9" slot takes 1320x2868, which is a taller frame — so every fixed offset
+ * below scales with it rather than staying where it was put for Play.
+ *   --w 1320 --h 2868   ->  App Store 6.9"
+ */
+const W = Number(arg('w', 1080));
+const H = Number(arg('h', 1920));
+/** Everything positioned in pixels was tuned at 1080x1920; scale from there. */
+const S = H / 1920;
+const SX = W / 1080;
 /**
  * BRAND.leaf, not BRAND.green.
  *
@@ -112,9 +122,9 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
  */
 function captionSvg(lines) {
   const longest = Math.max(...lines.map((l) => l.length));
-  const size = longest > 18 ? 84 : longest > 14 ? 96 : 108;
+  const size = Math.round((longest > 18 ? 84 : longest > 14 ? 96 : 108) * S);
   const lineHeight = Math.round(size * 1.18);
-  const top = 150;
+  const top = Math.round(150 * S);
   const text = lines.map((l, i) => `
     <text x="${W / 2}" y="${top + i * lineHeight}" text-anchor="middle"
           font-family="Inter, 'Helvetica Neue', Arial, sans-serif"
@@ -130,15 +140,15 @@ async function build(spec) {
   // The device sits below the caption and bleeds off the bottom. Rounded
   // corners and a soft edge stop it reading as a pasted rectangle.
   const deviceW = Math.round(W * 0.82);
-  const deviceTop = 400;
-  const deviceH = H - deviceTop + 40;               // +40 bleeds past the edge
+  const deviceTop = Math.round(400 * S);
+  const deviceH = H - deviceTop + Math.round(40 * S);   // bleeds past the edge
 
   const shot = await sharp(src)
     .resize({ width: deviceW, height: deviceH, fit: 'cover', position: 'top' })
     .composite([{
       input: Buffer.from(
         `<svg width="${deviceW}" height="${deviceH}">
-           <rect x="0" y="0" width="${deviceW}" height="${deviceH}" rx="36" ry="36" fill="#fff"/>
+           <rect x="0" y="0" width="${deviceW}" height="${deviceH}" rx="${Math.round(36 * SX)}" ry="${Math.round(36 * SX)}" fill="#fff"/>
          </svg>`,
       ),
       blend: 'dest-in',
@@ -151,7 +161,7 @@ async function build(spec) {
   const rim = Buffer.from(
     `<svg width="${deviceW}" height="${deviceH}" xmlns="http://www.w3.org/2000/svg">
        <rect x="1.5" y="1.5" width="${deviceW - 3}" height="${deviceH - 3}"
-             rx="35" ry="35" fill="none" stroke="${RIM}" stroke-width="3"/>
+             rx="${Math.round(35 * SX)}" ry="${Math.round(35 * SX)}" fill="none" stroke="${RIM}" stroke-width="${Math.max(2, Math.round(3 * SX))}"/>
      </svg>`,
   );
 
@@ -189,4 +199,8 @@ for (const spec of CAPTIONS) {
 
 console.log(`\n${made} built, ${missing} still to shoot.`);
 if (missing) console.log(`Drop the raw captures in ${path.resolve(inDir)}/ using the names above and re-run.`);
-if (made) console.log('Play accepts 2-8 phone screenshots; upload them in the order above.');
+if (made) {
+  console.log(W === 1080
+    ? 'Play accepts 2-8 phone screenshots; upload them in the order above.'
+    : `Built at ${W}x${H}. Apple's 6.9" slot takes up to 10; upload in the order above.`);
+}

@@ -132,6 +132,8 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
  */
 function captionSvgAt(lines, size) {
   const lineHeight = Math.round(size * 1.18);
+  // First BASELINE, so the cap-height of line 1 sits a fixed distance below the
+  // top edge whatever the size — an ascent-relative offset, not a box offset.
   const top = Math.round(150 * S) + size;
   const text = lines.map((l, i) => `
     <text x="${W / 2}" y="${top + i * lineHeight}" text-anchor="middle"
@@ -160,9 +162,27 @@ const CAPTION_MAX = 0.88;
  * rendered, trimmed to its ink, and stepped down until it is inside the margin.
  * Measuring costs a few milliseconds and removes the whole class of bug.
  */
+/**
+ * ONE SIZE FOR EVERY CAPTION, as a fraction of the canvas width.
+ *
+ * The size used to be picked per caption from a character count, so a six-shot
+ * set carried three different sizes — 90, 96 and 108 on Play — and the block
+ * above the device changed height from shot to shot. In a store listing the six
+ * are seen as a row, and a headline that grows and shrinks along it reads as
+ * carelessness rather than emphasis.
+ *
+ * 0.0833 of the width is the size the longest caption settled at when it was
+ * measured — 110px at 1320, 90px at 1080 — so every other line was only ever
+ * bigger because it could be, not because it should be. Fixing the size also
+ * fixes the spacing: a constant caption block under a constant `deviceTop`
+ * leaves the same gap above the screenshot in all six.
+ */
+const CAPTION_SIZE = 0.0833;
+
 async function captionSvg(lines) {
-  const longest = Math.max(...lines.map((l) => l.length));
-  let size = Math.round((longest > 18 ? 84 : longest > 14 ? 96 : 108) * SX);
+  let size = Math.round(W * CAPTION_SIZE);
+  // Kept as a GUARD, not as the mechanism: at this size every current caption
+  // fits, and the loop only bites if someone writes a longer one later.
   for (let i = 0; i < 14; i += 1) {
     // resolveWithObject, NOT metadata(). metadata() reports the INPUT's
     // dimensions, so it returned the full canvas width on every pass and the
@@ -178,8 +198,26 @@ async function captionSvg(lines) {
   return { svg: captionSvgAt(lines, size), size };
 }
 
+/**
+ * A PER-STORE SOURCE, when the two platforms genuinely differ.
+ *
+ * They usually do not — one capture serves both, which is the point of building
+ * from one pipeline. The capture screen is the exception: on Android the sheet
+ * is taken through Google's ML Kit scanner, a Play-services surface with its own
+ * shutter and Manual/Auto toggle, and on iOS through the app's own camera with
+ * its gold corner guides. Showing an iPhone screen on the Play listing would be
+ * a picture of an app the Play user does not have.
+ *
+ * So `1-capture.android.png` wins over `1-capture.png` when --variant android is
+ * passed, and everything without a variant file is shared exactly as before.
+ */
+const VARIANT = arg('variant', null);
+
 async function build(spec) {
-  const src = path.join(inDir, spec.file);
+  const variantFile = VARIANT
+    ? path.join(inDir, spec.file.replace(/\.png$/, `.${VARIANT}.png`))
+    : null;
+  const src = variantFile && fs.existsSync(variantFile) ? variantFile : path.join(inDir, spec.file);
   if (!fs.existsSync(src)) return { file: spec.file, skipped: true };
 
   // The device sits below the caption and bleeds off the bottom. Rounded
@@ -233,7 +271,7 @@ async function build(spec) {
     .removeAlpha()
     .png()
     .toFile(out);
-  return { file: spec.file, out, size: caption.size };
+  return { file: spec.file, out, size: caption.size, variant: src !== path.join(inDir, spec.file) };
 }
 
 fs.mkdirSync(outDir, { recursive: true });
@@ -251,7 +289,7 @@ for (const spec of CAPTIONS) {
     console.log(`           shoot:   ${spec.shoot}\n`);
   } else {
     made++;
-    console.log(`  built    ${r.out}   ${r.size}px   "${spec.lines.join(' ')}"`);
+    console.log(`  built    ${r.out}   ${r.size}px${r.variant ? `  [${VARIANT}]` : ''}   "${spec.lines.join(' ')}"`);
   }
 }
 

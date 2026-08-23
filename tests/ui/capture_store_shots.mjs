@@ -391,7 +391,11 @@ if (want(3) || want(6)) await drivePractice();
 if (want(4)) {
   await go('/osun');
   await waitForText('Declared result');
-  await scrollToText('DECLARED RESULT', 20);
+  // Anchor on the NOTICE, not the result, and let the declared figures fall
+  // below it — at 2868px tall both fit. Anchoring on 'DECLARED RESULT' scrolled
+  // the notice out of frame, which on a page of INEC-declared figures is the one
+  // thing this listing cannot afford to crop.
+  await scrollToText('Not government or INEC affiliated', 24);
   console.log('/osun ->', (await text(120)).replace(/\n/g, ' | '));
   await shot('4-result.png');
 }
@@ -401,9 +405,13 @@ if (want(4)) {
 if (want(5)) {
   await go('/political');
   await waitForText('Who holds power now');
-  // Negative offset: scroll a few pixels PAST the heading, so the bottom edge
-  // of the card above it does not leave a sliver across the top of the frame.
-  await scrollToText('WHO HOLDS POWER NOW', -10);
+  // NO SCROLL. This used to anchor on the heading with a negative offset, which
+  // put the hemicycle at the top of the frame and pushed the compliance notice
+  // off it. Both Play rejections were for showing government information without
+  // a visible source, and a reviewer screenshotted a board exactly like this
+  // one — so on the screen that carries NASS rosters and INEC seat data, the
+  // notice staying in frame is worth more than a few pixels of dead space.
+  await scrollToText('Not government or INEC affiliated', 24);
   console.log('/political ->', (await text(120)).replace(/\n/g, ' | '));
   await shot('5-map.png');
 }

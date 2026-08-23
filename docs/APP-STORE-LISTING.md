@@ -46,8 +46,17 @@ mistake that got the Android app rejected twice.
 ## 3. Promotional text (≤170, editable without review)
 
 ```
-Osun governorship, 15 August 2026. Record what you see at your polling unit and publish it to a public, tamper-evident record that anyone can check.
+An independent, citizen-run record of what happens at Nigeria's polling units. Report what you see, and publish it to a public ledger anyone can verify.
 ```
+(152 chars.)
+
+**EVERGREEN, AND IT HAS TO BE.** This read "Osun governorship, 15 August 2026"
+— an election that was over before the listing was ever submitted, advertising a
+date in the past to every reader. Promotional text is the one field Apple lets
+you change without a review cycle, which makes it the right place for a
+time-bound hook and the worst place to leave a stale one: nothing forces you back
+to it. Keep it about what the app IS. If you do want to promote a specific
+election, set a reminder to clear it the day after.
 
 ---
 

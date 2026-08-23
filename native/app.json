@@ -50,7 +50,7 @@
     },
     "android": {
       "package": "ng.com.hawkeye.observer.dev",
-      "versionCode": 6,
+      "versionCode": 7,
       "intentFilters": [
         {
           "action": "VIEW",

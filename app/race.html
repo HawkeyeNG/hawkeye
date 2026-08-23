@@ -110,11 +110,12 @@
         const seats = await fetch('seat_lgas.json').then((r) => r.json()).catch(() => null);
         race = window.seatRace(seats, code, seatName, contest, tier);
       } else if (tier === 'SHA' && seatName && contest) {
-        // A state-assembly seat has no seat table and no outline file — its
-        // constituencies are absent from the register, so the contest's own
-        // `constituencies` (which are LGA names) are all there is, and all a
-        // one-LGA map needs.
-        race = window.byElectionRace(contest, null, data);
+        // The seat table now HAS a SHA block, built from the catalogue rather
+        // than the register (state constituencies are not a register column).
+        // It is what turns "1 LGAs" into real ward and polling-unit figures, so
+        // this branch fetches it like the others rather than passing null.
+        const seats = await fetch('seat_lgas.json').then((r) => r.json()).catch(() => null);
+        race = window.byElectionRace(contest, seats, data);
       } else if (QP.get('race')) {
         race = data[QP.get('race')];
       } else {

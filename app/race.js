@@ -233,15 +233,50 @@
     const st = race.stats || {};
     const candTotal = race.candidates.length + ((race.others || race.minors || []).length);
     const cells = [];
+    /**
+     * THE YEAR IS A FALLBACK, NOT A FIFTH CELL.
+     *
+     * A full election day already contains it — "16 Jan 2027" — and the written
+     * races carry their own dated label, one of which is literally "Election
+     * year". Adding a year cell unconditionally printed that label TWICE on
+     * those pages. So the year fills in only when neither a date nor a dated
+     * label exists, which keeps the promise (every card shows a year) without
+     * saying the same thing in two boxes.
+     */
     if (race.date) cells.push([new Date(race.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }), 'Election day']);
     else if (race.dateText) cells.push([race.dateText, race.dateLabel || 'Date']);
-    // NO "0 Candidates" CELL. A race whose field INEC has not published yet is
-    // the normal state of every seat page until about a month out, and a zero in
-    // a stat bar reads as a claim about the ballot rather than about our data.
-    // The note below the map says what is actually true.
-    if (candTotal) cells.push([candTotal, 'Candidates']);
+    else if (yr) cells.push([yr, 'Election year']);
+    /**
+     * TBD, NOT A SUPPRESSED CELL.
+     *
+     * This used to omit the cell entirely when the count was zero, on the
+     * grounds that "a zero in a stat bar reads as a claim about the ballot
+     * rather than about our data". That reasoning was right about `0` and wrong
+     * about the fix: dropping the cell made the card SHORTER on exactly the
+     * pages that have least, so a seat with no published field looked like a
+     * page that had been half-built.
+     *
+     * `TBD` says the thing the zero could not: the number is missing from
+     * Hawkeye, not from the election. Every race now carries the same four
+     * facts, and three of them are known for every seat in the country.
+     */
+    cells.push([candTotal || 'TBD', 'Candidates']);
     if (st.heldBy) cells.push([st.heldBy, 'Currently held by']);
-    if (st.lgas != null) cells.push([st.lgas, 'LGAs']);
+    /**
+     * WARDS FOR A SEAT, LGAs FOR A REGION.
+     *
+     * The LGA count describes a governorship (a whole state) and a senatorial
+     * district (3-8 LGAs) perfectly well. It describes a federal constituency
+     * badly — 2 to 4 — and a state constituency not at all, where it is almost
+     * always the number 1. Wards are the grain those seats are actually built
+     * from: 10-51 per federal seat, and a real number per state seat.
+     *
+     * Chosen off `join.level`, which is the same field the board and the map key
+     * on, so a page cannot describe itself as one kind of race and draw another.
+     */
+    const seatLevel = race.join && (race.join.level === 'federal_constituency' || race.join.level === 'lga');
+    if (seatLevel && st.wards != null) cells.push([st.wards, 'Wards']);
+    else if (st.lgas != null) cells.push([st.lgas, 'LGAs']);
     if (st.pollingUnits != null) cells.push(['~' + Number(st.pollingUnits).toLocaleString(), 'Polling units']);
     if (cells.length) parts.push(`<div class="race-statbar">${cells.map(([n, l]) => `<div class="s"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('')}</div>`);
 
@@ -838,7 +873,7 @@
       office: `${senate ? 'Senator' : 'House of Representatives'} — ${canon}`,
       election: `${s.state} State · ${senate ? 'Senate' : 'House of Representatives'}`,
       date: contest && contest.date ? contest.date : undefined,
-      stats: { lgas: s.lgas.length, pollingUnits: s.pollingUnits },
+      stats: { lgas: s.lgas.length, wards: s.wards, pollingUnits: s.pollingUnits },
       // A seat the register cannot tell from its neighbour says so, rather than
       // presenting a shared figure as its own. Four Lagos LGAs elect two members
       // each and polling_units records only the LGA.
@@ -877,6 +912,31 @@
    * contest's `constituencies` ARE LGA names. That is enough for a map — one LGA
    * polygon — and it is the only map that exists for such a seat.
    */
+  /**
+   * A state constituency's figures out of seat_lgas.json.
+   *
+   * Keyed "State|Seat" there, unlike SEN and REP which key on the bare name:
+   * state-constituency names repeat across states ("Central", the numbered
+   * seats), so the state is part of the identity.
+   *
+   * `sharedRegister` travels with them. Nearly half of the 1,005 state seats sit
+   * on an LGA that elects more than one member, and the register cannot say
+   * which of them a unit votes in — so those figures describe the LGA, not the
+   * race, and the page has to say so rather than print a number that looks
+   * specific.
+   */
+  function shaStats(seats, state, seat) {
+    const t = (seats || {}).SHA || {};
+    const hit = t[`${state}|${seat}`] || t[matchSeatName(t, `${state}|${seat}`)];
+    if (!hit) return { lgas: 1 };
+    return {
+      lgas: (hit.lgas || []).length,
+      wards: hit.wards,
+      pollingUnits: hit.pollingUnits,
+      sharedRegister: !!hit.sharedRegister,
+    };
+  }
+
   function byElectionRace(contest, seats, political) {
     if (!contest) return null;
     const tier = contest.tier || contest.code;
@@ -896,8 +956,22 @@
       office: `${seat} State Constituency — ${state} State`,
       election: `${state} State · ${contest.name}`,
       date: contest.date || undefined,
-      stats: { lgas: (contest.constituencies || []).length },
-      note: 'INEC has not published the candidate list for this by-election yet. '
+      /**
+       * REAL FIGURES, from the register, instead of the number 1.
+       *
+       * This was `lgas: contest.constituencies.length` — which is always 1 for a
+       * by-election, so the card read "1 LGAs" and said nothing. The seat table
+       * now carries state constituencies (keyed "State|Seat", because those
+       * names repeat across states), so the same wards/units the other tiers
+       * show are available here too.
+       */
+      stats: shaStats(seats, state, seat),
+      note: (shaStats(seats, state, seat).sharedRegister
+        ? "This LGA elects more than one state member, and INEC's register does "
+          + 'not separate them, so the ward and polling-unit figures on this page '
+          + 'cover every seat in the LGA rather than this one alone. '
+        : '')
+        + 'INEC has not published the candidate list for this by-election yet. '
         + 'Candidates appear here as soon as the official list is out. The seat '
         + 'and map on this page come from the electoral register and are current.',
       candidates: [],

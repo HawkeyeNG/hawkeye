@@ -31,7 +31,13 @@ export type Minor = { name: string; party: string; meta?: string };
  */
 export type RaceJoin = {
   contest?: string;
-  level: 'state' | 'senatorial' | 'federal_constituency';
+  /**
+   * `lga` is the STATE-ASSEMBLY level. State constituencies are not a column in
+   * the electoral register — which is why the backend buckets an SHA contest's
+   * reports by LGA — so an assembly seat's map, board and scope all key on the
+   * LGA it sits in. There is no outline file for one, and there cannot be.
+   */
+  level: 'state' | 'senatorial' | 'federal_constituency' | 'lga';
   value: string;
   state?: string;
   lgas?: string[];
@@ -50,7 +56,21 @@ export type Race = {
   photoCredit?: string;
   incumbentNote?: string;
   notableAbsence?: string;
-  stats?: { lgas?: number; pollingUnits?: number; candidates?: number; heldBy?: string };
+  /**
+   * `wards` is what a SEAT is measured in. The LGA count describes a
+   * governorship and a senatorial district well and a federal constituency
+   * badly (2-4); for a state constituency it is almost always the number 1.
+   * Both are carried and the card picks by `join.level` — see components/race.
+   */
+  stats?: {
+    lgas?: number;
+    wards?: number;
+    pollingUnits?: number;
+    candidates?: number;
+    heldBy?: string;
+    /** These figures cover more than this one seat — see SeatInfo. */
+    sharedRegister?: boolean;
+  };
   candidates: Candidate[];
   others?: Candidate[];
   minors?: Minor[];
@@ -235,14 +255,28 @@ export type SeatInfo = {
   lgas: string[];
   pollingUnits: number;
   /**
-   * Two federal seats share this LGA and the register does not separate them,
-   * so these figures cover both. Four dense Lagos LGAs elect two members each
-   * while polling_units records only the LGA — see backend/scripts/
+   * Wards in the seat, counted on the `(state, lga, ward)` TRIPLE. A ward name
+   * repeats across LGAs, so counting distinct ward names collapses two into one.
+   */
+  wards?: number;
+  /** Present on the SHA block only, where the table key is "State|Seat". */
+  seat?: string;
+  /**
+   * More than one seat sits on this LGA and the register does not separate
+   * them, so these figures cover all of them. Four dense Lagos LGAs elect two
+   * federal members each while polling_units records only the LGA — and on the
+   * assembly side it is nearly half: 1,005 state seats sit on 768 LGAs, so 240
+   * LGAs elect two, three or four members. See backend/scripts/
    * build_seat_lgas.js. The page prints the caveat rather than presenting a
    * shared number as the seat's own.
    */
   sharedRegister?: boolean;
 };
+/**
+ * Keyed by TIER, then by seat. SEN and REP key on the bare seat name, which is
+ * unique nationally; **SHA keys on "State|Seat"**, because state-constituency
+ * names are not — "Central" and the numbered seats repeat across states.
+ */
 export type SeatTable = Record<string, Record<string, SeatInfo>>;
 
 let seatCache: Promise<SeatTable> | null = null;
@@ -322,13 +356,23 @@ function matchSeatName<T>(table: Record<string, T> | undefined, name: string): s
   return hits === 1 ? hit : null;
 }
 
+/**
+ * @param code  the CONTEST code — identity, and what /api/national is keyed by
+ * @param tier  the CATEGORY — which seat table to look the name up in. Defaults
+ *              to `code`, so the five general contests are unchanged. A
+ *              by-election passes REP_BYE_GOMBE_2026 + 'REP': the seat facts
+ *              live under REP, the board lives under the by-election's own code,
+ *              and merging the two would file a 2026 by-election into the 2027
+ *              general election's race — inside a published anchor, permanently.
+ */
 export function seatRace(
   seats: SeatTable | null | undefined,
-  code: 'SEN' | 'REP',
+  code: string,
   seatName: string,
   contest?: ContestLite | null,
+  tier?: string,
 ): Race | null {
-  const table = seats?.[code];
+  const table = seats?.[tier || code];
   if (!table || !seatName) return null;
   // Map spellings and register spellings differ on a handful of seats, so the
   // name is resolved rather than trusted.
@@ -341,12 +385,12 @@ export function seatRace(
   const canon = matchSeatName(table, seatName);
   if (!canon) return null;
   const s = table[canon];
-  const senate = code === 'SEN';
+  const senate = (tier || code) === 'SEN';
   return {
     office: `${senate ? 'Senator' : 'House of Representatives'} — ${canon}`,
     election: `${s.state} State · ${senate ? 'Senate' : 'House of Representatives'}`,
     date: contest?.date,
-    stats: { lgas: s.lgas.length, pollingUnits: s.pollingUnits },
+    stats: { lgas: s.lgas.length, wards: s.wards, pollingUnits: s.pollingUnits },
     // A seat the register cannot tell from its neighbour says so, rather than
     // presenting a shared figure as its own.
     note:
@@ -367,7 +411,16 @@ export function seatRace(
 }
 
 /** A contest as GET /api/contests reports it — only the fields a race page needs. */
-export type ContestLite = { code: string; name: string; date?: string; states?: string[] };
+export type ContestLite = {
+  code: string;
+  name: string;
+  date?: string;
+  states?: string[];
+  /** The shape a contest behaves as when it is not its own code — see api.ts. */
+  tier?: string;
+  /** The seats a by-election is confined to. Its presence IS what makes one. */
+  constituencies?: string[];
+};
 
 /**
  * A governorship screen for a state with no published candidate list — which is
@@ -404,6 +457,198 @@ export function stateRace(
     others: [],
     join: { contest: 'GOV', level: 'state', value: canon, state: canon },
   };
+}
+
+/** @param what what the reader is being told has no list yet — see the twin
+ *  wording in app/race.js, which the parity test compares string for string. */
+const seatNote = (what: 'race' | 'by-election') =>
+  `INEC has not published the candidate list for this ${what} yet. Candidates ` +
+  'appear here as soon as the official list is out. The seat and map on this ' +
+  'page come from the electoral register and are current.';
+
+/**
+ * A state constituency's figures out of seat_lgas.json. Twin of
+ * app/race.js:shaStats.
+ *
+ * Keyed "State|Seat", unlike SEN and REP which key on the bare name.
+ *
+ * `sharedRegister` travels with them. Nearly half of the 1,005 state seats sit
+ * on an LGA that elects more than one member, and the register cannot say which
+ * of them a unit votes in — so those figures describe the LGA, not the race,
+ * and the page has to say so rather than print a number that looks specific.
+ */
+export function shaStats(
+  seats: SeatTable | null | undefined,
+  state: string,
+  seat: string,
+): NonNullable<Race['stats']> {
+  const t = seats?.SHA ?? {};
+  const key = `${state}|${seat}`;
+  const canon = t[key] ? key : matchSeatName(t, key);
+  let hit = canon ? t[canon] : null;
+  /**
+   * A BY-ELECTION NAMES ITS LGA, NOT ITS SEAT.
+   *
+   * `constituencies` is the allowlist the backend gates reports with, and for a
+   * state-assembly contest the backend buckets by LGA — so what arrives here is
+   * an LGA name. Kano's is "Dawaki Kudu"; the seat is called "Dawakin Kudu". A
+   * seat-name lookup cannot bridge that, so it missed and the card fell back to
+   * `{ lgas: 1 }` — the exact "1 LGAs" this function exists to remove, on the
+   * one screen most likely to be read.
+   *
+   * Where the LGA elects several members every one of those rows carries the
+   * LGA's own figures (checked: identical across all 240 shared groups), so the
+   * first is as good as any and `sharedRegister` is already set on it.
+   */
+  if (!hit) hit = assemblySeatsInLga(seats, state, seat)[0] ?? null;
+  if (!hit) return { lgas: 1 };
+  return {
+    lgas: (hit.lgas ?? []).length,
+    wards: hit.wards,
+    pollingUnits: hit.pollingUnits,
+    sharedRegister: !!hit.sharedRegister,
+  };
+}
+
+/**
+ * A BY-ELECTION'S SCREEN. Twin of app/race.js:byElectionRace.
+ *
+ * A by-election is a race in the same category as the general election for that
+ * seat — a House by-election is a House race — so it reuses the same builders.
+ * What it must never do is share the general election's CONTEST CODE:
+ * `join.contest` is what /api/national is keyed by and what the ledger
+ * partitions a race's subchain on, so filing a 2026 by-election under `REP`
+ * would merge it with the 2027 general election for the same seat, inside a
+ * published anchor, permanently.
+ *
+ * The seat's name comes from the contest itself. `constituencies` is the
+ * allowlist the backend gates reports with (services/scope.js contestGate), so
+ * the screen and the gate cannot describe different places.
+ */
+export function byElectionRace(
+  contest: ContestLite | null | undefined,
+  seats: SeatTable | null | undefined,
+  political: Political | null | undefined,
+): Race | null {
+  if (!contest) return null;
+  const tier = contest.tier || contest.code;
+  const seat = (contest.constituencies ?? [])[0];
+  const state = (contest.states ?? [])[0];
+  if (!seat) return null;
+
+  if (tier === 'SEN' || tier === 'REP') {
+    const r = seatRace(seats, contest.code, seat, contest, tier);
+    if (r) r.election = `${state} State · ${contest.name}`;
+    return r;
+  }
+  if (tier === 'GOV') return stateRace(political, state, contest);
+  if (tier !== 'SHA') return null;
+
+  // REAL FIGURES, not the number 1. This was `lgas: constituencies.length`,
+  // which is always 1 for a by-election, so the card read "1 LGAs" and said
+  // nothing. The seat table carries state constituencies now.
+  const stats = shaStats(seats, state, seat);
+  return {
+    office: `${seat} State Constituency — ${state} State`,
+    election: `${state} State · ${contest.name}`,
+    date: contest.date || undefined,
+    stats,
+    note:
+      (stats.sharedRegister
+        ? "This LGA elects more than one state member, and INEC's register does " +
+          'not separate them, so the ward and polling-unit figures on this page ' +
+          'cover every seat in the LGA rather than this one alone. '
+        : '') + seatNote('by-election'),
+    candidates: [],
+    others: [],
+    join: {
+      contest: contest.code,
+      // 'lga' because that is the level the backend buckets a state-assembly
+      // contest by — state-assembly constituencies are not in the register.
+      level: 'lga',
+      value: seat,
+      state,
+      lgas: contest.constituencies ?? [],
+    },
+  };
+}
+
+/**
+ * A STATE CONSTITUENCY'S SCREEN. Twin of app/race.js:assemblyRace.
+ *
+ * State-assembly seats are not a column in the register — that is why the
+ * backend buckets SHA reports by LGA — so everything here comes from the SHA
+ * block of seat_lgas.json, built from the seat catalogue.
+ *
+ * There are 1,005 of them, which is why they are reached by route param and
+ * from the board rather than listed anywhere: the same treatment the 109
+ * senatorial districts and 366 federal constituencies already get.
+ */
+export function assemblyRace(
+  seats: SeatTable | null | undefined,
+  state: string,
+  seat: string,
+  contest?: ContestLite | null,
+): Race | null {
+  const table = seats?.SHA ?? {};
+  const key = `${state}|${seat}`;
+  const canon = table[key] ? key : matchSeatName(table, key);
+  if (!canon) return null;
+  const s = table[canon];
+  return {
+    office: `${s.seat ?? seat} State Constituency`,
+    election: `${s.state} State · House of Assembly`,
+    date: contest?.date,
+    stats: { lgas: (s.lgas ?? []).length, wards: s.wards, pollingUnits: s.pollingUnits },
+    note:
+      (s.sharedRegister
+        ? `${(s.lgas ?? []).join(', ')} elects more than one state member, and INEC's ` +
+          'register does not separate them, so the ward and polling-unit figures on this ' +
+          'page cover every seat in that LGA rather than this one alone. '
+        : '') + seatNote('race'),
+    candidates: [],
+    others: [],
+    join: {
+      contest: contest?.code ?? 'SHA',
+      level: 'lga',
+      value: (s.lgas ?? [])[0] ?? (s.seat ?? seat),
+      state: s.state,
+      lgas: s.lgas ?? [],
+    },
+  };
+}
+
+/**
+ * Every state constituency in one state, for the picker. Sorted by name so the
+ * list is stable; a state has 24-40 of them, which is a readable screen.
+ */
+export function assemblySeats(
+  seats: SeatTable | null | undefined,
+  state: string,
+): SeatInfo[] {
+  const table = seats?.SHA ?? {};
+  return Object.keys(table)
+    .filter((k) => normRegion(k.split('|')[0]) === normRegion(state))
+    .map((k) => table[k])
+    .sort((a, b) => String(a.seat).localeCompare(String(b.seat)));
+}
+
+/**
+ * The seats sitting on one LGA.
+ *
+ * The SHA board buckets by LGA, so a tap on it names an LGA and not a seat —
+ * and 240 of the 768 LGAs elect two, three or four members. Returning the LIST
+ * rather than the first one is what stops the board sending a reader to a race
+ * they did not tap on.
+ */
+export function assemblySeatsInLga(
+  seats: SeatTable | null | undefined,
+  state: string,
+  lga: string,
+): SeatInfo[] {
+  return assemblySeats(seats, state).filter((s) =>
+    (s.lgas ?? []).some((l) => normRegion(l) === normRegion(lga)),
+  );
 }
 
 /**

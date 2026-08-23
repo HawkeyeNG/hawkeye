@@ -36,6 +36,12 @@ type Item = {
   href: string | null;
   /** Set on the governorship row: the states on this cycle's ballot. */
   states?: string[];
+  /**
+   * Set on the STATE-ASSEMBLY row: every state with an assembly. 1,005 seats is
+   * not a list, so a state chip opens that state's own picker rather than
+   * trying to name every constituency here.
+   */
+  assembly?: string[];
 };
 
 const GENERAL_ELECTION_YEAR = 2027;
@@ -99,6 +105,7 @@ export default function Races() {
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const [soonOpen, setSoonOpen] = useState<string | null>(null);
   const [govOpen, setGovOpen] = useState(false);
+  const [asmOpen, setAsmOpen] = useState(false);
   const [filter, setFilter] = useState<Status | 'all'>('all');
   const [contests, setContests] = useState<Contest[] | null>(null);
   const [political, setPolitical] = useState<Political | null>(null);
@@ -123,7 +130,11 @@ export default function Races() {
     for (const c of [...contests].sort(bySeat)) {
       out.push({
         name: label(c),
-        desc: DESC[c.code] ?? '',
+        // A by-election borrows nothing from its category's blurb: "360 federal
+        // constituencies" is a false description of a race for one.
+        desc: (c.constituencies ?? []).length
+          ? `${c.constituencies!.join(', ')} — ${(c.states ?? []).join(', ')}.`
+          : (DESC[c.code] ?? ''),
         date: c.date,
         status: statusOf(c.date),
         // WHERE THIS CATEGORY GOES.
@@ -139,13 +150,22 @@ export default function Races() {
         // Same destinations Home's cards use — see (tabs)/index.tsx:cardHref, and
         // keep the two in step. A governorship still expands to its 28 states
         // rather than linking anywhere itself.
+        //
+        // A BY-ELECTION IS ONE SEAT, so it links straight at its own screen —
+        // no seat name to pass, because the contest already names it. The
+        // general SEN/REP rows go to their national board instead; the SHA row
+        // expands, like the governorship, because 1,005 seats is not a race you
+        // can open.
         href:
           c.code === 'PRES'
             ? '/candidates'
-            : c.code === 'GOV'
-              ? null
-              : `/(tabs)/results?contest=${encodeURIComponent(c.code)}`,
+            : (c.constituencies ?? []).length
+              ? `/race?contest=${encodeURIComponent(c.code)}`
+              : c.code === 'GOV' || c.code === 'SHA'
+                ? null
+                : `/(tabs)/results?contest=${encodeURIComponent(c.code)}`,
         states: c.code === 'GOV' ? (c.states ?? []) : undefined,
+        assembly: c.code === 'SHA' && !(c.constituencies ?? []).length ? (c.states ?? []) : undefined,
       });
     }
     // A finished election leaves the catalogue, but its page stays up — a record
@@ -202,12 +222,14 @@ export default function Races() {
     );
   };
 
-  const stateChips = (states: string[]) => (
+  const stateChips = (states: string[], contest: 'GOV' | 'SHA' = 'GOV') => (
     <View className="flex-row flex-wrap pt-1.5">
       {states.map((s) => (
         <Pressable
           key={s}
-          onPress={() => router.push(`/race?contest=GOV&state=${encodeURIComponent(s)}` as never)}
+          onPress={() =>
+            router.push(`/race?contest=${contest}&state=${encodeURIComponent(s)}` as never)
+          }
           className="mb-2 mr-2 rounded-full border border-line bg-surface px-3 py-1.5 active:opacity-70"
         >
           <Text className="text-xs font-semibold text-good-ink">{s}</Text>
@@ -215,6 +237,48 @@ export default function Races() {
       ))}
     </View>
   );
+
+  /**
+   * The state-assembly expander. Mirrors the governorship one, but a chip opens
+   * a PICKER rather than a race: a state has 24-40 constituencies and the
+   * country has 1,005, so the seat list belongs on a screen of its own.
+   */
+  const assemblyRow = (r: Item) => {
+    const all = [...(r.assembly ?? [])].sort();
+    return (
+      <View key={r.name} className="mb-3 rounded-2xl bg-card px-4 py-3.5">
+        <Pressable
+          onPress={() => setAsmOpen((v) => !v)}
+          className="flex-row items-center active:opacity-80"
+        >
+          <View className="flex-1 pr-3">
+            <Text className="text-base font-bold text-ink">{r.name}</Text>
+            <Text className="pt-0.5 text-xs text-muted">{r.desc}</Text>
+            {r.date ? <Text className="pt-0.5 text-xs text-muted">{fmt(r.date)}</Text> : null}
+          </View>
+          <View className="flex-row items-center">
+            <View className="rounded-full bg-hawk-green px-3 py-1">
+              <Text className="text-xs font-bold text-hawk-gold">{all.length} states</Text>
+            </View>
+            <Feather
+              name={asmOpen ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={ui.faint}
+              style={{ marginLeft: 2 }}
+            />
+          </View>
+        </Pressable>
+        {asmOpen ? (
+          <View className="pt-2">
+            <Text className="pt-1 text-[11px] text-muted">
+              Each opens that state&apos;s constituencies. The FCT has no state assembly.
+            </Text>
+            {stateChips(all, 'SHA')}
+          </View>
+        ) : null}
+      </View>
+    );
+  };
 
   const renderItem = (r: Item) => {
     const open = soonOpen === r.name;
@@ -232,6 +296,9 @@ export default function Races() {
         ) : null}
       </View>
     );
+
+    // Neither expanding row is a link — each opens a list of states.
+    if (r.assembly) return assemblyRow(r);
 
     // The governorship row is not a link — it opens a list of the states, each
     // of which has its own page.

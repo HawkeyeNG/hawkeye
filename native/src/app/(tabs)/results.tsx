@@ -973,6 +973,13 @@ export default function Results() {
   const racePageHref = useMemo(() => {
     const name = inspect?.name && String(inspect.name).replace(/\s*\(.*\)$/, '').trim();
     if (!name) return null;
+    // A BY-ELECTION IS ONE SEAT, so its board links straight at its own screen —
+    // no seat name to pass, because the contest already names it, in the same
+    // `constituencies` allowlist the backend gates its reports with.
+    const def = contestCode ? contests?.find((c) => c.code === contestCode) : null;
+    if (def && (def.constituencies ?? []).length) {
+      return `/race?contest=${encodeURIComponent(def.code)}`;
+    }
     // Keyed on the CONTEST, not on the selected race's type. A whole-contest
     // board has no selected race, and that is exactly the screen where tapping a
     // region to reach its page matters most — the national map of 109 districts.
@@ -984,10 +991,26 @@ export default function Results() {
     if (contestCode === 'REP' && level === 'federal') {
       return `/race?contest=REP&seat=${encodeURIComponent(name)}`;
     }
-    // SHA is deliberately absent: state-assembly constituencies are not in the
-    // register at all, so its board is drawn by LGA and an LGA has no seat page
-    // to go to. PRES is one national race — a state is a breakdown of it, not a
-    // race of its own.
+    /**
+     * The state-assembly board buckets by LGA, and a screen is about a SEAT —
+     * 240 of the 768 LGAs elect more than one member, so this cannot name one.
+     * It passes the LGA and lets the race screen resolve it: one seat renders,
+     * several offer a choice. Sending a reader to whichever sorted first would
+     * be a screen about a race they did not tap on.
+     *
+     * `mapScope` is the state this board is cropped to, and an LGA name is only
+     * unique WITHIN a state — six of them repeat across states (Bassa,
+     * Ifelodun, Irepodun, Nasarawa, Obi, Surulere). Uncropped there is no state
+     * to pass, so the region stays unlinked rather than guessing which Bassa the
+     * reader meant.
+     */
+    if (contestCode === 'SHA') {
+      return mapScope
+        ? `/race?contest=SHA&state=${encodeURIComponent(mapScope)}&lga=${encodeURIComponent(name)}`
+        : null;
+    }
+    // PRES is one national race — a state is a breakdown of it, not a race of
+    // its own.
     if (contestCode !== 'GOV' || level !== 'state') return null;
     // The FCT is on every state map and has no governor — it is run by a
     // minister, so it is excluded here as it is everywhere else.
@@ -996,7 +1019,7 @@ export default function Results() {
     return known
       ? `/race?key=${encodeURIComponent(known.key)}`
       : `/race?contest=GOV&state=${encodeURIComponent(name)}`;
-  }, [contestCode, level, inspect, political]);
+  }, [contestCode, level, inspect, political, contests, mapScope]);
 
   /**
    * Tap targets that actually work. A federal constituency is a few pixels wide

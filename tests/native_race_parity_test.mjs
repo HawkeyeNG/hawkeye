@@ -56,7 +56,7 @@ new Function('require', 'module', 'exports', 'process', code)(
 const rn = module_.exports;
 
 console.log('=== both sides export the same builders ===');
-for (const fn of ['seatRace', 'byElectionRace', 'assemblyRace', 'assemblySeats', 'assemblySeatsInLga', 'shaStats', 'stateRace']) {
+for (const fn of ['seatRace', 'byElectionRace', 'assemblyRace', 'assemblySeats', 'assemblySeatsInLga', 'shaStats', 'stateRace', 'seatFieldOf', 'wholeFieldOf']) {
   check(`native exports ${fn}`, typeof rn[fn], 'function');
   check(`web exports ${fn}`, typeof web[fn], 'function');
 }
@@ -158,6 +158,62 @@ console.log('\n=== the LGA a board hands over resolves to seats, not a guess ===
   const all = rn.assemblySeats(seats, 'Bayelsa');
   check('Bayelsa lists all 24 constituencies', all.length, 24);
   check('web agrees', web.assemblySeats(seats, 'Bayelsa').length, all.length);
+}
+
+console.log('\n=== the candidate-layout rule agrees on both clients ===');
+/**
+ * A seat lists its field; a region profiles it. The two RENDERERS cannot be
+ * compared — one builds template strings, the other JSX — so the decision is a
+ * function on each side and THAT is what is held against itself here.
+ *
+ * Every seat in the country is checked, plus the region shapes that must NOT
+ * take the seat treatment.
+ */
+{
+  const cases = [];
+  const def = { ...CONTEST };
+  for (const tier of ['SEN', 'REP']) {
+    for (const n of Object.keys(seats[tier])) cases.push([`${tier} ${n}`, rn.seatRace(seats, tier, n, { ...def, code: tier }, tier)]);
+  }
+  for (const k of Object.keys(seats.SHA)) {
+    const s = seats.SHA[k];
+    cases.push([`SHA ${k}`, rn.assemblyRace(seats, s.state, s.seat, { code: 'SHA', name: 'SHA' })]);
+  }
+  for (const d of contests.filter((c) => c.tier)) cases.push([d.code, rn.byElectionRace(d, seats, political)]);
+  cases.push(['GOV Kano', rn.stateRace(political, 'Kano', { code: 'GOV', name: 'Governorship', states: ['Kano'] })]);
+  cases.push(['GOV Osun (written)', political.raceOsun2026]);
+  cases.push(['PRES 2027 (no join)', political.race2027]);
+
+  const disagree = cases.filter(([, r]) => web.seatFieldOf(r) !== rn.seatFieldOf(r)).map(([n]) => n);
+  check(`all ${cases.length} races agree on seat-vs-region`, disagree.slice(0, 4), []);
+
+  // And the answer is RIGHT, not merely identical — two clients can agree on a
+  // wrong rule. Named cases, from both sides of the line.
+  const by = Object.fromEntries(cases);
+  check('a senatorial seat lists', rn.seatFieldOf(by['SEN Abia Central']), true);
+  check('a federal seat lists', rn.seatFieldOf(by['REP Aba North/Aba South']), true);
+  check('a state constituency lists', rn.seatFieldOf(by['SHA Bayelsa|Brass II']), true);
+  check('a REP by-election lists', rn.seatFieldOf(by.REP_BYE_GOMBE_2026), true);
+  check('a governorship PROFILES', rn.seatFieldOf(by['GOV Kano']), false);
+  check('the written Osun race PROFILES', rn.seatFieldOf(by['GOV Osun (written)']), false);
+  check('the presidency PROFILES', rn.seatFieldOf(by['PRES 2027 (no join)']), false);
+
+  // The merged list: same names, same order, on both sides — including the
+  // three-shape case a real seat will have once INEC publishes.
+  const withField = {
+    ...by['SEN Abia Central'],
+    candidates: [{ name: 'Ada Nwosu', party: 'LP', incumbent: true }],
+    others: [{ name: 'Bello Musa', party: 'APC' }, { name: 'Chidi Eze', party: 'PDP' }],
+    minors: [{ name: 'Dele Okon', party: 'SDP', meta: 'SDP · running mate' }],
+  };
+  check(
+    'candidates + others + minors merge identically',
+    rn.wholeFieldOf(withField).map((c) => `${c.party}:${c.name}`),
+    web.wholeFieldOf(withField).map((c) => `${c.party}:${c.name}`),
+  );
+  check('and merge ALL THREE shapes, sorted by party',
+    rn.wholeFieldOf(withField).map((c) => c.party), ['APC', 'LP', 'PDP', 'SDP']);
+  check('an empty field merges to nothing', rn.wholeFieldOf(by['SEN Abia Central']).length, 0);
 }
 
 console.log('\n=== controls: these must FAIL to resolve ===');

@@ -9,6 +9,8 @@ import {
   partyColor,
   photoUrl,
   resultsHrefFor,
+  seatFieldOf,
+  wholeFieldOf,
   type Candidate,
   type Race,
 } from '@/lib/political';
@@ -138,19 +140,30 @@ export function RaceView({
         year: 'numeric',
       })
     : '';
-  const ballot = race.others?.length
-    ? [...race.candidates, ...race.others].sort((a, b) => a.party.localeCompare(b.party))
-    : null;
+  // A SEAT LISTS ITS FIELD; A REGION PROFILES IT — the rule and its reasoning
+  // live in lib/political.ts, next to the web twin's, so the two can be compared
+  // by a test rather than by reading two renderers side by side.
+  const seatField = seatFieldOf(race);
+  const wholeField = seatField ? wholeFieldOf(race) : [];
+  const ballot =
+    !seatField && race.others?.length
+      ? [...race.candidates, ...race.others].sort((a, b) => a.party.localeCompare(b.party))
+      : null;
   // A race whose field INEC has not published is the normal state of a seat page
   // until about a month out. With no cards to put in them, the candidate
   // sections printed a heading, a nonpartisan disclaimer and then nothing —
   // which is what every governorship page outside Osun would have opened on.
-  const hasField = race.candidates.length > 0;
+  const hasField = !seatField && race.candidates.length > 0;
   // WHERE THE NOTE GOES DEPENDS ON WHAT ELSE IS ON THE SCREEN. With candidates it
   // is a source credit and belongs at the foot; with none it is the only thing
   // explaining why there is no ballot, and the foot position puts that under two
   // buttons, below the fold.
-  const noteLeads = !hasField && !!race.note;
+  //
+  // Asked of the WHOLE screen, not of `hasField`: a seat never has front-runner
+  // cards now, so keying on `hasField` would float the source credit to the top
+  // of every seat that DOES have a published field.
+  const anyField = seatField ? wholeField.length > 0 : race.candidates.length > 0;
+  const noteLeads = !anyField && !!race.note;
 
   // THE YEAR COMES FROM THE DATA — the polling date, or a year inside dateText
   // for a race whose day INEC has not fixed. No year rather than a guessed one:
@@ -173,8 +186,12 @@ export function RaceView({
         // the data. Date is a fixed day where INEC set one (Osun), else a verbatim
         // label (the 2027 presidential date is not yet fixed — dateText '2027').
         const st = race.stats;
-        const candTotal =
-          race.candidates.length + (race.others?.length ?? race.minors?.length ?? 0);
+        // COUNTED FROM THE LIST THAT IS ACTUALLY PRINTED. On a seat the merged
+        // field is the only list, so deriving the number from anything else
+        // could disagree with what is on screen directly beneath it.
+        const candTotal = seatField
+          ? wholeField.length
+          : race.candidates.length + (race.others?.length ?? race.minors?.length ?? 0);
         const cells: Array<[string | number, string]> = [];
         if (race.date) {
           cells.push([
@@ -267,6 +284,38 @@ export function RaceView({
         </View>
       ) : null}
 
+      {/* A SEAT'S WHOLE FIELD — one heading, one row each, in the same compact
+          format the presidential screen uses for its minor candidates. See the
+          `seatField` note above for why a seat is not given cards. */}
+      {seatField && wholeField.length ? (
+        <>
+          <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
+            Declared candidates
+          </Text>
+          <Text className="pb-2 text-xs text-muted">
+            Alphabetical by party. Not an endorsement or a prediction.
+          </Text>
+          <View className="overflow-hidden rounded-2xl bg-card">
+            {wholeField.map((c, i) => (
+              <View
+                key={`${c.party}-${c.name}`}
+                className={`flex-row items-center px-4 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}
+              >
+                <PartyMark party={c.party} logos={logos} />
+                <View className="flex-1 pl-3">
+                  <Text className="text-sm text-ink">{c.name}</Text>
+                  {c.meta ? <Text className="text-[11px] text-muted">{c.meta}</Text> : null}
+                </View>
+                <Text className="text-[11px] font-semibold" style={{ color: partyColor(c.party) }}>
+                  {c.party}
+                  {!c.meta && c.incumbent ? ' · inc' : ''}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : null}
+
       {hasField ? (
         <>
           <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
@@ -304,7 +353,9 @@ export function RaceView({
         </>
       ) : null}
 
-      {race.minors?.length ? (
+      {/* Not on a seat: `wholeField` above already printed every one of these
+          names, and a second heading would double the field. */}
+      {!seatField && race.minors?.length ? (
         <>
           <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
             Other declared candidates

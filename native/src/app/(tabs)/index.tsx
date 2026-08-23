@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
+import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
@@ -424,6 +425,13 @@ export default function Home() {
 
   return (
     <View className="flex-1 bg-surface">
+      {/* THE FIRST-RUN TOUR LIVES HERE, not in the sign-up handler.
+          `router.replace('/(tabs)')` appears at five places in sign-in.tsx —
+          password, OTP, two resume paths and browse-without-an-account — and a
+          tour hung off one of them would silently miss the other four. This is
+          the screen every one of those paths lands on. It opens itself only if
+          this device has never seen it, and fails closed. */}
+      <Tour auto />
       <ScreenHeader title="Hawkeye" translateY={translateY} right="none" />
       <FlashList
         data={shown ?? []}

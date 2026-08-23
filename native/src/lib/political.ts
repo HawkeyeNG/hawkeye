@@ -652,6 +652,52 @@ export function assemblySeatsInLga(
 }
 
 /**
+ * A SEAT LISTS ITS FIELD; A REGION PROFILES IT.
+ *
+ * The presidency and a governorship are races a reader follows as a contest
+ * between named people — so they keep the front-runner cards, the full ballot
+ * and the quick-compare table. A Senate, House or state-assembly seat is not
+ * read that way: there are 1,480 of them, the field is a list of names, and
+ * there is no per-candidate prose to profile or compare. Giving one of those the
+ * presidential treatment would produce a screen of cards with "—" in every field
+ * and a compare table whose five columns are all empty.
+ *
+ * So a seat gets ONE section, "Declared candidates", in the same compact row
+ * format the presidential screen already uses for "Other declared candidates".
+ *
+ * Keyed off `join.level`, the same field the map, the board and the stat bar key
+ * on, so a screen cannot draw itself as one kind of race and list itself as
+ * another. No join at all means the presidency, which has none.
+ *
+ * A FUNCTION, not an expression inside the component, because the web twin needs
+ * the identical answer and a rule buried in JSX cannot be compared to one buried
+ * in template strings. Twin: app/race.js:seatFieldOf, held against this one by
+ * tests/native_race_parity_test.mjs.
+ */
+export function seatFieldOf(race: Race | null | undefined): boolean {
+  const lvl = race?.join?.level;
+  return lvl === 'senatorial' || lvl === 'federal_constituency' || lvl === 'lga';
+}
+
+/** A row in a seat's single candidate list — a Candidate, or a Minor's `meta`. */
+export type FieldEntry = Candidate & { meta?: string };
+
+/**
+ * Every declared name on a seat's screen, in one list.
+ *
+ * `candidates`/`others`/`minors` are three shapes of the same fact and a seat
+ * has no reason to separate them — merging is what lets one heading be honest
+ * about being the whole field. Sorted by party, so the order is not a ranking.
+ */
+export function wholeFieldOf(race: Race | null | undefined): FieldEntry[] {
+  return [
+    ...(race?.candidates ?? []),
+    ...(race?.others ?? []),
+    ...(race?.minors ?? []),
+  ].sort((a, b) => String(a.party).localeCompare(String(b.party)));
+}
+
+/**
  * Absolutise a candidate photo path from political_data.json.
  *
  * The file stores site-relative paths ("photos/candidates/tinubu.jpg") because

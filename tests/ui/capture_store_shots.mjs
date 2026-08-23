@@ -56,7 +56,12 @@ const ctx = await browser.newContext({
   isMobile: true,
   hasTouch: true,
   locale: 'en-NG',
-  colorScheme: 'light',
+  // DARK. It is the app's default look: the theme preference ships as 'system'
+  // (lib/theme-pref.tsx), and these shots stand for what someone opening the app
+  // actually sees. The light captures were an artefact of this line, not a
+  // choice — a store listing showing a palette most users never meet is a
+  // listing about a different app.
+  colorScheme: 'dark',
 });
 
 await ctx.addInitScript(

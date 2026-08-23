@@ -93,11 +93,27 @@ for (const [name, src] of [['races.html', webRaces], ['races.tsx', racesSrc]]) {
 // State Assembly all have national boards now, so a dead row was stale UI, not a
 // statement about the election.
 const racesScreen = readFileSync('/home/elrio/hawkeye/native/src/app/races.tsx', 'utf8');
-check('Senate/Reps/SHA link to their own board',
+check('Senate/Reps link to their own board',
   racesScreen.includes('(tabs)/results?contest=${encodeURIComponent(c.code)}'), true);
 check('the presidency still opens its field page', racesScreen.includes("'/candidates'"), true);
-// A governorship is 28 separate elections; it expands rather than linking.
-check('a governorship still expands instead', /c\.code === 'GOV'\s*\?\s*null/.test(racesScreen), true);
+// TWO CATEGORIES EXPAND RATHER THAN LINK, for the same reason: a governorship is
+// 28 separate elections and a state assembly is 1,005 seats across 36 chambers,
+// so neither is a race you can open. Each state chip is the destination.
+//
+// Asserted as "reaches null, and has an expander", not as one exact expression —
+// the previous grep was for the literal `c.code === 'GOV' ? null` and broke the
+// moment SHA joined the same branch, reporting a governorship regression that
+// had not happened.
+const hrefBranch = racesScreen.slice(racesScreen.indexOf('href:'), racesScreen.indexOf('states:'));
+check('the href branch has a null arm at all', /\bnull\b/.test(hrefBranch), true);
+for (const code of ['GOV', 'SHA']) {
+  check(`${code} is decided in the href branch`, hrefBranch.includes(`c.code === '${code}'`), true);
+  check(`${code} is not sent to a board of its own`,
+    new RegExp(`c\\.code === '${code}'[^\\n]*results\\?contest`).test(hrefBranch), false);
+}
+check('a state chip carries the contest it expands from',
+  racesScreen.includes('/race?contest=${contest}&state='), true);
+check('the assembly expander has its own open state', /asmOpen/.test(racesScreen), true);
 // "Open" beside a January 2027 date read as "reporting is open", which on an
 // election app is the wrong thing to leave ambiguous.
 check('no pill claims an unopened election is open', racesScreen.includes(": 'Open';"), false);

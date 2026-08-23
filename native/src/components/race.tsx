@@ -152,9 +152,19 @@ export function RaceView({
   // buttons, below the fold.
   const noteLeads = !hasField && !!race.note;
 
+  // THE YEAR COMES FROM THE DATA — the polling date, or a year inside dateText
+  // for a race whose day INEC has not fixed. No year rather than a guessed one:
+  // this template used to be Osun-and-the-presidency only, and a hardcoded 2026
+  // would announce a 2027 Senate seat as a 2026 race. Twin of race.js:yearOf.
+  const yr = race.date
+    ? String(new Date(`${race.date}T00:00:00`).getFullYear())
+    : (String(race.dateText ?? race.election ?? '').match(/\b(20\d{2})\b/) ?? [])[1] ?? '';
+
   return (
     <View>
-      <Text className="text-xl font-bold text-ink">{race.office || race.election}</Text>
+      <Text className="text-xl font-bold text-ink">
+        {race.office ? `${race.office}${yr ? ` — ${yr}` : ''}` : race.election}
+      </Text>
       {dateStr ? <Text className="pt-0.5 text-sm text-muted">{dateStr}</Text> : null}
 
       {(() => {
@@ -177,12 +187,43 @@ export function RaceView({
           ]);
         } else if (race.dateText) {
           cells.push([race.dateText, race.dateLabel ?? 'Date']);
+        } else if (yr) {
+          // THE YEAR IS A FALLBACK, NOT A FIFTH CELL. A full election day
+          // already contains it ("16 Jan 2027"), and the written races carry
+          // their own dated label — one of which is literally "Election year",
+          // so an unconditional cell printed that label TWICE on those screens.
+          cells.push([yr, 'Election year']);
         }
-        // No "0 Candidates" cell — a zero in a stat bar reads as a claim about
-        // the ballot rather than about what we have been given.
-        if (candTotal) cells.push([candTotal, 'Candidates']);
+        /**
+         * TBD, NOT A SUPPRESSED CELL.
+         *
+         * This used to omit the cell at zero, on the grounds that a `0` in a
+         * stat bar reads as a claim about the ballot rather than about our data.
+         * Right about the zero, wrong about the fix: dropping the cell made the
+         * card SHORTEST on exactly the screens that have least, so a seat with
+         * no published field looked like one that had been half-built.
+         *
+         * `TBD` says what the zero could not — the number is missing from
+         * Hawkeye, not from the election.
+         */
+        cells.push([candTotal || 'TBD', 'Candidates']);
         if (st?.heldBy) cells.push([st.heldBy, 'Held by']);
-        if (st?.lgas != null) cells.push([st.lgas, 'LGAs']);
+        /**
+         * WARDS FOR A SEAT, LGAs FOR A REGION.
+         *
+         * The LGA count describes a governorship (a whole state) and a
+         * senatorial district (3-8 LGAs) well. It describes a federal
+         * constituency badly — 2 to 4 — and a state constituency not at all,
+         * where it is almost always the number 1. Wards are the grain those
+         * seats are actually built from: 10-51 per federal seat.
+         *
+         * Chosen off `join.level`, the same field the board and the map key on,
+         * so a screen cannot describe itself as one kind of race and draw
+         * another.
+         */
+        const seatLevel = race.join?.level === 'federal_constituency' || race.join?.level === 'lga';
+        if (seatLevel && st?.wards != null) cells.push([st.wards, 'Wards']);
+        else if (st?.lgas != null) cells.push([st.lgas, 'LGAs']);
         if (st?.pollingUnits != null) cells.push([`~${st.pollingUnits.toLocaleString()}`, 'Units']);
         return (
           <View className="mt-3 flex-row rounded-2xl bg-card px-2 py-3">

@@ -927,7 +927,27 @@
    */
   function shaStats(seats, state, seat) {
     const t = (seats || {}).SHA || {};
-    const hit = t[`${state}|${seat}`] || t[matchSeatName(t, `${state}|${seat}`)];
+    let hit = t[`${state}|${seat}`] || t[matchSeatName(t, `${state}|${seat}`)];
+    /**
+     * A BY-ELECTION NAMES ITS LGA, NOT ITS SEAT.
+     *
+     * `constituencies` is the allowlist the backend gates reports with, and for
+     * a state-assembly contest the backend buckets by LGA — so what arrives here
+     * is an LGA name. Kano's is "Dawaki Kudu"; the seat is called "Dawakin
+     * Kudu". A seat-name lookup cannot bridge that, so it missed and the card
+     * fell back to `{ lgas: 1 }` — the exact "1 LGAs" this function exists to
+     * remove, on the one page most likely to be read.
+     *
+     * Resolving through the LGA instead is not a looser spelling rule, it is the
+     * right question. Where the LGA elects several members every one of those
+     * rows carries the LGA's own figures (checked: identical across all 240
+     * shared groups), so the first is as good as any and `sharedRegister` is
+     * already set on it — the caveat the page prints.
+     */
+    if (!hit) {
+      const on = assemblySeatsInLga(seats, state, seat);
+      if (on.length) hit = on[0];
+    }
     if (!hit) return { lgas: 1 };
     return {
       lgas: (hit.lgas || []).length,
@@ -1067,4 +1087,5 @@
   window.assemblyRace = assemblyRace;
   window.assemblySeats = assemblySeats;
   window.assemblySeatsInLga = assemblySeatsInLga;
+  window.shaStats = shaStats;
 })();

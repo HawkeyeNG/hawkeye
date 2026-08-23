@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { bboxViewBox, loadMapGeo } from '@/components/results-map';
+import { bboxViewBox, loadMapGeo, matchRegion } from '@/components/results-map';
 import { api, type National, type NationalRegion } from '@/lib/api';
 import { partyColor, type RaceJoin } from '@/lib/political';
 import { useUi } from '@/lib/theme';
@@ -50,18 +50,46 @@ async function shapesFor(join: RaceJoin): Promise<{ shapes: Shape[]; caption: st
       : null;
   }
 
-  if (join.lgas && join.lgas.length > 1 && join.state) {
+  // A SEAT, cut into its member LGAs.
+  //
+  // `> 1` used to guard this: a single-LGA seat had nothing to subdivide and
+  // took the outline path instead. That is right for SEN and REP, whose
+  // outlines exist — and wrong for a STATE-ASSEMBLY seat, which has no outline
+  // file at all, so the guard left it with no map whatsoever. A one-LGA cut is
+  // allowed when nothing else could be drawn.
+  const minParts = join.level === 'lga' ? 1 : 2;
+  if (join.lgas && join.lgas.length >= minParts && join.state) {
     const geo = await loadMapGeo('lga');
-    const want = new Set(join.lgas.map((l) => norm(`${join.state}|${l}`)));
-    const shapes = geo.shapes.filter((s) => want.has(norm(s.key)));
-    // Only use the cut if it found every member.
+    // RESOLVED, not compared raw. The register and lga_geo.json disagree by a
+    // letter or two on names that are plainly the same LGA — "Ayedaade" vs
+    // "Ayedade", "Somolu" vs "Shomolu" — so an exact key match silently drops
+    // them and the seat containing one falls back to a featureless outline.
+    // matchRegion is the board's own matcher, uniqueness-guarded at every loose
+    // tier: it would rather find nothing than paint the neighbouring LGA.
+    const state = join.state;
+    const pool = geo.shapes.filter((s) => norm(String(s.key).split('|')[0]) === norm(state));
+    const shapes: Shape[] = [];
+    for (const l of join.lgas) {
+      const hit = matchRegion('lga', l, pool, (s) => String(s.key).split('|')[1] ?? '');
+      if (!hit) break;
+      shapes.push({ key: hit.key, name: hit.name, path: hit.path });
+    }
+    // Only use the cut if it found EVERY member; a partial cut would draw a seat
+    // missing pieces of itself, which is worse than an outline.
     if (shapes.length === join.lgas.length) {
       return {
-        shapes: shapes.map((s) => ({ key: s.key, name: s.name, path: s.path })),
-        caption: `${join.value} — ${shapes.length} local government areas`,
+        shapes,
+        caption: `${join.value} — ${shapes.length} local government area${shapes.length === 1 ? '' : 's'}`,
       };
     }
   }
+
+  // THERE IS NO OUTLINE FOR A STATE CONSTITUENCY, and there cannot be: they are
+  // not in the register and no boundary file ships them. Falling through to
+  // constituency_geo.json would look up an assembly seat's name among the 360
+  // FEDERAL ones — a lookup that can only miss, or worse, hit a same-named
+  // federal seat and draw the wrong shape.
+  if (join.level === 'lga') return null;
 
   const geo = await loadMapGeo(join.level === 'senatorial' ? 'senatorial' : 'federal');
   const hit = geo.shapes.find((s) => norm(s.name) === norm(join.value));

@@ -111,7 +111,12 @@
         // membership is ~46 KB that no other page has any use for.
         const seats = await fetch('seat_lgas.json').then((r) => r.json()).catch(() => null);
         race = window.seatRace(seats, code, seatName, contest, tier);
-      } else if (tier === 'SHA' && !contest.constituencies) {
+        // `contest &&` guards a real crash, not a style point: /api/contests is
+        // allowed to be unreachable (contestOf catches to null and the page
+        // still renders, undated), and reading `.constituencies` off null threw
+        // a TypeError that took the whole dispatcher down — so the ONE code path
+        // that degrades gracefully everywhere else rendered a blank screen here.
+      } else if (tier === 'SHA' && contest && !contest.constituencies) {
         /**
          * THE GENERAL STATE-ASSEMBLY CONTEST — 1,005 seats, so it arrives as one
          * of three things and this branch resolves all three:

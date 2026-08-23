@@ -142,16 +142,29 @@ check('native seeds no default race', /defaultRace/.test(nat), false);
 // effect would paint one empty board first and re-fire on every dep change.
 check('its chooser is derived, not an effect', /const nothingChosen = !race && !wholeContest;/.test(nat), true);
 check('and it is what the screen shows', /const choosing = picking \|\| nothingChosen;/.test(nat), true);
-// Both platforms order the five elections by seat magnitude. Two different
-// orders is the kind of difference a reader reads as a bug in one of them.
+// Both platforms order the elections by seat magnitude. Two different orders is
+// the kind of difference a reader reads as a bug in one of them.
+//
+// Native's copy MOVED: it was CHOOSER_ORDER in the Results screen, and now lives
+// as SEAT_ORDER beside the Contest type in lib/api.ts, because two native
+// screens and two web pages each kept their own copy and four copies of an
+// ordering rule is three chances to disagree. This check reads it wherever it
+// is; what it must never do is pass because it found nothing — hence the
+// not-null assertion below, which is what caught the move.
 const webOrder = fsReadWeb().match(/const ORDER = \[([^\]]*)\]/);
-const natOrder = nat.match(/const CHOOSER_ORDER = \[([^\]]*)\]/);
+const natOrder = fsReadNativeApi().match(/const SEAT_ORDER = \[([^\]]*)\]/);
+function fsReadNativeApi() {
+  return require_('node:fs').readFileSync('/home/elrio/hawkeye/native/src/lib/api.ts', 'utf8');
+}
 function fsReadWeb() {
   return require_('node:fs').readFileSync('/home/elrio/hawkeye/app/results.html', 'utf8');
 }
 const parse = (m) => (m ? m[1].match(/'(\w+)'/g).map((s) => s.replace(/'/g, '')) : null);
 check('web lists five elections by seat magnitude', parse(webOrder), ['PRES', 'GOV', 'SEN', 'REP', 'SHA']);
 check('native lists them identically', parse(natOrder), parse(webOrder));
+// A source check that silently matched nothing would report two nulls as equal.
+check('and both literals were actually found', [parse(webOrder), parse(natOrder)],
+  (v) => v.every((x) => Array.isArray(x) && x.length === 5));
 
 console.log(fail ? `\n${fail} FAILED` : '\nall passed');
 process.exitCode = fail ? 1 : 0;

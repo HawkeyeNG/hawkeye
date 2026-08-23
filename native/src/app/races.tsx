@@ -6,7 +6,7 @@ import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native
 import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
-import { api, type Contest } from '@/lib/api';
+import { api, bySeat, type Contest } from '@/lib/api';
 import { loadPolitical, type Political, type Race as RaceData } from '@/lib/political';
 import { useUi } from '@/lib/theme';
 
@@ -38,7 +38,8 @@ type Item = {
 };
 
 const GENERAL_ELECTION_YEAR = 2027;
-const ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
+// Seat magnitude, by TIER — see (tabs)/results.tsx bySeat, which this imports
+// rather than keeping a fifth copy of.
 const DESC: Record<string, string> = {
   PRES: 'The declared presidential field, quick compare and live results.',
   GOV: 'One governorship per state. Each state has its own page and map.',
@@ -118,7 +119,7 @@ export default function Races() {
   const items = useMemo<Item[] | null>(() => {
     if (!contests || !political) return null;
     const out: Item[] = [];
-    for (const c of [...contests].sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code))) {
+    for (const c of [...contests].sort(bySeat)) {
       out.push({
         name: label(c),
         desc: DESC[c.code] ?? '',

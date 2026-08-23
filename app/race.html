@@ -87,18 +87,44 @@
       const contestOf = (c) => fetch('/api/contests')
         .then((r) => r.json()).then((cs) => cs.find((x) => x.code === c)).catch(() => null);
 
-      if (code === 'GOV' && state) {
-        race = window.stateRace(data, state, await contestOf('GOV'));
-      } else if ((code === 'SEN' || code === 'REP') && seat) {
+      // DISPATCH ON THE TIER, NOT THE CODE. A by-election for a House seat is a
+      // House race and builds its page the same way; only its CONTEST CODE
+      // differs, and that difference is load-bearing — `join.contest` is what
+      // /api/national is keyed by and what the ledger partitions a race's
+      // subchain on, so a by-election filed under `REP` would merge with the
+      // 2027 general election for the same seat inside a published anchor.
+      //
+      // A by-election link needs only ?contest=: the contest names its own seat
+      // and state, in the same `constituencies` allowlist the backend gates
+      // reports with, so the page and the gate cannot describe different places.
+      const contest = await contestOf(code);
+      const tier = (contest && contest.tier) || code;
+      const seatName = seat || ((contest && contest.constituencies) || [])[0] || null;
+      const stateName = state || ((contest && contest.states) || [])[0] || null;
+
+      if (tier === 'GOV' && stateName) {
+        race = window.stateRace(data, stateName, contest);
+      } else if ((tier === 'SEN' || tier === 'REP') && seatName) {
         // seat_lgas.json is fetched ONLY here — 471 seats with their LGA
         // membership is ~46 KB that no other page has any use for.
-        const [seats, contest] = await Promise.all([
-          fetch('seat_lgas.json').then((r) => r.json()).catch(() => null),
-          contestOf(code),
-        ]);
-        race = window.seatRace(seats, code, seat, contest);
+        const seats = await fetch('seat_lgas.json').then((r) => r.json()).catch(() => null);
+        race = window.seatRace(seats, code, seatName, contest, tier);
+      } else if (tier === 'SHA' && seatName && contest) {
+        // A state-assembly seat has no seat table and no outline file — its
+        // constituencies are absent from the register, so the contest's own
+        // `constituencies` (which are LGA names) are all there is, and all a
+        // one-LGA map needs.
+        race = window.byElectionRace(contest, null, data);
+      } else if (QP.get('race')) {
+        race = data[QP.get('race')];
       } else {
-        race = data[QP.get('race') || 'raceOsun2026'];
+        // AN UNRECOGNISED CONTEST BUILDS NO PAGE. This used to fall through to
+        // `data['raceOsun2026']`, so any code the branches above did not match —
+        // every by-election among them — silently rendered the Osun
+        // governorship: a real page about a different election, with no sign
+        // anything had gone wrong. Same failure as scope.js's old
+        // `default: return 'PRES'`, and the same fix.
+        race = null;
       }
       window.mountRace(document.getElementById('race-main'), race, LOGOS, { compare: !!(race && race.minors) });
     })();

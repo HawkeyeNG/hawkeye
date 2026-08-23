@@ -120,6 +120,101 @@ if (fs.existsSync(GEO)) {
   if (added) console.log(`filled ${added} numbered seat(s) the register does not separate`);
 }
 
+/**
+ * STATE CONSTITUENCIES, which the register does not contain.
+ *
+ * SEN and REP are columns in polling_units, so their seats fall out of a GROUP
+ * BY. State-assembly constituencies are simply absent from INEC's register —
+ * which is why the backend buckets SHA reports by LGA — so the seat -> LGA
+ * mapping has to come from the catalogue instead: ASSEMBLY_LOCATIONS in
+ * native/src/lib/races.ts, 999 seats with the LGAs each one covers.
+ *
+ * READ FROM races.ts RATHER THAN COPIED. That table is maintained as part of the
+ * seat catalogue and has already been corrected twice (26 seats restored by
+ * court judgment in 2026, and a normalisation pass across sha_lga_map). A second
+ * copy here would be a second thing to correct, and the one nobody remembers.
+ *
+ * KEYED "State|Seat", unlike SEN and REP which key on the bare seat name. Those
+ * names are unique nationally; state-constituency names are not — "Central",
+ * "North East" and the numbered seats repeat across states — so the state is
+ * part of the identity, exactly as races.ts has it.
+ *
+ * SHARED FIGURES ARE FLAGGED. Several LGAs elect more than one state member, and
+ * the register cannot say which of them a unit votes in. Those seats get the
+ * LGA's own ward and unit totals with `sharedRegister: true`, the same treatment
+ * the numbered Lagos federal seats already get. Halving a figure between two
+ * seats would be a fabricated number.
+ */
+const RACES_TS = path.join(ROOT, 'native', 'src', 'lib', 'races.ts');
+if (fs.existsSync(RACES_TS)) {
+  const src = fs.readFileSync(RACES_TS, 'utf8');
+  const at = src.indexOf('export const ASSEMBLY_LOCATIONS');
+  if (at < 0) throw new Error('ASSEMBLY_LOCATIONS not found in races.ts — refusing to guess SHA seats');
+  const open = src.indexOf('{', at);
+  let depth = 0;
+  let end = open;
+  for (; end < src.length; end += 1) {
+    if (src[end] === '{') depth += 1;
+    else if (src[end] === '}') { depth -= 1; if (depth === 0) break; }
+  }
+  // A plain object literal of string keys, arrays and numbers — no imports, no
+  // calls — so evaluating it is reading data, not running the module.
+  // eslint-disable-next-line no-new-func
+  const LOCS = new Function(`return ${src.slice(open, end + 1)}`)();
+
+  const db2 = new DatabaseSync(DB, { readOnly: true });
+  const wardQ = db2.prepare(
+    `SELECT COUNT(*) AS n FROM (SELECT DISTINCT state, lga, ward FROM polling_units
+      WHERE state = ? AND lga = ? AND ward IS NOT NULL AND ward <> '')`);
+  const unitQ = db2.prepare('SELECT COUNT(*) AS n FROM polling_units WHERE state = ? AND lga = ?');
+
+  // How many seats sit on each (state, lga)? More than one means shared figures.
+  const seatsPerLga = new Map();
+  for (const key of Object.keys(LOCS)) {
+    const [st] = key.split('|');
+    for (const lga of LOCS[key].lgas || []) {
+      const k = `${st}|${lga}`;
+      seatsPerLga.set(k, (seatsPerLga.get(k) || 0) + 1);
+    }
+  }
+
+  const sha = {};
+  let unmatched = 0;
+  for (const key of Object.keys(LOCS)) {
+    const [state, seat] = key.split('|');
+    const lgas = LOCS[key].lgas || [];
+    let wards = 0;
+    let units = 0;
+    let missing = false;
+    for (const lga of lgas) {
+      const w = wardQ.get(state, lga);
+      const u = unitQ.get(state, lga);
+      if (!u || !Number(u.n)) { missing = true; continue; }
+      wards += Number(w?.n || 0);
+      units += Number(u.n);
+    }
+    if (missing) unmatched += 1;
+    sha[key] = {
+      state,
+      seat,
+      lgas,
+      wards,
+      pollingUnits: units,
+      // True when any of this seat's LGAs also carries another state seat, so
+      // these figures describe more than this one race.
+      ...(lgas.some((l) => (seatsPerLga.get(`${state}|${l}`) || 0) > 1) ? { sharedRegister: true } : {}),
+    };
+  }
+  db2.close();
+  out.SHA = sha;
+
+  const shared = Object.values(sha).filter((x) => x.sharedRegister).length;
+  console.log(`SHA ${Object.keys(sha).length} state constituencies `
+    + `(${shared} share an LGA with another seat, figures flagged)`);
+  // A seat whose LGA the register does not know would render blank facts.
+  if (unmatched) console.warn(`! ${unmatched} SHA seat(s) name an LGA the register does not have`);
+}
+
 const n = (c) => Object.keys(out[c]).length;
 const split = (c) => Object.values(out[c]).filter((s) => s.lgas.length === 1).length;
 const wardless = (c) => Object.values(out[c]).filter((s) => !s.wards).length;

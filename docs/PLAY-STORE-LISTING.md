@@ -73,8 +73,30 @@ upscale to 512 if needed).
 
 ## 3. Store settings
 
-- **App category:** News & Magazines  (alt: Tools)
-- **Tags:** election, news, civic, government (pick from Play's tag list)
+- **App category:** **Tools**. Reverted from News & Magazines on 2026-08-23, and
+  it should stay Tools.
+
+  It was moved to News & Magazines as a discoverability lever in the 2026-08-22
+  growth audit. Three things argue against it, and the growth case is the weakest
+  of the four:
+
+  1. It contradicts this app's OWN content rating. The IARC answer declares a
+     reference/utility app whose function is recording and verifying, not
+     reporting. A News category says the opposite on the same listing.
+  2. It contradicts the App Store listing, which is Utilities / Reference.
+     Reviewers on both sides can see the same website, and a product that
+     describes itself as two different kinds of app invites the question of which
+     is true.
+  3. It raises scrutiny on the ONE axis this app has already been rejected on
+     twice — government affiliation and source transparency. Sitting in News &
+     Magazines while publishing election figures is the worst place to be read
+     as claiming authority Hawkeye does not have.
+  4. The growth case was never strong: docs/PLAY-GROWTH.md's own diagnosis is a
+     cold start with no install or ratings signal, and the keywords already match
+     the queries verbatim. Category was not the binding constraint.
+
+- **Tags:** election, civic, government (pick from Play's tag list). `news`
+  removed with the category, for the same reason.
 - **Contact email:** osas@inixien.com  (or security@hawkeye.com.ng)
 - **Contact website:** https://hawkeye.com.ng
 - **Contact phone:** (your number — optional but recommended)

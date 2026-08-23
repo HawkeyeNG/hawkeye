@@ -37,32 +37,26 @@
  * survive lives in plugins/, which is why with-allow-backup-override and
  * with-release-signing are there too.
  *
- * ── DISABLED 2026-08-23: IT DOES NOT COMPILE ──────────────────────────────
+ * ── THE COMPILE FAILURE, AND THE FIX ─────────────────────────────────────
  *
- * Removed from app.json's plugins array. Re-enabling it as-is fails the build:
+ * Injecting the imports alone failed the build:
  *
  *   :app:compileReleaseKotlin
  *   e: MainApplication.kt:5:48 Unresolved reference 'GmsDocumentScannerOptions'
  *   e: MainApplication.kt:6:48 Unresolved reference 'GmsDocumentScanning'
  *   BUILD FAILED in 25m 3s
  *
- * The scanner artifact is declared implementation-scoped inside the
- * react-native-document-scanner-plugin library, so it is on that module's
- * compile path and not on the app module's. The imports this plugin injects into
- * MainApplication.kt therefore cannot resolve.
+ * react-native-document-scanner-plugin declares the artifact
+ * `implementation`-scoped (its android/build.gradle:77), which puts it on THAT
+ * module's compile classpath and not on the app module's. MainApplication.kt
+ * lives in the app module, so its imports could never resolve — this was never
+ * going to work, and only a compile says so.
  *
- * TO REVIVE IT, two things, in this order:
- *   1. Have the plugin also add the dependency to the APP module, e.g. via
- *      withAppBuildGradle appending
- *      `implementation 'com.google.android.gms:play-services-mlkit-document-scanner:...'`
- *      at the version the library already resolves, so the two cannot diverge.
- *   2. Prove it on a phone that currently reproduces the stall. Compiling is not
- *      the same as fixing; scannerLastError() in lib/scan.ts exists to say which
- *      it is.
- *
- * Until both are done this stays out of release builds. The scanner stall it
- * targets is present in the live listing too, so shipping without it is not a
- * regression — it is the status quo, minus twenty-five minutes of failed build.
+ * So the plugin now adds the dependency to the app module too, and reads the
+ * VERSION out of the library's own build.gradle rather than hardcoding it. A
+ * second hardcoded version is a second thing to drift: the app module and the
+ * library would silently resolve different artifacts the first time the library
+ * is upgraded, and Gradle would quietly pick one.
  *
  * ── NOT VERIFIED ON A DEVICE ──────────────────────────────────────────────
  *
@@ -74,7 +68,28 @@
  * reason: if the module still fails, that message says whether it is absent,
  * out of storage, or a Play services version floor.
  */
-const { withMainApplication } = require('@expo/config-plugins');
+const fs = require('node:fs');
+const path = require('node:path');
+const { withAppBuildGradle, withMainApplication } = require('@expo/config-plugins');
+
+/**
+ * The scanner artifact and version the LIBRARY resolves, read from its own
+ * build.gradle. Falls back to null rather than to a guessed version: adding a
+ * dependency at a version nobody chose is worse than not adding one, because it
+ * would build and then diverge.
+ */
+function scannerDependency(projectRoot) {
+  const gradle = path.join(
+    projectRoot, 'node_modules', 'react-native-document-scanner-plugin', 'android', 'build.gradle',
+  );
+  try {
+    const src = fs.readFileSync(gradle, 'utf8');
+    const m = src.match(/["'](com\.google\.android\.gms:play-services-mlkit-document-scanner:[^"']+)["']/);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
 
 const IMPORTS = [
   'import com.google.android.gms.common.moduleinstall.ModuleInstall',
@@ -100,6 +115,36 @@ const PREWARM = `
 `;
 
 module.exports = function withMlkitScannerPrewarm(config) {
+  // THE DEPENDENCY FIRST. Without it the imports below do not resolve and the
+  // build dies twenty-five minutes in, at compileReleaseKotlin.
+  config = withAppBuildGradle(config, (cfg) => {
+    const dep = scannerDependency(cfg.modRequest.projectRoot);
+    if (!dep) {
+      throw new Error(
+        'with-mlkit-scanner-prewarm: could not read the document-scanner version from '
+        + 'react-native-document-scanner-plugin/android/build.gradle. Refusing to guess a '
+        + 'version — fix the plugin or remove it from app.json.',
+      );
+    }
+    if (cfg.modResults.contents.includes('play-services-mlkit-document-scanner')) return cfg;
+    cfg.modResults.contents = cfg.modResults.contents.replace(
+      /^dependencies \{$/m,
+      `dependencies {
+    // Hawkeye: the scanner artifact is implementation-scoped inside
+`
+      + `    // react-native-document-scanner-plugin, so it is NOT on this module's
+`
+      + `    // compile path. MainApplication.kt imports it to pre-warm the Play
+`
+      + `    // services module, so this module needs it too. Version read from the
+`
+      + `    // library, never written down twice.
+`
+      + `    implementation "${dep}"`,
+    );
+    return cfg;
+  });
+
   return withMainApplication(config, (cfg) => {
     let src = cfg.modResults.contents;
 

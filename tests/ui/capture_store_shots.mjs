@@ -405,6 +405,18 @@ if (want(4)) {
   await shot('4-result.png');
 }
 
+// 2 - Home. The app's front door: what is coming, and the one action that
+// matters on the day. It replaced an entry-step shot that was a near-duplicate
+// of 6-practice — two pictures of the same screen is one wasted slot in a list
+// most people never scroll past.
+if (want(2)) {
+  await go('/');
+  await page.waitForTimeout(2500);
+  await clean();
+  console.log('/ ->', (await text(200)).replace(/\n/g, ' | '));
+  await shot('2-home.png');
+}
+
 // 5 - Political Data. The Senate and House hemicycles are the most populated
 // screen the app has on any day of the year, and they ship in the bundle.
 if (want(5)) {

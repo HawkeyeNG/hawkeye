@@ -141,7 +141,12 @@ Apple requires all four; all four already ship, so answer plainly if asked:
 
 ## 8. App Review Information
 
-- **Sign-in required:** Yes, for submitting reports. Browsing needs no account.
+- **Sign-in required:** Yes, for EVERYTHING. This said "browsing needs no
+  account", which is false and would have been a Guideline 2.1 rejection: the
+  root layout redirects every route except `/welcome` and `/sign-in` to
+  `/welcome` while signed out (`native/src/app/_layout.tsx:163-168`). A reviewer
+  following the old note would have got as far as the welcome screen and no
+  further.
 - **Demo account:** `+2348167000004` — international format, including the `+`.
   Password is the one stored in Play Console → App content → App access.
   **Re-verify it works before submitting**, exactly as on the Android side; a
@@ -151,11 +156,13 @@ Apple requires all four; all four already ship, so answer plainly if asked:
 **Notes (paste into App Review Notes):**
 
 ```
-Hawkeye is an independent civic transparency tool. It is not a government app and is not affiliated with INEC or any political party; every screen carries a disclaimer to that effect and links to the official INEC site.
+Hawkeye is an independent civic transparency tool. It is not a government app and is not affiliated with INEC or any political party; every screen that presents government-sourced information carries a visible notice saying so and linking the official INEC site.
+
+The app requires an account throughout — there is no signed-out browsing. Please sign in first with the demo account below.
 
 Sign in with the demo account above (phone + password — please do not use the OTP option, as codes go to a physical SIM).
 
-Result and incident reporting is date-gated to election day. To review the full reporting flow on any date, open "Practice Run" from the menu — it is a complete mock election that needs no account.
+Result and incident reporting is date-gated to election day. To review the full reporting flow on any date, sign in with the demo account and open More > Practice Run — a complete mock election that can be run end to end on any date, with no real report filed.
 
 All figures shown in the app are unofficial, crowd-reported observations from citizen observers. Official results are declared by INEC and are linked from within the app.
 

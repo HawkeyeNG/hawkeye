@@ -35,8 +35,14 @@ import { IconLink } from '@/components/icon-link';
  * One-liner + modal: the Play-critical claim (independent, not affiliated with
  * INEC) stays visible without interaction; the full statement + official links
  * open in a modal, so the banner no longer dominates every screen's layout.
- * Mounted on the government-info surfaces: results, races, integrity, reports
- * log, More.
+ * Mounted on the government-info surfaces: results, races, political data,
+ * candidates, integrity, the Osun record, race pages and More.
+ *
+ * That list was WRONG until 2026-08-23 — it claimed races and the reports log
+ * and neither was a mount site, while the Political Data page, which is the most
+ * government-sourced screen in the app, was not even claimed. A docstring that
+ * asserts compliance coverage is worth nothing if nobody checks it against the
+ * imports; this one is now checked by tests/gov_disclaimer_test.mjs.
  */
 export function GovDisclaimer() {
   const [open, setOpen] = useState(false);

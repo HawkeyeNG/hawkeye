@@ -4,19 +4,91 @@
 // and state assembly follow from the unit's state. Combined with the geofence /
 // GPS-plausibility layers, an observer standing in Sokoto physically cannot
 // file into a Lagos race. Keep byte-similar to contestScope() in app/app.js.
+import fs from 'node:fs';
+import path from 'node:path';
+import { config } from '../config.js';
+
 const stateLabel = (s) => (s === 'FCT' ? 'the FCT' : `${s} State`);
+
+/**
+ * TIER vs CODE — the distinction the whole by-election model rests on.
+ *
+ * A contest's CODE is its identity: it is the `contest` column of `results`
+ * (whose primary key is `(pu_code, contest)`), the prefix of every raceKey, and
+ * therefore what keeps a 2026 by-election in the Gombe/Kwami/Funakaye federal
+ * constituency from colliding with the 2027 general election in the SAME seat.
+ * Reuse `REP` for both and the two results overwrite each other in the database
+ * and merge into one anchored subchain — permanently, once published.
+ *
+ * A contest's TIER is its SHAPE: which register column locates it, what it is
+ * called, how a board buckets it. A by-election for a federal seat is a REP in
+ * every way except identity.
+ *
+ * So: switch on the tier, key on the code. `tier` defaults to the code, which
+ * makes all five existing contests behave exactly as before.
+ *
+ * Read from the JSON rather than imported from db.js deliberately — this module
+ * is the single source of the register column names that get interpolated into
+ * SQL, and it has no other dependency. Pulling in db.js would attach a live
+ * database connection to it.
+ */
+const CONTEST_TIERS = (() => {
+  try {
+    const rows = JSON.parse(
+      fs.readFileSync(path.join(config.dataDir, 'contests.json'), 'utf8'),
+    );
+    return new Map(rows.map((c) => [c.code, c.tier || c.code]));
+  } catch {
+    // A contests.json that cannot be read is db.js's error to raise, loudly, at
+    // startup. Here it degrades to "every code is its own tier", i.e. exactly
+    // the behaviour before by-elections existed.
+    return new Map();
+  }
+})();
+
+/** The shape a contest behaves as: its `tier`, or its own code. */
+export const contestTier = (code) => CONTEST_TIERS.get(code) || code;
 
 // The FCT is administered by an appointed minister — no governorship, no state
 // assembly. Those contests simply do not exist for FCT units.
 // `states` (optional) is a contest's allowlist of state names — used by
 // single-state elections (e.g. the Osun 2026 governorship pilot) so only units
 // in those states can file. Absent/empty ⇒ nationwide, i.e. current behaviour.
-export const contestApplies = (pu, contest, states) =>
-  !(pu.state === 'FCT' && (contest === 'GOV' || contest === 'SHA'))
-  && (!states || !states.length || states.includes(pu.state));
+/**
+ * `constituencies` is what makes a by-election a by-election.
+ *
+ * A `states: ['Gombe']` allowlist admits every unit in Gombe — all six federal
+ * constituencies, 3,088 units — into an election held in ONE of them. So a
+ * contest may also name the constituencies it runs in, tested against its
+ * TIER's own register column: `federal_constituency` for a REP by-election,
+ * `lga` for a SHA one.
+ *
+ * regionLevelFor().col, not scopeColFor(): scopeColFor returns 'state' for SHA,
+ * which would quietly turn the Delta and Kano gates back into state gates and
+ * admit the whole state again.
+ *
+ * Values must be REGISTER spellings, not INEC's. The register calls Kano's LGA
+ * `Dawaki Kudu` while INEC (and this app elsewhere) says `Dawakin Kudu`; the
+ * register even contradicts itself, its `federal_constituency` column reading
+ * `Dawakin Kudu/Warawa`. A mismatch fails closed — every unit rejected, one
+ * whole seat offline, behind an opaque contest_not_applicable — so
+ * scripts/check_contests.mjs asserts every value matches a real register row.
+ */
+export const contestApplies = (pu, contest, states, constituencies) => {
+  const tier = contestTier(contest);
+  if (pu.state === 'FCT' && (tier === 'GOV' || tier === 'SHA')) return false;
+  if (states && states.length && !states.includes(pu.state)) return false;
+  if (constituencies && constituencies.length) {
+    const col = regionLevelFor(tier).col;
+    if (!constituencies.includes(pu[col])) return false;
+  }
+  return true;
+};
 
 export function contestScope(pu, contest) {
-  switch (contest) {
+  // Tier, not code: a by-election for a federal seat describes itself exactly
+  // as the general election for that seat does.
+  switch (contestTier(contest)) {
     case 'SEN':
       return pu.senatorial
         ? `${pu.senatorial} Senatorial District, ${stateLabel(pu.state)}`
@@ -130,11 +202,14 @@ export const SCOPE_COLS = { SEN: 'senatorial', REP: 'federal_constituency' };
  * stands between a query parameter and a SQL identifier should not depend on a
  * caller two files away remembering to uppercase.
  */
-export const scopeColFor = (code) =>
-  (Object.hasOwn(SCOPE_COLS, code) ? SCOPE_COLS[code] : null) || 'state';
+export const scopeColFor = (code) => {
+  const tier = contestTier(code);
+  return (Object.hasOwn(SCOPE_COLS, tier) ? SCOPE_COLS[tier] : null) || 'state';
+};
 
 /** `{ level, col, noun, nounPlural }` for a contest, cropped to `state` or not. */
 export function regionLevelFor(code, state) {
+  const tier = contestTier(code);
   const table = state ? REGION_LEVEL_SCOPED : REGION_LEVEL;
   /**
    * Unlike raceKey, an unrecognised code keeps a fallback here — this decides
@@ -143,7 +218,7 @@ export function regionLevelFor(code, state) {
    * the same prototype-key reason as scopeColFor: `level` reaches LEVEL_COLS and
    * from there SQL.
    */
-  const level = (Object.hasOwn(table, code) ? table[code] : null) || table.PRES;
+  const level = (Object.hasOwn(table, tier) ? table[tier] : null) || table.PRES;
   return {
     level,
     col: LEVEL_COLS[level],
@@ -180,11 +255,24 @@ export const reportingOpen = (c) => {
  */
 export function raceKey(pu, contest) {
   const st = pu.state || '?';
-  switch (contest) {
-    case 'GOV': return contestApplies(pu, 'GOV') ? `GOV|${st}` : null;
-    case 'SEN': return `SEN|${st}|${pu.senatorial || '_unknown'}`;
-    case 'REP': return `REP|${st}|${pu.federal_constituency || '_unknown'}`;
-    case 'SHA': return contestApplies(pu, 'SHA') ? `SHA|${st}|${pu.lga || '?'}` : null;
+  /**
+   * SWITCH ON THE TIER, KEY ON THE CODE — and the second half is the one that
+   * matters. Resolving the tier first and then building `REP|Gombe|Gombe/Kwami/
+   * Funakaye` would emit the SAME key for the 2026 by-election and the 2027
+   * general election in that seat: one subchain, two elections, merged inside a
+   * published Rekor anchor and not separable afterwards. The full contest code
+   * leads instead, so the two are different races from the first entry.
+   *
+   * For the five original contests `contest === contestTier(contest)`, so every
+   * key they have ever produced is byte-identical — which it must be, being the
+   * Merkle leaf preimage in services/merkle.js and stored in
+   * anchor_races.race_key.
+   */
+  switch (contestTier(contest)) {
+    case 'GOV': return contestApplies(pu, contest) ? `${contest}|${st}` : null;
+    case 'SEN': return `${contest}|${st}|${pu.senatorial || '_unknown'}`;
+    case 'REP': return `${contest}|${st}|${pu.federal_constituency || '_unknown'}`;
+    case 'SHA': return contestApplies(pu, contest) ? `${contest}|${st}|${pu.lga || '?'}` : null;
     case 'PRES': return 'PRES';
     default:    return null;
   }

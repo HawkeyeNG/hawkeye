@@ -89,7 +89,9 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
 
     const pu = db.prepare('SELECT * FROM polling_units WHERE pu_code = ?').get(puCode);
     if (!pu) return res.status(404).json({ error: 'unknown_polling_unit' });
-    if (!contestApplies(pu, contest, contestDef?.states)) {
+    // constituencies too: a by-election runs in ONE seat of its state, and a
+    // states-only gate would admit every unit in that state.
+    if (!contestApplies(pu, contest, contestDef?.states, contestDef?.constituencies)) {
       return res.status(400).json({ error: 'contest_not_applicable' });
     }
 

@@ -189,7 +189,7 @@ const puByCode = (code) => db.prepare(
   'SELECT pu_code, name, ward, lga, state, senatorial, federal_constituency FROM polling_units WHERE pu_code = ?',
 ).get(String(code || '').trim().toUpperCase());
 const contestKeyboard = (pu) => ({
-  inline_keyboard: contests.filter((c) => contestApplies(pu, c.code, c.states))
+  inline_keyboard: contests.filter((c) => contestApplies(pu, c.code, c.states, c.constituencies))
     .map((c) => [{ text: contestLabel(c.code), callback_data: `rep:contest:${c.code}` }]),
 });
 

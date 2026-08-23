@@ -1782,18 +1782,56 @@ export function listRaces(type: ElectionTypeCode, state?: StateName): Race[] {
 /** The contest shape returned by GET /api/contests (subset we rely on). */
 export interface Contest {
   code: string;
+  /**
+   * Which of the five shapes this contest behaves as, when its `code` is not
+   * itself one of them — a by-election's code is unique (the backend keys
+   * stored results and anchored subchains on it) while its shape is a tier.
+   * Absent for the five general contests, where code and tier are the same.
+   */
+  tier?: string;
   states?: string[];
+  /**
+   * Register spellings of the specific constituencies a contest runs in, for a
+   * by-election held in one seat of a state that has many. REP gates on
+   * `federal_constituency`, SHA on `lga` — the register has no state-
+   * constituency column.
+   */
+  constituencies?: string[];
   open?: boolean;
   [k: string]: unknown;
 }
 
 /** The contest (if any) that governs this race's OPEN/closed state. */
+/**
+ * Match on the contest's TIER, and narrow by its constituencies.
+ *
+ * A by-election has its own `code` — it must, because the backend keys stored
+ * results and anchored race subchains on it, and reusing `REP` would collide
+ * the 2026 Gombe by-election with the 2027 general election in the same seat.
+ * But it is a REP in every way that concerns this catalogue, so it matches
+ * races whose `contestCode` is its `tier`.
+ *
+ * `constituencies` is what stops it matching the whole state. A by-election
+ * carries `states: ['Gombe']`, and Gombe holds six federal constituencies — so
+ * without this, every Gombe REP race would report as open on 19 September.
+ * The values are REGISTER spellings, which is why the SHA branch compares
+ * against `lgas` rather than the seat name: the register has no state-
+ * constituency column, so a SHA by-election is gated by LGA at both ends.
+ */
 export function matchContest(race: Race, contests: Contest[]): Contest | undefined {
-  return contests.find((c) =>
-    c.code === race.contestCode &&
+  return contests.find((c) => {
+    if ((c.tier ?? c.code) !== race.contestCode) return false;
     // A contest with no `states` (or an empty list) is national in scope.
-    (!c.states || c.states.length === 0 || (race.state != null && c.states.includes(race.state))),
-  );
+    if (c.states && c.states.length && !(race.state != null && c.states.includes(race.state))) {
+      return false;
+    }
+    const only = c.constituencies;
+    if (!only || !only.length) return true;
+    if (race.type === 'REP') return race.constituency != null && only.includes(race.constituency);
+    if (race.type === 'SEN') return race.district != null && only.includes(race.district);
+    if (race.type === 'SHA') return (race.lgas ?? []).some((l) => only.includes(l));
+    return true;
+  });
 }
 
 /** True when a live contest exists for this race and reporting is open. */

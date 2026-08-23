@@ -67,7 +67,11 @@ echo "  prod maps : present"
 VC=$(node -p "require('./app.json').expo.android.versionCode")
 VN=$(node -p "require('./app.json').expo.version")
 echo "  version   : $VN (versionCode $VC)"
-[ "$VC" -ge 5 ] || die "versionCode $VC would be rejected — the live listing is at 4"
+# Bump this WITH the versionCode, every release. It is a guard against
+# spending a twenty-minute bundle on an upload Play will reject as a
+# duplicate — and a guard that still names the release before last has
+# quietly stopped guarding anything.
+[ "$VC" -ge 6 ] || die "versionCode $VC would be rejected — the live listing is at 5"
 
 SKIP_PREBUILD=0
 [ "${1:-}" = "--skip-prebuild" ] && SKIP_PREBUILD=1

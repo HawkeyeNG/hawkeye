@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native';
 
 import { InfoDot } from '@/components/info-dot';
+import { GovDisclaimer } from '@/components/gov-disclaimer';
 import { PartyMark } from '@/components/race';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
@@ -63,6 +64,7 @@ export default function PoliticalData() {
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
       >
+        <GovDisclaimer />
         <View className="flex-row items-center pb-3">
           <Text className="flex-1 text-sm text-muted">
             The parties in power now — the incumbents this election confirms or unseats.

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native';
 
 import { InfoDot } from '@/components/info-dot';
+import { GovDisclaimer } from '@/components/gov-disclaimer';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api, bySeat, type Contest } from '@/lib/api';
@@ -310,6 +311,7 @@ export default function Races() {
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
       >
+        <GovDisclaimer />
         {/* No in-page "Races" heading: ScreenHeader above already says it, and
             the two sat one line apart. The subtitle is what this space is for. */}
         <View className="flex-row items-center">

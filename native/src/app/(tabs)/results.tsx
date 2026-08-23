@@ -24,6 +24,7 @@ import {
 import {
   api,
   BRAND,
+  bySeat,
   type Contest,
   type National,
   type NationalRegion,
@@ -187,9 +188,7 @@ function deepLinkRace(contest?: string, scope?: string): Race | null {
  * menu.js:RACE_ORDER). /api/contests returns catalogue order, which puts the two
  * National Assembly rows above the governorship here and nowhere else.
  */
-const CHOOSER_ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
-const orderedContests = (cs: Contest[]) =>
-  [...cs].sort((a, b) => CHOOSER_ORDER.indexOf(a.code) - CHOOSER_ORDER.indexOf(b.code));
+const orderedContests = (cs: Contest[]) => [...cs].sort(bySeat);
 
 /** "Opens 16 Jan 2027" for a race that has not started, from the contest itself. */
 function opensTag(c: Contest): string {

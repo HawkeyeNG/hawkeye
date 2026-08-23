@@ -797,13 +797,38 @@
       LOGOS = logos;
       const sel = document.getElementById('sel-contest');
       // Order by seat magnitude: Presidential > Governorship > Senate > Reps > State Assembly.
+    /**
+       * Seat magnitude — Presidential > Governorship > Senate > Reps > State Assembly.
+       *
+       * BY TIER, NOT BY CODE. A by-election for a House seat is a House race: its
+       * CODE (REP_BYE_GOMBE_2026) is its identity, its TIER is its category. Sorting
+       * on the code put all three by-elections ABOVE the presidency, because
+       * `indexOf` returns -1 for a code it does not list and -1 sorts first. An
+       * unrecognised contest now sorts LAST, which is the safe end: a new contest
+       * appearing at the bottom is untidy, one appearing above the presidency is a
+       * claim about its importance.
+       *
+       * Within a category the general election leads and its by-elections follow,
+       * by date then by state, so a category reads as "the race, then the seats
+       * being filled out of cycle".
+       */
       const ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
+      const tierOf = (c) => c.tier || c.code;
+      const seatRank = (c) => { const i = ORDER.indexOf(tierOf(c)); return i < 0 ? ORDER.length : i; };
+      const isGeneral = (c) => tierOf(c) === c.code;
+      const bySeat = (x, y) =>
+        seatRank(x) - seatRank(y)
+        || Number(!isGeneral(x)) - Number(!isGeneral(y))
+        || String(x.date || '').localeCompare(String(y.date || ''))
+        || String((x.states || [])[0] || '').localeCompare(String((y.states || [])[0] || ''))
+        || String(x.name || '').localeCompare(String(y.name || ''));
+
       // GUARDED. `[...contests]` throws on anything that is not an array, and the
       // throw happens inside the init IIFE — so a malformed /api/contests took the
       // whole board down with no message at all, which this page's history says is
       // the worst failure mode it has. An empty list at least renders the chooser.
       const ordered = (Array.isArray(contests) ? [...contests] : [])
-        .sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code));
+        .sort(bySeat);
       CONTESTS = ordered;
       sel.innerHTML = ordered.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
       sel.onchange = refresh;
@@ -858,6 +883,12 @@
       // A senatorial district and a federal constituency each have their own
       // page now, built from the register — which is the point of a national map
       // of 109 districts: every one of them goes somewhere.
+      // A by-election IS one seat, so its board links straight at its own page —
+      // no seat name to pass, because the contest already names it.
+      const def = (CONTESTS || []).find((c) => c.code === contest);
+      if (def && (def.constituencies || []).length) {
+        return `race.html?contest=${encodeURIComponent(contest)}`;
+      }
       if (contest === 'SEN' || contest === 'REP') {
         return `race.html?contest=${contest}&seat=${encodeURIComponent(name)}`;
       }

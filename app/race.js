@@ -37,6 +37,37 @@
   const geoCache = {};
   const getGeo = (f) => (geoCache[f] = geoCache[f] || fetch(f).then((r) => r.json()).catch(() => null));
   const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+  /**
+   * Each word clipped to its first four letters, deduplicated and sorted.
+   *
+   * The register and lga_geo.json disagree by a letter or two on names that are
+   * plainly the same LGA — "Dawaki Kudu" vs "Dawakin Kudu", "Ayedaade" vs
+   * "Ayedade", "Somolu" vs "Shomolu", "Danbata" vs "Dambatta". `norm()` strips
+   * punctuation and case and still sees two strangers, so ~50 of the 774 never
+   * matched and the seats containing them fell back to a featureless outline.
+   *
+   * Same key the native board uses (components/results-map.tsx stemKey), for the
+   * same reason and with the same guard: a stem match is accepted only when it
+   * is UNIQUE among the candidates. A map would rather draw nothing than draw
+   * the neighbouring LGA, and {Burutu, Buruku} / {Kaura, Kauru} are exactly the
+   * pairs that would otherwise be guessed between.
+   */
+  const stemKey = (s) => [...new Set(String(s || '').toLowerCase().split(/[^a-z]+/)
+    .filter(Boolean).map((w) => w.slice(0, 4)))].sort().join(' ');
+
+  /** Exact key first, then a UNIQUE stem match, then nothing. */
+  const matchOne = (wanted, candidates, nameOf) => {
+    if (!wanted) return null;
+    const key = norm(wanted);
+    if (!key) return null;
+    const exact = candidates.find((c) => norm(nameOf(c)) === key);
+    if (exact) return exact;
+    const want = stemKey(wanted);
+    if (!want) return null;
+    const hits = candidates.filter((c) => stemKey(nameOf(c)) === want);
+    return hits.length === 1 ? hits[0] : null;
+  };
   const titleCase = (s) => String(s || '').replace(/\b[a-z]/g, (c) => c.toUpperCase());
 
   const bboxOf = (paths) => {
@@ -126,14 +157,30 @@
       return hit ? svgFor([{ path: hit.path, name: hit.name }], `Map of ${j.value} State`) : '';
     }
 
-    if (j.lgas && j.lgas.length > 1 && j.state) {
+    // A SEAT, cut into its member LGAs.
+    //
+    // `> 1` used to guard this: a single-LGA seat had nothing to subdivide and
+    // took the outline path instead. That is right for SEN and REP, whose
+    // outlines exist — and wrong for a state-assembly seat, which has no outline
+    // file at all, so the guard left it with no map whatsoever. A one-LGA cut is
+    // now allowed when nothing else could be drawn.
+    //
+    // The members are RESOLVED through matchOne rather than compared raw. The
+    // old `.toLowerCase()` comparison missed every LGA the two sources spell
+    // differently, and a seat containing one silently lost its cut.
+    const minParts = j.level === 'lga' ? 1 : 2;
+    if (j.lgas && j.lgas.length >= minParts && j.state) {
       const geo = await getGeo('lga_geo.json');
       if (geo && geo.lgas) {
-        const want = new Set(j.lgas.map((l) => `${j.state}|${l}`.toLowerCase()));
-        const parts = geo.lgas.filter((x) => want.has(String(x.key).toLowerCase()))
-          .map((x) => ({ path: x.path, name: titleCase(String(x.key).split('|')[1] || '') }));
-        // Only use the cut if it actually found the members; a partial cut would
-        // draw a seat missing pieces of itself, which is worse than an outline.
+        const pool = geo.lgas.filter((x) => norm(String(x.key).split('|')[0]) === norm(j.state));
+        const parts = [];
+        for (const l of j.lgas) {
+          const hit = matchOne(l, pool, (x) => String(x.key).split('|')[1] || '');
+          if (!hit) break;
+          parts.push({ path: hit.path, name: titleCase(String(hit.key).split('|')[1] || '') });
+        }
+        // Only use the cut if it found EVERY member; a partial cut would draw a
+        // seat missing pieces of itself, which is worse than an outline.
         if (parts.length === j.lgas.length) {
           return svgFor(parts, `Map of ${j.value}, by LGA`,
             `${j.value} — ${parts.length} local government area${parts.length === 1 ? '' : 's'}`);
@@ -751,8 +798,17 @@
     return hits === 1 ? hit : null;
   }
 
-  function seatRace(seats, code, seatName, contest) {
-    const table = (seats || {})[code];
+  /**
+   * @param code  the CONTEST code — identity, and what /api/national is keyed by
+   * @param tier  the CATEGORY — which seat table to look the name up in.
+   *              Defaults to `code`, so the five general contests are unchanged.
+   *              A by-election passes REP_BYE_GOMBE_2026 + 'REP': the seat facts
+   *              live under REP, the board lives under the by-election's own code,
+   *              and merging the two would file a 2026 by-election into the 2027
+   *              general election's race.
+   */
+  function seatRace(seats, code, seatName, contest, tier) {
+    const table = (seats || {})[tier || code];
     if (!table || !seatName) return null;
     // Map spellings and register spellings differ on a handful of seats, so the
     // name is RESOLVED rather than trusted — and an unknown one builds no page
@@ -777,7 +833,7 @@
     const canon = matchSeatName(table, seatName);
     if (!canon) return null;
     const s = table[canon];
-    const senate = code === 'SEN';
+    const senate = (tier || code) === 'SEN';
     return {
       office: `${senate ? 'Senator' : 'House of Representatives'} — ${canon}`,
       election: `${s.state} State · ${senate ? 'Senate' : 'House of Representatives'}`,
@@ -801,8 +857,66 @@
     };
   }
 
+  /**
+   * A BY-ELECTION'S PAGE.
+   *
+   * A by-election is a race in the same category as the general election for
+   * that seat — a House by-election is a House race — so it reuses the same page
+   * builders. What it must never do is share the general election's CONTEST
+   * CODE: `join.contest` is what /api/national is keyed by and what the ledger
+   * partitions a race's subchain on, so filing a 2026 by-election under `REP`
+   * would merge it with the 2027 general election for the same seat, inside a
+   * published anchor, permanently.
+   *
+   * The seat's name comes from the contest itself. `constituencies` is the
+   * allowlist the backend gates reports with (services/scope.js contestApplies),
+   * so the page and the gate cannot describe different places.
+   *
+   * SHA has no seat table and no outline file: state-assembly constituencies are
+   * absent from the register, so the backend buckets them by LGA and the
+   * contest's `constituencies` ARE LGA names. That is enough for a map — one LGA
+   * polygon — and it is the only map that exists for such a seat.
+   */
+  function byElectionRace(contest, seats, political) {
+    if (!contest) return null;
+    const tier = contest.tier || contest.code;
+    const seat = (contest.constituencies || [])[0];
+    const state = (contest.states || [])[0];
+    if (!seat) return null;
+
+    if (tier === 'SEN' || tier === 'REP') {
+      const r = seatRace(seats, contest.code, seat, contest, tier);
+      if (r) r.election = `${state} State · ${contest.name}`;
+      return r;
+    }
+    if (tier === 'GOV') return stateRace(political, state, contest);
+    if (tier !== 'SHA') return null;
+
+    return {
+      office: `${seat} State Constituency — ${state} State`,
+      election: `${state} State · ${contest.name}`,
+      date: contest.date || undefined,
+      stats: { lgas: (contest.constituencies || []).length },
+      note: 'INEC has not published the candidate list for this by-election yet. '
+        + 'Candidates appear here as soon as the official list is out. The seat '
+        + 'and map on this page come from the electoral register and are current.',
+      candidates: [],
+      others: [],
+      join: {
+        contest: contest.code,
+        // 'lga' because that is the level the backend buckets a state-assembly
+        // contest by — state-assembly constituencies are not in the register.
+        level: 'lga',
+        value: seat,
+        state,
+        lgas: contest.constituencies || [],
+      },
+    };
+  }
+
   window.mountRace = mountRace;
   window.findRace = findRace;
   window.stateRace = stateRace;
   window.seatRace = seatRace;
+  window.byElectionRace = byElectionRace;
 })();

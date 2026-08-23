@@ -89,16 +89,39 @@ iOS listing would be claiming a feature the binary does not have.
 
 ## 5. Age rating questionnaire
 
-- Violence — cartoon/fantasy: **None**. Realistic violence: **Infrequent/Mild**
-  (incident *categories* name violence and ballot snatching; nothing is depicted
-  or glorified).
-- Sexual content, nudity, profanity, horror, gambling, alcohol/drugs/tobacco,
-  contests: **None**.
-- **User-generated content: Yes** — with content moderation, a report mechanism
-  and the ability to suspend abusive contributors (see §7).
-- Unrestricted web access: **No** (no in-app browser).
-- Medical/treatment information: **No**.
-- Expected result: 12+.
+Apple replaced the old band-based questionnaire; the console now asks a list of
+named fields and COMPUTES the band from them. Both of this repo's docs still
+quoted the retired system and disagreed with each other — one said 12+, the
+other said "17+ is the safe answer". Neither is an answer you can enter any
+more. Below are the actual field names, read from
+`GET /v1/appInfos/{id}/ageRatingDeclaration`, with the answer for this app.
+
+| Field | Answer | Why |
+|---|---|---|
+| `userGeneratedContent` | **Yes** | observers publish results and incidents |
+| `messagingAndChat` | **No** | no user-to-user messaging anywhere in the app |
+| `socialMedia` | **No** | no profiles, no feed, no following, no comments |
+| `violenceRealistic` | **Infrequent/Mild** | incident *categories* name violence and ballot snatching, and submitted photos may show real events; nothing is depicted for its own sake and every item is human-reviewed before publication |
+| `violenceRealisticProlongedGraphicOrSadistic` | **None** | |
+| `violenceCartoonOrFantasy` | **None** | |
+| `gunsOrOtherWeapons` | **None** | not a subject of the app |
+| `unrestrictedWebAccess` | **No** | links open fixed official destinations; there is no in-app browser to navigate freely |
+| `advertising` | **None** | no ads, no ad SDK, no Ad ID |
+| `contests`, `gambling`, `gamblingSimulated`, `lootBox` | **None / No** | |
+| `sexualContentOrNudity`, `sexualContentGraphicAndNudity` | **None** | |
+| `profanityOrCrudeHumor`, `horrorOrFearThemes`, `matureOrSuggestiveThemes` | **None** | |
+| `alcoholTobaccoOrDrugUseOrReferences` | **None** | |
+| `medicalOrTreatmentInformation`, `healthOrWellnessTopics` | **No / None** | |
+| `parentalControls` | **No** | |
+| `ageAssurance` | **No** | no age verification is performed |
+| `kidsAgeBand` | leave empty | not a Kids Category app |
+| `ageRatingOverride` | **NONE** | do not override a computed rating |
+
+**Do not write down the resulting band.** Apple computes it from the answers
+above, and that is the only number that will ever be correct — which is exactly
+what went wrong when this file claimed 12+ and APP-STORE-SUBMISSION.md claimed
+17+. Answer the fields honestly and accept whatever it returns; user-generated
+content alone will keep it well clear of 4+.
 
 ---
 

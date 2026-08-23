@@ -72,6 +72,8 @@
     // (Osun) resolves to it, so the generated page never shadows a real one.
     (async () => {
       const QP = new URLSearchParams(location.search);
+      const esc = (t) => String(t == null ? '' : t)
+        .replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const [data, LOGOS] = await Promise.all([
         fetchData('political_data.json').then((r) => r.json()),
         fetchData('logos/manifest.json').then((r) => r.json()).catch(() => ({})),
@@ -109,6 +111,44 @@
         // membership is ~46 KB that no other page has any use for.
         const seats = await fetch('seat_lgas.json').then((r) => r.json()).catch(() => null);
         race = window.seatRace(seats, code, seatName, contest, tier);
+      } else if (tier === 'SHA' && !contest.constituencies) {
+        /**
+         * THE GENERAL STATE-ASSEMBLY CONTEST — 1,005 seats, so it arrives as one
+         * of three things and this branch resolves all three:
+         *
+         *   ?state=X            a picker: every constituency in that state
+         *   ?state=X&seat=Y     that seat's page
+         *   ?state=X&lga=Z      from the BOARD, which buckets SHA by LGA. 240 of
+         *                       the 768 LGAs elect more than one member, so this
+         *                       resolves to a page when there is one seat and to
+         *                       a choice when there are several. Picking the
+         *                       first would send a reader to a race they did not
+         *                       click on.
+         */
+        const seats = await fetch('seat_lgas.json').then((r) => r.json()).catch(() => null);
+        const lga = QP.get('lga');
+        let pick = null;
+        if (stateName && seat) {
+          race = window.assemblyRace(seats, stateName, seat, contest);
+        } else if (stateName && lga) {
+          const hits = window.assemblySeatsInLga(seats, stateName, lga);
+          if (hits.length === 1) race = window.assemblyRace(seats, stateName, hits[0].seat, contest);
+          else pick = { state: stateName, seats: hits, why: `${lga} LGA elects ${hits.length} state members` };
+        } else if (stateName) {
+          const all = window.assemblySeats(seats, stateName);
+          pick = { state: stateName, seats: all, why: `${all.length} state constituencies` };
+        }
+        if (pick) {
+          const main = document.getElementById('race-main');
+          const notice = main.querySelector('.gov-disclaimer');
+          main.innerHTML = `<h1>${esc(pick.state)} State House of Assembly</h1>
+            <p class="race-absence">${esc(pick.why)} — choose one.</p>
+            <div class="rc-grid">${pick.seats.map((x) =>
+              `<a href="race.html?contest=SHA&amp;state=${encodeURIComponent(pick.state)}`
+              + `&amp;seat=${encodeURIComponent(x.seat)}">${esc(x.seat)}</a>`).join('')}</div>`;
+          if (notice) main.insertBefore(notice, main.firstChild);
+          return;
+        }
       } else if (tier === 'SHA' && seatName && contest) {
         // The seat table now HAS a SHA block, built from the catalogue rather
         // than the register (state constituencies are not a register column).

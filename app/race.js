@@ -988,9 +988,83 @@
     };
   }
 
+  /**
+   * A STATE CONSTITUENCY'S PAGE.
+   *
+   * State-assembly seats are not a column in the register — that is why the
+   * backend buckets SHA reports by LGA — so everything here comes from the SHA
+   * block of seat_lgas.json, built from the seat catalogue. Keyed "State|Seat",
+   * because those names repeat across states.
+   *
+   * There are 1,005 of them, which is why they are reached by URL and from the
+   * board rather than listed anywhere: the same treatment the 109 senatorial
+   * districts and 362 federal constituencies already get.
+   */
+  function assemblyRace(seats, state, seat, contest) {
+    const table = (seats || {}).SHA || {};
+    const key = `${state}|${seat}`;
+    const canon = table[key] ? key : matchSeatName(table, key);
+    if (!canon) return null;
+    const s = table[canon];
+    return {
+      office: `${s.seat} State Constituency`,
+      election: `${s.state} State · House of Assembly`,
+      date: contest && contest.date ? contest.date : undefined,
+      stats: { lgas: (s.lgas || []).length, wards: s.wards, pollingUnits: s.pollingUnits },
+      note: (s.sharedRegister
+        ? `${s.lgas.join(', ')} elects more than one state member, and INEC's register `
+          + 'does not separate them, so the ward and polling-unit figures on this page cover '
+          + 'every seat in that LGA rather than this one alone. '
+        : '')
+        + 'INEC has not published the candidate list for this race yet. Candidates appear '
+        + 'here as soon as the official list is out. The seat and map on this page come from '
+        + 'the electoral register and are current.',
+      candidates: [],
+      others: [],
+      join: {
+        contest: (contest && contest.code) || 'SHA',
+        // 'lga' because that is the level the backend buckets a state-assembly
+        // contest by — the constituencies themselves are not in the register.
+        level: 'lga',
+        value: (s.lgas || [])[0] || s.seat,
+        state: s.state,
+        lgas: s.lgas || [],
+      },
+    };
+  }
+
+  /**
+   * Every state constituency in one state, for the picker.
+   *
+   * Sorted by name so the list is stable; a state has 24-40 of them, which is a
+   * readable page and not a scroll.
+   */
+  function assemblySeats(seats, state) {
+    const table = (seats || {}).SHA || {};
+    return Object.keys(table)
+      .filter((k) => norm(k.split('|')[0]) === norm(state))
+      .map((k) => table[k])
+      .sort((a, b) => String(a.seat).localeCompare(String(b.seat)));
+  }
+
+  /**
+   * The seats sitting on one LGA.
+   *
+   * The SHA board buckets by LGA, so a link from it names an LGA and not a seat
+   * — and 240 of the 768 LGAs elect two, three or four members. Returning the
+   * list rather than the first one is what stops the board sending a reader to
+   * a race they did not click on.
+   */
+  function assemblySeatsInLga(seats, state, lga) {
+    return assemblySeats(seats, state).filter((s) => (s.lgas || []).some((l) => norm(l) === norm(lga)));
+  }
+
   window.mountRace = mountRace;
   window.findRace = findRace;
   window.stateRace = stateRace;
   window.seatRace = seatRace;
   window.byElectionRace = byElectionRace;
+  window.assemblyRace = assemblyRace;
+  window.assemblySeats = assemblySeats;
+  window.assemblySeatsInLga = assemblySeatsInLga;
 })();

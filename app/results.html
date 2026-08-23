@@ -892,7 +892,24 @@
       if (contest === 'SEN' || contest === 'REP') {
         return `race.html?contest=${contest}&seat=${encodeURIComponent(name)}`;
       }
-      if (contest !== 'GOV') return null;   // PRES is one national race; SHA has no seat pages
+      /**
+       * The state-assembly board buckets by LGA, and a page is about a SEAT —
+       * 240 of the 768 LGAs elect more than one member, so this cannot name one.
+       * It passes the LGA and lets the race page resolve it: one seat renders,
+       * several offer a choice. Sending a reader to whichever sorted first would
+       * be a page about a race they did not click on.
+       */
+      if (contest === 'SHA') {
+        // STATE_CROP is the state this board is cropped to, and an LGA name is
+        // only unique WITHIN a state — six of them repeat across states (Bassa,
+        // Ifelodun, Irepodun, Nasarawa, Obi, Surulere). Uncropped there is no
+        // state to pass, so the region stays unlinked rather than guessing which
+        // Bassa the reader meant.
+        return STATE_CROP
+          ? `race.html?contest=SHA&state=${encodeURIComponent(STATE_CROP)}&lga=${encodeURIComponent(name)}`
+          : null;
+      }
+      if (contest !== 'GOV') return null;   // PRES is one national race
       // The FCT is drawn on every state map but has no governor — it is run by a
       // minister. Offering it a governorship page would invent an office.
       if (/^fct$/i.test(name)) return null;

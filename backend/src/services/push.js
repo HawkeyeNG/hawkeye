@@ -208,8 +208,10 @@ export async function sendToObserver(observerId, { title, body, data } = {}) {
  *              The caller states the number it believes it is sending to; if
  *              reality disagrees, nothing goes out.
  *
- * Returns { audience, sent, failed, dryRun } so a caller can report honestly
- * rather than assuming success.
+ * Returns { audience, people, sent, failed, dryRun } so a caller can report
+ * honestly rather than assuming success. `audience` is DEVICES and `people` is
+ * distinct observers — they differ by a factor of about five here, and only one
+ * of them is reach.
  */
 export async function broadcast({
   title, body, data, dryRun = true, confirm = null, maxAudience = 0,
@@ -230,7 +232,26 @@ export async function broadcast({
     : [];
   const audience = android.length + web.length;
 
-  if (dryRun) return { audience, android: android.length, web: web.length, sent: 0, failed: 0, dryRun: true };
+  /**
+   * DEVICES ARE NOT PEOPLE, and the difference is large enough to mislead.
+   *
+   * A token row is created per browser profile, per reinstall, and every time
+   * Android rotates its FCM registration; nothing merges them, and dead ones are
+   * only removed when a send FAILS (see the delete in fcmSend/webPushSend). So a
+   * project that has never broadcast accumulates several tokens per person and
+   * prunes none of them — 107 devices across ~20 observers, which reads as 107
+   * people to anyone who is not looking at this query.
+   *
+   * The send still goes to every device, which is right: someone may carry the
+   * app on a phone and have it open in a browser. Only the REPORTING changes, so
+   * the number cannot be mistaken for reach.
+   */
+  const people = db.prepare(`
+    SELECT COUNT(DISTINCT t.observer_id) AS n FROM device_push_tokens t
+    LEFT JOIN observers o ON o.id = t.observer_id
+    WHERE (o.id IS NULL OR o.status = 'active')`).get()?.n || 0;
+
+  if (dryRun) return { audience, people, android: android.length, web: web.length, sent: 0, failed: 0, dryRun: true };
   if (confirm !== 'SEND') throw new Error("broadcast refused: pass confirm:'SEND' for a real send");
   if (maxAudience && audience > maxAudience) {
     throw new Error(`broadcast refused: audience ${audience} exceeds the expected maximum ${maxAudience}`);
@@ -251,7 +272,7 @@ export async function broadcast({
     // eslint-disable-next-line no-await-in-loop
     if (await webPushSend(r.token, title, body, data)) sent++; else failed++;
   }
-  return { audience, android: android.length, web: web.length, sent, failed, dryRun: false };
+  return { audience, people, android: android.length, web: web.length, sent, failed, dryRun: false };
 }
 
 // Fan out a push to everyone who saved this polling unit (Android only for now).

@@ -799,8 +799,16 @@
         const r = await fetch('/api/push/audience', { headers: hdr() });
         if (r.status === 401) return logout();
         const j = await r.json();
+        // DEVICES AND PEOPLE, because they are not the same number and the
+        // difference here is about five to one. A token is created per browser
+        // profile, per reinstall and per FCM rotation, and dead ones are only
+        // pruned when a send fails — so before the first broadcast the device
+        // count is inflated and reads as reach. Whoever is about to press send
+        // should see how many PEOPLE that is.
         $('push-audience').textContent = j.audience
-          ? `${j.audience} device(s) reachable — ${j.android} Android, ${j.web} browser`
+          ? `${j.audience} device(s) across ${j.people ?? '?'} observer(s)`
+            + ` — ${j.android} Android, ${j.web} browser.`
+            + ` Stale devices are cleared by the first send, so this number will drop.`
           : 'No devices are registered for push yet — a send would reach nobody.';
       } catch { $('push-audience').textContent = 'Could not read the audience.'; }
     }

@@ -104,18 +104,25 @@ more. Below are the actual field names, read from
 | `violenceRealistic` | **Infrequent/Mild** | incident *categories* name violence and ballot snatching, and submitted photos may show real events; nothing is depicted for its own sake and every item is human-reviewed before publication |
 | `violenceRealisticProlongedGraphicOrSadistic` | **None** | |
 | `violenceCartoonOrFantasy` | **None** | |
-| `gunsOrOtherWeapons` | **None** | not a subject of the app |
+| `gunsOrOtherWeapons` | **Infrequent/Mild** | the field asks about *depictions*, not subject matter — an incident photo from a polling unit may show a weapon, and this app exists to publish exactly that kind of evidence. Answering None here while answering Infrequent to `violenceRealistic` for the same reason would be inconsistent |
 | `unrestrictedWebAccess` | **No** | links open fixed official destinations; there is no in-app browser to navigate freely |
 | `advertising` | **None** | no ads, no ad SDK, no Ad ID |
 | `contests`, `gambling`, `gamblingSimulated`, `lootBox` | **None / No** | |
 | `sexualContentOrNudity`, `sexualContentGraphicAndNudity` | **None** | |
-| `profanityOrCrudeHumor`, `horrorOrFearThemes`, `matureOrSuggestiveThemes` | **None** | |
+| `horrorOrFearThemes` | **None** | this field is about content *designed* to evoke dread — a genre, an intent. Distressing real footage is already declared under `violenceRealistic`; declaring it twice inflates the rating for one thing |
+| `profanityOrCrudeHumor`, `matureOrSuggestiveThemes` | **None** | |
 | `alcoholTobaccoOrDrugUseOrReferences` | **None** | |
 | `medicalOrTreatmentInformation`, `healthOrWellnessTopics` | **No / None** | |
 | `parentalControls` | **No** | |
 | `ageAssurance` | **No** | no age verification is performed |
 | `kidsAgeBand` | leave empty | not a Kids Category app |
 | `ageRatingOverride` | **NONE** | do not override a computed rating |
+
+**The line these two fields sit on.** `horrorOrFearThemes` asks about INTENT —
+content built to frighten — and Hawkeye never does that, so it is None.
+`gunsOrOtherWeapons` and `violenceRealistic` ask about PRESENCE, and observer
+media from a polling unit can carry both, so they are Infrequent/Mild. Answer by
+what the field asks, not by how upsetting the subject is.
 
 **Do not write down the resulting band.** Apple computes it from the answers
 above, and that is the only number that will ever be correct — which is exactly

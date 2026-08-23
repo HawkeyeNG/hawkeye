@@ -1555,10 +1555,24 @@ export default function ReportIncident() {
               onPress={() => setStep('unit')}
               className={`items-center rounded-2xl py-4 ${reportReady ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
-              <Text className="text-base font-bold text-hawk-gold">
+              {/* text-center, because items-center is not the same thing.
+                  items-center centres the Text BLOCK inside the button; the
+                  lines INSIDE that block still align left, so the moment a
+                  label wraps you get a centred first line and a stray
+                  left-aligned second one. Not one of the 62 gold button
+                  labels in the app sets it — this is the only label long
+                  enough to have exposed it, and the fix belongs on every
+                  label that can wrap rather than on the one that did. */}
+              <Text className="text-center text-base font-bold text-hawk-gold">
                 {reportReady
                   ? 'Continue — where did this happen'
-                  : 'Pick what happened, and add a photo or a description'}
+                  : /* ONE LINE. This shares fixed footer space with the safety
+                       card above it, and every line here comes off the
+                       description box's scroll height — the same reason that
+                       card is held to one sentence. The two clauses are the
+                       two conditions in `reportReady`: a category, and either
+                       a photo or a description. */
+                    'Pick what happened, and add detail'}
               </Text>
             </Pressable>
           ) : (
@@ -1579,7 +1593,7 @@ export default function ReportIncident() {
                   // reportReady is already true to have reached this step, so an
                   // un-submittable form here can only be the undecided unit —
                   // name that, rather than leaving a dead grey button.
-                  <Text className="text-base font-bold text-hawk-gold">
+                  <Text className="text-center text-base font-bold text-hawk-gold">
                     {unitDecided
                       ? 'Submit incident report'
                       : 'Choose a unit, or tick an option above'}

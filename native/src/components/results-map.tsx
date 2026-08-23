@@ -264,6 +264,64 @@ export function loadMapGeo(level: MapLevel): Promise<MapGeo> {
   return cache[geoLevel] as Promise<MapGeo>;
 }
 
+/**
+ * THE SHAPES A BOARD ACTUALLY DRAWS — one rule, exported, because the map draws
+ * them and the legend counts them and the two must never disagree. They did:
+ * results.tsx kept its own copy of the state crop, so a board that drew Kano's
+ * 44 LGAs also captioned itself "44" while the server had said the election was
+ * held in one of them.
+ *
+ * LGAs used to ignore `subunits` entirely — their keys name their state, so a
+ * state crop was assumed to be the whole answer. It is not, once a contest can
+ * be confined to named LGAs: a by-election in Dawaki Kudu drew the whole of Kano
+ * with the seat merely outlined.
+ *
+ * TOTAL OR NOTHING. The crop is applied only if EVERY name the server sent
+ * resolved to a shape. The register and the geo file disagree on ~50 LGA
+ * spellings, and matchRegion recovers most but not all of them — narrowing
+ * unconditionally drops 43 shapes across 26 states (Osun loses Ayedade, Lagos
+ * loses Shomolu, Kano loses Dambatta and Nassarawa). A map with a hole in it
+ * reads as "no LGA there", which is a lie; a map with the whole state in it
+ * reads as too wide, which is merely unhelpful. Measured, both ways: under this
+ * rule 11 states narrow cleanly, 26 decline and draw in full exactly as they do
+ * today, and the three by-elections crop to their seats — with no state left
+ * holed.
+ */
+export function cropShapes(
+  geo: MapGeo | null,
+  level: MapLevel,
+  scopeState?: string | null,
+  subunits?: string[] | null,
+): MapShape[] | null {
+  if (!geo) return null;
+  if (!scopeState) return geo.shapes;
+
+  const pool =
+    geo.geoLevel === 'lga'
+      ? geo.shapes.filter((s) => s.state === regionKey('state', scopeState))
+      : geo.shapes;
+  // Never hand back an empty map: if nothing matched, the honest fallback is the
+  // full picture rather than a blank frame.
+  if (!pool.length) return geo.shapes;
+  if (!subunits?.length) return pool;
+
+  if (geo.geoLevel === 'lga') {
+    const keep = new Set<MapShape>();
+    for (const want of subunits) {
+      const hit = matchRegion(level, want, pool, (sh) => sh.name);
+      if (!hit) return pool; // a name we could not place — draw the state, not a hole
+      keep.add(hit);
+    }
+    return keep.size ? pool.filter((sh) => keep.has(sh)) : pool;
+  }
+
+  const want = new Set(subunits.map((n) => regionKey(level, n)));
+  const scoped = pool.filter(
+    (sh) => want.has(sh.key) || matchRegion(level, sh.name, subunits, (n) => n) != null,
+  );
+  return scoped.length ? scoped : pool;
+}
+
 /** Shape of the box before the geometry lands — keeps the card from jumping. */
 const FALLBACK_ASPECT = 800 / 660;
 
@@ -373,22 +431,10 @@ export const ResultsMap = memo(function ResultsMap({
    * by the register's `subunits` list for districts/constituencies, whose shapes
    * carry no state property at all.
    */
-  const shapes = useMemo(() => {
-    if (!geo) return null;
-    if (!scopeState) return geo.shapes;
-    if (geo.geoLevel === 'lga') {
-      const pre = regionKey('state', scopeState);
-      return geo.shapes.filter((s) => s.state === pre);
-    }
-    if (!subunits?.length) return geo.shapes;
-    const want = new Set(subunits.map((n) => regionKey(level, n)));
-    const scoped = geo.shapes.filter(
-      (s) => want.has(s.key) || matchRegion(level, s.name, subunits, (n) => n) != null,
-    );
-    // Never hand back an empty map: if nothing matched, the honest fallback is
-    // the full picture rather than a blank frame.
-    return scoped.length ? scoped : geo.shapes;
-  }, [geo, scopeState, subunits, level]);
+  const shapes = useMemo(
+    () => cropShapes(geo, level, scopeState, subunits),
+    [geo, scopeState, subunits, level],
+  );
 
   // viewBox is "minX minY width height". Trusting it blindly would render a
   // blank box, so an unusable one is reported like any other failure. When the

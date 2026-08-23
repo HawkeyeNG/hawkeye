@@ -16,8 +16,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
 import { ContestPicker } from '@/components/contest-picker';
 import { RekorAnchor } from '@/components/rekor-anchor';
@@ -852,15 +852,15 @@ export default function Practice() {
 
   if (!cfg) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface">
+      <SafeScreen className="flex-1 items-center justify-center bg-surface">
         <ActivityIndicator color={ui.tint.good.ink} />
-      </SafeAreaView>
+      </SafeScreen>
     );
   }
 
   if (!cfg.active) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
+      <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="moon" size={28} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
           Practice Is Closed
@@ -875,7 +875,7 @@ export default function Practice() {
         >
           <Text className="text-base font-bold text-hawk-gold">Back</Text>
         </Pressable>
-      </SafeAreaView>
+      </SafeScreen>
     );
   }
 
@@ -957,7 +957,7 @@ export default function Practice() {
       : 'the sample practice unit';
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
+    <SafeScreen className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         {/* Hawkeye mark (tap → Home), matching the shared ScreenHeader
             convention; the rest of this bar is bespoke to the wizard. */}
@@ -1518,6 +1518,6 @@ export default function Practice() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }

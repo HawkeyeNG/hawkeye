@@ -16,8 +16,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera } from '@/components/capture-camera';
 import { ContestPicker } from '@/components/contest-picker';
 import { NoElection } from '@/components/no-election';
@@ -1627,7 +1627,7 @@ export default function ReportResult() {
   // -- guards ---------------------------------------------------------------
   if (auth.status !== 'signedIn') {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
+      <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={BRAND.leaf} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to report a result
@@ -1641,7 +1641,7 @@ export default function ReportResult() {
         <Pressable className="mt-3" onPress={() => router.back()}>
           <Text className="text-sm text-muted">Not now</Text>
         </Pressable>
-      </SafeAreaView>
+      </SafeScreen>
     );
   }
 
@@ -1717,7 +1717,7 @@ export default function ReportResult() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
+    <SafeScreen className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         {/* Hawkeye mark (tap → Home), matching the shared ScreenHeader
             convention; the rest of this bar is bespoke to the wizard. */}
@@ -2439,6 +2439,6 @@ export default function ReportResult() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }

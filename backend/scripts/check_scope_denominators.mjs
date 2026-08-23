@@ -15,7 +15,7 @@ import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { contestGate, regionLevelFor } from '../src/services/scope.js';
+import { boardLevelFor, contestGate } from '../src/services/scope.js';
 
 // Resolved from this file, not the working directory, so it gives the same
 // answer wherever it is run from — a check that only works from one directory
@@ -31,10 +31,19 @@ const contests = JSON.parse(fs.readFileSync(path.join(BACKEND, 'src', 'data', 'c
 
 const soleState = (c) => (Array.isArray(c.states) && c.states.length === 1 ? c.states[0] : null);
 
+/**
+ * boardLevelFor, NOT regionLevelFor — the routes' own function.
+ *
+ * This script called regionLevelFor and kept passing after the routes moved to
+ * boardLevelFor, reporting "1 federal constituency" for a board that had already
+ * started answering with 3 LGAs. It was measuring a code path nothing used, and
+ * a green result said nothing at all. Any check that reimplements the thing it
+ * checks eventually checks the wrong thing; call what production calls.
+ */
 function subunits(c) {
   const state = soleState(c);
-  const { col } = regionLevelFor(c.code, state);
-  const gate = contestGate(c, col, { cropped: Boolean(state) });
+  const { col } = boardLevelFor(c, c.code, state);
+  const gate = contestGate(c, { cropped: Boolean(state) });
   const sql = state
     ? `SELECT DISTINCT ${col} AS r FROM polling_units WHERE state = ? AND ${col} IS NOT NULL AND ${col} != ''${gate.sqlBare} ORDER BY r`
     : `SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${col} IS NOT NULL AND ${col} != ''${gate.sqlBare} ORDER BY r`;
@@ -56,9 +65,20 @@ const EXPECT = {
   REP: { n: REGISTER.federal_constituency, why: 'nationwide — all 362 seats' },
   GOV: { n: 28, why: '28 governorships in the 2027 cycle; 8 off-cycle + FCT excluded' },
   SHA: { n: 762, why: 'every LGA outside the FCT, which has no state assembly' },
-  REP_BYE_GOMBE_2026: { n: 1, why: 'one federal constituency' },
-  SHA_BYE_DELTA_UDU_2026: { n: 1, why: 'one LGA' },
-  SHA_BYE_KANO_DAWAKINKUDU_2026: { n: 1, why: 'one LGA' },
+  // The by-elections are drawn one level FINER than their tier, so the board is a
+  // map rather than a single undivided block. Gombe/Kwami/Funakaye is a union of
+  // three whole LGAs; the two SHA seats are one LGA each and LGA is the floor.
+  REP_BYE_GOMBE_2026: { n: 3, level: 'lga', why: 'its 3 member LGAs: Funakaye, Gombe, Kwami' },
+  SHA_BYE_DELTA_UDU_2026: { n: 1, level: 'lga', why: 'one LGA — Udu' },
+  SHA_BYE_KANO_DAWAKINKUDU_2026: { n: 1, level: 'lga', why: 'one LGA — Dawaki Kudu' },
+};
+
+/** The level each board must be drawn at. A right count at the wrong level is still wrong. */
+const EXPECT_LEVEL = {
+  PRES: 'state', SEN: 'senatorial', REP: 'federal', GOV: 'state', SHA: 'lga',
+  REP_BYE_GOMBE_2026: 'lga',
+  SHA_BYE_DELTA_UDU_2026: 'lga',
+  SHA_BYE_KANO_DAWAKINKUDU_2026: 'lga',
 };
 
 let bad = 0;
@@ -68,10 +88,13 @@ let ungatedFull = 0;
 for (const c of contests) {
   const got = subunits(c);
   const want = EXPECT[c.code];
-  const { col } = regionLevelFor(c.code, soleState(c));
+  const { col } = boardLevelFor(c, c.code, soleState(c));
   const full = REGISTER[col];
-  const ok = want && got.length === want.n;
+  const { level } = boardLevelFor(c, c.code, soleState(c));
+  const levelOk = EXPECT_LEVEL[c.code] === level;
+  const ok = want && got.length === want.n && levelOk;
   if (!ok) bad++;
+  if (!levelOk) console.log(`     LEVEL WRONG: expected ${EXPECT_LEVEL[c.code]}, drawn at ${level}`);
   if (want && want.n < full) gatedShrank++;
   if (want && want.n === full) ungatedFull++;
   console.log(

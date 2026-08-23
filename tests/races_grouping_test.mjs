@@ -18,6 +18,37 @@ const CONTESTS = JSON.parse(fs.readFileSync('/home/elrio/hawkeye/backend/src/dat
 // a finished one is only in political_data" split is actually exercised.
 const OSUN = { code: 'GOV_OSUN', name: 'Osun Governorship', election: 'Osun 2026', date: '2026-08-15', states: ['Osun'] };
 
+/**
+ * What the catalogue implies on a given day, computed HERE from the dates in
+ * contests.json rather than written down.
+ *
+ * The counts were hardcoded at 5 and 6, and adding three by-elections turned
+ * four passing checks red without a single line of page code changing. Deriving
+ * them is not tautological: this re-implements the status rule independently of
+ * app/races.html, so a page that groups by anything other than the polling date
+ * still fails here. What it stops doing is failing every time a contest is added.
+ *
+ * ISO dates compare correctly as strings. Each frozen instant in this file is
+ * mid-morning at +01:00, so its UTC day is the same calendar day; freezing near
+ * midnight would need a real date comparison.
+ */
+const onDay = (iso, extra = []) => {
+  const day = iso.slice(0, 10);
+  const g = { ongoing: 0, upcoming: 0, completed: 0 };
+  for (const c of [...CONTESTS, ...extra]) {
+    g[c.date === day ? 'ongoing' : c.date < day ? 'completed' : 'upcoming'] += 1;
+  }
+  return g;
+};
+
+/**
+ * political_data.json contributes exactly one card the catalogue no longer
+ * lists — the finished Osun governorship, which line 92 asserts by name. The 36
+ * governorships do NOT add cards: they are state chips inside the single GOV
+ * card, counted by `.rc-grid a` rather than `.rc-body h2`.
+ */
+const OSUN_PAGE = 1;
+
 let withOsun = false;
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
@@ -82,7 +113,8 @@ let p = await pageOn('2026-08-15T12:00:00+01:00');
 let g = await groups(p);
 check('Osun is being reported now', g.ongoing, (v) => v.some((n) => /Osun/.test(n)));
 check('and is not in completed', g.completed, (v) => !v.some((n) => /Osun/.test(n)));
-check('the 2027 races are still upcoming', g.upcoming, (v) => v.length === 5);
+check('every scheduled race is still upcoming', g.upcoming,
+  (v) => v.length === onDay('2026-08-15T12:00:00+01:00', [OSUN]).upcoming);
 await p.close();
 
 console.log('\n=== the morning after, it is COMPLETED — no edit required ===');
@@ -91,7 +123,8 @@ p = await pageOn('2026-08-16T09:00:00+01:00');
 g = await groups(p);
 check('Osun moved to completed', g.completed, ['Osun Governorship (2026)']);
 check('nothing is being reported', g.ongoing, []);
-check('the five 2027 races are upcoming', g.upcoming.length, 5);
+check('every scheduled race is upcoming', g.upcoming.length,
+  onDay('2026-08-16T09:00:00+01:00').upcoming);
 check('and the empty group says so', await p.textContent('.rc-group[data-status="ongoing"] .rc-empty'),
   (t) => /No election is being reported today/.test(t));
 
@@ -100,8 +133,10 @@ await p.$eval('#rc-completed', (el) => { el.checked = true; el.dispatchEvent(new
 check('only Completed is visible', await p.$$eval('.rc-group:not([hidden]) > h2', (n) => n.map((x) => x.textContent)), ['Completed']);
 await p.$eval('#rc-all', (el) => { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); });
 check('All brings them back', await p.$$eval('.rc-group:not([hidden])', (n) => n.length), 3);
+const day2 = onDay('2026-08-16T09:00:00+01:00');
 check('chip counts match the cards', await p.$$eval('.rc-filter label', (n) => n.map((x) => x.textContent.trim())),
-  ['All 6', 'Ongoing 0', 'Upcoming 5', 'Completed 1']);
+  [`All ${day2.ongoing + day2.upcoming + day2.completed + OSUN_PAGE}`, `Ongoing ${day2.ongoing}`,
+   `Upcoming ${day2.upcoming}`, `Completed ${day2.completed + OSUN_PAGE}`]);
 
 console.log('\n=== governorship opens into the states, and they resolve ===');
 const gov = await p.evaluate(() => {
@@ -122,7 +157,8 @@ console.log('\n=== a future date rolls the general election into completed ===')
 p = await pageOn('2027-06-01T09:00:00+01:00');
 g = await groups(p);
 check('nothing is upcoming any more', g.upcoming, []);
-check('all six are completed', g.completed.length, 6);
+check('every race is completed', g.completed.length,
+  onDay('2027-06-01T09:00:00+01:00').completed + OSUN_PAGE);
 await p.close();
 
 await b.close();

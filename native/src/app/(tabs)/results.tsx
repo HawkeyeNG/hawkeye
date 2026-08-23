@@ -12,6 +12,7 @@ import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   asMapLevel,
+  cropShapes,
   LEVEL_WORD,
   loadMapGeo,
   matchRegion,
@@ -110,10 +111,17 @@ const LEVEL_FOR_TYPE: Record<string, MapLevel> = {
  * draw. They differ for one level: 358 of the 360 federal constituencies have a
  * mapped boundary. The map says so rather than quietly drawing 358 and letting
  * the reader assume that is all of them.
+ *
+ * `lga` was 37 — a leftover from when the "LGA view" only ever tinted whole
+ * states. Nigeria has 774 LGAs (774 distinct state+LGA pairs in the register,
+ * and 774 paths in lga_geo.json). The wrong number was invisible while every LGA
+ * board drew a whole state, because 44 < 37 is false and the sentence never
+ * fired; a board cropped to one seat draws 1 or 3, and it would have started
+ * announcing "3 of Nigeria's 37 LGAs have a mapped boundary".
  */
 const REGIONS_EXPECTED: Record<MapLevel, number> = {
   state: 37,
-  lga: 37,
+  lga: 774,
   senatorial: 109,
   federal: 360,
 };
@@ -509,6 +517,13 @@ export default function Results() {
   // the payload; a contest confined to one state has `scope` set by the server
   // and still crops.
   const mapScope = useMemo<string | null>(() => data?.scope?.state ?? null, [data]);
+  /**
+   * The sub-units in scope, straight off the board. Held once and passed to BOTH
+   * the map and the legend, so the two cannot be handed different lists — the
+   * legend having its own idea of the crop is what produced a "44" caption under
+   * a one-LGA election.
+   */
+  const subunits = useMemo<string[] | null>(() => data?.subunits ?? null, [data]);
 
   /**
    * The region row for the selected race. A race that is one seat inside a
@@ -681,14 +696,13 @@ export default function Results() {
     loadMapGeo(level)
       .then((g) => {
         if (!alive) return;
-        // Count only the shapes the map actually DRAWS. Unfiltered, a
-        // state-scoped board reported "no votes counted yet · 774" — every LGA
-        // in Nigeria — under a map showing Osun's 30. Same crop ResultsMap
-        // applies, so the legend and the map describe one set of regions.
-        const drawn =
-          mapScope && g.geoLevel === 'lga'
-            ? g.shapes.filter((s) => s.state === regionKey('state', mapScope))
-            : g.shapes;
+        // Count only the shapes the map actually DRAWS — through ResultsMap's
+        // OWN cropShapes, not a copy of it. Unfiltered, a state-scoped board
+        // reported "no votes counted yet · 774" — every LGA in Nigeria — under a
+        // map showing Osun's 30. The copy then drifted a second time: it ignored
+        // `subunits` at LGA level, so a by-election in one LGA of Kano drew all
+        // 44 and captioned itself "44". One function now answers for both.
+        const drawn = cropShapes(g, level, mapScope, subunits) ?? g.shapes;
         setShapes({ level, names: drawn.map((s) => s.name) });
       })
       .catch(() => {
@@ -697,7 +711,7 @@ export default function Results() {
     return () => {
       alive = false;
     };
-  }, [level, mapScope]);
+  }, [level, mapScope, subunits]);
   const shapeNames = shapes?.level === level ? shapes.names : NO_SHAPES;
 
   /**
@@ -803,11 +817,47 @@ export default function Results() {
     [raceKey],
   );
 
+  /**
+   * A contest held in exactly ONE region IS that region, so the board opens on it.
+   *
+   * Choosing the Kano state-assembly by-election used to land on a map of all 44
+   * Kano LGAs with nothing selected and the panel reading "The board above ranks
+   * the nationwide total" — for an election held in one LGA, where the contest
+   * total and the seat total are the same number. The server already says which
+   * one: `subunits` is the seat.
+   *
+   * DERIVED FROM `subunits`, AND DELIBERATELY NOT FROM `scope`. `scope` is sent
+   * to /api/coverage/gaps as `&region=`, which resolves against the contest's
+   * scope column — 'state' for a state-assembly contest — so putting an LGA name
+   * there answers 404 and silently kills the coverage card. This drives the
+   * selection and the sentence only; the board's own numbers are already this
+   * seat's, there being nothing else in the contest.
+   */
+  const seatRegion = useMemo(
+    () => (subunits?.length === 1 ? subunits[0] : null),
+    [subunits],
+  );
+
+  /**
+   * The contest is confined to named constituencies, so this board IS the whole
+   * race — there is no wider total it could be a part of.
+   *
+   * Separate from `seatRegion`, and it has to be: the Gombe by-election is one
+   * seat but THREE LGAs (Funakaye, Gombe, Kwami), so `seatRegion` is null there
+   * while the board is every bit as confined as Kano's single-LGA one. Keying
+   * the "nationwide total" sentence off `seatRegion` alone would have left that
+   * board still claiming a nation behind it.
+   */
+  const confined = useMemo(
+    () => (contest?.constituencies?.length ?? 0) > 0,
+    [contest],
+  );
+
   /** The outline belonging to the race being ranked, when it has one. Empty for
    *  the presidential board, whose scope is the whole country. */
   const homeShape = useMemo(
-    () => (level ? matchRegion(level, scope, shapeNames, (n) => n) : null),
-    [level, scope, shapeNames],
+    () => (level ? matchRegion(level, scope || seatRegion, shapeNames, (n) => n) : null),
+    [level, scope, seatRegion, shapeNames],
   );
 
   /**
@@ -865,10 +915,19 @@ export default function Results() {
       out.push(
         `Not drawn on the map: no outline is filed under this name, so these votes are in the board above but not in any colour here.`,
       );
-    if (inspect.home) out.push(`This is the ${word.one} the board above ranks.`);
-    else if (!scope) out.push('The board above ranks the nationwide total.');
+    // A contest held in one region has no "nationwide total" to be ranked
+    // against — the seat's total IS the contest's — and saying otherwise under a
+    // map of a single LGA invited the reader to look for the rest of a country
+    // that is not part of this election.
+    if (inspect.home && confined) {
+      out.push(`This election is held only here, so this ${word.one} is the whole race.`);
+    } else if (inspect.home) {
+      out.push(`This is the ${word.one} the board above ranks.`);
+    } else if (!scope && !confined) {
+      out.push('The board above ranks the nationwide total.');
+    }
     return out;
-  }, [inspect, word, scope, inspectUnplaced]);
+  }, [inspect, word, scope, confined, inspectUnplaced]);
 
   /**
    * The races this level's regions map onto one-for-one, so tapping a region can
@@ -970,13 +1029,20 @@ export default function Results() {
       );
     }
     const total = REGIONS_EXPECTED[level];
-    if (shapeNames.length > 0 && shapeNames.length < total) {
+    // ONLY ON AN UNCROPPED BOARD. This sentence compares the outline file's
+    // coverage against the country, so it means something only when the board is
+    // the country. Cropped, `shapeNames` is one state's LGAs — or one seat's —
+    // and the comparison turns into a false claim about national coverage.
+    if (!mapScope && shapeNames.length > 0 && shapeNames.length < total) {
       parts.push(
         `${shapeNames.length} of Nigeria's ${total} ${word.many} have a mapped boundary; the rest cannot be drawn.`,
       );
     }
     const only = contest?.states ?? [];
-    if ((level === 'state' || level === 'lga') && only.length > 0 && only.length < total) {
+    // Against the number of STATES, whatever the board's level is: `only` is a
+    // list of states, and comparing it to an LGA count was only ever right by
+    // accident of both being 37.
+    if ((level === 'state' || level === 'lga') && only.length > 0 && only.length < REGIONS_EXPECTED.state) {
       parts.push(`Contested only in ${only.join(', ')} — every other state stays grey.`);
     }
     if (scope && shapeNames.length > 0 && !homeShape) {
@@ -1030,7 +1096,7 @@ export default function Results() {
           <ResultsMap
             level={level}
             scopeState={mapScope}
-            subunits={data?.subunits ?? null}
+            subunits={subunits}
             fills={map.fills}
             selected={inspect?.name ?? null}
             onPress={onRegionPress}

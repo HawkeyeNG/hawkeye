@@ -26,6 +26,18 @@ export type Contest = {
   election: string;
   date: string; // YYYY-MM-DD
   states: string[];
+  /**
+   * The SHAPE a contest behaves as, when it is not its own code: a by-election
+   * for a federal seat is a `REP` in every way except identity. Absent for the
+   * five general contests, where code and tier are the same string.
+   */
+  tier?: string;
+  /**
+   * The named constituencies a contest is confined to — what makes a by-election
+   * a by-election. Present means the whole election is these places, so the
+   * board IS the race and there is no wider total to rank it against.
+   */
+  constituencies?: string[];
   open: boolean;
   opensAt?: string;
 };

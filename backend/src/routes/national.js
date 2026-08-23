@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db, contests, contestCodes } from '../db.js';
-import { LEVEL_COLS, contestGate, regionLevelFor, reportingOpen, reportingOpensAt } from '../services/scope.js';
+import { LEVEL_COLS, boardLevelFor, contestGate, reportingOpen, reportingOpensAt } from '../services/scope.js';
 
 export const nationalRouter = Router();
 
@@ -76,7 +76,10 @@ nationalRouter.get('/national/:contest', (req, res) => {
   }
   const contestDef = contests.find((c) => c.code === contest);
   const state = asked ?? soleState(contest);
-  let { level, col } = regionLevelFor(contest, state);
+  // boardLevelFor, not regionLevelFor: a contest held in ONE constituency drops a
+  // level, because bucketing it by its own level gives a board of one bucket and
+  // a map of one undivided block. See services/scope.js.
+  let { level, col } = boardLevelFor(contestDef, contest, state);
   // ?level= asks for a finer breakdown than the contest's default. A senatorial
   // race page draws its district as LGAs — every district is a union of whole
   // LGAs — so it needs LGA-keyed tallies, which SCOPED.SEN ('senatorial') does
@@ -97,10 +100,13 @@ nationalRouter.get('/national/:contest', (req, res) => {
    * 6 reporting" for an election held in one), and the 2027 governorship listed
    * all 37 states for a race held in 28.
    *
-   * `cropped` because a state crop already answers the question the allowlist
-   * would: see services/scope.js contestGate.
+   * `cropped` because a state crop already answers the question the state
+   * allowlist would. The constituency allowlist is NOT level-dependent: it
+   * narrows the units, and the board then buckets them by whatever `?level=`
+   * asked for — so a one-seat REP board drawn at `?level=lga` gets that seat's
+   * member LGAs. See services/scope.js contestGate.
    */
-  const gate = contestGate(contestDef, col, { cropped: Boolean(state) });
+  const gate = contestGate(contestDef, { cropped: Boolean(state) });
 
   const rows = state
     ? db.prepare(`

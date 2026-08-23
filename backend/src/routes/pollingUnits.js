@@ -12,8 +12,8 @@ import {
   LEVEL_COLS,
   LEVEL_NOUN,
   LEVEL_NOUN_PLURAL,
+  boardLevelFor,
   contestGate,
-  regionLevelFor,
   scopeColFor,
 } from '../services/scope.js';
 
@@ -313,7 +313,10 @@ pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
   // senatorial districts, and naming the wrong places to go and cover.
   const { level, col, noun, nounPlural } = region
     ? { level: 'lga', col: LEVEL_COLS.lga, noun: LEVEL_NOUN.lga, nounPlural: LEVEL_NOUN_PLURAL.lga }
-    : regionLevelFor(contest, state);
+    // boardLevelFor so the gaps list names the same places the board draws: a
+    // one-seat by-election asks for its member LGAs, not for the single
+    // constituency it trivially is.
+    : boardLevelFor(c, contest, state);
 
   // One filter, its COLUMN from the allow-lists above and its VALUE bound.
   const filter = region ? { sql: `${scopeCol} = ?`, val: region }
@@ -334,7 +337,7 @@ pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
    *
    * A coverage figure with an unreachable denominator can never read 100%.
    */
-  const gate = contestGate(c, col, { cropped: Boolean(filter) });
+  const gate = contestGate(c, { cropped: Boolean(filter) });
 
   const all = (filter
     ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${filter.sql} AND ${col} IS NOT NULL AND ${col} != ''${gate.sqlBare} ORDER BY r`).all(filter.val, ...gate.params)

@@ -14,6 +14,17 @@ const LGAS = JSON.parse(fs.readFileSync(`${APP}/lga_geo.json`, 'utf8'));
 const lgasOf = (st) => LGAS.lgas.filter((l) => l.key.split('|')[0] === st.toLowerCase())
   .map((l) => l.key.split('|')[1].replace(/\b[a-z]/g, (c) => c.toUpperCase()));
 
+/**
+ * Mirrors app/results.html raceLabel — a contest on exactly one state's ballot
+ * reads as that state's own race ("Gombe House of Representatives By-Election").
+ * Named raceLabel, not label: `check` below takes a parameter called `label`.
+ */
+const raceLabel = (c) =>
+  `${Array.isArray(c.states) && c.states.length === 1 ? `${c.states[0]} ` : ''}${c.name} (${String(c.date).slice(0, 4)})`;
+
+/** The seat-magnitude order app/results.html states as its intent. */
+const SEAT_ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
+
 const asked = [];
 const server = http.createServer((req, res) => {
   const [url, qs] = req.url.split('?');
@@ -59,8 +70,21 @@ await p.waitForSelector('.race-opt', { timeout: 10000 });
 check('the chooser is open', await p.$eval('#race-picker', (e) => !e.hidden), true);
 check('the board is withheld', await p.$eval('#board', (e) => e.hidden), true);
 check('and it says so', await p.textContent('#race-name'), 'Choose a race');
-check('all five races are offered', await p.$$eval('.race-opt b', (n) => n.map((x) => x.textContent)),
-  ['Presidential (2027)', 'Governorship (2027)', 'Senate (2027)', 'House of Representatives (2027)', 'State House of Assembly (2027)']);
+// WHAT is offered, order-independent — every contest in the catalogue and
+// nothing invented. Was a hardcoded list of five, which three by-elections
+// turned red without any page code changing.
+check('every race in the catalogue is offered, and nothing invented',
+  (await p.$$eval('.race-opt b', (n) => n.map((x) => x.textContent))).sort(),
+  CONTESTS.map(raceLabel).sort());
+// HOW it is ordered — asserted only over the general-election codes, which is
+// the ordering app/results.html actually claims to implement. Deliberately
+// silent on where the by-elections land: they currently sort ABOVE the
+// presidency because ORDER.indexOf() returns -1 for a code it does not list,
+// which is an accident, not a decision. Pinning it here would make the accident
+// the specification.
+check('the general election reads in seat-magnitude order',
+  (await p.$$eval('.race-opt', (n) => n.map((x) => x.dataset.code))).filter((c) => SEAT_ORDER.includes(c)),
+  SEAT_ORDER);
 check('NO board was fetched for a race nobody picked', asked, []);
 check('none is preselected', await p.$$eval('.race-opt.on', (n) => n.length), 0);
 

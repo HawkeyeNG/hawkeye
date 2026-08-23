@@ -228,6 +228,39 @@ export function regionLevelFor(code, state) {
 }
 
 /**
+ * THE LEVEL A CONTEST'S BOARD IS DRAWN AT — one step finer than its tier when the
+ * contest is a single seat.
+ *
+ * A REP board buckets by federal constituency. That is right for the general
+ * election (362 buckets) and useless for a by-election held in ONE of them: the
+ * board is a single bucket, and the map a single undivided block with nothing
+ * inside it to read. The Gombe by-election shipped looking exactly like that.
+ *
+ * A federal constituency is a union of WHOLE LGAs — Gombe/Kwami/Funakaye is
+ * Funakaye + Gombe + Kwami — so dropping to LGA subdivides the seat without
+ * inventing a boundary. It is also the floor: ward polygons exist but only 47.5%
+ * of them join to the register by name (9% in Rivers, 32% in Osun), and the ward
+ * positions we do hold are CENTROIDS — points, mean radius 3 km — which could
+ * only become areas by drawing borders that no authority published. On a product
+ * whose whole claim is that it does not invent things, that is not a trade worth
+ * making. LGA is where the honest detail stops.
+ *
+ * SHA is already at LGA and stays there; its seat is one LGA, drawn as one shape
+ * and cropped to it, which is the seat rather than the state around it.
+ */
+export function boardLevelFor(contestDef, code, state) {
+  const base = regionLevelFor(code, state);
+  const cons = contestDef?.constituencies;
+  if (!Array.isArray(cons) || !cons.length || base.level === 'lga') return base;
+  return {
+    level: 'lga',
+    col: LEVEL_COLS.lga,
+    noun: LEVEL_NOUN.lga,
+    nounPlural: LEVEL_NOUN_PLURAL.lga,
+  };
+}
+
+/**
  * THE NARROWING A CONTEST'S OWN DEFINITION IMPLIES, as SQL over the register.
  *
  * Two endpoints draw from a contest's scope — routes/national.js builds the
@@ -248,12 +281,16 @@ export function regionLevelFor(code, state) {
  * "no such column: p.lga" — which surfaced as a 500 on one board and a silently
  * empty one on another, the same fault wearing two faces.
  *
+ * NOTE the gate does NOT take the display column. Which units are in an election
+ * is a fact about the units; how a board buckets them is a display choice, and
+ * the two are independent. Conflating them is what kept a by-election board from
+ * being drawn at any level but its own — see the constituency branch below.
+ *
  * @param {object|undefined} contestDef  the contests.json row, or undefined
- * @param {string} col                   register column the board buckets by
  * @param {{cropped?: boolean}} [opts]   cropped: already narrowed to one state
  * @returns {{sql: string, sqlBare: string, params: string[]}}
  */
-export function contestGate(contestDef, col, { cropped = false } = {}) {
+export function contestGate(contestDef, { cropped = false } = {}) {
   const sql = [];
   const sqlBare = [];
   const params = [];
@@ -277,16 +314,20 @@ export function contestGate(contestDef, col, { cropped = false } = {}) {
   if (!cropped && Array.isArray(states) && states.length) add('state', states);
 
   /**
-   * The constituency allowlist is what makes a by-election a by-election, and
-   * applies only when the board is drawn at the level the gate names. `?level=`
-   * can ask for a finer breakdown — a seat's LGAs — and filtering LGA names
-   * against a list of federal-constituency names would empty the board rather
-   * than narrow it.
+   * The constituency allowlist is what makes a by-election a by-election, and it
+   * filters on ITS OWN column at every display level.
+   *
+   * It used to apply only when the board was drawn at the level the gate names,
+   * out of a worry that a finer `?level=` would test LGA names against a list of
+   * federal-constituency names and empty the board. That worry had the fix
+   * backwards. Narrow the UNITS by the gate's own column and then group by
+   * whatever the board asks for, and every level is right for free: the Gombe
+   * by-election at `?level=lga` returns its 3 member LGAs (Funakaye, Gombe,
+   * Kwami) instead of all 11 in the state — which is what lets a one-seat REP
+   * board be drawn as a real map instead of a single undivided block.
    */
   const cons = contestDef?.constituencies;
-  if (Array.isArray(cons) && cons.length && regionLevelFor(contestDef.code).col === col) {
-    add(col, cons);
-  }
+  if (Array.isArray(cons) && cons.length) add(regionLevelFor(contestDef.code).col, cons);
 
   return { sql: sql.join(''), sqlBare: sqlBare.join(''), params };
 }

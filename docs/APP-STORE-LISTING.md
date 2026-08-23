@@ -172,19 +172,42 @@ Phone numbers are stored hashed. Account deletion route:
 
 ## 7. Guideline 1.2 — user-generated content
 
-Apple requires all four; all four already ship, so answer plainly if asked:
+**THERE IS NO FORM FOR THIS IN APP STORE CONNECT, and looking for one costs an
+afternoon.** Guideline 1.2 is not a questionnaire — it is four capabilities the
+app must HAVE, which the reviewer verifies by using it. The only place you write
+anything is **App Store Connect → your version → App Review Information → Notes**,
+appended to the notes in §8.
 
-1. **Filtering objectionable material** — every incident is human-reviewed before
-   publication; nothing user-submitted appears unmoderated.
-2. **Reporting mechanism** — "⚑ Report This Content" on published incidents and
-   results (`POST /api/incidents/flags`), open to signed-out readers, with
-   reasons: abusive, false, privacy, other.
-3. **Blocking abusive users** — observers can be suspended from the admin
-   console. Note if asked: Hawkeye has no user-to-user messaging, feed or
-   comments, so there is no per-user block surface to build; abuse is handled by
-   removing the contributor.
-4. **Published contact information** — `info@hawkeye.com.ng`, on
-   `https://hawkeye.com.ng/about.html`. **Do not remove it.**
+All four already ship. Verified in the source, not assumed:
+
+| Requirement | Where it lives |
+|---|---|
+| Filter objectionable material | Incidents appear publicly only at `status = 'published'`; nothing user-submitted is shown unmoderated (`backend/src/routes/incidents.js:130`) |
+| Report offensive content | "Report this content" on published items → `POST /api/flags` (`native/src/components/report-content.tsx:63`), into the same queue the web uses (`backend/src/routes/admin.js:137`) |
+| Block abusive users | Observer suspension, server-side, `active` / `suspended` (`backend/src/routes/admin.js:179`). Nothing is hard-deleted |
+| Published contact | `info@hawkeye.com.ng`, on the About page in both apps (`app/about.html:83`, `native/src/lib/content.ts:322`). **Do not remove it** |
+
+The endpoint was written here as `/api/incidents/flags` and is actually
+`/api/flags` — corrected, because a reviewer reading a path that 404s learns the
+wrong thing about the moderation claim.
+
+**Paste this into App Review Notes, after the §8 text:**
+
+```
+USER-GENERATED CONTENT (Guideline 1.2)
+
+Incident reports are reviewed by a human before they appear publicly; nothing user-submitted is published unmoderated.
+
+Every published item carries a "Report this content" control, open to any signed-in reader, with reasons (abusive, false, privacy, other). Reports enter a moderation queue.
+
+Abusive contributors can be suspended server-side, which removes their content from public view. Hawkeye has no user-to-user messaging, feed, comments or profiles, so there is no per-user block surface to build — abuse is handled by removing the contributor.
+
+Contact for content concerns is published in-app under More > About and on the website: info@hawkeye.com.ng
+```
+
+Note the third paragraph deliberately explains the ABSENCE of a block-user
+feature rather than leaving a reviewer to find it missing. There is nowhere in
+this app for one user to reach another.
 
 ---
 

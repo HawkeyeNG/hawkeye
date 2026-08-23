@@ -43,6 +43,42 @@ export type Contest = {
 };
 
 /**
+ * Seat magnitude — Presidential > Governorship > Senate > Reps > State Assembly.
+ *
+ * BY TIER, NOT BY CODE. A by-election for a House seat is a House race: its CODE
+ * (REP_BYE_GOMBE_2026) is its identity, its TIER is its category. Sorting on the
+ * code put all three by-elections ABOVE the presidency, because `indexOf`
+ * returns -1 for a code it does not list and -1 sorts first. An unrecognised
+ * contest now sorts LAST, which is the safe end: a new contest appearing at the
+ * bottom is untidy, one appearing above the presidency is a claim about its
+ * importance.
+ *
+ * Within a category the general election leads and its by-elections follow, by
+ * date then by state, so a category reads as "the race, then the seats being
+ * filled out of cycle".
+ *
+ * It lives HERE, next to Contest, rather than in whichever screen needed it
+ * first — two native screens and two web pages each kept their own copy, and
+ * four copies of an ordering rule is three chances for the app to disagree with
+ * itself about which race comes first. Keep byte-similar to the copies in
+ * app/results.html and app/races.html, which cannot import from here.
+ */
+const SEAT_ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
+const tierOf = (c: Contest) => c.tier || c.code;
+const seatRank = (c: Contest) => {
+  const i = SEAT_ORDER.indexOf(tierOf(c));
+  return i < 0 ? SEAT_ORDER.length : i;
+};
+const isGeneral = (c: Contest) => tierOf(c) === c.code;
+export const bySeat = (x: Contest, y: Contest) =>
+  seatRank(x) - seatRank(y)
+  || Number(!isGeneral(x)) - Number(!isGeneral(y))
+  || String(x.date || '').localeCompare(String(y.date || ''))
+  || String((x.states || [])[0] || '').localeCompare(String((y.states || [])[0] || ''))
+  || String(x.name || '').localeCompare(String(y.name || ''));
+
+
+/**
  * How an election is named on a card.
  *
  * The catalogue's `election` string is singular — "2027 Governorship Election"

@@ -129,7 +129,32 @@
       REP: '360 federal constituencies.',
       SHA: 'The 36 state legislatures.',
     };
+    /**
+     * Seat magnitude — Presidential > Governorship > Senate > Reps > State Assembly.
+     *
+     * BY TIER, NOT BY CODE. A by-election for a House seat is a House race: its
+     * CODE (REP_BYE_GOMBE_2026) is its identity, its TIER is its category. Sorting
+     * on the code put all three by-elections ABOVE the presidency, because
+     * `indexOf` returns -1 for a code it does not list and -1 sorts first. An
+     * unrecognised contest now sorts LAST, which is the safe end: a new contest
+     * appearing at the bottom is untidy, one appearing above the presidency is a
+     * claim about its importance.
+     *
+     * Within a category the general election leads and its by-elections follow,
+     * by date then by state, so a category reads as "the race, then the seats
+     * being filled out of cycle".
+     */
     const ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
+    const tierOf = (c) => c.tier || c.code;
+    const seatRank = (c) => { const i = ORDER.indexOf(tierOf(c)); return i < 0 ? ORDER.length : i; };
+    const isGeneral = (c) => tierOf(c) === c.code;
+    const bySeat = (x, y) =>
+      seatRank(x) - seatRank(y)
+      || Number(!isGeneral(x)) - Number(!isGeneral(y))
+      || String(x.date || '').localeCompare(String(y.date || ''))
+      || String((x.states || [])[0] || '').localeCompare(String((y.states || [])[0] || ''))
+      || String(x.name || '').localeCompare(String(y.name || ''));
+
     const fmt = (d) => new Date(`${d}T00:00:00`).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' });
     /** Today at midnight — comparing dates, never instants, so a race is not
      *  "completed" at 00:01 on the morning of its own polling day. */
@@ -167,15 +192,23 @@
       const items = [];
 
       // The scheduled catalogue, in seat-magnitude order.
-      for (const c of [...contests].sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code))) {
+      for (const c of [...contests].sort(bySeat)) {
         items.push({
           name: raceLabel(c),
-          desc: DESC[c.code] || '',
+          // A by-election borrows nothing from its category's blurb: "360
+          // federal constituencies" is a false description of a race for one.
+          desc: (c.constituencies || []).length
+            ? `${c.constituencies.join(', ')} — ${(c.states || []).join(', ')}.`
+            : DESC[c.code] || '',
           date: c.date,
           status: statusOf(c.date),
           // Presidency has a page; governorship has one PER STATE and expands
-          // below rather than linking anywhere itself; the rest have none yet.
-          href: c.code === 'PRES' ? 'candidates.html' : null,
+          // below rather than linking anywhere itself; a by-election is a single
+          // seat and has its own page; the general SEN/REP/SHA rows have none,
+          // being 109, 362 and 993 seats rather than a race you can open.
+          href: c.code === 'PRES' ? 'candidates.html'
+            : (c.constituencies || []).length ? `race.html?contest=${encodeURIComponent(c.code)}`
+            : null,
           states: c.code === 'GOV' ? (c.states || []) : null,
         });
       }

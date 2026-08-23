@@ -37,6 +37,12 @@ const ROUTES = [
   ['/(tabs)/results', ''],
   ['/practice', 'Which Polling Unit'],
   ['/profile', ''],
+  // The report flow is a fullScreenModal and the heaviest screen in the app —
+  // which is exactly why the zero-inset first frame was visible there and
+  // nowhere else. Worth checking it still mounts at all.
+  ['/report/result', ''],
+  ['/report/collation', ''],
+  ['/report/incident', ''],
 ];
 
 const browser = await chromium.launch();
@@ -96,7 +102,7 @@ const READY = (body) =>
  * a deadline generous enough for a cold bundle. A screen that is genuinely
  * broken still fails — it just takes the full wait to say so.
  */
-async function load(route, deadlineMs = 60000) {
+async function load(route, needle, deadlineMs = 60000) {
   await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 90000 });
   await page.waitForLoadState('networkidle').catch(() => {});
   const until = Date.now() + deadlineMs;
@@ -104,7 +110,13 @@ async function load(route, deadlineMs = 60000) {
   while (Date.now() < until) {
     await page.waitForTimeout(1500);
     body = await text();
-    if (READY(body)) return body;
+    // Keep waiting for the LANDMARK, not merely for the body to stop being
+    // empty. A screen renders its chrome before its content, so "has 40
+    // characters" was satisfied by a header while the step below it was still
+    // mounting — which failed /practice for a screen that was about to be
+    // perfectly fine. If a route declares a landmark, that is what "loaded"
+    // means for it.
+    if (READY(body) && (!needle || body.includes(needle))) return body;
   }
   return body;
 }
@@ -113,7 +125,7 @@ let failures = 0;
 for (const [route, needle] of ROUTES) {
   let body = '';
   try {
-    body = await load(route);
+    body = await load(route, needle);
   } catch (e) {
     console.log(`FAIL  ${route}  (${e.message.split('\n')[0].slice(0, 60)})`);
     failures++;

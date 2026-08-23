@@ -38,15 +38,36 @@ for (const [code, col] of LEVELS) {
     GROUP BY ${col}, state, lga
     ORDER BY ${col}, lga`).all();
 
+  /**
+   * WARDS, counted separately because they cannot be summed from the rows above.
+   *
+   * A ward name repeats across LGAs, so counting DISTINCT ward would collapse
+   * two different wards into one. The unit of a ward is (state, lga, ward) —
+   * the same three-part identity the register itself uses — and only a subquery
+   * over that triple gives an honest count.
+   *
+   * Wards matter because the LGA count is a poor description of these seats: a
+   * federal constituency is 2-4 LGAs but 10-51 wards (median 22), and a state
+   * constituency is usually exactly ONE LGA, which tells a reader nothing.
+   */
+  const wardRows = db.prepare(`
+    SELECT seat, COUNT(*) AS wards FROM (
+      SELECT DISTINCT ${col} AS seat, state, lga, ward
+      FROM polling_units
+      WHERE ${col} IS NOT NULL AND ${col} <> '' AND ward IS NOT NULL AND ward <> ''
+    ) GROUP BY seat`).all();
+  const wardsBySeat = new Map(wardRows.map((r) => [r.seat, Number(r.wards)]));
+
   const seats = {};
   for (const r of rows) {
     // A seat name is unique nationally in the register, but keep the state from
     // the rows rather than assuming: it is what crops the map and what the board
     // link needs.
-    const s = (seats[r.seat] ??= { state: r.state, lgas: [], pollingUnits: 0 });
+    const s = (seats[r.seat] ??= { state: r.state, lgas: [], pollingUnits: 0, wards: 0 });
     if (!s.lgas.includes(r.lga)) s.lgas.push(r.lga);
     s.pollingUnits += Number(r.units);
   }
+  for (const [seat, n] of wardsBySeat) if (seats[seat]) seats[seat].wards = n;
   out[code] = seats;
 }
 db.close();
@@ -89,6 +110,7 @@ if (fs.existsSync(GEO)) {
       state: out.REP[sib].state,
       lgas: [...out.REP[sib].lgas],
       pollingUnits: out.REP[sib].pollingUnits,
+      wards: out.REP[sib].wards,
       // Both halves are flagged: the sibling's figures are equally shared.
       sharedRegister: true,
     };
@@ -100,8 +122,18 @@ if (fs.existsSync(GEO)) {
 
 const n = (c) => Object.keys(out[c]).length;
 const split = (c) => Object.values(out[c]).filter((s) => s.lgas.length === 1).length;
-console.log(`SEN ${n('SEN')} districts (${split('SEN')} single-LGA)`);
-console.log(`REP ${n('REP')} constituencies (${split('REP')} single-LGA)`);
+const wardless = (c) => Object.values(out[c]).filter((s) => !s.wards).length;
+const wardRange = (c) => {
+  const w = Object.values(out[c]).map((s) => s.wards).filter(Boolean).sort((a, b) => a - b);
+  return w.length ? `${w[0]}-${w[w.length - 1]}, median ${w[Math.floor(w.length / 2)]}` : 'none';
+};
+console.log(`SEN ${n('SEN')} districts (${split('SEN')} single-LGA, wards ${wardRange('SEN')})`);
+console.log(`REP ${n('REP')} constituencies (${split('REP')} single-LGA, wards ${wardRange('REP')})`);
+// A seat with no ward count would render a blank fact on its page. Say so here
+// rather than letting the card find out.
+for (const c of ['SEN', 'REP']) {
+  if (wardless(c)) console.warn(`! ${wardless(c)} ${c} seat(s) have NO ward count — their cards would show a gap`);
+}
 if (n('SEN') !== 109) console.warn(`! expected 109 senatorial districts, got ${n('SEN')}`);
 
 if (process.argv.includes('--print')) {

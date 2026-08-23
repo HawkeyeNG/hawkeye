@@ -1,67 +1,87 @@
 /**
- * The Android capture screenshot: YOUR device's ML Kit scanner UI, with the
- * specimen sheet placed in the camera viewport.
+ * The Android capture screenshot: the device's real ML Kit scanner chrome, at a
+ * full phone screen's proportions.
  *
- * The chrome is genuine — top bar, shutter, Manual/Auto capture toggle and the
- * "Hawkeye will have access only to the images you scan" line all come straight
- * off a real phone. That matters: the scanner UI is a Play-services surface that
- * Google draws at runtime, so it cannot be rendered by the web build and could
- * not be recreated by hand without inventing Google's interface. Only the camera
- * CONTENT is supplied, which is what the camera would show pointed at a sheet.
+ * The source is a CROP — 1066x1280, aspect 0.833, where a phone screen is nearer
+ * 0.45. Padding it to a phone-shaped canvas simply grew the black below the
+ * panel, which put the panel at 62% of the frame when on a real device it is
+ * closer to a fifth. Both wrong, and wrong in a way that reads as a mistake.
  *
- * Geometry is measured, not guessed: the viewport is the pure-black band at
- * y 75..874 (the bar above and the panel below are both #131313).
+ * So it is REASSEMBLED rather than padded. The top bar and the whole bottom
+ * panel — shutter, Manual/Auto toggle, privacy line — are lifted pixel-for-pixel
+ * from the device capture and keep their true height. Only the VIEWPORT is
+ * rebuilt, to the height a real phone gives it, holding the surface and the
+ * specimen sheet. A camera preview is the one region whose content is whatever
+ * the lens is pointed at, so its extent is the honest thing to set and its
+ * chrome is not.
+ *
+ * Measured, not guessed: bar y 0..74, viewport y 75..874 (pure black), panel
+ * y 875..1280. The bar and panel are both #131313.
  */
 import sharp from '/home/elrio/hawkeye/backend/node_modules/sharp/dist/index.cjs';
 
 const SRC = '/mnt/c/Users/HP/Downloads/5789690987201368074.jpg';
 const OUT = '/tmp/raw/1-capture.android.png';
-const VIEW_TOP = 75;
-const VIEW_BOT = 874;
+const BAR_BOT = 75;
+const PANEL_TOP = 875;
+const W = 1320;
+const H = 2868;
 
-const base = sharp(SRC);
-const meta = await base.metadata();
-const vw = meta.width;
-const vh = VIEW_BOT - VIEW_TOP;
+const meta = await sharp(SRC).metadata();
+const scale = W / meta.width;
 
-// The surface the sheet is lying on, filling the viewport as a camera would see
-// it, then the sheet inset so the surface shows all round — the same framing
-// asked for on iOS.
-const surface = await sharp({ create: { width: vw, height: vh, channels: 3, background: '#3f4643' } })
-  .png().toBuffer();
-const sheetH = Math.round(vh * 0.88);
+const bar = await sharp(SRC)
+  .extract({ left: 0, top: 0, width: meta.width, height: BAR_BOT })
+  .resize({ width: W }).png().toBuffer();
+const panel = await sharp(SRC)
+  .extract({ left: 0, top: PANEL_TOP, width: meta.width, height: meta.height - PANEL_TOP })
+  .resize({ width: W }).png().toBuffer();
+const barH = (await sharp(bar).metadata()).height;
+const panelH = (await sharp(panel).metadata()).height;
+
+/**
+ * THE VIEWPORT IS SIZED TO WHAT SURVIVES THE CROP, not to the canvas.
+ *
+ * make_store_screenshots.mjs fits the device with `cover, position: top` and
+ * bleeds it off the bottom edge, so roughly the top 81% of this frame is what a
+ * reader sees. Sizing the viewport to fill the whole 2868 pushed the panel —
+ * the shutter, the Manual/Auto toggle, the privacy line, the whole reason this
+ * shot is the Android one — clean off the bottom of the visible device.
+ *
+ * So the bar, the viewport and the panel are laid out to end at that line, and
+ * the remainder below is the panel's own #131313 continuing to the screen edge,
+ * exactly as it does on the phone.
+ */
+const VISIBLE = 0.81;
+const viewH = Math.round(H * VISIBLE) - barH - panelH;
+
+// The viewport, at the height a phone actually gives it: the surface the sheet
+// lies on, with the sheet inset so the surface shows all round — the same
+// framing as the iOS shot.
+const sheetH = Math.round(viewH * 0.74);
 const sheet = await sharp('/tmp/specimen-ec8a.png')
   .flatten({ background: '#ffffff' })
   .resize({ height: sheetH, fit: 'inside' })
   .toBuffer();
 const sm = await sharp(sheet).metadata();
-const viewport = await sharp(surface)
-  .composite([{ input: sheet, left: Math.round((vw - sm.width) / 2), top: Math.round((vh - sm.height) / 2) }])
+const viewport = await sharp({ create: { width: W, height: viewH, channels: 3, background: '#3f4643' } })
+  .composite([{ input: sheet, left: Math.round((W - sm.width) / 2), top: Math.round((viewH - sm.height) / 2) }])
   .png().toBuffer();
 
-const withSheet = await sharp(SRC)
-  .composite([{ input: viewport, left: 0, top: VIEW_TOP }])
-  .png().toBuffer();
-
-/**
- * Pad to the same 1320x2868 frame the other raw shots use, in the UI's own
- * #131313, so this flows through make_store_screenshots.mjs unchanged.
- *
- * Placed at the TOP because that script crops the device from the top and bleeds
- * it off the bottom edge — it keeps roughly the top 81% for Play. Anything below
- * that line is cut, and the grey panel with the shutter and the toggle is the
- * whole point of this shot.
- */
-const W = 1320;
-const H = 2868;
-const scaled = await sharp(withSheet).resize({ width: W }).png().toBuffer();
-const sc = await sharp(scaled).metadata();
 await sharp({ create: { width: W, height: H, channels: 3, background: '#131313' } })
-  .composite([{ input: scaled, left: 0, top: 0 }])
+  .composite([
+    { input: bar, left: 0, top: 0 },
+    { input: viewport, left: 0, top: barH },
+    { input: panel, left: 0, top: barH + viewH },
+  ])
   .removeAlpha()
   .png()
   .toFile(OUT);
 
-console.log(`viewport ${vw}x${vh}, sheet ${sm.width}x${sm.height} (${Math.round(sm.height / vh * 100)}% tall)`);
-console.log(`UI occupies 0..${sc.height} of ${H} (${Math.round(sc.height / H * 100)}%) — inside the ~81% Play keeps`);
+const visible = Math.round(H * VISIBLE);
+const pct = (n) => `${Math.round((n / visible) * 100)}%`;
+console.log(`scale ${scale.toFixed(3)}  of the VISIBLE ${visible}px: bar ${barH} (${pct(barH)})`
+  + `  viewport ${viewH} (${pct(viewH)})  panel ${panelH} (${pct(panelH)})`);
+console.log(`panel ends at y=${barH + viewH + panelH}, visible to y=${visible} — ${barH + viewH + panelH <= visible ? 'inside' : 'CUT OFF'}`);
+console.log(`sheet ${sm.width}x${sm.height} — ${Math.round((sm.height / viewH) * 100)}% of the viewport`);
 console.log(`wrote ${OUT}`);

@@ -103,6 +103,22 @@ echo "  package   : $PKG"
 echo "  signing   : upload config injected"
 echo "  maps key  : $(grep -c 'com.google.android.geo.API_KEY' android/app/src/main/AndroidManifest.xml) manifest entry"
 
+# Guard: THE SCANNER PRE-WARM ACTUALLY APPLIED.
+#
+# The plugin injects a Play-services module pre-fetch into MainApplication.kt and
+# adds the ML Kit artifact to this module — without the second half the first
+# half does not compile, which is how it burned 25 minutes before anyone noticed.
+# A prebuild that silently skips it would produce a bundle that builds fine and
+# fixes nothing, and the difference is invisible in the .aab. Checked here, in
+# seconds, rather than inferred from a green build.
+if grep -q 'with-mlkit-scanner-prewarm' app.json; then
+  grep -q 'deferredInstall' android/app/src/main/java/ng/com/hawkeye/observer/MainApplication.kt     || die "the scanner pre-warm is in app.json but did NOT reach MainApplication.kt"
+  grep -q 'play-services-mlkit-document-scanner' android/app/build.gradle     || die "the pre-warm injected its Kotlin but NOT its dependency — this build would fail at compileReleaseKotlin"
+  echo "  prewarm   : injected, with its dependency"
+else
+  echo "  prewarm   : not enabled in app.json (scanner module downloads on first use)"
+fi
+
 # Guard: react-native-compressor pulls TAndroidLame, which declares
 # allowBackup="true"; ours is "false" and the merger aborts without a
 # tools:replace. The config plugin adds it, but prebuild has proven flaky about

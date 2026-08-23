@@ -12,6 +12,7 @@ import {
   LEVEL_COLS,
   LEVEL_NOUN,
   LEVEL_NOUN_PLURAL,
+  contestGate,
   regionLevelFor,
   scopeColFor,
 } from '../services/scope.js';
@@ -275,6 +276,8 @@ pollingUnitsRouter.get('/register/unit', (req, res) => {
 pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
   const contest = String(req.query.contest || 'PRES').toUpperCase();
   const c = contests.find((x) => x.code === contest);
+  // The CROP, not the scope: only a contest confined to a single state can be
+  // narrowed to it. A contest naming 28 states is narrowed by contestGate below.
   const state = Array.isArray(c?.states) && c.states.length === 1 ? c.states[0] : null;
 
   /**
@@ -317,14 +320,30 @@ pollingUnitsRouter.get('/coverage/gaps', (req, res) => {
     : state ? { sql: 'state = ?', val: state }
     : null;
 
+  /**
+   * NARROWED TO THE CONTEST'S OWN SCOPE — the same gate /api/national uses.
+   *
+   * `all` is the DENOMINATOR this endpoint exists to publish, and it read
+   * straight off the register: every state, every LGA, every constituency the
+   * register knows, whether or not the election is held there. So the 2027
+   * governorship reported "0 of 37 states in this election have reports" for a
+   * race held in 28, and named nine states nobody can cover as places still
+   * needing observers. A by-election was worse — six federal constituencies
+   * offered for a seat that is one — and it says the same thing through the
+   * assistant, which reads this endpoint as a tool.
+   *
+   * A coverage figure with an unreachable denominator can never read 100%.
+   */
+  const gate = contestGate(c, col, { cropped: Boolean(filter) });
+
   const all = (filter
-    ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${filter.sql} AND ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all(filter.val)
-    : db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${col} IS NOT NULL AND ${col} != '' ORDER BY r`).all()
+    ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${filter.sql} AND ${col} IS NOT NULL AND ${col} != ''${gate.sqlBare} ORDER BY r`).all(filter.val, ...gate.params)
+    : db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${col} IS NOT NULL AND ${col} != ''${gate.sqlBare} ORDER BY r`).all(...gate.params)
   ).map((r) => r.r);
 
   const reported = new Set((filter
-    ? db.prepare(`SELECT DISTINCT p.${col} AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ? AND p.${filter.sql}`).all(contest, filter.val)
-    : db.prepare(`SELECT DISTINCT p.${col} AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ?`).all(contest)
+    ? db.prepare(`SELECT DISTINCT p.${col} AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ? AND p.${filter.sql}${gate.sql}`).all(contest, filter.val, ...gate.params)
+    : db.prepare(`SELECT DISTINCT p.${col} AS s FROM submissions sub JOIN polling_units p ON p.pu_code = sub.pu_code WHERE sub.contest = ?${gate.sql}`).all(contest, ...gate.params)
   ).map((r) => r.s));
 
   const missing = all.filter((s) => !reported.has(s));

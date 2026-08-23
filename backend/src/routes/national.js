@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db, contests, contestCodes } from '../db.js';
-import { LEVEL_COLS, regionLevelFor, reportingOpen, reportingOpensAt, contestTier } from '../services/scope.js';
+import { LEVEL_COLS, contestGate, regionLevelFor, reportingOpen, reportingOpensAt } from '../services/scope.js';
 
 export const nationalRouter = Router();
 
@@ -23,7 +23,14 @@ nationalRouter.get('/contests', (_req, res) => res.json(
 // two sources use different naming systems entirely. A ward map would be
 // two-thirds blank or, worse, confidently wrong.
 
-/** The single state a contest is confined to, or null if it is nationwide. */
+/**
+ * The single state a contest is confined to, or null.
+ *
+ * This CROPS the board — one state, subdivided one level finer. It is not the
+ * contest's scope: a contest naming 28 of the 36 states is confined to those 28
+ * and cannot be cropped to any one of them. That narrowing is contestGate's job,
+ * and the absence of it is what drew a 37-state board for a 28-state election.
+ */
 const soleState = (code) => {
   const c = contests.find((x) => x.code === code);
   return Array.isArray(c?.states) && c.states.length === 1 ? c.states[0] : null;
@@ -81,39 +88,29 @@ nationalRouter.get('/national/:contest', (req, res) => {
   }
 
   /**
-   * A contest confined to named constituencies is narrowed HERE as well as on
-   * the write path. The write path has always gated correctly — only a unit
-   * inside Gombe/Kwami/Funakaye can file into that by-election — but this
-   * endpoint listed every federal constituency in the state, so the board read
-   * "0 of 6 constituencies reporting" for an election held in exactly one.
+   * A contest is narrowed to its own scope HERE as well as on the write path.
    *
-   * The values are register spellings for the contest's own column, which is
-   * why they are compared against `only` rather than re-derived: see
-   * services/scope.js contestApplies.
+   * The write path has always gated correctly — only a unit inside
+   * Gombe/Kwami/Funakaye can file into that by-election, and no FCT unit can
+   * file into a governorship — but this endpoint read straight off the register.
+   * So a by-election board listed every federal constituency in the state ("0 of
+   * 6 reporting" for an election held in one), and the 2027 governorship listed
+   * all 37 states for a race held in 28.
    *
-   * Only applied when the board is drawn at the SAME level the gate names —
-   * ?level= can ask for a finer breakdown (a seat's LGAs), and filtering LGA
-   * names against a list of constituency names would empty the board.
+   * `cropped` because a state crop already answers the question the allowlist
+   * would: see services/scope.js contestGate.
    */
-  const gate = contestDef?.constituencies;
-  const gateCol = gate && gate.length ? regionLevelFor(contestTier(contest)).col : null;
-  const only = gateCol === col ? gate : null;
-  const holes = only ? only.map(() => '?').join(',') : '';
-  // TWO forms, because the two queries below are shaped differently: the
-  // results query joins polling_units as `p`, the subunits query selects
-  // from it unaliased. Sharing one string gave "no such column: p.lga".
-  const inList = only ? ` AND p.${col} IN (${holes})` : '';
-  const inListBare = only ? ` AND ${col} IN (${holes})` : '';
+  const gate = contestGate(contestDef, col, { cropped: Boolean(state) });
 
   const rows = state
     ? db.prepare(`
         SELECT r.votes_json, r.status, r.disputed, p.${col} AS region
         FROM results r JOIN polling_units p ON p.pu_code = r.pu_code
-        WHERE r.contest = ? AND p.state = ?${inList}`).all(contest, state, ...(only || []))
+        WHERE r.contest = ? AND p.state = ?${gate.sql}`).all(contest, state, ...gate.params)
     : db.prepare(`
         SELECT r.votes_json, r.status, r.disputed, p.${col} AS region
         FROM results r JOIN polling_units p ON p.pu_code = r.pu_code
-        WHERE r.contest = ?${inList}`).all(contest, ...(only || []));
+        WHERE r.contest = ?${gate.sql}`).all(contest, ...gate.params);
 
   // Every sub-unit in scope, reported or not. The clients draw the map from THIS,
   // not from `regions` — otherwise a board with no reports yet (the normal state
@@ -122,8 +119,8 @@ nationalRouter.get('/national/:contest', (req, res) => {
   // which the geo files cannot answer: district/constituency shapes carry no
   // state property.
   const subunits = (state
-    ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE state = ? AND ${col} IS NOT NULL AND ${col} != ''${inListBare} ORDER BY r`).all(state, ...(only || []))
-    : db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${col} IS NOT NULL AND ${col} != ''${inListBare} ORDER BY r`).all(...(only || []))
+    ? db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE state = ? AND ${col} IS NOT NULL AND ${col} != ''${gate.sqlBare} ORDER BY r`).all(state, ...gate.params)
+    : db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${col} IS NOT NULL AND ${col} != ''${gate.sqlBare} ORDER BY r`).all(...gate.params)
   ).map((x) => x.r);
 
   const national = {};

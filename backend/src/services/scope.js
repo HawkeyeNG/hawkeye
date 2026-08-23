@@ -227,6 +227,70 @@ export function regionLevelFor(code, state) {
   };
 }
 
+/**
+ * THE NARROWING A CONTEST'S OWN DEFINITION IMPLIES, as SQL over the register.
+ *
+ * Two endpoints draw from a contest's scope — routes/national.js builds the
+ * board, routes/pollingUnits.js coverage/gaps counts what is missing from it —
+ * and both honoured only the case of a contest confined to exactly ONE state.
+ * Every other allowlist a contest carries was ignored, so the 2027 governorship
+ * (28 states; the 8 off-cycle ones deliberately excluded) drew a board of 37 and
+ * reported "0 of 37 states in this election have reports" about an election held
+ * in 28. On a results product a published denominator wrong by nine states is
+ * not cosmetic: it is a coverage figure that can never reach 100%.
+ *
+ * Column names come from LEVEL_COLS via regionLevelFor in this file, never from
+ * a request, and every value is BOUND — nothing a caller sends can reach the SQL
+ * as an identifier.
+ *
+ * TWO SQL STRINGS, NOT ONE. The queries are shaped differently: some join
+ * polling_units as `p`, others select from it unaliased. Sharing one string gave
+ * "no such column: p.lga" — which surfaced as a 500 on one board and a silently
+ * empty one on another, the same fault wearing two faces.
+ *
+ * @param {object|undefined} contestDef  the contests.json row, or undefined
+ * @param {string} col                   register column the board buckets by
+ * @param {{cropped?: boolean}} [opts]   cropped: already narrowed to one state
+ * @returns {{sql: string, sqlBare: string, params: string[]}}
+ */
+export function contestGate(contestDef, col, { cropped = false } = {}) {
+  const sql = [];
+  const sqlBare = [];
+  const params = [];
+  const add = (column, values) => {
+    const holes = values.map(() => '?').join(',');
+    sql.push(` AND p.${column} IN (${holes})`);
+    sqlBare.push(` AND ${column} IN (${holes})`);
+    params.push(...values);
+  };
+
+  /**
+   * The state allowlist narrows a NATIONWIDE board only.
+   *
+   * Once the caller has cropped to one state it adds nothing — and it would do
+   * harm: a race page for an off-cycle governorship (Anambra next votes in 2029)
+   * asks for its own seat, and answering with an empty subunit list would blank
+   * a map that is legitimately about that seat. The page already knows the race
+   * is out of cycle, because it reads the contest's own `states` list to say so.
+   */
+  const states = contestDef?.states;
+  if (!cropped && Array.isArray(states) && states.length) add('state', states);
+
+  /**
+   * The constituency allowlist is what makes a by-election a by-election, and
+   * applies only when the board is drawn at the level the gate names. `?level=`
+   * can ask for a finer breakdown — a seat's LGAs — and filtering LGA names
+   * against a list of federal-constituency names would empty the board rather
+   * than narrow it.
+   */
+  const cons = contestDef?.constituencies;
+  if (Array.isArray(cons) && cons.length && regionLevelFor(contestDef.code).col === col) {
+    add(col, cons);
+  }
+
+  return { sql: sql.join(''), sqlBare: sqlBare.join(''), params };
+}
+
 export const reportingOpensAt = (c) => (c && c.date ? `${c.date}T08:30:00+01:00` : null);
 export const reportingOpen = (c) => {
   const at = reportingOpensAt(c);

@@ -130,17 +130,52 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
  * already failed at that. Font size steps down for long lines rather than
  * letting them overflow the canvas.
  */
-function captionSvg(lines) {
-  const longest = Math.max(...lines.map((l) => l.length));
-  const size = Math.round((longest > 18 ? 84 : longest > 14 ? 96 : 108) * S);
+function captionSvgAt(lines, size) {
   const lineHeight = Math.round(size * 1.18);
-  const top = Math.round(150 * S);
+  const top = Math.round(150 * S) + size;
   const text = lines.map((l, i) => `
     <text x="${W / 2}" y="${top + i * lineHeight}" text-anchor="middle"
           font-family="Inter, 'Helvetica Neue', Arial, sans-serif"
           font-size="${size}" font-weight="800" fill="${INK}"
           letter-spacing="-1.5">${esc(l)}</text>`).join('');
   return Buffer.from(`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${text}</svg>`);
+}
+
+/** No caption may come within this fraction of the canvas edge. */
+const CAPTION_MAX = 0.88;
+
+/**
+ * The largest size at which the caption actually FITS, measured rather than
+ * guessed.
+ *
+ * The size used to come from a character-count threshold scaled by S — the
+ * HEIGHT ratio. That is the wrong ratio: a caption is bounded by the canvas
+ * WIDTH, and going from Play's 1080x1920 to Apple's 1320x2868 grows the height
+ * by 1.49 and the width by only 1.22. Every iOS caption was therefore set a
+ * fifth too large for its line, and the longer ones ran off the edge.
+ *
+ * Scaling by SX instead fixes the arithmetic, but a heuristic that counts
+ * characters still cannot know that "Every election, and when it opens" sets
+ * wider than "Every result, permanently" at the same count. So the text is
+ * rendered, trimmed to its ink, and stepped down until it is inside the margin.
+ * Measuring costs a few milliseconds and removes the whole class of bug.
+ */
+async function captionSvg(lines) {
+  const longest = Math.max(...lines.map((l) => l.length));
+  let size = Math.round((longest > 18 ? 84 : longest > 14 ? 96 : 108) * SX);
+  for (let i = 0; i < 14; i += 1) {
+    // resolveWithObject, NOT metadata(). metadata() reports the INPUT's
+    // dimensions, so it returned the full canvas width on every pass and the
+    // loop ran to exhaustion — 0.94^14, which took Play's captions from 108px
+    // down to 46px and made them less legible than the bug being fixed. The
+    // trimmed size only exists on the pipeline's output.
+    // eslint-disable-next-line no-await-in-loop
+    const { info } = await sharp(captionSvgAt(lines, size)).png().trim()
+      .toBuffer({ resolveWithObject: true });
+    if (!info.width || info.width <= W * CAPTION_MAX) break;
+    size = Math.round(size * 0.94);
+  }
+  return { svg: captionSvgAt(lines, size), size };
 }
 
 async function build(spec) {
@@ -175,6 +210,7 @@ async function build(spec) {
      </svg>`,
   );
 
+  const caption = await captionSvg(spec.lines);
   const out = path.join(outDir, spec.file.replace(/\.[^.]+$/, '.png'));
   const left = Math.round((W - deviceW) / 2);
   // FLATTEN, THEN REMOVE THE CHANNEL. flatten() composites alpha onto the
@@ -191,13 +227,13 @@ async function build(spec) {
     .composite([
       { input: shot, top: deviceTop, left },
       { input: rim, top: deviceTop, left },
-      { input: captionSvg(spec.lines), top: 0, left: 0 },
+      { input: caption.svg, top: 0, left: 0 },
     ])
     .flatten({ background: BG })
     .removeAlpha()
     .png()
     .toFile(out);
-  return { file: spec.file, out };
+  return { file: spec.file, out, size: caption.size };
 }
 
 fs.mkdirSync(outDir, { recursive: true });
@@ -215,7 +251,7 @@ for (const spec of CAPTIONS) {
     console.log(`           shoot:   ${spec.shoot}\n`);
   } else {
     made++;
-    console.log(`  built    ${r.out}   "${spec.lines.join(' ')}"`);
+    console.log(`  built    ${r.out}   ${r.size}px   "${spec.lines.join(' ')}"`);
   }
 }
 

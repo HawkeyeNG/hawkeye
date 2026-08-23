@@ -16,8 +16,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
 import {
   envelopeText,
@@ -973,7 +973,7 @@ export default function ReportIncident() {
   // -- guards ---------------------------------------------------------------
   if (auth.status !== 'signedIn') {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
+      <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={BRAND.leaf} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
           Sign in to report an incident
@@ -987,7 +987,7 @@ export default function ReportIncident() {
         <Pressable className="mt-3" onPress={() => router.back()}>
           <Text className="text-sm text-muted">Not now</Text>
         </Pressable>
-      </SafeAreaView>
+      </SafeScreen>
     );
   }
 
@@ -1008,7 +1008,7 @@ export default function ReportIncident() {
 
   if (done) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
+      <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
         <View className="h-16 w-16 items-center justify-center rounded-full bg-hawk-green">
           {/* A tick on a queued report would claim a delivery that has not
               happened — the icon has to tell the two outcomes apart. */}
@@ -1022,7 +1022,7 @@ export default function ReportIncident() {
         >
           <Text className="text-base font-bold text-hawk-gold">Done</Text>
         </Pressable>
-      </SafeAreaView>
+      </SafeScreen>
     );
   }
 
@@ -1040,7 +1040,7 @@ export default function ReportIncident() {
   const ringM = searched?.envelopeM ?? searched?.registerM ?? DISCOVERY_RADIUS_M;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
+    <SafeScreen className="flex-1 bg-surface">
       <View className="flex-row items-center px-4 pt-2">
         {/* Hawkeye mark (tap → Home), matching the shared ScreenHeader
             convention; the rest of this bar is bespoke to the wizard. */}
@@ -1590,6 +1590,6 @@ export default function ReportIncident() {
           )}
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }

@@ -210,6 +210,10 @@
             : (c.constituencies || []).length ? `race.html?contest=${encodeURIComponent(c.code)}`
             : null,
           states: c.code === 'GOV' ? (c.states || []) : null,
+          // The state assembly expands too. 1,005 seats is not a list, so a
+          // state chip opens that state's own picker rather than trying to name
+          // every constituency here.
+          assembly: c.code === 'SHA' ? (c.states || []) : null,
         });
       }
 
@@ -238,6 +242,21 @@
         ['completed', 'Completed', 'No election has been reported through Hawkeye yet.'],
       ];
 
+      /**
+       * The state-assembly expander.
+       *
+       * Mirrors stateList, but a chip opens a PICKER rather than a race: a state
+       * has 24-40 constituencies and the country has 1,005, so the seat list
+       * belongs on a page of its own and not inside the index.
+       */
+      const assemblyStateList = (it) => {
+        const all = [...(it.assembly || [])].sort();
+        const chip = (s) => `<a href="race.html?contest=SHA&amp;state=${encodeURIComponent(s)}">${esc(s)}</a>`;
+        return `<details class="rc-states"><summary>Pick a state — all ${all.length} state assemblies</summary>
+          <p class="rc-sub">Each opens that state's constituencies. The FCT has no state assembly.</p>
+          <div class="rc-grid">${all.map(chip).join('')}</div></details>`;
+      };
+
       const stateList = (it, political) => {
         const all = Object.keys(political.stateStats || {}).filter((s) => s !== 'FCT').sort();
         const inCycle = new Set((it.states || []).map((s) => s.toLowerCase()));
@@ -258,6 +277,9 @@
         if (it.href) {
           const pill = it.status === 'completed' ? 'Result' : it.status === 'ongoing' ? 'Live' : 'Open';
           return `<a class="card race-item" href="${esc(it.href)}">${body}<span class="rc-pill live">${pill} ›</span></a>`;
+        }
+        if (it.assembly) {
+          return `<div class="card"><div class="race-item">${body}<span class="rc-pill live">${it.assembly.length} states</span></div>${assemblyStateList(it)}</div>`;
         }
         if (it.states) {
           return `<div class="card"><div class="race-item">${body}<span class="rc-pill live">${it.states.length} states</span></div>${stateList(it, political)}</div>`;

@@ -139,13 +139,23 @@ check('chip counts match the cards', await p.$$eval('.rc-filter label', (n) => n
    `Upcoming ${day2.upcoming}`, `Completed ${day2.completed + OSUN_PAGE}`]);
 
 console.log('\n=== governorship opens into the states, and they resolve ===');
-const gov = await p.evaluate(() => {
-  const links = [...document.querySelectorAll('.rc-grid a')];
-  return { n: links.length, hrefs: links.map((a) => a.getAttribute('href')) };
-});
+// SCOPED TO THE GOVERNORSHIP'S OWN EXPANDER. This counted every `.rc-grid a` on
+// the page, which was the same thing while only the governorship expanded — the
+// state assembly now expands too, so the bare selector returns 72 and the count
+// says nothing about either.
+const all = await p.evaluate(() =>
+  [...document.querySelectorAll('.rc-grid a')].map((a) => a.getAttribute('href')));
+const gov = { n: all.filter((h) => h.includes('contest=GOV&')).length,
+              hrefs: all.filter((h) => h.includes('contest=GOV&')) };
+const sha = all.filter((h) => h.includes('contest=SHA&'));
 check('all 36 governorships listed', gov.n, 36);
 check('the FCT is not among them', gov.hrefs, (h) => !h.some((x) => /state=FCT/i.test(x)));
 check('every one points at a race page', gov.hrefs, (h) => h.every((x) => x.startsWith('race.html?contest=GOV&state=')));
+// The state assembly expands the same way, into a picker per state — 1,005 seats
+// is not a list, so a chip opens that state's constituencies rather than a race.
+check('the state assembly expands into its 36 states', sha.length, 36);
+check('and each opens a state picker', sha, (h) => h.every((x) => x.startsWith('race.html?contest=SHA&state=')));
+check('the FCT has no state assembly', sha, (h) => !h.some((x) => x.includes('state=FCT')));
 // Follow one, and confirm it is a real page rather than a plausible URL.
 await p.goto(`${base}/${gov.hrefs.find((h) => /state=Bauchi/.test(h))}`, { waitUntil: 'networkidle' });
 await p.waitForSelector('.race-map', { timeout: 10000 });

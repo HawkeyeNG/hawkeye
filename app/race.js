@@ -508,9 +508,24 @@
     const canFollow = !done && !!j.contest && !!j.value;
     // `data-cta` names each button's JOB, so styling can change without a test
     // or a caller having to guess which anchor is which.
-    parts.push(`<div class="race-cta">
+    /**
+     * "REPORT FROM YOUR UNIT", not "Become an Observer".
+     *
+     * The two clients said the same words and meant different things: native
+     * routed straight to the report flow while this went to sign-up. Both now
+     * ask for the report — observe.html?intent=observe already handles either
+     * state, taking a signed-in observer to filing and a stranger through
+     * sign-up first, so the destination is unchanged and only the promise is
+     * honest now. Someone reading a race page who is ready to act is being
+     * asked to file from where they are standing.
+     *
+     * `race-cta` is STICKY (see race.css) — the same rule the app follows: a
+     * race page runs to a stat bar, a map, a declared result and up to nineteen
+     * candidates, and the one thing it asks for must not be under all of that.
+     */
+    parts.push(`<div class="race-cta${done ? '' : ' race-cta-pinned'}">
       ${canFollow ? '<button type="button" class="btn-quiet" data-cta="follow" id="race-follow-btn">🔔 Follow this race</button>' : ''}
-      ${done ? '' : '<a class="btn-accent" data-cta="observe" href="observe.html?intent=observe">Become an Observer</a>'}
+      ${done ? '' : '<a class="btn-accent" data-cta="observe" href="observe.html?intent=observe">Report from your unit</a>'}
       <a class="${done ? 'btn-accent' : 'btn-quiet'}" data-cta="results" href="${esc(opts.resultsHref || resultsHrefFor(race))}">${
         done ? 'Review the Results' : 'See Live Results'}</a>
       ${done ? '<a class="btn-quiet" data-cta="verify" href="ledger.html">Verify the Record</a>' : ''}</div>

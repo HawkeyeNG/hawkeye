@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Text, View } from 'react-native';
 
-import { RaceView } from '@/components/race';
+import { RaceActions, RaceView } from '@/components/race';
+import { PinnedFooter } from '@/components/pinned-footer';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
@@ -46,6 +47,10 @@ export default function Osun() {
           <RaceView race={race} logos={logos} />
         )}
       </Animated.ScrollView>
+      {/* Sibling of the scroller, not a child — see components/pinned-footer.
+          Osun is a completed race, so RaceActions drops the report button on its
+          own and this bar carries only "Review the results". */}
+      {race ? <PinnedFooter><RaceActions race={race} /></PinnedFooter> : null}
     </View>
   );
 }

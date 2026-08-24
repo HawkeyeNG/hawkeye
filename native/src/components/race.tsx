@@ -447,34 +447,8 @@ export function RaceView({
         </View>
       ) : null}
 
-      {/* A FINISHED RACE ASKS FOR NOTHING. Recruiting observers for an election
-          that is over sends people to a flow they cannot complete, and "Live
-          results" promises a count that stopped moving. Standing rule: past
-          polling day, no recruitment CTA, and the results button says what it
-          now is. Twin of app/race.js. */}
-      <View className="flex-row pt-5">
-        {isCompleted(race) ? null : (
-        <Pressable
-          className="mr-2 flex-1 items-center rounded-2xl bg-hawk-green py-3.5 active:opacity-80"
-          onPress={() => router.push('/report/result')}
-        >
-          <Text className="text-sm font-bold text-hawk-gold">Become an observer</Text>
-        </Pressable>
-        )}
-        {/* good-ink, not hawk-green: the fixed #004225 sat at 1.6:1 on the dark
-            surface — an outline and a label that both disappeared. The semantic
-            pair is 5.8:1 light / 11.0:1 dark, and matches every other secondary
-            affordance in the app. The filled button beside it keeps the fixed
-            brand pair because gold on dark green reads the same in both themes. */}
-        <Pressable
-          className="flex-1 items-center rounded-2xl border border-good-ink py-3.5 active:opacity-70"
-          onPress={() => router.push((resultsHref ?? resultsHrefFor(race)) as never)}
-        >
-          <Text className="text-sm font-bold text-good-ink">
-            {isCompleted(race) ? 'Review the results' : 'Live results'}
-          </Text>
-        </Pressable>
-      </View>
+      {/* The action row USED to sit here, in the scroll. It is now pinned by the
+          screen — see RaceActions below and the hosts that render it. */}
 
       {[noteLeads ? '' : race.note, race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit]
         .filter(Boolean)
@@ -485,6 +459,64 @@ export function RaceView({
             .join(' ')}
         </Text>
       ) : null}
+    </View>
+  );
+}
+
+/**
+ * A race's primary actions, PINNED — a sibling of the host's ScrollView, never
+ * inside it.
+ *
+ * WHY IT LEFT RaceView. A race page is long: stat bar, map, declared result,
+ * note, then a candidate list that on a presidential page runs to nineteen
+ * names. The one thing the page is asking of an observer sat at the bottom of
+ * all that, reachable only by scrolling past everything. The house rule is that
+ * no primary action is scroll-only, and the pattern is the footer View as a
+ * SIBLING of the scroller — report/result.tsx and map-unit.tsx both do it that
+ * way, and inside any KeyboardAvoidingView so it lifts with the keyboard.
+ *
+ * "REPORT FROM YOUR UNIT", not "Become an observer". The destination was already
+ * the report flow; the label described recruitment. Someone reading a race page
+ * who is ready to act is being asked to file from where they are standing, and
+ * the button now says that. (The web twin said the same words but went to
+ * sign-up — see app/race.js, now aligned.)
+ *
+ * A FINISHED RACE ASKS FOR NOTHING. Past polling day there is no report to file,
+ * so the report button goes and the results button says what it now is. Pinning
+ * makes that rule matter more, not less: a permanent bar recruiting for an
+ * election that is over would be the most visible thing on the page.
+ */
+export function RaceActions({
+  race,
+  resultsHref,
+}: {
+  race: Race;
+  resultsHref?: string;
+}) {
+  const done = isCompleted(race);
+  return (
+    <View className="flex-row">
+      {done ? null : (
+        <Pressable
+          className="mr-2 flex-1 items-center rounded-2xl bg-hawk-green py-3.5 active:opacity-80"
+          onPress={() => router.push('/report/result')}
+        >
+          <Text className="text-sm font-bold text-hawk-gold">Report from your unit</Text>
+        </Pressable>
+      )}
+      {/* good-ink, not hawk-green: the fixed #004225 sat at 1.6:1 on the dark
+          surface — an outline and a label that both disappeared. The semantic
+          pair is 5.8:1 light / 11.0:1 dark, and matches every other secondary
+          affordance in the app. The filled button beside it keeps the fixed
+          brand pair because gold on dark green reads the same in both themes. */}
+      <Pressable
+        className="flex-1 items-center rounded-2xl border border-good-ink py-3.5 active:opacity-70"
+        onPress={() => router.push((resultsHref ?? resultsHrefFor(race)) as never)}
+      >
+        <Text className="text-sm font-bold text-good-ink">
+          {done ? 'Review the results' : 'Live results'}
+        </Text>
+      </Pressable>
     </View>
   );
 }

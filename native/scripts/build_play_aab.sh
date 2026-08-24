@@ -71,7 +71,7 @@ echo "  version   : $VN (versionCode $VC)"
 # spending a twenty-minute bundle on an upload Play will reject as a
 # duplicate — and a guard that still names the release before last has
 # quietly stopped guarding anything.
-[ "$VC" -ge 7 ] || die "versionCode $VC would be rejected — 6 is in review"
+[ "$VC" -ge 7 ] || die "versionCode $VC would be rejected — 6 is PUBLISHED and live"
 
 SKIP_PREBUILD=0
 [ "${1:-}" = "--skip-prebuild" ] && SKIP_PREBUILD=1

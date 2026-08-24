@@ -35,7 +35,14 @@
    * without a stylesheet change.
    */
   const geoCache = {};
-  const getGeo = (f) => (geoCache[f] = geoCache[f] || fetch(f).then((r) => r.json()).catch(() => null));
+  // fetchData, not fetch: Lite does not bundle lga/constituency/district_geo
+  // (1.7 MB of its download). native.js's helper fetches them from the live site
+  // off-origin and is a no-op on hawkeye.com.ng, so the website is unchanged.
+  // Already tolerant of failure — the `.catch(() => null)` here is why an
+  // offline seat page loses only its outline and still renders everything else.
+  const getGeo = (f) => (geoCache[f] = geoCache[f]
+    || (typeof window !== 'undefined' && window.fetchData ? window.fetchData(f) : fetch(f))
+      .then((r) => r.json()).catch(() => null));
   const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 
   /**

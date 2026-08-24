@@ -283,7 +283,51 @@
       federal: 'constituency_geo.json',
     };
     const GEOCACHE = {};
-    const loadGeo = (f) => (GEOCACHE[f] = GEOCACHE[f] || fetch(f).then((r) => r.json()));
+    /**
+     * A MAP THAT FAILS TO LOAD MUST NOT TAKE THE BOARD WITH IT.
+     *
+     * This had no catch and no status check. `refresh()` awaits ensureGeo() at
+     * line ~752, so one failed geo fetch rejected the whole function and
+     * everything after that await was skipped: the follow-scope picker never
+     * populated, renderMap() never ran, and the "N units reporting · updated …"
+     * line froze. renderBoard() runs BEFORE the await, so the tally still
+     * appeared — leaving a half-drawn board that looked like a stalled count
+     * rather than a missing file. On election day that is the worst shape a
+     * failure can take.
+     *
+     * Worse, the rejected promise was memoised in GEOCACHE, so a single
+     * transient blip never retried for the life of the page.
+     *
+     * Now: a bad status or a network error resolves to null, is NOT cached, and
+     * the callers (which already guard on the layer being present) simply draw
+     * no map. The numbers keep updating, which is the part that matters.
+     */
+    /**
+     * fetchData, not fetch: Lite does not bundle the big three.
+     *
+     * lga/constituency/district_geo.json are 1.7 MB of the Lite download, for a
+     * board that CANNOT render offline anyway — every figure on it comes from
+     * /api/national. So Lite ships without them and fetches them from the live
+     * site when there is a connection, which is exactly the situation in which
+     * the board has anything to draw. native.js:fetchData is a no-op on
+     * hawkeye.com.ng, so the website is unchanged.
+     *
+     * `window.fetchData ? … : fetch` because native.js is not loaded in every
+     * context this file runs in (tests, and any page that includes the board
+     * without the native shell).
+     */
+    const loadGeo = (f) =>
+      (GEOCACHE[f] =
+        GEOCACHE[f] ||
+        (typeof window !== 'undefined' && window.fetchData ? window.fetchData(f) : fetch(f))
+          .then((r) => {
+            if (!r.ok) throw new Error(`${f} -> HTTP ${r.status}`);
+            return r.json();
+          })
+          .catch(() => {
+            delete GEOCACHE[f];   // do not memoise a failure — let the next refresh retry
+            return null;
+          }));
 
     /**
      * Make sure the layers THIS board draws are in hand. states_geo is always
@@ -337,6 +381,27 @@
     }
 
     function renderMap(data) {
+      /**
+       * NO GEOMETRY, NO MAP — and that is all that happens.
+       *
+       * `STATES` carries the shared viewBox every layer is projected into, so
+       * without it there is nothing to draw. loadGeo now resolves to null on a
+       * failed fetch instead of rejecting, which means this function can be
+       * reached with STATES unset; returning here keeps the numbers, the tally
+       * and the picker alive and simply omits the picture. Drawing is the part
+       * of this screen that can be missing without misleading anyone.
+       */
+      // STATES is required by every branch (it carries the shared viewBox); the
+      // level's own layer is required by the branch that draws it. Checked
+      // together, because a null LGAS/DGEO/CGEO throws just as hard as a null
+      // STATES and the level is the only thing that says which one matters.
+      const LAYER = { lga: () => LGAS, senatorial: () => DGEO, federal: () => CGEO };
+      const need = LAYER[data.level];
+      if (!STATES?.states || (need && !need())) {
+        const el = document.getElementById('map');
+        if (el) el.innerHTML = '<p class="hint" style="padding:14px">Map unavailable — check your connection. The figures below are live.</p>';
+        return;
+      }
       // Region label per map division: state, senatorial district, or federal constituency.
       const byRegion = Object.fromEntries(data.regions.map((r) => [r.region, r]));
       const leadersOf = (info) => (info?.leaders?.length ? info.leaders : (info?.leader ? [info.leader] : []));
@@ -754,10 +819,15 @@
       // the contest is confined to one state, its own sub-units ARE the choices —
       // offering all 36 states to follow on an Osun-only race was the clearest
       // sign the board still thought it was presidential.
+      // `?.` and `?? []` on all three: loadGeo resolves to null when a layer
+      // cannot be fetched, and the follow picker must degrade to empty rather
+      // than throw — losing the ability to follow a region is a small loss, and
+      // it sits AFTER the tally in refresh(), so a throw here would also stop
+      // the "N units reporting · updated …" line from ever ticking again.
       const names = data.subunits && data.subunits.length ? data.subunits
-        : data.level === 'senatorial' ? DGEO.regions.map((r) => r.name)
-        : data.level === 'federal' ? CGEO.regions.map((r) => r.name)
-        : STATES.states.map((s) => s.name);
+        : data.level === 'senatorial' ? (DGEO?.regions ?? []).map((r) => r.name)
+        : data.level === 'federal' ? (CGEO?.regions ?? []).map((r) => r.name)
+        : (STATES?.states ?? []).map((s) => s.name);
       const anywhere = data.scope && data.scope.state ? `Everywhere in ${data.scope.state}` : 'Everywhere';
       // THE PICKER SAYS "filter the leaderboard", so it has to filter it. It only
       // ever set which region to FOLLOW: choosing Osun on the governorship board

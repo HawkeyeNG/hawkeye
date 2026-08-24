@@ -4,6 +4,7 @@
   "private": true,
   "description": "Capacitor shell wrapping the Hawkeye PWA (app/) into native iOS + Android.",
   "scripts": {
+    "postinstall": "patch-package",
     "sync": "cap sync",
     "android": "cap run android",
     "ios": "cap run ios",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",
-    "@capacitor/ios": "^8.0.0"
+    "@capacitor/ios": "^8.0.0",
+    "patch-package": "^8.0.1"
   }
 }

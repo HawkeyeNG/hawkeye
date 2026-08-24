@@ -103,6 +103,34 @@ grep -q "window.fetchData" "$PUB/results.html" || { echo "GATE_FAIL: results.htm
 grep -q "window.fetchData" "$PUB/race.js" || { echo "GATE_FAIL: race.js does not route geo through fetchData — the stripped layers would never load"; exit 1; }
 echo "  ok: big-three geo fetched live, states_geo kept"
 
+# THE REASON RELEASE 2 EXISTS. Lite has no `server.url` (webDir: "../app"), so a
+# relative fetch reads the copy baked into the APK — which only changes with a
+# store release. INEC amended its 2023 candidate list SEVEN times after
+# publication; that is seven store releases for a JSON file.
+#
+# native.js's fetchData() reads those files from the live site off-origin and
+# falls back to the bundled copy when there is no signal. If it is ever missing
+# from the packaged bundle, Lite silently goes back to frozen data and looks
+# perfectly healthy while doing it — so it is asserted, not assumed.
+grep -q "window.fetchData = function" "$PUB/native.js" \
+  || { echo "GATE_FAIL: native.js has no fetchData — Lite would ship frozen candidate data"; exit 1; }
+# It only works because CapacitorHttp routes fetch natively; the live files send
+# no access-control-allow-origin, so a plain cross-origin fetch would be blocked
+# and the fallback would quietly serve the bundle forever.
+grep -q '"CapacitorHttp"' capacitor.config.json \
+  || { echo "GATE_FAIL: CapacitorHttp is not configured — fetchData would fail CORS and silently use the bundle"; exit 1; }
+echo "  ok: fetchData present, CapacitorHttp on"
+
+# The bundled political_data.json is the OFFLINE FALLBACK. It should not ship
+# months stale just because the live copy is what usually gets read.
+node -e '
+  const fs = require("fs");
+  const p = process.argv[1] + "/political_data.json";
+  const age = (Date.now() - fs.statSync(p).mtimeMs) / 86400000;
+  console.log("  political_data.json fallback is " + age.toFixed(0) + " days old");
+  if (age > 120) { console.log("GATE_FAIL: offline fallback is stale — refresh app/political_data.json"); process.exit(1); }
+' "$PUB" || exit 1
+
 # EVERY EMBLEM THE MANIFEST NAMES MUST STILL BE HERE. The strip above deletes
 # four .png files the manifest does not reference — if a future edit repoints a
 # party at one of them, the emblem would silently render as a blank disc
@@ -145,7 +173,22 @@ echo "  packaged web assets: $((KB / 1024)) MB"
 
 # --- LITE identity gates ---
 grep -q 'applicationId "ng.com.hawkeye.lite"' android/app/build.gradle || { echo "GATE_FAIL: applicationId is not ng.com.hawkeye.lite"; exit 1; }
-grep -q "versionCode 1" android/app/build.gradle || { echo "GATE_FAIL: versionCode is not 1"; exit 1; }
+# A FLOOR, not an equality — and read, not grepped for.
+#
+# This was `grep -q "versionCode 1"`, which had two faults. It pinned Lite to
+# release 1 forever, so the first real update failed its own build; and being a
+# substring match it would have accepted "versionCode 12" as "1" anyway. The
+# native script already does it this way (build_play_aab.sh) — same shape here.
+#
+# Bump the floor WITH the versionCode, every release. A guard naming the release
+# before last has quietly stopped guarding anything.
+# COMMENTS STRIPPED FIRST. Without that, a comment above the declaration that
+# happens to mention a number wins — the note explaining "release 1 is in review"
+# sits directly above `versionCode 2` and made this read 1 and fail the build.
+LITE_VC=$(grep -v '^\s*//' android/app/build.gradle | grep -oP 'versionCode\s+\K[0-9]+' | head -1)
+[ -n "$LITE_VC" ] || { echo "GATE_FAIL: could not read versionCode from build.gradle"; exit 1; }
+[ "$LITE_VC" -ge 2 ] || { echo "GATE_FAIL: versionCode $LITE_VC would be rejected — 1 is in Play review"; exit 1; }
+echo "  ok: versionCode $LITE_VC"
 grep -q "Hawkeye Lite" android/app/src/main/res/values/strings.xml || { echo "GATE_FAIL: app label is not Hawkeye Lite"; exit 1; }
 grep -q "/open" android/app/src/main/AndroidManifest.xml && { echo "GATE_FAIL: /open App Link filter still present (native owns it)"; exit 1; }
 # push: google-services.json must carry the lite package or the FCM SDK is dead

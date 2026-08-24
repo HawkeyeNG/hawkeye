@@ -22,8 +22,17 @@ android {
         // x86/x86_64 are emulators; arm64 + armeabi-v7a covers every real phone.
         if (project.hasProperty('webApk')) { ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' } }
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // Release 2. Release 1 (versionCode 1) is in Play review and CANNOT be
+        // replaced — Play rejects a duplicate versionCode outright, so this has
+        // to move before another upload is possible.
+        //
+        // What release 2 carries: native.js's fetchData(), so Lite reads
+        // political_data.json and the logo manifest from the LIVE site instead
+        // of the copy frozen in the APK (INEC amended its 2023 candidate list
+        // seven times AFTER publication — that would have been seven store
+        // releases for a JSON file). Plus the slimming: 13.7 MB -> 9.68 MB.
+        versionCode 2
+        versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

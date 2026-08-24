@@ -255,6 +255,22 @@
              href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer"><img
              src="play-badge.png" alt="Get it on Google Play" height="56"
              onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Get it on Google Play ↗'" /></a>
+          <!-- The App Store, on iPhone and iPad, the moment review passes.
+               STAGED BUT OFF: the switch is IOS_STORE_LIVE in the script below,
+               and nothing here shows until it is true. Shipping the markup dark
+               means the swap is a one-line change reviewed in advance rather than
+               a rush against a live listing.
+               Apple's OFFICIAL artwork, fetched unmodified from their marketing
+               tools API — the same rule the Play badge follows two lines up. It
+               is a trademark with its own guidelines: no recolouring, cropping or
+               redrawing, and clear space on all sides, which is why the link
+               carries none of our own background, border or radius. Same 56px
+               visible height as the Play badge, because Apple asks that a badge
+               shown beside another store's is no smaller than it. -->
+          <a class="play-badge-link" id="ios-cta" hidden rel="noopener" target="_blank"
+             href="https://apps.apple.com/app/id6804218478"><img
+             src="app-store-badge.svg" alt="Download on the App Store" height="56"
+             onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Download on the App Store ↗'" /></a>
           <!-- The web-app route, beside Play rather than under it: on Android
                they are two ways to get the same thing and reading as a pair is
                the honest presentation. Its LABEL is set by script, because this
@@ -331,7 +347,7 @@
                  a badge. An iPhone user who has just seen "Get it on Google Play"
                  will look for the App Store equivalent, and "there isn't one yet"
                  is a better answer than a hunt. -->
-            <p class="pwa-note" style="margin-top:0">There is no App Store version yet — on iPhone,
+            <p class="pwa-note" id="pwa-ios-note" style="margin-top:0">There is no App Store version yet — on iPhone,
               Safari installs it to your home screen and it works the same way.</p>
             <ol>
               <li>Open <strong>hawkeye.com.ng</strong> in <strong>Safari</strong>.
@@ -562,6 +578,36 @@
       // ours, only the clear space they require.
       const play = document.getElementById('play-cta');
       if (play && !isIOS) play.hidden = false;
+
+      /**
+       * THE APP STORE SWITCH. Flip to true the day iOS review passes.
+       *
+       * One constant, because three things have to change together and any one
+       * of them left behind is a visible lie: the badge appears, the web-app
+       * button stops being the only route on iPhone, and the install dialog
+       * stops saying "There is no App Store version yet". Splitting that across
+       * three edits is how a page ends up offering a store build in one place
+       * and denying it in another.
+       *
+       * Staged OFF deliberately: 1.0.0 (9) is on TestFlight and the App Store
+       * submission has not cleared. Turning this on before it does would send
+       * iPhone visitors to a listing that 404s — worse than the honest
+       * "not yet" the dialog gives them today.
+       */
+      const IOS_STORE_LIVE = false;
+
+      const ios = document.getElementById('ios-cta');
+      if (ios && isIOS && IOS_STORE_LIVE) ios.hidden = false;
+      // The dialog's iPhone section states the absence in words. When the store
+      // IS live that sentence becomes false, so it is rewritten from the same
+      // switch rather than left for someone to remember.
+      if (IOS_STORE_LIVE) {
+        const note = document.getElementById('pwa-ios-note');
+        if (note) {
+          note.textContent = 'Hawkeye is on the App Store — that is the best way in on iPhone. '
+            + 'You can also add this site to your home screen from Safari; it works the same way.';
+        }
+      }
 
       // ONE BUTTON, TWO MEANINGS. On iPhone there is no store build, so this is
       // the only way in and the label says which platform it is for. On Android

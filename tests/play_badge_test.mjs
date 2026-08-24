@@ -121,7 +121,23 @@ const dlg = await p.evaluate(() => {
       && playLink.compareDocumentPosition(and.querySelector('ol')) & Node.DOCUMENT_POSITION_FOLLOWING,
     iosSaysNoStore: /no App Store version yet/i.test(ios.textContent),
     iosStillHasSafariSteps: /Safari/.test(ios.textContent) && ios.querySelectorAll('ol li').length >= 3,
-    noAppStoreLink: !document.querySelector('a[href*="apps.apple.com"]'),
+    /**
+     * REACHABLE, not merely present.
+     *
+     * This was `!document.querySelector('a[href*="apps.apple.com"]')` — no such
+     * element at all. The App Store badge is now STAGED in the markup and held
+     * dark by IOS_STORE_LIVE, so the element exists and is never rendered; a
+     * presence check failed the build for a link no visitor can reach.
+     *
+     * The guard's point was never "no such tag", it was "do not offer a listing
+     * that does not exist". Reading the layout answers that; reading the DOM
+     * does not — the same distinction this file already had to learn about
+     * .hidden versus display (see the badge state above).
+     *
+     * tests/app_store_badge_test.mjs owns the flipped-on case.
+     */
+    noAppStoreLink: [...document.querySelectorAll('a[href*="apps.apple.com"]')]
+      .every((a) => a.getClientRects().length === 0),
   };
 });
 check('Play is in the Android section', dlg.playInAndroid, true);
@@ -129,7 +145,7 @@ check('with the right listing', dlg.playHref, PLAY);
 check('and it comes before the manual steps', !!dlg.playBeforeSteps, true);
 check('iPhone is told there is no App Store version', dlg.iosSaysNoStore, true);
 check('but keeps its Safari instructions', dlg.iosStillHasSafariSteps, true);
-check('and nothing links to an App Store listing that does not exist', dlg.noAppStoreLink, true);
+check('and no REACHABLE link to an App Store listing that does not exist', dlg.noAppStoreLink, true);
 
 await b.close();
 server.close();

@@ -84,11 +84,16 @@ TestFlight, once the build lands:
   3. EXTERNAL testing: up to 10,000, needs a Beta App Review (lighter than App
      Store review, usually about a day).
 
-Known iOS gaps, neither of which blocks testing:
-  - PUSH. The app calls getDevicePushTokenAsync(), which on iOS returns an APNs
-    token, while the server sends through FCM v1. iOS notifications will not
-    arrive until either the iOS app is added to Firebase (so the token is an FCM
-    one) or the server gains an APNs path. Everything else works regardless.
+PUSH — FIXED as of 2026-08-24, and this build is the one that delivers it.
+  The app is registered in Firebase, @react-native-firebase/messaging hands back
+  an FCM token on iOS, the server selects 'ios', and aps-environment is set to
+  production for this profile so TestFlight gets a production APNs token rather
+  than a sandbox one. A phone only becomes reachable once it RE-REGISTERS from a
+  build containing all of that — every earlier iOS install holds a raw APNs
+  token the server declines by shape, and the admin console counts those
+  separately so they are not mistaken for a broken key.
+
+Known iOS gaps, which do not block testing:
   - MAPS. No iOS Google Maps key is set, deliberately: react-native-maps falls
     back to Apple Maps, which needs no key and is good at exactly the thing this
     app uses it for. Worth eyeballing the map screens before deciding to keep it.

@@ -379,6 +379,14 @@ main.wrap { max-width: 840px; }
   color: var(--link); font-weight: 700; border-radius: 999px; padding: 13px 18px;
 }
 .race-cta .btn-quiet:hover { border-color: var(--link); background: var(--tint); }
+/* SUBSCRIBED. Set by follow.js:paint when the reader is already following, so
+   the one control that can undo it is not the faintest thing in the row. A
+   tinted fill and a full-strength border, still on the accessible --link ink —
+   loud enough to find, quiet enough not to compete with the report CTA beside
+   it, which is the action the page is actually asking for. */
+.race-cta .btn-quiet.btn-following {
+  border-color: var(--link); background: var(--tint);
+}
 
 /* hero visual: ledger card stack */
 .ledger-stack { position: relative; min-height: 330px; }

@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Text, View } from 'react-native';
 
-import { RaceActions, RaceView } from '@/components/race';
+import { RaceActions, RaceView, hasRaceActions } from '@/components/race';
 import { PinnedFooter } from '@/components/pinned-footer';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
@@ -49,7 +49,7 @@ export default function Candidates() {
       {/* Sibling of the scroller, not a child — see components/pinned-footer.
           The presidential field is nineteen names; without this the page's only
           action sits below all of them. */}
-      {race ? <PinnedFooter><RaceActions race={race} /></PinnedFooter> : null}
+      {race && hasRaceActions(race) ? <PinnedFooter><RaceActions race={race} /></PinnedFooter> : null}
     </View>
   );
 }

@@ -230,6 +230,21 @@
   };
 
   /**
+   * The presidency, and only it.
+   *
+   * A join names the region a race is fought in; the presidency is fought in
+   * all of them and carries none — the same invariant seatFieldOf above relies
+   * on. Named because the CTA row branches on it, and `!race.join` at a call
+   * site reads as a missing-data check rather than a statement about which
+   * election this is.
+   *
+   * It is also WHY the presidency keeps a second button: the map block renders
+   * nothing without a join, so it is the one race page with no live map of its
+   * own. Twin: political.ts:isPresidency.
+   */
+  const isPresidency = (race) => !!race && !race.join;
+
+  /**
    * Every declared name on a seat's page, in one list.
    *
    * `candidates`/`others`/`minors` are three shapes of the same fact and a seat
@@ -523,12 +538,27 @@
      * race page runs to a stat bar, a map, a declared result and up to nineteen
      * candidates, and the one thing it asks for must not be under all of that.
      */
+    /**
+     * NO RESULTS BUTTON, BECAUSE THIS PAGE IS THE RESULTS.
+     *
+     * The map above is this race's own regions coloured from /api/national —
+     * the board's data, cropped to the race being read. "See Live Results" sat
+     * directly beneath a live result and led somewhere less specific than where
+     * the reader already was.
+     *
+     * THE PRESIDENCY IS THE EXCEPTION and says why in one place: it carries no
+     * join, so the map block above renders nothing for it. It is the single
+     * race page with no live map of its own, and until it has one the button is
+     * the only route to a presidential board — now that board directly, rather
+     * than the picker (resultsHrefFor below). Twin: native RaceActions.
+     */
+    const boardOnly = isPresidency(race);
     parts.push(`<div class="race-cta${done ? '' : ' race-cta-pinned'}">
       ${canFollow ? '<button type="button" class="btn-quiet" data-cta="follow" id="race-follow-btn">🔔 Follow this race</button>' : ''}
       ${done ? '' : '<a class="btn-accent" data-cta="observe" href="observe.html?intent=observe">Report from your unit</a>'}
-      <a class="${done ? 'btn-accent' : 'btn-quiet'}" data-cta="results" href="${esc(opts.resultsHref || resultsHrefFor(race))}">${
-        done ? 'Review the Results' : 'See Live Results'}</a>
-      ${done ? '<a class="btn-quiet" data-cta="verify" href="ledger.html">Verify the Record</a>' : ''}</div>
+      ${boardOnly ? `<a class="${done ? 'btn-accent' : 'btn-quiet'}" data-cta="results" href="${esc(opts.resultsHref || resultsHrefFor(race))}">${
+        done ? 'Review the results' : 'Live results'}</a>` : ''}
+      ${done ? '<a class="btn-quiet" data-cta="verify" href="ledger.html">Verify the record</a>' : ''}</div>
       ${canFollow ? '<p class="hint" id="race-follow-msg" hidden></p>' : ''}`);
 
     const credit = [noteLeads ? '' : (race.note || ''), race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit || ''].filter(Boolean).join(' ');
@@ -623,7 +653,12 @@
    */
   function resultsHrefFor(race) {
     const j = race && race.join;
-    if (!j || !j.contest || !j.value) return 'results.html';
+    // The presidency has no join and still has a board. A bare results.html
+    // seeds itself from the picker, so the one button on the presidential page
+    // opened "choose an election" and asked the reader to find the race they
+    // were already reading. Name the contest and land on it. Twin: native
+    // lib/political.ts:resultsHrefFor.
+    if (!j || !j.contest || !j.value) return 'results.html?contest=PRES';
     const q = new URLSearchParams({ contest: j.contest });
     const state = j.state || (j.level === 'state' ? j.value : '');
     if (state) q.set('state', state);
@@ -1178,4 +1213,6 @@
   // native twin. The renderers are not comparable; these two functions are.
   window.seatFieldOf = seatFieldOf;
   window.wholeFieldOf = wholeFieldOf;
+  window.isPresidency = isPresidency;
+  window.resultsHrefFor = resultsHrefFor;
 })();

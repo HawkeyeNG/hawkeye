@@ -135,7 +135,7 @@
 
     <section id="need-auth" class="card" hidden>
       <p>To report an incident, register your device first.</p>
-      <a class="btn-link" href="observe.html?intent=incident">Register Your Device →</a>
+      <a class="btn-link" href="observe.html?intent=incident">Register your device →</a>
     </section>
 
     <section id="form-card" class="card" hidden>
@@ -201,12 +201,12 @@
         <label id="saved-unit-row" hidden style="display:flex;gap:8px;align-items:center;font-weight:400;margin-bottom:8px">
           <input type="radio" name="pu-choice" id="use-saved" style="width:auto" /> <span id="saved-unit-name"></span>
         </label>
-        <button type="button" id="btn-near" class="secondary" style="width:auto">Find Units Near Me</button>
+        <button type="button" id="btn-near" class="secondary" style="width:auto">Find units near me</button>
         <p id="pu-status" class="hint" role="status" style="margin:8px 0 0"></p>
         <div id="pu-near-list" style="margin-top:6px"></div>
       </div>
 
-      <button id="btn-submit">Submit Report</button>
+      <button id="btn-submit">Submit report</button>
       <!-- "A human reviews every report…" lived here AND in the receipt modal.
            The receipt is where it lands after the act it describes, so this copy
            went rather than being said twice. -->
@@ -247,7 +247,7 @@
         <p id="scan-hint" hidden></p>
         <div class="camera-actions">
           <button id="btn-cancel-camera" class="secondary">Cancel</button>
-          <button id="btn-capture">Capture Photo</button>
+          <button id="btn-capture">Capture photo</button>
         </div>
       </div>
     </div>
@@ -257,7 +257,7 @@
         <h2 id="done-title" style="margin-top:0">✅ Sent for Review</h2>
         <p id="done-msg" class="hint"></p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
-          <button id="btn-another" style="flex:1;min-width:150px">Report Another Incident</button>
+          <button id="btn-another" style="flex:1;min-width:150px">Report another incident</button>
           <button id="btn-exit" class="secondary" style="flex:1;min-width:110px">Exit</button>
         </div>
       </div>
@@ -554,7 +554,7 @@
           ${i.media.length ? `<div class="m">${i.media.map((m) => m.type === 'video'
             ? `<video src="/uploads/${safeFile(m.file)}" controls muted></video>`
             : `<img src="/uploads/${safeFile(m.file)}" alt="incident evidence" loading="lazy" />`).join('')}</div>` : ''}
-          <button type="button" class="flag-btn" data-flag="${i.id}">⚑ Report This Content</button>
+          <button type="button" class="flag-btn" data-flag="${i.id}">⚑ Report this content</button>
         </div>`).join('');
       // Store-policy requirement (Play UGC / App Store 1.2): every piece of
       // published user content carries an in-app way to object to it.

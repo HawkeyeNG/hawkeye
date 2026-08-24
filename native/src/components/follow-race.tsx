@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 
 import { BRAND } from '@/lib/api';
 import { authedGet, useAuth } from '@/lib/auth';
+import { useUi } from '@/lib/theme';
 import { getIdentity } from '@/lib/identity';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -66,6 +67,7 @@ export function followSubject(contest: string | null, scope: string): string {
  *                 federal constituency. '' means every region in the contest.
  */
 export function FollowRace({ contest, scope }: { contest: string | null; scope: string }) {
+  const ui = useUi();
   const auth = useAuth();
   const [subs, setSubs] = useState<Sub[]>([]);
   const [busy, setBusy] = useState(false);
@@ -153,21 +155,37 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
       : 'Alerts on'
     : `Get alerts on every report${scope ? ` in ${scope}` : ''}`;
 
+  /**
+   * SUBSCRIBED, AND IT HAS TO LOOK LIKE A CONTROL.
+   *
+   * `bg-card` is the same fill every passive panel on the screen uses, so once
+   * you were following, the one thing that could undo it was indistinguishable
+   * from a status card — and its label said "Following this race", which
+   * describes the state and leaves the action to be guessed at.
+   *
+   * A border in the accessible ink is what the rest of the app's secondary
+   * controls wear (see RaceActions), and it separates this from the panels
+   * around it without competing with the report CTA — which is still the thing
+   * the page is asking for.
+   */
   return (
     <Pressable
       disabled={busy}
       onPress={toggle}
+      accessibilityRole="button"
+      accessibilityState={{ selected: following, busy }}
+      accessibilityLabel={following ? `Unfollow ${subject}. Alerts are on.` : `Follow ${subject}`}
       className={`mb-3 flex-row items-center rounded-2xl px-4 py-3 active:opacity-80 ${
-        following ? 'bg-card' : 'bg-hawk-green'
+        following ? 'border border-good-ink bg-card' : 'bg-hawk-green'
       }`}
     >
       {busy ? (
-        <ActivityIndicator color={following ? BRAND.leaf : BRAND.gold} />
+        <ActivityIndicator color={following ? ui.tint.good.ink : BRAND.gold} />
       ) : (
         <Feather
           name={following ? 'bell' : 'bell-off'}
           size={16}
-          color={following ? BRAND.leaf : BRAND.gold}
+          color={following ? ui.tint.good.ink : BRAND.gold}
         />
       )}
       {/* STACKED, NOT SIDE BY SIDE. These were two Texts on one row competing
@@ -176,8 +194,14 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
           all House of Reps races", so the row is gone: one flexible column
           beside the icon, each line free to wrap on its own. */}
       <View className="flex-1 pl-3">
-        <Text className={`text-sm font-bold ${following ? 'text-hawk-leaf' : 'text-hawk-gold'}`}>
-          {following ? `Following ${subject}` : `Follow ${subject}`}
+        {/* THE LABEL IS THE ACTION, NOT THE STATE. "Following this race" told
+            you how things were and left what tapping does to be guessed at —
+            a reader wanting out had no reason to think the thing announcing
+            the subscription was also the way to end it. The state is still
+            here: the bell icon, the detail line's "Alerts on", and
+            accessibilityState.selected for anyone not seeing either. */}
+        <Text className={`text-sm font-bold ${following ? 'text-good-ink' : 'text-hawk-gold'}`}>
+          {following ? `Unfollow ${subject}` : `Follow ${subject}`}
         </Text>
         <Text className={`pt-0.5 text-xs ${following ? 'text-faint' : 'text-emerald-200'}`}>
           {detail}

@@ -151,7 +151,7 @@
         + flagQs
         + '<div class="q"><p>Optional note — what did you see? (public, max 280 chars)</p>'
         + '<textarea id="comment" maxlength="280" rows="2" placeholder="e.g. the INEC stamp is missing; figures column reads 108 not 180"></textarea></div>'
-        + '<button id="cast">Cast My Verdict</button><p class="note" id="msg"></p>'
+        + '<button id="cast">Cast my verdict</button><p class="note" id="msg"></p>'
         + '<p class="note">Your answers compute the verdict by a published rule — you never pick a side directly. Notes are public but never counted.</p>';
       $('cast').onclick = async () => {
         const val = (n) => document.querySelector(`input[name="${n}"]:checked`)?.value;

@@ -98,9 +98,26 @@
     var busy = false;
     var subject = followSubject(contest, scope);
 
+    /**
+     * A BUTTON IS LABELLED WITH WHAT IT DOES, NOT WITH HOW THINGS ARE.
+     *
+     * "Following this race" described the state and left the action to be
+     * guessed at — a reader looking to stop had no reason to think the thing
+     * telling them they were subscribed was also the way out, and the only
+     * clue was an aria-pressed nobody sees.
+     *
+     * So the label is the action: "Unfollow this race" once subscribed. The
+     * STATE is not lost — aria-pressed still carries it for assistive tech, the
+     * bell icon shows it, and the message line below says "Alerts on". Twin:
+     * native components/follow-race.tsx.
+     */
     function paint() {
-      btn.textContent = (followed ? '🔔 Following ' : '🔔 Follow ') + subject;
+      btn.textContent = (followed ? '🔕 Unfollow ' : '🔔 Follow ') + subject;
       btn.setAttribute('aria-pressed', followed ? 'true' : 'false');
+      // Once subscribed this is the only control that can undo it, so it stops
+      // being a quiet tertiary link and takes the outlined treatment the rest
+      // of the row's secondary actions use.
+      btn.classList.toggle('btn-following', !!followed);
     }
     function say(html) {
       if (!msg) return;

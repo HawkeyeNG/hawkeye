@@ -243,10 +243,35 @@ export function findRace(
  * contest — the presidency. Twin of app/race.js:resultsHrefFor.
  */
 export function resultsHrefFor(race: Race | null | undefined): string {
+  // THE PRESIDENCY, WHICH HAS NO JOIN, HAS A BOARD ALL THE SAME.
+  //
+  // This used to return a bare /(tabs)/results for it, and a bare board seeds
+  // itself from the picker — so the one button on the presidential screen
+  // opened "Choose an election type" and asked the reader to find the race they
+  // had just been reading about. Naming the contest lands on the national board
+  // directly. Every other race reaches its own board through the join below.
   const j = race?.join;
-  if (!j?.contest || !j.value) return '/(tabs)/results';
+  if (!j?.contest || !j.value) return '/(tabs)/results?contest=PRES';
   const q = new URLSearchParams({ contest: j.contest, scope: j.value });
   return `/(tabs)/results?${q.toString()}`;
+}
+
+/**
+ * The presidency, and only it.
+ *
+ * A join names the region a race is fought in; the presidency is fought in all
+ * of them and carries none, which is the invariant `seatFieldOf` above and the
+ * map both already rely on. Named because two screens now branch on it and
+ * `!race.join` at a call site reads like a missing-data check rather than a
+ * statement about which election this is.
+ *
+ * It is ALSO the reason the presidency keeps a second button while every other
+ * race page dropped one: components/race-map.tsx returns nothing without a
+ * join, so the presidential screen is the single race page with no live map of
+ * its own. Give it one and this exception can go. Twin: app/race.js:isPresidency.
+ */
+export function isPresidency(race: Race | null | undefined): boolean {
+  return !!race && !race.join;
 }
 
 /** One seat's register facts, from app/seat_lgas.json. */

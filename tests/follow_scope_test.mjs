@@ -99,11 +99,11 @@ console.log('\n=== a race page follows one race ===');
     await p.waitForSelector('#race-follow-btn', { timeout: 10000 });
     check(`${label} — offered`, await followBtn(p), '🔔 Follow this race');
     await p.click('#race-follow-btn');
-    await p.waitForFunction(() => document.getElementById('race-follow-btn').textContent.includes('Following'), { timeout: 5000 });
+    await p.waitForFunction(() => document.getElementById('race-follow-btn').textContent.includes('Unfollow'), { timeout: 5000 });
     // The region posted is the seat's own — exactly the key
     // subscriptions.js:reportScope buckets a report by for this contest.
     check(`${label} — posts its own region`, posted.at(-1), { method: 'POST', body: want });
-    check(`${label} — button flips`, await followBtn(p), '🔔 Following this race');
+    check(`${label} — button flips`, await followBtn(p), '🔕 Unfollow this race');
   }
   await p.close();
 }
@@ -147,10 +147,10 @@ console.log('\n=== already covered by a follow-everything row ===');
   posted.length = 0;
   await p.goto(`${base}/race.html?contest=SEN&seat=Kano%20Central`, { waitUntil: 'domcontentloaded' });
   await p.waitForSelector('#race-follow-btn', { timeout: 10000 });
-  await p.waitForFunction(() => document.getElementById('race-follow-btn').textContent.includes('Following'), { timeout: 5000 });
-  check('reads as already following', await followBtn(p), '🔔 Following this race');
+  await p.waitForFunction(() => document.getElementById('race-follow-btn').textContent.includes('Unfollow'), { timeout: 5000 });
+  check('reads as already following', await followBtn(p), '🔕 Unfollow this race');
   await p.click('#race-follow-btn');
-  await p.waitForFunction(() => !document.getElementById('race-follow-btn').textContent.includes('Following'), { timeout: 5000 });
+  await p.waitForFunction(() => !document.getElementById('race-follow-btn').textContent.includes('Unfollow'), { timeout: 5000 });
   check('unfollow deletes the row that was covering it', posted.at(-1), { method: 'DELETE', body: { contest: 'SEN', state: '' } });
   await p.close();
 }

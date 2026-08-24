@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native';
 
 import { GovDisclaimer } from '@/components/gov-disclaimer';
-import { RaceActions, RaceView } from '@/components/race';
+import { RaceActions, RaceView, hasRaceActions } from '@/components/race';
 import { PinnedFooter } from '@/components/pinned-footer';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
@@ -236,7 +236,7 @@ export default function RaceScreen() {
           one thing it asks of an observer must not be under all of that.
           Only on a real race: the SHA picker and the absence message are not
           races and have nothing to act on. */}
-      {race && !pick ? <PinnedFooter><RaceActions race={race} /></PinnedFooter> : null}
+      {race && !pick && hasRaceActions(race) ? <PinnedFooter><RaceActions race={race} /></PinnedFooter> : null}
     </View>
   );
 }

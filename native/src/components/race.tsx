@@ -5,6 +5,7 @@ import { FollowRace } from '@/components/follow-race';
 import { BRAND } from '@/lib/api';
 import { RaceMap } from '@/components/race-map';
 import {
+  isPresidency,
   logoUrl,
   partyColor,
   photoUrl,
@@ -482,9 +483,23 @@ export function RaceView({
  * sign-up — see app/race.js, now aligned.)
  *
  * A FINISHED RACE ASKS FOR NOTHING. Past polling day there is no report to file,
- * so the report button goes and the results button says what it now is. Pinning
- * makes that rule matter more, not less: a permanent bar recruiting for an
- * election that is over would be the most visible thing on the page.
+ * so the report button goes — and with the results button gone too (below), a
+ * completed race has no bar at all, which is why `hasRaceActions` exists.
+ * Pinning makes that rule matter more, not less: a permanent bar recruiting for
+ * an election that is over would be the most visible thing on the page.
+ *
+ * NO "LIVE RESULTS" BUTTON, BECAUSE THIS SCREEN IS THE LIVE RESULTS.
+ *
+ * RaceMap above draws this race's own regions coloured by /api/national — the
+ * same board data, cropped to the race being read. A button labelled "Live
+ * results" sat directly under a live result and sent the reader somewhere less
+ * specific than where they already were.
+ *
+ * THE PRESIDENCY IS THE EXCEPTION, and for a reason worth stating rather than
+ * special-casing quietly: it has no join, so race-map.tsx returns nothing and it
+ * is the one race page WITHOUT a map of its own. Until it has one, the button
+ * is the only way to a presidential board — and it now opens that board
+ * directly instead of the picker (lib/political.ts:resultsHrefFor).
  */
 export function RaceActions({
   race,
@@ -494,11 +509,14 @@ export function RaceActions({
   resultsHref?: string;
 }) {
   const done = isCompleted(race);
+  const boardOnly = isPresidency(race);
   return (
     <View className="flex-row">
       {done ? null : (
         <Pressable
-          className="mr-2 flex-1 items-center rounded-2xl bg-hawk-green py-3.5 active:opacity-80"
+          className={`flex-1 items-center rounded-2xl bg-hawk-green py-3.5 active:opacity-80${
+            boardOnly ? ' mr-2' : ''
+          }`}
           onPress={() => router.push('/report/result')}
         >
           <Text className="text-sm font-bold text-hawk-gold">Report from your unit</Text>
@@ -509,16 +527,31 @@ export function RaceActions({
           pair is 5.8:1 light / 11.0:1 dark, and matches every other secondary
           affordance in the app. The filled button beside it keeps the fixed
           brand pair because gold on dark green reads the same in both themes. */}
-      <Pressable
-        className="flex-1 items-center rounded-2xl border border-good-ink py-3.5 active:opacity-70"
-        onPress={() => router.push((resultsHref ?? resultsHrefFor(race)) as never)}
-      >
-        <Text className="text-sm font-bold text-good-ink">
-          {done ? 'Review the results' : 'Live results'}
-        </Text>
-      </Pressable>
+      {boardOnly ? (
+        <Pressable
+          className="flex-1 items-center rounded-2xl border border-good-ink py-3.5 active:opacity-70"
+          onPress={() => router.push((resultsHref ?? resultsHrefFor(race)) as never)}
+        >
+          <Text className="text-sm font-bold text-good-ink">
+            {done ? 'Review the results' : 'Live results'}
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
+}
+
+/**
+ * Whether RaceActions would render anything at all.
+ *
+ * PinnedFooter draws a bordered bar around whatever it is given, so an empty
+ * RaceActions inside one is a stripe of chrome pinned to the bottom of the
+ * screen advertising nothing. A completed non-presidential race is exactly that
+ * case. Hosts ask this before they mount the footer.
+ */
+export function hasRaceActions(race: Race | null | undefined): boolean {
+  if (!race) return false;
+  return !isCompleted(race) || isPresidency(race);
 }
 
 /**

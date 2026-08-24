@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Text, View } from 'react-native';
 
-import { RaceActions, RaceView } from '@/components/race';
+import { RaceActions, RaceView, hasRaceActions } from '@/components/race';
 import { PinnedFooter } from '@/components/pinned-footer';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
@@ -48,9 +48,14 @@ export default function Osun() {
         )}
       </Animated.ScrollView>
       {/* Sibling of the scroller, not a child — see components/pinned-footer.
-          Osun is a completed race, so RaceActions drops the report button on its
-          own and this bar carries only "Review the results". */}
-      {race ? <PinnedFooter><RaceActions race={race} /></PinnedFooter> : null}
+          Osun is a completed race and not the presidency, so it now has NO
+          actions: nothing to report, and the page is its own result. Asking
+          hasRaceActions rather than mounting an empty bar — PinnedFooter draws
+          its border and inset around whatever it is handed, so the alternative
+          is a stripe of chrome pinned to the screen advertising nothing. */}
+      {race && hasRaceActions(race) ? (
+        <PinnedFooter><RaceActions race={race} /></PinnedFooter>
+      ) : null}
     </View>
   );
 }

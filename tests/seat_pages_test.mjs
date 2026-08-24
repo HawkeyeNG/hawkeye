@@ -64,10 +64,19 @@ check('sized from the register', await p.$$eval('.race-statbar .s', (n) => n.map
   (c) => c.some((x) => x.includes(String(want.lgas.length))) && c.some((x) => /Polling units/.test(x)));
 check('and it says why there are no candidates', await p.textContent('.race-ctx'),
   (t) => /has not published the candidate list/.test(t));
-// URLSearchParams encodes a space as "+", not %20 — both are valid in a query
-// string, and this asserts what the code actually builds.
-check('its board link carries the seat', await p.$eval('.race-cta a[data-cta="results"]', (a) => a.getAttribute('href')),
+// The board link is a RULE now, not a button: a seat page draws its own LGAs
+// coloured from the same board data, so it no longer offers a way to a less
+// specific view of itself. The rule still has to name the seat, so it is
+// checked where it lives. URLSearchParams encodes a space as "+", not %20 —
+// both are valid in a query string, and this asserts what the code builds.
+check('its board link carries the seat',
+  await p.evaluate((s) => window.resultsHrefFor({
+    join: { contest: 'SEN', level: 'senatorial', value: s.seat, state: s.state },
+  }), { seat, state: want.state }),
   `results.html?${new URLSearchParams({ contest: 'SEN', state: want.state, scope: seat })}`);
+check('and the seat page itself asks only for a report',
+  await p.$$eval('.race-cta a, .race-cta button', (n) => n.map((x) => x.dataset.cta)),
+  (c) => c.includes('observe') && !c.includes('results'));
 
 console.log('\n=== a federal constituency, including a single-LGA one ===');
 const single = Object.entries(SEATS.REP).find(([, s]) => s.lgas.length === 1);

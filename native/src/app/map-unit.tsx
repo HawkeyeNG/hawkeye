@@ -491,10 +491,6 @@ export default function MapUnit() {
     return drawn;
   }, [nearby]);
 
-  /** True once anything on the map is an area rather than a point — the case
-   *  this screen exists for, and the only one worth explaining. */
-  const anyApprox = mapUnits.some((u) => u.tier === 'approx');
-
   /**
    * The circle to draw. Normally the envelope search, the wider of the two and
    * so the one that frames every result — but if only the register lookup
@@ -1172,18 +1168,13 @@ export default function MapUnit() {
             {searched && ringLine(searched) ? (
               <Text className="pt-2 text-xs leading-4 text-muted">{ringLine(searched)}</Text>
             ) : null}
-            {/* Describes the DOT, not the circle. Most envelopes are too large
-                to have a visible edge (2.8km average against an 800m search) and
-                are deliberately not drawn at all, so copy that promised a circle
-                was captioning something the observer could not see. */}
-            {anyApprox ? (
-              <Text className="pt-1 text-xs leading-4 text-muted">
-                An amber dot is a unit whose position is known only to an approximate area —
-                sometimes a whole estate. That area is outlined when it is small enough to fit on
-                the map, and its size is given on the row where we have it. Walking to it and
-                recording one fix is what turns the area into a point.
-              </Text>
-            ) : null}
+            {/* The amber dot's four-line explanation used to sit here. Removed:
+                this screen already says it three shorter ways — the legend
+                names "Approximate area only", each row carries its own tier
+                badge, and the ring line above states the radius. A paragraph
+                restating all of it pushed the unit list and the record-fix
+                button further down a screen whose whole job is to get someone
+                standing at a unit to tap one button. */}
           </View>
         ) : null}
 

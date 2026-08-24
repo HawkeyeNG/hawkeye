@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 #
-# Assemble the eight signing secrets that .github/workflows/ios-release.yml
-# expects, as FILES under ~/hawkeye-secrets/ios/github-secrets/ (mode 600).
+# Assemble the eight signing secrets the Capacitor iOS workflows expected, as
+# FILES under ~/hawkeye-secrets/ios/github-secrets/ (mode 600).
+#
+# ORPHANED as of 2026-08-24: .github/workflows/ios-release.yml and ios-build.yml
+# were deleted (they built Lite and signed it as the observer app, and Lite is
+# Android-only for now). Nothing consumes these secrets today. Kept because a
+# Lite iOS CI would need exactly this again — recover the workflows with
+# `git show 6648cc2^:.github/workflows/ios-release.yml`.
+#
+# This is NOT the path the live iOS app uses. That is EAS on native/, which
+# reads ~/hawkeye-secrets/ios/ directly and touches no GitHub secret.
 #
 # Nothing is printed. Every value goes to a file, and the summary shows only
 # names and byte counts — a transcript is the wrong place for a signing key,

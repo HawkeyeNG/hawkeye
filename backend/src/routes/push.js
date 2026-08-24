@@ -54,6 +54,10 @@ pushRouter.post('/push/broadcast', requireAdmin, async (req, res) => {
       dryRun,
       confirm: dryRun ? null : req.body?.confirm,
       maxAudience,
+      // Absent means everyone, which is what every existing caller meant. An
+      // unknown value THROWS in broadcast() and surfaces as the 400 below,
+      // rather than quietly targeting nobody and reporting a clean send.
+      platforms: req.body?.platforms ?? null,
     });
     res.json(r);
   } catch (e) {

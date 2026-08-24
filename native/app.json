@@ -115,6 +115,8 @@
         }
       ],
       "expo-notifications",
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
       "react-native-document-scanner-plugin",
       "./plugins/with-mlkit-scanner-prewarm",
       "./plugins/with-allow-backup-override",

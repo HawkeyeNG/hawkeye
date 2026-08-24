@@ -239,6 +239,41 @@ app.use('/uploads', express.static(config.uploadDir, {
   },
 }));
 
+/**
+ * /get — ONE store link that sends each device to its own store.
+ *
+ * A broadcast that says "update from the store" needs a different destination
+ * per platform, and the alternative was writing the notification twice and
+ * targeting each half by platform. That is two chances to send the wrong copy to
+ * the wrong people, and it does not survive a third platform. This is one URL in
+ * one notification: the device is already telling us what it is, in every
+ * request it makes.
+ *
+ * MUST BE REGISTERED BEFORE express.static, or a file named `get` would win.
+ *
+ * NOT an App Link. The app claims `/open` only (see app/.well-known/
+ * assetlinks.json), so tapping this opens a browser, which hands off to the
+ * store app — exactly what is wanted. Do NOT add /get to an intent filter: the
+ * app intercepting its own "go to the store" link is a loop.
+ *
+ * 302, not 301: the store URLs may change, and a permanent redirect would be
+ * cached by browsers past our ability to correct it.
+ */
+const STORE_ANDROID = 'https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer';
+const STORE_IOS = 'https://apps.apple.com/app/id6804218478';
+app.get('/get', (req, res) => {
+  const ua = String(req.get('user-agent') || '');
+  // iPadOS reports itself as Macintosh, so an iPad lands on the install page
+  // rather than being guessed at — a wrong store is worse than a page that
+  // offers both. Phones are what a push reaches, and they are unambiguous.
+  if (/iPhone|iPod/i.test(ua)) return res.redirect(302, STORE_IOS);
+  if (/Android/i.test(ua)) return res.redirect(302, STORE_ANDROID);
+  // Desktop, iPad, a crawler, or a UA we do not know: the homepage's install
+  // section carries both badges and the web-app route, and states plainly which
+  // platforms have a store build.
+  return res.redirect(302, '/index.html#install');
+});
+
 // Observer PWA + public dashboard.
 app.use(express.static(config.appDir));
 

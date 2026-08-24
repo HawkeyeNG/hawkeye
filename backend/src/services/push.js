@@ -1,4 +1,6 @@
-// Native push (FCM for Android; APNs stubbed until the iOS build exists).
+// Native push — FCM for BOTH Android and iOS. The iOS app joined the same
+// Firebase project on 2026-08-24 and now registers an FCM token (see
+// native/src/lib/push.ts), so there is one transport rather than two.
 // Credential-gated exactly like the AI providers: with no FCM service-account
 // env set, every send is a silent no-op — the app still works, it just doesn't
 // push. Tokens are registered by the mobile shell (app/native.js) and tied to an
@@ -111,17 +113,22 @@ async function fcmAccessToken() {
  * handler below would then DELETE it: an iOS device would register, be dropped,
  * register again, be dropped, forever.
  *
- * Recognised by SHAPE rather than by the stored `platform`, on purpose. Once the
- * iOS app is added to Firebase it will hand over a real FCM token while still
- * reporting platform 'ios' — a platform check would keep skipping it. This test
- * stops being true exactly when the token stops being an APNs one.
+ * Recognised by SHAPE rather than by the stored `platform`, on purpose — and
+ * that choice is what made the 2026-08-24 switch need no migration. The iOS app
+ * is in Firebase now and hands over a real FCM token while still reporting
+ * platform 'ios'; a platform check would have kept skipping those forever. This
+ * test stopped being true exactly when the token stopped being an APNs one.
+ *
+ * It still fires for rows registered BEFORE the switch, which hold an APNs token
+ * until that device next re-registers. Keep it until those have aged out.
  */
 const isRawApnsToken = (t) => /^[0-9a-f]{64}$/i.test(String(t || ''));
 
 async function fcmSend(accessToken, deviceToken, title, body, data) {
   if (isRawApnsToken(deviceToken)) {
-    // Not an error and not the device's fault: iOS push is not wired to FCM
-    // yet. Kept, not deleted — it becomes deliverable the moment it is.
+    // A pre-switch iOS row. Not an error and not the device's fault. Kept, NOT
+    // deleted: it becomes deliverable the moment that app re-registers, and
+    // deleting would just churn the row.
     return false;
   }
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${config.fcmProjectId}/messages:send`, {
@@ -176,7 +183,13 @@ export async function sendToObserver(observerId, { title, body, data } = {}) {
   if (!observerId) return 0;
   let sent = 0;
   if (FCM_ENABLED) {
-    const rows = db.prepare("SELECT token FROM device_push_tokens WHERE observer_id = ? AND platform = 'android'").all(observerId);
+    // 'ios' TOO, since 2026-08-24 — the iOS app is registered in the same
+    // Firebase project and @react-native-firebase/messaging now hands back an
+    // FCM token, so one transport serves both. Rows registered BEFORE that
+    // change still hold a raw APNs token; isRawApnsToken skips those, so the
+    // switch needs no migration and no cutover — a device starts being
+    // deliverable the moment it re-registers with an FCM token.
+    const rows = db.prepare("SELECT token FROM device_push_tokens WHERE observer_id = ? AND platform IN ('android', 'ios')").all(observerId);
     if (rows.length) {
       try {
         const at = await fcmAccessToken();
@@ -213,24 +226,63 @@ export async function sendToObserver(observerId, { title, body, data } = {}) {
  * distinct observers — they differ by a factor of about five here, and only one
  * of them is reach.
  */
+/** The only audiences that exist. Anything else is a caller mistake, not a
+ *  filter that quietly matches nothing. */
+export const PUSH_PLATFORMS = ['android', 'ios', 'web'];
+
 export async function broadcast({
-  title, body, data, dryRun = true, confirm = null, maxAudience = 0,
+  title, body, data, dryRun = true, confirm = null, maxAudience = 0, platforms = null,
 } = {}) {
   if (!title || !body) throw new Error('broadcast needs a title and body');
 
-  const android = FCM_ENABLED
+  /**
+   * WHO IT GOES TO. Omitted means everyone, so every existing caller is
+   * unchanged.
+   *
+   * Needed because not every announcement is true on every platform: an
+   * Android-only crash fix told to iPhone users is noise at best and, on an
+   * election tool, an invitation to distrust the next one. The store case is the
+   * opposite shape and is handled without this — /get redirects each device to
+   * its own store, so "update from the store" stays ONE message.
+   *
+   * An UNKNOWN platform THROWS rather than filtering to nothing. A typo'd
+   * 'ios ' silently matching zero devices, reported as a successful send to
+   * nobody, is the worst outcome available here.
+   */
+  let want = PUSH_PLATFORMS;
+  if (platforms != null) {
+    const list = (Array.isArray(platforms) ? platforms : [platforms]).map((p) => String(p).trim());
+    const bad = list.filter((p) => !PUSH_PLATFORMS.includes(p));
+    if (bad.length) throw new Error(`broadcast: unknown platform(s) ${bad.join(', ')}`);
+    if (!list.length) throw new Error('broadcast: platforms was empty — omit it to mean everyone');
+    want = [...new Set(list)];
+  }
+
+  // 'android' AND 'ios' through ONE query — one FCM transport serves both since
+  // the iOS app joined the Firebase project (2026-08-24). A row registered
+  // before that still holds a raw APNs token and isRawApnsToken declines it, so
+  // no migration is needed: each device becomes deliverable when it re-registers.
+  const fcmWant = want.filter((p) => p !== 'web');
+  const holes = fcmWant.map(() => '?').join(',');
+  const android = FCM_ENABLED && fcmWant.length
     ? db.prepare(`
-        SELECT t.token FROM device_push_tokens t
+        SELECT t.token, t.platform FROM device_push_tokens t
         LEFT JOIN observers o ON o.id = t.observer_id
-        WHERE t.platform = 'android' AND (o.id IS NULL OR o.status = 'active')`).all()
+        WHERE t.platform IN (${holes}) AND (o.id IS NULL OR o.status = 'active')`).all(...fcmWant)
     : [];
-  const web = VAPID_ENABLED
+  const web = VAPID_ENABLED && want.includes('web')
     ? db.prepare(`
         SELECT t.token FROM device_push_tokens t
         LEFT JOIN observers o ON o.id = t.observer_id
         WHERE t.platform = 'web' AND (o.id IS NULL OR o.status = 'active')`).all()
     : [];
   const audience = android.length + web.length;
+  // REPORTED SEPARATELY even though they send through one loop. The admin Push
+  // tab prints these, and folding iOS into "android" would make the console lie
+  // about who a broadcast reached — the exact class of mistake that made "107
+  // devices" read as 107 people.
+  const iosCount = android.filter((r) => r.platform === 'ios').length;
+  const androidCount = android.length - iosCount;
 
   /**
    * DEVICES ARE NOT PEOPLE, and the difference is large enough to mislead.
@@ -246,12 +298,16 @@ export async function broadcast({
    * app on a phone and have it open in a browser. Only the REPORTING changes, so
    * the number cannot be mistaken for reach.
    */
+  // SCOPED TO THE SAME PLATFORMS as the send. Counting every observer while
+  // sending to only Android would report reach this broadcast does not have —
+  // and "people" is the number a human reads before pressing SEND.
+  const peopleHoles = want.map(() => '?').join(',');
   const people = db.prepare(`
     SELECT COUNT(DISTINCT t.observer_id) AS n FROM device_push_tokens t
     LEFT JOIN observers o ON o.id = t.observer_id
-    WHERE (o.id IS NULL OR o.status = 'active')`).get()?.n || 0;
+    WHERE t.platform IN (${peopleHoles}) AND (o.id IS NULL OR o.status = 'active')`).get(...want)?.n || 0;
 
-  if (dryRun) return { audience, people, android: android.length, web: web.length, sent: 0, failed: 0, dryRun: true };
+  if (dryRun) return { audience, people, android: androidCount, ios: iosCount, web: web.length, sent: 0, failed: 0, dryRun: true };
   if (confirm !== 'SEND') throw new Error("broadcast refused: pass confirm:'SEND' for a real send");
   if (maxAudience && audience > maxAudience) {
     throw new Error(`broadcast refused: audience ${audience} exceeds the expected maximum ${maxAudience}`);
@@ -272,7 +328,7 @@ export async function broadcast({
     // eslint-disable-next-line no-await-in-loop
     if (await webPushSend(r.token, title, body, data)) sent++; else failed++;
   }
-  return { audience, people, android: android.length, web: web.length, sent, failed, dryRun: false };
+  return { audience, people, android: androidCount, ios: iosCount, web: web.length, sent, failed, dryRun: false };
 }
 
 // Fan out a push to everyone who saved this polling unit (Android only for now).

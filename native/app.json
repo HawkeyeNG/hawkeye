@@ -115,7 +115,12 @@
         }
       ],
       "expo-notifications",
-      "@react-native-firebase/app",
+      [
+        "@react-native-firebase/app",
+        {
+          "ios": { "disableSPM": true }
+        }
+      ],
       "@react-native-firebase/messaging",
       "react-native-document-scanner-plugin",
       "./plugins/with-mlkit-scanner-prewarm",

@@ -67,6 +67,23 @@ module.exports = ({ config }) => {
     // — and restrict that key to the iOS bundle id, not the Android package.
     ios: {
       ...config.ios,
+      /**
+       * FCM ON iOS. Registered 2026-08-24 as `ng.com.hawkeye.observer` in the
+       * same Firebase project the Android apps use (hawkeye-bd27d, sender
+       * 381988132033), so one server transport serves both platforms.
+       *
+       * Committed for the same reason google-services.json above is: the file
+       * carries project and app identifiers and an API key that is scoped to the
+       * bundle id, it is extractable from any installed build, and Google
+       * documents it as non-secret. The service-account PRIVATE key is the
+       * secret, and it lives only in the server's environment.
+       *
+       * NOT SUFFICIENT ON ITS OWN — see lib/push.ts. expo-notifications'
+       * getDevicePushTokenAsync() returns a raw APNs token on iOS whatever this
+       * file says; something has to turn that into an FCM token before the
+       * server's fcmSend can deliver to it.
+       */
+      googleServicesFile: './GoogleService-Info.plist',
     },
     // WHETHER A KEY WAS INJECTED, published somewhere the RUNTIME can see it.
     //

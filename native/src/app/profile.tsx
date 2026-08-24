@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ChooseUnitModal } from '@/components/choose-unit';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { PasswordField } from '@/components/password-field';
 import { ScreenHeader } from '@/components/screen-header';
@@ -182,6 +183,7 @@ export default function Profile() {
   const insets = useSafeAreaInsets();
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const [me, setMe] = useState<Me | null>(null);
+  const [pickUnit, setPickUnit] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -521,7 +523,14 @@ export default function Profile() {
                   ) : null
                 }
                 chevron
-                onPress={() => router.push('/map-unit')}
+                /* CHOOSE, not map. This used to push /map-unit — a screen whose
+                   instruction is "Stand at the polling unit and record one GPS
+                   fix" and whose primary button is "I am standing here". Saving
+                   was a secondary row on it, so someone who only wanted to say
+                   which unit is theirs was handed a surveying tool and told to
+                   be standing in the right place. /map-unit is unchanged and
+                   still right for contributing a coordinate. */
+                onPress={() => setPickUnit(true)}
               />
             </View>
             {/* Headed, not bare: these chips used to float under the account
@@ -925,6 +934,16 @@ export default function Profile() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Updates `me` in place rather than refetching: the row that opened this
+          is the row that has to change, and a round-trip to /api/observers/me
+          would leave "None saved" on screen for as long as the network takes. */}
+      <ChooseUnitModal
+        visible={pickUnit}
+        onClose={() => setPickUnit(false)}
+        current={savedUnit}
+        onSaved={(u) => setMe((m) => (m ? ({ ...m, unit: u } as Me) : m))}
+      />
     </View>
   );
 }

@@ -41,6 +41,44 @@
 .race-absence { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
 .race-cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 6px; }
 
+/* THE RACE PAGE'S ASK, PINNED — the web half of the rule the app already keeps
+   (native/src/components/pinned-footer.tsx).
+
+   A race page is long: stat bar, map, declared result, note, then a candidate
+   list that on the presidential page runs to nineteen names. "Report from your
+   unit" sat under all of it, reachable only by scrolling to the very bottom.
+
+   `sticky`, not `fixed`, and deliberately. Sticky keeps the bar in normal flow —
+   it takes up its own space, cannot overlap the content that follows it, and
+   stops sticking when its container ends. A fixed bar would need a body padding
+   rule to avoid covering the page footer, which is exactly the arrangement that
+   put an earlier CTA underneath the tab bar.
+
+   Only on a LIVE race: `.race-cta-pinned` is not emitted for a completed one,
+   because a permanent bar recruiting for an election that is over would be the
+   most prominent thing on the page. Same rule as race.js's `done` branch. */
+.race-cta-pinned {
+  position: sticky;
+  /* Clear of the tab bar where one exists. On the plain website .tabbar is
+     display:none and this resolves to the safe-area inset alone; inside the
+     app shell it is the bar's own height plus that inset. */
+  bottom: calc(8px + env(safe-area-inset-bottom));
+  z-index: 5;
+  margin-bottom: 8px;
+  padding: 10px 0 2px;
+  /* The bar has to be opaque, or the content sliding under it shows through and
+     the buttons read as part of whatever they are covering. The gradient fades
+     the top edge so it does not look like a hard-cut panel. */
+  background: linear-gradient(to bottom, transparent 0, var(--bg) 14px, var(--bg) 100%);
+}
+.native-app .race-cta-pinned { bottom: calc(66px + env(safe-area-inset-bottom)); }
+
+/* A phone in landscape has too little height to give a permanent bar away —
+   at that point scrolling to the button is the lesser cost. */
+@media (max-height: 460px) {
+  .race-cta-pinned { position: static; background: none; }
+}
+
 /* The inspect panel under a race map. Reserves its own height so the page does
    not jump the first time an area is tapped. */
 .race-map-info { min-height: 3.1em; margin: 8px 0 0; background: var(--card); border: 1px solid var(--line);

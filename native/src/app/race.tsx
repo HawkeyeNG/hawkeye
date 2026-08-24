@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native';
 
 import { GovDisclaimer } from '@/components/gov-disclaimer';
-import { RaceView } from '@/components/race';
+import { RaceActions, RaceView } from '@/components/race';
+import { PinnedFooter } from '@/components/pinned-footer';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api } from '@/lib/api';
@@ -229,6 +230,13 @@ export default function RaceScreen() {
           </Text>
         )}
       </Animated.ScrollView>
+      {/* PINNED, and a SIBLING of the ScrollView above — inside it, it would
+          scroll, which is the problem it exists to solve. A race page runs to a
+          stat bar, a map, a declared result and up to nineteen candidates; the
+          one thing it asks of an observer must not be under all of that.
+          Only on a real race: the SHA picker and the absence message are not
+          races and have nothing to act on. */}
+      {race && !pick ? <PinnedFooter><RaceActions race={race} /></PinnedFooter> : null}
     </View>
   );
 }

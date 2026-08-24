@@ -112,10 +112,16 @@ html.native-app:not([data-theme="dark"]) {
   --header-ctl-hover: rgba(0, 0, 0, 0.06);
 }
 /* Self-hosted type: Inter for UI/body, Lora serif for headings. */
+/* ONE FILE, FOUR WEIGHTS — because inter-400/500/600/700.woff2 are BYTE
+   IDENTICAL (same md5, 25,970 B each). They always were: four names, one face.
+   So the browser has been synthesising 500/600/700 from the 400 file all along,
+   and pointing all four rules at it changes nothing on screen while removing
+   three redundant downloads. Worth ~78 KB in the Lite APK, which ships all four.
+   If a real multi-weight Inter is ever added, give each rule its own file again. */
 @font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-weight: 500; font-display: swap; src: url('fonts/inter-500.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-weight: 600; font-display: swap; src: url('fonts/inter-600.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-weight: 700; font-display: swap; src: url('fonts/inter-700.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 500; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 600; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 700; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
 
 * { box-sizing: border-box; }
 html { background: var(--bg); scroll-behavior: smooth; }

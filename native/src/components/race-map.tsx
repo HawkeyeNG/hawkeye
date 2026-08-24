@@ -161,10 +161,26 @@ function inspectLines(date: string | undefined, name: string, row: NationalRegio
   ].filter(Boolean);
 }
 
-export function RaceMap({ join, date }: { join?: RaceJoin; date?: string }) {
+export function RaceMap({
+  join,
+  date,
+  board: givenBoard,
+}: {
+  join?: RaceJoin;
+  date?: string;
+  /**
+   * The board, when the host already has it. RaceView fetches it for the
+   * candidate list's running totals, and the two would otherwise ask the same
+   * endpoint twice on every race page. `undefined` means "not given, fetch your
+   * own"; `null` means "given, and it failed" — which is a different thing and
+   * must not restart the request.
+   */
+  board?: National | null;
+}) {
   const ui = useUi();
   const [data, setData] = useState<{ shapes: Shape[]; caption: string } | null>(null);
-  const [board, setBoard] = useState<National | null>(null);
+  const [ownBoard, setOwnBoard] = useState<National | null>(null);
+  const board = givenBoard !== undefined ? givenBoard : ownBoard;
   const [picked, setPicked] = useState<string | null>(null);
 
   useEffect(() => {
@@ -182,6 +198,13 @@ export function RaceMap({ join, date }: { join?: RaceJoin; date?: string }) {
 
   useEffect(() => {
     let live = true;
+    // GIVEN A BOARD, DO NOT FETCH ONE. The candidate list needs the same
+    // response's party totals, so RaceView now fetches once and hands it down;
+    // this keeps its own fetch for any host that renders a map on its own.
+    //
+    // Tested on the PROP, not on the derived `board` — that one is null before
+    // the fetch resolves, so guarding on it would mean never fetching at all.
+    if (givenBoard !== undefined) return undefined;
     const state = join?.state || join?.value;
     if (!join?.contest || !state) return undefined;
     // `level=lga` is asked for explicitly: a senatorial contest's own breakdown
@@ -189,12 +212,12 @@ export function RaceMap({ join, date }: { join?: RaceJoin; date?: string }) {
     // board, so a failure is silent by design.
     api
       .national(join.contest, { state, level: 'lga' })
-      .then((b) => live && setBoard(b))
+      .then((b) => live && setOwnBoard(b))
       .catch(() => {});
     return () => {
       live = false;
     };
-  }, [join]);
+  }, [join, givenBoard]);
 
   const find = useMemo(() => regionLookup(board?.regions), [board]);
   const lines = useMemo(

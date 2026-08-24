@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
 
 import { FollowRace } from '@/components/follow-race';
-import { BRAND } from '@/lib/api';
+import { BRAND, api, type National } from '@/lib/api';
 import { RaceMap } from '@/components/race-map';
 import {
   isPresidency,
@@ -134,6 +135,30 @@ export function RaceView({
   logos: Record<string, string>;
   resultsHref?: string;
 }) {
+  /**
+   * The running totals, fetched ONCE for the two things that want them.
+   *
+   * RaceMap asked for this already; the candidate list needs the same response's
+   * party totals, and two requests to one endpoint on every race screen is a
+   * cost with nothing to show for it. Fetched here and handed down — RaceMap
+   * still fetches its own when no board is passed, so it stays usable alone.
+   *
+   * `undefined` while in flight, `null` on failure: the map distinguishes them,
+   * because "not given" and "given and empty" mean different things there.
+   */
+  const [board, setBoard] = useState<National | null>(null);
+  useEffect(() => {
+    let live = true;
+    const state = race.join?.state || race.join?.value;
+    if (!race.join?.contest || !state) return undefined;
+    api
+      .national(race.join.contest, { state, level: 'lga' })
+      .then((b) => live && setBoard(b))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [race.join]);
   const dateStr = race.date
     ? new Date(`${race.date}T00:00:00`).toLocaleDateString('en-NG', {
         day: 'numeric',
@@ -141,11 +166,24 @@ export function RaceView({
         year: 'numeric',
       })
     : '';
-  // A SEAT LISTS ITS FIELD; A REGION PROFILES IT — the rule and its reasoning
-  // live in lib/political.ts, next to the web twin's, so the two can be compared
-  // by a test rather than by reading two renderers side by side.
+  // THE PRESIDENCY PROFILES ITS FIELD; EVERY OTHER RACE LISTS IT — the rule and
+  // its reasoning live in lib/political.ts, next to the web twin's, so the two
+  // can be compared by a test rather than by reading two renderers side by side.
   const seatField = seatFieldOf(race);
   const wholeField = seatField ? wholeFieldOf(race) : [];
+  /**
+   * The running total per party, or null until there is one.
+   *
+   * Joined on PARTY — the only key the two sides share, because a result sheet
+   * records votes by party, not by candidate name. NULL RATHER THAN AN EMPTY MAP
+   * when nothing has been reported: the list then renders exactly as it did
+   * before, with no column of zeroes claiming nobody has voted for anyone.
+   */
+  const reported = useMemo(() => {
+    if (!board?.unitsReporting || !board.national?.length) return null;
+    const totals = new Map(board.national.map((n) => [String(n.party), Number(n.votes) || 0]));
+    return { totals, units: board.unitsReporting };
+  }, [board]);
   const ballot =
     !seatField && race.others?.length
       ? [...race.candidates, ...race.others].sort((a, b) => a.party.localeCompare(b.party))
@@ -257,7 +295,7 @@ export function RaceView({
         );
       })()}
 
-      <RaceMap join={race.join} date={race.date} />
+      <RaceMap join={race.join} date={race.date} board={board} />
 
       {/* WHO INEC DECLARED — on a finished race, the first thing a reader wants.
 
@@ -293,26 +331,48 @@ export function RaceView({
           <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
             Declared candidates
           </Text>
+          {/* WHAT THE NUMBERS BESIDE THE NAMES ARE. Said here rather than left
+              to be inferred: on a completed race this list sits below the
+              DECLARED card, and a reader has to be able to tell INEC's figures
+              from what Hawkeye's observers have sent in. The unit count is part
+              of the claim — a total without a denominator invites being read as
+              final. */}
           <Text className="pb-2 text-xs text-muted">
             Alphabetical by party. Not an endorsement or a prediction.
+            {reported
+              ? ` Totals are what observers have reported so far — from ${reported.units.toLocaleString()} polling unit${
+                  reported.units === 1 ? '' : 's'
+                }, not an official count.`
+              : ''}
           </Text>
           <View className="overflow-hidden rounded-2xl bg-card">
-            {wholeField.map((c, i) => (
-              <View
-                key={`${c.party}-${c.name}`}
-                className={`flex-row items-center px-4 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}
-              >
-                <PartyMark party={c.party} logos={logos} />
-                <View className="flex-1 pl-3">
-                  <Text className="text-sm text-ink">{c.name}</Text>
-                  {c.meta ? <Text className="text-[11px] text-muted">{c.meta}</Text> : null}
+            {wholeField.map((c, i) => {
+              const votes = reported?.totals.get(c.party);
+              return (
+                <View
+                  key={`${c.party}-${c.name}`}
+                  className={`flex-row items-center px-4 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}
+                >
+                  <PartyMark party={c.party} logos={logos} />
+                  <View className="flex-1 pl-3">
+                    <Text className="text-sm text-ink">{c.name}</Text>
+                    {c.meta ? <Text className="text-[11px] text-muted">{c.meta}</Text> : null}
+                  </View>
+                  <Text className="text-[11px] font-semibold" style={{ color: partyColor(c.party) }}>
+                    {c.party}
+                    {!c.meta && c.incumbent ? ' · inc' : ''}
+                  </Text>
+                  {/* Only when this party has votes. A "0" against a name reads
+                      as "nobody voted for them", which is a different and
+                      wrong claim while reports are still arriving. */}
+                  {votes ? (
+                    <Text className="pl-3 text-sm font-bold tabular-nums text-ink">
+                      {votes.toLocaleString()}
+                    </Text>
+                  ) : null}
                 </View>
-                <Text className="text-[11px] font-semibold" style={{ color: partyColor(c.party) }}>
-                  {c.party}
-                  {!c.meta && c.incumbent ? ' · inc' : ''}
-                </Text>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </>
       ) : null}

@@ -107,9 +107,11 @@
      * clue was an aria-pressed nobody sees.
      *
      * So the label is the action: "Unfollow this race" once subscribed. The
-     * STATE is not lost — aria-pressed still carries it for assistive tech, the
-     * bell icon shows it, and the message line below says "Alerts on". Twin:
-     * native components/follow-race.tsx.
+     * STATE is not lost — aria-pressed carries it for assistive tech, the bell
+     * glyph shows it, and `say()` confirms it right after the click. (The app's
+     * control also keeps a standing "Alerts on" line under the label; this one
+     * has no room for a second line, which is why the confirmation does that
+     * job here.) Twin: native components/follow-race.tsx.
      */
     function paint() {
       btn.textContent = (followed ? '🔕 Unfollow ' : '🔔 Follow ') + subject;

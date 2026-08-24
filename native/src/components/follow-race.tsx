@@ -105,8 +105,11 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
     );
   }, [subs, contest, scope, auth.status]);
   const following = !!followed;
-  /** Following, but through a whole-election row rather than this seat's own. */
-  const followsEverywhere = !!followed && (followed.state ?? '') === '' && scope !== '';
+  // `followsEverywhere` lived here — following through a whole-election row
+  // rather than this seat's own. Its only reader was the long detail line that
+  // explained the distinction, and that line is gone. The distinction still
+  // MATTERS where it has consequences: `toggle` above unfollows the exact row
+  // that is doing the covering, which is what makes DELETE match.
 
   const toggle = useCallback(async () => {
     if (!contest) return;
@@ -149,11 +152,17 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
   if (!contest) return null;
 
   const subject = followSubject(contest, scope);
-  const detail = following
-    ? followsEverywhere
-      ? `Alerts on — through your subscription to every ${scope ? 'region' : 'race'} in this election`
-      : 'Alerts on'
-    : `Get alerts on every report${scope ? ` in ${scope}` : ''}`;
+  /**
+   * TWO SHORT LINES, THE SAME EVERYWHERE.
+   *
+   * These used to vary: the region was appended when following one, and being
+   * covered by a whole-election subscription produced "Alerts on — through your
+   * subscription to every region in this election". Both were true and neither
+   * earned its length under a button whose label already says what it does. The
+   * region is named in the heading directly above, and how the subscription
+   * came about is not something a reader is deciding between.
+   */
+  const detail = following ? 'Alerts on' : 'Get alerts on every report';
 
   /**
    * SUBSCRIBED, AND IT HAS TO LOOK LIKE A CONTROL.

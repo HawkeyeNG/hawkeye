@@ -81,6 +81,10 @@
     /* ---- push ---- */
     .push-audience { font-weight: 700; padding: 10px 14px; border-radius: 10px;
                      background: var(--surface, #eef3f0); margin: 10px 0 4px; }
+    .push-platforms { display: flex; gap: 14px; flex-wrap: wrap; margin: 4px 0 2px; }
+    .push-platforms label { display: inline-flex; align-items: center; gap: 6px;
+                            font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    .push-platforms input { width: auto; margin: 0; }
     .push-presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
     .push-presets .preset { width: auto; margin: 0; padding: 7px 12px; font-size: 0.84rem;
                             background: transparent; color: var(--link);
@@ -207,6 +211,20 @@
     about to message is a number you have actually seen.</p>
 
     <div class="push-audience" id="push-audience">Checking who is reachable…</div>
+
+    <!-- WHO IT GOES TO. Everyone by default, which is what every send did before
+         this existed. One platform matters when the message is only TRUE on one:
+         an Android-only crash fix announced to iPhone users is noise at best,
+         and on an election tool it teaches people to ignore the next one.
+         The store case does NOT need this — /get redirects each device to its
+         own store, so "update from your store" stays one message. -->
+    <label for="push-platforms">Send to</label>
+    <div class="push-platforms" id="push-platforms">
+      <label><input type="checkbox" value="android" checked /> Android</label>
+      <label><input type="checkbox" value="ios" checked /> iPhone</label>
+      <label><input type="checkbox" value="web" checked /> Browser</label>
+    </div>
+    <p class="hint" id="push-platforms-hint">All three — the audience above is everyone.</p>
 
     <label for="push-title">Title</label>
     <input id="push-title" maxlength="120" placeholder="Update Hawkeye from the Play Store" />
@@ -771,8 +789,22 @@
       title: $('push-title').value.trim(),
       body: $('push-body').value.trim(),
       url: $('push-url').value.trim(),
+      platforms: pushPlatforms(),
     });
-    const pushKey = (c) => `${c.title} ${c.body} ${c.url}`;
+    /** Ticked platforms, in the server's own order. */
+    const pushPlatforms = () =>
+      [...$('push-platforms').querySelectorAll('input:checked')].map((i) => i.value);
+
+    /**
+     * THE AUDIENCE IS PART OF THE KEY, so changing it invalidates the dry run.
+     *
+     * Send unlocks only for copy that has been dry-run. Without the platforms in
+     * this key an admin could dry-run "everyone", untick two boxes, and send —
+     * button still unlocked, count on screen describing an audience they are no
+     * longer addressing. The guard exists so the number you saw is the number
+     * you send to, and that has to include WHO.
+     */
+    const pushKey = (c) => `${c.title} ${c.body} ${c.url} @${(c.platforms || []).join(',')}`;
 
     function pushRefresh() {
       const c = pushCopy();
@@ -832,6 +864,7 @@
           method: 'POST',
           headers: { ...hdr(), 'content-type': 'application/json' },
           body: JSON.stringify({
+            // ...c carries title, body, url AND platforms.
             ...c, dryRun, confirm: dryRun ? undefined : 'SEND',
             // State the audience we believe we are addressing. The server
             // refuses if reality is larger — that is what stops a message
@@ -845,7 +878,7 @@
         if (j.dryRun) {
           pushDryFor = pushKey(c);
           $('push-out').textContent =
-            `Dry run — nothing sent. Would reach ${j.audience} device(s) (${j.android} Android, ${j.web} browser).`;
+            `Dry run — nothing sent. Would reach ${j.audience} device(s) across ${j.people} observer(s) — ${j.android} Android, ${j.ios} iPhone, ${j.web} browser.`;
           pushRefresh();
         } else {
           pushDryFor = null;
@@ -860,6 +893,29 @@
     for (const id of ['push-title', 'push-body', 'push-url']) {
       $(id).addEventListener('input', pushRefresh);
     }
+
+    /**
+     * Ticking a platform is a change to the message, so it runs pushRefresh —
+     * which relocks Send, because the audience is part of pushKey. Unticking a
+     * box after a dry run must not leave a live Send button describing a count
+     * that is no longer true.
+     *
+     * At least one must stay ticked: a send to nobody is refused by the server
+     * anyway, and letting the form reach that state is a worse way to find out.
+     */
+    $('push-platforms').addEventListener('change', (e) => {
+      const boxes = [...$('push-platforms').querySelectorAll('input')];
+      if (!boxes.some((b) => b.checked)) {
+        e.target.checked = true;   // re-tick the one just cleared
+        $('push-platforms-hint').textContent = 'A push needs at least one platform.';
+        return;
+      }
+      const on = boxes.filter((b) => b.checked).map((b) => b.parentNode.textContent.trim());
+      $('push-platforms-hint').textContent = on.length === boxes.length
+        ? 'All three — the audience above is everyone.'
+        : `Only ${on.join(' and ')}. The count below is for that audience alone.`;
+      pushRefresh();
+    });
     document.querySelectorAll('.push-presets .preset').forEach((b) => {
       b.addEventListener('click', () => {
         const p = PRESETS[b.dataset.preset];

@@ -201,48 +201,51 @@
   }
 
   /**
-   * A SEAT LISTS ITS FIELD; A REGION PROFILES IT.
-   *
-   * The presidency and a governorship are races a reader follows as a contest
-   * between named people — so they keep the front-runner cards, the full ballot
-   * and the quick-compare table. A Senate, House or state-assembly seat is not
-   * read that way: there are 1,480 of them, the field is a list of names, and
-   * there is no per-candidate prose to profile or compare. Giving one of those
-   * the presidential treatment would produce a page of cards with "—" in every
-   * field and a compare table whose five columns are all empty.
-   *
-   * So a seat gets ONE section, "Declared candidates", in the same compact row
-   * format the presidential page already uses for "Other declared candidates" —
-   * which is what that format is good at: many names, one line each,
-   * party-marked.
-   *
-   * Keyed off `join.level`, the same field the map, the board and the stat bar
-   * key on, so a page cannot draw itself as one kind of race and list itself as
-   * another. No join at all means the presidency, which has none.
-   *
-   * A FUNCTION, not an expression inside the renderer, because the native twin
-   * needs the identical answer and a rule buried in JSX cannot be compared to
-   * one buried in template strings. Twin: political.ts:seatFieldOf.
-   */
-  const seatFieldOf = (race) => {
-    const lvl = race && race.join && race.join.level;
-    return lvl === 'senatorial' || lvl === 'federal_constituency' || lvl === 'lga';
-  };
-
-  /**
    * The presidency, and only it.
    *
    * A join names the region a race is fought in; the presidency is fought in
-   * all of them and carries none — the same invariant seatFieldOf above relies
-   * on. Named because the CTA row branches on it, and `!race.join` at a call
-   * site reads as a missing-data check rather than a statement about which
-   * election this is.
+   * all of them and carries none. Named because the CTA row and the field rule
+   * below both branch on it, and `!race.join` at a call site reads as a
+   * missing-data check rather than a statement about which election this is.
    *
    * It is also WHY the presidency keeps a second button: the map block renders
    * nothing without a join, so it is the one race page with no live map of its
    * own. Twin: political.ts:isPresidency.
    */
   const isPresidency = (race) => !!race && !race.join;
+
+  /**
+   * THE PRESIDENCY PROFILES ITS FIELD; EVERY OTHER RACE LISTS IT.
+   *
+   * The presidency is the one race read as a contest between named individuals
+   * — nineteen people with running mates, home bases and national profiles — so
+   * it keeps the front-runner cards, the full ballot and the quick-compare
+   * table.
+   *
+   * A GOVERNORSHIP USED TO BE TREATED THE SAME WAY AND IS NOT ANY MORE. In
+   * practice its cards and compare table were the presidential furniture with
+   * nothing to put in it: no running mate, no home base, no prose, so five
+   * columns of "—" and two card sizes for what is, like every other race, a list
+   * of names. Osun is the clearest case — a completed race whose actual result
+   * is in the declared card above, with front-runner cards below re-arguing a
+   * contest that is over.
+   *
+   * So everything but the presidency gets ONE section, "Declared candidates", in
+   * the compact row format the presidential page already uses for "Other
+   * declared candidates" — which is what that format is good at: many names, one
+   * line each, party-marked, and now with each candidate's running total beside
+   * them once reports start arriving.
+   *
+   * Expressed as "not the presidency" rather than a list of levels. It was a
+   * list, and adding the governorship left it stating the same fact twice —
+   * worse, a level added later would have defaulted to the profiled treatment,
+   * which is exactly the wrong way round.
+   *
+   * A FUNCTION, not an expression inside the renderer, because the native twin
+   * needs the identical answer and a rule buried in JSX cannot be compared to
+   * one buried in template strings. Twin: political.ts:seatFieldOf.
+   */
+  const seatFieldOf = (race) => !isPresidency(race) && !!(race && race.join && race.join.level);
 
   /**
    * Every declared name on a seat's page, in one list.
@@ -424,10 +427,16 @@
     // and the list beneath it come from the same array.
     if (seatField && wholeField.length) {
       parts.push('<h2 style="margin-top:26px">Declared candidates</h2>');
-      parts.push('<p class="hint">Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.</p>');
-      parts.push(`<div class="ballot">${wholeField.map((c) => `
-        <div class="b" style="--pc:${color(c.party)}">${flagIcon(c.party)}
-          <div><strong>${esc(c.name)}</strong><span>${esc(c.meta || c.party)}${!c.meta && c.incumbent ? ' · incumbent' : ''}</span></div></div>`).join('')}</div>`);
+      parts.push('<p class="hint" id="field-hint">Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.</p>');
+      /**
+       * `data-party` is the join key for the running totals filled in later —
+       * see fillFieldTotals. The slot is rendered EMPTY rather than omitted, so
+       * arriving numbers do not reflow a list the reader is already looking at.
+       */
+      parts.push(`<div class="ballot" id="field-list">${wholeField.map((c) => `
+        <div class="b" style="--pc:${color(c.party)}" data-party="${esc(c.party)}">${flagIcon(c.party)}
+          <div><strong>${esc(c.name)}</strong><span>${esc(c.meta || c.party)}${!c.meta && c.incumbent ? ' · incumbent' : ''}</span></div>
+          <b class="b-votes" hidden></b></div>`).join('')}</div>`);
     }
 
     // Primary candidate cards
@@ -601,6 +610,18 @@
       });
     }
 
+    /**
+     * The running totals, fetched ONCE and used by both things that want them.
+     *
+     * The board was previously fetched only when the map had more than one
+     * region to wire up — the candidate list needs the same response's
+     * `national` array whether or not there is a map to tap, so the request
+     * moves out here and both readers share it. Failing to a null board is
+     * fine: the list simply keeps the names it already rendered.
+     */
+    const board = boardFor(race).catch(() => null);
+    board.then((b) => fillFieldTotals(main, race, b)).catch(() => {});
+
     // Fill the map slot behind the paint. A failure here must cost nothing: the
     // page is about candidates, the map is context, and a race with no matching
     // geometry (or a network that never answers) simply keeps an empty slot
@@ -619,8 +640,9 @@
               `<label class="race-map-pickwrap"><span class="sr-only">Jump to an area</span>
                  <select class="race-map-pick"></select></label>
                <p class="race-map-info" aria-live="polite"><span class="race-mi-sub">Tap an area of the map for what has been reported from it.</span></p>`);
-            boardFor(race)
-              .then((board) => wireRaceMap(slot, race, board))
+            // The same promise the totals used — one request, two readers.
+            board
+              .then((b) => wireRaceMap(slot, race, b))
               .catch(() => wireRaceMap(slot, race, null));
           }
         })
@@ -737,6 +759,49 @@
     const url = `/api/national/${encodeURIComponent(j.contest)}`
       + `?state=${encodeURIComponent(state)}&level=lga`;
     return fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  }
+
+  /**
+   * WHAT OBSERVERS HAVE REPORTED FOR EACH CANDIDATE, BESIDE THEIR NAME.
+   *
+   * The board's `national` array is the same running total the leaderboard
+   * ranks, scoped to this race — so the list stops being a static roll of names
+   * once polling starts and becomes the thing a reader actually opened the page
+   * for. Joined on PARTY, which is the only key both sides share: the board
+   * counts votes by party because that is what a result sheet records.
+   *
+   * THIS IS NOT THE DECLARED RESULT and must never be mistaken for it. The
+   * declared card above carries INEC's figures and is unchanged; this is what
+   * Hawkeye's observers have sent in so far, which is why the hint says so and
+   * says how many units it is drawn from. On a completed race the two sit on the
+   * same page and a reader has to be able to tell which is which.
+   *
+   * NOTHING IS SHOWN UNTIL SOMETHING IS REPORTED. A column of zeroes before
+   * polls open reads as "no votes for anyone", not as "no reports yet" — and
+   * those are opposite claims. Same rule the map's tap-through already follows.
+   */
+  function fillFieldTotals(main, race, board) {
+    const list = main.querySelector('#field-list');
+    if (!list || !board || !board.unitsReporting || !Array.isArray(board.national)) return;
+    const totals = new Map(board.national.map((n) => [String(n.party), Number(n.votes) || 0]));
+    let any = false;
+    list.querySelectorAll('.b[data-party]').forEach((row) => {
+      const v = totals.get(row.dataset.party);
+      if (!v) return;                       // no reports for this party yet
+      const slot = row.querySelector('.b-votes');
+      if (!slot) return;
+      slot.textContent = v.toLocaleString();
+      slot.hidden = false;
+      any = true;
+    });
+    if (!any) return;
+    const units = board.unitsReporting;
+    const hint = main.querySelector('#field-hint');
+    if (hint) {
+      hint.innerHTML = 'Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan. '
+        + `<strong>Totals are what observers have reported so far</strong> — from ${units.toLocaleString()} `
+        + `polling unit${units === 1 ? '' : 's'}, not an official count.`;
+    }
   }
 
   /** One line per fact, most important first. */

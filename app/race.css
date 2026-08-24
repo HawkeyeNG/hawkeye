@@ -37,6 +37,16 @@
 .b strong { font-size: 0.9rem; display: block; }
 .b span { font-size: 0.73rem; color: var(--muted); }
 :root[data-theme="dark"] .b span { color: var(--ink); }
+/* The candidate's running total from observer reports, filled in after the list
+   paints (race.js:fillFieldTotals) and hidden until there is one — a zero beside
+   a name reads as "nobody voted for them", which is a different claim from "no
+   reports yet". `margin-left:auto` pins it to the right edge of the row without
+   giving the name column a fixed width to fight over, and tabular figures stop
+   the numbers jittering as they climb. */
+.b .b-votes {
+  margin-left: auto; padding-left: 10px; font-size: 0.92rem; font-weight: 700;
+  color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
 
 .race-absence { font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
 .race-cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 6px; }

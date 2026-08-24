@@ -206,10 +206,47 @@ export async function registerForPush(): Promise<void> {
     // own FCM v1 sends against the raw device token, so an Expo push token would
     // be registered and then never delivered to.
     const token = await Notifications.getDevicePushTokenAsync();
-    await authedPost('/api/push/register', {
-      token: String(token.data),
-      platform: token.type === 'ios' ? 'ios' : 'android',
-    });
+    const platform = token.type === 'ios' ? 'ios' : 'android';
+
+    /**
+     * ON iOS, ASK FIREBASE — expo-notifications hands back an APNs token.
+     *
+     * `getDevicePushTokenAsync()` returns the raw APNs device token on iOS, and
+     * the server sends through FCM v1, which cannot deliver to one. Every iOS
+     * registration therefore stored a token nothing could ever use;
+     * services/push.js:113 recognises the 64-hex shape and declines to send
+     * rather than fail, which is why this was silent rather than noisy.
+     *
+     * @react-native-firebase/messaging returns the FCM token for the same
+     * device. Getting it needs the APNs token to have been registered with
+     * Firebase first — which the call above has just caused — so the ORDER here
+     * matters and is not incidental.
+     *
+     * Android is untouched: expo-notifications already returns an FCM token
+     * there, and routing it through a second SDK would be a new way for a
+     * working path to break.
+     *
+     * FAILS BACK, not open. If messaging throws or returns nothing, the APNs
+     * token is registered as before: the server still declines to send to it, so
+     * the outcome is exactly today's behaviour rather than a lost registration.
+     */
+    let deviceToken = String(token.data);
+    if (platform === 'ios') {
+      try {
+        // MODULAR API, no default export. @react-native-firebase v22 dropped the
+        // namespaced `messaging().getToken()` form; v26 (what is installed) only
+        // ships the tree-shakeable functions, so the old shape does not
+        // typecheck and would not run.
+        const { getMessaging, getToken } = await import('@react-native-firebase/messaging');
+        const fcm = await getToken(getMessaging());
+        if (fcm) deviceToken = fcm;
+      } catch {
+        // No Firebase config in this build, or the APNs registration has not
+        // landed yet. Keep the APNs token; it is inert, not harmful.
+      }
+    }
+
+    await authedPost('/api/push/register', { token: deviceToken, platform });
   } catch {
     // No Firebase config in the build, permission denied, backend down — none
     // of it is worth interrupting someone for. The in-app feed still works.

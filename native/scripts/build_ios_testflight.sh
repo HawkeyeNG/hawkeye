@@ -51,6 +51,32 @@ node -p "require('./app.json').expo.ios.infoPlist.ITSAppUsesNonExemptEncryption 
   && note "encryption   : declared exempt (saves a review round-trip)" \
   || note "encryption   : NOT declared — every upload will ask"
 
+# FIREBASE MUST NOT RESOLVE THROUGH SPM HERE, and the failure is remote.
+#
+# @react-native-firebase v26 defaults to Swift Package Manager for the Firebase
+# iOS SDK. firebase-ios-sdk's SPM products are automatic libraries, so each
+# react-native-firebase pod embeds its own copy — and this project links
+# statically ("Framework build type is static library"), where those copies
+# collide as duplicate symbols. pod install refuses outright:
+#
+#   [!] [react-native-firebase] SPM + static linkage is not supported
+#
+# That cost a full build cycle to discover, because pod install runs on Expo's
+# machines. `ios.disableSPM` on the app plugin puts Firebase back on CocoaPods,
+# which static linkage handles. The alternative the log suggests — dynamic
+# frameworks — is a far larger change and would touch every other pod.
+node -p "require('./app.json').expo.plugins.some(p => Array.isArray(p) && p[0] === '@react-native-firebase/app' && p[1]?.ios?.disableSPM === true) ? '' : (()=>{throw 0})()" >/dev/null 2>&1 \
+  || die "app.json: @react-native-firebase/app needs { ios: { disableSPM: true } } — SPM + static linkage fails at pod install"
+note "firebase     : SPM disabled (CocoaPods), required for static linkage"
+
+# aps-environment decides which APNs environment the device token comes from,
+# and a TestFlight build on the sandbox one takes push that never arrives.
+APS=$(APP_VARIANT=production npx expo config --type introspect --json 2>/dev/null \
+  | sed -n '/^{/,$p' \
+  | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).ios.entitlements['aps-environment'])}catch(e){console.log('unset')}})")
+[ "$APS" = "production" ] || die "aps-environment is '$APS' for the production variant — TestFlight would get a sandbox push token"
+note "aps-env      : production"
+
 step "Project link"
 LINKED=$(node -p "require('./app.json').expo.extra?.eas?.projectId ?? ''" 2>/dev/null)
 if [ -z "$LINKED" ]; then

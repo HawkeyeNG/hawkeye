@@ -194,8 +194,13 @@ console.log('\n=== the candidate-layout rule agrees on both clients ===');
   check('a federal seat lists', rn.seatFieldOf(by['REP Aba North/Aba South']), true);
   check('a state constituency lists', rn.seatFieldOf(by['SHA Bayelsa|Brass II']), true);
   check('a REP by-election lists', rn.seatFieldOf(by.REP_BYE_GOMBE_2026), true);
-  check('a governorship PROFILES', rn.seatFieldOf(by['GOV Kano']), false);
-  check('the written Osun race PROFILES', rn.seatFieldOf(by['GOV Osun (written)']), false);
+  // A GOVERNORSHIP LISTS TOO, since 2026-08-24. It used to take the presidential
+  // treatment — front-runner cards and a quick-compare table — with nothing to
+  // fill them: no running mate, no home base, no prose, so five columns of "—".
+  check('a governorship lists', rn.seatFieldOf(by['GOV Kano']), true);
+  check('the written Osun race lists', rn.seatFieldOf(by['GOV Osun (written)']), true);
+  // THE PRESIDENCY IS THE ONLY ONE LEFT PROFILING, which is now the whole rule
+  // — so this case is what stops it collapsing into "always true".
   check('the presidency PROFILES', rn.seatFieldOf(by['PRES 2027 (no join)']), false);
 
   // The merged list: same names, same order, on both sides — including the

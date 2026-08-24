@@ -55,17 +55,26 @@ const check = (label, got, want) => {
   if (!ok) console.log(`        got  ${JSON.stringify(got)}\n        want ${JSON.stringify(want)}`);
 };
 
-console.log('=== Osun 2026 — the LIVE page, must be unchanged ===');
+console.log('=== Osun 2026 — the LIVE page ===');
 const osun = await render(POLITICAL.raceOsun2026, { compare: false });
 check('title still carries 2026', osun.h1, 'Governor of Osun State — 2026');
-check('3 front-runner cards', osun.cards, 3);
-// 'Declared result' leads now: a finished race says who won before it lists who
-// stood. It is a SECTION name, not the winner's name — an <h2> reading "Ademola
-// Adeleke" would put a person in the page outline where a section belongs, and
-// would read as Hawkeye announcing him rather than recording INEC's declaration.
-check('headings, declaration first', osun.headings, ['Declared result', 'Front-runners', 'Full ballot — 14 candidates', 'Quick compare']);
-check('compare table has its 3 rows', osun.compareRows, 3);
-check('full ballot 14', osun.ballotRows, 14);
+/**
+ * A GOVERNORSHIP LISTS ITS FIELD NOW (2026-08-24). The front-runner cards and
+ * the compare table were the presidential furniture with nothing to put in it —
+ * no running mate, no home base, no prose — and on Osun they re-argued a
+ * contest that had already finished, directly beneath the card carrying INEC's
+ * declared result.
+ *
+ * 'Declared result' still leads: a finished race says who won before it lists
+ * who stood. It is a SECTION name, not the winner's name — an <h2> reading
+ * "Ademola Adeleke" would put a person in the page outline where a section
+ * belongs, and would read as Hawkeye announcing him rather than recording
+ * INEC's declaration.
+ */
+check('no front-runner cards', osun.cards, 0);
+check('headings, declaration first', osun.headings, ['Declared result', 'Declared candidates']);
+check('no compare table', osun.compareRows, 0);
+check('the whole field in one list', osun.ballotRows, 14);
 
 console.log('\n=== Presidency 2027 ===');
 // This object carries no `office`, so the title falls back to `election` — the
@@ -129,13 +138,18 @@ check('one heading', sha.headings, ['Declared candidates']);
 check('no cards', sha.cards, 0);
 check('measured in wards', sha.statCells, ['Election year', 'Candidates', 'Wards', 'Polling units']);
 
-console.log('\n=== CONTROL: a governorship keeps all four sections ===');
-// If seatField ever went true for a region, this is what would catch it.
+console.log('\n=== a governorship reads like every other race ===');
+// This was the control for "seatField must never go true for a region". The rule
+// changed deliberately, so the control inverts: a governorship must now render
+// the SAME shape as a state constituency, and the presidency below is what keeps
+// the rule from collapsing into "always list".
 const gov = await render(POLITICAL.raceOsun2026, {});
-check('governorship still has its cards', gov.cards, 3);
-check('and its compare table', gov.compareRows, 3);
-check('and both headings', gov.headings.includes('Front-runners')
-  && gov.headings.some((h) => h.startsWith('Full ballot')), true);
+check('no cards', gov.cards, 0);
+check('no compare table', gov.compareRows, 0);
+check('and no profiled headings', gov.headings.includes('Front-runners')
+  || gov.headings.some((h) => h.startsWith('Full ballot')), false);
+check('the same single heading a seat gets',
+  gov.headings.includes('Declared candidates'), true);
 
 console.log('\n=== CONTROL: the presidency keeps "Other declared candidates" ===');
 const pres2 = await render(POLITICAL.race2027, {});

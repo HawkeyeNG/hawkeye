@@ -677,22 +677,30 @@ export function assemblySeatsInLga(
 }
 
 /**
- * A SEAT LISTS ITS FIELD; A REGION PROFILES IT.
+ * THE PRESIDENCY PROFILES ITS FIELD; EVERY OTHER RACE LISTS IT.
  *
- * The presidency and a governorship are races a reader follows as a contest
- * between named people — so they keep the front-runner cards, the full ballot
- * and the quick-compare table. A Senate, House or state-assembly seat is not
- * read that way: there are 1,480 of them, the field is a list of names, and
- * there is no per-candidate prose to profile or compare. Giving one of those the
- * presidential treatment would produce a screen of cards with "—" in every field
- * and a compare table whose five columns are all empty.
+ * The presidency is the one race read as a contest between named individuals —
+ * nineteen people with running mates, home bases and national profiles — so it
+ * keeps the front-runner cards, the full ballot and the quick-compare table.
  *
- * So a seat gets ONE section, "Declared candidates", in the same compact row
- * format the presidential screen already uses for "Other declared candidates".
+ * A GOVERNORSHIP USED TO BE TREATED THE SAME WAY AND IS NOT ANY MORE. In
+ * practice its cards and compare table were the presidential furniture with
+ * nothing to put in it: no running mate, no home base, no prose, so five columns
+ * of "—" and two card sizes for what is, like every other race, a list of names.
+ * Osun is the clearest case — a completed race whose actual result is in the
+ * declared card above, with front-runner cards below re-arguing a contest that
+ * is over.
  *
- * Keyed off `join.level`, the same field the map, the board and the stat bar key
- * on, so a screen cannot draw itself as one kind of race and list itself as
- * another. No join at all means the presidency, which has none.
+ * So everything but the presidency gets ONE section, "Declared candidates", in
+ * the compact row format the presidential screen already uses for "Other
+ * declared candidates" — which is what that format is good at: many names, one
+ * line each, party-marked, and now with each candidate's running total beside
+ * them once reports start arriving.
+ *
+ * Expressed as "not the presidency" rather than a list of levels. It was a list,
+ * and adding the governorship to it left the rule stating the same fact twice —
+ * worse, a level added later would have defaulted to the profiled treatment,
+ * which is exactly the wrong way round.
  *
  * A FUNCTION, not an expression inside the component, because the web twin needs
  * the identical answer and a rule buried in JSX cannot be compared to one buried
@@ -700,8 +708,7 @@ export function assemblySeatsInLga(
  * tests/native_race_parity_test.mjs.
  */
 export function seatFieldOf(race: Race | null | undefined): boolean {
-  const lvl = race?.join?.level;
-  return lvl === 'senatorial' || lvl === 'federal_constituency' || lvl === 'lga';
+  return !isPresidency(race) && !!race?.join?.level;
 }
 
 /** A row in a seat's single candidate list — a Candidate, or a Minor's `meta`. */

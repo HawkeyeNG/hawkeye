@@ -129,6 +129,60 @@ const APPJSON = fs.readFileSync(`${ROOT}/native/app.json`, 'utf8');
 const filters = APPJSON.slice(APPJSON.indexOf('"intentFilters"'), APPJSON.indexOf('"intentFilters"') + 900);
 check('no intent filter claims /get', /"\/get"/.test(filters), false);
 
+/**
+ * THE CONSOLE MUST NOT SHOW ONE AUDIENCE AND SEND TO ANOTHER.
+ *
+ * The selector was wired to the send but not to the count: /push/audience took
+ * no platforms and never reported iOS, so ticking "iPhone" left the total for
+ * everyone on screen — and the confirmation prompt SCRAPED that banner for the
+ * number it showed and for maxAudience. "Send to 107 device(s)?" for a send of
+ * four is the precise failure pushKey exists to prevent, arriving by another
+ * door.
+ */
+console.log('\n=== the audience count is scoped to the ticked platforms ===');
+const ROUTE = fs.readFileSync(`${ROOT}/backend/src/routes/push.js`, 'utf8');
+const AUD = ROUTE.slice(ROUTE.indexOf("'/push/audience'"), ROUTE.indexOf("'/push/broadcast'"));
+check('the endpoint reads ?platforms', /req\.query\?\.platforms/.test(AUD), true);
+check('and passes them to broadcast', /platforms,/.test(AUD), true);
+check('it reports ios, which it never used to', /ios: r\.ios/.test(AUD), true);
+check('an unknown platform is a 400, not a confident zero', /status\(400\)/.test(AUD), true);
+
+const ADMIN = fs.readFileSync(`${ROOT}/app/admin.html`, 'utf8');
+check('the console asks for a scoped count', /push\/audience\$\{qs\}/.test(ADMIN), true);
+check('and prints the iPhone share', /iPhone, \$\{j\.web\} browser/.test(ADMIN), true);
+check('ticking a platform re-counts', /pushRefresh\(\);\s*\n\s*\/\/[^]*?pushAudience\(\);/.test(ADMIN), true);
+
+// ABSENCE, asserted across the WHOLE file rather than a window around an anchor
+// — a fixed-size slice once missed a handler because the comment explaining it
+// was longer than the window, and absence is the stronger claim anyway.
+check('the banner is NOT scraped for the send size',
+  /push-audience'\)\.textContent\.match/.test(ADMIN), false);
+check('the confirmation uses the dry run figure', /pushDryAudience = j\.audience/.test(ADMIN), true);
+check('which is cleared once sent', /pushDryAudience = 0/.test(ADMIN), true);
+
+/**
+ * A COUNT THAT INCLUDES DEVICES NOTHING CAN REACH MUST SAY SO.
+ *
+ * Every iOS row registered before the FCM switch holds a raw APNs token that
+ * fcmSend declines by shape. Reporting "3 iPhone" and then "0 sent, 3 failed"
+ * reads as a broken APNs key and sends someone off to re-upload a good one.
+ */
+console.log('\n=== undeliverable iPhones are counted and named ===');
+check('the service counts raw-APNs rows', /const undeliverable = android\.filter/.test(SRC), true);
+check('and returns it from a dry run',
+  /dryRun\) return \{[^}]*undeliverable/.test(SRC), true);
+check('and from a real send', /web: web\.length, undeliverable, sent, failed/.test(SRC), true);
+check('the endpoint passes it through', /undeliverable: r\.undeliverable/.test(ROUTE), true);
+check('the console explains it rather than showing a bare number',
+  /pre-FCM build|before FCM/.test(ADMIN), true);
+// The fixture holds exactly one such row — 'a'.repeat(64), observer 4.
+check('the fixture would exercise it',
+  ROWS.filter((r) => /^[0-9a-f]{64}$/i.test(r.token)).length, 1);
+
+console.log('\n=== control: these source reads can actually fail ===');
+check('a string that IS in admin.html is found', /pushPlatforms/.test(ADMIN), true);
+check('a string that is NOT in it is not found', /pushBananaAudience/.test(ADMIN), false);
+
 console.log('\n=== control: the fixture can distinguish audiences ===');
 check('android-only and ios-only differ',
   JSON.stringify(select(['android'])) !== JSON.stringify(select(['ios'])), true);

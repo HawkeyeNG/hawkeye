@@ -205,10 +205,10 @@
       <div id="lab-list"><p class="empty">Loading…</p></div>
     </div><div class="panel" data-p="push" hidden>
     <h1>Send a Push</h1>
-    <p class="hint">Goes to <strong>every registered device</strong> — Android (FCM) and browser
-    (Web Push) together. <strong>A push cannot be recalled.</strong> The dry run below is not
-    optional: the Send button stays disabled until you have run one, so the audience you are
-    about to message is a number you have actually seen.</p>
+    <p class="hint">Goes to <strong>every registered device on the platforms you tick</strong> —
+    Android and iPhone (both FCM) and browser (Web Push). <strong>A push cannot be recalled.</strong>
+    The dry run below is not optional: the Send button stays disabled until you have run one, so
+    the audience you are about to message is a number you have actually seen.</p>
 
     <div class="push-audience" id="push-audience">Checking who is reachable…</div>
 
@@ -783,7 +783,8 @@
       },
     };
 
-    let pushDryFor = null;   // the exact copy the last dry run was for
+    let pushDryFor = null;      // the exact copy the last dry run was for
+    let pushDryAudience = 0;    // and the audience IT counted, for that copy
 
     const pushCopy = () => ({
       title: $('push-title').value.trim(),
@@ -828,7 +829,16 @@
 
     async function pushAudience() {
       try {
-        const r = await fetch('/api/push/audience', { headers: hdr() });
+        // SCOPED TO THE TICKED PLATFORMS. The banner sits directly above the
+        // selector, so an unscoped count under "iPhone only" would describe an
+        // audience this send does not have — and it is the first number an
+        // admin reads on this tab.
+        // Always sent, even when all three are ticked — an explicit "all" and an
+        // omitted param mean the same thing to the server, and no magic count
+        // of checkboxes has to stay in step with the markup.
+        const plats = pushPlatforms();
+        const qs = plats.length ? `?platforms=${plats.join(',')}` : '';
+        const r = await fetch(`/api/push/audience${qs}`, { headers: hdr() });
         if (r.status === 401) return logout();
         const j = await r.json();
         // DEVICES AND PEOPLE, because they are not the same number and the
@@ -837,9 +847,20 @@
         // pruned when a send fails — so before the first broadcast the device
         // count is inflated and reads as reach. Whoever is about to press send
         // should see how many PEOPLE that is.
+        if (j.error) { $('push-audience').textContent = `Could not read the audience: ${j.error}`; return; }
         $('push-audience').textContent = j.audience
           ? `${j.audience} device(s) across ${j.people ?? '?'} observer(s)`
-            + ` — ${j.android} Android, ${j.web} browser.`
+            + ` — ${j.android} Android, ${j.ios ?? 0} iPhone, ${j.web} browser.`
+            + (j.undeliverable
+              // REGISTERED IS NOT REACHABLE. An iPhone that registered before
+              // the FCM switch holds a raw APNs token the sender declines by
+              // shape; it is a real device and belongs in the count, but the
+              // send will report it as a failure. Saying so here is the
+              // difference between "the app needs updating" and "the APNs key
+              // I just uploaded is broken".
+              ? ` ${j.undeliverable} of those cannot be delivered to yet —`
+                + ` iPhones still on a build from before FCM. They need the next iOS build.`
+              : '')
             + ` Stale devices are cleared by the first send, so this number will drop.`
           : 'No devices are registered for push yet — a send would reach nobody.';
       } catch { $('push-audience').textContent = 'Could not read the audience.'; }
@@ -848,7 +869,17 @@
     async function pushPost(dryRun) {
       const c = pushCopy();
       if (!c.title || !c.body) { $('push-out').textContent = 'Title and message are both required.'; return; }
-      const audienceNow = Number(($('push-audience').textContent.match(/^(\d+)/) || [])[1] || 0);
+      /**
+       * THE NUMBER IN THE PROMPT IS THE DRY RUN'S, NOT THE BANNER'S.
+       *
+       * This used to scrape the banner, which counted every platform. Tick
+       * "iPhone only" after that and the confirmation read "Send to 107
+       * device(s)?" for a send of four — the count on screen describing an
+       * audience the admin was no longer addressing, which is the one thing
+       * pushKey exists to prevent. Send only unlocks for a CURRENT dry run, so
+       * this number was counted for exactly this copy and these platforms.
+       */
+      const audienceNow = dryRun ? 0 : pushDryAudience;
       if (!dryRun) {
         // Typed confirmation, not a click. The audience is in the prompt so the
         // last thing seen before sending is how many people this reaches.
@@ -877,11 +908,17 @@
         if (!r.ok) { $('push-out').textContent = `Refused: ${j.error || r.status}`; return; }
         if (j.dryRun) {
           pushDryFor = pushKey(c);
+          pushDryAudience = j.audience;
           $('push-out').textContent =
-            `Dry run — nothing sent. Would reach ${j.audience} device(s) across ${j.people} observer(s) — ${j.android} Android, ${j.ios} iPhone, ${j.web} browser.`;
+            `Dry run — nothing sent. Would reach ${j.audience} device(s) across ${j.people} observer(s)`
+            + ` — ${j.android} Android, ${j.ios} iPhone, ${j.web} browser.`
+            + (j.undeliverable
+              ? ` ${j.undeliverable} will fail: iPhones on a pre-FCM build, waiting on the next iOS release.`
+              : '');
           pushRefresh();
         } else {
           pushDryFor = null;
+          pushDryAudience = 0;
           $('push-out').textContent = `Sent to ${j.sent} of ${j.audience}. ${j.failed} failed.`
             + (j.failed ? ' Failures are usually stale tokens from uninstalled apps.' : '');
           pushRefresh();
@@ -913,8 +950,12 @@
       const on = boxes.filter((b) => b.checked).map((b) => b.parentNode.textContent.trim());
       $('push-platforms-hint').textContent = on.length === boxes.length
         ? 'All three — the audience above is everyone.'
-        : `Only ${on.join(' and ')}. The count below is for that audience alone.`;
+        : `Only ${on.join(' and ')}. The count above is for that audience alone.`;
       pushRefresh();
+      // RE-COUNT, or the hint above is a claim the banner does not support. The
+      // count is what makes the selector legible: ticking iPhone should show how
+      // many iPhones, not leave yesterday's total sitting there.
+      pushAudience();
     });
     document.querySelectorAll('.push-presets .preset').forEach((b) => {
       b.addEventListener('click', () => {

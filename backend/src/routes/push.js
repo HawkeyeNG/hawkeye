@@ -19,9 +19,30 @@ export const pushRouter = Router();
  * is filled in — "this will go to 19 people" changes what you write, and
  * finding out afterwards is too late.
  */
-pushRouter.get('/push/audience', requireAdmin, async (_req, res) => {
-  const r = await broadcast({ title: 'x', body: 'x', dryRun: true });
-  res.json({ audience: r.audience, android: r.android, web: r.web });
+pushRouter.get('/push/audience', requireAdmin, async (req, res) => {
+  // SCOPED BY ?platforms= for the same reason broadcast() is: the console shows
+  // this number beside a platform selector, so an unscoped count sitting under
+  // "iPhone only" describes an audience the send would not have. Absent means
+  // everyone, which is what this endpoint always meant.
+  const raw = String(req.query?.platforms || '').trim();
+  const platforms = raw ? raw.split(',').map((p) => p.trim()).filter(Boolean) : null;
+  try {
+    const r = await broadcast({
+      title: 'x', body: 'x', dryRun: true, platforms,
+    });
+    res.json({
+      audience: r.audience,
+      people: r.people,
+      android: r.android,
+      ios: r.ios,
+      web: r.web,
+      undeliverable: r.undeliverable,
+    });
+  } catch (e) {
+    // An unknown platform throws rather than counting nobody — surface it as a
+    // 400 so the console says so instead of showing a confident zero.
+    res.status(400).json({ error: String(e?.message || e) });
+  }
 });
 
 /**

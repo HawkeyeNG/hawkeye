@@ -84,6 +84,25 @@ module.exports = ({ config }) => {
        * server's fcmSend can deliver to it.
        */
       googleServicesFile: './GoogleService-Info.plist',
+      /**
+       * WHICH APNS ENVIRONMENT THIS BUILD TALKS TO. Stated, not inherited.
+       *
+       * expo-notifications' plugin writes `aps-environment` only when it is
+       * absent, and its default `mode` is 'development' — the plugin is listed
+       * as a bare string here, so nothing was passing 'production'. A TestFlight
+       * or App Store build carrying the development entitlement gets a SANDBOX
+       * device token, while the server sends through FCM to production APNs.
+       * That mismatch is silent: the send reports success and the phone never
+       * rings, which is indistinguishable from a bad APNs key.
+       *
+       * Tied to the same `production` flag as the package name and Maps key, so
+       * the dev client keeps its sandbox token and the release build cannot be
+       * left on the wrong one by hand.
+       */
+      entitlements: {
+        ...config.ios?.entitlements,
+        'aps-environment': production ? 'production' : 'development',
+      },
     },
     // WHETHER A KEY WAS INJECTED, published somewhere the RUNTIME can see it.
     //

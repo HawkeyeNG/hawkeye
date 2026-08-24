@@ -285,6 +285,21 @@ export async function broadcast({
   const androidCount = android.length - iosCount;
 
   /**
+   * REGISTERED IS NOT REACHABLE, and on iOS right now they differ.
+   *
+   * Every iOS row created before 2026-08-24 holds a RAW APNS token, because
+   * that is what expo-notifications hands back; fcmSend declines it by shape.
+   * Those devices are genuinely registered, so they belong in the audience —
+   * but nothing can be delivered to them until the app re-registers with an
+   * FCM token, which needs a build carrying @react-native-firebase/messaging.
+   *
+   * Counted and reported because the alternative is a dry run promising "3
+   * iPhone" and a send reporting "0 sent, 3 failed" — which reads as a broken
+   * APNs key, and would send someone to re-upload a key that was fine.
+   */
+  const undeliverable = android.filter((r) => isRawApnsToken(r.token)).length;
+
+  /**
    * DEVICES ARE NOT PEOPLE, and the difference is large enough to mislead.
    *
    * A token row is created per browser profile, per reinstall, and every time
@@ -307,7 +322,7 @@ export async function broadcast({
     LEFT JOIN observers o ON o.id = t.observer_id
     WHERE t.platform IN (${peopleHoles}) AND (o.id IS NULL OR o.status = 'active')`).get(...want)?.n || 0;
 
-  if (dryRun) return { audience, people, android: androidCount, ios: iosCount, web: web.length, sent: 0, failed: 0, dryRun: true };
+  if (dryRun) return { audience, people, android: androidCount, ios: iosCount, web: web.length, undeliverable, sent: 0, failed: 0, dryRun: true };
   if (confirm !== 'SEND') throw new Error("broadcast refused: pass confirm:'SEND' for a real send");
   if (maxAudience && audience > maxAudience) {
     throw new Error(`broadcast refused: audience ${audience} exceeds the expected maximum ${maxAudience}`);
@@ -328,7 +343,7 @@ export async function broadcast({
     // eslint-disable-next-line no-await-in-loop
     if (await webPushSend(r.token, title, body, data)) sent++; else failed++;
   }
-  return { audience, people, android: androidCount, ios: iosCount, web: web.length, sent, failed, dryRun: false };
+  return { audience, people, android: androidCount, ios: iosCount, web: web.length, undeliverable, sent, failed, dryRun: false };
 }
 
 // Fan out a push to everyone who saved this polling unit (Android only for now).

@@ -117,6 +117,29 @@
         <p class="hint">Forgot it? Reset it from the <a href="observe.html?intent=signin">sign-in page</a> — "Forgot your password?" sends a code, then you set a new one.</p>
       </div>
 
+      <!-- CHOOSE YOUR POLLING UNIT. Same back/card shell as the password modal
+           below, so there is one modal treatment on this page rather than two.
+           pu-search.js is the picker every other web PU flow already uses; it is
+           mounted lazily on first open because it warms a register pack. -->
+      <div id="unit-modal" class="pw-modal-back" hidden>
+        <div class="pw-modal" role="dialog" aria-modal="true" aria-labelledby="unit-modal-title">
+          <h2 id="unit-modal-title" style="margin-top:0">Choose your polling unit</h2>
+          <p class="hint" style="margin-top:0">This is the unit you'll get alerts about.
+            You don't need to be there now.</p>
+          <!-- GPS first: the search below answers "I know the name", this answers
+               "I am standing near it", and the second is one tap. -->
+          <button id="btn-unit-near" class="secondary" style="width:auto">📍 Find units near me</button>
+          <p class="hint" id="unit-near-status" role="status" aria-live="polite"></p>
+          <div id="unit-near-results"></div>
+          <div id="unit-search-host"></div>
+          <p class="hint" id="unit-msg" role="status" aria-live="polite"></p>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+            <button id="btn-unit-cancel" class="secondary" style="width:auto">Cancel</button>
+            <button id="btn-unit-save" style="width:auto" disabled>Save this unit</button>
+          </div>
+        </div>
+      </div>
+
       <div id="pw-modal" class="pw-modal-back" hidden>
         <div class="pw-modal" role="dialog" aria-modal="true" aria-labelledby="pw-modal-title">
           <h2 id="pw-modal-title" style="margin-top:0">Set Password</h2>
@@ -139,7 +162,17 @@
       <div class="pcard">
         <h2>My Polling Unit</h2>
         <div id="p-unit" class="empty">None saved.</div>
-        <p class="hint">Save or change it on <a href="map-unit.html">Map a Polling Unit</a> — you'll get alerts for every report at your unit.</p>
+        <!-- CHOOSE, not map. This used to send people to Map a Polling Unit — a
+             page whose instruction is "Only do this while physically standing at
+             the unit" and whose primary button captures a GPS fix. Saving was a
+             secondary control on it. Someone who only wants to say which unit is
+             theirs was being handed a surveying tool and told to be standing in
+             the right place to use it. Twin of the app's ChooseUnitModal.
+             Map a Polling Unit is unchanged and still right for contributing a
+             coordinate — the link to it stays, worded as the other job. -->
+        <button id="btn-pick-unit" class="secondary" style="width:auto">Choose your polling unit</button>
+        <p class="hint">You'll get alerts for every report at your unit. Standing at
+          one and want to record where it is? That's <a href="map-unit.html">Map a Polling Unit</a>.</p>
       </div>
 
       <div class="pcard">
@@ -240,6 +273,101 @@
         .catch(() => {});
     };
 
+    /**
+     * CHOOSE YOUR POLLING UNIT — the web twin of the app's ChooseUnitModal.
+     *
+     * Everything here already existed somewhere: pu-search.js is the picker the
+     * report flow and map-unit both mount, /api/polling-units?lat&lng is the
+     * near-me lookup map-unit uses, and POST /api/observers/my-unit is the one
+     * writer (one saved unit per observer — saving replaces).
+     *
+     * What was missing was a place to do only this. Profile sent people to Map a
+     * Polling Unit, which is a surveying screen.
+     */
+    let pickedUnit = null;
+
+    const unitRow = (u, where) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'secondary';
+      b.style.cssText = 'width:100%;text-align:left;margin:0 0 6px';
+      b.innerHTML = `<strong>${esc(u.name || u.pu_code)}</strong>`
+        + `<span class="sub" style="display:block;font-weight:400">${esc(where)}</span>`;
+      b.onclick = () => selectUnit(u);
+      return b;
+    };
+
+    function selectUnit(u) {
+      pickedUnit = u;
+      $('btn-unit-save').disabled = false;
+      $('unit-msg').textContent = `Selected: ${u.name || u.pu_code}`;
+    }
+
+    const unitOpen = () => {
+      pickedUnit = null;
+      $('btn-unit-save').disabled = true;
+      $('unit-msg').textContent = '';
+      $('unit-near-status').textContent = '';
+      $('unit-near-results').innerHTML = '';
+      $('unit-modal').hidden = false;
+      // MOUNTED LAZILY, and mount() is idempotent (it sets a data flag), so
+      // reopening does not rebuild the box or re-warm the register pack.
+      if (window.puSearch) window.puSearch.mount($('unit-search-host'), { onSelect: selectUnit });
+      else $('unit-msg').textContent = 'Search is unavailable — reload the page.';
+    };
+    const unitClose = () => { $('unit-modal').hidden = true; };
+    $('btn-pick-unit').onclick = unitOpen;
+    $('btn-unit-cancel').onclick = unitClose;
+    $('unit-modal').onclick = (e) => { if (e.target === $('unit-modal')) unitClose(); };
+
+    $('btn-unit-near').onclick = async () => {
+      $('unit-near-results').innerHTML = '';
+      if (!navigator.geolocation) {
+        $('unit-near-status').textContent = 'This browser cannot check your location — search below.';
+        return;
+      }
+      $('unit-near-status').textContent = 'Getting your location…';
+      try {
+        const pos = await new Promise((ok, no) =>
+          navigator.geolocation.getCurrentPosition(ok, no, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }));
+        const { latitude: lat, longitude: lng } = pos.coords;
+        const r = await fetch(`/api/polling-units?lat=${lat}&lng=${lng}`).then((x) => x.json()).catch(() => []);
+        const rows = Array.isArray(r) ? r.slice(0, 8) : [];
+        if (!rows.length) { $('unit-near-status').textContent = 'No units found near you — search below.'; return; }
+        $('unit-near-status').textContent = 'Nearest units:';
+        for (const u of rows) {
+          $('unit-near-results').appendChild(
+            unitRow(u, [u.ward ? `${u.ward} ward` : '', u.lga, u.state].filter(Boolean).join(', ')));
+        }
+      } catch (e) {
+        // NAMED, not one message for everything: telling someone with working
+        // permission that they denied it is how this control loses the people
+        // it is for. Codes match the geolocation spec's own numbering.
+        const why = e && e.code === 1 ? 'Location permission is off'
+          : e && e.code === 3 ? 'Location timed out'
+          : 'Could not check your location';
+        $('unit-near-status').textContent = `${why} — search for your unit below.`;
+      }
+    };
+
+    $('btn-unit-save').onclick = async () => {
+      if (!pickedUnit) return;
+      $('unit-msg').textContent = 'Saving…';
+      const { status, b } = await api('/api/observers/my-unit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ puCode: pickedUnit.pu_code }),
+      });
+      if (status !== 200) {
+        $('unit-msg').textContent = b.error === 'unknown_unit'
+          ? 'That unit is not on the register.'
+          : 'Could not save — check your connection and try again.';
+        return;
+      }
+      unitClose();
+      load();   // repaint #p-unit from the server rather than guessing at it
+    };
+
     // Modal open/close. Fields and message reset on open so a previous attempt's
     // error never greets the next one; backdrop tap and Escape both close.
     const pwOpen = () => {
@@ -251,7 +379,13 @@
     $('btn-pw-open').onclick = pwOpen;
     $('btn-pw-cancel').onclick = pwClose;
     $('pw-modal').onclick = (e) => { if (e.target === $('pw-modal')) pwClose(); };
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('pw-modal').hidden) pwClose(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      // Both modals, not just the password one — a dialog you cannot dismiss the
+      // way every other dialog dismisses is a trap.
+      if (!$('pw-modal').hidden) pwClose();
+      if (!$('unit-modal').hidden) unitClose();
+    });
 
     $('btn-pw').onclick = async () => {
       const pw = $('pw-new').value;
@@ -286,6 +420,10 @@
 
     load();
   </script>
+  <!-- The shared PU picker, same build map-unit and the report flow mount. It
+       defines window.puSearch and is loaded before the page script runs its
+       first open. -->
+  <script src="pu-search.js?v=6"></script>
   <script src="device.js"></script>
   <script src="menu.js?v=149"></script>
 </body>

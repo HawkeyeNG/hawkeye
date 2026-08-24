@@ -19,10 +19,12 @@ const REFRESH_MS = 30_000;
  * Where an election card goes.
  *
  * The presidency has its own screen; a governorship confined to ONE state has a
- * per-state race screen; everything else (a nationwide governorship across 28
- * states, National Assembly, State Assembly) has no single page to open, so the
- * board for that contest is the honest destination — it is the screen that is
- * actually about that election.
+ * per-state race screen; a by-election is a single seat and has one too.
+ * Everything else (a nationwide governorship across 28 states, National
+ * Assembly, State Assembly) is 28, 109, 360 or 1,005 seats with no single page
+ * to open, so the board for that contest is the honest destination — it is the
+ * screen that is actually about that election, and the selection it offers is
+ * the point rather than a detour.
  */
 // Every branch ends in a query string, so the caller can append `&n=` without
 // having to know which one it got.
@@ -31,6 +33,25 @@ function cardHref(c: Contest): string {
   if (c.code === 'GOV' && c.states?.length === 1) {
     return `/race?contest=GOV&state=${encodeURIComponent(c.states[0])}`;
   }
+  /**
+   * A BY-ELECTION IS ONE SEAT, SO IT OPENS THAT SEAT.
+   *
+   * `constituencies` present means the whole election is those places, and for
+   * every by-election it is exactly one. Sending those to the board produced a
+   * page describing a single constituency as if it were a category — "Leading
+   * party by federal constituency in Gombe" over a map with one shape, and
+   * "Help cover Gombe" — an intermediate step whose only content was a worse
+   * version of the race page behind it.
+   *
+   * The link needs nothing but the code: the contest names its own seat and
+   * state, in the same allowlist the backend gates reports with, so the screen
+   * and the gate cannot describe different places (see app/race.tsx).
+   *
+   * The web twin already did this — app/races.html has branched on
+   * `constituencies.length` since by-elections were added. This is Home
+   * catching up, not a new rule.
+   */
+  if (c.constituencies?.length) return `/race?contest=${encodeURIComponent(c.code)}`;
   // The contest's OWN national board — all 37 states for a governorship, all 109
   // districts for the Senate. Without `scope` the results screen used to seed
   // itself with whichever seat sorted first, so every one of these cards landed

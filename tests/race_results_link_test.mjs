@@ -1,6 +1,20 @@
-// "See Live Results" must land on THIS race's board. It used to go to the
-// leaderboard's default — the presidency — so every governorship page sent its
-// readers to a nationwide presidential map.
+/**
+ * WHERE A RACE'S BOARD IS, AND WHO STILL HAS A BUTTON TO IT.
+ *
+ * The link had to land on THIS race's board; it used to go to the leaderboard's
+ * default — the presidency — so every governorship page sent its readers to a
+ * nationwide presidential map. That rule still holds and is still tested here.
+ *
+ * What changed: the BUTTON is gone from every race page but the presidency,
+ * because a race page draws its own regions coloured from the same board data,
+ * so "See Live Results" pointed somewhere less specific than where the reader
+ * already was. The presidency carries no join, renders no map, and keeps it.
+ *
+ * So the href rule is now tested on the FUNCTION — window.resultsHrefFor, the
+ * twin of native lib/political.ts — and the button's presence is tested
+ * separately, on the pages. Reading the href out of the DOM would only have
+ * been able to test the one page that still has one.
+ */
 import { createRequire } from 'node:module';
 const require_ = createRequire('/home/elrio/hawkeye/tests/ui/');
 const { chromium } = require_('playwright-core');
@@ -55,44 +69,53 @@ const b = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwri
 const p = await b.newPage({ viewport: { width: 900, height: 1100 } });
 const errs = [];
 p.on('pageerror', (e) => errs.push(String(e)));
-const ctaHref = () => p.$eval('.race-cta a[data-cta="results"]', (a) => a.getAttribute('href'));
+/** The shipped rule, called directly. */
+const hrefFor = (join) => p.evaluate((j) => window.resultsHrefFor(j ? { join: j } : {}), join);
+const ctas = () => p.$$eval('.race-cta a, .race-cta button', (n) => n.map((x) => x.dataset.cta));
 
 console.log('=== the link carries the race ===');
 await p.goto(`${base}/race.html?contest=GOV&state=Kano`, { waitUntil: 'networkidle' });
 await p.waitForSelector('.race-cta', { timeout: 10000 });
-check('a generated state page points at its own board', await ctaHref(),
+check('a state race resolves to its own board',
+  await hrefFor({ contest: 'GOV', level: 'state', value: 'Kano', state: 'Kano' }),
   'results.html?contest=GOV&state=Kano');
+// A seat FINER than its state crop keeps a scope, because there the follow
+// picker really does have a choice to preselect.
+check('a senatorial seat scopes within its state',
+  await hrefFor({ contest: 'SEN', level: 'senatorial', value: 'Ebonyi South', state: 'Ebonyi' }),
+  'results.html?contest=SEN&state=Ebonyi&scope=Ebonyi+South');
+// The presidency has no join. This used to fall through to a bare
+// results.html, which seeds itself from the picker — so the one button on the
+// presidential page opened "choose an election".
+check('the presidency names its contest instead of opening the picker',
+  await hrefFor(null), 'results.html?contest=PRES');
+
+console.log('\n=== but only the presidency still shows a button ===');
+check('a live state race asks for a report and nothing else', await ctas(),
+  (c) => c.includes('observe') && !c.includes('results'));
 
 await p.goto(`${base}/osun.html`, { waitUntil: 'networkidle' });
 await p.waitForSelector('.race-cta', { timeout: 10000 });
-check('osun.html derives the same link (its override is gone)', await ctaHref(),
-  'results.html?contest=GOV&state=Osun');
-// Osun 2026 is past, so it must not still be recruiting observers for it.
-check('a completed race drops the recruitment CTA', await p.$$eval('.race-cta a', (a) => a.map((x) => x.dataset.cta)),
-  ['results', 'verify']);
-check('and offers the record instead of a live count',
-  await p.textContent('.race-cta a[data-cta="results"]'), (t) => /Review the Results/.test(t));
+// Osun 2026 is past, so it must not still be recruiting observers for it — and
+// with the board link gone the only thing left is the ledger.
+check('a completed race drops the recruitment CTA too', await ctas(), ['verify']);
 
-// The page that had NO href of its own — the bug as reported.
-await p.goto(`${base}/race.html?race=raceOsun2026`, { waitUntil: 'networkidle' });
+await p.goto(`${base}/candidates.html`, { waitUntil: 'networkidle' });
 await p.waitForSelector('.race-cta', { timeout: 10000 });
-check('and the generic race page no longer falls back to the presidency', await ctaHref(),
-  'results.html?contest=GOV&state=Osun');
-
-// A seat FINER than its state crop keeps a scope, because there the follow
-// picker really does have a choice to preselect.
-check('a senatorial seat scopes within its state', await p.evaluate(() => window.__h = null || (() => {
-  const el = document.createElement('main');
-  window.mountRace(el, {
-    office: 'Senator — Ebonyi South', election: '2027', candidates: [], others: [],
-    join: { contest: 'SEN', level: 'senatorial', value: 'Ebonyi South', state: 'Ebonyi' },
-  }, {}, {});
-  return el.querySelector('.race-cta a[data-cta="results"]').getAttribute('href');
-})()), 'results.html?contest=SEN&state=Ebonyi&scope=Ebonyi+South');
+check('the presidency keeps its board link', await ctas(), (c) => c.includes('results'));
+check('and it points at the presidential board',
+  await p.$eval('.race-cta a[data-cta="results"]', (a) => a.getAttribute('href')),
+  'results.html?contest=PRES');
+check('labelled in sentence case, like every other button',
+  await p.textContent('.race-cta a[data-cta="results"]'), (t) => /^\s*Live results\s*$/.test(t));
 
 console.log('\n=== following it crops the board ===');
 asked.length = 0;
-await p.goto(`${base}/${await ctaHref()}`, { waitUntil: 'networkidle' });
+// The link Osun's page WOULD produce. Its button is gone (the race is over and
+// the page is its own record), but the rule that produced it still has to send
+// a reader to Osun's board rather than the federation's.
+await p.goto(`${base}/${await hrefFor({ contest: 'GOV', level: 'state', value: 'Osun', state: 'Osun' })}`,
+  { waitUntil: 'networkidle' });
 await p.waitForSelector('#map path', { timeout: 10000 });
 check('the board was asked for Osun, not the federation', asked.filter((a) => a.contest === 'GOV'),
   (a) => a.length > 0 && a.every((x) => x.state === 'Osun'));

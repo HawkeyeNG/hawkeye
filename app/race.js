@@ -340,21 +340,34 @@
     cells.push([candTotal || 'TBD', 'Candidates']);
     if (st.heldBy) cells.push([st.heldBy, 'Currently held by']);
     /**
-     * WARDS FOR A SEAT, LGAs FOR A REGION.
+     * THE COUNT SHOULD DESCRIBE WHAT THE MAP DRAWS — except where it cannot.
      *
-     * The LGA count describes a governorship (a whole state) and a senatorial
-     * district (3-8 LGAs) perfectly well. It describes a federal constituency
-     * badly — 2 to 4 — and a state constituency not at all, where it is almost
-     * always the number 1. Wards are the grain those seats are actually built
-     * from: 10-51 per federal seat, and a real number per state seat.
+     * The map above is cut from LGAs at every level, so the LGA count and the
+     * shapes on screen are the same fact twice: a governorship's whole state, a
+     * senatorial district's 3-8, a federal constituency's 2-4. Naming a
+     * different unit than the one being drawn makes a reader reconcile two
+     * numbers for no gain.
+     *
+     * A STATE CONSTITUENCY IS THE EXCEPTION, and the only one. It sits inside a
+     * single LGA — "1 LGAs", on 765 of the 1,005 seats — which is not a fact
+     * about the seat so much as a fact about the register not separating them.
+     * Wards are the grain that seat is actually built from and the only figure
+     * that varies: 8 to 20 per state constituency.
+     *
+     * REP was briefly measured in wards too and is back on LGAs, because its
+     * map really does draw 2-4 shapes and the count now names them. Twin:
+     * native components/race.tsx.
      *
      * Chosen off `join.level`, which is the same field the board and the map key
      * on, so a page cannot describe itself as one kind of race and draw another.
      */
-    const seatLevel = race.join && (race.join.level === 'federal_constituency' || race.join.level === 'lga');
-    if (seatLevel && st.wards != null) cells.push([st.wards, 'Wards']);
-    else if (st.lgas != null) cells.push([st.lgas, 'LGAs']);
-    if (st.pollingUnits != null) cells.push(['~' + Number(st.pollingUnits).toLocaleString(), 'Polling units']);
+    const seatLevel = race.join && race.join.level === 'lga';
+    // A count of one is still a count of one. "1 LGAs" appears on 80 of the 366
+    // federal constituencies and 986 of the 1,005 state seats — not a rare edge.
+    const plural = (n, word) => (Number(n) === 1 ? word : word + 's');
+    if (seatLevel && st.wards != null) cells.push([st.wards, plural(st.wards, 'Ward')]);
+    else if (st.lgas != null) cells.push([st.lgas, plural(st.lgas, 'LGA')]);
+    if (st.pollingUnits != null) cells.push(['~' + Number(st.pollingUnits).toLocaleString(), plural(st.pollingUnits, 'Polling unit')]);
     if (cells.length) parts.push(`<div class="race-statbar">${cells.map(([n, l]) => `<div class="s"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('')}</div>`);
 
     // WHO INEC DECLARED — on a finished race, the first thing a reader wants.

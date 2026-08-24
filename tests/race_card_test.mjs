@@ -58,16 +58,26 @@ async function card(qs) {
   return out;
 }
 
-console.log('=== a federal seat counts WARDS, not LGAs ===');
+/**
+ * A FEDERAL SEAT COUNTS LGAs — the unit its own map draws.
+ *
+ * It was briefly measured in wards, on the grounds that 2-4 LGAs describes a
+ * constituency poorly. True, but the map above the bar is cut from those same
+ * 2-4 LGAs, so naming a different unit than the one on screen asks a reader to
+ * reconcile two numbers for nothing. Wards stay where the LGA count genuinely
+ * says nothing: a state constituency, 986 of whose 1,005 sit inside one LGA.
+ */
+console.log('=== a federal seat counts LGAs, matching its map ===');
 let c = await card('contest=REP&seat=Gombe%2FKwami%2FFunakaye');
 console.log('   ', JSON.stringify(c));
 // The year may arrive as its own cell or inside the election day — assert it
 // is READABLE, not which box holds it.
 check('a year is visible on the card', JSON.stringify(c), (v) => /20\d\d/.test(v));
 check('says Candidates TBD rather than dropping the cell', c.Candidates, 'TBD');
-check('counts wards', c.Wards, (v) => Number(v) > 0);
-check('and does NOT show an LGA count', 'LGAs' in c, false);
-check('wards match the seat table', Number(c.Wards), SEATS.REP['Gombe/Kwami/Funakaye'].wards);
+check('counts LGAs', c.LGAs, (v) => Number(v) > 0);
+check('and does NOT show a ward count', 'Wards' in c, false);
+check('the LGA count matches the seat table',
+  Number(c.LGAs), SEATS.REP['Gombe/Kwami/Funakaye'].lgas.length);
 check('polling units present', c['Polling units'], (v) => /^~[\d,]+$/.test(String(v)));
 
 console.log('\n=== a senatorial district keeps LGAs ===');

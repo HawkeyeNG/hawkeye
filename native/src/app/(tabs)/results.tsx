@@ -1422,20 +1422,35 @@ export default function Results() {
                       on ? 'bg-hawk-green' : 'bg-card'
                     }`}
                   >
+                    {/**
+                      * THE DATE SITS UNDER THE NAME, matching the website (and
+                      * so Hawkeye Lite), where it reads better on a narrow phone.
+                      *
+                      * Beside it, the name takes flex-1 and the date has nothing
+                      * holding its width, so "House of Representatives
+                      * By-Election (2026)" wrapped to four lines against a
+                      * squeezed "Opens 19 Sept 2026". Stacked, each gets the full
+                      * width and the row is two tidy lines instead.
+                      *
+                      * The "Open" PILL stays on the right: two short words, and
+                      * it is the state a reader scans this list for — a badge
+                      * reads as a badge only when set apart from the text.
+                      */}
                     <View className="flex-1 pr-3">
                       <Text className={`text-base font-bold ${on ? 'text-hawk-gold' : 'text-ink'}`}>
                         {c.name} ({Number(String(c.date ?? '').slice(0, 4)) || 2027})
                       </Text>
+                      {!c.open ? (
+                        <Text className="pt-0.5 text-[11px] font-semibold text-faint">
+                          {opensTag(c)}
+                        </Text>
+                      ) : null}
                     </View>
                     {c.open ? (
-                      <View className="mr-1.5 rounded-full bg-good px-2.5 py-1">
+                      <View className="mr-1.5 shrink-0 rounded-full bg-good px-2.5 py-1">
                         <Text className="text-[11px] font-bold text-good-ink">Open</Text>
                       </View>
-                    ) : (
-                      <Text className="mr-1.5 text-[11px] font-semibold text-faint">
-                        {opensTag(c)}
-                      </Text>
-                    )}
+                    ) : null}
                     <Feather name="chevron-right" size={18} color={on ? BRAND.gold : ui.faint} />
                   </Pressable>
                 );

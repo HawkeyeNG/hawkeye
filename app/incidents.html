@@ -465,9 +465,15 @@
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => {
           if (d && d.unit) {
-            $('saved-unit-name').textContent = `My saved unit — ${d.unit.name || d.unit.pu_code}${d.unit.ward ? ', ' + d.unit.ward : ''}`;
-            $('use-saved').value = d.unit.pu_code;
-            $('saved-unit-row').hidden = false;
+            const label = `My saved unit — ${d.unit.name || d.unit.pu_code || ''}${d.unit.ward ? ', ' + d.unit.ward : ''}`;
+            $('saved-unit-name').textContent = label;
+            $('use-saved').value = d.unit.pu_code || '';
+            // A RADIO WITH NO TEXT IS JUST A DOT. my-unit LEFT JOINs the
+            // register, so every field but the code can be null; with no code
+            // either, this row rendered as a bare selection dot floating above
+            // the near-me button, selecting nothing. Show it only when it can
+            // say what it selects.
+            $('saved-unit-row').hidden = !d.unit.pu_code;
           }
         })
         .catch(() => {});

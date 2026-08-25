@@ -92,7 +92,7 @@ const b = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwri
   await p.waitForTimeout(1200);
 
   const before = await p.evaluate(() => {
-    const card = [...document.querySelectorAll('.pcard')].find((c) => /My Polling Unit/.test(c.textContent));
+    const card = [...document.querySelectorAll('.pcard')].find((c) => /My polling unit/i.test(c.textContent));
     return {
       hasCard: !!card,
       // The card may still LINK to map-unit — that is fine and deliberate, it is

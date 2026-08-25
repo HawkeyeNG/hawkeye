@@ -110,11 +110,24 @@
       <!-- Password: one line + one button; the form itself lives in a modal
            (native's pattern). Two always-visible inputs made the card read as a
            form demanding to be filled on every visit. -->
-      <div class="pcard">
-        <h2>Password</h2>
-        <p class="hint" id="pw-state"></p>
-        <button id="btn-pw-open" class="secondary" style="width:auto">Set password</button>
-        <p class="hint">Forgot it? Reset it from the <a href="observe.html?intent=signin">sign-in page</a> — "Forgot your password?" sends a code, then you set a new one.</p>
+      <!-- ACCOUNT: two ROWS, the way the app has it. Each of these was its own
+           card with a heading, a state paragraph, a full-width button and a
+           second paragraph of advice — four blocks of prose for two settings.
+           The row states the setting and its current value and opens the thing
+           that changes it; the advice moved into those modals, where it is read
+           when it applies rather than on every visit. -->
+      <h2 class="sec-label">Account</h2>
+      <div class="pcard prows">
+        <button type="button" class="prow" id="btn-pw-open">
+          <span class="prow-k">Password</span>
+          <span class="prow-v" id="pw-state">Change</span>
+          <span class="prow-c" aria-hidden="true">›</span>
+        </button>
+        <button type="button" class="prow" id="btn-pick-unit">
+          <span class="prow-k">My polling unit</span>
+          <span class="prow-v" id="p-unit">None saved</span>
+          <span class="prow-c" aria-hidden="true">›</span>
+        </button>
       </div>
 
       <!-- CHOOSE YOUR POLLING UNIT. Same back/card shell as the password modal
@@ -159,9 +172,7 @@
         </div>
       </div>
 
-      <div class="pcard">
-        <h2>My polling unit</h2>
-        <div id="p-unit" class="empty">None saved.</div>
+      <div class="pcard" hidden>
         <!-- CHOOSE, not map. This used to send people to Map a Polling Unit — a
              page whose instruction is "Only do this while physically standing at
              the unit" and whose primary button captures a GPS fix. Saving was a
@@ -170,9 +181,6 @@
              the right place to use it. Twin of the app's ChooseUnitModal.
              Map a Polling Unit is unchanged and still right for contributing a
              coordinate — the link to it stays, worded as the other job. -->
-        <button id="btn-pick-unit" class="secondary" style="width:auto">Choose your polling unit</button>
-        <p class="hint">You'll get alerts for every report at your unit. Standing at
-          one and want to record where it is? That's <a href="map-unit.html">Map a Polling Unit</a>.</p>
       </div>
 
       <div class="pcard">
@@ -219,6 +227,27 @@
       return { status: res.status, body };
     }
 
+    /**
+     * Contest code -> the name people use for it, from /api/contests.
+     *
+     * Populated asynchronously; until it answers (or if it never does) this
+     * returns the code, which is what the card showed before. A follow chip with
+     * no text would be worse than one with an ugly label.
+     */
+    let CONTEST_NAMES = {};
+    const contestLabel = (code) => CONTEST_NAMES[code] || code;
+    fetch('/api/contests')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((cs) => {
+        for (const c of cs) {
+          const year = Number(String(c.date || '').slice(0, 4)) || '';
+          CONTEST_NAMES[c.code] = year ? `${c.name} (${year})` : c.name;
+        }
+        // Re-render whatever already drew with codes.
+        if (window.__hkRedrawSubs) window.__hkRedrawSubs();
+      })
+      .catch(() => {});
+
     function renderList(el, rows, fn) {
       if (!rows || !rows.length) return;
       el.classList.remove('empty');
@@ -235,19 +264,21 @@
       $('p-since').textContent = 'since ' + dt(body.createdAt);
       $('p-hash').textContent = body.identityHash;
       hasPassword = body.hasPassword;
-      $('pw-state').textContent = hasPassword
-        ? 'You have a password — you can sign in on any device without an OTP.'
-        : 'No password yet. Set one to sign in on new devices without waiting for an OTP.';
+      // The VALUE of the row, not a sentence about it. "Password · Change ›".
+      $('pw-state').textContent = hasPassword ? 'Change' : 'Set';
       $('pw-current-wrap').hidden = !hasPassword;
-      $('btn-pw-open').textContent = hasPassword ? 'Change password' : 'Set password';
       $('pw-modal-title').textContent = hasPassword ? 'Change password' : 'Set password';
 
       if (body.unit) {
         $('p-unit').classList.remove('empty');
         $('p-unit').innerHTML = `<strong>${esc(body.unit.name || body.unit.pu_code)}</strong><div class="sub">${esc(body.unit.pu_code)} · ${esc(body.unit.ward || '')} ward, ${esc(body.unit.lga || '')}, ${esc(body.unit.state || '')}</div>`;
       }
+      // THE RACE'S NAME, NOT ITS CODE. This printed s.contest raw, so the card
+      // read "REP_BYE_GOMBE_2026" — an internal identifier, in the one place a
+      // reader is checking which races they follow. /api/contests is the same
+      // source the board and the bot label races from, so the three agree.
       renderList($('p-subs'), body.subscriptions, (s) =>
-        `<span class="tag ok">${esc(s.contest)}${s.state ? ' · ' + esc(s.state) : ''}</span>`);
+        `<span class="tag ok">${esc(contestLabel(s.contest))}${s.state ? ' — ' + esc(s.state) : ''}</span>`);
       renderList($('p-reports'), body.reports, (r) =>
         `<div class="item"><strong>${esc(r.name || r.pu_code)}</strong> · ${esc(r.contest)}
          <div class="sub">${esc(r.pu_code)} · ${esc(r.lga || '')}, ${esc(r.state || '')} · ${dt(r.created_at)} ·
@@ -401,11 +432,8 @@
       $('pw-new').value = ''; $('pw-new2').value = ''; $('pw-current').value = '';
       hasPassword = true;
       $('pw-current-wrap').hidden = false;
-      $('btn-pw-open').textContent = 'Change Password';
       $('pw-modal-title').textContent = 'Change Password';
-      $('pw-state').textContent = hasPassword
-        ? 'You have a password ✓ — you can sign in on any device without an OTP.'
-        : '';
+      $('pw-state').textContent = hasPassword ? 'Change' : 'Set';
       pwClose(); // success closes the modal; the card's state line carries the ✓
     };
 

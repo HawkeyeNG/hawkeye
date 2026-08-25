@@ -1046,9 +1046,10 @@ export default function Results() {
         : `Every ${word.one} that has reported, filled with the party leading there.`;
     const parts: string[] = [];
     if (level === 'lga') {
-      parts.push(
-        'State Assembly reports are grouped by state in the tally, not by state constituency — so this map colours whole states. It cannot show which constituency inside a state a party is winning.',
-      );
+      // One clause. The full explanation — that the tally groups by state
+      // because state constituencies are not a register column — is the kind of
+      // detail an InfoDot is for, not a caption under a map.
+      parts.push('Coloured by state, not by constituency.');
     }
     const total = REGIONS_EXPECTED[level];
     // ONLY ON AN UNCROPPED BOARD. This sentence compares the outline file's

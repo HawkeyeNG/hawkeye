@@ -193,10 +193,10 @@ const ringLine = (_s: Searched): string =>
 
 const nothingFoundLine = (s: Searched): string => {
   if (s.envelopeM != null && s.registerM != null) {
-    return `No polling unit found nearby. Hawkeye searched ${s.registerM}m around you for units observers have already placed, and ${s.envelopeM}m for units known only by their mapped area — browse the register below, or just practise without a specific unit.`;
+    return `No unit found within ${s.registerM}m. Browse the register, or practise without one.`;
   }
   if (s.envelopeM != null) {
-    return `No polling unit with a mapped area within ${s.envelopeM}m — browse the register below, or practise without a specific unit.`;
+    return `No unit found within ${s.envelopeM}m. Browse the register, or practise without one.`;
   }
   if (s.registerM != null) {
     return `No polling unit within ${s.registerM}m of you — browse the register below, or practise without a specific unit.`;

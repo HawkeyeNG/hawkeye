@@ -241,15 +241,8 @@ const ringLine = (_s: Searched): string =>
 /** The same honesty for an empty answer: name the circles that were searched,
  *  rather than the one that was drawn. */
 const nothingFoundLine = (s: Searched): string => {
-  if (s.envelopeM != null && s.registerM != null) {
-    return `No polling unit found. Hawkeye searched ${s.registerM}m around you for units observers have already placed, and ${s.envelopeM}m for units known only by their mapped area — browse the register below to find the one you are at.`;
-  }
-  if (s.envelopeM != null) {
-    return `No polling unit with a mapped area within ${s.envelopeM}m of you, and the lookup that finds units placed by observers did not answer — browse the register below.`;
-  }
-  if (s.registerM != null) {
-    return `No polling unit within ${s.registerM}m of you, and the wider search for units with a mapped area did not answer — browse the register below.`;
-  }
+  const m = s.registerM ?? s.envelopeM;
+  if (m != null) return `No unit found within ${m}m. Browse the register below.`;
   // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
   // /units), so on a lookup failure it is the one other path that cannot work
   // either. Search answers from the register bundled into the app.
@@ -934,7 +927,7 @@ export default function ReportIncident() {
         setDone({
           title: 'Saved to send later',
           icon: 'clock',
-          line: 'No connection right now. Your report and its evidence are stored on this phone and go out on their own once you are back online — you can close the app.',
+          line: 'Saved on this phone. It sends itself once you are back online.',
         });
         return;
       }

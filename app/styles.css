@@ -1380,7 +1380,17 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
   display: flex; align-items: center; gap: 14px; padding: 13px 10px;
   text-decoration: none; color: var(--ink); border-top: 1px solid var(--line);
 }
-.rs-opt svg { width: 26px; height: 26px; flex: none; color: var(--green); }
+/* GOLD ON A GREEN DISC, as the app draws these
+   (native/src/components/report-sheet.tsx: a 40px bg-hawk-green circle with an
+   18px BRAND.gold glyph). A bare green glyph on the sheet's dark panel was
+   close to invisible — the same contrast problem the docket's info dot had.
+   The disc is what makes the icon read as an icon rather than a smudge, and
+   gold on dark green is the one pair that holds in both themes. */
+.rs-opt svg {
+  width: 18px; height: 18px; flex: none; color: var(--gold);
+  box-sizing: content-box; padding: 11px;
+  background: var(--green-dark, #00482b); border-radius: 50%;
+}
 .rs-opt strong { display: block; font-size: 0.98rem; }
 .rs-opt small { color: var(--muted); font-size: 0.8rem; }
 .rs-opt:active { background: var(--tint); }

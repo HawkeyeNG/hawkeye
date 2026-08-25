@@ -58,6 +58,15 @@
       background: var(--green-dark); color: var(--accent); border: 1px solid var(--green-700);
     }
     .media-actions > button:active, .media-actions > .media-upload:active { opacity: 0.8; }
+    /* EVERY ICON THE SAME SIZE. 📄 renders smaller than 📷 and 🎥 in the system
+       emoji font, so Upload read as a lesser option beside two equals — the
+       controls were already the same width, only the glyph differed. A loose
+       glyph in label text cannot be sized; in its own span it can.
+       line-height:1 keeps the taller glyphs from growing the button. */
+    .media-actions .mi {
+      font-style: normal; font-size: 1.15rem; line-height: 1;
+      display: inline-block; width: 1.25em; text-align: center;
+    }
     /* The native input is a seam now, not a control — see .media-upload above. */
     .media-actions #media { display: none; }
     /* The `hidden` ATTRIBUTE alone does not hide this: the stylesheet's own
@@ -154,18 +163,18 @@
              Capacitor shell, so on the WEBSITE there was no camera control at
              all — just a file input that opens a chooser. It is now the primary
              control everywhere, routed per-platform in the wiring below. -->
-        <button type="button" id="btn-camera" class="secondary">📷 Photo</button>
+        <button type="button" id="btn-camera" class="secondary"><i class="mi">📷</i> Photo</button>
         <!-- VIDEO WAS UNREACHABLE. `capture` on the photo seam pins the OS
              camera to stills, so "photo, video or text" was a promise the page
              could not keep — an incident is often only provable on video.
              capture="camcorder" opens the recorder directly. -->
-        <button type="button" id="btn-video" class="secondary">🎥 Video</button>
+        <button type="button" id="btn-video" class="secondary"><i class="mi">🎥</i> Video</button>
         <input id="media-vid" type="file" accept="video/*" capture="camcorder" hidden />
         <!-- The gallery picker, driven by a label so it can be styled like its
              two neighbours. A file input cannot have its button relabelled, so
              "Choose Files / No files chosen" was unavoidable while it was the
              visible control; it is now hidden and this <label> opens it. -->
-        <label for="media" class="media-upload">📄 Upload</label>
+        <label for="media" class="media-upload"><i class="mi">📄</i> Upload</label>
         <input id="media" type="file" accept="image/*,video/*" multiple />
         <!-- The web camera seam. `capture` makes a mobile browser open the
              camera DIRECTLY instead of the gallery chooser; desktop ignores the
@@ -223,9 +232,9 @@
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
         <h2 id="add-modal-title" style="margin-top:0">Add Media</h2>
         <div class="media-actions" style="margin-bottom:12px">
-          <button type="button" id="add-photo">📷 Photo</button>
-          <button type="button" id="add-video">🎥 Video</button>
-          <label for="media" class="media-upload" id="add-upload">📄 Upload</label>
+          <button type="button" id="add-photo"><i class="mi">📷</i> Photo</button>
+          <button type="button" id="add-video"><i class="mi">🎥</i> Video</button>
+          <label for="media" class="media-upload" id="add-upload"><i class="mi">📄</i> Upload</label>
         </div>
         <button type="button" id="add-cancel" class="secondary" style="width:auto">Cancel</button>
       </div>

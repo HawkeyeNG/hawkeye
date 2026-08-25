@@ -82,6 +82,27 @@ check('no scrollbar when it fits', short.bodyScrolls, false);
 check('Close visible', short.closeVisible, true);
 check('dialog fits', short.dialogFitsViewport, true);
 
+/**
+ * THE DISCLAIMER IS ONLY ON THE PAGES THAT NEED IT (2026-08-25).
+ *
+ * It is a compliance notice, not a brand element — a stain on the design that
+ * we carry where we must — so it rides the pages presenting FIGURES a reader
+ * could mistake for official, and nowhere else. That mirrors the app, which
+ * renders GovDisclaimer on eight screens and is published on Play with exactly
+ * that arrangement.
+ *
+ * So this section moves to results.html: index.html deliberately no longer has
+ * a bar to click, and asserting the modal there would be asserting the old rule.
+ */
+console.log('\n=== the notice is only where it is needed ===');
+for (const [page, want] of [['index.html', false], ['privacy.html', false], ['results.html', true]]) {
+  await p.goto(`${base}/${page}`, { waitUntil: 'domcontentloaded' });
+  await p.waitForFunction(() => typeof window.HAWKEYE_MODAL === 'function', { timeout: 10000 });
+  await p.waitForTimeout(150);
+  const has = await p.evaluate(() => !!document.querySelector('.gov-disclaimer'));
+  check(`${page} ${want ? 'carries' : 'does NOT carry'} the notice`, has, want);
+}
+
 console.log('\n=== the disclaimer dialog gets the same treatment ===');
 const disc = await p.evaluate(() => {
   document.querySelectorAll('dialog[open]').forEach((d) => d.close());

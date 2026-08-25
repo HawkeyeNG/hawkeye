@@ -42,6 +42,7 @@ import { STATES, type Race, type StateName } from '@/lib/races';
 import { maybeAskForReview } from '@/lib/review';
 import { useUi } from '@/lib/theme';
 import { regFetch } from '@/lib/register-fetch';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -203,7 +204,7 @@ const nothingFoundLine = (s: Searched): string => {
   // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
   // /units), so on a lookup failure it is the one other path that cannot work
   // either. Search answers from the register bundled into the app.
-  return 'Could not look up nearby units. Search for yours by name below (the list works without a connection), or practise without a specific unit.';
+  return 'Could not check nearby units. Search by name below.';
 };
 
 /** The tier's colour, sized for a line of text, so a row and the pin it refers
@@ -568,7 +569,7 @@ export default function Practice() {
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
         setNearLine(
-          `Could not look up nearby units. Search for yours by name below (the list works without a connection), or practise without a specific unit. (lookup_failed${status ? ` / HTTP ${status}` : ''})`,
+          'Could not check nearby units. Search by name below.',
         );
         return;
       }
@@ -676,7 +677,7 @@ export default function Practice() {
       );
     } catch (e) {
       setNearLine(
-        `Could not look up nearby units. Search for yours by name below (the list works without a connection), or practise without a specific unit. (${e instanceof Error ? e.message : String(e)})`,
+        humanError(e, 'Could not check nearby units. Search by name below.'),
       );
     } finally {
       setNearBusy(false);
@@ -738,7 +739,7 @@ export default function Practice() {
         'Could not open that unit',
         ctl.signal.aborted
           ? `Looking up ${n.name} took too long. Check your signal and tap it again, or find it under “Browse the register”. (timed out after ${PICK_TIMEOUT_MS / 1000}s)`
-          : `Check your connection and retry. (${e instanceof Error ? e.message : String(e)})`,
+          : humanError(e, 'Check your connection and retry.'),
       );
     } finally {
       clearTimeout(timer);
@@ -827,7 +828,7 @@ export default function Practice() {
         );
       }
     } catch (e) {
-      setLine(`Network error. (${e instanceof Error ? e.message : String(e)})`);
+      setLine(humanError(e, 'Network error.'));
     } finally {
       setBusy(false);
     }

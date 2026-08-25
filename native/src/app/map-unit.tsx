@@ -45,6 +45,7 @@ import {
   type Fix,
 } from '@/lib/location';
 import { regFetch } from '@/lib/register-fetch';
+import { humanError } from '@/lib/errors';
 
 type Unit = {
   pu_code: string;
@@ -200,19 +201,19 @@ const ringLine = (_s: Searched): string =>
 /** The same honesty for an empty answer: name the circles that were searched,
  *  rather than the one that was drawn. */
 const nothingFoundLine = (s: Searched): string => {
-  if (s.envelopeM != null && s.registerM != null) {
-    return `No polling unit found. Hawkeye searched ${s.registerM}m around you for units observers have already placed, and ${s.envelopeM}m for units known only by their mapped area — browse the register below to find yours by name.`;
-  }
-  if (s.envelopeM != null) {
-    return `No polling unit with a mapped area within ${s.envelopeM}m of you, and the lookup that finds units placed by observers did not answer — browse the register below to find yours by name.`;
-  }
-  if (s.registerM != null) {
-    return `No polling unit within ${s.registerM}m of you, and the wider search for units with a mapped area did not answer — browse the register below to find yours by name.`;
-  }
+  /**
+   * ONE SENTENCE. These were three, and they narrated the search: which radius
+   * was tried for units observers had placed, which for units known only by
+   * their mapped area, and which of the two lookups had failed. All true, none
+   * of it actionable — the reader's next move is the search box directly below
+   * either way, and the radius is already stated by `ringLine` above.
+   */
+  if (s.registerM != null) return `No unit within ${s.registerM}m. Search by name below.`;
+  if (s.envelopeM != null) return `No unit within ${s.envelopeM}m. Search by name below.`;
   // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
   // /units), so on a lookup failure it is the one other path that cannot work
   // either. Search answers from the register bundled into the app.
-  return 'Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection.';
+  return 'Could not check nearby units. Search by name below.';
 };
 
 /**
@@ -564,9 +565,10 @@ export default function MapUnit() {
       // down with it. What was and was not searched is then said out loud.
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
-        setNearLine(
-          `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (lookup_failed${status ? ` / HTTP ${status}` : ''})`,
-        );
+        // The status is CONSOLE detail, not UI: "HTTP 503" tells the reader
+        // nothing they can act on, and the next move is the search box below.
+        if (status) console.warn('[hawkeye] near-me lookup failed', status);
+        setNearLine('Could not check nearby units. Search by name below.');
         return;
       }
 
@@ -713,7 +715,7 @@ export default function MapUnit() {
       );
     } catch (e) {
       setNearLine(
-        `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (${e instanceof Error ? e.message : String(e)})`,
+        humanError(e, 'Could not check nearby units. Search by name below.'),
       );
     } finally {
       setNearBusy(false);
@@ -795,7 +797,7 @@ export default function MapUnit() {
     } catch (e) {
       Alert.alert(
         'Could not update your polling unit',
-        `Please try again. (${e instanceof Error ? e.message : String(e)})`,
+        humanError(e, 'Please try again.'),
       );
     } finally {
       setSaving(false);
@@ -872,7 +874,7 @@ export default function MapUnit() {
               : `Could not record the fix. (${code} / HTTP ${res.status})`,
       );
     } catch (e) {
-      fail(`Could not record the fix. (${e instanceof Error ? e.message : String(e)})`);
+      fail(humanError(e, 'Could not record the fix.'));
     } finally {
       setBusy(false);
     }

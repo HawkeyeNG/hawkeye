@@ -1112,6 +1112,54 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 .ledger-card.bad::before { content: '⚠'; }
 /* Shared stat tiles + collapsible folds — the native dashboard pattern, used by
    the docket, ledger, and any page that leads with numbers then folds the detail. */
+/* ── LITE'S TYPE SCALE ────────────────────────────────────────────────────────
+   Measured 2026-08-25: every page ran about 20% larger than the app it mirrors
+   — body 17px against the app's 14, h1 27 against 20, h2 19-22 against 16. That
+   is the whole of "Lite looks weird, the text is slightly too large": nothing
+   was misaligned, there was simply more of it per line, so headings wrapped and
+   cards grew tall enough to push content below the fold.
+
+   SCOPED TO .native-app, which native.js sets only inside Capacitor. The same
+   stylesheet serves the desktop website, where 17px is a comfortable reading
+   size and shrinking it would fix nothing and break something.
+
+   FORM CONTROLS STAY AT 16px. Below that, Safari zooms the page on focus — Lite
+   is Android-only today, but this stylesheet is also the iOS PWA. */
+html.native-app { font-size: 15px; }
+html.native-app main h1 { font-size: 1.35rem; line-height: 1.25; }
+html.native-app main h2 { font-size: 1.05rem; }
+html.native-app .lede { font-size: 0.95rem; line-height: 1.45; }
+html.native-app .hint,
+html.native-app .meta,
+html.native-app .sub { font-size: 0.8rem; }
+html.native-app input,
+html.native-app select,
+html.native-app textarea { font-size: 16px; }
+
+/* BREATHING ROOM UNDER THE APP HEADER. In Lite the header is app chrome pinned
+   above the content, and the first card on the report flows sat flush against
+   it — the card's own border touching the header's bottom edge, which reads as
+   a rendering fault rather than a layout. The website has no such header, which
+   is why this is scoped. */
+html.native-app main.wrap { padding-top: 14px; }
+
+/* The evidence row (.media-actions) already gives its three controls
+   `flex: 1 1 0`, so Camera / Video / Upload are the same WIDTH. What differs is
+   the glyph: 📄 renders smaller than 📷 and 🎥 in the system emoji font, which
+   is a markup change (each needs its icon in its own span to be sized), not a
+   CSS one. Left for that change rather than faked here. */
+
+/* MY PROFILE's card headings, as the app writes them: a small uppercase label
+   above the card's content, not a 16px bold title inside it. The app uses
+   text-[11px] font-bold uppercase tracking-wider text-faint for exactly these
+   ("Account", "Races you follow", "My activity"), which is what stops a page of
+   six stacked cards reading as six competing headlines. */
+html.native-app .pcard h2 {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted); margin: 0 0 8px;
+  border: 0; padding: 0;
+}
+
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 16px 0 8px; }
 .stile { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
 /* TYPOGRAPHY MATCHED TO THE APP's Stat card (native components/content-kit.tsx).

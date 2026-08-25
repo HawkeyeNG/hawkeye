@@ -358,7 +358,7 @@ export default function ReportCollation() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
           title: 'Saved on This Phone',
-          line: 'It will send when you have signal. The report is already signed, so it files exactly as you left it — keep the app installed and it goes on its own.',
+          line: 'Already signed. It sends itself once you have signal.',
         });
         setStep('done');
       } else {

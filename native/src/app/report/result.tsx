@@ -408,15 +408,8 @@ const ringLine = (_s: Searched): string =>
 /** The same honesty for an empty answer: name the circles that were searched,
  *  rather than the one that was drawn. */
 const nothingFoundLine = (s: Searched): string => {
-  if (s.envelopeM != null && s.registerM != null) {
-    return `No polling unit found. Hawkeye searched ${s.registerM}m around you for units observers have already placed, and ${s.envelopeM}m for units known only by their mapped area — browse the register below to find yours by name.`;
-  }
-  if (s.envelopeM != null) {
-    return `No polling unit with a mapped area within ${s.envelopeM}m of you, and the lookup that finds units placed by observers did not answer — browse the register below to find yours by name.`;
-  }
-  if (s.registerM != null) {
-    return `No polling unit within ${s.registerM}m of you, and the wider search for units with a mapped area did not answer — browse the register below to find yours by name.`;
-  }
+  const m = s.registerM ?? s.envelopeM;
+  if (m != null) return `No unit found within ${m}m. Browse the register below.`;
   // POINT AT SEARCH, NOT BROWSE. This is the NETWORK-failure case, and browsing
   // the register is itself network-backed (/lgas, /wards, /units) — so the old
   // copy sent an observer whose DNS had just failed to the one other path that
@@ -1378,7 +1371,10 @@ export default function ReportResult() {
       Alert.alert(
         'Could not open that unit',
         ctl.signal.aborted
-          ? `Looking up ${n.name} took too long. Check your signal and tap it again, or find it under “Browse the register instead”. (timed out after ${PICK_TIMEOUT_MS / 1000}s)`
+          // "(timed out after 12s)" is the kind of detail that belongs in the
+          // console: the dialog already says it took too long, and the number
+          // does not change what to do about it.
+          ? 'That took too long. Check your signal and tap it again.'
           : humanError(e, 'Check your connection and retry.'),
       );
     } finally {
@@ -1616,7 +1612,7 @@ export default function ReportResult() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
           title: 'Saved on this phone',
-          line: 'It will send when you have signal. The report is already signed, so it files exactly as you left it — keep the app installed and it goes on its own.',
+          line: 'Already signed. It sends itself once you have signal.',
         });
         setStep('done');
       } else {

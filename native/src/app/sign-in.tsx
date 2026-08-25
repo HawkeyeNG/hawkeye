@@ -385,7 +385,7 @@ export default function SignIn() {
     purpose === 'signup'
       ? {
           title: 'Create Your Account',
-          body: 'Enter your phone number. We send a one-time code (OTP) to confirm it, then you choose a password — that password is how you sign in from then on.',
+          body: 'Enter your phone number. We send a code to confirm it, then you choose a password.',
         }
       : purpose === 'reset'
         ? {
@@ -394,7 +394,7 @@ export default function SignIn() {
           }
         : {
             title: 'No Password on This Account',
-            body: 'This account was created before Hawkeye had passwords, so it does not have one yet. Sign in with a one-time code (OTP) and set a password now — after that you sign in with your phone number and password like everyone else.',
+            body: 'This account has no password yet. Sign in with a code and set one now.',
           };
 
   const setPwCopy =
@@ -402,7 +402,7 @@ export default function SignIn() {
       ? { title: 'Choose a New Password', body: 'Your number is verified. Pick a new password — at least 8 characters.' }
       : purpose === 'no-password'
         ? { title: 'Set Your Password', body: 'Your number is verified. Choose a password — at least 8 characters — and use it to sign in on any device from now on.' }
-        : { title: 'Create Your Password', body: 'Your number is verified. Choose a password — at least 8 characters. You will need it with your phone number every time you sign in.' };
+        : { title: 'Create Your Password', body: 'Verified. Choose a password — at least 8 characters.' };
 
   const pwSaveDisabled = busy || newPw.length < 8 || newPw2.length < 8;
 

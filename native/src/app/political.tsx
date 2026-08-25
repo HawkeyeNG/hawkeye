@@ -12,6 +12,7 @@ import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
 import { SeatArch } from '@/components/seat-arch';
 import { NigeriaMap, normState } from '@/components/nigeria-map';
+
 import {
   loadPolitical,
   partyColor,
@@ -19,6 +20,10 @@ import {
   type Members,
   type Political,
 } from '@/lib/political';
+
+// Same base every other call uses — see lib/api.ts. Overridable so the app
+// can run against a local backend; production blocks cross-origin calls.
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
 /**
  * Political Data — who holds power now: the incumbents this election confirms
@@ -73,6 +78,13 @@ function governorParty(governors: Record<string, string> | undefined, picked: st
   return null;
 }
 
+/**
+ * One state assembly as /api/political reports it. Wikipedia is the only source
+ * for these, so `asOf` is Wikipedia's own date and is shown per row rather than
+ * averaged into one claim about all 36.
+ */
+type ShaState = { seats: number; parties: Record<string, number>; asOf?: string };
+
 export default function PoliticalData() {
   const ui = useUi();
   const [d, setD] = useState<Political | null>(null);
@@ -81,6 +93,18 @@ export default function PoliticalData() {
   const [err, setErr] = useState<string | null>(null);
   /** The state the reader tapped on the map, in the GEO file's spelling. */
   const [pickedState, setPickedState] = useState<string | null>(null);
+  /**
+   * Per-state assembly composition, from /api/political — the same live source
+   * the website's State Houses of Assembly section uses. NOT in
+   * political_data.json: the committed file carries only the 993-seat national
+   * total, so without this the assembly card can say how many seats exist and
+   * nothing about who holds them.
+   *
+   * Enrichment, so a failure is silent and the section simply does not appear —
+   * the rest of the page renders from the committed JSON as before.
+   */
+  const [assemblies, setAssemblies] = useState<Record<string, ShaState> | null>(null);
+  const [shaOpen, setShaOpen] = useState(false);
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
 
   useEffect(() => {
@@ -91,6 +115,19 @@ export default function PoliticalData() {
         setMembers(m);
       })
       .catch((e) => setErr(humanError(e, 'Could not load political data.')));
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    fetch(`${API_BASE}/api/political`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (live && j?.ok && j.states && Object.keys(j.states).length) setAssemblies(j.states);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
   }, []);
 
   // FCT is in the register with a null party — it has a minister, not a
@@ -220,6 +257,70 @@ export default function PoliticalData() {
                           </View>
                         ))}
                       </View>
+                      {/* THE PER-STATE BREAKDOWN, folded — the website's State
+                          Houses of Assembly section. 993 seats across 36
+                          chambers is a number nobody can picture; this is which
+                          party holds each one. CLOSED by default: the card above
+                          is the answer, this is the working.
+
+                          Only when the live source answered. Wikipedia is the
+                          only source for these, so each row keeps the "as of"
+                          Wikipedia itself carries — several are years old, and
+                          saying so beats implying they are current. */}
+                      {key === 'assembly' && assemblies ? (
+                        <View className="pt-3">
+                          <Pressable
+                            onPress={() => setShaOpen((v) => !v)}
+                            className="flex-row items-center rounded-xl bg-surface px-3 py-2 active:opacity-80"
+                          >
+                            <Text className="flex-1 text-xs font-bold text-ink">
+                              {Object.keys(assemblies).length} of 36 state assemblies
+                            </Text>
+                            <Feather
+                              name={shaOpen ? 'chevron-up' : 'chevron-down'}
+                              size={16}
+                              color={ui.faint}
+                            />
+                          </Pressable>
+                          {shaOpen ? (
+                            <View className="pt-2">
+                              {Object.entries(assemblies)
+                                .sort((a, b) => a[0].localeCompare(b[0]))
+                                .map(([st, a]) => {
+                                  const ranked = Object.entries(a.parties ?? {}).sort((x, y) => y[1] - x[1]);
+                                  const top = ranked[0];
+                                  return (
+                                    <View key={st} className="border-t border-line py-2">
+                                      <View className="flex-row items-baseline">
+                                        <Text className="flex-1 text-xs font-semibold text-ink">{st}</Text>
+                                        {top ? (
+                                          <Text className="shrink-0 text-[11px] text-muted">
+                                            <Text style={{ color: partyColor(top[0]) }}>{top[0]}</Text>{' '}
+                                            {top[1]}/{a.seats}
+                                          </Text>
+                                        ) : null}
+                                      </View>
+                                      <View className="mt-1 h-1.5 flex-row overflow-hidden rounded-full bg-card">
+                                        {ranked.map(([p, n]) => (
+                                          <View
+                                            key={p}
+                                            style={{
+                                              width: `${(n / Math.max(1, a.seats)) * 100}%`,
+                                              backgroundColor: partyColor(p),
+                                            }}
+                                          />
+                                        ))}
+                                      </View>
+                                      {a.asOf ? (
+                                        <Text className="pt-0.5 text-[10px] text-faint">as of {a.asOf}</Text>
+                                      ) : null}
+                                    </View>
+                                  );
+                                })}
+                            </View>
+                          ) : null}
+                        </View>
+                      ) : null}
                       {key === 'governors' ? (
                         <View className="pt-3">
                           {/* THE MAP THE WEBSITE HAS, and it answers a tap.

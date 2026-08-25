@@ -730,12 +730,18 @@
     sheet.hidden = true;
     sheet.innerHTML = `<div class="rs-backdrop"></div><div class="rs-panel" role="dialog" aria-label="What are you reporting?">
       <div class="rs-grab"></div><h3>What are you reporting?</h3>
+      <!-- LABELS AND SUB-LINES ARE THE APP'S, VERBATIM
+           (native/src/components/report-sheet.tsx). The two sheets are the same
+           control reached from the same tab, and they were naming the same three
+           actions differently — "Polling-unit result" against "Report a Result",
+           "Incident" against "Report an Incident". Each option is an ACTION, so
+           it starts with the verb. -->
       <a class="rs-opt" href="observe.html?intent=observe">${ic('<circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/>')}
-        <span><strong>Polling-unit result</strong><small>Photograph the EC8A sheet and enter the counts</small></span></a>
+        <span><strong>Report a Result</strong><small>Photograph the result sheet at your unit</small></span></a>
       <a class="rs-opt" href="incidents.html">${ic('<path d="M12 3 2.5 20h19z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.5"/>')}
-        <span><strong>Incident</strong><small>Violence, vote-buying, BVAS failure, obstruction…</small></span></a>
+        <span><strong>Report an Incident</strong><small>Photo or video of what you witnessed</small></span></a>
       <a class="rs-opt" href="collation.html">${ic('<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>')}
-        <span><strong>Collation result</strong><small>Ward, LGA or state collation (EC8B/C/D)</small></span></a>
+        <span><strong>Report a Collation</strong><small>Ward or LGA collation announcement</small></span></a>
     </div>`;
     document.body.appendChild(sheet);
     const openSheet = (o) => { sheet.hidden = !o; document.body.style.overflow = o ? 'hidden' : ''; };

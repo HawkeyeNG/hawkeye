@@ -100,11 +100,33 @@ console.log('\n=== My Profile mirrors the app ===');
   const h = await p.evaluate(() => [...document.querySelectorAll('.pcard h2')].map((x) => ({
     t: x.textContent.trim(), px: getComputedStyle(x).fontSize, up: getComputedStyle(x).textTransform,
   })));
-  check('there are card headings to check', h.length, (n) => n >= 4);
+  check('there are card headings to check', h.length, (n) => n >= 2);
   check('each is a small uppercase label, not a 16px title', h.every((x) => px(x.px) <= 12 && x.up === 'uppercase'), true);
   // The app writes them in sentence case: "Account", "Races you follow".
   check('sentence case, like the app', h.map((x) => x.t), (t) =>
-    t.includes('Races you follow') && t.includes('My polling unit') && t.includes('Delete my identity'));
+    t.includes('Races you follow') && t.includes('Delete my identity'));
+
+  /**
+   * PASSWORD AND MY POLLING UNIT ARE ROWS NOW, not cards.
+   *
+   * The app states each as one row — the setting, its current value, a chevron —
+   * inside a single ACCOUNT card. Lite had each as its own card with a heading,
+   * a state paragraph, a full-width button and a second paragraph of advice:
+   * four blocks of prose for two settings, which is what pushed the rest of the
+   * page off the screen. This asserts the SHAPE, because the old shape is what
+   * the complaint was about.
+   */
+  const rows = await p.evaluate(() => [...document.querySelectorAll('.prow')].map((r) => ({
+    k: r.querySelector('.prow-k')?.textContent.trim(),
+    hasValue: !!r.querySelector('.prow-v'),
+    hasChevron: !!r.querySelector('.prow-c'),
+  })));
+  check('both settings are rows', rows.map((r) => r.k).join(' + '), 'Password + My polling unit');
+  check('each row states its current value', rows.every((r) => r.hasValue), true);
+  check('and offers a way in', rows.every((r) => r.hasChevron), true);
+  // The advice moved into the modals; it must not still be standing on the page.
+  const body = await p.evaluate(() => document.body.innerText);
+  check('the standing password advice is gone', /Forgot it\? Reset it from the/.test(body), false);
   await p.close();
 }
 

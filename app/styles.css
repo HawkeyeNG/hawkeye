@@ -1552,3 +1552,37 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
   padding-top: 10px; border-top: 1px solid var(--border, #dde4de); }
 .pwa-os .apk-dl { display: inline-block; font-size: 0.9rem; font-weight: 700; }
 .pwa-note { font-size: 0.78rem; color: var(--muted); line-height: 1.45; margin: 6px 0 0; }
+
+/* MY PROFILE's ACCOUNT ROWS — the app's two-row card. A row states a setting and
+   its current value and opens the thing that changes it, so the page stops being
+   a column of headings, paragraphs and full-width buttons. */
+html.native-app .prows { padding: 0; overflow: hidden; }
+html.native-app .prow {
+  display: flex; align-items: center; gap: 10px; width: 100%; margin: 0;
+  padding: 14px 16px; background: none; border: 0; box-shadow: none;
+  border-top: 1px solid var(--line); text-align: left; cursor: pointer;
+  font-size: 0.95rem; color: var(--ink);
+}
+html.native-app .prows .prow:first-child { border-top: 0; }
+html.native-app .prow:hover { background: var(--tint); filter: none; }
+html.native-app .prow-k { flex: 1 1 auto; font-weight: 600; }
+html.native-app .prow-v { color: var(--muted); font-size: 0.85rem; text-align: right; }
+html.native-app .prow-c { color: var(--muted); flex: none; }
+
+/* FOLLOW CHIPS YOU CAN READ. `.tag.ok` is a faint tint built for a light page;
+   on the app's dark card it was dark-green text on near-black. The app draws
+   these as green text on a raised chip, which is what this is. */
+html.native-app #p-subs .tag {
+  display: inline-block; margin: 0 6px 6px 0; padding: 7px 12px;
+  border-radius: 999px; background: var(--green-dark, #00482b);
+  color: var(--accent); font-weight: 600; font-size: 0.82rem; line-height: 1.3;
+}
+
+/* THE WORDMARK MUST CLEAR THE STATUS BAR. In Lite the WebView draws edge to
+   edge, so the sign-in header sat under the clock and the battery icon. The
+   viewport carries viewport-fit=cover, so the inset is available; the header
+   pays it. Only in the app — the website has an OS chrome above it. */
+html.native-app .auth-screen .gov-header,
+html.native-app.is-landing .gov-header {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+}

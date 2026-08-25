@@ -441,6 +441,29 @@
   // surface the reviewer saw.
   (function govDisclaimer() {
     /**
+     * ONLY THE PAGES THAT NEED IT — mirroring the app, which renders
+     * GovDisclaimer on eight screens and nowhere else.
+     *
+     * This is a compliance notice, not a brand element: it is a stain on the
+     * design that we carry where we must, so it belongs on as few pages as
+     * possible. It was being injected into EVERY page, including ones that show
+     * no election figures at all and therefore cannot be mistaken for a
+     * government source — Privacy, Terms, FAQ, the report flows.
+     *
+     * The list is the app's, page for page: the leaderboard, the presidency, a
+     * race, the race index, Osun, integrity and political data — every surface
+     * that presents FIGURES a reader could take for official. Native's More
+     * screen is the eighth; its web counterpart is the ☰ panel, which is not a
+     * page, so the notice rides the pages instead.
+     */
+    var NEEDS_DISCLAIMER = [
+      'results.html', 'candidates.html', 'race.html', 'races.html',
+      'osun.html', 'integrity.html', 'political.html',
+    ];
+    var page = (location.pathname.split('/').pop() || 'index.html');
+    if (NEEDS_DISCLAIMER.indexOf(page) === -1) return;
+
+    /**
      * THE LANDING PAGE HAD NO DISCLAIMER AT ALL.
      *
      * This required a <main>, and index.html's only <main> lives inside
@@ -490,10 +513,24 @@
     // affiliation the rest of this bar denies. INEC is named as the official
     // BODY — whose site is the source for the register and the official
     // declaration we check against — not as where these numbers came from.
+    /**
+     * EXACTLY THE APP'S BAR — one line, claim then Details, nothing else.
+     * (native/src/components/gov-disclaimer.tsx.)
+     *
+     * It used to carry the whole statement on its face — "Figures are crowd
+     * reports; official results come from INEC — inecnigeria.org" — which ran to
+     * three lines on a phone, above every page.
+     *
+     * ON THE PLAY REJECTION, since the long version was written to answer it:
+     * Play rejected the Capacitor build twice under Misleading Claims for
+     * lacking a visible source link, and the fix was putting inecnigeria.org on
+     * the bar. That is no longer the evidence available. The native app SHIPPED
+     * to Play on 2026-08-19 carrying this exact one-line bar, with the source
+     * links in the modal, and was accepted. A published app beats an inference
+     * drawn from an older rejection, and the sources are still one tap away.
+     */
     bar.innerHTML = '<strong>Not government or INEC affiliated.</strong> '
-      + 'Figures are crowd reports; official results come from INEC — '
-      + '<a href="https://www.inecnigeria.org" target="_blank" rel="noopener">inecnigeria.org</a> '
-      + '<span class="gov-disc-more" role="button" tabindex="0">Details</span>';
+      + '<span class="gov-disc-more" role="button" tabindex="0">Details ›</span>';
     // On the sign-in / sign-up screen the disclaimer goes BELOW the form: it is a
     // legal footnote, and at the top of a bare auth page it was the first and
     // loudest thing on screen, overshadowing the brand.

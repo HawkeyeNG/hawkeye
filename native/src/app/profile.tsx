@@ -28,6 +28,7 @@ import { pick } from '@/lib/haptics';
 import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -235,7 +236,7 @@ export default function Profile() {
       setMe(body as unknown as Me);
       setErr(null);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(humanError(e));
     }
   }, [auth.status]);
 

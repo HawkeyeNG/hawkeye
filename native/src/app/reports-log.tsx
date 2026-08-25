@@ -7,6 +7,7 @@ import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -90,7 +91,7 @@ export default function ReportsLog() {
       setLedger(l);
       setErr(null);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(humanError(e));
     }
   }, []);
 

@@ -48,6 +48,7 @@ import {
 import { queueJob } from '@/lib/outbox';
 import { filePart } from '@/lib/submit';
 import { regFetch } from '@/lib/register-fetch';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -252,7 +253,7 @@ const nothingFoundLine = (s: Searched): string => {
   // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
   // /units), so on a lookup failure it is the one other path that cannot work
   // either. Search answers from the register bundled into the app.
-  return 'Could not look up nearby units. Search for the one you are at by name below — the polling unit list works without a connection.';
+  return 'Could not check nearby units. Search by name below.';
 };
 
 /** The tier's colour, sized for a line of text — so a row and the pin it refers
@@ -619,9 +620,10 @@ export default function ReportIncident() {
 
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
-        setNearLine(
-          `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (lookup_failed${status ? ` / HTTP ${status}` : ''})`,
-        );
+        // Console, not UI: "HTTP 503" is not something the reader can act on,
+        // and their next move is the search box directly below either way.
+        if (status) console.warn('[hawkeye] near-me lookup failed', status);
+        setNearLine('Could not check nearby units. Search by name below.');
         return;
       }
 
@@ -756,7 +758,7 @@ export default function ReportIncident() {
       );
     } catch (e) {
       setNearLine(
-        `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (${e instanceof Error ? e.message : String(e)})`,
+        humanError(e, 'Could not check nearby units. Search by name below.'),
       );
     } finally {
       setNearBusy(false);
@@ -924,7 +926,7 @@ export default function ReportIncident() {
           });
         } catch (e) {
           setLine(
-            `Upload failed and the report could not be saved for later — nothing was sent. (${e instanceof Error ? e.message : String(e)})`,
+            humanError(e, 'Upload failed and nothing was saved. Nothing was sent.'),
           );
           return;
         }
@@ -963,7 +965,7 @@ export default function ReportIncident() {
       // Getting here means the upload itself did NOT fail (that path queues) —
       // identity, the token read or the GPS fix threw. Name the exception:
       // "Network request failed" and a JS error are very different diagnoses.
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = humanError(e);
       setLine(`Could not prepare the report — nothing was sent. (${msg})`);
     } finally {
       setBusy(false);

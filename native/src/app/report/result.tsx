@@ -58,6 +58,7 @@ import {
 } from '@/lib/location';
 import { submitResult, type Receipt, type Shot, type Vote } from '@/lib/submit';
 import { regFetch } from '@/lib/register-fetch';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -421,7 +422,7 @@ const nothingFoundLine = (s: Searched): string => {
   // copy sent an observer whose DNS had just failed to the one other path that
   // could not work either. Search answers from the register bundled into the
   // app, which is the only unit lookup that survives having no connection.
-  return 'Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection.';
+  return 'Could not check nearby units. Search by name below.';
 };
 
 /**
@@ -435,8 +436,13 @@ const nothingFoundLine = (s: Searched): string => {
  * could not be told apart from a timeout, a DNS failure or a 500, which cost a
  * whole debugging round once.
  */
-const lookupFailedLine = (detail: string): string =>
-  `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (${detail})`;
+const lookupFailedLine = (detail: string): string => {
+  // The detail is CONSOLE-ONLY now. It used to be appended in brackets, which is
+  // how "fetch failed: java.net.UnknownHostException: Unable to resolve host" came
+  // to be four lines of Java under "Report a result" on a phone with no signal.
+  if (detail) console.warn('[hawkeye] near-me lookup failed', detail);
+  return 'Could not check nearby units. Search by name below.';
+};
 
 /** The tier's colour, sized for a line of text — so a row, a receipt line and
  *  the pin they refer to all carry the same mark. */
@@ -1373,7 +1379,7 @@ export default function ReportResult() {
         'Could not open that unit',
         ctl.signal.aborted
           ? `Looking up ${n.name} took too long. Check your signal and tap it again, or find it under “Browse the register instead”. (timed out after ${PICK_TIMEOUT_MS / 1000}s)`
-          : `Check your connection and retry. (${e instanceof Error ? e.message : String(e)})`,
+          : humanError(e, 'Check your connection and retry.'),
       );
     } finally {
       clearTimeout(timer);
@@ -1618,7 +1624,7 @@ export default function ReportResult() {
         setLine(r.message);
       }
     } catch (e) {
-      setLine(`Something went wrong — nothing was sent. Retry. (${e instanceof Error ? e.message : String(e)})`);
+      setLine(humanError(e, 'Something went wrong — nothing was sent. Retry.'));
     } finally {
       setBusy(false);
     }

@@ -13,6 +13,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND, type Incident } from '@/lib/api';
 import { useUi } from '@/lib/theme';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -86,7 +87,7 @@ export default function Incidents() {
       setErr(null);
       return null;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = humanError(e);
       setErr(msg);
       return msg;
     }

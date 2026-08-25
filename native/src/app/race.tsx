@@ -22,6 +22,7 @@ import {
   type SeatInfo,
 } from '@/lib/political';
 import { useUi } from '@/lib/theme';
+import { humanError } from '@/lib/errors';
 
 /**
  * One race, by route params. Native twin of app/race.html, and reached the same
@@ -158,7 +159,7 @@ export default function RaceScreen() {
       if (live) setDone(true);
     })().catch((e) => {
       if (live) {
-        setErr(e instanceof Error ? e.message : String(e));
+        setErr(humanError(e));
         setDone(true);
       }
     });

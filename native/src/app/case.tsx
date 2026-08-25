@@ -24,6 +24,7 @@ import { flagLabel } from '@/lib/flags';
 import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -102,7 +103,7 @@ export default function CaseScreen() {
       setC(d);
       setErr(d.error ?? (res.ok ? null : `HTTP ${res.status}`));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(humanError(e));
     }
   }, [id]);
 
@@ -173,7 +174,7 @@ export default function CaseScreen() {
         );
       }
     } catch (e) {
-      setMsg(`Could not record. (${e instanceof Error ? e.message : String(e)})`);
+      setMsg(humanError(e, 'Could not record.'));
     } finally {
       setBusy(false);
     }

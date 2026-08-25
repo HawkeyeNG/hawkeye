@@ -10,6 +10,7 @@ import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
 import { markRead, openNotificationTarget, setUnread, useUnread } from '@/lib/push';
+import { humanError } from '@/lib/errors';
 
 type Notification = {
   id: number;
@@ -52,7 +53,7 @@ export default function Alerts() {
       setErr(null);
       return null;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = humanError(e);
       setErr(msg);
       return msg;
     }
@@ -100,7 +101,7 @@ export default function Alerts() {
       await markRead('all');
       setItems((list) => list?.map((x) => ({ ...x, read: 1 })) ?? list);
     } catch (e) {
-      Alert.alert('Could not mark them read', e instanceof Error ? e.message : String(e));
+      Alert.alert('Could not mark them read', humanError(e));
     } finally {
       setMarking(false);
     }

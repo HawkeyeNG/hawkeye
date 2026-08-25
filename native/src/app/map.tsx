@@ -7,6 +7,7 @@ import { loadStatesGeo, NigeriaMap, NO_DATA_FILL, normState } from '@/components
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { loadPolitical, partyColor, partyName, type Political } from '@/lib/political';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -102,7 +103,7 @@ export default function MapScreen() {
   useEffect(() => {
     loadPolitical()
       .then(({ data }) => setPolitical(data))
-      .catch((e) => setErr(`Incumbency data: ${e instanceof Error ? e.message : String(e)}`));
+      .catch((e) => setErr(humanError(e, 'Could not load incumbency data.')));
   }, []);
 
   // The contest list is fixed for the run — only the tally under it moves, so
@@ -117,7 +118,7 @@ export default function MapScreen() {
         }
         setCode((prev) => (prev && list.some((c) => c.code === prev) ? prev : list[0].code));
       })
-      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+      .catch((e) => setErr(humanError(e, 'Could not load the map.')));
   }, []);
 
   const load = useCallback(async () => {
@@ -126,7 +127,7 @@ export default function MapScreen() {
       setTally(await jget<Tally>(`/api/national/${code}`));
       setErr(null);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(humanError(e, 'Could not load the map.'));
     }
   }, [code]);
 

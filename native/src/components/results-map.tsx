@@ -4,6 +4,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { loadStatesGeo } from '@/components/nigeria-map';
 import { useUi } from '@/lib/theme';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -419,7 +420,7 @@ export const ResultsMap = memo(function ResultsMap({
     setErr(null);
     loadMapGeo(level)
       .then((g) => alive && setGeo(g))
-      .catch((e) => alive && setErr(e instanceof Error ? e.message : String(e)));
+      .catch((e) => alive && setErr(humanError(e, 'Could not load the map.')));
     return () => {
       alive = false;
     };

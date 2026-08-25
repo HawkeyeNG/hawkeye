@@ -59,13 +59,17 @@
   </header>
 <main class="wrap">
     <h1>Verify the Ledger</h1>
-    <!-- The lede and the "How the chain is checked" fold both explained rather
-         than instructed, so both collapse into one ⓘ. -->
-    <p class="lede"><strong>Verified</strong> = your phone recomputed every hash and matched our published head.<button
-      class="info-i" data-info-title="How the chain is checked"
-      data-info="Every accepted report is chained by hash: each entry commits to all before it, so changing or removing any past report breaks every later hash. This page recomputes the whole chain in your own browser and compares the head it gets to the one the server publishes — you don't have to trust us."></button></p>
-
+    <!-- THE CARDS FIRST, THEN THE SENTENCE THAT EXPLAINS THEM — the order the
+         app uses. The line defines the word "Verified", and one of these four
+         cards is the word: above them it explained a term the reader had not met
+         yet, and pushed the numbers the page exists for below the fold.
+         Wording matches the app too, rather than being a second phrasing of the
+         same sentence. The "How the chain is checked" fold stays folded. -->
     <div class="stat-grid" id="tiles"></div>
+
+    <p class="lede">Verified means your phone recomputed every hash itself and got the same head we publish.<button
+      class="info-i" data-info-title="How the chain is checked"
+      data-info="Each entry stores the hash of the one before it, so altering or removing any past report breaks every hash after it. This page recomputes the whole chain in your own browser and compares the head it gets to the one we publish — you don't have to trust us."></button></p>
 
     <button id="btn-verify">🔒 Re-verify the entire chain in my browser</button>
     <p id="client-result" class="status" role="status"></p>
@@ -141,8 +145,11 @@
       const latest = anchors.length ? anchors.reduce((a, b) => (anchorTime(b) > anchorTime(a) ? b : a)) : null;
       const anchorMs = latest ? anchorTime(latest) : 0;
       // Never print "Invalid Date" again: fall back to the raw day, then to none.
+      // Day and month only, like the app (ledger.tsx:shortDay). The year made
+      // "25 Aug 2026" wrap onto two lines inside its own tile, and the anchor a
+      // reader cares about is always recent — the year is noise in that space.
       TS.anchor = anchorMs
-        ? new Date(anchorMs).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        ? new Date(anchorMs).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
         : (latest?.day || 'None yet');
       renderTiles();
       document.getElementById('status').innerHTML = `Server head — compare, don't trust: <code>${verify.head || GENESIS}</code>`;
@@ -232,6 +239,6 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=152"></script>
+  <script src="menu.js?v=153"></script>
 </body>
 </html>

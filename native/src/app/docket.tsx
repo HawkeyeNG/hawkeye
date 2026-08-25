@@ -158,12 +158,54 @@ export default function Docket() {
 
   const pct = supermajority ? Math.round(supermajority * 100) : null;
 
+  /**
+   * The whole explanation, for the banner's dot. Built here rather than inline
+   * because it interpolates the live quorum/supermajority/window the backend
+   * reports — a hardcoded "needs 5 verdicts" would go stale the moment those are
+   * tuned, on the one screen whose subject is how the rules work.
+   *
+   * The first paragraph states BOTH conditions on purpose: withholding is
+   * immediate, but with DOCKET_AUTO_OPEN_CASES off (the real general election)
+   * no case exists for the crowd to judge until the post-election batch opens
+   * one, so the count above can exceed the number of cases below.
+   */
+  const docketExplainer = [
+    'A flag never decides anything — it holds that unit’s votes out of every tally until the crowd clears them.',
+    'Why a disputed result is excluded — a unit is marked disputed while a serious flag on it is unresolved, or while its case is open, upheld, or timed out without quorum. Disputed means badged everywhere, barred from ever reading as verified, and left out of the headline tallies. That is why the count above can be higher than the number of cases below: a result is held back the moment it is flagged, and the case putting it to the crowd may only be opened once polls close. A result the crowd clears goes straight back into the count, and the flag stays on the public record either way.',
+    'Who judges, and how — verified observers worldwide answer factual questions about evidence they can see, one verdict per person, published with the answers behind it. Nobody at Hawkeye votes, and no juror picks a side: a published rule computes each verdict from the answers.',
+    quorum && pct
+      ? `How a case resolves — a case needs ${quorum} verdicts and a ${pct}% supermajority${
+          windowDays ? ` inside a ${windowDays}-day window` : ''
+        }. Anything short of that closes unresolved — still disputed, still revisitable.${
+          rule ? ` Resolution rule: ${rule}` : ''
+        }`
+      : 'How a case resolves — a case needs a quorum of verdicts and a supermajority. Anything short of that closes unresolved — still disputed, still revisitable.',
+    "The docket is on the chain — every flag, case opening and verdict is appended to the docket's own hash chain, whose head is folded into the same public Rekor anchor as the results. The arbitration is as rollback-proof as what it judges.",
+  ].join('\n\n');
+
   const header = (
     <View className="px-4 pb-2 pt-3">
-      <View className="mb-3 rounded-xl bg-warn px-3 py-2">
-        <Text className="text-xs font-semibold text-warn-ink">
+      {/**
+        * ONE CARD, WITH THE DETAIL BEHIND ITS DOT.
+        *
+        * This banner and a separate paragraph below the stats were saying
+        * overlapping things — "flagged results, judged by the crowd" and "a flag
+        * never decides anything" are the same fact twice, and the second one
+        * carried the InfoDot holding the actual explanation. Two pieces of
+        * standing prose at the top of a screen whose content is the case list.
+        *
+        * The paragraph is gone; its dot moved here. The claim stays visible, the
+        * explanation is one tap away, and the case list starts higher up.
+        */}
+      <View className="mb-3 flex-row items-center rounded-xl bg-warn px-3 py-2">
+        <Text className="flex-1 text-xs font-semibold text-warn-ink">
           Flagged results, judged by the crowd. Nobody at Hawkeye decides.
         </Text>
+        <InfoDot
+          title="How the docket works"
+          color={ui.tint.warn.ink}
+          text={docketExplainer}
+        />
       </View>
 
       {err ? (
@@ -217,27 +259,6 @@ export default function Docket() {
           DOCKET_AUTO_OPEN_CASES off (the real general election) no case exists
           for the crowd to judge until the post-election batch opens it — the
           dot's first paragraph states both conditions. */}
-      <View className="flex-row items-center pt-1">
-        <Text className="flex-1 text-sm leading-5 text-muted">
-          A flag never decides anything — it holds that unit&apos;s votes out of every tally until
-          the crowd clears them.
-        </Text>
-        <InfoDot
-          title="How the docket works"
-          text={[
-            'Why a disputed result is excluded — a unit is marked disputed while a serious flag on it is unresolved, or while its case is open, upheld, or timed out without quorum. Disputed means badged everywhere, barred from ever reading as verified, and left out of the headline tallies. That is why the count above can be higher than the number of cases below: a result is held back the moment it is flagged, and the case putting it to the crowd may only be opened once polls close. A result the crowd clears goes straight back into the count, and the flag stays on the public record either way.',
-            'Who judges, and how — verified observers worldwide answer factual questions about evidence they can see, one verdict per person, published with the answers behind it. Nobody at Hawkeye votes, and no juror picks a side: a published rule computes each verdict from the answers.',
-            quorum && pct
-              ? `How a case resolves — a case needs ${quorum} verdicts and a ${pct}% supermajority${
-                  windowDays ? ` inside a ${windowDays}-day window` : ''
-                }. Anything short of that closes unresolved — still disputed, still revisitable.${
-                  rule ? ` Resolution rule: ${rule}` : ''
-                }`
-              : 'How a case resolves — a case needs a quorum of verdicts and a supermajority. Anything short of that closes unresolved — still disputed, still revisitable.',
-            "The docket is on the chain — every flag, case opening and verdict is appended to the docket's own hash chain, whose head is folded into the same public Rekor anchor as the results. The arbitration is as rollback-proof as what it judges.",
-          ].join('\n\n')}
-        />
-      </View>
 
       <SectionLabel text="Cases" />
       <Text className="pb-2 text-sm text-muted">

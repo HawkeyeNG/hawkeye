@@ -67,13 +67,19 @@
   </header>
 <main class="wrap">
     <h1>Public Docket</h1>
-    <!-- Four folds collapsed into one ⓘ: all four explained, none instructed.
+    <!-- ONE CARD, WITH THE DETAIL BEHIND ITS DOT — matching the app.
+         This was a standing paragraph ("A flag never decides anything…") that
+         said the same thing as the claim now on the card, and carried the ⓘ
+         holding the actual explanation. Two pieces of prose above a screen whose
+         content is the case list. The claim stays visible, the explanation is
+         one tap away, and the list starts higher up.
          The resolution rule is fetched, so the script appends it to data-info
-         below rather than writing into a visible <p>. -->
-    <p class="lede">A flag never decides anything — it holds that unit's votes out of every tally
-    until the crowd clears them.<button class="info-i" id="docket-i"
+         rather than writing into a visible <p>. -->
+    <p class="notice">Flagged results, judged by the crowd. Nobody at Hawkeye decides.<button class="info-i" id="docket-i"
       data-info-title="How the docket works"
-      data-info="Why a disputed result is excluded — until the crowd reviews a flag, the unit's votes stay out of every tally. Holding a possibly-bad result while it is checked is safer than letting it inflate a total; nothing is deleted, only set aside until it is cleared or struck.
+      data-info="A flag never decides anything — it holds that unit's votes out of every tally until the crowd clears them.
+
+Why a disputed result is excluded — until the crowd reviews a flag, the unit's votes stay out of every tally. Holding a possibly-bad result while it is checked is safer than letting it inflate a total; nothing is deleted, only set aside until it is cleared or struck.
 
 Who judges, and how — verified observers worldwide, never Hawkeye. Each answers factual questions about the evidence on file: the results-sheet photo, the venue photo, the GPS fix. No one at Hawkeye casts a verdict.
 
@@ -140,6 +146,6 @@ The docket is on the chain — every case, verdict and resolution is appended to
       }).join('');
     }).catch(() => { $('list').innerHTML = '<div class="empty">Could not load the docket — try again shortly.</div>'; });
   </script>
-  <script src="menu.js?v=152"></script>
+  <script src="menu.js?v=153"></script>
 </body>
 </html>

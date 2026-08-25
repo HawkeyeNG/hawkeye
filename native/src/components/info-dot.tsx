@@ -17,8 +17,23 @@ import { useUi } from '@/lib/theme';
  *
  * Renders inline inside a <Text> as well as standalone.
  */
-export function InfoDot({ title, text }: { title?: string; text: string }) {
+export function InfoDot({
+  title,
+  text,
+  color,
+}: {
+  title?: string;
+  text: string;
+  /**
+   * Ink for the dot itself, when it does not sit on a normal surface. The
+   * default good-ink is a green tuned for `bg-surface`/`bg-card`; on the
+   * docket's amber `bg-warn` banner it is close to unreadable. Callers on a
+   * coloured card pass that card's own ink.
+   */
+  color?: string;
+}) {
   const ui = useUi();
+  const dotColor = color ?? ui.tint.good.ink;
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -33,9 +48,9 @@ export function InfoDot({ title, text }: { title?: string; text: string }) {
       >
         <View
           className="h-5 w-5 items-center justify-center rounded-full border"
-          style={{ borderColor: ui.tint.good.ink }}
+          style={{ borderColor: dotColor }}
         >
-          <Text className="text-[11px] font-bold" style={{ color: ui.tint.good.ink }}>
+          <Text className="text-[11px] font-bold" style={{ color: dotColor }}>
             i
           </Text>
         </View>

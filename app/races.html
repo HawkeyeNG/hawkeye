@@ -21,7 +21,13 @@
        Same for `font`: the button default is bold, so the description and date
        came out as heavy as the title they sit under. */
     button.race-item { width: 100%; text-align: left; color: inherit; font: inherit; }
-    .rc-body { flex: 1; min-width: 0; }
+    /* `overflow-wrap: anywhere` for the same reason as results.html's .race-opt b:
+       min-width:0 lets this shrink below its content so the date beside it keeps
+       its width, but "Representatives" and "Gombe/Kwami/Funakaye" are single
+       unbreakable tokens that then SPILL out of the box and paint over the date.
+       Clean here at default size; at Android's 160% font scale five rows spill,
+       so this is latent rather than absent. */
+    .rc-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
     .race-item h2 { margin: 0 0 2px; font-size: 1.05rem; border: 0; padding: 0; }
     .race-item .rc-desc { margin: 0; font-size: 0.85rem; color: var(--muted); }
     .rc-pill { flex: none; font-size: 0.72rem; font-weight: 700; padding: 3px 11px; border-radius: 999px; white-space: nowrap; }
@@ -317,6 +323,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=151"></script>
+  <script src="menu.js?v=152"></script>
 </body>
 </html>

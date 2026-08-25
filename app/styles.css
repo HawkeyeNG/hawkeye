@@ -1348,9 +1348,21 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
   /* Top margin matters: injected as main's first child it otherwise sits flush
      against the header/phase banner above it. */
   margin: 16px 0 12px; padding: 7px 11px;
-  background: var(--tint-warn); border: 1px solid var(--amber-border); border-radius: 9px;
-  font-size: 0.78rem; line-height: 1.4; color: var(--ink);
+  /* BRAND GOLD, NOT A TINTED SURFACE — matching the app, which made this call
+     first (native/src/components/gov-disclaimer.tsx). A compliance notice has to
+     be SEEN, and --tint-warn is a pale wash that receded into the page on light
+     and vanished into the dark theme's #402c0c, which is the opposite of what a
+     "we are not the government" disclaimer is for.
+
+     The ink is FIXED near-black rather than var(--ink), because the gold is
+     fixed in both themes: the dark theme's near-white --ink on #f5b301 sits
+     around 1.9:1 and fails badly. Near-black on this gold is about 11:1. */
+  background: var(--gold); border: 1px solid var(--gold); border-radius: 9px;
+  font-size: 0.78rem; line-height: 1.4; color: #10221a;
 }
+/* Both inherit the near-black above; the link keeps its underline so it still
+   reads as a link on a saturated background rather than as bold text. */
+.gov-disclaimer a, .gov-disclaimer .gov-disc-more { color: #10221a; }
 /* On the auth screen it is appended below the form, so the margin flips. */
 .auth-screen .gov-disclaimer { margin: 18px 0 0; }
 /* Inline, so it flows as the last words of the sentence. It is a <span role=

@@ -160,13 +160,18 @@
             say('Could not update following — make sure your phone is verified.');
             return;
           }
-          if (on) {
-            followed = { contest: contest, state: state };
-            say('🔔 Following ' + subject + '. You will be alerted on every new report — Telegram or WhatsApp, your choice, plus the in-app feed.');
-          } else {
-            followed = null;
-            say('Alerts off. You can follow again at any time.');
-          }
+          /**
+           * NO CONFIRMATION LINE. The button's own label is the confirmation:
+           * it now reads "Unfollow this race", which can only be true if you are
+           * following it. A paragraph repeating that, plus a list of the
+           * channels it might arrive on, was three lines of text under a control
+           * whose new label said the same thing in two words.
+           *
+           * ERRORS STILL SPEAK (below and above) — those are the cases where
+           * nothing visible changed and the reader needs telling why.
+           */
+          followed = on ? { contest: contest, state: state } : null;
+          say('');
           paint();
         });
     });

@@ -27,6 +27,31 @@ import {
  * list (party → its states), which reads better on a phone than a map you have
  * to pinch, and carries the count the map only implies.
  */
+/**
+ * The order the page reads in: presidency (above), then governors, Senate,
+ * House, State Assemblies, LGA chairmen.
+ *
+ * Object.entries() was used before, so the order was whichever order
+ * political_data.json happened to list the chambers in — senate, house,
+ * governors, assembly, lga. That put the two national chambers above the
+ * governors, and the governing-party-by-state breakdown ended up several
+ * screens below the governor count it belongs to.
+ *
+ * Descending scope, and it is stated HERE rather than fixed in the data,
+ * because a JSON key order is not a design decision and nothing stops the next
+ * edit from reshuffling it.
+ */
+const CHAMBER_ORDER = ['governors', 'senate', 'house', 'assembly', 'lga'];
+
+function orderedChambers<T>(chambers: Record<string, T>): [string, T][] {
+  const rank = (k: string) => {
+    const i = CHAMBER_ORDER.indexOf(k);
+    // A chamber added later and not listed sorts LAST rather than vanishing.
+    return i === -1 ? CHAMBER_ORDER.length : i;
+  };
+  return Object.entries(chambers).sort((a, b) => rank(a[0]) - rank(b[0]));
+}
+
 export default function PoliticalData() {
   const ui = useUi();
   const [d, setD] = useState<Political | null>(null);
@@ -114,7 +139,7 @@ export default function PoliticalData() {
                 <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
                   Who holds power now
                 </Text>
-                {Object.entries(d.composition.chambers).map(([key, ch]) => {
+                {orderedChambers(d.composition.chambers).map(([key, ch]) => {
                   // Counts come from our own roster wherever we have one, so the
                   // picture and the names are the same fact counted once. The
                   // committed composition stays the fallback (and is the only
@@ -163,6 +188,45 @@ export default function PoliticalData() {
                           </View>
                         ))}
                       </View>
+                      {key === 'governors' ? (
+                        <View className="pt-3">
+            {/* WHICH PARTY GOVERNS WHERE, directly under the Governors row it
+                          breaks down — it used to sit after every chamber, so the
+                          reader met "993 State Assembly seats" between the governor
+                          count and the list of which states those governors hold. */}
+                      {byParty.groups.length ? (
+                        <>
+                          <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
+                            Governing party by state
+                          </Text>
+                          {byParty.groups.map(([party, sts]) => (
+                            <View key={party} className="mb-2 rounded-2xl bg-card px-4 py-3">
+                              <View className="flex-row items-center">
+                                <PartyMark party={party} logos={logos} size={20} />
+                                <Text
+                                  className="flex-1 pl-2 text-sm font-bold"
+                                  style={{ color: partyColor(party) }}
+                                >
+                                  {partyName(party)}
+                                </Text>
+                                <Text className="text-xs font-semibold text-muted">
+                                  {sts.length} {sts.length === 1 ? 'state' : 'states'}
+                                </Text>
+                              </View>
+                              <Text className="pt-1.5 text-xs text-muted">
+                                {sts.sort().join(' · ')}
+                              </Text>
+                            </View>
+                          ))}
+                          {byParty.none.length ? (
+                            <Text className="pt-1 text-xs text-faint">
+                              {byParty.none.join(' · ')} — no governor (administered by a minister).
+                            </Text>
+                          ) : null}
+                        </>
+                      ) : null}
+                        </View>
+                      ) : null}
                     </View>
                   );
                 })}
@@ -175,38 +239,6 @@ export default function PoliticalData() {
               </>
             ) : null}
 
-            {/* Governing party by state — the map, as a list you can read. */}
-            {byParty.groups.length ? (
-              <>
-                <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-                  Governing party by state
-                </Text>
-                {byParty.groups.map(([party, sts]) => (
-                  <View key={party} className="mb-2 rounded-2xl bg-card px-4 py-3">
-                    <View className="flex-row items-center">
-                      <PartyMark party={party} logos={logos} size={20} />
-                      <Text
-                        className="flex-1 pl-2 text-sm font-bold"
-                        style={{ color: partyColor(party) }}
-                      >
-                        {partyName(party)}
-                      </Text>
-                      <Text className="text-xs font-semibold text-muted">
-                        {sts.length} {sts.length === 1 ? 'state' : 'states'}
-                      </Text>
-                    </View>
-                    <Text className="pt-1.5 text-xs text-muted">
-                      {sts.sort().join(' · ')}
-                    </Text>
-                  </View>
-                ))}
-                {byParty.none.length ? (
-                  <Text className="pt-1 text-xs text-faint">
-                    {byParty.none.join(' · ')} — no governor (administered by a minister).
-                  </Text>
-                ) : null}
-              </>
-            ) : null}
 
             {d.upcoming ? (
               <>

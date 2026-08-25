@@ -11,6 +11,7 @@ import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
 import { SeatArch } from '@/components/seat-arch';
+import { NigeriaMap, normState } from '@/components/nigeria-map';
 import {
   loadPolitical,
   partyColor,
@@ -23,9 +24,11 @@ import {
  * Political Data — who holds power now: the incumbents this election confirms
  * or unseats.
  *
- * The web page draws a choropleth of Nigeria; here the same fact is a grouped
- * list (party → its states), which reads better on a phone than a map you have
- * to pinch, and carries the count the map only implies.
+ * The governors card carries BOTH the choropleth the website has and the grouped
+ * list (party → its states). They answer different questions and neither
+ * replaces the other: the map answers "who governs HERE", which a list of party
+ * names cannot, and the list carries the counts a map only implies. The map
+ * answers a tap, the way the seat arches do.
  */
 /**
  * The order the page reads in: presidency (above), then governors, Senate,
@@ -52,12 +55,32 @@ function orderedChambers<T>(chambers: Record<string, T>): [string, T][] {
   return Object.entries(chambers).sort((a, b) => rank(a[0]) - rank(b[0]));
 }
 
+
+/**
+ * The governing party for a state the MAP named.
+ *
+ * The geo file and political_data.json spell several states differently, so the
+ * tapped name is matched through normState rather than used as a key — an exact
+ * lookup silently returns nothing for exactly the states whose spelling differs,
+ * which is the failure mode that leaves a tap looking broken.
+ */
+function governorParty(governors: Record<string, string> | undefined, picked: string): string | null {
+  if (!governors) return null;
+  const want = normState(picked);
+  for (const [state, party] of Object.entries(governors)) {
+    if (normState(state) === want) return party || null;
+  }
+  return null;
+}
+
 export default function PoliticalData() {
   const ui = useUi();
   const [d, setD] = useState<Political | null>(null);
   const [logos, setLogos] = useState<Record<string, string>>({});
   const [members, setMembers] = useState<Members | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  /** The state the reader tapped on the map, in the GEO file's spelling. */
+  const [pickedState, setPickedState] = useState<string | null>(null);
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
 
   useEffect(() => {
@@ -159,7 +182,16 @@ export default function PoliticalData() {
                       {seats ? (
                         <>
                           <SeatArch parties={counts} size={ch.size} roster={seats} />
-                          <Text className="pt-1 text-[11px] text-faint">
+                          {/* THE COUNT UNDER THE CHAMBER, as the website has it.
+                              "109/109 attributed" sits in the card's top corner
+                              as a caveat about our data; this is the plain fact
+                              about the chamber, under the picture of it, where a
+                              reader looking at 109 dots asks how many there
+                              are. */}
+                          <Text className="pt-1 text-[11px] font-semibold text-muted">
+                            {held} of {ch.size} seats
+                          </Text>
+                          <Text className="pt-0.5 text-[11px] text-faint">
                             Tap a seat for the {key === 'senate' ? 'Senator' : 'Member'}.
                           </Text>
                         </>
@@ -190,6 +222,44 @@ export default function PoliticalData() {
                       </View>
                       {key === 'governors' ? (
                         <View className="pt-3">
+                          {/* THE MAP THE WEBSITE HAS, and it answers a tap.
+                              The grouped list below carries the counts; a map
+                              answers "who governs HERE", which a list of party
+                              names cannot. Reuses components/nigeria-map, which
+                              already takes fills + onPress — the same component
+                              the incumbency map uses.
+
+                              IT REPORTS THE PARTY, NOT A NAME, because
+                              political_data.json holds state → party and no
+                              governor names. Naming a person we do not have is
+                              the one thing this page must not do. */}
+                          <NigeriaMap
+                            fills={Object.fromEntries(
+                              Object.entries(d.governors ?? {})
+                                .filter(([, party]) => !!party)
+                                .map(([state, party]) => [normState(state), partyColor(party as string)]),
+                            )}
+                            onPress={(state) => setPickedState(state)}
+                          />
+                          {pickedState ? (
+                            <View className="mt-2 flex-row items-center rounded-xl bg-surface px-3 py-2">
+                              <Text className="flex-1 text-sm font-bold text-ink">{pickedState}</Text>
+                              {governorParty(d.governors, pickedState) ? (
+                                <Text
+                                  className="text-xs font-bold"
+                                  style={{ color: partyColor(governorParty(d.governors, pickedState)!) }}
+                                >
+                                  {governorParty(d.governors, pickedState)}
+                                </Text>
+                              ) : (
+                                <Text className="text-xs text-muted">No governor</Text>
+                              )}
+                            </View>
+                          ) : (
+                            <Text className="pt-1 text-[11px] text-faint">
+                              Tap a state for its governing party.
+                            </Text>
+                          )}
             {/* WHICH PARTY GOVERNS WHERE, directly under the Governors row it
                           breaks down — it used to sit after every chamber, so the
                           reader met "993 State Assembly seats" between the governor

@@ -84,7 +84,11 @@ export function SeatArch({ parties, size, roster }: {
               key={i}
               cx={x}
               cy={y}
-              r={boss ? 4.4 : 3.1}
+              // SPACED LIKE THE WEBSITE'S. At 3.1 the dots on the inner rows
+              // touched, so a 360-seat chamber read as a solid band of colour
+              // rather than 360 seats. Smaller dots on the same geometry widen
+              // every gap without moving a single seat.
+              r={boss ? 4.0 : 2.7}
               fill={p ? partyColor(p) : '#d7ded9'}
               // A transparent stroke widens the TAP area without changing what
               // is drawn. Unstroked, a seat is ~5px on a phone — well under the

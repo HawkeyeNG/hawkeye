@@ -24,6 +24,20 @@
     .legend i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
     /* 2027 race cards */
     .cand-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 14px; margin-top: 10px; }
+    /* The president card and the link beneath it — the app's top pair
+       (native/src/app/political.tsx). .pcard is profile.html's own class and is
+       not shared, so the two rules it needs are stated here rather than reached
+       for across pages. */
+    .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+    .prez-row { display: flex; align-items: center; gap: 12px; }
+    .prez-row img { width: 26px; height: 26px; border-radius: 50%; object-fit: contain; background: #fff; flex: none; }
+    .prez-row strong { display: block; font-size: 0.95rem; }
+    .prez-row .hint { display: block; }
+    .prez-link {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      color: inherit; text-decoration: none; font-weight: 600; font-size: 0.92rem;
+    }
+    .prez-link:hover { border-color: var(--green); }
     .cand { border: 1px solid var(--line); border-top: 4px solid var(--pc, #9aa7a0); border-radius: 12px; padding: 14px; background: var(--card); }
     .cand .row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .cand .av { width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--pc, #9aa7a0); color: #fff; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
@@ -152,41 +166,57 @@
     <p class="lede">The parties in power — the incumbents this election will confirm or unseat.<button
       class="info-i" data-info-title="Reading this page"
       data-info="Each state is coloured by its governing party. Tap or hover a state for its governor, party and the year of its next election. Figures are compiled from public records and updated as results are declared." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
-    <p class="scope-note" id="prez"></p>
     <p class="unofficial" id="provisional" style="background:var(--tint-warn);border-left:6px solid #f9a825;padding:10px;font-size:0.85rem;color:var(--text-warn)"></p>
 
-    <div class="card">
-      <h2>The 2027 Presidential Race</h2>
-      <p class="hint" id="race-note"></p>
-      <div class="cand-grid" id="race"></div>
-      <p class="hint" style="margin-top:10px"><a class="link" href="candidates.html">Full Profiles &amp; Quick Compare →</a></p>
+    <!-- THE PRESIDENT, THEN THE WAY TO THE FULL FIELD — the app's top card
+         (native/src/app/political.tsx). This was a grid of nineteen candidate
+         cards duplicating candidates.html, which the link below already reaches
+         and which does the job better: portraits, running mates and a compare
+         table. A page about who holds power now was opening with a page about
+         who is running next. -->
+    <div class="pcard" id="prez-card" hidden>
+      <div class="prez-row">
+        <img id="prez-flag" alt="" />
+        <div>
+          <strong id="prez-name"></strong>
+          <span class="hint" id="prez-party"></span>
+        </div>
+      </div>
     </div>
+    <a class="pcard prez-link" href="candidates.html">
+      <span>The 2027 Presidential Race — Full Profiles</span>
+      <span aria-hidden="true">›</span>
+    </a>
 
+
+
+
+
+    <!-- ORDER: presidency (above), governors, National Assembly, State
+         Assemblies — descending scope, matching the app. The map and the
+         zone list are both ABOUT the governors, so they sit with them
+         rather than several screens below the seat counts. -->
+    <div class="card map-card">
+      <h2>Governing Party by State</h2>
+      <div class="legend" id="legend"></div>
+      <div id="map"><p class="meta">Loading…</p></div>
+    </div>
+    <div class="card">
+      <h2>Incumbent Governors</h2>
+      <p class="hint">Grouped by geopolitical zone — open one to see its states.</p>
+      <div id="zones"></div>
+    </div>
     <div class="card">
       <h2>The National Assembly</h2>
       <p class="hint" id="comp-note"></p>
       <div id="arches"></div>
       <div id="composition"></div>
     </div>
-
     <div class="card">
       <h2>State Houses of Assembly</h2>
       <p class="hint" id="sha-note">Loading…</p>
       <div id="sha"></div>
     </div>
-
-    <div class="card map-card">
-      <h2>Governing Party by State</h2>
-      <div class="legend" id="legend"></div>
-      <div id="map"><p class="meta">Loading…</p></div>
-    </div>
-
-    <div class="card">
-      <h2>Incumbent Governors</h2>
-      <p class="hint">Grouped by geopolitical zone — open one to see its states.</p>
-      <div id="zones"></div>
-    </div>
-
     <div class="card">
       <h2>Upcoming Elections</h2>
       <p class="hint" id="up-note"></p>
@@ -333,25 +363,23 @@
       const roster = (own && own.chambers) || {};
       const byKey = {}; for (const [st,p] of Object.entries(data.governors)) byKey[norm(st)] = { st, p };
 
-      // 2027 presidential race cards — Wikipedia portraits + party flags
-      if (data.race2027) {
-        const av = (c) => c.photo
-          ? `<span class="av"><img src="${c.photo}" alt="${c.name}" loading="lazy"
-               style="width:100%;height:100%;object-fit:cover;border-radius:50%"
-               onerror="this.parentNode.textContent='${c.initials || ''}'"></span>`
-          : `<span class="av">${c.initials || ''}</span>`;
-        const flag = (p) => logos[p]
-          ? `<img src="${logos[p]}" alt="" style="width:13px;height:13px;border-radius:50%;object-fit:contain;background:#fff;vertical-align:-2px;margin-right:4px">`
-          : '';
-        document.getElementById('race-note').textContent =
-          `${data.race2027.election}. ${data.race2027.note} (as of ${data.race2027.asOf})`;
-        document.getElementById('race').innerHTML = data.race2027.candidates.map((c) => `
-          <div class="cand" style="--pc:${color(c.party)}">
-            <div class="row1">${av(c)}
-              <div><span class="pill">${flag(c.party)}${c.party}</span><h3>${c.name}${c.incumbent ? '<span class="inc">Incumbent</span>' : ''}</h3></div>
-            </div>
-            <p>${c.line}</p>
-          </div>`).join('');
+      // THE PRESIDENT, as one card. The nineteen-card grid that was here
+      // duplicated candidates.html, which the link beneath reaches and which
+      // does it better — portraits, running mates and a compare table.
+      if (data.president) {
+        const el = document.getElementById('prez-card');
+        document.getElementById('prez-name').textContent = data.president.name;
+        const partyEl = document.getElementById('prez-party');
+        partyEl.textContent = 'Governing party: ';
+        const span = document.createElement('span');
+        span.textContent = data.president.party;
+        span.style.color = color(data.president.party);
+        span.style.fontWeight = '700';
+        partyEl.appendChild(span);
+        const flag = document.getElementById('prez-flag');
+        if (logos[data.president.party]) flag.src = logos[data.president.party];
+        else flag.remove();
+        el.hidden = false;
       }
 
       // Seat composition — stacked bar + donut per chamber, party-colored,
@@ -479,7 +507,6 @@
              data-info-title="Where these numbers come from"
              data-info="${esc(info)}" data-info-links="${esc(srcLines)}"></button>`;
       }
-      document.getElementById('prez').textContent = `${data.president.name}: governing party ${data.president.party}`;
       document.getElementById('provisional').textContent = data.note;
 
       let s='';

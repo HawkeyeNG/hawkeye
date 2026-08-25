@@ -445,6 +445,12 @@ export type ContestLite = {
   tier?: string;
   /** The seats a by-election is confined to. Its presence IS what makes one. */
   constituencies?: string[];
+  /**
+   * The seat's own name, when it differs from the register value in
+   * `constituencies`. A state-assembly gate is an LGA, and an LGA that elects
+   * two members cannot name either of them — see byElectionRace.
+   */
+  seat?: string;
 };
 
 /**
@@ -572,9 +578,27 @@ export function byElectionRace(
   // REAL FIGURES, not the number 1. This was `lgas: constituencies.length`,
   // which is always 1 for a by-election, so the card read "1 LGAs" and said
   // nothing. The seat table carries state constituencies now.
+  /**
+   * THE SEAT'S NAME AND THE GATE'S NAME ARE DIFFERENT THINGS.
+   *
+   * `constituencies` is the register value reports are gated on, and for a
+   * state-assembly contest that is an LGA. Usually the LGA and the seat are the
+   * same place — Udu is Udu — so the title read fine off the gate.
+   *
+   * Bauchi 2026 is where that breaks. Its two by-elections are for Shira I
+   * (Disina) and Sakwa (Zaki I), which sit in the LGAs "Shira" and "Zaki" — and
+   * each of those LGAs elects a SECOND member who is not up for election
+   * (Shira II, Azare). Titling off the gate would have produced "Shira State
+   * Constituency", which is the name of the sibling seat: a page announcing the
+   * wrong race. Only the contest knows which of the two is voting, so it says.
+   *
+   * Falls back to the gate value, so the three contests written before this
+   * field existed are unchanged.
+   */
   const stats = shaStats(seats, state, seat);
+  const seatName = contest.seat || seat;
   return {
-    office: `${seat} State Constituency — ${state} State`,
+    office: `${seatName} State Constituency — ${state} State`,
     election: `${state} State · ${contest.name}`,
     date: contest.date || undefined,
     stats,

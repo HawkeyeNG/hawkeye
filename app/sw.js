@@ -10,7 +10,7 @@
 // are network-first below, so they update on their own. Nothing else volatile
 // belongs in LAZY either — if a file can change between deploys, it goes in the
 // network-first branch, not here.
-const CACHE = 'hawkeye-v282';
+const CACHE = 'hawkeye-v283';
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every
@@ -20,7 +20,7 @@ const CACHE = 'hawkeye-v282';
 // It was ~1.5 MB / 45 requests; the map data and Leaflet (~940 KB) are needed by
 // only 5 of ~25 pages, so they moved to LAZY below. Keep this lean: HTML +
 // core JS/CSS + fonts. Anything big and page-specific belongs in LAZY.
-const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/races.html', '/incident-reports.html', '/race.html', '/race.js?v=18', '/follow.js?v=2', '/race.css?v=5', '/app.js?v=151', '/scan.js?v=8', '/capture.js?v=1', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=149', '/authgate.js?v=2', '/map-label.js?v=2', '/pu-code.js?v=3', '/pu-search.js?v=6', '/register-store.js?v=2', '/reg/manifest.json', '/reg/manifest.sig', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=156', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2'];
+const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/races.html', '/incident-reports.html', '/race.html', '/race.js?v=19', '/follow.js?v=2', '/race.css?v=5', '/app.js?v=151', '/scan.js?v=8', '/capture.js?v=1', '/scan-worker.js?v=3', '/device.js', '/menu.js?v=149', '/authgate.js?v=2', '/map-label.js?v=2', '/pu-code.js?v=3', '/pu-search.js?v=6', '/register-store.js?v=2', '/reg/manifest.json', '/reg/manifest.sig', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=156', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/logo.svg', '/fonts/inter-400.woff2', '/fonts/inter-500.woff2', '/fonts/inter-600.woff2', '/fonts/inter-700.woff2'];
 
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.

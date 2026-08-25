@@ -328,6 +328,45 @@ export async function broadcast({
     throw new Error(`broadcast refused: audience ${audience} exceeds the expected maximum ${maxAudience}`);
   }
 
+  /**
+   * FILE IT IN ALERTS BEFORE SENDING IT.
+   *
+   * A broadcast used to write no notification rows at all, so an announcement
+   * swiped away on the lock screen was gone forever — and an observer who simply
+   * had notifications off never learned it existed. The Alerts screen is the
+   * durable copy; the push is the interruption.
+   *
+   * BEFORE the send, not after: the send loop is slow (one FCM call per device)
+   * and can fail partway. Filing first means a phone that receives the push
+   * always has the row waiting behind it, rather than a notification that opens
+   * an Alerts screen not yet mentioning it.
+   *
+   * Scoped to the same platforms as the send, so someone reached only on Android
+   * does not get an Alerts row for an iPhone-only message.
+   *
+   * ORPHANED TOKENS GET THE PUSH BUT NO ROW, which is correct rather than a gap:
+   * `notifications` is keyed per observer, and those rows belong to accounts that
+   * no longer exist. The audience query keeps them (`o.id IS NULL`) precisely so
+   * a deleted account's device still receives the message.
+   */
+  const noteHolders = db.prepare(`
+    SELECT DISTINCT t.observer_id FROM device_push_tokens t
+    JOIN observers o ON o.id = t.observer_id AND o.status = 'active'
+    WHERE t.platform IN (${peopleHoles})`).all(...want).map((r) => r.observer_id);
+  let filed = 0;
+  try {
+    const n = await import('./notifications.js');
+    filed = n.noteMany(noteHolders, {
+      kind: 'announcement',
+      title,
+      body,
+      url: data?.url ?? null,
+    });
+  } catch {
+    // The send is the point; a failure to file must not stop it. It is reported
+    // as filed:0 rather than swallowed, so the console can say so.
+  }
+
   let sent = 0;
   let failed = 0;
   if (android.length) {
@@ -343,7 +382,7 @@ export async function broadcast({
     // eslint-disable-next-line no-await-in-loop
     if (await webPushSend(r.token, title, body, data)) sent++; else failed++;
   }
-  return { audience, people, android: androidCount, ios: iosCount, web: web.length, undeliverable, sent, failed, dryRun: false };
+  return { audience, people, android: androidCount, ios: iosCount, web: web.length, undeliverable, sent, failed, filed, dryRun: false };
 }
 
 // Fan out a push to everyone who saved this polling unit (Android only for now).

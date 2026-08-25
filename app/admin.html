@@ -919,7 +919,12 @@
         } else {
           pushDryFor = null;
           pushDryAudience = 0;
+          // `filed` is the Alerts side: the announcement is now a durable row in
+          // each observer's feed, not only a push that dies when swiped away.
+          // Reported separately because it is a different count — devices are
+          // not people, and orphaned tokens get the push with no row to file.
           $('push-out').textContent = `Sent to ${j.sent} of ${j.audience}. ${j.failed} failed.`
+            + (j.filed ? ` Filed in Alerts for ${j.filed} observer(s).` : '')
             + (j.failed ? ' Failures are usually stale tokens from uninstalled apps.' : '');
           pushRefresh();
           pushAudience();

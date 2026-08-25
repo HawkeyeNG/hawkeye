@@ -73,19 +73,19 @@ export const TOUR_STEPS: TourStep[] = [
     icon: 'home',
     title: 'Home',
     body:
-      'The elections being reported now or coming next, how many reports have been accepted, and a live feed of what other observers are sending in.',
+      'Elections open now, reports accepted so far, and a live feed.',
   },
   {
     icon: 'bar-chart-2',
     title: 'Results',
     body:
-      'The public leaderboard. Pick a race to see the map, the running tally and which polling units have reported. You can follow a single seat and get alerts on it.',
+      'Pick a race for its map and running tally. Follow one to get alerts.',
   },
   {
     icon: 'camera',
     title: 'Report — the green button',
     body:
-      'The middle button is the one that matters. It opens three choices: report a result sheet, report a collation result, or report an incident. This is what makes you an observer.',
+      'Report a result sheet, a collation result, or an incident. This is what makes you an observer.',
   },
   {
     icon: 'bell',
@@ -97,7 +97,7 @@ export const TOUR_STEPS: TourStep[] = [
     icon: 'menu',
     title: 'More',
     body:
-      'Everything else: a practice run you can do today, the ledger you can verify yourself, the public docket, and the observer guide. Start with Practice Run.',
+      'Practice runs, the ledger, the docket and the guide. Start with Practice Run.',
   },
 ];
 

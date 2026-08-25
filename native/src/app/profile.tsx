@@ -706,7 +706,7 @@ export default function Profile() {
         visible={confirm === 'signout'}
         icon="log-out"
         title="Sign out?"
-        body="You'll need your phone number and a code — or your password — to sign back in on this device. Nothing you have reported is affected."
+        body='You can sign back in with your number and password. Your reports are unaffected.'
         confirmLabel="Sign out"
         busy={confirmBusy}
         onConfirm={doSignOut}
@@ -718,7 +718,7 @@ export default function Profile() {
         icon="trash-2"
         danger
         title="Delete your observer identity?"
-        body="This wipes your signing key, device binding, Telegram link and subscriptions, and deactivates your ID. Reports already on the public ledger are permanent and stay. Re-registering the same phone restores the same ID."
+        body="Wipes your key, device, Telegram link and subscriptions. Ledger reports stay — they are permanent."
         confirmLabel="Delete my identity"
         busy={confirmBusy}
         onConfirm={doDelete}

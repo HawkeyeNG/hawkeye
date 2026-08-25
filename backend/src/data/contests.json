@@ -111,6 +111,34 @@
     ]
   },
   {
+    "code": "SHA_BYE_BAUCHI_DISINA_2026",
+    "tier": "SHA",
+    "name": "State House of Assembly By-Election (Disina)",
+    "election": "2026 By-Elections",
+    "date": "2026-09-19",
+    "states": [
+      "Bauchi"
+    ],
+    "seat": "Shira I (Disina)",
+    "constituencies": [
+      "Shira"
+    ]
+  },
+  {
+    "code": "SHA_BYE_BAUCHI_SAKWA_2026",
+    "tier": "SHA",
+    "name": "State House of Assembly By-Election (Sakwa)",
+    "election": "2026 By-Elections",
+    "date": "2026-09-19",
+    "states": [
+      "Bauchi"
+    ],
+    "seat": "Sakwa (Zaki I)",
+    "constituencies": [
+      "Zaki"
+    ]
+  },
+  {
     "code": "SHA_BYE_DELTA_UDU_2026",
     "tier": "SHA",
     "name": "State House of Assembly By-Election (Udu)",
@@ -119,6 +147,7 @@
     "states": [
       "Delta"
     ],
+    "seat": "Udu",
     "constituencies": [
       "Udu"
     ]
@@ -132,6 +161,7 @@
     "states": [
       "Kano"
     ],
+    "seat": "Dawakin Kudu",
     "constituencies": [
       "Dawaki Kudu"
     ]

@@ -374,7 +374,7 @@ export function RaceView({
                     <Text className="text-sm text-ink">{c.name}</Text>
                     {c.meta ? <Text className="text-[11px] text-muted">{c.meta}</Text> : null}
                   </View>
-                  <Text className="shrink-0 text-[11px] font-semibold" style={{ color: partyColor(c.party) }}>
+                  <Text className="text-[11px] font-semibold" style={{ color: partyColor(c.party) }}>
                     {c.party}
                     {!c.meta && c.incumbent ? ' · inc' : ''}
                   </Text>
@@ -382,7 +382,7 @@ export function RaceView({
                       as "nobody voted for them", which is a different and
                       wrong claim while reports are still arriving. */}
                   {votes ? (
-                    <Text className="shrink-0 pl-3 text-sm font-bold tabular-nums text-ink">
+                    <Text className="pl-3 text-sm font-bold tabular-nums text-ink">
                       {votes.toLocaleString()}
                     </Text>
                   ) : null}
@@ -448,7 +448,7 @@ export function RaceView({
                   <Text className="text-sm text-ink">{m.name}</Text>
                   {m.meta ? <Text className="text-[11px] text-muted">{m.meta}</Text> : null}
                 </View>
-                <Text className="shrink-0 text-[11px] font-semibold" style={{ color: partyColor(m.party) }}>
+                <Text className="text-[11px] font-semibold" style={{ color: partyColor(m.party) }}>
                   {m.party}
                 </Text>
               </View>

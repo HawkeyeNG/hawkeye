@@ -164,8 +164,21 @@ echo "  ok: styles.css references no stripped font"
 rm -rf "$PUB/reg"
 
 gate() { if grep -q "$1" "$PUB/$2"; then echo "  ok: $3"; else echo "GATE_FAIL: $3 missing from $2"; exit 1; fi; }
-gate "Figures are crowd reports" menu.js "disclaimer wording"
-gate "inecnigeria.org"           menu.js "official source link"
+# WHAT PLAY REJECTED THIS APP FOR, TWICE, gated on the CLAIMS rather than on one
+# sentence's wording.
+#
+# This used to grep "Figures are crowd reports", which was a phrase on the face
+# of the disclaimer bar. On 2026-08-25 the bar was shortened to match the native
+# app's — one line, claim then Details, with the full statement in the modal —
+# and this gate failed, correctly: it noticed. But the compliance substance had
+# not gone anywhere, only that phrasing had, so gating on the phrase was gating
+# on a style decision.
+#
+# These three are the facts a reviewer is looking for, and they live in the modal
+# where they cannot be shortened away by a layout change:
+gate "not affiliated with"      menu.js "non-affiliation statement"
+gate "unofficial crowd reports" menu.js "figures-are-unofficial statement"
+gate "inecnigeria.org"          menu.js "official source link"
 
 KB=$(du -sk "$PUB" | cut -f1)
 echo "  packaged web assets: $((KB / 1024)) MB"

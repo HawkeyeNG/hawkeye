@@ -181,12 +181,28 @@
       .race-card .updated { margin: 6px 0 0 14px; font-size: .82rem; color: var(--muted, #5b6b62); }
       #race-list { display: flex; flex-direction: column; gap: 8px; }
       .race-opt {
-        width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+        /* WRAPS RATHER THAN CRUSHES. `.race-tag` is `flex: none`, so it never
+           yields: on a 320px screen at Android's largest font it took the whole
+           row and left the name a 1-7px box. With wrapping, the tag drops to its
+           own line instead and both stay readable. Costs nothing at normal
+           sizes, where they still share one line. */
+        width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; text-align: left;
         background: var(--card, #fff); border: 1px solid var(--border); border-radius: 12px;
         padding: 12px 14px; font: inherit; color: var(--ink); cursor: pointer;
       }
       .race-opt.on { border-color: #008751; background: var(--tint, #e8f5ee); }
-      .race-opt b { flex: 1; min-width: 0; font-size: .95rem; }
+      /* `overflow-wrap: anywhere` is the whole fix for the Fold-5 overlap.
+         `min-width: 0` lets this flex item shrink below its own content so the
+         tag beside it keeps its width — correct, and the boxes never overlap.
+         But "Representatives" is ONE UNBREAKABLE WORD: when the box shrinks
+         under it the TEXT spills out and paints over the tag, which measures as
+         a healthy 10px gap while looking like "RepresentativesOpens Jan 16".
+         Measured at 320px: box 95px, text 113px; at Android's 130% font scale,
+         box 63px against 147px of text. `anywhere` lets the word break instead,
+         and also lets the flex item report an honest min-content width. */
+      /* `flex: 1 1 60%` — the name keeps at least 60% of the row, so the tag
+         wraps to the next line before the name is squeezed into a sliver. */
+      .race-opt b { flex: 1 1 60%; min-width: 0; font-size: .95rem; overflow-wrap: anywhere; }
       .race-tag { flex: none; font-size: .72rem; font-weight: 800; color: var(--muted, #5b6b62); }
       .race-tag.open { color: #008751; }
     </style>
@@ -1045,6 +1061,6 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=151"></script>
+  <script src="menu.js?v=152"></script>
 </body>
 </html>

@@ -1114,9 +1114,18 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
    the docket, ledger, and any page that leads with numbers then folds the detail. */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 16px 0 8px; }
 .stile { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
-.stile b { display: block; font-size: 1.7rem; line-height: 1.1; }
-.stile.tight b { font-size: 1.15rem; }
-.stile span { color: var(--muted); font-size: 0.8rem; }
+/* TYPOGRAPHY MATCHED TO THE APP's Stat card (native components/content-kit.tsx).
+   Lite ran visibly larger than the app it mirrors: the value at 1.7rem and a
+   0.8rem sentence-case label made each tile tall enough to push the page's real
+   content below the fold, and "25 Aug 2026" wrapped onto two lines inside its
+   own card. The app uses text-xl / text-base for the value and a 10px bold
+   uppercase label with 1px tracking, which is what these now are. */
+.stile b { display: block; font-size: 1.25rem; line-height: 1.15; }
+.stile.tight b { font-size: 1rem; }
+.stile span {
+  display: block; padding-top: 4px; color: var(--muted);
+  font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+}
 .stile.bad b { color: var(--text-danger); } .stile.warn b { color: var(--text-warn); } .stile.ok b { color: var(--link); }
 details.fold { border: 1px solid var(--border); border-radius: 12px; padding: 0 14px; margin: 8px 0; background: var(--card); }
 details.fold > summary { padding: 12px 0; font-weight: 700; cursor: pointer; list-style: none; }

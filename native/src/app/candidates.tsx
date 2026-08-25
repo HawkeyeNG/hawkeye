@@ -8,6 +8,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 import { loadPolitical, type Race } from '@/lib/political';
+import { humanError } from '@/lib/errors';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 
 /** 2027 Candidates — the declared presidential field, plus the side-by-side
@@ -24,7 +25,7 @@ export default function Candidates() {
         setRace(data.race2027 ?? null);
         setLogos(l);
       })
-      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+      .catch((e) => setErr(humanError(e)));
   }, []);
 
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();

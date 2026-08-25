@@ -31,6 +31,7 @@ import { useAuth } from '@/lib/auth';
 import { describeFixFailure, trySubmitFix } from '@/lib/location';
 import { submitCollation, type CollationLevel, type Receipt, type Shot, type Vote } from '@/lib/submit';
 import { regFetch } from '@/lib/register-fetch';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -366,7 +367,7 @@ export default function ReportCollation() {
       }
     } catch (e) {
       setLine(
-        `Something went wrong — nothing was sent. Retry. (${e instanceof Error ? e.message : String(e)})`,
+        humanError(e, 'Something went wrong — nothing was sent. Retry.'),
       );
     } finally {
       setBusy(false);

@@ -15,6 +15,7 @@ import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -178,7 +179,7 @@ export default function Ledger() {
         setRaces([]);
       }
     } catch (err) {
-      setLoadErr(err instanceof Error ? err.message : String(err));
+      setLoadErr(humanError(err, 'Could not load the ledger.'));
     } finally {
       setLoading(false);
     }
@@ -262,7 +263,7 @@ export default function Ledger() {
     } catch (err) {
       setRaceOut({
         ok: false,
-        text: `Could not fetch the proof. (${err instanceof Error ? err.message : String(err)})`,
+        text: humanError(err, 'Could not fetch the proof.'),
       });
     } finally {
       setRaceBusy(false);

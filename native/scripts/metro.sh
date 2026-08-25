@@ -53,7 +53,11 @@ else
   # setsid, because a plain `&` inside `wsl.exe bash -lc` dies with the launcher.
   setsid nohup npx expo start --dev-client --host lan > /tmp/mt.log 2>&1 < /dev/null &
   disown 2>/dev/null
-  for _ in $(seq 1 60); do
+  # 180s, not 60. A cold start right after a WSL restart — empty Metro cache,
+  # and often a gradle build competing for the same cores — took longer than 60s
+  # and this reported "metro did not come up" about a Metro that was starting
+  # perfectly well and listened moments later.
+  for _ in $(seq 1 180); do
     ss -tln | grep -q ':8081' && break
     sleep 1
   done

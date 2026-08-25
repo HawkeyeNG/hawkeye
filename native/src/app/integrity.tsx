@@ -10,6 +10,7 @@ import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { flagLabel } from '@/lib/flags';
 import { pick } from '@/lib/haptics';
 import { useUi } from '@/lib/theme';
+import { humanError } from '@/lib/errors';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 import { InfoDot } from '@/components/info-dot';
 
@@ -223,7 +224,7 @@ export default function Integrity() {
       await loadRows();
       setErr(null);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(humanError(e));
     }
   }, [loadRows]);
 

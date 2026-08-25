@@ -811,7 +811,7 @@ $('btn-locate').onclick = async () => {
     // sentence there, different and stronger reason. Closing that gap is the
     // post-election "native browse offline" item.
     $('locate-status').textContent =
-      `Could not look up nearby units. Search for yours by name below — the polling unit list works without a connection. (${r.error})`;
+      'Could not check nearby units. Search by name below.';
     $('browse-block').open = true;
     $('btn-locate').textContent = 'Try Searching Near Me Again';
     return;

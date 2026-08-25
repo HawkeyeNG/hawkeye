@@ -8,6 +8,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 import { loadPolitical, type Race } from '@/lib/political';
+import { humanError } from '@/lib/errors';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 
 /** Osun 2026 — Hawkeye's first live pilot election. */
@@ -23,7 +24,7 @@ export default function Osun() {
         setRace(data.raceOsun2026 ?? null);
         setLogos(l);
       })
-      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+      .catch((e) => setErr(humanError(e)));
   }, []);
 
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();

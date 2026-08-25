@@ -17,6 +17,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
+import { humanError } from '@/lib/errors';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -135,7 +136,7 @@ export default function Assistant() {
       );
     } catch (e) {
       setFailedId(id);
-      setErr(`Could not reach the assistant. (${e instanceof Error ? e.message : String(e)})`);
+      setErr(humanError(e, 'Could not reach the assistant.'));
     } finally {
       setBusy(false);
     }

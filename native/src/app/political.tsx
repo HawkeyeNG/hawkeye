@@ -9,6 +9,7 @@ import { PartyMark } from '@/components/race';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
+import { humanError } from '@/lib/errors';
 import { SeatArch } from '@/components/seat-arch';
 import {
   loadPolitical,
@@ -41,7 +42,7 @@ export default function PoliticalData() {
         setLogos(l);
         setMembers(m);
       })
-      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+      .catch((e) => setErr(humanError(e, 'Could not load political data.')));
   }, []);
 
   // FCT is in the register with a null party — it has a minister, not a

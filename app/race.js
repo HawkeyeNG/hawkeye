@@ -1171,8 +1171,27 @@
     if (tier === 'GOV') return stateRace(political, state, contest);
     if (tier !== 'SHA') return null;
 
+    /**
+     * THE SEAT'S NAME AND THE GATE'S NAME ARE DIFFERENT THINGS.
+     *
+     * `constituencies` is the register value reports are gated on, and for a
+     * state-assembly contest that is an LGA. Usually the LGA and the seat are
+     * the same place — Udu is Udu — so the title read fine off the gate.
+     *
+     * Bauchi 2026 is where that breaks. Its two by-elections are for Shira I
+     * (Disina) and Sakwa (Zaki I), sitting in the LGAs "Shira" and "Zaki" — and
+     * each of those LGAs elects a SECOND member who is not up for election
+     * (Shira II, Azare). Titling off the gate would produce "Shira State
+     * Constituency", which is the name of the sibling seat: a page announcing
+     * the wrong race. Only the contest knows which of the two is voting.
+     *
+     * Falls back to the gate value, so contests written before this field
+     * existed are unchanged. Twin: political.ts:byElectionRace.
+     */
+    const seatName = contest.seat || seat;
+
     return {
-      office: `${seat} State Constituency — ${state} State`,
+      office: `${seatName} State Constituency — ${state} State`,
       election: `${state} State · ${contest.name}`,
       date: contest.date || undefined,
       /**

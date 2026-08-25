@@ -66,6 +66,25 @@ export function useUnread(): number {
 /** The server's count is authoritative — callers pass what /api/notifications said. */
 export function setUnread(next: number) {
   const n = Math.max(0, next);
+  /**
+   * THE NUMBER ON THE APP ICON, the way Instagram and Gmail carry one.
+   *
+   * Set HERE because this is the one choke point every path already goes
+   * through — the feed refresh, marking read, the Alerts screen's own load and
+   * sign-out. Putting it on any of those individually would mean the badge was
+   * right after some of them and stale after the rest.
+   *
+   * OUTSIDE the unchanged-value guard below, on purpose. The count starting
+   * equal to what the server says is the COMMON case on a cold start, and it is
+   * exactly when a badge left over from a previous session — alerts since read
+   * on the website — needs clearing. Guarding this would keep that stale number
+   * on the icon precisely when it is wrong.
+   *
+   * Fire-and-forget: iOS shows a real number, Android leaves it to the launcher
+   * (One UI and most others honour it, some ignore it), and a launcher that
+   * refuses is not a reason to surface anything to the reader.
+   */
+  Notifications.setBadgeCountAsync(n).catch(() => {});
   if (n === unread) return;
   unread = n;
   listeners.forEach((l) => l());

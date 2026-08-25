@@ -162,9 +162,24 @@
     // just "Leaderboard", so normalise every page's drifted label to that.
     const lb = links.get('results.html');
     if (lb) lb.textContent = 'Leaderboard';
-    // "2027 Candidates" -> "Presidency 2027" for every page's static copy.
+    /**
+     * PRESIDENCY 2027 IS NOT A MENU ENTRY. Native's More screen has no such
+     * item, and this menu is a 1:1 mirror of it.
+     *
+     * It used to be relabelled here and left in place, which put it in the worst
+     * possible spot: every GROUPS member gets APPENDED in order, so a link that
+     * belongs to no group keeps its original position and ends up after
+     * everything — under "Learn & about", below Terms of Service, as if a
+     * presidential race were a policy document.
+     *
+     * Removed rather than regrouped, for the reason the Races accordion was
+     * removed: /races derives every race from /api/contests and groups them
+     * completed / ongoing / upcoming. One race hand-pinned to the menu beside it
+     * is a stale subset of the page that already lists it — and Home's cards
+     * link straight to it too, so nothing is orphaned.
+     */
     const pres = links.get('candidates.html');
-    if (pres) pres.textContent = 'Presidency 2027';
+    if (pres) { pres.remove(); links.delete('candidates.html'); }
     // A collapsible accordion: a link-styled header that shows/hides its
     // sub-links, remembered in localStorage. Default CLOSED — the whole point of
     // an accordion here is a shorter menu.
@@ -250,6 +265,31 @@
   }
 
   // Header slot, one control, state-dependent (called by syncAuthMenu below):
+  /**
+   * THE NUMBER ON THE APP ICON, the way Instagram and Gmail carry one.
+   *
+   * The Badging API is the only way a web app can write to its own launcher
+   * icon, and it works only where the app is INSTALLED (an installed PWA on
+   * Android Chrome, or a desktop PWA). In a browser tab it does not exist, which
+   * is why this is feature-detected and silent rather than gated on some guess
+   * about the platform.
+   *
+   * Deliberately not clamped to "9+" like the in-page dots: those are pills a
+   * few pixels wide, whereas the launcher owns its own rendering and truncates
+   * to taste. Zero CLEARS rather than showing a nought — an icon badge reading
+   * "0" is worse than no badge.
+   *
+   * Capacitor's WebView does NOT implement this: Hawkeye Lite would need a
+   * native badge plugin, which is why Lite is untouched here.
+   */
+  function appBadge(d) {
+    try {
+      const n = d && Number(d.unread) || 0;
+      if (!navigator.setAppBadge) return;
+      if (n > 0) navigator.setAppBadge(n); else navigator.clearAppBadge?.();
+    } catch (e) { /* unsupported, or denied — never break the page for a badge */ }
+  }
+
   //   signed in  -> notifications bell + unread badge
   //   signed out -> "Sign in" for returning observers
   // A bell is meaningless before an account exists, and a first-time visitor has
@@ -273,7 +313,10 @@
       btn.parentNode.insertBefore(a, slot());
       fetch('/api/notifications', { headers: { authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') } })
         .then((r) => (r.ok ? r.json() : null))
-        .then((d) => { if (d && d.unread > 0) { const dot = a.querySelector('.bell-dot'); dot.textContent = d.unread > 9 ? '9+' : d.unread; dot.hidden = false; } })
+        .then((d) => {
+          if (d && d.unread > 0) { const dot = a.querySelector('.bell-dot'); dot.textContent = d.unread > 9 ? '9+' : d.unread; dot.hidden = false; }
+          appBadge(d);
+        })
         .catch(() => {});
       return;
     }
@@ -666,7 +709,10 @@
     if (tk && !/notifications\.html/.test(location.pathname)) {
       fetch('/api/notifications', { headers: { authorization: 'Bearer ' + tk } })
         .then((r) => (r.ok ? r.json() : null))
-        .then((d) => { if (d && d.unread > 0) { const dot = nav.querySelector('.tab-dot'); if (dot) { dot.textContent = d.unread > 9 ? '9+' : d.unread; dot.hidden = false; } } })
+        .then((d) => {
+          if (d && d.unread > 0) { const dot = nav.querySelector('.tab-dot'); if (dot) { dot.textContent = d.unread > 9 ? '9+' : d.unread; dot.hidden = false; } }
+          appBadge(d);
+        })
         .catch(() => {});
     }
   }

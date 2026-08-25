@@ -289,7 +289,7 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
 
     const result = recomputeResult(db, puCode, contest);
     if (result) result.scope = contestScope(pu, contest);
-    notifySubscribers(db, { contest, pu });
+    notifySubscribers(db, { contest, pu, exceptObserverId: req.observer?.id ?? null });
 
     // Optional EC8A form serial (observer-typed) + automated integrity checks.
     // Best-effort — never block or fail the submission.

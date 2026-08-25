@@ -230,19 +230,14 @@ export function ContestPicker({
                 <Text className="pt-0.5 text-xs text-muted">
                   {t.seatLabel} · {t.seats} nationwide
                 </Text>
-                {/* Under the label, not beside it — "House of Representatives"
-                    next to "No open races" is the collision that made a folded
-                    Fold 5 render "RepresentativesOpens Sep 19, 2026" on the
-                    board. The pill below is short and stays on the right. */}
-                {open > 0 ? null : (
-                  <Text className="pt-0.5 text-[11px] font-semibold text-faint">No open races</Text>
-                )}
               </View>
               {open > 0 ? (
-                <View className="mr-1.5 shrink-0 rounded-full bg-good px-2.5 py-1">
+                <View className="mr-1.5 rounded-full bg-good px-2.5 py-1">
                   <Text className="text-[11px] font-bold text-good-ink">{open} open</Text>
                 </View>
-              ) : null}
+              ) : (
+                <Text className="mr-1.5 text-[11px] font-semibold text-faint">No open races</Text>
+              )}
               <Feather name="chevron-right" size={18} color={ui.faint} />
             </Pressable>
           );

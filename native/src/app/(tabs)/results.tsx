@@ -1422,20 +1422,40 @@ export default function Results() {
                       on ? 'bg-hawk-green' : 'bg-card'
                     }`}
                   >
+                    {/**
+                      * THE DATE SITS UNDER THE NAME, NOT BESIDE IT.
+                      *
+                      * Beside it, "House of Representatives By-Election (2026)"
+                      * and "Opens Sep 19, 2026" competed for one row: the name
+                      * takes flex-1 and the date had nothing holding its width,
+                      * so on a folded Fold 5 (~320dp) the two overlapped and
+                      * rendered as "RepresentativesOpens Sep 19, 2026".
+                      *
+                      * Stacking makes the collision structurally impossible at
+                      * ANY width rather than buying headroom a longer name would
+                      * spend again — and it is what the other picker
+                      * (components/contest-picker.tsx) already does with the
+                      * same pair of facts.
+                      *
+                      * The "Open" PILL stays on the right: it is two short words,
+                      * it is the state a reader scans this list for, and a badge
+                      * reads as a badge only when it is set apart from the text.
+                      */}
                     <View className="flex-1 pr-3">
                       <Text className={`text-base font-bold ${on ? 'text-hawk-gold' : 'text-ink'}`}>
                         {c.name} ({Number(String(c.date ?? '').slice(0, 4)) || 2027})
                       </Text>
+                      {!c.open ? (
+                        <Text className="pt-0.5 text-[11px] font-semibold text-faint">
+                          {opensTag(c)}
+                        </Text>
+                      ) : null}
                     </View>
                     {c.open ? (
-                      <View className="mr-1.5 rounded-full bg-good px-2.5 py-1">
+                      <View className="mr-1.5 shrink-0 rounded-full bg-good px-2.5 py-1">
                         <Text className="text-[11px] font-bold text-good-ink">Open</Text>
                       </View>
-                    ) : (
-                      <Text className="mr-1.5 text-[11px] font-semibold text-faint">
-                        {opensTag(c)}
-                      </Text>
-                    )}
+                    ) : null}
                     <Feather name="chevron-right" size={18} color={on ? BRAND.gold : ui.faint} />
                   </Pressable>
                 );

@@ -39,16 +39,31 @@
       align-items: center; justify-content: center; padding: 20px;
       background: rgba(0, 0, 0, 0.55);
     }
+    /* IN THE APP SHELL THE BOTTOM 66px IS THE TAB BAR. Centring in the full
+       viewport pushed the modal's own actions underneath it, so Cancel and Save
+       were on screen and unreachable — worse than off-screen, because nothing
+       said to scroll. */
+    body.has-tabbar .pw-modal-back { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
     .pw-modal {
       width: 100%; max-width: 420px; border-radius: 14px; padding: 20px 22px;
       background: var(--surface, #fff); border: 1px solid var(--border, #d5ddd7);
       box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
-      /* IT HAS TO SCROLL. The unit picker grows with its results — near-me rows,
-         then search matches — and with none of this the card simply ran past the
-         bottom of the screen, taking Cancel and Save with it. dvh, not vh, so
-         the mobile browser's collapsing toolbar does not hide the actions. */
-      max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain;
+      /* THE BODY SCROLLS, THE ACTIONS DO NOT.
+         Making the whole card scroll was not enough: the unit picker grows with
+         its results, so Cancel and Save scrolled away with everything else and a
+         reader had to know to keep going to reach them. This is the rule native's
+         ModalCard exists to enforce — the scroll area and the actions are
+         SIBLINGS, so a primary action can never be below the fold. dvh, not vh,
+         so a collapsing mobile toolbar cannot hide them either. */
+      display: flex; flex-direction: column;
+      max-height: calc(100dvh - 40px); overscroll-behavior: contain;
     }
+    /* [hidden] MUST BE SCOPED, and this file is why the rule exists.
+       The UA sheet hides [hidden] with `display: none` at the weakest possible
+       specificity, so a plain `.unit-picked { display: block }` outranks it and the
+       EMPTY card rendered as a mystery outlined bar above the near-me button.
+       Same class of bug as .menu-panel a[hidden] a few hundred lines away. */
+    .unit-picked[hidden] { display: none; }
     .unit-picked {
       display: block; width: 100%; text-align: left; margin: 0 0 10px;
       padding: 12px 14px; border-radius: 12px; cursor: pointer;
@@ -57,6 +72,8 @@
     .unit-picked strong { display: block; font-size: 0.95rem; }
     .unit-picked .sub { display: block; color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
     .unit-picked .chg { display: block; margin-top: 6px; font-size: 0.8rem; font-weight: 700; color: var(--link); }
+    .pw-body { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+    .pw-actions { flex: none; padding-top: 12px; }
     .signout { width: auto; padding: 8px 16px; }
     /* Hero identity card — native parity. */
     .phero { display: flex; align-items: center; gap: 14px; background: linear-gradient(160deg, #00251a, #00482b); border-radius: 16px; padding: 18px; color: #fff; margin: 8px 0 14px; }
@@ -150,6 +167,7 @@
       <div id="unit-modal" class="pw-modal-back" hidden>
         <div class="pw-modal" role="dialog" aria-modal="true" aria-labelledby="unit-modal-title">
           <h2 id="unit-modal-title" style="margin-top:0">Choose your polling unit</h2>
+          <div class="pw-body">
           <p class="hint" style="margin-top:0">This is the unit you'll get alerts about.
             You don't need to be there now.</p>
           <!-- The confirmed choice. Empty until something is picked; tapping it
@@ -162,7 +180,8 @@
           <div id="unit-near-results"></div>
           <div id="unit-search-host"></div>
           <p class="hint" id="unit-msg" role="status" aria-live="polite"></p>
-          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+          </div>
+          <div class="pw-actions" style="display:flex;gap:10px;justify-content:flex-end">
             <button id="btn-unit-cancel" class="secondary" style="width:auto">Cancel</button>
             <button id="btn-unit-save" style="width:auto" disabled>Save this unit</button>
           </div>

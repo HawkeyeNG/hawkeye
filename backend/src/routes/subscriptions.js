@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { db, contests, contestLabel } from '../db.js';
+import { db, contests, contestLabel, scopeIsState } from '../db.js';
 import { config } from '../config.js';
 import { tgSendMessage } from '../services/sms.js';
 import { notifyChat, notifyMaster, chatIdByHash } from '../services/notify.js';
 import { pushNote } from '../services/notifications.js';
+import { isRaceClosed } from '../services/declarations.js';
 import { requireObserver } from './observers.js';
 
 export const subscriptionsRouter = Router();
@@ -18,6 +19,14 @@ subscriptionsRouter.post('/subscriptions', requireObserver, (req, res) => {
   const contest = String(req.body?.contest || '');
   const state = String(req.body?.state || '');
   if (!contests.some((c) => c.code === contest)) return res.status(400).json({ error: 'unknown_contest' });
+  /**
+   * A DECLARED RACE CANNOT BE FOLLOWED. Both clients hide the control on a
+   * closed race, but hiding a button is a presentation choice and this is the
+   * rule — a stale page, a cached bundle or a direct call would otherwise write
+   * a row that closeFinishedRaces has already been round to delete, and it
+   * would sit in the follow list until the next declaration touched it.
+   */
+  if (isRaceClosed(contest, state)) return res.status(409).json({ error: 'race_closed' });
   const r = db.prepare('INSERT OR IGNORE INTO subscriptions (observer_id, contest, state, created_at) VALUES (?, ?, ?, ?)')
     .run(req.observer.id, contest, state, Date.now());
   if (r.changes) {
@@ -37,9 +46,12 @@ subscriptionsRouter.delete('/subscriptions', requireObserver, (req, res) => {
 
 // The follow-scope for a report = the region the subscriber may have picked:
 // state for president/governor/assembly, senatorial district for Senate, federal
-// constituency for House of Reps.
+// constituency for House of Reps. `scopeIsState` (db.js) is the same rule, and
+// the prune in services/declarations.js reads it to know whether a stored region
+// can be checked against a contest's `states` list — so the two cannot disagree
+// about what was written here.
 const reportScope = (pu, contest) =>
-  contest === 'SEN' ? pu.senatorial : contest === 'REP' ? pu.federal_constituency : pu.state;
+  scopeIsState(contest) ? pu.state : contest === 'SEN' ? pu.senatorial : pu.federal_constituency;
 
 /**
  * Tell everyone following this race that a report landed.

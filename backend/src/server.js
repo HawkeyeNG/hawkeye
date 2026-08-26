@@ -274,6 +274,22 @@ app.get('/get', (req, res) => {
   return res.redirect(302, '/index.html#install');
 });
 
+/**
+ * /download — where a shared link lands.
+ *
+ * The in-app Share button (app/share.js, native/src/components/social-row.tsx)
+ * sends this one address to everybody, so it has to be an address rather than a
+ * filename: hawkeye.com.ng/download reads as a place, survives being typed from
+ * memory, and does not change when the page behind it does.
+ *
+ * BEFORE express.static, and it has to be. `app/download/` is a real directory —
+ * it holds the APKs the install dialog links to — so a request for /download
+ * resolves to a directory with no index and 404s. The APKs are untouched:
+ * /download/hawkeye-1.2-8.apk is a different path and still falls through to
+ * the static mount below.
+ */
+app.get('/download', (_req, res) => res.sendFile(path.join(config.appDir, 'download.html')));
+
 // Observer PWA + public dashboard.
 app.use(express.static(config.appDir));
 
@@ -335,6 +351,17 @@ app.listen(config.port, () => {
   };
   purgePractice();
   setInterval(purgePractice, 3_600_000);
+  // Declared races: drop the follows for anything that is over and tell the
+  // people who were following it who won. Idempotent — every closure is recorded
+  // in race_closures, so this re-reads the same file on every boot and does
+  // nothing until a new declaration is written into it. Daily as well as on
+  // boot, so a declaration added to the data file reaches observers without
+  // waiting for a restart (POST /api/admin/close-races does it on demand).
+  const closeRaces = () => import('./services/declarations.js')
+    .then((d) => d.closeFinishedRaces())
+    .catch((e) => console.error('[declarations]', e.message));
+  setTimeout(closeRaces, 20_000);
+  setInterval(closeRaces, 24 * 3_600_000);
   console.log(
     'NOTE: camera + GPS in the PWA need a secure context — use http://localhost, or an HTTPS tunnel for phones.',
   );

@@ -1,6 +1,6 @@
 {
   "schema": 5,
-  "fetchedAt": "2026-08-06T08:42:01.718Z",
+  "fetchedAt": "2026-08-26T08:01:46.210Z",
   "revid": 1355294681,
   "chambers": {
     "senate": {
@@ -246,7 +246,7 @@
           "id": "451"
         },
         {
-          "name": "Ekpeyong Asuquo",
+          "name": "Asuquo Ekpenyong",
           "state": "Cross River",
           "district": "Cross River South",
           "party": null,
@@ -310,7 +310,7 @@
           "id": null
         },
         {
-          "name": "Adams Aliyu Oshiomole",
+          "name": "Adams Aliyu Oshiomhole",
           "state": "Edo",
           "district": "Edo North",
           "party": null,
@@ -478,7 +478,7 @@
           "id": "576"
         },
         {
-          "name": "Ibrahim Shekarau",
+          "name": "Rufai Sani Hanga",
           "state": "Kano",
           "district": "Kano Central",
           "party": null,
@@ -783,7 +783,7 @@
           "id": "519"
         },
         {
-          "name": "Napoleon Bali",
+          "name": "Simon Bako Lalong",
           "state": "Plateau",
           "district": "Plateau South",
           "party": null,
@@ -815,7 +815,7 @@
           "id": null
         },
         {
-          "name": "Abdullahi Ibrahim Gobir",
+          "name": "Ibrahim Lamido",
           "state": "Sokoto",
           "district": "Sokoto East",
           "party": null,
@@ -925,9 +925,9 @@
       ]
     },
     "house": {
-      "listed": 360,
+      "listed": 359,
       "official": 246,
-      "withParty": 224,
+      "withParty": 230,
       "members": [
         {
           "name": "Alex Ikwechegh",
@@ -938,7 +938,7 @@
           "id": null
         },
         {
-          "name": "Uko Nkole",
+          "name": "Ibe Osonwa",
           "state": "Abia",
           "district": "Arochukwu/Ohafia",
           "party": null,
@@ -955,9 +955,9 @@
           "office": "Deputy Speaker of the House"
         },
         {
-          "name": "Samuel Onuigbo",
+          "name": "Obi Aguocha",
           "state": "Abia",
-          "district": "Ikwuano/Umuahia North and South",
+          "district": "Ikwuano/Umuahia North/Umuahia South",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -965,23 +965,23 @@
         {
           "name": "Obinna Ginger Onwusibe",
           "state": "Abia",
-          "district": "Isiala Ngwa South/Isiala Ngwa North",
+          "district": "Isiala Ngwa North/Isiala Ngwa South",
           "party": "LP",
           "partyKnown": true,
           "id": "645"
         },
         {
-          "name": "Nkeiruka Onyejeocha",
+          "name": "Amobi Ogah",
           "state": "Abia",
           "district": "Isuikwuato/Umunneochi",
-          "party": null,
-          "partyKnown": false,
-          "id": null
+          "party": "LP",
+          "partyKnown": true,
+          "id": "628"
         },
         {
-          "name": "Solomon Adaelu",
+          "name": "Munachim Alozie",
           "state": "Abia",
-          "district": "Obingwa, Osisoma Ngwa, and Ugwunagbo",
+          "district": "Obingwa/Osisioma/Ugwunagbo",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -997,7 +997,7 @@
         {
           "name": "Kwamoti Bitrus Laori",
           "state": "Adamawa",
-          "district": "Demsa/Numan/ Lamurde",
+          "district": "Demsa/Numan/Lamurde",
           "party": "PDP",
           "partyKnown": true,
           "id": "347"
@@ -1005,7 +1005,7 @@
         {
           "name": "Aliyu Wakili Boya",
           "state": "Adamawa",
-          "district": "Furore/Song",
+          "district": "Fufore/Song",
           "party": "APC",
           "partyKnown": true,
           "id": "622"
@@ -1043,9 +1043,9 @@
           "id": "330"
         },
         {
-          "name": "Rufa i Jingi",
+          "name": "Ja afar Abubakar Magaji",
           "state": "Adamawa",
-          "district": "Mubi N/Mubi S/Maiha",
+          "district": "Mubi North/Mubi South/Maiha",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -1059,7 +1059,7 @@
           "id": "574"
         },
         {
-          "name": "Aniekan John Umanah",
+          "name": "Clement Jimbo",
           "state": "Akwa Ibom",
           "district": "Abak/Etim Ekpo/Ika",
           "party": null,
@@ -1069,7 +1069,7 @@
         {
           "name": "Okpolupm Etteh",
           "state": "Akwa Ibom",
-          "district": "Eket/Onna/Esit Eket/Ibeno",
+          "district": "Eket/Esit Eket/Ibeno/Onna",
           "party": "PDP",
           "partyKnown": true,
           "id": "517"
@@ -1099,7 +1099,7 @@
           "id": null
         },
         {
-          "name": "Umoh Patrick Patrick",
+          "name": "Patrick Umoh",
           "state": "Akwa Ibom",
           "district": "Ikot Ekpene/Essien Udim/Obot Akara",
           "party": null,
@@ -1117,7 +1117,7 @@
         {
           "name": "Martins Etim Esin",
           "state": "Akwa Ibom",
-          "district": "Oron, Mbo, Okobo, Udung Uko, Urue Offong, Oruko",
+          "district": "Mbo/Okobo/Oron/Udung Uko/Urue Offong Oruko",
           "party": "PDP",
           "partyKnown": true,
           "id": "641"
@@ -1125,7 +1125,7 @@
         {
           "name": "Unyime Josiah Idem",
           "state": "Akwa Ibom",
-          "district": "Oruk Anam/Ukanafun",
+          "district": "Ukanafun/Oruk Anam",
           "party": "PDP",
           "partyKnown": true,
           "id": "226"
@@ -1133,7 +1133,7 @@
         {
           "name": "Esset Mark Udo",
           "state": "Akwa Ibom",
-          "district": "Uyo, Uruan, Nsit Atai, Ibesikpo Asutan",
+          "district": "Uyo/Uruan/Nsit Atai/Ibesikpo Asutan",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -1157,7 +1157,7 @@
         {
           "name": "Orogbu Obiageli",
           "state": "Anambra",
-          "district": "Awka North, Awka South",
+          "district": "Awka North/Awka South",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -1221,7 +1221,7 @@
         {
           "name": "Maureen Chinwe Gwacham",
           "state": "Anambra",
-          "district": "Oyi, Ayamelum",
+          "district": "Oyi/Ayamelum",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -1387,7 +1387,7 @@
           "id": null
         },
         {
-          "name": "Regina Akuma",
+          "name": "Regina Akume",
           "state": "Benue",
           "district": "Gboko/Tarka",
           "party": null,
@@ -1419,7 +1419,7 @@
           "id": null
         },
         {
-          "name": "Ugbor Terseer",
+          "name": "Terseer Ugbor",
           "state": "Benue",
           "district": "Kwande/Ushongo",
           "party": null,
@@ -1427,7 +1427,7 @@
           "id": null
         },
         {
-          "name": "Tarkighir Dominic Dickson",
+          "name": "Dickson Tarkighir",
           "state": "Benue",
           "district": "Makurdi/Guma",
           "party": null,
@@ -1441,6 +1441,14 @@
           "party": "APC",
           "partyKnown": true,
           "id": "631"
+        },
+        {
+          "name": "Blessing Onyeche Onuh",
+          "state": "Benue",
+          "district": "Otukpo/Ohimini",
+          "party": "APGA",
+          "partyKnown": true,
+          "id": "370"
         },
         {
           "name": "Midala Usman Balami",
@@ -1589,7 +1597,7 @@
         {
           "name": "Okolie Ngozi Lawrence",
           "state": "Delta",
-          "district": "Aniocha North/Aniocha South/ Oshimili North South",
+          "district": "Aniocha North/Aniocha South/Oshimili North/Oshimili South",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -1661,7 +1669,7 @@
         {
           "name": "Ereyitomi Thomas",
           "state": "Delta",
-          "district": "Warri North/Warri South/ Warri South West",
+          "district": "Warri North/Warri South/Warri South West",
           "party": "PDP",
           "partyKnown": true,
           "id": "171"
@@ -1739,14 +1747,6 @@
           "id": "617"
         },
         {
-          "name": "Onobun Marcus Iziegbeaya",
-          "state": "Edo",
-          "district": "Esan Central/West/Igueben",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
           "name": "Prince Odianosen Okojie",
           "state": "Edo",
           "district": "Esan South-East/Esan North-East",
@@ -1781,18 +1781,10 @@
         {
           "name": "Omosede Igbinedion",
           "state": "Edo",
-          "district": "Ovia",
+          "district": "Ovia North East/Ovia South West",
           "party": null,
           "partyKnown": false,
           "id": null
-        },
-        {
-          "name": "Dennis Idahosa",
-          "state": "Edo",
-          "district": "Ovia North East, Ovia South West",
-          "party": "APC",
-          "partyKnown": true,
-          "id": "383"
         },
         {
           "name": "Julius Omozuanvbo Ihonvbere",
@@ -1852,12 +1844,12 @@
           "id": null
         },
         {
-          "name": "Chijoke Stanislaus Okereke",
+          "name": "Befford Onwuegbu Anayo",
           "state": "Enugu",
           "district": "Aninri/Awgu/Oji River",
-          "party": null,
-          "partyKnown": false,
-          "id": null
+          "party": "PDP",
+          "partyKnown": true,
+          "id": "537"
         },
         {
           "name": "Paul Nnamchi",
@@ -1884,12 +1876,20 @@
           "id": "550"
         },
         {
-          "name": "Nwodo Stainless Chijioke",
+          "name": "Martins Oke",
           "state": "Enugu",
           "district": "Igbo Etiti/Uzo Uwani",
           "party": null,
           "partyKnown": false,
           "id": null
+        },
+        {
+          "name": "Simon Chukwuemeka Atigwe",
+          "state": "Enugu",
+          "district": "Igbo-Eze North/Udenu",
+          "party": "PDP",
+          "partyKnown": true,
+          "id": "692"
         },
         {
           "name": "Nnolim John Nnaji",
@@ -1906,14 +1906,6 @@
           "party": null,
           "partyKnown": false,
           "id": null
-        },
-        {
-          "name": "Simon Chukwuemeka Atigwe",
-          "state": "Enugu",
-          "district": "Udenu/Igbo-Eze North",
-          "party": "PDP",
-          "partyKnown": true,
-          "id": "692"
         },
         {
           "name": "Obika Joshua Chinedu",
@@ -1942,7 +1934,7 @@
         {
           "name": "Ali Isa",
           "state": "Gombe",
-          "district": "Balanga/ Billiri",
+          "district": "Balanga/Billiri",
           "party": "PDP",
           "partyKnown": true,
           "id": "609"
@@ -1956,41 +1948,9 @@
           "id": "527"
         },
         {
-          "name": "Tongo Bauchi Yaya",
-          "state": "Gombe",
-          "district": "Gombe/Kwami/Funakaya",
-          "party": "PDP",
-          "partyKnown": true,
-          "id": "295"
-        },
-        {
-          "name": "Yaya-Bauchi Tongo",
-          "state": "Gombe",
-          "district": "Gombe/Kwami/Funakaye",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
           "name": "Obed Paul Shehu",
           "state": "Gombe",
           "district": "Kaltungo/Shongom",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
-          "name": "Obed Shehu",
-          "state": "Gombe",
-          "district": "Kaltungo/Shongom",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
-          "name": "Garba Inuwa",
-          "state": "Gombe",
-          "district": "Yamaltu/Deba",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -2014,7 +1974,7 @@
         {
           "name": "Emeka Martins Chinedu",
           "state": "Imo",
-          "district": "Ahaizu Mbaise/Ezinihitte",
+          "district": "Ahiazu Mbaise/Ezinihitte",
           "party": "PDP",
           "partyKnown": true,
           "id": "118"
@@ -2028,7 +1988,7 @@
           "id": "531"
         },
         {
-          "name": "Ikeagwuonu Michael",
+          "name": "Ikenga Ugochinyere",
           "state": "Imo",
           "district": "Ideato North/Ideato South",
           "party": null,
@@ -2036,7 +1996,7 @@
           "id": null
         },
         {
-          "name": "Henry Nwawuba",
+          "name": "Akarachi Etinosa Amadi",
           "state": "Imo",
           "district": "Ikeduru/Mbaitoli",
           "party": null,
@@ -2068,12 +2028,12 @@
           "id": null
         },
         {
-          "name": "Chukwugozie Nwachukwu",
+          "name": "Canice Moore Nwachukwu",
           "state": "Imo",
-          "district": "Our East/Orsu/Orlu",
-          "party": null,
-          "partyKnown": false,
-          "id": null
+          "district": "Orlu/Oru East/Orsu",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "644"
         },
         {
           "name": "Tochukwu Chinedu Okere",
@@ -2100,14 +2060,6 @@
           "id": "320"
         },
         {
-          "name": "Fulata Hassan",
-          "state": "Jigawa",
-          "district": "Birniwa/Guri/Kirikasamma",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
           "name": "Yakubu Adamu",
           "state": "Jigawa",
           "district": "Buji/Birnin Kudu",
@@ -2119,14 +2071,6 @@
           "name": "Madawaki Dahiru",
           "state": "Jigawa",
           "district": "Dutse/Kiyawa",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
-          "name": "Isa Dongoyaro",
-          "state": "Jigawa",
-          "district": "Garki/Babura",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -2150,7 +2094,7 @@
         {
           "name": "Usman Ibrahim Auyo",
           "state": "Jigawa",
-          "district": "Hadeja/Kafin Hausa/Auyo",
+          "district": "Hadejia/Auyo/Kafin Hausa",
           "party": "APC",
           "partyKnown": true,
           "id": "470"
@@ -2164,7 +2108,7 @@
           "id": "12"
         },
         {
-          "name": "Murtar Muhammad",
+          "name": "Mukhtar Muhammed Zanna",
           "state": "Jigawa",
           "district": "Kazaure/Roni/Gwiwa/Yankwashi",
           "party": null,
@@ -2180,15 +2124,7 @@
           "id": "429"
         },
         {
-          "name": "Yusuf Saidu Miga",
-          "state": "Jigawa",
-          "district": "Miga/Jahun",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
-          "name": "Saad Taura",
+          "name": "Sa ad Wada Taura",
           "state": "Jigawa",
           "district": "Taura/Ringim",
           "party": null,
@@ -2212,22 +2148,6 @@
           "id": "542"
         },
         {
-          "name": "Fidelix Bagudu",
-          "state": "Kaduna",
-          "district": "Chikun/Kajuru",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
-          "name": "Aminu Jamo Daura",
-          "state": "Kaduna",
-          "district": "Daura/Sandamu/Maiadua",
-          "party": "APC",
-          "partyKnown": true,
-          "id": "627"
-        },
-        {
           "name": "Jallo Hussaini Mohammed",
           "state": "Kaduna",
           "district": "Igabi",
@@ -2246,7 +2166,7 @@
         {
           "name": "Amos Daniel",
           "state": "Kaduna",
-          "district": "Jemaa/Sanga",
+          "district": "Jema a/Sanga",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -2260,7 +2180,7 @@
           "id": null
         },
         {
-          "name": "El-Rufai Mohammed Bello",
+          "name": "Bello El-Rufai",
           "state": "Kaduna",
           "district": "Kaduna North",
           "party": null,
@@ -2341,7 +2261,7 @@
           "office": "Speaker of the House"
         },
         {
-          "name": "Ghali Tijjani Mustapha",
+          "name": "Ghali Mustapha Tijjani",
           "state": "Kano",
           "district": "Albasu/Gaya/Ajingi",
           "party": null,
@@ -2381,7 +2301,7 @@
           "id": null
         },
         {
-          "name": "Ibrahim Hamisu",
+          "name": "Hamisu Ibrahim Chidari",
           "state": "Kano",
           "district": "Dambatta/Makoda",
           "party": null,
@@ -2405,7 +2325,7 @@
           "id": "372"
         },
         {
-          "name": "Aminu Sulaiman Goro",
+          "name": "Muhammad Bello Shehu",
           "state": "Kano",
           "district": "Fagge",
           "party": null,
@@ -2429,7 +2349,7 @@
           "id": null
         },
         {
-          "name": "Gwarzo Abdullahi Mu azu",
+          "name": "Abdullahi Mu azu Gwarzo",
           "state": "Kano",
           "district": "Gwarzo/Kabo",
           "party": null,
@@ -2437,7 +2357,7 @@
           "id": null
         },
         {
-          "name": "Ibrahim Sagir Koki",
+          "name": "Sagir Ibrahim Koki",
           "state": "Kano",
           "district": "Kano Municipal",
           "party": null,
@@ -2453,7 +2373,7 @@
           "id": "532"
         },
         {
-          "name": "Dankawu Idris",
+          "name": "Idris Dankawu",
           "state": "Kano",
           "district": "Kumbotso",
           "party": null,
@@ -2501,7 +2421,7 @@
           "id": null
         },
         {
-          "name": "Zakari Umar Mukhtar",
+          "name": "Mukhtar Umar Zakari",
           "state": "Kano",
           "district": "Tarauni",
           "party": null,
@@ -2557,6 +2477,14 @@
           "id": "556"
         },
         {
+          "name": "Aminu Jamo Daura",
+          "state": "Katsina",
+          "district": "Daura/Sandamu/Maiadua",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "627"
+        },
+        {
           "name": "Balele Aminu",
           "state": "Katsina",
           "district": "Dutsin-Ma/Kurfi",
@@ -2565,7 +2493,7 @@
           "id": "526"
         },
         {
-          "name": "Jamilu Muhammed",
+          "name": "Shehu Dalhatu Tafoki",
           "state": "Katsina",
           "district": "Faskari/Kankara/Sabuwa",
           "party": null,
@@ -2575,7 +2503,7 @@
         {
           "name": "Abubakar Ahmad Mohammed",
           "state": "Katsina",
-          "district": "Funtana/Dandume",
+          "district": "Funtua/Dandume",
           "party": "APC",
           "partyKnown": true,
           "id": "686"
@@ -2599,7 +2527,7 @@
         {
           "name": "Aminu Chindo",
           "state": "Katsina",
-          "district": "Katsina Central",
+          "district": "Katsina",
           "party": "PDP",
           "partyKnown": true,
           "id": "621"
@@ -2655,7 +2583,7 @@
         {
           "name": "Sani Yakubu Noma",
           "state": "Kebbi",
-          "district": "Argungu/ Augie",
+          "district": "Argungu/Augie",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -2679,7 +2607,7 @@
         {
           "name": "Mansur Musa",
           "state": "Kebbi",
-          "district": "Gwandu/Aleiro/Jega",
+          "district": "Gwandu/Aliero/Jega",
           "party": "PDP",
           "partyKnown": true,
           "id": "529"
@@ -2687,7 +2615,7 @@
         {
           "name": "Salisu Garba Koko",
           "state": "Kebbi",
-          "district": "Koko Besse/Maiyama",
+          "district": "Koko/Besse/Maiyama",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -2695,7 +2623,7 @@
         {
           "name": "Sununu Tanko Yusuf",
           "state": "Kebbi",
-          "district": "Yauri, Shanga Ngaski",
+          "district": "Yauri/Shanga/Ngaski",
           "party": "APC",
           "partyKnown": true,
           "id": "58"
@@ -2709,12 +2637,76 @@
           "id": "148"
         },
         {
+          "name": "Abdulraheem Abdulmaleek",
+          "state": "Kogi",
+          "district": "Adavi/Okehi Federal Constituency",
+          "party": "PDP",
+          "partyKnown": true,
+          "id": "568"
+        },
+        {
           "name": "sanni Abdulraheem",
           "state": "Kogi",
           "district": "Ajaokuta Federal Constituency",
           "party": "APC",
           "partyKnown": true,
           "id": "515"
+        },
+        {
+          "name": "Ali Ibrahim Abdullahi",
+          "state": "Kogi",
+          "district": "Ankpa/Omala/Olamaboro Federal Constituency",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "96"
+        },
+        {
+          "name": "Paul Gowon Haruna",
+          "state": "Kogi",
+          "district": "Bassa/Dekina Federal Constituency",
+          "party": null,
+          "partyKnown": false,
+          "id": null
+        },
+        {
+          "name": "David Idris Zacharias",
+          "state": "Kogi",
+          "district": "Idah/Ibaji/Igalamela-Odolu Federal Constituency",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "263"
+        },
+        {
+          "name": "Salman Idris",
+          "state": "Kogi",
+          "district": "Kabba-Bunu/Ijumu Federal Constituency",
+          "party": null,
+          "partyKnown": false,
+          "id": null
+        },
+        {
+          "name": "Danladi Suleiman Aguye",
+          "state": "Kogi",
+          "district": "Lokoja/Kogi Federal Constituency",
+          "party": null,
+          "partyKnown": false,
+          "id": null
+        },
+        {
+          "name": "Ozigi Muhammad Tijani",
+          "state": "Kogi",
+          "district": "Okene/Ogori-Magongo Federal Constituency",
+          "party": null,
+          "partyKnown": false,
+          "id": null
+        },
+        {
+          "name": "Leke Joseph Abejide",
+          "state": "Kogi",
+          "district": "Yagba East/Yagba West/Mopa-Muro Federal Constituency",
+          "party": "PDP",
+          "partyKnown": true,
+          "id": "269"
         },
         {
           "name": "Mohammed Omar Bio",
@@ -2791,13 +2783,13 @@
         {
           "name": "George Olawande",
           "state": "Lagos",
-          "district": "Amuwo Odofin",
+          "district": "Amuwo-Odofin",
           "party": "LP",
           "partyKnown": true,
           "id": "565"
         },
         {
-          "name": "Adedayo Olumiywa",
+          "name": "Adedayo Adesola",
           "state": "Lagos",
           "district": "Apapa",
           "party": null,
@@ -2835,6 +2827,14 @@
           "party": "APC",
           "partyKnown": true,
           "id": "326"
+        },
+        {
+          "name": "Adeyemi Benjamin Olabinjo",
+          "state": "Lagos",
+          "district": "Ifako-Ijaiye",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "671"
         },
         {
           "name": "Abiodun James Faleke",
@@ -2909,7 +2909,15 @@
           "id": "594"
         },
         {
-          "name": "Okey Joe",
+          "name": "Bashiru Ayinla Dawodu",
+          "state": "Lagos",
+          "district": "Oshodi-Isolo I",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "475"
+        },
+        {
+          "name": "Jesse Okey-Joe Onuakalusi",
           "state": "Lagos",
           "district": "Oshodi-Isolo II",
           "party": null,
@@ -2943,10 +2951,18 @@
         {
           "name": "Jeremiah Umaru",
           "state": "Nasarawa",
-          "district": "Akwanga/Naarawa Eggon/Wamba",
+          "district": "Akwanga/Nasarawa Eggon/Wamba",
           "party": "APC",
           "partyKnown": true,
           "id": "549"
+        },
+        {
+          "name": "Abubakar Hassan Nalaraba",
+          "state": "Nasarawa",
+          "district": "Awe/Doma/Keana",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "23"
         },
         {
           "name": "Gaza Jonathan Gbefwi",
@@ -2955,6 +2971,14 @@
           "party": "PDP",
           "partyKnown": true,
           "id": "364"
+        },
+        {
+          "name": "Abubakar Sarki Dahiru",
+          "state": "Nasarawa",
+          "district": "Lafia/Obi",
+          "party": "SDP",
+          "partyKnown": true,
+          "id": "336"
         },
         {
           "name": "Abdulmumin Ari Mohammed",
@@ -2981,17 +3005,9 @@
           "id": "217"
         },
         {
-          "name": "Abubakar Hassan Nalaraba",
-          "state": "Niger",
-          "district": "Awe/Doma/Keana",
-          "party": "APC",
-          "partyKnown": true,
-          "id": "23"
-        },
-        {
           "name": "Saidu Musa Abdullahi",
           "state": "Niger",
-          "district": "Bida/Gbako/Katcho",
+          "district": "Bida/Gbako/Katcha",
           "party": "APC",
           "partyKnown": true,
           "id": "172"
@@ -2999,18 +3015,18 @@
         {
           "name": "Baraje Yusuf Kure",
           "state": "Niger",
-          "district": "Booso/Paikoro",
+          "district": "Bosso/Paikoro",
           "party": null,
           "partyKnown": false,
           "id": null
         },
         {
-          "name": "Abubakar Yabo Umaru",
+          "name": "Abubakar Abdul Buba",
           "state": "Niger",
           "district": "Chanchaga",
-          "party": "APC",
-          "partyKnown": true,
-          "id": "5"
+          "party": null,
+          "partyKnown": false,
+          "id": null
         },
         {
           "name": "Adamu Tanko",
@@ -3027,14 +3043,6 @@
           "party": "APC",
           "partyKnown": true,
           "id": "420"
-        },
-        {
-          "name": "Abubakar Sarki Dahiru",
-          "state": "Niger",
-          "district": "Lafia/Obi",
-          "party": "SDP",
-          "partyKnown": true,
-          "id": "336"
         },
         {
           "name": "Joshua Gana",
@@ -3061,6 +3069,14 @@
           "id": "611"
         },
         {
+          "name": "Olumide Babatunde Osoba",
+          "state": "Ogun",
+          "district": "Abeokuta North/Obafemi Owode/Odeda",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "131"
+        },
+        {
           "name": "Afolabi Moruf Afuape",
           "state": "Ogun",
           "district": "Abeokuta South",
@@ -3071,7 +3087,7 @@
         {
           "name": "Akinosi Olatunji Akanni",
           "state": "Ogun",
-          "district": "Ado Odo/Ota",
+          "district": "Ado-Odo/Ota",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3103,7 +3119,7 @@
         {
           "name": "Joseph Adegbesan",
           "state": "Ogun",
-          "district": "Ijebu East/Ijebu North/Ogun Waterside",
+          "district": "Ijebu North/Ijebu East/Ogun Waterside",
           "party": "APC",
           "partyKnown": true,
           "id": "683"
@@ -3125,25 +3141,9 @@
           "id": null
         },
         {
-          "name": "Adewunmi Oriyomi Onanuga",
-          "state": "Ogun",
-          "district": "Ikenne/Shagamu/Remo North",
-          "party": "APC",
-          "partyKnown": true,
-          "id": "151"
-        },
-        {
-          "name": "Olumide Babatunde Osoba",
-          "state": "Ogun",
-          "district": "Odeda/Obafemi Owode/Abeokuta North",
-          "party": "APC",
-          "partyKnown": true,
-          "id": "131"
-        },
-        {
           "name": "Ifeoluwa Babajide Ehindero",
           "state": "Ondo",
-          "district": "Akoko North East/North West",
+          "district": "Akoko North East/Akoko North West",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3183,7 +3183,7 @@
         {
           "name": "Ayodele Adefiranye",
           "state": "Ondo",
-          "district": "Ileoluji Okeigbo/Odigbo",
+          "district": "Ile-Oluji/Okeigbo/Odigbo",
           "party": "APC",
           "partyKnown": true,
           "id": "666"
@@ -3213,9 +3213,9 @@
           "id": "184"
         },
         {
-          "name": "Akintola Oluokun Goeorge",
+          "name": "Omirin Emmanuel Olusanya",
           "state": "Osun",
-          "district": "Akinyele/Lagelu",
+          "district": "Atakunmosa East/Atakunmosa West/Ilesa East/Ilesa West",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3237,9 +3237,9 @@
           "id": "660"
         },
         {
-          "name": "Mudashiru Lukman Alani",
+          "name": "Akanni Clement Ademola",
           "state": "Osun",
-          "district": "Ayedire/Iwo/Ola-Oluwa",
+          "district": "Boluwaduro/Ifedayo/Ila",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3247,39 +3247,31 @@
         {
           "name": "Bamidele Salam",
           "state": "Osun",
-          "district": "Ede North,South/Egbedero/Ejigbo",
+          "district": "Ede North/Ede South/Egbedore/Ejigbo",
           "party": "PDP",
           "partyKnown": true,
           "id": "141"
         },
         {
-          "name": "Salam Bamidele",
-          "state": "Osun",
-          "district": "Ede North,South/Egbedero/Ejigbo",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
-          "name": "Adewale Morufu Adebayo",
-          "state": "Osun",
-          "district": "Ife Central/Ife North/Ife South/Ife East",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
           "name": "Taofeek Abimbola Ajilesoro",
           "state": "Osun",
-          "district": "Ife Central/Ife North/Ife South/Ife East",
+          "district": "Ife Central/Ife East/Ife North/Ife South",
           "party": "APC",
           "partyKnown": true,
           "id": "91"
         },
         {
+          "name": "Adewale Morufu Adebayo",
+          "state": "Osun",
+          "district": "Irepodun/Olorunda/Osogbo/Orolu",
+          "party": null,
+          "partyKnown": false,
+          "id": null
+        },
+        {
           "name": "Oluwole Oke",
           "state": "Osun",
-          "district": "Obokon/Oriade",
+          "district": "Obokun/Oriade",
           "party": "PDP",
           "partyKnown": true,
           "id": "428"
@@ -3301,6 +3293,14 @@
           "id": "350"
         },
         {
+          "name": "Olafisoye Wasiu Akinmoyede",
+          "state": "Oyo",
+          "district": "Akinyele/Lagelu",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "658"
+        },
+        {
           "name": "Akinola Adekunle Alabi",
           "state": "Oyo",
           "district": "Egbeda/Ona Ara",
@@ -3317,17 +3317,9 @@
           "id": "278"
         },
         {
-          "name": "Abass Agboworin",
-          "state": "Oyo",
-          "district": "Ibadan North East/Ibadan South East",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
           "name": "Abass Adekunle Adigun",
           "state": "Oyo",
-          "district": "Ibadan North-East/South-East",
+          "district": "Ibadan North East/Ibadan South East",
           "party": "PDP",
           "partyKnown": true,
           "id": "351"
@@ -3335,7 +3327,7 @@
         {
           "name": "Adedeji Stanley Olajide",
           "state": "Oyo",
-          "district": "Ibadan South West/Ibadan North West",
+          "district": "Ibadan North West/Ibadan South West",
           "party": "PDP",
           "partyKnown": true,
           "id": "38"
@@ -3357,12 +3349,12 @@
           "id": "675"
         },
         {
-          "name": "Ojerinde Olumide Abiodun",
+          "name": "Olaide Yusuf Mohammed",
           "state": "Oyo",
           "district": "Irepo/Orelope/Olorunsogo",
-          "party": null,
-          "partyKnown": false,
-          "id": null
+          "party": "APC",
+          "partyKnown": true,
+          "id": "612"
         },
         {
           "name": "Najimdeen Oyedeji",
@@ -3373,9 +3365,9 @@
           "id": "665"
         },
         {
-          "name": "Ajao Jacob Adejumo",
+          "name": "Olamijuwonlo Alao-Akala",
           "state": "Oyo",
-          "district": "Ogbomosho North/Ogbomoso South/Orire",
+          "district": "Ogbomoso North/Ogbomoso South/Orire",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3397,12 +3389,12 @@
           "id": "209"
         },
         {
-          "name": "Olajide Olatubosun",
+          "name": "Tajudeen Kareem",
           "state": "Oyo",
           "district": "Saki East/Saki West/Atisbo",
-          "party": null,
-          "partyKnown": false,
-          "id": null
+          "party": "APC",
+          "partyKnown": true,
+          "id": "677"
         },
         {
           "name": "Peter Gyendeng",
@@ -3413,52 +3405,52 @@
           "id": "535"
         },
         {
-          "name": "Lalu Ishaya David",
-          "state": "Plateau",
-          "district": "Bokkos/Mangu",
-          "party": null,
-          "partyKnown": false,
-          "id": null
-        },
-        {
           "name": "Agah Avia Musa",
           "state": "Plateau",
-          "district": "Jos North/Bassa",
+          "district": "Bassa/Jos North",
           "party": "PDP",
           "partyKnown": true,
           "id": "403"
         },
         {
-          "name": "Dachung Musa Bagos",
+          "name": "Alfred Ajang Iliya",
           "state": "Plateau",
           "district": "Jos South/Jos East",
-          "party": "PDP",
-          "partyKnown": true,
-          "id": "136"
+          "party": null,
+          "partyKnown": false,
+          "id": null
+        },
+        {
+          "name": "Vincent Venman Bulus",
+          "state": "Plateau",
+          "district": "Langtang North/Langtang South",
+          "party": null,
+          "partyKnown": false,
+          "id": null
+        },
+        {
+          "name": "Ishaya David Lalu",
+          "state": "Plateau",
+          "district": "Mangu/Bokkos",
+          "party": null,
+          "partyKnown": false,
+          "id": null
+        },
+        {
+          "name": "John Dafaan",
+          "state": "Plateau",
+          "district": "Mikang/Qua an Pan/Shendam",
+          "party": null,
+          "partyKnown": false,
+          "id": null
         },
         {
           "name": "Gagdi Adamu Yusuf",
           "state": "Plateau",
-          "district": "Kanke/Pankshin/Kanam",
+          "district": "Pankshin/Kanke/Kanam",
           "party": "APC",
           "partyKnown": true,
           "id": "64"
-        },
-        {
-          "name": "Beni Butmak Lar",
-          "state": "Plateau",
-          "district": "Langtang North/South",
-          "party": "PDP",
-          "partyKnown": true,
-          "id": "113"
-        },
-        {
-          "name": "Isaac Kwallu",
-          "state": "Plateau",
-          "district": "Mikang/Quaan/Pan/Shedam",
-          "party": "PDP",
-          "partyKnown": true,
-          "id": "534"
         },
         {
           "name": "Ahmed Idris Wase",
@@ -3471,7 +3463,7 @@
         {
           "name": "Solomon T Bob",
           "state": "Rivers",
-          "district": "Abua-Odual/Ahaoda East",
+          "district": "Abua-Odual/Ahoada East",
           "party": "PDP",
           "partyKnown": true,
           "id": "282"
@@ -3479,7 +3471,7 @@
         {
           "name": "Obuzor Victor",
           "state": "Rivers",
-          "district": "Ahaoda West/Ogba Egbema",
+          "district": "Ahoada West/Ogba-Egbema-Ndoni",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3487,15 +3479,23 @@
         {
           "name": "Boma Goodhead",
           "state": "Rivers",
-          "district": "Akuku Toru/Asari Toru",
+          "district": "Akuku-Toru/Asari-Toru",
           "party": "PDP",
           "partyKnown": true,
           "id": "480"
         },
         {
+          "name": "Awaji-inombek Dagomie Abiante",
+          "state": "Rivers",
+          "district": "Andoni/Opobo/Nkoro",
+          "party": "PDP",
+          "partyKnown": true,
+          "id": "61"
+        },
+        {
           "name": "Hart Cyril Godwin",
           "state": "Rivers",
-          "district": "Bonny/Degema",
+          "district": "Degema/Bonny",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3519,7 +3519,7 @@
         {
           "name": "Boniface Sunday Emerengwa",
           "state": "Rivers",
-          "district": "Ikwerre/Emuoha",
+          "district": "Ikwerre/Emohua",
           "party": "PDP",
           "partyKnown": true,
           "id": "490"
@@ -3549,17 +3549,9 @@
           "id": "626"
         },
         {
-          "name": "Awaji-inombek Dagomie Abiante",
-          "state": "Rivers",
-          "district": "Opobo/Nkoro/Andoni",
-          "party": "PDP",
-          "partyKnown": true,
-          "id": "61"
-        },
-        {
           "name": "Umezuruike Manuchim",
           "state": "Rivers",
-          "district": "Port-Harcourt I",
+          "district": "Port Harcourt I",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3567,7 +3559,7 @@
         {
           "name": "Blessing Chigeru Amadi",
           "state": "Rivers",
-          "district": "Port-Harcourt II",
+          "district": "Port Harcourt II",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3581,7 +3573,7 @@
           "id": "678"
         },
         {
-          "name": "Shehu Nasiru",
+          "name": "Nasiru Shehu Bodinga",
           "state": "Sokoto",
           "district": "Dange-Shuni/Bodinga/Tureta",
           "party": null,
@@ -3592,6 +3584,14 @@
           "name": "Bashiru Usman Gorau",
           "state": "Sokoto",
           "district": "Goronyo/Gada",
+          "party": null,
+          "partyKnown": false,
+          "id": null
+        },
+        {
+          "name": "Sani Alhaji Yakubu",
+          "state": "Sokoto",
+          "district": "Gudu/Tangaza",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3623,10 +3623,18 @@
         {
           "name": "Ahmad Abdullahi Kalambaina",
           "state": "Sokoto",
-          "district": "Kware/Wamako",
+          "district": "Kware/Wamakko",
           "party": "APC",
           "partyKnown": true,
           "id": "329"
+        },
+        {
+          "name": "Bala Hassan",
+          "state": "Sokoto",
+          "district": "Sokoto North/Sokoto South",
+          "party": null,
+          "partyKnown": false,
+          "id": null
         },
         {
           "name": "Ibrahim Almustapha Aliyu",
@@ -3637,7 +3645,7 @@
           "id": "140"
         },
         {
-          "name": "Umar Musa Yabo",
+          "name": "Umar Yusuf Yabo",
           "state": "Sokoto",
           "district": "Yabo/Shagari",
           "party": null,
@@ -3645,7 +3653,7 @@
           "id": null
         },
         {
-          "name": "Jaafaru Yakubu",
+          "name": "Jaafaru Chiroma Yakubu",
           "state": "Taraba",
           "district": "Bali/Gassol",
           "party": null,
@@ -3653,12 +3661,12 @@
           "id": null
         },
         {
-          "name": "Rimamnde Shawulu Kwewum",
+          "name": "David Abel Fuoh",
           "state": "Taraba",
-          "district": "Donga/Ussa/Takum/Special Area",
-          "party": null,
-          "partyKnown": false,
-          "id": null
+          "district": "Gashaka/Kurmi/Sardauna",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "32"
         },
         {
           "name": "Ayuba Dampar",
@@ -3669,7 +3677,7 @@
           "id": "563"
         },
         {
-          "name": "Ismaila Yushau Mohammed",
+          "name": "Sadiq Abbas Tafida",
           "state": "Taraba",
           "district": "Jalingo/Yorro/Zing",
           "party": null,
@@ -3679,23 +3687,15 @@
         {
           "name": "Mohammed Audu",
           "state": "Taraba",
-          "district": "Karim Lamido Lau/Ardo-Kola",
+          "district": "Karim Lamido/Lau/Ardo-Kola",
           "party": "PDP",
           "partyKnown": true,
           "id": "659"
         },
         {
-          "name": "David Abel Fuoh",
+          "name": "Useni Mark Bako",
           "state": "Taraba",
-          "district": "Sarduana/Kurmi/Gashaka",
-          "party": "APC",
-          "partyKnown": true,
-          "id": "32"
-        },
-        {
-          "name": "Yakubu Sani Alhaji",
-          "state": "Taraba",
-          "district": "Tangaza/Gudu",
+          "district": "Takum/Donga/Ussa",
           "party": null,
           "partyKnown": false,
           "id": null
@@ -3749,12 +3749,28 @@
           "id": "646"
         },
         {
-          "name": "Anka Isa Mohammed",
+          "name": "Isa Muhammad Anka",
           "state": "Zamfara",
-          "district": "Anka/Talata/Mafara",
+          "district": "Anka/Talata Mafara",
           "party": null,
           "partyKnown": false,
           "id": null
+        },
+        {
+          "name": "Sani Muhammad Ahmad",
+          "state": "Zamfara",
+          "district": "Bakura/Maradun",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "681"
+        },
+        {
+          "name": "Abdulmalik Zubairu",
+          "state": "Zamfara",
+          "district": "Bungudu/Maru",
+          "party": "APC",
+          "partyKnown": true,
+          "id": "558"
         },
         {
           "name": "Sulaiman Gumi Abubakar",
@@ -3765,6 +3781,14 @@
           "id": "477"
         },
         {
+          "name": "Kabiru Amadu",
+          "state": "Zamfara",
+          "district": "Gusau/Tsafe",
+          "party": "PDP",
+          "partyKnown": true,
+          "id": "474"
+        },
+        {
           "name": "Aminu Jaji",
           "state": "Zamfara",
           "district": "Kaura Namoda/Birnin Magaji",
@@ -3773,44 +3797,12 @@
           "id": "516"
         },
         {
-          "name": "Sani Muhammad Ahmad",
-          "state": "Zamfara",
-          "district": "Maradun/Bakura",
-          "party": "APC",
-          "partyKnown": true,
-          "id": "681"
-        },
-        {
-          "name": "Abdulmalik Zubairu",
-          "state": "Zamfara",
-          "district": "Maru/Bungudu",
-          "party": "APC",
-          "partyKnown": true,
-          "id": "558"
-        },
-        {
           "name": "Bello Shinkafi Hassan",
           "state": "Zamfara",
           "district": "Shinkafi/Zurmi",
           "party": "PDP",
           "partyKnown": true,
           "id": "473"
-        },
-        {
-          "name": "Kabiru Amadu",
-          "state": "Zamfara",
-          "district": "Tsafe/Gusau",
-          "party": "PDP",
-          "partyKnown": true,
-          "id": "474"
-        },
-        {
-          "name": "Fola Oyekunle",
-          "state": "",
-          "district": "Ibadan North",
-          "party": null,
-          "partyKnown": false,
-          "id": null
         }
       ],
       "offices": [

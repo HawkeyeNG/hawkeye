@@ -1,0 +1,72 @@
+{
+  "_note": [
+    "RACES INEC HAS DECLARED AND HAWKEYE HAS CLOSED.",
+    "",
+    "A race here is finished: its result is announced, nothing more will be",
+    "reported into it, and it stops being something to follow. Adding an entry",
+    "does three things on the next boot (or on POST /api/admin/close-races):",
+    "  1. every subscription it matches is deleted, so the race leaves the",
+    "     follow list on the website, in Lite and in the app at once — the list",
+    "     is served from one table, so there is no per-client version of this;",
+    "  2. everyone who WAS following it is told who was declared, with the top",
+    "     three results, in the notification centre and on their phone;",
+    "  3. the Follow control stops being offered on that race anywhere.",
+    "Each of those happens ONCE — services/declarations.js records the closure in",
+    "the race_closures table, so a restart is not a second announcement.",
+    "",
+    "MATCHING. `scope` is matched against subscriptions.state, which is the",
+    "region a follow was scoped to: a state for PRES/GOV/SHA and every",
+    "by-election, a senatorial district for SEN, a federal constituency for REP",
+    "(routes/subscriptions.js:reportScope). An entry with NO scope closes the",
+    "whole contest and takes every row for it — right for a by-election, which is",
+    "one seat and is over when it is over. An entry WITH a scope takes only rows",
+    "naming that region, and deliberately leaves a whole-election row alone:",
+    "somebody following all 36 governorships has not stopped following them",
+    "because one of the 36 has been declared.",
+    "",
+    "WHAT THIS FILE IS NOT. It is not a result. Hawkeye does not certify",
+    "results — this records what INEC's returning officer announced, with the",
+    "sources it was taken from, so it can be checked against INEC's own sheets.",
+    "The same rule the declared card on a race page follows (app/race.js).",
+    "Numbers are transcribed by hand from the declaration; there is no endpoint",
+    "to derive them from, because IReV publishes sheet IMAGES and never figures."
+  ],
+
+  "_howToAdd": {
+    "_": "Copy this into `declarations`, fill it in, restart (or POST /api/admin/close-races). Run with dryRun first — it prints the exact notification and the number of followers it would reach, and sends nothing.",
+    "contest": "SHA_BYE_DELTA_UDU_2026",
+    "scope": "",
+    "url": "https://hawkeye.com.ng/race.html?contest=SHA_BYE_DELTA_UDU_2026",
+    "declaredOn": "2026-09-20",
+    "by": "INEC",
+    "winner": { "name": "", "party": "", "votes": 0 },
+    "results": [
+      { "name": "", "party": "", "votes": 0 }
+    ],
+    "sources": ["https://…"]
+  },
+
+  "declarations": [
+    {
+      "contest": "GOV",
+      "scope": "Osun",
+      "label": "Osun Governorship (2026)",
+      "url": "https://hawkeye.com.ng/osun.html",
+      "declaredOn": "2026-08-16",
+      "by": "INEC",
+      "place": "State collation centre, Osogbo",
+      "winner": { "name": "Ademola Adeleke", "party": "A", "votes": 511067 },
+      "results": [
+        { "name": "Ademola Adeleke", "party": "A", "votes": 511067 },
+        { "name": "Bola Oyebamiji", "party": "APC", "votes": 444815 },
+        { "name": "Najeem Salam", "party": "ADC", "votes": 17180 }
+      ],
+      "sources": [
+        "https://www.channelstv.com/2026/08/16/imole-de-accords-adeleke-wins-osun-governorship-election-returns-for-second-term/",
+        "https://www.thisdaylive.com/2026/08/16/osun-governorship-election-results-2026-as-announced-by-inec/"
+      ],
+      "announce": false,
+      "_announceNote": "DROP THE FOLLOWS, SEND NOTHING. Osun was declared on 2026-08-16 and closed on our side a week later, both before this mechanism existed — the observers who followed it have known the result for days. Pushing it now would be a phone buzzing about last week's news, which is the fastest way to teach somebody that Hawkeye's alerts are not worth reading. Every race declared from here on carries announce:true (the default); this one entry is retrospective. The follow rows still go, which is the part that was actually wrong."
+    }
+  ]
+}

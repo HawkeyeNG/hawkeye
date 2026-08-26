@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { db, contests, contestCodes } from '../db.js';
+import { publicDeclarations } from '../services/declarations.js';
 import { LEVEL_COLS, boardLevelFor, contestGate, reportingOpen, reportingOpensAt } from '../services/scope.js';
 
 export const nationalRouter = Router();
@@ -9,6 +10,22 @@ export const nationalRouter = Router();
 nationalRouter.get('/contests', (_req, res) => res.json(
   contests.map((c) => ({ ...c, open: reportingOpen(c), opensAt: reportingOpensAt(c) })),
 ));
+
+/**
+ * Races INEC has declared and Hawkeye has closed.
+ *
+ * PUBLIC, and separate from /contests, because a closure is keyed by
+ * (contest, region) and a contest is not: Osun's governorship is finished while
+ * the GOV contest itself runs on in twenty-eight other states in 2027. Folding
+ * it into the contest object would have meant a second array hanging off it that
+ * only means something to two callers.
+ *
+ * Its readers are the Follow control on each client (app/follow.js,
+ * native/src/components/follow-race.tsx), which stops offering to follow a race
+ * that is over. The authority is still the server: POST /api/subscriptions
+ * refuses a closed race regardless of what any client shows.
+ */
+nationalRouter.get('/declarations', (_req, res) => res.json(publicDeclarations()));
 
 // The level tables MOVED to services/scope.js. They were duplicated here only,
 // so /api/coverage/gaps could not use them and counted states for a Senate

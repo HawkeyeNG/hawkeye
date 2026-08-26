@@ -290,6 +290,41 @@ adminRouter.post('/admin/coords/clear-crowd', requireAdmin, (req, res) => {
   res.json({ ok: true, unit: pu.name, puCode, before, droppedFixes });
 });
 
+/**
+ * Close every race that has been declared, without waiting for a restart.
+ *
+ * The declarations themselves live in backend/src/data/declarations.json,
+ * written by hand from the returning officer's announcement. This endpoint just
+ * runs the pass — on the night, that means editing the file and calling this,
+ * instead of editing the file and restarting the server mid-count.
+ *
+ * DRY RUN IS THE DEFAULT, the same rule the push broadcast follows and for the
+ * same reason: this deletes subscriptions and pushes to phones, and a push
+ * cannot be unsent. A dry run returns the exact notification each entry would
+ * produce — title, body, url — and how many followers it would reach, changing
+ * nothing. Read it, then repeat with { dryRun: false }.
+ *
+ * Idempotent either way: an entry already recorded in race_closures is reported
+ * as skipped rather than applied a second time.
+ */
+adminRouter.post('/admin/close-races', requireAdmin, async (req, res) => {
+  const dryRun = req.body?.dryRun !== false;
+  try {
+    const { closeFinishedRaces } = await import('../services/declarations.js');
+    const r = await closeFinishedRaces({ dryRun });
+    if (!dryRun) {
+      const done = r.applied.filter((a) => a.applied);
+      if (done.length) {
+        notifyMaster(`🏁 races closed: ${done.map((a) => `${a.key} (${a.dropped} follow(s), `
+          + `${a.announce ? a.followers : 0} alert(s))`).join(' · ')}`);
+      }
+    }
+    res.json({ ok: true, dryRun, ...r });
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
+});
+
 // Archive a finished election cycle to a browsable folder tree:
 //   storage/elections/<election>/<race-type>/<race>/results.json
 // One folder per election (e.g. 2027-general-elections), a subfolder per race

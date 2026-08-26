@@ -470,6 +470,20 @@ for (const ddl of [
    )`,
   'CREATE INDEX IF NOT EXISTS idx_flags_status ON content_flags(status, id)',
   'CREATE UNIQUE INDEX IF NOT EXISTS idx_flags_dedupe ON content_flags(kind, target_id, ip_hash)',
+  // Races INEC has declared and Hawkeye has closed — the receipt for a closure
+  // that has already run. services/declarations.js re-reads its data file on
+  // every boot, so without a row here every restart would delete the same
+  // subscriptions again (harmless) and push the same declared-result alert to
+  // every follower again (not). `key` is `contest|scope`, matching the
+  // subscription pair a declaration is written against.
+  `CREATE TABLE IF NOT EXISTS race_closures (
+     key       TEXT PRIMARY KEY,       -- contest|scope
+     contest   TEXT NOT NULL,
+     scope     TEXT NOT NULL DEFAULT '',
+     closed_at INTEGER NOT NULL,
+     dropped   INTEGER NOT NULL DEFAULT 0,   -- subscriptions deleted
+     announced INTEGER NOT NULL DEFAULT 0    -- observers told
+   )`,
   // FCT is an acronym — repair rows title-cased to "Fct" before the loader fix.
   "UPDATE polling_units SET state = 'FCT' WHERE state = 'Fct'",
   "UPDATE polling_units SET senatorial = REPLACE(senatorial, 'Fct', 'FCT') WHERE senatorial LIKE '%Fct%'",
@@ -597,6 +611,24 @@ export function contestLabel(code) {
   const where = Array.isArray(c.states) && c.states.length === 1 ? `${c.states[0]} ` : '';
   return `${where}${c.name} (${year})`;
 }
+
+/**
+ * Is a follow's REGION a state, for this contest?
+ *
+ * A subscription's `state` column is whatever region the follow was scoped to,
+ * and that is not always a state: Senate follows carry a senatorial district and
+ * House of Reps follows a federal constituency (routes/subscriptions.js:
+ * reportScope). Everything else — the presidency, governorship, state assembly,
+ * and every by-election, whose codes are their own rather than the bare 'SEN' /
+ * 'REP' — scopes by state.
+ *
+ * It lives HERE, beside the contest catalogue, because two unrelated places need
+ * the same answer and neither should be the authority: reportScope decides what
+ * to write, and pruneOrphanSubscriptions decides whether a written value can be
+ * checked against a contest's `states` list. If those two ever disagreed, the
+ * prune would delete follows it had misread.
+ */
+export const scopeIsState = (contest) => contest !== 'SEN' && contest !== 'REP';
 
 // Practice/mock election (sandbox for new users). Optional file — absent or
 // past its autoDeleteAt ⇒ no practice election is offered. Kept ENTIRELY

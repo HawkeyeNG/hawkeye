@@ -49,6 +49,7 @@ import { queueJob } from '@/lib/outbox';
 import { filePart } from '@/lib/submit';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
+import { humanBytes, uploadWithProgress, xhrFilePart, type UploadProgress } from '@/lib/upload';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -398,6 +399,8 @@ export default function ReportIncident() {
   /** Filing deliberately without a unit — an explicit choice, not the absence
    *  of one. The server accepts it: pu_code and state both land null. */
   const [noUnit, setNoUnit] = useState(false);
+  /** Bytes sent, while a submission is in flight. Null when nothing is uploading. */
+  const [up, setUp] = useState<UploadProgress | null>(null);
 
   const [kind, setKind] = useState<string | null>(null);
   const [description, setDescription] = useState('');
@@ -882,16 +885,38 @@ export default function ReportIncident() {
       // Fresh FormData PER ATTEMPT: on Android a body whose file parts were
       // already streamed by a failed attempt cannot be replayed — reusing it
       // makes the retry throw instantly and masks the original error.
-      const buildForm = () => {
+      const buildForm = (part: typeof filePart = filePart) => {
         const form = new FormData();
         for (const [k, v] of Object.entries(fields)) form.append(k, v);
-        for (const f of files) form.append(f.field, filePart(f.uri, f.name, f.type));
+        for (const f of files) form.append(f.field, part(f.uri, f.name, f.type));
         return form;
+      };
+      const headers = { authorization: `Bearer ${token}`, 'x-device-id': id.deviceId };
+
+      /**
+       * FIRST ATTEMPT REPORTS BYTES; THE RETRY IS THE OLD PATH.
+       *
+       * XHR is the only transport that can report upload progress, and it needs
+       * RN's classic part shape rather than the bytes() object Expo's fetch
+       * converter wants. That shape assumption cannot be checked anywhere but on
+       * a device — so if it is wrong, this attempt rejects and the existing
+       * fetch retry below lands the report exactly as it always did. A progress
+       * bar is not worth risking a submission for.
+       */
+      const postWithProgress = async (): Promise<Response> => {
+        const r = await uploadWithProgress({
+          url: `${BASE}/api/incidents`,
+          form: buildForm(xhrFilePart),
+          headers,
+          onProgress: setUp,
+        });
+        // Handed back as a Response so everything downstream is untouched.
+        return new Response(r.text, { status: r.status });
       };
       const post = () =>
         fetch(`${BASE}/api/incidents`, {
           method: 'POST',
-          headers: { authorization: `Bearer ${token}`, 'x-device-id': id.deviceId },
+          headers,
           body: buildForm(),
         });
       // One silent retry: a reset connection on Nigerian mobile networks is a
@@ -899,8 +924,11 @@ export default function ReportIncident() {
       // a retried incident that DID land twice just shows twice in the queue.)
       let res: Response | null = null;
       try {
-        res = await post();
+        res = await postWithProgress();
       } catch {
+        // Either the network dropped or XHR would not take the part shape.
+        // Both mean: fall back to the transport that has always worked.
+        setUp(null);
         setLine('Connection dropped — retrying…');
         try {
           res = await post();
@@ -908,6 +936,8 @@ export default function ReportIncident() {
           res = null;
         }
       }
+      // The upload is over either way; the bar must not outlive it.
+      setUp(null);
       if (!res) {
         // Both attempts threw, so nothing reached the server — hand the report
         // to the outbox instead of asking someone in the middle of an incident
@@ -1622,6 +1652,29 @@ export default function ReportIncident() {
             </Pressable>
           ) : (
             <>
+              {/* WHAT IS ACTUALLY HAPPENING, IN BYTES.
+                  Four attachments over a mobile network can run for a minute,
+                  and a spinner cannot tell "uploading" from "hung" — which is
+                  the moment a reporter closes the app or files again. This is
+                  driven by real bytes sent (lib/upload.ts), so it moves; if the
+                  platform will not say how many there are in total it shows the
+                  amount sent rather than inventing a percentage. */}
+              {up ? (
+                <View className="pb-3">
+                  <View className="h-2 overflow-hidden rounded-full bg-disabled">
+                    <View
+                      className="h-2 rounded-full bg-good-ink"
+                      style={{ width: `${up.pct ?? 8}%` }}
+                    />
+                  </View>
+                  <Text className="pt-1.5 text-xs font-semibold text-muted">
+                    {up.pct !== null && up.total
+                      ? `Uploading ${up.pct}% — ${humanBytes(up.sent)} of ${humanBytes(up.total)}`
+                      : `Uploading — ${humanBytes(up.sent)} sent`}
+                    {media.length > 1 ? ` · ${media.length} attachments` : ''}
+                  </Text>
+                </View>
+              ) : null}
               {line ? (
                 <Text className="pb-2 text-sm font-semibold text-warn-ink">{line}</Text>
               ) : null}

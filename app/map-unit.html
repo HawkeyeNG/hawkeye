@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=157" />
+  <link rel="stylesheet" href="styles.css?v=160" />
   <script src="native.js?v=110"></script>
   <!-- Leaflet self-hosted (vendor/leaflet) — CDN was a single point of failure
        on flaky networks and inside the future Telegram webview. -->
@@ -135,10 +135,41 @@
   <script src="register-store.js?v=2"></script>
   <script src="pu-search.js?v=6"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
+  <!-- One wording for every "we could not get your position", shared with
+       incidents.html and the native screens. Both failure lines on this page
+       used to spell out the fallback in full; the fallback is the picker
+       immediately below them. -->
+  <script src="geo-msg.js?v=1"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
     let unit = null;
+
+    /**
+     * One short sentence for a failed position lookup, from the shared helper
+     * (geo-msg.js) so this page, incidents.html and the native screens describe
+     * a denied/unavailable/timed-out fix identically. The fallback covers the
+     * file failing to load and nothing else — it has to stay as short as the
+     * real thing.
+     */
+    const geoLine = (err) => (window.HAWKEYE_GEO && window.HAWKEYE_GEO.line)
+      ? window.HAWKEYE_GEO.line(err) : 'Location unavailable.';
+    /**
+     * The same sentence with this page's one useful pointer welded on as a
+     * CLAUSE, not a second sentence — geo-msg.js's lines end in a full stop, so
+     * the stop comes off before the clause goes on. Two sentences on a status
+     * line is the shape the reader complained about. The construction is
+     * native's, verbatim: `${lead}, or browse the register below.`
+     */
+    const geoLineWith = (err, tail) => `${geoLine(err)}`.replace(/[.\s]+$/, '') + tail;
+    /** Diagnostic to the console, never onto the line — a code in brackets is
+     *  exactly the tail that made this message too long to read. */
+    const geoLog = (where, err) => {
+      try {
+        const code = (window.HAWKEYE_GEO && window.HAWKEYE_GEO.code) ? window.HAWKEYE_GEO.code(err) : 'unknown';
+        console.warn(`[hawkeye] geolocation ${where}: ${code}`);
+      } catch { /* logging must never break the mapping flow */ }
+    };
     const api = (p, o) => fetch(p, o).then((r) => r.json().then((b) => ({ status: r.status, b })));
 
     async function stats() {
@@ -205,7 +236,12 @@
         } else {
           $('cap-status').textContent = ({ gps_accuracy_too_low: 'GPS too weak — move to open sky and retry.', too_far_from_unit: 'You are too far from this unit — only map it while standing there.' })[b.error] || b.error;
         }
-      }, () => { $('cap-status').textContent = 'Location unavailable.'; }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+      }, (err) => {
+        // No tail: the retry IS this button, and mapping a unit is impossible
+        // without a fix — there is no fallback to point at from here.
+        geoLog('map-fix', err);
+        $('cap-status').textContent = geoLine(err);
+      }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     };
 
     // ---------- Leaflet map: locator + ward boundaries + nearby PUs ----------
@@ -328,8 +364,11 @@
         $('near-status').textContent = (r.units || []).length
           ? `${r.units.length} unit(s) within 5 km. Positions marked orange are approximate — mapping them pins the real spot.`
           : 'No units found within 5 km — pick your state, LGA and ward below instead.';
-      }, () => {
-        $('near-status').textContent = 'Location unavailable — pick your state, LGA and ward below instead.';
+      }, (err) => {
+        // ONE clause of tail, because on this page there genuinely is somewhere
+        // else to go: the state › LGA › ward picker sits directly below.
+        geoLog('near-me', err);
+        $('near-status').textContent = geoLineWith(err, ', or browse the register below.');
       }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     };
 
@@ -383,6 +422,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=152"></script>
+  <script src="menu.js?v=155"></script>
 </body>
 </html>

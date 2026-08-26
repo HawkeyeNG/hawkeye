@@ -121,6 +121,24 @@ grep -q '"CapacitorHttp"' capacitor.config.json \
   || { echo "GATE_FAIL: CapacitorHttp is not configured — fetchData would fail CORS and silently use the bundle"; exit 1; }
 echo "  ok: fetchData present, CapacitorHttp on"
 
+# SHARE — another one that fails invisibly, in the same shape as fetchData.
+#
+# Android WebView does NOT expose navigator.share; it is a browser-UI feature.
+# So Lite is the one surface that needs @capacitor/share to open a real OS share
+# sheet, and without it "Share Hawkeye" still WORKS — app/share.js falls through
+# to its own WhatsApp/Telegram/X/Facebook sheet. The app looks healthy; the
+# button just quietly stops offering Instagram, iMessage and everything else the
+# phone knows about, on the one platform that most needed them.
+#
+# Checked in the SYNCED output, not package.json: `npx cap sync` is the step that
+# registers a plugin with the native project, and a dependency present in
+# package.json but never synced is exactly this failure.
+grep -q '@capacitor/share' android/app/src/main/assets/capacitor.plugins.json \
+  || { echo "GATE_FAIL: @capacitor/share is not registered — run 'npm i && npx cap sync android' in mobile/ (Lite would lose the OS share sheet)"; exit 1; }
+grep -q 'Cap.Plugins.Share' "$PUB/share.js" \
+  || { echo "GATE_FAIL: share.js does not reach for the Capacitor plugin — the OS sheet would never be used"; exit 1; }
+echo "  ok: @capacitor/share registered and reached for"
+
 # The bundled political_data.json is the OFFLINE FALLBACK. It should not ship
 # months stale just because the live copy is what usually gets read.
 node -e '

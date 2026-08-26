@@ -941,6 +941,13 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 }
 .menu-panel a:last-child { border-bottom: none; }
 .menu-panel a:hover { background: #eef5f0; }
+/* `display: block` above OUTRANKS the user agent's `[hidden] { display: none }`,
+   so a row hidden from JS would stay on screen -- the scoped-display trap this
+   codebase has hit before. Today only "Take the tour" is ever hidden this way
+   (menu.js hides it when no tab bar is rendered, since the tour is five cards
+   about that bar), and no anchor in this panel carries `hidden` on the website,
+   so this rule changes nothing there. */
+.menu-panel a[hidden] { display: none; }
 
 .scope-note:empty { display: none; }
 .scope-note {
@@ -1142,6 +1149,16 @@ html.native-app textarea { font-size: 16px; }
    a rendering fault rather than a layout. The website has no such header, which
    is why this is scoped. */
 html.native-app main.wrap { padding-top: 14px; }
+/* AND THE AUTH SCREEN KEEPS ITS STATUS-BAR GAP.
+   The rule above is (0,2,2) and `.auth-screen main` is (0,1,1), so introducing
+   the app type scale silently outranked the one padding that was load-bearing:
+   the auth screen hides .gov-header entirely, which makes `main` the top of the
+   window, and in an edge-to-edge WebView that put the HAWKEYE wordmark under the
+   clock. Restated here at (0,3,2) rather than by weakening the rule above,
+   because every other page genuinely wants the flat 14px. */
+html.native-app.auth-screen main.wrap {
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+}
 
 /* The evidence row (.media-actions) already gives its three controls
    `flex: 1 1 0`, so Camera / Video / Upload are the same WIDTH. What differs is
@@ -1395,6 +1412,165 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 .rs-opt small { color: var(--muted); font-size: 0.8rem; }
 .rs-opt:active { background: var(--tint); }
 
+/* ---------- first-run tour (app shell only) ----------
+   Built once in menu.js, right beside the tab bar and the report sheet it sits
+   on top of. The web twin of native/src/components/tour.tsx; every rule here is
+   reachable only from `.tour` or from `.tabbar .tab.tour-lit`, so nothing on the
+   website can see it.
+
+   TWO NATIVE TINTS, neither of which this sheet has a token for -- and they are
+   NOT the same colour in light mode, which is how collapsing them into one
+   variable went unnoticed:
+
+   --tour-ink is the TAB BAR'S ACTIVE tint ((tabs)/_layout.tsx:
+   `activeTint = ui.dark ? ui.tint.good.ink : BRAND.green`). It inks the glyph
+   inside the gold ring, and nothing else. #004225 on a dark surface is a
+   near-black smudge that reads as the DISABLED control, hence the dark value.
+
+   --tour-good-ink is the palette's --good-ink (native/src/global.css: 11 107 58
+   light, 110 219 160 dark). It inks the CARD -- the chip glyph, the live
+   progress dot and the Next label -- every one of which tour.tsx draws in
+   `text-good-ink` / `ui.tint.good.ink`. In DARK the two are the same #6edba0,
+   which is why one variable appeared to work; in LIGHT good-ink is #0b6b3a and
+   the ring's green is #004225, so the card was wearing the ring's colour.
+
+   Declared on the two roots that consume them rather than on :root, to keep the
+   feature in one place. */
+.tour, .tabbar { --tour-ink: var(--green); --tour-good-ink: #0b6b3a; }
+:root[data-theme="dark"] .tour,
+:root[data-theme="dark"] .tabbar { --tour-ink: #6edba0; --tour-good-ink: #6edba0; }
+
+.tour {
+  position: fixed; inset: 0; z-index: 130;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  /* THE WHOLE LAYER CATCHES POINTERS -- including the strip it leaves UNDIMMED
+     above the tab bar.
+
+     Undimmed is not the same as live, and native is not live either. Its tour is
+     an RN <Modal>: a separate full-screen window above the React root, so the
+     strip `bottomGap` leaves unpainted is VISIBLE but takes no touches
+     (modal-card.tsx says so in as many words -- "no scrim, no touch capture" --
+     the backdrop Pressable stops short of it and the modal window swallows
+     whatever lands there).
+
+     Letting the real bar through instead cost three bugs, all reproduced:
+     tapping a tab NAVIGATED AWAY mid-tour with the seen flag unwritten, so the
+     tour reopened on the next visit; tapping the ringed Report circle opened the
+     report sheet UNDERNEATH this scrim (z-index 120 against 130) and stranded it
+     there; tapping More opened the menu panel behind it. The reader is being
+     SHOWN a control, not handed it -- the tour is five taps long and the bar is
+     still there afterwards.
+
+     A tap on the strip does nothing at all, which is also native: it is outside
+     the backdrop's Pressable, so it does not dismiss either. */
+}
+.tour[hidden] { display: none; }
+/* STOPS SHORT OF THE TAB BAR. --tour-gap is measured in menu.js (bar height plus
+   the raised Report circle's overhang) and set on this element every time a card
+   paints, so the ringed tab is LIT rather than dimmed to the same grey as
+   everything else. */
+.tour-backdrop {
+  position: absolute; left: 0; right: 0; top: 0; bottom: var(--tour-gap, 0px);
+  background: rgba(10, 18, 14, 0.55);
+}
+.tour-card {
+  position: relative;
+  width: 100%; max-width: 26rem; max-height: 85%;
+  /* Centred in the space ABOVE the bar, not in the window: a flex-centred child
+     is centred including its margins. */
+  margin-bottom: var(--tour-gap, 0px);
+  display: flex; flex-direction: column;
+  background: var(--card); color: var(--ink);
+  border-radius: 18px; padding: 18px 18px 16px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  animation: rs-up 0.18s ease-out;
+}
+@media (prefers-reduced-motion: reduce) { .tour-card { animation: none; } }
+/* The card takes focus on open (see menu.js) purely so the keyboard and a
+   screen reader land inside the dialog; it is a container, not a control, so
+   it must not paint a focus ring of its own. Every real control in here keeps
+   the sheet's. */
+.tour-card:focus { outline: none; }
+/* AND NO SECOND GOLD RING ON THE BUTTONS. This sheet's focus ring is
+   `button:focus { outline: 3px solid var(--focus) }` -- :focus, not
+   :focus-visible -- so TAPPING Next left a 3px #ffdd00 outline burning on it for
+   the rest of the tour: loudest on the Report card, where it competes with the
+   gold ring the card is telling the reader to look at. Focusing the card instead
+   of the button on open only ever covered the first card; every card after it is
+   reached by pressing Next.
+   Suppressed for the POINTER case only. A keyboard user still gets the ring
+   (:focus-visible), which is what it is for, and a browser that does not know
+   :focus-visible drops this rule as invalid and keeps today's behaviour. Scoped
+   to .tour: the rest of the site is untouched. */
+.tour button:focus:not(:focus-visible) { outline: none; }
+.tour-card h3 { margin: 0 0 10px; font-size: 1.05rem; }
+/* Rule one of native's ModalCard: the BODY scrolls ... */
+.tour-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+/* ... and rule two: the footer is a SIBLING of it, never inside, so Skip and
+   Next are on screen from the moment the card opens. */
+.tour-foot { flex: none; padding-top: 16px; }
+.tour-step { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; }
+/* The neutral chip is native's `bg-surface` + a good-ink glyph. Native's
+   --surface is the SCREEN background (232 242 236 light, 8 20 14 dark), which
+   this sheet calls --bg -- the same two values to the byte, while --surface here
+   means something else entirely (the card). --tint was close enough in light to
+   pass by eye and visibly wrong in dark. */
+.tour-chip {
+  width: 40px; height: 40px; flex: none; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bg); color: var(--tour-good-ink);
+}
+.tour-chip svg { width: 18px; height: 18px; display: block; }
+/* THE REPORT CHIP IS THE REPORT BUTTON. Every step used to get the same neutral
+   chip in native -- including the one whose whole body is "Report -- the green
+   button", describing a control the reader was about to look for, in colours
+   that control does not have. It wears the tab bar's own pairing instead:
+   --green (#004225) with the glyph in --gold (#f5b301), the two values the CTA
+   itself uses. Both are theme-invariant in this sheet, so the pair holds in
+   light and dark. */
+.tour-step.is-cta .tour-chip { background: var(--green); color: var(--gold); }
+.tour-name { font-size: 1rem; }
+.tour-text { margin: 0; font-size: 0.9rem; line-height: 1.45; color: var(--muted); }
+.tour-note { margin: 16px 0 0; font-size: 0.76rem; line-height: 1.5; color: var(--faint); }
+.tour-note[hidden] { display: none; }
+.tour-dots { display: flex; justify-content: center; gap: 8px; padding-bottom: 12px; }
+.tour-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+.tour-dots span.on { background: var(--tour-good-ink); }
+/* TWO EQUAL BUTTONS, side by side. flex-basis 0 rather than auto so the pair is
+   split down the middle whatever the labels say -- "Start observing" is more
+   than twice the width of "Close". */
+.tour-actions { display: flex; gap: 8px; }
+.tour-actions button {
+  flex: 1 1 0; min-width: 0;
+  border-radius: 999px; padding: 12px 8px;
+  font: inherit; font-size: 0.85rem; font-weight: 700;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.tour-skip { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+/* bg-good + text-good-ink, native's own pairing for this button. --tint-ok IS
+   native's --good in both themes (dff2e8 / 103824), so only the ink moved. */
+.tour-next { background: var(--tint-ok); color: var(--tour-good-ink); border: 1px solid transparent; }
+.tour-skip:active, .tour-next:active { opacity: 0.7; }
+
+/* THE RING ON THE LIVE TAB. box-shadow, not a border or an outline offset, so
+   nothing in the bar moves when a card opens; the padding is cancelled by an
+   equal negative margin for the same reason. Set and cleared by menu.js's
+   litTab(); every exit path clears it, because a ring left burning after the
+   tour closes is a tab that looks permanently selected. */
+.tabbar .tab.tour-lit .ti { border-radius: 999px; box-shadow: 0 0 0 2px var(--gold); }
+.tabbar .tab.tour-lit:not(.tab-cta) .ti {
+  padding: 4px; margin: -4px;
+  background: var(--tint-ok); color: var(--tour-ink);
+}
+/* The CTA keeps its own drop shadow -- box-shadow is one property, so the ring
+   has to be listed with it or the circle goes flat exactly when it is being
+   pointed at. 3px because this ring sits on brand green rather than on the bar,
+   and 2px disappears into the shadow. */
+.tabbar .tab.tour-lit.tab-cta .ti {
+  box-shadow: 0 0 0 3px var(--gold), 0 6px 16px rgba(0, 66, 37, 0.4);
+}
+
 /* App shell (Capacitor / installed PWA): the header carries the page name, so it
    is set as running text rather than a spaced-out wordmark, and the notifications
    row stacks so "Mark all read" can span the width. */
@@ -1555,19 +1731,28 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
 
 /* MY PROFILE's ACCOUNT ROWS — the app's two-row card. A row states a setting and
    its current value and opens the thing that changes it, so the page stops being
-   a column of headings, paragraphs and full-width buttons. */
-html.native-app .prows { padding: 0; overflow: hidden; }
-html.native-app .prow {
+   a column of headings, paragraphs and full-width buttons.
+
+   NOT SCOPED TO html.native-app, and that was a bug for a day. The markup went
+   in for Lite, so the rules did too — but the markup is in profile.html, which
+   is one file serving both, and a `<button class="prow">` with no rules falls
+   to the base button style. The WEBSITE was rendering "Password  Change  ›" as
+   a full-width solid green button, twice, stacked: exactly the column of
+   full-width buttons this shape exists to replace. A row reads better on a
+   desktop profile than a green slab does anyway, so both get it. */
+.prows { padding: 0; overflow: hidden; }
+.prow {
   display: flex; align-items: center; gap: 10px; width: 100%; margin: 0;
   padding: 14px 16px; background: none; border: 0; box-shadow: none;
   border-top: 1px solid var(--line); text-align: left; cursor: pointer;
-  font-size: 0.95rem; color: var(--ink);
+  font-size: 0.95rem; color: var(--ink); text-decoration: none;
 }
-html.native-app .prows .prow:first-child { border-top: 0; }
-html.native-app .prow:hover { background: var(--tint); filter: none; }
-html.native-app .prow-k { flex: 1 1 auto; font-weight: 600; }
-html.native-app .prow-v { color: var(--muted); font-size: 0.85rem; text-align: right; }
-html.native-app .prow-c { color: var(--muted); flex: none; }
+.prows .prow:first-child { border-top: 0; }
+.prow:hover { background: var(--tint); filter: none; }
+.prow:active { transform: none; }
+.prow-k { flex: 1 1 auto; font-weight: 600; }
+.prow-v { color: var(--muted); font-size: 0.85rem; text-align: right; }
+.prow-c { color: var(--muted); flex: none; }
 
 /* FOLLOW CHIPS YOU CAN READ. `.tag.ok` is a faint tint built for a light page;
    on the app's dark card it was dark-green text on near-black. The app draws
@@ -1582,7 +1767,98 @@ html.native-app #p-subs .tag {
    edge, so the sign-in header sat under the clock and the battery icon. The
    viewport carries viewport-fit=cover, so the inset is available; the header
    pays it. Only in the app — the website has an OS chrome above it. */
-html.native-app .auth-screen .gov-header,
+/* .is-landing only. The `.auth-screen` half of this selector was written with a
+   descendant combinator — but that class goes on <html>, so it matched nothing,
+   and the auth screen hides .gov-header regardless. Its real fix is the
+   main.wrap rule above. */
 html.native-app.is-landing .gov-header {
   padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
 }
+
+/* ============================ SHARE HAWKEYE ==============================
+   The download landing page (download.html) and the web-intent sheet share.js
+   falls back to when neither navigator.share nor Capacitor's is available. */
+
+/* ONE CENTRED CARD. This page is what a forwarded link opens, so it is read by
+   somebody who knows nothing about Hawkeye and is deciding in about four
+   seconds. A narrow column keeps the badges above the fold on a phone and stops
+   the sentence above them running to a newspaper measure on a laptop. */
+/* CENTRED IN THE WINDOW, and in Hawkeye's own colours.
+   This is the first thing a stranger sees when a friend sends them the link, so
+   it should look like the app it is offering rather than like a settings panel.
+   Dark green with a gold call to action is the pairing the tab bar, the race
+   CTAs and the app icon already use.
+   min-height with dvh, not vh: on a phone browser vh includes the collapsing
+   address bar, so a vh-centred card jumps as the bar hides. */
+.dl-wrap {
+  max-width: 520px;
+  min-height: calc(100dvh - 220px);
+  display: flex; align-items: center; justify-content: center;
+}
+.dl-card {
+  background: linear-gradient(160deg, #00251a, #00482b);
+  border: 1px solid rgba(245, 179, 1, .28);
+  color: #fff;
+  width: 100%;
+}
+.dl-card h1 { color: #fff; }
+/* Solid white on the dark green rather than --muted, which is tuned for a light
+   card and drops to about 2:1 here. */
+.dl-card .lede { color: rgba(255, 255, 255, .92); }
+.dl-card .hint { color: rgba(255, 255, 255, .72); }
+.dl-alt { border-top-color: rgba(255, 255, 255, .18); }
+/* The ghost button has to be readable on green too — its default border and ink
+   are both tuned for a light surface. */
+.dl-card .btn-ghost {
+  color: #fff; border-color: rgba(255, 255, 255, .45); background: transparent;
+}
+.dl-card .btn-ghost:hover { background: rgba(255, 255, 255, .10); }
+/* GOLD, and dark ink on it. The share button is the one thing this page is
+   really for, and --accent resolves to the same gold but paints white text on
+   it, which is 1.9:1. */
+.dl-share .btn-accent {
+  background: var(--gold); color: #14201a; border-color: var(--gold);
+  font-weight: 700;
+}
+.dl-share .btn-accent:hover { filter: brightness(1.06); }
+.dl-card { text-align: center; }
+.dl-card h1 { border: 0; padding: 0; margin: 0 0 10px; }
+.dl-card .lede { margin: 0 auto 18px; max-width: 42ch; }
+/* Centred, unlike the homepage's left-aligned install row, and allowed to wrap
+   to two rows when both stores are live. */
+.dl-badges { justify-content: center; }
+.dl-alt { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.dl-alt .hint { margin: 0 0 8px; }
+.dl-share { margin-top: 18px; }
+.dl-share .btn-accent { width: 100%; max-width: 320px; }
+
+/* THE FALLBACK SHEET. Desktop, mostly — a phone gets its own OS sheet, which is
+   better than anything we could draw. Same dialog treatment as the install
+   modal so the site has one modal, not two that nearly match. */
+.share-sheet {
+  border: 0; border-radius: 16px; padding: 22px; max-width: min(94vw, 380px);
+  background: var(--card); color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+}
+.share-sheet::backdrop { background: rgba(10, 20, 15, .55); }
+.share-sheet h2 { font-size: 1.15rem; margin: 0 0 6px; border: 0; padding: 0; }
+.share-sheet .hint { margin: 0 0 14px; }
+/* Two per row: four names of very different lengths ("X" against "Facebook")
+   read as a jumble in a flex row and as a tidy list in a grid. */
+.share-targets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.share-targets .btn-ghost { margin: 0; width: 100%; text-align: center; }
+/* The link is PRINTED, not only copyable: clipboard.writeText needs a secure
+   context and can be refused outright, and a Copy button that silently does
+   nothing is worse than no button. Whatever happens, the address is on screen. */
+.share-link { margin: 14px 0 0; text-align: center; }
+.share-link code {
+  font-size: 0.82rem; color: var(--muted); word-break: break-all;
+  background: var(--tint); padding: 6px 10px; border-radius: 8px; display: inline-block;
+}
+.share-foot { display: flex; gap: 8px; margin-top: 16px; }
+.share-foot button { flex: 1; margin: 0; }
+
+/* In Lite the sheet is never built (Capacitor's own sheet answers first), but
+   the download page IS reachable from the menu, so it takes the app type scale
+   like every other page. */
+html.native-app .dl-card h1 { font-size: 1.35rem; }
+html.native-app .dl-wrap { max-width: none; }

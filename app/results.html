@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=157" />
+  <link rel="stylesheet" href="styles.css?v=160" />
   <script src="native.js?v=111"></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
@@ -76,11 +76,11 @@
   <script src="map-label.js?v=2"></script>
   <!-- For window.followSubject — the Follow button here and the one on a race
        page describe their subscriptions with the same words, from one place. -->
-  <script src="follow.js?v=3"></script>
+  <script src="follow.js?v=4"></script>
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
-  <script src="race.js?v=20"></script>
+  <script src="race.js?v=21"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -746,6 +746,23 @@
     document.getElementById('race-list').addEventListener('click', (e) => {
       const b = e.target.closest('.race-opt');
       if (!b) return;
+      /**
+       * A BY-ELECTION GOES STRAIGHT TO ITS RACE PAGE.
+       *
+       * Picking one here used to paint a national board for an election held in
+       * one place — a map of a single LGA, over a caption offering to go and
+       * look at the race the board already was. `constituencies` is the test
+       * races.html has always used for this ("a by-election is a single seat and
+       * has its own page"); the leaderboard is the surface that never got it.
+       *
+       * location.href, not replace: the reader came from the leaderboard and
+       * Back should return them to it.
+       */
+      const picked = (CONTESTS || []).find((c) => c.code === b.dataset.code);
+      if (picked && (picked.constituencies || []).length) {
+        location.href = `race.html?contest=${encodeURIComponent(picked.code)}`;
+        return;
+      }
       document.getElementById('sel-contest').value = b.dataset.code;
       // Choosing a race is choosing the whole race: a crop inherited from the
       // page that sent you here would quietly limit it.
@@ -789,7 +806,32 @@
       const subject = scope && scope !== '__all'
         ? scope
         : (window.followSubject ? window.followSubject(contest, '') : 'this race');
-      document.getElementById('btn-follow').textContent = `🔔 Follow ${subject}`;
+      const btn = document.getElementById('btn-follow');
+      btn.textContent = `🔔 Follow ${subject}`;
+      /**
+       * A DECLARED RACE IS NOT SOMETHING TO FOLLOW.
+       *
+       * A race page hides its own CTAs once polling day has passed, but this
+       * picker lists every contest in the catalogue and a by-election STAYS in
+       * the catalogue after it is won — so the day after the Udu by-election
+       * this board would have gone on offering alerts about reports that cannot
+       * arrive. The declarations list is the same one follow.js reads and the
+       * server enforces (POST /api/subscriptions returns 409).
+       *
+       * Shown again by default on every repaint, because the picker changes what
+       * this button is about: leaving it hidden after switching to a live race
+       * would remove a control that is now valid.
+       */
+      btn.hidden = false;
+      if (window.raceIsClosed) {
+        window.raceIsClosed(contest, scope === '__all' ? '' : scope).then((closed) => {
+          // Re-read the picker: an await means the reader may have changed it.
+          if (!closed) return;
+          if (document.getElementById('sel-contest').value !== contest) return;
+          btn.hidden = true;
+          document.getElementById('follow-msg').textContent = '';
+        });
+      }
     }
 
     function togglePicker(open) {
@@ -927,6 +969,21 @@
       const QP = new URLSearchParams(location.search);
       const asked = QP.get('contest');
       const deepLinked = !!asked && ordered.some((c) => c.code === asked);
+      /**
+       * THE SECOND WAY IN. Every follow alert the backend sends points at
+       * results.html?contest=… (routes/subscriptions.js), so closing the picker
+       * alone would leave the intermediate board reachable from every
+       * new-report notification about a followed by-election.
+       *
+       * location.replace, not href: this arrival has no leaderboard behind it
+       * worth going Back to, and href would leave a bounce in history that
+       * sends the reader straight forward again.
+       */
+      const askedDef = ordered.find((c) => c.code === asked);
+      if (askedDef && (askedDef.constituencies || []).length) {
+        location.replace(`race.html?contest=${encodeURIComponent(asked)}`);
+        return;
+      }
       if (deepLinked) sel.value = asked;
       // ?state= crops the board before the first load. An unknown name is
       // rejected by the API with a 404 rather than silently drawing an empty
@@ -952,7 +1009,24 @@
       const wantScope = QP.get('scope');
       if (wantScope) {
         const ss = document.getElementById('sel-scope');
-        if ([...ss.options].some((o) => o.value === wantScope)) ss.value = wantScope;
+        if ([...ss.options].some((o) => o.value === wantScope)) {
+          ss.value = wantScope;
+          /**
+           * AND RELABEL THE BUTTON. refresh() above painted it from the picker's
+           * value at the time, which was "Everywhere" — so a link opened with
+           * ?scope=Osun showed "Follow all governorship races" over a picker
+           * reading Osun, and the click handler then subscribed to Osun alone.
+           * The label was describing a different subscription from the one the
+           * button made.
+           *
+           * This is the path every follow alert arrives on
+           * (notifySubscribers sends results.html?contest=…&scope=…), so it is
+           * not a rare entry. It also decides whether the race is closed, which
+           * is scoped by region — without this that check runs against the wrong
+           * region.
+           */
+          paintFollowBtn();
+        }
       }
       startPolling();
     })();
@@ -1057,12 +1131,19 @@
       // Names the same subject the button does — "everywhere" left the reader to
       // work out what they had just signed up for.
       const subject = scope || (window.followSubject ? window.followSubject(contest, '') : 'this race');
+      // 409 = declared while this board was open. Not a failure the reader can
+      // act on, so the control goes rather than reporting one.
+      if (r.status === 409) {
+        document.getElementById('btn-follow').hidden = true;
+        msg.textContent = '';
+        return;
+      }
       msg.textContent = r.ok
         ? `🔔 Following ${subject}. You'll be alerted on every new report (Telegram or WhatsApp, your choice, plus the in-app feed).`
         : 'Could not set up following — make sure your phone is verified.';
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=152"></script>
+  <script src="menu.js?v=155"></script>
 </body>
 </html>

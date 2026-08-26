@@ -118,7 +118,12 @@ console.log('=== a live race: the ask is pinned and reachable ===');
 {
   const r = await render(LIVE);
   check('the button says what it does', r.label, 'Report from your unit');
-  check('and still goes to the report route', r.href, 'observe.html?intent=observe');
+  // The href now CARRIES THE RACE. A reader who taps Report on a race page
+  // has already said which race; the wizard used to ask again two steps
+  // later. startsWith, not equality: the contest is appended only when the
+  // race has a join (the presidency does not).
+  check('and still goes to the report route', r.href.startsWith('observe.html?intent=observe'), true);
+  check('carrying the race the reader came from', /[?&]contest=/.test(r.href), true);
   check('the bar is marked pinned', r.pinnedClass, true);
   check('and is actually sticky', r.position, 'sticky');
   check('REACHABLE with the page scrolled to the top', r.inViewAtTop, true);

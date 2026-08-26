@@ -8,7 +8,7 @@
   <title>Hawkeye — Admin Console</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=157" />
+  <link rel="stylesheet" href="styles.css?v=160" />
   <script src="native.js?v=110"></script>
   <style>
 /* ---- from review.html ---- */
@@ -156,7 +156,7 @@
 
     <section id="console" hidden>
       <div class="panelbar" id="panelbar">
-        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="push">Push</span><span class="tab" data-p="social">Social</span><span class="tab" data-p="register">Register</span>
+        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="push">Push</span><span class="tab" data-p="races">Races</span><span class="tab" data-p="social">Social</span><span class="tab" data-p="register">Register</span>
         <span class="tab" data-p="_logout" style="margin-left:auto">Lock 🔒</span>
       </div>
       <div class="panel" data-p="reach">
@@ -341,6 +341,26 @@
     <p class="hint" id="reg-note" style="margin-top:6px">Dry run first — Apply unlocks once it has
       reported what would change.</p>
     <div id="reg-out"></div>
+  </div><div class="panel" data-p="races" hidden>
+    <h1 style="margin-top:34px">Close a Declared Race</h1>
+    <p class="hint">On the night, once INEC's returning officer has announced a result:
+      write it into <code>backend/src/data/declarations.json</code>, deploy, then run this.
+      Each race it closes <strong>drops itself from every follow list</strong> and sends the
+      people who were following it one alert naming the declared winner and the top three —
+      in their notification centre and on their phone.</p>
+    <p class="hint"><strong>Dry run first.</strong> It prints the exact notification each entry
+      would send, word for word, and how many people would get it, and writes nothing.
+      A push cannot be recalled, so Close is locked until you have seen one.
+      Both are <strong>idempotent</strong>: a race already closed is reported as skipped, never
+      announced twice.</p>
+
+    <div class="row" style="margin-top:12px;gap:8px">
+      <button id="rc-dry" class="secondary" style="width:auto;margin:0">Dry run</button>
+      <button id="rc-apply" class="btn-danger" style="width:auto;margin:0" disabled>Close and announce</button>
+    </div>
+    <p class="hint" id="rc-note" style="margin-top:6px">Dry run first — Close unlocks once it has
+      shown you what would be sent.</p>
+    <div id="rc-out"></div>
   </div>
     </section>
   </main>
@@ -1104,6 +1124,96 @@
     dryBtn.onclick = () => call(false);
     applyBtn.onclick = () => {
       if (!confirm('Rewrite the register spellings on PRODUCTION?\n\nThis updates thousands of polling-unit rows. It is idempotent and safe to repeat, but it is a live write.')) return;
+      call(true);
+    };
+  })();
+
+  /**
+   * CLOSE A DECLARED RACE — the Races pane.
+   *
+   * Same shape as Register above, and for a stronger reason: this deletes
+   * subscriptions AND pushes to phones, and a push cannot be recalled. The dry
+   * run is the server's default, so the safe call is the one that happens if
+   * anything about this form goes wrong.
+   *
+   * The dry run renders the notification AS A NOTIFICATION — the title on one
+   * line, the body under it, in the same preview block the push composer uses.
+   * A JSON dump would technically contain the same words, and nobody proofreads
+   * JSON. The words are the deliverable here.
+   */
+  (function () {
+    const out = document.getElementById('rc-out');
+    const note = document.getElementById('rc-note');
+    const dryBtn = document.getElementById('rc-dry');
+    const applyBtn = document.getElementById('rc-apply');
+    if (!out) return;
+
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    function card(r) {
+      const who = r.announce
+        ? `${r.followers} follower${r.followers === 1 ? '' : 's'} would be told`
+        : 'announces nothing (announce: false)';
+      const state = r.applied
+        ? `<span class="status ok">Closed — ${r.dropped} follow(s) dropped</span>`
+        : `<span class="status">${esc(r.skipped || 'not applied')}</span>`;
+      return `<div class="card" style="padding:12px;margin-top:10px">
+        <div style="display:flex;justify-content:space-between;gap:12px">
+          <b>${esc(r.label)}</b><span class="muted">${esc(r.key)}</span></div>
+        <div class="push-preview" style="margin-top:10px">
+          <div class="pp-app">Hawkeye</div>
+          <div class="pp-title">${esc(r.note.title)}</div>
+          <div class="pp-body" style="white-space:pre-line">${esc(r.note.body)}</div>
+        </div>
+        <p class="hint" style="margin-top:8px">Opens ${esc(r.note.url || '—')} · ${esc(who)}</p>
+        ${state}</div>`;
+    }
+
+    async function call(apply) {
+      const secret = sessionStorage.getItem('hawkeye_admin') || '';
+      if (!secret) { out.innerHTML = '<p class="status bad">Unlock the console first.</p>'; return; }
+      dryBtn.disabled = applyBtn.disabled = true;
+      out.innerHTML = '<p class="empty">Working…</p>';
+      try {
+        const r = await fetch('/api/admin/close-races', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-admin-secret': secret },
+          body: JSON.stringify({ dryRun: !apply }),
+        });
+        const d = await r.json().catch(() => null);
+        if (!r.ok || !d) {
+          out.innerHTML = `<p class="status bad">${esc((d && d.error) || `HTTP ${r.status}`)}</p>`;
+          return;
+        }
+        const list = d.applied || [];
+        out.innerHTML = list.length
+          ? list.map(card).join('')
+          : '<p class="empty">No declarations are configured. Add one to backend/src/data/declarations.json and deploy.</p>';
+        // The prune runs alongside and is deliberately silent to observers —
+        // but it deletes rows, so it says so here, on the preview too.
+        if (d.pruned) {
+          out.insertAdjacentHTML('beforeend',
+            `<p class="hint">${d.dryRun ? 'Would also remove' : 'Also removed'} ${esc(d.pruned)} follow(s) for races that left the ballot with no declaration recorded. No alert is sent for those — there is no result to carry.</p>`);
+        }
+        if (d.dryRun) {
+          applyBtn.disabled = !list.some((x) => x.skipped === 'dry run');
+          note.textContent = applyBtn.disabled
+            ? 'Nothing new to close — every declaration here has already been applied.'
+            : 'Read the alerts above word for word. Close sends them.';
+        } else {
+          applyBtn.disabled = true;
+          note.textContent = 'Done. Re-running changes nothing.';
+        }
+      } catch (e) {
+        out.innerHTML = `<p class="status bad">${esc(e.message || e)}</p>`;
+      } finally {
+        dryBtn.disabled = false;
+      }
+    }
+
+    dryBtn.onclick = () => call(false);
+    applyBtn.onclick = () => {
+      if (!confirm('Close these races on PRODUCTION?\n\nThis deletes the follow rows and sends a push to everyone who was following. A push cannot be recalled.')) return;
       call(true);
     };
   })();

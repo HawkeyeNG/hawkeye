@@ -9,9 +9,18 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=157" />
+  <link rel="stylesheet" href="styles.css?v=160" />
   <script src="native.js?v=111"></script>
   <style>
+    /* The tapped-state line under the governors map. Page-local: styles.css is
+       pinned by every page in the app, so a shared rule for one caption would
+       mean bumping forty ?v= pins and the service worker with them. */
+    .gov-pick { margin: 8px 0 0; font-size: 0.92rem; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .gov-pick .gp-name { color: var(--muted); }
+    .gov-pick .gp-party { margin-left: auto; font-weight: 700; font-size: 0.82rem; }
+    .gov-pick-hint { margin: 8px 0 0; }
+    #map path.st { cursor: pointer; }
+    #map path.st.sel { stroke: var(--green); stroke-width: 2; }
     .map-card svg { width: 100%; height: auto; }
     .st { stroke: #fff; stroke-width: 1; }
     table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
@@ -514,7 +523,12 @@
       for (const st of geo.states) {
         const g = byKey[st.key]; const p = g?.p;
         won.push(p);
-        s += `<path class="st" d="${st.path}" fill="${p?color(p):'#eef4f0'}" fill-opacity="${p?0.85:1}"><title>${st.name}: ${p||'—'}</title></path>`;
+        // The governor's NAME, from political_data.json's governorNames —
+        // researched from each state government and the Nigeria Governors
+        // Forum. Absent for the FCT, which has no governor.
+        const gname = (data.governorNames || {})[st.name] || '';
+        const tip = `${st.name}: ${p || '—'}${gname ? ` — ${gname}` : ''}`;
+        s += `<path class="st" d="${st.path}" fill="${p?color(p):'#eef4f0'}" fill-opacity="${p?0.85:1}" tabindex="0" role="button" data-state="${esc(st.name)}" data-party="${esc(p || '')}" data-gov="${esc(gname)}"><title>${esc(tip)}</title></path>`;
       }
       // Shapes first, THEN the emblems: the label point is measured off the
       // rendered path. Same fix as preview.html and results.html — the old
@@ -522,7 +536,9 @@
       // states with a tail or a crescent the emblem sat on the border or off the
       // state entirely. See map-label.js.
       const mapEl = document.getElementById('map');
-      mapEl.innerHTML = `<svg viewBox="${geo.viewBox}" role="img" aria-label="Governing party by state">${s}<g class="badges"></g></svg>`;
+      mapEl.innerHTML = `<svg viewBox="${geo.viewBox}" role="img" aria-label="Governing party by state">${s}<g class="badges"></g></svg>`
+        + `<p class="gov-pick" id="gov-pick" hidden></p>`
+        + `<p class="hint gov-pick-hint" id="gov-pick-hint">Tap a state for its governor.</p>`;
       const msvg = mapEl.querySelector('svg');
       const R = window.HAWKEYE_MAP.badgeScale(msvg);  // constant on-screen size
       let b = '';
@@ -536,6 +552,37 @@
            + `<image href="${logos[p]}" x="${pt.x-w/2}" y="${pt.y-h/2}" width="${w}" height="${h}"/>`;
       });
       msvg.querySelector('g.badges').innerHTML = b;
+
+      /**
+       * TAP A STATE. Mirrors the seat arches on this same page: the <title>
+       * stays for a desktop hover, and the detail a phone cannot reach is put
+       * on screen instead. Keyboard too — the shapes carry tabindex and
+       * role=button, so Enter and Space have to work or the role is a lie.
+       */
+      const showPick = (el) => {
+        const pick = document.getElementById('gov-pick');
+        const hint = document.getElementById('gov-pick-hint');
+        if (!pick) return;
+        const st = el.dataset.state || '';
+        const pt = el.dataset.party || '';
+        const gv = el.dataset.gov || '';
+        pick.innerHTML = `<strong>${esc(st)}</strong>`
+          + (gv ? ` <span class="gp-name">${esc(gv)}</span>` : '')
+          + (pt ? ` <span class="gp-party" style="color:${color(pt)}">${esc(pt)}</span>`
+                : ' <span class="gp-party">No governor</span>');
+        pick.hidden = false;
+        if (hint) hint.hidden = true;
+        msvg.querySelectorAll('path.st').forEach((x) => x.classList.toggle('sel', x === el));
+      };
+      msvg.addEventListener('click', (e) => {
+        const t = e.target.closest && e.target.closest('path.st');
+        if (t) showPick(t);
+      });
+      msvg.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const t = e.target.closest && e.target.closest('path.st');
+        if (t) { e.preventDefault(); showPick(t); }
+      });
 
       const parties = [...new Set(Object.values(data.governors).filter(Boolean))];
       document.getElementById('legend').innerHTML = parties.map(p=>`<span><i style="background:${color(p)}"></i>${p}</span>`).join('');
@@ -601,6 +648,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=152"></script>
+  <script src="menu.js?v=155"></script>
 </body>
 </html>

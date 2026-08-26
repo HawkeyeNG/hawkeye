@@ -776,6 +776,36 @@ $('auth-reset').onclick = (e) => {
   resetAuthPane();
 };
 
+/**
+ * The one-sentence reason a location attempt failed.
+ *
+ * geo-msg.js owns the wording, because incidents.html and map-unit.html print
+ * the same line and three copies of it drifted into three explanations of one
+ * condition. It is the web port of native's describeFixFailure, and it keeps
+ * native's rule that a TIMEOUT never mentions permission — the commonest caller
+ * has already granted location and is simply standing indoors.
+ *
+ * The inline fallback covers observe.html failing to load the script and nothing
+ * else, so it must stay exactly as short as the real thing: a fallback that
+ * reintroduces the paragraph would quietly undo the fix on the one page that
+ * needed it most.
+ */
+function geoLine(err) {
+  if (window.HAWKEYE_GEO && typeof window.HAWKEYE_GEO.line === 'function') return window.HAWKEYE_GEO.line(err);
+  const code = err && err.code;
+  if (code === 1) return 'Hawkeye needs your location — allow Location for this site and try again.';
+  if (code === 2) return 'Your device could not work out where it is — try again in a moment.';
+  if (code === 3) return 'Could not get a GPS fix — move near a window or step outside and try again.';
+  return 'This device could not report its location just now — try again.';
+}
+/** The branch that fired, for the console only — never for the status line. */
+function geoLog(where, err) {
+  try {
+    const code = (window.HAWKEYE_GEO && window.HAWKEYE_GEO.code) ? window.HAWKEYE_GEO.code(err) : 'unknown';
+    console.warn(`[hawkeye] geolocation ${where}: ${code}`);
+  } catch { /* logging must never break a report */ }
+}
+
 // ---------- locate: geofenced discovery ----------
 $('btn-locate').onclick = async () => {
   $('locate-status').textContent = 'Getting your location…';
@@ -783,8 +813,12 @@ $('btn-locate').onclick = async () => {
   let pos;
   try {
     pos = await getPosition();
-  } catch {
-    $('locate-status').textContent = 'Location denied or unavailable — Hawkeye cannot work without it. If you denied it, allow Location for this site (tap the padlock/ⓘ icon by the address bar → Permissions) and try again.';
+  } catch (err) {
+    // ONE SENTENCE. This used to be a 43-word paragraph that diagnosed, blamed
+    // and then gave an address-bar tour — and it said the same thing whether the
+    // observer had refused permission or was simply indoors with no lock yet.
+    geoLog('near-me', err);
+    $('locate-status').textContent = geoLine(err);
     return;
   }
   const { latitude: lat, longitude: lng, accuracy } = pos.coords;
@@ -1170,8 +1204,40 @@ function fillContests() {
     sel.innerHTML = '<option value="">— Select election —</option>'
       + applicableContests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
   }
+  applyRaceProposal(sel);
   updateScopeNotice();
   updateSubmitState();
+}
+
+/**
+ * A race carried in from a race page's "Report from your unit" (?contest=).
+ *
+ * CONSUMED ONCE, at the first moment the unit and the election list are both
+ * known — which is here, because fillContests runs on every unit change. After
+ * that it is forgotten: re-imposing it would silently undo an observer who
+ * corrected their unit and got a different set of races.
+ *
+ * It PRE-SELECTS and leaves the step on screen. The unit decides what can be
+ * reported, and the unit was chosen after the link — so if the race is not
+ * offered here, the picker simply stays unanswered rather than arguing.
+ */
+let raceProposal = (() => {
+  try {
+    return new URLSearchParams(location.search).get('contest') || null;
+  } catch { return null; }
+})();
+
+function applyRaceProposal(sel) {
+  if (!raceProposal || !sel) return;
+  const code = raceProposal;
+  raceProposal = null;
+  const opt = [...sel.options].find((o) => o.value === code && !o.disabled);
+  if (!opt) return;   // not held at this unit, or not open — the reader chooses
+  sel.value = code;
+  // A programmatic assignment does NOT fire `change`, and the step confirmer
+  // and the fold lock below it both hang off that event. Without this the
+  // election would look chosen and the next step would stay locked.
+  sel.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function bindUnit(u) {
@@ -1310,6 +1376,47 @@ function setStepDone(i, done, label) {
   stepLock();
 }
 
+/**
+ * Name what is about to be signed, on the submit card.
+ *
+ * Painted from updateSubmitState so it follows every change that can invalidate
+ * it — selectUnit() un-confirms steps 2 and 3 whenever the unit changes, and
+ * this runs on the same path. Cleared when there is no unit, so it can never sit
+ * there describing a choice the observer has since undone.
+ *
+ * BUILT WITH textContent, NOT innerHTML. The first version interpolated three
+ * register-supplied strings through an `esc()` that does not exist in this file
+ * — it is a closure-local const inside menu.js, practice.js, pu-search.js and
+ * race.js, none of which leak it — so the very first paint threw
+ * `ReferenceError: esc is not defined`. That throw escaped updateSubmitState()
+ * and therefore bindUnit(), so selectUnit() never reached setStepDone(1, …):
+ * choosing a polling unit painted the unit's name and then did nothing at all,
+ * with no error on screen. Nodes and textContent remove the escaping question
+ * rather than answering it, so there is nothing left to forget.
+ */
+function paintSubmitFacts() {
+  const box = $('submit-facts');
+  if (!box) return;
+  box.textContent = '';
+  const u = selectedPu;
+  if (!u) { box.hidden = true; return; }
+  const where = [u.ward, u.lga, u.state].filter(Boolean).join(', ');
+  const code = [u.pu_code, where].filter(Boolean).join(' · ');
+  const sel = $('sel-contest');
+  const race = sel && sel.value ? (sel.options[sel.selectedIndex] || {}).textContent || '' : '';
+  const add = (tag, text, cls) => {
+    if (!text) return;
+    const el = document.createElement(tag);
+    if (cls) el.className = cls;
+    el.textContent = text;
+    box.appendChild(el);
+  };
+  add('strong', u.name || u.pu_code || '');
+  add('small', code);
+  add('span', race.trim(), 'sf-race');
+  box.hidden = false;
+}
+
 function updateSubmitState() {
   for (const t of ['sheet', 'venue']) {
     const badge = $(`status-${t}`);
@@ -1326,6 +1433,7 @@ function updateSubmitState() {
   // the "reporting opens on election day" error rather than a dead, silent
   // button — the scope notice already explains the wait.
   $('btn-submit').disabled = !(shots.sheet && shots.venue && selectedPu);
+  paintSubmitFacts();
 }
 
 // ---------- camera (live capture only; overlay opens per slot) ----------
@@ -1484,7 +1592,7 @@ async function resolveUnitFromSheet(text) {
     try { codes = P.extractCandidates(text); } catch { /* report as unread */ }
     box.innerHTML = codes.length
       ? `<p class="hint">Read <strong>${codes[0]}</strong> off the sheet, but no unit with that code was found — pick yours below.</p>`
-      : '<p class="hint">Could not read the unit code off the sheet — pick yours below.</p>';
+      : '<p class="hint">Could not read unit code off sheet. Pick unit below.</p>';
     return;
   }
   const u = hit.unit;

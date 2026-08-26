@@ -577,7 +577,7 @@
     const boardOnly = isPresidency(race);
     parts.push(`<div class="race-cta${done ? '' : ' race-cta-pinned'}">
       ${canFollow ? '<button type="button" class="btn-quiet" data-cta="follow" id="race-follow-btn">🔔 Follow this race</button>' : ''}
-      ${done ? '' : '<a class="btn-accent" data-cta="observe" href="observe.html?intent=observe">Report from your unit</a>'}
+      ${done ? '' : `<a class="btn-accent" data-cta="observe" id="race-report-btn" href="observe.html?intent=observe${race.join && race.join.contest ? '&contest=' + encodeURIComponent(race.join.contest) : ''}">Report from your unit</a>`}
       ${boardOnly ? `<a class="${done ? 'btn-accent' : 'btn-quiet'}" data-cta="results" href="${esc(opts.resultsHref || resultsHrefFor(race))}">${
         done ? 'Review the results' : 'Live results'}</a>` : ''}
       ${done ? '<a class="btn-quiet" data-cta="verify" href="ledger.html">Verify the record</a>' : ''}</div>
@@ -614,6 +614,57 @@
     // wording and the request so this page and the leaderboard cannot describe
     // the same subscription differently; a page that has not loaded it simply
     // keeps a button that does nothing rather than throwing during mount.
+    /**
+     * REPORTING OPENS WHEN THE POLLS DO, and this button used to ignore it.
+     *
+     * As a plain link it walked the observer into the wizard — sheet, venue,
+     * unit — to a step where every race is padlocked, or to a 403 at submit
+     * after both photos and the tally. The rule is the server's, unchanged: a
+     * contest opens at 08:30 WAT on its own polling date and never closes again
+     * (backend/src/services/scope.js).
+     *
+     * COMPUTED FROM `opensAt`, NOT from the `open` boolean beside it. `open` is
+     * a snapshot taken when the page loaded; a page left open overnight would
+     * still be refusing on election morning. The timestamp stays true.
+     *
+     * It FAILS OPEN — no answer, no gate. The server still refuses a genuinely
+     * early report, so a client that cannot tell should let the observer
+     * through rather than block someone standing at a real unit.
+     */
+    var reportBtn = main.querySelector('#race-report-btn');
+    var joinContest = (race.join && race.join.contest) || 'PRES';
+    if (reportBtn) {
+      fetch('/api/contests')
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .catch(function () { return []; })
+        .then(function (list) {
+          var c = (list || []).find(function (x) { return x.code === joinContest; });
+          if (!c) return;
+          var at = Date.parse(c.opensAt || (c.date + 'T08:30:00+01:00'));
+          if (!isFinite(at) || Date.now() >= at) return;
+          var when = new Date(at).toLocaleString('en-GB', {
+            weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit',
+          });
+          reportBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            // The SAME dialog the submit path already raises for this, and the
+            // same two sentences — naming the instant, because an observer told
+            // "not open" without a time comes back at random.
+            if (window.HAWKEYE_MODAL) {
+              window.HAWKEYE_MODAL(
+                'Reporting is not open yet',
+                'Reporting opens ' + when + '. You can file from your polling unit as soon as polls open.',
+                ''
+              );
+            } else {
+              // No modal loaded (menu.js failed): the link still works, and the
+              // wizard's own locked step explains itself. Never a dead button.
+              window.location.href = reportBtn.getAttribute('href');
+            }
+          });
+        });
+    }
+
     if (canFollow && typeof window.mountFollow === 'function') {
       window.mountFollow({
         button: main.querySelector('#race-follow-btn'),

@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=157" />
+  <link rel="stylesheet" href="styles.css?v=160" />
   <script src="native.js?v=110"></script>
   <style>
     .feed-item { background: var(--card); border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
@@ -186,8 +186,24 @@
       </div>
       <div id="preview"></div>
 
+      <!-- THE KIND IS NEVER PRE-SELECTED. This used to be an empty <select>
+           filled from /api/incidents/kinds, so the first kind in that list —
+           'violence' — was the selected value the moment the page loaded. A
+           dropdown that already reads "Violence" is not a question anyone
+           notices being asked: every report filed without touching it was
+           classified as violence by the markup, not by the observer.
+
+           The placeholder carries an EMPTY value and is the first option, so
+           an untouched form submits nothing and the guard in the submit
+           handler names the missing choice. Matches the native screen, where
+           `kind` starts as null and `reportReady` gates on it
+           (native/src/app/report/incident.tsx). Deliberately NOT `disabled`:
+           re-selecting it is a legitimate "I got that wrong" and the submit
+           guard is the real gate, so the option stays reachable. -->
       <label for="kind" style="margin-top:12px;display:block">Type of Incident</label>
-      <select id="kind"></select>
+      <select id="kind" aria-required="true">
+        <option value="" selected>Choose an incident type…</option>
+      </select>
 
       <label for="desc">What happened?</label>
       <textarea id="desc" rows="4" placeholder="Describe the incident — where, when, who was involved."
@@ -287,8 +303,13 @@
 
   <script src="device.js"></script>
   <script src="capture.js?v=1"></script>
+  <!-- One wording for every "we could not get your position", shared with
+       map-unit.html and the native screens. The strings that used to live
+       inline here were three sentences long on a status line nobody reads
+       three sentences of. -->
+  <script src="geo-msg.js?v=1"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=152"></script>
+  <script src="menu.js?v=155"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     // Escape ALL HTML metacharacters (not just '<') so observer-supplied text is
@@ -296,6 +317,40 @@
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const token = localStorage.getItem('hawkeye_token');
+
+    /**
+     * The instruction that stands in for a pre-selected kind, and the sentence
+     * shown when someone submits without answering it. One constant each, so
+     * the placeholder cannot drift away from the error that refers to it, and
+     * so re-populating the <select> from the API cannot drop the placeholder.
+     *
+     * KIND_REQUIRED matches the server's own `invalid_kind` copy below word for
+     * word — the client now catches this before the request, but a server that
+     * rejects a kind for its own reasons must not say it differently.
+     */
+    const KIND_PLACEHOLDER = 'Choose an incident type…';
+    const KIND_REQUIRED = 'Choose an incident type.';
+
+    /**
+     * One short sentence for a failed position lookup, from the shared helper
+     * (geo-msg.js) so this page, map-unit.html and the native screens describe
+     * a denied/unavailable/timed-out fix identically.
+     *
+     * The fallback covers the file failing to load and nothing else — it must
+     * stay as short as the real thing, because the whole point of the helper is
+     * that this line is ONE sentence.
+     */
+    const geoLine = (err) => (window.HAWKEYE_GEO && window.HAWKEYE_GEO.line)
+      ? window.HAWKEYE_GEO.line(err) : 'Location unavailable.';
+    /** The diagnostic goes to the console, NOT onto the status line — a code in
+     *  brackets is exactly the tail that made this message too long to read. */
+    const geoLog = (where, err) => {
+      try {
+        const code = (window.HAWKEYE_GEO && window.HAWKEYE_GEO.code) ? window.HAWKEYE_GEO.code(err) : 'unknown';
+        console.warn(`[hawkeye] geolocation ${where}: ${code}`);
+      } catch { /* logging must never break a report */ }
+    };
+
     const KIND_LABEL = {
       violence: 'Violence', ballot_snatching: 'Ballot snatching', vote_buying: 'Vote-buying',
       intimidation: 'Voter intimidation', bvas_failure: 'BVAS failure', late_materials: 'Late materials',
@@ -360,10 +415,28 @@
 
     // Receipt actions. "Report another" returns to a clean form at the top of
     // the page; "Exit" leaves for the dashboard.
+    /**
+     * Back to the PLACEHOLDER, not to the first real kind.
+     *
+     * `selectedIndex = 0` used to mean "violence" and now means the
+     * placeholder, which is correct only for as long as the placeholder stays
+     * first — so this says it by VALUE, which is the thing the submit guard
+     * actually reads. A second report filed after a first one must ask the
+     * question again; silently re-arming a kind is the original bug wearing a
+     * reset button.
+     */
+    function resetKind() {
+      $('kind').value = '';
+      if ($('kind').selectedIndex < 0) $('kind').selectedIndex = 0; // no empty-valued option (kinds not loaded yet)
+      $('kind').removeAttribute('aria-invalid');
+    }
+    // Answering the question clears the complaint about not having answered it.
+    $('kind').onchange = () => { if ($('kind').value) $('kind').removeAttribute('aria-invalid'); };
+
     $('btn-another').onclick = () => {
       $('done-modal').hidden = true;
       $('status').textContent = '';
-      $('kind').selectedIndex = 0;
+      resetKind();
       $('attach-pu').checked = false; $('pu-picker').hidden = true;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -445,9 +518,19 @@
     }
     $('btn-camera').onclick = doCapture;
 
+    /**
+     * Resolves `{ coords }` or `{ err }` — NEVER a bare null.
+     *
+     * The old signature threw the GeolocationPositionError away, which is the
+     * only thing that can tell "you blocked us" from "your phone could not see
+     * the sky" from "no location hardware at all". One sentence covered all
+     * three and accused the observer of the first, so the two callers here now
+     * get the error and hand it to geoLine().
+     */
     async function getPos() {
+      if (!navigator.geolocation) return { err: null };
       return new Promise((res) => navigator.geolocation.getCurrentPosition(
-        (p) => res(p.coords), () => res(null), { enableHighAccuracy: true, timeout: 10000 }));
+        (p) => res({ coords: p.coords }), (err) => res({ err }), { enableHighAccuracy: true, timeout: 10000 }));
     }
 
     // Optional polling-unit selector — OPT-IN. The reporter explicitly attaches a
@@ -494,8 +577,11 @@
       nearAutoRan = true;
       $('btn-near').textContent = 'Search Near Me Again';
       $('pu-status').textContent = 'Finding units near you…';
-      const c = await getPos();
-      if (!c) { $('pu-status').textContent = 'Location unavailable — allow location access and try again.'; return; }
+      const { coords: c, err } = await getPos();
+      // No tail: attaching a unit is already optional here, the retry is the
+      // button directly above this line, and the saved-unit radio is the other
+      // way in. Nothing to point at that is not already on screen.
+      if (!c) { geoLog('near-me', err); $('pu-status').textContent = geoLine(err); return; }
       try {
         const r = await fetch(`/api/polling-units?lat=${c.latitude}&lng=${c.longitude}`);
         const { units = [] } = await r.json();
@@ -513,6 +599,12 @@
       const kind = $('kind').value;
       const desc = $('desc').value.trim();
       const files = attachments;
+      // THE KIND GATE, CLIENT-SIDE. The server rejects an empty kind with
+      // `invalid_kind`, but relying on that means uploading up to four files
+      // and 30 MB over a Nigerian mobile network before being told to pick from
+      // a dropdown. Same shape as the empty_report gate on the next line: an
+      // inline sentence naming the missing answer, and no request.
+      if (!kind) { $('status').textContent = KIND_REQUIRED; $('kind').setAttribute('aria-invalid', 'true'); $('kind').focus(); $('status').scrollIntoView({ block: 'nearest' }); return; }
       if (!desc && !files.length) { $('status').textContent = 'Add a photo/video or describe what happened.'; return; }
       $('btn-submit').disabled = true; $('status').textContent = 'Uploading…';
       try {
@@ -525,8 +617,11 @@
         }
         for (const f of files) fd.append('media', f);
         if ($('use-gps').checked) {
-          const c = await getPos();
+          // Optional stamp: a failure here is logged, never shown — the report
+          // files without coordinates rather than stopping to explain itself.
+          const { coords: c, err } = await getPos();
           if (c) { fd.set('lat', c.latitude); fd.set('lng', c.longitude); }
+          else geoLog('submit-stamp', err);
         }
         const res = await fetch('/api/incidents', {
           method: 'POST',
@@ -602,7 +697,13 @@
     loadFeed();
     (async () => {
       const kinds = await fetch('/api/incidents/kinds').then((r) => r.json()).catch(() => Object.keys(KIND_LABEL));
-      $('kind').innerHTML = kinds.map((k) => `<option value="${esc(k)}">${esc(KIND_LABEL[k] || k)}</option>`).join('');
+      // The placeholder is re-inserted FIRST and stays selected. Writing the
+      // API's kinds straight into innerHTML is what pre-selected 'violence' in
+      // the first place — the list arrives ordered, and option 0 of a <select>
+      // is selected whether or not anyone chose it.
+      $('kind').innerHTML = `<option value="">${esc(KIND_PLACEHOLDER)}</option>`
+        + kinds.map((k) => `<option value="${esc(k)}">${esc(KIND_LABEL[k] || k)}</option>`).join('');
+      $('kind').value = '';
     })();
   </script>
 </body>

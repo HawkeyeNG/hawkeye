@@ -71,12 +71,31 @@ console.log(`(all four layers together are ${ALL_KB} KB raw)`);
 console.log('\n=== the race chooser needs no geometry at all ===');
 const chooser = await layersFor('/results.html', '.race-opt');
 check('nothing but the shared projection is fetched', chooser.layers, ['states_geo.json']);
-check('and that is small', chooser.kb, (n) => n < 40);
+/**
+ * 80 KB RAW, which is about 25 KB on the wire.
+ *
+ * This was 40, calibrated against a states_geo.json that was 23 KB — and tore.
+ * That file was per-state ArcGIS output at 47.8% shared vertices, so blocks of
+ * same-coloured states had visible slivers running through them. It is now
+ * dissolved from wards through one topology: 72.6 KB raw, 24.6 KB gzipped,
+ * 81.2% shared.
+ *
+ * The number that matters is the gzipped one, because that is what a phone
+ * downloads, and this page PRE-WARMS the file without awaiting it — so the cost
+ * is 16 KB more background traffic, not 16 KB more before the chooser paints.
+ * The assertion still exists to catch the real regression it was written for:
+ * a board's heavy layers (1.8 MB of LGA/constituency/district geometry) leaking
+ * into a page that draws no map.
+ */
+check('and that is small', chooser.kb, (n) => n < 80);
 
 console.log('\n=== a presidential board: states only ===');
 const pres = await layersFor('/results.html?contest=PRES', '#map path');
 check('states_geo only', pres.layers, ['states_geo.json']);
-check(`~${ALL_KB} KB down to a few`, pres.kb, (n) => n < 40);
+// Same 80 KB for the same reason as the chooser above: this board draws the
+// state map, so states_geo.json is exactly what it SHOULD fetch — and
+// nothing else. The guard is that the heavy layers stay out.
+check(`~${ALL_KB} KB down to states only`, pres.kb, (n) => n < 80);
 
 console.log('\n=== a Senate board: districts, and NOT the 774 LGAs ===');
 const sen = await layersFor('/results.html?contest=SEN', '#map path');

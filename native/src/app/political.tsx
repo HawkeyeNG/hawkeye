@@ -79,6 +79,24 @@ function governorParty(governors: Record<string, string> | undefined, picked: st
 }
 
 /**
+ * The governor of a state, by NAME, or null.
+ *
+ * Sibling of governorParty above and matched to it: the same normState lookup,
+ * for the same reason. Null for the FCT, which has no governor, and null for any
+ * state the file does not name — publishing less is correct here, because a
+ * wrong name on an election product is worse than a blank one.
+ */
+function governorName(data: Political, picked: string): string | null {
+  const names = (data as { governorNames?: Record<string, string> }).governorNames;
+  if (!names || !picked) return null;
+  const want = normState(picked);
+  for (const [state, name] of Object.entries(names)) {
+    if (normState(state) === want) return name || null;
+  }
+  return null;
+}
+
+/**
  * One state assembly as /api/political reports it. Wikipedia is the only source
  * for these, so `asOf` is Wikipedia's own date and is shown per row rather than
  * averaged into one claim about all 36.
@@ -330,11 +348,23 @@ export default function PoliticalData() {
                               already takes fills + onPress — the same component
                               the incumbency map uses.
 
-                              IT REPORTS THE PARTY, NOT A NAME, because
-                              political_data.json holds state → party and no
-                              governor names. Naming a person we do not have is
-                              the one thing this page must not do. */}
+                              IT NAMES THE GOVERNOR NOW. This used to say the
+                              file held state → party and no names, and that
+                              naming a person we do not have is the one thing
+                              this page must not do — both true at the time. The
+                              names are in political_data.json as of 26 Aug 2026,
+                              taken from each state government and the Nigeria
+                              Governors Forum and cross-checked, so the rule is
+                              satisfied rather than waived. */}
                           <NigeriaMap
+                            /* The party emblem inside each state, the same
+                               thing the website's map has always drawn. The
+                               governors map IS about which party holds what, so
+                               the colour alone asked the reader to hold a
+                               five-item legend in their head while looking at
+                               37 shapes. */
+                            badges={(d.governors ?? {}) as Record<string, string>}
+                            logos={logos}
                             fills={Object.fromEntries(
                               Object.entries(d.governors ?? {})
                                 .filter(([, party]) => !!party)
@@ -344,7 +374,22 @@ export default function PoliticalData() {
                           />
                           {pickedState ? (
                             <View className="mt-2 flex-row items-center rounded-xl bg-surface px-3 py-2">
-                              <Text className="flex-1 text-sm font-bold text-ink">{pickedState}</Text>
+                              <View className="flex-1">
+                                <Text className="text-sm font-bold text-ink">{pickedState}</Text>
+                                {/* THE PERSON, under the place. This row reported a
+                                    party code and nothing else, because the data
+                                    file held no names — the comment above still
+                                    said so. It does now, researched from each
+                                    state government and the Nigeria Governors
+                                    Forum, so the question a reader actually asks
+                                    of a governors map can be answered. Absent for
+                                    the FCT, which has no governor. */}
+                                {governorName(d, pickedState) ? (
+                                  <Text className="pt-0.5 text-xs text-muted">
+                                    {governorName(d, pickedState)}
+                                  </Text>
+                                ) : null}
+                              </View>
                               {governorParty(d.governors, pickedState) ? (
                                 <Text
                                   className="text-xs font-bold"
@@ -358,7 +403,7 @@ export default function PoliticalData() {
                             </View>
                           ) : (
                             <Text className="pt-1 text-[11px] text-faint">
-                              Tap a state for its governing party.
+                              Tap a state for its governor.
                             </Text>
                           )}
             {/* WHICH PARTY GOVERNS WHERE, directly under the Governors row it

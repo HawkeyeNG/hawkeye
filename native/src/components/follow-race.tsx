@@ -14,6 +14,33 @@ import { getIdentity } from '@/lib/identity';
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
 type Sub = { contest: string; state?: string };
+type Declaration = { contest: string; scope: string };
+
+/**
+ * Races INEC has declared and Hawkeye has closed — /api/declarations.
+ *
+ * ONE fetch for the whole app run, not one per mounted control: the results
+ * board and a race screen each mount a FollowRace, and the list changes about as
+ * often as an election is declared. A failed fetch resolves to "nothing is
+ * closed", which is the safe direction — the reader gets a working button and
+ * the server still refuses a closed race with a 409. This decides what to SHOW.
+ */
+let closedP: Promise<Declaration[]> | null = null;
+function closedRaces(): Promise<Declaration[]> {
+  closedP ??= fetch(`${BASE}/api/declarations`)
+    .then((r) => (r.ok ? (r.json() as Promise<Declaration[]>) : []))
+    .catch(() => []);
+  return closedP;
+}
+
+/**
+ * Is this race over? Mirrors services/declarations.js:covers and
+ * app/follow.js:isClosed — an entry with no scope closes the whole contest, an
+ * entry with one closes only that region and leaves a whole-election follow
+ * alone.
+ */
+const isClosed = (list: Declaration[], contest: string, scope: string) =>
+  list.some((d) => d.contest === contest && (!d.scope || d.scope === scope));
 
 /**
  * FOLLOWING, AT EITHER OF ITS TWO SIZES.
@@ -71,6 +98,27 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
   const auth = useAuth();
   const [subs, setSubs] = useState<Sub[]>([]);
   const [busy, setBusy] = useState(false);
+  const [closed, setClosed] = useState(false);
+
+  /**
+   * A FINISHED RACE IS NOT SOMETHING TO FOLLOW.
+   *
+   * Once INEC has declared it nothing more will be reported into it, so the
+   * control has nothing to offer and the row it would create is one the server
+   * deletes on its next pass. It disappears rather than becoming a disabled
+   * button with an explanation beside it — the declared result is already the
+   * first thing on the screen above, so there is nothing left to say.
+   */
+  useEffect(() => {
+    if (!contest) return;
+    let live = true;
+    closedRaces()
+      .then((list) => live && setClosed(isClosed(list, contest, scope)))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [contest, scope]);
 
   // Signing out is handled by DERIVING below, not by clearing here. Emptying the
   // list from inside the effect is a setState in an effect body — a second
@@ -133,6 +181,13 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
         },
         body: JSON.stringify({ contest, state }),
       });
+      // 409 = declared while this screen was open. The control is not broken,
+      // it is obsolete, so it leaves instead of reporting a failure the reader
+      // can do nothing about.
+      if (res.status === 409) {
+        setClosed(true);
+        return;
+      }
       if (!res.ok) {
         Alert.alert('Could not update', `Try again. (HTTP ${res.status})`);
         return;
@@ -149,7 +204,7 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
     }
   }, [auth.status, contest, followed, following, scope]);
 
-  if (!contest) return null;
+  if (!contest || closed) return null;
 
   const subject = followSubject(contest, scope);
   /**

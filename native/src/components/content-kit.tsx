@@ -176,15 +176,56 @@ function Rules({ tone, title, items }: { tone: string; title?: string; items: st
   );
 }
 
-function Callout({ icon, title, body }: { icon: Icon; title: string; body: string }) {
-  return (
-    <View className="mt-3 flex-row rounded-2xl bg-hawk-green px-4 py-4">
+function Callout({
+  icon,
+  title,
+  body,
+  cta,
+  href,
+}: {
+  icon: Icon;
+  title: string;
+  body: string;
+  cta?: string;
+  href?: string;
+}) {
+  /**
+   * ROUTED WHEN IT HAS SOMEWHERE TO GO. A callout that ends "go and do X" and
+   * cannot take you to X is asking the reader to go and find it — which, for
+   * the guide's closing "Rehearse It First", meant hunting under More for the
+   * one action the whole page builds towards.
+   *
+   * The whole card is the target, not just the label: a 44dp+ tap area is the
+   * accessible minimum and the same rule the actions cards follow. Unrouted
+   * callouts render as a plain View exactly as before, so every other caller is
+   * untouched.
+   */
+  const inner = (
+    <>
       <Feather name={icon} size={18} color={BRAND.gold} style={{ marginTop: 2 }} />
       <View className="flex-1 pl-3">
         <Text className="text-base font-bold text-hawk-gold">{title}</Text>
         <Text className="pt-1 text-sm leading-5 text-emerald-50">{body}</Text>
+        {cta && href ? (
+          <View className="flex-row items-center pt-2.5">
+            <Text className="text-sm font-bold text-hawk-gold">{cta}</Text>
+            <Feather name="arrow-right" size={13} color={BRAND.gold} style={{ marginLeft: 4 }} />
+          </View>
+        ) : null}
       </View>
-    </View>
+    </>
+  );
+  const className = 'mt-3 flex-row rounded-2xl bg-hawk-green px-4 py-4';
+  if (!href) return <View className={className}>{inner}</View>;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${cta ?? ''}`.trim()}
+      className={`${className} active:opacity-80`}
+      onPress={() => router.push(href as never)}
+    >
+      {inner}
+    </Pressable>
   );
 }
 

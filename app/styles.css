@@ -1509,7 +1509,9 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 .tour-x:hover { background: var(--tint); color: var(--ink); }
 /* Back has nothing behind it on card one. Dimmed and inert, not removed — a
    footer that changes shape mid-tour is its own small distraction. */
-.tour-skip:disabled { opacity: 0.4; cursor: default; }
+/* Card one has nothing behind it. Dimmed enough to read as unavailable, not so
+   dim it reads as absent. */
+.tour-skip:disabled { opacity: 0.55; cursor: default; }
 
 .tour-card:focus { outline: none; }
 /* AND NO SECOND GOLD RING ON THE BUTTONS. This sheet's focus ring is
@@ -1567,7 +1569,10 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
   font: inherit; font-size: 0.85rem; font-weight: 700;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.tour-skip { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+/* Back is a real control, not a hint. Transparent + --muted + a --border hairline
+   left it almost unreadable on the dark card, and the disabled state then took
+   it to 40% of that — the reader reported it as "not visible", which it was. */
+.tour-skip { background: var(--card); color: var(--ink); border: 1px solid var(--rule, var(--border)); font-weight: 700; }
 /* bg-good + text-good-ink, native's own pairing for this button. --tint-ok IS
    native's --good in both themes (dff2e8 / 103824), so only the ink moved. */
 .tour-next { background: var(--tint-ok); color: var(--tour-good-ink); border: 1px solid transparent; }

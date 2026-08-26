@@ -226,7 +226,7 @@
         <label id="saved-unit-row" hidden style="display:flex;gap:8px;align-items:center;font-weight:400;margin-bottom:8px">
           <input type="radio" name="pu-choice" id="use-saved" style="width:auto" /> <span id="saved-unit-name"></span>
         </label>
-        <button type="button" id="btn-near" class="secondary" style="width:auto">Find units near me</button>
+        <button type="button" id="btn-near" class="secondary" style="width:auto;display:block;margin:0 auto">Find units near me</button>
         <p id="pu-status" class="hint" role="status" style="margin:8px 0 0"></p>
         <div id="pu-near-list" style="margin-top:6px"></div>
       </div>
@@ -565,7 +565,11 @@
             // either, this row rendered as a bare selection dot floating above
             // the near-me button, selecting nothing. Show it only when it can
             // say what it selects.
-            $('saved-unit-row').hidden = !d.unit.pu_code;
+            // Gate on the RENDERED label, not on pu_code. A row is only worth
+            // showing if it can say what it selects, and the label is what says
+            // it — checking the code behind it still allows an empty dot
+            // whenever every displayable field is null.
+            $('saved-unit-row').hidden = !$('saved-unit-name').textContent.trim() || !d.unit.pu_code;
           }
         })
         .catch(() => {});

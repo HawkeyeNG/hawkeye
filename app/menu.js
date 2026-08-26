@@ -1473,7 +1473,13 @@
 
   function mount() {
     const css = `
-    #hk-fab{position:fixed;right:18px;bottom:18px;z-index:1200;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+    #hk-fab{position:fixed;right:18px;bottom:18px;z-index:110;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+    /* z-index 110, NOT 1200. At 1200 this button floated above EVERY modal in
+       the app — the report sheet (120), the tour (130), the refusal modal (140)
+       and the menu panel (80). With the tour open it was the only thing on
+       screen still reacting to a tap, which reads exactly like a frozen app,
+       and that is how it was reported. 110 keeps it above the tab bar (95) and
+       the page, and below everything that is meant to block. */
     #hk-fab:hover{filter:brightness(1.08)}
     /* GOLD border, not the usual hairline. This panel floats over whatever page
        you were reading, and a 1px var(--line) edge is the same colour as every

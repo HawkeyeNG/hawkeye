@@ -4,6 +4,7 @@ import Svg, { G, Image as SvgImage, Path, Rect } from 'react-native-svg';
 
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
+import { logoUrl } from '@/lib/political';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -208,7 +209,14 @@ export function NigeriaMap({
     if (!geo || !logos || !Object.keys(badgeByKey).length) return [];
     return geo.states.flatMap((s) => {
       const party = badgeByKey[s.key];
-      const href = party ? logos[party] : null;
+      // logoUrl, NOT logos[party]. The manifest stores paths relative to the
+      // site root ("logos/APC.jpg"); a browser resolves those against the page
+      // and React Native has no page to resolve against, so SvgImage was handed
+      // a path it could not fetch and drew nothing — leaving the white <Rect>
+      // behind it as the only thing on screen. PartyMark and the candidate
+      // photos already went through a resolver for exactly this reason; the map
+      // was the one place that reached into the manifest raw.
+      const href = party ? logoUrl(logos, party) : null;
       if (!href || s.lx == null || s.ly == null || !s.lr) return [];
       if (s.lr < BADGE_MIN_ROOM) return [];
       const halfW = Math.min(s.lr * 0.9, BADGE_MAX_HALF_W);

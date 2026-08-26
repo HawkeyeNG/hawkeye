@@ -49,6 +49,7 @@ import { queueJob } from '@/lib/outbox';
 import { filePart } from '@/lib/submit';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
+import { InfoDot } from '@/components/info-dot';
 import { humanBytes, uploadWithProgress, xhrFilePart, type UploadProgress } from '@/lib/upload';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -1128,10 +1129,18 @@ export default function ReportIncident() {
             />
 
             <Prompt>Which polling unit is this about?</Prompt>
+            {/* ONE LINE, DETAIL BEHIND THE DOT. Three sentences of explanation sat
+                between the question and the controls that answer it, on a step
+                someone may be completing in a hurry or somewhere unsafe. The
+                house rule is one sentence per line of UI. */}
             <Text className="pb-3 text-sm text-muted">
-              The unit you are AT, which may not be the one you are registered at. It decides which
-              state the report is filed under and which watchers are alerted. Answer this from
-              somewhere safe — your report is already saved on this device.
+              The unit you are AT, not the one you are registered at.
+              <InfoDot
+                title="Why the unit matters"
+                text={`It decides which state the report is filed under and which unit watchers are alerted.
+
+Answer it from somewhere safe — your report is already saved on this device, so nothing is lost by waiting.`}
+              />
             </Text>
 
             {/* THE ANSWER, ONCE THERE IS ONE.

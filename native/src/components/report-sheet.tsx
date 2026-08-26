@@ -1,7 +1,7 @@
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
-import { forwardRef, useCallback } from 'react';
+import { forwardRef, useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,10 +32,41 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
 ) {
   const ui = useUi();
   const insets = useSafeAreaInsets();
+  /**
+   * IS THE SHEET ACTUALLY OPEN?
+   *
+   * Not cosmetic — it decides whether the backdrop exists at all. See below.
+   */
+  const [open, setOpen] = useState(false);
 
+  /**
+   * THE BACKDROP IS UNMOUNTED WHEN CLOSED, NOT JUST FADED.
+   *
+   * BottomSheetBackdrop animates its opacity between appearsOnIndex and
+   * disappearsOnIndex, but it stays MOUNTED across the whole range and keeps
+   * pointerEvents: 'auto'. If that close animation is ever interrupted — a
+   * navigation away mid-gesture, a Fast Refresh, a re-render that resets the
+   * animated value — it can settle at opacity 0 while still swallowing every
+   * touch. The screen then looks completely normal and is completely dead,
+   * except for anything in its own window: the dev-client gear, and any
+   * floating control drawn above it. That is precisely how this was reported,
+   * and it is intermittent because it depends on an animation being cut short.
+   *
+   * Gating the whole component on the sheet's real index makes the failure
+   * impossible rather than unlikely: when the sheet is closed there is no
+   * backdrop in the tree to capture anything.
+   *
+   * pressBehavior="close" as well, so that a backdrop which IS up always has a
+   * working way out — the previous one did nothing when tapped.
+   */
   const backdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+      <BottomSheetBackdrop
+        {...props}
+        appearsOnIndex={0}
+        disappearsOnIndex={-1}
+        pressBehavior="close"
+      />
     ),
     [],
   );
@@ -53,7 +84,12 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
       enableDynamicSizing={false}
       animateOnMount={false}
       enablePanDownToClose
-      backdropComponent={backdrop}
+      // index >= 0 means open. onChange fires for every settle, including the
+      // one that lands on -1, so the backdrop is torn down as the sheet closes.
+      onChange={(i) => setOpen(i >= 0)}
+      // undefined, not null: the prop types as FC | undefined, and passing null
+      // is the difference between "no backdrop" and a type error.
+      backdropComponent={open ? backdrop : undefined}
       // @gorhom/bottom-sheet styles through objects, not classNames, so the
       // theme has to be read in JS. A hardcoded white here left the sheet pale
       // in dark mode while its title (text-ink) went near-white on top of it —

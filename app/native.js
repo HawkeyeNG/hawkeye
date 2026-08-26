@@ -18,14 +18,35 @@
   // Follow html[data-theme]. Capacitor names the style by BACKGROUND: Style.Light
   // = dark icons for a light bg; Style.Dark = light icons for a dark bg.
   (function () {
-    const SB = Cap.Plugins && Cap.Plugins.StatusBar;
-    if (!SB) return;
+    /**
+     * THE PLUGIN IS NOT ALWAYS THERE YET, AND GIVING UP IS PERMANENT.
+     *
+     * This read Cap.Plugins.StatusBar once and returned if it was missing. Lite
+     * is a multi-page app, so this runs on EVERY navigation, and on the ones
+     * where Capacitor had not finished injecting its plugin bridge the bar was
+     * simply never styled — which is exactly the "doesn't always change to
+     * black" report: not a theme bug, a race. It is intermittent because it
+     * depends on how quickly the bridge lands on that particular page load.
+     *
+     * So it retries briefly instead of bailing, and every later theme change
+     * still goes through the observer below.
+     */
     const applyBar = () => {
+      const SB = Cap.Plugins && Cap.Plugins.StatusBar;
+      if (!SB) return false;
       const dark = document.documentElement.getAttribute('data-theme') === 'dark';
       SB.setStyle({ style: dark ? 'DARK' : 'LIGHT' }).catch(() => {});
       if (SB.setBackgroundColor) SB.setBackgroundColor({ color: dark ? '#00251a' : '#ffffff' }).catch(() => {});
+      return true;
     };
-    applyBar();
+    if (!applyBar()) {
+      // ~2s of 100ms attempts. Bounded: a bar that never styles is a cosmetic
+      // fault, and an unbounded timer on every page is not worth it.
+      let tries = 0;
+      const t = setInterval(() => {
+        if (applyBar() || ++tries > 20) clearInterval(t);
+      }, 100);
+    }
     new MutationObserver(applyBar).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   })();
 

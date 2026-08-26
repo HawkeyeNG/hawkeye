@@ -764,6 +764,37 @@ console.log('\n=== Lite: the tour never paints a second gold ring ===');
   await ctx.close();
 }
 
+/* ==================================================== Back navigates */
+console.log('\n=== Lite: Back walks the cards, and is dead on the first ===');
+{
+  const { ctx, p } = await shell();
+  // Back shipped broken: its handler called paint(), and this file already has a
+  // paint() — the theme toggle's — so it resolved to that closure instead of
+  // throwing, and the button silently did nothing. Nothing asserted it moved.
+  check('Back is disabled on card 1', await p.evaluate(() => document.querySelector('.tour-skip').disabled), true);
+  await p.click('.tour-next');
+  await p.click('.tour-next');
+  check('precondition: three cards in', ((await card(p)) || {}).name, steps[2].title);
+  check('Back is live once there is something behind', await p.evaluate(() => document.querySelector('.tour-skip').disabled), false);
+  await p.click('.tour-skip');
+  check('Back goes to the previous card', ((await card(p)) || {}).name, steps[1].title);
+  await p.click('.tour-skip');
+  check('and again', ((await card(p)) || {}).name, steps[0].title);
+  check('and is dead again at the start', await p.evaluate(() => document.querySelector('.tour-skip').disabled), true);
+  check('Back never closes the tour', (await card(p)) !== null, true);
+  check('and never writes the seen flag',
+    await p.evaluate(() => localStorage.getItem('hawkeye_tour_seen')), null);
+  // The button must also be READABLE — it was muted-on-transparent at 40%, which
+  // the reader reported as "not visible".
+  const vis = await p.evaluate(() => {
+    const b = document.querySelector('.tour-skip');
+    const cs = getComputedStyle(b);
+    return { op: Number(cs.opacity), text: cs.color, bg: cs.backgroundColor };
+  });
+  check('and legible even when disabled', vis.op >= 0.5 && vis.bg !== 'rgba(0, 0, 0, 0)', true);
+  await ctx.close();
+}
+
 /* ==================================================== exits and the flag */
 console.log('\n=== Lite: exits, the seen flag, and the ring after ===');
 {

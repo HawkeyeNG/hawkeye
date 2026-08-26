@@ -108,12 +108,36 @@ models on one unit; "just add internet."
 - **Connectivity: Starlink** — kit ~$350–600 one-time; service ~$50–150/mo
   (Priority/Business tier for uptime; Nigeria pricing varies). Starlink is CGNAT,
   so expose via **Cloudflare Tunnel** (free, no open ports/static IP).
-- **Power: 3.5 kVA solar system** (~$4,000–6,000 installed in Nigeria): 3.5 kVA
-  pure-sine inverter + **~3.5 kWp panels** + **10 kWh LiFePO₄** battery. The
-  two-Spark + Starlink + networking load is ~600 W continuous (≈14.4 kWh/day);
-  3.5 kWp generates ~15–16 kWh/day at Nigerian sun hours and the battery gives
-  ≥14 h autonomy — true 24/7 off-grid, replaces the UPS entirely. (A 1.5 kVA
-  system only carries ONE Spark; sized up for the two-box failover cluster.)
+- **Power: 10 kVA / 30 kWh solar system.** Sized for an ELECTION-WEEK OPERATIONS
+  ROOM, not just the rack: a 10 kVA hybrid pure-sine inverter (48 V) + **~9 kWp
+  of panels** (16–18 × 550 W) + **30 kWh LiFePO₄** (6 × 5 kWh 51.2 V rack
+  modules).
+  - **Cluster alone** — two Sparks + Starlink + networking — is ~600 W
+    continuous (≈14.4 kWh/day). On 27 kWh usable (90 % DoD) that is **~45 h**,
+    close to two full days, with no sun at all.
+  - **Cluster + the room it sits in** — 10–20 staff on shifts, laptops, screens,
+    lighting, access points, device charging — is ~2.3 kW, giving **~12 h**: one
+    complete night shift. With two 1.5 HP inverter ACs running it is ~4.5 kW and
+    **~6 h**.
+  - **~9 kWp yields ~31–35 kWh/day** at 4.5–5.0 Nigerian peak sun hours after a
+    0.75 derate (inverter, heat, soiling, wiring, charge losses). That refills
+    the battery daily against the full ops-room load and over-serves the
+    server-only load several times over.
+  - **Why the jump** from the 3.5 kVA / 3.5 kWp / 10 kWh system this section used
+    to specify: that one carried the two boxes and nothing else. On election
+    night the thing that must not go dark is the room where reports are triaged
+    and pushes are sent — and Nigerian grid supply is precisely what cannot be
+    relied on that week. A 1.5 kVA system carries ONE Spark; 3.5 kVA carried the
+    pair; 10 kVA carries the operation.
+  - **It outlives the election.** LiFePO₄ runs ~6,000 cycles (10+ years at one
+    cycle a day) and panels carry 25-year output warranties, so the asset is
+    still standing for the 2031 cycle — which is the strongest thing that can be
+    said to a donor funding capex. The inverter is the first part likely to need
+    replacing, at ~8–10 years.
+  - **Installed Nigeria cost: being re-quoted from Nigerian vendors (Aug 2026)**
+    for the Naira donor budget. The superseded 3.5 kVA / 10 kWh build was
+    $4,000–6,000; this system is materially larger, so do not carry the old
+    figure forward — wait for the quote.
 - Caveats: ARM64 (our native deps build fine); desktop-class memory bandwidth, so
   **sample** vision at election-day peak rather than scanning every sheet live.
 
@@ -145,8 +169,9 @@ change; only where they run does.
   local Ollama on an existing laptop.
 - **Intended (funded, sized for 1M users — see [SCALE-1M](SCALE-1M.md)):**
   **2× NVIDIA DGX Spark** (~$8k) + **Starlink** kit + 12 mo service (~$1.2k) +
-  **3.5 kVA / 3.5 kWp / 10 kWh solar** (~$5k) + networking/spares (~$1k) →
-  **~$16,000–19,000** one-time for a redundant, deplatform-proof, off-grid
+  **10 kVA / ~9 kWp / 30 kWh solar** (re-quoting — was $5k at the superseded
+  3.5 kVA size) + networking/spares (~$1k) →
+  **one-time total pending the solar re-quote** for a redundant, deplatform-proof, off-grid
   failover cluster (Spark A: app + Postgres + 2 TB media mirror; Spark B: AI
   inference + warm standby). A Mac Studio (M3/M4 Ultra, 256 GB) is a valid
   substitute for the inference box only — faster LLM bandwidth, weaker Linux

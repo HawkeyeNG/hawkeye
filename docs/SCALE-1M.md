@@ -64,23 +64,36 @@ hardware we own, behind Cloudflare Tunnel on Starlink.
   parity. Verdict: Sparks first; a Mac Studio is an acceptable inference add-on.
 - 3rd Spark = optional cold spare / regional mirror when funded.
 
-## 5. Power (upgraded from 1.5 kVA)
+## 5. Power (upgraded from 1.5 kVA → 3.5 kVA → **10 kVA / 30 kWh**)
 
-Continuous load: 2× Spark ≈ 480 W + Starlink ~75 W + router/switch ~50 W ≈
-**600 W (800 W peak)** → 14.4 kWh/day.
+Two loads, and the second is the one that drove the resize.
+
+| Load | Draw | Daily |
+|---|---|---|
+| **Cluster only** — 2× Spark ≈ 480 W + Starlink ~75 W + router/switch ~50 W | **600 W** (800 W peak) | 14.4 kWh |
+| **+ election-week ops room** — 10–20 staff on shifts, laptops, screens, lighting, APs, device charging | **~2.3 kW** | ~30 kWh over a 12 h shift |
+| **+ two 1.5 HP inverter ACs** | **~4.5 kW** | — |
 
 | Component | Size | Why |
 |---|---|---|
-| Inverter | **3.5 kVA** (pure sine) | comfortable loading headroom (~800 W peak load); 1.5 kVA was sized for one Spark |
-| Panels | **~3.5 kWp** | Nigeria ≈ 4.5–5 peak sun hours → ~15–16 kWh/day |
-| Battery | **10 kWh LiFePO₄** | ≥14 h overnight/outage autonomy |
-| Nigeria cost | **$4,000–6,000** installed | replaces UPS entirely |
+| Inverter | **10 kVA** hybrid, 48 V pure sine | 8 kW real at 0.8 pf — carries the ops room, not just the rack. 3.5 kVA carried the two Sparks and nothing else |
+| Panels | **~9 kWp** (16–18 × 550 W) | ~31–35 kWh/day at 4.5–5.0 Nigerian peak sun hours after a 0.75 derate — refills the battery daily against the FULL ops load |
+| Battery | **30 kWh LiFePO₄** (6 × 5 kWh, 51.2 V rack) | 27 kWh usable at 90 % DoD → **~45 h** cluster-only, **~12 h** with the ops room (one night shift), **~6 h** with AC |
+| Lifespan | ~6,000 cycles / 25 yr panel warranty | still an asset in the **2031** cycle; inverter is the first replacement at ~8–10 yr |
+| Nigeria cost | **being re-quoted (Aug 2026)** | the superseded 3.5 kVA / 10 kWh build was $4,000–6,000; do not carry that figure forward |
+
+**Why it changed.** Election night is exactly when the Nigerian grid cannot be
+relied on, and the thing that must not go dark is not the rack — it is the room
+where incidents are triaged and pushes are sent. A UPS-sized system protects the
+servers and loses the operation.
 
 ## 6. Budget deltas (decks updated accordingly)
 
-- On-prem line: ~$11k → **~$16,000–19,000** one-time
-  (2× Spark $8k · 3.5 kVA/3.5 kWp/10 kWh solar $5k · Starlink kit + 12 mo service
-  $1.2k · networking/spares $1k · contingency).
+- On-prem line: ~$11k → ~$16,000–19,000 → **pending the 10 kVA solar re-quote**
+  (2× Spark $8k · **10 kVA / ~9 kWp / 30 kWh solar — being re-quoted, was $5k at
+  the superseded 3.5 kVA size** · Starlink kit + 12 mo service $1.2k ·
+  networking/spares $1k · contingency). The Naira donor budget (Aug 2026) is the
+  authority on the new figure; update here once it lands.
 - New opex line: **cloud $500–1,500/mo during election windows**, <$300/mo off-peak.
 - Everything ships against GO54 today and re-points by base-URL swap; the
   trust core (ledger, Rekor, Merkle proofs, docket) is unchanged at any scale.

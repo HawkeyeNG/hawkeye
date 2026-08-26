@@ -3,12 +3,13 @@ import type BottomSheet from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { router, Tabs } from 'expo-router';
 import { useRef } from 'react';
-import { Pressable, View } from 'react-native';
+import { type ColorValue, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ReportSheet } from '@/components/report-sheet';
 import { BRAND } from '@/lib/api';
 import { useUnread } from '@/lib/push';
+import { type TabRoute, useTourSpotlight } from '@/lib/tour';
 import { useUi } from '@/lib/theme';
 
 /**
@@ -36,8 +37,10 @@ const ITEM_PADDING_V = 5;
 const BAR_PADDING_TOP = 4; // + ITEM_PADDING_V = 9, matching the web's 6 + 3
 const BAR_PADDING_BOTTOM = 6; // the constant half of the web's calc(6px + inset)
 
-/** Intrinsic bar height before the safe-area inset is added. */
-const BAR_CONTENT_HEIGHT =
+/** Intrinsic bar height before the safe-area inset is added.
+ *  Exported for the tour, which cuts its scrim short of the bar so the tab it
+ *  is describing shows through lit rather than dimmed. */
+export const BAR_CONTENT_HEIGHT =
   BAR_PADDING_TOP +
   ITEM_PADDING_V +
   ICON_SIZE +
@@ -59,7 +62,10 @@ const BAR_CONTENT_HEIGHT =
  * lands level with the top of the label's line box, same as the shipped build.
  */
 const CTA_SIZE = 48;
-const CTA_LIFT = 18;
+/** Exported with BAR_CONTENT_HEIGHT: the Report circle overhangs the bar's top
+ *  edge by ~12px, so a scrim that stopped at the bar would clip the ring on
+ *  exactly the step that most needs it. */
+export const CTA_LIFT = 18;
 
 /**
  * Five-tab shell — the native twin of the web app's tab bar (app/menu.js):
@@ -70,6 +76,12 @@ export default function TabsLayout() {
   const sheetRef = useRef<BottomSheet>(null);
   /** Unread alerts, kept live by usePushNotifications() in the root layout. */
   const unread = useUnread();
+  /**
+   * The tab the open tour step is about, or null. Same module-store shape as
+   * useUnread above — see lib/tour.ts for why the ring has to be drawn here
+   * rather than by the tour itself.
+   */
+  const spot = useTourSpotlight();
   /** Gesture bar / home indicator. Added to the bar, never subtracted from it. */
   const insets = useSafeAreaInsets();
   const ui = useUi();
@@ -98,6 +110,39 @@ export default function TabsLayout() {
   const activeTint = ui.dark ? ui.tint.good.ink : BRAND.green;
   const inactiveTint = ui.muted;
 
+
+  /**
+   * A tab glyph, ringed while the tour is talking about it.
+   *
+   * The ring is gold on the app's own tint, and it forces the ACTIVE colour on
+   * the glyph as well: a lit ring around a muted grey icon reads as a warning
+   * badge, not as "this one". Off the spotlight it renders exactly what the bar
+   * rendered before — a bare Feather in react-navigation's own tint.
+   */
+  // `color` is react-navigation's ColorValue, not a string — it can be an
+  // OpaqueColorValue (a platform colour token), so it is passed through rather
+  // than narrowed.
+  const Glyph = ({ route, name, color }: { route: TabRoute; name: string; color: ColorValue }) => {
+    const lit = spot === route;
+    return (
+      <View
+        style={
+          lit
+            ? {
+                borderWidth: 2,
+                borderColor: BRAND.gold,
+                borderRadius: 999,
+                padding: 4,
+                backgroundColor: ui.tint.good.bg,
+              }
+            : undefined
+        }
+      >
+        <Feather name={name as never} size={ICON_SIZE} color={lit ? activeTint : color} />
+      </View>
+    );
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <Tabs
@@ -124,14 +169,14 @@ export default function TabsLayout() {
           name="index"
           options={{
             title: 'Home',
-            tabBarIcon: ({ color }) => <Feather name="home" size={ICON_SIZE} color={color} />,
+            tabBarIcon: ({ color }) => <Glyph route="index" name="home" color={color} />,
           }}
         />
         <Tabs.Screen
           name="results"
           options={{
             title: 'Results',
-            tabBarIcon: ({ color }) => <Feather name="bar-chart-2" size={ICON_SIZE} color={color} />,
+            tabBarIcon: ({ color }) => <Glyph route="results" name="bar-chart-2" color={color} />,
           }}
         />
         <Tabs.Screen
@@ -163,6 +208,13 @@ export default function TabsLayout() {
                   shadowRadius: 6,
                   shadowOffset: { width: 0, height: 3 },
                   elevation: 6,
+                  // Ringed, not wrapped: a second concentric circle around a
+                  // 48dp CTA that already carries a shadow reads as a rendering
+                  // fault. 3px because this ring sits on brand green rather
+                  // than on the bar, and 2px disappears into the shadow.
+                  ...(spot === 'report'
+                    ? { borderWidth: 3, borderColor: BRAND.gold }
+                    : null),
                 }}
               >
                 <Feather name="camera" size={22} color={BRAND.gold} />
@@ -184,14 +236,14 @@ export default function TabsLayout() {
           options={{
             tabBarBadge: unread || undefined,
             title: 'Alerts',
-            tabBarIcon: ({ color }) => <Feather name="bell" size={ICON_SIZE} color={color} />,
+            tabBarIcon: ({ color }) => <Glyph route="alerts" name="bell" color={color} />,
           }}
         />
         <Tabs.Screen
           name="more"
           options={{
             title: 'More',
-            tabBarIcon: ({ color }) => <Feather name="menu" size={ICON_SIZE} color={color} />,
+            tabBarIcon: ({ color }) => <Glyph route="more" name="menu" color={color} />,
           }}
         />
       </Tabs>

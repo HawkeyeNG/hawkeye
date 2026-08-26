@@ -1,9 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BAR_CONTENT_HEIGHT, CTA_LIFT } from '@/app/(tabs)/_layout';
 import { ModalCard } from '@/components/modal-card';
-import { markTourSeen, shouldShowTour, TOUR_STEPS } from '@/lib/tour';
+import { BRAND } from '@/lib/api';
+import { markTourSeen, setTourSpotlight, shouldShowTour, TOUR_STEPS } from '@/lib/tour';
 import { useUi } from '@/lib/theme';
 
 /**
@@ -35,6 +38,8 @@ export function Tour({
   onClose?: () => void;
 }) {
   const ui = useUi();
+  /** Gesture bar / home indicator — the tab bar pays it, so the scrim gap must too. */
+  const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
   const [i, setI] = useState(0);
 
@@ -55,7 +60,26 @@ export function Tour({
   const step = TOUR_STEPS[i];
   const last = i === TOUR_STEPS.length - 1;
 
+  /**
+   * LIGHT THE TAB THIS STEP IS ABOUT.
+   *
+   * The card describes a button; the button is on screen, six centimetres
+   * below, behind the scrim. Publishing the step's route makes the tab bar ring
+   * it (see (tabs)/_layout.tsx), so "Report — the green button" is read beside
+   * the actual green button rather than instead of it.
+   *
+   * The cleanup matters as much as the set: a ring left burning after the tour
+   * closes is a tab that looks permanently selected. It clears on unmount here
+   * and in finish() below, which is the single exit for Skip, Close and a
+   * backdrop tap alike.
+   */
+  useEffect(() => {
+    setTourSpotlight(showing ? (step?.route ?? null) : null);
+    return () => setTourSpotlight(null);
+  }, [showing, step]);
+
   const finish = () => {
+    setTourSpotlight(null);
     void markTourSeen();
     setI(0);
     setOpen(false);
@@ -71,6 +95,14 @@ export function Tour({
       // an app that reopened the tour on the next launch because the reader
       // dismissed it the quickest way would be arguing with them.
       onClose={finish}
+      /**
+       * STOP THE SCRIM ABOVE THE TAB BAR, so the ringed tab is lit rather than
+       * dimmed to the same grey as everything else. + CTA_LIFT because the
+       * Report circle overhangs the bar's top edge by ~12dp — without the
+       * headroom the scrim would clip the ring on exactly the step that most
+       * needs it.
+       */
+      bottomGap={BAR_CONTENT_HEIGHT + insets.bottom + CTA_LIFT}
       title="Welcome to Hawkeye"
       footer={
         <View>
@@ -109,8 +141,25 @@ export function Tour({
       }
     >
       <View className="flex-row items-center pb-2">
-        <View className="h-10 w-10 items-center justify-center rounded-full bg-surface">
-          <Feather name={step.icon as never} size={18} color={ui.tint.good.ink} />
+        {/* THE REPORT CHIP IS THE REPORT BUTTON.
+            Every step used to get the same neutral chip — a grey circle with a
+            green glyph — including the one whose whole body is "Report — the
+            green button". It was describing a control the reader was about to
+            look for, in colours that control does not have. Report now wears
+            the tab bar's own pairing: bg-hawk-green (#004225) with the glyph in
+            BRAND.gold (#f5b301), the exact two values (tabs)/_layout.tsx uses.
+            Size stays 18, not the real bar's 22 — that is sized for a 48dp
+            circle and this chip is 40. */}
+        <View
+          className={`h-10 w-10 items-center justify-center rounded-full ${
+            step.cta ? 'bg-hawk-green' : 'bg-surface'
+          }`}
+        >
+          <Feather
+            name={step.icon as never}
+            size={18}
+            color={step.cta ? BRAND.gold : ui.tint.good.ink}
+          />
         </View>
         <Text className="pl-3 text-base font-bold text-ink">{step.title}</Text>
       </View>

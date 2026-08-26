@@ -4,6 +4,8 @@ import { Linking, Pressable, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { SectionLabel } from '@/components/content-kit';
+import { shareHawkeye } from '@/lib/share';
+import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 
 /** Optical size for every mark in the accounts strip. One constant, so the
@@ -91,6 +93,44 @@ export function SocialRow() {
   return (
     <View>
       <SectionLabel text="Find Hawkeye" />
+
+      {/* SHARE HAWKEYE, FIRST IN THE SECTION.
+
+          The rest of this section is where to find Hawkeye; this is how someone
+          else finds it, which is the only one of the five that does anything for
+          an election. It takes the same action-card shape as the Telegram row
+          below rather than being a sixth glyph in the accounts strip — an
+          unlabelled share icon in a row of logos reads as "post to a share
+          service", and this is a person sending a link to their sister.
+
+          Gold tile against Telegram's green: two cards of identical weight, in a
+          section that is otherwise muted, need something to say which one is
+          being offered. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Share Hawkeye — send the app to someone"
+        className="mb-2 flex-row rounded-2xl bg-card p-4 active:opacity-80"
+        onPress={shareHawkeye}
+      >
+        <View className="h-11 w-11 items-center justify-center rounded-2xl bg-surface">
+          <Feather name="share-2" size={19} color={BRAND.gold} />
+        </View>
+        <View className="flex-1 pl-3.5">
+          <Text className="text-base font-bold text-ink">Share Hawkeye</Text>
+          <Text className="pt-1 text-sm leading-5 text-muted">
+            Send the app to someone who votes.
+          </Text>
+          <View className="flex-row items-center pt-2">
+            <Text className="text-sm font-bold text-good-ink">Share the download link</Text>
+            <Feather
+              name="arrow-right"
+              size={13}
+              color={ui.tint.good.ink}
+              style={{ marginLeft: 4 }}
+            />
+          </View>
+        </View>
+      </Pressable>
 
       <Pressable
         accessibilityRole="button"

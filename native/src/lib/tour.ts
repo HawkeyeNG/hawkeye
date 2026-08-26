@@ -25,6 +25,7 @@
  * Storage follows lib/review.ts: one key, written BEFORE the thing it gates, one
  * try/catch around everything, and a caller that carries no policy.
  */
+import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SEEN_KEY = 'hawkeye_tour_seen';
@@ -53,11 +54,29 @@ const SEEN_KEY = 'hawkeye_tour_seen';
  */
 let seenThisRun = false;
 
+/** The five tabs, by the `name=` each Tabs.Screen is registered under. */
+export type TabRoute = 'index' | 'results' | 'report' | 'alerts' | 'more';
+
 export type TourStep = {
   /** Feather icon name — kept as a string so this file imports no UI. */
   icon: string;
   title: string;
   body: string;
+  /**
+   * WHICH TAB THIS STEP IS ABOUT. The tour describes the bar the reader is
+   * looking at, so while a step is open its tab is lit up down there — a
+   * description of a button, next to the button. Positional order used to be
+   * the only link between the two, which meant reordering the steps silently
+   * pointed every one of them at the wrong tab.
+   */
+  route: TabRoute;
+  /**
+   * This step describes the raised green Report button rather than a plain tab
+   * glyph, so its chip is drawn as that button instead of as a generic icon.
+   * A flag, not `icon === 'camera'`: what makes Report special is that it is
+   * the CTA, not which glyph it happens to use.
+   */
+  cta?: true;
 };
 
 /**
@@ -71,30 +90,36 @@ export type TourStep = {
 export const TOUR_STEPS: TourStep[] = [
   {
     icon: 'home',
+    route: 'index',
     title: 'Home',
     body:
       'Elections open now, reports accepted so far, and a live feed.',
   },
   {
     icon: 'bar-chart-2',
+    route: 'results',
     title: 'Results',
     body:
       'Pick a race for its map and running tally. Follow one to get alerts.',
   },
   {
     icon: 'camera',
+    route: 'report',
+    cta: true,
     title: 'Report — the green button',
     body:
       'Report a result sheet, a collation result, or an incident. This is what makes you an observer.',
   },
   {
     icon: 'bell',
+    route: 'alerts',
     title: 'Alerts',
     body:
       'What has happened on the races you follow — reports accepted, units flagged, and anything Hawkeye needs to tell you.',
   },
   {
     icon: 'menu',
+    route: 'more',
     title: 'More',
     body:
       'Practice runs, the ledger, the docket and the guide. Start with Practice Run.',
@@ -146,4 +171,39 @@ export async function resetTour(): Promise<void> {
   } catch {
     // As above.
   }
+}
+
+/**
+ * WHICH TAB IS LIT, while the tour is open.
+ *
+ * The tour is an RN <Modal>, which is a separate native window above the whole
+ * React root — so the tab bar renders underneath it and nothing inside the
+ * modal can draw on it. The ring therefore has to be drawn by the tab bar
+ * itself, which means the two need a channel between them.
+ *
+ * A module-level value plus listeners, copied from lib/push.ts's unread badge —
+ * the same shape, driving the same file, for the same reason: the tab bar and
+ * the thing that knows the state always agree, with no state library and no
+ * context provider wrapped around the app for one ring.
+ */
+let spotlight: TabRoute | null = null;
+const spotListeners = new Set<() => void>();
+
+/** The tab the open tour step is about, or null when no tour is showing. */
+export function useTourSpotlight(): TabRoute | null {
+  return useSyncExternalStore(
+    (cb) => {
+      spotListeners.add(cb);
+      return () => spotListeners.delete(cb);
+    },
+    () => spotlight,
+    () => spotlight,
+  );
+}
+
+/** Light a tab, or pass null to put the bar back to normal. */
+export function setTourSpotlight(route: TabRoute | null): void {
+  if (spotlight === route) return;
+  spotlight = route;
+  spotListeners.forEach((fn) => fn());
 }

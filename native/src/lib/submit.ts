@@ -12,7 +12,12 @@ import * as SecureStore from '@/lib/secure-store';
 
 import { bootstrapAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
-import { queueJob, type JobFile } from '@/lib/outbox';
+// TYPE-ONLY, so this edge is erased at compile time and creates no runtime
+// require cycle. outbox.ts legitimately imports filePart/remintSession from
+// here; this file needed queueJob back, and the pair warned on every Metro
+// start ("Require cycles are allowed, but can result in uninitialized values").
+// The value import moved to the single call site below, as a dynamic import.
+import type { JobFile } from '@/lib/outbox';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -316,6 +321,8 @@ async function handOff(
   lead = 'Saved on this phone — your signed report will send itself as soon as the network allows.',
 ): Promise<SubmitResult> {
   try {
+    // Resolved here rather than at module load: see the import note at the top.
+    const { queueJob } = await import('@/lib/outbox');
     await queueJob({ kind, body, files, label });
     return {
       ok: false,

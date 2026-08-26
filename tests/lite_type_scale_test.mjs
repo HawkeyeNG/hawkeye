@@ -80,7 +80,10 @@ console.log('=== the class is actually set (or everything below measures the web
 }
 
 console.log('\n=== the app scale, across trust & verify and learn & about ===');
-for (const f of ['ledger.html', 'integrity.html', 'docket.html', 'how.html', 'guide.html', 'about.html', 'terms.html']) {
+// download.html is in this list because the menu reaches it from inside Lite —
+// "Share Hawkeye" degrades to it when share.js has not loaded — so it is an app
+// page like the rest, not only the landing page a forwarded link opens.
+for (const f of ['ledger.html', 'integrity.html', 'docket.html', 'how.html', 'guide.html', 'about.html', 'terms.html', 'download.html']) {
   const p = await lite(f);
   const m = await p.evaluate(() => {
     const g = (sel) => { const el = document.querySelector(sel); return el ? getComputedStyle(el).fontSize : null; };
@@ -116,12 +119,26 @@ console.log('\n=== My Profile mirrors the app ===');
    * page off the screen. This asserts the SHAPE, because the old shape is what
    * the complaint was about.
    */
-  const rows = await p.evaluate(() => [...document.querySelectorAll('.prow')].map((r) => ({
+  // SCOPED TO THE ACCOUNT CARD. This read every .prow on the page, which was the
+  // same thing until a second card started using the row shape — Find Hawkeye,
+  // at the foot — and the assertion then read "Password + My polling unit +
+  // Share Hawkeye" and failed. What it is about is the ACCOUNT card's shape, so
+  // it says so, and adding a fourth row somewhere else cannot break it again.
+  const rows = await p.evaluate(() => [
+    ...document.querySelectorAll('.prows')[0].querySelectorAll('.prow'),
+  ].map((r) => ({
     k: r.querySelector('.prow-k')?.textContent.trim(),
     hasValue: !!r.querySelector('.prow-v'),
     hasChevron: !!r.querySelector('.prow-c'),
   })));
   check('both settings are rows', rows.map((r) => r.k).join(' + '), 'Password + My polling unit');
+  // The other user of the row shape, pinned so the two cards cannot silently
+  // become one.
+  check('Share Hawkeye is a row of its own, in its own card', await p.evaluate(() => {
+    const cards = [...document.querySelectorAll('.prows')];
+    return cards.length > 1 && cards[1].querySelectorAll('.prow').length === 1
+      && cards[1].querySelector('.prow-k').textContent.trim() === 'Share Hawkeye';
+  }), true);
   check('each row states its current value', rows.every((r) => r.hasValue), true);
   check('and offers a way in', rows.every((r) => r.hasChevron), true);
   // The advice moved into the modals; it must not still be standing on the page.

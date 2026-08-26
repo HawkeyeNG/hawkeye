@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=157" />
+  <link rel="stylesheet" href="styles.css?v=160" />
   <script src="native.js?v=110"></script>
   <style>
     .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
@@ -197,6 +197,25 @@
         <div id="p-incidents" class="empty">No incident reports yet.</div></details>
       <details class="fold"><summary>Units Mapped <span class="cnt" id="cnt-mappings">0</span></summary>
         <div id="p-mappings" class="empty">No units mapped yet.</div></details>
+
+      <!-- SHARE HAWKEYE. Down here with the actions rather than up with the
+           account rows: it is not a setting, and it is the one thing on this
+           page an observer might do FOR Hawkeye rather than to their own
+           account. Same row shape as Account above so the page has one list
+           treatment.
+
+           A LINK, and the href is not decoration — before share.js loads, or if
+           it fails to, this opens the download page, which carries the same
+           store badges and its own share button. The handler upgrades it to the
+           phone's own share sheet. -->
+      <h2 class="sec-label" style="margin-top:18px">Find Hawkeye</h2>
+      <div class="pcard prows">
+        <a class="prow" href="download.html" data-share>
+          <span class="prow-k">Share Hawkeye</span>
+          <span class="prow-v">Send the app to someone</span>
+          <span class="prow-c" aria-hidden="true">›</span>
+        </a>
+      </div>
 
       <div class="pcard">
         <h2>Session</h2>
@@ -453,6 +472,7 @@
        first open. -->
   <script src="pu-search.js?v=6"></script>
   <script src="device.js"></script>
-  <script src="menu.js?v=152"></script>
+  <script src="share.js?v=1"></script>
+  <script src="menu.js?v=155"></script>
 </body>
 </html>

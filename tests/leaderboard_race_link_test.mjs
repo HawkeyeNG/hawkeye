@@ -78,8 +78,12 @@ check('Osun links to its own written race', osun.href, 'race.html?race=raceOsun2
 
 // The FCT is on every state map and has no governor — it must not be offered a
 // governorship page, and must still show its detail like any other region.
-const fct = await clickRegion('Fct');
-check('FCT still shows its detail', fct.text, (t) => /Fct/.test(t));
+// 'FCT', not 'Fct'. states_geo.json is rebuilt from wards now and title-cases
+// its own names, so the acronym is spelled as an acronym — the same repair
+// db.js already applies to the polling-unit register. Nothing keys on the
+// display name (every client normalises to `fct` first); this test did.
+const fct = await clickRegion('FCT');
+check('FCT still shows its detail', fct.text, (t) => /FCT/i.test(t));
 check('FCT is offered no governorship', fct.href, null);
 
 console.log('\n=== a second click on the same region opens it ===');

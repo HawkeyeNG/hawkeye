@@ -10,9 +10,16 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=157" />
+  <link rel="stylesheet" href="styles.css?v=160" />
   <style>
-    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=157, so
+    /* The step-5 facts block. Page-local on purpose — styles.css is pinned by
+       every page in the app, so a shared rule for one card would mean bumping
+       forty ?v= pins and the service worker with them. */
+    .submit-facts { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin: 0 0 12px; }
+    .submit-facts strong { display: block; font-size: 0.95rem; }
+    .submit-facts small { display: block; color: var(--muted); font-size: 0.78rem; }
+    .submit-facts .sf-race { display: block; margin-top: 4px; font-size: 0.78rem; font-weight: 700; color: var(--link); }
+    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=160, so
        putting three rules in the shared sheet would mean bumping and
        redeploying all forty to defeat the HTTP cache — a large blast radius
        for CSS only this page uses. Move it into styles.css whenever that file
@@ -407,6 +414,14 @@
 
       <div class="card">
         <h2><span class="step-no">5</span> Sign and Submit</h2>
+        <!-- WHAT IS ABOUT TO BE SIGNED. This card had no facts on it at all:
+             the unit and the election were visible only as ellipsised "✔ …"
+             receipts on folds two and three, which are shut by the time anyone
+             reaches this button. A report is permanent and cannot be withdrawn,
+             so the last thing before signing should be what is being signed.
+             Filled by paintSubmitFacts() in app.js; hidden until there is
+             something to say. -->
+        <div id="submit-facts" class="submit-facts" hidden></div>
         <p class="hint">Signed on this device and written to the public tamper-evident
         ledger — it cannot be edited or withdrawn. Its fingerprint is published to the
         public Rekor transparency log in the next daily anchor.</p>
@@ -480,8 +495,13 @@
        sheet. Must load before app.js, which calls into it. -->
   <script src="pu-code.js?v=3"></script>
   <script src="capture.js?v=1"></script>
-  <script src="app.js?v=151" defer></script>
+  <!-- One wording for every "we could not get your position", shared with
+       incidents.html and map-unit.html. app.js carries a verbatim inline
+       fallback, so a missing tag degrades quietly rather than loudly --
+       which is exactly why the tag has to be asserted, not eyeballed. -->
+  <script src="geo-msg.js?v=1"></script>
+  <script src="app.js?v=153" defer></script>
   <script src="tg.js?v=95" defer></script>
-  <script src="menu.js?v=152" defer></script>
+  <script src="menu.js?v=155" defer></script>
 </body>
 </html>

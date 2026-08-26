@@ -67,6 +67,26 @@
     if (nav.children.length) btn.parentNode.insertBefore(nav, btn);
   }
 
+  /**
+   * IS THIS THE APP SHELL? The Capacitor app (Hawkeye Lite) or an INSTALLED PWA
+   * — both ARE the app experience, and both get the bottom tab bar. The
+   * `inAppShell` const further down is now just this call.
+   *
+   * A hoisted FUNCTION rather than a const, because two things need the answer
+   * at opposite ends of this file: the ☰ panel's "Take the tour" row is built up
+   * here with the menu groups, and the tab bar (and the tour that rings it) is
+   * built ~650 lines below. A `const` declared down there cannot be read from up
+   * here — temporal dead zone — and a second copy of the expression is exactly
+   * how the tour and the bar would come to disagree about what "the shell" is.
+   */
+  function isAppShell() {
+    return !!(window.HAWKEYE && window.HAWKEYE.native)
+      || window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+  }
+  /** Set by the tour when it builds itself (shell only); see the tour block. */
+  let openTour = null;
+
   // Group the (15-item) menu into scannable sections. Built dynamically from
   // the page's own links so page HTML stays a flat, JS-free fallback list.
   // Footer-only pages: not in the ☰ menu (menu stays short); the canonical
@@ -102,7 +122,24 @@
     ['Live data', ['results.html', 'races.html', 'dashboard.html', 'political.html']],
     // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
     // aren't in the panel, the group finds no members and is skipped.
-    ['Learn & about', ['how.html', 'guide.html', 'faq.html', 'about.html', 'support.html', 'privacy.html', 'terms.html']],
+    // "Take the tour" LEADS this group, which is where native puts it
+    // (more.tsx GROUPS: first item of "Learn & about", above "Ask Hawkeye").
+    // Ask Hawkeye is native-only — no web page — so here the row lands directly
+    // above "How Hawkeye Works", one position earlier but the same position in
+    // the group. It is an ACTION, not a page, so it is INJECTED below rather
+    // than static-listed in every page's <nav>, following the races.html /
+    // profile.html precedent — and injected ONLY in the app shell. On the
+    // website links.get('#tour') finds nothing, this item resolves to null and
+    // the rendered group is byte-identical to before.
+    ['Learn & about', ['#tour', 'how.html', 'guide.html', 'faq.html', 'about.html', 'support.html', 'privacy.html', 'terms.html']],
+    /**
+     * Where native puts it too — the app's More screen ends with a "Find
+     * Hawkeye" section (components/social-row.tsx) and the share control sits
+     * at the top of it. Its other members, the Telegram bot and the four
+     * accounts, are on the web already: they are the strip in the footer below
+     * this panel, which is why this group has one entry rather than six.
+     */
+    ['Find Hawkeye', ['download.html']],
   ];
   if (panel && !panel.querySelector('.menu-group')) {
     // The races selector. Injected so it appears on every page. Osun 2026 and
@@ -147,6 +184,37 @@
       pr.textContent = 'Practice Run';
       panel.appendChild(pr);
     }
+    /**
+     * SHARE HAWKEYE. An election tool spreads by one person handing it to
+     * another, and until now the only way to do that was to copy the address
+     * bar.
+     *
+     * IT IS A LINK, and the href is not decoration: without JS — or before
+     * share.js has loaded, or if it fails to — tapping this opens the download
+     * page, which carries the same store badges and its own share button. The
+     * click handler upgrades it to the phone's own share sheet.
+     *
+     * share.js is loaded HERE rather than fetched on the click. navigator.share
+     * needs transient user activation, and a script fetched after the tap
+     * finishes has already lost it — the share would be refused on exactly the
+     * platforms it is for.
+     */
+    if (!panel.querySelector('a[href="download.html"]')) {
+      var sh = document.createElement('a');
+      sh.href = 'download.html';
+      sh.textContent = 'Share Hawkeye';
+      sh.setAttribute('data-share', '');
+      panel.appendChild(sh);
+      // Already loaded (download.html and profile.html carry it): its own sweep
+      // for [data-share] ran before this link existed, so mount it by hand.
+      // Otherwise load it — its sweep then finds this link on arrival.
+      if (window.mountShare) window.mountShare(sh);
+      else if (!document.querySelector('script[src^="share.js"]')) {
+        var ss = document.createElement('script');
+        ss.src = 'share.js?v=1';
+        document.head.appendChild(ss);
+      }
+    }
     // Terms of Service — no page static-lists it, and its only other route
     // (privacy.html's footer nav) is overwritten by the canonical footer below,
     // so inject it here (like Osun/Practice above) so "Learn & about" surfaces it.
@@ -155,6 +223,38 @@
       tm.href = 'terms.html';
       tm.textContent = 'Terms of Service';
       panel.appendChild(tm);
+    }
+    /**
+     * TAKE THE TOUR — the replay, and the only way back to the tour once the
+     * first run is over. The tour shows itself once and its Skip button is meant
+     * to be pressed, which would otherwise make it unreachable forever for
+     * exactly the people who later wish they had watched it. Native reasons the
+     * same way (more.tsx, `action:tour`).
+     *
+     * A LINK rather than a button because a link is the only thing the GROUPS
+     * resolver below reads, and `#tour` is a harmless href with JS off. SHELL
+     * ONLY: the five cards are literally about the five tabs, and the website
+     * has no tab bar — a tour describing controls that are not on screen would
+     * be worse than none.
+     *
+     * "In the shell" is necessary but not sufficient: an INSTALLED DESKTOP PWA
+     * is the shell and still renders no bar (.tabbar is display:none above
+     * 899px). The tour block below therefore hides this row whenever no bar is
+     * on screen — a decision it can only make once the bar exists, 650 lines
+     * from here. See syncTourRow().
+     */
+    if (isAppShell() && !panel.querySelector('a[href="#tour"]')) {
+      const tr = document.createElement('a');
+      tr.href = '#tour';
+      tr.textContent = 'Take the tour';
+      tr.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        panel.hidden = true;
+        document.querySelector('.menu-btn')?.setAttribute('aria-expanded', 'false');
+        if (openTour) openTour();
+      });
+      panel.appendChild(tr);
     }
     const links = new Map([...panel.querySelectorAll('a')].map((a) => [a.getAttribute('href'), a]));
     // Canonical label for the results page: its static link text drifts across
@@ -429,9 +529,7 @@
   // both get native-style bottom tabs (parity). A plain browser tab (mobile or
   // desktop web) keeps its header nav/bell/footer instead. has-tabbar hides the
   // footer, so an installed PWA gets exactly the native chrome, not both.
-  const inAppShell = (window.HAWKEYE && window.HAWKEYE.native)
-    || window.matchMedia('(display-mode: standalone)').matches
-    || window.navigator.standalone === true;
+  const inAppShell = isAppShell();
   // GOOGLE PLAY "Misleading Claims" COMPLIANCE (rejection, 2026-08-03).
   // Any app presenting government-related information must, in-app, (a) state
   // plainly that it does not represent the government entity and (b) link the
@@ -758,6 +856,292 @@
         })
         .catch(() => {});
     }
+
+    /* ================= FIRST-RUN TOUR ==================================
+       The web twin of native's components/tour.tsx + lib/tour.ts: five cards,
+       one per tab, in tab order, with Skip on every one.
+
+       WHY IT LIVES IN menu.js, WITH ITS CSS IN styles.css, AND ADDS NO FILE.
+       This file already builds the tab bar, the menu panel AND the report sheet
+       on every page of the shell. `.report-sheet` directly above is the
+       precedent: a modal owned by menu.js, styled in the shared sheet. A new
+       app/tour.js would need a `?v=` pin added to every page plus a decision
+       about app/sw.js's precache list; zero new files is zero pin coordination.
+
+       SHELL ONLY, exactly like the tab bar it describes (this whole block sits
+       inside `if (inAppShell ...)`). The five cards are literally about the five
+       tabs, and the website has no tab bar -- a tour describing controls that
+       are not on screen would be worse than no tour at all.
+       =================================================================== */
+
+    /** The SAME key name native uses for AsyncStorage (lib/tour.ts SEEN_KEY). */
+    const TOUR_SEEN_KEY = 'hawkeye_tour_seen';
+    /**
+     * Five steps, one per tab, in tab order.
+     *
+     * TITLES AND BODIES ARE NATIVE'S, VERBATIM -- copied from TOUR_STEPS in
+     * native/src/lib/tour.ts and not reworded. tests/tour_test.mjs PARSES that
+     * file at test time and diffs it against what this renders, so the two
+     * clients cannot drift apart silently: reword it there and here in the same
+     * commit, or the test goes red.
+     *
+     * `route` is the tab's href in TABS above, not a position. Native learned
+     * this the hard way: when order was the only link between a step and its
+     * tab, reordering the steps silently pointed every one of them at the wrong
+     * one. `cta` marks the step that describes the raised green Report button so
+     * its chip is drawn AS that button rather than as a generic icon -- a flag,
+     * not `icon === 'camera'`, because what makes Report special is that it is
+     * the CTA, not which glyph it happens to use.
+     */
+    const TOUR = [
+      { route: 'index.html', title: 'Home',
+        body: 'Elections open now, reports accepted so far, and a live feed.' },
+      { route: 'results.html', title: 'Results',
+        body: 'Pick a race for its map and running tally. Follow one to get alerts.' },
+      { route: 'observe.html', cta: true, title: 'Report — the green button',
+        body: 'Report a result sheet, a collation result, or an incident. This is what makes you an observer.' },
+      { route: 'notifications.html', title: 'Alerts',
+        body: 'What has happened on the races you follow — reports accepted, units flagged, and anything Hawkeye needs to tell you.' },
+      { route: '#more', title: 'More',
+        body: 'Practice runs, the ledger, the docket and the guide. Start with Practice Run.' },
+    ];
+    /**
+     * The nonpartisan line, on the FIRST card only (native: tour.tsx renders it
+     * when i === 0). It is the first thing the app says to a new observer
+     * everywhere else -- the board, the race pages and the store listing all
+     * carry it -- and a welcome card that omitted it would be the one place
+     * Hawkeye introduced itself without it.
+     */
+    const TOUR_NOTE = 'Hawkeye is independent and nonpartisan. It is not affiliated with INEC or any government body, and it does not declare results — it records what observers report and lets anyone check the record.';
+
+    /**
+     * HAS THIS DEVICE SEEN IT? FAILS CLOSED, the direction native argues for in
+     * shouldShowTour(): an unreadable flag means we cannot prove the tour was
+     * shown, and showing it once more to one person is a far smaller cost than a
+     * storage fault putting it in front of everyone on every launch -- which is
+     * what the other direction eventually does, once the write fails too.
+     */
+    let tourSeenThisRun = false;
+    const tourSeen = () => {
+      if (tourSeenThisRun) return true;
+      try { return localStorage.getItem(TOUR_SEEN_KEY) !== null; } catch (e) { return true; }
+    };
+    /** Finished OR skipped -- the same fact. An app that re-asks tomorrow has not listened. */
+    const markTourSeen = () => {
+      tourSeenThisRun = true;   // synchronous first, before the write that can fail
+      try { localStorage.setItem(TOUR_SEEN_KEY, '1'); } catch (e) { /* never worth an error */ }
+    };
+
+    const tour = document.createElement('div');
+    tour.className = 'tour';
+    tour.hidden = true;
+    tour.innerHTML = '<div class="tour-backdrop"></div>'
+      // tabindex=-1 so the CARD can take focus on open. Focusing the Next
+      // button instead put a second, louder gold ring on screen at the exact
+      // moment the tour is asking the reader to look at a gold ring on a tab —
+      // and the dialog container is what WAI-ARIA says to focus anyway.
+      + '<div class="tour-card" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="tour-title">'
+      + '<h3 id="tour-title">Welcome to Hawkeye</h3>'
+      // The body scrolls and the footer is its SIBLING, not its last child --
+      // native's ModalCard exists to enforce exactly those two rules, because a
+      // primary action reachable only by scrolling is a bug this codebase has
+      // already shipped once.
+      + '<div class="tour-body"><div class="tour-step">'
+      + '<span class="tour-chip" aria-hidden="true"></span><strong class="tour-name"></strong></div>'
+      + '<p class="tour-text"></p><p class="tour-note"></p></div>'
+      + '<div class="tour-foot">'
+      // Progress FIRST, so the reader knows how long this is before deciding
+      // whether to skip. Five dots, not "1 of 5" -- the shape of the thing is
+      // the answer to the question being asked.
+      + '<div class="tour-dots" aria-hidden="true">' + TOUR.map(() => '<span></span>').join('') + '</div>'
+      // SKIP IS NOT A CORNER CROSS. It sits in the footer beside Next, the same
+      // width, on screen from the first card, because a tour someone cannot
+      // obviously leave is worse than no tour.
+      + '<div class="tour-actions">'
+      + '<button type="button" class="tour-skip"></button>'
+      + '<button type="button" class="tour-next"></button>'
+      + '</div></div></div>';
+    document.body.appendChild(tour);
+
+    /**
+     * LIGHT THE REAL TAB THIS CARD IS ABOUT.
+     *
+     * Native has to publish the route to a module store and let the tab bar draw
+     * the ring itself, because an RN <Modal> is a separate native window above
+     * the React root. In Lite the bar is real DOM built a few lines up, so the
+     * ring goes straight on it -- simpler, same result.
+     *
+     * Clearing matters as much as setting: a ring left burning after the tour
+     * closes is a tab that looks permanently selected. Every exit runs through
+     * endTour(), which calls this with null first.
+     */
+    const litTab = (route) => {
+      for (const t of nav.querySelectorAll('.tab')) t.classList.remove('tour-lit');
+      if (!route) return;
+      const el = nav.querySelector('.tab[href="' + route + '"]');
+      if (el) el.classList.add('tour-lit');
+    };
+
+    /**
+     * HOW FAR SHORT OF THE BOTTOM THE SCRIM STOPS -- so the ringed tab shows
+     * through LIT rather than dimmed to the same grey as everything else, which
+     * is the opposite of pointing at it.
+     *
+     * MEASURED, never a magic number. The bar's height varies with
+     * env(safe-area-inset-bottom) on the phone, and the raised Report circle
+     * overhangs the bar's top edge (margin-top: -22px against the 9px of padding
+     * above it), so a scrim that stopped at the bar would clip the ring on
+     * exactly the step that most needs it. Native computes this from exported
+     * constants (BAR_CONTENT_HEIGHT + insets.bottom + CTA_LIFT) because it has
+     * no DOM to ask; here the DOM can just be asked. Returns 0 when no bar is on
+     * screen, which is also the signal not to open at all.
+     */
+    const tourGap = () => {
+      const bar = document.querySelector('.tabbar');
+      if (!bar || getComputedStyle(bar).display === 'none') return 0;
+      let top = bar.getBoundingClientRect().top;
+      const cta = bar.querySelector('.tab-cta .ti');
+      if (cta) top = Math.min(top, cta.getBoundingClientRect().top - 4);   // -4: clear the gold ring
+      return Math.max(0, Math.round(window.innerHeight - top));
+    };
+
+    let ti = 0;
+    const paintTour = () => {
+      const s = TOUR[ti];
+      const last = ti === TOUR.length - 1;
+      const tab = TABS.find((t) => t.href === s.route);
+      // The chip wears the tab bar's OWN glyph for that tab, not a lookalike:
+      // the card is a picture of the control six centimetres below it.
+      tour.querySelector('.tour-step').classList.toggle('is-cta', !!s.cta);
+      tour.querySelector('.tour-chip').innerHTML = tab ? ic(tab.icon) : '';
+      tour.querySelector('.tour-name').textContent = s.title;
+      tour.querySelector('.tour-text').textContent = s.body;
+      const note = tour.querySelector('.tour-note');
+      note.textContent = ti === 0 ? TOUR_NOTE : '';
+      note.hidden = ti !== 0;
+      tour.querySelectorAll('.tour-dots span').forEach((d, n) => d.classList.toggle('on', n === ti));
+      tour.querySelector('.tour-skip').textContent = last ? 'Close' : 'Skip tour';
+      tour.querySelector('.tour-next').textContent = last ? 'Start observing' : 'Next';
+      tour.style.setProperty('--tour-gap', tourGap() + 'px');
+      tour.querySelector('.tour-body').scrollTop = 0;
+      litTab(s.route);
+    };
+
+    /**
+     * THE REPLAY ROW ONLY EXISTS WHEN THE BAR DOES. `isAppShell()` is also true
+     * for an INSTALLED DESKTOP PWA, where `.tabbar { display: none }` above
+     * 899px -- and on any shell screen that hides the bar (the signed-out
+     * landing, the auth screen). The row was injected regardless, so a desktop
+     * reader could open five cards about a tab bar that is not on screen, under
+     * a full-bleed scrim, with the ring on invisible elements. That is the exact
+     * thing the shell-only gate exists to prevent, reached by the other door.
+     *
+     * Hidden rather than deleted: the same window becomes a phone-width one on
+     * rotation or a resize, and the row comes back with the bar (see the resize
+     * listener below). It needs `.menu-panel a[hidden] { display: none }` in
+     * styles.css -- the panel sets `display: block` on its anchors, which
+     * outranks the user agent's [hidden] rule.
+     */
+    const tourRow = document.querySelector('#menu-panel a[href="#tour"]');
+    const syncTourRow = () => { if (tourRow) tourRow.hidden = tourGap() === 0; };
+    syncTourRow();
+
+    // Assigned to the outer `openTour`, which the menu panel's "Take the tour"
+    // row (built ~650 lines above, before any of this exists) calls. Always from
+    // card one, and regardless of the seen flag -- that row IS the replay.
+    openTour = () => {
+      // ONE GATE, BOTH DOORS. The first-run trigger at the foot of this block
+      // asks the same question; asking it here too means the replay cannot walk
+      // round it if the row is ever stale (a resize between opening the panel
+      // and tapping the row).
+      if (tourGap() === 0) return;
+      ti = 0;
+      tour.hidden = false;
+      document.body.style.overflow = 'hidden';
+      paintTour();
+      tour.querySelector('.tour-card').focus();
+    };
+    /**
+     * ONE EXIT for Skip, Close, the backdrop and Escape alike. Tapping the
+     * backdrop is a deliberate exit too and counts as skipping -- an app that
+     * reopened the tour on the next launch because the reader dismissed it the
+     * quickest way would be arguing with them. All of them write the same flag.
+     */
+    const endTour = () => {
+      litTab(null);
+      markTourSeen();
+      ti = 0;
+      tour.hidden = true;
+      // Give the page its scroll back only if nothing ELSE is holding it. The
+      // report sheet locks the same single property, and `= ''` here would
+      // unlock the page under a sheet that is still open. Unreachable today --
+      // the scrim covers the bar, so the sheet cannot be opened from behind the
+      // tour any more -- but the two modals share one lock and only one of them
+      // can be right about releasing it.
+      document.body.style.overflow = sheet.hidden ? '' : 'hidden';
+    };
+    tour.querySelector('.tour-skip').addEventListener('click', endTour);
+    tour.querySelector('.tour-backdrop').addEventListener('click', endTour);
+    tour.querySelector('.tour-next').addEventListener('click', () => {
+      if (ti >= TOUR.length - 1) { endTour(); return; }
+      ti += 1;
+      paintTour();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !tour.hidden) endTour(); });
+    /**
+     * TAB STAYS INSIDE THE CARD. It says `aria-modal="true"`, and a dialog that
+     * lets the keyboard walk out into the page it is covering has made that
+     * claim untrue. Native gets this for free -- an RN <Modal> is a separate
+     * window and there is nothing behind it to reach -- so this is the web
+     * paying for the same guarantee. Two controls, so the cycle is two long;
+     * from the card itself (which holds focus on open) Tab lands on Skip.
+     */
+    tour.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      e.preventDefault();
+      const f = [tour.querySelector('.tour-skip'), tour.querySelector('.tour-next')];
+      const at = f.indexOf(document.activeElement);
+      const n = e.shiftKey ? (at <= 0 ? f.length - 1 : at - 1) : (at === f.length - 1 ? 0 : at + 1);
+      f[n].focus();
+    });
+    /**
+     * LEAVING THE PAGE IS AN EXIT TOO, and it writes the same flag.
+     *
+     * Android's hardware Back is outside this dialog's reach: native routes it
+     * through `<Modal onRequestClose>` into the same finish(), a WebView just
+     * navigates and the document goes away mid-tour with the flag unwritten --
+     * and the tour would then reopen on the next visit to Home, which is the one
+     * thing the flag exists to prevent. Deliberately NOT a Capacitor backButton
+     * listener: registering one disables the app's default Back on every page of
+     * the shell, which is a far larger change than a tour is worth.
+     */
+    addEventListener('pagehide', () => { if (!tour.hidden) markTourSeen(); });
+    // The bar's height changes with rotation, the keyboard and the WebView's
+    // retracting toolbar; a stale gap would either dim the bar or leave a band.
+    // The same event decides whether the replay row belongs in the menu, since
+    // what it depends on -- a rendered tab bar -- is what changed.
+    addEventListener('resize', () => {
+      if (!tour.hidden) tour.style.setProperty('--tour-gap', tourGap() + 'px');
+      syncTourRow();
+    });
+
+    /**
+     * FIRST RUN -- opens by itself the first time the app reaches Home, and
+     * never again. Native hangs this off (tabs)/index rather than any auth
+     * handler, deliberately: five different sign-in paths land on Home and a
+     * trigger on one of them would silently miss the other four. index.html is
+     * the web twin of that screen.
+     *
+     * ONE CONDITION MORE THAN NATIVE, forced by Lite rather than chosen:
+     * index.html in the shell is TWO screens. Signed out it is the welcome/auth
+     * screen, which hides the header AND the tab bar (styles.css:
+     * `.native-app.is-landing:not(.obs-home) .tabbar { display: none }`). Native
+     * has no such screen inside its tab shell. Five cards pointing at a bar that
+     * is not rendered would be worse than none, so the trigger ASKS THE DOM
+     * whether the bar is on screen rather than assuming it -- which also, for
+     * free, keeps the tour off desktop widths, where the bar is display:none.
+     */
+    if (page === 'index.html' && tourGap() > 0 && !tourSeen()) openTour();
   }
 
   // Mascot trial: swap the emoji crest for the hawk mark on every page from
@@ -1215,13 +1599,32 @@
       const by = new Map((available || []).map((c) => [c.code, c]));
       const prev = sel.value;
       const head = o.placeholder === false ? '' : `<option value="">${esc(o.placeholder || '— select election —')}</option>`;
+      /**
+       * THE FIVE GENERAL CONTESTS, THEN ANY BY-ELECTION ON THE WIRE.
+       *
+       * RACE_ORDER is a fixed list of the five codes a general election has, so
+       * anything else — every by-election, which carries its own code such as
+       * SHA_BYE_DELTA_UDU_2026 — was silently dropped: it went into `by`,
+       * matched nothing here, and never became an option. The consequence was
+       * not cosmetic. Five by-elections are on the ballot on 19 September 2026
+       * and neither this site nor Hawkeye Lite could file a result for any of
+       * them; an observer reached this step, saw five general elections all
+       * marked "not open yet", and had nothing to choose.
+       *
+       * The five stay first and stay in their fixed order — they are the shape
+       * of a general election and the order people expect. By-elections follow,
+       * named by the server, because there is no fixed list of them to hardcode:
+       * they appear and finish between general elections.
+       */
+      const general = new Set(RACE_ORDER.map((r) => r.code));
+      const extras = (available || []).filter((c) => !general.has(c.code));
       sel.innerHTML = head + RACE_ORDER.map((r) => {
         const c = by.get(r.code);
         if (c) return `<option value="${esc(c.code)}">${esc(c.name)}</option>`;
         // Named, visible, and unselectable — it tells people the race exists and
         // is coming without letting them file against an election with no date.
         return `<option value="${esc(r.code)}" disabled>${esc(r.name)} — not open yet</option>`;
-      }).join('');
+      }).concat(extras.map((c) => `<option value="${esc(c.code)}">${esc(c.name)}</option>`)).join('');
       if (prev && by.has(prev)) { sel.value = prev; return prev; }
       // Exactly one race actually reportable (today: Osun GOV) ⇒ pick it, rather
       // than making everyone choose from a list of one enabled row.

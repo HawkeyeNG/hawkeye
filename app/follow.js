@@ -52,6 +52,43 @@
     }
   }
 
+  /**
+   * Races INEC has declared and Hawkeye has closed — /api/declarations.
+   *
+   * Fetched ONCE per page load and only when something asks. results.html
+   * mounts a control and a race page mounts another, and neither should pay for
+   * the other's request — but a race page with no Follow button on it (every
+   * finished race) should pay for nobody's.
+   *
+   * Failing to answer means "nothing is closed". That is the right direction: an
+   * offline reader still gets a working Follow button, and the server refuses a
+   * closed race anyway (routes/subscriptions.js returns 409) — this list decides
+   * what to SHOW, never what is allowed.
+   */
+  var closedP = null;
+  function closedRaces() {
+    if (!closedP) {
+      closedP = fetch('/api/declarations')
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .catch(function () { return []; });
+    }
+    return closedP;
+  }
+
+  /**
+   * Is this race over? Mirrors services/declarations.js:covers — an entry with
+   * no scope closes the whole contest, an entry with one closes only that
+   * region and leaves a whole-election follow alone.
+   */
+  function isClosed(list, contest, scope) {
+    for (var i = 0; i < (list || []).length; i++) {
+      var d = list[i];
+      if (d.contest !== contest) continue;
+      if (!d.scope || d.scope === scope) return d;
+    }
+    return null;
+  }
+
   /** This observer's subscriptions, or null when signed out / unreachable. */
   function mySubscriptions() {
     var t = token();
@@ -128,6 +165,29 @@
     }
 
     paint();
+
+    /**
+     * A FINISHED RACE IS NOT SOMETHING TO FOLLOW.
+     *
+     * Once INEC has declared it, nothing more will be reported into it, so the
+     * control has nothing to offer and the row it would create is one the server
+     * deletes on its next pass. It goes away entirely rather than becoming a
+     * disabled button with an explanation: the declared result is already the
+     * first thing on the page above it, so there is nothing left to say.
+     *
+     * IT HIDES ON THE ANSWER, not before it. Starting hidden would blank the
+     * button on every open race for as long as the request takes, to spare a
+     * flash on the handful that are closed — and the label is already written
+     * twice on load anyway, since `mySubscriptions` decides between Follow and
+     * Unfollow the same way.
+     */
+    closedRaces().then(function (list) {
+      if (isClosed(list, contest, scope)) {
+        btn.hidden = true;
+        say('');
+      }
+    });
+
     // Signed out, or the check failed: the button still reads "Follow" and the
     // click path handles both. A page must not wait on this to be usable.
     mySubscriptions().then(function (subs) {
@@ -151,12 +211,21 @@
         headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token() },
         body: JSON.stringify({ contest: contest, state: state }),
       })
-        .then(function (r) { return r && r.ok; })
-        .catch(function () { return false; })
-        .then(function (ok) {
+        .then(function (r) { return r ? r.status : 0; })
+        .catch(function () { return 0; })
+        .then(function (status) {
           busy = false;
           btn.disabled = false;
-          if (!ok) {
+          // 409 = the race was declared while this page was open (or the page
+          // was served from cache after it closed). The control is not broken,
+          // it is obsolete — so it leaves rather than reporting a failure the
+          // reader can do nothing about.
+          if (status === 409) {
+            btn.hidden = true;
+            say('');
+            return;
+          }
+          if (!(status >= 200 && status < 300)) {
             say('Could not update following — make sure your phone is verified.');
             return;
           }
@@ -179,4 +248,18 @@
 
   window.followSubject = followSubject;
   window.mountFollow = mountFollow;
+  /**
+   * Is this race declared and closed? Resolves to the declaration, or null.
+   *
+   * For results.html, which does NOT use mountFollow — the leaderboard has its
+   * own Follow button, wired to its own scope picker, and only borrows
+   * followSubject from here. That board is where this rule matters most: a race
+   * page hides its own CTAs once polling day has passed, but the leaderboard's
+   * picker lists every contest in the catalogue, and a by-election stays in the
+   * catalogue after it is won. Without this, the day after the Udu by-election
+   * the board would still offer to alert you about reports that cannot arrive.
+   */
+  window.raceIsClosed = function (contest, scope) {
+    return closedRaces().then(function (list) { return isClosed(list, contest, scope || ''); });
+  };
 })();

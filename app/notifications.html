@@ -9,14 +9,18 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=157" />
+  <link rel="stylesheet" href="styles.css?v=160" />
   <script src="native.js?v=110"></script>
   <style>
     .n { display: flex; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 8px 0; color: inherit; text-decoration: none; }
     .n.unread { border-left: 4px solid var(--green); }
     .n .ic { font-size: 1.2rem; flex: none; }
     .n h3 { margin: 0 0 2px; font-size: 0.96rem; }
-    .n p { margin: 0; font-size: 0.87rem; color: var(--muted); }
+    /* pre-line: an alert body may be written as LINES — the declared-result one
+       is a numbered top three followed by who declared it — and HTML collapses
+       those newlines, running a ranking together into one unreadable sentence.
+       Wrapping still works; only the author's own breaks are kept. */
+    .n p { margin: 0; font-size: 0.87rem; color: var(--muted); white-space: pre-line; }
     .n time { font-size: 0.74rem; color: var(--muted); }
     .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 6px 0 10px; }
     .top button { margin: 0; width: auto; }
@@ -72,7 +76,11 @@
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const ICON = { report: '🦅', unit: '📋', incident: '🆘', case: '⚖️', info: '🔔' };
+    // `result` and `declared` are the two a followed race produces — a new report
+    // from it, and INEC declaring it. Both were falling through to the generic
+    // bell, which is the icon for "something happened" in a feed where every row
+    // is something that happened.
+    const ICON = { report: '🦅', result: '📊', declared: '🏁', unit: '📋', incident: '🆘', case: '⚖️', info: '🔔' };
     const ago = (t) => {
       const s = (Date.now() - t) / 1000;
       if (s < 60) return 'just now';
@@ -149,6 +157,6 @@
     };
     load();
   </script>
-  <script src="menu.js?v=152"></script>
+  <script src="menu.js?v=155"></script>
 </body>
 </html>

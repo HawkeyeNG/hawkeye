@@ -941,6 +941,10 @@
       // moment the tour is asking the reader to look at a gold ring on a tab —
       // and the dialog container is what WAI-ARIA says to focus anyway.
       + '<div class="tour-card" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="tour-title">'
+      // A DELIBERATE EXIT, IN THE CORNER. The backdrop no longer dismisses (see
+      // below), so leaving has to be possible somewhere obvious — and the footer
+      // slot that used to do it is now Back.
+      + '<button type="button" class="tour-x" aria-label="Close tour">\u00d7</button>'
       + '<h3 id="tour-title">Welcome to Hawkeye</h3>'
       // The body scrolls and the footer is its SIBLING, not its last child --
       // native's ModalCard exists to enforce exactly those two rules, because a
@@ -954,9 +958,10 @@
       // whether to skip. Five dots, not "1 of 5" -- the shape of the thing is
       // the answer to the question being asked.
       + '<div class="tour-dots" aria-hidden="true">' + TOUR.map(() => '<span></span>').join('') + '</div>'
-      // SKIP IS NOT A CORNER CROSS. It sits in the footer beside Next, the same
-      // width, on screen from the first card, because a tour someone cannot
-      // obviously leave is worse than no tour.
+      // BACK, NOT SKIP. Five cards is enough that missing one matters, and there
+      // was no way back — the only two controls advanced or left. Leaving now
+      // lives in the corner cross, which is harder to hit by accident than a
+      // full-width footer button sitting under the thumb.
       + '<div class="tour-actions">'
       + '<button type="button" class="tour-skip"></button>'
       + '<button type="button" class="tour-next"></button>'
@@ -1020,7 +1025,11 @@
       note.textContent = ti === 0 ? TOUR_NOTE : '';
       note.hidden = ti !== 0;
       tour.querySelectorAll('.tour-dots span').forEach((d, n) => d.classList.toggle('on', n === ti));
-      tour.querySelector('.tour-skip').textContent = last ? 'Close' : 'Skip tour';
+      const back = tour.querySelector('.tour-skip');
+      back.textContent = 'Back';
+      // Nothing behind card one. Disabled rather than hidden, so the footer does
+      // not change shape as the reader moves through it.
+      back.disabled = ti === 0;
       tour.querySelector('.tour-next').textContent = last ? 'Start observing' : 'Next';
       tour.style.setProperty('--tour-gap', tourGap() + 'px');
       tour.querySelector('.tour-body').scrollTop = 0;
@@ -1080,8 +1089,15 @@
       // can be right about releasing it.
       document.body.style.overflow = sheet.hidden ? '' : 'hidden';
     };
-    tour.querySelector('.tour-skip').addEventListener('click', endTour);
-    tour.querySelector('.tour-backdrop').addEventListener('click', endTour);
+    // BACK, one card at a time.
+    tour.querySelector('.tour-skip').addEventListener('click', () => {
+      if (ti > 0) { ti -= 1; paint(); }
+    });
+    tour.querySelector('.tour-x').addEventListener('click', endTour);
+    // THE BACKDROP NO LONGER DISMISSES. A tap outside the card is the easiest
+    // gesture to make by accident — reaching for a tab, steadying the phone —
+    // and it silently ended the tour AND wrote the seen flag, so it never came
+    // back. Leaving is now the corner cross or Escape: both deliberate.
     tour.querySelector('.tour-next').addEventListener('click', () => {
       if (ti >= TOUR.length - 1) { endTour(); return; }
       ti += 1;
@@ -1099,7 +1115,8 @@
     tour.addEventListener('keydown', (e) => {
       if (e.key !== 'Tab') return;
       e.preventDefault();
-      const f = [tour.querySelector('.tour-skip'), tour.querySelector('.tour-next')];
+      const f = [tour.querySelector('.tour-x'), tour.querySelector('.tour-skip'), tour.querySelector('.tour-next')]
+        .filter((el) => el && !el.disabled);
       const at = f.indexOf(document.activeElement);
       const n = e.shiftKey ? (at <= 0 ? f.length - 1 : at - 1) : (at === f.length - 1 ? 0 : at + 1);
       f[n].focus();

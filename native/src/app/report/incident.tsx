@@ -440,6 +440,10 @@ export default function ReportIncident() {
 
   /** A decision about the unit has been made, either way. */
   const unitDecided = !!unit || noUnit;
+  /** Opaque on purpose: see the pickers below. Deriving the guard straight
+   *  from `unitDecided` narrows `unit` to null inside it, and the pickers
+   *  pass `unit?.pu_code` for their selected-row highlight. */
+  const showPickers: boolean = !unitDecided;
 
   /** Enough of an incident to be worth attributing — the same bar the server
    *  applies (`empty_report`: a description OR media), plus the kind, which is
@@ -1100,6 +1104,42 @@ export default function ReportIncident() {
               somewhere safe — your report is already saved on this device.
             </Text>
 
+            {/* THE ANSWER, ONCE THERE IS ONE.
+                Picking a unit used to change nothing on screen except a faint
+                highlight in whichever list it was picked from, so there was no
+                moment where the choice registered and nothing said the step was
+                finished — the only feedback was the submit label, at the bottom
+                of a long scroll. The choice now replaces the things that exist
+                to make it. */}
+            {unit ? (
+              // THE WHOLE CARD IS THE CONTROL, not a "Change" link inside it.
+              // Tapping your own answer to change it is how the result flow
+              // behaves, and a row that looks like a summary but only responds
+              // along one word of its width is the more annoying half-measure.
+              <Pressable
+                onPress={() => setUnit(null)}
+                accessibilityRole="button"
+                accessibilityLabel={`Chosen unit ${unit.name ?? unit.pu_code}. Tap to choose a different one.`}
+                className="mb-3 flex-row items-center rounded-2xl border border-good-ink bg-card px-4 py-3 active:opacity-80"
+              >
+                <Feather name="check-circle" size={19} color={BRAND.leaf} />
+                <View className="flex-1 pl-3">
+                  <Text className="text-sm font-bold text-ink">{unit.name ?? unit.pu_code}</Text>
+                  <Text className="text-xs text-muted">{unit.pu_code}</Text>
+                </View>
+                <Text className="pl-2 text-sm font-bold text-good-ink">Change</Text>
+              </Pressable>
+            ) : null}
+
+            {/* EVERY PICKER BELOW EXISTS ONLY TO ANSWER THIS ONE QUESTION —
+                near-me, the map, search and the register cascade alike. Once it
+                is answered, by a unit or by the not-tied tick, they are all
+                noise, and leaving the search box under a ticked "not tied to a
+                polling unit" invites someone to search for a unit the report
+                will not carry. */}
+            {showPickers ? (
+              <>
+
             {/* GPS FIRST. Someone standing at a unit they are only observing
                 knows where they are, not that ward's spelling in the register.
 
@@ -1250,10 +1290,14 @@ export default function ReportIncident() {
               <Text className="mt-4 text-xs text-faint">Checking your saved polling unit…</Text>
             )}
 
+              </>
+            ) : null}
+
             {/* FILING WITH NO UNIT STAYS POSSIBLE, and is labelled for what it
                 is. incidents.js stores pu_code and state as NULL on this path;
                 the report is still reviewed and can still be published, it just
                 carries no place. */}
+            {!unit ? (
             <Pressable
               onPress={() => {
                 setNoUnit((v) => !v);
@@ -1279,6 +1323,10 @@ export default function ReportIncident() {
               </View>
             </Pressable>
 
+            ) : null}
+
+            {showPickers ? (
+              <>
             {/* Search by name/code, above the cascade — knowing the unit's name
                 but not its ward is the case the cascade cannot serve. */}
             <UnitSearch<PickedUnit> onSelect={choose} selectedCode={unit?.pu_code} />
@@ -1354,6 +1402,8 @@ export default function ReportIncident() {
                   </>
                 ) : null}
               </View>
+            ) : null}
+              </>
             ) : null}
           </ScrollView>
         ) : (

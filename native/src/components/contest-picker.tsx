@@ -109,7 +109,7 @@ export function ContestPicker({
    * `opensAt`/`open` are real fields, not the loose index-signature `unknown`
    * that the races.ts shape would hand back.
    */
-  const { match, isOpen, counts } = useMemo(() => {
+  const { match, isOpen, counts, soonest } = useMemo(() => {
     const match = (race: Race): Contest | undefined =>
       contests.find(
         (c) =>
@@ -121,10 +121,32 @@ export function ContestPicker({
       );
     const isOpen = (race: Race) => match(race)?.open === true;
     const counts = { PRES: 0, GOV: 0, SEN: 0, REP: 0, SHA: 0 } as Record<ElectionTypeCode, number>;
+    /**
+     * THE NEXT DATE ANYTHING IN THIS TIER OPENS.
+     *
+     * Reporting opens at 08:30 on polling day and not a minute before, so
+     * `open` is false for every contest until that morning — which is correct,
+     * and which made this screen say "No open races" against all five tiers with
+     * five by-elections twenty-four days away. A reader cannot tell that from
+     * nothing-at-all, and the by-elections are exactly the races we need people
+     * to find NOW, while there is still time to recruit for them.
+     *
+     * So a tier with nothing open reports when its soonest race opens instead.
+     * No arbitrary "within N days" window: the real date is more use than a
+     * threshold, and there is nothing to keep in sync.
+     */
+    const soonest = {} as Record<ElectionTypeCode, string | null>;
+    const now = Date.now();
     for (const t of ELECTION_TYPES) {
-      counts[t.code] = listRaces(t.code, lockedState).filter(isOpen).length;
+      const rs = listRaces(t.code, lockedState);
+      counts[t.code] = rs.filter(isOpen).length;
+      const upcoming = rs
+        .map((r) => match(r)?.opensAt)
+        .filter((d): d is string => !!d && new Date(d).getTime() > now)
+        .sort();
+      soonest[t.code] = upcoming[0] ?? null;
     }
-    return { match, isOpen, counts };
+    return { match, isOpen, counts, soonest };
   }, [contests, lockedState]);
 
   const anyOpen = ELECTION_TYPES.some((t) => counts[t.code] > 0);
@@ -214,9 +236,11 @@ export function ContestPicker({
         <Prompt>Choose an election</Prompt>
         {shown.map((t) => {
           const open = counts[t.code];
-          // A type with nothing open is still shown (the full 2027 picture) but
-          // muted — unless the filter has already hidden it.
-          const muted = open === 0;
+          const next = soonest[t.code];
+          // Muted means "nothing to do here". A tier whose next race has a date
+          // is NOT nothing — it is the thing to prepare for — so only a tier
+          // with neither an open race nor an upcoming one is dimmed.
+          const muted = open === 0 && !next;
           return (
             <Pressable
               key={t.code}
@@ -234,6 +258,12 @@ export function ContestPicker({
               {open > 0 ? (
                 <View className="mr-1.5 rounded-full bg-good px-2.5 py-1">
                   <Text className="text-[11px] font-bold text-good-ink">{open} open</Text>
+                </View>
+              ) : next ? (
+                <View className="mr-1.5 rounded-full border border-good-ink px-2.5 py-1">
+                  <Text className="text-[11px] font-bold text-good-ink">
+                    Opens {new Date(next).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                  </Text>
                 </View>
               ) : (
                 <Text className="mr-1.5 text-[11px] font-semibold text-faint">No open races</Text>

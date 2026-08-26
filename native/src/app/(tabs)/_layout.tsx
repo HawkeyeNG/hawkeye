@@ -125,19 +125,31 @@ export default function TabsLayout() {
   const Glyph = ({ route, name, color }: { route: TabRoute; name: string; color: ColorValue }) => {
     const lit = spot === route;
     return (
-      <View
-        style={
-          lit
-            ? {
-                borderWidth: 2,
-                borderColor: BRAND.gold,
-                borderRadius: 999,
-                padding: 4,
-                backgroundColor: ui.tint.good.bg,
-              }
-            : undefined
-        }
-      >
+      // THE RING IS AN OVERLAY, NOT A BORDER ON THE GLYPH'S OWN BOX.
+      //
+      // It used to be borderWidth + padding on this very View, which grows it to
+      // ~35pt inside a slot react-navigation has pinned to ICON_SIZE (23) via
+      // tabBarIconStyle — so every ringed icon was squeezed out of shape on a
+      // real device. Report looked fine and that was the tell: its glyph is
+      // drawn by hand inside the raised 48pt circle, never through here.
+      //
+      // An absolutely-positioned sibling paints outside the layout box and
+      // changes nothing about the Feather. Rendered BEFORE the glyph so the
+      // tint sits behind it, and pointerEvents="none" so the tab stays tappable.
+      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+        {lit ? (
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: -5, right: -5, bottom: -5, left: -5,
+              borderWidth: 2,
+              borderColor: BRAND.gold,
+              borderRadius: 999,
+              backgroundColor: ui.tint.good.bg,
+            }}
+          />
+        ) : null}
         <Feather name={name as never} size={ICON_SIZE} color={lit ? activeTint : color} />
       </View>
     );

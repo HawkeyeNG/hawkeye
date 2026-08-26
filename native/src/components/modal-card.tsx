@@ -26,6 +26,7 @@ export function ModalCard({
   children,
   footer,
   closeLabel = 'Close',
+  bottomGap = 0,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -34,6 +35,20 @@ export function ModalCard({
   /** Replaces the default Close button when a modal needs its own actions. */
   footer?: ReactNode;
   closeLabel?: string;
+  /**
+   * Leave this many pixels at the foot of the screen UNCOVERED — no scrim, no
+   * touch capture.
+   *
+   * For the tour, which talks about the tab bar. An RN Modal is a separate
+   * native window above the whole React root, so the bar renders underneath and
+   * a full-bleed backdrop dims it to the same grey as everything else — which
+   * is the opposite of pointing at it. Cutting the scrim short lets the real bar
+   * show through at full brightness, so the tab being described is lit rather
+   * than merely less dark.
+   *
+   * Default 0: every other caller keeps today's full-bleed behaviour exactly.
+   */
+  bottomGap?: number;
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -41,6 +56,7 @@ export function ModalCard({
       <Pressable
         onPress={onClose}
         className="flex-1 items-center justify-center bg-black/50 px-6"
+        style={bottomGap ? { marginBottom: bottomGap } : undefined}
       >
         <Pressable
           onPress={() => {}}

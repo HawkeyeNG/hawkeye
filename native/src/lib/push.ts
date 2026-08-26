@@ -134,6 +134,12 @@ const ROUTES: Record<string, string> = {
   'ledger.html': '/ledger',
   'integrity.html': '/integrity',
   'osun.html': '/osun',
+  // A race page, reached the same way on both clients:
+  // race.html?contest=SHA_BYE_DELTA_UDU_2026 -> /race?contest=… . Added for the
+  // declared-result alert (services/declarations.js), whose whole point is the
+  // race it names — landing in a browser tab for a screen the app already has
+  // would be the one notification that leaves the app to answer itself.
+  'race.html': '/race',
   'candidates.html': '/candidates',
   'political.html': '/political',
   'profile.html': '/profile',
@@ -165,7 +171,23 @@ function nativeRoute(url: string): string | null {
     const id = /(?:^|&)id=(\d+)/.exec(query)?.[1];
     return id ? `/case?id=${id}` : '/docket';
   }
-  if (Object.hasOwn(ROUTES, file)) return ROUTES[file];
+  /**
+   * THE QUERY COMES WITH IT.
+   *
+   * It used to be dropped here, which mattered on two live links: a race alert
+   * says WHICH race in `?contest=`, and the "new report" alert every follower
+   * gets already sends `results.html?contest=…&scope=…`, so tapping it landed
+   * on an empty board with the picker unset. Both target screens read exactly
+   * those params (app/(tabs)/results.tsx, app/race.tsx).
+   *
+   * A mapping that already carries its own query — the /page?slug= entries —
+   * is used as written: appending a second `?` would break it, and those pages
+   * take no parameters anyway.
+   */
+  if (Object.hasOwn(ROUTES, file)) {
+    const to = ROUTES[file];
+    return query && !to.includes('?') ? `${to}?${query}` : to;
+  }
   const path = `/${file}`;
   return NATIVE.has(path) ? (query ? `${path}?${query}` : path) : null;
 }

@@ -176,8 +176,16 @@ export default function Alerts() {
               >
                 <View className="flex-1 pr-2">
                   <Text className="text-base font-semibold text-ink">{item.title}</Text>
+                  {/* SIX LINES, NOT THREE. Every alert used to be one sentence
+                      ("A result was reported at ..."), so three was generous.
+                      The declared-result alert is four lines by design — the top
+                      three as declared, then who declared it and why the race has
+                      left your follow list — and at three the ranking pushed the
+                      explanation off the row, leaving a race that vanished from
+                      the list with no reason given. Still bounded: a 400-character
+                      broadcast cannot take over the screen. */}
                   {item.body ? (
-                    <Text className="pt-0.5 text-sm text-muted" numberOfLines={3}>
+                    <Text className="pt-0.5 text-sm text-muted" numberOfLines={6}>
                       {item.body}
                     </Text>
                   ) : null}

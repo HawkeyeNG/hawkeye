@@ -236,7 +236,7 @@ type Searched = {
  * never written as literals.
  */
 const ringLine = (_s: Searched): string =>
-  'Units found within an 800m radius. Unmapped units may not appear on map.';
+  'Units found within 800m. Unmapped units may not appear.';
 
 /** The same honesty for an empty answer: name the circles that were searched,
  *  rather than the one that was drawn. */

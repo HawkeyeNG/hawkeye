@@ -189,7 +189,7 @@ const PICK_TIMEOUT_MS = 12_000;
 /** The map ring names one circle; the search was two. Say which, so an empty
  *  ring is never read as "nothing is near you". */
 const ringLine = (_s: Searched): string =>
-  'Units found within an 800m radius. Unmapped units may not appear on map.';
+  'Units found within 800m. Unmapped units may not appear.';
 
 const nothingFoundLine = (s: Searched): string => {
   if (s.envelopeM != null && s.registerM != null) {

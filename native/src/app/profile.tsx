@@ -25,6 +25,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND } from '@/lib/api';
 import { pick } from '@/lib/haptics';
+import { shareHawkeye } from '@/lib/share';
 import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -666,6 +667,31 @@ export default function Profile() {
                     : null}
                 </View>
               ))}
+            </View>
+
+            {/* SHARE HAWKEYE. Down with the actions rather than up with the
+                account rows: it is not a setting, and it is the one thing on
+                this screen an observer might do FOR Hawkeye rather than to
+                their own account.
+
+                Its own card because there is exactly one row — the same shape
+                the section above uses, so the screen has one list treatment
+                instead of a special control at the bottom. The full section,
+                with the Telegram bot and the accounts, is on More
+                (components/social-row.tsx); this is the one entry that belongs
+                on a page about you. */}
+            <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
+              Find Hawkeye
+            </Text>
+            <View className="overflow-hidden rounded-2xl bg-card">
+              <Row
+                first
+                icon="share-2"
+                label="Share Hawkeye"
+                value="Send it on"
+                chevron
+                onPress={shareHawkeye}
+              />
             </View>
 
             {/* Delete stays in the scroll, below everything — deleting is not

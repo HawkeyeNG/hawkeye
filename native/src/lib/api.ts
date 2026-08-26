@@ -43,6 +43,32 @@ export type Contest = {
 };
 
 /**
+ * When reporting opens for a contest, as a sentence.
+ *
+ * A scheduled election opens at poll-open on election day (the server sends
+ * open:false + opensAt until then). NAMING THE INSTANT is the whole point: an
+ * observer who is told "not open" without a time comes back at random. It gives
+ * the time as well as the day because between midnight and 08:30 on polling day
+ * a report is still refused, and "opens 16 January" would read as broken to
+ * someone standing at a unit at seven in the morning.
+ *
+ * Lived in report/collation.tsx until the race page's blocked modal needed the
+ * same sentence. One phrasing, two screens.
+ */
+export function opensLine(c: Contest | null | undefined): string {
+  if (!c || !c.opensAt) return 'Reporting has not opened for this election yet.';
+  const d = new Date(c.opensAt);
+  if (Number.isNaN(d.getTime())) return `Reporting opens ${c.opensAt}.`;
+  return `Reporting opens ${d.toLocaleString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: 'numeric',
+    minute: '2-digit',
+  })}.`;
+}
+
+/**
  * Seat magnitude — Presidential > Governorship > Senate > Reps > State Assembly.
  *
  * BY TIER, NOT BY CODE. A by-election for a House seat is a House race: its CODE

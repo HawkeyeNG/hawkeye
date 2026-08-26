@@ -1818,7 +1818,17 @@ export interface Contest {
  * against `lgas` rather than the seat name: the register has no state-
  * constituency column, so a SHA by-election is gated by LGA at both ends.
  */
-export function matchContest(race: Race, contests: Contest[]): Contest | undefined {
+/**
+ * GENERIC over the contest shape, so callers get back what they put in.
+ *
+ * This file's `Contest` is the loose subset the matching rule needs; the api's
+ * is the full row the submit and the review screen read. Returning the narrow
+ * type meant report/result.tsx could not use this function at all, so it
+ * inlined its own copy of the rule — and the copy was wrong for by-elections
+ * (it matched on `code` where this matches on `tier ?? code`, and ignored
+ * `constituencies`). One rule, both shapes.
+ */
+export function matchContest<T extends Contest>(race: Race, contests: T[]): T | undefined {
   return contests.find((c) => {
     if ((c.tier ?? c.code) !== race.contestCode) return false;
     // A contest with no `states` (or an empty list) is national in scope.

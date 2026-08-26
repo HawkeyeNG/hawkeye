@@ -23,7 +23,7 @@ import { ContestPicker } from '@/components/contest-picker';
 import { NoElection } from '@/components/no-election';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import { Crumb, Prompt } from '@/components/wizard';
-import { api, BRAND, type Contest, type Party } from '@/lib/api';
+import { api, BRAND, type Contest, opensLine, type Party } from '@/lib/api';
 import { pick, tap } from '@/lib/haptics';
 import type { Race, StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
@@ -72,24 +72,6 @@ const contestApplies = (state: string, c: Contest) =>
 
 const racesIn = (state: string, contests: Contest[]) =>
   contests.filter((c) => contestApplies(state, c));
-
-/**
- * A scheduled election opens at poll-open on election day (the server sends
- * open:false + opensAt until then). Naming the instant is the whole point: an
- * observer who is told "not open" without a time comes back at random.
- */
-function opensLine(c: Contest): string {
-  if (!c.opensAt) return 'Reporting has not opened for this election yet.';
-  const d = new Date(c.opensAt);
-  if (Number.isNaN(d.getTime())) return `Reporting opens ${c.opensAt}.`;
-  return `Reporting opens ${d.toLocaleString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    hour: 'numeric',
-    minute: '2-digit',
-  })}.`;
-}
 
 /**
  * Report a collation — the announcement made at a ward/LGA/state centre.
@@ -905,8 +887,14 @@ export default function ReportCollation() {
               {contest ? (
                 <View className="flex-row items-center justify-between py-1.5">
                   <Text className="pr-3 text-sm text-muted">Election</Text>
+                  {/* The ELECTION, not the contest's short name. This row was
+                      labelled "Election" and printed "Governorship" — the tier,
+                      which does not say which one or which year. `election` is
+                      the full "2027 Governorship Election", and it is what the
+                      result wizard's review card names too, so the two receipts
+                      agree about what was filed. */}
                   <Text className="flex-1 text-right text-sm font-bold text-ink">
-                    {contest.name}
+                    {contest.election || contest.name}
                   </Text>
                 </View>
               ) : null}

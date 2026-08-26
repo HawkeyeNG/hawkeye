@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 
+import { InfoDot } from '@/components/info-dot';
 import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera } from '@/components/capture-camera';
 import { ContestPicker } from '@/components/contest-picker';
@@ -43,6 +44,7 @@ import {
   ELECTION_TYPES,
   isRaceOpen,
   listRaces,
+  matchContest,
   type Race,
   type StateName,
 } from '@/lib/races';
@@ -403,7 +405,7 @@ const receiptLocation = (r: Receipt): { label: string; color: string } => {
  * only the narrow lookup can see. So the ring is named.
  */
 const ringLine = (_s: Searched): string =>
-  'Units found within an 800m radius. Unmapped units may not appear on map.';
+  'Units found within 800m. Unmapped units may not appear.';
 
 /** The same honesty for an empty answer: name the circles that were searched,
  *  rather than the one that was drawn. */
@@ -783,6 +785,18 @@ export default function ReportResult() {
    * is empty), which is correct: a State House seat cannot be selected yet, so it
    * can never be the one race we auto-skip into.
    */
+  /**
+   * A race carried in from a race page's "Report from your unit".
+   *
+   * Only a CONTEST CODE travels — the specific seat is derived server-side from
+   * the polling unit (scope.js:contestScope), so one string is the whole
+   * payload. Held in a ref rather than state: it is consumed once, at the
+   * moment the unit is known, and re-imposing it after that would silently undo
+   * an observer who corrected their choice.
+   */
+  const { contest: askedContest } = useLocalSearchParams<{ contest?: string }>();
+  const proposed = useRef<string | null>(askedContest ?? null);
+
   const openRacesHere = useMemo<Race[]>(() => {
     if (!unit) return [];
     const st = unit.state as StateName;
@@ -1187,7 +1201,7 @@ export default function ReportResult() {
       setSheetMiss(
         codes.length
           ? `Read ${codes[0]} off the sheet, but no unit with that code was found — pick yours below.`
-          : 'Could not read the unit code off the sheet — pick yours below.',
+          : 'Could not read unit code off sheet. Pick unit below.',
       );
       return;
     }
@@ -1284,19 +1298,25 @@ export default function ReportResult() {
 
   /**
    * Resolve a picked Race to its GET /api/contests object — what the submit and
-   * the review screen actually read — and record both. The match rule mirrors
-   * races.ts:matchContest (code + states[] scope), inlined so it returns the
-   * concrete api Contest rather than the loose races.ts shape.
+   * the review screen actually read — and record both.
+   *
+   * THIS USED TO CARRY ITS OWN COPY OF THE MATCH RULE, and the copy was wrong
+   * for by-elections. It matched `c.code === r.contestCode`, but a Race's
+   * `contestCode` is its TIER: a Gombe by-election Race carries 'REP', so this
+   * resolved to the GENERAL 2027 House of Representatives row and the report
+   * would have been filed as `contest: 'REP'` — a September 2026 by-election
+   * recorded against the 2027 general election, on a ledger that partitions by
+   * race. It also ignored `constituencies`, the field that makes a by-election
+   * a by-election.
+   *
+   * races.ts:matchContest is the authority (tier ?? code, then states, then
+   * constituencies per race type) and is what isRaceOpen already uses to decide
+   * whether this very race is reportable. Two rules deciding "which contest is
+   * this" could only ever agree by luck; now there is one.
    */
   const selectRace = (r: Race) => {
     setRace(r);
-    setContest(
-      contests.find(
-        (c) =>
-          c.code === r.contestCode &&
-          (!c.states || c.states.length === 0 || (r.state != null && c.states.includes(r.state))),
-      ) ?? null,
-    );
+    setContest(matchContest(r, contests) ?? null);
   };
 
   /**
@@ -1488,6 +1508,30 @@ export default function ReportResult() {
         `Hawkeye is covering the ${contests[0].election}. Nothing is open for reporting at ${unit.name} yet — but you can still map polling units anywhere in Nigeria.`,
       );
       return;
+    }
+    /**
+     * THE RACE THE READER CAME FROM, if it is actually held here.
+     *
+     * Tested against `openRacesHere` rather than against a fresh rule: that
+     * list is already the answer to "what can be reported from this unit right
+     * now", computed from the unit and the contest catalogue together, and a
+     * third opinion on the same question is how the two that already exist came
+     * to disagree.
+     *
+     * It PRE-SELECTS and shows the step; it does not skip it. If the unit turns
+     * out not to be in the race, the picker simply opens unanswered — no alert,
+     * no block, nothing the observer has to dismiss. They chose a unit; the unit
+     * wins.
+     */
+    const asked = proposed.current;
+    proposed.current = null;
+    if (asked) {
+      const hit = openRacesHere.find((r) => matchContest(r, contests)?.code === asked);
+      if (hit) {
+        selectRace(hit);
+        setStep('contest');
+        return;
+      }
     }
     if (skipPicker) {
       selectRace(openRacesHere[0]);
@@ -2085,11 +2129,14 @@ export default function ReportResult() {
             {/* The unit's state is known, so the picker is scoped to it and the
                 observer never re-picks a state. Openness comes only from
                 `contests` (isRaceOpen inside the picker), never hardcoded. */}
-            <Text className="pb-2 text-sm text-muted">
-              Reporting at {unit?.name}
-              {unit ? `, ${unit.state}` : ''}. Tap an open race to report it. A race that has not
-              opened shows when reporting begins — you cannot file it yet, but it is not hidden.
-            </Text>
+            {/* ONE LINE. This read "Reporting at <unit>, <state>. Tap an open
+                race to report it. A race that has not opened shows when
+                reporting begins - you cannot file it yet, but it is not
+                hidden." The unit is named on the Crumb directly above, so the
+                first clause repeated what the reader could already see, and the
+                last one explained a padlocked row that explains itself: every
+                closed race prints "Opens 16 Jan" beside a lock glyph. */}
+            <Text className="pb-2 text-sm text-muted">Tap an open race to report.</Text>
             <ContestPicker
               contests={contests}
               value={race}
@@ -2196,13 +2243,25 @@ export default function ReportResult() {
         {step === 'review' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
             <Text className="pb-3 text-xl font-bold text-ink">Confirm and send</Text>
+            {/* WHAT IS ABOUT TO BE FILED, in full, before it is signed.
+                The state was missing — "Shira, Bauchi" and "Shira, Kano" are
+                both real, and the one thing a report cannot be wrong about is
+                where it came from. And the election line printed
+                `contest.name — contest.election`, which for three of the five
+                contests renders "Governorship — 2027 Governorship Election":
+                the name is a word already inside the election. `election`
+                alone loses nothing and frees the width the state needs.
+                Same shape as the unit rows everywhere else in both clients —
+                name in bold, then code · ward, LGA, state. */}
             <View className="mb-3 rounded-2xl bg-card px-4 py-3">
               <Text className="text-base font-semibold text-ink">{unit?.name}</Text>
-              <Text className="text-xs text-muted">{unit?.pu_code} · {unit?.ward}, {unit?.lga}</Text>
+              <Text className="text-xs text-muted">
+                {[unit?.pu_code, [unit?.ward, unit?.lga, unit?.state].filter(Boolean).join(', ')]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Text>
               {contest ? (
-                <Text className="pt-1 text-xs font-bold text-hawk-leaf">
-                  {contest.name} — {contest.election}
-                </Text>
+                <Text className="pt-1 text-xs font-bold text-hawk-leaf">{contest.election}</Text>
               ) : null}
             </View>
             <View className="mb-3 flex-row gap-3">
@@ -2251,10 +2310,23 @@ export default function ReportResult() {
               onChangeText={setSheetSerial}
               editable={!busy}
             />
-            <Text className="pb-3 text-xs text-muted">
-              Submitting takes a GPS fix at your position, signs the report with this device’s
-              key, and files it for review. Your number is never attached — only your observer ID.
-            </Text>
+            {/* BEHIND A DOT, so the facts above stay on screen.
+                Three sentences of explanation sat between the observer and the
+                Send button — about 60pt on a phone, on the one screen that has
+                to hold the unit, both photos and every party's count. It is
+                explanation, not instruction, which is exactly the category the
+                InfoDot exists for. Nothing is lost: the dot is beside the
+                heading it belongs to and the words are unchanged. */}
+            <View className="flex-row items-center pb-3">
+              <Text className="text-xs text-muted">What happens when you send</Text>
+              <InfoDot
+                title="What happens when you send"
+                text={
+                  'Submitting takes a GPS fix at your position, signs the report with this device’s key, '
+                  + 'and files it for review.\n\nYour number is never attached — only your observer ID.'
+                }
+              />
+            </View>
           </ScrollView>
         ) : null}
 

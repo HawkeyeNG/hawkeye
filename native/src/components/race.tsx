@@ -3,7 +3,8 @@ import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native'
 import { useEffect, useMemo, useState } from 'react';
 
 import { FollowRace } from '@/components/follow-race';
-import { BRAND, api, type National } from '@/lib/api';
+import { BRAND, api, type Contest, type National, opensLine } from '@/lib/api';
+import { ModalCard } from '@/components/modal-card';
 import { RaceMap } from '@/components/race-map';
 import {
   isPresidency,
@@ -586,6 +587,55 @@ export function RaceActions({
 }) {
   const done = isCompleted(race);
   const boardOnly = isPresidency(race);
+
+  /**
+   * REPORTING OPENS WHEN THE POLLS DO, and this button used to ignore that.
+   *
+   * It walked the observer through the whole wizard — sheet, venue, unit, race —
+   * to a padlocked row, or (once a unit was chosen) to a 403 at submit after
+   * both photos and the tally. The rule is one line in scope.js: a contest opens
+   * at 08:30 WAT on its own polling date and never closes again.
+   *
+   * COMPUTED FROM `opensAt`, NOT FROM THE `open` BOOLEAN the server sends with
+   * it. `open` is true-or-false at the moment of the fetch; this component can
+   * be on screen for hours, and on election morning a cached false would keep
+   * blocking an observer who is standing at their unit with a sheet in hand.
+   * The timestamp stays true as the clock moves.
+   */
+  const [contest, setContest] = useState<Contest | null>(null);
+  const [blocked, setBlocked] = useState(false);
+  const code = race.join?.contest ?? 'PRES';
+  useEffect(() => {
+    let live = true;
+    api
+      .contests()
+      .then((cs) => live && setContest(cs.find((c) => c.code === code) ?? null))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [code]);
+
+  const opensAtMs = contest
+    ? Date.parse(contest.opensAt ?? `${contest.date}T08:30:00+01:00`)
+    : NaN;
+  /**
+   * READ AT PRESS TIME, not at render time.
+   *
+   * Two reasons, and they point the same way. `Date.now()` in a render body is
+   * an impure call — the lint rule that forbids it is describing a real hazard,
+   * since the value would only be as fresh as the last render. And this screen
+   * can sit open across the very moment that matters: an observer who opened a
+   * race page at 08:25 on election morning and taps at 08:31 should be let
+   * through, which a render-time boolean would not do.
+   *
+   * Unknown contest, unparseable date, or a catalogue that never answered: OPEN.
+   * The server refuses a genuinely early report anyway (submissions.js returns
+   * 403 reporting_not_open), so a client that cannot tell should let the
+   * observer through rather than block someone standing at a real unit.
+   */
+  const notOpenYet = () => Number.isFinite(opensAtMs) && Date.now() < opensAtMs;
+
   return (
     <View className="flex-row">
       {done ? null : (
@@ -593,11 +643,31 @@ export function RaceActions({
           className={`flex-1 items-center rounded-2xl bg-hawk-green py-3.5 active:opacity-80${
             boardOnly ? ' mr-2' : ''
           }`}
-          onPress={() => router.push('/report/result')}
+          // Carries the race in, so the wizard's race step arrives already
+          // answered instead of asking again for something just chosen.
+          onPress={() =>
+            notOpenYet()
+              ? setBlocked(true)
+              : router.push(`/report/result?contest=${encodeURIComponent(code)}` as never)
+          }
         >
           <Text className="text-sm font-bold text-hawk-gold">Report from your unit</Text>
         </Pressable>
       )}
+      {/* The wording is the collation wizard's, not a third phrasing of the same
+          fact — and it names the TIME, which matters: between midnight and 08:30
+          on polling day this button still blocks, and "opens 16 Jan" would read
+          as broken to someone standing at a unit at seven in the morning. */}
+      <ModalCard
+        visible={blocked}
+        onClose={() => setBlocked(false)}
+        title="Reporting is not open yet"
+      >
+        <Text className="text-sm leading-5 text-muted">{opensLine(contest)}</Text>
+        <Text className="pt-2 text-sm leading-5 text-muted">
+          You can file from your polling unit as soon as polls open.
+        </Text>
+      </ModalCard>
       {/* good-ink, not hawk-green: the fixed #004225 sat at 1.6:1 on the dark
           surface — an outline and a label that both disappeared. The semantic
           pair is 5.8:1 light / 11.0:1 dark, and matches every other secondary

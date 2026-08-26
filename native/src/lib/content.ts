@@ -30,8 +30,10 @@ export type Block =
   | { kind: 'layers'; items: { icon: Icon; title: string; points: string[] }[] }
   /** Icon-bulleted list; tone drives the icon and colour. */
   | { kind: 'rules'; tone: 'enforced' | 'never' | 'private' | 'public'; title?: string; items: string[] }
-  /** Coloured callout for the one thing that must not be missed. */
-  | { kind: 'callout'; icon: Icon; title: string; body: string }
+  /** Coloured callout for the one thing that must not be missed. Optionally
+   *  routed: a callout that tells the reader to do something should be able to
+   *  take them there, rather than naming a screen and leaving them to find it. */
+  | { kind: 'callout'; icon: Icon; title: string; body: string; cta?: string; href?: string }
   /** Contact rows that open mail/Telegram natively. */
   | { kind: 'contacts'; items: { icon: Icon; label: string; value: string; url: string }[] };
 
@@ -256,6 +258,11 @@ export const PAGES: Record<string, Page> = {
         icon: 'play-circle',
         title: 'Rehearse It First',
         body: 'The practice run walks the exact steps — photos, counts, review, submit — without publishing anything.',
+        // The guide ends by telling the reader to go and practise, so it takes
+        // them there. It used to name the practice run and stop, leaving the
+        // one action the whole page builds towards to be hunted for under More.
+        cta: 'Start a practice run',
+        href: '/practice',
       },
     ],
   },

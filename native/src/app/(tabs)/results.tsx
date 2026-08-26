@@ -349,6 +349,20 @@ export default function Results() {
     if (appliedLink.current === key) return;
     appliedLink.current = key;
     if (!contests.some((c) => c.code === linkContest)) return;
+    /**
+     * THE SECOND WAY IN, and closing the picker alone would not close it.
+     *
+     * Every follow alert the backend sends points at
+     * `results.html?contest=…` (routes/subscriptions.js), which arrives here
+     * with no scope — so a reader following a by-election would still be
+     * dropped on the intermediate board by every new-report notification.
+     * Same test as the picker row, same destination.
+     */
+    const def = contests.find((c) => c.code === linkContest);
+    if ((def?.constituencies ?? []).length) {
+      router.push(`/race?contest=${encodeURIComponent(linkContest)}` as never);
+      return;
+    }
     // No scope means the whole election; a scope resolves to one seat.
     if (!linkScope) {
       setRace(null);
@@ -1417,7 +1431,29 @@ export default function Results() {
                 return (
                   <Pressable
                     key={c.code}
-                    onPress={() => selectWholeContest(c.code)}
+                    /**
+                     * A BY-ELECTION GOES STRAIGHT TO ITS RACE PAGE.
+                     *
+                     * Picking one here used to paint a national board for an
+                     * election held in one place: a map of a single LGA headed
+                     * "Leading party by LGA in Bauchi", over a card explaining
+                     * that this LGA "is the whole race", over a button offering
+                     * to go and look at that race. Three steps to say there is
+                     * only one, and the reader had already named it.
+                     *
+                     * `constituencies` is the test the rest of the app already
+                     * uses for exactly this — Home's cards (app/(tabs)/index.tsx)
+                     * and the web's races.html both read it as "the whole
+                     * election is these places, so the board IS the race". Not
+                     * `states.length === 1`, which is the single-state
+                     * GOVERNORSHIP rule and would misfire on an off-cycle
+                     * general contest like Osun.
+                     */
+                    onPress={() =>
+                      (c.constituencies ?? []).length
+                        ? router.push(`/race?contest=${encodeURIComponent(c.code)}` as never)
+                        : selectWholeContest(c.code)
+                    }
                     className={`mb-2 flex-row items-center rounded-2xl px-4 py-3.5 active:opacity-80 ${
                       on ? 'bg-hawk-green' : 'bg-card'
                     }`}

@@ -94,6 +94,11 @@ export function Tour({
       // Tapping the backdrop is a deliberate exit too, and counts as skipping —
       // an app that reopened the tour on the next launch because the reader
       // dismissed it the quickest way would be arguing with them.
+      // AN OUTSIDE TAP NO LONGER ENDS IT. It is the easiest gesture to make by
+      // mistake, and it both closed the tour and wrote the seen flag, so it
+      // never came back. Leaving is the corner cross or hardware Back.
+      dismissOnBackdrop={false}
+      onCloseIcon={finish}
       onClose={finish}
       /**
        * STOP THE SCRIM ABOVE THE TAB BAR, so the ringed tab is lit rather than
@@ -118,14 +123,21 @@ export function Tour({
             ))}
           </View>
           <View className="flex-row">
+            {/* BACK, NOT SKIP. Five cards is enough that missing one matters and
+                there was no way to return to it; leaving now lives in the corner
+                cross, which is harder to hit by accident than a full-width
+                button under the thumb. Disabled on card one rather than hidden,
+                so the footer keeps its shape as the reader moves through. */}
             <Pressable
-              onPress={finish}
+              onPress={() => setI((n) => Math.max(0, n - 1))}
+              disabled={i === 0}
               accessibilityRole="button"
-              className="mr-2 flex-1 items-center rounded-full border border-line py-3 active:opacity-70"
+              accessibilityState={{ disabled: i === 0 }}
+              className={`mr-2 flex-1 items-center rounded-full border border-line py-3 ${
+                i === 0 ? 'opacity-40' : 'active:opacity-70'
+              }`}
             >
-              <Text className="text-sm font-bold text-muted">
-                {last ? 'Close' : 'Skip tour'}
-              </Text>
+              <Text className="text-sm font-bold text-muted">Back</Text>
             </Pressable>
             <Pressable
               onPress={() => (last ? finish() : setI(i + 1))}

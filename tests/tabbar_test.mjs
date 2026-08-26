@@ -147,7 +147,8 @@ console.log('\n=== the tour is once per DEVICE, not once per sign-in ===');
   await p.goto(`${base}/index.html`);
   await p.waitForTimeout(800);
   check('a brand-new device gets the tour', await open());
-  await p.evaluate(() => document.querySelector('.tour-skip')?.click());
+  // The footer's left button is Back now; leaving is the corner cross.
+  await p.evaluate(() => document.querySelector('.tour-x')?.click());
   await p.waitForTimeout(250);
   check('Skip closes it and writes the flag', await p.evaluate(() => localStorage.getItem('hawkeye_tour_seen')), '1');
 

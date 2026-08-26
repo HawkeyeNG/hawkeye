@@ -253,3 +253,14 @@ Claimed but present, equivalent, or out of scope — do not "fix" these:
 - **Inline links inside explainer copy, and the Observer Guide's closing call to action** — REFUTED — this is a presentation difference in a deliberately redesigned surface, not a missing user-facing capability. Every destination the inline links point at is reachable natively, several of them from within the same explainer-conten
 - **Practice-run contest details and the closed-state escape links** — REFUTED — both halves fall under "NOT a gap". (1) cfg.office / cfg.note. Factually the reviewer is right that native/src/app/practice.tsx types them at :27-28 and never renders them (only cfg.name at :295, unit at :299/:350). But this is a
 - **"Try a practice run first" on the welcome/auth screen** — Refuted — placement difference, not a missing capability. The native app has a complete Practice Run: native/src/app/practice.tsx:55-450 implements the full flow (sheet photo → venue photo → counts → review → sign & submit), registered as a
+
+## DO NOT BUMP EXPO UNTIL AFTER THE SEPTEMBER ELECTIONS
+
+Metro reports `expo 57.0.8 -> ~57.0.16` available, with ~20 other packages
+behind. **Deliberately deferred.** An Expo minor bump drags the whole native
+dependency tree with it — prebuild, the plugin chain, ML Kit, Maps, the dev
+client — and each of those has already cost days on this project. The
+by-elections are 19 September 2026 and the general election is 16 January 2027;
+there is no window before either where a broken build is affordable.
+
+Revisit **after the September by-elections**, and only with a clear week.

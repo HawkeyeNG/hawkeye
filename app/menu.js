@@ -1670,3 +1670,59 @@
     document.head.appendChild(s);
   } catch { /* never let a nice-to-have break navigation */ }
 })();
+
+/**
+ * ONE BLOCKING REFUSAL, SHARED BY EVERY FLOW.
+ *
+ * The report, collation and incident screens each refused a bad submit by
+ * writing a sentence into a status line under the button. On a phone that line
+ * is below the fold at the moment of the tap, so all three read as dead
+ * buttons — the single most reported complaint about these screens.
+ *
+ * Built here for the same reason the report sheet and the tour are: menu.js is
+ * the one script every page already loads, so this needs no new file, no new
+ * pin and no service-worker entry. Styles live beside .hk-alert in styles.css.
+ *
+ * Fails silently and returns false if the DOM is not ready, and every caller
+ * keeps its old status-line path as a fallback — a refusal that cannot be shown
+ * must never become a refusal that does not happen.
+ */
+(function () {
+  var box = null;
+  var lastFocus = null;
+  var after = null;
+  function close() {
+    if (!box) return;
+    box.hidden = true;
+    document.body.style.overflow = '';
+    try { if (lastFocus && lastFocus.focus) lastFocus.focus(); } catch (e) {}
+    var fn = after; after = null;
+    if (typeof fn === 'function') { try { fn(); } catch (e) {} }
+  }
+  window.HAWKEYE_ALERT = function (title, body, onClose) {
+    try {
+      if (!document.body) return false;
+      if (!box) {
+        box = document.createElement('div');
+        box.className = 'hk-alert';
+        box.hidden = true;
+        box.innerHTML = '<div class="hk-alert-card" role="alertdialog" aria-modal="true" aria-labelledby="hk-alert-title">'
+          + '<h3 id="hk-alert-title"></h3><p></p><button type="button" id="hk-alert-ok">OK</button></div>';
+        document.body.appendChild(box);
+        box.addEventListener('click', function (e) { if (e.target === box) close(); });
+        box.querySelector('#hk-alert-ok').addEventListener('click', close);
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && box && !box.hidden) close();
+        });
+      }
+      lastFocus = document.activeElement;
+      after = onClose;
+      box.querySelector('h3').textContent = title || 'Not yet';
+      box.querySelector('p').textContent = body || '';
+      box.hidden = false;
+      document.body.style.overflow = 'hidden';
+      box.querySelector('#hk-alert-ok').focus();
+      return true;
+    } catch (e) { return false; }
+  };
+})();

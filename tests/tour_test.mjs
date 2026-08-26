@@ -25,7 +25,7 @@
  * Everything else in Part Two is measured off the RENDERED page rather than read
  * out of the source, because each of those behaviours is something a reader can
  * see and a source-reading test cannot: the gold ring is detected by the
- * COMPUTED box-shadow on the real tab, "the tab bar is not dimmed" is proved in
+ * COMPUTED outline on the real tab, "the tab bar is not dimmed" is proved in
  * PIXELS (an unlit tab must render byte-identically with the scrim there and
  * with it removed), and every colour on the card is read back computed and
  * compared with the palette parsed out of native/src/global.css.
@@ -358,15 +358,26 @@ const card = (p) => p.evaluate(() => {
 /**
  * WHICH TABS ARE RINGED, read off the rendered page.
  *
- * The gold ring is a computed box-shadow on the tab's own icon slot, so this
- * looks for the colour rather than for a class — a class name is a claim, a
- * computed shadow is what the reader sees.
+ * The gold ring is a computed OUTLINE on the tab's own icon slot, so this looks
+ * for the colour rather than for a class — a class name is a claim, a computed
+ * style is what the reader sees.
+ *
+ * It was a box-shadow, and this read boxShadow to match. It had to change: a
+ * shadow needed `padding: 4px; margin: -4px` to sit clear of the glyph, and that
+ * padding GROWS the flex item the 23px svg lives in, so every icon came out
+ * distorted on a real device — all except Report, whose .ti is a fixed 50px
+ * circle. An outline is painted outside the border box and joins no layout, so
+ * the ring is drawn without touching the icon. Checked here as outline-color,
+ * with outlineStyle so a transparent-but-declared outline cannot pass.
  */
 const ringed = (p) => p.evaluate(() => {
   const GOLD = 'rgb(245, 179, 1)';
   return [...document.querySelectorAll('.tabbar .tab')].map((t) => {
     const ti = t.querySelector('.ti');
-    return ti && getComputedStyle(ti).boxShadow.includes(GOLD) ? t.getAttribute('href') : null;
+    if (!ti) return null;
+    const cs = getComputedStyle(ti);
+    const lit = cs.outlineStyle === 'solid' && cs.outlineColor.includes(GOLD);
+    return lit ? t.getAttribute('href') : null;
   }).filter(Boolean);
 });
 

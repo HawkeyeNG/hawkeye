@@ -388,6 +388,38 @@ const tierOf = (u) =>
 // ---------- state ----------
 let selectedPu = null;
 let parties = [];
+/**
+ * THE COUNTS STEP MUST NEVER BE EMPTY.
+ *
+ * If /api/parties yielded nothing — offline, a bad response, anything —
+ * buildVoteRows() rendered an empty div, and step 4 became a card with a filter
+ * box, a serial field and NOWHERE TO TYPE A SINGLE NUMBER. That shipped: an
+ * observer reached the counts step with no count to enter, and "Verify counts"
+ * then refused because it could find no inputs, which read as a broken button.
+ *
+ * INEC's register of parties changes between cycles, not between deploys, so a
+ * bundled copy is a safe floor. The live list still wins whenever it arrives,
+ * and a good response is cached so the next run starts from real data.
+ */
+const FALLBACK_PARTIES = [
+  ['A', 'Accord'], ['AA', 'Action Alliance'], ['AAC', 'African Action Congress'],
+  ['ADC', 'African Democratic Congress'], ['ADP', 'Action Democratic Party'],
+  ['APC', 'All Progressives Congress'], ['APGA', 'All Progressives Grand Alliance'],
+  ['APM', 'Allied Peoples Movement'], ['APP', 'Action Peoples Party'], ['BP', 'Boot Party'],
+  ['DLA', 'Democratic Leadership Alliance'], ['LP', 'Labour Party'],
+  ['NNPP', 'New Nigeria Peoples Party'], ['NRM', 'National Rescue Movement'],
+  ['PDP', 'Peoples Democratic Party'], ['PRP', 'Peoples Redemption Party'],
+  ['SDP', 'Social Democratic Party'], ['YP', 'Youth Party'],
+  ['YPP', 'Young Progressives Party'], ['ZLP', 'Zenith Labour Party'],
+].map(([code, name]) => ({ code, name }));
+
+/** The last good /api/parties response. Same idea as cachedContests(). */
+function cachedParties() {
+  try {
+    const v = JSON.parse(localStorage.getItem('hawkeye_parties') || 'null');
+    return Array.isArray(v) && v.length ? v : null;
+  } catch { return null; }
+}
 let contests = [];
 let logos = null; // party code -> official emblem path (logos/manifest.json)
 // cameraStream/capturing now live in capture.js — the single camera owner.
@@ -1115,7 +1147,11 @@ async function prepareReportUI() {
       : contests,
     logos === null ? fetch('logos/manifest.json').then((r) => r.json()).catch(() => ({})) : logos,
   ]);
-  parties = p || [];
+  // The live list, else the last good one, else the bundled floor — never [].
+  parties = (Array.isArray(p) && p.length) ? p : (cachedParties() || FALLBACK_PARTIES);
+  if (Array.isArray(p) && p.length) {
+    try { localStorage.setItem('hawkeye_parties', JSON.stringify(p)); } catch { /* quota */ }
+  }
   contests = c || [];
   logos = l || {};
   // A unit may already have been picked while these were still in flight, in
@@ -1432,7 +1468,10 @@ function updateSubmitState() {
   // A CLOSED contest still keeps it clickable on purpose, so the tap surfaces
   // the "reporting opens on election day" error rather than a dead, silent
   // button — the scope notice already explains the wait.
-  $('btn-submit').disabled = !(shots.sheet && shots.venue && selectedPu);
+  // STEP 4 IS A REAL GATE. Submit lit up as soon as the photos and the unit
+  // existed, so it was pressable with no counts entered and "Verify counts"
+  // never tapped — i.e. before the last card had been finished at all.
+  $('btn-submit').disabled = !(shots.sheet && shots.venue && selectedPu && stepDone[3]);
   paintSubmitFacts();
 }
 
@@ -1991,12 +2030,24 @@ $('sel-contest').onchange = () => {
 $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
   const n = [...document.querySelectorAll('#vote-inputs input')]
     .filter((i) => i.value !== '' && Number(i.value) >= 0).length;
-  if (!n) { $('submit-status').textContent = 'Enter at least one party count.'; return; }
+  if (!n) {
+    const rows = document.querySelectorAll('#vote-inputs input').length;
+    if (window.HAWKEYE_ALERT) {
+      HAWKEYE_ALERT('No counts entered', rows
+        ? 'Type the votes each party was announced to have, then tap Verify counts again.'
+        : 'The party list could not be loaded. Close and reopen the report to try again.');
+    } else { $('submit-status').textContent = 'Enter at least one party count.'; }
+    return;
+  }
   $('submit-status').textContent = '';
   // Any OCR-proposed value the observer has now looked at is theirs.
   document.querySelectorAll('#vote-inputs input.ocr-filled')
     .forEach((i) => i.classList.remove('ocr-filled'));
   setStepDone(3, true, `✔ ${n} part${n === 1 ? 'y' : 'ies'} entered`);
+  // Submit now DEPENDS on stepDone[3], and setStepDone does not recompute it —
+  // without this the button stays disabled for ever, which is a worse bug than
+  // the one the gate was added to fix.
+  updateSubmitState();
 });
 if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) navigator.serviceWorker.register('sw.js');
 (async () => {

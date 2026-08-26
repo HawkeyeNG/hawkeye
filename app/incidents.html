@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=161" />
+  <link rel="stylesheet" href="styles.css?v=162" />
   <script src="native.js?v=110"></script>
   <style>
     .feed-item { background: var(--card); border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
@@ -309,7 +309,7 @@
        three sentences of. -->
   <script src="geo-msg.js?v=1"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=155"></script>
+  <script src="menu.js?v=156"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     // Escape ALL HTML metacharacters (not just '<') so observer-supplied text is
@@ -604,7 +604,19 @@
       // and 30 MB over a Nigerian mobile network before being told to pick from
       // a dropdown. Same shape as the empty_report gate on the next line: an
       // inline sentence naming the missing answer, and no request.
-      if (!kind) { $('status').textContent = KIND_REQUIRED; $('kind').setAttribute('aria-invalid', 'true'); $('kind').focus(); $('status').scrollIntoView({ block: 'nearest' }); return; }
+      if (!kind) {
+        // Colouring the picker and writing a status line was too quiet — both
+        // are easy to scroll past, so the tap read as a dead button.
+        $('kind').setAttribute('aria-invalid', 'true');
+        if (window.HAWKEYE_ALERT) {
+          HAWKEYE_ALERT('Choose an incident type', 'Pick what happened from the list, then submit again.',
+            () => { $('kind').focus(); $('kind').scrollIntoView({ block: 'center' }); });
+        } else {
+          $('status').textContent = KIND_REQUIRED; $('kind').focus();
+          $('status').scrollIntoView({ block: 'nearest' });
+        }
+        return;
+      }
       if (!desc && !files.length) { $('status').textContent = 'Add a photo/video or describe what happened.'; return; }
       $('btn-submit').disabled = true; $('status').textContent = 'Uploading…';
       try {

@@ -1364,7 +1364,7 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
   text-decoration: none; color: var(--muted); font-size: 0.64rem; font-weight: 600;
   padding: 3px 0; -webkit-tap-highlight-color: transparent;
 }
-.tabbar .tab svg { width: 23px; height: 23px; display: block; }
+.tabbar .tab svg { width: 23px; height: 23px; display: block; flex: none; }
 .tabbar .tab .ti { position: relative; display: flex; }
 .tabbar .tab.on { color: var(--tab-on); }
 .tabbar .tab-cta .ti {
@@ -1566,18 +1566,40 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
    equal negative margin for the same reason. Set and cleared by menu.js's
    litTab(); every exit path clears it, because a ring left burning after the
    tour closes is a tab that looks permanently selected. */
-.tabbar .tab.tour-lit .ti { border-radius: 999px; box-shadow: 0 0 0 2px var(--gold); }
-.tabbar .tab.tour-lit:not(.tab-cta) .ti {
-  padding: 4px; margin: -4px;
-  background: var(--tint-ok); color: var(--tab-on);
+/* AN OUTLINE, NOT PADDING. The ring used padding:4px with margin:-4px, which
+   GROWS the flex item the glyph sits in. .tab is a flex column and the 23px svg
+   is a shrinkable flex child, so that padding squeezed every icon out of shape.
+   Only Report survived, because its .ti is a fixed 50px circle — which is
+   exactly the tell. An outline is painted outside the border box and takes part
+   in no layout at all, so nothing moves and nothing is squashed. */
+/* A REFUSAL THE READER CANNOT MISS. Three flows wrote theirs into a status line
+   under the button, which on a phone is below the fold at the moment of the tap
+   — so the button read as dead rather than as refusing. Painted by
+   window.HAWKEYE_ALERT in menu.js. */
+.hk-alert[hidden] { display: none; }
+.hk-alert {
+  position: fixed; inset: 0; z-index: 140; display: flex;
+  align-items: center; justify-content: center; padding: 22px;
+  background: rgba(10, 18, 14, 0.55);
 }
+.hk-alert .hk-alert-card {
+  background: var(--card); color: var(--ink); border-radius: 14px;
+  padding: 20px; max-width: 22rem; width: 100%;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+.hk-alert h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.hk-alert p { margin: 0 0 16px; color: var(--muted); font-size: 0.94rem; }
+.hk-alert button { width: 100%; }
+
+.tabbar .tab.tour-lit .ti {
+  border-radius: 999px; outline: 2px solid var(--gold); outline-offset: 4px;
+}
+.tabbar .tab.tour-lit:not(.tab-cta) .ti { background: var(--tint-ok); color: var(--tab-on); }
 /* The CTA keeps its own drop shadow -- box-shadow is one property, so the ring
    has to be listed with it or the circle goes flat exactly when it is being
    pointed at. 3px because this ring sits on brand green rather than on the bar,
    and 2px disappears into the shadow. */
-.tabbar .tab.tour-lit.tab-cta .ti {
-  box-shadow: 0 0 0 3px var(--gold), 0 6px 16px rgba(0, 66, 37, 0.4);
-}
+.tabbar .tab.tour-lit.tab-cta .ti { outline-width: 3px; outline-offset: 3px; }
 
 /* App shell (Capacitor / installed PWA): the header carries the page name, so it
    is set as running text rather than a spaced-out wordmark, and the notifications

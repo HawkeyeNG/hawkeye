@@ -48,7 +48,12 @@ const posted = [];
 const MUTATIONS = {
   // Delete the client-side kind gate, leaving only the server's invalid_kind.
   noguard: (html) => {
-    const re = /\n[^\n]*if \(!kind\) \{ \$\('status'\)\.textContent = KIND_REQUIRED;[^\n]*\n/;
+    // The guard used to be one line writing KIND_REQUIRED into #status. It is
+    // now a block that opens the shared refusal modal, so this anchor follows
+    // it: from `if (!kind) {` to its own closing brace after the `return`.
+    // Anchored on the SHAPE rather than on any one sentence, so a reworded
+    // message does not silently turn this control into a no-op.
+    const re = /\n[ \t]*if \(!kind\) \{[\s\S]*?\n[ \t]*return;\n[ \t]*\}\n/;
     if (!re.test(html)) throw new Error('control mutation "noguard" matched nothing — the anchor moved');
     return html.replace(re, '\n');
   },
@@ -181,16 +186,35 @@ await p.click('#btn-submit');
 await p.waitForTimeout(400);
 
 check('no request is made while the kind is unanswered', posted.length, 0);
-const blocked = await p.evaluate(() => ({
-  status: document.getElementById('status').textContent.trim(),
-  invalid: document.getElementById('kind').getAttribute('aria-invalid'),
-  modalHidden: document.getElementById('done-modal').hidden,
-}));
-check('the refusal is visible and names the missing choice',
-  blocked.status, (t) => t.length > 0 && /incident type/i.test(t));
+const blocked = await p.evaluate(() => {
+  const a = document.querySelector('.hk-alert');
+  return {
+    // The refusal MOVED. It used to be this status line, under the button —
+    // which on a phone is below the fold at the moment of the tap, so the
+    // button read as dead rather than as refusing. It is now a blocking modal
+    // (window.HAWKEYE_ALERT, built in menu.js). The old line survives only as
+    // the fallback for a page where the helper failed to load, so it is no
+    // longer where the refusal is asserted.
+    alertOpen: !!a && !a.hidden,
+    alertText: a ? (a.querySelector('h3').textContent + ' ' + a.querySelector('p').textContent).trim() : '',
+    invalid: document.getElementById('kind').getAttribute('aria-invalid'),
+    modalHidden: document.getElementById('done-modal').hidden,
+  };
+});
+check('the refusal is a blocking modal, not a line under the button', blocked.alertOpen, true);
+check('and it names the missing choice',
+  blocked.alertText, (t) => t.length > 0 && /incident type/i.test(t));
 check('the select is marked invalid for assistive tech', blocked.invalid, 'true');
 check('no receipt is shown', blocked.modalHidden, true);
-console.log(`        refusal reads: ${JSON.stringify(blocked.status)}`);
+console.log(`        refusal reads: ${JSON.stringify(blocked.alertText)}`);
+// DISMISS IT BEFORE CARRYING ON. The refusal is now a real blocking layer, so
+// it intercepts every pointer event until it is closed — which is the point,
+// and which is also why the rest of this file could not click anything until it
+// was. Closing it here doubles as the check that OK actually works.
+await p.click('#hk-alert-ok');
+await p.waitForTimeout(200);
+check('OK dismisses the refusal and hands the page back',
+  await p.evaluate(() => { const a = document.querySelector('.hk-alert'); return !a || a.hidden; }), true);
 
 // -- submittable once a kind is chosen ---------------------------------------
 await p.selectOption('#kind', 'vote_buying');
@@ -222,6 +246,16 @@ check('no uncaught JavaScript on any of it', errors, (e) => e.length === 0);
 // -- item (2) smoke: the location-failure line is one short sentence ---------
 // Ticking "Attach Polling Unit" auto-fires the near-me lookup, and the stubbed
 // geolocation above refuses it. This is the line the reader called too long.
+//
+// The second-gating check above left the refusal modal on screen, and it is a
+// real blocking layer — so every click below it is intercepted until it is
+// dismissed. That is the modal doing its job; the test just has to behave like
+// a person and close it first.
+await p.evaluate(() => {
+  const ok = document.getElementById('hk-alert-ok');
+  if (ok) ok.click();
+});
+await p.waitForFunction(() => { const a = document.querySelector('.hk-alert'); return !a || a.hidden; });
 await p.check('#attach-pu');
 await p.waitForFunction(() => document.getElementById('pu-status').textContent.trim().length > 0);
 const geo = (await p.textContent('#pu-status')).trim();

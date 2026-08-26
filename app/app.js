@@ -861,9 +861,38 @@ $('btn-locate').onclick = async () => {
   if (!warm) {
     $('locate-status').textContent = `Location fixed (±${Math.round(accuracy)} m). Looking up nearby units…`;
   }
-  const r = warm
-    ? { body: warm }
-    : await apiTry(`/api/polling-units?lat=${lat}&lng=${lng}`);
+  /**
+   * TWO ENDPOINTS, MERGED — the same pair native asks, for the same reason.
+   *
+   * /api/polling-units is pinned server-side to config.discoveryRadiusM (500 m)
+   * and ignores a radiusM parameter, so Lite could never see past 500 m however
+   * it asked. /api/mapping/nearby DOES take a radius and reaches the 800 m the
+   * report screens use, and it includes units placed only by their GRID3
+   * envelope. Asking either alone leaves real observers with an empty list:
+   * the first knows a unit's state and caps early, the second reaches further
+   * but never reads crowd_lat. native/src/app/report/result.tsx carries the
+   * long version of this note and the evidence behind it.
+   */
+  const merged = async () => {
+    const [reg, near] = await Promise.all([
+      apiTry(`/api/polling-units?lat=${lat}&lng=${lng}`),
+      apiTry(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=800`),
+    ]);
+    // A failure on either side is survivable; a failure on both is not, and is
+    // reported as one, so the caller's error path still fires.
+    if (reg.error && near.error) return reg;
+    const rows = [];
+    const seen = new Set();
+    for (const u of [...(reg.body?.units || []), ...(near.body?.units || [])]) {
+      const code = u.pu_code || u.puCode || u.code;
+      if (!code || seen.has(code)) continue;
+      seen.add(code);
+      rows.push(u);
+    }
+    rows.sort((a, b) => (a.distanceM ?? 1e9) - (b.distanceM ?? 1e9));
+    return { body: { ...(reg.body || {}), radiusM: 800, units: rows } };
+  };
+  const r = warm ? { body: warm } : await merged();
   // Every exit from here on leaves the observer somewhere usable — a named
   // failure and an open register browser, never a status line that just stops.
   if (r.error) {
@@ -885,7 +914,7 @@ $('btn-locate').onclick = async () => {
   const body = r.body;
   if (!body.units || body.units.length === 0) {
     $('locate-status').textContent =
-      `No mapped polling unit within ${body.radiusM} m — use "Browse the register" below.`;
+      'No units found — search or browse the register below.';
     $('browse-block').open = true;
     return;
   }

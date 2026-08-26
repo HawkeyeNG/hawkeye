@@ -1366,7 +1366,7 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 }
 .tabbar .tab svg { width: 23px; height: 23px; display: block; }
 .tabbar .tab .ti { position: relative; display: flex; }
-.tabbar .tab.on { color: var(--green); }
+.tabbar .tab.on { color: var(--tab-on); }
 .tabbar .tab-cta .ti {
   background: var(--green); color: #fff; width: 50px; height: 50px; border-radius: 50%;
   align-items: center; justify-content: center; margin-top: -22px;
@@ -1422,10 +1422,18 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
    NOT the same colour in light mode, which is how collapsing them into one
    variable went unnoticed:
 
-   --tour-ink is the TAB BAR'S ACTIVE tint ((tabs)/_layout.tsx:
-   `activeTint = ui.dark ? ui.tint.good.ink : BRAND.green`). It inks the glyph
-   inside the gold ring, and nothing else. #004225 on a dark surface is a
-   near-black smudge that reads as the DISABLED control, hence the dark value.
+   --tab-on is the TAB BAR'S ACTIVE tint ((tabs)/_layout.tsx:
+   `activeTint = ui.dark ? ui.tint.good.ink : BRAND.green`). It inks the SELECTED
+   tab, and the glyph inside the tour's gold ring — one active tint for the bar,
+   read from one place, because they are the same idea.
+
+   It was called --tour-ink and it was only wired to the ring, while
+   `.tab.on` kept a hardcoded var(--green). That is #004225, and MEASURED on the
+   dark bar it comes to 1.40:1 against 7.12:1 for an INACTIVE tab — so in dark
+   mode the selected tab was five times harder to read than its neighbours and
+   the bar read inverted: the current tab looked disabled and the others looked
+   chosen. Native fixed exactly this with the theme-aware activeTint above; the
+   web never did until the tour brought the token in and left the tab behind.
 
    --tour-good-ink is the palette's --good-ink (native/src/global.css: 11 107 58
    light, 110 219 160 dark). It inks the CARD -- the chip glyph, the live
@@ -1436,9 +1444,9 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 
    Declared on the two roots that consume them rather than on :root, to keep the
    feature in one place. */
-.tour, .tabbar { --tour-ink: var(--green); --tour-good-ink: #0b6b3a; }
+.tour, .tabbar { --tab-on: var(--green); --tour-good-ink: #0b6b3a; }
 :root[data-theme="dark"] .tour,
-:root[data-theme="dark"] .tabbar { --tour-ink: #6edba0; --tour-good-ink: #6edba0; }
+:root[data-theme="dark"] .tabbar { --tab-on: #6edba0; --tour-good-ink: #6edba0; }
 
 .tour {
   position: fixed; inset: 0; z-index: 130;
@@ -1561,7 +1569,7 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 .tabbar .tab.tour-lit .ti { border-radius: 999px; box-shadow: 0 0 0 2px var(--gold); }
 .tabbar .tab.tour-lit:not(.tab-cta) .ti {
   padding: 4px; margin: -4px;
-  background: var(--tint-ok); color: var(--tour-ink);
+  background: var(--tint-ok); color: var(--tab-on);
 }
 /* The CTA keeps its own drop shadow -- box-shadow is one property, so the ring
    has to be listed with it or the circle goes flat exactly when it is being

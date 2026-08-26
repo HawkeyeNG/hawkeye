@@ -9,9 +9,16 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=157" />
+  <link rel="stylesheet" href="styles.css?v=160" />
   <script src="native.js?v=110"></script>
   <style>
+    /* The step-5 facts block. Page-local on purpose — styles.css is pinned by
+       every page in the app, so a shared rule for one card would mean bumping
+       forty ?v= pins and the service worker with them. */
+    .submit-facts { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin: 0 0 12px; }
+    .submit-facts strong { display: block; font-size: 0.95rem; }
+    .submit-facts small { display: block; color: var(--muted); font-size: 0.78rem; }
+    .submit-facts .sf-race { display: block; margin-top: 4px; font-size: 0.78rem; font-weight: 700; color: var(--link); }
     /* Mirror of observe.html: the slot description spans the full card instead
        of being flexed beside the REQUIRED badge, which made it wrap to three
        lines in half a card and left both capture slots needlessly tall. */
@@ -188,6 +195,10 @@
         <p class="hint">Signed on this device. Once submitted it cannot be edited or withdrawn.<button
           class="info-i" data-info-title="What happens to this report"
           data-info="Your report is signed on this device and written to the public tamper-evident ledger, so it cannot be edited or withdrawn afterwards. It is checked against the polling-unit evidence in this area, and its fingerprint is published to the public Rekor transparency log in the next daily anchor." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
+        <!-- WHAT IS ABOUT TO BE SIGNED. A collation report carries no polling
+             unit — it is scoped to a ward, an LGA or a state — so this names
+             the scope, the form and the election rather than a unit. -->
+        <div id="submit-facts" class="submit-facts" hidden></div>
         <button id="btn-submit" disabled>Sign &amp; submit collation report</button>
         <p id="status" class="status" role="status"></p>
       </div>
@@ -221,7 +232,7 @@
   <script src="scan.js?v=8"></script>
   <script src="capture.js?v=1"></script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=152"></script>
+  <script src="menu.js?v=155"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
@@ -444,6 +455,38 @@
       // Closed no longer disables the button — the click-handler surfaces an error
       // instead of a dead, silent tap (the notice below still explains the wait).
       $('btn-submit').disabled = !(shots.sheet && shots.venue && scopeOk() && $('sel-contest').value);
+      // Name what is about to be signed. Runs on every step transition, so it
+      // cannot go stale when the scope or the election is changed.
+      (function () {
+        const box = $('submit-facts');
+        if (!box) return;
+        const lv = $('sel-level').value;
+        const bits = [$('sel-ward') && lv === 'ward' ? $('sel-ward').value : '',
+                      lv !== 'state' ? $('sel-lga').value : '',
+                      $('sel-state').value].filter(Boolean);
+        if (!bits.length) { box.hidden = true; box.innerHTML = ''; return; }
+        // FORM is this page's own {ward:'EC8B', lga:'EC8C', state:'EC8D'}
+        // map (declared above) — the level's form code, which is how a
+        // collation report is identified on paper.
+        const form = FORM[lv] || '';
+        const sel = $('sel-contest');
+        const race = sel && sel.value ? (sel.options[sel.selectedIndex] || {}).textContent || '' : '';
+        // Built as NODES, not as an HTML string: this page has no esc() helper,
+        // and textContent escapes by construction rather than by remembering to.
+        box.textContent = '';
+        const add = (tag, text, cls) => {
+          if (!text) return;
+          const el = document.createElement(tag);
+          if (cls) el.className = cls;
+          el.textContent = text;
+          box.appendChild(el);
+        };
+        add('strong', bits.join(', '));
+        add('small', form ? form + ' · ' + lv + ' collation' : '');
+        add('span', race.trim(), 'sf-race');
+        box.hidden = false;
+      })();
+
       const c = CONTESTS.find((x) => x.code === $('sel-contest').value);
       if (closed && c?.opensAt) {
         $('status').textContent = `Collation reporting opens when polls open — ${new Date(c.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}.`;

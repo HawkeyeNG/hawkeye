@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00251a" />
+  <meta name="description" content="Get Hawkeye — the free, independent Nigerian election monitor. On Google Play, or straight from your browser." />
+  <title>Hawkeye — Get the app</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=160" />
+  <script src="native.js?v=111"></script>
+  <!-- OG tags matter more here than on any other page: this is the URL people
+       send each other, so the preview card in WhatsApp IS the first thing most
+       new users see of Hawkeye. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hawkeye" />
+  <meta property="og:title" content="Get Hawkeye" />
+  <meta property="og:description" content="Watch an election from your own polling unit and check the results against INEC's own sheets. Free and independent." />
+  <meta property="og:url" content="https://hawkeye.com.ng/download" />
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a href="observe.html">Report a Result</a>
+        <a href="results.html">Leaderboard</a>
+        <a href="dashboard.html">Public Reports Log</a>
+        <a href="ledger.html">Verify the Ledger</a>
+        <a href="integrity.html">Election Integrity</a>
+        <a href="docket.html">Public Docket</a>
+        <a href="political.html">Political Data</a>
+        <a href="how.html">How Hawkeye Works</a>
+        <a href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About &amp; Contact</a>
+        <a href="privacy.html">Privacy &amp; Data</a>
+      </nav>
+    </div>
+  </header>
+
+  <!--
+    ONE CARD, CENTRED, AND NOTHING ELSE ON THE PAGE.
+
+    This is where a shared link lands, so it is read by somebody who has been
+    handed it by a friend and knows nothing about Hawkeye. Everything on it is
+    either "what is this" (one sentence) or "how do I get it" (the badges). A
+    page of sections would bury the buttons the link exists to deliver.
+
+    It is a PAGE that looks like a modal rather than a modal over the homepage:
+    a link people forward has to survive a failed script, an old browser and a
+    preview crawler, and a dialog that only opens if JS runs does none of those.
+  -->
+  <main class="wrap dl-wrap">
+    <div class="card dl-card">
+      <h1>Get Hawkeye</h1>
+      <p class="lede">Watch an election from your own polling unit, and check the
+        results against INEC&rsquo;s own sheets. Free, independent, and not
+        affiliated with INEC or any government body.</p>
+
+      <div class="install-row dl-badges">
+        <a class="play-badge-link" rel="noopener" target="_blank"
+           href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer"><img
+           src="play-badge.png" alt="Get it on Google Play" height="56"
+           onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Get it on Google Play ↗'" /></a>
+        <!-- Dark until the listing is live — the switch is HAWKEYE_STORES.iosLive
+             in share.js, the same one index.html's install row reads. -->
+        <a class="play-badge-link" id="ios-cta" hidden rel="noopener" target="_blank"
+           href="https://apps.apple.com/app/id6804218478"><img
+           src="app-store-badge.svg" alt="Download on the App Store" height="56"
+           onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Download on the App Store ↗'" /></a>
+      </div>
+
+      <p class="hint" id="ios-note">On iPhone, open this page in Safari and tap
+        Share &rarr; Add to Home Screen. It works the same way.</p>
+
+      <div class="dl-alt">
+        <p class="hint">No store, or a phone short on space?</p>
+        <p><a class="btn-ghost" href="index.html#install">Run it from your home screen</a></p>
+      </div>
+
+      <div class="dl-share">
+        <button type="button" class="btn-accent" data-share>Share Hawkeye</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="share.js?v=1"></script>
+  <script>
+    // The App Store badge and the iPhone sentence are two halves of one fact, so
+    // they flip together off the single switch in share.js.
+    if (window.HAWKEYE_STORES && window.HAWKEYE_STORES.iosLive) {
+      document.getElementById('ios-cta').hidden = false;
+      document.getElementById('ios-note').textContent =
+        'On iPhone, get it from the App Store — or add this site to your home screen from Safari.';
+    }
+  </script>
+  <script src="menu.js?v=155"></script>
+</body>
+</html>

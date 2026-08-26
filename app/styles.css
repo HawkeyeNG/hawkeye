@@ -1484,6 +1484,7 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 }
 .tour-card {
   position: relative;
+  position: relative;
   width: 100%; max-width: 26rem; max-height: 85%;
   /* Centred in the space ABOVE the bar, not in the window: a flex-centred child
      is centred including its margins. */
@@ -1499,6 +1500,17 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
    screen reader land inside the dialog; it is a container, not a control, so
    it must not paint a focus ring of its own. Every real control in here keeps
    the sheet's. */
+.tour-x {
+  position: absolute; top: 8px; right: 10px;
+  width: 34px; height: 34px; padding: 0; line-height: 1;
+  background: none; border: 0; border-radius: 999px;
+  color: var(--muted); font-size: 1.5rem; cursor: pointer;
+}
+.tour-x:hover { background: var(--tint); color: var(--ink); }
+/* Back has nothing behind it on card one. Dimmed and inert, not removed — a
+   footer that changes shape mid-tour is its own small distraction. */
+.tour-skip:disabled { opacity: 0.4; cursor: default; }
+
 .tour-card:focus { outline: none; }
 /* AND NO SECOND GOLD RING ON THE BUTTONS. This sheet's focus ring is
    `button:focus { outline: 3px solid var(--focus) }` -- :focus, not

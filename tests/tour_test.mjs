@@ -338,7 +338,7 @@ const card = (p) => p.evaluate(() => {
   const note = q('.tour-note');
   const chip = q('.tour-chip');
   const glyph = q('.tour-chip svg');
-  const skip = q('.tour-skip');
+  const skip = q('.tour-skip');   // the BACK button — named for its class, not its label
   const next = q('.tour-next');
   return {
     title: q('#tour-title').textContent,
@@ -603,8 +603,11 @@ console.log('\n=== Lite, first run ===');
       check(`7. card ${n} keeps the neutral chip (not the green CTA)`, c && c.chipBg !== 'rgb(0, 66, 37)');
     }
     const last = i === steps.length - 1;
-    check(`4. card ${n} buttons read ${last ? '"Close" / "Start observing"' : '"Skip tour" / "Next"'}`,
-      c && [c.skip, c.next], last ? ['Close', 'Start observing'] : ['Skip tour', 'Next']);
+    // BACK REPLACED SKIP. Five cards is enough that missing one matters and
+    // there was no way back; leaving moved to a corner cross, which is harder
+    // to hit by accident than a full-width footer button under the thumb.
+    check(`4. card ${n} buttons read ${last ? '"Back" / "Start observing"' : '"Back" / "Next"'}`,
+      c && [c.skip, c.next], last ? ['Back', 'Start observing'] : ['Back', 'Next']);
     check(`4. card ${n} buttons are equal width`, c && Math.abs(c.skipW - c.nextW) <= 1);
     if (!last) await p.click('.tour-next');
   }
@@ -615,7 +618,7 @@ console.log('\n=== Lite, first run ===');
   // the real check runs, and each must come back red. (The fourth, "not dimmed",
   // is a pixel comparison and carries its own control where it is made.)
   console.log('\n=== control: the Lite assertions can fail ===');
-  await p.click('.tour-skip');                    // "Close" on card 5 → shut, flag written
+  await p.click('.tour-x');                       // the corner cross → shut, flag written
   await openMenu(p);
   await p.click('#menu-panel a[href="#tour"]');   // a genuine, freshly painted card 1
   const good = await card(p);
@@ -685,7 +688,7 @@ console.log('\n=== Lite: the bar is SHOWN, not handed over ===');
 
   // Every exit still releases the page's scroll — and only it. Guarded for the
   // same reason as nextCard above.
-  if (await p.evaluate(() => !document.querySelector('.tour').hidden)) await p.click('.tour-skip');
+  if (await p.evaluate(() => !document.querySelector('.tour').hidden)) await p.click('.tour-x');
   check('and when the tour does close, the page gets its scroll back',
     await p.evaluate(() => [document.querySelector('.tour').hidden, document.body.style.overflow]),
     [true, '']);
@@ -749,14 +752,15 @@ console.log('\n=== Lite: the tour never paints a second gold ring ===');
 
   await p.keyboard.press('Tab');
   const kb = await focusState(p);
+  // The cycle gained the corner cross, and it is first in DOM order.
   check('but a KEYBOARD user still gets the focus ring',
-    [kb.on, kb.outline, kb.colour], ['tour-skip', 'solid', 'rgb(255, 221, 0)']);
+    [kb.on, kb.outline, kb.colour], ['tour-x', 'solid', 'rgb(255, 221, 0)']);
   await p.keyboard.press('Tab');
-  check('and Tab stays inside the dialog — it claims aria-modal', (await focusState(p)).on, 'tour-next');
+  check('and Tab stays inside the dialog — it claims aria-modal', (await focusState(p)).on, 'tour-skip');
   await p.keyboard.press('Tab');
-  check('cycling rather than escaping into the page it is covering', (await focusState(p)).on, 'tour-skip');
+  check('cycling rather than escaping into the page it is covering', (await focusState(p)).on, 'tour-next');
   await p.keyboard.press('Shift+Tab');
-  check('Shift+Tab too', (await focusState(p)).on, 'tour-next');
+  check('Shift+Tab too', (await focusState(p)).on, 'tour-skip');
   await ctx.close();
 }
 
@@ -764,9 +768,9 @@ console.log('\n=== Lite: the tour never paints a second gold ring ===');
 console.log('\n=== Lite: exits, the seen flag, and the ring after ===');
 {
   const { ctx, p } = await shell();
-  await p.click('.tour-skip');
-  check('8. Skip closes the tour', await card(p), null);
-  check('8. Skip clears the ring — no tab is left lit', await ringed(p), []);
+  await p.click('.tour-x');
+  check('8. the corner cross closes the tour', await card(p), null);
+  check('8. and clears the ring — no tab is left lit', await ringed(p), []);
   check("8. Skip writes 'hawkeye_tour_seen'",
     await p.evaluate(() => localStorage.getItem('hawkeye_tour_seen')), '1');
   await p.reload();
@@ -780,10 +784,22 @@ console.log('\n=== Lite: exits, the seen flag, and the ring after ===');
   // Top-left of the scrim, well clear of the card — Playwright's default is the
   // element's centre, which is behind the card and is not a tap any reader makes.
   await p.click('.tour-backdrop', { position: { x: 6, y: 6 } });
-  check('8. a backdrop tap behaves exactly like Skip: closed', await card(p), null);
-  check('8. a backdrop tap behaves exactly like Skip: flag written',
+  /**
+   * THIS ASSERTION IS THE OPPOSITE OF WHAT IT USED TO BE, DELIBERATELY.
+   *
+   * A backdrop tap used to close the tour and write the seen flag — so the
+   * easiest gesture to make by accident (reaching for a tab, steadying the
+   * phone) ended the tour permanently. It happened to the reader who reported
+   * it. Leaving is now the corner cross or Escape, both deliberate.
+   */
+  check('8. a backdrop tap does NOT close the tour', (await card(p)) !== null, true);
+  check('8. and does NOT write the seen flag',
+    await p.evaluate(() => localStorage.getItem('hawkeye_tour_seen')), null);
+  await p.click('.tour-x');
+  check('8. the corner cross does close it', await card(p), null);
+  check('8. closing by the cross writes the flag',
     await p.evaluate(() => localStorage.getItem('hawkeye_tour_seen')), '1');
-  check('8. a backdrop tap behaves exactly like Skip: ring cleared', await ringed(p), []);
+  check('8. and clears the ring', await ringed(p), []);
   await ctx.close();
 }
 {

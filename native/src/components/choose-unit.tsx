@@ -87,8 +87,26 @@ export function ChooseUnitModal({
         return;
       }
       const res = await fetch(`${BASE}/api/polling-units?lat=${r.fix.lat}&lng=${r.fix.lng}`).catch(() => null);
-      const rows = res && res.ok ? ((await res.json().catch(() => [])) as Row[]) : [];
-      const list = Array.isArray(rows) ? rows.slice(0, 8) : [];
+      /**
+       * THE RESPONSE IS AN ENVELOPE, NOT AN ARRAY.
+       *
+       * /api/polling-units answers { radiusM, maxRows, capped, units } — it
+       * reports the radius it searched and whether it capped, which the report
+       * screens use to explain a short list. This screen still expected the bare
+       * array the endpoint used to return, and its `Array.isArray` guard then
+       * turned every successful lookup into an empty one: 13 units at Garki
+       * became "No units found near you", with no error anywhere.
+       *
+       * A defensive guard that silently converts a shape change into "nothing
+       * here" is worse than no guard, so this reads both shapes explicitly.
+       */
+      const body = res && res.ok ? await res.json().catch(() => null) : null;
+      const rows: Row[] = Array.isArray(body)
+        ? (body as Row[])
+        : Array.isArray((body as { units?: Row[] } | null)?.units)
+          ? ((body as { units: Row[] }).units)
+          : [];
+      const list = rows.slice(0, 8);
       setNear(list);
       setNearLine(list.length ? null : 'No units found near you — search for it below.');
     } catch {

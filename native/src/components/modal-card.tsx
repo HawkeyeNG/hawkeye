@@ -1,5 +1,8 @@
+import { Feather } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+
+import { useUi } from '@/lib/theme';
 
 /**
  * A centred modal whose BODY SCROLLS and whose actions stay put.
@@ -22,6 +25,8 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 export function ModalCard({
   visible,
   onClose,
+  onCloseIcon,
+  dismissOnBackdrop = true,
   title,
   children,
   footer,
@@ -30,6 +35,14 @@ export function ModalCard({
 }: {
   visible: boolean;
   onClose: () => void;
+  /** Renders a close cross beside the title. Give it when the backdrop does not dismiss. */
+  onCloseIcon?: () => void;
+  /**
+   * Whether a tap on the dimmed area closes. TRUE is right for most sheets and
+   * WRONG for anything a reader can lose progress in: an outside tap is the
+   * easiest gesture to make by accident.
+   */
+  dismissOnBackdrop?: boolean;
   title?: string;
   children: ReactNode;
   /** Replaces the default Close button when a modal needs its own actions. */
@@ -50,11 +63,12 @@ export function ModalCard({
    */
   bottomGap?: number;
 }) {
+  const ui = useUi();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       {/* Backdrop closes; the inner Pressable swallows the tap so the card stays. */}
       <Pressable
-        onPress={onClose}
+        onPress={dismissOnBackdrop ? onClose : undefined}
         className="flex-1 items-center justify-center bg-black/50 px-6"
         style={bottomGap ? { marginBottom: bottomGap } : undefined}
       >
@@ -63,7 +77,22 @@ export function ModalCard({
           className="w-full max-w-md rounded-2xl bg-card p-5"
           style={{ maxHeight: '85%' }}
         >
-          {title ? <Text className="pb-2 text-lg font-bold text-ink">{title}</Text> : null}
+          {title || onCloseIcon ? (
+            <View className="flex-row items-start pb-2">
+              <Text className="flex-1 text-lg font-bold text-ink">{title}</Text>
+              {onCloseIcon ? (
+                <Pressable
+                  onPress={onCloseIcon}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
+                  className="-mr-1 -mt-1 rounded-full p-1 active:opacity-60"
+                >
+                  <Feather name="x" size={20} color={ui.muted} />
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
           {/* flexShrink lets the scroll area give up space to the title and
               footer; without it the content pushes them off a short screen. */}
           <ScrollView style={{ flexShrink: 1 }} persistentScrollbar>

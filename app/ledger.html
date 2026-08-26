@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=164" />
-  <script src="native.js?v=110"></script>
+  <script src="native.js?v=111"></script>
   <style>
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e6e6e5; vertical-align: top; }
@@ -104,6 +104,15 @@
 
   <script>
     const GENESIS = '0'.repeat(64);
+    /** First 16 characters and an ellipsis — the shortening native uses
+     *  (ledger.tsx slices to 16 and 24). A full 64-character hash wraps to two
+     *  lines on a phone and says nothing its prefix does not: these are here to
+     *  be COMPARED against each other by eye, and truncated pairs compare fine.
+     *  The full value stays in the DOM's title so it can still be read. */
+    const shortHash = (h) => {
+      const s = String(h == null ? '' : h);
+      return s.length > 20 ? s.slice(0, 16) + '…' : s;
+    };
     const sha256hex = async (str) => {
       const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
       return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -152,7 +161,11 @@
         ? new Date(anchorMs).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
         : (latest?.day || 'None yet');
       renderTiles();
-      document.getElementById('status').innerHTML = `Server head — compare, don't trust: <code>${verify.head || GENESIS}</code>`;
+      // SHORTENED, like native (ledger.tsx slices to 16 and 24). A 64-character
+      // hash printed in full wraps to two lines on a phone and tells a reader
+      // nothing more than its first characters do — the point is to COMPARE two
+      // heads, and a truncated pair compares just as well by eye.
+      document.getElementById('status').innerHTML = `Server head — compare, don't trust: <code>${shortHash(verify.head || GENESIS)}</code>`;
 
       // Each card is addressable by its entry hash, so a report can be linked
       // to directly — ledger.html#<entry_hash>. The whole point of a public
@@ -195,7 +208,7 @@
         }
         prev = e.entry_hash;
       }
-      out.innerHTML = `<span class="ok">✔ Verified ${ENTRIES.length} entries in your browser. Head matches: <code>${prev}</code></span>`;
+      out.innerHTML = `<span class="ok">✔ Verified ${ENTRIES.length} entries in your browser. Head matches: <code>${shortHash(prev)}</code></span>`;
       TS.onPhone = 'Verified'; TS.onPhoneT = 'ok'; renderTiles();
     };
 

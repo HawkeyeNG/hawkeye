@@ -35,6 +35,7 @@ import { Crumb, Prompt } from '@/components/wizard';
 import { UnitSearch } from '@/components/unit-search';
 import { BRAND } from '@/lib/api';
 import { tap } from '@/lib/haptics';
+import { compressMedia } from '@/lib/media-compress';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -70,6 +71,21 @@ const KINDS: { code: string; label: string; icon: keyof typeof Feather.glyphMap 
 ];
 
 const MAX_MEDIA = 4;
+/**
+ * FOUR SLOTS, BUT AT MOST TWO VIDEOS.
+ *
+ * The cost is almost entirely video: a client-compressed photo is a few hundred
+ * KB, a minute of phone video is tens of MB. Cutting the total to two would
+ * lose corroboration — a wide shot and a close-up of the same scene support
+ * each other — while saving almost nothing, because the saving is not in the
+ * photos. So the cap goes where the bytes are.
+ *
+ * The duration cap does more work than any size cap: it is enforceable at the
+ * moment of recording, and "45 seconds" is a limit an observer can hold in
+ * their head, which "15 MB" is not.
+ */
+const MAX_VIDEOS = 2;
+const MAX_VIDEO_SECONDS = 45;
 
 /** The reporter's saved unit. `name` is nullable — the server LEFT JOINs the
  *  register, so a saved code that is no longer listed comes back bare. */
@@ -406,6 +422,30 @@ export default function ReportIncident() {
   const [kind, setKind] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [media, setMedia] = useState<Media[]>([]);
+  /**
+   * Add media, honouring BOTH caps in one place.
+   *
+   * Both entry points — the in-app camera and the library picker — used a bare
+   * `slice(0, MAX_MEDIA)`, so the video cap would have had to be written twice
+   * and could drift. Anything over a cap is dropped rather than rejected: the
+   * observer keeps what fits and is told why, instead of losing the batch.
+   */
+  const addMedia = (incoming: Media[]) => {
+    setMedia((arr) => {
+      const out = [...arr];
+      let refusedVideo = false;
+      for (const m of incoming) {
+        if (out.length >= MAX_MEDIA) break;
+        if (m.type === 'video' && out.filter((x) => x.type === 'video').length >= MAX_VIDEOS) {
+          refusedVideo = true;
+          continue;
+        }
+        out.push(m);
+      }
+      if (refusedVideo) setLine(`Up to ${MAX_VIDEOS} videos per report — add the rest as photos, or file a second report.`);
+      return out;
+    });
+  };
   const [camera, setCamera] = useState(false);
   const [useGps, setUseGps] = useState(true);
 
@@ -812,17 +852,38 @@ export default function ReportIncident() {
       allowsMultipleSelection: true,
       selectionLimit: MAX_MEDIA - media.length,
       quality: 0.7,
-      videoMaxDuration: 90,
+      // 45s, down from 90. A cap in SECONDS is the one an observer can act on —
+      // nobody knows what 15 MB looks like through a viewfinder — and it is the
+      // single biggest lever on whether the upload finishes at all.
+      videoMaxDuration: MAX_VIDEO_SECONDS,
     });
     if (res.canceled) return;
-    const picked: Media[] = res.assets.map((a) => ({
-      uri: a.uri,
-      capturedAt: Date.now(),
-      lat: 0,
-      lng: 0,
-      type: a.type === 'video' ? 'video' : 'image',
+
+    /**
+     * COMPRESS BEFORE ATTACHING, not at submit.
+     *
+     * `quality: 0.7` above only applies to images the picker re-encodes; a
+     * video comes out of the library byte-for-byte as it was filmed, which on a
+     * modern phone is tens of megabytes a minute. Those bytes were being sent
+     * over the observer's own mobile data.
+     *
+     * Doing it here rather than in onSubmit means the size shown in the tray is
+     * the size that will actually be sent, and a slow re-encode happens while
+     * they are still writing the description instead of stalling the submit.
+     */
+    setLine(res.assets.some((a) => a.type === 'video') ? 'Compressing…' : '');
+    const picked: Media[] = await Promise.all(res.assets.map(async (a) => {
+      const type: 'image' | 'video' = a.type === 'video' ? 'video' : 'image';
+      return {
+        uri: await compressMedia(a.uri, type),
+        capturedAt: Date.now(),
+        lat: 0,
+        lng: 0,
+        type,
+      };
     }));
-    setMedia((arr) => [...arr, ...picked].slice(0, MAX_MEDIA));
+    setLine('');
+    addMedia(picked);
   };
 
   const onSubmit = async () => {
@@ -1028,7 +1089,7 @@ export default function ReportIncident() {
         hint="Photo, or switch to video (up to 90s). Stay safe — distance first."
         allowVideo
         onCapture={(m) => {
-          setMedia((arr) => [...arr, m].slice(0, MAX_MEDIA));
+          addMedia([m]);
           setCamera(false);
         }}
         onCancel={() => setCamera(false)}

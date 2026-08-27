@@ -1,0 +1,143 @@
+/**
+ * THE WEB INCIDENT FORM'S MEDIA RULES, DRIVEN IN A BROWSER.
+ *
+ * The server is the real gate, but by the time it answers, the observer has
+ * already spent the mobile data to reach it — on election day, on a congested
+ * cell, at a polling unit. So the client has to shrink what it can and refuse
+ * what it must, BEFORE the upload.
+ *
+ * Two things are asserted, and both are about bytes rather than about markup:
+ *   1. a photo is compressed before it is attached, so the size in the tray is
+ *      the size that will be sent;
+ *   2. a third video is refused with a message that says what to do instead.
+ *
+ * A canvas cannot re-encode video, so there is deliberately no "videos get
+ * smaller" assertion here — that is the native build's job, and pretending
+ * otherwise is how a test starts lying.
+ */
+import { createRequire } from 'node:module';
+const require_ = createRequire('/home/elrio/hawkeye/tests/ui/');
+const { chromium } = require_('playwright-core');
+import fs from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
+
+const APP = '/home/elrio/hawkeye/app';
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
+const server = http.createServer((req, res) => {
+  const [u] = req.url.split('?');
+  const json = (v) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(v)); };
+  if (u === '/api/observers/me') return json({ observerNo: 2, createdAt: '2026-07-15T00:00:00Z', idHash: 'a'.repeat(64) });
+  // REAL SHAPES, not {}. A catch-all empty object made the page throw
+  // "kinds.map is not a function" — a fault in the fixture that reads exactly
+  // like a fault in the product, which is the whole reason page errors are
+  // failures here.
+  if (u === '/api/incidents/kinds') return json(['violence', 'vote_buying', 'intimidation', 'other']);
+  if (u === '/api/incidents') return json({ incidents: [] });
+  if (u === '/api/contests') return json([]);
+  if (u === '/api/parties') return json([]);
+  if (u.startsWith('/api/')) return json({});
+  const f = path.join(APP, decodeURIComponent(u === '/' ? '/index.html' : u));
+  if (!f.startsWith(APP) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
+  res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' });
+  return fs.createReadStream(f).pipe(res);
+});
+await new Promise((r) => server.listen(0, r));
+const base = `http://127.0.0.1:${server.address().port}`;
+
+let fail = 0;
+const check = (l, ok, extra = '') => {
+  if (!ok) fail++;
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${l}${ok || !extra ? '' : `\n        ${extra}`}`);
+};
+const control = (l, red) => { if (red) fail++; console.log(`${red ? 'FAIL' : 'PASS'}  CONTROL ${l}`); };
+
+const JWT = () => `x.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 86400 })).toString('base64')}.y`;
+const browser = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome' });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 780 } });
+await ctx.addInitScript((t) => {
+  Object.defineProperty(window, 'HAWKEYE', { value: { native: true, apiBase: '' }, writable: false, configurable: false });
+  const mark = () => { if (document.documentElement) document.documentElement.classList.add('native-app'); };
+  mark();
+  document.addEventListener('readystatechange', mark);
+  try { localStorage.setItem('hawkeye_token', t); localStorage.setItem('hawkeye_tour_seen', '1'); } catch { /* ignore */ }
+}, JWT());
+const page = await ctx.newPage();
+page.on('pageerror', (e) => { fail++; console.log('FAIL  page error: ' + String(e.stack || e).slice(0, 400)); });
+await page.goto(`${base}/incidents.html`);
+await page.waitForTimeout(1200);
+
+console.log('=== the shrink helper is reachable from this page ===');
+{
+  const has = await page.evaluate(() => !!(window.HAWKEYE_CAPTURE && window.HAWKEYE_CAPTURE.shrink));
+  check('capture.js exposes HAWKEYE_CAPTURE.shrink', has,
+    'incidents.html loads capture.js but not app.js, so the helper must live in capture.js');
+}
+
+console.log('\n=== a large photo is compressed BEFORE it is attached ===');
+{
+  const r = await page.evaluate(async () => {
+    // A big, noisy canvas: a flat colour would compress to nothing and prove nothing.
+    const c = document.createElement('canvas');
+    c.width = 3000; c.height = 2250;
+    const g = c.getContext('2d');
+    const img = g.createImageData(c.width, c.height);
+    for (let i = 0; i < img.data.length; i += 4) {
+      img.data[i] = Math.random() * 255; img.data[i + 1] = Math.random() * 255;
+      img.data[i + 2] = Math.random() * 255; img.data[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', 0.95));
+    const file = new File([blob], 'evidence.jpg', { type: 'image/jpeg' });
+    const out = await window.HAWKEYE_CAPTURE.shrink(file, 1280, 0.72);
+    return { before: file.size, after: out.size, type: out.type, name: out.name || null };
+  });
+  console.log(`      ${(r.before / 1048576).toFixed(2)} MB -> ${(r.after / 1048576).toFixed(2)} MB`);
+  check('the compressed photo is smaller', r.after < r.before, `${r.before} -> ${r.after}`);
+  check('it is still a JPEG', r.type === 'image/jpeg', r.type);
+  check('and it keeps a filename for the upload', !!r.name, String(r.name));
+}
+
+console.log('\n=== shrink never makes things worse ===');
+{
+  const r = await page.evaluate(async () => {
+    // Already tiny: re-encoding would ADD bytes, so the original must come back.
+    const c = document.createElement('canvas');
+    c.width = 8; c.height = 8;
+    const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', 0.5));
+    const file = new File([blob], 'tiny.jpg', { type: 'image/jpeg' });
+    const out = await window.HAWKEYE_CAPTURE.shrink(file, 1280, 0.72);
+    return { same: out === file, before: file.size, after: out.size };
+  });
+  check('a tiny image is returned untouched, not inflated', r.same || r.after <= r.before,
+    `${r.before} -> ${r.after}`);
+  // CONTROL: a non-image must pass straight through rather than be mangled.
+  const v = await page.evaluate(async () => {
+    const f = new File([new Uint8Array(1024)], 'clip.mp4', { type: 'video/mp4' });
+    const out = await window.HAWKEYE_CAPTURE.shrink(f, 1280, 0.72);
+    return out === f;
+  });
+  control('a video handed to shrink is NOT altered', !v);
+}
+
+console.log('\n=== the third video is refused, with a way forward ===');
+{
+  const r = await page.evaluate(async () => {
+    const mk = (n) => new File([new Uint8Array(2048)], `c${n}.mp4`, { type: 'video/mp4' });
+    await addFiles([mk(1), mk(2), mk(3)]);
+    return {
+      attached: attachments.length,
+      videos: attachments.filter((f) => /^video\//.test(f.type)).length,
+      status: document.getElementById('status').textContent.trim(),
+    };
+  });
+  console.log(`      attached=${r.attached} videos=${r.videos} status="${r.status}"`);
+  check('only two videos are kept', r.videos === 2, `got ${r.videos}`);
+  check('and the message says what to do instead',
+    /second report|photos/i.test(r.status), r.status);
+}
+
+await browser.close();
+server.close();
+console.log(fail ? `\n${fail} FAILED` : '\nall passed');
+process.exit(fail ? 1 : 0);

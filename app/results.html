@@ -1139,7 +1139,9 @@
         return;
       }
       msg.textContent = r.ok
-        ? `🔔 Following ${subject}. You'll be alerted on every new report (Telegram or WhatsApp, your choice, plus the in-app feed).`
+        // The button beside this already reads Follow / Unfollow this race, and
+        // the sentence explaining what following does was three lines of it.
+        ? `🔔 Following ${subject}.`
         : 'Could not set up following — make sure your phone is verified.';
     };
   </script>

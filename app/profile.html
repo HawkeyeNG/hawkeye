@@ -43,7 +43,18 @@
        viewport pushed the modal's own actions underneath it, so Cancel and Save
        were on screen and unreachable — worse than off-screen, because nothing
        said to scroll. */
-    body.has-tabbar .pw-modal-back { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
+    /* ONE SIZE, THE BOX BETWEEN THE CHROME. The card grew with its content up to
+       a viewport-height cap, so it ran from the top of the screen down to kiss
+       the tab bar — untidy, and pointless once the body scrolls: a scrolling
+       panel does not need to be tall, it needs to be a known shape. menu.js
+       publishes the real header and bar heights as --hdr-h and --bar-h, so this
+       asks for them rather than guessing. */
+    body.has-tabbar .pw-modal-back {
+      align-items: stretch;
+      padding-top: calc(var(--hdr-h, 56px) + 14px);
+      padding-bottom: calc(var(--bar-h, 66px) + 14px + env(safe-area-inset-bottom));
+    }
+    body.has-tabbar .pw-modal { max-height: 100%; }
     .pw-modal {
       width: 100%; max-width: 420px; border-radius: 14px; padding: 20px 22px;
       background: var(--surface, #fff); border: 1px solid var(--border, #d5ddd7);
@@ -74,6 +85,12 @@
     .unit-picked .chg { display: block; margin-top: 6px; font-size: 0.8rem; font-weight: 700; color: var(--link); }
     .pw-body { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
     .pw-actions { flex: none; padding-top: 12px; }
+    /* The unit name, its code and its ward are three lines of value against a
+       three-word label, so side by side both columns wrap and neither reads.
+       This row stacks: label, then value beneath it. */
+    .prow:has(.prow-stack) { display: block; }
+    .prow:has(.prow-stack) .prow-k { display: block; margin-bottom: 2px; }
+    .prow:has(.prow-stack) .prow-v { display: block; text-align: left; }
     .signout { width: auto; padding: 8px 16px; }
     /* Hero identity card — native parity. */
     .phero { display: flex; align-items: center; gap: 14px; background: linear-gradient(160deg, #00251a, #00482b); border-radius: 16px; padding: 18px; color: #fff; margin: 8px 0 14px; }
@@ -154,7 +171,7 @@
           <span class="prow-c" aria-hidden="true">›</span>
         </button>
         <button type="button" class="prow" id="btn-pick-unit">
-          <span class="prow-k">My polling unit</span>
+          <span class="prow-k prow-stack">My polling unit</span>
           <span class="prow-v" id="p-unit">None saved</span>
           <span class="prow-c" aria-hidden="true">›</span>
         </button>
@@ -445,8 +462,12 @@
         const pos = await new Promise((ok, no) =>
           navigator.geolocation.getCurrentPosition(ok, no, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }));
         const { latitude: lat, longitude: lng } = pos.coords;
-        const r = await fetch(`/api/polling-units?lat=${lat}&lng=${lng}`).then((x) => x.json()).catch(() => []);
-        const rows = Array.isArray(r) ? r.slice(0, 8) : [];
+        const r = await fetch(`/api/polling-units?lat=${lat}&lng=${lng}`).then((x) => x.json()).catch(() => null);
+        // THE RESPONSE IS AN ENVELOPE: { radiusM, maxRows, capped, units }. An
+        // Array.isArray guard against it yields [] and reports "no units found"
+        // on a lookup that succeeded. Same guard, same silent failure, in
+        // app/app.js and native choose-unit.tsx before this one.
+        const rows = (Array.isArray(r) ? r : (Array.isArray(r && r.units) ? r.units : [])).slice(0, 8);
         if (!rows.length) { $('unit-near-status').textContent = 'No units found near you — search below.'; return; }
         $('unit-near-status').textContent = 'Nearest units:';
         for (const u of rows) {

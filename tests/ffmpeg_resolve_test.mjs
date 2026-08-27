@@ -95,5 +95,61 @@ console.log('\n=== the binary actually runs ===');
   control('a missing binary reports nothing', /ffmpeg version/.test(bogus));
 }
 
+/**
+ * THE REAL PIPELINE ARGUMENTS MUST RUN ON THE BUNDLED BINARY.
+ *
+ * This is the check that would have caught the last failure and none of the
+ * others would. The bundled build is from 2018: it reports an `hevc` decoder
+ * and a `libx264` encoder, answers `-version` happily, and then dies mid-stream
+ * with "Option 'force_divisible_by' not found" — an option added in FFmpeg 4.2.
+ * Presence checks and version strings all passed; only running the actual
+ * filter graph failed.
+ *
+ * So the filter string is read OUT OF THE ROUTE and executed, rather than
+ * copied here where it could drift into being a test of itself.
+ */
+console.log('\n=== the route\'s own filter graph runs on this binary ===');
+{
+  const src = fs.readFileSync(path.join(BACKEND, 'src/routes/incidents.js'), 'utf8');
+  const m = src.match(/'-vf',\s*"([^"]+)"/);
+  check('the -vf filter was found in incidents.js', !!m, 'the route changed shape');
+  if (m) {
+    const vf = m[1];
+    console.log(`      ${vf.slice(0, 90)}…`);
+    check('it does not use force_divisible_by (FFmpeg 4.2+ only)',
+      !/force_divisible_by/.test(vf),
+      'the bundled binary predates it and fails at runtime, not at startup');
+
+    const IN = '/tmp/hk_filter_probe.mp4';
+    const OUT = '/tmp/hk_filter_out.mp4';
+    // Odd dimensions on purpose: 641x361 is exactly what the even-rounding pass
+    // exists for, so a filter that cannot round would fail here.
+    execFileSync(bundled, ['-y', '-v', 'error', '-f', 'lavfi',
+      '-i', 'testsrc2=size=641x361:rate=15:duration=1', '-pix_fmt', 'yuv420p', IN]);
+
+    let ran = true;
+    let err = '';
+    try {
+      execFileSync(bundled, ['-y', '-v', 'error', '-i', IN, '-map_metadata', '-1',
+        '-movflags', '+faststart', '-vf', vf, '-c:v', 'libx264', '-preset', 'veryfast',
+        '-crf', '28', '-c:a', 'aac', '-b:a', '96k', OUT],
+      { stdio: ['ignore', 'ignore', 'pipe'], encoding: 'utf8', timeout: 120000 });
+    } catch (e) { ran = false; err = String(e.stderr || e).slice(0, 200); }
+    check('the filter graph completes on the bundled binary', ran, err);
+    check('and it produced a file', ran && fs.existsSync(OUT) && fs.statSync(OUT).size > 0);
+
+    // CONTROL: the old argument really does fail here, so the check above has
+    // teeth rather than passing because ffmpeg is lenient.
+    let oldFailed = false;
+    try {
+      execFileSync(bundled, ['-y', '-v', 'error', '-i', IN,
+        '-vf', "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",
+        '-c:v', 'libx264', '-f', 'null', '-'],
+      { stdio: 'ignore', timeout: 120000 });
+    } catch { oldFailed = true; }
+    control('the pre-fix filter is rejected by this binary', !oldFailed);
+  }
+}
+
 console.log(fail ? `\n${fail} FAILED` : '\nall passed');
 process.exit(fail ? 1 : 0);

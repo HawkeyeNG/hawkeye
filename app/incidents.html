@@ -185,6 +185,8 @@
         <input id="media-cam" type="file" accept="image/*,video/*" capture="environment" hidden />
       </div>
       <div id="preview"></div>
+      <!-- Hidden until the first video is attached — see paintVideoCount(). -->
+      <p id="video-count" class="hint" hidden></p>
 
       <!-- THE KIND IS NEVER PRE-SELECTED. This used to be an empty <select>
            filled from /api/incidents/kinds, so the first kind in that list —
@@ -404,7 +406,28 @@
         add.innerHTML = '＋<span>ADD</span>';
         $('preview').appendChild(add);
       }
+      paintVideoCount();
       syncCap();
+    }
+
+    /**
+     * THE VIDEO ALLOWANCE, ONLY ONCE IT IS RELEVANT.
+     *
+     * Silent at zero: telling someone about a limit they have not approached is
+     * noise on a screen whose job is capturing what is happening. It appears
+     * the moment the first video is attached — which is when "how many more"
+     * becomes a real question — and is what stops the third attempt being a
+     * surprise rather than only explaining it afterwards.
+     */
+    function paintVideoCount() {
+      const el = $('video-count');
+      if (!el) return;
+      const n = attachments.filter((f) => /^video\//.test(f.type)).length;
+      if (!n) { el.hidden = true; el.textContent = ''; return; }
+      el.hidden = false;
+      el.textContent = n >= MAX_VIDEOS
+        ? `${MAX_VIDEOS} of ${MAX_VIDEOS} videos — photos only from here.`
+        : `${n} of ${MAX_VIDEOS} videos — you can add ${MAX_VIDEOS - n} more.`;
     }
     /**
      * Take what fits, shrink what can be shrunk, and say why anything was left.
@@ -428,7 +451,19 @@
         }
         const isVideo = /^video\//.test(f.type);
         if (isVideo && videos() >= MAX_VIDEOS) {
-          $('status').textContent = `Up to ${MAX_VIDEOS} videos per report — add the rest as photos, or file a second report.`;
+          /**
+           * A MODAL, not a status line. Dropping the third video and writing
+           * one line under the tray is indistinguishable from the attach
+           * quietly not working — the file was chosen, it vanished, and
+           * nothing said why. Anything that DISCARDS a selection has to be
+           * acknowledged.
+           */
+          if (window.HAWKEYE_ALERT) {
+            HAWKEYE_ALERT(`Only ${MAX_VIDEOS} videos per report`,
+              `You already have ${MAX_VIDEOS}. Add the rest as photos, or file a second report — every report is reviewed separately, so nothing is lost by splitting them.`);
+          } else {
+            $('status').textContent = `Up to ${MAX_VIDEOS} videos per report — add the rest as photos, or file a second report.`;
+          }
           continue;
         }
         const cap = isVideo ? VIDEO_BYTES : PHOTO_BYTES;

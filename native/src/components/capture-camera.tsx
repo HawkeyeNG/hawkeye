@@ -10,7 +10,7 @@ import { scanSheet, scannerAvailable, scannerProven } from '@/lib/scan';
 import type { Shot } from '@/lib/submit';
 import { describeFixFailure, trySubmitFix, type FixFailure } from '@/lib/location';
 import { BRAND } from '@/lib/api';
-import { MAX_VIDEO_SECONDS } from '@/lib/media-compress';
+import { MAX_VIDEO_SECONDS, compressVideo } from '@/lib/media-compress';
 
 /**
  * In-app capture with a GPS stamp taken at capture time — the property the
@@ -30,8 +30,10 @@ export type Media = Shot & { type: 'image' | 'video'; read?: SheetRead | null };
  * Video compression happens AT THE ENCODER, not by cutting recordings short:
  * CameraView pins 720p and VIDEO_BITRATE caps the encoder, so length is bought
  * with efficiency instead of quality. 2 Mbps video + AAC audio ≈ 2.13 Mbit/s
- * → the shared 60s cap ≈ 16MB, inside the server's 15MB/file limit once
- * react-native-compressor has re-encoded it, and well inside the 25MB stop.
+ * → the shared 45s cap ≈ 12MB, and a few MB once react-native-compressor has
+ * re-encoded it. The 25MB stop below and the server's 25MB cap both sit above
+ * anything 45s can produce, so the DURATION is the gate and a recording made
+ * under the rule is never refused afterwards for its size.
  * Dev-build era (with push notifications): react-native-compressor for
  * WhatsApp-grade re-encode (minutes of video), and Google ML Kit for
  * on-device doc-scan/OCR of result sheets.
@@ -42,17 +44,10 @@ export type Media = Shot & { type: 'image' | 'video'; read?: SheetRead | null };
 // H.265, which sent a later investigation of an unplayable admin clip straight
 // at the wrong suspect. H.264 is also the codec every browser can decode, so a
 // compressed recording plays in review even when the server cannot transcode.
-// With it, recordings are re-encoded after capture, so the length
-// cap doubles; without it the encoder cap is the only thing keeping 90s ≈ 24MB
-// under the edge's 33MB body limit, so the old cap stays.
-let VideoCompressor: { compress: (uri: string, opts: object) => Promise<string> } | null = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  VideoCompressor = (require('react-native-compressor') as typeof import('react-native-compressor'))
-    .Video;
-} catch {
-  VideoCompressor = null;
-}
+//
+// The probe itself now lives in lib/media-compress, which both this screen and
+// the library-attach path use. Two copies of it was how one path could compress
+// while the other did not, and neither said so.
 
 // Optional image downscaler (parity with the web/Capacitor compressCapture step):
 // shrink a freshly captured photo to the same targets before it is hashed/signed,
@@ -476,16 +471,26 @@ export function CaptureCamera({
         setBusy(false);
         return;
       }
-      let uri = video.uri;
-      if (VideoCompressor) {
-        setLine('Compressing…');
-        try {
-          uri = await VideoCompressor.compress(video.uri, { compressionMethod: 'auto' });
-        } catch {
-          uri = video.uri; // a failed compress must never lose the recording
-        }
-        if (cancelled.current) return;
-      }
+      /**
+       * ONE COMPRESSOR, AND IT SAYS WHEN IT DID NOTHING.
+       *
+       * This used to call the library directly and swallow the failure, so a
+       * recording that was never re-encoded looked exactly like one that was.
+       * It surfaced days later in the admin console: a 45s clip arrived as
+       * 13 MB of HEVC — over the size limit and undecodable in a desktop
+       * browser — because the compressor emits H.264 and had simply not run.
+       * With ffmpeg missing on the server, this step is the ONLY thing making
+       * a clip a reviewer can watch, so its silence was expensive.
+       */
+      setLine('Compressing…');
+      const out = await compressVideo(video.uri);
+      if (cancelled.current) return;
+      const uri = out.uri;
+      // The recording is never lost — compressVideo returns the original on
+      // failure — but the observer is told, because an uncompressed clip is
+      // larger and stays in the phone's codec.
+      if (!out.compressed) setLine('Could not compress — uploading the original.');
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onCapture({ uri, capturedAt: Date.now(), ...fix, type: 'video' });
     } catch {

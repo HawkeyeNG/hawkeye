@@ -43,7 +43,21 @@
  */
 export const MAX_VIDEO_SECONDS = 45;
 export const MAX_VIDEOS = 2;
-export const VIDEO_BYTES = 15 * 1024 * 1024;
+/**
+ * 25 MB, RAISED FROM 15 — because the duration cap has to be the real gate.
+ *
+ * A 45s recording came in at 15.1 MB and was refused against a 15 MB line: the
+ * app stopped the camera at its own limit and then rejected the result, leaving
+ * the observer no move at all. The ceiling now sits above what this app can
+ * itself produce in 45s (13-16 MB uncompressed, a few MB once re-encoded), so
+ * a recording made under the rule always fits.
+ *
+ * It still bounds a GALLERY file, which carries no such guarantee and can be an
+ * hour of 4K — that is the case a size limit exists for. Matches
+ * capture-camera's VIDEO_MAX_BYTES and the server's own cap; all three must
+ * agree or the strictest one silently becomes the rule.
+ */
+export const VIDEO_BYTES = 25 * 1024 * 1024;
 export const PHOTO_BYTES = 8 * 1024 * 1024;
 
 /**
@@ -86,20 +100,41 @@ try {
 /** True when this build can actually re-encode video (dev/release, not Expo Go). */
 export const canCompressVideo = () => VideoCompressor !== null;
 
+export type CompressOutcome = {
+  uri: string;
+  /** false when the original came back untouched. */
+  compressed: boolean;
+  /** why not, when it did not. */
+  reason?: 'unavailable' | 'failed' | 'no_smaller';
+};
+
 /**
  * Re-encode a video to something an observer can actually upload.
  *
- * NEVER THROWS AND NEVER RETURNS NOTHING. A failed compression must not lose
- * the recording — the original URI comes back and the report still files. That
- * rule is copied deliberately from capture-camera.tsx, where losing a clip
- * someone recorded during an incident would be the worst possible outcome.
+ * NEVER THROWS AND NEVER LOSES THE RECORDING. A failed compression returns the
+ * original URI and the report still files — losing a clip someone took during
+ * an incident would be the worst possible outcome.
+ *
+ * BUT IT NO LONGER FAILS QUIETLY, and that distinction cost a day. This used to
+ * `catch { return uri }`, so a compression that never happened was
+ * indistinguishable from one that did. The consequence was visible only much
+ * later, in the admin console: a 45s recording arrived as 13 MB of HEVC instead
+ * of a few MB of H.264 — over the size limit AND undecodable in a desktop
+ * browser — because the library re-encodes to `video/avc` and it had simply not
+ * run. Exactly the same shape as the server's silent remux fallback.
+ *
+ * On this codebase the compressor is also the ONLY thing producing a
+ * browser-playable codec: ffmpeg is absent on the production host, so whatever
+ * leaves the phone is what a reviewer has to watch.
  */
-export async function compressVideo(uri: string): Promise<string> {
-  if (!VideoCompressor) return uri;
+export async function compressVideo(uri: string): Promise<CompressOutcome> {
+  if (!VideoCompressor) return { uri, compressed: false, reason: 'unavailable' };
   try {
-    return await VideoCompressor.compress(uri, { compressionMethod: 'auto' });
+    const out = await VideoCompressor.compress(uri, { compressionMethod: 'auto' });
+    if (!out || out === uri) return { uri, compressed: false, reason: 'no_smaller' };
+    return { uri: out, compressed: true };
   } catch {
-    return uri;
+    return { uri, compressed: false, reason: 'failed' };
   }
 }
 
@@ -127,7 +162,9 @@ export async function compressImage(uri: string, maxDim = 1280, quality = 0.72):
   }
 }
 
-/** Compress whichever kind this is; unknown kinds pass through untouched. */
-export async function compressMedia(uri: string, type: 'image' | 'video'): Promise<string> {
-  return type === 'video' ? compressVideo(uri) : compressImage(uri);
+/** Compress whichever kind this is, reporting whether it actually happened. */
+export async function compressMedia(uri: string, type: 'image' | 'video'): Promise<CompressOutcome> {
+  if (type === 'video') return compressVideo(uri);
+  const out = await compressImage(uri);
+  return { uri: out, compressed: out !== uri, reason: out === uri ? 'failed' : undefined };
 }

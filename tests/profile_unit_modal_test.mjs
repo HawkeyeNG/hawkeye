@@ -36,6 +36,13 @@ const server = http.createServer((req, res) => {
   const json = (v) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(v)); };
   if (u === '/api/observers/me') return json(ME);
   if (u === '/api/observers/my-unit') return json({});
+  // THE REAL SHAPE. /api/polling-units answers an envelope, and a bare-array
+  // stub would let the Array.isArray bug pass unnoticed — which is exactly how
+  // it survived in three separate files.
+  if (u === '/api/polling-units') return json({ radiusM: 500, maxRows: 20, capped: false, units: [
+    { pu_code: '37-06-02-141', name: 'Wonderland Estate', ward: 'Garki', lga: 'Municipal', state: 'FCT', distanceM: 120, locationTier: 'verified' },
+    { pu_code: '37-06-01-105', name: 'No 20 Ogbomosho Street', ward: 'City Centre', lga: 'Municipal', state: 'FCT', distanceM: 220, locationTier: 'verified' },
+  ] });
   if (u.startsWith('/api/')) return json({});
   const f = path.join(APP, decodeURIComponent(u === '/' ? '/index.html' : u));
   if (!f.startsWith(APP) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
@@ -57,7 +64,11 @@ const JWT = () => `x.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() /
 const browser = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome' });
 
 async function open() {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 780 } });
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 780 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 9.033, longitude: 7.49 },
+  });
   await ctx.addInitScript((t) => {
     Object.defineProperty(window, 'HAWKEYE', { value: { native: true, apiBase: '' }, writable: false, configurable: false });
     const mark = () => { if (document.documentElement) document.documentElement.classList.add('native-app'); };
@@ -163,6 +174,39 @@ console.log('\n=== a long list scrolls the BODY, leaving the actions put ===');
   console.log(`      Save top before scroll=${before} after scrolling to the end=${after.top}`);
   check('Save does not travel with the scrolling body', Math.abs(after.top - before) <= 2);
   check('and is still clear of the tab bar', after.clearOfBar);
+  await ctx.close();
+}
+
+
+console.log('\n=== near me returns rows, and picking one confirms it ===');
+{
+  const { ctx, p } = await open();
+  await p.click('#btn-unit-near');
+  await p.waitForTimeout(1200);
+  const near = await p.evaluate(() => ({
+    status: document.getElementById('unit-near-status').textContent.trim(),
+    rows: document.querySelectorAll('#unit-near-results button, #unit-near-results .pu-option').length,
+  }));
+  console.log(`      status="${near.status}" rows=${near.rows}`);
+  // The envelope bug reported "No units found near you" on a lookup that had
+  // just returned two. Assert the ROWS, not the message.
+  check('near-me returns rows from the envelope', near.rows, (n) => n > 0);
+  await p.evaluate(() => {
+    const b = document.querySelector('#unit-near-results button, #unit-near-results .pu-option');
+    if (b) b.click();
+  });
+  await p.waitForTimeout(300);
+  const picked = await p.evaluate(() => {
+    const card = document.getElementById('unit-picked');
+    return {
+      painted: card ? card.getClientRects().length > 0 : false,
+      names: card ? /Wonderland Estate/.test(card.textContent) : false,
+      save: !document.getElementById('btn-unit-save').disabled,
+    };
+  });
+  check('picking a row paints the confirmation card', picked.painted);
+  check('and the card names the unit that was picked', picked.names);
+  check('and Save becomes available', picked.save);
   await ctx.close();
 }
 

@@ -87,12 +87,19 @@ function findFfmpeg() {
           return p;
         }
         mediaHealth.npmPackages.push(`${mod} (loaded but exported no path)`);
-      } catch {
-        /* SAY SO. Silence here is why "npm install ran and the warning stayed"
-           was unanswerable: an uninstalled module left no trace in the tried
-           list, so it looked identical to a module that was installed and
-           simply did not work. */
-        mediaHealth.npmPackages.push(`${mod} (not installed)`);
+      } catch (e) {
+        /**
+         * REPORT THE ERROR, NOT A GUESS AT IT.
+         *
+         * This said "(not installed)" for any failure, which was wrong and cost
+         * two rounds: the package WAS installed and resolvable — it threw while
+         * LOADING. `require()` executes a module; `require.resolve()` only
+         * locates it, and the two disagreeing is the whole signal. The usual
+         * cause is a platform binary that is an optionalDependency, which npm
+         * skips silently when it cannot install it.
+         */
+        const msg = String((e && e.message) || e).split('\n')[0].slice(0, 160);
+        mediaHealth.npmPackages.push(`${mod} (load failed: ${msg})`);
       }
     }
     return null;

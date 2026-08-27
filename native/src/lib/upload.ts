@@ -79,12 +79,30 @@ export function uploadWithProgress(opts: {
     if (timeoutMs > 0) xhr.timeout = timeoutMs;
 
     if (onProgress && xhr.upload) {
+      /**
+       * `loaded` CAN EXCEED `total`, and did — a screen recording showed
+       * "Uploading 100% — 54.5 MB of 27.3 MB", almost exactly twice the body.
+       *
+       * The bytes are real: the server rejects an oversize part early and
+       * closes, and the HTTP client underneath replays the request body, while
+       * this one XHR keeps counting across both attempts. Whatever the cause,
+       * a progress bar that reports more than was ever going to be sent is
+       * telling the observer something false at the moment they are deciding
+       * whether to wait — so it is clamped at the total, and `pct` was already
+       * clamped, which is why the percentage sat at a plausible 100 while the
+       * byte count ran away underneath it.
+       *
+       * The real fix is upstream: the file is now measured before it is sent,
+       * so a body this size does not leave the phone. This keeps the display
+       * honest if anything ever gets past that.
+       */
       xhr.upload.onprogress = (e: ProgressEvent) => {
         const total = e.lengthComputable ? e.total : null;
+        const sent = total ? Math.min(e.loaded, total) : e.loaded;
         onProgress({
-          sent: e.loaded,
+          sent,
           total,
-          pct: total ? Math.max(0, Math.min(100, Math.round((e.loaded / total) * 100))) : null,
+          pct: total ? Math.max(0, Math.min(100, Math.round((sent / total) * 100))) : null,
         });
       };
     }

@@ -10,6 +10,7 @@ import { scanSheet, scannerAvailable, scannerProven } from '@/lib/scan';
 import type { Shot } from '@/lib/submit';
 import { describeFixFailure, trySubmitFix, type FixFailure } from '@/lib/location';
 import { BRAND } from '@/lib/api';
+import { MAX_VIDEO_SECONDS } from '@/lib/media-compress';
 
 /**
  * In-app capture with a GPS stamp taken at capture time — the property the
@@ -29,7 +30,8 @@ export type Media = Shot & { type: 'image' | 'video'; read?: SheetRead | null };
  * Video compression happens AT THE ENCODER, not by cutting recordings short:
  * CameraView pins 720p and VIDEO_BITRATE caps the encoder, so length is bought
  * with efficiency instead of quality. 2 Mbps video + AAC audio ≈ 2.13 Mbit/s
- * → 90s ≈ 24MB, inside the 25MB stop and the server's 30MB/file cap.
+ * → the shared 60s cap ≈ 16MB, inside the server's 15MB/file limit once
+ * react-native-compressor has re-encoded it, and well inside the 25MB stop.
  * Dev-build era (with push notifications): react-native-compressor for
  * WhatsApp-grade H.265 re-encode (minutes of video), and Google ML Kit for
  * on-device doc-scan/OCR of result sheets.
@@ -88,7 +90,17 @@ async function downscaleForUpload(uri: string, isDocument: boolean): Promise<str
   }
 }
 
-const VIDEO_MAX_S = VideoCompressor ? 180 : 90;
+/**
+ * ONE NUMBER, IMPORTED — see lib/media-compress.ts.
+ *
+ * This used to be `VideoCompressor ? 180 : 90`, which made the cap depend on
+ * which build you were in, while incident.tsx's hint said a flat "up to 90s".
+ * The camera screen promised 90 and the recorder allowed 180, in the same app,
+ * on the same tap. Length is no longer bought with the compressor's efficiency:
+ * the binding constraint was never the encoder, it is the observer's uplink at
+ * a polling unit.
+ */
+const VIDEO_MAX_S = MAX_VIDEO_SECONDS;
 const VIDEO_BITRATE = 2_000_000;
 const VIDEO_MAX_BYTES = 25 * 1024 * 1024; // pre-compress stop; edge rejects >33MB bodies
 

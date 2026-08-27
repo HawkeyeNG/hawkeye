@@ -23,6 +23,43 @@
  * still attached, just uncompressed, which is the correct trade for evidence.
  */
 
+/**
+ * ONE PLACE FOR THE MEDIA POLICY.
+ *
+ * The duration cap used to live in two files that did not know about each
+ * other: incident.tsx hard-coded "up to 90s" in a hint, while capture-camera
+ * computed `VideoCompressor ? 180 : 90`. So the camera screen promised 90s, the
+ * recorder promised 180s, and it really did record 180. Whichever number was
+ * right, showing two was the bug — a limit the app contradicts itself about is
+ * not a limit.
+ *
+ * 60s, and it is the SAME number wherever it appears. Seconds rather than
+ * megabytes because it is the one an observer can act on while pointing a
+ * phone at something.
+ */
+export const MAX_VIDEO_SECONDS = 60;
+export const MAX_VIDEOS = 2;
+export const VIDEO_BYTES = 15 * 1024 * 1024;
+export const PHOTO_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Size of a local file, or null when it cannot be read.
+ *
+ * NULL IS NOT ZERO AND MUST NOT REJECT. If the size cannot be determined, the
+ * attachment goes through — refusing evidence because we failed to measure it
+ * would be the worst possible failure mode for this screen.
+ */
+export async function fileSize(uri: string): Promise<number | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { File } = require('expo-file-system') as typeof import('expo-file-system');
+    const n = new File(uri).size;
+    return typeof n === 'number' && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
 let VideoCompressor: { compress: (uri: string, opts: object) => Promise<string> } | null = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports

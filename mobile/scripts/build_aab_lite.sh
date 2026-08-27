@@ -218,7 +218,7 @@ grep -q 'applicationId "ng.com.hawkeye.lite"' android/app/build.gradle || { echo
 # sits directly above `versionCode 2` and made this read 1 and fail the build.
 LITE_VC=$(grep -v '^\s*//' android/app/build.gradle | grep -oP 'versionCode\s+\K[0-9]+' | head -1)
 [ -n "$LITE_VC" ] || { echo "GATE_FAIL: could not read versionCode from build.gradle"; exit 1; }
-[ "$LITE_VC" -ge 2 ] || { echo "GATE_FAIL: versionCode $LITE_VC would be rejected — 1 is in Play review"; exit 1; }
+[ "$LITE_VC" -ge 3 ] || { echo "GATE_FAIL: versionCode $LITE_VC would be rejected — 2 is LIVE on Play (published 2026-08-27)"; exit 1; }
 echo "  ok: versionCode $LITE_VC"
 grep -q "Hawkeye Lite" android/app/src/main/res/values/strings.xml || { echo "GATE_FAIL: app label is not Hawkeye Lite"; exit 1; }
 grep -q "/open" android/app/src/main/AndroidManifest.xml && { echo "GATE_FAIL: /open App Link filter still present (native owns it)"; exit 1; }

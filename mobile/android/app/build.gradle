@@ -22,17 +22,24 @@ android {
         // x86/x86_64 are emulators; arm64 + armeabi-v7a covers every real phone.
         if (project.hasProperty('webApk')) { ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' } }
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // Release 2. Release 1 (versionCode 1) is in Play review and CANNOT be
-        // replaced — Play rejects a duplicate versionCode outright, so this has
-        // to move before another upload is possible.
+        // Release 3. VERSION CODE 2 IS LIVE ON PLAY as of 2026-08-27 — Play
+        // rejects a duplicate versionCode outright, so every build from here
+        // must be 3 or higher or it cannot be uploaded at all. Bump this BEFORE
+        // building anything intended for the store, not after the upload fails.
         //
-        // What release 2 carries: native.js's fetchData(), so Lite reads
+        // Release 2 (live) carried native.js's fetchData(), so Lite reads
         // political_data.json and the logo manifest from the LIVE site instead
         // of the copy frozen in the APK (INEC amended its 2023 candidate list
         // seven times AFTER publication — that would have been seven store
         // releases for a JSON file). Plus the slimming: 13.7 MB -> 9.68 MB.
-        versionCode 2
-        versionName "1.1"
+        //
+        // What release 3 carries: the incident-media work — a 2-video cap with
+        // an acknowledged refusal, a 45s duration cap that is the gate for
+        // recordings (size limits apply to gallery files only), client-side
+        // compression before upload, real video thumbnails, and upload
+        // feedback that reports only what it actually knows.
+        versionCode 3
+        versionName "1.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

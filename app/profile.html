@@ -87,10 +87,17 @@
     .pw-actions { flex: none; padding-top: 12px; }
     /* The unit name, its code and its ward are three lines of value against a
        three-word label, so side by side both columns wrap and neither reads.
-       This row stacks: label, then value beneath it. */
-    .prow:has(.prow-stack) { display: block; }
-    .prow:has(.prow-stack) .prow-k { display: block; margin-bottom: 2px; }
-    .prow:has(.prow-stack) .prow-v { display: block; text-align: left; }
+       Only the TEXT stacks: label over value in one column, with the chevron
+       given a narrow column of its own so it sits on the same axis as the
+       Password row's. `display: block` stacked all three children, which sent
+       the chevron to the left margin on a line of its own under the address. */
+    .prow:has(.prow-stack) {
+      display: grid; grid-template-columns: 1fr auto;
+      align-items: center; row-gap: 2px; column-gap: 10px;
+    }
+    .prow:has(.prow-stack) .prow-k { grid-column: 1; grid-row: 1; }
+    .prow:has(.prow-stack) .prow-v { grid-column: 1; grid-row: 2; text-align: left; }
+    .prow:has(.prow-stack) .prow-c { grid-column: 2; grid-row: 1 / span 2; }
     .signout { width: auto; padding: 8px 16px; }
     /* Hero identity card — native parity. */
     .phero { display: flex; align-items: center; gap: 14px; background: linear-gradient(160deg, #00251a, #00482b); border-radius: 16px; padding: 18px; color: #fff; margin: 8px 0 14px; }

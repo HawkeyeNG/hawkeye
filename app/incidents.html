@@ -28,6 +28,24 @@
     .empty { color: var(--muted); }
     #preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
     #preview img, #preview video { width: 80px; height: 64px; object-fit: cover; border-radius: 6px; }
+    /* The tile a video sits on before (or instead of) its frame arrives. Dark
+       rather than the browser's grey placeholder, and never empty-looking. */
+    #preview .vthumb { background: #0b1a12; }
+    #preview .vthumb-none { background: #0b1a12; }
+    .up-bar { margin: 10px 0 0; }
+    .up-track { height: 6px; border-radius: 999px; background: var(--tint); overflow: hidden; }
+    .up-fill { height: 100%; width: 0; border-radius: 999px; background: var(--green, #004225); transition: width .2s linear; }
+    /* Indeterminate: a sweep, never a percentage. Used where no byte events
+       exist, so the bar must not imply knowledge it does not have. */
+    .up-fill.indeterminate { width: 40%; animation: up-sweep 1.1s ease-in-out infinite; }
+    @keyframes up-sweep { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+    @media (prefers-reduced-motion: reduce) { .up-fill.indeterminate { animation: none; width: 100%; opacity: .5; } }
+    #preview .vbadge {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: 26px; height: 26px; border-radius: 50%; background: rgba(0, 0, 0, 0.55);
+      color: #fff; font-size: 12px; line-height: 26px; text-align: center;
+      pointer-events: none;
+    }
     .thumb { position: relative; display: inline-flex; }
     .thumb .rm { position: absolute; top: -7px; right: -7px; width: 22px; height: 22px; margin: 0; padding: 0;
       border-radius: 50%; background: #c0392b; color: #fff; border: 2px solid var(--surface); box-shadow: none;
@@ -187,6 +205,13 @@
       <div id="preview"></div>
       <!-- Hidden until the first video is attached — see paintVideoCount(). -->
       <p id="video-count" class="hint" hidden></p>
+      <!-- Upload progress. Real percentage on the website; in Lite the bar is
+           indeterminate and the label carries size + elapsed, because Capacitor
+           reports no byte events. See postWithProgress(). -->
+      <div id="up-bar" class="up-bar" hidden>
+        <div class="up-track"><div id="up-fill" class="up-fill"></div></div>
+        <p id="up-label" class="hint"></p>
+      </div>
 
       <!-- THE KIND IS NEVER PRE-SELECTED. This used to be an empty <select>
            filled from /api/incidents/kinds, so the first kind in that list —
@@ -390,9 +415,26 @@
         const url = URL.createObjectURL(f);
         const cell = document.createElement('div');
         cell.className = 'thumb';
-        cell.innerHTML = (f.type.startsWith('video') ? `<video src="${url}" muted></video>` : `<img src="${url}" alt="" />`)
+        /**
+         * A REAL FRAME, NOT A GREY BOX.
+         *
+         * A <video> with no poster paints the browser's placeholder until it
+         * has decoded something — in the Capacitor shell that is a flat grey
+         * rectangle, so three attached clips looked like three broken files and
+         * gave no clue which was which. Drawing the first frame into a canvas
+         * gives the same affordance a photo has: you can see what you attached.
+         *
+         * An <img> either way, so the tray is one kind of element; the play
+         * badge marks which are videos. If the frame cannot be grabbed — codec
+         * the browser will not decode, which is the HEVC case — the badge and
+         * the dark tile remain, which is still better than a grey unknown.
+         */
+        cell.innerHTML = (f.type.startsWith('video')
+          ? `<img class="vthumb" alt="" /><span class="vbadge" aria-hidden="true">▶</span>`
+          : `<img src="${url}" alt="" />`)
           + `<button type="button" class="rm" data-i="${i}" aria-label="Remove">✕</button>`;
         $('preview').appendChild(cell);
+        if (f.type.startsWith('video')) grabFrame(f, cell.querySelector('.vthumb'), url);
       });
       // The add-more affordance is a TILE, not a sentence. It only appears once
       // there is something to add to (an empty grid already has the Capture
@@ -408,6 +450,121 @@
       }
       paintVideoCount();
       syncCap();
+    }
+
+    const humanMB = (n) => (n / 1048576).toFixed(1) + ' MB';
+
+    /**
+     * Upload, reporting whatever progress is HONESTLY available.
+     *
+     * On the website the request is same-origin, so a plain XHR reports real
+     * bytes and the bar is a true percentage.
+     *
+     * IN LITE IT CANNOT BE. Capacitor's CapacitorHttp patches both fetch and
+     * XMLHttpRequest to route through the native bridge, which emits no
+     * upload-progress events; the unpatched XHR that Capacitor stashes would be
+     * a raw cross-origin request, and this API deliberately sends NO CORS
+     * headers in production (server.js: "Widening CORS on a public
+     * election-integrity API is not something to do for developer
+     * convenience"). Weakening that for a progress bar is not a trade worth
+     * making.
+     *
+     * So Lite gets what is genuinely known — the total being sent and the time
+     * elapsed — and an indeterminate bar. A percentage invented from a timer
+     * would be a lie told at exactly the moment someone is deciding whether the
+     * upload has stalled.
+     */
+    function postWithProgress(url, fd, headers, total) {
+      const bar = $('up-bar');
+      const fill = $('up-fill');
+      const label = $('up-label');
+      const show = (pct, text) => {
+        if (!bar) return;
+        bar.hidden = false;
+        if (fill) {
+          fill.classList.toggle('indeterminate', pct === null);
+          if (pct !== null) fill.style.width = `${pct}%`;
+        }
+        if (label) label.textContent = text;
+      };
+      const hide = () => { if (bar) bar.hidden = true; };
+
+      const native = !!(window.HAWKEYE && window.HAWKEYE.native);
+      const started = Date.now();
+
+      if (native) {
+        // No byte events available — report size and elapsed, both real.
+        show(null, total ? `Uploading ${humanMB(total)}…` : 'Uploading…');
+        const tick = setInterval(() => {
+          const s = Math.round((Date.now() - started) / 1000);
+          show(null, `${total ? `Uploading ${humanMB(total)}` : 'Uploading'} — ${s}s`);
+        }, 1000);
+        return fetch(url, { method: 'POST', headers, body: fd })
+          .finally(() => { clearInterval(tick); hide(); });
+      }
+
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
+        xhr.upload.onprogress = (e) => {
+          if (!e.lengthComputable) { show(null, 'Uploading…'); return; }
+          // Clamped: a client that replays the body can report more than it
+          // ever meant to send, and a bar past 100% reads as broken.
+          const sent = Math.min(e.loaded, e.total);
+          show(Math.round((sent / e.total) * 100), `Uploading ${humanMB(sent)} of ${humanMB(e.total)}`);
+        };
+        xhr.onload = () => {
+          hide();
+          // Handed back as a Response so the caller is unchanged.
+          resolve(new Response(xhr.responseText, { status: xhr.status }));
+        };
+        xhr.onerror = () => { hide(); reject(new Error('network')); };
+        xhr.onabort = () => { hide(); reject(new Error('aborted')); };
+        show(0, total ? `Uploading ${humanMB(total)}…` : 'Uploading…');
+        xhr.send(fd);
+      });
+    }
+
+    /**
+     * Paint the first frame of a video into an <img>.
+     *
+     * Seeks a little way in rather than to 0: the first frame of a phone
+     * recording is very often black while the sensor settles, which would trade
+     * a grey rectangle for a black one. Everything is guarded and best-effort —
+     * a thumbnail is never worth breaking an attach over, and a clip whose
+     * codec the browser cannot decode simply keeps the dark tile and its badge.
+     */
+    function grabFrame(file, img, url) {
+      if (!img) return;
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      v.muted = true;
+      v.playsInline = true;
+      const done = (ok) => {
+        v.removeAttribute('src');
+        try { v.load(); } catch (e) { /* already torn down */ }
+        if (!ok) img.classList.add('vthumb-none');
+      };
+      v.addEventListener('loadeddata', () => {
+        try { v.currentTime = Math.min(0.5, (v.duration || 1) / 4); } catch (e) { done(false); }
+      }, { once: true });
+      v.addEventListener('seeked', () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = 160; c.height = 128;
+          const ctx = c.getContext('2d');
+          // cover: fill the tile, crop the overflow, never letterbox
+          const s = Math.max(c.width / v.videoWidth, c.height / v.videoHeight);
+          const w = v.videoWidth * s;
+          const h = v.videoHeight * s;
+          ctx.drawImage(v, (c.width - w) / 2, (c.height - h) / 2, w, h);
+          img.src = c.toDataURL('image/jpeg', 0.7);
+          done(true);
+        } catch (e) { done(false); }
+      }, { once: true });
+      v.addEventListener('error', () => done(false), { once: true });
+      v.src = url;
     }
 
     /**
@@ -722,11 +879,9 @@
           if (c) { fd.set('lat', c.latitude); fd.set('lng', c.longitude); }
           else geoLog('submit-stamp', err);
         }
-        const res = await fetch('/api/incidents', {
-          method: 'POST',
-          headers: { authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() },
-          body: fd,
-        });
+        const headers = { authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() };
+        const total = files.reduce((n, f) => n + (f.size || 0), 0);
+        const res = await postWithProgress('/api/incidents', fd, headers, total);
         const body = await res.json().catch(() => ({}));
         if (res.status === 201) {
           $('desc').value = ''; attachments.length = 0; renderPreview();

@@ -35,7 +35,10 @@ import { Crumb, Prompt } from '@/components/wizard';
 import { UnitSearch } from '@/components/unit-search';
 import { BRAND } from '@/lib/api';
 import { tap } from '@/lib/haptics';
-import { compressMedia } from '@/lib/media-compress';
+import {
+  compressMedia, fileSize,
+  MAX_VIDEOS, MAX_VIDEO_SECONDS, VIDEO_BYTES, PHOTO_BYTES,
+} from '@/lib/media-compress';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -84,8 +87,9 @@ const MAX_MEDIA = 4;
  * moment of recording, and "45 seconds" is a limit an observer can hold in
  * their head, which "15 MB" is not.
  */
-const MAX_VIDEOS = 2;
-const MAX_VIDEO_SECONDS = 45;
+/* MAX_VIDEOS, MAX_VIDEO_SECONDS, VIDEO_BYTES and PHOTO_BYTES are imported from
+   lib/media-compress — the same values capture-camera records against. Keeping
+   a second copy here is exactly how the 90s-vs-180s contradiction happened. */
 
 /** The reporter's saved unit. `name` is nullable — the server LEFT JOINs the
  *  register, so a saved code that is no longer listed comes back bare. */
@@ -430,21 +434,48 @@ export default function ReportIncident() {
    * and could drift. Anything over a cap is dropped rather than rejected: the
    * observer keeps what fits and is told why, instead of losing the batch.
    */
-  const addMedia = (incoming: Media[]) => {
-    setMedia((arr) => {
-      const out = [...arr];
-      let refusedVideo = false;
-      for (const m of incoming) {
-        if (out.length >= MAX_MEDIA) break;
-        if (m.type === 'video' && out.filter((x) => x.type === 'video').length >= MAX_VIDEOS) {
-          refusedVideo = true;
-          continue;
-        }
-        out.push(m);
+  const addMedia = async (incoming: Media[]) => {
+    const current = media;
+    const kept: Media[] = [];
+    let videos = current.filter((x) => x.type === 'video').length;
+    let refusedVideo = false;
+    let tooBig: string | null = null;
+
+    for (const m of incoming) {
+      if (current.length + kept.length >= MAX_MEDIA) break;
+      if (m.type === 'video' && videos >= MAX_VIDEOS) { refusedVideo = true; continue; }
+
+      /**
+       * MEASURE HERE, NOT AT THE SERVER.
+       *
+       * The server's 413 arrives only after the whole body has been pushed —
+       * a screen recording showed 27.3 MB uploaded (twice over, in fact)
+       * before the rejection landed, all of it on the observer's own data at a
+       * polling unit. Checking after compression means the number tested is
+       * the number that would actually be sent.
+       *
+       * An unmeasurable file is ACCEPTED: refusing evidence because we could
+       * not stat it would be a worse failure than an upload that gets
+       * rejected.
+       */
+      const cap = m.type === 'video' ? VIDEO_BYTES : PHOTO_BYTES;
+      const size = await fileSize(m.uri);
+      if (size !== null && size > cap) {
+        const mb = (size / 1048576).toFixed(1);
+        tooBig = m.type === 'video'
+          ? `That video is ${mb} MB — the limit is ${Math.round(VIDEO_BYTES / 1048576)} MB. Record a shorter clip (up to ${MAX_VIDEO_SECONDS}s).`
+          : `That photo is ${mb} MB — the limit is ${Math.round(PHOTO_BYTES / 1048576)} MB.`;
+        continue;
       }
-      if (refusedVideo) setLine(`Up to ${MAX_VIDEOS} videos per report — add the rest as photos, or file a second report.`);
-      return out;
-    });
+
+      if (m.type === 'video') videos += 1;
+      kept.push(m);
+    }
+
+    if (kept.length) setMedia((arr) => [...arr, ...kept].slice(0, MAX_MEDIA));
+    // Size first: it is the more specific complaint, and the one with a fix.
+    if (tooBig) setLine(tooBig);
+    else if (refusedVideo) setLine(`Up to ${MAX_VIDEOS} videos per report — add the rest as photos, or file a second report.`);
   };
   const [camera, setCamera] = useState(false);
   const [useGps, setUseGps] = useState(true);
@@ -1086,7 +1117,7 @@ export default function ReportIncident() {
     return (
       <CaptureCamera
         title="Capture Evidence"
-        hint="Photo, or switch to video (up to 90s). Stay safe — distance first."
+        hint={`Photo, or switch to video (up to ${MAX_VIDEO_SECONDS}s). Stay safe — distance first.`}
         allowVideo
         onCapture={(m) => {
           addMedia([m]);

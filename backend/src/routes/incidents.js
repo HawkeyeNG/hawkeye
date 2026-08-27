@@ -157,9 +157,20 @@ async function remuxVideo(inBuf, destPath) {
     await fs.promises.writeFile(tmp, inBuf);
     await execFileAsync(FFMPEG, [
       '-y', '-i', tmp, '-map_metadata', '-1', '-movflags', '+faststart',
-      // downscale to <=720p long edge (keeps aspect, never upscales) + a leaner CRF —
-      // incident clips are evidence, not cinema. Measured 13x on a 1080p source.
-      '-vf', "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",
+      /**
+       * Downscale to <=720p long edge (keeps aspect, never upscales) + a leaner
+       * CRF — incident clips are evidence, not cinema. Measured 10.5x on a real
+       * phone clip pulled off the server.
+       *
+       * TWO scale passes, NOT `force_divisible_by=2`. That option arrived in
+       * FFmpeg 4.2 (2019), and the binary that installs without a download here
+       * (@ffmpeg-installer) is a 2018 build: it reports an `hevc` decoder and a
+       * `libx264` encoder, passes a version check, and then dies mid-stream with
+       * "Option 'force_divisible_by' not found". A second scale rounding to even
+       * does the same job and works on both — verified against the 2018 binary
+       * and a current one, producing byte-identical dimensions.
+       */
+      '-vf', "scale=w='min(1280,iw)':h='min(720,ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2",
       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28',
       '-c:a', 'aac', '-b:a', '96k', destPath,
     ], { timeout: TRANSCODE_TIMEOUT_MS, maxBuffer: 1 << 20 });

@@ -434,7 +434,22 @@ export default function ReportIncident() {
    * and could drift. Anything over a cap is dropped rather than rejected: the
    * observer keeps what fits and is told why, instead of losing the batch.
    */
-  const addMedia = async (incoming: Media[]) => {
+  /**
+   * @param source 'camera' for something this app just recorded or shot,
+   *               'library' for a file chosen off the device.
+   *
+   * THE GATE DEPENDS ON WHERE IT CAME FROM, and that is the whole point.
+   *
+   * For a RECORDING, the duration cap IS the limit. The app stops the camera at
+   * MAX_VIDEO_SECONDS, so a clip that ends at 45s is one the app itself
+   * produced under its own rule — refusing it afterwards for being 15.1 MB
+   * against a 15 MB line is the app overruling its own instruction, and the
+   * observer has no move left: they recorded exactly what they were told to.
+   *
+   * A LIBRARY file has no such guarantee — it can be an hour of 4K — so the
+   * size check stays there, where it is the only bound that exists.
+   */
+  const addMedia = async (incoming: Media[], source: 'camera' | 'library' = 'library') => {
     const current = media;
     const kept: Media[] = [];
     let videos = current.filter((x) => x.type === 'video').length;
@@ -445,27 +460,26 @@ export default function ReportIncident() {
       if (current.length + kept.length >= MAX_MEDIA) break;
       if (m.type === 'video' && videos >= MAX_VIDEOS) { refusedVideo = true; continue; }
 
-      /**
-       * MEASURE HERE, NOT AT THE SERVER.
-       *
-       * The server's 413 arrives only after the whole body has been pushed —
-       * a screen recording showed 27.3 MB uploaded (twice over, in fact)
-       * before the rejection landed, all of it on the observer's own data at a
-       * polling unit. Checking after compression means the number tested is
-       * the number that would actually be sent.
-       *
-       * An unmeasurable file is ACCEPTED: refusing evidence because we could
-       * not stat it would be a worse failure than an upload that gets
-       * rejected.
-       */
-      const cap = m.type === 'video' ? VIDEO_BYTES : PHOTO_BYTES;
-      const size = await fileSize(m.uri);
-      if (size !== null && size > cap) {
-        const mb = (size / 1048576).toFixed(1);
-        tooBig = m.type === 'video'
-          ? `That video is ${mb} MB — the limit is ${Math.round(VIDEO_BYTES / 1048576)} MB. Record a shorter clip (up to ${MAX_VIDEO_SECONDS}s).`
-          : `That photo is ${mb} MB — the limit is ${Math.round(PHOTO_BYTES / 1048576)} MB.`;
-        continue;
+      if (source === 'library') {
+        /**
+         * Measured here, not at the server. The 413 arrives only after the
+         * whole body has been pushed — a screen recording showed 27.3 MB going
+         * up before the rejection landed, on the observer's own data at a
+         * polling unit. Checked after compression, so the number tested is the
+         * number that would actually be sent.
+         *
+         * An unmeasurable file is ACCEPTED: refusing evidence because we could
+         * not stat it is worse than an upload that gets rejected.
+         */
+        const cap = m.type === 'video' ? VIDEO_BYTES : PHOTO_BYTES;
+        const size = await fileSize(m.uri);
+        if (size !== null && size > cap) {
+          const mb = (size / 1048576).toFixed(1);
+          tooBig = m.type === 'video'
+            ? `That video is ${mb} MB — the limit is ${Math.round(VIDEO_BYTES / 1048576)} MB. Record one here instead (up to ${MAX_VIDEO_SECONDS}s), or trim it first.`
+            : `That photo is ${mb} MB — the limit is ${Math.round(PHOTO_BYTES / 1048576)} MB.`;
+          continue;
+        }
       }
 
       if (m.type === 'video') videos += 1;
@@ -903,18 +917,18 @@ export default function ReportIncident() {
      * they are still writing the description instead of stalling the submit.
      */
     setLine(res.assets.some((a) => a.type === 'video') ? 'Compressing…' : '');
+    let uncompressed = 0;
     const picked: Media[] = await Promise.all(res.assets.map(async (a) => {
       const type: 'image' | 'video' = a.type === 'video' ? 'video' : 'image';
-      return {
-        uri: await compressMedia(a.uri, type),
-        capturedAt: Date.now(),
-        lat: 0,
-        lng: 0,
-        type,
-      };
+      const out = await compressMedia(a.uri, type);
+      if (type === 'video' && !out.compressed) uncompressed += 1;
+      return { uri: out.uri, capturedAt: Date.now(), lat: 0, lng: 0, type };
     }));
-    setLine('');
-    addMedia(picked);
+    // Not silent. An uncompressed clip is bigger AND, on this codebase, stays
+    // in the phone's own codec — which the server cannot convert while ffmpeg
+    // is missing, so a reviewer may not be able to play it at all.
+    setLine(uncompressed ? 'Could not compress that video — it will upload at full size.' : '');
+    addMedia(picked, 'library');
   };
 
   const onSubmit = async () => {
@@ -1120,7 +1134,9 @@ export default function ReportIncident() {
         hint={`Photo, or switch to video (up to ${MAX_VIDEO_SECONDS}s). Stay safe — distance first.`}
         allowVideo
         onCapture={(m) => {
-          addMedia([m]);
+          // 'camera': the recorder already stopped this at MAX_VIDEO_SECONDS,
+          // so the duration cap is the gate and no size check applies.
+          addMedia([m], 'camera');
           setCamera(false);
         }}
         onCancel={() => setCamera(false)}

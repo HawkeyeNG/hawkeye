@@ -54,7 +54,7 @@ function clip(seconds, bitrate, file) {
   return file;
 }
 const small = clip(4, '6M', '/tmp/hk_small.mp4');      // a few MB, well under the cap
-const huge = clip(30, '12M', '/tmp/hk_huge.mp4');      // comfortably over 15 MB
+const huge = clip(30, '12M', '/tmp/hk_huge.mp4');      // ~46 MB, well over the 25 MB cap
 
 const post = async (files) => {
   const fd = new FormData();

@@ -109,7 +109,12 @@ const OK_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', '
  */
 const MAX_FILES = 4;
 const MAX_VIDEOS = 2;
-const VIDEO_BYTES = 15 * 1024 * 1024;
+/* 25 MB, raised from 15. The clients cap RECORDING at 45s and treat that as the
+   gate; a 45s clip from this app is 13-16 MB before compression, so a 15 MB
+   ceiling refused recordings the app had just instructed someone to make. This
+   must stay >= the clients' VIDEO_BYTES, or the server silently becomes the
+   real limit and the observer is refused after paying for the upload. */
+const VIDEO_BYTES = 25 * 1024 * 1024;
 const PHOTO_BYTES = 8 * 1024 * 1024;
 
 const upload = multer({

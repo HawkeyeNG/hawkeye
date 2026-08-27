@@ -363,7 +363,18 @@
     // WebView a bare file input can only reach the gallery, so the app shows a
     // dedicated camera button (wired below) that routes through the native
     // Camera plugin — the same seam the result/venue capture uses.
-    const MAX_FILES = 4, MAX_BYTES = 30 * 1024 * 1024;
+    /**
+     * Four slots, but at most two videos — the cost is almost entirely video.
+     * A compressed photo is a few hundred KB; a minute of phone video is tens
+     * of MB. Cutting the total to two would lose corroboration (a wide shot and
+     * a close-up support each other) while saving almost nothing, so the cap
+     * goes where the bytes actually are.
+     *
+     * These must not exceed the server's own limits in
+     * backend/src/routes/incidents.js, which are the real gate.
+     */
+    const MAX_FILES = 4, MAX_VIDEOS = 2, MAX_VIDEO_SECONDS = 45;
+    const VIDEO_BYTES = 15 * 1024 * 1024, PHOTO_BYTES = 8 * 1024 * 1024;
     const attachments = [];
 
     function syncCap() {
@@ -395,17 +406,54 @@
       }
       syncCap();
     }
-    function addFiles(list) {
+    /**
+     * Take what fits, shrink what can be shrunk, and say why anything was left.
+     *
+     * PHOTOS ARE COMPRESSED HERE, BEFORE THE UPLOAD. The server re-encodes them
+     * anyway, but that happens after the bytes have crossed the observer's own
+     * mobile data — on election day, on a congested cell, at a polling unit. A
+     * 1280px/q0.72 JPEG is a few hundred KB instead of several MB, which is the
+     * difference between a report that arrives and one that times out.
+     *
+     * VIDEOS ARE NOT COMPRESSED HERE, because a browser cannot re-encode one
+     * reliably — there is no equivalent of the native build's compressor. They
+     * are bounded instead: at most MAX_VIDEOS, each under VIDEO_BYTES. The
+     * native app compresses and caps duration; this is the honest web ceiling.
+     */
+    async function addFiles(list) {
+      const videos = () => attachments.filter((f) => /^video\//.test(f.type)).length;
       for (const f of list) {
-        if (attachments.length >= MAX_FILES) { $('status').textContent = `You can attach up to ${MAX_FILES} files.`; break; }
-        if (f.size > MAX_BYTES) { $('status').textContent = 'Each file must be under 30 MB.'; continue; }
-        attachments.push(f);
+        if (attachments.length >= MAX_FILES) {
+          $('status').textContent = `You can attach up to ${MAX_FILES} files.`; break;
+        }
+        const isVideo = /^video\//.test(f.type);
+        if (isVideo && videos() >= MAX_VIDEOS) {
+          $('status').textContent = `Up to ${MAX_VIDEOS} videos per report — add the rest as photos, or file a second report.`;
+          continue;
+        }
+        const cap = isVideo ? VIDEO_BYTES : PHOTO_BYTES;
+        // Photos are measured AFTER shrinking: a 9 MB phone photo is fine once
+        // it is a few hundred KB, and rejecting it on its original size would
+        // turn a solvable problem into a refusal.
+        const use = isVideo || !window.HAWKEYE_CAPTURE || !window.HAWKEYE_CAPTURE.shrink
+          ? f
+          : await window.HAWKEYE_CAPTURE.shrink(f, 1280, 0.72);
+        if (use.size > cap) {
+          $('status').textContent = isVideo
+            ? `Videos must be under ${Math.round(VIDEO_BYTES / 1048576)} MB — record a shorter clip (about ${MAX_VIDEO_SECONDS}s).`
+            : `That photo is too large even after compressing.`;
+          continue;
+        }
+        attachments.push(use);
       }
       renderPreview();
     }
-    $('media').onchange = () => { addFiles($('media').files); $('media').value = ''; };
-    $('media-cam').onchange = () => { addFiles($('media-cam').files); $('media-cam').value = ''; };
-    $('media-vid').onchange = () => { addFiles($('media-vid').files); $('media-vid').value = ''; };
+    // SNAPSHOT THE LIST FIRST. addFiles is async now (it awaits compression),
+    // and clearing the input's value can empty its live FileList before the
+    // loop has read it — the files would silently vanish mid-attach.
+    $('media').onchange = () => { addFiles([...$('media').files]); $('media').value = ''; };
+    $('media-cam').onchange = () => { addFiles([...$('media-cam').files]); $('media-cam').value = ''; };
+    $('media-vid').onchange = () => { addFiles([...$('media-vid').files]); $('media-vid').value = ''; };
     // Video always goes through the file input: the Capacitor Camera plugin is
     // stills-only, so there is no native seam to route to on either platform.
     $('btn-video').onclick = () => {
@@ -669,7 +717,11 @@
     });
 
     async function loadFeed() {
-      const { incidents } = await fetch('/api/incidents').then((r) => r.json());
+      // GUARDED. This destructured `incidents` and called .length on it, so any
+      // body that was not the expected envelope — an error page, an offline
+      // failure, a shape change — threw here and killed the feed silently.
+      const body = await fetch('/api/incidents').then((r) => r.json()).catch(() => null);
+      const incidents = Array.isArray(body?.incidents) ? body.incidents : [];
       if (!incidents.length) { $('feed').innerHTML = '<p class="empty">No incidents have been published yet.</p>'; return; }
       const safeFile = (f) => encodeURI(String(f)).replace(/"/g, '%22');
       $('feed').innerHTML = incidents.map((i) => `

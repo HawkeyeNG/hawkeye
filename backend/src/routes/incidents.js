@@ -51,12 +51,30 @@ export const mediaHealth = {
  * looked for rather than just "missing".
  */
 function findFfmpeg() {
+  /**
+   * A bundled binary, from whichever packaging is installed.
+   *
+   * `ffmpeg-static` is the dependency in package.json; it downloads a ~76 MB
+   * static build in a postinstall step. `@ffmpeg-installer/ffmpeg` is accepted
+   * too because it ships platform binaries as ordinary npm packages with NO
+   * postinstall download — the fallback worth having if this host's outbound
+   * access ever blocks the first one.
+   *
+   * Neither can be uploaded by the deploy script: 76 MB against a 10 MB
+   * per-request limit, and no shell on the host to reassemble chunks. The
+   * binary has to arrive via an `npm install` run from the DirectAdmin Node.js
+   * panel — Passenger restarts on tmp/restart.txt but never installs anything.
+   */
   const bundled = (() => {
-    try {
-      // eslint-disable-next-line
-      const p = require('ffmpeg-static');
-      return typeof p === 'string' ? p : null;
-    } catch { return null; }
+    for (const mod of ['ffmpeg-static', '@ffmpeg-installer/ffmpeg']) {
+      try {
+        // eslint-disable-next-line
+        const m = require(mod);
+        const p = typeof m === 'string' ? m : m && m.path;
+        if (typeof p === 'string' && p) return p;
+      } catch { /* not installed — try the next */ }
+    }
+    return null;
   })();
   const candidates = [
     process.env.FFMPEG_PATH,

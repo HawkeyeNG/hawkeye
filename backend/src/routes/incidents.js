@@ -28,16 +28,69 @@ const execFileAsync = promisify(execFile);
  * docs/SCALE-1M.md budgets incident media at "720p re-encode server-side" —
  * a plan quietly resting on a step that was not running.
  */
-export const mediaHealth = { ffmpeg: false, transcodeFailures: 0, lastFailure: null };
-let FFMPEG = null;
-try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); FFMPEG = 'ffmpeg'; } catch { /* absent */ }
+export const mediaHealth = {
+  ffmpeg: false, ffmpegPath: null, ffmpegTried: [], transcodeFailures: 0, lastFailure: null,
+};
+
+/**
+ * FIND ffmpeg, don't just ask PATH for it.
+ *
+ * This was a bare `execFileSync('ffmpeg', …)`, which resolves through PATH and
+ * nothing else. A jailed DirectAdmin/CloudLinux Node process routinely runs
+ * with a minimal environment, so /usr/bin/ffmpeg can be sitting right there and
+ * still be invisible — and the failure looks identical to not having it
+ * installed at all, which is not a distinction anyone can make from the
+ * outside.
+ *
+ * So: an explicit override first, then PATH, then the places it actually lives
+ * on shared hosting, then a bundled binary if `ffmpeg-static` is ever added as
+ * a dependency (an npm install needs no root, which is the point — there is no
+ * shell on that host and `apt-get` is not an option there).
+ *
+ * Every candidate tried is recorded, so the admin diagnostic can say what was
+ * looked for rather than just "missing".
+ */
+function findFfmpeg() {
+  const bundled = (() => {
+    try {
+      // eslint-disable-next-line
+      const p = require('ffmpeg-static');
+      return typeof p === 'string' ? p : null;
+    } catch { return null; }
+  })();
+  const candidates = [
+    process.env.FFMPEG_PATH,
+    'ffmpeg',
+    '/usr/bin/ffmpeg',
+    '/usr/local/bin/ffmpeg',
+    '/opt/ffmpeg/bin/ffmpeg',
+    '/usr/local/ffmpeg/bin/ffmpeg',
+    '/home/hawkeye/bin/ffmpeg',
+    bundled,
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    mediaHealth.ffmpegTried.push(c);
+    try {
+      execFileSync(c, ['-version'], { stdio: 'ignore' });
+      return c;
+    } catch { /* try the next one */ }
+  }
+  return null;
+}
+
+let FFMPEG = findFfmpeg();
 mediaHealth.ffmpeg = !!FFMPEG;
+mediaHealth.ffmpegPath = FFMPEG;
 if (FFMPEG) {
-  console.log('[incidents] ffmpeg present — videos will be transcoded to 720p H.264/AAC');
+  console.log(`[incidents] ffmpeg found at "${FFMPEG}" — videos will be transcoded to 720p H.264/AAC`);
 } else {
   console.warn('[incidents] ffmpeg NOT FOUND. Incident videos will be stored EXACTLY as recorded '
-    + '(HEVC on most phones: unplayable in browsers, ~13x larger than transcoded). '
-    + 'Install ffmpeg on this host, or transcode out-of-band. Reported at GET /api/admin/stats -> media.');
+    + '(HEVC on most phones: unplayable in browsers, ~13x larger than transcoded).\n'
+    + `           tried: ${mediaHealth.ffmpegTried.join(', ')}\n`
+    + '           Fixes, in order of least privilege: set FFMPEG_PATH if it is installed elsewhere; '
+    + 'add the `ffmpeg-static` npm dependency (needs no root, which matters on a shared host with no shell); '
+    + 'or ask the host to install it. Reported at GET /api/admin/stats -> media.');
 }
 
 /** How long one transcode may run. Generous BECAUSE it no longer blocks: the

@@ -647,8 +647,9 @@
           ? `⚠ Video conversion is available but has failed ${m.transcodeFailuresSinceBoot} time(s) since restart`
             + `${stale ? ` · ${stale} report(s) hold an unconverted clip` : ''}`
             + `${m.lastTranscodeFailure ? ` · last: ${m.lastTranscodeFailure.reason}` : ''}`
-          : `⚠ ffmpeg is NOT installed on this server, so incident videos are stored exactly as recorded`
-            + ` and may not play in this browser${stale ? ` · ${stale} report(s) affected` : ''}.`;
+          : `⚠ ffmpeg was not found on this server, so incident videos are stored exactly as recorded`
+            + ` and may not play in this browser${stale ? ` · ${stale} report(s) affected` : ''}.`
+            + (m.ffmpegTried?.length ? ` Looked in: ${m.ffmpegTried.join(', ')}` : '');
       } catch { el.hidden = true; }
     }
 

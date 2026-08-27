@@ -598,6 +598,10 @@ adminRouter.get('/admin/stats', requireAdmin, (_req, res) => {
     at: new Date(now).toISOString(),
     media: {
       ffmpeg: mediaHealth.ffmpeg,
+      // WHERE it was found, or everywhere it was looked for. "missing" with no
+      // list is not actionable on a host with no shell to go and check.
+      ffmpegPath: mediaHealth.ffmpegPath,
+      ffmpegTried: mediaHealth.ffmpegTried,
       transcodeFailuresSinceBoot: mediaHealth.transcodeFailures,
       lastTranscodeFailure: mediaHealth.lastFailure,
       untranscodedVideoReports: untranscoded,

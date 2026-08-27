@@ -1,3 +1,18 @@
+diff --git a/node_modules/@capacitor-mlkit/text-recognition/CapacitorMlkitTextRecognition.podspec b/node_modules/@capacitor-mlkit/text-recognition/CapacitorMlkitTextRecognition.podspec
+index 7d8341b..4b7f818 100644
+--- a/node_modules/@capacitor-mlkit/text-recognition/CapacitorMlkitTextRecognition.podspec
++++ b/node_modules/@capacitor-mlkit/text-recognition/CapacitorMlkitTextRecognition.podspec
+@@ -14,10 +14,6 @@ Pod::Spec.new do |s|
+   s.ios.deployment_target = '15.0'
+   s.dependency 'Capacitor'
+   s.dependency 'GoogleMLKit/TextRecognition', '~> 8.0.0'
+-  s.dependency 'GoogleMLKit/TextRecognitionChinese', '~> 8.0.0'
+-  s.dependency 'GoogleMLKit/TextRecognitionDevanagari', '~> 8.0.0'
+-  s.dependency 'GoogleMLKit/TextRecognitionJapanese', '~> 8.0.0'
+-  s.dependency 'GoogleMLKit/TextRecognitionKorean', '~> 8.0.0'
+   s.swift_version = '5.1'
+   s.static_framework = true
+ end
 diff --git a/node_modules/@capacitor-mlkit/text-recognition/android/build.gradle b/node_modules/@capacitor-mlkit/text-recognition/android/build.gradle
 index de80ed4..eb44c56 100644
 --- a/node_modules/@capacitor-mlkit/text-recognition/android/build.gradle
@@ -48,4 +63,40 @@ index 9168478..8fcfb2f 100644
 -                return new KoreanTextRecognizerOptions.Builder().build();
              default:
                  return TextRecognizerOptions.DEFAULT_OPTIONS;
+         }
+diff --git a/node_modules/@capacitor-mlkit/text-recognition/ios/Plugin/TextRecognition.swift b/node_modules/@capacitor-mlkit/text-recognition/ios/Plugin/TextRecognition.swift
+index 6d7602e..135d03a 100644
+--- a/node_modules/@capacitor-mlkit/text-recognition/ios/Plugin/TextRecognition.swift
++++ b/node_modules/@capacitor-mlkit/text-recognition/ios/Plugin/TextRecognition.swift
+@@ -1,10 +1,6 @@
+ import Foundation
+ import MLKitVision
+ import MLKitTextRecognition
+-import MLKitTextRecognitionChinese
+-import MLKitTextRecognitionDevanagari
+-import MLKitTextRecognitionJapanese
+-import MLKitTextRecognitionKorean
+ 
+ @objc public class TextRecognition: NSObject {
+     public let plugin: TextRecognitionPlugin
+@@ -36,15 +32,12 @@ import MLKitTextRecognitionKorean
+     }
+ 
+     private func createRecognizerOptionsForScript(_ script: String) -> CommonTextRecognizerOptions {
++        // LATIN ONLY (Hawkeye patch). The chinese/devanagari/japanese/korean
++        // pods carry line-recognition models for scripts this app never reads;
++        // they are removed from the podspec, so their option classes no longer
++        // exist and every script resolves to the Latin default. Hawkeye passes
++        // no script at all.
+         switch script {
+-        case "CHINESE":
+-            return ChineseTextRecognizerOptions()
+-        case "DEVANAGARI":
+-            return DevanagariTextRecognizerOptions()
+-        case "JAPANESE":
+-            return JapaneseTextRecognizerOptions()
+-        case "KOREAN":
+-            return KoreanTextRecognizerOptions()
+         default:
+             return TextRecognizerOptions()
          }

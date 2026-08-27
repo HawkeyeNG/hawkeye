@@ -10,6 +10,7 @@ import { Router } from 'express';
 import { db, contests } from '../db.js';
 import { config } from '../config.js';
 import { notifyMaster, notifyUnitSavers } from '../services/notify.js';
+import { mediaHealth } from './incidents.js';
 import { runAnchor } from '../services/anchor.js';
 import { raceKey, contestScope } from '../services/scope.js';
 
@@ -578,8 +579,29 @@ adminRouter.get('/admin/stats', requireAdmin, (_req, res) => {
     try { return db.prepare(sql).get().c; } catch { return null; }
   };
   const now = Date.now();
+  /**
+   * IS THE VIDEO TRANSCODE ACTUALLY RUNNING?
+   *
+   * There was no way to answer this from outside the box, which is how it went
+   * unnoticed that it was not: incident videos were being stored exactly as
+   * recorded, and the only symptom was a reviewer getting audio and a black
+   * frame. `untranscodedVideos` counts what is already on disk that way, so a
+   * fix has a work-list rather than a guess.
+   */
+  const untranscoded = (() => {
+    try {
+      return db.prepare(
+        `SELECT COUNT(*) AS c FROM incidents WHERE media_json LIKE '%"transcoded":false%'`).get().c;
+    } catch { return null; }
+  })();
   res.json({
     at: new Date(now).toISOString(),
+    media: {
+      ffmpeg: mediaHealth.ffmpeg,
+      transcodeFailuresSinceBoot: mediaHealth.transcodeFailures,
+      lastTranscodeFailure: mediaHealth.lastFailure,
+      untranscodedVideoReports: untranscoded,
+    },
     observers: {
       total: n('SELECT COUNT(*) AS c FROM observers'),
       active: n("SELECT COUNT(*) AS c FROM observers WHERE status = 'active'"),

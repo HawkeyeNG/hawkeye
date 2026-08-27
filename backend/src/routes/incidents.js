@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { execFileSync } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
+import { promisify } from 'node:util';
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
@@ -14,27 +15,77 @@ import { notifyMaster, notifyChat, chatIdByHash } from '../services/notify.js';
 
 export const incidentsRouter = Router();
 
-// ffmpeg is optional (shared host may not have it) — detect once at boot.
+const execFileAsync = promisify(execFile);
+
+/**
+ * ffmpeg is optional (a shared host may not have it) — detect once at boot.
+ *
+ * IT MUST SAY SO. This used to fail silently, and silence is indistinguishable
+ * from success: every incident video was stored exactly as the phone recorded
+ * it, which on any recent Android or iPhone means HEVC. The container's AAC
+ * audio still plays, so a reviewer gets sound and a black frame, and a
+ * downloaded copy asks them to buy an HEVC extension. Meanwhile
+ * docs/SCALE-1M.md budgets incident media at "720p re-encode server-side" —
+ * a plan quietly resting on a step that was not running.
+ */
+export const mediaHealth = { ffmpeg: false, transcodeFailures: 0, lastFailure: null };
 let FFMPEG = null;
 try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); FFMPEG = 'ffmpeg'; } catch { /* absent */ }
+mediaHealth.ffmpeg = !!FFMPEG;
+if (FFMPEG) {
+  console.log('[incidents] ffmpeg present — videos will be transcoded to 720p H.264/AAC');
+} else {
+  console.warn('[incidents] ffmpeg NOT FOUND. Incident videos will be stored EXACTLY as recorded '
+    + '(HEVC on most phones: unplayable in browsers, ~13x larger than transcoded). '
+    + 'Install ffmpeg on this host, or transcode out-of-band. Reported at GET /api/admin/stats -> media.');
+}
 
-// Re-mux a video to a clean MP4 (H.264/AAC), stripping metadata and any
-// container-embedded payload. Returns true on success, false to fall back.
+/** How long one transcode may run. Generous BECAUSE it no longer blocks: the
+ *  old 60s ceiling had to stay tight since it froze the whole server. */
+const TRANSCODE_TIMEOUT_MS = 120_000;
+
+/**
+ * Re-mux a video to a clean MP4 (H.264/AAC), stripping metadata and any
+ * container-embedded payload.
+ *
+ * ASYNCHRONOUS, and that is the point. This was `execFileSync` inside an
+ * `async function` — the `async` was decoration; the sync call pinned Node's
+ * single thread for up to a minute. On election day, when incident uploads
+ * arrive together, one video froze every other request on the server: signups,
+ * result submissions, the dashboard, all of it. `execFile` + promisify keeps
+ * the event loop free while ffmpeg runs in its own process.
+ *
+ * Returns { ok, reason } rather than a bare boolean so the caller can record
+ * WHY, instead of quietly keeping the original.
+ */
 async function remuxVideo(inBuf, destPath) {
-  if (!FFMPEG) return false;
+  if (!FFMPEG) return { ok: false, reason: 'ffmpeg_absent' };
   const tmp = path.join(os.tmpdir(), `hk_${crypto.randomBytes(8).toString('hex')}`);
   try {
-    fs.writeFileSync(tmp, inBuf);
-    execFileSync(FFMPEG, [
+    await fs.promises.writeFile(tmp, inBuf);
+    await execFileAsync(FFMPEG, [
       '-y', '-i', tmp, '-map_metadata', '-1', '-movflags', '+faststart',
       // downscale to <=720p long edge (keeps aspect, never upscales) + a leaner CRF —
-      // incident clips are evidence, not cinema; this roughly halves election-day storage.
+      // incident clips are evidence, not cinema. Measured 13x on a 1080p source.
       '-vf', "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",
       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28',
       '-c:a', 'aac', '-b:a', '96k', destPath,
-    ], { stdio: 'ignore', timeout: 60_000 });
-    return fs.existsSync(destPath) && fs.statSync(destPath).size > 0;
-  } catch { return false; } finally { try { fs.unlinkSync(tmp); } catch { /* ignore */ } }
+    ], { timeout: TRANSCODE_TIMEOUT_MS, maxBuffer: 1 << 20 });
+    const good = fs.existsSync(destPath) && fs.statSync(destPath).size > 0;
+    return good ? { ok: true } : { ok: false, reason: 'empty_output' };
+  } catch (e) {
+    return { ok: false, reason: e && e.killed ? 'timeout' : 'ffmpeg_error' };
+  } finally {
+    try { await fs.promises.unlink(tmp); } catch { /* ignore */ }
+  }
+}
+
+/** One place that both counts a failure and says so, so neither can be forgotten. */
+function noteTranscodeFailure(reason) {
+  mediaHealth.transcodeFailures += 1;
+  mediaHealth.lastFailure = { reason, at: new Date().toISOString() };
+  console.warn(`[incidents] video transcode failed (${reason}) — storing the original. `
+    + 'It may be HEVC and unplayable in a browser.');
 }
 
 const incidentDir = path.join(config.uploadDir, 'incidents');
@@ -43,11 +94,52 @@ fs.mkdirSync(incidentDir, { recursive: true });
 const KINDS = new Set(['violence', 'ballot_snatching', 'vote_buying', 'intimidation', 'bvas_failure', 'late_materials', 'obstruction', 'other']);
 const OK_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm']);
 
+/**
+ * FOUR FILES, AT MOST TWO VIDEOS.
+ *
+ * The old ceiling was 4 x 30 MB = 120 MB per report, and the cost is almost
+ * entirely video: a client-compressed photo is a few hundred KB, a minute of
+ * phone video is tens of MB. Cutting the total to two would lose corroboration
+ * — a wide shot and a close-up of the same scene support each other — while
+ * saving almost nothing, so the cap goes where the bytes are.
+ *
+ * multer only understands ONE fileSize, so it is set to the larger (video)
+ * limit and photos are checked against PHOTO_BYTES in the handler, after the
+ * sniff proves what they actually are.
+ */
+const MAX_FILES = 4;
+const MAX_VIDEOS = 2;
+const VIDEO_BYTES = 15 * 1024 * 1024;
+const PHOTO_BYTES = 8 * 1024 * 1024;
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 30 * 1024 * 1024, files: 4 }, // 30 MB/file, up to 4
+  limits: { fileSize: VIDEO_BYTES, files: MAX_FILES },
   fileFilter: (_req, file, cb) => cb(null, OK_MIME.has(file.mimetype)),
 });
+
+/**
+ * Multer's own rejections were UNHANDLED, so an oversize attachment fell
+ * through to the generic error handler and the observer got
+ * `{"error":"internal_error"}` with a 500 — after spending the data to send it.
+ * "Something broke, try again" invites the identical retry; naming the limit is
+ * the only reply that lets them fix it.
+ */
+function uploadOr400(req, res, next) {
+  upload.array('media', MAX_FILES)(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        error: 'file_too_large',
+        hint: `Each video must be under ${Math.round(VIDEO_BYTES / 1048576)} MB and each photo under ${Math.round(PHOTO_BYTES / 1048576)} MB. Record a shorter clip and try again.`,
+      });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({ error: 'too_many_files', hint: `Up to ${MAX_FILES} files per report.` });
+    }
+    return res.status(400).json({ error: 'upload_failed', hint: 'That attachment could not be read.' });
+  });
+}
 
 // The claimed mimetype is attacker-controlled — verify the actual file bytes.
 function sniffType(buf) {
@@ -65,7 +157,7 @@ function sniffType(buf) {
 
 // Observer files an incident. Media (photos/videos) + text; queued as 'pending'
 // for human review before it can be published anywhere. Never auto-published.
-incidentsRouter.post('/incidents', requireObserver, upload.array('media', 4), async (req, res) => {
+incidentsRouter.post('/incidents', requireObserver, uploadOr400, async (req, res) => {
   const kind = String(req.body.kind || '').trim();
   if (!KINDS.has(kind)) return res.status(400).json({ error: 'invalid_kind' });
   const description = String(req.body.description || '').trim().slice(0, 2000);
@@ -77,10 +169,28 @@ incidentsRouter.post('/incidents', requireObserver, upload.array('media', 4), as
   const pu = puCode ? db.prepare('SELECT state FROM polling_units WHERE pu_code = ?').get(puCode) : null;
 
   const media = [];
+  let videoCount = 0;
   for (const f of req.files || []) {
     // Trust the sniffed bytes, not the client's claimed mimetype.
     const real = sniffType(f.buffer);
     if (!real) return res.status(400).json({ error: 'invalid_media', hint: 'unrecognized file format' });
+
+    /* Enforced HERE, not in multer, for the same reason the type is sniffed
+       here: multer only sees the claimed mimetype, and it is the client's to
+       lie about. These checks run against what the bytes actually are. */
+    if (real.startsWith('video/')) {
+      if (++videoCount > MAX_VIDEOS) {
+        return res.status(400).json({
+          error: 'too_many_videos',
+          hint: `Up to ${MAX_VIDEOS} videos per report — send the rest as photos, or file a second report.`,
+        });
+      }
+    } else if (f.buffer.length > PHOTO_BYTES) {
+      return res.status(413).json({
+        error: 'file_too_large',
+        hint: `Each photo must be under ${Math.round(PHOTO_BYTES / 1048576)} MB.`,
+      });
+    }
     let buffer = f.buffer;
     let ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm' }[real];
     if (real.startsWith('image/')) {
@@ -96,18 +206,39 @@ incidentsRouter.post('/incidents', requireObserver, upload.array('media', 4), as
       }
     }
     const isVideo = real.startsWith('video');
-    // Transcode target is always .mp4 so ffmpeg's H.264/AAC output matches the
-    // container; without ffmpeg we keep the sniffed-safe original extension.
-    if (isVideo && FFMPEG) ext = 'mp4';
-    const name = `${crypto.randomBytes(12).toString('hex')}.${ext}`;
-    const dest = path.join(incidentDir, name);
-    if (isVideo) {
-      const remuxed = await remuxVideo(f.buffer, dest);
-      if (!remuxed) fs.writeFileSync(dest, buffer); // ffmpeg absent/failed → store sniffed original
-    } else {
-      fs.writeFileSync(dest, buffer);
+    const stem = crypto.randomBytes(12).toString('hex');
+
+    if (!isVideo) {
+      const name = `${stem}.${ext}`;
+      fs.writeFileSync(path.join(incidentDir, name), buffer);
+      media.push({ file: `incidents/${name}`, type: 'image' });
+      continue;
     }
-    media.push({ file: `incidents/${name}`, type: real.startsWith('video') ? 'video' : 'image' });
+
+    /**
+     * NAME IT FOR WHAT IT ACTUALLY IS. The extension used to be set to .mp4 up
+     * front whenever ffmpeg merely EXISTED, so a transcode that then failed
+     * left the phone's original bytes wearing an .mp4 name — a QuickTime/HEVC
+     * file the admin player could not decode and nothing on disk admitted to.
+     * Decide after the outcome instead.
+     *
+     * A failed transcode still STORES the original: this is evidence, and
+     * losing it to save disk would be the worse trade. It is recorded as
+     * untranscoded so review can see why it will not play, and so the
+     * out-of-band fixer has a list.
+     */
+    const mp4Name = `${stem}.mp4`;
+    const mp4Dest = path.join(incidentDir, mp4Name);
+    const r = await remuxVideo(f.buffer, mp4Dest);
+    if (r.ok) {
+      media.push({ file: `incidents/${mp4Name}`, type: 'video', transcoded: true });
+    } else {
+      try { fs.unlinkSync(mp4Dest); } catch { /* nothing was written */ }
+      noteTranscodeFailure(r.reason);
+      const name = `${stem}.${ext}`;
+      fs.writeFileSync(path.join(incidentDir, name), buffer);
+      media.push({ file: `incidents/${name}`, type: 'video', transcoded: false, transcodeError: r.reason });
+    }
   }
 
   const info = db.prepare(`

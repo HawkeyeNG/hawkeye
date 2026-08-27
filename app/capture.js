@@ -152,5 +152,41 @@
     if (cancel) cancel.onclick = close;
   });
 
-  window.HAWKEYE_CAPTURE = { open, close, capture, native, warm };
+  /**
+   * Downscale a photo before it is uploaded.
+   *
+   * FOR THE UNSIGNED PATHS ONLY — incident photos today. The server already
+   * re-encodes those, but only after the bytes have crossed the observer's own
+   * mobile data on election day, which is the expensive part and the part that
+   * decides whether the upload finishes at all.
+   *
+   * DELIBERATELY NOT SHARED WITH app.js:compressCapture, which does the same
+   * arithmetic for EC8A and venue photos. Those bytes are hashed, signed and
+   * content-addressed in the ledger, so their compression must never change as
+   * a side effect of someone tuning the incident path. The duplication is the
+   * isolation; if you "fix" it by merging them, read submissions.js first.
+   *
+   * Returns the ORIGINAL blob on any failure, and whenever shrinking made it
+   * bigger — attaching evidence must never fail because compression did.
+   */
+  async function shrink(blob, maxDim, quality) {
+    try {
+      if (!blob || !/^image\//.test(blob.type)) return blob;
+      const bmp = await createImageBitmap(blob);
+      const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+      const w = Math.round(bmp.width * scale);
+      const h = Math.round(bmp.height * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+      if (bmp.close) bmp.close();
+      const out = await new Promise((r) => c.toBlob(r, 'image/jpeg', quality));
+      if (!out || out.size >= blob.size) return blob;
+      // Keep it a File where possible so the upload still carries a filename.
+      const name = (blob.name || 'photo.jpg').replace(/\.[^.]+$/, '') + '.jpg';
+      try { return new File([out], name, { type: 'image/jpeg' }); } catch { return out; }
+    } catch { return blob; }
+  }
+
+  window.HAWKEYE_CAPTURE = { open, close, capture, native, warm, shrink };
 }());

@@ -54,6 +54,7 @@ import { filePart } from '@/lib/submit';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { InfoDot } from '@/components/info-dot';
+import { ModalCard } from '@/components/modal-card';
 import { humanBytes, uploadWithProgress, xhrFilePart, type UploadProgress } from '@/lib/upload';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -426,6 +427,11 @@ export default function ReportIncident() {
   const [kind, setKind] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [media, setMedia] = useState<Media[]>([]);
+  /** A refusal the observer must acknowledge, because it discarded something. */
+  const [blocked, setBlocked] = useState<{ title: string; body: string } | null>(null);
+  /** Derived, never stored: a second copy of this count would be one more thing
+   *  to keep in step with the tray, and it is cheap to recompute. */
+  const videoCount = media.filter((m) => m.type === 'video').length;
   /**
    * Add media, honouring BOTH caps in one place.
    *
@@ -487,9 +493,27 @@ export default function ReportIncident() {
     }
 
     if (kept.length) setMedia((arr) => [...arr, ...kept].slice(0, MAX_MEDIA));
-    // Size first: it is the more specific complaint, and the one with a fix.
-    if (tooBig) setLine(tooBig);
-    else if (refusedVideo) setLine(`Up to ${MAX_VIDEOS} videos per report — add the rest as photos, or file a second report.`);
+
+    /**
+     * A REFUSAL GETS A MODAL, not a status line.
+     *
+     * Dropping the third video and writing one grey line under the tray is
+     * indistinguishable from the attach quietly not working — which is exactly
+     * how it read: the clip was recorded, the observer watched it vanish, and
+     * nothing said why. Anything that DISCARDS what someone just captured has
+     * to be acknowledged, so it takes a tap to dismiss.
+     *
+     * Size still uses the line: that path keeps nothing and the tray visibly
+     * does not change, so it is not a silent loss.
+     */
+    if (refusedVideo) {
+      setBlocked({
+        title: `Only ${MAX_VIDEOS} videos per report`,
+        body: `You already have ${MAX_VIDEOS}. Add the rest as photos, or file a second report — every report is reviewed separately, so nothing is lost by splitting them.`,
+      });
+    } else if (tooBig) {
+      setLine(tooBig);
+    }
   };
   const [camera, setCamera] = useState(false);
   const [useGps, setUseGps] = useState(true);
@@ -1606,6 +1630,23 @@ Answer it from somewhere safe — your report is already saved on this device, s
               ) : null}
             </View>
 
+            {/**
+             * THE VIDEO ALLOWANCE, ONLY ONCE IT IS RELEVANT.
+             *
+             * Silent at zero: telling someone about a limit they have not
+             * approached is noise on a screen where the point is to capture
+             * what is happening. It appears the moment the first video is
+             * attached, which is when "how many more" becomes a real question,
+             * and is what stops the third attempt being a surprise.
+             */}
+            {videoCount > 0 ? (
+              <Text className="pb-1 text-xs text-muted">
+                {videoCount >= MAX_VIDEOS
+                  ? `${MAX_VIDEOS} of ${MAX_VIDEOS} videos — photos only from here.`
+                  : `${videoCount} of ${MAX_VIDEOS} videos — you can add ${MAX_VIDEOS - videoCount} more.`}
+              </Text>
+            ) : null}
+
             <Text className="pb-2 pt-3 text-sm font-semibold text-muted">Description</Text>
             <TextInput
               className="min-h-[110px] rounded-2xl bg-card px-4 py-3 text-base text-ink"
@@ -1819,6 +1860,18 @@ Answer it from somewhere safe — your report is already saved on this device, s
           )}
         </View>
       </KeyboardAvoidingView>
+
+      {/* Acknowledged, not glanced at: this fires only when an attach was
+          REFUSED and the capture discarded, so a tap to dismiss is the point.
+          dismissOnBackdrop stays default — nothing is lost by closing it. */}
+      <ModalCard
+        visible={!!blocked}
+        onClose={() => setBlocked(null)}
+        title={blocked?.title}
+        closeLabel="Got it"
+      >
+        <Text className="text-sm leading-5 text-muted">{blocked?.body}</Text>
+      </ModalCard>
     </SafeScreen>
   );
 }

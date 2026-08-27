@@ -133,8 +133,54 @@ console.log('\n=== the third video is refused, with a way forward ===');
   });
   console.log(`      attached=${r.attached} videos=${r.videos} status="${r.status}"`);
   check('only two videos are kept', r.videos === 2, `got ${r.videos}`);
-  check('and the message says what to do instead',
-    /second report|photos/i.test(r.status), r.status);
+
+  /**
+   * A REFUSAL MUST BE ACKNOWLEDGED. Dropping the third video and writing a
+   * status line reads as the attach silently not working — the file was
+   * chosen, it vanished, and nothing demanded a response. So this asserts a
+   * real modal is on screen, not just that some text changed somewhere.
+   */
+  const modal = await page.evaluate(() => {
+    const box = document.querySelector('.hk-alert');
+    return {
+      exists: !!box,
+      painted: box ? box.getClientRects().length > 0 : false,
+      text: box ? box.textContent.replace(/\s+/g, ' ').trim() : '',
+    };
+  });
+  console.log(`      modal painted=${modal.painted} "${modal.text.slice(0, 80)}"`);
+  check('a modal is actually on screen', modal.painted, JSON.stringify(modal));
+  check('and it says what to do instead', /second report|photos/i.test(modal.text), modal.text);
+}
+
+console.log('\n=== the video counter is silent until it is relevant ===');
+{
+  const r = await page.evaluate(async () => {
+    const el = () => document.getElementById('video-count');
+    const seen = {};
+    // Start clean: the previous section left two videos attached.
+    attachments.length = 0;
+    renderPreview();
+    seen.atZero = { hidden: el().hidden, text: el().textContent.trim() };
+
+    await addFiles([new File([new Uint8Array(2048)], 'a.mp4', { type: 'video/mp4' })]);
+    seen.atOne = { hidden: el().hidden, text: el().textContent.trim() };
+
+    await addFiles([new File([new Uint8Array(2048)], 'b.mp4', { type: 'video/mp4' })]);
+    seen.atTwo = { hidden: el().hidden, text: el().textContent.trim() };
+
+    // A photo must not change the VIDEO count.
+    await addFiles([new File([new Uint8Array(512)], 'p.jpg', { type: 'image/jpeg' })]);
+    seen.afterPhoto = { hidden: el().hidden, text: el().textContent.trim() };
+    return seen;
+  });
+  console.log(`      0 videos: hidden=${r.atZero.hidden}`);
+  console.log(`      1 video : "${r.atOne.text}"`);
+  console.log(`      2 videos: "${r.atTwo.text}"`);
+  check('nothing is shown before any video is attached', r.atZero.hidden === true, JSON.stringify(r.atZero));
+  check('after one video it says how many more', !r.atOne.hidden && /1 more/.test(r.atOne.text), r.atOne.text);
+  check('at the cap it says photos only', !r.atTwo.hidden && /photos only/i.test(r.atTwo.text), r.atTwo.text);
+  check('a photo does not change the video count', /2 of 2/.test(r.afterPhoto.text), r.afterPhoto.text);
 }
 
 await browser.close();

@@ -460,7 +460,7 @@ export default function ReportIncident() {
     const kept: Media[] = [];
     let videos = current.filter((x) => x.type === 'video').length;
     let refusedVideo = false;
-    let tooBig: string | null = null;
+    let tooBig: { title: string; body: string } | null = null;
 
     for (const m of incoming) {
       if (current.length + kept.length >= MAX_MEDIA) break;
@@ -482,8 +482,14 @@ export default function ReportIncident() {
         if (size !== null && size > cap) {
           const mb = (size / 1048576).toFixed(1);
           tooBig = m.type === 'video'
-            ? `That video is ${mb} MB — the limit is ${Math.round(VIDEO_BYTES / 1048576)} MB. Record one here instead (up to ${MAX_VIDEO_SECONDS}s), or trim it first.`
-            : `That photo is ${mb} MB — the limit is ${Math.round(PHOTO_BYTES / 1048576)} MB.`;
+            ? {
+              title: 'That video is too large',
+              body: `It is ${mb} MB and the limit is ${Math.round(VIDEO_BYTES / 1048576)} MB. Record one here instead — the camera stops at ${MAX_VIDEO_SECONDS}s, which always fits — or trim it before attaching.`,
+            }
+            : {
+              title: 'That photo is too large',
+              body: `It is ${mb} MB and the limit is ${Math.round(PHOTO_BYTES / 1048576)} MB.`,
+            };
           continue;
         }
       }
@@ -512,7 +518,12 @@ export default function ReportIncident() {
         body: `You already have ${MAX_VIDEOS}. Add the rest as photos, or file a second report — every report is reviewed separately, so nothing is lost by splitting them.`,
       });
     } else if (tooBig) {
-      setLine(tooBig);
+      // A modal too. I argued this one could stay a status line because it
+      // "discards nothing you can watch disappear" — wrong: the file IS
+      // dropped, so from the observer's side something they chose simply never
+      // reached the tray, with the explanation in a line under the button.
+      // Same silent loss, same acknowledgement.
+      setBlocked(tooBig);
     }
   };
   const [camera, setCamera] = useState(false);

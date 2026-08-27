@@ -183,6 +183,64 @@ console.log('\n=== the video counter is silent until it is relevant ===');
   check('a photo does not change the video count', /2 of 2/.test(r.afterPhoto.text), r.afterPhoto.text);
 }
 
+console.log('\n=== a video thumbnail shows a real frame, not a grey box ===');
+{
+  const r = await page.evaluate(async () => {
+    // A tiny real video, produced in-page so the decoder has something valid.
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 48;
+    const ctx = canvas.getContext('2d');
+    const stream = canvas.captureStream(10);
+    const rec = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    const chunks = [];
+    rec.ondataavailable = (e) => chunks.push(e.data);
+    const stopped = new Promise((res) => { rec.onstop = res; });
+    rec.start();
+    for (let i = 0; i < 12; i++) {
+      ctx.fillStyle = `hsl(${i * 30},90%,50%)`;
+      ctx.fillRect(0, 0, 64, 48);
+      await new Promise((res) => setTimeout(res, 30));
+    }
+    rec.stop();
+    await stopped;
+    const file = new File(chunks, 'clip.webm', { type: 'video/webm' });
+
+    attachments.length = 0;
+    await addFiles([file]);
+    // grabFrame is asynchronous (loadeddata -> seeked); give it a moment.
+    await new Promise((res) => setTimeout(res, 1500));
+    const img = document.querySelector('#preview .vthumb');
+    return {
+      isImg: !!img && img.tagName === 'IMG',
+      hasFrame: !!img && /^data:image\/jpeg/.test(img.src || ''),
+      badge: !!document.querySelector('#preview .vbadge'),
+      noVideoEl: !document.querySelector('#preview video'),
+    };
+  });
+  console.log(`      img=${r.isImg} frame=${r.hasFrame} badge=${r.badge}`);
+  check('the tile is an <img>, not a bare <video>', r.isImg && r.noVideoEl, JSON.stringify(r));
+  check('a play badge marks it as a video', r.badge);
+  check('and a real frame was drawn into it', r.hasFrame,
+    'grabFrame did not paint — the tile would be a flat colour, which is the bug');
+}
+
+console.log('\n=== the progress bar never invents a percentage ===');
+{
+  const r = await page.evaluate(() => {
+    const src = document.documentElement.innerHTML;
+    return {
+      // In the native shell there are no byte events, so the bar must be
+      // indeterminate rather than driven by a timer pretending to be progress.
+      hasIndeterminate: /indeterminate/.test(src),
+      // The clamp: a replayed body can report more than was ever going to be
+      // sent, and a bar past 100% reads as broken.
+      clamps: /Math\.min\(e\.loaded, e\.total\)/.test(src),
+    };
+  });
+  check('an indeterminate mode exists for where progress is unknown', r.hasIndeterminate);
+  check('and real progress is clamped to the total', r.clamps);
+}
+
 await browser.close();
 server.close();
 console.log(fail ? `\n${fail} FAILED` : '\nall passed');

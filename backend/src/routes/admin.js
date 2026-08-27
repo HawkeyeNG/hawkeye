@@ -3,6 +3,7 @@
 // anywhere in the app. Handles the incident moderation queue: view pending reports
 // (with media), publish (→ public feed + best-effort social) or reject them.
 import crypto from 'node:crypto';
+import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import multer from 'multer';
@@ -574,6 +575,49 @@ adminRouter.post('/admin/social/upload', requireAdmin, (req, res) => {
 // plausible data rather than an error. Other tables are not assumed to match;
 // only columns verified as ms are compared this way.
 const MS_DAY = 86400000;
+/**
+ * WHERE DOES THIS PROCESS ACTUALLY RESOLVE MODULES FROM?
+ *
+ * Two `npm install` runs from the DirectAdmin panel left the app reporting
+ * "@ffmpeg-installer/ffmpeg (not installed)" on a freshly booted process. That
+ * has only a few possible causes and none of them can be told apart from
+ * outside: the panel's app root may not be the directory we upload to; the
+ * CloudLinux Node Selector may install into a virtualenv that this process is
+ * not using; or the install may be failing outright.
+ *
+ * There is no shell on that host, so the running app IS the probe. It reports
+ * its own cwd, the node_modules directories Node would search, which of those
+ * exist, and whether a few known-good dependencies resolve — if `express`
+ * resolves and `@ffmpeg-installer/ffmpeg` does not, the install went to the
+ * right place and simply did not include it; if NOTHING resolves from the
+ * expected path, the app root is elsewhere.
+ */
+function runtimeProbe() {
+  const req = createRequire(import.meta.url);
+  const resolves = (m) => {
+    try { return req.resolve(m).replace(/\/node_modules\/.*$/, '/node_modules'); }
+    catch { return null; }
+  };
+  const dirs = (req.resolve.paths('express') || []).slice(0, 6).map((p) => {
+    let kind = 'missing';
+    try {
+      const st = fs.lstatSync(p);
+      kind = st.isSymbolicLink() ? `symlink -> ${fs.readlinkSync(p)}` : `dir (${fs.readdirSync(p).length} entries)`;
+    } catch { /* missing */ }
+    return `${p} [${kind}]`;
+  });
+  return {
+    node: process.version,
+    cwd: process.cwd(),
+    searchPaths: dirs,
+    // A dependency that has always been installed, as a control: if this is
+    // null too, the problem is the app root, not the package.
+    expressFrom: resolves('express'),
+    sharpFrom: resolves('sharp'),
+    ffmpegInstallerFrom: resolves('@ffmpeg-installer/ffmpeg'),
+  };
+}
+
 adminRouter.get('/admin/stats', requireAdmin, (_req, res) => {
   const n = (sql) => {
     try { return db.prepare(sql).get().c; } catch { return null; }
@@ -603,6 +647,7 @@ adminRouter.get('/admin/stats', requireAdmin, (_req, res) => {
       ffmpegPath: mediaHealth.ffmpegPath,
       ffmpegTried: mediaHealth.ffmpegTried,
       npmPackages: mediaHealth.npmPackages,
+      runtime: runtimeProbe(),
       // Detection runs ONCE at boot. If this predates an npm install, the
       // install simply has not been picked up yet and the process is stale —
       // a different problem from a failed install, and previously

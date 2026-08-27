@@ -653,7 +653,16 @@
             + (m.ffmpegTried?.length ? `<br>looked in: ${m.ffmpegTried.join(', ')}` : '')
             // Detection runs once at boot: an install done AFTER this timestamp
             // has not been seen yet, which is a restart, not a broken install.
-            + (m.bootedAt ? `<br>server started: ${new Date(m.bootedAt).toLocaleString()}` : '');
+            + (m.bootedAt ? `<br>server started: ${new Date(m.bootedAt).toLocaleString()}` : '')
+            // Where this process resolves modules from. `express` is the
+            // control: if it resolves and the ffmpeg package does not, the
+            // install reached the right place and simply omitted it; if
+            // NOTHING resolves from the expected directory, the panel's app
+            // root is not the directory being deployed to.
+            + (m.runtime ? `<br>cwd: ${m.runtime.cwd}`
+              + `<br>express from: ${m.runtime.expressFrom || 'UNRESOLVED'}`
+              + `<br>ffmpeg pkg from: ${m.runtime.ffmpegInstallerFrom || 'UNRESOLVED'}`
+              + `<br>searched: ${(m.runtime.searchPaths || []).join(' · ')}` : '');
       } catch { el.hidden = true; }
     }
 

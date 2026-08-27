@@ -881,13 +881,23 @@ $('btn-locate').onclick = async () => {
     // A failure on either side is survivable; a failure on both is not, and is
     // reported as one, so the caller's error path still fires.
     if (reg.error && near.error) return reg;
+    /**
+     * ONE SHAPE OUT. The two endpoints do not agree on field names — the
+     * register answers `pu_code` with `lga` and `state`, the mapping index
+     * answers `puCode` and carries NEITHER, because a GRID3-envelope unit is
+     * known by position rather than by register row. Merging them raw handed
+     * the renderer two shapes, and every mapping-only row drew as
+     *   "Lasigun / Irerinde — undefined · Akogun, undefined · 453 m away"
+     * in the live report flow. Normalising here rather than at each render
+     * site keeps the next reader of this list from having to know any of it.
+     */
     const rows = [];
     const seen = new Set();
     for (const u of [...(reg.body?.units || []), ...(near.body?.units || [])]) {
       const code = u.pu_code || u.puCode || u.code;
       if (!code || seen.has(code)) continue;
       seen.add(code);
-      rows.push(u);
+      rows.push({ ...u, pu_code: code, ward: u.ward || '', lga: u.lga || '', state: u.state || '' });
     }
     rows.sort((a, b) => (a.distanceM ?? 1e9) - (b.distanceM ?? 1e9));
     return { body: { ...(reg.body || {}), radiusM: 800, units: rows } };
@@ -922,8 +932,13 @@ $('btn-locate').onclick = async () => {
   for (const u of body.units) {
     const btn = document.createElement('button');
     btn.className = 'pu-option';
-    btn.innerHTML = `<strong>${u.name}</strong><br />
-      <small>${u.pu_code} · ${u.ward}, ${u.lga} · ${u.distanceM} m away · ${TIER_LABEL[tierOf(u)]}</small>`;
+    // Join what EXISTS. A unit placed only by its GRID3 envelope has a ward but
+    // no LGA, and "Akogun, " with a dangling comma reads as broken in a list
+    // someone is scanning under time pressure.
+    const where = [u.ward, u.lga].filter(Boolean).join(', ');
+    const facts = [u.pu_code, where, `${u.distanceM} m away`, TIER_LABEL[tierOf(u)]]
+      .filter(Boolean).join(' · ');
+    btn.innerHTML = `<strong>${u.name}</strong><br /><small>${facts}</small>`;
     btn.onclick = () => selectUnit(u);
     $('pu-list').appendChild(btn);
   }

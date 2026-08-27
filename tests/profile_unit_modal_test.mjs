@@ -210,6 +210,45 @@ console.log('\n=== near me returns rows, and picking one confirms it ===');
   await ctx.close();
 }
 
+console.log('\n=== the polling-unit chevron sits on the Password chevron\'s axis ===');
+{
+  const { ctx, p } = await open();
+  // Real content: three lines of value against a three-word label, which is
+  // the case the stacked layout exists for.
+  await p.evaluate(() => {
+    document.getElementById('unit-modal').hidden = true;
+    document.getElementById('p-unit').textContent = 'Wonderland Estate\n37-06-02-141 · Garki ward, Municipal, FCT';
+  });
+  await p.waitForTimeout(200);
+  const geom = () => p.evaluate(() => {
+    const r = (sel) => { const e = document.querySelector(sel); return e ? e.getBoundingClientRect() : null; };
+    const pwC = r('#btn-pw-open .prow-c');
+    const unC = r('#btn-pick-unit .prow-c');
+    const unV = r('#btn-pick-unit .prow-v');
+    return {
+      pwRight: Math.round(pwC.right), unRight: Math.round(unC.right),
+      // "below the value" is the old bug: the chevron on its own line at the
+      // left margin. Beside it means its left edge starts after the text ends.
+      besideValue: unC.left >= unV.right - 1,
+      unLeft: Math.round(unC.left), valueRight: Math.round(unV.right),
+    };
+  });
+  const g = await geom();
+  console.log(`      password chevron right=${g.pwRight}  unit chevron right=${g.unRight}  unit chevron left=${g.unLeft} value right=${g.valueRight}`);
+  check('both chevrons end on the same vertical axis', Math.abs(g.pwRight - g.unRight) <= 1);
+  check('the unit chevron is beside the value, not under it', g.besideValue);
+
+  // CONTROL: put the old `display: block` rule back and the same measurement
+  // must fail — otherwise this is checking nothing.
+  await p.addStyleTag({ content: '.prow:has(.prow-stack) { display: block !important; }' });
+  await p.waitForTimeout(150);
+  const bad = await geom();
+  console.log(`      with display:block forced -> unit chevron right=${bad.unRight} beside=${bad.besideValue}`);
+  control('the measurement catches the chevron dropping to its own line',
+    Math.abs(bad.pwRight - bad.unRight) <= 1 && bad.besideValue);
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(fail ? `\n${fail} FAILED` : '\nall passed');

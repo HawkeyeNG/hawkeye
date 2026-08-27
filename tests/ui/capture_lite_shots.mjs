@@ -35,6 +35,24 @@
  *
  * The six filenames match the native set exactly, because the compositor keys
  * its captions off them.
+ *
+ * SHOT 1 IS NOT TAKEN HERE — IT IS THE NATIVE ANDROID ONE, REUSED.
+ *
+ * Lite and the RN app show the SAME capture screen on Android, because both end
+ * up in Google's ML Kit document scanner: in the Capacitor shell native.js sets
+ * HAWKEYE.capturePhoto, which calls DocScan.scanDocument(), and capture.js's
+ * open() returns at nativeCapture() before the getUserMedia overlay is ever
+ * shown. The scanner is a Play-services UI Google draws at runtime, so no
+ * browser can render it and there is nothing here to capture.
+ *
+ * A first pass DID capture a camera screen for Lite, with a fake video device
+ * feeding the specimen sheet. It was a real screenshot of a real screen — just
+ * the wrong one: the getUserMedia overlay is what the WEBSITE uses, and a Lite
+ * install never reaches it. The scripts for it (capture_lite_camera.mjs,
+ * make_lite_camera_feed.mjs) were deleted rather than kept, because their only
+ * remaining use would be to produce a screenshot of a screen the app does not
+ * have. Copy play-phone/1-capture.png into the Lite set instead; the plate,
+ * caption and canvas are identical, so it drops straight in.
  */
 import fs from 'node:fs';
 import path from 'node:path';

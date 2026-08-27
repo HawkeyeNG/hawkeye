@@ -33,11 +33,15 @@
  * right, showing two was the bug — a limit the app contradicts itself about is
  * not a limit.
  *
- * 60s, and it is the SAME number wherever it appears. Seconds rather than
+ * 45s, and it is the SAME number wherever it appears. Seconds rather than
  * megabytes because it is the one an observer can act on while pointing a
  * phone at something.
+ *
+ * Was briefly 60s. A real 60s recording still came out over the 15 MB limit,
+ * so the number is set by what actually fits rather than by what sounds
+ * generous.
  */
-export const MAX_VIDEO_SECONDS = 60;
+export const MAX_VIDEO_SECONDS = 45;
 export const MAX_VIDEOS = 2;
 export const VIDEO_BYTES = 15 * 1024 * 1024;
 export const PHOTO_BYTES = 8 * 1024 * 1024;

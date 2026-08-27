@@ -22,7 +22,28 @@
     .inc h3 { margin: 0 0 4px; font-size: 1.05rem; }
     .inc .meta { color: var(--muted); font-size: 0.82rem; }
     .inc .m { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
-    .inc .m img, .inc .m video { width: 160px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+    .inc .m img { width: 160px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+    /* EVIDENCE, NOT A THUMBNAIL.
+       A reviewer decides publish/reject from this clip, and it was rendered in
+       a 160x120 box with object-fit: cover — cropped, and far too small to read
+       what is happening. Worse, Chrome REDUCES its control set for a small
+       video element: at 160px the overflow menu offered only Download and
+       Playback speed, with no Fullscreen and no Mute, so there was no way to
+       make it bigger either. That is why it behaved differently on a phone,
+       where the same element is a large fraction of the screen.
+       `contain`, never `cover`: cropping evidence to fit a box is exactly the
+       wrong trade here. */
+    .inc .m .vid { flex: 1 1 100%; max-width: 520px; }
+    .inc .m video {
+      width: 100%; height: auto; max-height: 60vh; object-fit: contain;
+      background: #000; border-radius: 6px; border: 1px solid var(--border);
+    }
+    /* A clip the server could not convert may simply not decode in this
+       browser. Saying so beats a black rectangle the reviewer has to guess at. */
+    .inc .m .noconv {
+      margin: 0 0 6px; padding: 6px 8px; border-radius: 6px; font-size: 0.78rem;
+      background: #4a3a00; color: #ffd873; border: 1px solid #7a5f00;
+    }
     .acts { display: flex; gap: 10px; margin-top: 8px; }
     .acts button { margin: 0; width: auto; }
     .btn-reject { background: #6b7280; box-shadow: 0 2px 0 #4b5563; }
@@ -190,6 +211,10 @@
              covers every panel. This was a leftover from when incident review
              was its own page, and rendered a second identical Lock on screen. -->
       </div>
+      <!-- IS THE VIDEO TRANSCODE RUNNING? Answerable at a glance, because the
+           only symptom of it NOT running is a clip that plays audio and shows
+           nothing — which looks like a browser problem, not a server one. -->
+      <p id="media-health" class="meta" hidden></p>
       <div id="list"><p class="empty">Loading…</p></div>
 
       </div><div class="panel" data-p="labels" hidden><h1 style="margin-top:34px">Label Review</h1>
@@ -594,6 +619,39 @@
       }
     }
 
+    /**
+     * Say whether the server can convert video at all.
+     *
+     * ffmpeg is optional on this host, and when it is missing every incident
+     * video is stored exactly as the phone recorded it — HEVC on any recent
+     * handset, which a phone decodes and a desktop browser generally does not.
+     * The symptom (audio plays, picture does not) reads as a browser fault, so
+     * the server states its own capability here instead of leaving it to be
+     * deduced from a black rectangle.
+     *
+     * Quiet when everything is fine: a line that is always there is a line
+     * nobody reads.
+     */
+    async function paintMediaHealth() {
+      const el = $('media-health');
+      if (!el) return;
+      try {
+        const r = await fetch('/api/admin/stats', { headers: hdr() });
+        if (!r.ok) { el.hidden = true; return; }
+        const m = (await r.json()).media;
+        if (!m) { el.hidden = true; return; }
+        const stale = m.untranscodedVideoReports || 0;
+        if (m.ffmpeg && !stale && !m.transcodeFailuresSinceBoot) { el.hidden = true; return; }
+        el.hidden = false;
+        el.innerHTML = m.ffmpeg
+          ? `⚠ Video conversion is available but has failed ${m.transcodeFailuresSinceBoot} time(s) since restart`
+            + `${stale ? ` · ${stale} report(s) hold an unconverted clip` : ''}`
+            + `${m.lastTranscodeFailure ? ` · last: ${m.lastTranscodeFailure.reason}` : ''}`
+          : `⚠ ffmpeg is NOT installed on this server, so incident videos are stored exactly as recorded`
+            + ` and may not play in this browser${stale ? ` · ${stale} report(s) affected` : ''}.`;
+      } catch { el.hidden = true; }
+    }
+
     async function loadIncidents() {
       const r = await fetch(`/api/admin/incidents?status=${tab}`, { headers: hdr() });
       if (r.status === 401) { logout(); return; }
@@ -602,14 +660,27 @@
       // Tolerate a count element that is not on the page — the tab strip has
       // changed once already and will change again.
       const setCount = (id, n) => { const el = $(id); if (el) el.textContent = n || 0; };
+      paintMediaHealth();
       setCount('c-pending', counts?.pending);
       setCount('c-published', counts?.published);
       setCount('c-rejected', counts?.rejected);
       if (!incidents?.length) { $('list').innerHTML = `<p class="empty">Nothing ${tab}.</p>`; return; }
       $('list').innerHTML = incidents.map((i) => {
-        const media = (i.media || []).map((m) => m.type === 'video'
-          ? `<video src="/uploads/${m.file}" controls muted></video>`
-          : `<a href="/uploads/${m.file}" target="_blank"><img src="/uploads/${m.file}" alt="" /></a>`).join('');
+        const media = (i.media || []).map((m) => {
+          if (m.type !== 'video') {
+            return `<a href="/uploads/${m.file}" target="_blank"><img src="/uploads/${m.file}" alt="" /></a>`;
+          }
+          // `transcoded:false` means the server kept the phone's original —
+          // usually HEVC, which most desktop browsers cannot decode even though
+          // the AAC audio plays. Naming that turns a black rectangle into a
+          // known state with a way round it.
+          const warn = m.transcoded === false
+            ? `<p class="noconv">⚠ Not converted on the server${m.transcodeError ? ` (${m.transcodeError})` : ''} — this is the phone's original recording. If it will not play here, open it directly: <a href="/uploads/${m.file}" target="_blank" rel="noopener">${m.file.split('/').pop()}</a></p>`
+            : '';
+          // NOT muted: a reviewer judging an incident needs the audio, and the
+          // attribute only set the initial state anyway.
+          return `<div class="vid">${warn}<video src="/uploads/${m.file}" controls playsinline preload="metadata"></video></div>`;
+        }).join('');
         const gps = (i.lat != null && i.lng != null)
           ? ` · <a href="https://maps.google.com/?q=${i.lat},${i.lng}" target="_blank" rel="noopener">📍 map</a>` : '';
         const acts = tab === 'pending'

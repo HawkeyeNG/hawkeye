@@ -10,7 +10,7 @@
 // are network-first below, so they update on their own. Nothing else volatile
 // belongs in LAZY either — if a file can change between deploys, it goes in the
 // network-first branch, not here.
-const CACHE = 'hawkeye-v313';
+const CACHE = 'hawkeye-v314';
 // NOTE: vendor/tesseract (~6 MB per client) is deliberately NOT precached — it
 // lazy-loads on first sheet capture and the browser's HTTP cache keeps it.
 // PRECACHE ONLY THE REAL SHELL. This list is re-downloaded IN FULL by every

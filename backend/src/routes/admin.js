@@ -602,6 +602,12 @@ adminRouter.get('/admin/stats', requireAdmin, (_req, res) => {
       // list is not actionable on a host with no shell to go and check.
       ffmpegPath: mediaHealth.ffmpegPath,
       ffmpegTried: mediaHealth.ffmpegTried,
+      npmPackages: mediaHealth.npmPackages,
+      // Detection runs ONCE at boot. If this predates an npm install, the
+      // install simply has not been picked up yet and the process is stale —
+      // a different problem from a failed install, and previously
+      // indistinguishable from it.
+      bootedAt: mediaHealth.bootedAt,
       transcodeFailuresSinceBoot: mediaHealth.transcodeFailures,
       lastTranscodeFailure: mediaHealth.lastFailure,
       untranscodedVideoReports: untranscoded,

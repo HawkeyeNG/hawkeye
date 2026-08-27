@@ -649,7 +649,11 @@
             + `${m.lastTranscodeFailure ? ` · last: ${m.lastTranscodeFailure.reason}` : ''}`
           : `⚠ ffmpeg was not found on this server, so incident videos are stored exactly as recorded`
             + ` and may not play in this browser${stale ? ` · ${stale} report(s) affected` : ''}.`
-            + (m.ffmpegTried?.length ? ` Looked in: ${m.ffmpegTried.join(', ')}` : '');
+            + (m.npmPackages?.length ? `<br>npm: ${m.npmPackages.join(' · ')}` : '')
+            + (m.ffmpegTried?.length ? `<br>looked in: ${m.ffmpegTried.join(', ')}` : '')
+            // Detection runs once at boot: an install done AFTER this timestamp
+            // has not been seen yet, which is a restart, not a broken install.
+            + (m.bootedAt ? `<br>server started: ${new Date(m.bootedAt).toLocaleString()}` : '');
       } catch { el.hidden = true; }
     }
 

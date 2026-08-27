@@ -29,7 +29,15 @@ const execFileAsync = promisify(execFile);
  * a plan quietly resting on a step that was not running.
  */
 export const mediaHealth = {
-  ffmpeg: false, ffmpegPath: null, ffmpegTried: [], transcodeFailures: 0, lastFailure: null,
+  ffmpeg: false,
+  ffmpegPath: null,
+  ffmpegTried: [],
+  /** What the npm-packaged binaries resolved to, INCLUDING "not installed". */
+  npmPackages: [],
+  /** So a stale process is distinguishable from a bad install. */
+  bootedAt: new Date().toISOString(),
+  transcodeFailures: 0,
+  lastFailure: null,
 };
 
 /**
@@ -71,8 +79,21 @@ function findFfmpeg() {
         // eslint-disable-next-line
         const m = require(mod);
         const p = typeof m === 'string' ? m : m && m.path;
-        if (typeof p === 'string' && p) return p;
-      } catch { /* not installed — try the next */ }
+        if (typeof p === 'string' && p) {
+          // Resolved but possibly not downloaded: ffmpeg-static fetches its
+          // binary in a postinstall step, so the module can be present while
+          // the 76 MB file it points at is not.
+          mediaHealth.npmPackages.push(`${mod} -> ${p}${fs.existsSync(p) ? '' : ' (MODULE PRESENT BUT BINARY MISSING)'}`);
+          return p;
+        }
+        mediaHealth.npmPackages.push(`${mod} (loaded but exported no path)`);
+      } catch {
+        /* SAY SO. Silence here is why "npm install ran and the warning stayed"
+           was unanswerable: an uninstalled module left no trace in the tried
+           list, so it looked identical to a module that was installed and
+           simply did not work. */
+        mediaHealth.npmPackages.push(`${mod} (not installed)`);
+      }
     }
     return null;
   })();

@@ -69,17 +69,44 @@ console.log('\n=== it is found when PATH has no ffmpeg (the production case) ===
   // below would prove nothing at all.
   check('precondition: ffmpeg is NOT on the stripped PATH', visible === false);
 
-  const out = execFileSync(process.execPath, ['-e', `
-    import('./src/routes/incidents.js').then((m) => {
-      console.log(JSON.stringify({ ok: m.mediaHealth.ffmpeg, path: m.mediaHealth.ffmpegPath }));
-      process.exit(0);
-    });
-  `], { cwd: BACKEND, env: { ...process.env, PATH: stripped }, encoding: 'utf8' });
+  /**
+   * RUN IT FROM A FILE, THE WAY THE SERVER DOES.
+   *
+   * This used `node -e`, which executes in CommonJS mode and leaves a GLOBAL
+   * `require` in place. incidents.js is an ES module, where `require` does not
+   * exist — so a bare `require()` in it worked under the test and threw in
+   * production ("load failed: require is not defined") for a package that was
+   * correctly installed. The test was measuring its own invocation.
+   *
+   *   node -e "…"     globalThis.require -> function
+   *   node file.mjs   globalThis.require -> undefined
+   */
+  const runner = '/tmp/hk_ffmpeg_probe.mjs';
+  fs.writeFileSync(runner, `
+    import { mediaHealth } from '${BACKEND}/src/routes/incidents.js';
+    console.log(JSON.stringify({ ok: mediaHealth.ffmpeg, path: mediaHealth.ffmpegPath }));
+    process.exit(0);
+  `);
+  const out = execFileSync(process.execPath, [runner],
+    { cwd: BACKEND, env: { ...process.env, PATH: stripped }, encoding: 'utf8' });
   const line = out.trim().split('\n').filter((l) => l.startsWith('{')).pop() || '{}';
   const r = JSON.parse(line);
   console.log(`      resolved: ${r.path}`);
   check('ffmpeg is still found', r.ok === true, out.slice(0, 200));
   check('and it resolved to the bundled binary', /ffmpeg-static|ffmpeg-installer/.test(String(r.path)), String(r.path));
+
+  /* CONTROL: the two invocation modes really do differ, so the choice above is
+     load-bearing rather than incidental. If this ever stops being true, the
+     `node -e` form would be safe again — but until then it hides ESM bugs. */
+  const inE = execFileSync(process.execPath, ['-e', 'console.log(typeof globalThis.require)'], { encoding: 'utf8' }).trim();
+  const inFile = (() => {
+    const f = '/tmp/hk_require_probe.mjs';
+    fs.writeFileSync(f, 'console.log(typeof globalThis.require);\n');
+    return execFileSync(process.execPath, [f], { encoding: 'utf8' }).trim();
+  })();
+  console.log(`      node -e: require is ${inE} · node file.mjs: require is ${inFile}`);
+  control('`node -e` leaks a global require that a real module does not have',
+    !(inE === 'function' && inFile === 'undefined'));
 }
 
 console.log('\n=== the binary actually runs ===');

@@ -4,6 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
+import { createRequire } from 'node:module';
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
@@ -74,10 +75,20 @@ function findFfmpeg() {
    * panel — Passenger restarts on tmp/restart.txt but never installs anything.
    */
   const bundled = (() => {
+    /**
+     * createRequire, NOT a bare `require`.
+     *
+     * This file is an ES module and ESM has no `require` — the server reported
+     * "load failed: require is not defined" for a package that was correctly
+     * installed. It passed locally only because the test ran the module through
+     * `node -e`, which runs in CommonJS mode and leaks a global `require` that
+     * does not exist when Node starts a real .js entry point. The test was
+     * measuring its own invocation, not the code.
+     */
+    const req = createRequire(import.meta.url);
     for (const mod of ['ffmpeg-static', '@ffmpeg-installer/ffmpeg']) {
       try {
-        // eslint-disable-next-line
-        const m = require(mod);
+        const m = req(mod);
         const p = typeof m === 'string' ? m : m && m.path;
         if (typeof p === 'string' && p) {
           // Resolved but possibly not downloaded: ffmpeg-static fetches its

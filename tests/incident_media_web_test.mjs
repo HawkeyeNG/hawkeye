@@ -183,6 +183,49 @@ console.log('\n=== the video counter is silent until it is relevant ===');
   check('a photo does not change the video count', /2 of 2/.test(r.afterPhoto.text), r.afterPhoto.text);
 }
 
+console.log('\n=== an oversize file is refused by MODAL, and only from the library ===');
+{
+  const r = await page.evaluate(async () => {
+    const big = () => new File([new Uint8Array(26 * 1024 * 1024)], 'big.mp4', { type: 'video/mp4' });
+    const close = () => { const b = document.querySelector('#hk-alert-ok'); if (b) b.click(); };
+
+    attachments.length = 0;
+    close();
+    // LIBRARY: the only place a size limit is the real bound.
+    await addFiles([big()], 'library');
+    const box = document.querySelector('.hk-alert');
+    const fromLibrary = {
+      attached: attachments.length,
+      modal: box ? box.getClientRects().length > 0 : false,
+      text: box ? box.textContent.replace(/\s+/g, ' ').trim() : '',
+    };
+
+    close();
+    attachments.length = 0;
+    // CAMERA: the recorder already stopped at the duration cap, so size must
+    // NOT refuse it — the app would be overruling its own instruction.
+    await addFiles([big()], 'camera');
+    const box2 = document.querySelector('.hk-alert');
+    const fromCamera = {
+      attached: attachments.length,
+      modal: box2 ? box2.getClientRects().length > 0 : false,
+    };
+    close();
+    attachments.length = 0;
+    renderPreview();
+    return { fromLibrary, fromCamera };
+  });
+  console.log(`      library: attached=${r.fromLibrary.attached} modal=${r.fromLibrary.modal}`);
+  console.log(`      camera : attached=${r.fromCamera.attached} modal=${r.fromCamera.modal}`);
+  check('an oversize library file is refused', r.fromLibrary.attached === 0);
+  check('and refused with a modal, not a status line', r.fromLibrary.modal, JSON.stringify(r.fromLibrary));
+  check('the modal names the size and the limit',
+    /MB/.test(r.fromLibrary.text) && /too large/i.test(r.fromLibrary.text), r.fromLibrary.text);
+  check('a RECORDING of the same size is accepted', r.fromCamera.attached === 1,
+    'the duration cap is the gate for recordings — a size refusal there overrules the app\'s own instruction');
+  check('and raises no modal', r.fromCamera.modal === false);
+}
+
 console.log('\n=== a video thumbnail shows a real frame, not a grey box ===');
 {
   const r = await page.evaluate(async () => {

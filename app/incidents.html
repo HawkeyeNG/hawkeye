@@ -600,7 +600,24 @@
      * are bounded instead: at most MAX_VIDEOS, each under VIDEO_BYTES. The
      * native app compresses and caps duration; this is the honest web ceiling.
      */
-    async function addFiles(list) {
+    /**
+     * @param source 'camera' for something this app just recorded or shot,
+     *               'library' for a file chosen off the device.
+     *
+     * THE GATE DEPENDS ON WHERE IT CAME FROM. For a RECORDING the duration cap
+     * is the limit: the capture input stops at MAX_VIDEO_SECONDS, so a clip
+     * that ends there is one the app itself produced under its own rule, and
+     * refusing it afterwards for being a megabyte over is the app overruling
+     * its own instruction with no move left for the observer. A LIBRARY file
+     * carries no such guarantee — it can be an hour of 4K — so the size check
+     * stays there, where it is the only bound that exists.
+     *
+     * Native has drawn this distinction since the caps went in; the web applied
+     * the size cap to every source, so Lite was refusing 45s recordings it had
+     * just asked for.
+     */
+    async function addFiles(list, source) {
+      source = source || 'library';
       const videos = () => attachments.filter((f) => /^video\//.test(f.type)).length;
       for (const f of list) {
         if (attachments.length >= MAX_FILES) {
@@ -630,10 +647,22 @@
         const use = isVideo || !window.HAWKEYE_CAPTURE || !window.HAWKEYE_CAPTURE.shrink
           ? f
           : await window.HAWKEYE_CAPTURE.shrink(f, 1280, 0.72);
-        if (use.size > cap) {
-          $('status').textContent = isVideo
-            ? `Videos must be under ${Math.round(VIDEO_BYTES / 1048576)} MB — record a shorter clip (about ${MAX_VIDEO_SECONDS}s).`
-            : `That photo is too large even after compressing.`;
+        // A RECORDING IS NOT SIZE-CHECKED — see the note on `source` above.
+        if (source === 'library' && use.size > cap) {
+          /**
+           * A MODAL, like the video-count refusal. This wrote a line under the
+           * Submit button, which is easy to scroll past — and the file is
+           * discarded either way, so from the observer's side something they
+           * chose simply never appeared in the tray. That is the same silent
+           * loss, and it needs the same acknowledgement.
+           */
+          const mb = (use.size / 1048576).toFixed(1);
+          const title = isVideo ? 'That video is too large' : 'That photo is too large';
+          const body = isVideo
+            ? `It is ${mb} MB and the limit is ${Math.round(VIDEO_BYTES / 1048576)} MB. Record one here instead — the camera stops at ${MAX_VIDEO_SECONDS}s, which always fits — or trim it before attaching.`
+            : `It is ${mb} MB even after compressing, and the limit is ${Math.round(PHOTO_BYTES / 1048576)} MB.`;
+          if (window.HAWKEYE_ALERT) HAWKEYE_ALERT(title, body);
+          else $('status').textContent = `${title}. ${body}`;
           continue;
         }
         attachments.push(use);
@@ -643,9 +672,12 @@
     // SNAPSHOT THE LIST FIRST. addFiles is async now (it awaits compression),
     // and clearing the input's value can empty its live FileList before the
     // loop has read it — the files would silently vanish mid-attach.
-    $('media').onchange = () => { addFiles([...$('media').files]); $('media').value = ''; };
-    $('media-cam').onchange = () => { addFiles([...$('media-cam').files]); $('media-cam').value = ''; };
-    $('media-vid').onchange = () => { addFiles([...$('media-vid').files]); $('media-vid').value = ''; };
+    // #media is the GALLERY picker — size-checked. #media-cam and #media-vid
+    // carry `capture`, so they are the device camera: the duration cap is their
+    // gate and a size refusal there would overrule the app's own instruction.
+    $('media').onchange = () => { addFiles([...$('media').files], 'library'); $('media').value = ''; };
+    $('media-cam').onchange = () => { addFiles([...$('media-cam').files], 'camera'); $('media-cam').value = ''; };
+    $('media-vid').onchange = () => { addFiles([...$('media-vid').files], 'camera'); $('media-vid').value = ''; };
     // Video always goes through the file input: the Capacitor Camera plugin is
     // stills-only, so there is no native seam to route to on either platform.
     $('btn-video').onclick = () => {
@@ -730,7 +762,7 @@
         window.HAWKEYE_CAPTURE.open('incident', {
           labels: { incident: { title: 'Incident photo', action: 'Capture Photo' } },
           onShot: (blob) => {
-            if (blob) addFiles([new File([blob], `incident-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })]);
+            if (blob) addFiles([new File([blob], `incident-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })], 'camera');
             return true; // close the camera
           },
           onError: (m) => { $('status').textContent = m; },
@@ -740,7 +772,7 @@
       if (!nativeCam()) { $('media-cam').click(); return; }
       try {
         const blob = await window.HAWKEYE.capturePhoto('venue'); // 'venue' = plain OS camera, no doc-scan
-        if (blob) addFiles([new File([blob], `photo-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })]);
+        if (blob) addFiles([new File([blob], `photo-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })], 'camera');
         // A resolved-but-empty result is NOT a cancel — it means the plugin came
         // back with nothing, which used to look identical to success.
         else $('status').textContent = 'The camera returned no photo — use “Choose files” below instead.';

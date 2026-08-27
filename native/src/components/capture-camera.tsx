@@ -33,11 +33,16 @@ export type Media = Shot & { type: 'image' | 'video'; read?: SheetRead | null };
  * → the shared 60s cap ≈ 16MB, inside the server's 15MB/file limit once
  * react-native-compressor has re-encoded it, and well inside the 25MB stop.
  * Dev-build era (with push notifications): react-native-compressor for
- * WhatsApp-grade H.265 re-encode (minutes of video), and Google ML Kit for
+ * WhatsApp-grade re-encode (minutes of video), and Google ML Kit for
  * on-device doc-scan/OCR of result sheets.
  */
 // react-native-compressor exists only in the dev client, not Expo Go — probe
-// once. With it, recordings are re-encoded H.265 after capture, so the length
+// once. It re-encodes to H.264 — `MIME_TYPE = "video/avc"` in the library's own
+// Android Compressor.kt, checked rather than assumed: this comment used to claim
+// H.265, which sent a later investigation of an unplayable admin clip straight
+// at the wrong suspect. H.264 is also the codec every browser can decode, so a
+// compressed recording plays in review even when the server cannot transcode.
+// With it, recordings are re-encoded after capture, so the length
 // cap doubles; without it the encoder cap is the only thing keeping 90s ≈ 24MB
 // under the edge's 33MB body limit, so the old cap stays.
 let VideoCompressor: { compress: (uri: string, opts: object) => Promise<string> } | null = null;

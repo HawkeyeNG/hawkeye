@@ -5,3 +5,13 @@
 node_modules/
 ios/
 *.log
+
+# ...but NOT our own plugin's iOS sources. `ios/` above is meant for the
+# GENERATED Capacitor project at mobile/ios; being pathless it matched
+# plugins/hawkeye-vision/ios/ too, and silently kept the plugin's Swift out of
+# the repo. The pod would still have built in CI — with no source files in it —
+# and iOS would have come back with no scanner and no OCR while every step went
+# green. Caught by `git status` showing five files staged where nine were
+# expected.
+!plugins/*/ios/
+!plugins/*/ios/**

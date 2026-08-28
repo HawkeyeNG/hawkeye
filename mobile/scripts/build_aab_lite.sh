@@ -68,7 +68,13 @@ node -e '
   fs.writeFileSync(p, JSON.stringify(after, null, 2) + "\n");
   console.log("  android plugins: " + before.length + " -> " + after.length);
 ' || exit 1
-sed -i "/capacitor-firebase-messaging/d" android/capacitor.settings.gradle
+# cap sync writes each plugin as include / project / BLANK. Deleting only the
+# two named lines leaves the blank stranded next to the previous one, and these
+# files are TRACKED — so every build left the tree dirty, which is how a real
+# change goes unnoticed. Take the trailing blank with them. (`cat -s` was the
+# first attempt and was too blunt: it also collapsed a double blank that is
+# genuinely in the committed file.)
+sed -i "/^include ':capacitor-firebase-messaging'/,+2d" android/capacitor.settings.gradle
 sed -i "/capacitor-firebase-messaging/d" android/app/capacitor.build.gradle
 
 for f in android/capacitor.settings.gradle android/app/capacitor.build.gradle \

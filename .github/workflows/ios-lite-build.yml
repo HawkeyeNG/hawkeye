@@ -120,6 +120,25 @@ jobs:
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
             IPHONEOS_DEPLOYMENT_TARGET=16.0 CODE_SIGNING_ALLOWED=NO build
 
+      - name: Device build (unsigned) — the size that actually matters
+        working-directory: mobile
+        # The simulator build is the correctness gate; THIS is the measurement.
+        # A simulator .app carries x86_64/arm64-sim slices and is not what a
+        # phone downloads, so it cannot answer "is Lite still lite on iOS".
+        # continue-on-error, because an unsigned device build is the step most
+        # likely to be refused by a toolchain change — and a warning in the UI
+        # is visible, where swallowing the failure would not be.
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          WS=$(find ios -maxdepth 2 -name '*.xcworkspace' | head -1)
+          xcodebuild -workspace "$WS" -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath /tmp/dd-device \
+            IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | tail -20
+
       - name: What it weighs
         working-directory: mobile
         if: always()
@@ -139,15 +158,25 @@ jobs:
           echo "--- pods by total on disk (both slices, NOT a store size) ---"
           du -sh ios/App/Pods/* 2>/dev/null | sort -rh | head -10
 
-          echo "--- DEVICE slices only (ios-arm64), largest first ---"
-          # This is what a phone would actually receive, before thinning.
-          found=0
-          while IFS= read -r d; do
-            found=1
-            printf '%8s  %s\n' "$(du -sh "$d" | cut -f1)" \
-              "$(echo "$d" | sed -E 's#.*/Pods/([^/]+)/.*#\1#')"
-          done < <(find ios/App/Pods -type d -name 'ios-arm64' 2>/dev/null | sort)
-          [ "$found" = 1 ] || echo "  (no ios-arm64 slices found — are these not XCFrameworks?)"
+          echo "--- how ML Kit is actually laid out (the ios-arm64 probe missed it) ---"
+          # A `-name ios-arm64` search found only IONGeolocationLib, so the
+          # GoogleMLKit pods do not use that XCFramework slice layout. Print the
+          # real shape rather than reporting a number for one pod and calling it
+          # the device total.
+          find ios/App/Pods/MLKitTextRecognitionCommon -maxdepth 3 -type d 2>/dev/null | head -8
+          find ios/App/Pods -maxdepth 3 -name '*.xcframework' 2>/dev/null | head -8
+
+          echo "--- built .app for DEVICE (Release, arm64) — the real figure ---"
+          DEV=$(find /tmp/dd-device -type d -name 'App.app' 2>/dev/null | head -1)
+          if [ -n "$DEV" ]; then
+            du -sh "$DEV"
+            echo "  its frameworks:"
+            du -sh "$DEV"/Frameworks/* 2>/dev/null | sort -rh | head -8 || echo "    (none — statically linked)"
+            echo "  its main binary:"
+            du -sh "$DEV/App" 2>/dev/null || true
+          else
+            echo "  NOT FOUND — the device build step did not produce a product."
+          fi
 
           echo "--- built .app (simulator Debug, NOT a store size) ---"
           APP=$(find ~/Library/Developer/Xcode/DerivedData -type d -name 'App.app' 2>/dev/null | head -1)

@@ -123,18 +123,44 @@ jobs:
       - name: What it weighs
         working-directory: mobile
         if: always()
-        # INDICATIVE ONLY. A simulator Debug build is not an App Store download:
-        # it is unthinned, unstripped and carries simulator slices. It is still
-        # the honest way to see which pod dominates, which is the question that
-        # matters before deciding whether Lite is worth shipping on iOS at all.
+        # A `du -sh Pods/*` total is NOT a store size — an XCFramework carries
+        # device AND simulator slices, and only the device one ships. Run 1
+        # reported MLKitTextRecognitionCommon at 103 MB on that basis, which
+        # overstates it; the ios-arm64 slice below is the honest figure to
+        # reason about before App Store thinning and compression.
+        #
+        # The .app lookup here previously found nothing and printed nothing
+        # while the step still went green — measuring zero and reporting
+        # success. It now says so out loud.
         run: |
           echo "--- packaged web assets ---"
-          du -sh ios/App/App/public 2>/dev/null || true
-          echo "--- pods, largest first (unthinned) ---"
-          du -sh ios/App/Pods/* 2>/dev/null | sort -rh | head -12 || true
-          echo "--- built .app (simulator, NOT a store size) ---"
-          find ~/Library/Developer/Xcode/DerivedData -name 'App.app' -maxdepth 6 -print0 2>/dev/null \
-            | xargs -0 -I{} du -sh {} 2>/dev/null | head -3 || true
+          du -sh ios/App/App/public
+
+          echo "--- pods by total on disk (both slices, NOT a store size) ---"
+          du -sh ios/App/Pods/* 2>/dev/null | sort -rh | head -10
+
+          echo "--- DEVICE slices only (ios-arm64), largest first ---"
+          # This is what a phone would actually receive, before thinning.
+          found=0
+          while IFS= read -r d; do
+            found=1
+            printf '%8s  %s\n' "$(du -sh "$d" | cut -f1)" \
+              "$(echo "$d" | sed -E 's#.*/Pods/([^/]+)/.*#\1#')"
+          done < <(find ios/App/Pods -type d -name 'ios-arm64' 2>/dev/null | sort)
+          [ "$found" = 1 ] || echo "  (no ios-arm64 slices found — are these not XCFrameworks?)"
+
+          echo "--- built .app (simulator Debug, NOT a store size) ---"
+          APP=$(find ~/Library/Developer/Xcode/DerivedData -type d -name 'App.app' 2>/dev/null | head -1)
+          if [ -n "$APP" ]; then
+            du -sh "$APP"
+          else
+            # Loudly, because a silent nothing here is indistinguishable from a
+            # build that produced no product at all.
+            echo "  NOT FOUND — no App.app under DerivedData. The compile step"
+            echo "  said BUILD SUCCEEDED, so this is a measurement fault, not a"
+            echo "  build fault; find the real product path before trusting it."
+            find ~/Library/Developer/Xcode/DerivedData -maxdepth 3 -type d 2>/dev/null | head -5
+          fi
 
       - name: Keep the build log
         if: always()

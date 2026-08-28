@@ -57,24 +57,61 @@ const scale = want / longest;
 console.log(`  crest now  ${cw}x${ch}  (${((cw / W) * 100).toFixed(1)}% x ${((ch / H) * 100).toFixed(1)}%)`);
 console.log(`  target     longest side ${want}px  (${(TARGET * 100).toFixed(0)}% of ${W})  scale x${scale.toFixed(3)}`);
 
-if (Math.abs(scale - 1) < 0.02) { console.log('  already at target — nothing to do'); process.exit(0); }
 if (DRY) { console.log('  --dry: not writing'); process.exit(0); }
 
-// Crop to the crest, scale it, and centre it on a fresh transparent canvas.
-const crest = await sharp(SRC).extract({ left: minX, top: minY, width: cw, height: ch })
-  .resize({ width: Math.round(cw * scale), height: Math.round(ch * scale), fit: 'fill' })
-  .png().toBuffer();
-const cm = await sharp(crest).metadata();
+/* SKIP THE RESCALE, NOT THE REST. This used to `process.exit(0)` when the crest
+   was already the right size, which also skipped the mipmap rewrite below — so
+   a second run silently did nothing about resolution. An early exit that jumps
+   over unrelated later work is a bug waiting for someone to re-run the script. */
+if (Math.abs(scale - 1) < 0.02) {
+  console.log('  crest already at target — leaving the source alone');
+} else {
+  // Crop to the crest, scale it, and centre it on a fresh transparent canvas.
+  const crest = await sharp(SRC).extract({ left: minX, top: minY, width: cw, height: ch })
+    .resize({ width: Math.round(cw * scale), height: Math.round(ch * scale), fit: 'fill' })
+    .png().toBuffer();
+  const cm = await sharp(crest).metadata();
 
-const out = await sharp({ create: { width: W, height: H, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-  .composite([{ input: crest, left: Math.round((W - cm.width) / 2), top: Math.round((H - cm.height) / 2) }])
-  .png().toBuffer();
+  const out = await sharp({ create: { width: W, height: H, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    .composite([{ input: crest, left: Math.round((W - cm.width) / 2), top: Math.round((H - cm.height) / 2) }])
+    .png().toBuffer();
 
-fs.copyFileSync(SRC, SRC.replace(/\.png$/, '.pre-scale.png'));
-fs.writeFileSync(SRC, out);
-console.log(`  wrote ${SRC} (previous kept as ${SRC.replace(/\.png$/, '.pre-scale.png')})`);
+  fs.copyFileSync(SRC, SRC.replace(/\.png$/, '.pre-scale.png'));
+  fs.writeFileSync(SRC, out);
+  console.log(`  wrote ${SRC} (previous kept as ${SRC.replace(/\.png$/, '.pre-scale.png')})`);
+}
 
 // Read it back rather than trusting the write.
+/**
+ * AND WRITE THE MIPMAPS AT THE RIGHT RESOLUTION.
+ *
+ * `@capacitor/assets` generates the adaptive FOREGROUND at the legacy launcher
+ * sizes — 48dp base, so xxxhdpi came out 192x192. An adaptive foreground is
+ * 108dp, which is 432x432 at xxxhdpi, exactly what native ships. Lite's icon
+ * was therefore being upscaled 2.25x by the launcher and looked soft beside it,
+ * which is a different fault from the crest being the wrong size and survives
+ * fixing that one.
+ *
+ * Run this AFTER `capacitor-assets generate --android`, which is what creates
+ * the directories and the XML that references these files.
+ */
+const DENSITIES = [['ldpi', 81], ['mdpi', 108], ['hdpi', 162], ['xhdpi', 216], ['xxhdpi', 324], ['xxxhdpi', 432]];
+const RES = 'android/app/src/main/res';
+if (fs.existsSync(RES)) {
+  for (const [d, px] of DENSITIES) {
+    const dest = `${RES}/mipmap-${d}/ic_launcher_foreground.png`;
+    if (!fs.existsSync(`${RES}/mipmap-${d}`)) continue;
+    await sharp(SRC).resize(px, px, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png().toFile(dest + '.tmp');
+    fs.renameSync(dest + '.tmp', dest);
+  }
+  const big = await sharp(`${RES}/mipmap-xxxhdpi/ic_launcher_foreground.png`).metadata();
+  console.log(`  mipmap foregrounds rewritten at 108dp sizes (xxxhdpi ${big.width}x${big.height})`);
+  if (big.width !== 432) { console.log('FAIL: xxxhdpi foreground is not 432px'); process.exit(1); }
+} else {
+  console.log('  (no android/ res dir — skipped the mipmap rewrite)');
+}
+
 const check = await sharp(SRC).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 let a = check.info.width, b = -1;
 for (let y = 0; y < check.info.height; y++) {

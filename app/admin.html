@@ -171,6 +171,14 @@
     body { min-height: 100vh; display: flex; flex-direction: column; }
     main.wrap { flex: 1 0 auto; }
     footer.gov-footer { flex-shrink: 0; }
+
+    /* ONE LINE, HALF THE HEIGHT. styles.css sizes this footer for three blocks
+       — nav, disclaimer, copyright — and gives .copyright a hairline rule to set
+       it off from the prose above. With only the copyright left that rule
+       separates a line from nothing, which reads as a mistake rather than as
+       structure. Padding halves with the content it was spacing. */
+    footer.gov-footer .wrap { padding-top: 13px; padding-bottom: 15px; }
+    footer.gov-footer .copyright { margin: 0; padding-top: 0; border-top: 0; }
   </style>
   <script src="authgate.js?v=2"></script>
 </head>
@@ -407,12 +415,11 @@
     </section>
   </main>
 
-  <!-- The console had no footer at all. Deliberately NOT the public one: its nav
-       points at Privacy / How It Works / FAQ, which is site furniture with no
-       business on an owner-only page. The copyright line is the part that
-       belongs here, and it matches the wording every other page carries. -->
+  <!-- Deliberately NOT the public footer: its nav points at Privacy / How It
+       Works / FAQ, which is site furniture with no business on an owner-only
+       page. The copyright is the only line that belongs, worded as every other
+       page words it — the header already says this console is private. -->
   <footer class="gov-footer"><div class="wrap">
-    <p>Hawkeye Admin Console — private. Not a public page.</p>
     <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
   </div></footer>
 

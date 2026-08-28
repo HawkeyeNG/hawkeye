@@ -278,6 +278,29 @@
     // has a session; a tap on a notification with a data.url deep-links there.
     window.HAWKEYE.initPush = async function initPush() {
       if (!localStorage.getItem('hawkeye_token')) return;
+
+      /**
+       * WAKE THE FIREBASE PLUGIN BEFORE ANYTHING REGISTERS WITH APNS.
+       *
+       * Capacitor instantiates a plugin lazily, on its first call from JS, and
+       * FirebaseMessagingPlugin.load() is where it subscribes to
+       * .capacitorDidRegisterForRemoteNotifications — the ONLY place it sets
+       * Messaging.apnsToken. Reaching for it for the first time inside the
+       * `registration` listener installed that observer AFTER the notification
+       * had already fired, so Firebase never saw the APNs token and getToken()
+       * failed with "No APNS token specified before fetching FCM Token".
+       *
+       * The app looked fine: permission was granted, iOS issued a token, and
+       * the only symptom was that no push ever arrived. Any call will do — this
+       * one is cheap and side-effect free; what matters is that it happens
+       * before Push.register() below.
+       */
+      if (FbMsg) {
+        try { await FbMsg.checkPermissions(); } catch (e) {
+          console.warn('[push] could not wake FirebaseMessaging:', (e && e.message) || e);
+        }
+      }
+
       let perm = await Push.checkPermissions();
       if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') perm = await Push.requestPermissions();
       if (perm.receive !== 'granted') return;
@@ -296,15 +319,32 @@
         // the same MESSAGING_EVENT service) and exchanges it for an FCM token.
         let value = t.value;
         if (FbMsg) {
-          try {
+          // ONE RETRY. Firebase sets apnsToken from a NotificationCenter
+          // observer; with the wake-up above that has already run by the time
+          // this listener fires, but a single retry costs nothing and turns a
+          // marginal ordering into a recovered one rather than a dead device.
+          const fetchToken = async () => {
             const r = await FbMsg.getToken();
             if (!r || !r.token) throw new Error('no token returned');
-            value = r.token;
+            return r.token;
+          };
+          try {
+            try {
+              value = await fetchToken();
+            } catch (first) {
+              await new Promise((r) => setTimeout(r, 1500));
+              value = await fetchToken();
+            }
+            window.HAWKEYE.pushError = null;
           } catch (e) {
-            // Deliberately register NOTHING rather than an APNs token the
-            // server cannot use. A missing registration is visible; a stored
-            // dead token looks exactly like a working one.
-            console.warn('[push] no FCM token on iOS — not registering:', (e && e.message) || e);
+            /* Deliberately register NOTHING rather than an APNs token the server
+               cannot use: a stored dead token looks exactly like a working one.
+               But "nothing" was also invisible — this failed on a real device and
+               the only symptom was that no push ever arrived. Park the reason
+               where it can be read back. */
+            const why = (e && e.message) || String(e);
+            window.HAWKEYE.pushError = why;
+            console.warn('[push] no FCM token on iOS — not registering:', why);
             return;
           }
         }

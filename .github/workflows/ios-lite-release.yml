@@ -357,11 +357,21 @@ jobs:
           # runtime — the app runs and push never arrives.
           group = project.main_group['App'] || project.main_group
           ref = group.files.find { |f| f.display_name == 'GoogleService-Info.plist' }
-          ref ||= group.new_file('App/GoogleService-Info.plist')
+          # JUST THE FILENAME. new_file resolves relative to the GROUP, and this
+          # group's own path is already 'App' — passing 'App/GoogleService-Info
+          # .plist' produced ios/App/App/App/... and the archive failed with
+          # "Build input file cannot be found".
+          ref ||= group.new_file('GoogleService-Info.plist')
           phase = target.resources_build_phase
           unless phase.files_references.include?(ref)
             phase.add_file_reference(ref)
           end
+          # Resolve the reference back to a real path and confirm something is
+          # actually there. A dangling reference is what the doubled path was,
+          # and it survives all the way to the archive before saying so.
+          abort("FAIL: reference resolves to #{ref.real_path}, which does not exist") \
+            unless File.exist?(ref.real_path)
+          puts "  plist reference -> #{ref.real_path}"
 
           project.save
 

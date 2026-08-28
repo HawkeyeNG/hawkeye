@@ -339,9 +339,57 @@
   // It lives in the web footer, on the app's welcome screen, and in about.html
   // ("Who runs Hawkeye"), which the menu links to.
 
+  /**
+   * WHICH CONTROL SITS IN THE HEADER — and, in the app, whether it is a way BACK.
+   *
+   * An iPhone gives a web view no system back gesture, the way the Fold's
+   * right-swipe does. So inside the Capacitor shell a page that is not a tab had
+   * NO way back at all: an observer who opened, say, the ledger from the menu
+   * could only leave it through the tab bar, losing where they were.
+   *
+   * Native already solved this. ScreenHeader takes `right='close'` with
+   * `onClose={() => router.back()}` on every screen, and `right='none'` on the
+   * five tab screens, because there the tab bar IS the navigation
+   * (native/src/app/(tabs)/*). Lite mirrors that rule rather than inventing one:
+   *
+   *   app shell, home ............ theme toggle (as before)
+   *   app shell, other tab page .. nothing, matching native's right='none'
+   *   app shell, any other page .. a close (x) that goes back
+   *   website .................... unchanged, theme toggle everywhere
+   *
+   * The toggle is not lost on the pages that give it up — it is added to the
+   * menu panel below, which is reachable from every screen.
+   *
+   * The close button carries the .theme-btn class as well as its own, so it
+   * inherits the header button's existing size, colour and hit area. Adding a
+   * rule to styles.css would have meant bumping ?v= across all 40 pages and the
+   * service-worker CACHE for a button that already has a style.
+   */
+  const APP_TABS = { '': 1, 'index.html': 1, 'results.html': 1, 'observe.html': 1, 'notifications.html': 1 };
+  const HERE = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  const SHELL = isAppShell();
+
+  if (btn && SHELL && !APP_TABS[HERE] && !document.querySelector('.close-btn')) {
+    const cb = document.createElement('button');
+    cb.className = 'theme-btn close-btn';
+    cb.type = 'button';
+    cb.setAttribute('aria-label', 'Close and go back');
+    cb.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    cb.addEventListener('click', () => {
+      /* A deep link or a cold start has nothing to go back TO, and history.back()
+         there does nothing whatsoever — silently reproducing the dead end this
+         button exists to remove. Home is the honest fallback. */
+      if (window.history.length > 1) window.history.back();
+      else location.href = 'index.html';
+    });
+    btn.parentNode.insertBefore(cb, btn);
+  }
+
   // Light/dark toggle beside the hamburger. Toggles from the EFFECTIVE mode and
   // persists; greens are identical in both — only neutral surfaces change.
-  if (btn && !document.querySelector('.theme-btn')) {
+  // In the app shell it is HOME ONLY (see above); on the website, every page.
+  if (btn && !document.querySelector('.theme-btn') && (!SHELL || APP_TABS[HERE])
+      && !(SHELL && HERE !== 'index.html' && HERE !== '')) {
     const tb = document.createElement('button');
     tb.className = 'theme-btn';
     const effective = () => document.documentElement.dataset.theme || 'dark';
@@ -362,6 +410,39 @@
     });
     paint();
     btn.parentNode.insertBefore(tb, btn);
+  }
+
+  /**
+   * ...AND THE TOGGLE GOES INTO THE MENU, so giving it up in the header costs
+   * nothing. Only in the app shell: on the website it is already on every page.
+   *
+   * The row copies an existing panel link's className rather than naming one,
+   * so it keeps matching whatever the panel is styled with instead of pinning a
+   * class this file does not own.
+   */
+  if (SHELL && panel && !panel.querySelector('.menu-theme')
+      && !document.querySelector('.theme-btn:not(.close-btn)')) {
+    /* Only where the header does NOT already carry the toggle — i.e. everywhere
+       but Home. Two controls for one setting would have to be kept in step, and
+       the first version of this tried to do that by poking the header button;
+       not having two is better than syncing two. */
+    const sample = panel.querySelector('a');
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'menu-theme' + (sample ? ' ' + sample.className : '');
+    row.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;font:inherit;color:inherit;';
+    const eff = () => document.documentElement.dataset.theme || 'dark';
+    const label = () => (eff() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    row.textContent = label();
+    row.addEventListener('click', () => {
+      const next = eff() === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('hawkeye_theme', next);
+      const m = document.querySelector('meta[name="theme-color"]');
+      if (m) m.content = next === 'dark' ? '#00251a' : '#ffffff';
+      row.textContent = label();
+    });
+    panel.appendChild(row);
   }
 
   // Header slot, one control, state-dependent (called by syncAuthMenu below):
@@ -1221,6 +1302,22 @@
     row.className = 'social-row';
     row.innerHTML = shownSocial.map((s) => `<a href="${s.url}" target="_blank" rel="noopener me" aria-label="Hawkeye on ${s.name}" title="Hawkeye on ${s.name}"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${s.svg}</svg></a>`).join('');
     footWrap.insertBefore(row, footWrap.querySelector('nav') || footWrap.firstChild);
+    /**
+     * AND INTO THE MENU, IN THE APP.
+     *
+     * The shell hides the footer (`body.has-tabbar .gov-footer`), which took the
+     * social row down with it — so Lite had no way to reach the accounts at all,
+     * on any screen. Native does not have that gap: it puts SocialRow in the
+     * More tab. The menu panel is Lite's More tab, so it goes here.
+     *
+     * A clone, not a move: the website's footer keeps its own row.
+     */
+    const panelEl = document.querySelector('.menu-panel') || document.getElementById('menu-panel');
+    if (isAppShell() && panelEl && !panelEl.querySelector('.social-row')) {
+      const inMenu = row.cloneNode(true);
+      inMenu.style.cssText = 'display:flex;gap:18px;justify-content:center;padding:14px 0 4px;';
+      panelEl.appendChild(inMenu);
+    }
     if (!document.getElementById('social-row-css')) {
       const st = document.createElement('style');
       st.id = 'social-row-css';

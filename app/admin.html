@@ -219,6 +219,13 @@
            with the console secret. -->
       <h1>Reach</h1>
       <div id="stats" class="statgrid"><p class="empty">Loading…</p></div>
+      <!-- Which device is which. The counts above say a bad row exists; this
+           says whose, on what platform, and how old — the three things that
+           decide whether it ages out by itself or is a bug. No token values. -->
+      <details id="push-wrap" style="margin-top:10px">
+        <summary style="cursor:pointer;font-weight:700">Push devices</summary>
+        <div id="push-list"><p class="empty">Loading…</p></div>
+      </details>
       <details id="obs-wrap" style="margin-top:10px">
         <summary style="cursor:pointer;font-weight:700">Observer Roll</summary>
         <p class="meta">Phone hashes are truncated. They are one-way, but Nigerian mobile
@@ -608,6 +615,28 @@
           + cell(a.practiceRuns, 'practice runs')
           + cell(a.unitsCrowdMapped, 'units crowd-mapped')
           + cell(since, 'first signup', false, 'date');
+
+        // The rows behind the counts. An undeliverable row is only actionable
+        // once you know whose it is: a pre-2026-08-24 native one ages out on its
+        // own, a Lite one is a bug.
+        // Local escape: `esc` exists in this file but in two LATER IIFEs, not
+        // this one. Reaching for it here throws a ReferenceError and takes the
+        // whole Reach panel down with it, not just this table.
+        const e2 = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const dev = d.pushDevices || [];
+        $('push-list').innerHTML = dev.length
+          ? `<table class="mono" style="width:100%;font-size:0.82rem;border-collapse:collapse">
+               <tr style="text-align:left;color:var(--muted)">
+                 <th>observer</th><th>platform</th><th>deliverable</th><th>len</th><th>registered</th></tr>
+               ${dev.map((r) => `<tr>
+                 <td>#${r.observer_id ?? '—'}</td>
+                 <td>${e2(r.platform)}</td>
+                 <td style="color:${r.deliverable ? 'var(--green)' : '#b3261e'};font-weight:700">
+                   ${r.deliverable ? 'yes' : 'NO — raw APNs'}</td>
+                 <td>${r.token_len}</td>
+                 <td>${new Date(r.created_at).toISOString().slice(0, 10)}</td></tr>`).join('')}
+             </table>`
+          : '<p class="empty">No devices registered for push.</p>';
       } catch (e) {
         $('stats').innerHTML = `<p class="empty">Could not load stats (${e.message})</p>`;
       }

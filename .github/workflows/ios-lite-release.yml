@@ -282,8 +282,51 @@ jobs:
           PLIST
           cat ios/ExportOptions.plist
 
+      - name: Configure signing on the App target ONLY
+        working-directory: mobile
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        # Signing settings passed as xcodebuild ARGUMENTS apply to every target
+        # in the workspace, and the ~13 Pods targets are static libraries that
+        # must not be signed at all:
+        #
+        #   error: Capacitor does not support provisioning profiles, but
+        #   provisioning profile Hawkeye Lite App Store has been manually
+        #   specified.   (…and the same for all twelve others)
+        #
+        # So they go into the App target's own build configuration instead,
+        # leaving the Pods project untouched. xcodeproj is CocoaPods' own
+        # dependency, so `pod install` having succeeded means it is present.
+        run: |
+          set -euo pipefail
+          ruby -e "require 'xcodeproj'" 2>/dev/null || sudo gem install xcodeproj --no-document
+          TEAM_ID="$TEAM_ID" PROFILE_NAME="$PROFILE_NAME" ruby - <<'RUBY'
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open('ios/App/App.xcodeproj')
+          target = project.targets.find { |t| t.name == 'App' }
+          abort('FAIL: no App target in the project') if target.nil?
+          target.build_configurations.each do |config|
+            s = config.build_settings
+            s['CODE_SIGN_STYLE'] = 'Manual'
+            s['DEVELOPMENT_TEAM'] = ENV['TEAM_ID']
+            s['PROVISIONING_PROFILE_SPECIFIER'] = ENV['PROFILE_NAME']
+            s['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
+            # The sdk-qualified key is the one Xcode actually consults for a
+            # device build; the Capacitor template sets it, and leaving it alone
+            # is what made the first run look for "iOS Development".
+            s['CODE_SIGN_IDENTITY[sdk=iphoneos*]'] = 'Apple Distribution'
+          end
+          project.save
+          puts 'signing written to the App target:'
+          target.build_configurations.each do |config|
+            puts "  #{config.name}: #{config.build_settings['CODE_SIGN_IDENTITY[sdk=iphoneos*]']} / #{config.build_settings['PROVISIONING_PROFILE_SPECIFIER']}"
+          end
+          RUBY
+
       - name: Archive
         working-directory: mobile
+        # NO signing arguments here — see the step above. Only the deployment
+        # target, which genuinely does belong to every pod.
         run: |
           set -euo pipefail
           WS=$(find ios -maxdepth 2 -name '*.xcworkspace' | head -1)
@@ -291,10 +334,6 @@ jobs:
             -sdk iphoneos -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/HawkeyeLite.xcarchive" \
             IPHONEOS_DEPLOYMENT_TARGET=16.0 \
-            DEVELOPMENT_TEAM='${{ secrets.APPLE_TEAM_ID }}' \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             archive
 
       - name: Export .ipa

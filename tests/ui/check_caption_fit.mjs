@@ -12,8 +12,28 @@ import path from 'node:path';
 import sharp from '/home/elrio/hawkeye/backend/node_modules/sharp/dist/index.cjs';
 
 const ROOT = '/mnt/c/Users/HP/Downloads/hawkeye-screenshots';
+
+/**
+ * DIRECTORIES COME FROM ARGV. They used to be hardcoded and any argument was
+ * silently ignored — so checking a new set appeared to work, printed "every
+ * caption sits inside its margin", and had in fact re-measured the native ones.
+ * Three runs against three different Lite directories all reported "12 of 12
+ * files" for sets of five, and the total was hardcoded too, so nothing in the
+ * output contradicted it.
+ */
+const args = process.argv.slice(2);
+const targets = args.length
+  ? args.map((d) => [path.basename(d).padEnd(4).slice(0, 4), path.isAbsolute(d) ? d : `${ROOT}/${d}`])
+  : [['play', `${ROOT}/play-phone`], ['ios ', `${ROOT}/ios-6.9`]];
+
+for (const [, dir] of targets) {
+  if (!fs.existsSync(dir)) { console.log(`CONTROL FAILED: ${dir} does not exist`); process.exit(2); }
+}
+const total = targets.reduce((n, [, d]) =>
+  n + fs.readdirSync(d).filter((x) => x.endsWith('.png')).length, 0);
+
 let bad = 0, seen = 0;
-for (const [label, dir] of [['play', `${ROOT}/play-phone`], ['ios ', `${ROOT}/ios-6.9`]]) {
+for (const [label, dir] of targets) {
   for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.png')).sort()) {
     const p = path.join(dir, f);
     const { data, info } = await sharp(p).raw().toBuffer({ resolveWithObject: true });
@@ -39,6 +59,6 @@ for (const [label, dir] of [['play', `${ROOT}/play-phone`], ['ios ', `${ROOT}/io
 }
 console.log('');
 if (!seen) console.log('CONTROL FAILED: found no caption ink anywhere — this check is measuring nothing');
-else console.log(`control: caption ink located in ${seen} of 12 files`);
+else console.log(`control: caption ink located in ${seen} of ${total} files`);
 console.log(bad ? `${bad} caption(s) wrong` : 'every caption sits inside its margin');
 process.exit(bad ? 1 : 0);

@@ -100,6 +100,20 @@
   --caution-ink: #fae014;
   color-scheme: only dark;   /* see the "only light" note above */
 }
+/* DOUBLE-TAP ZOOM OFF IN THE APP SHELL. PINCH ZOOM STAYS.
+   Reported on iOS Lite 2026-08-28: a stray double tap zooms the WebView, the
+   zoom is choppy, and getting back to 1x was hard enough that the observer left
+   the screen and came back to escape it. On election day, in a hurry, that is a
+   trap.
+   `manipulation` permits panning AND pinch-zoom and drops only the double-tap
+   gesture — so anyone who needs to magnify still can, deliberately, and nobody
+   does it by accident. It does NOT block JS tap handlers, so observe.html's own
+   tap-to-zoom on the sheet image (its 250% reading view) is unaffected; that one
+   is ours, not the browser's.
+   Scoped to .native-app because in a browser tab double-tap zoom is expected
+   behaviour and the website should keep it. */
+html.native-app, html.native-app body { touch-action: manipulation; }
+
 /* APP ONLY (Capacitor/native shell): light mode gets a WHITE header instead of
    the green gov bar, and the transparent crest reads on it. The public website
    keeps the green header in both themes. native.js adds .native-app app-side only. */

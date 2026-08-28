@@ -56,6 +56,14 @@
     .statgrid .s b { display: block; font-size: 1.5rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
     .statgrid .s span { font-size: 0.78rem; color: var(--muted); }
     .statgrid .s.warn b { color: #b3261e; }
+    /* "2026-07-15" is ten characters where every other stat is two or three, so
+       at 1.5rem it wrapped inside the 140px minimum card width. Scoped to the
+       date cell: shrinking .s b would shrink every number on the panel to suit
+       the one value that does not fit.
+       1.05rem is the largest that fits, swept rather than calculated — 1.2rem
+       looked right by arithmetic and still wrapped. The card floor is 140px
+       from minmax(), leaving 110px inside the padding. */
+    .statgrid .s.date b { font-size: 1.05rem; }
     table.roll { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-top: 8px; }
     table.roll th, table.roll td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line, #e6e6e5); white-space: nowrap; }
     table.roll td.mono { font-family: ui-monospace, Menlo, monospace; }
@@ -577,8 +585,8 @@
         const d = await r.json();
         const o = d.observers, a = d.activity;
         const since = o.firstRegisteredAt ? new Date(o.firstRegisteredAt).toISOString().slice(0, 10) : '—';
-        const cell = (n, label, warn) =>
-          `<div class="s${warn ? ' warn' : ''}"><b>${n == null ? '—' : n}</b><span>${label}</span></div>`;
+        const cell = (n, label, warn, cls) =>
+          `<div class="s${warn ? ' warn' : ''}${cls ? ' ' + cls : ''}"><b>${n == null ? '—' : n}</b><span>${label}</span></div>`;
         $('stats').innerHTML =
           cell(o.total, 'observers registered')
           + cell(o.newLast24h, 'new in 24h', o.newLast24h === 0)
@@ -591,7 +599,7 @@
           + cell(a.incidents, 'incidents filed')
           + cell(a.practiceRuns, 'practice runs')
           + cell(a.unitsCrowdMapped, 'units crowd-mapped')
-          + cell(since, 'first signup');
+          + cell(since, 'first signup', false, 'date');
       } catch (e) {
         $('stats').innerHTML = `<p class="empty">Could not load stats (${e.message})</p>`;
       }

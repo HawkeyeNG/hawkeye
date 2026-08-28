@@ -130,7 +130,13 @@ jobs:
           echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
           echo "PROFILE_PATH=$PROFILE_PATH" >> "$GITHUB_ENV"
           echo "Imported profile '$NAME' ($UUID)"
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH" | tee "$RUNNER_TEMP/ids.txt"
+          # A DISTRIBUTION cert, specifically. A development certificate imports
+          # cleanly, passes every check above, and then fails ten minutes later
+          # inside Archive with "No signing certificate iOS Development found" —
+          # an error that points at the wrong thing entirely.
+          grep -q 'Apple Distribution' "$RUNNER_TEMP/ids.txt" \
+            || { echo "::error::BUILD_CERTIFICATE_BASE64 is not an Apple Distribution certificate — archiving for the App Store needs one"; exit 1; }
 
       - name: Profile must match the app
         # THE CHECK THE DELETED WORKFLOWS DID NOT HAVE. An App Store profile is
@@ -288,6 +294,7 @@ jobs:
             DEVELOPMENT_TEAM='${{ secrets.APPLE_TEAM_ID }}' \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             archive
 
       - name: Export .ipa

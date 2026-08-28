@@ -120,11 +120,11 @@ in the app.
 
 ## 5. Screenshots
 
-Five captioned shots per display size, in
+Six captioned shots per display size, in
 `Downloads/hawkeye-screenshots/lite-ios-{6.5,6.7,6.9}`:
 
 ```
-2-home  3-published  4-result  5-map  6-practice
+1-capture  2-home  3-published  4-result  5-map  6-practice
 ```
 
 Produced by `tests/ui/capture_lite_shots.mjs` → `backend/scripts/make_store_screenshots.mjs`
@@ -132,19 +132,15 @@ Produced by `tests/ui/capture_lite_shots.mjs` → `backend/scripts/make_store_sc
 are identical. Captured **light**, where the native set is dark; that is a
 listing decision, so the two read as distinct products in search results.
 
-**There is no `1-capture.png`, deliberately.** The sheet capture screen cannot
-be photographed for Lite on iOS and nothing accurate can be substituted:
+**`1-capture.png` is the native iOS one, reused.** Confirmed on device
+2026-08-28: native and Lite present the **same** capture screen on iPhone —
+both reach Apple's VisionKit document camera, and the only difference is the
+prompt text. So the native image is accurate for Lite and drops straight in;
+plate, caption and canvas are already identical. Copy per display size, not one
+image stretched across three.
 
-- On iOS, Lite hands sheet capture to Apple's **VisionKit** document camera
-  (`hawkeye-vision`). That control is drawn by iOS at runtime, so no browser can
-  render it.
-- The Android Lite set reuses the ML Kit scanner shot. That is **Google's**
-  interface and must not appear in an App Store listing.
-- The native iOS `1-capture.png` shows expo-camera, a screen Lite does not have.
-
-Apple requires at least one screenshot and accepts up to ten, so five is a
-complete set. The alternative — shipping a screenshot of a screen the app never
-shows — is Guideline 2.3.3, and worse than one fewer image.
+(The Android Lite set reuses the **ML Kit** scanner shot instead, because that
+is what Android shows. Never put that one in an App Store listing.)
 
 Verify before uploading:
 ```bash

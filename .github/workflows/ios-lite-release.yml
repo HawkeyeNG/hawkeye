@@ -1,0 +1,349 @@
+name: iOS Lite release (archive → TestFlight)
+
+# Signed App Store build of HAWKEYE LITE — bundle id ng.com.hawkeye.lite.
+#
+# The signed sibling of ios-lite-build.yml, which compiles unsigned and needs no
+# Apple account. Everything about the toolchain is documented there; this file
+# adds signing, versioning, archive/export and the TestFlight upload.
+#
+# WHY THE OLD ios-release.yml COULD NOT WORK, and what stops it recurring:
+# it built mobile/ (appId ng.com.hawkeye.lite) and then wrote an ExportOptions
+# plist keyed on ng.com.hawkeye.observer — Lite wearing the main app's identity,
+# left over from when Capacitor WAS the main app. The App Store profile is an
+# EXPLICIT one for …observer, so the archive failed on a bundle-id mismatch with
+# an error that named neither cause. The "Profile must match the app" step below
+# reads the identity out of the profile itself and fails in ten seconds with a
+# sentence that says which id it found.
+#
+# TRIGGER: manual only. `upload: false` archives and leaves the .ipa as an
+# artifact — the safe dry run. `upload: true` sends it to TestFlight. Nothing
+# here ever releases to the public: that stays a human action in App Store
+# Connect.
+#
+# REQUIRED SECRETS (Settings → Secrets and variables → Actions):
+#   BUILD_CERTIFICATE_BASE64     base64 of the Apple Distribution .p12
+#   P12_PASSWORD                 password used when exporting that .p12
+#   PROVISIONING_PROFILE_BASE64  base64 of the App Store profile FOR LITE
+#   KEYCHAIN_PASSWORD            any random string (throwaway keychain)
+#   APPSTORE_KEY_ID              App Store Connect API key id
+#   APPSTORE_ISSUER_ID           App Store Connect issuer id
+#   APPSTORE_PRIVATE_KEY         contents of the .p8 (BEGIN PRIVATE KEY …)
+#   APPLE_TEAM_ID                G99KD9RW94
+#
+# The distribution certificate is shared with the native app; only the PROFILE
+# is Lite-specific, because a profile is bound to one App ID.
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: 'CFBundleVersion — App Store Connect rejects a re-used one'
+        required: true
+        type: string
+      upload:
+        description: 'Upload to TestFlight (off = archive + .ipa artifact only)'
+        type: boolean
+        default: false
+
+env:
+  LITE_BUNDLE_ID: ng.com.hawkeye.lite
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check signing secrets are present
+        env:
+          CERT: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          PROFILE: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        # Fail in seconds rather than after a twenty-minute build.
+        run: |
+          missing=0
+          for v in CERT PROFILE TEAM; do
+            if [ -z "${!v}" ]; then echo "::error::secret $v is not set"; missing=1; fi
+          done
+          [ "$missing" = 0 ] || exit 1
+
+      - name: Install JS deps
+        working-directory: mobile
+        run: npm ci
+
+      - name: The Apple-frameworks plugin must be linked
+        working-directory: mobile
+        # Without hawkeye-vision, iOS loses BOTH the scanner and OCR and the app
+        # still runs: native.js falls through to the plain camera and ocrSheet
+        # returns early. Counting the swift files, not just checking the podspec
+        # — a pod with no sources installs and builds perfectly while doing
+        # nothing, which is how the gitignore trap nearly shipped.
+        run: |
+          test -d node_modules/hawkeye-vision \
+            || { echo "::error::hawkeye-vision is not installed"; exit 1; }
+          SWIFT=$(find node_modules/hawkeye-vision/ios -name '*.swift' | wc -l | tr -d ' ')
+          [ "$SWIFT" -ge 2 ] \
+            || { echo "::error::hawkeye-vision has $SWIFT swift files, expected 2"; exit 1; }
+          echo "  ok: hawkeye-vision present with $SWIFT swift sources"
+
+      - name: Import certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERT_PATH=$RUNNER_TEMP/build_certificate.p12
+          PROFILE_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERT_PATH"
+          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$P12_PASSWORD" -A \
+            -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          # Xcode 16+ reads profiles from the UserData path; the older
+          # MobileDevice one still works, so install to both.
+          mkdir -p ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID raw -)
+          NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
+          cp "$PROFILE_PATH" ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/"$UUID".mobileprovision
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
+          echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "PROFILE_PATH=$PROFILE_PATH" >> "$GITHUB_ENV"
+          echo "Imported profile '$NAME' ($UUID)"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+      - name: Profile must match the app
+        # THE CHECK THE DELETED WORKFLOWS DID NOT HAVE. An App Store profile is
+        # bound to ONE explicit App ID; using the native app's profile for Lite
+        # cannot work, and xcodebuild's failure names neither the expected nor
+        # the actual id. Read it out of the profile's own entitlements and say
+        # exactly what is wrong.
+        run: |
+          set -euo pipefail
+          APPID=$(security cms -D -i "$PROFILE_PATH" \
+            | plutil -extract Entitlements.application-identifier raw -)
+          # Entitlement is TEAMID.bundle.id — drop the team prefix.
+          GOT="${APPID#*.}"
+          echo "profile '$PROFILE_NAME' is for: $GOT"
+          if [ "$GOT" != "$LITE_BUNDLE_ID" ]; then
+            echo "::error::PROVISIONING_PROFILE_BASE64 is a profile for '$GOT', but this workflow builds '$LITE_BUNDLE_ID'."
+            echo "::error::Lite needs its OWN App ID and its OWN App Store profile — the native app's profile cannot sign it."
+            exit 1
+          fi
+          echo "  ok: profile matches $LITE_BUNDLE_ID"
+
+      - name: Add iOS platform (CocoaPods)
+        working-directory: mobile
+        run: |
+          npx cap add ios --packagemanager CocoaPods || true
+          test -f ios/App/Podfile || { echo "::error::Podfile was not generated"; exit 1; }
+
+      - name: Drop ML Kit from the iOS build
+        working-directory: mobile
+        # GoogleMLKit text recognition is a STATIC framework: it links into the
+        # app binary, and measured 42 MB of a 52 MB device build. Apple's Vision
+        # does the same job at zero bytes, and ML Kit's document scanner was only
+        # ever an iOS stub. Android keeps ML Kit — it has no VisionKit.
+        run: sed -i '' "/@capacitor-mlkit/d" ios/App/Podfile
+
+      - name: Bump deployment target + pod install
+        working-directory: mobile
+        run: |
+          set -x
+          sed -i '' "s/^platform :ios.*/platform :ios, '16.0'/" ios/App/Podfile
+          (cd ios/App && pod install --repo-update)
+
+      - name: Gate on what CocoaPods actually installed
+        working-directory: mobile
+        # Podfile.lock is the record of what was INSTALLED, which is what ends up
+        # in the binary. Editing the Podfile and never checking the result is how
+        # a 42 MB regression returns unnoticed.
+        run: |
+          LOCK=ios/App/Podfile.lock
+          if grep -qi 'MLKit' "$LOCK"; then
+            echo "::error::ML Kit is back in the iOS build — roughly 42 MB"
+            grep -i 'MLKit' "$LOCK" | head
+            exit 1
+          fi
+          grep -q 'HawkeyeVision' "$LOCK" \
+            || { echo "::error::HawkeyeVision did not install — iOS would have no scanner and no OCR"; exit 1; }
+          echo "  ok: no ML Kit, HawkeyeVision linked"
+
+      - name: The built app must actually be Lite
+        working-directory: mobile
+        # capacitor.config.json drives this, but assert it: signing the wrong
+        # identity is the failure this whole workflow exists to have avoided.
+        run: |
+          BID=$(plutil -extract CFBundleIdentifier raw ios/App/App/Info.plist 2>/dev/null || echo '')
+          echo "Info.plist CFBundleIdentifier: $BID"
+          grep -q "\"appId\": \"$LITE_BUNDLE_ID\"" capacitor.config.json \
+            || { echo "::error::capacitor.config.json appId is not $LITE_BUNDLE_ID"; exit 1; }
+          grep -q "Hawkeye Lite" capacitor.config.json \
+            || { echo "::error::appName is not Hawkeye Lite"; exit 1; }
+          echo "  ok: building $LITE_BUNDLE_ID"
+
+      - name: Stamp version and build number
+        working-directory: mobile
+        # Marketing version comes from the ANDROID build so the two platforms
+        # never drift; the build number is the workflow input, because App Store
+        # Connect rejects a re-used CFBundleVersion.
+        run: |
+          set -euo pipefail
+          VERSION=$(grep -v '^\s*//' android/app/build.gradle | grep -m1 'versionName' | sed 's/[^"]*"\([^"]*\)".*/\1/')
+          BUILD='${{ inputs.build_number }}'
+          echo "Marketing version $VERSION, build $BUILD"
+          plutil -replace CFBundleShortVersionString -string "$VERSION" ios/App/App/Info.plist
+          plutil -replace CFBundleVersion -string "$BUILD" ios/App/App/Info.plist
+
+      - name: Inject privacy usage strings
+        working-directory: mobile
+        # ios/ is regenerated from Capacitor's template on every run and carries
+        # NO usage strings. Without them iOS terminates the app the instant it
+        # touches the camera, and review rejects it outright (Guideline 5.1.1 —
+        # purpose strings must be present AND specific about the use).
+        run: |
+          set -euo pipefail
+          P=ios/App/App/Info.plist
+          set_str() {
+            plutil -replace "$1" -string "$2" "$P" 2>/dev/null \
+              || plutil -insert "$1" -string "$2" "$P"
+          }
+          set_str NSCameraUsageDescription \
+            "Hawkeye uses the camera to photograph polling unit result sheets and to capture optional photo or video evidence for incident reports."
+          set_str NSMicrophoneUsageDescription \
+            "Hawkeye records audio only as part of a short video you choose to attach as evidence to an incident report."
+          set_str NSPhotoLibraryUsageDescription \
+            "Hawkeye lets you attach a photo or video you already have as evidence for an incident or result report."
+          set_str NSPhotoLibraryAddUsageDescription \
+            "Hawkeye can save a copy of a result sheet you photograph to your own photo library."
+          set_str NSLocationWhenInUseUsageDescription \
+            "Hawkeye attaches your location to a report so it can be cross-checked against the polling unit you selected. This is optional and is only read when you submit a report."
+          # Declares no non-exempt encryption, so every upload skips the export
+          # compliance questionnaire instead of stalling in review.
+          plutil -replace ITSAppUsesNonExemptEncryption -bool false "$P" 2>/dev/null \
+            || plutil -insert ITSAppUsesNonExemptEncryption -bool false "$P"
+          echo "--- usage strings now in Info.plist ---"
+          plutil -p "$P" | grep -E "UsageDescription|NonExempt"
+
+      - name: Copy web assets
+        working-directory: mobile
+        # `cap copy` refreshes webDir + config only; it does NOT regenerate the
+        # Podfile, so the ML Kit cut and the deployment-target bump both survive.
+        run: npx cap copy ios
+
+      - name: Strip and gate the web bundle
+        working-directory: mobile
+        # The same script the Android release runs. cap sync copies everything
+        # under app/ — including app/download/, six ~30 MB copies of a different
+        # app, which once produced a 173 MB "Lite".
+        run: bash scripts/strip_web_assets.sh ios/App/App/public ios/App/Podfile
+
+      - name: Write export options
+        working-directory: mobile
+        run: |
+          cat > ios/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>uploadSymbols</key><true/>
+            <key>provisioningProfiles</key><dict>
+              <key>${{ env.LITE_BUNDLE_ID }}</key><string>${PROFILE_NAME}</string>
+            </dict>
+          </dict></plist>
+          PLIST
+          cat ios/ExportOptions.plist
+
+      - name: Archive
+        working-directory: mobile
+        run: |
+          set -euo pipefail
+          WS=$(find ios -maxdepth 2 -name '*.xcworkspace' | head -1)
+          xcodebuild -workspace "$WS" -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/HawkeyeLite.xcarchive" \
+            IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            DEVELOPMENT_TEAM='${{ secrets.APPLE_TEAM_ID }}' \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            CODE_SIGN_STYLE=Manual \
+            archive
+
+      - name: Export .ipa
+        working-directory: mobile
+        run: |
+          set -euo pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/HawkeyeLite.xcarchive" \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/export"
+          ls -la "$RUNNER_TEMP/export"
+
+      - name: What it weighs
+        # The .ipa is the closest thing to a real answer before Apple reports a
+        # download size. The unsigned CI build measured a 7.6 MB device .app
+        # after ML Kit came out, against 52 MB with it — this is the check that
+        # the released artifact kept that.
+        run: |
+          IPA=$(find "$RUNNER_TEMP/export" -name '*.ipa' | head -1)
+          echo "ipa: $(du -sh "$IPA" | cut -f1)"
+          mkdir -p "$RUNNER_TEMP/peek" && (cd "$RUNNER_TEMP/peek" && unzip -q "$IPA")
+          du -sh "$RUNNER_TEMP/peek/Payload/"*.app
+          du -sh "$RUNNER_TEMP/peek/Payload/"*.app/Frameworks/* 2>/dev/null | sort -rh | head -8 || true
+
+      - name: Upload .ipa as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hawkeye-lite-ios-ipa
+          path: ${{ runner.temp }}/export/*.ipa
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload to TestFlight
+        if: ${{ inputs.upload == true }}
+        # Only when explicitly asked: uploading is outward-facing — it makes the
+        # build visible to Apple and to any internal testers.
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/private_keys
+          echo -n "$APPSTORE_PRIVATE_KEY" > ~/private_keys/AuthKey_${APPSTORE_KEY_ID}.p8
+          IPA=$(find "$RUNNER_TEMP/export" -name '*.ipa' | head -1)
+          xcrun altool --validate-app -f "$IPA" -t ios \
+            --apiKey "$APPSTORE_KEY_ID" --apiIssuer "$APPSTORE_ISSUER_ID"
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$APPSTORE_KEY_ID" --apiIssuer "$APPSTORE_ISSUER_ID"
+
+      - name: Clean up keychain and profiles
+        if: always()
+        # Keychains live in RUNNER_TEMP and die with the runner, but be explicit:
+        # a leaked signing identity is the worst thing this workflow could do.
+        run: |
+          security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" || true
+          rm -f ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision || true
+          rm -f ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision || true
+          rm -rf ~/private_keys || true

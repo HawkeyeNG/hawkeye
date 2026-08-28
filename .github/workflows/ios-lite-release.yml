@@ -251,6 +251,39 @@ jobs:
           echo "--- usage strings now in Info.plist ---"
           plutil -p "$P" | grep -E "UsageDescription|NonExempt"
 
+      - name: Firebase config + push entitlement
+        working-directory: mobile
+        env:
+          PLIST_B64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+        # @capacitor/push-notifications returns an APNs token on iOS while the
+        # backend sends via FCM — the two do not interoperate, so Lite needs
+        # Firebase in the app. Without this plist Firebase never initialises and
+        # push fails at runtime with the app looking perfectly healthy, so a
+        # missing secret is a hard failure here rather than a warning.
+        run: |
+          set -euo pipefail
+          [ -n "$PLIST_B64" ] \
+            || { echo "::error::GOOGLE_SERVICE_INFO_PLIST_BASE64 is not set — Firebase would never initialise and push would die silently"; exit 1; }
+          echo -n "$PLIST_B64" | base64 --decode -o ios/App/App/GoogleService-Info.plist
+          BID=$(plutil -extract BUNDLE_ID raw ios/App/App/GoogleService-Info.plist)
+          [ "$BID" = "$LITE_BUNDLE_ID" ] \
+            || { echo "::error::this plist is for '$BID', not '$LITE_BUNDLE_ID' — there are two in circulation and the native app's looks identical"; exit 1; }
+          echo "  ok: GoogleService-Info.plist for $BID"
+
+          # aps-environment MUST be production, and MUST be stated rather than
+          # left to a default. A development entitlement gets a SANDBOX device
+          # token while the server sends to production APNs: the send reports
+          # success and the phone never rings — indistinguishable from a bad
+          # APNs key. This already cost a debugging cycle on the native app.
+          cat > ios/App/App/App.entitlements <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>aps-environment</key><string>production</string>
+          </dict></plist>
+          PLIST
+          plutil -p ios/App/App/App.entitlements
+
       - name: Copy web assets
         working-directory: mobile
         # `cap copy` refreshes webDir + config only; it does NOT regenerate the
@@ -315,12 +348,31 @@ jobs:
             # device build; the Capacitor template sets it, and leaving it alone
             # is what made the first run look for "iOS Development".
             s['CODE_SIGN_IDENTITY[sdk=iphoneos*]'] = 'Apple Distribution'
+            s['CODE_SIGN_ENTITLEMENTS'] = 'App/App.entitlements'
           end
+
+          # GoogleService-Info.plist has to be a BUNDLE RESOURCE, not merely a
+          # file sitting in the directory. Written to disk it looks present, the
+          # build succeeds, and FirebaseApp.configure() then finds nothing at
+          # runtime — the app runs and push never arrives.
+          group = project.main_group['App'] || project.main_group
+          ref = group.files.find { |f| f.display_name == 'GoogleService-Info.plist' }
+          ref ||= group.new_file('App/GoogleService-Info.plist')
+          phase = target.resources_build_phase
+          unless phase.files_references.include?(ref)
+            phase.add_file_reference(ref)
+          end
+
           project.save
+
           puts 'signing written to the App target:'
           target.build_configurations.each do |config|
-            puts "  #{config.name}: #{config.build_settings['CODE_SIGN_IDENTITY[sdk=iphoneos*]']} / #{config.build_settings['PROVISIONING_PROFILE_SPECIFIER']}"
+            puts "  #{config.name}: #{config.build_settings['CODE_SIGN_IDENTITY[sdk=iphoneos*]']} / #{config.build_settings['PROVISIONING_PROFILE_SPECIFIER']} / #{config.build_settings['CODE_SIGN_ENTITLEMENTS']}"
           end
+          bundled = phase.files_references.map(&:display_name)
+          puts "resources: #{bundled.join(', ')}"
+          abort('FAIL: GoogleService-Info.plist is not in the resources build phase') \
+            unless bundled.include?('GoogleService-Info.plist')
           RUBY
 
       - name: Archive
@@ -357,6 +409,22 @@ jobs:
           mkdir -p "$RUNNER_TEMP/peek" && (cd "$RUNNER_TEMP/peek" && unzip -q "$IPA")
           du -sh "$RUNNER_TEMP/peek/Payload/"*.app
           du -sh "$RUNNER_TEMP/peek/Payload/"*.app/Frameworks/* 2>/dev/null | sort -rh | head -8 || true
+
+          # THE ONLY PROOF THAT COUNTS for the Firebase config: is it inside the
+          # shipped bundle? Every earlier check looked at the working tree or the
+          # project file, and both can be right while the resource still fails to
+          # copy. If this is missing, push is dead on arrival and nothing else
+          # would have said so.
+          APP=$(find "$RUNNER_TEMP/peek/Payload" -maxdepth 1 -name '*.app' | head -1)
+          if [ -f "$APP/GoogleService-Info.plist" ]; then
+            echo "  ok: GoogleService-Info.plist is IN the ipa ($(plutil -extract BUNDLE_ID raw "$APP/GoogleService-Info.plist"))"
+          else
+            echo "::error::GoogleService-Info.plist did NOT make it into the ipa — Firebase would not initialise and push would fail silently"
+            exit 1
+          fi
+          echo "  entitlements actually signed into the binary:"
+          codesign -d --entitlements - --xml "$APP" 2>/dev/null | plutil -p - | grep -i 'aps-environment' \
+            || echo "    WARNING: no aps-environment in the signed entitlements — push will not work"
 
       - name: Upload .ipa as an artifact
         uses: actions/upload-artifact@v4

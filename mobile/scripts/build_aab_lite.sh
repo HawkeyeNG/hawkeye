@@ -41,6 +41,47 @@ echo "  ok: ML Kit is latin-only"
 
 npx cap sync android 2>&1 | tail -2
 
+# ---------------------------------------------------------------------------
+# @capacitor-firebase/messaging IS FOR iOS ONLY. IT MUST NOT REACH ANDROID.
+#
+# Not a size decision — it costs nothing measurable here (9.77 MB either way,
+# because @capacitor/push-notifications already pulls firebase-messaging). It is
+# a CORRECTNESS one. Both plugins declare a service filtering the same intent:
+#
+#   @capacitor/push-notifications   com.capacitorjs.plugins.pushnotifications.MessagingService
+#   @capacitor-firebase/messaging   io.capawesome…firebase.messaging.MessagingService
+#                                   both: com.google.firebase.MESSAGING_EVENT
+#
+# Firebase delivers to ONE of them. With both present, messages can go to the
+# service app/native.js never listens to — and Android Lite is LIVE on Play, so
+# the failure would be silent push loss on a shipping app. iOS needs the plugin
+# because @capacitor/push-notifications returns an APNs token there while the
+# backend sends via FCM; Android has no such problem.
+#
+# Cut from all THREE files cap sync writes, then asserted below.
+# ---------------------------------------------------------------------------
+node -e '
+  const fs = require("fs");
+  const p = "android/app/src/main/assets/capacitor.plugins.json";
+  const before = JSON.parse(fs.readFileSync(p, "utf8"));
+  const after = before.filter((x) => !String(x.pkg).startsWith("@capacitor-firebase/"));
+  fs.writeFileSync(p, JSON.stringify(after, null, 2) + "\n");
+  console.log("  android plugins: " + before.length + " -> " + after.length);
+' || exit 1
+sed -i "/capacitor-firebase-messaging/d" android/capacitor.settings.gradle
+sed -i "/capacitor-firebase-messaging/d" android/app/capacitor.build.gradle
+
+for f in android/capacitor.settings.gradle android/app/capacitor.build.gradle \
+         android/app/src/main/assets/capacitor.plugins.json; do
+  grep -qi 'capacitor-firebase\|@capacitor-firebase' "$f" && {
+    echo "GATE_FAIL: @capacitor-firebase survived in $f — Android push would break silently"; exit 1; }
+done
+# ...and the one that must still be there, so the cut above cannot take the
+# wrong plugin and pass by removing everything.
+grep -q 'pushnotifications.PushNotificationsPlugin' android/app/src/main/assets/capacitor.plugins.json \
+  || { echo "GATE_FAIL: @capacitor/push-notifications is gone — Android would have no push at all"; exit 1; }
+echo "  ok: firebase messaging excluded from android, push-notifications intact"
+
 # The strip list and the web-asset gates now live in scripts/strip_web_assets.sh,
 # because iOS syncs from the same webDir and needs every one of them. They were
 # 160 lines of this file; a second copy for iOS would have passed on the day it

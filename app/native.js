@@ -265,6 +265,11 @@
   // matching FCM service account, so Push.register() initialises cleanly.
   const PUSH_ENABLED = true;
   const Push = PUSH_ENABLED && Cap.Plugins && Cap.Plugins.PushNotifications;
+  // iOS only, by construction: @capacitor-firebase/messaging is stripped from
+  // the Android build (mobile/scripts/build_aab_lite.sh) because it and
+  // @capacitor/push-notifications both register a service for
+  // com.google.firebase.MESSAGING_EVENT and Firebase delivers to only one.
+  const FbMsg = Cap.Plugins && Cap.Plugins.FirebaseMessaging;
   window.HAWKEYE.capabilities.push = !!Push;
   window.HAWKEYE.initPush = async () => {}; // safe no-op unless enabled below
   if (Push) {
@@ -276,13 +281,38 @@
       let perm = await Push.checkPermissions();
       if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') perm = await Push.requestPermissions();
       if (perm.receive !== 'granted') return;
-      Push.addListener('registration', (t) => {
+      Push.addListener('registration', async (t) => {
         const jwt = localStorage.getItem('hawkeye_token');
         if (!jwt) return;
+
+        // WHICH TOKEN THE BACKEND CAN ACTUALLY USE.
+        //
+        // On Android this event carries an FCM token and the server sends via
+        // FCM — fine. On iOS @capacitor/push-notifications hands back an APNs
+        // token, which FCM cannot address: the server would store it, every
+        // send would look like it succeeded, and no phone would ever ring.
+        // hawkeye-vision's sibling here is @capacitor-firebase/messaging, which
+        // exists on iOS ONLY (it must never reach Android — both plugins claim
+        // the same MESSAGING_EVENT service) and exchanges it for an FCM token.
+        let value = t.value;
+        if (FbMsg) {
+          try {
+            const r = await FbMsg.getToken();
+            if (!r || !r.token) throw new Error('no token returned');
+            value = r.token;
+          } catch (e) {
+            // Deliberately register NOTHING rather than an APNs token the
+            // server cannot use. A missing registration is visible; a stored
+            // dead token looks exactly like a working one.
+            console.warn('[push] no FCM token on iOS — not registering:', (e && e.message) || e);
+            return;
+          }
+        }
+
         origFetch(BASE + '/api/push/register', {
           method: 'POST',
           headers: { 'content-type': 'application/json', authorization: 'Bearer ' + jwt },
-          body: JSON.stringify({ token: t.value, platform: Cap.getPlatform() }),
+          body: JSON.stringify({ token: value, platform: Cap.getPlatform() }),
         }).catch(() => {});
       });
       Push.addListener('pushNotificationActionPerformed', (ev) => {

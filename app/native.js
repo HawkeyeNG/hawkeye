@@ -145,8 +145,21 @@
   const Camera = Cap.Plugins && Cap.Plugins.Camera;
   window.HAWKEYE.capabilities = { camera: !!Camera, secureKey: false, push: false };
 
-  const DocScan = Cap.Plugins && Cap.Plugins.DocumentScanner;   // ML Kit doc scanner
-  const TextRec = Cap.Plugins && Cap.Plugins.TextRecognition;   // ML Kit on-device OCR
+  // SCANNING AND OCR COME FROM WHICHEVER ENGINE THIS PLATFORM HAS.
+  //
+  // Android: ML Kit, as before. iOS: Apple's own VisionKit + Vision, through
+  // the hawkeye-vision plugin. Two reasons it is not ML Kit on both:
+  //   - @capacitor-mlkit/document-scanner is an iOS STUB. scanDocument() calls
+  //     rejectCallAsUnimplemented, so sheet capture never had edge detection
+  //     on iPhone at all — it silently used the plain camera.
+  //   - ML Kit text recognition links 42 MB into the iOS binary (measured: a
+  //     52 MB device build, of which the main binary is 42). Lite exists to be
+  //     small; VisionKit and Vision are part of iOS and cost nothing.
+  // hawkeye-vision deliberately mirrors the ML Kit method names and result
+  // shapes, so everything below is one code path rather than two.
+  const Vision  = Cap.Plugins && Cap.Plugins.HawkeyeVision;     // iOS: Apple frameworks
+  const DocScan = Vision || (Cap.Plugins && Cap.Plugins.DocumentScanner);
+  const TextRec = Vision || (Cap.Plugins && Cap.Plugins.TextRecognition);
   window.HAWKEYE.capabilities.docScanner = !!DocScan;
   window.HAWKEYE.capabilities.ocr = !!TextRec;
 
@@ -188,6 +201,11 @@
     // before the first scan, or scanDocument() fails and the sheet capture
     // appears to do nothing (no edge detection). Ensure it up front.
     async function ensureDocModule() {
+      // VisionKit is part of iOS — nothing to fetch, and these two methods do
+      // not exist on hawkeye-vision. Checking for the method rather than
+      // calling it and catching keeps a normal iOS launch from throwing a
+      // rejection on every capture.
+      if (!DocScan.isGoogleDocumentScannerModuleAvailable) return;
       try {
         const a = await DocScan.isGoogleDocumentScannerModuleAvailable();
         if (a && a.available === false) await DocScan.installGoogleDocumentScannerModule();

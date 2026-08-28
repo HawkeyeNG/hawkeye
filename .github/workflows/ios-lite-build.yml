@@ -55,26 +55,25 @@ jobs:
         # postinstall runs patch-package, which is what keeps ML Kit latin-only.
         run: npm ci
 
-      - name: ML Kit must be latin-only on iOS too
+      - name: The Apple-frameworks plugin must be linked
         working-directory: mobile
-        # The Android build gates this in build_aab_lite.sh. The iOS podspec has
-        # the SAME over-inclusion — GoogleMLKit/TextRecognition{Chinese,
-        # Devanagari,Japanese,Korean} — and on iOS those are pods, not gradle
-        # artifacts, so the Android gate cannot see them. Assert it here or the
-        # first signed build silently carries four scripts a Nigerian EC8A is
-        # never written in.
+        # If hawkeye-vision is missing, iOS loses BOTH the scanner and OCR and
+        # the app still runs perfectly — native.js falls through to the plain
+        # camera and ocrSheet returns early. Exactly the shape that hides.
         run: |
-          SPEC=node_modules/@capacitor-mlkit/text-recognition/CapacitorMlkitTextRecognition.podspec
-          test -f "$SPEC" || { echo "GATE_FAIL: $SPEC not found"; exit 1; }
-          for s in Chinese Devanagari Japanese Korean; do
-            if grep -q "TextRecognition$s" "$SPEC"; then
-              echo "GATE_FAIL: GoogleMLKit/TextRecognition$s is still in the podspec — the iOS latin-only patch is missing"
-              exit 1
-            fi
-          done
-          grep -q "GoogleMLKit/TextRecognition'" "$SPEC" \
-            || { echo "GATE_FAIL: the LATIN pod is missing — OCR would not work at all"; exit 1; }
-          echo "  ok: ML Kit pods are latin-only"
+          test -d node_modules/hawkeye-vision \
+            || { echo "GATE_FAIL: hawkeye-vision is not installed"; exit 1; }
+          test -f node_modules/hawkeye-vision/HawkeyeVision.podspec \
+            || { echo "GATE_FAIL: hawkeye-vision has no podspec — it cannot link"; exit 1; }
+          # A pod with NO SOURCES builds perfectly and does nothing. mobile/
+          # .gitignore's pathless `ios/` rule matched plugins/hawkeye-vision/ios/
+          # and kept both Swift files out of the first commit — CocoaPods would
+          # have installed an empty pod, the compile would have passed, and iOS
+          # would have shipped with no scanner and no OCR. Count them.
+          SWIFT=$(find node_modules/hawkeye-vision/ios -name '*.swift' | wc -l | tr -d ' ')
+          [ "$SWIFT" -ge 2 ] \
+            || { echo "GATE_FAIL: hawkeye-vision has $SWIFT swift files, expected 2 — sources missing from the checkout"; exit 1; }
+          echo "  ok: hawkeye-vision present with $SWIFT swift sources"
 
       - name: Add iOS platform (CocoaPods)
         working-directory: mobile
@@ -85,6 +84,21 @@ jobs:
           npx cap add ios --packagemanager CocoaPods || true
           test -f ios/App/Podfile || { echo "Podfile was not generated"; exit 1; }
 
+      - name: Drop ML Kit from the iOS build
+        working-directory: mobile
+        # GoogleMLKit's text-recognition framework is STATIC, so it links
+        # straight into the app binary: 42 MB of a 52 MB device build, measured.
+        # Apple's Vision framework does the same job at zero bytes, and the ML
+        # Kit document scanner was never more than a stub on iOS. Android keeps
+        # ML Kit — it has no VisionKit and the scanner works there.
+        #
+        # Removed at the Podfile rather than by dropping the npm dependency,
+        # because the same package.json builds both platforms.
+        run: |
+          sed -i '' "/@capacitor-mlkit/d" ios/App/Podfile
+          echo "--- capacitor_pods after the cut ---"
+          sed -n '/def capacitor_pods/,/^end/p' ios/App/Podfile
+
       - name: Bump iOS deployment target + pod install
         working-directory: mobile
         run: |
@@ -93,6 +107,41 @@ jobs:
           grep -n "platform :ios" ios/App/Podfile
           (cd ios/App && pod install --repo-update)
           find ios -maxdepth 2 -name '*.xcworkspace' -print
+
+      - name: Gate on what CocoaPods actually installed
+        working-directory: mobile
+        # Podfile.lock, not the Podfile: the lock is the record of what was
+        # installed, which is the thing that ends up in the binary. Editing the
+        # Podfile and never checking the result is how a 42 MB regression comes
+        # back without anyone noticing.
+        run: |
+          LOCK=ios/App/Podfile.lock
+          if grep -qi 'MLKit' "$LOCK"; then
+            echo "GATE_FAIL: ML Kit is back in the iOS build — that is ~42 MB"
+            grep -i 'MLKit' "$LOCK" | head
+            exit 1
+          fi
+          grep -q 'HawkeyeVision' "$LOCK" \
+            || { echo "GATE_FAIL: HawkeyeVision did not install — iOS would have no scanner and no OCR"; exit 1; }
+          echo "  ok: no ML Kit, HawkeyeVision linked"
+
+      - name: Info.plist usage strings
+        working-directory: mobile
+        # `cap add ios` generates a bare Info.plist. Without these the app does
+        # not fail to build — it CRASHES the first time an observer taps the
+        # camera, which is the one moment it must not. Set here because ios/ is
+        # generated fresh each run and is gitignored.
+        run: |
+          PL=ios/App/App/Info.plist
+          set_str() {
+            /usr/libexec/PlistBuddy -c "Delete :$1" "$PL" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :$1 string $2" "$PL"
+          }
+          set_str NSCameraUsageDescription "Hawkeye uses the camera to photograph result sheets and polling-unit surroundings for your report."
+          set_str NSLocationWhenInUseUsageDescription "Hawkeye records where a report was filed so results can be matched to the right polling unit."
+          set_str NSPhotoLibraryAddUsageDescription "Hawkeye can save a copy of a sheet you photographed to your photo library."
+          /usr/libexec/PlistBuddy -c "Print" "$PL" | grep -iE 'UsageDescription' || {
+            echo "GATE_FAIL: usage strings were not written"; exit 1; }
 
       - name: Copy web assets
         working-directory: mobile

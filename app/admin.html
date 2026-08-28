@@ -154,6 +154,23 @@
        mechanical assembly of the two originals. */
     .panel[data-p="social"] label[for="secret"],
     .panel[data-p="social"] label[for="secret"] + .row { display: none; }
+
+    /* BREATHING ROOM. styles.css gives .wrap horizontal padding only — every
+       other page happens to get its top gap from an <h1>'s margin, and this one
+       opens straight into a .card, so the console sat flush against the sticky
+       header. The footer contributes its own 24px above, so the bottom value
+       here is the smaller half of that gap. */
+    main.wrap { padding-top: 20px; padding-bottom: 16px; }
+
+    /* The console's signed-out view is one small card, which left the footer
+       floating mid-viewport with dead space under it. A flex column pins it to
+       the bottom on short pages without pinning it OVER content on the long
+       ones (the four tabs run well past a screen). Scoped here rather than in
+       styles.css: that file is in the service-worker SHELL, so touching it
+       means bumping ?v= across 40 pages for a layout only this one needs. */
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+    main.wrap { flex: 1 0 auto; }
+    footer.gov-footer { flex-shrink: 0; }
   </style>
   <script src="authgate.js?v=2"></script>
 </head>
@@ -389,6 +406,15 @@
   </div>
     </section>
   </main>
+
+  <!-- The console had no footer at all. Deliberately NOT the public one: its nav
+       points at Privacy / How It Works / FAQ, which is site furniture with no
+       business on an owner-only page. The copyright line is the part that
+       belongs here, and it matches the wording every other page carries. -->
+  <footer class="gov-footer"><div class="wrap">
+    <p>Hawkeye Admin Console — private. Not a public page.</p>
+    <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+  </div></footer>
 
   <script>
   // post.html's script. Wrapped: it declares $, secret, hdr and setStatus at

@@ -1,0 +1,23 @@
+{
+  "name": "hawkeye-vision",
+  "version": "1.0.0",
+  "description": "Document scanning and text recognition through Apple's own VisionKit and Vision frameworks. iOS only, and deliberately so: it exists to keep ML Kit — 42 MB of the 52 MB device build — out of Hawkeye Lite on iPhone.",
+  "license": "MIT",
+  "private": true,
+  "main": "dist/plugin.cjs.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  },
+  "files": [
+    "dist/",
+    "ios/Plugin/",
+    "HawkeyeVision.podspec"
+  ],
+  "peerDependencies": {
+    "@capacitor/core": ">=8.0.0"
+  }
+}

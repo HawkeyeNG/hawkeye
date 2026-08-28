@@ -28,6 +28,7 @@
     "hawkeye-vision": "file:plugins/hawkeye-vision"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
     "patch-package": "^8.0.1"

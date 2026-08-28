@@ -99,6 +99,17 @@ jobs:
           echo "--- capacitor_pods after the cut ---"
           sed -n '/def capacitor_pods/,/^end/p' ios/App/Podfile
 
+      - name: Generate the iOS app icon
+        working-directory: mobile
+        # `cap add ios` ships CAPACITOR'S DEFAULT icon - the blue X on white that
+        # turned up on the home screen in TestFlight build 3, beside the real
+        # Hawkeye. Nothing here had ever replaced it: not a bug, a missing step.
+        # ios/ is regenerated every run and is gitignored, so this has to happen
+        # in CI rather than being committed once.
+        run: |
+          npx @capacitor/assets generate --ios --assetPath assets
+          node scripts/check_ios_icon.mjs
+
       - name: Bump iOS deployment target + pod install
         working-directory: mobile
         run: |

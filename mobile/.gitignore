@@ -15,3 +15,6 @@ ios/
 # expected.
 !plugins/*/ios/
 !plugins/*/ios/**
+
+# Backup the icon rescaler writes; the original is in git history.
+assets/*.pre-scale.png

@@ -20,6 +20,18 @@
     .inc-desc { margin: 8px 0 0; }
     .inc-media { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
     .empty { color: var(--muted); padding: 24px; text-align: center; }
+    /* Same rules as incidents.html. Kept inline rather than moved to styles.css
+       because that file is in the service-worker SHELL — hoisting seven lines
+       would mean bumping ?v= across all 40 pages and redeploying the lot for a
+       button style. If .flag-btn reaches a THIRD page, hoist it then.
+       min-height 44px is the accessibility touch target, not decoration. */
+    .flag-btn {
+      display: inline-block; margin-top: 8px; padding: 10px 12px; min-height: 44px;
+      background: none; border: none; box-shadow: none; width: auto;
+      color: var(--muted); font-size: 0.78rem; font-weight: 600; cursor: pointer;
+    }
+    .flag-btn:hover { color: var(--link); background: none; filter: none; }
+    .flag-btn:disabled { color: var(--green); opacity: 1; }
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -93,9 +105,40 @@
           ${place ? `<div class="inc-place">${esc(place)}</div>` : ''}
           ${i.description ? `<p class="inc-desc">${esc(i.description)}</p>` : ''}
           ${media ? `<div class="inc-media">📎 ${media} photo/video file${media === 1 ? '' : 's'} on file</div>` : ''}
+          <button type="button" class="flag-btn" data-flag="${i.id}">⚑ Report this content</button>
         </div>`;
       }).join('');
+      // Store-policy requirement (Play UGC / App Store 1.2): EVERY surface that
+      // shows published user content needs an in-app way to object to it. This
+      // page renders observer descriptions and was missing it while
+      // incidents.html had it — found while writing the Lite review notes, which
+      // would otherwise have claimed a capability one of the two pages lacked.
+      for (const b of document.querySelectorAll('[data-flag]')) b.onclick = () => flagContent(Number(b.dataset.flag), b);
     }).catch(() => { document.getElementById('list').innerHTML = '<div class="empty">Could not load incidents — try again shortly.</div>'; });
+
+    // Same reasons and the same endpoint as incidents.html, deliberately: a
+    // reader who reports something here should reach the one moderation queue.
+    async function flagContent(id, btn) {
+      const reason = prompt(
+        'Report this content — why?\n1 Abusive or harmful\n2 False or misleading\n3 Privacy violation\n4 Other\n\nEnter 1-4:');
+      if (!reason) return;
+      const map = { 1: 'abuse', 2: 'false', 3: 'privacy', 4: 'other' };
+      if (!map[reason.trim()]) return alert('Enter a number from 1 to 4.');
+      const detail = prompt('Add any detail (optional):') || '';
+      const token = localStorage.getItem('hawkeye_token');
+      try {
+        const r = await fetch('/api/flags', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) },
+          body: JSON.stringify({ kind: 'incident', targetId: id, reason: map[reason.trim()], detail: detail.slice(0, 500) }),
+        });
+        if (!r.ok) throw new Error();
+        btn.textContent = '✓ Reported — our team will review';
+        btn.disabled = true;
+      } catch {
+        alert('Could not send the report — check your connection and try again.');
+      }
+    }
   </script>
   <script src="menu.js?v=159"></script>
 </body>

@@ -593,6 +593,14 @@
           + cell(o.newLast7d, 'new in 7 days')
           + cell(o.telegramLinked, 'Telegram linked')
           + cell(o.pushSubscribed, 'push enabled')
+          // Per-platform, because "push enabled: 3" cannot say whether iOS is
+          // among them — which is the only question when push is not arriving.
+          + cell(o.pushIos, 'iOS devices')
+          + cell(o.pushAndroid, 'Android devices')
+          // Raw APNs tokens: registered, counted as subscribed, and skipped
+          // silently by the sender. Warns when non-zero because a device in this
+          // state looks subscribed and receives nothing.
+          + cell(o.pushIosDead, 'iOS undeliverable', o.pushIosDead > 0)
           + cell(o.withSavedUnit, 'saved a unit')
           + cell(a.submissions, 'result submissions')
           + cell(a.collationReports, 'collation reports')

@@ -669,6 +669,21 @@ adminRouter.get('/admin/stats', requireAdmin, (_req, res) => {
       telegramLinked: n('SELECT COUNT(*) AS c FROM telegram_links'),
       withSavedUnit: n('SELECT COUNT(DISTINCT observer_id) AS c FROM saved_units'),
       pushSubscribed: n('SELECT COUNT(DISTINCT observer_id) AS c FROM device_push_tokens'),
+      /**
+       * PUSH, BROKEN DOWN — because "pushSubscribed: 3" cannot answer the only
+       * question worth asking when push is not arriving: on WHICH platform?
+       *
+       * `pushIosDead` counts iOS rows holding a raw 64-hex APNs token rather
+       * than an FCM one. services/push.js skips those silently and deliberately
+       * (deleting would churn the row), so a device can be registered, look
+       * subscribed here, and never receive anything. That is exactly the shape
+       * that hid a broken iOS registration, so it gets its own number.
+       */
+      pushIos: n("SELECT COUNT(*) AS c FROM device_push_tokens WHERE platform = 'ios'"),
+      pushAndroid: n("SELECT COUNT(*) AS c FROM device_push_tokens WHERE platform = 'android'"),
+      pushWeb: n("SELECT COUNT(*) AS c FROM device_push_tokens WHERE platform = 'web'"),
+      pushIosDead: n(`SELECT COUNT(*) AS c FROM device_push_tokens
+                      WHERE platform = 'ios' AND LENGTH(token) = 64 AND token GLOB '[0-9a-fA-F]*'`),
     },
     activity: {
       submissions: n('SELECT COUNT(*) AS c FROM submissions'),

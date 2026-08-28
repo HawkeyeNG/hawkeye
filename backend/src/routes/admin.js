@@ -685,6 +685,22 @@ adminRouter.get('/admin/stats', requireAdmin, (_req, res) => {
       pushIosDead: n(`SELECT COUNT(*) AS c FROM device_push_tokens
                       WHERE platform = 'ios' AND LENGTH(token) = 64 AND token GLOB '[0-9a-fA-F]*'`),
     },
+    /**
+     * THE ROWS THEMSELVES — because the counts cannot say WHOSE a bad row is.
+     *
+     * "1 iOS undeliverable" is true of a stale pre-2026-08-24 NATIVE row and of
+     * a failed Lite registration alike, and the two call for opposite actions:
+     * one ages out by itself, the other is a bug. Only the row answers it.
+     *
+     * NO TOKEN VALUE, not even truncated. A push token is a capability to send
+     * to that device, these figures get screenshotted, and nothing here needs
+     * the token — only its SHAPE, which is what decides deliverability.
+     */
+    pushDevices: db.prepare(`
+      SELECT observer_id, platform, created_at,
+             CASE WHEN LENGTH(token) = 64 AND token GLOB '[0-9a-fA-F]*' THEN 0 ELSE 1 END AS deliverable,
+             LENGTH(token) AS token_len
+      FROM device_push_tokens ORDER BY created_at DESC LIMIT 50`).all(),
     activity: {
       submissions: n('SELECT COUNT(*) AS c FROM submissions'),
       collationReports: n('SELECT COUNT(*) AS c FROM collation_reports'),

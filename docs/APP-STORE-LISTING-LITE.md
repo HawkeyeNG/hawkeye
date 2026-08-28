@@ -132,15 +132,23 @@ Produced by `tests/ui/capture_lite_shots.mjs` → `backend/scripts/make_store_sc
 are identical. Captured **light**, where the native set is dark; that is a
 listing decision, so the two read as distinct products in search results.
 
-**`1-capture.png` is the native iOS one, reused.** Confirmed on device
-2026-08-28: native and Lite present the **same** capture screen on iPhone —
-both reach Apple's VisionKit document camera, and the only difference is the
-prompt text. So the native image is accurate for Lite and drops straight in;
-plate, caption and canvas are already identical. Copy per display size, not one
-image stretched across three.
+**`1-capture.png` is shared by native and Lite, and is DRAWN, not captured** —
+`tests/ui/make_ios_capture.mjs`, rebuilt 2026-08-28 against photographs of the
+real control on device.
 
-(The Android Lite set reuses the **ML Kit** scanner shot instead, because that
-is what Android shows. Never put that one in an App Store listing.)
+On iPhone both apps hand sheet capture to Apple's **VisionKit** document camera
+(native via `react-native-document-scanner-plugin`, Lite via `hawkeye-vision`).
+iOS draws that control at runtime, so no browser or emulator can render it and
+there is no screen in either codebase to point a harness at. The chrome is
+traced from the real thing — close button, "Position the document in view."
+pill, filter name, Flash / Filters / Shutter, shutter — over our own SPECIMEN
+sheet. Nothing about the UI is invented.
+
+Rebuild and re-composite with `tmp/rebuild_capture.sh`; it writes the shot into
+all six sets (`ios-*` and `lite-ios-*`) at each display size.
+
+(The Android Lite set uses the **ML Kit** scanner shot instead, because that is
+what Android shows. Never put that one in an App Store listing.)
 
 Verify before uploading:
 ```bash

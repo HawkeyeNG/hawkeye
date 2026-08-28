@@ -124,7 +124,7 @@ async function fcmAccessToken() {
  */
 const isRawApnsToken = (t) => /^[0-9a-f]{64}$/i.test(String(t || ''));
 
-async function fcmSend(accessToken, deviceToken, title, body, data) {
+async function fcmSend(accessToken, deviceToken, title, body, data, badge) {
   if (isRawApnsToken(deviceToken)) {
     // A pre-switch iOS row. Not an error and not the device's fault. Kept, NOT
     // deleted: it becomes deliverable the moment that app re-registers, and
@@ -147,7 +147,25 @@ async function fcmSend(accessToken, deviceToken, title, body, data) {
         // is what makes it an alert rather than a silent arrival.
         apns: {
           headers: { 'apns-push-type': 'alert', 'apns-priority': '10' },
-          payload: { aps: { sound: 'default', 'content-available': 1 } },
+          payload: {
+            aps: {
+              sound: 'default',
+              'content-available': 1,
+              /**
+               * THE NUMBER ON THE APP ICON, and it costs no client code.
+               *
+               * iOS will not badge an icon by itself — the count has to arrive
+               * in the payload, and it is an absolute value, not an increment,
+               * so the server has to send what the total SHOULD now be rather
+               * than "one more". Callers pass the observer's unread count.
+               *
+               * Omitted entirely when the caller does not know it: sending 0
+               * would CLEAR a badge that other unread alerts still justify,
+               * which is worse than not setting one.
+               */
+              ...(Number.isInteger(badge) && badge >= 0 ? { badge } : {}),
+            },
+          },
         },
       },
     }),
@@ -193,7 +211,23 @@ export async function sendToObserver(observerId, { title, body, data } = {}) {
     if (rows.length) {
       try {
         const at = await fcmAccessToken();
-        for (const r of rows) if (await fcmSend(at, r.token, title, body, data).catch(() => false)) sent++;
+        /**
+         * The icon badge, read at send time rather than tracked.
+         *
+         * iOS takes an ABSOLUTE number, so it has to be what the total should
+         * now be. Counting the observer's unread rows is the same figure the
+         * in-app bell shows (routes/notifications.js), which means the icon and
+         * the app cannot disagree — a badge kept by its own counter drifts the
+         * first time a notification is read on another device.
+         *
+         * Undefined rather than 0 if the query fails: sending 0 would clear a
+         * badge that other unread alerts still justify.
+         */
+        let badge;
+        try {
+          badge = db.prepare('SELECT COUNT(*) AS c FROM notifications WHERE observer_id = ? AND read = 0').get(observerId)?.c;
+        } catch { /* notifications table not readable here — send without a badge */ }
+        for (const r of rows) if (await fcmSend(at, r.token, title, body, data, badge).catch(() => false)) sent++;
       } catch { /* FCM oauth failed — web still goes out below */ }
     }
   }

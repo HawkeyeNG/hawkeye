@@ -175,6 +175,31 @@ export default function TabsLayout() {
             fontWeight: '600',
             marginTop: LABEL_GAP,
           },
+          /**
+           * THE ALERTS COUNT, SIZED AGAINST THE ICON RATHER THAN LEFT AT THE
+           * DEFAULT.
+           *
+           * React Navigation's badge is 18px tall with 12px text. tabBarIconStyle
+           * pins the icon box to exactly ICON_SIZE (23), so the default badge is
+           * nearly as tall as the bell it sits on and overhangs the box it is
+           * positioned against — which is what read as "too big and slightly
+           * misplaced". 16px on a 23px icon is the proportion iOS itself uses.
+           *
+           * lineHeight matches height so a single digit centres; without it the
+           * glyph sits high in the circle. The margins pull it back over the
+           * icon's top-right corner instead of outside it.
+           *
+           * Shared by both platforms, so this is the Android fix too.
+           */
+          tabBarBadgeStyle: {
+            fontSize: 10,
+            lineHeight: 16,
+            minWidth: 16,
+            height: 16,
+            borderRadius: 8,
+            marginTop: 1,
+            marginLeft: 1,
+          },
         }}
       >
         <Tabs.Screen

@@ -110,6 +110,18 @@ jobs:
           npx @capacitor/assets generate --ios --assetPath assets
           node scripts/check_ios_icon.mjs
 
+      - name: Own the app icon manifest
+        working-directory: mobile
+        # `@capacitor/assets` EDITS Contents.json, it does not create one, so the
+        # App Store icon entry depends on whichever template `cap add ios` shipped.
+        # Xcode's single-size format derives every size - including the 1024
+        # marketing icon App Store Connect displays - from the one file the
+        # generator writes.
+        run: |
+          cp scripts/ios_appiconset.json \
+             ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json
+          cat ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json
+
       - name: Bump iOS deployment target + pod install
         working-directory: mobile
         run: |

@@ -183,6 +183,18 @@ jobs:
         # ever an iOS stub. Android keeps ML Kit — it has no VisionKit.
         run: sed -i '' "/@capacitor-mlkit/d" ios/App/Podfile
 
+      - name: Own the app icon manifest
+        working-directory: mobile
+        # `@capacitor/assets` EDITS Contents.json, it does not create one, so the
+        # App Store icon entry depends on whichever template `cap add ios` shipped.
+        # Xcode's single-size format derives every size - including the 1024
+        # marketing icon App Store Connect displays - from the one file the
+        # generator writes.
+        run: |
+          cp scripts/ios_appiconset.json \
+             ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json
+          cat ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json
+
       - name: Bump deployment target + pod install
         working-directory: mobile
         run: |
@@ -443,6 +455,24 @@ jobs:
             echo "::error::GoogleService-Info.plist did NOT make it into the ipa — Firebase would not initialise and push would fail silently"
             exit 1
           fi
+
+          # THE APP STORE ICON, PROVEN RATHER THAN ASSUMED. It lives inside
+          # Assets.car, not as a loose file, so listing the bundle says nothing.
+          # TestFlight renders from the 60pt icon and looks fine without it,
+          # which is exactly how build 4 shipped looking correct and left App
+          # Store Connect blank.
+          echo "--- 1024 marketing icon in the asset catalog? ---"
+          if xcrun assetutil --info "$APP/Assets.car" 2>/dev/null \
+               | grep -qE '"(Name|RenditionName)"[^,]*AppIcon' ; then
+            xcrun assetutil --info "$APP/Assets.car" 2>/dev/null \
+              | grep -E '"(Name|RenditionName|SizeOnDisk|Image Type)"' | head -20
+          fi
+          if xcrun assetutil --info "$APP/Assets.car" 2>/dev/null | grep -q '1024'; then
+            echo "  ok: a 1024 icon is in Assets.car"
+          else
+            echo "::warning::no 1024 found in Assets.car — App Store Connect will show no icon"
+          fi
+
           echo "  entitlements actually signed into the binary:"
           codesign -d --entitlements - --xml "$APP" 2>/dev/null | plutil -p - | grep -i 'aps-environment' \
             || echo "    WARNING: no aps-environment in the signed entitlements — push will not work"

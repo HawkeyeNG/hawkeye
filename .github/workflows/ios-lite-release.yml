@@ -172,6 +172,25 @@ jobs:
         # ever an iOS stub. Android keeps ML Kit — it has no VisionKit.
         run: sed -i '' "/@capacitor-mlkit/d" ios/App/Podfile
 
+      - name: MEASUREMENT BRANCH — modular headers for GoogleUtilities
+        working-directory: mobile
+        # Present only on measure/firebase-weight, to get a real .ipa number for
+        # the Firebase decision. FirebaseCoreInternal is a Swift pod importing
+        # the Objective-C GoogleUtilities, which publishes no module map, so
+        # static linkage is refused without this. Scoped to one pod, never a
+        # global use_frameworks!.
+        run: |
+          ruby - <<'RUBY'
+          f = 'ios/App/Podfile'
+          s = File.read(f)
+          unless s.include?('GoogleUtilities')
+            s.sub!(/^(\s*capacitor_pods\s*)$/) do
+              "#{$1}\n  pod 'GoogleUtilities', :modular_headers => true"
+            end
+            File.write(f, s)
+          end
+          RUBY
+
       - name: Bump deployment target + pod install
         working-directory: mobile
         run: |

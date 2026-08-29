@@ -140,7 +140,13 @@
         return n.url
           ? `<a class="n ${n.read ? '' : 'unread'}" href="${esc(n.url)}">${inner}</a>`
           : `<div class="n ${n.read ? '' : 'unread'}">${inner}</div>`;
-      }).join('');
+      }).join('')
+        // Say the retention rule out loud. An alert quietly vanishing looks
+        // like data loss on a tool whose whole claim is that records persist —
+        // and this feed is the one part of Hawkeye that is deliberately NOT
+        // permanent, so the distinction is worth one line.
+        + '<p class="empty" style="padding:18px 8px 4px;font-size:0.8rem">'
+        + 'Alerts are kept for 90 days. Reports, incidents and the ledger are permanent.</p>';
       // Opening the page marks everything read.
       if (d.unread > 0) {
         fetch('/api/notifications/read', {

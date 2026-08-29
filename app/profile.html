@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=165" />
-  <script src="native.js?v=112"></script>
+  <script src="native.js?v=113"></script>
   <style>
     .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
     .pcard h2 { margin: 0 0 10px; font-size: 1.02rem; }
@@ -98,6 +98,10 @@
     .prow:has(.prow-stack) .prow-k { grid-column: 1; grid-row: 1; }
     .prow:has(.prow-stack) .prow-v { grid-column: 1; grid-row: 2; text-align: left; }
     .prow:has(.prow-stack) .prow-c { grid-column: 2; grid-row: 1 / span 2; }
+    /* Push diagnostics: the detail is a diagnostic string, so let it wrap over
+       several lines rather than truncating — a half-shown error is no use. */
+    #push-detail { display: block; margin-top: 3px; font-size: 0.72rem; line-height: 1.45;
+                   color: var(--muted); white-space: normal; word-break: break-word; }
     .signout { width: auto; padding: 8px 16px; }
     /* Hero identity card — native parity. */
     .phero { display: flex; align-items: center; gap: 14px; background: linear-gradient(160deg, #00251a, #00482b); border-radius: 16px; padding: 18px; color: #fff; margin: 8px 0 14px; }
@@ -180,6 +184,18 @@
         <button type="button" class="prow" id="btn-pick-unit">
           <span class="prow-k prow-stack">My polling unit</span>
           <span class="prow-v" id="p-unit">None saved</span>
+          <span class="prow-c" aria-hidden="true">›</span>
+        </button>
+        <!-- PUSH STATUS, in the app only.
+             Lite received no push for six builds and the app could not say why:
+             every failure path returned silently, so the only way to tell a
+             refused permission from a dead token from a never-registered device
+             was a cable and Safari Web Inspector. This row is the app answering
+             that question about itself. Tapping it retries registration, which
+             is also the fix when someone signed in AFTER launch. -->
+        <button type="button" class="prow" id="btn-push-state" hidden>
+          <span class="prow-k prow-stack">Notifications</span>
+          <span class="prow-v" id="push-state">Checking…<small id="push-detail"></small></span>
           <span class="prow-c" aria-hidden="true">›</span>
         </button>
       </div>
@@ -448,6 +464,54 @@
     };
     const unitClose = () => { $('unit-modal').hidden = true; };
     $('btn-pick-unit').onclick = unitOpen;
+
+    /**
+     * PUSH STATUS — the app answering the question it could not answer before.
+     *
+     * Shown only inside the native shell (window.HAWKEYE.native), because on
+     * the web there is no APNs chain to report on and a "Notifications: n/a"
+     * row would just be clutter.
+     *
+     * Reads the breadcrumbs native.js leaves at each step. Deliberately shows
+     * the token LENGTH, never the token: 64 = a raw APNs token the sender
+     * declines by shape, 150+ = a real FCM one. That single number is the
+     * difference between "the app is broken" and "the server is".
+     */
+    (function pushStatus() {
+      const H = window.HAWKEYE;
+      if (!H || !H.native) return;               // web: nothing to report
+      const row = $('btn-push-state');
+      const val = $('push-state');
+      const detail = $('push-detail');
+      if (!row) return;
+      row.hidden = false;
+
+      const paint = () => {
+        const st = H.pushStage || 'not started';
+        const err = H.pushError;
+        const ok = st === 'registered';
+        val.textContent = ok ? 'On' : (err ? 'Not working' : st);
+        val.style.color = ok ? 'var(--green)' : (err ? '#b3261e' : 'var(--muted)');
+        const bits = [`stage: ${st}`];
+        if (H.pushPermission) bits.push(`permission: ${H.pushPermission}`);
+        if (H.pushPlugins) bits.push(`plugins: push=${H.pushPlugins.push} firebase=${H.pushPlugins.firebase}`);
+        if (H.pushTokenLen) bits.push(`token length: ${H.pushTokenLen}`);
+        if (err) bits.push(`error: ${err}`);
+        bits.push('tap to retry');
+        detail.textContent = bits.join(' · ');
+      };
+      paint();
+      // Repaint while the chain is still running — registration is async and
+      // arrives seconds after this screen paints.
+      const t = setInterval(paint, 1500);
+      setTimeout(() => clearInterval(t), 60_000);
+
+      row.onclick = async () => {
+        val.textContent = 'Retrying…';
+        try { await H.initPush(); } catch (e) { H.pushError = (e && e.message) || String(e); }
+        paint();
+      };
+    })();
     $('btn-unit-cancel').onclick = unitClose;
     // The card IS the undo: tapping your own answer clears it and hands the
     // pickers back, which is the same gesture that made the choice.

@@ -276,8 +276,30 @@
     // Register this device's token against the signed-in observer so the backend
     // can push "new report at your saved unit" etc. Only runs once the observer
     // has a session; a tap on a notification with a data.url deep-links there.
+    /**
+     * A BREADCRUMB PER STEP, because every one of them can end the chain.
+     *
+     * Six builds shipped with push silently dead, and the app could not say
+     * which link broke: a refused permission, a plugin that never woke, a token
+     * that never arrived and a register POST that failed all looked identical
+     * from the outside — nothing. `stage` records the last point reached, so
+     * the profile screen can name the failure instead of someone needing a
+     * cable and Safari Web Inspector to find out.
+     */
+    const stage = (s) => { window.HAWKEYE.pushStage = s; };
+    stage('not started');
+
     window.HAWKEYE.initPush = async function initPush() {
-      if (!localStorage.getItem('hawkeye_token')) return;
+      stage('starting');
+      if (!localStorage.getItem('hawkeye_token')) {
+        // NOT an error — just nobody signed in yet. It became one only because
+        // initPush ran once at launch and never again, so signing in afterwards
+        // left push permanently unregistered for that install. The sign-in
+        // paths in app.js now call this again; recorded either way.
+        stage('waiting for sign-in');
+        window.HAWKEYE.pushError = 'not signed in when push started';
+        return;
+      }
 
       /**
        * WAKE THE FIREBASE PLUGIN BEFORE ANYTHING REGISTERS WITH APNS.
@@ -295,15 +317,23 @@
        * one is cheap and side-effect free; what matters is that it happens
        * before Push.register() below.
        */
+      window.HAWKEYE.pushPlugins = { push: !!Push, firebase: !!FbMsg };
       if (FbMsg) {
+        stage('waking Firebase');
         try { await FbMsg.checkPermissions(); } catch (e) {
           console.warn('[push] could not wake FirebaseMessaging:', (e && e.message) || e);
         }
       }
 
+      stage('checking permission');
       let perm = await Push.checkPermissions();
       if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') perm = await Push.requestPermissions();
-      if (perm.receive !== 'granted') { window.HAWKEYE.pushError = `permission ${perm.receive}`; return; }
+      window.HAWKEYE.pushPermission = perm.receive;
+      if (perm.receive !== 'granted') {
+        stage(`permission ${perm.receive}`);
+        window.HAWKEYE.pushError = `permission ${perm.receive}`;
+        return;
+      }
 
       /**
        * THE FAILURE THAT USED TO LEAVE NO TRACE AT ALL.
@@ -322,6 +352,7 @@
        */
       Push.addListener('registrationError', (e) => {
         const why = (e && (e.error || e.message)) || JSON.stringify(e);
+        stage('APNs refused registration');
         window.HAWKEYE.pushError = `registrationError: ${why}`;
         console.warn('[push] APNs registration failed:', why);
       });
@@ -331,17 +362,20 @@
       // wait so "nothing happened" is distinguishable from "not tried yet";
       // the listener above clears it the moment a token does land.
       window.HAWKEYE.pushError = 'awaiting APNs registration';
+      stage('awaiting APNs token');
       setTimeout(() => {
         if (window.HAWKEYE.pushError === 'awaiting APNs registration') {
           window.HAWKEYE.pushError = 'no registration event after 30s — APNs token never reached the app';
+          stage('no APNs token after 30s');
           console.warn('[push]', window.HAWKEYE.pushError);
         }
       }, 30_000);
 
       Push.addListener('registration', async (t) => {
         window.HAWKEYE.pushError = null;
+        stage('APNs token received');
         const jwt = localStorage.getItem('hawkeye_token');
-        if (!jwt) return;
+        if (!jwt) { stage('token arrived but signed out'); return; }
 
         // WHICH TOKEN THE BACKEND CAN ACTUALLY USE.
         //
@@ -378,17 +412,38 @@
                the only symptom was that no push ever arrived. Park the reason
                where it can be read back. */
             const why = (e && e.message) || String(e);
+            stage('FCM token exchange failed');
             window.HAWKEYE.pushError = why;
             console.warn('[push] no FCM token on iOS — not registering:', why);
             return;
           }
         }
 
+        /**
+         * THE LAST SILENT LINK. This POST used to end in `.catch(() => {})`,
+         * so a 401, an offline phone or a server error left no trace and the
+         * device simply never appeared in the audience — the same
+         * indistinguishable nothing as every other failure in this chain.
+         *
+         * The token's LENGTH is recorded, never the token: 64 hex characters
+         * means an APNs token the sender declines by shape, ~150+ means a real
+         * FCM one, and that difference is the whole diagnosis. The value itself
+         * is the capability to push to this device and this screen gets
+         * screenshotted.
+         */
+        stage('registering with server');
+        window.HAWKEYE.pushTokenLen = String(value || '').length;
         origFetch(BASE + '/api/push/register', {
           method: 'POST',
           headers: { 'content-type': 'application/json', authorization: 'Bearer ' + jwt },
           body: JSON.stringify({ token: value, platform: Cap.getPlatform() }),
-        }).catch(() => {});
+        }).then((r) => {
+          if (r.ok) { stage('registered'); window.HAWKEYE.pushError = null; }
+          else { stage(`server refused (${r.status})`); window.HAWKEYE.pushError = `register HTTP ${r.status}`; }
+        }).catch((e) => {
+          stage('register request failed');
+          window.HAWKEYE.pushError = `register failed: ${(e && e.message) || e}`;
+        });
       });
       Push.addListener('pushNotificationActionPerformed', (ev) => {
         const url = ev && ev.notification && ev.notification.data && ev.notification.data.url;

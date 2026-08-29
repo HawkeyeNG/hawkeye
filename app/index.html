@@ -20,7 +20,7 @@
     // without stripping them from every other page in the shell.
     document.documentElement.classList.add('is-landing');
   </script>
-  <script src="native.js?v=113"></script>
+  <script src="native.js?v=114"></script>
   <style>
     /* ---- Observer Home (signed-in index) ---- */
     .home-obs { display: none; }
@@ -630,12 +630,27 @@
          * navigates away immediately and a normal fetch would be cancelled
          * mid-flight; the alert would then reappear and look like a bug.
          */
+        const unreadNow = d.items.filter((n) => !n.read).length;
         box.querySelectorAll('a[data-note]').forEach((a) => a.addEventListener('click', () => {
           fetch('/api/notifications/read', {
             method: 'POST', keepalive: true,
             headers: { ...auth, 'content-type': 'application/json' },
             body: JSON.stringify({ id: Number(a.dataset.note) }),
           }).catch(() => {});
+          /**
+           * Drop the app-icon badge by one, now.
+           *
+           * Computed rather than read from the response because keepalive
+           * requests are fire-and-forget through a navigation — waiting for
+           * the new count would mean never applying it. One-off drift is
+           * corrected the moment anything re-reads the feed, and a badge that
+           * lags a tap is exactly the complaint this is fixing.
+           */
+          try {
+            if (window.HAWKEYE && window.HAWKEYE.clearNotificationUi) {
+              window.HAWKEYE.clearNotificationUi(Math.max(0, unreadNow - 1));
+            }
+          } catch { /* a badge must never break a navigation */ }
         }));
       }).catch(() => {});
 

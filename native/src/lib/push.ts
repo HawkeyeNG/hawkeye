@@ -85,6 +85,19 @@ export function setUnread(next: number) {
    * refuses is not a reason to surface anything to the reader.
    */
   Notifications.setBadgeCountAsync(n).catch(() => {});
+  /**
+   * NOTHING UNREAD MEANS NOTHING LEFT IN THE SHADE EITHER.
+   *
+   * Reading an alert in the app used to leave its banner sitting in the phone's
+   * notification centre, so the same alert had to be dismissed twice — and the
+   * shade still implied there was something new when there was not. iOS keeps
+   * delivered notifications until they are explicitly removed; the badge and
+   * the shade are separate stores and clearing one does not touch the other.
+   *
+   * Only at zero. With unread still outstanding the shade is telling the truth,
+   * and removing the rest would hide alerts that have genuinely not been seen.
+   */
+  if (n === 0) Notifications.dismissAllNotificationsAsync().catch(() => {});
   if (n === unread) return;
   unread = n;
   listeners.forEach((l) => l());
@@ -194,7 +207,22 @@ function nativeRoute(url: string): string | null {
 
 /** Open what a notification is about — native screen if there is one, browser otherwise. */
 export function openNotificationTarget(url: string | null | undefined) {
-  if (!url) return;
+  /**
+   * NO URL MEANS ALERTS, not "do nothing".
+   *
+   * Returning early here left the app on whatever screen it happened to open
+   * on — the Home tab — so tapping a notification looked like it had simply
+   * ignored you. Broadcasts are the common case and they carry no url unless
+   * the sender typed one (backend/src/services/push.js passes data.url only
+   * when set), so "no url" is the NORMAL path, not an edge case.
+   *
+   * Alerts is the honest destination: it is where that notification is now a
+   * durable row, so the thing you tapped is the first thing you see.
+   */
+  if (!url) {
+    router.push('/alerts' as never);
+    return;
+  }
   const route = nativeRoute(url);
   if (route) {
     router.push(route as never);

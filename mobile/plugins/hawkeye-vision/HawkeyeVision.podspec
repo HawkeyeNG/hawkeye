@@ -17,7 +17,7 @@ Pod::Spec.new do |s|
   # GoogleMLKit's static text-recognition framework linked 42 MB into the app
   # binary, on an app whose reason for existing is being small.
   s.dependency 'Capacitor'
-  s.frameworks = 'VisionKit', 'Vision', 'UIKit'
+  s.frameworks = 'VisionKit', 'Vision', 'UIKit', 'UserNotifications'
 
   s.ios.deployment_target = '16.0'
   s.swift_version = '5.1'

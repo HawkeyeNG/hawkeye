@@ -785,6 +785,10 @@ $('btn-auth').onclick = async () => {
   });
   if (status !== 200) return alert(explain(body));
   localStorage.setItem('hawkeye_token', body.token);
+  // Register for push NOW. initPush ran once at launch and never again,
+  // so signing in afterwards left this install permanently unregistered —
+  // no token, no server row, and nothing anywhere said so.
+  try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
   if (settingPw) {
     const r = await api('/api/observers/set-password', {
       method: 'POST',
@@ -2055,6 +2059,10 @@ async function tryResume() {
     });
     if (status === 200 && body.token) {
       localStorage.setItem('hawkeye_token', body.token);
+  // Register for push NOW. initPush ran once at launch and never again,
+  // so signing in afterwards left this install permanently unregistered —
+  // no token, no server row, and nothing anywhere said so.
+  try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
       return true;
     }
   } catch { /* fall through to sign-up */ }
@@ -2180,6 +2188,10 @@ function armTelegramLogin() {
       });
       if (status !== 200) throw new Error(body.error || 'failed');
       localStorage.setItem('hawkeye_token', body.token);
+  // Register for push NOW. initPush ran once at launch and never again,
+  // so signing in afterwards left this install permanently unregistered —
+  // no token, no server row, and nothing anywhere said so.
+  try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
       afterVerified();
     } catch (e) {
       btn.disabled = false;

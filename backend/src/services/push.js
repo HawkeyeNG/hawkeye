@@ -120,15 +120,48 @@ async function fcmAccessToken() {
  * test stopped being true exactly when the token stopped being an APNs one.
  *
  * It still fires for rows registered BEFORE the switch, which hold an APNs token
- * until that device next re-registers. Keep it until those have aged out.
+ * that device will never present again — see prunePermanentlyUndeliverable().
  */
 const isRawApnsToken = (t) => /^[0-9a-f]{64}$/i.test(String(t || ''));
 
+/**
+ * DELETE THE ROWS THE SENDER WILL NEVER USE. Idempotent; runs at boot.
+ *
+ * These do not age out on their own, which is what the original "keep it until
+ * they age out" note here got wrong. Two mechanisms had to be true for that and
+ * neither is: fcmSend returns above WITHOUT a network call, so a raw APNs row
+ * can never fail a send, and the only prune we have runs on a send failure; and
+ * re-registering does not revive the row, because an FCM token is a DIFFERENT
+ * string and INSERT ... ON CONFLICT(token) therefore writes a new one beside it.
+ *
+ * So one stale row from 2026-08-22 sat in the audience reporting "1 iOS
+ * undeliverable" indefinitely — an outstanding-looking problem three days after
+ * the app that created it was fixed, and precisely the noise that gets a real
+ * failure ignored later.
+ *
+ * Selected by the SENDER'S OWN predicate rather than by a cutoff date, so the
+ * invariant is exactly "the table holds no token fcmSend would decline". A
+ * second definition of undeliverable living here would be free to drift from
+ * the one that actually governs delivery.
+ *
+ * Nothing is lost: the device re-registers on next launch with a token that
+ * works, and an APNs token we cannot send to has no other use. The daily
+ * snapshot in server.js holds seven days of history if that is ever wrong.
+ */
+export function prunePermanentlyUndeliverable() {
+  const rows = db.prepare("SELECT token FROM device_push_tokens WHERE platform IN ('android', 'ios')").all();
+  const dead = rows.filter((r) => isRawApnsToken(r.token));
+  if (dead.length) {
+    const del = db.prepare('DELETE FROM device_push_tokens WHERE token = ?');
+    db.transaction((list) => { for (const r of list) del.run(r.token); })(dead);
+  }
+  return dead.length;
+}
+
 async function fcmSend(accessToken, deviceToken, title, body, data, badge) {
   if (isRawApnsToken(deviceToken)) {
-    // A pre-switch iOS row. Not an error and not the device's fault. Kept, NOT
-    // deleted: it becomes deliverable the moment that app re-registers, and
-    // deleting would just churn the row.
+    // A pre-switch iOS row that boot has not pruned yet. Not an error and not
+    // the device's fault — decline it quietly rather than reporting a failure.
     return false;
   }
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${config.fcmProjectId}/messages:send`, {

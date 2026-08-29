@@ -173,8 +173,19 @@ check('and returns it from a dry run',
   /dryRun\) return \{[^}]*undeliverable/.test(SRC), true);
 check('and from a real send', /web: web\.length, undeliverable, sent, failed/.test(SRC), true);
 check('the endpoint passes it through', /undeliverable: r\.undeliverable/.test(ROUTE), true);
+// Reworded 2026-08-29. The old copy said these rows were "waiting on the next
+// iOS build" and would clear themselves; neither was true, so the assertion now
+// pins the explanation that IS true — the sender declines them by shape.
 check('the console explains it rather than showing a bare number',
-  /pre-FCM build|before FCM/.test(ADMIN), true);
+  /declines by shape/.test(ADMIN), true);
+// And it must not go back to promising they self-clear: fcmSend returns before
+// any network call, so no send failure ever prunes one. That is what
+// prunePermanentlyUndeliverable() is for (tests/push_prune_test.mjs).
+check('the console does not claim a send will clear them',
+  /Stale devices are cleared by the first send/.test(ADMIN), false);
+check('the prune exists and runs at boot',
+  /export function prunePermanentlyUndeliverable/.test(SRC)
+  && /prunePermanentlyUndeliverable\(\)/.test(fs.readFileSync(`${ROOT}/backend/src/server.js`, 'utf8')), true);
 // The fixture holds exactly one such row — 'a'.repeat(64), observer 4.
 check('the fixture would exercise it',
   ROWS.filter((r) => /^[0-9a-f]{64}$/i.test(r.token)).length, 1);

@@ -29,7 +29,7 @@ import { runForensics, recheckCollations } from './services/integrity.js';
 import { runBackup } from './services/backup.js';
 import { irevScan } from './services/irev.js';
 import { runAnchor } from './services/anchor.js';
-import { pushConfigured } from './services/push.js';
+import { pushConfigured, prunePermanentlyUndeliverable } from './services/push.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import sharp from 'sharp';
@@ -314,6 +314,12 @@ app.use((err, req, res, _next) => {
 
 app.listen(config.port, () => {
   console.log(`Hawkeye backend listening on http://0.0.0.0:${config.port} (${config.env})`);
+  // Drop push rows the sender can never deliver to. Logged even at 0, because
+  // "pruned 0" and "the prune did not run" are the same silence otherwise, and
+  // this exists precisely because an undeliverable row had gone unnoticed.
+  try {
+    console.log(`[push] pruned ${prunePermanentlyUndeliverable()} permanently undeliverable token(s)`);
+  } catch (e) { console.error('[push] prune failed:', e.message); }
   // Self-setup on hosts without shell access (register load runs in the background).
   bootstrapData(db).catch((err) => console.error('[bootstrap]', err.message));
   // Cross-unit statistical forensics: run shortly after boot, then hourly.

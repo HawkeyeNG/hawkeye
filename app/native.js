@@ -447,9 +447,50 @@
       });
       Push.addListener('pushNotificationActionPerformed', (ev) => {
         const url = ev && ev.notification && ev.notification.data && ev.notification.data.url;
-        if (url) location.href = url;
+        /**
+         * NO URL MEANS ALERTS, not "stay where you are".
+         *
+         * Tapping a notification used to do nothing at all unless the sender
+         * had typed a url — so the app opened on whatever page it last showed,
+         * normally Home, and the tap looked ignored. Broadcasts carry no url
+         * unless one was entered, so that is the ORDINARY case, not an edge.
+         * Alerts is where the tapped notification is a durable row, so it is
+         * the honest destination.
+         */
+        location.href = url || 'notifications.html';
       });
       await Push.register();
+    };
+
+    /**
+     * THE BADGE AND THE SHADE ARE TWO SEPARATE STORES, and reading an alert
+     * has to clear both.
+     *
+     * The server sends an absolute badge count with every push, so once alerts
+     * were read the icon kept the old number until the NEXT push arrived —
+     * which is exactly what "the counter doesn't disappear" looked like. And
+     * iOS keeps delivered notifications in the shade until something removes
+     * them, so the same alert had to be dismissed a second time by hand.
+     *
+     * Neither push plugin exposes the icon badge (they can clear the shade
+     * only), hence HawkeyeVision.setBadge — see the Swift side for why that
+     * lives in the vision plugin instead of a new dependency. On Android the
+     * launcher derives its badge from active notifications, so clearing
+     * delivered ones does the whole job and Vision is absent by design.
+     *
+     * Every call is best-effort: a badge that fails to clear must never break
+     * the page that was only trying to mark something read.
+     */
+    window.HAWKEYE.clearNotificationUi = async function clearNotificationUi(unread) {
+      const n = Math.max(0, Number(unread) || 0);
+      try {
+        if (n === 0 && Push.removeAllDeliveredNotifications) {
+          await Push.removeAllDeliveredNotifications();
+        }
+      } catch (e) { console.warn('[push] could not clear the shade:', (e && e.message) || e); }
+      try {
+        if (Vision && Vision.setBadge) await Vision.setBadge({ count: n });
+      } catch (e) { console.warn('[push] could not set the badge:', (e && e.message) || e); }
     };
     document.addEventListener('DOMContentLoaded', () => setTimeout(() => window.HAWKEYE.initPush().catch(() => {}), 1500));
   }

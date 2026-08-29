@@ -12,5 +12,8 @@ export interface HawkeyeVisionPlugin {
   isAvailable(): Promise<AvailabilityResult>;
   scanDocument(): Promise<ScanDocumentResult>;
   processImage(options: { path: string }): Promise<ProcessImageResult>;
+  /** Set the number on the app icon; 0 clears it. iOS only — see the Swift
+   *  side for why the badge lives in this plugin rather than a new dependency. */
+  setBadge(options: { count: number }): Promise<void>;
 }
 export declare const HawkeyeVision: HawkeyeVisionPlugin;

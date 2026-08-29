@@ -172,7 +172,16 @@ async function fcmSend(accessToken, deviceToken, title, body, data, badge) {
         token: deviceToken,
         notification: { title, body },
         data: Object.fromEntries(Object.entries(data || {}).map(([k, v]) => [k, String(v)])),
-        android: { priority: 'high' },
+        android: {
+          priority: 'high',
+          // The NUMBER on the Android app icon. Launchers that badge numerically
+          // (Samsung OneUI, and Pixel's long-press count) read it from
+          // notification_count; launchers that only dot ignore it, harmlessly.
+          // Same absolute-not-increment rule as aps.badge below, same reason for
+          // omitting when unknown. Handled OS-side by FCM — nothing for the
+          // Capacitor or Expo clients to parse, so no client risk.
+          ...(Number.isInteger(badge) && badge >= 0 ? { notification: { notification_count: badge } } : {}),
+        },
         // APNS RELAY SETTINGS. FCM ignores this block for an Android target, so
         // it costs Android nothing — but for an iOS target it is not optional:
         // without `apns-push-type` Apple rejects the relay outright, and without

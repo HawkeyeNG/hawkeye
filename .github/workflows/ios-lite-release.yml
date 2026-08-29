@@ -164,6 +164,15 @@ jobs:
           npx cap add ios --packagemanager CocoaPods || true
           test -f ios/App/Podfile || { echo "::error::Podfile was not generated"; exit 1; }
 
+      - name: Forward APNs registration in AppDelegate
+        working-directory: mobile
+        # The template AppDelegate drops the APNs device token on the floor -
+        # neither push plugin hooks the app delegate itself; both wait on the
+        # NotificationCenter event this patch posts. Root cause of builds 2-6
+        # registering no push token, with zero errors anywhere. The script
+        # verifies its own result and fails the build if the patch didn't take.
+        run: bash scripts/patch_ios_appdelegate.sh ios/App/App/AppDelegate.swift
+
       - name: Generate the iOS app icon
         working-directory: mobile
         # `cap add ios` ships CAPACITOR'S DEFAULT icon - the blue X on white that

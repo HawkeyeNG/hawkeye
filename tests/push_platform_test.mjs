@@ -187,6 +187,10 @@ check('sendToObserver passes a badge to fcmSend',
   /fcmSend\(at, r\.token, title, body, data, badge\)/.test(SRC), true);
 check('orphaned tokens get undefined, never a badge-clearing 0',
   /if \(oid == null\) return undefined;/.test(SRC), true);
+// Android numbers ride AndroidConfig.notification.notification_count — without
+// it, launchers show at most a dot while iOS gets a real number from aps.badge.
+check('the badge also rides the android block',
+  /notification: \{ notification_count: badge \}/.test(SRC), true);
 check('the endpoint passes it through', /undeliverable: r\.undeliverable/.test(ROUTE), true);
 // Reworded 2026-08-29. The old copy said these rows were "waiting on the next
 // iOS build" and would clear themselves; neither was true, so the assertion now

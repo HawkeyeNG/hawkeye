@@ -9,7 +9,7 @@ import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
-import { markRead, openNotificationTarget, setUnread, useUnread } from '@/lib/push';
+import { markRead, openNotificationTarget, refreshUnread, setUnread, useUnread } from '@/lib/push';
 import { humanError } from '@/lib/errors';
 
 type Notification = {
@@ -125,7 +125,19 @@ export default function Alerts() {
     if (!n.read) {
       setItems((list) => list?.map((x) => (x.id === n.id ? { ...x, read: 1 } : x)) ?? list);
       setUnread(unread - 1);
-      markRead(n.id).catch(() => {});
+      /**
+       * A FAILED RECEIPT USED TO VANISH. The row went read on screen, the badge
+       * dropped, markRead's rejection was swallowed by `.catch(() => {})`, and
+       * the next load quietly restored both — which from the outside is
+       * indistinguishable from "tapping does not mark it read". If this ever
+       * IS the fault, it now says so and puts the row back rather than leaving
+       * the screen disagreeing with the server.
+       */
+      markRead(n.id).catch((e) => {
+        setItems((list) => list?.map((x) => (x.id === n.id ? { ...x, read: 0 } : x)) ?? list);
+        refreshUnread();
+        Alert.alert('Could not mark that read', humanError(e));
+      });
     }
     /**
      * A LONG ALERT OPENS IN PLACE rather than navigating.
@@ -265,14 +277,6 @@ export default function Alerts() {
                 />
                 <View className="flex-1 pr-2">
                   <Text className="text-base font-semibold text-ink">{item.title}</Text>
-                  {/* SIX LINES, NOT THREE. Every alert used to be one sentence
-                      ("A result was reported at ..."), so three was generous.
-                      The declared-result alert is four lines by design — the top
-                      three as declared, then who declared it and why the race has
-                      left your follow list — and at three the ranking pushed the
-                      explanation off the row, leaving a race that vanished from
-                      the list with no reason given. Still bounded: a 400-character
-                      broadcast cannot take over the screen. */}
                   {/* ONE LINE, then "More". Six lines meant a 400-character
                       broadcast filled the screen and pushed every other alert
                       out of view — the list stopped being a list. One line is

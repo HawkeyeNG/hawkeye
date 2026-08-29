@@ -12,6 +12,7 @@
       "bundleIdentifier": "ng.com.hawkeye.observer",
       "supportsTablet": false,
       "infoPlist": {
+        "CFBundleIconName": "AppIcon",
         "NSCameraUsageDescription": "Hawkeye uses the camera to photograph the official result sheet and the polling unit itself — the evidence behind every report.",
         "NSMicrophoneUsageDescription": "Hawkeye uses the microphone only when you record a video of an incident, so the recording has sound.",
         "NSLocationWhenInUseUsageDescription": "Hawkeye records a GPS fix when you capture evidence or map a polling unit, to prove reports come from where they claim.",

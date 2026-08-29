@@ -1,6 +1,10 @@
 import Foundation
 import Capacitor
 import VisionKit
+import UIKit
+// For setBadge below: UNUserNotificationCenter.setBadgeCount is the iOS 16+
+// replacement for applicationIconBadgeNumber, which is deprecated.
+import UserNotifications
 
 /// The Capacitor bridge for HawkeyeVision.
 ///
@@ -15,7 +19,8 @@ public class HawkeyeVisionPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "isAvailable", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "scanDocument", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "processImage", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "processImage", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setBadge", returnType: CAPPluginReturnPromise)
     ]
 
     private let implementation = HawkeyeVision()
@@ -28,6 +33,33 @@ public class HawkeyeVisionPlugin: CAPPlugin, CAPBridgedPlugin {
             "scanner": VNDocumentCameraViewController.isSupported,
             "ocr": true
         ])
+    }
+
+    /// Set (or clear) the number on the app icon.
+    ///
+    /// WHY IT LIVES IN THE VISION PLUGIN, which is otherwise about the scanner:
+    /// neither @capacitor/push-notifications nor @capacitor-firebase/messaging
+    /// exposes the badge — they can clear the notification SHADE but not the
+    /// icon — and on iOS the badge is a separate store that only
+    /// `applicationIconBadgeNumber` touches. The alternative was a third-party
+    /// pod for four lines of UIKit. This plugin is already this app's one
+    /// iOS-native surface, already built, signed and size-gated, so the badge
+    /// goes here rather than into another dependency. If a third unrelated
+    /// method ever lands, rename the plugin instead of stretching this one.
+    ///
+    /// iOS only by construction: on Android the launcher derives its badge from
+    /// active notifications, so removing delivered ones is the whole job there
+    /// and this plugin does not exist.
+    @objc func setBadge(_ call: CAPPluginCall) {
+        let count = max(0, call.getInt("count") ?? 0)
+        DispatchQueue.main.async {
+            if #available(iOS 16.0, *) {
+                UNUserNotificationCenter.current().setBadgeCount(count) { _ in call.resolve() }
+            } else {
+                UIApplication.shared.applicationIconBadgeNumber = count
+                call.resolve()
+            }
+        }
     }
 
     @objc func scanDocument(_ call: CAPPluginCall) {

@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { router, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
@@ -21,6 +21,16 @@ type Notification = {
   read: 0 | 1;
   created_at: number;
 };
+
+/**
+ * Past this many characters an alert opens in a modal instead of being clamped
+ * in its row. Matches app/notifications.html so the two clients agree on which
+ * alerts are "long" — a message that opened a panel on the website and a row in
+ * the app would be the same alert behaving differently for no visible reason.
+ * The server caps bodies at 500 (services/notifications.js), so 180 splits that
+ * range rather than sitting at one end.
+ */
+const LONG_BODY = 180;
 
 function ago(ts: number) {
   const m = Math.max(1, Math.round((Date.now() - ts) / 60000));
@@ -41,6 +51,8 @@ export default function Alerts() {
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [marking, setMarking] = useState(false);
+  // The alert whose full text is on screen; null when the modal is closed.
+  const [detail, setDetail] = useState<Notification | null>(null);
 
   // Returns the failure so the caller can decide how loudly to say it: a first
   // load has an empty screen to explain itself in, a pull-to-refresh does not.
@@ -92,6 +104,18 @@ export default function Alerts() {
       setUnread(unread - 1);
       markRead(n.id).catch(() => {});
     }
+    /**
+     * A LONG ALERT OPENS IN PLACE rather than navigating.
+     *
+     * The row clamps its body at six lines, so a broadcast written at any
+     * length was readable only as far as the row went. Past the threshold the
+     * whole message earns a panel — and if the alert also carries a url the
+     * modal offers it as a button, so nothing becomes less reachable.
+     */
+    if ((n.body ?? '').length > LONG_BODY) {
+      setDetail(n);
+      return;
+    }
     openNotificationTarget(n.url);
   };
 
@@ -109,7 +133,33 @@ export default function Alerts() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Alerts" translateY={translateY} right="none" />
+      {/* REFRESH, top right. A push can land while this screen is open, and
+          tapping a notification now lands here before the feed has been
+          re-read — so the alert that sent you is briefly not on the page it
+          sent you to. Pull-to-refresh already exists but is not discoverable
+          in that moment, and it is unreachable while the list is empty. */}
+      <ScreenHeader
+        title="Alerts"
+        translateY={translateY}
+        right="none"
+        rightSlot={
+          auth.status === 'signedIn' ? (
+            <Pressable
+              onPress={onRefresh}
+              disabled={refreshing}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh alerts"
+            >
+              {refreshing ? (
+                <ActivityIndicator size="small" color={ui.tint.good.ink} />
+              ) : (
+                <Feather name="refresh-cw" size={19} color={ui.muted} />
+              )}
+            </Pressable>
+          ) : null
+        }
+      />
 
       {auth.status !== 'signedIn' ? (
         <View
@@ -181,6 +231,16 @@ export default function Alerts() {
                   item.read ? 'bg-card' : 'bg-good'
                 }`}
               >
+                {/* UNREAD DOT. The tinted card already says "new", but tint is
+                    easy to miss at a glance and impossible to see in a
+                    screenshot of a single row. Red because that is the colour
+                    of the tab badge and the app icon count — three places
+                    saying the same thing the same way. Hidden rather than
+                    removed so the text does not shift left when a row is read. */}
+                <View
+                  className="mr-2.5 h-2 w-2 rounded-full"
+                  style={{ backgroundColor: item.read ? 'transparent' : '#d93025' }}
+                />
                 <View className="flex-1 pr-2">
                   <Text className="text-base font-semibold text-ink">{item.title}</Text>
                   {/* SIX LINES, NOT THREE. Every alert used to be one sentence
@@ -243,6 +303,60 @@ export default function Alerts() {
           ) : null}
         </>
       )}
+
+      {/* THE FULL TEXT OF A LONG ALERT. Same treatment as the other modals in
+          the app (support, profile): a dimmed backdrop that dismisses on tap,
+          an inner card that does not, and a close affordance top-right. */}
+      <Modal
+        visible={!!detail}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDetail(null)}
+      >
+        <Pressable
+          className="flex-1 items-center justify-center bg-black/60 p-5"
+          onPress={() => setDetail(null)}
+        >
+          {detail ? (
+            <Pressable
+              className="w-full max-w-[420px] rounded-2xl border border-line bg-card p-5"
+              onPress={() => {}}
+            >
+              <Pressable
+                onPress={() => setDetail(null)}
+                hitSlop={12}
+                className="absolute right-3 top-2.5 z-10"
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Feather name="x" size={20} color={ui.muted} />
+              </Pressable>
+              <Text className="pr-7 text-lg font-bold text-ink">{detail.title}</Text>
+              {/* Scrolls, because the cap is 500 characters and a small screen
+                  in a large font will not fit that. */}
+              <ScrollView className="mt-2 max-h-80">
+                <Text className="text-[15px] leading-6 text-ink">{detail.body}</Text>
+              </ScrollView>
+              <Text className="pt-3 text-xs text-faint">{ago(detail.created_at)} ago</Text>
+              {/* The url is offered, not swallowed: a long alert that also
+                  points somewhere must stay as reachable as a short one. */}
+              {detail.url ? (
+                <Pressable
+                  onPress={() => {
+                    const u = detail.url;
+                    setDetail(null);
+                    openNotificationTarget(u);
+                  }}
+                  className="mt-3 flex-row items-center justify-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
+                >
+                  <Feather name="arrow-right" size={16} color={BRAND.gold} />
+                  <Text className="pl-2 text-base font-bold text-hawk-gold">Open</Text>
+                </Pressable>
+              ) : null}
+            </Pressable>
+          ) : null}
+        </Pressable>
+      </Modal>
     </View>
   );
 }

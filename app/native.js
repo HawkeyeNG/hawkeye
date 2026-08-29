@@ -303,8 +303,43 @@
 
       let perm = await Push.checkPermissions();
       if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') perm = await Push.requestPermissions();
-      if (perm.receive !== 'granted') return;
+      if (perm.receive !== 'granted') { window.HAWKEYE.pushError = `permission ${perm.receive}`; return; }
+
+      /**
+       * THE FAILURE THAT USED TO LEAVE NO TRACE AT ALL.
+       *
+       * Everything below hangs off the 'registration' event. If APNs never
+       * hands one back, none of it runs — no token, no server row, and
+       * pushError never even gets assigned, because it was only ever set
+       * INSIDE the listener. That is precisely how the AppDelegate bug hid for
+       * five builds: permission granted, register() resolved, then silence
+       * indistinguishable from success.
+       *
+       * The plugin does emit 'registrationError' for exactly this case (a
+       * stripped aps-environment entitlement, no APNs reachability, a token
+       * that will not parse). Listening costs nothing and turns the next
+       * silent death into a readable one.
+       */
+      Push.addListener('registrationError', (e) => {
+        const why = (e && (e.error || e.message)) || JSON.stringify(e);
+        window.HAWKEYE.pushError = `registrationError: ${why}`;
+        console.warn('[push] APNs registration failed:', why);
+      });
+
+      // A registration that never arrives at all is the OTHER silent case, and
+      // no event fires for it by definition. Park a reason after a generous
+      // wait so "nothing happened" is distinguishable from "not tried yet";
+      // the listener above clears it the moment a token does land.
+      window.HAWKEYE.pushError = 'awaiting APNs registration';
+      setTimeout(() => {
+        if (window.HAWKEYE.pushError === 'awaiting APNs registration') {
+          window.HAWKEYE.pushError = 'no registration event after 30s — APNs token never reached the app';
+          console.warn('[push]', window.HAWKEYE.pushError);
+        }
+      }, 30_000);
+
       Push.addListener('registration', async (t) => {
+        window.HAWKEYE.pushError = null;
         const jwt = localStorage.getItem('hawkeye_token');
         if (!jwt) return;
 

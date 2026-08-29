@@ -1,0 +1,267 @@
+# Build the NATIVE React Native app (ng.com.hawkeye.observer) on GitHub, and
+# upload it to TestFlight — without spending an EAS build credit.
+#
+# WHY. EAS's free tier is a small monthly allowance and this app is iterated on
+# daily; running out mid-fix stops the work. This repo is PUBLIC, and GitHub
+# Actions is free with no minute limit on public repositories — macOS runners
+# included. So the same archive can be produced here indefinitely.
+#
+# It is a port of ios-lite-release.yml, which already does exactly this for the
+# Capacitor app. The only real difference is how ios/ comes into being:
+#   Lite    npx cap add ios          (Capacitor)
+#   native  npx expo prebuild        (Expo)
+# Both regenerate a gitignored ios/ from config on every run, so anything the
+# project needs must be applied HERE, not committed once.
+#
+# EAS IS NOT RETIRED. `eas build` still works and remains the reference: if a
+# build here behaves oddly, build the same commit on EAS and compare before
+# assuming the runner is at fault.
+#
+# Secrets — the same ones ios-lite-release.yml uses, EXCEPT the profile:
+#   BUILD_CERTIFICATE_BASE64            distribution .p12 (shared, same team)
+#   P12_PASSWORD                        its export password
+#   PROVISIONING_PROFILE_NATIVE_BASE64  App Store profile FOR THE NATIVE APP —
+#                                       a profile is bound to one App ID, so
+#                                       Lite's cannot sign this one
+#   KEYCHAIN_PASSWORD                   any throwaway string
+#   APPSTORE_KEY_ID / APPSTORE_ISSUER_ID / APPSTORE_PRIVATE_KEY   ASC API key
+name: iOS native — build + TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: 'CFBundleVersion — App Store Connect rejects a re-used one'
+        required: true
+        type: string
+      upload:
+        description: 'Upload to TestFlight (off = archive + .ipa artifact only)'
+        type: boolean
+        default: false
+
+env:
+  NATIVE_BUNDLE_ID: ng.com.hawkeye.observer
+  SCHEME: Hawkeye
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: native
+        # npm ci, not install: the lockfile is the contract, and a resolved-
+        # differently dependency tree is the last thing to debug from a CI log.
+        run: npm ci
+
+      - name: Prebuild the iOS project
+        working-directory: native
+        env:
+          APP_VARIANT: production
+        # --clean because ios/ is gitignored and any leftover would be a
+        # half-configured project. Pods install as part of prebuild.
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform ios --clean
+          test -d ios/"$SCHEME".xcodeproj || {
+            echo "::error::prebuild did not produce ios/$SCHEME.xcodeproj — the app name may have changed"
+            ls ios || true
+            exit 1
+          }
+
+      - name: Firebase config must have survived prebuild
+        working-directory: native
+        # native/GoogleService-Info.plist is committed and the @react-native-
+        # firebase plugin copies it in. If that ever stops happening the build
+        # still succeeds and push silently dies — the exact failure that cost
+        # eight Lite builds. Check it is there before spending twenty minutes.
+        run: |
+          set -euo pipefail
+          F=$(find ios -maxdepth 3 -name GoogleService-Info.plist | head -1)
+          [ -n "$F" ] || { echo "::error::GoogleService-Info.plist is not in the generated project — push would be dead"; exit 1; }
+          BID=$(plutil -extract BUNDLE_ID raw "$F")
+          [ "$BID" = "$NATIVE_BUNDLE_ID" ] \
+            || { echo "::error::GoogleService-Info.plist is for '$BID', expected $NATIVE_BUNDLE_ID"; exit 1; }
+          echo "  ok: Firebase config for $BID"
+
+      - name: Stamp the build number
+        working-directory: native
+        env:
+          BUILD: ${{ inputs.build_number }}
+        run: |
+          set -euo pipefail
+          P=ios/"$SCHEME"/Info.plist
+          plutil -replace CFBundleVersion -string "$BUILD" "$P"
+          echo "  version $(plutil -extract CFBundleShortVersionString raw "$P") build $BUILD"
+
+      - name: Purpose strings must be specific
+        working-directory: native
+        # Same gate as Lite. ITMS-90683 for a missing key, and Guideline 5.1.1
+        # for a generic one — both arrive AFTER a successful upload, so nothing
+        # in a green build tells you about them.
+        run: |
+          set -euo pipefail
+          P=ios/"$SCHEME"/Info.plist
+          for K in NSCameraUsageDescription NSMicrophoneUsageDescription \
+                   NSPhotoLibraryUsageDescription \
+                   NSLocationWhenInUseUsageDescription \
+                   NSLocationAlwaysAndWhenInUseUsageDescription; do
+            V=$(plutil -extract "$K" raw "$P" 2>/dev/null || echo '')
+            [ -n "$V" ] || { echo "::error::$K is missing — Apple returns ITMS-90683"; exit 1; }
+            case "$V" in
+              "Allow "*) echo "::error::$K is Expo boilerplate ('$V') — Guideline 5.1.1 wants a specific reason"; exit 1 ;;
+            esac
+            printf '  ok  %s\n' "$K"
+          done
+
+      - name: Import certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_NATIVE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PROVISIONING_PROFILE_BASE64" ]; then
+            echo "::error::PROVISIONING_PROFILE_NATIVE_BASE64 is not set. It is the App Store profile"
+            echo "::error::for $NATIVE_BUNDLE_ID — Lite's profile cannot sign this app."
+            exit 1
+          fi
+          CERT_PATH=$RUNNER_TEMP/build_certificate.p12
+          PROFILE_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERT_PATH"
+          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          mkdir -p ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID raw -)
+          NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
+          cp "$PROFILE_PATH" ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/"$UUID".mobileprovision
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
+          echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "PROFILE_PATH=$PROFILE_PATH" >> "$GITHUB_ENV"
+          echo "Imported profile '$NAME' ($UUID)"
+
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH" | tee "$RUNNER_TEMP/ids.txt"
+          grep -q 'Apple Distribution' "$RUNNER_TEMP/ids.txt" \
+            || { echo "::error::BUILD_CERTIFICATE_BASE64 is not an Apple Distribution certificate"; exit 1; }
+
+      - name: Profile must match the app
+        # A profile is bound to ONE explicit App ID and xcodebuild's failure
+        # names neither the expected nor the actual one. Say it here instead.
+        run: |
+          set -euo pipefail
+          APPID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Entitlements.application-identifier raw -)
+          GOT="${APPID#*.}"
+          if [ "$GOT" != "$NATIVE_BUNDLE_ID" ]; then
+            echo "::error::PROVISIONING_PROFILE_NATIVE_BASE64 is a profile for '$GOT', but this workflow builds '$NATIVE_BUNDLE_ID'."
+            echo "::error::For Hawkeye Lite use ios-lite-release.yml, which has its own profile secret."
+            exit 1
+          fi
+          APS=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Entitlements.aps-environment raw - 2>/dev/null || echo '')
+          [ "$APS" = production ] \
+            || { echo "::error::profile has aps-environment='$APS' — push would not work in TestFlight"; exit 1; }
+          echo "  ok: profile is for $GOT with aps-environment=$APS"
+
+      - name: Archive
+        working-directory: native
+        run: |
+          set -euo pipefail
+          xcodebuild -workspace ios/"$SCHEME".xcworkspace \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/$SCHEME.xcarchive" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+            archive
+
+      - name: Export .ipa
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/export.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key><dict>
+              <key>$NATIVE_BUNDLE_ID</key><string>$PROFILE_NAME</string>
+            </dict>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/$SCHEME.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist"
+          ls -la "$RUNNER_TEMP/export"
+
+      - name: What it weighs, and what is inside
+        run: |
+          set -euo pipefail
+          IPA=$(find "$RUNNER_TEMP/export" -name '*.ipa' | head -1)
+          echo "  ipa: $(du -h "$IPA" | cut -f1)"
+          rm -rf "$RUNNER_TEMP/peek" && mkdir -p "$RUNNER_TEMP/peek"
+          unzip -qo "$IPA" -d "$RUNNER_TEMP/peek"
+          APP=$(find "$RUNNER_TEMP/peek/Payload" -maxdepth 1 -name '*.app' | head -1)
+          plutil -p "$APP/Info.plist" | grep -E 'CFBundleIdentifier|CFBundleVersion|CFBundleShortVersion'
+          # The two things whose absence is silent and expensive.
+          test -f "$APP/GoogleService-Info.plist" \
+            || { echo "::error::GoogleService-Info.plist did not reach the ipa — push would be dead"; exit 1; }
+          plutil -extract CFBundleIconName raw "$APP/Info.plist" >/dev/null \
+            || { echo "::error::CFBundleIconName missing — App Store Connect shows no icon"; exit 1; }
+          echo "  ok: Firebase config and icon name present"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hawkeye-native-ios-ipa
+          path: ${{ runner.temp }}/export/*.ipa
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload to TestFlight
+        if: ${{ inputs.upload }}
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/private_keys
+          echo -n "$APPSTORE_PRIVATE_KEY" > ~/private_keys/AuthKey_${APPSTORE_KEY_ID}.p8
+          IPA=$(find "$RUNNER_TEMP/export" -name '*.ipa' | head -1)
+          xcrun altool --validate-app -f "$IPA" -t ios \
+            --apiKey "$APPSTORE_KEY_ID" --apiIssuer "$APPSTORE_ISSUER_ID"
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$APPSTORE_KEY_ID" --apiIssuer "$APPSTORE_ISSUER_ID"
+
+      - name: Clean up keychain, profiles and keys
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" || true
+          rm -f ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision || true
+          rm -f ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision || true
+          rm -f ~/private_keys/*.p8 || true

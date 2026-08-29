@@ -71,8 +71,13 @@
        the list into a wall and pushed every other alert off the screen. */
     .n p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1;
            overflow: hidden; }
-    .n .more { display: inline-block; margin-left: 8px; font-size: 0.74rem;
-               font-weight: 700; color: var(--green); }
+    /* --link, NOT --green. --green is #004225, Nigeria green, an almost-black
+       accent — as body text on a dark card it read as muted grey and the one
+       affordance that says "there is more to see here" was the least visible
+       thing in the row. --link is the neon (#57d9a1 dark / #0a6b40 light) that
+       "Mark all read" already uses, so the two read as the same kind of thing. */
+    .n .more { display: inline-block; margin-left: 8px; font-size: 0.78rem;
+               font-weight: 800; color: var(--link); letter-spacing: 0.02em; }
     /* Every row is a <button> now, so it can mark itself read BEFORE it
        navigates — an <a> would be gone before the receipt was sent. These undo
        the control defaults a button brings and the site's own button styling,

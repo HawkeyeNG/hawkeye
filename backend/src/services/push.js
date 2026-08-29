@@ -212,11 +212,38 @@ async function fcmSend(accessToken, deviceToken, title, body, data, badge) {
       },
     }),
   });
-  // 404/UNREGISTERED → the app was uninstalled / token rotated: drop it.
-  if (res.status === 404 || res.status === 403) {
+  /**
+   * KEEP THE REASON. Every failure used to collapse to `false`, so the console
+   * could say "3 failed" and nothing else — and with no shell on the host, that
+   * was the end of the trail. A misconfigured APNs key, an expired credential
+   * and an uninstalled app were indistinguishable.
+   *
+   * Read once, because a Response body cannot be consumed twice, and only the
+   * ERROR CODE is kept — never the body verbatim, which echoes the token back.
+   */
+  let code = null;
+  if (!res.ok) {
+    try {
+      const j = await res.json();
+      code = j?.error?.details?.find((d) => d.errorCode)?.errorCode
+        || j?.error?.status || j?.error?.message || null;
+    } catch { /* non-JSON error body — status alone has to do */ }
+  }
+
+  /**
+   * DELETE ONLY WHAT IS PROVABLY DEAD.
+   *
+   * 404 UNREGISTERED means the app was uninstalled or the token rotated — the
+   * row is genuinely worthless. 403 was in here too and should not have been:
+   * it is SENDER_ID_MISMATCH, a CONFIGURATION fault, and deleting on it erases
+   * the evidence needed to diagnose it while the device keeps re-registering.
+   * A misconfiguration that silently eats its own rows is close to
+   * undebuggable — this session spent hours on exactly that shape of failure.
+   */
+  if (res.status === 404) {
     db.prepare('DELETE FROM device_push_tokens WHERE token = ?').run(deviceToken);
   }
-  return res.ok;
+  return { ok: res.ok, status: res.status, code };
 }
 
 async function webPushSend(subJson, title, body, data) {
@@ -269,7 +296,7 @@ export async function sendToObserver(observerId, { title, body, data } = {}) {
         try {
           badge = db.prepare('SELECT COUNT(*) AS c FROM notifications WHERE observer_id = ? AND read = 0').get(observerId)?.c;
         } catch { /* notifications table not readable here — send without a badge */ }
-        for (const r of rows) if (await fcmSend(at, r.token, title, body, data, badge).catch(() => false)) sent++;
+        for (const r of rows) if ((await fcmSend(at, r.token, title, body, data, badge).catch(() => ({ ok: false }))).ok) sent++;
       } catch { /* FCM oauth failed — web still goes out below */ }
     }
   }
@@ -447,6 +474,21 @@ export async function broadcast({
 
   let sent = 0;
   let failed = 0;
+
+  /**
+   * WHY the failures happened, aggregated — never which devices.
+   *
+   * Grouped by (platform, status, code) and counted, so the console can say
+   * "2 ios: 400 INVALID_ARGUMENT" instead of "2 failed". No token values, not
+   * even truncated: these figures get screenshotted, and a token is the
+   * capability to push to that device.
+   */
+  const failures = new Map();
+  const noteFailure = (platform, status, code, n = 1) => {
+    const key = `${platform}|${status}|${code ?? 'unknown'}`;
+    failures.set(key, (failures.get(key) || 0) + n);
+  };
+
   if (android.length) {
     try {
       const at = await fcmAccessToken();
@@ -477,15 +519,23 @@ export async function broadcast({
       };
       for (const r of android) {
         // eslint-disable-next-line no-await-in-loop
-        if (await fcmSend(at, r.token, title, body, data, badgeFor(r.observer_id)).catch(() => false)) sent++; else failed++;
+        const out = await fcmSend(at, r.token, title, body, data, badgeFor(r.observer_id))
+          .catch((e) => ({ ok: false, status: 0, code: e?.message || 'threw' }));
+        if (out.ok) sent++;
+        else { failed++; noteFailure(r.platform, out.status, out.code); }
       }
-    } catch { failed += android.length; }
+    } catch (e) { failed += android.length; noteFailure('fcm', 0, `oauth: ${e?.message || 'failed'}`, android.length); }
   }
   for (const r of web) {
     // eslint-disable-next-line no-await-in-loop
-    if (await webPushSend(r.token, title, body, data)) sent++; else failed++;
+    if (await webPushSend(r.token, title, body, data)) sent++; else { failed++; noteFailure('web', 0, 'webpush_failed'); }
   }
-  return { audience, people, android: androidCount, ios: iosCount, web: web.length, undeliverable, sent, failed, filed, dryRun: false };
+  // Sorted by count so the dominant cause reads first, which is the one worth
+  // acting on when several appear at once.
+  const failureReasons = [...failures.entries()]
+    .map(([k, count]) => { const [platform, status, code] = k.split('|'); return { platform, status: Number(status), code, count }; })
+    .sort((a, b) => b.count - a.count);
+  return { audience, people, android: androidCount, ios: iosCount, web: web.length, undeliverable, sent, failed, failureReasons, filed, dryRun: false };
 }
 
 // Fan out a push to everyone who saved this polling unit (Android only for now).

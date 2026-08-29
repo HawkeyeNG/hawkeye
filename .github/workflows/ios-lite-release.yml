@@ -295,6 +295,15 @@ jobs:
             "Hawkeye can save a copy of a result sheet you photograph to your own photo library."
           set_str NSLocationWhenInUseUsageDescription \
             "Hawkeye attaches your location to a report so it can be cross-checked against the polling unit you selected. This is optional and is only read when you submit a report."
+          # ITMS-90683 on every Lite delivery so far. @capacitor/geolocation LINKS
+          # requestAlwaysAuthorization, and Apple requires the purpose string for
+          # any API the binary references — "your app might not use these APIs, a
+          # purpose string is still required". Hawkeye never asks for always
+          # authorisation, so this string will not be shown to anyone; it says so
+          # plainly, because a reviewer reading it should not conclude the app
+          # tracks people in the background.
+          set_str NSLocationAlwaysAndWhenInUseUsageDescription \
+            "Hawkeye only reads your location while you are using the app, to stamp a report with where it was filed. It never requests background or always-on location and does not track you when the app is closed."
           # Declares no non-exempt encryption, so every upload skips the export
           # compliance questionnaire instead of stalling in review.
           plutil -replace ITSAppUsesNonExemptEncryption -bool false "$P" 2>/dev/null \
@@ -316,6 +325,35 @@ jobs:
           # Fail loudly rather than shipping another build ASC cannot display.
           plutil -extract CFBundleIconName raw "$P" >/dev/null \
             || { echo "::error::CFBundleIconName missing — App Store Connect will show no icon"; exit 1; }
+
+          # EVERY PURPOSE STRING AN APPLE VALIDATOR ASKS FOR.
+          #
+          # ITMS-90683 arrived on every Lite delivery for missing
+          # NSLocationAlwaysAndWhenInUseUsageDescription and nothing in this
+          # workflow noticed — the upload SUCCEEDS, the warning is an email, and
+          # the next build repeats it. This list is the set the linked
+          # frameworks require; a missing one now fails the build instead.
+          #
+          # Also rejects Apple/Expo BOILERPLATE ("Allow X to access your ..."),
+          # because Guideline 5.1.1 wants a specific reason and a generic string
+          # passes every automated check while being exactly what gets a human
+          # rejection.
+          for K in NSCameraUsageDescription NSMicrophoneUsageDescription \
+                   NSPhotoLibraryUsageDescription NSPhotoLibraryAddUsageDescription \
+                   NSLocationWhenInUseUsageDescription \
+                   NSLocationAlwaysAndWhenInUseUsageDescription; do
+            V=$(plutil -extract "$K" raw "$P" 2>/dev/null || echo '')
+            if [ -z "$V" ]; then
+              echo "::error::$K is missing — Apple returns ITMS-90683 for this and the next delivery repeats it"
+              exit 1
+            fi
+            case "$V" in
+              "Allow "*|"Allow"*"access your"*)
+                echo "::error::$K is boilerplate ('$V') — Guideline 5.1.1 wants a specific reason"
+                exit 1 ;;
+            esac
+            printf '  ok  %s\n' "$K"
+          done
 
       - name: Firebase config + push entitlement
         working-directory: mobile

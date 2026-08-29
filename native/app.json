@@ -18,7 +18,7 @@
         "NSPhotoLibraryUsageDescription": "Hawkeye lets you attach existing photos or videos from your library to an incident report.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "16",
+      "buildNumber": "17",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
           {
@@ -98,7 +98,12 @@
         }
       ],
       "expo-image",
-      "expo-secure-store",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Hawkeye does not use Face ID. This entry exists only because the secure-storage library references Apple's biometric API; your session is stored without any biometric prompt."
+        }
+      ],
       "expo-web-browser",
       [
         "expo-camera",
@@ -111,7 +116,10 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Hawkeye records a GPS fix when you capture evidence or map a polling unit, to prove reports come from where they claim."
+          "locationWhenInUsePermission": "Hawkeye records a GPS fix when you capture evidence or map a polling unit, to prove reports come from where they claim.",
+          "locationAlwaysAndWhenInUsePermission": "Hawkeye only reads your location while you are using the app, to prove a report came from the polling unit it names. It never requests background or always-on location and does not track you when the app is closed.",
+          "locationAlwaysPermission": "Hawkeye only reads your location while you are using the app, to prove a report came from the polling unit it names. It never requests background or always-on location and does not track you when the app is closed.",
+          "motionUsagePermission": "Hawkeye does not use motion or fitness data. This entry exists only because the bundled location library references Apple's motion API; Hawkeye never requests or reads it."
         }
       ],
       "expo-notifications",

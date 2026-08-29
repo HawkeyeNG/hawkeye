@@ -50,6 +50,38 @@ export function noteMany(observerIds, note) {
   return ids.length;
 }
 
+/**
+ * HOW LONG AN ALERT STAYS IN THE FEED.
+ *
+ * 90 days. The common default across in-app notification centres is 14-30 days
+ * (Power Apps expires at 14; several notification servers default to 30), and
+ * the standard advice is to expire deliberately so an inbox never goes stale.
+ * Hawkeye sits at the long end of that range on purpose:
+ *
+ *   - These are civic alerts, not marketing. "A result was reported at your
+ *     polling unit" stays meaningful for as long as that result can be
+ *     challenged, and Nigeria's petition window alone is 21 days from
+ *     declaration, with tribunals running months past it.
+ *   - 90 days covers a whole election event plus that aftermath, so an observer
+ *     coming back to check what they were told still finds it.
+ *   - It is still a bound. Without one the table only grows, and a single
+ *     broadcast writes one row per observer.
+ *
+ * THIS IS THE FEED, NOT THE RECORD. Results, the hash-chained ledger and
+ * incidents are permanent and untouched — this prunes only the copy that exists
+ * to tell someone something happened.
+ *
+ * Pruned by age regardless of read state: a 90-day-old unread alert is not a
+ * task anyone still needs to do, and exempting unread rows would mean a lapsed
+ * account keeps its notifications for ever — the opposite of a retention rule.
+ */
+export const NOTIFICATION_RETENTION_DAYS = 90;
+
+export function pruneOldNotifications() {
+  const cutoff = Date.now() - NOTIFICATION_RETENTION_DAYS * 86_400_000;
+  return db.prepare('DELETE FROM notifications WHERE created_at < ?').run(cutoff).changes;
+}
+
 // Fan a notification out to everyone who saved this polling unit as theirs.
 export function noteUnitSavers(puCode, note) {
   if (!puCode) return 0;

@@ -597,10 +597,46 @@
 
       fetch('/api/notifications', { headers: auth }).then((r) => (r.ok ? r.json() : null)).then((d) => {
         const box = document.getElementById('home-alerts');
-        if (!d || !d.items || !d.items.length) { box.innerHTML = '<p class="home-empty">Nothing yet — reports at your saved unit and status updates land here.</p>'; return; }
-        box.innerHTML = d.items.slice(0, 4).map((n) => `
-          <a class="alert-line" href="${esc(n.url || 'notifications.html')}">${n.read ? '' : '<span class="dot"></span>'}
+        if (!d || !d.items) return;
+        /**
+         * UNREAD ONLY, and at most three.
+         *
+         * This panel answers "is there anything I need to look at", which is a
+         * different question from "what has happened", and the Alerts page
+         * already answers the second one in full. Showing read items meant the
+         * same lines sat here indefinitely: the panel never emptied, so it
+         * stopped carrying any signal, and a genuinely new alert looked exactly
+         * like the four-day-old one above it.
+         *
+         * Three rather than four because every one of them is now unread and
+         * therefore worth reading — a shorter list that is entirely live beats
+         * a longer one that is mostly history.
+         */
+        const fresh = d.items.filter((n) => !n.read).slice(0, 3);
+        if (!fresh.length) {
+          // Distinguish "caught up" from "nothing ever arrived". Both are empty
+          // panels; only one of them means the feature is working.
+          box.innerHTML = d.items.length
+            ? '<p class="home-empty">You’re all caught up. <a href="notifications.html">See all alerts →</a></p>'
+            : '<p class="home-empty">Nothing yet — reports at your saved unit and status updates land here.</p>';
+          return;
+        }
+        box.innerHTML = fresh.map((n) => `
+          <a class="alert-line" data-note="${n.id}" href="${esc(n.url || 'notifications.html')}"><span class="dot"></span>
             <span>${esc(n.title)}</span><time>${timeAgo(n.created_at)}</time></a>`).join('');
+        /**
+         * Opening one marks it read, so it is gone from here next time — which
+         * is the whole point of an unread list. keepalive, because the click
+         * navigates away immediately and a normal fetch would be cancelled
+         * mid-flight; the alert would then reappear and look like a bug.
+         */
+        box.querySelectorAll('a[data-note]').forEach((a) => a.addEventListener('click', () => {
+          fetch('/api/notifications/read', {
+            method: 'POST', keepalive: true,
+            headers: { ...auth, 'content-type': 'application/json' },
+            body: JSON.stringify({ id: Number(a.dataset.note) }),
+          }).catch(() => {});
+        }));
       }).catch(() => {});
 
       fetch('/api/ledger/entries').then((r) => r.json()).then((rows) => {

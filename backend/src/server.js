@@ -320,6 +320,15 @@ app.listen(config.port, () => {
   try {
     console.log(`[push] pruned ${prunePermanentlyUndeliverable()} permanently undeliverable token(s)`);
   } catch (e) { console.error('[push] prune failed:', e.message); }
+  // Age out the alerts feed. Daily as well as at boot, because this process
+  // runs for weeks at a time — a boot-only prune would simply never fire.
+  const pruneNotes = () => {
+    import('./services/notifications.js')
+      .then((n) => console.log(`[notifications] pruned ${n.pruneOldNotifications()} older than ${n.NOTIFICATION_RETENTION_DAYS}d`))
+      .catch((e) => console.error('[notifications] prune failed:', e.message));
+  };
+  pruneNotes();
+  setInterval(pruneNotes, 24 * 3_600_000);
   // Self-setup on hosts without shell access (register load runs in the background).
   bootstrapData(db).catch((err) => console.error('[bootstrap]', err.message));
   // Cross-unit statistical forensics: run shortly after boot, then hourly.

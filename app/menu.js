@@ -471,6 +471,37 @@
     } catch (e) { /* unsupported, or denied — never break the page for a badge */ }
   }
 
+  /**
+   * ONE PLACE THAT SETS THE UNREAD COUNT EVERYWHERE.
+   *
+   * There are four surfaces carrying it — the header bell dot, the tab bar dot,
+   * the PWA icon badge, and (in Lite) the real iOS app icon — and until now each
+   * was written once at page load from its own fetch. So reading an alert left
+   * every one of them stale until the next navigation, which is exactly what
+   * "clicking the link from home didn't make the badge disappear" was.
+   *
+   * Exposed globally because the pages that CHANGE the count (index.html's
+   * latest-alerts panel, notifications.html) are not this file.
+   */
+  function setUnreadEverywhere(n) {
+    const count = Math.max(0, Number(n) || 0);
+    try {
+      document.querySelectorAll('.bell-dot, .tab-dot').forEach((dot) => {
+        if (count > 0) { dot.textContent = count > 9 ? '9+' : String(count); dot.hidden = false; }
+        else { dot.hidden = true; dot.textContent = ''; }
+      });
+    } catch (e) { /* a badge must never break the page */ }
+    appBadge({ unread: count });
+    // Lite: the real app icon and the notification shade. No-op on the web and
+    // on any build without the native bridge.
+    try {
+      if (window.HAWKEYE && window.HAWKEYE.clearNotificationUi) {
+        window.HAWKEYE.clearNotificationUi(count);
+      }
+    } catch (e) { /* ditto */ }
+  }
+  window.hawkeyeSetUnread = setUnreadEverywhere;
+
   //   signed in  -> notifications bell + unread badge
   //   signed out -> "Sign in" for returning observers
   // A bell is meaningless before an account exists, and a first-time visitor has

@@ -148,14 +148,49 @@ const isRawApnsToken = (t) => /^[0-9a-f]{64}$/i.test(String(t || ''));
  * works, and an APNs token we cannot send to has no other use. The daily
  * snapshot in server.js holds seven days of history if that is ever wrong.
  */
+/**
+ * A GRACE PERIOD, so this prune cannot destroy the evidence of a LIVE bug.
+ *
+ * An old raw-APNs row is junk from before the 2026-08-24 FCM switch. A row
+ * created in the last few days is something else entirely: a client that is
+ * registering an APNs token RIGHT NOW, which is a bug worth seeing — and this
+ * function would delete it at the next restart, on a server that gets restarted
+ * several times an hour while someone is debugging exactly that.
+ *
+ * That is not hypothetical. iOS Lite is under investigation for producing no
+ * token at all, and one of the remaining explanations is that it registers a
+ * raw APNs token because the Firebase plugin did not resolve. If that is what
+ * is happening, an ungraced prune would erase the proof every single boot and
+ * the symptom would stay "no row", pointing at the wrong half of the system.
+ */
+const PRUNE_GRACE_DAYS = 7;
+
 export function prunePermanentlyUndeliverable() {
-  const rows = db.prepare("SELECT token FROM device_push_tokens WHERE platform IN ('android', 'ios')").all();
+  const cutoff = Date.now() - PRUNE_GRACE_DAYS * 86_400_000;
+  const rows = db.prepare(
+    "SELECT token, created_at FROM device_push_tokens WHERE platform IN ('android', 'ios') AND created_at < ?",
+  ).all(cutoff);
   const dead = rows.filter((r) => isRawApnsToken(r.token));
   if (dead.length) {
     const del = db.prepare('DELETE FROM device_push_tokens WHERE token = ?');
     db.transaction((list) => { for (const r of list) del.run(r.token); })(dead);
   }
   return dead.length;
+}
+
+/**
+ * Undeliverable rows still INSIDE the grace period — i.e. a client actively
+ * registering tokens the sender cannot use. Surfaced separately from the prune
+ * count because "we deleted 3 old ones" and "something is creating new ones
+ * today" are opposite findings that a single number would merge.
+ */
+export function freshUndeliverable() {
+  const cutoff = Date.now() - PRUNE_GRACE_DAYS * 86_400_000;
+  const rows = db.prepare(
+    "SELECT token, platform, created_at FROM device_push_tokens WHERE platform IN ('android', 'ios') AND created_at >= ?",
+  ).all(cutoff);
+  return rows.filter((r) => isRawApnsToken(r.token))
+    .map((r) => ({ platform: r.platform, created_at: r.created_at, token_len: String(r.token).length }));
 }
 
 async function fcmSend(accessToken, deviceToken, title, body, data, badge) {

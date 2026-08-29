@@ -54,7 +54,13 @@ const SEED = [
   ['{"endpoint":"https://fcm.googleapis.com/x","keys":{}}', 'web', 'alive'],
 ];
 const ins = db.prepare('INSERT INTO device_push_tokens (token, observer_id, platform, created_at) VALUES (?, 1, ?, ?)');
-for (const [token, platform] of SEED) ins.run(token, platform, Date.now());
+/**
+ * Seeded OLD (30 days) so the 7-day grace period does not protect them — the
+ * grace exists so a row registered TODAY survives to be seen, and the fresh
+ * case is asserted separately below.
+ */
+const OLD = Date.now() - 30 * 86_400_000;
+for (const [token, platform] of SEED) ins.run(token, platform, OLD);
 
 const survivors = () => db.prepare('SELECT token FROM device_push_tokens').all().map((r) => r.token).sort();
 const EXPECTED = SEED.filter(([, , s]) => s === 'alive').map(([t]) => t).sort();
@@ -75,6 +81,25 @@ check('the web subscription is untouched', survivors().includes(SEED[8][0]), tru
 // ---- idempotence: a normal boot must do nothing ---------------------------
 check('a second run prunes nothing', prunePermanentlyUndeliverable(), 0);
 check('and removes nothing', survivors(), EXPECTED);
+
+/**
+ * THE GRACE PERIOD — the prune must not destroy evidence of a LIVE bug.
+ *
+ * A raw APNs row created today means a client is registering unusable tokens
+ * right now. Deleting it at the next boot (and this server restarts several
+ * times an hour during a debugging session) would erase the proof and leave the
+ * symptom looking like "no row at all" — pointing at the wrong half of the
+ * system. This is not hypothetical: it is one of the live explanations for iOS
+ * Lite, and an ungraced prune would have hidden it every single restart.
+ */
+const { freshUndeliverable } = await import('../backend/src/services/push.js');
+ins.run('f'.repeat(64), 'ios', Date.now());              // registered just now
+check('a FRESH raw-APNs row is NOT pruned', prunePermanentlyUndeliverable(), 0);
+check('and it is still there', survivors().includes('f'.repeat(64)), true);
+check('freshUndeliverable reports it', freshUndeliverable().length, 1);
+check('reporting length, never the token', freshUndeliverable()[0].token_len, 64);
+check('and never the token value itself',
+  Object.keys(freshUndeliverable()[0]).includes('token'), false);
 
 /**
  * CONTROL — prove the assertion can fail. If check() or survivors() were broken,

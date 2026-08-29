@@ -29,7 +29,7 @@ import { runForensics, recheckCollations } from './services/integrity.js';
 import { runBackup } from './services/backup.js';
 import { irevScan } from './services/irev.js';
 import { runAnchor } from './services/anchor.js';
-import { pushConfigured, prunePermanentlyUndeliverable } from './services/push.js';
+import { pushConfigured, prunePermanentlyUndeliverable, freshUndeliverable } from './services/push.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import sharp from 'sharp';
@@ -319,6 +319,14 @@ app.listen(config.port, () => {
   // this exists precisely because an undeliverable row had gone unnoticed.
   try {
     console.log(`[push] pruned ${prunePermanentlyUndeliverable()} permanently undeliverable token(s)`);
+    // Loud, because a FRESH undeliverable row means a client is registering
+    // tokens the sender cannot use right now — the opposite finding from
+    // "cleaned up some old ones", and one a prune count alone would hide.
+    const fresh = freshUndeliverable();
+    if (fresh.length) {
+      console.warn(`[push] ${fresh.length} RECENT undeliverable row(s) — a client is registering raw APNs tokens:`,
+        fresh.map((f) => `${f.platform} len=${f.token_len} @${new Date(f.created_at).toISOString().slice(0, 10)}`).join(', '));
+    }
   } catch (e) { console.error('[push] prune failed:', e.message); }
   // Age out the alerts feed. Daily as well as at boot, because this process
   // runs for weeks at a time — a boot-only prune would simply never fire.

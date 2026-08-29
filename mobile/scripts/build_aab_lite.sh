@@ -39,7 +39,26 @@ grep -q "com.google.mlkit:text-recognition:" "$MLKIT_GRADLE" || {
   echo "GATE_FAIL: the LATIN ML Kit artifact is missing — OCR would not work at all"; exit 1; }
 echo "  ok: ML Kit is latin-only"
 
-npx cap sync android 2>&1 | tail -2
+# A FAILED SYNC MUST STOP THE BUILD.
+#
+# This was `npx cap sync android 2>&1 | tail -2`. In a pipeline the exit status
+# is tail's, so `set -e` never saw cap sync fail — the build carried on against
+# whatever the PREVIOUS run had left in assets/public, which is a bundle that
+# has already been stripped. The symptom is a gate failing far downstream for a
+# reason that has nothing to do with the real fault: on 2026-08-29 an
+# interrupted sync left 72 of 243 files and the build died claiming
+# "states_geo.json was stripped" when nothing had stripped it.
+#
+# So: capture, check, and assert the sync actually populated the directory.
+npx cap sync android > /tmp/cap_sync.log 2>&1 || {
+  echo "GATE_FAIL: cap sync failed — see /tmp/cap_sync.log"; tail -20 /tmp/cap_sync.log; exit 1; }
+tail -2 /tmp/cap_sync.log
+SYNCED=$(find android/app/src/main/assets/public -type f | wc -l)
+[ "$SYNCED" -ge 200 ] || {
+  echo "GATE_FAIL: cap sync left only $SYNCED files in assets/public — a full sync is ~240."
+  echo "           The bundle is partial or stale; the strip gates below would blame the wrong thing."
+  exit 1; }
+echo "  ok: cap sync wrote $SYNCED files"
 
 # ---------------------------------------------------------------------------
 # @capacitor-firebase/messaging IS FOR iOS ONLY. IT MUST NOT REACH ANDROID.

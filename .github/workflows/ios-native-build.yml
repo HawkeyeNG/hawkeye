@@ -183,8 +183,51 @@ jobs:
             || { echo "::error::profile has aps-environment='$APS' — push would not work in TestFlight"; exit 1; }
           echo "  ok: profile is for $GOT with aps-environment=$APS"
 
+      - name: Write signing onto the app target only
+        working-directory: native
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        # THE FIRST RUN FAILED HERE, exactly as Lite's first run did:
+        #   error: No signing certificate "iOS Development" found
+        #
+        # Two reasons, and both are why these settings cannot be xcodebuild
+        # ARGUMENTS. An argument applies to EVERY target in the workspace,
+        # including the ~40 Pods targets, which must not be signed with the
+        # app's App Store profile. And the setting Xcode actually consults for
+        # a device build is the sdk-qualified CODE_SIGN_IDENTITY[sdk=iphoneos*],
+        # which Expo's template sets to a development identity — leaving it
+        # alone is precisely what made the archive hunt for "iOS Development".
+        #
+        # So they are written into the app target's own build configurations.
+        # xcodeproj is CocoaPods' own dependency, so prebuild having installed
+        # pods means it is available.
+        run: |
+          set -euo pipefail
+          ruby -e "require 'xcodeproj'" 2>/dev/null || sudo gem install xcodeproj --no-document
+          TEAM_ID="$TEAM_ID" PROFILE_NAME="$PROFILE_NAME" SCHEME="$SCHEME" ruby - <<'RUBY'
+          require 'xcodeproj'
+          scheme = ENV['SCHEME']
+          project = Xcodeproj::Project.open("ios/#{scheme}.xcodeproj")
+          target = project.targets.find { |t| t.name == scheme }
+          abort("FAIL: no #{scheme} target in the project") if target.nil?
+          target.build_configurations.each do |config|
+            s = config.build_settings
+            s['CODE_SIGN_STYLE'] = 'Manual'
+            s['DEVELOPMENT_TEAM'] = ENV['TEAM_ID']
+            s['PROVISIONING_PROFILE_SPECIFIER'] = ENV['PROFILE_NAME']
+            s['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
+            s['CODE_SIGN_IDENTITY[sdk=iphoneos*]'] = 'Apple Distribution'
+          end
+          project.save
+          puts "signing written to the #{scheme} target:"
+          target.build_configurations.each do |config|
+            puts "  #{config.name}: #{config.build_settings['CODE_SIGN_IDENTITY[sdk=iphoneos*]']} / #{config.build_settings['PROVISIONING_PROFILE_SPECIFIER']}"
+          end
+          RUBY
+
       - name: Archive
         working-directory: native
+        # No signing settings on the command line — see the step above for why.
         run: |
           set -euo pipefail
           xcodebuild -workspace ios/"$SCHEME".xcworkspace \
@@ -192,9 +235,6 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/$SCHEME.xcarchive" \
-            CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
             archive
 
       - name: Export .ipa

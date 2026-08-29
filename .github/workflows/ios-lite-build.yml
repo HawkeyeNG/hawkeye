@@ -170,8 +170,15 @@ jobs:
           set_str NSCameraUsageDescription "Hawkeye uses the camera to photograph result sheets and polling-unit surroundings for your report."
           set_str NSLocationWhenInUseUsageDescription "Hawkeye records where a report was filed so results can be matched to the right polling unit."
           set_str NSPhotoLibraryAddUsageDescription "Hawkeye can save a copy of a sheet you photographed to your photo library."
+          # Top-level CFBundleIconName: what App Store Connect reads to find the
+          # 1024 marketing icon. Capacitor writes only the nested copy under
+          # CFBundleIcons, which satisfies the home screen and TestFlight but
+          # leaves ASC blank. Kept in step with the release workflow.
+          set_str CFBundleIconName AppIcon
           /usr/libexec/PlistBuddy -c "Print" "$PL" | grep -iE 'UsageDescription' || {
             echo "GATE_FAIL: usage strings were not written"; exit 1; }
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PL" >/dev/null 2>&1 || {
+            echo "GATE_FAIL: CFBundleIconName missing — App Store Connect would show no icon"; exit 1; }
 
       - name: Copy web assets
         working-directory: mobile

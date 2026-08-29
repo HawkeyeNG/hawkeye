@@ -280,8 +280,23 @@ jobs:
           # compliance questionnaire instead of stalling in review.
           plutil -replace ITSAppUsesNonExemptEncryption -bool false "$P" 2>/dev/null \
             || plutil -insert ITSAppUsesNonExemptEncryption -bool false "$P"
-          echo "--- usage strings now in Info.plist ---"
-          plutil -p "$P" | grep -E "UsageDescription|NonExempt"
+
+          # THE APP STORE CONNECT ICON. Apple requires CFBundleIconName at the
+          # TOP LEVEL for any app whose icon comes from an asset catalog; it
+          # names the icon set App Store Connect pulls the 1024 marketing icon
+          # from. Capacitor's generated Info.plist writes only the nested
+          # CFBundleIcons.CFBundlePrimaryIcon.CFBundleIconName, which is enough
+          # for the OS home screen and for TestFlight (they use the 60pt icon)
+          # but leaves ASC with nothing to display — checked in build 8's ipa,
+          # where the top-level key was absent while the nested one was present.
+          # That asymmetry is exactly why the icon showed in TestFlight and not
+          # on ASC.
+          set_str CFBundleIconName AppIcon
+          echo "--- usage strings + icon name now in Info.plist ---"
+          plutil -p "$P" | grep -E "UsageDescription|NonExempt|CFBundleIconName"
+          # Fail loudly rather than shipping another build ASC cannot display.
+          plutil -extract CFBundleIconName raw "$P" >/dev/null \
+            || { echo "::error::CFBundleIconName missing — App Store Connect will show no icon"; exit 1; }
 
       - name: Firebase config + push entitlement
         working-directory: mobile

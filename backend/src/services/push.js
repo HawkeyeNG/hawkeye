@@ -331,9 +331,11 @@ export async function broadcast({
   // no migration is needed: each device becomes deliverable when it re-registers.
   const fcmWant = want.filter((p) => p !== 'web');
   const holes = fcmWant.map(() => '?').join(',');
+  // observer_id selected too: the icon badge is per PERSON (their unread
+  // count), so the send loop below needs to know whose device each row is.
   const android = FCM_ENABLED && fcmWant.length
     ? db.prepare(`
-        SELECT t.token, t.platform FROM device_push_tokens t
+        SELECT t.token, t.platform, t.observer_id FROM device_push_tokens t
         LEFT JOIN observers o ON o.id = t.observer_id
         WHERE t.platform IN (${holes}) AND (o.id IS NULL OR o.status = 'active')`).all(...fcmWant)
     : [];
@@ -439,9 +441,34 @@ export async function broadcast({
   if (android.length) {
     try {
       const at = await fcmAccessToken();
+      /**
+       * THE ICON BADGE, for broadcasts too. The 2026-08-29 test push proved the
+       * gap: sendToObserver had carried a badge since the badge work landed, but
+       * a BROADCAST — the only send anyone had actually tested with — passed
+       * none, so no icon ever badged and the whole feature read as broken.
+       *
+       * Same rule as sendToObserver: the observer's unread count, which is the
+       * figure the in-app bell shows, so icon and app cannot disagree. The
+       * ordering above makes it right by construction — alerts are filed BEFORE
+       * this loop, so the count already includes this announcement.
+       *
+       * Cached per observer, not per device: the count is a per-person fact and
+       * this loop runs per token row. Orphaned tokens (deleted accounts) get
+       * UNDEFINED, not 0 — they have no unread rows so the query would say 0,
+       * and a 0 CLEARS the badge; undefined omits the field entirely.
+       */
+      const unread = db.prepare('SELECT COUNT(*) AS c FROM notifications WHERE observer_id = ? AND read = 0');
+      const badges = new Map();
+      const badgeFor = (oid) => {
+        if (oid == null) return undefined;
+        if (!badges.has(oid)) {
+          try { badges.set(oid, unread.get(oid)?.c); } catch { badges.set(oid, undefined); }
+        }
+        return badges.get(oid);
+      };
       for (const r of android) {
         // eslint-disable-next-line no-await-in-loop
-        if (await fcmSend(at, r.token, title, body, data).catch(() => false)) sent++; else failed++;
+        if (await fcmSend(at, r.token, title, body, data, badgeFor(r.observer_id)).catch(() => false)) sent++; else failed++;
       }
     } catch { failed += android.length; }
   }

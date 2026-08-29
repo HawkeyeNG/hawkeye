@@ -172,6 +172,21 @@ check('the service counts raw-APNs rows', /const undeliverable = android\.filter
 check('and returns it from a dry run',
   /dryRun\) return \{[^}]*undeliverable/.test(SRC), true);
 check('and from a real send', /web: web\.length, undeliverable, sent, failed/.test(SRC), true);
+
+// THE ICON BADGE MUST RIDE EVERY FCM SEND PATH, not just sendToObserver.
+// Found the hard way on 2026-08-29: the badge shipped on the per-observer path,
+// the test push went out as a broadcast — the one path without it — and the
+// whole feature read as broken on both apps. These pin all three pieces:
+// broadcast knows whose device each row is, passes that observer's unread
+// count, and sendToObserver still passes its own.
+check('broadcast selects observer_id (a badge is per person)',
+  /SELECT t\.token, t\.platform, t\.observer_id FROM device_push_tokens/.test(SRC), true);
+check('broadcast passes a badge to fcmSend',
+  /fcmSend\(at, r\.token, title, body, data, badgeFor\(r\.observer_id\)\)/.test(SRC), true);
+check('sendToObserver passes a badge to fcmSend',
+  /fcmSend\(at, r\.token, title, body, data, badge\)/.test(SRC), true);
+check('orphaned tokens get undefined, never a badge-clearing 0',
+  /if \(oid == null\) return undefined;/.test(SRC), true);
 check('the endpoint passes it through', /undeliverable: r\.undeliverable/.test(ROUTE), true);
 // Reworded 2026-08-29. The old copy said these rows were "waiting on the next
 // iOS build" and would clear themselves; neither was true, so the assertion now

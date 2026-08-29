@@ -1117,7 +1117,14 @@
           // each observer's feed, not only a push that dies when swiped away.
           // Reported separately because it is a different count — devices are
           // not people, and orphaned tokens get the push with no row to file.
+          // WHY they failed, not just how many. "3 failed" with no shell on the
+          // host is a dead end; a status + FCM error code names the fault
+          // (401/403 = credentials or bundle mismatch, 400 = a malformed
+          // payload, 404 = uninstalled). No token values — screenshots happen.
           $('push-out').textContent = `Sent to ${j.sent} of ${j.audience}. ${j.failed} failed.`
+            + ((j.failureReasons || []).length
+              ? ` Reasons: ${j.failureReasons.map((f) => `${f.count}× ${f.platform} ${f.status || ''} ${f.code}`.replace(/\s+/g, ' ').trim()).join('; ')}.`
+              : '')
             + (j.filed ? ` Filed in Alerts for ${j.filed} observer(s).` : '')
             + (j.failed ? ' Failures are usually stale tokens from uninstalled apps.' : '');
           pushRefresh();

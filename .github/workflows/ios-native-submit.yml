@@ -1,0 +1,86 @@
+# Upload an ALREADY-BUILT native iOS .ipa (from EAS) to TestFlight.
+#
+# WHY THIS EXISTS. `eas submit --non-interactive` refuses with "App Store
+# Connect API Keys cannot be set up in --non-interactive mode" unless the ASC
+# key is either stored in EAS's credentials service (an interactive one-off) or
+# written into eas.json as ascApiKeyPath / ascApiKeyId / ascApiKeyIssuerId.
+# This repo is PUBLIC, so eas.json is the wrong home for account identifiers.
+#
+# The Lite pipeline already solves the same problem correctly: altool on a
+# macOS runner, credentials from GitHub Secrets, nothing in the tree. This is
+# that same step, pointed at an artifact EAS built rather than one we archived
+# here — so native builds keep EAS's toolchain and still submit hands-free.
+#
+# The four secrets are the ones ios-lite-release.yml already uses; the ASC API
+# key is account-wide, so one key serves both apps.
+name: iOS native — submit to TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_url:
+        description: 'EAS .ipa URL (eas build:list --json -> artifacts.applicationArchiveUrl)'
+        required: true
+        type: string
+      what_to_test:
+        description: 'Optional "What to test" note for the TestFlight build'
+        required: false
+        type: string
+
+jobs:
+  submit:
+    runs-on: macos-26
+    steps:
+      - name: Download the .ipa
+        env:
+          URL: ${{ inputs.artifact_url }}
+        # Fail on a non-200 rather than uploading an HTML error page: altool
+        # would reject it with a confusing "invalid archive" much later.
+        run: |
+          set -euo pipefail
+          case "$URL" in
+            https://expo.dev/artifacts/*|https://*.expo.dev/artifacts/*) ;;
+            *) echo "::error::artifact_url must be an expo.dev artifact URL"; exit 1 ;;
+          esac
+          curl -fSL --retry 3 -o app.ipa "$URL"
+          SIZE=$(stat -f%z app.ipa)
+          echo "downloaded $SIZE bytes"
+          [ "$SIZE" -gt 1000000 ] || { echo "::error::.ipa is implausibly small ($SIZE bytes)"; exit 1; }
+          # It must actually be a zip; a redirect to an error page is not.
+          file app.ipa | grep -qi zip || { echo "::error::not a zip archive"; exit 1; }
+
+      - name: Confirm what we are about to ship
+        # Print the identity BEFORE uploading. Submitting the wrong app to the
+        # wrong App Store record is the expensive mistake here, and the bundle id
+        # is the one field that distinguishes native from Lite.
+        run: |
+          set -euo pipefail
+          unzip -qo app.ipa -d extracted
+          PLIST=$(find extracted/Payload -maxdepth 2 -name Info.plist | head -1)
+          BID=$(plutil -extract CFBundleIdentifier raw "$PLIST")
+          VER=$(plutil -extract CFBundleShortVersionString raw "$PLIST")
+          BUILD=$(plutil -extract CFBundleVersion raw "$PLIST")
+          echo "bundle: $BID   version: $VER ($BUILD)"
+          if [ "$BID" != "ng.com.hawkeye.observer" ]; then
+            echo "::error::This workflow submits the NATIVE app (ng.com.hawkeye.observer) but the ipa is '$BID'."
+            echo "::error::For Hawkeye Lite use ios-lite-release.yml, which builds and uploads its own."
+            exit 1
+          fi
+
+      - name: Upload to TestFlight
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/private_keys
+          echo -n "$APPSTORE_PRIVATE_KEY" > ~/private_keys/AuthKey_${APPSTORE_KEY_ID}.p8
+          xcrun altool --validate-app -f app.ipa -t ios \
+            --apiKey "$APPSTORE_KEY_ID" --apiIssuer "$APPSTORE_ISSUER_ID"
+          xcrun altool --upload-app -f app.ipa -t ios \
+            --apiKey "$APPSTORE_KEY_ID" --apiIssuer "$APPSTORE_ISSUER_ID"
+
+      - name: Clean up the key
+        if: always()
+        run: rm -f ~/private_keys/*.p8

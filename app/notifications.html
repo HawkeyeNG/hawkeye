@@ -56,8 +56,30 @@
     .nm h2 { margin: 0 0 6px; font-size: 1.05rem; }
     .nm .nm-body { margin: 0; font-size: 0.92rem; color: var(--ink); white-space: pre-line; line-height: 1.5; }
     .nm .nm-when { display: block; margin-top: 10px; font-size: 0.75rem; color: var(--muted); }
-    .nm-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
-    .nm-actions button, .nm-actions a { width: auto; margin: 0; }
+    /* Two real buttons of equal weight, not a link beside a button — the modal
+       shipped with an underlined "Open" next to a solid "Close", which read as
+       a stray hyperlink and made Close look like the primary action when Open
+       is the one that does something. Full width on a phone so both are
+       thumb-reachable. */
+    .nm-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .nm-actions > * { flex: 1 1 0; margin: 0; width: auto; text-align: center;
+                      padding: 11px 14px; border-radius: 10px; font-size: 0.92rem;
+                      font-weight: 600; text-decoration: none; line-height: 1.2; }
+    #nm-open { background: var(--green); color: #fff; border: 1px solid var(--green); }
+    #nm-close { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    /* THE ROW SHOWS ONE LINE. A 400-character broadcast rendered in full turned
+       the list into a wall and pushed every other alert off the screen. */
+    .n p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1;
+           overflow: hidden; }
+    .n .more { display: inline-block; margin-left: 8px; font-size: 0.74rem;
+               font-weight: 700; color: var(--green); }
+    /* Every row is a <button> now, so it can mark itself read BEFORE it
+       navigates — an <a> would be gone before the receipt was sent. These undo
+       the control defaults a button brings and the site's own button styling,
+       which would otherwise centre the text and paint the card green. */
+    button.n { width: 100%; text-align: left; font: inherit; cursor: pointer;
+               -webkit-appearance: none; appearance: none; }
+    button.n > div { flex: 1 1 auto; min-width: 0; }
   </style>
   <script src="authgate.js?v=2"></script>
 </head>
@@ -140,14 +162,14 @@
     // is something that happened.
     const ICON = { report: '🦅', result: '📊', declared: '🏁', unit: '📋', incident: '🆘', case: '⚖️', info: '🔔' };
     /**
-     * Past this many characters an alert opens in a modal rather than being
-     * clamped in its row. 180 is roughly four lines at this width — long enough
-     * that every existing alert ("A result was reported at ...") stays an
-     * ordinary row, short enough that a real broadcast gets the full panel.
-     * The server caps bodies at 500 (services/notifications.js), so this splits
-     * the range rather than sitting at one end of it.
+     * Past this many characters the body will not fit the single line the row
+     * shows, so the alert gets a "More" affordance and opens in a modal.
+     * Deliberately BELOW what actually fits (~45 characters at this width): the
+     * cost of offering More on a message that would just have fitted is nil,
+     * and the cost of the other error is text clipped with no way to read it.
+     * Matches native so an alert cannot behave differently between the two.
      */
-    const LONG_BODY = 180;
+    const ONE_LINE = 40;
     // The rendered list is HTML, so the modal needs the objects it came from.
     let lastItems = [];
     const ago = (t) => {
@@ -204,9 +226,18 @@
       if (!d.items.length) { $('list').innerHTML = '<p class="empty">No notifications yet. You’ll see reports at your saved units and status updates here.</p>'; return; }
       $('mark-all').hidden = d.unread === 0;
       $('list').innerHTML = d.items.map((n) => {
+        /**
+         * ONE LINE IN THE ROW, the rest behind "More".
+         *
+         * A row that renders a 400-character broadcast in full turns the list
+         * into a wall and pushes every other alert off screen. One line is
+         * enough to recognise it; anything that does not fit gets a modal with
+         * the whole message and, if it has one, its link.
+         */
+        const longBody = (n.body || '').length > ONE_LINE;
         const inner = `<span class="dot" aria-hidden="true"></span><span class="ic">${ICON[n.kind] || ICON.info}</span>
           <div><h3>${esc(n.title)}</h3>${n.body ? `<p>${esc(n.body)}</p>` : ''}
-          <time>${ago(n.created_at)}</time></div>`;
+          <time>${ago(n.created_at)}</time>${longBody ? '<span class="more">More</span>' : ''}</div>`;
         /**
          * A LONG ALERT OPENS IN PLACE instead of navigating.
          *
@@ -216,13 +247,11 @@
          * alert also carries a url, the modal offers it as a button rather than
          * swallowing it, so nothing becomes less reachable than it was.
          */
-        const long = (n.body || '').length > LONG_BODY;
-        if (long) {
-          return `<button type="button" class="n ${n.read ? 'read' : 'unread'}" data-modal="${n.id}">${inner}</button>`;
-        }
-        return n.url
-          ? `<a class="n ${n.read ? 'read' : 'unread'}" href="${esc(n.url)}">${inner}</a>`
-          : `<div class="n ${n.read ? 'read' : 'unread'}">${inner}</div>`;
+        const cls = `n ${n.read ? 'read' : 'unread'}`;
+        // Everything is a button now, including short alerts with a url: the
+        // row has to mark itself read before it navigates, and an <a> would be
+        // gone before the receipt was sent.
+        return `<button type="button" class="${cls}" data-id="${n.id}"${longBody ? ' data-modal="1"' : ''}>${inner}</button>`;
       }).join('')
         // Say the retention rule out loud. An alert quietly vanishing looks
         // like data loss on a tool whose whole claim is that records persist —
@@ -230,33 +259,43 @@
         // permanent, so the distinction is worth one line.
         + '<p class="empty" style="padding:18px 8px 4px;font-size:0.8rem">'
         + 'Alerts are kept for 90 days. Reports, incidents and the ledger are permanent.</p>';
-      // Opening the page marks everything read — and in the app that has to
-      // clear the icon badge and the notification shade too, or the phone keeps
-      // advertising alerts the reader has just finished reading. No-op on web.
-      if (d.unread > 0) {
-        fetch('/api/notifications/read', {
-          method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
-          body: JSON.stringify({ all: true }),
-        }).then(() => clearAppNotificationUi(0)).catch(() => {});
-      } else {
-        // Already read everywhere, but the badge may still be carrying a count
-        // from a push that was never opened in-app. Opening Alerts IS reading.
-        clearAppNotificationUi(0);
-      }
+      /**
+       * ARRIVING IS NOT READING. This page used to mark EVERYTHING read on
+       * load, which meant a glance at the list silently cleared alerts the
+       * reader had not opened — and with several unread, or one long enough to
+       * need its modal, the information was gone from every badge before it had
+       * been seen. Only opening an alert marks that alert read; "Mark all read"
+       * is still there for anyone who wants the blunt instrument.
+       */
+      setUnreadEverywhere(d.unread);
     }
-    // Best-effort bridge into the native shell; absent on the website.
-    function clearAppNotificationUi(unread) {
-      try {
-        if (window.HAWKEYE && window.HAWKEYE.clearNotificationUi) {
-          window.HAWKEYE.clearNotificationUi(unread);
-        }
-      } catch { /* never let a badge failure break the page */ }
+    // Keep the four unread surfaces (bell, tab, PWA badge, iOS icon) in step.
+    // menu.js owns them; absent only if menu.js failed to load.
+    function setUnreadEverywhere(n) {
+      try { if (window.hawkeyeSetUnread) window.hawkeyeSetUnread(n); }
+      catch { /* never let a badge failure break the page */ }
+    }
+    // Mark ONE alert read, update every badge, and grey the row immediately —
+    // the receipt catches up behind the navigation.
+    function markOneRead(n) {
+      if (!n || n.read) return;
+      n.read = 1;
+      const left = lastItems.filter((x) => !x.read).length;
+      setUnreadEverywhere(left);
+      $('mark-all').hidden = left === 0;
+      fetch('/api/notifications/read', {
+        method: 'POST', keepalive: true,
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+        body: JSON.stringify({ id: n.id }),
+      }).catch(() => {});
+      const row = $('list').querySelector(`[data-id="${n.id}"]`);
+      if (row) { row.classList.remove('unread'); row.classList.add('read'); }
     }
     $('mark-all').onclick = () => {
       fetch('/api/notifications/read', {
         method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
         body: JSON.stringify({ all: true }),
-      }).then(() => { clearAppNotificationUi(0); load(); }).catch(() => {});
+      }).then(() => { setUnreadEverywhere(0); load(); }).catch(() => {});
     };
 
     /**
@@ -293,13 +332,23 @@
     // Delegated, because the list is re-rendered on every load and per-row
     // handlers would be re-bound (or leak) each time.
     $('list').addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-modal]');
+      const btn = e.target.closest('[data-id]');
       if (!btn) return;
-      const n = (lastItems || []).find((x) => String(x.id) === btn.dataset.modal);
+      const n = (lastItems || []).find((x) => String(x.id) === btn.dataset.id);
       if (!n) return;
+
+      // CLICKING IS READING — every row, whether it opens a modal or navigates.
+      markOneRead(n);
+
+      if (!btn.dataset.modal) {
+        // Short alert: behave like the link it used to be.
+        if (n.url) location.href = n.url;
+        return;
+      }
       $('nm-title').textContent = n.title;
       $('nm-body').textContent = n.body || '';
-      $('nm-when').textContent = ago(n.created_at) + ' ago';
+      // ago() already ends in "ago" — appending another produced "24m ago ago".
+      $('nm-when').textContent = ago(n.created_at);
       const open = $('nm-open');
       if (n.url) {
         open.href = n.url;
@@ -314,6 +363,6 @@
     });
     load();
   </script>
-  <script src="menu.js?v=160"></script>
+  <script src="menu.js?v=161"></script>
 </body>
 </html>

@@ -646,10 +646,13 @@
            * corrected the moment anything re-reads the feed, and a badge that
            * lags a tap is exactly the complaint this is fixing.
            */
+          // menu.js owns all four unread surfaces — the header bell, the tab
+          // dot, the PWA badge and (in Lite) the real app icon. Going through
+          // it means the in-app dots clear on this tap too; reaching straight
+          // for the native bridge updated the icon and left the dots stale,
+          // which is what "the badge didn't disappear" looked like.
           try {
-            if (window.HAWKEYE && window.HAWKEYE.clearNotificationUi) {
-              window.HAWKEYE.clearNotificationUi(Math.max(0, unreadNow - 1));
-            }
+            if (window.hawkeyeSetUnread) window.hawkeyeSetUnread(Math.max(0, unreadNow - 1));
           } catch { /* a badge must never break a navigation */ }
         }));
       }).catch(() => {});
@@ -781,6 +784,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=160"></script>
+  <script src="menu.js?v=161"></script>
 </body>
 </html>

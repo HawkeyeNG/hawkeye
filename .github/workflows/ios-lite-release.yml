@@ -173,6 +173,25 @@ jobs:
         # verifies its own result and fails the build if the patch didn't take.
         run: bash scripts/patch_ios_appdelegate.sh ios/App/App/AppDelegate.swift
 
+      - name: Can this build attach to an App Store version?
+        working-directory: mobile
+        env:
+          ASC_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        # Builds 6-11 all uploaded, validated and reached TestFlight while being
+        # unattachable to the store listing: they declare 1.2 (from Android's
+        # versionName) and the ASC version record was still Apple's default
+        # 1.0.0. ASC only offers a build to a version whose number matches, so
+        # none of them appeared in the build picker — and the listing showed no
+        # icon, because the icon comes from the attached build. Nothing reported
+        # it: altool is happy, the build reads VALID, and the two facts live on
+        # different console screens. Warns rather than fails, because uploading
+        # ahead of the store record is a legitimate thing to do while testing.
+        run: |
+          VERSION=$(grep -v '^\s*//' android/app/build.gradle | grep -m1 'versionName' | sed 's/[^"]*"\([^"]*\)".*/\1/')
+          node scripts/check_asc_version.mjs "$LITE_BUNDLE_ID" "$VERSION"
+
       - name: Generate the iOS app icon
         working-directory: mobile
         # `cap add ios` ships CAPACITOR'S DEFAULT icon - the blue X on white that

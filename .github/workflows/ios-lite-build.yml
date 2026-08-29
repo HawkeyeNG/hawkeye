@@ -84,6 +84,13 @@ jobs:
           npx cap add ios --packagemanager CocoaPods || true
           test -f ios/App/Podfile || { echo "Podfile was not generated"; exit 1; }
 
+      - name: Forward APNs registration in AppDelegate
+        working-directory: mobile
+        # Same patch as the release workflow: the template AppDelegate drops the
+        # APNs token, and both push plugins wait on the NotificationCenter event
+        # it should post. See mobile/scripts/patch_ios_appdelegate.sh.
+        run: bash scripts/patch_ios_appdelegate.sh ios/App/App/AppDelegate.swift
+
       - name: Drop ML Kit from the iOS build
         working-directory: mobile
         # GoogleMLKit's text-recognition framework is STATIC, so it links

@@ -1,8 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { router, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
@@ -23,14 +23,18 @@ type Notification = {
 };
 
 /**
- * Past this many characters an alert opens in a modal instead of being clamped
- * in its row. Matches app/notifications.html so the two clients agree on which
- * alerts are "long" — a message that opened a panel on the website and a row in
- * the app would be the same alert behaving differently for no visible reason.
- * The server caps bodies at 500 (services/notifications.js), so 180 splits that
- * range rather than sitting at one end.
+ * Past this many characters the body will not fit the single line the row
+ * shows, so the alert gets a "More" affordance and opens in a modal.
+ *
+ * Deliberately BELOW what actually fits (~45 characters at this width and
+ * size): offering More on a message that would just have fitted costs nothing,
+ * while the opposite error clips text with no way to reach it — and the row
+ * gets narrower still at large accessibility font sizes.
+ *
+ * Matches app/notifications.html so the same alert cannot be a panel on one
+ * client and a row on the other.
  */
-const LONG_BODY = 180;
+const ONE_LINE = 40;
 
 function ago(ts: number) {
   const m = Math.max(1, Math.round((Date.now() - ts) / 60000));
@@ -53,6 +57,25 @@ export default function Alerts() {
   const [marking, setMarking] = useState(false);
   // The alert whose full text is on screen; null when the modal is closed.
   const [detail, setDetail] = useState<Notification | null>(null);
+  /**
+   * A TARGET TO OPEN ONCE THE MODAL HAS FINISHED DISMISSING.
+   *
+   * Opening it straight from the button froze the app: iOS cannot present a
+   * view controller (which is what an in-app browser tab is) while another is
+   * still being dismissed, so the browser appeared and vanished immediately and
+   * left an orphaned window swallowing every touch — the app looked alive and
+   * responded to nothing until it was force-quit.
+   *
+   * So the tap only RECORDS where to go; the navigation happens after dismissal
+   * is genuinely complete. Held in a ref rather than state because the firing
+   * path reads and clears it, and a stale closure would fire it twice.
+   */
+  const pending = useRef<string | null>(null);
+  const firePending = useCallback(() => {
+    const u = pending.current;
+    pending.current = null;          // cleared BEFORE use: idempotent, so the
+    if (u) openNotificationTarget(u); // iOS and Android paths cannot double-fire
+  }, []);
 
   // Returns the failure so the caller can decide how loudly to say it: a first
   // load has an empty screen to explain itself in, a pull-to-refresh does not.
@@ -107,12 +130,11 @@ export default function Alerts() {
     /**
      * A LONG ALERT OPENS IN PLACE rather than navigating.
      *
-     * The row clamps its body at six lines, so a broadcast written at any
-     * length was readable only as far as the row went. Past the threshold the
-     * whole message earns a panel — and if the alert also carries a url the
-     * modal offers it as a button, so nothing becomes less reachable.
+     * The row shows one line, so anything longer is readable only here. The
+     * modal carries the whole message and, if the alert has a url, offers it as
+     * a button — so a long alert is never less reachable than a short one.
      */
-    if ((n.body ?? '').length > LONG_BODY) {
+    if ((n.body ?? '').length > ONE_LINE) {
       setDetail(n);
       return;
     }
@@ -251,10 +273,19 @@ export default function Alerts() {
                       explanation off the row, leaving a race that vanished from
                       the list with no reason given. Still bounded: a 400-character
                       broadcast cannot take over the screen. */}
+                  {/* ONE LINE, then "More". Six lines meant a 400-character
+                      broadcast filled the screen and pushed every other alert
+                      out of view — the list stopped being a list. One line is
+                      enough to recognise an alert; the rest is a tap away. */}
                   {item.body ? (
-                    <Text className="pt-0.5 text-sm text-muted" numberOfLines={6}>
-                      {item.body}
-                    </Text>
+                    <View className="flex-row items-baseline">
+                      <Text className="flex-1 pt-0.5 text-sm text-muted" numberOfLines={1}>
+                        {item.body}
+                      </Text>
+                      {item.body.length > ONE_LINE ? (
+                        <Text className="pl-2 text-xs font-bold text-good-ink">More</Text>
+                      ) : null}
+                    </View>
                   ) : null}
                 </View>
                 {/* faint is the app's timestamp colour on a card and stays that
@@ -312,6 +343,11 @@ export default function Alerts() {
         transparent
         animationType="fade"
         onRequestClose={() => setDetail(null)}
+        // iOS fires this once dismissal is actually finished — the only moment
+        // it is safe to present the browser. Android does not fire it, hence
+        // the timeout fallback on the button; firePending is idempotent so the
+        // two paths cannot both act.
+        onDismiss={firePending}
       >
         <Pressable
           className="flex-1 items-center justify-center bg-black/60 p-5"
@@ -343,9 +379,15 @@ export default function Alerts() {
               {detail.url ? (
                 <Pressable
                   onPress={() => {
-                    const u = detail.url;
+                    // Record, close, and let the dismissal finish before
+                    // navigating — see `pending` above for what happens if the
+                    // browser is presented mid-dismiss.
+                    pending.current = detail.url;
                     setDetail(null);
-                    openNotificationTarget(u);
+                    // Android has no onDismiss; the fade is 300ms, so this
+                    // clears it comfortably. No-op on iOS, where onDismiss has
+                    // already fired and emptied the ref.
+                    if (Platform.OS !== 'ios') setTimeout(firePending, 350);
                   }}
                   className="mt-3 flex-row items-center justify-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
                 >

@@ -616,9 +616,12 @@
           + cell(a.unitsCrowdMapped, 'units crowd-mapped')
           + cell(since, 'first signup', false, 'date');
 
-        // The rows behind the counts. An undeliverable row is only actionable
-        // once you know whose it is: a pre-2026-08-24 native one ages out on its
-        // own, a Lite one is a bug.
+        // The rows behind the counts, and the DATE is the load-bearing column:
+        // it is what told us the one undeliverable row was a pre-2026-08-24
+        // native leftover and not the Lite registration we were hunting — which
+        // in turn said Lite had registered NOTHING, the actual bug. Boot now
+        // prunes these (services/push.js), so a row here dated after a restart
+        // is new information rather than history.
         // Local escape: `esc` exists in this file but in two LATER IIFEs, not
         // this one. Reaching for it here throws a ReferenceError and takes the
         // whole Reach panel down with it, not just this table.
@@ -1035,16 +1038,22 @@
           ? `${j.audience} device(s) across ${j.people ?? '?'} observer(s)`
             + ` — ${j.android} Android, ${j.ios ?? 0} iPhone, ${j.web} browser.`
             + (j.undeliverable
-              // REGISTERED IS NOT REACHABLE. An iPhone that registered before
-              // the FCM switch holds a raw APNs token the sender declines by
-              // shape; it is a real device and belongs in the count, but the
-              // send will report it as a failure. Saying so here is the
-              // difference between "the app needs updating" and "the APNs key
-              // I just uploaded is broken".
-              ? ` ${j.undeliverable} of those cannot be delivered to yet —`
-                + ` iPhones still on a build from before FCM. They need the next iOS build.`
+              // REGISTERED IS NOT REACHABLE. A row holding a raw APNs token is
+              // declined by shape; it is a real device and belongs in the
+              // count, but nothing reaches it. Saying so here is the difference
+              // between "the app needs updating" and "the APNs key I just
+              // uploaded is broken".
+              //
+              // It used to promise these would clear themselves. They do not:
+              // fcmSend declines them BEFORE any network call, so they never
+              // fail a send, and only a failed send prunes. One such row sat
+              // here for a week reading as an open problem. Boot prunes them
+              // now (services/push.js), so a number that persists across a
+              // restart means something new, not the old leftover.
+              ? ` ${j.undeliverable} cannot be delivered to — a raw APNs token, which the sender declines by shape.`
+                + ` These are pruned at boot, so if this persists the backend has not restarted since it appeared.`
               : '')
-            + ` Stale devices are cleared by the first send, so this number will drop.`
+            + ` Dead Android and browser tokens are pruned by the first failed send.`
           : 'No devices are registered for push yet — a send would reach nobody.';
       } catch { $('push-audience').textContent = 'Could not read the audience.'; }
     }
@@ -1096,7 +1105,9 @@
             `Dry run — nothing sent. Would reach ${j.audience} device(s) across ${j.people} observer(s)`
             + ` — ${j.android} Android, ${j.ios} iPhone, ${j.web} browser.`
             + (j.undeliverable
-              ? ` ${j.undeliverable} will fail: iPhones on a pre-FCM build, waiting on the next iOS release.`
+              // Skipped, not failed — fcmSend declines the shape before it
+              // sends, so these never reach FCM and never count as an error.
+              ? ` ${j.undeliverable} will be skipped: raw APNs tokens, cleared at the next backend restart.`
               : '');
           pushRefresh();
         } else {

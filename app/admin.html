@@ -1126,7 +1126,19 @@
               ? ` Reasons: ${j.failureReasons.map((f) => `${f.count}× ${f.platform} ${f.status || ''} ${f.code}`.replace(/\s+/g, ' ').trim()).join('; ')}.`
               : '')
             + (j.filed ? ` Filed in Alerts for ${j.filed} observer(s).` : '')
-            + (j.failed ? ' Failures are usually stale tokens from uninstalled apps.' : '');
+            // NO MORE GUESSING AT THE CAUSE. This used to say failures were
+            // "usually stale tokens from uninstalled apps" — a guess that was
+            // wrong on 2026-08-29 and cost real time: the reason was
+            // 401 THIRD_PARTY_AUTH_ERROR, an APNs key missing from one Firebase
+            // app entry. The reasons list above now says what actually
+            // happened, so this line only explains what to DO with it.
+            + (j.failed && !(j.failureReasons || []).length
+              ? ' No reason was captured — check the backend is running the current push.js.'
+              : '')
+            + ((j.failureReasons || []).some((f) => String(f.code).includes('THIRD_PARTY_AUTH'))
+              ? ' THIRD_PARTY_AUTH_ERROR means FCM has no valid APNs key for that app:'
+                + ' Firebase → Project settings → Cloud Messaging → select THAT iOS app → upload the APNs auth key.'
+              : '');
           pushRefresh();
           pushAudience();
         }

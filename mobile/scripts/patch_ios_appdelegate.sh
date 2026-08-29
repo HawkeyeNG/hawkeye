@@ -60,6 +60,16 @@ methods = '''
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
     }
+
+    // The third method @capacitor-firebase/messaging's README mandates
+    // (lines 138-140). NOT needed for token registration, alerts or badges —
+    // added because without it a background/data-only message never reaches
+    // FirebaseMessagingPlugin, which observes this exact notification name. A
+    // gap that would only surface the day someone builds on data messages, by
+    // which time nobody would connect it to push setup.
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        NotificationCenter.default.post(name: Notification.Name("didReceiveRemoteNotification"), object: completionHandler, userInfo: userInfo)
+    }
 '''
 i = src.rstrip().rfind('}')
 if i < 0:
@@ -73,6 +83,7 @@ ok=1
 grep -q "didRegisterForRemoteNotificationsWithDeviceToken" "$APPDELEGATE" || ok=0
 grep -q "capacitorDidRegisterForRemoteNotifications" "$APPDELEGATE" || ok=0
 grep -q "capacitorDidFailToRegisterForRemoteNotifications" "$APPDELEGATE" || ok=0
+grep -q "didReceiveRemoteNotification" "$APPDELEGATE" || ok=0
 if [ "$ok" != 1 ]; then
   echo "::error::AppDelegate patch did not take — push registration would be silently dead"
   exit 1

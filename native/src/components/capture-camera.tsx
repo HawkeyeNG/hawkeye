@@ -534,7 +534,7 @@ export function CaptureCamera({
                 </View>
               ) : read === null ? (
                 <View className="mt-2 rounded-xl bg-amber-400/15 px-3 py-2">
-                  <Text className="text-xs font-semibold text-amber-200">
+                  <Text className="text-xs font-semibold text-amber-300">
                     Could not read this sheet on this phone. Send it anyway if it looks clear —
                     the server reads it too.
                   </Text>
@@ -562,7 +562,7 @@ export function CaptureCamera({
                 </View>
               ) : (
                 <View className="mt-2 rounded-xl bg-amber-400/15 px-3 py-2">
-                  <Text className="text-xs font-semibold text-amber-200">
+                  <Text className="text-xs font-semibold text-amber-300">
                     Little text detected — check focus and glare, then retake.
                   </Text>
                 </View>
@@ -790,7 +790,7 @@ export function CaptureCamera({
               a connection and a second tap usually fixes. */}
           {scanNote ? (
             <View className="mt-2 rounded-xl bg-amber-400/15 px-3 py-2">
-              <Text className="text-xs font-semibold text-amber-200">{scanNote}</Text>
+              <Text className="text-xs font-semibold text-amber-300">{scanNote}</Text>
             </View>
           ) : null}
         </View>

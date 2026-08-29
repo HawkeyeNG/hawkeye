@@ -324,7 +324,7 @@ export default function MapScreen() {
 
         {mode === 'results' && !stateKeyed ? (
           <View className="mb-3 rounded-2xl bg-card px-4 py-3">
-            <Text className="text-sm font-semibold text-amber-800">
+            <Text className="text-sm font-semibold text-warn-ink">
               This race can&apos;t be drawn on a state map.
             </Text>
             <Text className="pt-1 text-xs text-muted">
@@ -435,7 +435,7 @@ export default function MapScreen() {
           </Text>
         ))}
         {err ? (
-          <Text className="pt-1.5 text-xs font-semibold text-amber-800">Could not load. ({err})</Text>
+          <Text className="pt-1.5 text-xs font-semibold text-warn-ink">Could not load. ({err})</Text>
         ) : null}
         <Pressable
           className="mt-3 items-center rounded-2xl bg-hawk-green py-3.5 active:opacity-80"

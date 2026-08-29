@@ -142,7 +142,14 @@ export default function Alerts() {
             }
             onScroll={onScroll}
             scrollEventThrottle={scrollEventThrottle}
-            contentContainerStyle={{ paddingTop: headerH, paddingHorizontal: 16, paddingBottom: 12 }}
+            // headerH + 12 is the house offset (race, profile, integrity,
+            // map-unit, more, races, case, osun, assistant, map, political,
+            // candidates all use it). This list used bare headerH, so the first
+            // alert sat flush against the header's bottom edge with no gap —
+            // visible on both platforms. The empty state below already added
+            // its own 16, which is why the screen only looked wrong when there
+            // were alerts to show.
+            contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 12 }}
             ListEmptyComponent={
               items === null && !err ? (
                 <ActivityIndicator className="pt-8" color={ui.tint.good.ink} />

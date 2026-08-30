@@ -270,6 +270,9 @@ export default function Results() {
   const [wholeContest, setWholeContest] = useState<string | null>(null);
 
   const [data, setData] = useState<National | null>(null);
+  // The gaps list is collapsed by default — see the coverage card below for why
+  // 109 district names cannot be the first thing on it.
+  const [gapsOpen, setGapsOpen] = useState(false);
   const [parties, setParties] = useState<Party[]>([]);
   const [gaps, setGaps] = useState<Gaps | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
@@ -1320,9 +1323,31 @@ export default function Results() {
           {/* "in Jigawa in this election" read as a stutter once the card could
               actually be about one race. Narrowed, the place IS the subject. */}
           {coverage.where ? ` in ${coverage.where}` : ' in this election'} have reports so far.
-          Nothing has come in from:
         </Text>
-        <Text className="pt-2 text-xs text-muted">{coverage.missing.join(' · ')}</Text>
+        {/**
+          * THE COUNT IS THE POINT; THE LIST IS THE DETAIL.
+          *
+          * On a Senate board this printed all 109 district names inline, which
+          * buried the sentence above it and pushed the report CTA — the only
+          * thing on the card anyone can act on — off the screen. The names stay,
+          * one tap away, with the count in the label so opening it is an
+          * informed choice rather than a surprise.
+          */}
+        <Pressable
+          onPress={() => setGapsOpen((v) => !v)}
+          className="mt-2 flex-row items-center active:opacity-70"
+          accessibilityRole="button"
+          accessibilityState={{ expanded: gapsOpen }}
+        >
+          <Text className="flex-1 text-xs font-bold text-good-ink">
+            Nothing has come in from {coverage.missing.length}{' '}
+            {coverage.missing.length === 1 ? coverage.unit : coverage.units}
+          </Text>
+          <Feather name={gapsOpen ? 'chevron-down' : 'chevron-right'} size={15} color={ui.tint.good.ink} />
+        </Pressable>
+        {gapsOpen ? (
+          <Text className="pt-2 text-xs text-muted">{coverage.missing.join(' · ')}</Text>
+        ) : null}
         <Pressable
           className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
           onPress={() => router.push('/report/result')}

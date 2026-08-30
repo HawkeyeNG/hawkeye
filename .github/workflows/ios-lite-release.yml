@@ -328,12 +328,27 @@ jobs:
           # a form, and the boards are vertical lists — so the orientation is
           # closed rather than the CSS chased across every breakpoint.
           # Matches the native app, which is already "orientation": "portrait".
+          #
+          # THE iPAD KEY MUST LIST ALL FOUR — build 16 was rejected for this.
+          # Apple error 90474: an app that supports iPad must offer every
+          # orientation there, because iPad multitasking resizes the window
+          # under the app. Native sidesteps the rule entirely by being iPhone
+          # only ("supportsTablet": false); Lite ships to iPad as well, and
+          # dropping a device family from a PUBLISHED app is a product decision,
+          # not a build fix — so iPad keeps the four Apple demands and the phone
+          # gets the lock the bug was actually about.
           plutil -replace UISupportedInterfaceOrientations -json \
             '["UIInterfaceOrientationPortrait"]' "$P" 2>/dev/null \
             || plutil -insert UISupportedInterfaceOrientations -json \
                '["UIInterfaceOrientationPortrait"]' "$P"
-          plutil -replace 'UISupportedInterfaceOrientations~ipad' -json \
-            '["UIInterfaceOrientationPortrait"]' "$P" 2>/dev/null || true
+          IPAD_ALL='["UIInterfaceOrientationPortrait","UIInterfaceOrientationPortraitUpsideDown","UIInterfaceOrientationLandscapeLeft","UIInterfaceOrientationLandscapeRight"]'
+          plutil -replace 'UISupportedInterfaceOrientations~ipad' -json "$IPAD_ALL" "$P" 2>/dev/null \
+            || plutil -insert 'UISupportedInterfaceOrientations~ipad' -json "$IPAD_ALL" "$P"
+          # Catch it here, in seconds, instead of two minutes into an upload.
+          IPAD_N=$(plutil -extract 'UISupportedInterfaceOrientations~ipad' json -o - "$P" \
+                   | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')
+          [ "$IPAD_N" = "4" ] \
+            || { echo "::error::iPad lists $IPAD_N orientations, Apple rejects anything but 4 (error 90474)"; exit 1; }
           echo "--- usage strings + icon name now in Info.plist ---"
           plutil -p "$P" | grep -E "UsageDescription|NonExempt|CFBundleIconName"
           # Fail loudly rather than shipping another build ASC cannot display.

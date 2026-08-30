@@ -879,11 +879,21 @@
         slot.dataset.for = contest;
       }
       slot.hidden = !combined;
-      // The scope select lives inside the follow toolbar and filters the board,
-      // so the BUTTON goes rather than the whole bar — hiding the bar would take
-      // the state filter with it.
-      const btn = document.getElementById('btn-follow');
-      if (btn) btn.hidden = combined;
+      /**
+       * THE WHOLE TOOLBAR GOES, and via style.display rather than [hidden].
+       *
+       * Two bugs in one line before this. `btn.hidden = combined` had NO visual
+       * effect: styles.css:606 sets a global `button { display: block }`, and an
+       * explicit display beats the UA rule [hidden] relies on — so the Follow
+       * button stayed on screen in the shipped APK with the code plainly there.
+       * Same failure as the coverage accordion: never trust [hidden] or a UA
+       * default on an element the page's own stylesheet also styles.
+       *
+       * And it was the wrong target anyway. The "Everywhere" scope select sits
+       * beside it and is redundant once the picker exists — both ask "which race
+       * do you want", and the picker answers it better. So the bar goes whole.
+       */
+      if (followBar) followBar.style.display = combined ? 'none' : '';
       if (combined && followMsg) followMsg.textContent = '';
       return combined;
     }

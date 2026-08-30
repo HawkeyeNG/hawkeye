@@ -279,8 +279,16 @@
       + '<span class="rp-chev" aria-hidden="true">›</span>'
       + '</button>'
       + '<div class="rp-body" hidden>'
-      + '<label class="rp-lab" for="rp-state">State</label>'
-      + '<select id="rp-state"><option value="">— select state —</option></select>'
+      // A visible "STATE" bar under a title that already says "Find your state"
+      // labels the same thing twice, and there is no second step for it to
+      // distinguish from. The select still needs an accessible name, so it keeps
+      // one as aria-label rather than losing it with the heading. The native
+      // twin drops the same heading (race-picker.tsx) — there it is decoration,
+      // here it is a real <label for>, hence the two different removals.
+      + (oneStep
+        ? '<select id="rp-state" aria-label="State"><option value="">— select state —</option></select>'
+        : '<label class="rp-lab" for="rp-state">State</label>'
+          + '<select id="rp-state"><option value="">— select state —</option></select>')
       + (oneStep ? ''
         : '<label class="rp-lab" for="rp-seat">'
           + meta.label.replace(/^\w/, function (c) { return c.toUpperCase(); }) + '</label>'

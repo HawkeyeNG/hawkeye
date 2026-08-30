@@ -60,6 +60,20 @@ export default function RaceScreen() {
   const [logos, setLogos] = useState<Record<string, string>>({});
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  /**
+   * The states a combined contest is actually held in.
+   *
+   * `def` lives inside the effect below, so the RacePicker rendered further down
+   * had no way to reach it and was mounted with no `states` prop at all. That is
+   * invisible for SEN/REP/SHA/LGA, which fetch their own list — and fatal for
+   * GOVERNORSHIP, whose states come only from the contest: the picker on this
+   * screen could never show a single state.
+   *
+   * Kept as the contest's own list rather than all 36, because governorships are
+   * staggered: offering a state that is not voting sends a reader to a race that
+   * is not being held.
+   */
+  const [contestStates, setContestStates] = useState<string[] | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -75,6 +89,7 @@ export default function RaceScreen() {
       const cs = contest ? await api.contests().catch(() => []) : [];
       if (!live) return;
       const def = cs.find((c) => c.code === contest) ?? null;
+      setContestStates(def?.states ?? null);
 
       // DISPATCH ON THE TIER, NOT THE CODE. A by-election for a House seat is a
       // House race and builds its screen the same way; only its CONTEST CODE
@@ -247,7 +262,7 @@ export default function RaceScreen() {
             {/* The card manages its own margin, so it is pulled back out of the
                 screen's horizontal padding to sit flush like the other cards. */}
             <View className="-mx-4">
-              <RacePicker code={contest as string} />
+              <RacePicker code={contest as string} states={contestStates ?? undefined} />
             </View>
           </View>
         ) : (

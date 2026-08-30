@@ -552,10 +552,27 @@
 window.HAWKEYE_LIVE_ORIGIN = 'https://hawkeye.com.ng';
 window.fetchData = function (name) {
   var onLive = /(^|\.)hawkeye\.com\.ng$/i.test(location.hostname);
-  // Capacitor serves the app over https://localhost; a dev server is http on a
-  // port. Without this, `npm run dev` would silently read PRODUCTION data and a
-  // locally-edited political_data.json would appear to have no effect.
-  var isDev = location.protocol !== 'https:';
+  /**
+   * A DEV SERVER IS `http:` — TEST FOR THAT, not for "not https".
+   *
+   * `location.protocol !== 'https:'` was written when Android was the only
+   * shell, where capacitor.config sets androidScheme "https" and the app really
+   * is served from https://localhost. iOS has no iosScheme, so it serves from
+   * `capacitor://localhost` — which is not 'https:', so every fetchData call on
+   * iOS took the DEV branch and read the copy baked into the app.
+   *
+   * That is invisible for anything still in the bundle and fatal for anything
+   * stripped out of it. strip_web_assets.sh removes lga_geo, district_geo and
+   * constituency_geo (1.7 MB) precisely because they are meant to come from the
+   * live site, so on iOS they 404'd against the bundle and the board printed
+   * "Map unavailable". states_geo.json stays bundled, which is why the
+   * governorship map drew and the Senate one did not — the difference that
+   * identified this.
+   *
+   * Not a regression: it has been true since the iOS shell existed. Android was
+   * fine throughout, which is what made it look like a build problem.
+   */
+  var isDev = location.protocol === 'http:';
   if (onLive || isDev) return fetch(name);
   return fetch(window.HAWKEYE_LIVE_ORIGIN + '/' + name.replace(/^\/+/, ''))
     .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r; })

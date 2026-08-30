@@ -51,9 +51,14 @@
      * GOVERNORSHIP IS ONE STEP, NOT TWO: the state IS the race, so the first
      * list is also the last and picking from it navigates.
      *
-     * Its states come from the CONTEST, never from the register or a hardcoded
-     * 36 — governorships are staggered, and the 2027 row lists 28. Offering the
-     * other nine would send a reader to a race that is not being held.
+     * The CONTEST says which states are voting — governorships are staggered
+     * and the 2027 row lists 28 — but the picker offers all 36 and tags the
+     * other eight "off-cycle". Hiding them was the older rule, on the grounds
+     * that a race not being held is not worth a link. What that actually did
+     * was leave a reader in Ekiti scanning a list of 28, not finding their
+     * state, and learning nothing. The destinations are honest on their own
+     * (race.js:stateRace prints no date and says the state is out of cycle,
+     * and Osun has a real declared page), so the tag is all that was missing.
      */
     GOV: { title: 'Governorship', label: 'state', source: 'contest', plural: 'states', statesAreRaces: true }
   };
@@ -88,11 +93,38 @@
    * @param {string[]|null} universe  every state in the register, or null
    */
   function govRows(inCycle, universe) {
-    var on = {};
+    // Object.create(null): the keys are normalised state names, and a bare
+    // literal would answer "yes, in cycle" for anything Object.prototype
+    // happens to define.
+    var on = Object.create(null);
+    var seen = Object.create(null);
+    var names = [];
+    var push = function (s) {
+      var k = norm(s);
+      // NO GOVERNOR THERE. FCT is in every state-shaped dataset because it is a
+      // federal capital territory administered by a minister. Matched on the
+      // spelt-out name too, so the register writing it in full cannot smuggle
+      // an election for an office that does not exist past a three-letter test.
+      if (!k || k === 'fct' || k === 'federalcapitalterritory') return;
+      if (seen[k]) return;
+      seen[k] = true;
+      names.push(s);
+    };
     (inCycle || []).forEach(function (s) { on[norm(s)] = true; });
-    var names = (universe && universe.length) ? universe : (inCycle || []);
+    /**
+     * UNION, NOT REPLACE — the contest is the FLOOR.
+     *
+     * This read `universe.length ? universe : inCycle`, which let the widening
+     * step SHRINK the list: any state the contest names but the register's
+     * stateStats does not — a spelling drift, a regenerated file, a partial
+     * write — would silently vanish from the picker a moment after appearing,
+     * and a reader in that state would conclude their race does not exist.
+     * Taking the union means the register can only ever ADD the off-cycle
+     * eight, never remove one of the contest's own.
+     */
+    (inCycle || []).forEach(push);
+    (universe || []).forEach(push);
     return names
-      .filter(function (s) { return norm(s) !== 'fct'; })
       .slice()
       .sort()
       .map(function (s) { return on[norm(s)] ? s : { name: s, sub: 'off-cycle' }; });
@@ -326,26 +358,42 @@
       // fetch and nothing to wait for.
       if (meta.statesAreRaces) {
         if (!given || !given.length) {
-          msg.textContent = 'No governorship races are listed for this election.';
+          /**
+           * SAY WHAT WE DO NOT HAVE, not what is not happening.
+           *
+           * This read "No governorship races are listed for this election" — a
+           * claim about Nigeria's election calendar, made on the strength of an
+           * empty array. race.html:90 deliberately catches an unreachable
+           * /api/contests to null, so an outage arrived here as that sentence:
+           * the page told a reader no governorships were being held because a
+           * fetch had failed. The honest statement covers both causes.
+           */
+          msg.textContent = 'The list of states is unavailable. Reload the page to try again.';
           return;
         }
         data = given;
-        // Usable IMMEDIATELY with the 28 the contest names, then widened to all
-        // 36 once the register arrives. The off-cycle states are a courtesy, so
+        // Usable IMMEDIATELY with the states the contest names, then widened
+        // once the register arrives. The off-cycle states are a courtesy, so
         // they must never be something the reader waits on: political_data.json
         // is 16 KB and already cached by the board, but a slow or failed fetch
         // leaves a working picker rather than a spinner.
-        fill(selState, govRows(given, null), '— select state —');
-        msg.textContent = given.length + ' states vote for governor in 2027';
-        load('political_data.json').then(function (pd) {
-          var all = Object.keys((pd && pd.stateStats) || {});
-          var rows = govRows(given, all);
+        var count = function (rows) {
+          // BOTH NUMBERS FROM THE SAME ROWS. Reporting `given.length` beside a
+          // count taken from the widened list stated two different sets as one
+          // sentence, so the totals could disagree with the select itself.
           var off = rows.filter(function (r) { return typeof r !== 'string'; }).length;
-          if (!off) return;   // nothing gained; leave the working list alone
+          return (rows.length - off) + ' states vote for governor in this election'
+            + (off ? ' · ' + off + ' others are off-cycle' : '');
+        };
+        var first = govRows(given, null);
+        fill(selState, first, '— select state —');
+        msg.textContent = count(first);
+        load('political_data.json').then(function (pd) {
+          var rows = govRows(given, Object.keys((pd && pd.stateStats) || {}));
+          if (rows.length <= first.length) return;  // nothing gained; leave it
           fill(selState, rows, '— select state —');
-          msg.textContent = given.length + ' states vote for governor in 2027 · '
-            + off + ' others are off-cycle';
-        }).catch(function () { /* the 28 already render; say nothing */ });
+          msg.textContent = count(rows);
+        }).catch(function () { /* the contest's own states already render */ });
         return;
       }
       msg.textContent = 'Loading ' + meta.plural + '…';

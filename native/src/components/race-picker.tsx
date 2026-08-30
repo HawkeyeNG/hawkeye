@@ -49,9 +49,14 @@ export const COMBINED: Record<
    * GOVERNORSHIP IS ONE STEP: the state IS the race, so the first list is also
    * the last and picking from it navigates.
    *
-   * Its states come from the CONTEST, never from the register or a hardcoded
-   * 36 — governorships are staggered and the 2027 row lists 28. Offering the
-   * other nine would send a reader to a race that is not being held.
+   * The CONTEST says which states are voting — governorships are staggered and
+   * the 2027 row lists 28 — but the picker offers all 36 and tags the other
+   * eight "off-cycle". Hiding them was the older rule, on the grounds that a
+   * race not being held is not worth a link; what it actually did was leave a
+   * reader in Ekiti scanning 28 states, not finding theirs, and learning
+   * nothing. The destinations are honest on their own (lib/political.ts's
+   * stateRace prints no date and says the state is out of cycle, and Osun has a
+   * real declared page), so the tag is all that was missing.
    */
   GOV: { title: 'Governorship', label: 'state', plural: 'states', statesAreRaces: true },
 };

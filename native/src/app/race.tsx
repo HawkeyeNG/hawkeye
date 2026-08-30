@@ -69,9 +69,9 @@ export default function RaceScreen() {
    * GOVERNORSHIP, whose states come only from the contest: the picker on this
    * screen could never show a single state.
    *
-   * Kept as the contest's own list rather than all 36, because governorships are
-   * staggered: offering a state that is not voting sends a reader to a race that
-   * is not being held.
+   * This is the contest's own list — the states actually voting — not the whole
+   * 36. The picker adds the off-cycle eight itself, from the register, and tags
+   * them; what it needs from here is the authority on which are IN cycle.
    */
   const [contestStates, setContestStates] = useState<string[] | null>(null);
 

@@ -190,7 +190,23 @@ let cache: Promise<{
 export function loadPolitical() {
   if (!cache) {
     cache = Promise.all([
-      fetch(`${BASE}/political_data.json`).then((r) => r.json() as Promise<Political>),
+      // CHECK THE STATUS, AND DO NOT MEMOISE A FAILURE.
+      //
+      // This had neither. Without the r.ok check a 502's HTML body reached
+      // JSON.parse and threw; without the reset that rejection stayed in
+      // `cache` for the life of the JS runtime, so one bad moment on launch
+      // left every screen that reads political data — party colours, the
+      // governorship picker's off-cycle tags, every race page — permanently
+      // without it, and only a full app restart could clear it.
+      //
+      // Both siblings below already degrade to a default on failure, and the
+      // other memos in the app (seatCache here, lgaCache in race-picker) both
+      // null themselves on rejection. This one is now the same: the next
+      // caller retries.
+      fetch(`${BASE}/political_data.json`).then(async (r) => {
+        if (!r.ok) throw new Error(`political_data.json → HTTP ${r.status}`);
+        return (await r.json()) as Political;
+      }),
       fetch(`${BASE}/logos/manifest.json`)
         .then((r) => r.json() as Promise<Record<string, string>>)
         .catch(() => ({})),
@@ -199,7 +215,12 @@ export function loadPolitical() {
       fetch(`${BASE}/members.json`)
         .then((r) => r.json() as Promise<Members>)
         .catch(() => null),
-    ]).then(([data, logos, members]) => ({ data, logos, members }));
+    ])
+      .then(([data, logos, members]) => ({ data, logos, members }))
+      .catch((e) => {
+        cache = null;
+        throw e;
+      });
   }
   return cache;
 }

@@ -77,7 +77,7 @@
   <!-- For window.followSubject — the Follow button here and the one on a race
        page describe their subscriptions with the same words, from one place. -->
   <script src="follow.js?v=4"></script>
-  <script src="race-picker.js?v=7"></script>
+  <script src="race-picker.js?v=8"></script>
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
@@ -876,9 +876,11 @@
       if (!slot || !window.racePicker) return false;
       const combined = window.racePicker.isCombined(contest);
       if (combined && slot.dataset.for !== contest) {
-        // GOV's states come from the CONTEST, not the register: governorships
-        // are staggered and the 2027 row lists 28 of 36. Offering all of them
-        // would send a reader to a race that is not being held.
+        // GOV's IN-CYCLE states come from the CONTEST, not the register:
+        // governorships are staggered and the 2027 row lists 28 of 36. The
+        // picker offers all 36 and tags the other eight off-cycle itself, so
+        // this passes the contest's list as the authority on which are voting,
+        // not as the whole list — see govRows in race-picker.js.
         const def = (CONTESTS || []).find((c) => c.code === contest);
         window.racePicker.mount(slot, contest, { states: def && def.states });
         slot.dataset.for = contest;

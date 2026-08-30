@@ -127,7 +127,35 @@ function target(code: string, state: string, pick: string): string {
   return `/race?${q}${code === 'SHA' ? `&state=${encodeURIComponent(state)}` : ''}&seat=${encodeURIComponent(pick)}`;
 }
 
-export function RacePicker({ code, states: given }: { code: string; states?: string[] }) {
+/**
+ * THE CARD KEYS ITSELF ON THE CONTEST, and that is the fix for the stuck
+ * governorship card — it was never a slow fetch.
+ *
+ * results.tsx renders the picker inside the FlashList's ListHeaderComponent and
+ * swaps `code` in place: applyLink() sets the new contest without touching
+ * `picking`, so the list is never unmounted. Every piece of the picker's state
+ * therefore survived a contest switch, and toggle()'s own guard —
+ * `if (!next || data || busy) return` — then refused to recompute because
+ * `data` looked populated.
+ *
+ * So: open the Senate board, expand the picker once, go Home, open
+ * Governorship. `data` was still SEN's seat table, `data.__states` undefined,
+ * and the list rendered as [] with no error and no spinner — an empty "STATE"
+ * heading, exactly what the screenshot showed. Choosing the contest from the
+ * in-screen chooser DOES unmount the list, which is why it came right "on
+ * another try".
+ *
+ * The key lives HERE rather than at the two call sites: a key on a caller is
+ * one line that the next caller added is free to forget, and it is this
+ * component that knows its state belongs to exactly one contest. Resetting in
+ * an effect instead would be six setState calls in an effect body — cascading
+ * renders, and what react-hooks/set-state-in-effect exists to stop.
+ */
+export function RacePicker(props: { code: string; states?: string[] }) {
+  return <RacePickerFor key={props.code} {...props} />;
+}
+
+function RacePickerFor({ code, states: given }: { code: string; states?: string[] }) {
   const ui = useUi();
   const meta = COMBINED[code];
   const [open, setOpen] = useState(false);
@@ -144,13 +172,13 @@ export function RacePicker({ code, states: given }: { code: string; states?: str
     const next = !open;
     setOpen(next);
     if (!next || data || busy) return;
-    // GOVERNORSHIP: the states arrived with the contest, so there is nothing to
-    // fetch and nothing to wait for.
-    if (meta.statesAreRaces) {
-      if (!given?.length) setErr('no governorship races are listed for this election');
-      else setData({ __states: given } as never);
-      return;
-    }
+    /**
+     * GOVERNORSHIP FETCHES NOTHING. Its states arrive as a prop, so the list is
+     * DERIVED at render (see `states` below) rather than copied into `data` on
+     * open. Copying it was what made the card unable to notice the catalogue
+     * landing a moment later: a prop re-renders on its own, a snapshot does not.
+     */
+    if (meta.statesAreRaces) return;
     setBusy(true);
     setErr(null);
     try {
@@ -163,58 +191,9 @@ export function RacePicker({ code, states: given }: { code: string; states?: str
     } finally {
       setBusy(false);
     }
-  }, [open, data, busy, code, meta.lgaSource, meta.statesAreRaces, given]);
-
-  /**
-   * THE CARD IS NOT REMOUNTED WHEN THE CONTEST CHANGES — and that is the bug
-   * behind the stuck governorship card, not a slow fetch.
-   *
-   * results.tsx renders this inside the FlashList's ListHeaderComponent and
-   * swaps `code` in place: applyLink() sets the new contest without touching
-   * `picking`, so the list is never unmounted and neither call site passes a
-   * `key`. Every piece of state below therefore survives the switch, and
-   * toggle()'s own guard — `if (!next || data || busy) return` — then refuses to
-   * recompute because `data` looks populated.
-   *
-   * So: open the Senate board, expand the picker once, go Home, open
-   * Governorship. `data` is still SEN's seat table, `data.__states` is
-   * undefined, and the list renders as [] with no error and no spinner — an
-   * empty "STATE" heading, exactly what the screenshot showed. Choosing the
-   * contest from the in-screen chooser instead DOES unmount the list, which is
-   * why it came right "on another try".
-   *
-   * Resetting here rather than with a key at the call sites: a key is one line
-   * per caller and is silently missing from any caller added later, and this
-   * component is the thing that knows its state belongs to one contest.
-   */
-  useEffect(() => {
-    setOpen(false);
-    setData(null);
-    setErr(null);
-    setBusy(false);
-    setState(null);
-    setUniverse(null);
-  }, [code]);
-
-  /**
-   * THE CONTEST CAN LAND AFTER THE CARD IS OPENED.
-   *
-   * Governorship states are not fetched by this component — results.tsx passes
-   * them down from /api/contests, and race.tsx from the same catalogue. Both are
-   * async, so a reader who taps the card in the first moment of the screen hits
-   * `given === undefined`, which toggle() can only read as "no races listed".
-   * The card then sat there until it was closed and reopened — the "stuck for a
-   * second, works on another try" behaviour.
-   *
-   * toggle() only runs on a tap, so nothing re-evaluated when the list arrived.
-   * This does, and it heals the card in place rather than asking for a gesture
-   * whose only purpose is to retry.
-   */
-  useEffect(() => {
-    if (!open || data || !meta?.statesAreRaces || !given?.length) return;
-    setData({ __states: given } as never);
-    setErr(null);
-  }, [open, data, given, meta]);
+    // `given` is deliberately absent: governorship returns above without
+    // reading it, and the list it feeds is derived at render instead.
+  }, [open, data, busy, code, meta.lgaSource, meta.statesAreRaces]);
 
   /**
    * The register's state list, fetched once the card is open and only for
@@ -241,11 +220,12 @@ export function RacePicker({ code, states: given }: { code: string; states?: str
   }, [open, meta, universe]);
 
   if (!meta) return null;
-  // GOV carries its states directly; the others derive them from the table.
-  const states = !data
-    ? []
-    : meta.statesAreRaces
-      ? [...((data as { __states?: string[] }).__states ?? [])].sort()
+  // GOV reads its states straight off the prop — see toggle(). The others need
+  // the fetched table, so they stay gated on `data`.
+  const states = meta.statesAreRaces
+    ? [...(given ?? [])].sort()
+    : !data
+      ? []
       : statesOf(code, data);
 
   /**
@@ -320,9 +300,7 @@ export function RacePicker({ code, states: given }: { code: string; states?: str
                 // Never an empty list under a heading: that is indistinguishable
                 // from a list still loading, and it is what the screenshot of
                 // the stuck governorship card actually showed.
-                <Text className="py-4 text-sm text-muted">
-                  The list of states has not arrived yet. Close this and open it again.
-                </Text>
+                <Text className="py-4 text-sm text-muted">Waiting for the list of states.</Text>
               ) : null}
               <ScrollView className="max-h-80" nestedScrollEnabled>
                 {stateRows.map((s) => (

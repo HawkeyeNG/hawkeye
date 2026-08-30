@@ -578,17 +578,59 @@
     }).catch(function () { return false; });
   }
 
+  /**
+   * A DEADLINE ON EVERY NETWORK LEG. Nothing here had one.
+   *
+   * app.js has a house convention — every API call goes through apiTry(), which
+   * wraps it in an AbortController with a 20s timeout (app/app.js:116). The
+   * register bypassed it entirely: app.js:1055 `refApi()` awaits
+   * loadRegisterIndex() BEFORE it can reach that guard, and the three fetches
+   * below had no signal at all.
+   *
+   * A REJECTION was always handled; a STALL was not, and they are different
+   * failures. Every catch here falls back to the API or to IndexedDB, so a 404
+   * or a refused connection degrades fine. A connection that opens and then
+   * never answers — a captive portal, a dying mobile cell, a proxy holding the
+   * socket — leaves the await pending for the life of the page, and the state
+   * cascade that awaits it never fills. That is the "Select your state is
+   * broken" report, and it is Lite-shaped: strip_web_assets.sh removes reg/ from
+   * the bundle, so on Android this is ALWAYS a network call, where on the
+   * website it is a service-worker SHELL hit that resolves instantly.
+   *
+   * 12s, not app.js's 20: this is a prefetch with a working fallback behind it,
+   * so failing over early costs a reader nothing and waiting costs them the
+   * whole control.
+   */
+  var REG_TIMEOUT_MS = 12000;
+  function fetchT(url, init) {
+    var opts = init || {};
+    if (typeof AbortController !== 'function') return fetch(url, opts);
+    var ctl = new AbortController();
+    var timer = setTimeout(function () { ctl.abort(); }, REG_TIMEOUT_MS);
+    opts.signal = ctl.signal;
+    return fetch(url, opts).then(
+      function (r) { clearTimeout(timer); return r; },
+      function (e) {
+        clearTimeout(timer);
+        // Name it, so a timeout is distinguishable from a refusal in a log.
+        throw (e && e.name === 'AbortError')
+          ? new Error('register fetch timed out after ' + REG_TIMEOUT_MS + 'ms: ' + url)
+          : e;
+      }
+    );
+  }
+
   var manifestP = null;
   function manifest(force) {
     if (manifestP && !force) return manifestP;
     // Network-first so a register correction does not wait on a cache bump, with
     // the stored copy as the offline answer.
     manifestP = Promise.all([
-      fetch(MANIFEST_URL, { cache: 'no-cache' }).then(function (r) {
+      fetchT(MANIFEST_URL, { cache: 'no-cache' }).then(function (r) {
         if (!r.ok) throw new Error('manifest ' + r.status);
         return r.arrayBuffer();
       }),
-      fetch(MANIFEST_SIG_URL, { cache: 'no-cache' }).then(function (r) {
+      fetchT(MANIFEST_SIG_URL, { cache: 'no-cache' }).then(function (r) {
         if (!r.ok) throw new Error('manifest.sig ' + r.status);
         return r.text();
       }),
@@ -656,7 +698,7 @@
     }).then(function (hit) {
       if (hit) return hit;
       var tNet0 = now();
-      return fetch(ORIGIN + '/reg/' + entry.file, { cache: 'no-store' }).then(function (r) {
+      return fetchT(ORIGIN + '/reg/' + entry.file, { cache: 'no-store' }).then(function (r) {
         if (!r.ok) throw new Error('pack ' + r.status);
         return r.arrayBuffer();
       }).then(function (ab) {

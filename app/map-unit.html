@@ -132,7 +132,7 @@
     <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p></div></footer>
 
   <script src="device.js"></script>
-  <script src="register-store.js?v=2"></script>
+  <script src="register-store.js?v=3"></script>
   <script src="pu-search.js?v=6"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
   <!-- One wording for every "we could not get your position", shared with
@@ -272,10 +272,32 @@
     }
 
     // Ward boundaries — 9,300 polygons, lazy-loaded once, rendered on canvas.
+    /**
+     * A FAILURE IS NOT MEMOISED, and the status is checked.
+     *
+     * This used to cache the PROMISE unconditionally, with no `.ok` check and
+     * no catch. nga_wards.geojson is stripped from the Lite bundle
+     * (strip_web_assets.sh:28), so on the phone it can only come off the
+     * network — and one failed fetch stored a REJECTED promise in wardLoading
+     * that every later call returned, wedging the ward layer for the life of
+     * the page. An unhandled rejection also propagated out of both callers'
+     * `await`, taking their handlers down with it.
+     *
+     * Now: a bad response throws inside the chain, the memo is cleared so the
+     * next tap genuinely retries, and the callers are told rather than dying.
+     * Mirrors what results.html's loadGeo already does.
+     */
     function loadWards() {
       if (wardLoading) return wardLoading;
       $('near-status').textContent = 'Loading ward boundaries…';
-      wardLoading = fetch('/nga_wards.geojson').then((r) => r.json()).then((geo) => {
+      wardLoading = fetch('/nga_wards.geojson').then((r) => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).catch((e) => {
+        wardLoading = null;   // let the next attempt try again
+        $('near-status').textContent = 'Could not load ward boundaries — check your connection and try again.';
+        throw e;
+      }).then((geo) => {
         wardFeatures = geo.features;
         wardLayer = L.geoJSON(geo, {
           style: { color: '#00482b', weight: 0.6, fill: false, opacity: 0.7 },
@@ -294,7 +316,11 @@
 
     $('toggle-wards').onchange = async (e) => {
       if (!initMap()) return;
-      const layer = await loadWards();
+      // A failed load must not leave the switch reading ON for a layer that is
+      // not there, and the rejection must not escape this handler — loadWards
+      // has already said what went wrong.
+      let layer;
+      try { layer = await loadWards(); } catch { e.target.checked = false; return; }
       if (e.target.checked) layer.addTo(lmap);
       else lmap.removeLayer(layer);
     };
@@ -306,7 +332,10 @@
       if (!q) return;
       if (!initMap()) return;
       $('toggle-wards').checked = true;
-      const layer = await loadWards();
+      // Same guard as the toggle: an unhandled rejection here killed the whole
+      // search handler, so a failed ward fetch made the search box dead too.
+      let layer;
+      try { layer = await loadWards(); } catch { $('toggle-wards').checked = false; return; }
       layer.addTo(lmap);
       const hit = wardFeatures.find((f) => {
         const p = f.properties;
@@ -422,6 +451,6 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=161"></script>
+  <script src="menu.js?v=162"></script>
 </body>
 </html>

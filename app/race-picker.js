@@ -13,6 +13,9 @@
  * (map-unit.html's state → LGA → ward), because an observer has already learned
  * that gesture and this is the same question asked about a different list.
  *
+ * GOVERNORSHIP IS THE ONE-STEP EXCEPTION and renders one select, not two — the
+ * state is itself the race. See `oneStep` in mount().
+ *
  * ONE CARD THAT OPENS ON CLICK. Closed it is a single line of furniture; open
  * it is two selects and nothing else. A permanently-expanded picker on a board
  * whose job is showing results would compete with the results.
@@ -56,6 +59,44 @@
   };
 
   function isCombined(code) { return Object.prototype.hasOwnProperty.call(COMBINED, code); }
+
+  function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+
+  /**
+   * EVERY STATE THAT HAS A GOVERNOR, with the eight out-of-cycle ones marked.
+   *
+   * The picker used to offer only the contest's 28, on the reasoning that
+   * sending a reader to a race which is not being held is worse than not
+   * offering it. That reasoning was half right: the destination is fine — a
+   * governorship page for an off-cycle state already says so in its own words
+   * ("Osun votes for governor off the general-election cycle…", race.js:1010),
+   * and Osun's page is better than fine, because political_data.json carries
+   * `raceOsun2026` with INEC's declaration and findRace prefers a real page to a
+   * generated one. What was wrong was the SILENCE: a reader in Ekiti searched a
+   * list of 28, did not find their state, and learned nothing about why.
+   *
+   * So all 36 are listed and the 8 carry a tag. Derived, never hardcoded: the
+   * universe is the register's own state list and "off-cycle" is simply
+   * "not named by the contest", so the day a governorship moves cycle this
+   * follows the data instead of a list someone has to remember to edit.
+   *
+   * FCT is dropped. It is in every state-shaped dataset because it is a federal
+   * capital territory administered by a minister, and it has no governor to
+   * elect — the same exclusion race.js:993 makes at the other end.
+   *
+   * @param {string[]} inCycle   the contest's own states
+   * @param {string[]|null} universe  every state in the register, or null
+   */
+  function govRows(inCycle, universe) {
+    var on = {};
+    (inCycle || []).forEach(function (s) { on[norm(s)] = true; });
+    var names = (universe && universe.length) ? universe : (inCycle || []);
+    return names
+      .filter(function (s) { return norm(s) !== 'fct'; })
+      .slice()
+      .sort()
+      .map(function (s) { return on[norm(s)] ? s : { name: s, sub: 'off-cycle' }; });
+  }
 
   /**
    * THE CARD BRINGS ITS OWN STYLE, injected once on first mount.
@@ -213,18 +254,37 @@
     ensureStyle();
     var meta = COMBINED[code];
 
+    /**
+     * ONE STEP MEANS ONE CONTROL.
+     *
+     * The card used to build both selects for every contest and rely on the GOV
+     * branches further down to skip the second one. Skipping the LOGIC is not
+     * the same as not RENDERING it: governorship showed a second select,
+     * labelled "State" (meta.label capitalised) and disabled forever on
+     * "— select state first —", under a hint that read "Pick a state, then your
+     * state". Two dead controls describing a step that does not exist.
+     *
+     * The state IS the governorship race, so it gets a single select and a hint
+     * that says what tapping does.
+     */
+    var oneStep = !!meta.statesAreRaces;
+
     host.innerHTML =
       '<div class="rp-card" data-open="0">'
       + '<button type="button" class="rp-head" aria-expanded="false">'
       + '<span class="rp-title">Find your ' + meta.label + '</span>'
-      + '<span class="rp-hint">Pick a state, then your ' + meta.label + '</span>'
+      + '<span class="rp-hint">'
+      + (oneStep ? 'Pick a state to open its race' : 'Pick a state, then your ' + meta.label)
+      + '</span>'
       + '<span class="rp-chev" aria-hidden="true">›</span>'
       + '</button>'
       + '<div class="rp-body" hidden>'
       + '<label class="rp-lab" for="rp-state">State</label>'
       + '<select id="rp-state"><option value="">— select state —</option></select>'
-      + '<label class="rp-lab" for="rp-seat">' + meta.label.replace(/^\w/, function (c) { return c.toUpperCase(); }) + '</label>'
-      + '<select id="rp-seat" disabled><option value="">— select state first —</option></select>'
+      + (oneStep ? ''
+        : '<label class="rp-lab" for="rp-seat">'
+          + meta.label.replace(/^\w/, function (c) { return c.toUpperCase(); }) + '</label>'
+          + '<select id="rp-seat" disabled><option value="">— select state first —</option></select>')
       + '<p class="rp-msg" role="status" aria-live="polite"></p>'
       + '</div></div>';
 
@@ -262,8 +322,22 @@
           return;
         }
         data = given;
-        fill(selState, given.slice().sort(), '— select state —');
-        msg.textContent = given.length + ' states hold a governorship election';
+        // Usable IMMEDIATELY with the 28 the contest names, then widened to all
+        // 36 once the register arrives. The off-cycle states are a courtesy, so
+        // they must never be something the reader waits on: political_data.json
+        // is 16 KB and already cached by the board, but a slow or failed fetch
+        // leaves a working picker rather than a spinner.
+        fill(selState, govRows(given, null), '— select state —');
+        msg.textContent = given.length + ' states vote for governor in 2027';
+        load('political_data.json').then(function (pd) {
+          var all = Object.keys((pd && pd.stateStats) || {});
+          var rows = govRows(given, all);
+          var off = rows.filter(function (r) { return typeof r !== 'string'; }).length;
+          if (!off) return;   // nothing gained; leave the working list alone
+          fill(selState, rows, '— select state —');
+          msg.textContent = given.length + ' states vote for governor in 2027 · '
+            + off + ' others are off-cycle';
+        }).catch(function () { /* the 28 already render; say nothing */ });
         return;
       }
       msg.textContent = 'Loading ' + meta.plural + '…';
@@ -307,10 +381,15 @@
         : 'No ' + meta.plural + ' listed for ' + s + '.';
     });
 
-    selSeat.addEventListener('change', function () {
-      if (!selSeat.value || !selState.value) return;
-      location.href = targetUrl(code, selState.value, selSeat.value);
-    });
+    // Absent on a one-step contest, because the markup above no longer writes
+    // it. Guarding rather than asserting: mount() must not throw and leave the
+    // board with a half-built card.
+    if (selSeat) {
+      selSeat.addEventListener('change', function () {
+        if (!selSeat.value || !selState.value) return;
+        location.href = targetUrl(code, selState.value, selSeat.value);
+      });
+    }
 
     return true;
   }

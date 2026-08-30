@@ -5,6 +5,7 @@ import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 import { RaceActions, RaceView, hasRaceActions } from '@/components/race';
 import { PinnedFooter } from '@/components/pinned-footer';
+import { COMBINED, isCombined, RacePicker } from '@/components/race-picker';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api } from '@/lib/api';
@@ -222,6 +223,33 @@ export default function RaceScreen() {
           </View>
         ) : race ? (
           <RaceView race={race} logos={logos} />
+        ) : isCombined(contest as string) ? (
+          /**
+           * A COMBINED CONTEST WITH NOTHING PICKED YET ASKS, IT DOES NOT SHRUG.
+           *
+           * Every branch above needs a seat, a state, or both. Open SEN or REP
+           * with no seat, LGA at all, or SHA with no state, and there is no race
+           * to build — for a contest holding 109, 366, 774 or 1,005 real ones.
+           * The reader did not ask a bad question, only one that needs narrowing.
+           *
+           * AFTER the pick branch above, not before: the assembly board's own
+           * LGA disambiguation is a better answer than a fresh cascade whenever
+           * it applies.
+           */
+          <View>
+            <Text className="text-xl font-bold text-ink">
+              {COMBINED[contest as string].title}
+            </Text>
+            <Text className="pb-3 pt-1 text-sm text-muted">
+              This contest is decided in many separate races. Choose your{' '}
+              {COMBINED[contest as string].label} to see its candidates, results and ledger.
+            </Text>
+            {/* The card manages its own margin, so it is pulled back out of the
+                screen's horizontal padding to sit flush like the other cards. */}
+            <View className="-mx-4">
+              <RacePicker code={contest as string} />
+            </View>
+          </View>
         ) : (
           // A race we have nothing for. Say so, rather than render an empty
           // frame that looks like a page still loading.

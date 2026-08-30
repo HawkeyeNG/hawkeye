@@ -163,7 +163,37 @@ function RootShell() {
     if (auth.status !== 'signedOut') return;
     const top = segments[0];
     const allowed = top === 'welcome' || top === 'sign-in';
-    if (!allowed) router.replace('/welcome');
+    if (allowed) return;
+
+    /**
+     * DISMISS ANY OPEN MODAL BEFORE REPLACING THE STACK UNDER IT.
+     *
+     * This effect lives in the ROOT layout, so it fires whatever is on screen —
+     * and 18 of the 20 routes here are presented as fullScreenModal. When a
+     * session expires while one is open, a bare router.replace('/welcome')
+     * swaps the stack UNDERNEATH it: the modal's host view is orphaned but
+     * still mounted and still on top, so every touch lands on a view whose
+     * screen no longer exists.
+     *
+     * That is the "frozen except the Ask Hawkeye button" report. AskFab is the
+     * survivor because it is mounted OUTSIDE the Stack (below, after </Stack>),
+     * so it is the one control not covered by the orphan — which is why the
+     * symptom names it, and why the FAB itself was never the fault.
+     *
+     * Intermittent by construction: it needs auth to flip to signedOut while a
+     * modal happens to be open, which depends on when a token check resolves.
+     *
+     * dismissAll() unwinds the modal presentations first and is a no-op when
+     * none are up, so the ordinary signed-out bounce is unchanged. It is
+     * wrapped because it throws if the navigator has not mounted yet, and this
+     * effect can run on the very first frame.
+     */
+    try {
+      if (router.canDismiss?.()) router.dismissAll();
+    } catch {
+      /* nothing to dismiss, or the navigator is not ready — replace anyway */
+    }
+    router.replace('/welcome');
   }, [auth.status, segments]);
 
   return (

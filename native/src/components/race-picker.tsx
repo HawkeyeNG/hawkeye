@@ -28,11 +28,23 @@ import { loadSeats, type SeatTable } from '@/lib/political';
 import { useUi } from '@/lib/theme';
 
 /** The four contests decided across many separate races. */
-export const COMBINED: Record<string, { title: string; label: string; plural: string; lgaSource?: true }> = {
+export const COMBINED: Record<
+  string,
+  { title: string; label: string; plural: string; lgaSource?: true; statesAreRaces?: true }
+> = {
   SEN: { title: 'Senate', label: 'senatorial district', plural: 'senatorial districts' },
   REP: { title: 'House of Representatives', label: 'federal constituency', plural: 'federal constituencies' },
   SHA: { title: 'State Houses of Assembly', label: 'state constituency', plural: 'state constituencies' },
   LGA: { title: 'Local Government Chairmanship', label: 'local government area', plural: 'local government areas', lgaSource: true },
+  /**
+   * GOVERNORSHIP IS ONE STEP: the state IS the race, so the first list is also
+   * the last and picking from it navigates.
+   *
+   * Its states come from the CONTEST, never from the register or a hardcoded
+   * 36 — governorships are staggered and the 2027 row lists 28. Offering the
+   * other nine would send a reader to a race that is not being held.
+   */
+  GOV: { title: 'Governorship', label: 'state', plural: 'states', statesAreRaces: true },
 };
 
 export function isCombined(code: string | null | undefined): boolean {
@@ -97,6 +109,8 @@ function rowsOf(code: string, data: SeatTable | Record<string, unknown>, state: 
 /** Where a pick lands — the same params app/race.js reads. */
 function target(code: string, state: string, pick: string): string {
   const q = `contest=${encodeURIComponent(code)}`;
+  // GOV: the state IS the race, so there is no seat to name.
+  if (COMBINED[code].statesAreRaces) return `/race?${q}&state=${encodeURIComponent(state)}`;
   if (COMBINED[code].lgaSource) {
     return `/race?${q}&state=${encodeURIComponent(state)}&lga=${encodeURIComponent(pick)}`;
   }
@@ -104,7 +118,7 @@ function target(code: string, state: string, pick: string): string {
   return `/race?${q}${code === 'SHA' ? `&state=${encodeURIComponent(state)}` : ''}&seat=${encodeURIComponent(pick)}`;
 }
 
-export function RacePicker({ code }: { code: string }) {
+export function RacePicker({ code, states: given }: { code: string; states?: string[] }) {
   const ui = useUi();
   const meta = COMBINED[code];
   const [open, setOpen] = useState(false);
@@ -119,6 +133,13 @@ export function RacePicker({ code }: { code: string }) {
     const next = !open;
     setOpen(next);
     if (!next || data || busy) return;
+    // GOVERNORSHIP: the states arrived with the contest, so there is nothing to
+    // fetch and nothing to wait for.
+    if (meta.statesAreRaces) {
+      if (!given?.length) setErr('no governorship races are listed for this election');
+      else setData({ __states: given } as never);
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
@@ -131,11 +152,16 @@ export function RacePicker({ code }: { code: string }) {
     } finally {
       setBusy(false);
     }
-  }, [open, data, busy, code, meta.lgaSource]);
+  }, [open, data, busy, code, meta.lgaSource, meta.statesAreRaces, given]);
 
   if (!meta) return null;
-  const states = data ? statesOf(code, data) : [];
-  const rows = data && state ? rowsOf(code, data, state) : [];
+  // GOV carries its states directly; the others derive them from the table.
+  const states = !data
+    ? []
+    : meta.statesAreRaces
+      ? [...((data as { __states?: string[] }).__states ?? [])].sort()
+      : statesOf(code, data);
+  const rows = data && state && !meta.statesAreRaces ? rowsOf(code, data, state) : [];
 
   return (
     <View className="mx-4 mb-3 overflow-hidden rounded-2xl border border-line bg-card">
@@ -172,7 +198,9 @@ export function RacePicker({ code }: { code: string }) {
                 {states.map((s) => (
                   <Pressable
                     key={s}
-                    onPress={() => setState(s)}
+                    // One step for GOV: the state IS the race, so tapping it
+                    // navigates rather than drilling into a seat list.
+                    onPress={() => (meta.statesAreRaces ? router.push(target(code, s, '') as never) : setState(s))}
                     className="flex-row items-center border-b border-line py-3 active:opacity-70"
                   >
                     <Text className="flex-1 text-[15px] text-ink">{s}</Text>

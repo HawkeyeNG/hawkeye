@@ -320,6 +320,20 @@ jobs:
           # That asymmetry is exactly why the icon showed in TestFlight and not
           # on ASC.
           set_str CFBundleIconName AppIcon
+
+          # PORTRAIT ONLY. Rotating the app exposed the WEBSITE header: the
+          # app-shell CSS keys off a viewport the landscape layout falls
+          # outside, so the phone showed the site's own nav inside the app.
+          # Nothing in Hawkeye needs landscape — the report flow is a camera and
+          # a form, and the boards are vertical lists — so the orientation is
+          # closed rather than the CSS chased across every breakpoint.
+          # Matches the native app, which is already "orientation": "portrait".
+          plutil -replace UISupportedInterfaceOrientations -json \
+            '["UIInterfaceOrientationPortrait"]' "$P" 2>/dev/null \
+            || plutil -insert UISupportedInterfaceOrientations -json \
+               '["UIInterfaceOrientationPortrait"]' "$P"
+          plutil -replace 'UISupportedInterfaceOrientations~ipad' -json \
+            '["UIInterfaceOrientationPortrait"]' "$P" 2>/dev/null || true
           echo "--- usage strings + icon name now in Info.plist ---"
           plutil -p "$P" | grep -E "UsageDescription|NonExempt|CFBundleIconName"
           # Fail loudly rather than shipping another build ASC cannot display.

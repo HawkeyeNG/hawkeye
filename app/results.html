@@ -170,7 +170,12 @@
          race-picker.js takes over the slot; the Follow control stays for the
          contests where it means one race. -->
     <div id="race-picker-slot" hidden></div>
-    <div class="toolbar" id="follow">
+    <!-- HIDDEN BY DEFAULT, revealed only for a contest that is one race.
+         It used to start visible and be hidden by script once the contest was
+         known, so on a combined board both controls flashed up and then
+         vanished — a Follow-all-109 button briefly offered on every load. The
+         safe default is the restrictive one. -->
+    <div class="toolbar" id="follow" style="display:none">
       <select id="sel-scope" aria-label="Filter the leaderboard by state or district" style="width:auto;min-width:200px"><option value="">Everywhere</option></select>
       <button id="btn-follow" class="secondary" style="width:auto;margin:0">🔔 Follow</button>
     </div>

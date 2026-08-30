@@ -243,7 +243,32 @@
       <!-- Both rewritten by loadGaps() — the noun depends on the contest's scope. -->
       <h2 id="gaps-title">Help Cover These States</h2>
       <p class="hint" id="gaps-hint">These states have no reports yet for this election. Voting or observing in one? Be the first. <a href="observe.html?intent=observe">Become an observer →</a></p>
-      <div id="gaps" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+      <!-- THE COUNT IS THE POINT; THE LIST IS THE DETAIL.
+           On a Senate board this printed all 109 district names inline, which
+           buried the sentence that actually says how far coverage has got and
+           pushed everything below it off the screen. The summary stays visible
+           and the names go behind a disclosure — <details> because it is the
+           element that already does this, keyboard-accessible and open-able
+           with no script. -->
+      <details id="gaps-more" style="margin-top:10px">
+        <summary id="gaps-more-label" style="cursor:pointer;font-size:0.85rem;font-weight:700;color:var(--link)">Show the list</summary>
+        <!-- SCOPED TO [open]. A <details> hides its non-summary children with a
+             UA rule that ANY explicit `display` overrides — so with
+             `display:flex` set inline, all 109 chips rendered while the control
+             read as collapsed. The rule below only applies the flex layout once
+             it is genuinely open, so the closed state is the browser's. -->
+        <div id="gaps"></div>
+      </details>
+      <style>
+        /* BOTH STATES WRITTEN DOWN, rather than relying on the UA rule for the
+           closed one. Measured: with only the [open] rule, a closed <details>
+           still laid the chips out at display:block and 3,240px tall — the
+           control read as collapsed while the whole list was on the page. The
+           browser default for a details child is not something to depend on
+           when the page's own stylesheet is also in play. */
+        #gaps { display: none; }
+        #gaps-more[open] #gaps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+      </style>
     </div>
 
     <div class="card">
@@ -694,11 +719,30 @@
         const where = place ? ` in ${place}` : '';
         document.getElementById('gaps-title').textContent =
           place ? `Help cover ${place}` : `Help cover these ${units}`;
+        /**
+         * ONE SENTENCE, THEN THE LIST BEHIND A DISCLOSURE.
+         *
+         * The counts come from the same payload the native card already reads
+         * (statesTotal / statesReported — named before the endpoint covered
+         * anything but states, and kept so existing callers keep working). The
+         * summary is what a reader needs; 109 district names are what they
+         * might want next, not first. Wording matched to the native twin so the
+         * same board does not read differently on a phone.
+         */
+        const total = Number(g.statesTotal) || 0;
+        const done = Number(g.statesReported) || 0;
         document.getElementById('gaps-hint').innerHTML =
-          `These ${units}${where} have no reports yet for this election. Voting or observing in one? Be the first. `
-          + `<a href="observe.html?intent=observe">Become an observer →</a>`;
+          `${done} of ${total} ${total === 1 ? unit : units}${where || ' in this election'} have reports so far. `
+          + `Voting or observing in one? <a href="observe.html?intent=observe">Become an observer →</a>`;
         document.getElementById('gaps').innerHTML = g.missing.map((s) =>
           `<span style="font-size:.85rem;padding:5px 11px;border-radius:999px;background:var(--tint);border:1px solid var(--border);color:var(--link)">${s}</span>`).join('');
+        // Name what opening it reveals, and how many — "Show the list" alone
+        // does not say whether that is three names or a hundred and nine.
+        document.getElementById('gaps-more-label').textContent =
+          `Nothing has come in from ${g.missing.length} ${g.missing.length === 1 ? unit : units} — show them`;
+        // Collapsed on every contest change, not just first paint: switching
+        // from a 3-gap board to a 109-gap one must not leave it open.
+        document.getElementById('gaps-more').open = false;
         card.hidden = false;
       } catch { /* non-critical */ }
     }

@@ -1296,7 +1296,9 @@ export default function Results() {
         */}
       {!scope && isCombined(contestCode) ? (
         <View className="-mx-4">
-          <RacePicker code={contestCode as string} />
+          {/* GOV's states come from the CONTEST, not the register: governorships
+              are staggered and the 2027 row lists 28 of 36. */}
+          <RacePicker code={contestCode as string} states={contest?.states ?? undefined} />
         </View>
       ) : (
         <FollowRace contest={contestCode} scope={scope} />

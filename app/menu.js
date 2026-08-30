@@ -1600,8 +1600,34 @@
   fetch('/api/assistant/health').then((r) => r.json()).then((h) => { if (h && h.enabled) mount(); }).catch(() => {});
 
   function mount() {
+    /**
+     * THE ASSISTANT SITS ABOVE THE FURNITURE AND BELOW EVERY BLOCKER — 98.
+     *
+     * The layer map in styles.css, lowest first:
+     *   80  .menu-panel      anchored dropdown, blocks nothing
+     *   95  .tabbar          furniture; the FAB must clear it or it is buried
+     *  100  #camera-overlay  fixed inset:0 — a REAL blocker
+     *  120  .report-sheet    fixed inset:0
+     *  130  .tour            fixed inset:0
+     *  140  .hk-alert        fixed inset:0
+     *
+     * A previous pass lowered the FAB from 1200 to 110 and called it fixed. 110
+     * is still above #camera-overlay, which is a full-screen blocker used on
+     * collation, incidents and practice — all of which mount this. And it left
+     * #hk-panel at 1200, so the 360px assistant panel floated above every modal
+     * in the app: open Ask Hawkeye, tap Report, and the panel sat on top of the
+     * report sheet.
+     *
+     * 98 clears the tab bar (95) and goes under the lowest real blocker (100),
+     * so "one live control above a modal" cannot recur for either element.
+     *
+     * NOT A COMPLETE ANSWER TO A FROZEN SCREEN, and worth saying so: ordering
+     * only decides WHAT is on top. A blocking layer with no visible exit is
+     * still a trap — lowering this turns "frozen except one button" into
+     * "frozen, full stop". Every blocker needs a reachable way out as well.
+     */
     const css = `
-    #hk-fab{position:fixed;right:18px;bottom:18px;z-index:110;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+    #hk-fab{position:fixed;right:18px;bottom:18px;z-index:98;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
     /* z-index 110, NOT 1200. At 1200 this button floated above EVERY modal in
        the app — the report sheet (120), the tour (130), the refusal modal (140)
        and the menu panel (80). With the tour open it was the only thing on
@@ -1616,7 +1642,7 @@
        is the one accent not already used for a party colour or a status state,
        so it says "assistant" without competing with the results palette. The
        tinted shadow does the rest of the lifting off the page. */
-    #hk-panel{position:fixed;right:18px;bottom:84px;z-index:1200;width:min(360px,calc(100vw - 36px));max-height:min(560px,calc(100vh - 120px));display:none;flex-direction:column;background:var(--card,#fff);border:2px solid var(--gold,#f5b301);border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.32),0 0 0 4px rgba(245,179,1,.16)}
+    #hk-panel{position:fixed;right:18px;bottom:84px;z-index:98;width:min(360px,calc(100vw - 36px));max-height:min(560px,calc(100vh - 120px));display:none;flex-direction:column;background:var(--card,#fff);border:2px solid var(--gold,#f5b301);border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.32),0 0 0 4px rgba(245,179,1,.16)}
     #hk-panel.open{display:flex}
     #hk-head{background:var(--green-darker,#00331e);color:#fff;padding:11px 14px;font-weight:700;font-size:.95rem;display:flex;justify-content:space-between;align-items:center;gap:8px;white-space:nowrap}
     #hk-head button{display:inline-block;width:auto;margin:0;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:0 2px;flex:none;box-shadow:none}

@@ -106,16 +106,50 @@ console.log('\n=== the Ask Hawkeye button specifically ===');
     const r = css.match(new RegExp(`\\${sel}\\s*\\{[^}]*z-index:\\s*(\\d+)`));
     return r ? Number(r[1]) : null;
   };
-  const sheet = zOf('.report-sheet');
-  const tour = zOf('.tour');
-  const alert_ = zOf('.hk-alert');
-  console.log(`      .report-sheet z=${sheet}  .tour z=${tour}  .hk-alert z=${alert_}`);
-  check('it sits below the report sheet', zFab < sheet);
-  check('below the tour', zFab < tour);
-  check('below the refusal modal', zFab < alert_);
+  /**
+   * ENUMERATE THE BLOCKERS, DO NOT NAME THREE.
+   *
+   * This asserted against a hardcoded list — .report-sheet, .tour, .hk-alert —
+   * and so had no opinion about #camera-overlay (z-100, `position:fixed;
+   * inset:0`, used on collation, incidents and practice, all of which mount the
+   * assistant). The FAB shipped at z-110, above it, and this test passed.
+   *
+   * A blocking layer is any rule that covers the viewport, so find them that
+   * way: every `position:fixed` rule with `inset:0` and a z-index. A new modal
+   * added tomorrow is then covered without editing this file.
+   */
+  const blockers = [];
+  const RULE = /([^{}]+)\{([^}]*position:\s*fixed[^}]*)\}/g;
+  let r;
+  while ((r = RULE.exec(css))) {
+    const body = r[2];
+    if (!/inset:\s*0/.test(body)) continue;          // must cover the viewport
+    const z = body.match(/z-index:\s*(\d+)/);
+    if (!z) continue;
+    blockers.push({ sel: r[1].trim().split('\n').pop().trim(), z: Number(z[1]) });
+  }
+  console.log(`      blocking layers found: ${blockers.map((b) => `${b.sel}=${b.z}`).join(', ')}`);
+  // The enumeration itself must not silently find nothing — that would pass
+  // every assertion below for the wrong reason.
+  check('the stylesheet scan found blocking layers', blockers.length >= 3);
+  for (const b of blockers) check(`#hk-fab sits below ${b.sel} (${b.z})`, zFab < b.z);
+
   // And still above the furniture it is meant to float over.
   const tabbar = zOf('.tabbar');
   check('but still above the tab bar', zFab > (tabbar ?? 0));
+
+  /**
+   * THE PANEL, NOT ONLY THE BUTTON. #hk-panel was left at z-1200 when the FAB
+   * was lowered, so the assistant's own 360px panel still floated above every
+   * modal — the same defect on the element that actually covers content. The
+   * DOM probe cannot see it (it runs with the panel display:none), so it is
+   * asserted from the stylesheet text alongside the button.
+   */
+  const mp = src.match(/#hk-panel\{[^}]*z-index:\s*(\d+)/);
+  check('the assistant panel declares a z-index', !!mp);
+  const zPanel = mp ? Number(mp[1]) : Infinity;
+  console.log(`      #hk-panel z=${zPanel}`);
+  for (const b of blockers) check(`#hk-panel sits below ${b.sel} (${b.z})`, zPanel < b.z);
 }
 
 console.log('\n=== CONTROL: the detector catches a control that outranks a modal ===');

@@ -34,9 +34,8 @@
 (function () {
   'use strict';
 
-  // The four contests this exists for. GOV is 36 races but the map works there
-  // (one shape per state, and everyone knows their own state's outline), and
-  // PRES is a single national race with nothing to pick.
+  // The contests decided across many separate races. PRES is the only one left
+  // out: it is a single national race with nothing to pick.
   // `title` is a fallback for a heading: /api/contests names SEN/REP/SHA, but
   // there is no LGA row in the catalogue, so a page keyed on the contest name
   // rendered a bare "LGA" as its headline.
@@ -44,7 +43,16 @@
     SEN: { title: 'Senate', label: 'senatorial district', source: 'seats', plural: 'senatorial districts' },
     REP: { title: 'House of Representatives', label: 'federal constituency', source: 'seats', plural: 'federal constituencies' },
     SHA: { title: 'State Houses of Assembly', label: 'state constituency', source: 'seats', plural: 'state constituencies' },
-    LGA: { title: 'Local Government Chairmanship', label: 'local government area', source: 'lgas', plural: 'local government areas' }
+    LGA: { title: 'Local Government Chairmanship', label: 'local government area', source: 'lgas', plural: 'local government areas' },
+    /**
+     * GOVERNORSHIP IS ONE STEP, NOT TWO: the state IS the race, so the first
+     * list is also the last and picking from it navigates.
+     *
+     * Its states come from the CONTEST, never from the register or a hardcoded
+     * 36 — governorships are staggered, and the 2027 row lists 28. Offering the
+     * other nine would send a reader to a race that is not being held.
+     */
+    GOV: { title: 'Governorship', label: 'state', source: 'contest', plural: 'states', statesAreRaces: true }
   };
 
   function isCombined(code) { return Object.prototype.hasOwnProperty.call(COMBINED, code); }
@@ -181,6 +189,10 @@
   // Where a pick lands. race.html reads contest/state/seat/lga (race.html:83-134).
   function targetUrl(code, state, pick) {
     var q = 'contest=' + encodeURIComponent(code);
+    // GOV: the state IS the race, so there is no seat to name.
+    if (COMBINED[code].statesAreRaces) {
+      return 'race.html?' + q + '&state=' + encodeURIComponent(state);
+    }
     if (COMBINED[code].source === 'lgas') {
       return 'race.html?' + q + '&state=' + encodeURIComponent(state) + '&lga=' + encodeURIComponent(pick);
     }
@@ -195,8 +207,9 @@
    * this contest is not one of the combined four — so a caller can fall back to
    * whatever it showed before without knowing the list.
    */
-  function mount(host, code) {
+  function mount(host, code, opts) {
     if (!host || !isCombined(code)) return false;
+    var given = (opts && opts.states) || null;
     ensureStyle();
     var meta = COMBINED[code];
 
@@ -241,6 +254,18 @@
       if (isOpen || data) return;
       // Load on FIRST open, not on page load: 172 KB that most readers of a
       // results board never need.
+      // GOVERNORSHIP: the states came with the contest, so there is nothing to
+      // fetch and nothing to wait for.
+      if (meta.statesAreRaces) {
+        if (!given || !given.length) {
+          msg.textContent = 'No governorship races are listed for this election.';
+          return;
+        }
+        data = given;
+        fill(selState, given.slice().sort(), '— select state —');
+        msg.textContent = given.length + ' states hold a governorship election';
+        return;
+      }
       msg.textContent = 'Loading ' + meta.plural + '…';
       load(meta.source === 'lgas' ? 'district_index.json' : 'seat_lgas.json')
         .then(function (d) {
@@ -264,6 +289,11 @@
 
     selState.addEventListener('change', function () {
       var s = selState.value;
+      // One step for GOV: no seat to choose, so the state navigates.
+      if (meta.statesAreRaces) {
+        if (s) location.href = targetUrl(code, s, '');
+        return;
+      }
       if (!s || !data) {
         selSeat.disabled = true;
         fill(selSeat, [], '— select state first —');

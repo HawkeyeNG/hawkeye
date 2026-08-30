@@ -6,6 +6,7 @@ import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 
 import { ContestPicker } from '@/components/contest-picker';
 import { FollowRace } from '@/components/follow-race';
+import { isCombined, RacePicker } from '@/components/race-picker';
 import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
@@ -1274,11 +1275,29 @@ export default function Results() {
           both. */}
       <GovDisclaimer />
 
-      {/* A CATEGORY BOARD FOLLOWS THE CATEGORY. `scope` is '' on a whole-contest
-          view, so this reads "Follow all Senate races" — which is what the
-          subscription actually is. Following ONE seat is offered on that seat's
-          own page, where it is the obvious thing to want; see components/race.tsx. */}
-      <FollowRace contest={contestCode} scope={scope} />
+      {/**
+        * A COMBINED CONTEST GETS THE PICKER, NOT A FOLLOW BUTTON.
+        *
+        * `scope` is '' on a whole-contest view, so this read "Follow all Senate
+        * races" — and that is literally what it subscribed to: 109 of them, or
+        * 366 for Reps, 1,005 for the assemblies. Following every seat in a
+        * contest is not a thing anyone wants, and it asks the push path to fan
+        * each one out.
+        *
+        * This screen is where those contests LAND — races.tsx routes SEN and REP
+        * to /(tabs)/results, not to /race — so the picker has to be here, not
+        * only on the race screen.
+        *
+        * Narrowed to a state or district (`scope` set), Follow means one real
+        * race again and stays. So do PRES, GOV and the by-elections.
+        */}
+      {!scope && isCombined(contestCode) ? (
+        <View className="-mx-4">
+          <RacePicker code={contestCode as string} />
+        </View>
+      ) : (
+        <FollowRace contest={contestCode} scope={scope} />
+      )}
     </View>
   );
 

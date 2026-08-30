@@ -215,6 +215,58 @@ export async function verifyOwner(
   return { ok: false, error: r.error, hint: r.hint };
 }
 
+/**
+ * RENEW A SESSION THAT EXPIRED ON THE CLOCK, RATHER THAN ENDING IT.
+ *
+ * Tokens are issued with expiresIn: '7d' (backend observers.js:34) and nothing
+ * refreshed them, so EVERY observer was signed out exactly one week after
+ * signing in — discovered on whatever request happened to be in flight at the
+ * time. That is not a security boundary anyone chose; it is a default nobody
+ * revisited, and on this app it lands mid-use.
+ *
+ * /api/observers/resume already exists for precisely this: a device that is
+ * still the observer's registered device, proving it with the same fingerprint
+ * and persistent key bootstrapAuth uses at launch, gets a fresh token with no
+ * OTP. Expiry should therefore be invisible on a device someone still owns.
+ *
+ * Returns true if the session was renewed, so the caller can retry.
+ *
+ * IT DOES NOT LOOP. A resume that fails, or a device that is no longer
+ * recognised, returns false and the caller expires the session exactly as
+ * before — and the opted-out flag still disables this permanently, so someone
+ * who signed out is never silently signed back in.
+ */
+let renewing: Promise<boolean> | null = null;
+export function renewSession(): Promise<boolean> {
+  // One attempt shared by every concurrent 401 — a screen firing four requests
+  // must not fire four resumes.
+  if (renewing) return renewing;
+  renewing = (async () => {
+    try {
+      if (await SecureStore.getItemAsync(K_OPTED_OUT)) return false;
+      const id = await getIdentity();
+      const r = await post<{ ok: boolean; observerId?: number; token?: string }>(
+        '/api/observers/resume',
+        { deviceId: id.deviceId, publicKeyJwk: id.publicKeyJwk },
+      );
+      if (!r.ok || !r.token || !r.observerId) return false;
+      await SecureStore.setItemAsync(K_TOKEN, r.token);
+      await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
+      set({ status: 'signedIn', observerId: r.observerId, token: r.token });
+      return true;
+    } catch {
+      // Network down: NOT a dead session. Say no, and let the caller decide —
+      // it will expire the session, which is the pre-existing behaviour.
+      return false;
+    } finally {
+      // Cleared on the next tick so a burst of 401s shares this attempt but a
+      // later one can try again.
+      setTimeout(() => { renewing = null; }, 0);
+    }
+  })();
+  return renewing;
+}
+
 /** App-start session restore: stored token first, then silent device resume. */
 export async function bootstrapAuth(): Promise<void> {
   try {
@@ -301,6 +353,18 @@ export async function authedGet<T>(
     clearTimeout(timer);
   }
   if (res.status === 401) {
+    /**
+     * TRY TO RENEW BEFORE GIVING UP. A 7-day token expiring is the ordinary
+     * case here, not a revoked session, and the device can prove itself without
+     * an OTP. Renew and retry once; only a device the server no longer
+     * recognises falls through to expiry.
+     */
+    if (opts.signOutOn401 !== false && (await renewSession())) {
+      const retry = await fetch(`${BASE}${path}`, {
+        headers: { accept: 'application/json', authorization: `Bearer ${state.token}` },
+      });
+      if (retry.ok) return (await retry.json()) as T;
+    }
     // expireSession, never signOut: a rejected token clears the session but must
     // not set the opted-out flag. Background readers (unread counts, my-unit,
     // the post-verify password check) all hit this path and none of them

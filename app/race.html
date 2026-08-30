@@ -56,6 +56,7 @@
   </div></footer>
 
   <script src="follow.js?v=4"></script>
+  <script src="race-picker.js?v=4"></script>
   <script src="race.js?v=21"></script>
   <script>
     // Generic race page. Two ways in:
@@ -172,6 +173,39 @@
         // `default: return 'PRES'`, and the same fix.
         race = null;
       }
+      /**
+       * A COMBINED CONTEST WITH NOTHING PICKED YET ASKS, IT DOES NOT SHRUG.
+       *
+       * Every branch above needs a seat, a state, or both. Open SEN or REP with
+       * no ?seat=, LGA at all, or SHA with no ?state=, and `race` is null — so
+       * mountRace renders an absence for a contest that has 109, 366, 774 or
+       * 1,005 real races in it. The reader did not ask a bad question; they
+       * asked one that needs narrowing, and the answer is the picker.
+       *
+       * AFTER the dispatch, not before: SHA's own branch already resolves
+       * ?state= to a grid of that state's constituencies and ?lga= to a choice
+       * among the seats an LGA elects, and those are better answers than a
+       * fresh cascade. This only catches what nothing else could resolve.
+       */
+      if (!race && window.racePicker && window.racePicker.isCombined(code)) {
+        const main = document.getElementById('race-main');
+        const notice = main.querySelector('.gov-disclaimer');
+        const meta = window.racePicker.COMBINED[code] || {};
+        const label = meta.label || 'race';
+        // The catalogue's name first, then the picker's own — /api/contests has
+        // no LGA row, which rendered a headline reading just "LGA".
+        const title = (contest && contest.name) || meta.title || code;
+        main.innerHTML = `<h1>${esc(title)}</h1>`
+          + `<p class="race-absence">This contest is decided in many separate races.`
+          + ` Choose your ${esc(label)} to see its candidates, results and ledger.</p>`
+          + '<div id="race-picker-slot"></div>';
+        window.racePicker.mount(document.getElementById('race-picker-slot'), code);
+        // The disclaimer bar is Play-gated content (see build_aab_lite.sh) and
+        // must survive a re-render of this container.
+        if (notice) main.insertBefore(notice, main.firstChild);
+        return;
+      }
+
       window.mountRace(document.getElementById('race-main'), race, LOGOS, { compare: !!(race && race.minors) });
     })();
   </script>

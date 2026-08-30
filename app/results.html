@@ -77,6 +77,7 @@
   <!-- For window.followSubject — the Follow button here and the one on a race
        page describe their subscriptions with the same words, from one place. -->
   <script src="follow.js?v=4"></script>
+  <script src="race-picker.js?v=2"></script>
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
@@ -161,6 +162,13 @@
          are the results" rather than "this is the race you happen to be looking
          at". A deep link (?contest=) still opens its board directly. -->
     <div id="board" hidden>
+    <!-- ON A COMBINED BOARD THIS IS REPLACED BY THE RACE PICKER.
+         SEN/REP/SHA/LGA are 109/366/1,005/774 seats, and follow.js treats an
+         empty region as "every seat in the contest" — so Follow here signs
+         someone up for all of them and asks the push path to fan every one out.
+         race-picker.js takes over the slot; the Follow control stays for the
+         contests where it means one race. -->
+    <div id="race-picker-slot" hidden></div>
     <div class="toolbar" id="follow">
       <select id="sel-scope" aria-label="Filter the leaderboard by state or district" style="width:auto;min-width:200px"><option value="">Everywhere</option></select>
       <button id="btn-follow" class="secondary" style="width:auto;margin:0">🔔 Follow</button>
@@ -168,6 +176,28 @@
     <p id="follow-msg" class="hint"></p>
 
     <style>
+    /* ---- race picker (race-picker.js) ------------------------------------
+       ONE CARD, CLOSED BY DEFAULT. On a results board the reader came for the
+       numbers; an always-open two-select form competes with them. Closed it is
+       one line of furniture that says what it is for. */
+    .rp-card { border: 1px solid var(--border); border-radius: 12px; background: var(--card);
+               margin: 0 0 12px; overflow: hidden; }
+    .rp-head { display: grid; grid-template-columns: 1fr auto; align-items: center;
+               gap: 2px 10px; width: 100%; text-align: left; background: none; border: 0;
+               margin: 0; padding: 13px 15px; font: inherit; color: inherit; cursor: pointer; }
+    .rp-title { grid-column: 1; font-weight: 700; font-size: 0.98rem; color: var(--ink); }
+    .rp-hint  { grid-column: 1; grid-row: 2; font-size: 0.8rem; color: var(--muted); }
+    .rp-chev  { grid-column: 2; grid-row: 1 / span 2; color: var(--muted); font-size: 1.3rem;
+                transition: transform 0.18s ease; }
+    .rp-card[data-open="1"] .rp-chev { transform: rotate(90deg); }
+    @media (prefers-reduced-motion: reduce) { .rp-chev { transition: none; } }
+    .rp-body { padding: 0 15px 14px; border-top: 1px solid var(--border); }
+    .rp-lab  { display: block; margin: 12px 0 5px; font-size: 0.78rem; font-weight: 700;
+               letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); }
+    /* Full width and a real tap target: this is the control on a phone, and the
+       seat list runs to 1,005 rows. */
+    .rp-body select { width: 100%; margin: 0; padding: 11px 12px; font-size: 0.95rem; }
+    .rp-msg  { margin: 10px 0 0; font-size: 0.8rem; color: var(--muted); min-height: 1em; }
       .race-card { margin: 0 0 10px; }
       .race-pick {
         width: 100%; display: flex; align-items: center; gap: 10px;
@@ -800,9 +830,42 @@
      * choice and now looks like one. Following a SINGLE race without hunting
      * through this picker is on the race's own page.
      */
+    /**
+     * ONE SLOT, TWO CONTROLS, NEVER BOTH.
+     *
+     * On SEN/REP/SHA/LGA the picker replaces Follow outright rather than
+     * sitting beside it: leaving Follow there keeps the 109-races-at-once
+     * button one tap away, which is the thing being removed. On every other
+     * contest — PRES, GOV, a by-election — Follow means one race and stays.
+     *
+     * Called from paintFollowBtn so it re-evaluates on every contest change,
+     * not once at load: the board switches contest without navigating.
+     */
+    function paintRacePicker(contest) {
+      const slot = document.getElementById('race-picker-slot');
+      const followBar = document.getElementById('follow');
+      const followMsg = document.getElementById('follow-msg');
+      if (!slot || !window.racePicker) return false;
+      const combined = window.racePicker.isCombined(contest);
+      if (combined && slot.dataset.for !== contest) {
+        window.racePicker.mount(slot, contest);
+        slot.dataset.for = contest;
+      }
+      slot.hidden = !combined;
+      // The scope select lives inside the follow toolbar and filters the board,
+      // so the BUTTON goes rather than the whole bar — hiding the bar would take
+      // the state filter with it.
+      const btn = document.getElementById('btn-follow');
+      if (btn) btn.hidden = combined;
+      if (combined && followMsg) followMsg.textContent = '';
+      return combined;
+    }
+
     function paintFollowBtn() {
       const contest = document.getElementById('sel-contest').value;
       const scope = document.getElementById('sel-scope').value;
+      // A combined contest shows the picker instead; nothing below applies.
+      if (paintRacePicker(contest)) return;
       const subject = scope && scope !== '__all'
         ? scope
         : (window.followSubject ? window.followSubject(contest, '') : 'this race');

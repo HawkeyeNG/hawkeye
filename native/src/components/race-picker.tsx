@@ -20,12 +20,21 @@
  */
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BASE } from '@/lib/api';
-import { loadSeats, type SeatTable } from '@/lib/political';
+import { loadPolitical, loadSeats, type SeatTable } from '@/lib/political';
 import { useUi } from '@/lib/theme';
+
+/**
+ * Compare state names by shape, not spelling. The contest catalogue and the
+ * register agree on the names but not always on punctuation or case, and a
+ * governorship silently tagged "off-cycle" because of a hyphen would be a lie
+ * told confidently. Mirrors normRegion in lib/political.ts, which is private
+ * to that module.
+ */
+const normKey = (s: string) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 
 /** The four contests decided across many separate races. */
 export const COMBINED: Record<
@@ -126,6 +135,8 @@ export function RacePicker({ code, states: given }: { code: string; states?: str
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState<string | null>(null);
+  /** Every state in the register, for tagging the off-cycle governorships. */
+  const [universe, setUniverse] = useState<string[] | null>(null);
 
   // Loaded on FIRST OPEN, not on mount: a reader who came for the board should
   // not pay for a list they never asked to see.
@@ -154,6 +165,50 @@ export function RacePicker({ code, states: given }: { code: string; states?: str
     }
   }, [open, data, busy, code, meta.lgaSource, meta.statesAreRaces, given]);
 
+  /**
+   * THE CONTEST CAN LAND AFTER THE CARD IS OPENED.
+   *
+   * Governorship states are not fetched by this component — results.tsx passes
+   * them down from /api/contests, and race.tsx from the same catalogue. Both are
+   * async, so a reader who taps the card in the first moment of the screen hits
+   * `given === undefined`, which toggle() can only read as "no races listed".
+   * The card then sat there until it was closed and reopened — the "stuck for a
+   * second, works on another try" behaviour.
+   *
+   * toggle() only runs on a tap, so nothing re-evaluated when the list arrived.
+   * This does, and it heals the card in place rather than asking for a gesture
+   * whose only purpose is to retry.
+   */
+  useEffect(() => {
+    if (!open || data || !meta?.statesAreRaces || !given?.length) return;
+    setData({ __states: given } as never);
+    setErr(null);
+  }, [open, data, given, meta]);
+
+  /**
+   * The register's state list, fetched once the card is open and only for
+   * governorship. loadPolitical() is module-cached and every other screen has
+   * already asked for it, so this is normally free.
+   *
+   * Deliberately NOT awaited by the list: the contest's own states render
+   * immediately and the off-cycle tags fill in behind them. Marking eight extra
+   * states is a courtesy and must never be something a reader waits on.
+   */
+  useEffect(() => {
+    if (!open || !meta?.statesAreRaces || universe) return;
+    let live = true;
+    loadPolitical()
+      .then(({ data: pd }) => {
+        if (live) setUniverse(Object.keys(pd?.stateStats ?? {}));
+      })
+      .catch(() => {
+        /* the contest's own states are already listed; say nothing */
+      });
+    return () => {
+      live = false;
+    };
+  }, [open, meta, universe]);
+
   if (!meta) return null;
   // GOV carries its states directly; the others derive them from the table.
   const states = !data
@@ -161,6 +216,30 @@ export function RacePicker({ code, states: given }: { code: string; states?: str
     : meta.statesAreRaces
       ? [...((data as { __states?: string[] }).__states ?? [])].sort()
       : statesOf(code, data);
+
+  /**
+   * EVERY STATE WITH A GOVERNOR, the eight out-of-cycle ones tagged.
+   *
+   * A reader in Ekiti scanning a list of 28 does not find their state and
+   * learns nothing about why. The destination is already honest — an off-cycle
+   * governorship page says so in its own words (lib/political.ts:486), and
+   * Osun's is better than honest, because political_data.json carries
+   * raceOsun2026 with INEC's declaration — so the omission was the only problem.
+   *
+   * Derived rather than listed: the universe is the register's own states and
+   * "off-cycle" means "not named by the contest", so a state changing cycle
+   * needs no edit here. FCT is dropped — it has no governor.
+   */
+  const stateRows: { name: string; off: boolean }[] = meta.statesAreRaces
+    ? (() => {
+        const inCycle = new Set(states.map(normKey));
+        const all = (universe?.length ? universe : states).filter((s) => normKey(s) !== 'fct');
+        return [...all]
+          .sort()
+          .map((name) => ({ name, off: !inCycle.has(normKey(name)) }));
+      })()
+    : states.map((name) => ({ name, off: false }));
+
   const rows = data && state && !meta.statesAreRaces ? rowsOf(code, data, state) : [];
 
   return (
@@ -174,7 +253,14 @@ export function RacePicker({ code, states: given }: { code: string; states?: str
         <View className="flex-1">
           <Text className="text-base font-bold text-ink">Find your {meta.label}</Text>
           <Text className="pt-0.5 text-xs text-muted">
-            {state ? `${state} — pick a ${meta.label}` : `Pick a state, then your ${meta.label}`}
+            {/* One step means one sentence. For GOV meta.label is "state", so the
+                two-step template read "Pick a state, then your state" — naming a
+                second step that does not exist. */}
+            {meta.statesAreRaces
+              ? 'Pick a state to open its race'
+              : state
+                ? `${state} — pick a ${meta.label}`
+                : `Pick a state, then your ${meta.label}`}
           </Text>
         </View>
         <Feather name={open ? 'chevron-down' : 'chevron-right'} size={20} color={ui.muted} />
@@ -193,17 +279,40 @@ export function RacePicker({ code, states: given }: { code: string; states?: str
             </Pressable>
           ) : !state ? (
             <>
-              <Text className="pb-1 pt-3 text-xs font-bold uppercase tracking-wide text-muted">State</Text>
+              {/* Only worth a step heading when there IS a second step. On
+                  governorship the card title already says "Find your state",
+                  so a "STATE" bar under it labels the same thing twice. */}
+              {meta.statesAreRaces ? null : (
+                <Text className="pb-1 pt-3 text-xs font-bold uppercase tracking-wide text-muted">State</Text>
+              )}
+              {stateRows.length === 0 ? (
+                // Never an empty list under a heading: that is indistinguishable
+                // from a list still loading, and it is what the screenshot of
+                // the stuck governorship card actually showed.
+                <Text className="py-4 text-sm text-muted">
+                  The list of states has not arrived yet. Close this and open it again.
+                </Text>
+              ) : null}
               <ScrollView className="max-h-80" nestedScrollEnabled>
-                {states.map((s) => (
+                {stateRows.map((s) => (
                   <Pressable
-                    key={s}
+                    key={s.name}
                     // One step for GOV: the state IS the race, so tapping it
                     // navigates rather than drilling into a seat list.
-                    onPress={() => (meta.statesAreRaces ? router.push(target(code, s, '') as never) : setState(s))}
+                    onPress={() =>
+                      meta.statesAreRaces ? router.push(target(code, s.name, '') as never) : setState(s.name)
+                    }
                     className="flex-row items-center border-b border-line py-3 active:opacity-70"
                   >
-                    <Text className="flex-1 text-[15px] text-ink">{s}</Text>
+                    <View className="flex-1 pr-2">
+                      <Text className="text-[15px] text-ink">{s.name}</Text>
+                      {s.off ? (
+                        // Says which of the two it is, not merely that it differs.
+                        <Text className="pt-0.5 text-xs text-muted">
+                          Off-cycle — not in the 2027 election
+                        </Text>
+                      ) : null}
+                    </View>
                     <Feather name="chevron-right" size={16} color={ui.faint} />
                   </Pressable>
                 ))}

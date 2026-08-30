@@ -298,14 +298,39 @@ export function RaceView({
         if (st?.pollingUnits != null) {
           cells.push([`~${st.pollingUnits.toLocaleString()}`, plural(st.pollingUnits, 'Unit')]);
         }
+        /**
+         * COLUMNS SIZED BY WHAT IS IN THEM, not five equal fifths.
+         *
+         * `flex-1` on every cell gave "31" exactly as much room as
+         * "6 Feb 2027". On a 390pt phone the card is ~358pt, so each fifth is
+         * ~71pt while the date needs ~85pt bold — the widest cell truncated to
+         * "6 Feb 2..." beside a column with half its width empty. It looked
+         * fine on a tablet, which is why it survived.
+         *
+         * flexBasis 0 with a proportional flexGrow distributes the whole width
+         * in the ratio of the content, so the date takes about a third and
+         * "LGAs" takes what it needs. The weight is the wider of the two lines,
+         * scaled: the value is 16px and the label 10px, so a character of value
+         * is worth roughly 1.6 of a character of label.
+         */
+        const weigh = (value: string | number, label: string) =>
+          Math.max(String(value).length * 1.6, label.length);
         return (
-          <View className="mt-3 flex-row rounded-2xl bg-card px-2 py-3">
+          <View className="mt-3 flex-row rounded-2xl bg-card px-1 py-3">
             {cells.map(([n, l]) => (
-              <View key={l} className="flex-1 items-center">
+              <View
+                key={l}
+                className="items-center px-1"
+                style={{ flexGrow: weigh(n, l), flexShrink: 1, flexBasis: 0 }}
+              >
                 <Text className="text-base font-bold text-ink" numberOfLines={1}>
                   {n}
                 </Text>
-                <Text className="text-[10px] text-muted">{l}</Text>
+                {/* The label is the narrower line only because it is smaller;
+                    it must not be the thing that wraps instead. */}
+                <Text className="text-[10px] text-muted" numberOfLines={1}>
+                  {l}
+                </Text>
               </View>
             ))}
           </View>

@@ -305,8 +305,40 @@ export default function Results() {
    * the effect's deps moved. This is simply what the screen shows while there is
    * no race — the same rule app/results.html applies by keeping #board hidden.
    */
+  // The link applyLink() has already acted on, held TWICE on purpose.
+  //
+  // The ref is the synchronous guard inside applyLink itself, unchanged. The
+  // state is the same value for RENDER: linkPending below needs it, and a ref
+  // read during render is neither reactive nor sound under a replayed render —
+  // eslint rejects it outright ("Cannot access refs during render"), and it was
+  // right to. Both are written in one place, applyLink.
+  const appliedLink = useRef<string | null>(null);
+  const [appliedKey, setAppliedKey] = useState<string | null>(null);
+
   const nothingChosen = !race && !wholeContest;
-  const choosing = picking || nothingChosen;
+
+  /**
+   * A LINK ON ITS WAY IN IS NOT "NOTHING CHOSEN".
+   *
+   * Tapping an election card on Home pushes here with ?contest=…&n=…, but
+   * applyLink() cannot act until the catalogue arrives — its first line is
+   * `if (!contests.length || !linkContest) return`. Until then `race` and
+   * `wholeContest` are both null, so the screen decided nothing had been chosen
+   * and painted the CHOOSER: a full screen of election types with "Rank a
+   * single seat instead", shown for a few frames and then replaced by the board
+   * the reader actually asked for. It looked like a wrong page loading by
+   * mistake, and it was reported on both platforms.
+   *
+   * The ref is the same key applyLink stamps, so this is true exactly while
+   * that call is still owed — including the single frame between the catalogue
+   * landing and the focus effect re-running. It goes false the moment applyLink
+   * runs, even when the link resolves to nothing (an unknown contest code), so
+   * the chooser is still what an unusable link falls back to.
+   *
+   */
+  const linkPending =
+    !!linkContest && appliedKey !== `${linkContest}|${linkScope ?? ''}|${linkNonce ?? ''}`;
+  const choosing = picking || (nothingChosen && !linkPending);
 
   const loadContests = useCallback(async () => {
     const cs = await api.contests().catch(() => null);
@@ -346,12 +378,15 @@ export default function Results() {
    * on focus alone would clobber a choice made here whenever the reader switched
    * tabs and came back.
    */
-  const appliedLink = useRef<string | null>(null);
   const applyLink = useCallback(() => {
     if (!contests.length || !linkContest) return;
     const key = `${linkContest}|${linkScope ?? ''}|${linkNonce ?? ''}`;
     if (appliedLink.current === key) return;
     appliedLink.current = key;
+    // Set BEFORE the resolution below, exactly like the ref: this link has been
+    // acted on even when it resolves to nothing, so an unknown contest code
+    // falls through to the chooser instead of hanging on "Loading…".
+    setAppliedKey(key);
     if (!contests.some((c) => c.code === linkContest)) return;
     /**
      * THE SECOND WAY IN, and closing the picker alone would not close it.

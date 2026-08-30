@@ -77,7 +77,7 @@
   <!-- For window.followSubject — the Follow button here and the one on a race
        page describe their subscriptions with the same words, from one place. -->
   <script src="follow.js?v=4"></script>
-  <script src="race-picker.js?v=2"></script>
+  <script src="race-picker.js?v=4"></script>
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
@@ -163,6 +163,7 @@
          at". A deep link (?contest=) still opens its board directly. -->
     <div id="board" hidden>
     <!-- ON A COMBINED BOARD THIS IS REPLACED BY THE RACE PICKER.
+         (The card carries its own style — see race-picker.js:ensureStyle.)
          SEN/REP/SHA/LGA are 109/366/1,005/774 seats, and follow.js treats an
          empty region as "every seat in the contest" — so Follow here signs
          someone up for all of them and asks the push path to fan every one out.
@@ -176,28 +177,6 @@
     <p id="follow-msg" class="hint"></p>
 
     <style>
-    /* ---- race picker (race-picker.js) ------------------------------------
-       ONE CARD, CLOSED BY DEFAULT. On a results board the reader came for the
-       numbers; an always-open two-select form competes with them. Closed it is
-       one line of furniture that says what it is for. */
-    .rp-card { border: 1px solid var(--border); border-radius: 12px; background: var(--card);
-               margin: 0 0 12px; overflow: hidden; }
-    .rp-head { display: grid; grid-template-columns: 1fr auto; align-items: center;
-               gap: 2px 10px; width: 100%; text-align: left; background: none; border: 0;
-               margin: 0; padding: 13px 15px; font: inherit; color: inherit; cursor: pointer; }
-    .rp-title { grid-column: 1; font-weight: 700; font-size: 0.98rem; color: var(--ink); }
-    .rp-hint  { grid-column: 1; grid-row: 2; font-size: 0.8rem; color: var(--muted); }
-    .rp-chev  { grid-column: 2; grid-row: 1 / span 2; color: var(--muted); font-size: 1.3rem;
-                transition: transform 0.18s ease; }
-    .rp-card[data-open="1"] .rp-chev { transform: rotate(90deg); }
-    @media (prefers-reduced-motion: reduce) { .rp-chev { transition: none; } }
-    .rp-body { padding: 0 15px 14px; border-top: 1px solid var(--border); }
-    .rp-lab  { display: block; margin: 12px 0 5px; font-size: 0.78rem; font-weight: 700;
-               letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); }
-    /* Full width and a real tap target: this is the control on a phone, and the
-       seat list runs to 1,005 rows. */
-    .rp-body select { width: 100%; margin: 0; padding: 11px 12px; font-size: 0.95rem; }
-    .rp-msg  { margin: 10px 0 0; font-size: 0.8rem; color: var(--muted); min-height: 1em; }
       .race-card { margin: 0 0 10px; }
       .race-pick {
         width: 100%; display: flex; align-items: center; gap: 10px;

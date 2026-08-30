@@ -37,14 +37,52 @@
   // The four contests this exists for. GOV is 36 races but the map works there
   // (one shape per state, and everyone knows their own state's outline), and
   // PRES is a single national race with nothing to pick.
+  // `title` is a fallback for a heading: /api/contests names SEN/REP/SHA, but
+  // there is no LGA row in the catalogue, so a page keyed on the contest name
+  // rendered a bare "LGA" as its headline.
   var COMBINED = {
-    SEN: { label: 'senatorial district', source: 'seats', plural: 'senatorial districts' },
-    REP: { label: 'federal constituency', source: 'seats', plural: 'federal constituencies' },
-    SHA: { label: 'state constituency', source: 'seats', plural: 'state constituencies' },
-    LGA: { label: 'local government area', source: 'lgas', plural: 'local government areas' }
+    SEN: { title: 'Senate', label: 'senatorial district', source: 'seats', plural: 'senatorial districts' },
+    REP: { title: 'House of Representatives', label: 'federal constituency', source: 'seats', plural: 'federal constituencies' },
+    SHA: { title: 'State Houses of Assembly', label: 'state constituency', source: 'seats', plural: 'state constituencies' },
+    LGA: { title: 'Local Government Chairmanship', label: 'local government area', source: 'lgas', plural: 'local government areas' }
   };
 
   function isCombined(code) { return Object.prototype.hasOwnProperty.call(COMBINED, code); }
+
+  /**
+   * THE CARD BRINGS ITS OWN STYLE, injected once on first mount.
+   *
+   * It started as a block in results.html, which meant the second page to want
+   * a picker had to copy it — and the copy would drift the first time either
+   * was touched. styles.css is the other home, but that file is in the service
+   * worker's SHELL: putting a two-page component there costs a ?v= bump across
+   * forty pages and a CACHE version for everyone. So the component carries it.
+   */
+  var styled = false;
+  function ensureStyle() {
+    if (styled || document.getElementById('rp-style')) { styled = true; return; }
+    var el = document.createElement('style');
+    el.id = 'rp-style';
+    el.textContent = [
+      '.rp-card{border:1px solid var(--border);border-radius:12px;background:var(--card);margin:0 0 12px;overflow:hidden}',
+      '.rp-head{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;width:100%;',
+      'text-align:left;background:none;border:0;margin:0;padding:13px 15px;font:inherit;color:inherit;cursor:pointer}',
+      '.rp-title{grid-column:1;font-weight:700;font-size:0.98rem;color:var(--ink)}',
+      '.rp-hint{grid-column:1;grid-row:2;font-size:0.8rem;color:var(--muted)}',
+      '.rp-chev{grid-column:2;grid-row:1/span 2;color:var(--muted);font-size:1.3rem;transition:transform .18s ease}',
+      '.rp-card[data-open="1"] .rp-chev{transform:rotate(90deg)}',
+      '@media (prefers-reduced-motion:reduce){.rp-chev{transition:none}}',
+      '.rp-body{padding:0 15px 14px;border-top:1px solid var(--border)}',
+      '.rp-lab{display:block;margin:12px 0 5px;font-size:0.78rem;font-weight:700;',
+      'letter-spacing:.02em;text-transform:uppercase;color:var(--muted)}',
+      // Full width and a real tap target: this IS the control on a phone, and
+      // the state-constituency list runs to 1,005 rows.
+      '.rp-body select{width:100%;margin:0;padding:11px 12px;font-size:0.95rem}',
+      '.rp-msg{margin:10px 0 0;font-size:0.8rem;color:var(--muted);min-height:1em}'
+    ].join('');
+    document.head.appendChild(el);
+    styled = true;
+  }
 
   /**
    * fetchData RETURNS A RESPONSE, NOT JSON — and it is defined on the web too.
@@ -159,6 +197,7 @@
    */
   function mount(host, code) {
     if (!host || !isCombined(code)) return false;
+    ensureStyle();
     var meta = COMBINED[code];
 
     host.innerHTML =

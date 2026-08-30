@@ -166,6 +166,37 @@ export function RacePicker({ code, states: given }: { code: string; states?: str
   }, [open, data, busy, code, meta.lgaSource, meta.statesAreRaces, given]);
 
   /**
+   * THE CARD IS NOT REMOUNTED WHEN THE CONTEST CHANGES — and that is the bug
+   * behind the stuck governorship card, not a slow fetch.
+   *
+   * results.tsx renders this inside the FlashList's ListHeaderComponent and
+   * swaps `code` in place: applyLink() sets the new contest without touching
+   * `picking`, so the list is never unmounted and neither call site passes a
+   * `key`. Every piece of state below therefore survives the switch, and
+   * toggle()'s own guard — `if (!next || data || busy) return` — then refuses to
+   * recompute because `data` looks populated.
+   *
+   * So: open the Senate board, expand the picker once, go Home, open
+   * Governorship. `data` is still SEN's seat table, `data.__states` is
+   * undefined, and the list renders as [] with no error and no spinner — an
+   * empty "STATE" heading, exactly what the screenshot showed. Choosing the
+   * contest from the in-screen chooser instead DOES unmount the list, which is
+   * why it came right "on another try".
+   *
+   * Resetting here rather than with a key at the call sites: a key is one line
+   * per caller and is silently missing from any caller added later, and this
+   * component is the thing that knows its state belongs to one contest.
+   */
+  useEffect(() => {
+    setOpen(false);
+    setData(null);
+    setErr(null);
+    setBusy(false);
+    setState(null);
+    setUniverse(null);
+  }, [code]);
+
+  /**
    * THE CONTEST CAN LAND AFTER THE CARD IS OPENED.
    *
    * Governorship states are not fetched by this component — results.tsx passes

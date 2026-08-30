@@ -56,7 +56,7 @@
   </div></footer>
 
   <script src="follow.js?v=4"></script>
-  <script src="race-picker.js?v=6"></script>
+  <script src="race-picker.js?v=7"></script>
   <script src="race.js?v=21"></script>
   <script>
     // Generic race page. Two ways in:
@@ -199,7 +199,14 @@
           + `<p class="race-absence">This contest is decided in many separate races.`
           + ` Choose your ${esc(label)} to see its candidates, results and ledger.</p>`
           + '<div id="race-picker-slot"></div>';
-        window.racePicker.mount(document.getElementById('race-picker-slot'), code);
+        // PASS THE CONTEST'S STATES. Governorship is the one contest whose
+        // states come only from the catalogue — the register cannot say which
+        // of them vote in 2027 — so a mount without them left this page's
+        // picker reading "No governorship races are listed for this election".
+        // Invisible for SEN/REP/SHA/LGA, which fetch their own list, which is
+        // why it survived here while the leaderboard's mount always passed them.
+        window.racePicker.mount(document.getElementById('race-picker-slot'), code,
+          { states: contest && contest.states });
         // The disclaimer bar is Play-gated content (see build_aab_lite.sh) and
         // must survive a re-render of this container.
         if (notice) main.insertBefore(notice, main.firstChild);

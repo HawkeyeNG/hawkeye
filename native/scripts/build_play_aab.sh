@@ -188,10 +188,20 @@ cat <<DONE
 Next, by hand:
   1. Play Console -> Test and release -> Production -> Create new release
   2. Upload the .aab above (versionCode $VC)
-  3. BEFORE rolling out, confirm the map works on a real install. The prod Maps
-     key must be restricted to ng.com.hawkeye.observer + PLAY'S app-signing
-     SHA-1 (Console -> Test and release -> App signing), NOT the upload key's
-     printed above. Bound to the upload cert it works in a local build and
-     shows a blank grey map to every real user.
+  3. The Maps key is CONFIGURED AND VERIFIED — no action needed unless a key is
+     rotated. Checked 2026-08-30 against the live console: "Maps Platform API
+     Key (Real Android App)" (id f9a66c99-..., GCP project hawkeye-503910, owned
+     by elrio1991@gmail.com — NOT the Play publisher account) is restricted to
+     Maps SDK for Android and carries BOTH rows for ng.com.hawkeye.observer:
+       72:8B:5E:83:41:81:F2:30:9D:FB:45:A1:5F:1C:84:A8:E9:AF:AE:CE  Play app-signing
+       AA:C3:36:54:9B:85:B2:FD:9F:FC:82:CB:F3:B3:CD:0F:25:51:8C:0D  upload key
+     The second is this keystore, so local and internal-sharing builds work; the
+     first is what a Play install actually presents. With only the upload row
+     the map is blank grey for EVERY real user while every local build looks
+     fine — which is why this is written down rather than left to be noticed.
+     REVISIT ONLY IF: the upload keystore is replaced (compare the SHA-1 the
+     preflight prints), or Play's app signing key is upgraded (Console -> Test
+     and release -> App signing; take the CLASSICAL key's SHA-1, not the
+     post-quantum one). This app's key can next be upgraded from 27 Jul 2027.
   4. The short description edit staged in the Console goes out with this release.
 DONE

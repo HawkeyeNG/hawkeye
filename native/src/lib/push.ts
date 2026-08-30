@@ -16,7 +16,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { BRAND } from '@/lib/api';
-import { authedGet, useAuth } from '@/lib/auth';
+import { authedGet, renewSession, useAuth } from '@/lib/auth';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -29,17 +29,30 @@ const CHANNEL = 'default';
  * lib/auth.ts writes, the same way app/profile.tsx does it.
  */
 async function authedPost<T>(path: string, body: object): Promise<T> {
+  const send = async (bearer: string) =>
+    fetch(`${BASE}${path}`, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        authorization: `Bearer ${bearer}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
   const token = await SecureStore.getItemAsync('hawkeye.auth.token');
   if (!token) throw new Error('not signed in');
-  const res = await fetch(`${BASE}${path}`, {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      authorization: `Bearer ${token}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
+  let res = await send(token);
+  /**
+   * RENEW ON 401 HERE TOO. Tokens expire after 7 days and this is the path that
+   * marks alerts read and re-registers the push token — the two things that
+   * quietly stop working when a session ages out. Reads the renewed token from
+   * storage rather than taking it as a return value, so it cannot go stale.
+   */
+  if (res.status === 401 && (await renewSession())) {
+    const fresh = await SecureStore.getItemAsync('hawkeye.auth.token');
+    if (fresh) res = await send(fresh);
+  }
   if (!res.ok) throw new Error(`${path} → HTTP ${res.status}`);
   return (await res.json()) as T;
 }

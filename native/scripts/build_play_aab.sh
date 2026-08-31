@@ -22,9 +22,13 @@ NOTE="$SECRETS/keystore-password.txt"
 LOG=/tmp/gradle_play_aab.log
 OUT_DIR="$(pwd)/android/app/build/outputs/bundle/release"
 
-# The toolchain the other two builds proved out on this host.
-export JAVA_HOME="$HOME/android/jdk21"
-export ANDROID_HOME="$HOME/android/sdk"
+# The toolchain the other two builds proved out on this host — but only as a
+# DEFAULT. A CI runner arrives with its own JDK and SDK already exported at
+# different paths, and hardcoding these made the script unusable anywhere but
+# this laptop. Neither variable is set by the login shell here, so locally this
+# resolves to exactly what it always did.
+export JAVA_HOME="${JAVA_HOME:-$HOME/android/jdk21}"
+export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/android/sdk}}"
 export PATH="$JAVA_HOME/bin:$PATH"
 # This host preloads Datadog's APM injector system-wide, attaching a java agent
 # to every JVM. Its -Xshare warning lands on the stderr of AGP's CMake configure
@@ -71,7 +75,7 @@ echo "  version   : $VN (versionCode $VC)"
 # spending a twenty-minute bundle on an upload Play will reject as a
 # duplicate — and a guard that still names the release before last has
 # quietly stopped guarding anything.
-[ "$VC" -ge 7 ] || die "versionCode $VC would be rejected — 6 is PUBLISHED and live"
+[ "$VC" -ge 8 ] || die "versionCode $VC would be rejected — 7 is UPLOADED (internal testing) and live"
 
 SKIP_PREBUILD=0
 [ "${1:-}" = "--skip-prebuild" ] && SKIP_PREBUILD=1

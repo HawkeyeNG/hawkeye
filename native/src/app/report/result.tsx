@@ -185,8 +185,8 @@ type NearRow = {
    * Only that endpoint can tell a crowd-mapped unit from an officially verified
    * one — /api/polling-units reports both as `verified`, because it tiers on
    * which COLUMN is filled and a crowd median is promoted into `lat`. The
-   * geofence the observer is warned against differs by a factor of nearly four
-   * between the two (200m vs 750m), so a row that only the register lookup saw
+   * geofence the observer is warned against still differs between the two
+   * (500m vs 750m), so a row that only the register lookup saw
    * must not be judged as though the distinction had been made.
    */
   tierConfirmed: boolean;
@@ -261,7 +261,7 @@ const PICK_TIMEOUT_MS = 12_000;
  * listed here and still be too far to file from. These mirror
  * backend/src/routes/submissions.js: the fence widens for crowd-mapped
  * coordinates, because the booth can stand anywhere inside the area observers
- * mapped, and warning at 200m there would talk observers out of submissions the
+ * mapped, and warning at 500m there would talk observers out of submissions the
  * server would have accepted.
  *
  * `approx` is INFINITY here and that is not "no gate" — it is "no gate measured
@@ -274,7 +274,7 @@ const PICK_TIMEOUT_MS = 12_000;
  * to warn, before two photos and a full tally have been spent.
  */
 const FAR_ENOUGH_TO_WARN_M: Record<UnitTier, number> = {
-  verified: 200, // config.geofenceRadiusM
+  verified: 500, // config.geofenceRadiusM — raised from 200 on 2026-08-31
   crowd: 750, // config.crowdGeofenceRadiusM
   approx: Number.POSITIVE_INFINITY,
 };
@@ -320,13 +320,13 @@ const haversineM = (aLat: number, aLng: number, bLat: number, bLng: number) => {
  * That lookup is wrapped in a catch and is ALLOWED to fail; on election day, on
  * one overloaded mast, it is the likelier of the two to. Without it every row
  * carries `verified`, since /api/polling-units tiers on which column is filled
- * and a crowd-mapped median lives in `lat` — so the narrow 200m fence would be
+ * and a crowd-mapped median lives in `lat` — so the 500m fence would have been
  * asserted over units the server accepts to 750m, and an observer standing 400m
  * from their own polling unit would be told to move for no reason.
  *
  * So the widest fence the server states in metres is used instead
  * (config.crowdGeofenceRadiusM). It is the widest any row this endpoint can
- * return is subject to: submissions.js fences only when `pu.lat` is set, at 200m
+ * return is subject to: submissions.js fences only when `pu.lat` is set, at 500m
  * or 750m, and applies a far looser envelope check to everything else. Warning
  * late is recoverable — the server refuses and says the real distance. Warning
  * early on a guess talks an observer out of a submission that would have stood.
@@ -983,7 +983,7 @@ export default function ReportResult() {
        * derives it from coords_source rather than from which column is filled.
        * That distinction is not cosmetic: a crowd-mapped unit reads as
        * `verified` in /api/polling-units' tier, and the tier is what picks the
-       * geofence this screen warns against (200m official, 750m crowd).
+       * geofence this screen warns against (500m official, 750m crowd).
        *
        * THE ENVELOPE NEVER TRAVELS WITH THE POSITION. It is attached in the
        * second loop only, from the row whose own lat/lng ARE its centre, and
@@ -1009,7 +1009,7 @@ export default function ReportResult() {
          * filters by distance and sorts, so in a dense urban bbox a unit 50m
          * away can be dropped). Without this line either of those turns a
          * crowd-mapped unit green, and — worse than the colour — fences it at
-         * 200m when the server accepts it to 750m.
+         * 500m when the server accepts it to 750m.
          */
         const crowdMapped = u.coords_source === 'crowd_mapped';
         merged.set(u.pu_code, {
@@ -1450,7 +1450,7 @@ export default function ReportResult() {
   /**
    * How far is too far to file from — measured at the fence that actually
    * applies, and at the WIDEST plausible one whenever the tier was never
-   * confirmed. Never at the narrow 200m fence on a row that cannot tell an
+   * confirmed. Never at the official 500m fence on a row that cannot tell an
    * official coordinate from a crowd-mapped one.
    */
   const tooFar =
@@ -2064,7 +2064,7 @@ export default function ReportResult() {
                 unit can be listed and still be too far to file from. Say it
                 here rather than after two photos and a full tally — at the
                 tier's own fence, so a crowd-mapped unit is not warned off at
-                200m when the server would accept it up to 750m, and at the
+                500m when the server would accept it up to 750m, and at the
                 widest fence when the tier was never confirmed (see `tooFar`).
                 No threshold is quoted: the applicable one is exactly what an
                 unconfirmed row does not know. */}

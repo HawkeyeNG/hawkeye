@@ -104,15 +104,29 @@ async function main() {
           console.error('  >>> THE SCOPE IS WRONG. The token cannot call Play regardless of identity.');
           console.error('');
         }
-        console.error('  Three things must all be true. Check in this order:');
-        console.error('  1. Play Console -> Setup -> API access: the Google Cloud project');
-        console.error('     hawkeye-503910 must be LINKED, and the service account listed there.');
-        console.error('  2. Users and permissions: the service account email invited AND given');
-        console.error('     "Release to testing tracks" — view-only permission cannot open an edit.');
-        console.error('  3. The grant must cover THIS app. An account-level grant covers both;');
-        console.error('     a per-app grant on one app leaves the other returning exactly this.');
+        console.error('  IF THE IDENTITY AND SCOPE ABOVE ARE CORRECT, this is very likely just');
+        console.error('  Google needing time. On 31 Aug 2026 every link in this chain was checked');
+        console.error('  against the live consoles and all of them were right, while the API kept');
+        console.error('  returning this same 403 for hours:');
         console.error('');
-        console.error('  A fresh grant can take a few minutes to propagate.');
+        console.error('    - androidpublisher API: Enabled on hawkeye-503910');
+        console.error('    - service account: Active team member in Play Console');
+        console.error('    - account-level "Release apps to testing tracks": granted 14:55');
+        console.error('    - token identity == the service account unique ID (116392902205141128154)');
+        console.error('    - package names: correct');
+        console.error('');
+        console.error('  Google documents that granting a service account API access can take UP TO');
+        console.error('  24 HOURS to take effect. There is no way to hurry it and nothing to fix.');
+        console.error('  Re-run tomorrow before changing ANYTHING — the trap here is "fixing" a');
+        console.error('  configuration that was already correct and losing a working setup.');
+        console.error('');
+        console.error('  Only if it still fails after 24h, check, in this order:');
+        console.error('  1. Users and permissions -> the service account -> Account permissions:');
+        console.error('     "Release apps to testing tracks" ticked, and Save is greyed out (saved).');
+        console.error('  2. That the grant covers THIS app — account-level covers all; a per-app');
+        console.error('     grant on one app leaves the other returning exactly this.');
+        console.error('  3. Play Console -> Developer account -> API access, if that page exists on');
+        console.error('     this account, for a Cloud project that needs linking.');
         console.error('');
       }
       die(`${method} ${url.replace(API, '')} -> ${r.status}\n       ${t.slice(0, 300)}`);

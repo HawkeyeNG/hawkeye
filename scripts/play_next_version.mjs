@@ -64,14 +64,46 @@ async function main() {
       // used in project N before or it is disabled" plus an enable link. A plain
       // permission denial means the API is on and the grant is the problem.
       if (r.status === 403) {
+        // ASK THE TOKEN WHO IT IS, rather than assume.
+        //
+        // "auth succeeded" only proves a token was minted — NOT that it belongs
+        // to the service account we think. If impersonation silently produced a
+        // token for the federated principal instead, every Play-side grant in
+        // the world would still 403, and the console would look perfectly
+        // configured. That is exactly the hole this fell into: the Play grant
+        // was verified correct in the console (account-level "Release apps to
+        // testing tracks", granted 14:55 on 31 Aug) while the calls kept failing.
+        //
+        // tokeninfo is Google's own endpoint and returns only metadata. Only the
+        // identity and scopes are printed — never the token.
+        let who = null;
+        try {
+          const t = await fetch(
+            `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(token)}`);
+          if (t.ok) who = await t.json();
+        } catch { /* diagnostics must never mask the real error */ }
+
         console.error('');
-        console.error('Play refused this request, though authentication SUCCEEDED —');
-        console.error('a token was minted, so Workload Identity Federation is fine.');
-        console.error('The service account is not authorised in the PLAY CONSOLE.');
+        console.error('Play refused this request, though a token WAS minted.');
         console.error('');
-        console.error(`  package        ${app.pkg}`);
-        console.error('  service acct   hawkeye-play-publisher@hawkeye-503910.iam.gserviceaccount.com');
+        console.error(`  package         ${app.pkg}`);
+        console.error(`  token identity  ${who?.email ?? who?.sub ?? 'COULD NOT BE READ'}`);
+        console.error(`  token scopes    ${who?.scope ?? 'unknown'}`);
+        console.error(`  token audience  ${who?.aud ?? 'unknown'}`);
+        console.error('  expected        hawkeye-play-publisher@hawkeye-503910.iam.gserviceaccount.com');
         console.error('');
+        if (who?.email && !who.email.startsWith('hawkeye-play-publisher@')) {
+          console.error('  >>> THE IDENTITY DOES NOT MATCH. This is not a Play permissions problem:');
+          console.error('  >>> impersonation did not produce a token for the service account, so no');
+          console.error('  >>> grant in Play Console could ever satisfy it. Check the workflow auth');
+          console.error('  >>> step — service_account, and the roles/iam.serviceAccountTokenCreator');
+          console.error('  >>> binding on the SA for the federated principal.');
+          console.error('');
+        }
+        if (who?.scope && !who.scope.includes('androidpublisher')) {
+          console.error('  >>> THE SCOPE IS WRONG. The token cannot call Play regardless of identity.');
+          console.error('');
+        }
         console.error('  Three things must all be true. Check in this order:');
         console.error('  1. Play Console -> Setup -> API access: the Google Cloud project');
         console.error('     hawkeye-503910 must be LINKED, and the service account listed there.');

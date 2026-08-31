@@ -1,0 +1,168 @@
+name: Play upload (build + publish to a testing track)
+
+# Build an Android App Bundle and publish it to a Play testing track, with NO
+# service-account key anywhere.
+#
+# WHY KEYLESS. The organisation enforces iam.disableServiceAccountKeyCreation
+# (Google's Secure-by-Default), so a downloadable key cannot be created — and
+# should not be: a Play upload credential lets its holder publish to the
+# listings. Instead GitHub presents an OIDC token, Google's STS exchanges it for
+# credentials that expire in an hour, and the trust is pinned to THIS repository
+# by an attribute condition on the provider (see scripts/setup_wif.sh).
+#
+# WHY THE BUILD MOVED HERE. The upload path in a browser caps at 10 MB and the
+# native bundle is ~113 MB, so every release until now was a hand upload. Doing
+# the build in the same place as the upload removes the file from the loop
+# entirely — and these runners are free on a public repo.
+#
+# IT WILL NOT TOUCH PRODUCTION. The track input offers testing tracks only.
+# Promotion stays a human decision in the Console, where the rollout percentage
+# and any staged store-listing changes are visible. This workflow can see
+# neither.
+#
+# REQUIRED SECRETS
+#   GCP_WIF_PROVIDER            printed by scripts/setup_wif.sh
+#   GCP_SERVICE_ACCOUNT         hawkeye-play-publisher@hawkeye-503910.iam.gserviceaccount.com
+#   ANDROID_KEYSTORE_BASE64     base64 of the app's upload keystore
+#   ANDROID_KEYSTORE_PASSWORD   store + key password
+#   ANDROID_KEY_ALIAS           'hawkeye' (native) or 'hawkeye-lite' (Lite)
+#   ANDROID_KEYSTORE_LITE_BASE64 / ANDROID_KEYSTORE_LITE_PASSWORD  — Lite signs
+#                               with its OWN keystore, a different certificate.
+#                               Using the wrong one produces a bundle Play
+#                               rejects for a mismatched signature.
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Which app'
+        required: true
+        type: choice
+        options: [native, lite]
+      track:
+        description: 'Testing track (production is deliberately absent)'
+        required: true
+        default: internal
+        type: choice
+        options: [internal, alpha, beta]
+      notes:
+        description: 'Release notes. Leave blank to publish without any.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Build and verify only — do not publish'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write        # REQUIRED: this is what mints the OIDC token. Without
+                         # it the auth step fails with a confusing 403.
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Which app, and which keystore
+        id: cfg
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.app }}" = native ]; then
+            echo "dir=native/android"                                        >> "$GITHUB_OUTPUT"
+            echo "aab=native/android/app/build/outputs/bundle/release/app-release.aab" >> "$GITHUB_OUTPUT"
+            echo "pkg=ng.com.hawkeye.observer"                               >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=mobile/android"                                        >> "$GITHUB_OUTPUT"
+            echo "aab=mobile/android/app/build/outputs/bundle/release/app-release.aab" >> "$GITHUB_OUTPUT"
+            echo "pkg=ng.com.hawkeye.lite"                                   >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install JS deps
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.app }}" = native ]; then npm ci --prefix native
+          else npm ci --prefix mobile || npm install --prefix mobile
+          fi
+
+      - name: Restore the upload keystore
+        env:
+          KS_NATIVE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_LITE: ${{ secrets.ANDROID_KEYSTORE_LITE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.app }}" = native ]; then B64="$KS_NATIVE"; else B64="$KS_LITE"; fi
+          [ -n "$B64" ] || { echo "::error::keystore secret is empty for ${{ inputs.app }}"; exit 1; }
+          echo -n "$B64" | base64 -d > "$RUNNER_TEMP/upload.keystore"
+          # A truncated secret still base64-decodes to something. Prove it is a
+          # keystore before spending a 40-minute build on it.
+          keytool -list -keystore "$RUNNER_TEMP/upload.keystore" \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > /dev/null \
+            || { echo "::error::that secret is not a readable keystore, or the password is wrong"; exit 1; }
+          echo "keystore ok"
+
+      - name: Build the bundle
+        env:
+          ORG_GRADLE_PROJECT_HAWKEYE_UPLOAD_STORE_FILE: ${{ runner.temp }}/upload.keystore
+          ORG_GRADLE_PROJECT_HAWKEYE_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_HAWKEYE_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_HAWKEYE_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          cd "${{ steps.cfg.outputs.dir }}"
+          ./gradlew --no-daemon --console=plain bundleRelease
+
+      - name: The bundle must not carry a debug certificate
+        run: |
+          set -euo pipefail
+          AAB="${{ steps.cfg.outputs.aab }}"
+          [ -f "$AAB" ] || { echo "::error::no bundle produced at $AAB"; exit 1; }
+          D=$(mktemp -d); unzip -q -o "$AAB" -d "$D" 'META-INF/*'
+          SIG=$(find "$D/META-INF" -iname '*.RSA' -o -iname '*.DSA' -o -iname '*.EC' | head -1)
+          keytool -printcert -file "$SIG" | grep -i 'Owner:' || true
+          keytool -printcert -file "$SIG" | grep -qi 'Android Debug' \
+            && { echo "::error::this bundle is signed with the DEBUG key"; exit 1; }
+          echo "size: $(( $(stat -c%s "$AAB") / 1048576 )) MB"
+
+      - name: Authenticate to Google — no key, short-lived credentials
+        id: auth
+        if: ${{ !inputs.dry_run }}
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Publish to ${{ inputs.track }}
+        if: ${{ !inputs.dry_run }}
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          NOTES_ARG=""
+          if [ -n "${{ inputs.notes }}" ]; then
+            printf '%s' "${{ inputs.notes }}" > "$RUNNER_TEMP/notes.txt"
+            NOTES_ARG="--notes-file $RUNNER_TEMP/notes.txt"
+          fi
+          node scripts/play_upload.mjs \
+            --app "${{ inputs.app }}" \
+            --track "${{ inputs.track }}" \
+            $NOTES_ARG
+
+      - name: Keep the bundle as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.app }}-aab
+          path: ${{ steps.cfg.outputs.aab }}
+          retention-days: 14

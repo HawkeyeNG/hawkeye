@@ -66,10 +66,26 @@ if (!ALLOWED_TRACKS.includes(track)) die(`--track must be one of: ${ALLOWED_TRAC
 const app = APPS[appKey];
 const aabPath = path.resolve(app.aab);
 if (!fs.existsSync(aabPath)) die(`no bundle at ${app.aab} — build it first`);
-if (!fs.existsSync(KEY_PATH)) {
-  die(`no service-account key at ${KEY_PATH}\n`
-    + '       Create one in Google Cloud console -> IAM -> Service accounts ->\n'
-    + '       hawkeye-play-publisher -> Keys -> Add key -> JSON, then move it there.');
+
+/**
+ * TWO WAYS TO AUTHENTICATE, and the keyless one is preferred.
+ *
+ * In GitHub Actions, google-github-actions/auth has already exchanged the
+ * runner's OIDC token for a short-lived access token via Workload Identity
+ * Federation, and hands it over in PLAY_ACCESS_TOKEN. Nothing long-lived
+ * exists. That is the supported path here, because the organisation enforces
+ * iam.disableServiceAccountKeyCreation and a downloadable key cannot be made.
+ *
+ * The key-file branch remains for a local run if that policy is ever relaxed.
+ * It is the fallback, not the default, and it is deliberately second.
+ */
+const ENV_TOKEN = process.env.PLAY_ACCESS_TOKEN || '';
+if (!ENV_TOKEN && !fs.existsSync(KEY_PATH)) {
+  die('no credentials.\n'
+    + '       In CI: the auth step should have set PLAY_ACCESS_TOKEN — check that\n'
+    + '       the job has `permissions: id-token: write`, without which the OIDC\n'
+    + '       token is never minted and auth fails with a misleading 403.\n'
+    + `       Locally: a service-account key at ${KEY_PATH}, if org policy allows one.`);
 }
 
 const notes = args['notes-file'] ? fs.readFileSync(args['notes-file'], 'utf8').trim() : null;
@@ -79,6 +95,8 @@ const b64 = (o) => Buffer.from(typeof o === 'string' ? o : JSON.stringify(o))
   .toString('base64url');
 
 async function accessToken() {
+  // Federated token from the CI auth step — already scoped to androidpublisher.
+  if (ENV_TOKEN) return ENV_TOKEN;
   const key = JSON.parse(fs.readFileSync(KEY_PATH, 'utf8'));
   if (!key.client_email || !key.private_key) die('that key file is not a service-account JSON');
   const now = Math.floor(Date.now() / 1000);

@@ -95,30 +95,77 @@ jobs:
           else npm ci --prefix mobile || npm install --prefix mobile
           fi
 
+      # THE TWO APPS TAKE THEIR SIGNING CONFIG IN COMPLETELY DIFFERENT WAYS, and
+      # they sign with different certificates. Native reads gradle properties
+      # (HAWKEYE_UPLOAD_*, see native/android/app/build.gradle:110). Lite reads a
+      # keystore.properties FILE (mobile/android/app/build.gradle:52) which is
+      # gitignored and therefore absent on a fresh runner — build_aab_lite.sh
+      # only gates on it existing, it never creates one.
+      #
+      # Passing native's password or alias to Lite produces a bundle Play
+      # rejects for a certificate mismatch, which for a published app is not
+      # something you can undo yourself. Hence one branch per app, and a keytool
+      # check with THAT app's own password before any build time is spent.
       - name: Restore the upload keystore
         env:
           KS_NATIVE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KS_LITE: ${{ secrets.ANDROID_KEYSTORE_LITE_BASE64 }}
+          PW_NATIVE: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          PW_LITE: ${{ secrets.ANDROID_KEYSTORE_LITE_PASSWORD }}
+          AL_NATIVE: ${{ secrets.ANDROID_KEY_ALIAS }}
+          AL_LITE: ${{ secrets.ANDROID_KEY_ALIAS_LITE }}
         run: |
           set -euo pipefail
-          if [ "${{ inputs.app }}" = native ]; then B64="$KS_NATIVE"; else B64="$KS_LITE"; fi
-          [ -n "$B64" ] || { echo "::error::keystore secret is empty for ${{ inputs.app }}"; exit 1; }
-          echo -n "$B64" | base64 -d > "$RUNNER_TEMP/upload.keystore"
-          # A truncated secret still base64-decodes to something. Prove it is a
-          # keystore before spending a 40-minute build on it.
-          keytool -list -keystore "$RUNNER_TEMP/upload.keystore" \
-            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > /dev/null \
-            || { echo "::error::that secret is not a readable keystore, or the password is wrong"; exit 1; }
-          echo "keystore ok"
+          if [ "${{ inputs.app }}" = native ]; then
+            B64="$KS_NATIVE"; PW="$PW_NATIVE"; AL="$AL_NATIVE"; WANT='CN=Hawkeye,'
+          else
+            B64="$KS_LITE";   PW="$PW_LITE";   AL="$AL_LITE";   WANT='CN=Hawkeye Lite'
+          fi
+          [ -n "$B64" ] || { echo "::error::keystore secret empty for ${{ inputs.app }}"; exit 1; }
+          [ -n "$PW"  ] || { echo "::error::keystore password empty for ${{ inputs.app }}"; exit 1; }
+          [ -n "$AL"  ] || { echo "::error::key alias empty for ${{ inputs.app }}"; exit 1; }
+
+          KS="$RUNNER_TEMP/upload.keystore"
+          printf '%s' "$B64" | base64 -d > "$KS"
+
+          # A truncated secret still base64-decodes to something. Prove it opens
+          # with this app's own password AND carries this app's own certificate,
+          # before spending build time or signing anything.
+          keytool -list -keystore "$KS" -storepass "$PW" -alias "$AL" > /dev/null 2>&1 \
+            || { echo "::error::keystore will not open with the ${{ inputs.app }} password/alias"; exit 1; }
+          OWNER=$(keytool -list -v -keystore "$KS" -storepass "$PW" -alias "$AL" | grep -i '^Owner:' | head -1)
+          echo "$OWNER"
+          echo "$OWNER" | grep -q "$WANT" \
+            || { echo "::error::this is the WRONG certificate for ${{ inputs.app }} — expected $WANT"; exit 1; }
+
+          # Lite's gradle wants a properties file, not -P properties.
+          if [ "${{ inputs.app }}" != native ]; then
+            cat > mobile/android/keystore.properties <<EOF
+          storeFile=$KS
+          storePassword=$PW
+          keyAlias=$AL
+          keyPassword=$PW
+          EOF
+            grep -q 'storeFile=' mobile/android/keystore.properties \
+              || { echo "::error::failed to write mobile/android/keystore.properties"; exit 1; }
+          fi
+          echo "keystore ok for ${{ inputs.app }}"
 
       - name: Build the bundle
         env:
+          # Native only — Lite ignores these and uses the file written above.
           ORG_GRADLE_PROJECT_HAWKEYE_UPLOAD_STORE_FILE: ${{ runner.temp }}/upload.keystore
           ORG_GRADLE_PROJECT_HAWKEYE_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ORG_GRADLE_PROJECT_HAWKEYE_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ORG_GRADLE_PROJECT_HAWKEYE_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           set -euo pipefail
+          # Lite is a Capacitor app: the web bundle has to be synced into the
+          # native shell first, and stripped, or it ships the wrong assets.
+          if [ "${{ inputs.app }}" != native ]; then
+            npx --prefix mobile cap sync android || { echo "::error::cap sync failed"; exit 1; }
+            bash mobile/scripts/strip_web_assets.sh mobile/android/app/src/main/assets/public mobile/Podfile || true
+          fi
           cd "${{ steps.cfg.outputs.dir }}"
           ./gradlew --no-daemon --console=plain bundleRelease
 

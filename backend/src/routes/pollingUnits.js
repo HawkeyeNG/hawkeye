@@ -24,12 +24,17 @@ const tierOf = (u) =>
 
 // Unit DISCOVERY — "help me find my unit", not "prove you were there".
 //
-// Filters at config.discoveryRadiusM (500 m), deliberately WIDER than the
-// submission geofence (config.geofenceRadiusM, 200 m, enforced in
-// routes/submissions.js). Appearing in this list asserts nothing: a unit found
-// here at 480 m is still refused by the fence if the observer files from there.
-// Do not point this filter back at geofenceRadiusM to "make them agree" — the
-// note in config.js explains what that silently changes.
+// Filters at config.discoveryRadiusM (500 m). The submission geofence
+// (config.geofenceRadiusM, enforced in routes/submissions.js) was raised to the
+// same 500 m on 2026-08-31 because INEC's published unit coordinates are
+// unreliable often enough that a tighter fence rejected honest observers — see
+// the note on geofenceRadiusM in config.js.
+//
+// So the two now coincide, and appearing in this list does currently imply the
+// fence would accept a report from the same spot. That is a coincidence of
+// values, NOT an invariant: they answer different questions and are separate
+// settings on purpose. Do not collapse them into one constant, and if the fence
+// is tightened again, widen this in the same commit.
 //
 // Two tiers appear here:
 //   verified — official/field-verified coordinates; the geofence is enforced at

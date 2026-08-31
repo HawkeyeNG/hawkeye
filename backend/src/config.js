@@ -199,9 +199,12 @@ export const config = {
   //
   // The two pulled in opposite directions while they shared one value: raising
   // discovery to a usable radius silently widened the proof radius on every real
-  // election report. Hence the split. A unit found at 480 m and filed from 400 m
-  // is correctly listed here and correctly refused by the fence — that is the
-  // system working, not an inconsistency to tune away.
+  // election report. Hence the split.
+  //
+  // THE SPLIT IS CURRENTLY CLOSED, DELIBERATELY, AT 500 m BOTH SIDES — see the
+  // note on geofenceRadiusM below for why. Anything this list offers can now
+  // also be filed from. If the fence is ever tightened again, widen discovery
+  // in the same commit so the gap comes back rather than appearing by accident.
   discoveryRadiusM: num('DISCOVERY_RADIUS_M', 500),
   // Row cap on that discovery list — see routes/pollingUnits.js for the register
   // density this was measured against. Env-tunable for the same reason the rest
@@ -209,7 +212,29 @@ export const config = {
   // change, not a deploy.
   discoveryMaxRows: num('DISCOVERY_MAX_ROWS', 40),
 
-  geofenceRadiusM: num('GEOFENCE_RADIUS_M', 200),
+  /**
+   * 500 m, RAISED FROM 200 m ON 2026-08-31, and the reason is the register, not
+   * a softening of the standard.
+   *
+   * The fence is only ever as good as the coordinate it measures from, and a
+   * large share of INEC's published polling-unit coordinates put the unit in the
+   * wrong place — the geocoded set was found to be roughly a third wrong, which
+   * is why the local copy was purged. At 200 m a fence built on a bad coordinate
+   * does not catch a liar; it rejects the honest observer standing at the right
+   * building, on the day, with the sheet in their hand and no way to appeal.
+   *
+   * That is the expensive failure. A false accept costs one suspect report,
+   * which the anomaly checks, the duplicate-photo test, the venue-photo match
+   * and the public docket all still see. A false reject costs the evidence
+   * outright: the observer cannot file, and the sheet goes back inside.
+   *
+   * 500 m is a building-and-compound tolerance, not a neighbourhood — it does
+   * not let anyone file from a party office across town, and every other
+   * location defence is unchanged: three GPS fixes must still agree within
+   * 750 m of each other, accuracy must still be under maxGpsAccuracyM, and a
+   * crowd-mapped unit still uses the wider crowdGeofenceRadiusM.
+   */
+  geofenceRadiusM: num('GEOFENCE_RADIUS_M', 500),
   maxGpsAccuracyM: num('MAX_GPS_ACCURACY_M', 100),
   // Tier-2 location trust: a non-geocoded unit earns 'provisional' location status
   // once >= minLocationReports independent observers report from within

@@ -54,7 +54,37 @@ async function main() {
   const call = async (method, url) => {
     const r = await fetch(url, { method, headers: { Authorization: `Bearer ${token}` } });
     const t = await r.text();
-    if (!r.ok) die(`${method} ${url.replace(API, '')} -> ${r.status}\n       ${t.slice(0, 300)}`);
+    if (!r.ok) {
+      // A bare "403 PERMISSION_DENIED" sends you looking in the wrong place. By
+      // the time this runs the OIDC exchange has already succeeded — a token
+      // exists — so the denial is Play's, not Google Cloud's, and it has exactly
+      // three causes. Name them here rather than leaving it to be rediscovered.
+      //
+      // Note which error this is NOT: a disabled API answers with "has not been
+      // used in project N before or it is disabled" plus an enable link. A plain
+      // permission denial means the API is on and the grant is the problem.
+      if (r.status === 403) {
+        console.error('');
+        console.error('Play refused this request, though authentication SUCCEEDED —');
+        console.error('a token was minted, so Workload Identity Federation is fine.');
+        console.error('The service account is not authorised in the PLAY CONSOLE.');
+        console.error('');
+        console.error(`  package        ${app.pkg}`);
+        console.error('  service acct   hawkeye-play-publisher@hawkeye-503910.iam.gserviceaccount.com');
+        console.error('');
+        console.error('  Three things must all be true. Check in this order:');
+        console.error('  1. Play Console -> Setup -> API access: the Google Cloud project');
+        console.error('     hawkeye-503910 must be LINKED, and the service account listed there.');
+        console.error('  2. Users and permissions: the service account email invited AND given');
+        console.error('     "Release to testing tracks" — view-only permission cannot open an edit.');
+        console.error('  3. The grant must cover THIS app. An account-level grant covers both;');
+        console.error('     a per-app grant on one app leaves the other returning exactly this.');
+        console.error('');
+        console.error('  A fresh grant can take a few minutes to propagate.');
+        console.error('');
+      }
+      die(`${method} ${url.replace(API, '')} -> ${r.status}\n       ${t.slice(0, 300)}`);
+    }
     return t ? JSON.parse(t) : null;
   };
 

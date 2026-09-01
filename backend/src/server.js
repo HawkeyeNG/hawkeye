@@ -38,13 +38,29 @@ const app = express();
 app.set('trust proxy', true);
 app.disable('x-powered-by');
 
-// Origin lock (dormant until ORIGIN_AUTH_SECRET is set in .env): GO54 fronts
-// the origin with its own proxy, so an Apache IP allowlist can't tell our
-// Cloudflare zone's traffic from direct scans — instead a CF Transform Rule
-// stamps X-Origin-Auth on every request and we reject anything without it.
-if (config.originAuthSecret) {
+// Origin lock (dormant until a secret is set in .env): GO54 fronts the origin
+// with its own proxy, so an Apache IP allowlist can't tell our Cloudflare zone's
+// traffic from direct scans — instead the edge stamps a secret header on every
+// request and we reject anything without it.
+//
+// TWO HEADERS, because the two edges disagree on the name and only one of them
+// lets us choose it:
+//   Cloudflare  X-Origin-Auth        set by a Transform Rule (we pick the name)
+//   Shield      Shield-Proxy-Secret  Defenses -> Proxy Header; the NAME IS FIXED
+//                                    by Google and cannot be changed
+// Accepting both is what makes Project Shield usable as a second edge at all.
+// Without it, cutting over to Shield would 403 every request — which is the
+// failure docs/PROJECT-SHIELD-VS-CLOUDFLARE.md was written to prevent.
+//
+// Each header is only honoured if ITS OWN secret is configured, so setting one
+// never weakens the other, and an unset secret can never be matched by a missing
+// header. The lock arms if either is present.
+if (config.originAuthSecret || config.shieldProxySecret) {
   app.use((req, res, next) => {
-    if (req.headers['x-origin-auth'] === config.originAuthSecret) return next();
+    if (config.originAuthSecret
+      && req.headers['x-origin-auth'] === config.originAuthSecret) return next();
+    if (config.shieldProxySecret
+      && req.headers['shield-proxy-secret'] === config.shieldProxySecret) return next();
     res.status(403).json({ error: 'origin_locked' });
   });
 }

@@ -74,6 +74,11 @@ export const config = {
 
   // set this AND a matching Cloudflare Transform Rule header to lock the origin
   originAuthSecret: process.env.ORIGIN_AUTH_SECRET || '',
+  // the same lock for Project Shield, which stamps a header whose NAME IS FIXED
+  // by Google (Shield-Proxy-Secret) — dashboard: Defenses -> Proxy Header. Unset
+  // means Shield traffic is not accepted, which is the right default while
+  // Cloudflare is the live edge.
+  shieldProxySecret: process.env.SHIELD_PROXY_SECRET || '',
   jwtSecret: process.env.JWT_SECRET || DEV_DEFAULT,
   oracleSecret: process.env.ORACLE_SECRET || DEV_DEFAULT, // signs location attestations
   phoneSalt: process.env.PHONE_SALT || DEV_DEFAULT,       // phones stored as HMAC only

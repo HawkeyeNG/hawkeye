@@ -14,6 +14,7 @@ import { notifyMaster, notifyUnitSavers } from '../services/notify.js';
 import { mediaHealth } from './incidents.js';
 import { runAnchor } from '../services/anchor.js';
 import { raceKey, contestScope } from '../services/scope.js';
+import { clientIp } from '../services/security.js';
 
 export const adminRouter = Router();
 
@@ -26,7 +27,7 @@ export function requireAdmin(req, res, next) {
   const a = Buffer.from(given);
   const b = Buffer.from(secret);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    notifyMaster(`🔐 FAILED admin console login from ${req.ip}`);
+    notifyMaster(`🔐 FAILED admin console login from ${clientIp(req)}`);
     return res.status(401).json({ error: 'bad_passphrase' });
   }
   next();

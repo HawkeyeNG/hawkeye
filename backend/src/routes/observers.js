@@ -8,6 +8,7 @@ import { sendOtp, confirmScOtp } from '../services/sms.js';
 import { notifyChat, notifyMaster, chatIdByHash } from '../services/notify.js';
 import { noteRegistration } from '../services/integrity.js';
 import { verifyWebAppPayload, parseJsonField } from '../services/telegramWebApp.js';
+import { clientIp } from '../services/security.js';
 
 export const observersRouter = Router();
 
@@ -86,7 +87,7 @@ function otpRateLimited(ip) {
 }
 
 observersRouter.post('/register', async (req, res) => {
-  if (otpRateLimited(req.ip)) return res.status(429).json({ error: 'too_many_requests' });
+  if (otpRateLimited(clientIp(req))) return res.status(429).json({ error: 'too_many_requests' });
   const phone = normalizePhone(req.body?.phone);
   if (!phone) {
     return res.status(400).json({ error: 'invalid_phone', hint: 'Nigerian mobile, e.g. 08031234567' });

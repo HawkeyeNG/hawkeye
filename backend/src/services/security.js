@@ -68,6 +68,36 @@ export function concurrencyLimit(max, name = 'busy') {
   };
 }
 
+/**
+ * The caller's real IP — NOT `req.ip`, which anyone can choose.
+ *
+ * THE BUG THIS CLOSES. server.js sets `trust proxy: true`, so Express reads the
+ * LEFTMOST entry of X-Forwarded-For. That header is appended to by each hop, and
+ * the first entry is whatever the ORIGINAL CLIENT sent. So anyone could defeat
+ * every limit below by varying one request header:
+ *
+ *     curl -H 'X-Forwarded-For: 1.2.3.4' ...     -> counted as a new visitor
+ *
+ * Cloudflare overwrites CF-Connecting-IP with the actual TCP peer on every
+ * request, so it cannot be spoofed from outside. It is trustworthy here for a
+ * second reason too: the origin lock in server.js already refuses anything that
+ * did not come through the edge, so a request reaching this code has passed
+ * Cloudflare.
+ *
+ * FALLBACK IS THE SOCKET, NEVER A HEADER. If CF-Connecting-IP is absent the
+ * request either bypassed the edge (which the origin lock should have refused)
+ * or came via an edge that publishes no client-IP header. Project Shield is in
+ * the latter group — it exposes Client_Region and nothing finer. Keying on the
+ * socket peer then collapses callers together and limits too aggressively, which
+ * is the safe direction to fail; trusting a forgeable header is not. Revisit if
+ * Shield ever becomes the primary edge.
+ */
+export function clientIp(req) {
+  const cf = req.headers?.['cf-connecting-ip'];
+  if (typeof cf === 'string' && cf.trim()) return cf.trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+
 // Fixed-window in-memory limiter. Adequate for a single-process host; swap for a
 // Redis store if the app ever runs multi-instance.
 export function makeLimiter({ windowMs, max, name }) {
@@ -78,8 +108,9 @@ export function makeLimiter({ windowMs, max, name }) {
   }, windowMs).unref();
   return (req, res, next) => {
     const now = Date.now();
-    let h = hits.get(req.ip);
-    if (!h || h.resetAt <= now) { h = { count: 0, resetAt: now + windowMs }; hits.set(req.ip, h); }
+    const ip = clientIp(req);
+    let h = hits.get(ip);
+    if (!h || h.resetAt <= now) { h = { count: 0, resetAt: now + windowMs }; hits.set(ip, h); }
     h.count++;
     if (h.count > max) {
       res.setHeader('Retry-After', Math.ceil((h.resetAt - now) / 1000));

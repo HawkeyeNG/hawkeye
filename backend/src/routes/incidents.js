@@ -13,6 +13,7 @@ import { db } from '../db.js';
 import { config } from '../config.js';
 import { requireObserver } from './observers.js';
 import { notifyMaster, notifyChat, chatIdByHash } from '../services/notify.js';
+import { clientIp } from '../services/security.js';
 
 export const incidentsRouter = Router();
 
@@ -435,7 +436,7 @@ incidentsRouter.post('/flags', (req, res) => {
     db.prepare(`
       INSERT INTO content_flags (kind, target_id, reason, detail, observer_id, ip_hash, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)`)
-      .run(kind, targetId, reason, detail, observerId, flagIpHash(req.ip), Date.now());
+      .run(kind, targetId, reason, detail, observerId, flagIpHash(clientIp(req)), Date.now());
   } catch {
     // UNIQUE(kind, target_id, ip_hash) — same reader re-flagging the same item.
     return res.json({ ok: true, status: 'already_reported' });

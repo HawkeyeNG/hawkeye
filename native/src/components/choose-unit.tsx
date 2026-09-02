@@ -1,10 +1,11 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
 
 import { InfoDot } from '@/components/info-dot';
 import { ModalCard } from '@/components/modal-card';
+import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { UnitSearch } from '@/components/unit-search';
 import {
   mapAvailable,
@@ -296,6 +297,7 @@ export function ChooseUnitModal({
   current?: { pu_code: string; name?: string | null } | null;
 }) {
   const ui = useUi();
+  const notice = useNotice();
   const [tab, setTab] = useState<Tab | null>(null);
   const [picked, setPicked] = useState<Row | null>(null);
   const [saving, setSaving] = useState(false);
@@ -680,7 +682,7 @@ export function ChooseUnitModal({
         const code = body.error ?? `http_${res.status}`;
         // The code is in the message on purpose: "try again" with nothing to
         // report is the message that wastes a support round-trip.
-        Alert.alert(
+        notice.show(
           'Could not save your polling unit',
           code === 'unknown_unit'
             ? `${unit.name} is not in the register. (${code} / HTTP ${res.status})`
@@ -692,7 +694,7 @@ export function ChooseUnitModal({
       onSaved?.(unit);
       close();
     } catch {
-      Alert.alert('Could not save your polling unit', 'Please check your connection and try again.');
+      notice.show('Could not save your polling unit', 'Please check your connection and try again.');
     } finally {
       setSaving(false);
     }
@@ -1009,6 +1011,10 @@ export function ChooseUnitModal({
           </Text>
         </View>
       ) : null}
+
+      {/* Inside the card, not beside it: this notice belongs to the modal that
+          raised it, and the ModalCard is what is on screen when a save fails. */}
+      <NoticeSheet {...notice.props} />
     </ModalCard>
   );
 }

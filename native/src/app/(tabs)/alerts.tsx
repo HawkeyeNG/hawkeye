@@ -2,8 +2,9 @@ import { Feather } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { router, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
+import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
@@ -51,6 +52,7 @@ export default function Alerts() {
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
   const navigation = useNavigation();
   const unread = useUnread();
+  const notice = useNotice();
   const [items, setItems] = useState<Notification[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -114,7 +116,7 @@ export default function Alerts() {
     // Under a full-height list an inline error sits below the fold and is never
     // read. The pull was deliberate, so a failed one gets an answer.
     if (failed && items?.length) {
-      Alert.alert('Could not refresh', `Your alerts did not load. (${failed})`);
+      notice.show('Could not refresh', `Your alerts did not load. (${failed})`);
     }
   };
 
@@ -136,7 +138,7 @@ export default function Alerts() {
       markRead(n.id).catch((e) => {
         setItems((list) => list?.map((x) => (x.id === n.id ? { ...x, read: 0 } : x)) ?? list);
         refreshUnread();
-        Alert.alert('Could not mark that read', humanError(e));
+        notice.show('Could not mark that read', humanError(e));
       });
     }
     /**
@@ -159,7 +161,7 @@ export default function Alerts() {
       await markRead('all');
       setItems((list) => list?.map((x) => ({ ...x, read: 1 })) ?? list);
     } catch (e) {
-      Alert.alert('Could not mark them read', humanError(e));
+      notice.show('Could not mark them read', humanError(e));
     } finally {
       setMarking(false);
     }
@@ -403,6 +405,7 @@ export default function Alerts() {
           ) : null}
         </Pressable>
       </Modal>
+      <NoticeSheet {...notice.props} />
     </View>
   );
 }

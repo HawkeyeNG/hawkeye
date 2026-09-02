@@ -17,6 +17,7 @@ export function ConfirmSheet({
   title,
   body,
   confirmLabel,
+  cancelLabel = 'Cancel',
   danger,
   busy,
   onConfirm,
@@ -27,6 +28,13 @@ export function ConfirmSheet({
   title: string;
   body: string;
   confirmLabel: string;
+  /**
+   * `null` drops the second button, turning the sheet into a one-action NOTICE.
+   * A refusal has nothing to cancel — offering "Cancel" beside "Choose another
+   * unit" asks the reader to distinguish two ways of doing the same thing.
+   * Defaults to 'Cancel', so every existing caller is unchanged.
+   */
+  cancelLabel?: string | null;
   danger?: boolean;
   busy?: boolean;
   onConfirm: () => void;
@@ -64,13 +72,15 @@ export function ConfirmSheet({
               {confirmLabel}
             </Text>
           </Pressable>
-          <Pressable
-            disabled={busy}
-            onPress={onCancel}
-            className="mt-2 items-center rounded-2xl bg-card py-3.5 active:opacity-70"
-          >
-            <Text className="text-base font-semibold text-muted">Cancel</Text>
-          </Pressable>
+          {cancelLabel === null ? null : (
+            <Pressable
+              disabled={busy}
+              onPress={onCancel}
+              className="mt-2 items-center rounded-2xl bg-card py-3.5 active:opacity-70"
+            >
+              <Text className="text-base font-semibold text-muted">{cancelLabel}</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </Modal>

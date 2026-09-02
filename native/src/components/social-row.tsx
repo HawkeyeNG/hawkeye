@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import * as WebBrowser from 'expo-web-browser';
 import { Linking, Pressable, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';

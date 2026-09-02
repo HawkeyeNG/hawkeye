@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import Constants from 'expo-constants';
 import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';

@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {

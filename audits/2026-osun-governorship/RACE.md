@@ -240,11 +240,25 @@ agrees with it too, and leaves no trace of having done so.
 **Reviewers must be named.** `requireObserver` admits anyone who has passed a
 phone OTP — the same credential used to file an ordinary field report — and
 these endpoints write the audit's evidence base immutably, with no delete route.
-Set `REVIEW_OBSERVER_IDS=<comma-separated observer ids>`; the routes fail closed
-without it, so an unconfigured deployment cannot quietly accept audit readings
-from the public. The reveal and the final are additionally bound to the
-*committer*: only the reviewer who locked a reading may see the machine's answer
-for that sheet or settle it.
+The routes fail closed, so an unconfigured install cannot quietly accept audit
+readings from the public.
+
+```
+node backend/scripts/reviewers.mjs list
+node backend/scripts/reviewers.mjs add 42
+```
+
+The list lives in `backend/storage/audit_review/reviewers.json` and is read on
+every request, so adding someone takes effect on their next click — no restart.
+(`REVIEW_OBSERVER_IDS` still works and the two are unioned.) You cannot look
+your own id up in the database — it stores a phone hash, never a number — so
+the Review tab names it for you: *"You are observer 1, who is not on the
+reviewer list"*, with the exact command.
+
+The reveal and the final are additionally bound to the **committer**: only the
+reviewer who locked a reading may see the machine's answer for that sheet or
+settle it. Keying that on the sheet instead would mean the first person to
+commit unlocks the answer for everyone.
 
 Build the queue (regenerable; it lives under gitignored `backend/storage/`, and
 the predictions are deliberately outside the public `/training` mount):

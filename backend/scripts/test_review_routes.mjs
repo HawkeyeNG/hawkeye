@@ -364,6 +364,30 @@ console.log('\nflagged-sheet review routes\n');
     `keys=${Object.keys(after).length}`);
 }
 
+// ── 17. the reviewer list is a file, and it is read per request ───────────
+// Adding someone must not need a restart — that is the whole reason it is not
+// only an env var. And the refusal must name the caller, because an observer
+// has no other way to discover the id they need to be added under.
+{
+  const F = path.join(reviewDir, 'reviewers.json');
+  fs.writeFileSync(F, JSON.stringify({ observers: [4242] }));
+  let r = await call('get', '/training/review/queue', { query: { set: 1 }, observerId: 4242 });
+  eq('an observer named only in reviewers.json is admitted', r.status, 200);
+
+  fs.writeFileSync(F, JSON.stringify({ observers: [] }));
+  r = await call('get', '/training/review/queue', { query: { set: 1 }, observerId: 4242 });
+  eq('removing them takes effect on the very next request',
+    [r.status, r.body.error], [403, 'not_a_reviewer']);
+  eq('the refusal names the caller so they can be added', r.body.you, 4242);
+
+  // A malformed file must not widen access to everyone.
+  fs.writeFileSync(F, 'not json at all');
+  r = await call('get', '/training/review/queue', { query: { set: 1 }, observerId: 4242 });
+  eq('a malformed reviewers.json refuses rather than admitting',
+    [r.status, r.body.error], [403, 'not_a_reviewer']);
+  fs.rmSync(F, { force: true });
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(failures ? `\n${failures} FAILED\n` : '\nall passed\n');
 process.exit(failures ? 1 : 0);

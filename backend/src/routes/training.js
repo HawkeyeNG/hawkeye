@@ -394,19 +394,56 @@ const writeReviewJson = (name, obj) => {
   fs.renameSync(tmp, dest);
 };
 
-/** Reviewers are named explicitly. `requireObserver` admits anyone who passed a
- *  phone OTP — the same credential used to file an ordinary field report — and
- *  these endpoints write the audit's evidence base, immutably and with no delete
- *  route. Fails CLOSED when unset: an unconfigured deployment must not quietly
- *  accept audit readings from the public. Set REVIEW_OBSERVER_IDS=7,12,19,23. */
-const REVIEW_IDS = new Set(
-  String(process.env.REVIEW_OBSERVER_IDS || '').split(',').map((s) => s.trim()).filter(Boolean),
-);
-const requireReviewer = (req, res, next) => {
-  if (!REVIEW_IDS.size) {
-    return res.status(403).json({ error: 'reviewers_not_configured', hint: 'set REVIEW_OBSERVER_IDS' });
+/**
+ * Reviewers are named explicitly. `requireObserver` admits anyone who has passed
+ * a phone OTP — the same credential used to file an ordinary field report — and
+ * these endpoints write the audit's evidence base, immutably and with no delete
+ * route. Fails CLOSED: an unconfigured install must not quietly accept audit
+ * readings from the public.
+ *
+ * Two sources, unioned, and BOTH are read per request:
+ *   reviewers.json      backend/storage/audit_review/, managed by
+ *                       scripts/reviewers.mjs — takes effect immediately, so
+ *                       adding a reviewer never needs a restart
+ *   REVIEW_OBSERVER_IDS env, for deployments that prefer configuration
+ *
+ * Read per request rather than cached at import because the whole point is that
+ * a person can be added while the server is running — and because a cached
+ * allowlist silently ignores the file, which is the kind of thing nobody
+ * notices until someone is locked out mid-session.
+ */
+const envReviewers = () => String(process.env.REVIEW_OBSERVER_IDS || '')
+  .split(',').map((s) => s.trim()).filter(Boolean);
+
+const reviewerIds = () => {
+  const ids = new Set(envReviewers());
+  const p = path.join(reviewDir(), 'reviewers.json');
+  if (fs.existsSync(p)) {
+    try {
+      const d = JSON.parse(fs.readFileSync(p, 'utf8'));
+      for (const id of (Array.isArray(d) ? d : d.observers || [])) ids.add(String(id));
+    } catch { /* a malformed file must not silently widen access */ }
   }
-  if (!REVIEW_IDS.has(String(req.observer.id))) return res.status(403).json({ error: 'not_a_reviewer' });
+  return ids;
+};
+
+const requireReviewer = (req, res, next) => {
+  const ids = reviewerIds();
+  // The caller's own id goes back with the refusal. They already know who they
+  // are, so it leaks nothing, and it turns "403" into an instruction — without
+  // it there is no way to discover the number you need to be added under.
+  if (!ids.size) {
+    return res.status(403).json({
+      error: 'reviewers_not_configured', you: req.observer.id,
+      hint: `node backend/scripts/reviewers.mjs add ${req.observer.id}`,
+    });
+  }
+  if (!ids.has(String(req.observer.id))) {
+    return res.status(403).json({
+      error: 'not_a_reviewer', you: req.observer.id,
+      hint: `node backend/scripts/reviewers.mjs add ${req.observer.id}`,
+    });
+  }
   return next();
 };
 

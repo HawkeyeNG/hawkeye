@@ -70,16 +70,13 @@
            href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer"><img
            src="play-badge.png" alt="Get it on Google Play" height="56"
            onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Get it on Google Play ↗'" /></a>
-        <!-- Dark until the listing is live — the switch is HAWKEYE_STORES.iosLive
-             in share.js, the same one index.html's install row reads. -->
+        <!-- Live since 2026-09-02 — the switch is HAWKEYE_STORES.iosLive in
+             share.js, the same one index.html's install row reads. -->
         <a class="play-badge-link" id="ios-cta" hidden rel="noopener" target="_blank"
            href="https://apps.apple.com/app/id6804218478"><img
            src="app-store-badge.svg" alt="Download on the App Store" height="56"
            onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Download on the App Store ↗'" /></a>
       </div>
-
-      <p class="hint" id="ios-note">On iPhone, open this page in Safari and tap
-        Share &rarr; Add to Home Screen. It works the same way.</p>
 
       <div class="dl-alt">
         <p class="hint">No store, or a phone short on space?</p>
@@ -92,14 +89,16 @@
     </div>
   </main>
 
-  <script src="share.js?v=1"></script>
+  <script src="share.js?v=2"></script>
   <script>
-    // The App Store badge and the iPhone sentence are two halves of one fact, so
-    // they flip together off the single switch in share.js.
+    // The badge is all that is left of this: the Add-to-Home-Screen sentence
+    // that used to sit under it went when the App Store listing went live. It
+    // described the only iPhone route there was, and repeating it beside a real
+    // store badge pushed people toward the fallback. The web-app route is still
+    // here, one line down, under "No store, or a phone short on space?".
     if (window.HAWKEYE_STORES && window.HAWKEYE_STORES.iosLive) {
-      document.getElementById('ios-cta').hidden = false;
-      document.getElementById('ios-note').textContent =
-        'On iPhone, get it from the App Store — or add this site to your home screen from Safari.';
+      const ios = document.getElementById('ios-cta');
+      if (ios) ios.hidden = false;
     }
   </script>
   <script src="menu.js?v=162"></script>

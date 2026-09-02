@@ -14,8 +14,16 @@ audits/
     party_full.jsonl   pass 3: cropped party-table read
     vlm_stage0b.jsonl  all passes reconciled — THIS is what gets published
     *.xlsx             the deliverable workbook
-    RACE.md            what was run, when, on what, and what it cost
 ```
+
+**RACE.md lives outside this tree**, at
+`docs/private/audits/<year>-<state>-<race>/RACE.md`. It records what was run, on
+what, what it cost — and the caveats, including which published figures are not
+yet what they look like. Its own header says it is an internal evidence base and
+that several things in it would mislead an outside reader as written, and this
+repository is public, so it is kept in the gitignored `docs/private/` rather than
+here. Note that moving it does not unpublish the versions already pushed; it
+stops adding to them.
 
 ## Crop, then ask one question
 

@@ -267,6 +267,23 @@
         <span class="tab" data-set="5">Claude <b id="s5"></b></span>
       </div>
       <p class="meta" id="lab-summary"></p>
+
+      <!-- Separate job from the label spot-check above: who is allowed to review
+           the flagged Osun sheets. It lives here because there is no shell on
+           this host, so this is the only way to add someone. The list is read on
+           every request, so a change takes effect on their next click. -->
+      <details id="rv-admin" style="margin:14px 0;border:1px solid var(--line,#dde4de);border-radius:8px;padding:10px 12px">
+        <summary style="cursor:pointer;font-weight:700">Flagged-sheet reviewers</summary>
+        <p class="meta" style="margin:8px 0">A reviewer opens <b>train.html → Review flagged sheets</b>;
+        if they are not on this list the page tells them their own observer id. Add it here.</p>
+        <div class="row" style="gap:8px">
+          <input id="rv-add-id" inputmode="numeric" placeholder="observer id" style="width:140px" />
+          <button id="rv-add-btn">Add</button>
+        </div>
+        <p id="rv-admin-msg" class="meta"></p>
+        <div id="rv-admin-list" class="meta">Loading…</div>
+      </details>
+
       <div id="lab-list"><p class="empty">Loading…</p></div>
     </div><div class="panel" data-p="push" hidden>
     <h1>Send a Push</h1>
@@ -1195,6 +1212,53 @@
       document.querySelectorAll('#set-tabs .tab').forEach((x) => x.classList.toggle('on', x === t));
       loadLabels();
     });
+
+    // ---- who may review the flagged sheets ---------------------------------
+    async function rvLoadReviewers() {
+      try {
+        const r = await fetch('/api/training/review/reviewers', { headers: hdr() });
+        const d = await r.json();
+        if (!r.ok) { $('rv-admin-list').textContent = d.error || 'Could not load.'; return; }
+        const ids = d.observers || [];
+        $('rv-admin-list').innerHTML = ids.length
+          ? ids.map((id) => `<span class="tab" style="margin:2px 4px 2px 0">observer ${Number(id)} `
+            + `<a href="#" data-rm="${Number(id)}" style="color:#c00;text-decoration:none">&times;</a></span>`).join('')
+          : '<em>Nobody yet — the review endpoints are refusing everyone.</em>';
+      } catch { $('rv-admin-list').textContent = 'Could not load.'; }
+    }
+
+    async function rvSetReviewer(observer, action) {
+      $('rv-admin-msg').textContent = action === 'add' ? 'Adding…' : 'Removing…';
+      // hdr() in this block carries only the admin secret, so the content-type
+      // is added here — without it express.json() never parses the body and the
+      // server sees an empty request.
+      const r = await fetch('/api/training/review/reviewers', {
+        method: 'POST',
+        headers: { ...hdr(), 'content-type': 'application/json' },
+        body: JSON.stringify({ observer, action }),
+      });
+      const d = await r.json().catch(() => ({}));
+      // Name the reason. "no_such_observer" and "observer_not_active" are
+      // different problems and only one of them is a typo.
+      $('rv-admin-msg').textContent = r.ok
+        ? `${action === 'add' ? 'Added' : 'Removed'} observer ${observer}. Effective immediately.`
+        : ({ no_such_observer: `No observer with id ${observer}.`,
+             observer_not_active: `Observer ${observer} is not active.`,
+             bad_observer_id: 'Enter a numeric observer id.' }[d.error] || d.error || 'Failed.');
+      if (r.ok) { $('rv-add-id').value = ''; rvLoadReviewers(); }
+    }
+
+    $('rv-add-btn').addEventListener('click', () => {
+      const v = $('rv-add-id').value.trim();
+      if (!/^\d+$/.test(v)) { $('rv-admin-msg').textContent = 'Enter a numeric observer id.'; return; }
+      rvSetReviewer(v, 'add');
+    });
+    $('rv-admin-list').addEventListener('click', (e) => {
+      const a = e.target.closest('[data-rm]'); if (!a) return;
+      e.preventDefault();
+      rvSetReviewer(a.dataset.rm, 'remove');
+    });
+    $('rv-admin').addEventListener('toggle', () => { if ($('rv-admin').open) rvLoadReviewers(); });
 
     function logout() { sessionStorage.removeItem('hawkeye_admin'); location.reload(); }
     $('tabs').addEventListener('click', (e) => {

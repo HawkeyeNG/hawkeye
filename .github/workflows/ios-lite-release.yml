@@ -183,7 +183,12 @@ jobs:
         run: |
           PBX=ios/App/App.xcodeproj/project.pbxproj
           test -f "$PBX" || { echo "::error::$PBX not found"; exit 1; }
-          sed -i 's/TARGETED_DEVICE_FAMILY = "1,2"/TARGETED_DEVICE_FAMILY = "1"/g' "$PBX"
+          # `sed -i ''` — BSD sed, because this runs on macOS. GNU's bare -i
+          # takes no argument; BSD's consumes the next one as a backup suffix,
+          # so the GNU spelling silently hands sed the script as a suffix and
+          # the file as the script. The other two sed -i calls in this file
+          # already carry the '' for the same reason.
+          sed -i '' 's/TARGETED_DEVICE_FAMILY = "1,2"/TARGETED_DEVICE_FAMILY = "1"/g' "$PBX"
           # Verify rather than assume: a template change upstream would make the
           # sed a silent no-op and put iPad support back without anyone noticing.
           if grep -q 'TARGETED_DEVICE_FAMILY = "1,2"' "$PBX"; then

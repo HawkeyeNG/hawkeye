@@ -1742,6 +1742,17 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
 .play-badge-link { display: inline-block; padding: 14px 14px 14px 0; background: none;
   border: 0; box-shadow: none; line-height: 0; }
 .play-badge-link img { display: block; height: 56px; width: auto; }
+/* THE TWO BADGES ARE NOT THE SAME KIND OF ASSET, so equal `height` renders them
+   unequal. Measured off the files themselves: Google's PNG is only 67.7% ink —
+   it carries its required clear space inside the artwork — while Apple's SVG is
+   100% ink with none. At a shared height: 56px, Google's visible button is
+   37.9px tall and Apple's is 56px, half again as big, which is what the eye
+   objects to.
+   38px matches the artwork and still satisfies Apple's rule that their badge be
+   no smaller than a neighbouring store's (38 >= 37.9). Their clear space comes
+   from .play-badge-link's 14px padding, far above the 10%-of-height they ask
+   for. Do not "tidy" these to one height without re-measuring the ink. */
+#ios-cta img { height: 38px; }
 /* An author `display` BEATS the hidden attribute — [hidden] is only a UA rule of
    `display: none`. Without this the badge stayed on screen for iPhone visitors
    even though the script had set .hidden = true, offering a store build that
@@ -1855,6 +1866,12 @@ html.native-app.is-landing .gov-header {
   max-width: 520px;
   min-height: calc(100dvh - 220px);
   display: flex; align-items: center; justify-content: center;
+  /* The card was flush against the header — measured 0px between them — so it
+     read as part of the header bar rather than as a card sitting on the page.
+     It only shows when the card is taller than the viewport and cannot centre,
+     which is most phones, i.e. most visitors. Scales with the viewport so a
+     short screen does not spend a fifth of itself on a gap. */
+  padding-top: clamp(18px, 4vh, 44px);
 }
 .dl-card {
   background: linear-gradient(160deg, #00251a, #00482b);

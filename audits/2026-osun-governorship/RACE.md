@@ -244,7 +244,7 @@ The routes fail closed, so an unconfigured install cannot quietly accept audit
 readings from the public.
 
 ```
-node backend/scripts/reviewers.mjs list
+node backend/scripts/reviewers.mjs list        # local; on the live host use the admin console
 node backend/scripts/reviewers.mjs add 42
 ```
 
@@ -264,8 +264,30 @@ Build the queue (regenerable; it lives under gitignored `backend/storage/`, and
 the predictions are deliberately outside the public `/training` mount):
 
 ```
-node backend/scripts/build_review_queue.mjs
+node backend/scripts/build_review_queue.mjs      # queue.json + pred/ + pred.json
+node backend/scripts/add_sheet_urls.mjs          # ~20 min, once per election
 ```
+
+**Deploying it.** The live host holds none of this: the sheets are gitignored
+(1.3 GB) and so is `backend/storage`. It also has no SSH — every file goes up one
+per request through the DirectAdmin API, and bursting that API has previously
+tripped the host's intrusion prevention. So only **two data files** ship,
+`queue.json` and `pred.json` (the 490 per-key predictions bundled into one), into
+`/hawkeye/backend/storage/audit_review/`:
+
+```
+tmp/mkremote.sh /hawkeye/backend/storage audit_review        # once
+scripts/deploy_app.sh --path /hawkeye/backend/storage/audit_review \
+  backend/storage/audit_review/queue.json backend/storage/audit_review/pred.json
+```
+
+**No sheet images are uploaded.** They are public INEC documents on a CDN, and
+the server fetches one on demand, compresses it through the same 1500px/q76
+pipeline the audit used (~3.7 MB → ~330 KB, which matters on a mobile link) and
+caches it under `audit_review/sheets/`. `add_sheet_urls.mjs` puts the URL in the
+queue because the S3 key ends in a UUID that cannot be derived from the unit
+code. Where a local copy exists — the machine that ran the audit — that is
+preferred and nothing is fetched.
 
 Reviewers use the **Review flagged sheets** tab on `train.html`, `train2.html`,
 `trainderek.html` and `traindavina.html` (sets 1–4). Progress and the agreement

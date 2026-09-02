@@ -309,12 +309,12 @@
     <p class="hint" id="push-platforms-hint">All three — the audience above is everyone.</p>
 
     <label for="push-title">Title</label>
-    <input id="push-title" maxlength="120" placeholder="Update Hawkeye from the Play Store" />
+    <input id="push-title" maxlength="120" placeholder="Update Hawkeye from your app store" />
     <p class="hint" id="push-title-count"></p>
 
     <label for="push-body">Message</label>
     <textarea id="push-body" rows="4" maxlength="400"
-      placeholder="The scanner is fixed in the latest version. Update from Google Play to get it."></textarea>
+      placeholder="The scanner is fixed in the latest version. Update from your app store to get it."></textarea>
     <p class="hint" id="push-body-count"></p>
 
     <label for="push-url">Opens (optional)</label>
@@ -325,7 +325,7 @@
     refuses it.</p>
 
     <div class="push-presets">
-      <button type="button" class="preset" data-preset="play">Play Store migration</button>
+      <button type="button" class="preset" data-preset="play">Store migration</button>
       <button type="button" class="preset" data-preset="scanner">Scanner fix</button>
     </div>
 
@@ -972,17 +972,26 @@
     // live here AND on the server, because a check that exists only in a form
     // is not a check.
     const PRESETS = {
+      // BOTH OF THESE POINT AT /get, NOT AT A STORE. The platform boxes above
+      // default to all three and a preset does not touch them, so one click and
+      // Send used to tell every iPhone owner to update from Google Play and hand
+      // them a listing their phone cannot open. /get redirects each device to
+      // its own store, which is exactly what the note beside those checkboxes
+      // already says the store case should do.
+      // It must be /get rather than the App Store link: routes/push.js:66
+      // rejects any url outside hawkeye.com.ng and play.google.com, so an
+      // apps.apple.com url 400s.
       play: {
-        title: 'Hawkeye is now on Google Play',
-        body: 'Install the Play Store version — it is half the size, updates itself, and opens '
-          + 'faster. Your account and saved units come with you.',
-        url: 'https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer',
+        title: 'Hawkeye has a store app now',
+        body: 'Install it from your app store — it is smaller than the web app, updates itself, '
+          + 'and opens faster. Your account and saved units come with you.',
+        url: 'https://hawkeye.com.ng/get',
       },
       scanner: {
         title: 'Update Hawkeye — scanner fix',
-        body: 'The sheet scanner is fixed in the latest version. Update from Google Play, then '
-          + 'try Report again.',
-        url: 'https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer',
+        body: 'The sheet scanner is fixed in the latest version. Update from your app store, '
+          + 'then try Report again.',
+        url: 'https://hawkeye.com.ng/get',
       },
     };
 

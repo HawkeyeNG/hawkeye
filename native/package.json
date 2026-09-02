@@ -73,5 +73,19 @@
     "lint": "expo lint",
     "postinstall": "patch-package"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "autolinking": {
+      "apple": {
+        "exclude": [
+          "@react-native-ml-kit/text-recognition"
+        ]
+      },
+      "ios": {
+        "exclude": [
+          "@react-native-ml-kit/text-recognition"
+        ]
+      }
+    }
+  }
 }

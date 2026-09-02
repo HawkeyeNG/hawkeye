@@ -15,23 +15,51 @@
  * (routes/submissions.js → ocrMatchCounts), so this never becomes the source of
  * truth — it is a helper and a warning, and every value it proposes is editable.
  *
- * ML Kit is a native module: it exists in a dev/production build and NOT in
- * Expo Go, so the import is probed, exactly like the video compressor.
+ * TWO READERS, ONE PER PLATFORM.
+ *
+ *   iOS      Apple Vision, via the local modules/hawkeye-vision module. Vision
+ *            ships with the OS, so nothing is bundled. Hawkeye Lite has read
+ *            EC8A sheets this way in production.
+ *   Android  Google ML Kit, which has no system-provided equivalent there.
+ *
+ * They were both ML Kit until the iOS binary was measured: the ML Kit pod pulls
+ * five recognition models (Latin, Chinese, Devanagari, Japanese, Korean) into
+ * the app, and observers download that over Nigerian mobile data. The two
+ * return the same shape, so everything below this point is platform-agnostic.
+ *
+ * Both are native modules: they exist in a dev/production build and NOT in Expo
+ * Go, so each is probed rather than imported, exactly like the video compressor.
  */
+import { Platform } from 'react-native';
+
+import { recognize as visionRecognize, visionAvailable } from '@/modules/hawkeye-vision';
 
 type MlkitResult = { text: string; blocks?: { text: string }[] };
 type Recogniser = { recognize: (uri: string) => Promise<MlkitResult> };
 
 let TextRecognition: Recogniser | null = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = require('@react-native-ml-kit/text-recognition');
-  TextRecognition = (mod?.default ?? mod) as Recogniser;
-} catch {
-  TextRecognition = null;
+if (Platform.OS !== 'ios') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('@react-native-ml-kit/text-recognition');
+    TextRecognition = (mod?.default ?? mod) as Recogniser;
+  } catch {
+    TextRecognition = null;
+  }
 }
 
-export const ocrAvailable = () => TextRecognition != null;
+/** Read the sheet with whichever recogniser this platform has. */
+async function recogniseText(uri: string): Promise<string | null> {
+  if (Platform.OS === 'ios') {
+    const res = await visionRecognize(uri);
+    return res?.text ?? null;
+  }
+  if (!TextRecognition) return null;
+  const res = await TextRecognition.recognize(uri);
+  return res?.text ?? '';
+}
+
+export const ocrAvailable = () => (Platform.OS === 'ios' ? visionAvailable() : TextRecognition != null);
 
 export type SheetRead = {
   /** Raw recognised text, newline separated. */
@@ -79,12 +107,12 @@ export function parseCounts(text: string, partyCodes: string[]): Record<string, 
   return out;
 }
 
-/** Recognise a sheet photo. Returns null when ML Kit is unavailable or fails. */
+/** Recognise a sheet photo. Returns null when no recogniser is available or it fails. */
 export async function readSheet(uri: string, partyCodes: string[] = []): Promise<SheetRead | null> {
-  if (!TextRecognition) return null;
+  if (!ocrAvailable()) return null;
   try {
-    const res = await TextRecognition.recognize(uri);
-    const text = res?.text ?? '';
+    const text = await recogniseText(uri);
+    if (text == null) return null;
     if (!text.trim()) return { text: '', numericLines: 0, counts: {} };
     const numericLines = text.split(/\r?\n/).filter((l) => /\d/.test(l)).length;
     return { text, numericLines, counts: parseCounts(text, partyCodes) };

@@ -342,12 +342,27 @@
   // ── queue ───────────────────────────────────────────────────────────────
   async function loadQueue() {
     const r = await api('/api/training/review/queue?set=' + SET + '&limit=25');
-    if (!r.ok) { $('rv-progress').textContent = 'Sign in as a verified observer to review sheets.'; return; }
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      if (j.you) {
+        // Reviewing is restricted to named people. Say who you are and exactly
+        // what unlocks it — a bare 403 leaves no way to discover the id you
+        // would need to be added under.
+        $('rv-progress').innerHTML = `You are observer <strong>${Number(j.you)}</strong>, `
+          + 'who is not on the reviewer list for the flagged-sheet audit.'
+          + `<br><span class="hint">An admin adds you with: <code>node backend/scripts/reviewers.mjs add ${Number(j.you)}</code></span>`
+          + '<br><span class="hint">Then re-open this tab — no reload needed.</span>';
+        return false;
+      }
+      $('rv-progress').textContent = 'Sign in as a verified observer to review sheets.';
+      return false;
+    }
     const d = await r.json();
     ballot = d.ballot || [];
     queue = d.items || [];
     $('rv-progress').textContent =
       `${d.mineDone} of ${d.mineTotal} in your set reviewed · ${d.doneAll} of ${d.total} flagged sheets done overall`;
+    return true;
   }
 
   function next() {
@@ -374,13 +389,26 @@
   // Started on first switch to the review tab, not on page load: most visits to
   // these pages are for labelling, and the queue fetch would be wasted.
   let started = false;
+  let starting = false;
   window.HawkeyeReview = {
     async start() {
-      if (started) return;
-      started = true;
-      if (!token) { $('rv-progress').textContent = 'Sign in as a verified observer to review sheets.'; return; }
-      await loadQueue();
-      next();
+      // `started` is set only once the queue actually loads. A refusal — not yet
+      // on the reviewer list, signed out — must stay retryable: the reviewer is
+      // told exactly what unlocks it, and once someone does, re-opening the tab
+      // should work without a page reload. `starting` guards a double-click.
+      if (started || starting) return;
+      starting = true;
+      try {
+        if (!token) {
+          $('rv-progress').textContent = 'Sign in as a verified observer to review sheets.';
+          return;
+        }
+        if (!await loadQueue()) return;
+        started = true;
+        next();
+      } finally {
+        starting = false;
+      }
     },
   };
 }());

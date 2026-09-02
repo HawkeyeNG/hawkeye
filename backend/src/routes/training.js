@@ -339,3 +339,326 @@ trainingRouter.get('/training/meta', requireAdmin, (req, res) => {
     illegible: readJson('illegible.json'),
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FLAGGED-SHEET REVIEW (Osun 2026 audit, tier A)
+//
+// A different job from the labelling above. Labelling builds a calibration set
+// from unseen sheets; this re-reads the 495 sheets the audit's own checks
+// FAILED on, to establish what each one actually says.
+//
+// BLIND FIRST. The reviewer is shown the sheet and nothing else. Only once
+// their own reading is committed does the server release the machine's — and
+// the commit is immutable, so the two can be compared honestly. This is not
+// ceremony: the 20 sheets in hand_labels.json were labelled by a model shown
+// its own earlier output, 16 of the 20 came back byte-identical, and the "97.7%
+// correct" figure computed from them is an agreement rate wearing an accuracy's
+// clothes. A reviewer shown a plausible number agrees with it; that is what
+// anchoring is, and it is silent.
+//
+// WHAT IS WITHHELD. Not just the predicted counts — also the triage's reason
+// and its arithmetic ("over-voting, excess 211", "margin 44, leader APC").
+// Those name the answer as surely as the counts do.
+//
+// WHERE IT LIVES. storage/audit_review/, deliberately NOT storage/training/:
+// server.js:243 serves the whole training directory publicly, and its
+// AUDIT_INTERNAL denylist matches path.basename against three literal
+// filenames, so per-key files placed there would not be covered by it.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const REVIEW_SETS = 4; // train.html, train2.html, trainderek.html, traindavina.html
+
+const reviewDir = () => {
+  const d = path.join(path.dirname(config.dbPath), 'audit_review');
+  fs.mkdirSync(path.join(d, 'pred'), { recursive: true });
+  return d;
+};
+const reviewJson = (name, fallback) => {
+  try { return JSON.parse(fs.readFileSync(path.join(reviewDir(), name), 'utf8')); } catch { return fallback; }
+};
+const writeReviewJson = (name, obj) =>
+  fs.writeFileSync(path.join(reviewDir(), name), JSON.stringify(obj, null, 1));
+
+const readQueue = () => reviewJson('queue.json', { entries: [] });
+const readReviews = () => reviewJson('reviews.json', {});
+
+// The sheet images stay in the audit tree; they are not copied into the public
+// training mount. Resolved from dbPath so it follows a relocated storage dir.
+const sheetsDir = () => path.join(
+  path.dirname(path.dirname(path.dirname(config.dbPath))),
+  'audits', '2026-osun-governorship', 'sheets',
+);
+
+const cleanKey = (v) => String(v || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 32);
+
+/** Sheets are striped across the four pages by queue position, so two reviewers
+ *  never draw the same sheet and no lease/claim bookkeeping is needed. The queue
+ *  is already conflict-first, so each stripe is conflict-first too. */
+const setForIndex = (i) => (i % REVIEW_SETS) + 1;
+
+/** Everything a reviewer may see BEFORE committing a reading. Location is on
+ *  the sheet in front of them, so it anchors nothing and confirms they have the
+ *  right unit. Note what is absent: verdict, why, triage numbers, priority. */
+const reviewSafe = (e, i) => ({
+  key: e.key,
+  file: e.file,
+  lga: e.lga,
+  ward: e.ward,
+  name: e.name,
+  set: setForIndex(i),
+});
+
+const cleanParties = (obj) => {
+  const out = {};
+  if (!obj || typeof obj !== 'object') return out;
+  for (const [p, c] of Object.entries(obj)) {
+    const n = Number(c);
+    // Unlike truth.json, an explicit 0 is KEPT here: "this party polled nothing"
+    // and "this row was never read" are the exact distinction the audit is stuck
+    // on, and collapsing them again would waste the review.
+    if (Number.isInteger(n) && n >= 0 && n < 100000) out[String(p).toUpperCase().slice(0, 6)] = n;
+  }
+  return out;
+};
+
+const cleanBoxes = (obj) => {
+  const out = {};
+  if (!obj || typeof obj !== 'object') return out;
+  for (const f of BOX_FIELDS) {
+    const n = Number(obj[f]);
+    if (Number.isInteger(n) && n >= 0 && n < 10000) out[f] = n;
+  }
+  return out;
+};
+
+// ---- the queue ------------------------------------------------------------
+trainingRouter.get('/training/review/queue', requireObserver, (req, res) => {
+  const q = readQueue();
+  const reviews = readReviews();
+  const want = Math.min(REVIEW_SETS, Math.max(1, Math.floor(Number(req.query.set) || 1)));
+  const limit = Math.min(50, Math.max(1, Math.floor(Number(req.query.limit) || 25)));
+
+  const mine = q.entries
+    .map((e, i) => ({ e, i }))
+    .filter(({ i }) => setForIndex(i) === want);
+  const pending = mine.filter(({ e }) => !reviews[e.key]?.final);
+
+  res.json({
+    set: want,
+    // The 15 pre-printed party rows. Public — it is what was on the ballot —
+    // and giving reviewers the labelled rows stops one being silently skipped.
+    ballot: q.ballot || [],
+    total: q.entries.length,
+    mineTotal: mine.length,
+    mineDone: mine.length - pending.length,
+    doneAll: Object.values(reviews).filter((r) => r?.final).length,
+    items: pending.slice(0, limit).map(({ e, i }) => reviewSafe(e, i)),
+  });
+});
+
+// ---- the sheet image ------------------------------------------------------
+// Served through the API behind auth rather than from the public static mount:
+// queue membership is a list of where we suspect a problem, before a human has
+// confirmed one.
+trainingRouter.get('/training/review/sheet/:key', requireObserver, (req, res) => {
+  const key = cleanKey(req.params.key);
+  const entry = readQueue().entries.find((e) => e.key === key);
+  if (!entry) return res.status(404).json({ error: 'not_in_queue' });
+  const p = path.join(sheetsDir(), path.basename(entry.file));
+  if (!fs.existsSync(p)) return res.status(404).json({ error: 'no_sheet' });
+  res.type('image/jpeg');
+  res.set('Cache-Control', 'private, max-age=3600');
+  fs.createReadStream(p).pipe(res);
+});
+
+// ---- 1. commit the blind reading (immutable) ------------------------------
+trainingRouter.post('/training/review/blind', requireObserver, (req, res) => {
+  const key = cleanKey(req.body?.key);
+  const entry = readQueue().entries.find((e) => e.key === key);
+  if (!entry) return res.status(404).json({ error: 'not_in_queue' });
+
+  const reviews = readReviews();
+  // Immutable by design. If re-submission were allowed, a reviewer could read
+  // the machine's answer and then quietly restate their own to match it, which
+  // is precisely the measurement this endpoint exists to protect.
+  if (reviews[key]?.blind) return res.status(409).json({ error: 'blind_already_committed' });
+
+  const parties = cleanParties(req.body?.parties);
+  const boxes = cleanBoxes(req.body?.boxes);
+  if (!Object.keys(parties).length && !Object.keys(boxes).length && req.body?.unreadable !== true) {
+    return res.status(400).json({ error: 'empty_reading' });
+  }
+
+  reviews[key] = {
+    ...(reviews[key] || {}),
+    blind: {
+      parties,
+      boxes,
+      // The reviewer asserting they read every row, which turns every party
+      // absent from `parties` into a definite zero rather than an unknown.
+      complete: req.body?.complete === true,
+      // Some sheets genuinely cannot be read — that is a finding, not a failure.
+      unreadable: req.body?.unreadable === true,
+      by: req.observer.id,
+      at: new Date().toISOString(),
+      // Client-reported, so treat as a smoke alarm rather than evidence: a
+      // four-second "reading" of a 18-row sheet did not happen.
+      clientMs: Math.max(0, Math.floor(Number(req.body?.ms) || 0)) || null,
+    },
+  };
+  writeReviewJson('reviews.json', reviews);
+  res.status(201).json({ ok: true, key });
+});
+
+// ---- 2. release the machine's reading (gated on step 1) -------------------
+trainingRouter.get('/training/review/pred/:key', requireObserver, (req, res) => {
+  const key = cleanKey(req.params.key);
+  const entry = readQueue().entries.find((e) => e.key === key);
+  if (!entry) return res.status(404).json({ error: 'not_in_queue' });
+
+  const reviews = readReviews();
+  // THE GATE. Everything else in this feature is arrangement; this is the part
+  // that makes the comparison mean something.
+  if (!reviews[key]?.blind) return res.status(409).json({ error: 'blind_reading_required' });
+
+  let pred;
+  try {
+    pred = JSON.parse(fs.readFileSync(path.join(reviewDir(), 'pred', `${key}.json`), 'utf8'));
+  } catch { return res.status(404).json({ error: 'no_prediction' }); }
+
+  // Stamp which prediction was shown, so a later rebuild cannot change what the
+  // reviewer was actually compared against.
+  if (!reviews[key].pred) {
+    reviews[key].pred = { hash: entry.predHash, source: pred.source, shownAt: new Date().toISOString() };
+    writeReviewJson('reviews.json', reviews);
+  }
+
+  res.json({
+    key,
+    prediction: pred,
+    // Released together with the prediction, for the same reason: it names the
+    // answer. `rowIntegrity` in particular may be OUR duplication bug rather
+    // than anything wrong with INEC's sheet.
+    triage: entry.triage,
+    blind: reviews[key].blind,
+  });
+});
+
+// ---- 3. the settled reading ----------------------------------------------
+trainingRouter.post('/training/review/final', requireObserver, (req, res) => {
+  const key = cleanKey(req.body?.key);
+  const entry = readQueue().entries.find((e) => e.key === key);
+  if (!entry) return res.status(404).json({ error: 'not_in_queue' });
+
+  const reviews = readReviews();
+  const rec = reviews[key];
+  if (!rec?.blind) return res.status(409).json({ error: 'blind_reading_required' });
+  if (rec.final) return res.status(409).json({ error: 'already_final' });
+
+  const parties = cleanParties(req.body?.parties);
+  const boxes = cleanBoxes(req.body?.boxes);
+
+  // Agreement is computed HERE, from the two stored readings — never taken from
+  // the client. It is the output of the whole exercise, and a client-supplied
+  // "yes I agreed" would be worth nothing.
+  let pred = null;
+  try {
+    pred = JSON.parse(fs.readFileSync(path.join(reviewDir(), 'pred', `${key}.json`), 'utf8'));
+  } catch { /* prediction missing; agreement stays null */ }
+
+  let agreement = null;
+  if (pred) {
+    // The model's row list includes rows it could NOT read (value null). Scoring
+    // those as disagreements would reproduce, inside this very metric, the
+    // blank-versus-unread conflation the review exists to resolve: "the model
+    // said 98 and the human said 55" and "the model read nothing and the human
+    // read 0" are different events and are counted separately below.
+    const machine = {};
+    const unread = new Set();
+    for (const row of pred.parties || []) {
+      if (!row.party) continue;
+      const p = String(row.party).toUpperCase().slice(0, 6);
+      if (row.value === null || row.value === undefined) unread.add(p);
+      else machine[p] = Number(row.value);
+    }
+    const human = rec.blind.parties;
+    let same = 0;
+    const differs = []; const added = []; const dropped = [];
+    for (const p of new Set([...Object.keys(machine), ...Object.keys(human)])) {
+      const m = machine[p]; const h = human[p];
+      if (m !== undefined && h !== undefined) {
+        if (m === h) same += 1; else differs.push({ party: p, machine: m, human: h });
+      } else if (m === undefined) {
+        // The human read a row the model could not. This is the review's whole
+        // point, and it is coverage gained — never an accuracy loss.
+        added.push({ party: p, human: h, machineUnread: unread.has(p) });
+      } else {
+        // The model produced a number the human could not find on the sheet.
+        dropped.push({ party: p, machine: m });
+      }
+    }
+    agreement = {
+      // The denominator is only the cells BOTH of them read, so the rate means
+      // "when they both had an answer, how often did it match".
+      parties: { compared: same + differs.length, same, differs, added, dropped },
+      // Did seeing the machine's answer change the reviewer's mind? A high rate
+      // here is the anchoring signal to watch.
+      humanChangedAfterReveal: JSON.stringify(parties) !== JSON.stringify(rec.blind.parties)
+        || JSON.stringify(boxes) !== JSON.stringify(rec.blind.boxes),
+    };
+  }
+
+  rec.final = {
+    parties,
+    boxes,
+    complete: req.body?.complete === true,
+    unreadable: req.body?.unreadable === true,
+    note: typeof req.body?.note === 'string' ? req.body.note.trim().slice(0, 400) : null,
+    by: req.observer.id,
+    at: new Date().toISOString(),
+  };
+  rec.agreement = agreement;
+  reviews[key] = rec;
+  writeReviewJson('reviews.json', reviews);
+
+  const done = Object.values(reviews).filter((r) => r?.final).length;
+  res.status(201).json({ ok: true, key, agreement, done, total: readQueue().entries.length });
+});
+
+// ---- progress, for the console -------------------------------------------
+trainingRouter.get('/training/review/stats', requireAdmin, (req, res) => {
+  const q = readQueue();
+  const reviews = readReviews();
+  const finals = Object.entries(reviews).filter(([, r]) => r?.final);
+  let agreed = 0; let compared = 0; let changed = 0;
+  let added = 0; let dropped = 0;
+  const fast = [];
+  for (const [key, r] of finals) {
+    if (r.agreement) {
+      agreed += r.agreement.parties.same;
+      compared += r.agreement.parties.compared;
+      added += r.agreement.parties.added.length;
+      dropped += r.agreement.parties.dropped.length;
+      if (r.agreement.humanChangedAfterReveal) changed += 1;
+    }
+    if (r.blind?.clientMs && r.blind.clientMs < 15000) fast.push({ key, ms: r.blind.clientMs });
+  }
+  res.json({
+    total: q.entries.length,
+    blind: Object.values(reviews).filter((r) => r?.blind).length,
+    final: finals.length,
+    partyCellsCompared: compared,
+    partyCellsAgreed: agreed,
+    agreementRate: compared ? Number((agreed / compared).toFixed(4)) : null,
+    // Rows the human read that the model could not — the reason for doing this
+    // at all. Reported separately so they can never inflate the rate above.
+    rowsRecovered: added,
+    // Rows the model produced that the human could not find. A rising number
+    // here means the model is inventing figures, which is the worse failure.
+    rowsUnsupported: dropped,
+    changedAfterReveal: changed,
+    // Not an accusation — a queue to look at. A sheet read in eight seconds may
+    // have been blank, or may not have been read.
+    suspiciouslyFast: fast.sort((a, b) => a.ms - b.ms).slice(0, 20),
+  });
+});

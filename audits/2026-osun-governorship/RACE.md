@@ -84,6 +84,23 @@ The sample is the first 20 sheets by unit code — one LGA, one officer, one
 camera. It bounds the damage; it does not prove accuracy on the sheets that
 actually blocked.
 
+**And the labels are not human.** `hand_labels.json` records its labeller as
+"claude-opus-5, reading the JPEGs directly. NOT an independent human labeller",
+and refers the reader to a caveat in this report that was never written. This is
+that caveat. The 97.7% above is therefore an **agreement rate between two model
+readings**, not an accuracy: the labeller was shown the same images and could
+misread them the same way, and a model presented with a plausible earlier answer
+tends to agree with it. Sixteen of the twenty came back identical to the
+machine's own reading, which is what that looks like from the outside.
+
+Nothing here says the figure is wrong. It says the figure has not been tested
+against a person, and until it is, it should not be quoted as accuracy —
+publicly or internally. The blind-first review in
+`backend/scripts/build_review_queue.mjs` and the `/api/training/review/*` routes
+exists to settle this: a reviewer commits their own reading before the server
+will release the machine's, so the comparison measures something. Those 20
+sheets should go through it before this number is used again.
+
 ## What the verdicts mean
 
 - **publishable** — the transcription is internally consistent. NOT "result
@@ -179,6 +196,54 @@ Every entry is phrased *"this sheet does not reconcile"*, never as an
 accusation. A presiding officer adding fifteen figures by hand at six in the
 evening is a likelier explanation than anything else, and nothing here can tell
 the two apart.
+
+## Blind human review of the flagged sheets (Stage 4)
+
+The 495 tier-A sheets that carry an image — the ones where a check actually
+failed — go back to people, one at a time, **blind**. The reviewer sees the
+sheet and nothing else; the server refuses to release the machine's reading
+(HTTP 409) until their own is committed, and the commit cannot be revised. Then
+both readings appear side by side and they settle it.
+
+The blindness is the whole feature. Everything above was measured against 20
+labels a model produced while able to see its own earlier answer, and 16 of the
+20 came back identical (see **Calibration**). A person handed a plausible number
+agrees with it too, and leaves no trace of having done so.
+
+- **Queue**: tier A only. `tier_b` is deliberately excluded and must stay so —
+  it is a 300-sheet stride sample and the only unbiased accuracy estimate this
+  project has; reviewing it as part of a flagged stream would convert a random
+  sample into a selected one, undetectably. Tier A and tier C do not overlap at
+  all, so excluding B costs nothing.
+- **Order**: conflict-first — sheets where the model's figures and its written
+  words disagreed, so it settled on no value. 316 of the 495 have at least one.
+  The queue is striped across the four training pages (124/124/124/123, no
+  overlap), so two reviewers never draw the same sheet.
+- **Not `pass1Verdict`.** That field looks like the verdict and is not: it is
+  carried forward from pass 1, byte-identical in `vlm_merged` and `vlm_stage0`,
+  and absent entirely from `vlm_stage0b`, the current generation. The live
+  verdicts were computed from stage0b and materialised into `tier_*.json`.
+- **Agreement is not one number.** Rows both parties read are compared; rows the
+  model could not read but the human could are counted as **recovered**, never
+  as model errors; rows the model produced but the human could not find are
+  counted as **unsupported**, which is the worse failure. Collapsing these would
+  reproduce the blank-versus-unreadable conflation the audit exists to resolve.
+
+Build the queue (regenerable; it lives under gitignored `backend/storage/`, and
+the predictions are deliberately outside the public `/training` mount):
+
+```
+node backend/scripts/build_review_queue.mjs
+```
+
+Reviewers use the **Review flagged sheets** tab on `train.html`, `train2.html`,
+`trainderek.html` and `traindavina.html` (sets 1–4). Progress and the agreement
+split: `GET /api/training/review/stats`, admin only. Tests, including a control
+that fails if the gate ever opens early:
+
+```
+node backend/scripts/test_review_routes.mjs
+```
 
 ## Before any of this could be published
 

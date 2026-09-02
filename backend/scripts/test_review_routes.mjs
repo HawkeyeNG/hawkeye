@@ -1,0 +1,236 @@
+/**
+ * Regression test for the flagged-sheet review routes.
+ *
+ *   node backend/scripts/test_review_routes.mjs
+ *
+ * The feature's entire value rests on one property: a reviewer cannot see the
+ * machine's reading until their own is committed and frozen. Everything else is
+ * plumbing. So the tests are built around trying to BREAK that, not around
+ * walking the happy path — a happy-path test would pass just as cheerfully if
+ * the gate had been deleted, which is the failure mode worth guarding against.
+ *
+ * The two that matter most:
+ *   - CONTROL: fetching the prediction before any blind reading must 409. If
+ *     this ever returns 200 the audit's numbers are anchoring, not accuracy.
+ *   - LEAK: the pre-commit payload must not carry the triage's reason or its
+ *     arithmetic. "over-voting, excess 211" names the answer as surely as the
+ *     counts do, and it would arrive looking like harmless context.
+ *
+ * Runs against a temp storage dir, so it touches nothing real.
+ */
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'review-'));
+const storage = path.join(tmp, 'storage');
+const reviewDir = path.join(storage, 'audit_review');
+fs.mkdirSync(path.join(reviewDir, 'pred'), { recursive: true });
+fs.mkdirSync(path.join(storage, 'training'), { recursive: true });
+process.env.DB_PATH = path.join(storage, 'test.db');
+process.env.ADMIN_PASSPHRASE = 'test-pass';
+
+let failures = 0;
+const eq = (label, got, want) => {
+  const ok = JSON.stringify(got) === JSON.stringify(want);
+  if (!ok) { failures++; console.log(`  FAIL ${label}\n       got  ${JSON.stringify(got)}\n       want ${JSON.stringify(want)}`); }
+  else console.log(`  ok   ${label}`);
+};
+const ok_ = (label, cond, detail = '') => {
+  if (cond) console.log(`  ok   ${label}`);
+  else { failures++; console.log(`  FAIL ${label} ${detail}`); }
+};
+
+// ── a queue of two sheets, one of which carries anchoring triage numbers ────
+const KEY = '29-04-04-010';
+const KEY2 = '29-10-04-012';
+fs.writeFileSync(path.join(reviewDir, 'queue.json'), JSON.stringify({
+  source: 'vlm_stage0b.jsonl',
+  tier: 'a',
+  count: 2,
+  entries: [
+    {
+      key: KEY,
+      file: `${KEY}.jpg`,
+      tier: 'a',
+      lga: 'Ayedire',
+      ward: 'Oke-Osun',
+      name: 'Laitan Village',
+      triage: { verdict: 'flagged', why: 'over-voting above 10 votes', excess: 211, cast: 458, accredited: 247 },
+      priority: { conflict: 15, contested: 0, unread: 0, single: 0 },
+      predHash: 'deadbeefdeadbeef',
+    },
+    {
+      key: KEY2,
+      file: `${KEY2}.jpg`,
+      tier: 'a',
+      lga: 'Ejigbo',
+      ward: "Elejigbo 'D'/Ejemu",
+      name: 'Apake Open Space',
+      triage: { verdict: 'review', why: 'an unread row could hold enough to lead', margin: 44, leader: 'APC' },
+      priority: { conflict: 0, contested: 0, unread: 2, single: 0 },
+      predHash: 'cafecafecafecafe',
+    },
+  ],
+}));
+fs.writeFileSync(path.join(reviewDir, 'pred', `${KEY}.json`), JSON.stringify({
+  key: KEY,
+  file: `${KEY}.jpg`,
+  source: 'vlm_stage0b.jsonl',
+  parties: [
+    { party: 'APC', value: 120, confidence: 'both' },
+    { party: 'PDP', value: 98, confidence: 'conflict' },
+    { party: 'ADC', value: null, confidence: 'empty' },
+  ],
+  boxes: { registered: 500, accredited: 247 },
+  defects: { rowIntegrity: null, adjudicated: null, implausible: null, promptLeak: null },
+  confidenceCounts: { both: 1, conflict: 1, empty: 1 },
+}));
+
+const { trainingRouter } = await import('../src/routes/training.js');
+
+/** Minimal route driver: invoke the final handler, skipping auth middleware,
+ *  with an observer stubbed in since the handlers record who reviewed. */
+function call(method, routePath, { body = {}, params = {}, query = {} } = {}) {
+  const layer = trainingRouter.stack.find(
+    (l) => l.route?.path === routePath && l.route.methods[method],
+  );
+  if (!layer) throw new Error(`no route ${method} ${routePath}`);
+  const stack = layer.route.stack.map((s) => s.handle);
+  const handler = stack[stack.length - 1];
+  return new Promise((resolve) => {
+    const res = {
+      statusCode: 200,
+      status(c) { this.statusCode = c; return this; },
+      json(payload) { resolve({ status: this.statusCode, body: payload }); return this; },
+      type() { return this; },
+      set() { return this; },
+    };
+    handler(
+      { body, params, query, observer: { id: 7 }, headers: {} },
+      res,
+      () => resolve({ status: 500, body: { error: 'next called' } }),
+    );
+  });
+}
+
+console.log('\nflagged-sheet review routes\n');
+
+// ── 1. THE CONTROL ─────────────────────────────────────────────────────────
+// Before anything else: prove the gate is shut. A test suite that cannot fail
+// here is not testing the feature, it is describing it.
+{
+  const r = await call('get', '/training/review/pred/:key', { params: { key: KEY } });
+  eq('CONTROL prediction is refused before any blind reading',
+    [r.status, r.body.error], [409, 'blind_reading_required']);
+}
+
+// ── 2. the pre-commit payload must not name the answer ─────────────────────
+{
+  const r = await call('get', '/training/review/queue', { query: { set: 1, limit: 50 } });
+  const item = r.body.items.find((x) => x.key === KEY);
+  ok_('queue returns the sheet', Boolean(item));
+  const text = JSON.stringify(item ?? {});
+  for (const leak of ['triage', 'why', 'excess', 'accredited', 'verdict', 'priority', 'conflict', 'margin', 'leader', 'predHash']) {
+    ok_(`LEAK pre-commit payload withholds "${leak}"`, !text.includes(leak), `-> ${text}`);
+  }
+  ok_('pre-commit payload keeps location (it is printed on the sheet)',
+    text.includes('Ayedire') && text.includes('Laitan Village'));
+}
+
+// ── 3. committing a blind reading ──────────────────────────────────────────
+{
+  const r = await call('post', '/training/review/blind', {
+    body: { key: KEY, parties: { APC: 120, PDP: 55, ADC: 0 }, boxes: { registered: 500, accredited: 247 }, complete: true, ms: 92000 },
+  });
+  eq('blind reading is accepted', [r.status, r.body.ok], [201, true]);
+
+  const stored = JSON.parse(fs.readFileSync(path.join(reviewDir, 'reviews.json'), 'utf8'));
+  // An explicit zero must survive. "ADC polled nothing" and "nobody read the ADC
+  // row" is the exact distinction this whole review exists to settle, and
+  // truth.json's non-zero-only convention would erase it.
+  eq('an explicit zero is preserved', stored[KEY].blind.parties.ADC, 0);
+  eq('the reviewer is recorded', stored[KEY].blind.by, 7);
+}
+
+// ── 4. the blind reading is immutable ──────────────────────────────────────
+{
+  const r = await call('post', '/training/review/blind', {
+    body: { key: KEY, parties: { APC: 120, PDP: 98 } },  // now matching the machine
+  });
+  eq('a second blind reading is refused', [r.status, r.body.error], [409, 'blind_already_committed']);
+  const stored = JSON.parse(fs.readFileSync(path.join(reviewDir, 'reviews.json'), 'utf8'));
+  eq('the original blind reading is unchanged', stored[KEY].blind.parties.PDP, 55);
+}
+
+// ── 5. now the prediction is released ──────────────────────────────────────
+{
+  const r = await call('get', '/training/review/pred/:key', { params: { key: KEY } });
+  eq('prediction is released after the blind commit', r.status, 200);
+  ok_('it carries the machine reading', r.body.prediction?.parties?.length === 3);
+  ok_('it now also carries the triage reason', r.body.triage?.why === 'over-voting above 10 votes');
+  const stored = JSON.parse(fs.readFileSync(path.join(reviewDir, 'reviews.json'), 'utf8'));
+  eq('which prediction was shown is stamped', stored[KEY].pred.hash, 'deadbeefdeadbeef');
+}
+
+// ── 6. a final needs a blind reading first ─────────────────────────────────
+{
+  const r = await call('post', '/training/review/final', { body: { key: KEY2, parties: { APC: 10 } } });
+  eq('final is refused with no blind reading', [r.status, r.body.error], [409, 'blind_reading_required']);
+}
+
+// ── 7. agreement is computed server-side, not accepted from the client ─────
+{
+  const r = await call('post', '/training/review/final', {
+    body: {
+      key: KEY,
+      parties: { APC: 120, PDP: 98, ADC: 0 },   // reviewer moved PDP to the machine's value
+      boxes: { registered: 500, accredited: 247 },
+      complete: true,
+      // A client insisting it agreed on everything. It must be ignored.
+      agreement: { parties: { compared: 99, same: 99, differs: [] } },
+    },
+  });
+  eq('final is accepted', r.status, 201);
+  const a = r.body.agreement;
+  // APC: both read 120        -> same
+  // PDP: machine 98, blind 55 -> a real disagreement
+  // ADC: machine never read it, human read 0 -> NOT a disagreement. The model
+  //      had no opinion, so this is a row the human recovered.
+  eq('agreement counts the BLIND reading, not the final one', a.parties.same, 1);
+  eq('the disagreement is identified', a.parties.differs.map((d) => d.party), ['PDP']);
+  eq('a row the model could not read is counted as recovered, not wrong',
+    a.parties.added.map((d) => d.party), ['ADC']);
+  ok_('that recovered row is marked as unread by the model', a.parties.added[0]?.machineUnread === true);
+  eq('nothing was claimed by the model and missed by the human', a.parties.dropped, []);
+  ok_('the denominator counts only cells BOTH read', a.parties.compared === 2, `compared=${a.parties.compared}`);
+  eq('the change of mind after reveal is recorded', a.humanChangedAfterReveal, true);
+}
+
+// ── 8. a final cannot be rewritten either ──────────────────────────────────
+{
+  const r = await call('post', '/training/review/final', { body: { key: KEY, parties: { APC: 1 } } });
+  eq('a second final is refused', [r.status, r.body.error], [409, 'already_final']);
+}
+
+// ── 9. only sheets in the queue are servable ───────────────────────────────
+{
+  const r = await call('get', '/training/review/sheet/:key', { params: { key: '../../../etc/passwd' } });
+  eq('a key outside the queue is refused', [r.status, r.body.error], [404, 'not_in_queue']);
+}
+
+// ── 10. the stats view ─────────────────────────────────────────────────────
+{
+  const r = await call('get', '/training/review/stats');
+  eq('stats count the finished review', [r.body.final, r.body.blind], [1, 1]);
+  eq('stats report the agreement rate over comparable cells only', r.body.agreementRate, 0.5);
+  eq('stats report rows the human recovered', r.body.rowsRecovered, 1);
+  eq('stats report rows the model could not support', r.body.rowsUnsupported, 0);
+  eq('stats flag the change after reveal', r.body.changedAfterReveal, 1);
+  ok_('a 92-second reading is not flagged as suspiciously fast',
+    r.body.suspiciouslyFast.length === 0, JSON.stringify(r.body.suspiciouslyFast));
+}
+
+fs.rmSync(tmp, { recursive: true, force: true });
+console.log(failures ? `\n${failures} FAILED\n` : '\nall passed\n');
+process.exit(failures ? 1 : 0);

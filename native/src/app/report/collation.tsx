@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -21,6 +20,7 @@ import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera } from '@/components/capture-camera';
 import { ContestPicker } from '@/components/contest-picker';
 import { NoElection } from '@/components/no-election';
+import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, opensLine, type Party } from '@/lib/api';
@@ -84,6 +84,7 @@ const racesIn = (state: string, contests: Contest[]) =>
 export default function ReportCollation() {
   const ui = useUi();
   const auth = useAuth();
+  const notice = useNotice();
   // Opens straight into the camera: 'sheet' and 'venue' ARE the capture screen.
   const [step, setStep] = useState<Step>('sheet');
 
@@ -183,7 +184,7 @@ export default function ReportCollation() {
     tap();
     if (!stateSel) return;
     if (contests.length === 0) {
-      Alert.alert(
+      notice.show(
         'Election list not loaded',
         'Hawkeye could not load which elections are running — check your connection and reopen this screen. (no /api/contests response)',
       );
@@ -191,7 +192,7 @@ export default function ReportCollation() {
     }
     const races = racesIn(stateSel, contests);
     if (races.length === 0) {
-      Alert.alert(
+      notice.show(
         `No active election in ${stateSel}`,
         `Hawkeye is covering the ${contests[0].election}. No collation is open for reporting in ${stateSel} yet — but you can still map polling units anywhere in Nigeria.`,
       );
@@ -937,6 +938,8 @@ export default function ReportCollation() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
+
+      <NoticeSheet {...notice.props} />
     </SafeScreen>
   );
 }

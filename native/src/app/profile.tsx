@@ -5,7 +5,6 @@ import * as SecureStore from '@/lib/secure-store';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   KeyboardAvoidingView,
   Modal,
@@ -20,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChooseUnitModal } from '@/components/choose-unit';
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { PasswordField } from '@/components/password-field';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
@@ -191,6 +191,7 @@ export default function Profile() {
   const [copied, setCopied] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<'signout' | 'delete' | null>(null);
+  const notice = useNotice();
   /** Practice runs are per-device, not per-observer — practice never asks
    *  anyone to sign in, so they arrive from their own endpoint. */
   const [practice, setPractice] = useState<PracticeRun[]>([]);
@@ -315,9 +316,10 @@ export default function Profile() {
       setPwConfirm('');
       setPwCurrent('');
       setPwOpen(false);
-      Alert.alert(
+      notice.show(
         'Password saved',
         'You can now sign in with your phone number and password on any device.',
+        'good',
       );
     } finally {
       setPwBusy(false);
@@ -389,7 +391,7 @@ export default function Profile() {
       await signOut();
       router.replace('/welcome');
     } else {
-      Alert.alert('Could not delete', `Try again. (HTTP ${status})`);
+      notice.show('Could not delete', `Try again. (HTTP ${status})`);
     }
   };
 
@@ -971,6 +973,8 @@ export default function Profile() {
         current={savedUnit}
         onSaved={(u) => setMe((m) => (m ? ({ ...m, unit: u } as Me) : m))}
       />
+
+      <NoticeSheet {...notice.props} />
     </View>
   );
 }

@@ -4,10 +4,11 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { InfoDot } from '@/components/info-dot';
+import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { ReportContent } from '@/components/report-content';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
@@ -77,6 +78,7 @@ export default function Incidents() {
   const [rows, setRows] = useState<Published[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const notice = useNotice();
 
   // Returns the failure so the caller can decide how loudly to say it: a first
   // load has an empty screen to explain itself in, a pull-to-refresh does not.
@@ -105,7 +107,7 @@ export default function Incidents() {
     // read. The pull was deliberate, so a failed one gets an answer that can't
     // be scrolled past.
     if (failed && rows?.length) {
-      Alert.alert('Could not refresh', `The incident feed did not load. (${failed})`);
+      notice.show('Could not refresh', `The incident feed did not load. (${failed})`);
     }
   };
 
@@ -237,6 +239,8 @@ export default function Incidents() {
           <Text className="pl-2 text-base font-bold text-hawk-gold">Report an incident</Text>
         </Pressable>
       </View>
+
+      <NoticeSheet {...notice.props} />
     </View>
   );
 }

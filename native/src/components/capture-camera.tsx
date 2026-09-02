@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';

@@ -174,6 +174,19 @@ const existingReviews = (() => {
   return fs.existsSync(p) ? readJson(p) : {};
 })();
 
+// Carry forward the IReV document URLs a previous run of add_sheet_urls.mjs
+// harvested. They take ~20 minutes to collect by walking the election's whole
+// LGA/ward tree, and without this a rebuild would silently discard them — which
+// on a host that has no local copy of the sheets means every image 404s.
+const existingUrls = (() => {
+  const p = path.join(OUT, 'queue.json');
+  if (!fs.existsSync(p)) return new Map();
+  try {
+    return new Map((readJson(p).entries || [])
+      .filter((e) => e.docUrl).map((e) => [e.key, e.docUrl]));
+  } catch { return new Map(); }
+})();
+
 const entries = [];
 const unlocated = [];
 let wrote = 0;
@@ -221,6 +234,9 @@ for (const t of withImage) {
     lga: loc?.lga ?? null,
     ward: loc?.ward ?? null,
     name: loc?.name ?? null,
+    // Where the sheet can be fetched when this machine has no copy of it.
+    // Safe: it is a public INEC document, and it names no answer.
+    ...(existingUrls.has(key) ? { docUrl: existingUrls.get(key) } : {}),
     // Withheld until a blind reading is committed.
     triage,
     priority: p,
@@ -264,6 +280,16 @@ fs.writeFileSync(path.join(OUT, 'queue.json'), JSON.stringify({
   count: entries.length,
   entries,
 }, null, 1));
+
+// One bundled prediction file alongside the per-key ones. Deploying to the live
+// host means one file per request through the DirectAdmin API, and 490 separate
+// uploads is exactly the burst that has tripped its intrusion prevention; the
+// server reads whichever form it finds.
+const bundle = {};
+for (const e of entries) {
+  bundle[e.key] = JSON.parse(fs.readFileSync(path.join(PRED, `${e.key}.json`), 'utf8'));
+}
+fs.writeFileSync(path.join(OUT, 'pred.json'), JSON.stringify(bundle));
 
 // ------------------------------------------------------------------- report
 const conflictSheets = entries.filter((e) => e.priority.conflict > 0).length;

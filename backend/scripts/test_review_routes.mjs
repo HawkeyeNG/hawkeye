@@ -388,6 +388,62 @@ console.log('\nflagged-sheet review routes\n');
   fs.rmSync(F, { force: true });
 }
 
+// ── 18. the bundled prediction file is equivalent to the per-key ones ─────
+// Deploying to the live host means one upload per file, so 490 per-key files
+// are shipped as one bundle. If the server could not read the bundle, the
+// reveal would 404 in production and nowhere else.
+{
+  const perKey = path.join(reviewDir, 'pred', `${KEY3}.json`);
+  const pred = { key: KEY3, file: `${KEY3}.jpg`, source: 'vlm_stage0b.jsonl',
+    parties: [{ party: 'APC', value: 7, confidence: 'both' }], boxes: {}, defects: {} };
+  fs.writeFileSync(perKey, JSON.stringify(pred));
+  fs.writeFileSync(path.join(reviewDir, 'pred.json'), JSON.stringify({ [KEY3]: pred }));
+
+  await call('post', '/training/review/blind', {
+    body: { key: KEY3, parties: { APC: 7 } }, observerId: 99,
+  });
+  let r = await call('get', '/training/review/pred/:key', { params: { key: KEY3 }, observerId: 99 });
+  eq('the per-key prediction is read', [r.status, r.body.prediction?.parties?.[0]?.value], [200, 7]);
+
+  // CONTROL: with the per-key file gone, only the bundle can answer. If this
+  // passes without the bundle being read, the test proves nothing.
+  fs.rmSync(perKey);
+  r = await call('get', '/training/review/pred/:key', { params: { key: KEY3 }, observerId: 99 });
+  eq('and so is the bundle when the per-key file is absent',
+    [r.status, r.body.prediction?.parties?.[0]?.value], [200, 7]);
+
+  fs.rmSync(path.join(reviewDir, 'pred.json'));
+  r = await call('get', '/training/review/pred/:key', { params: { key: KEY3 }, observerId: 99 });
+  eq('CONTROL with neither present it is a 404, so the two above meant something',
+    [r.status, r.body.error], [404, 'no_prediction']);
+}
+
+// ── 19. reviewers are manageable without a shell ──────────────────────────
+// The live host has no SSH, so the admin console is the only way to add someone.
+{
+  const F = path.join(reviewDir, 'reviewers.json');
+  fs.rmSync(F, { force: true });
+  let r = await call('post', '/training/review/reviewers', { body: { observer: 'abc' } });
+  eq('a non-numeric observer id is refused', [r.status, r.body.error], [400, 'bad_observer_id']);
+
+  r = await call('post', '/training/review/reviewers', { body: { observer: '77777' } });
+  eq('an observer who does not exist is refused', [r.status, r.body.error], [404, 'no_such_observer']);
+
+  // Remove needs no such check — taking access away from a stale id is safe.
+  fs.writeFileSync(F, JSON.stringify({ observers: ['4242'] }));
+  r = await call('post', '/training/review/reviewers', { body: { observer: '4242', action: 'remove' } });
+  eq('removing works and reports the new list', [r.status, r.body.observers], [201, []]);
+  const after = JSON.parse(fs.readFileSync(F, 'utf8'));
+  eq('and it is written to disk', after.observers, []);
+  fs.rmSync(F, { force: true });
+}
+
+// ── 20. a sheet with no local file and no URL is an honest 404 ────────────
+{
+  const r = await call('get', '/training/review/sheet/:key', { params: { key: KEY3 }, observerId: 99 });
+  eq('no image and no upstream URL reports no_sheet', [r.status, r.body.error], [404, 'no_sheet']);
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(failures ? `\n${failures} FAILED\n` : '\nall passed\n');
 process.exit(failures ? 1 : 0);

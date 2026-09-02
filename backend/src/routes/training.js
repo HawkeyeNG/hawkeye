@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Router } from 'express';
 import { config } from '../config.js';
+import { db } from '../db.js';
 import { ocrMatchCounts } from '../services/ocr.js';
 import { requireObserver } from './observers.js';
 import { requireAdmin } from './admin.js';
@@ -450,6 +451,33 @@ const requireReviewer = (req, res, next) => {
 const readQueue = () => reviewJson('queue.json', { entries: [] });
 const readReviews = () => reviewJson('reviews.json', {});
 
+/**
+ * One prediction, from whichever form is present.
+ *
+ * The builder writes both: `pred/<key>.json` per sheet, and a single bundled
+ * `pred.json`. The bundle exists because deploying to this host means one file
+ * per request through the DirectAdmin API, and 490 separate uploads is exactly
+ * the burst that has tripped its intrusion prevention before.
+ *
+ * The bundle is cached in memory and re-read only when its mtime changes, so a
+ * rebuilt file is picked up without a restart but is not re-parsed per request.
+ */
+let predBundle = null;
+let predBundleMtime = 0;
+const readPrediction = (key) => {
+  const perKey = path.join(reviewDir(), 'pred', `${key}.json`);
+  if (fs.existsSync(perKey)) return JSON.parse(fs.readFileSync(perKey, 'utf8'));
+
+  const bundle = path.join(reviewDir(), 'pred.json');
+  if (!fs.existsSync(bundle)) return null;
+  const m = fs.statSync(bundle).mtimeMs;
+  if (!predBundle || m !== predBundleMtime) {
+    predBundle = JSON.parse(fs.readFileSync(bundle, 'utf8'));
+    predBundleMtime = m;
+  }
+  return predBundle[key] || null;
+};
+
 // The sheet images stay in the audit tree; they are not copied into the public
 // training mount. Resolved from dbPath so it follows a relocated storage dir.
 const sheetsDir = () => path.join(
@@ -557,15 +585,71 @@ trainingRouter.get('/training/review/queue', requireObserver, requireReviewer, (
 // Served through the API behind auth rather than from the public static mount:
 // queue membership is a list of where we suspect a problem, before a human has
 // confirmed one.
-trainingRouter.get('/training/review/sheet/:key', requireObserver, requireReviewer, (req, res) => {
+trainingRouter.get('/training/review/sheet/:key', requireObserver, requireReviewer, async (req, res) => {
   const key = cleanKey(req.params.key);
   const entry = readQueue().entries.find((e) => e.key === key);
   if (!entry) return res.status(404).json({ error: 'not_in_queue' });
-  const p = path.join(sheetsDir(), path.basename(entry.file));
-  if (!fs.existsSync(p)) return res.status(404).json({ error: 'no_sheet' });
-  res.type('image/jpeg');
-  res.set('Cache-Control', 'private, max-age=3600');
-  fs.createReadStream(p).pipe(res);
+
+  const send = (p) => {
+    res.type('image/jpeg');
+    res.set('Cache-Control', 'private, max-age=86400');
+    fs.createReadStream(p).pipe(res);
+  };
+
+  // 1. The audit tree, on the machine that ran the audit.
+  const local = path.join(sheetsDir(), path.basename(entry.file));
+  if (fs.existsSync(local)) return send(local);
+
+  // 2. A copy fetched earlier.
+  const cacheDir = path.join(reviewDir(), 'sheets');
+  const cached = path.join(cacheDir, `${key}.jpg`);
+  if (fs.existsSync(cached)) return send(cached);
+
+  // 3. Fetch it from INEC and compress it the way the audit did.
+  //
+  // The 1.3 GB of sheets are gitignored and exist only where the audit ran, and
+  // this host has no shell — every file goes up one-per-request through the
+  // DirectAdmin API, which has tripped the host's intrusion prevention before
+  // now. They do not need uploading: they are public INEC documents on a CDN,
+  // and the URL is carried in the queue because the S3 key ends in a UUID that
+  // cannot be derived from the polling-unit code.
+  //
+  // Compressed on arrival at 1500px/q76 — identical to the audit's own
+  // pipeline — because the raw sheets are ~3.7 MB each and reviewers are on
+  // Nigerian mobile links. That is a 16x reduction and the same image the
+  // audit read.
+  if (!entry.docUrl) return res.status(404).json({ error: 'no_sheet' });
+  try {
+    // Bounded and retried once. The raw sheets are ~3.7 MB and this link drops
+    // mid-body often enough to matter (undici reports it as "terminated"), so
+    // an unbounded await would leave a reviewer staring at a blank card with no
+    // way to tell a slow fetch from a dead one.
+    const grab = async () => {
+      const c = new AbortController();
+      const timer = setTimeout(() => c.abort(), 45000);
+      try {
+        const resp = await fetch(entry.docUrl, {
+          headers: { 'user-agent': 'Mozilla/5.0' }, signal: c.signal,
+        });
+        if (!resp.ok) throw new Error(`upstream ${resp.status}`);
+        return Buffer.from(await resp.arrayBuffer());
+      } finally { clearTimeout(timer); }
+    };
+    let raw;
+    try { raw = await grab(); } catch { raw = await grab(); }
+    const { default: sharp } = await import('sharp');
+    const out = await sharp(raw).rotate()
+      .resize({ width: 1500, withoutEnlargement: true })
+      .jpeg({ quality: 76, mozjpeg: true }).toBuffer();
+    // Cache best-effort. A read-only or full disk must not stop the review —
+    // it only means the next viewer pays for the fetch again.
+    try { fs.mkdirSync(cacheDir, { recursive: true }); fs.writeFileSync(cached, out); } catch { /* ignore */ }
+    res.type('image/jpeg');
+    res.set('Cache-Control', 'private, max-age=86400');
+    return res.send(out);
+  } catch (e) {
+    return res.status(502).json({ error: 'sheet_fetch_failed', detail: String(e.message).slice(0, 120) });
+  }
 });
 
 // ---- 1. commit the blind reading (immutable) ------------------------------
@@ -635,8 +719,9 @@ trainingRouter.get('/training/review/pred/:key', requireObserver, requireReviewe
 
   let pred;
   try {
-    pred = JSON.parse(fs.readFileSync(path.join(reviewDir(), 'pred', `${key}.json`), 'utf8'));
-  } catch { return res.status(404).json({ error: 'no_prediction' }); }
+    pred = readPrediction(key);
+  } catch { pred = null; }
+  if (!pred) return res.status(404).json({ error: 'no_prediction' });
 
   // Stamp which prediction was shown, so a later rebuild cannot change what the
   // reviewer was actually compared against.
@@ -681,7 +766,7 @@ trainingRouter.post('/training/review/final', requireObserver, requireReviewer, 
   // "yes I agreed" would be worth nothing.
   let pred = null;
   try {
-    pred = JSON.parse(fs.readFileSync(path.join(reviewDir(), 'pred', `${key}.json`), 'utf8'));
+    pred = readPrediction(key);
   } catch { /* prediction missing; agreement stays null */ }
 
   let agreement = null;
@@ -741,6 +826,51 @@ trainingRouter.post('/training/review/final', requireObserver, requireReviewer, 
 
   const done = Object.values(reviews).filter((r) => r?.final).length;
   res.status(201).json({ ok: true, key, agreement, done, total: readQueue().entries.length });
+});
+
+// ---- who may review, managed from the admin console ----------------------
+// The shell script that does this locally is no use on the live host, which has
+// no SSH: adding a reviewer there would otherwise mean editing a JSON file and
+// re-uploading it through the file-manager API. Since the list is read per
+// request, these take effect immediately.
+trainingRouter.get('/training/review/reviewers', requireAdmin, (req, res) => {
+  res.json({
+    observers: [...reviewerIds()],
+    fromEnv: envReviewers(),
+    note: 'Reviewers see their own observer id in the refusal on train.html.',
+  });
+});
+
+trainingRouter.post('/training/review/reviewers', requireAdmin, (req, res) => {
+  const id = String(req.body?.observer ?? '').trim();
+  const action = req.body?.action === 'remove' ? 'remove' : 'add';
+  if (!/^\d+$/.test(id)) return res.status(400).json({ error: 'bad_observer_id' });
+
+  if (action === 'add') {
+    // Refuse an id that cannot review anyway: it would sit in the list looking
+    // like access, and the person would still be turned away with no clue why.
+    const o = db.prepare('SELECT id, status FROM observers WHERE id = ?').get(Number(id));
+    if (!o) return res.status(404).json({ error: 'no_such_observer' });
+    if (o.status !== 'active') return res.status(400).json({ error: 'observer_not_active', status: o.status });
+  }
+
+  const p = path.join(reviewDir(), 'reviewers.json');
+  let list = [];
+  if (fs.existsSync(p)) {
+    try {
+      const d = JSON.parse(fs.readFileSync(p, 'utf8'));
+      list = (Array.isArray(d) ? d : d.observers || []).map(String);
+    } catch { /* a malformed file is replaced, never merged into blindly */ }
+  }
+  list = action === 'add'
+    ? [...new Set([...list, id])]
+    : list.filter((x) => x !== id);
+
+  writeReviewJson('reviewers.json', {
+    note: 'Observer ids allowed to review flagged audit sheets. Read per request.',
+    observers: list,
+  });
+  res.status(201).json({ ok: true, action, observer: id, observers: list });
 });
 
 // ---- progress, for the console -------------------------------------------

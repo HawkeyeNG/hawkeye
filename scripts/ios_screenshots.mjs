@@ -23,16 +23,36 @@ import { mkdirSync } from 'node:fs';
 const BASE = process.env.HAWKEYE_BASE || 'https://hawkeye.com.ng';
 const OUT = '/home/elrio/hawkeye/app/ios-shots';
 
+const IPHONE_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) '
+  + 'Version/17.0 Mobile/15E148 Safari/604.1';
+const IPAD_UA =
+  'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) '
+  + 'Version/17.0 Mobile/15E148 Safari/604.1';
+
 const DEVICES = [
   { name: '6.7in', width: 430, height: 932, dsf: 3 },
   { name: '6.5in', width: 414, height: 896, dsf: 3 },
+  // 13-inch iPad, which App Store Connect demands for any build that declares
+  // iPad support — Capacitor's default template does, so Hawkeye Lite needs it.
+  // 1032 x 1376 logical @2 is exactly Apple's 2064 x 2752. The @2 that the
+  // header warns against for iPhones is correct HERE: the tablet layout is the
+  // one an iPad genuinely renders.
+  { name: '13in-ipad', width: 1032, height: 1376, dsf: 2, ua: IPAD_UA, isMobile: false },
 ];
 
 // Deliberately no results/leaderboard page: its choropleth renders as a blank
 // white panel until reports exist, which is a poor listing image before an
 // election. Pages here are ones that carry real content year-round.
+// THE HOME PAGE IS NOT IN THE APP STORE SET ANY MORE. It carries both store
+// badges as of 2 Sep 2026 — they used to be platform-gated, so an iPhone
+// user-agent saw only the App Store one and the home page was safe to shoot.
+// Now a Play badge renders for every visitor, and App Store Review guideline
+// 2.3.10 forbids imagery of other mobile platforms in screenshots. Shooting the
+// home page here would put "Get it on Google Play" into an App Store listing.
+// The Play set (scripts/play_screenshots.mjs) has the mirror-image problem and
+// should skip it for the same reason.
 const SHOTS = [
-  ['01-home', '/index.html'],
   ['02-how', '/how.html'],
   ['03-integrity', '/integrity.html'],
   ['04-ledger', '/ledger.html'],
@@ -52,10 +72,11 @@ for (const dev of DEVICES) {
   const ctx = await browser.newContext({
     viewport: { width: dev.width, height: dev.height },
     deviceScaleFactor: dev.dsf,
-    isMobile: true,
+    // isMobile drives the mobile viewport meta path; an iPad reports false and
+    // must, or the site serves the phone layout inside a 1032px frame.
+    isMobile: dev.isMobile ?? true,
     hasTouch: true,
-    userAgent:
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    userAgent: dev.ua ?? IPHONE_UA,
     reducedMotion: 'reduce',
     // The app ships dark unless the OS asks for light; headless reports light,
     // which produced a pale listing that looks nothing like the installed app.
@@ -87,4 +108,4 @@ for (const dev of DEVICES) {
 }
 
 await browser.close();
-console.log(`\nDone: ${OUT}/{6.7in,6.5in}  (1290x2796 and 1242x2688)`);
+console.log(`\nDone: ${OUT}/{6.7in,6.5in,13in-ipad}  (1290x2796, 1242x2688, 2064x2752)`);

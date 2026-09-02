@@ -59,6 +59,10 @@
   </header>
 <main class="wrap">
     <h1>OCR Training — Davina</h1>
+    <div class="pair" id="mode-tabs" style="margin:10px 0 18px">
+      <button id="tab-label" class="secondary">Label new sheets</button>
+      <button id="tab-review" class="secondary">Review flagged sheets</button>
+    </div>
     <p class="lede">For each sheet: check what the system read, then enter the real party
     counts from the image (non-zero rows only). Your answers become the calibration set.</p>
     <p class="progress" id="progress"></p>
@@ -96,6 +100,7 @@
         <p id="msg" class="status"></p>
       </div>
     </section>
+      <div id="review-mount" hidden></div>
   </main>
 
   <footer class="gov-footer"><div class="wrap"><p>Training images are public IReV documents and practice sheets. Official results remain INEC's.</p>
@@ -197,6 +202,34 @@
       next();
     })();
   </script>
+  <script>
+    /* Two jobs live on this page. Labelling builds the calibration set from
+       unseen sheets; review re-reads the Osun sheets our own checks could not
+       settle. The review tab is lazy — it fetches nothing until opened. */
+    window.TRAIN_SET = 4;
+    (function () {
+      var LABEL_IDS = ['progress', 'batch', 'need-auth', 'work'];
+      /* The lede is instructions for labelling; it would tell a reviewer to do
+         the very thing the blind-first flow exists to prevent. */
+      var LEDE = document.querySelector('main .lede');
+      function show(mode) {
+        var review = mode === 'review';
+        LABEL_IDS.forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.style.display = review ? 'none' : '';
+        });
+        if (LEDE) LEDE.style.display = review ? 'none' : '';
+        document.getElementById('review-mount').hidden = !review;
+        document.getElementById('tab-label').disabled = !review;
+        document.getElementById('tab-review').disabled = review;
+        if (review && window.HawkeyeReview) window.HawkeyeReview.start();
+      }
+      document.getElementById('tab-label').onclick = function () { show('label'); };
+      document.getElementById('tab-review').onclick = function () { show('review'); };
+      show('label');
+    }());
+  </script>
+  <script src="train-review.js?v=1"></script>
   <script src="menu.js?v=162"></script>
 </body>
 </html>

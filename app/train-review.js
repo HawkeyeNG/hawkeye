@@ -103,10 +103,22 @@
       el.src = sheetUrl;
       el.onclick = () => window.open(sheetUrl, '_blank', 'noopener');
     } catch (e) {
-      el.replaceWith(Object.assign(document.createElement('p'), {
-        className: 'status',
-        textContent: 'The sheet image could not be loaded. Skip this one and tell the team.',
-      }));
+      // The sheet is fetched from INEC on hosts that hold no local copy, and
+      // that can fail. Say so and offer a way past it — telling someone to skip
+      // a sheet while giving them no control to do it leaves them stuck on it,
+      // and the queue does not release a sheet until it has a final.
+      const box = document.createElement('div');
+      box.innerHTML = '<p class="status">This sheet could not be loaded from INEC. '
+        + 'Nothing has been recorded for it.</p>';
+      const retry = document.createElement('button');
+      retry.textContent = 'Try again';
+      retry.onclick = () => renderRead(cur);
+      const skip = document.createElement('button');
+      skip.className = 'secondary';
+      skip.textContent = 'Skip to the next sheet';
+      skip.onclick = () => next();
+      box.append(retry, skip);
+      el.replaceWith(box);
     }
   }
 

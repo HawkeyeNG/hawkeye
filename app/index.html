@@ -357,20 +357,24 @@
              the visitor's own first. -->
         <dialog id="install-modal" class="pwa-modal">
           <h2 tabindex="-1">Install Hawkeye</h2>
+          <!-- NO STORE BUTTONS IN HERE, deliberately. This dialog opens from
+               "Or install the web app — no store, no download", which sits
+               directly beneath both store badges. Everyone who reaches it has
+               already seen those badges and chosen against them: they have no
+               store, no space, or no wish to use one. Offering the stores again
+               argues with a decision the visitor has just made, and buries the
+               steps they actually came for. The badges do the store job; this
+               dialog does exactly one job. -->
           <p class="pwa-lede">Hawkeye runs from your home screen like any other app — no
             app store needed. It takes about ten seconds.</p>
 
           <section class="pwa-os" id="pwa-android">
             <h3>📱 Android</h3>
-            <!-- Play FIRST. It is the route that needs no explanation, no
-                 "allow installs from this source" prompt, and no Play Protect
-                 warning — the three things every other option below has to spend
-                 a paragraph on. The web-app and direct-download routes stay,
-                 because they are what a low-storage or low-data phone needs. -->
-            <p class="pwa-alt" style="margin-top:0"><strong>Easiest: install from Google Play.</strong></p>
-            <p><a class="btn-ghost" rel="noopener" target="_blank"
-                  href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer">Get it on Google Play ↗</a></p>
-            <p class="pwa-note">Or run it from your home screen with no store and no download:</p>
+            <!-- Play used to lead this section. It was removed once it became
+                 clear people were reaching this dialog BY declining the badges
+                 above and then finding the same store offered again. See the
+                 note on .pwa-lede. -->
+            <p class="pwa-note" style="margin-top:0">Run it from your home screen, with no store and no download:</p>
             <ol>
               <li>Open <strong>hawkeye.com.ng</strong> in <strong>Chrome</strong>.</li>
               <li>Tap the <strong>⋮</strong> menu, top-right.</li>
@@ -404,20 +408,25 @@
                  be served stale. Bump it whenever the APK is rebuilt. -->
             <p><a class="btn-ghost apk-dl" href="download/hawkeye-1.2-8.apk"
                   download="hawkeye-1.2-8.apk" rel="nofollow">⬇ Download the Android App</a></p>
+            <!-- "not yet on Play" stopped being the reason for that prompt the day
+                 the listing went live. Android shows it for anything installed
+                 outside Play at all, which is what this route is. -->
             <p class="pwa-note">30&nbsp;MB. Android will ask you to allow installs from
-              your browser — that prompt is normal for an app not yet on Play, and it
-              only applies to this one install. The file is served from
-              hawkeye.com.ng itself; do not install a Hawkeye APK from anywhere else.</p>
+              your browser — that prompt is normal for any app installed outside the
+              Play Store, and it only applies to this one install. The file is served
+              from hawkeye.com.ng itself; do not install a Hawkeye APK from anywhere
+              else.</p>
           </section>
 
           <section class="pwa-os" id="pwa-ios">
             <h3>🍎 iPhone &amp; iPad</h3>
-            <!-- Said plainly rather than left to be inferred from the absence of
-                 a badge. An iPhone user who has just seen "Get it on Google Play"
-                 will look for the App Store equivalent, and "there isn't one yet"
-                 is a better answer than a hunt. -->
-            <p class="pwa-note" id="pwa-ios-note" style="margin-top:0">There is no App Store version yet — on iPhone,
-              Safari installs it to your home screen and it works the same way.</p>
+            <!-- No App Store button here either, for the same reason as Android.
+                 The old copy said "There is no App Store version yet", which was
+                 true then and is not now; it is simply dropped rather than
+                 replaced, because in this dialog the answer to "how do I get it"
+                 is the home-screen route. -->
+            <p class="pwa-note" id="pwa-ios-note" style="margin-top:0">Safari installs it to your home screen,
+              and it works the same way:</p>
             <ol>
               <li>Open <strong>hawkeye.com.ng</strong> in <strong>Safari</strong>.
                 <em>Chrome and Firefox on iPhone cannot install it — it must be Safari.</em></li>
@@ -728,16 +737,11 @@
 
       const ios = document.getElementById('ios-cta');
       if (ios && IOS_STORE_LIVE) ios.hidden = false;
-      // The dialog's iPhone section states the absence in words. When the store
-      // IS live that sentence becomes false, so it is rewritten from the same
-      // switch rather than left for someone to remember.
-      if (IOS_STORE_LIVE) {
-        const note = document.getElementById('pwa-ios-note');
-        if (note) {
-          note.textContent = 'Hawkeye is on the App Store — that is the best way in on iPhone. '
-            + 'You can also add this site to your home screen from Safari; it works the same way.';
-        }
-      }
+      // The dialog used to have its iPhone note rewritten from this switch, to
+      // replace "there is no App Store version yet" with a line pointing at the
+      // store. Both are gone: the dialog no longer mentions stores at all, since
+      // it is only reached by someone who has just declined them, and its markup
+      // now says the true thing without needing a script to correct it.
 
       // One label now. It used to read "Web App for iPhone" there, because on
       // iPhone it was the ONLY route; with the app on the App Store that is no

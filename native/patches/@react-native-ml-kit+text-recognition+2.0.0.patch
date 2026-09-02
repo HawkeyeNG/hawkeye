@@ -1,0 +1,48 @@
+diff --git a/node_modules/@react-native-ml-kit/text-recognition/RNMLKitTextRecognition.podspec b/node_modules/@react-native-ml-kit/text-recognition/RNMLKitTextRecognition.podspec
+index 421bcfc..f91cfe0 100644
+--- a/node_modules/@react-native-ml-kit/text-recognition/RNMLKitTextRecognition.podspec
++++ b/node_modules/@react-native-ml-kit/text-recognition/RNMLKitTextRecognition.podspec
+@@ -23,13 +23,5 @@ Pod::Spec.new do |s|
+   s.dependency "React"
+   # To recognize Latin script
+   s.dependency 'GoogleMLKit/TextRecognition', '8.0.0'
+-  # To recognize Chinese script
+-  s.dependency 'GoogleMLKit/TextRecognitionChinese', '8.0.0'
+-  # To recognize Devanagari script
+-  s.dependency 'GoogleMLKit/TextRecognitionDevanagari', '8.0.0'
+-  # To recognize Japanese script
+-  s.dependency 'GoogleMLKit/TextRecognitionJapanese', '8.0.0'
+-  # To recognize Korean script
+-  s.dependency 'GoogleMLKit/TextRecognitionKorean', '8.0.0'
+ end
+ 
+diff --git a/node_modules/@react-native-ml-kit/text-recognition/ios/TextRecognition.m b/node_modules/@react-native-ml-kit/text-recognition/ios/TextRecognition.m
+index 85a067d..57cc303 100644
+--- a/node_modules/@react-native-ml-kit/text-recognition/ios/TextRecognition.m
++++ b/node_modules/@react-native-ml-kit/text-recognition/ios/TextRecognition.m
+@@ -3,10 +3,6 @@
+ @import MLKitVision.MLKVisionImage;
+ @import MLKitTextRecognition;
+ @import MLKitTextRecognitionCommon;
+-@import MLKitTextRecognitionChinese;
+-@import MLKitTextRecognitionDevanagari;
+-@import MLKitTextRecognitionJapanese;
+-@import MLKitTextRecognitionKorean;
+ 
+ @implementation TextRecognition
+ 
+@@ -95,14 +91,6 @@ RCT_EXPORT_METHOD(recognize: (nonnull NSString*)url
+     // if the language param isn't specified, we can assume the user requirement is Latin text recognition
+     if (script == nil || [script isEqualToString:@"Latin"]) {
+         options = [[MLKTextRecognizerOptions alloc] init];
+-    } else if ([script isEqualToString:@"Chinese"]) {
+-        options = [[MLKChineseTextRecognizerOptions alloc] init];
+-    } else if ([script isEqualToString:@"Devanagari"]) {
+-        options = [[MLKDevanagariTextRecognizerOptions alloc] init];
+-    } else if ([script isEqualToString:@"Japanese"]) {
+-        options = [[MLKJapaneseTextRecognizerOptions alloc] init];
+-    } else if ([script isEqualToString:@"Korean"]) {
+-        options = [[MLKKoreanTextRecognizerOptions alloc] init];
+     } else {
+         return reject(@"Text Recognition", @"Unsupported script", nil);
+     }

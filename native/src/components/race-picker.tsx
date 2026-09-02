@@ -18,7 +18,7 @@
  * does not arise. What IS shared with the web is the contest list and the
  * destination URLs, so the same tap goes to the same place on both.
  */
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';

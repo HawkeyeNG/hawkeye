@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
 import { type ReactNode } from 'react';
 import { Animated, Image, Pressable, Text, View } from 'react-native';

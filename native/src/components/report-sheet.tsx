@@ -5,7 +5,7 @@ import { forwardRef, useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 

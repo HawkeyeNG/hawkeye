@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Modal, Pressable, Text, View, useWindowDimensions } from 'react-native';

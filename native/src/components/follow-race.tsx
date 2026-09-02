@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
 import * as SecureStore from '@/lib/secure-store';
 import { useCallback, useEffect, useMemo, useState } from 'react';

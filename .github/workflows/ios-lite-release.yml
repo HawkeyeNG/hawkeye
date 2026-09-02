@@ -164,6 +164,39 @@ jobs:
           npx cap add ios --packagemanager CocoaPods || true
           test -f ios/App/Podfile || { echo "::error::Podfile was not generated"; exit 1; }
 
+      - name: iPhone only
+        working-directory: mobile
+        # `cap add ios` ships Capacitor's default TARGETED_DEVICE_FAMILY = "1,2",
+        # so every Lite build has silently claimed iPad support. App Store
+        # Connect then refuses the submission until 13-inch iPad screenshots are
+        # uploaded — which is how this surfaced, as a submission block rather
+        # than as a decision anyone made.
+        #
+        # Lite is a phone product: its own subtitle is "For older phones and slow
+        # data", and the native app already sets supportsTablet: false. Claiming
+        # iPad also means Apple reviews it on one, where the injected page title
+        # overlaps the nav at 1032px.
+        #
+        # ios/ is regenerated on every run and is gitignored, so this cannot live
+        # in a committed project file — same reason the icon and the AppDelegate
+        # patch are steps here.
+        run: |
+          PBX=ios/App/App.xcodeproj/project.pbxproj
+          test -f "$PBX" || { echo "::error::$PBX not found"; exit 1; }
+          sed -i 's/TARGETED_DEVICE_FAMILY = "1,2"/TARGETED_DEVICE_FAMILY = "1"/g' "$PBX"
+          # Verify rather than assume: a template change upstream would make the
+          # sed a silent no-op and put iPad support back without anyone noticing.
+          if grep -q 'TARGETED_DEVICE_FAMILY = "1,2"' "$PBX"; then
+            echo "::error::TARGETED_DEVICE_FAMILY is still 1,2 — the sed did not apply"
+            exit 1
+          fi
+          COUNT=$(grep -c 'TARGETED_DEVICE_FAMILY = "1"' "$PBX" || true)
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::no TARGETED_DEVICE_FAMILY = \"1\" in the project — pattern changed upstream"
+            exit 1
+          fi
+          echo "  ok: iPhone-only on $COUNT build configuration(s)"
+
       - name: Forward APNs registration in AppDelegate
         working-directory: mobile
         # The template AppDelegate drops the APNs device token on the floor -

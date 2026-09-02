@@ -151,6 +151,35 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
         return res.status(403).json({ error: 'too_far_from_unit' });
       }
       locationPlausible = approxDist <= pu.approx_radius_m * 1.5 + 1000 + accuracy ? 1 : 0;
+    } else if (pu.state && pu.lga && pu.ward) {
+      // Tier-3: the unit is placed NOWHERE — no pin, no envelope. Until now
+      // these fell off the end of this chain with no distance check of any kind:
+      // a report from anywhere on earth was accepted. routes/mapping.js:35-44
+      // already solved this for the low-stakes coordinate-suggestion endpoint,
+      // and its comment names the hole exactly — "a unit with no envelope had NO
+      // distance check at all". That rule is ported here verbatim, same query,
+      // same threshold, so the evidentiary endpoint is no longer weaker than the
+      // advisory one.
+      //
+      // The centroid of sibling units in the same ward that DO have a spot is a
+      // coarse instrument, so it is checked at config.wardFallbackRadiusM
+      // (15km) — wide enough to survive a badly geocoded ward, narrow enough
+      // that the wrong state is refused. A ward with no located sibling at all
+      // still accepts blind, which is honest: nothing here knows where that unit
+      // is.
+      //
+      // Measured 2026-09-02 over the 176,846-row register: 117,167 pinned,
+      // 52,867 envelope-only, and 6,812 reaching this branch — of which 5,588
+      // gain a ward-centroid fence here and 1,224 remain unfenced. Those counts
+      // move as geocoding lands, so re-measure rather than trusting them.
+      const sib = db.prepare(
+        `SELECT AVG(COALESCE(lat, approx_lat)) AS la, AVG(COALESCE(lng, approx_lng)) AS ln, COUNT(*) AS n
+           FROM polling_units
+          WHERE state = ? AND lga = ? AND ward = ? AND pu_code != ? AND COALESCE(lat, approx_lat) IS NOT NULL`,
+      ).get(pu.state, pu.lga, pu.ward, pu.pu_code);
+      if (sib && sib.n > 0 && haversineM(lat, lng, sib.la, sib.ln) > config.wardFallbackRadiusM) {
+        return res.status(403).json({ error: 'too_far_from_unit' });
+      }
     }
 
     // 2. Both photos, both freshly captured in-app moments ago.

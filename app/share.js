@@ -47,7 +47,10 @@
   var STORES = {
     android: 'https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer',
     ios: 'https://apps.apple.com/app/id6804218478',
-    iosLive: false,
+    // Flipped 2026-09-02, after checking the listing was actually purchasable
+    // rather than merely approved: itunes.apple.com/lookup?id=6804218478
+    // returns resultCount 1 for "Hawkeye Election Monitor" 1.0.0.
+    iosLive: true,
   };
 
   /** Where a shared link lands: store badges, and the routes for phones with

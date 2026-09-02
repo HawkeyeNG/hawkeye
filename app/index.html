@@ -336,13 +336,17 @@
              href="https://apps.apple.com/app/id6804218478"><img
              src="app-store-badge.svg" alt="Download on the App Store" height="56"
              onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Download on the App Store ↗'" /></a>
-          <!-- The web-app route, beside Play rather than under it: on Android
-               they are two ways to get the same thing and reading as a pair is
-               the honest presentation. Its LABEL is set by script, because this
-               one button means different things per platform — on iPhone it is
-               the only route there is. -->
-          <button class="btn-ghost install-alt" id="install-cta" hidden type="button">Install Web App</button>
           </div>
+          <!-- The web-app route, now BELOW the two store badges rather than
+               beside them. It sat in the row when it was one of only two ways in;
+               with the app on both stores it is the fallback for someone with no
+               store or no space, so it reads as a quieter third option. Still the
+               same #install-cta the script drives — an anchor takes hidden,
+               textContent and the click handler exactly as the button did, and
+               download.html links straight here for precisely this route. -->
+          <p class="hint install-alt-line" style="margin: 10px 0 0">
+            <a href="#install" id="install-cta" hidden role="button">Install Web App</a>
+          </p>
         </div>
 
         <!-- Manual install steps. Chromium's one-tap prompt covers most Android
@@ -695,8 +699,13 @@
       // guidelines forbid recolouring, cropping or redrawing it, which is
       // also why .play-badge-link carries no background, border or radius of
       // ours, only the clear space they require.
+      // BOTH BADGES, EVERYWHERE. This used to hide Play on iPhone because there
+      // was no iOS build and the badge would have been an offer the visitor
+      // could not take. There is now, so a pair of badges is simply what is
+      // true — and people choose an app on a laptop for a phone they are not
+      // holding, which platform-gating hides from them.
       const play = document.getElementById('play-cta');
-      if (play && !isIOS) play.hidden = false;
+      if (play) play.hidden = false;
 
       /**
        * THE APP STORE SWITCH. Flip to true the day iOS review passes.
@@ -708,15 +717,17 @@
        * three edits is how a page ends up offering a store build in one place
        * and denying it in another.
        *
-       * Staged OFF deliberately: 1.0.0 (9) is on TestFlight and the App Store
-       * submission has not cleared. Turning this on before it does would send
-       * iPhone visitors to a listing that 404s — worse than the honest
-       * "not yet" the dialog gives them today.
+       * ON since 2026-09-02: review passed and the listing is live — verified
+       * before flipping, not assumed from the approval mail. itunes.apple.com's
+       * lookup for id6804218478 returns resultCount 1, "Hawkeye Election
+       * Monitor" 1.0.0, and apps.apple.com/app/id6804218478 answers 200. Check
+       * the same way before flipping this back on after any removal: an
+       * approved app and a purchasable one are not the same state.
        */
-      const IOS_STORE_LIVE = false;
+      const IOS_STORE_LIVE = true;
 
       const ios = document.getElementById('ios-cta');
-      if (ios && isIOS && IOS_STORE_LIVE) ios.hidden = false;
+      if (ios && IOS_STORE_LIVE) ios.hidden = false;
       // The dialog's iPhone section states the absence in words. When the store
       // IS live that sentence becomes false, so it is rewritten from the same
       // switch rather than left for someone to remember.
@@ -728,12 +739,11 @@
         }
       }
 
-      // ONE BUTTON, TWO MEANINGS. On iPhone there is no store build, so this is
-      // the only way in and the label says which platform it is for. On Android
-      // and desktop it sits beside the Play badge as the alternative that needs
-      // no store, no download and no sideload prompt — calling it "for iPhone"
-      // there would be simply wrong.
-      btn.textContent = isIOS ? 'Web App for iPhone' : 'Install Web App';
+      // One label now. It used to read "Web App for iPhone" there, because on
+      // iPhone it was the ONLY route; with the app on the App Store that is no
+      // longer true and the old label would send people down the fallback path
+      // in preference to the store.
+      btn.textContent = 'Or install the web app — no store, no download';
       // Samsung Internet's PWA install is blocked by Play Protect ("built for an
       // older version of Android") — its wrapper, not our site; the same manifest
       // installs cleanly in Chrome and on iPhone. Say so BEFORE they tap: a

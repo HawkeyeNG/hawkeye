@@ -373,11 +373,42 @@ const reviewDir = () => {
   fs.mkdirSync(path.join(d, 'pred'), { recursive: true });
   return d;
 };
+// A MISSING file is empty; an UNREADABLE one is an error. Swallowing both would
+// turn a corrupt reviews.json into "nobody has reviewed anything", and the very
+// next write would truncate the file and replace every stored review with one
+// record. Committed readings are immutable and have no repair path, so that loss
+// is permanent — let it throw instead.
 const reviewJson = (name, fallback) => {
-  try { return JSON.parse(fs.readFileSync(path.join(reviewDir(), name), 'utf8')); } catch { return fallback; }
+  const p = path.join(reviewDir(), name);
+  if (!fs.existsSync(p)) return fallback;
+  return JSON.parse(fs.readFileSync(p, 'utf8'));
 };
-const writeReviewJson = (name, obj) =>
-  fs.writeFileSync(path.join(reviewDir(), name), JSON.stringify(obj, null, 1));
+
+// Write to a sibling temp file and rename, so a crash or a full disk mid-write
+// leaves the previous file intact rather than a truncated one. rename(2) within
+// a directory is atomic.
+const writeReviewJson = (name, obj) => {
+  const dest = path.join(reviewDir(), name);
+  const tmp = `${dest}.tmp-${process.pid}`;
+  fs.writeFileSync(tmp, JSON.stringify(obj, null, 1));
+  fs.renameSync(tmp, dest);
+};
+
+/** Reviewers are named explicitly. `requireObserver` admits anyone who passed a
+ *  phone OTP — the same credential used to file an ordinary field report — and
+ *  these endpoints write the audit's evidence base, immutably and with no delete
+ *  route. Fails CLOSED when unset: an unconfigured deployment must not quietly
+ *  accept audit readings from the public. Set REVIEW_OBSERVER_IDS=7,12,19,23. */
+const REVIEW_IDS = new Set(
+  String(process.env.REVIEW_OBSERVER_IDS || '').split(',').map((s) => s.trim()).filter(Boolean),
+);
+const requireReviewer = (req, res, next) => {
+  if (!REVIEW_IDS.size) {
+    return res.status(403).json({ error: 'reviewers_not_configured', hint: 'set REVIEW_OBSERVER_IDS' });
+  }
+  if (!REVIEW_IDS.has(String(req.observer.id))) return res.status(403).json({ error: 'not_a_reviewer' });
+  return next();
+};
 
 const readQueue = () => reviewJson('queue.json', { entries: [] });
 const readReviews = () => reviewJson('reviews.json', {});
@@ -408,40 +439,63 @@ const reviewSafe = (e, i) => ({
   set: setForIndex(i),
 });
 
+// Both sanitisers REPORT what they refused rather than dropping it silently. A
+// dropped cell used to vanish from the immutable blind record while the browser
+// went on showing the reviewer their own typed value — and at the final it was
+// scored as `dropped`, the bucket that means "the model invented a figure the
+// human could not find". A typo would have been filed as evidence against the
+// model. Refusing the request instead lets the reviewer fix it while nothing is
+// committed yet.
 const cleanParties = (obj) => {
   const out = {};
-  if (!obj || typeof obj !== 'object') return out;
+  const bad = [];
+  if (!obj || typeof obj !== 'object') return { out, bad };
   for (const [p, c] of Object.entries(obj)) {
     const n = Number(c);
     // Unlike truth.json, an explicit 0 is KEPT here: "this party polled nothing"
     // and "this row was never read" are the exact distinction the audit is stuck
     // on, and collapsing them again would waste the review.
     if (Number.isInteger(n) && n >= 0 && n < 100000) out[String(p).toUpperCase().slice(0, 6)] = n;
+    else bad.push(String(p).toUpperCase().slice(0, 6));
   }
-  return out;
+  return { out, bad };
 };
 
 const cleanBoxes = (obj) => {
   const out = {};
-  if (!obj || typeof obj !== 'object') return out;
+  const bad = [];
+  if (!obj || typeof obj !== 'object') return { out, bad };
   for (const f of BOX_FIELDS) {
+    if (obj[f] === undefined || obj[f] === null || obj[f] === '') continue;
     const n = Number(obj[f]);
     if (Number.isInteger(n) && n >= 0 && n < 10000) out[f] = n;
+    else bad.push(f);
   }
-  return out;
+  return { out, bad };
 };
 
 // ---- the queue ------------------------------------------------------------
-trainingRouter.get('/training/review/queue', requireObserver, (req, res) => {
+trainingRouter.get('/training/review/queue', requireObserver, requireReviewer, (req, res) => {
   const q = readQueue();
   const reviews = readReviews();
   const want = Math.min(REVIEW_SETS, Math.max(1, Math.floor(Number(req.query.set) || 1)));
   const limit = Math.min(50, Math.max(1, Math.floor(Number(req.query.limit) || 25)));
 
+  const me = req.observer.id;
   const mine = q.entries
     .map((e, i) => ({ e, i }))
     .filter(({ i }) => setForIndex(i) === want);
-  const pending = mine.filter(({ e }) => !reviews[e.key]?.final);
+  // Two reasons a sheet is not pending for THIS reviewer: it is settled, or
+  // someone else committed the blind reading on it. The second matters because
+  // the reveal and the final are ownership-bound — serving such a sheet would
+  // hand the reviewer a card they can never submit, and because the queue only
+  // drops a sheet once it has a final, it would sit at the head of their queue
+  // for good.
+  const pending = mine.filter(({ e }) => {
+    const r = reviews[e.key];
+    if (r?.final) return false;
+    return !r?.blind || r.blind.by === me;
+  });
 
   res.json({
     set: want,
@@ -452,7 +506,13 @@ trainingRouter.get('/training/review/queue', requireObserver, (req, res) => {
     mineTotal: mine.length,
     mineDone: mine.length - pending.length,
     doneAll: Object.values(reviews).filter((r) => r?.final).length,
-    items: pending.slice(0, limit).map(({ e, i }) => reviewSafe(e, i)),
+    items: pending.slice(0, limit).map(({ e, i }) => ({
+      ...reviewSafe(e, i),
+      // Says only that THIS reviewer already locked a reading for this sheet —
+      // never what it said, and never anything about the machine's. Lets the
+      // page resume at the comparison instead of asking them to read it twice.
+      resume: reviews[e.key]?.blind?.by === me,
+    })),
   });
 });
 
@@ -460,7 +520,7 @@ trainingRouter.get('/training/review/queue', requireObserver, (req, res) => {
 // Served through the API behind auth rather than from the public static mount:
 // queue membership is a list of where we suspect a problem, before a human has
 // confirmed one.
-trainingRouter.get('/training/review/sheet/:key', requireObserver, (req, res) => {
+trainingRouter.get('/training/review/sheet/:key', requireObserver, requireReviewer, (req, res) => {
   const key = cleanKey(req.params.key);
   const entry = readQueue().entries.find((e) => e.key === key);
   if (!entry) return res.status(404).json({ error: 'not_in_queue' });
@@ -472,7 +532,7 @@ trainingRouter.get('/training/review/sheet/:key', requireObserver, (req, res) =>
 });
 
 // ---- 1. commit the blind reading (immutable) ------------------------------
-trainingRouter.post('/training/review/blind', requireObserver, (req, res) => {
+trainingRouter.post('/training/review/blind', requireObserver, requireReviewer, (req, res) => {
   const key = cleanKey(req.body?.key);
   const entry = readQueue().entries.find((e) => e.key === key);
   if (!entry) return res.status(404).json({ error: 'not_in_queue' });
@@ -483,8 +543,13 @@ trainingRouter.post('/training/review/blind', requireObserver, (req, res) => {
   // is precisely the measurement this endpoint exists to protect.
   if (reviews[key]?.blind) return res.status(409).json({ error: 'blind_already_committed' });
 
-  const parties = cleanParties(req.body?.parties);
-  const boxes = cleanBoxes(req.body?.boxes);
+  const { out: parties, bad: badParties } = cleanParties(req.body?.parties);
+  const { out: boxes, bad: badBoxes } = cleanBoxes(req.body?.boxes);
+  // Refuse BEFORE writing: the blind reading is immutable, so a partial one
+  // cannot be corrected afterwards.
+  if (badParties.length || badBoxes.length) {
+    return res.status(400).json({ error: 'out_of_range', fields: [...badParties, ...badBoxes] });
+  }
   if (!Object.keys(parties).length && !Object.keys(boxes).length && req.body?.unreadable !== true) {
     return res.status(400).json({ error: 'empty_reading' });
   }
@@ -511,7 +576,7 @@ trainingRouter.post('/training/review/blind', requireObserver, (req, res) => {
 });
 
 // ---- 2. release the machine's reading (gated on step 1) -------------------
-trainingRouter.get('/training/review/pred/:key', requireObserver, (req, res) => {
+trainingRouter.get('/training/review/pred/:key', requireObserver, requireReviewer, (req, res) => {
   const key = cleanKey(req.params.key);
   const entry = readQueue().entries.find((e) => e.key === key);
   if (!entry) return res.status(404).json({ error: 'not_in_queue' });
@@ -519,7 +584,17 @@ trainingRouter.get('/training/review/pred/:key', requireObserver, (req, res) => 
   const reviews = readReviews();
   // THE GATE. Everything else in this feature is arrangement; this is the part
   // that makes the comparison mean something.
-  if (!reviews[key]?.blind) return res.status(409).json({ error: 'blind_reading_required' });
+  //
+  // It is keyed on the REVIEWER, not on the sheet. Testing only that some blind
+  // reading exists would mean the first person to commit unlocks the machine's
+  // answer for everyone else — so a second reviewer could read it, then author
+  // the sheet's settled reading having seen it, and `humanChangedAfterReveal`
+  // would compare against the FIRST reviewer's numbers and report clean. The
+  // property this feature exists to guarantee would then hold only by the
+  // accident of one person ever touching a sheet.
+  const blind = reviews[key]?.blind;
+  if (!blind) return res.status(409).json({ error: 'blind_reading_required' });
+  if (blind.by !== req.observer.id) return res.status(403).json({ error: 'not_your_reading' });
 
   let pred;
   try {
@@ -545,7 +620,7 @@ trainingRouter.get('/training/review/pred/:key', requireObserver, (req, res) => 
 });
 
 // ---- 3. the settled reading ----------------------------------------------
-trainingRouter.post('/training/review/final', requireObserver, (req, res) => {
+trainingRouter.post('/training/review/final', requireObserver, requireReviewer, (req, res) => {
   const key = cleanKey(req.body?.key);
   const entry = readQueue().entries.find((e) => e.key === key);
   if (!entry) return res.status(404).json({ error: 'not_in_queue' });
@@ -553,10 +628,16 @@ trainingRouter.post('/training/review/final', requireObserver, (req, res) => {
   const reviews = readReviews();
   const rec = reviews[key];
   if (!rec?.blind) return res.status(409).json({ error: 'blind_reading_required' });
+  // Only the person who committed the blind reading may settle the sheet. Without
+  // this, someone who read the machine's answer first could author the final.
+  if (rec.blind.by !== req.observer.id) return res.status(403).json({ error: 'not_your_reading' });
   if (rec.final) return res.status(409).json({ error: 'already_final' });
 
-  const parties = cleanParties(req.body?.parties);
-  const boxes = cleanBoxes(req.body?.boxes);
+  const { out: parties, bad: badParties } = cleanParties(req.body?.parties);
+  const { out: boxes, bad: badBoxes } = cleanBoxes(req.body?.boxes);
+  if (badParties.length || badBoxes.length) {
+    return res.status(400).json({ error: 'out_of_range', fields: [...badParties, ...badBoxes] });
+  }
 
   // Agreement is computed HERE, from the two stored readings — never taken from
   // the client. It is the output of the whole exercise, and a client-supplied

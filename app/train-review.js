@@ -197,12 +197,26 @@
     if (!r.ok) {
       const j = await r.json().catch(() => ({}));
       $('rv-submit').disabled = false;
-      $('rv-msg').textContent = j.error === 'blind_already_committed'
-        ? 'This sheet already has a locked reading.'
-        : 'Could not save — are you still signed in?';
+      if (j.error === 'blind_already_committed') {
+        // A reading was locked in an earlier session that ended before the final
+        // — a reload, a locked phone, a failed reveal. Without this the sheet is
+        // served as a fresh READ card forever, every resubmit 409s, and because
+        // the queue only drops a sheet once it has a FINAL, the reviewer's whole
+        // set is wedged behind it. Resuming releases nothing new: the reading is
+        // already frozen and the server hands it back to us.
+        $('rv-msg').textContent = 'You already locked a reading for this sheet — picking up where you left off.';
+        await revealAndCompare();
+        return;
+      }
+      if (j.error === 'out_of_range') {
+        $('rv-msg').textContent = `Check these figures: ${(j.fields || []).join(', ')}. `
+          + 'Nothing has been saved yet.';
+        return;
+      }
+      $('rv-msg').textContent = 'Could not save — are you still signed in?';
       return;
     }
-    blind = { parties, boxes, unreadable };
+    blind = { parties, boxes, unreadable, complete: $('rv-complete').checked };
     $('rv-msg').textContent = '';
     await revealAndCompare();
   }
@@ -212,6 +226,12 @@
     const r = await api('/api/training/review/pred/' + encodeURIComponent(cur.key));
     if (!r.ok) { $('rv-msg').textContent = 'Could not load the comparison.'; return; }
     const d = await r.json();
+    // Take the STORED reading as the source of truth, not our local copy. It is
+    // what the agreement will actually be computed against, it survives a
+    // reload, and it reflects exactly what the server accepted — so what the
+    // reviewer sees at the compare step cannot drift from what was recorded.
+    if (d.blind) blind = d.blind;
+    if (!blind) { $('rv-msg').textContent = 'Could not load your locked reading for this sheet.'; return; }
     renderCompare(d.prediction, d.triage);
   }
 
@@ -338,6 +358,16 @@
       return;
     }
     $('rv-msg').textContent = '';
+    if (cur.resume) {
+      // A reading was locked here in an earlier session. Go straight to the
+      // comparison rather than asking them to read the sheet a second time —
+      // their answer is already frozen, so nothing is at risk.
+      blind = null;
+      $('rv-work').hidden = false;
+      $('rv-work').innerHTML = '<div class="card"><p class="hint">Picking up your locked reading…</p></div>';
+      revealAndCompare();
+      return;
+    }
     renderRead(cur);
   }
 

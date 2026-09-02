@@ -29,6 +29,10 @@ fs.mkdirSync(path.join(reviewDir, 'pred'), { recursive: true });
 fs.mkdirSync(path.join(storage, 'training'), { recursive: true });
 process.env.DB_PATH = path.join(storage, 'test.db');
 process.env.ADMIN_PASSPHRASE = 'test-pass';
+// The review routes admit only named reviewers. 7 and 99 are both reviewers
+// here, so the cross-reviewer tests below exercise the OWNERSHIP rule rather
+// than merely bouncing off the allowlist.
+process.env.REVIEW_OBSERVER_IDS = '7,99';
 
 let failures = 0;
 const eq = (label, got, want) => {
@@ -44,10 +48,11 @@ const ok_ = (label, cond, detail = '') => {
 // ── a queue of two sheets, one of which carries anchoring triage numbers ────
 const KEY = '29-04-04-010';
 const KEY2 = '29-10-04-012';
+const KEY3 = '29-13-03-012';
 fs.writeFileSync(path.join(reviewDir, 'queue.json'), JSON.stringify({
   source: 'vlm_stage0b.jsonl',
   tier: 'a',
-  count: 2,
+  count: 3,
   entries: [
     {
       key: KEY,
@@ -71,6 +76,17 @@ fs.writeFileSync(path.join(reviewDir, 'queue.json'), JSON.stringify({
       priority: { conflict: 0, contested: 0, unread: 2, single: 0 },
       predHash: 'cafecafecafecafe',
     },
+    {
+      key: KEY3,
+      file: `${KEY3}.jpg`,
+      tier: 'a',
+      lga: 'Ife East',
+      ward: 'Ilode Ii',
+      name: 'Omitoto Line 1',
+      triage: { verdict: 'flagged', why: 'party column misses the total', shortfall: 17 },
+      priority: { conflict: 1, contested: 0, unread: 0, single: 0 },
+      predHash: 'f00df00df00df00d',
+    },
   ],
 }));
 fs.writeFileSync(path.join(reviewDir, 'pred', `${KEY}.json`), JSON.stringify({
@@ -87,17 +103,34 @@ fs.writeFileSync(path.join(reviewDir, 'pred', `${KEY}.json`), JSON.stringify({
   confidenceCounts: { both: 1, conflict: 1, empty: 1 },
 }));
 
+fs.writeFileSync(path.join(reviewDir, 'pred', `${KEY2}.json`), JSON.stringify({
+  key: KEY2,
+  file: `${KEY2}.jpg`,
+  source: 'vlm_stage0b.jsonl',
+  parties: [
+    { party: 'APC', value: 10, confidence: 'both' },
+    { party: 'PDP', value: 21, confidence: 'figures' },
+  ],
+  boxes: { registered: 300 },
+  defects: {},
+  confidenceCounts: { both: 1, figures: 1 },
+}));
+
 const { trainingRouter } = await import('../src/routes/training.js');
 
 /** Minimal route driver: invoke the final handler, skipping auth middleware,
  *  with an observer stubbed in since the handlers record who reviewed. */
-function call(method, routePath, { body = {}, params = {}, query = {} } = {}) {
+function call(method, routePath, { body = {}, params = {}, query = {}, observerId = 7 } = {}) {
   const layer = trainingRouter.stack.find(
     (l) => l.route?.path === routePath && l.route.methods[method],
   );
   if (!layer) throw new Error(`no route ${method} ${routePath}`);
-  const stack = layer.route.stack.map((s) => s.handle);
-  const handler = stack[stack.length - 1];
+  // Run the WHOLE chain except requireObserver, which needs a real JWT and is
+  // stubbed by injecting req.observer. Taking only the last handler — as this
+  // did originally — silently skips route middleware, so an authorisation rule
+  // living in middleware could not be tested and a test asserting it would have
+  // been measuring nothing.
+  const stack = layer.route.stack.map((s) => s.handle).slice(1);
   return new Promise((resolve) => {
     const res = {
       statusCode: 200,
@@ -106,11 +139,14 @@ function call(method, routePath, { body = {}, params = {}, query = {} } = {}) {
       type() { return this; },
       set() { return this; },
     };
-    handler(
-      { body, params, query, observer: { id: 7 }, headers: {} },
-      res,
-      () => resolve({ status: 500, body: { error: 'next called' } }),
-    );
+    const req = { body, params, query, observer: { id: observerId }, headers: {} };
+    let i = 0;
+    const next = () => {
+      const h = stack[i++];
+      if (!h) return resolve({ status: 500, body: { error: 'chain exhausted' } });
+      return h(req, res, next);
+    };
+    next();
   });
 }
 
@@ -229,6 +265,103 @@ console.log('\nflagged-sheet review routes\n');
   eq('stats flag the change after reveal', r.body.changedAfterReveal, 1);
   ok_('a 92-second reading is not flagged as suspiciously fast',
     r.body.suspiciouslyFast.length === 0, JSON.stringify(r.body.suspiciouslyFast));
+}
+
+
+// ── 11. THE CRITICAL ONE: the gate is per-reviewer, not per-sheet ──────────
+// The first version keyed both the reveal and the final on "does a blind reading
+// exist for this sheet". With one reviewer that is indistinguishable from the
+// correct rule, which is why the original suite passed while a second observer
+// could read the machine's answer and author the settled reading.
+{
+  const K = KEY2;
+  let r = await call('post', '/training/review/blind', {
+    body: { key: K, parties: { APC: 10, PDP: 20 }, complete: true }, observerId: 7,
+  });
+  eq('reviewer 7 commits a blind reading on a second sheet', r.status, 201);
+
+  r = await call('get', '/training/review/pred/:key', { params: { key: K }, observerId: 99 });
+  eq('a DIFFERENT reviewer cannot see the machine reading',
+    [r.status, r.body.error], [403, 'not_your_reading']);
+
+  r = await call('post', '/training/review/final', {
+    body: { key: K, parties: { APC: 10, PDP: 20 } }, observerId: 99,
+  });
+  eq('a DIFFERENT reviewer cannot settle the sheet',
+    [r.status, r.body.error], [403, 'not_your_reading']);
+
+  r = await call('get', '/training/review/pred/:key', { params: { key: K }, observerId: 7 });
+  eq('the reviewer who committed it still can', r.status, 200);
+}
+
+// ── 12. only named reviewers may touch these routes ───────────────────────
+{
+  // A sheet nobody has touched, so a 403 here can only come from the allowlist.
+  const r = await call('post', '/training/review/blind', {
+    body: { key: KEY3, parties: { APC: 1 } }, observerId: 1234,
+  });
+  eq('an observer who is not a named reviewer is refused',
+    [r.status, r.body.error], [403, 'not_a_reviewer']);
+
+  // CONTROL for the test above: the same request from a named reviewer must NOT
+  // be refused, or the 403 above would prove nothing about the allowlist.
+  const c = await call('get', '/training/review/queue', { query: { set: 1 }, observerId: 7 });
+  ok_('CONTROL a named reviewer is not refused', c.status === 200, `got ${c.status}`);
+}
+
+// ── 13. a sheet another reviewer has blinded is not served ────────────────
+// Otherwise it sits at the head of their queue forever: they cannot submit it
+// (403) and the queue only drops a sheet once it has a FINAL.
+{
+  // KEY2 is queue index 1, so setForIndex puts it in set 2 — ask for the set it
+  // is actually in, or this test passes for the wrong reason.
+  const r = await call('get', '/training/review/queue', { query: { set: 2, limit: 50 }, observerId: 99 });
+  const keys = r.body.items.map((i) => i.key);
+  ok_('a sheet blinded by someone else is withheld from this reviewer', !keys.includes(KEY2),
+    `got ${JSON.stringify(keys)}`);
+}
+
+// ── 14. an interrupted review resumes instead of wedging the queue ─────────
+{
+  const r = await call('get', '/training/review/queue', { query: { set: 2, limit: 50 }, observerId: 7 });
+  const item = r.body.items.find((i) => i.key === KEY2);
+  ok_('the sheet is still offered to the reviewer who blinded it', Boolean(item));
+  eq('and it is flagged as resumable', item?.resume, true);
+  const text = JSON.stringify(item ?? {});
+  for (const leak of ['triage', 'why', 'excess', 'parties', 'value']) {
+    ok_(`resume flag leaks nothing ("${leak}")`, !text.includes(leak));
+  }
+}
+
+// ── 15. a figure out of range is refused, not silently dropped ────────────
+// Dropping it wrote an incomplete IMMUTABLE reading, showed the reviewer their
+// own typed value anyway, and then scored the missing cell as "the model
+// invented a figure" — a typo filed as evidence against the model.
+{
+  const r = await call('post', '/training/review/blind', {
+    body: { key: KEY3, parties: { APC: 123456, PDP: 55 } }, observerId: 7,
+  });
+  eq('an out-of-range figure is refused', [r.status, r.body.error], [400, 'out_of_range']);
+  eq('and the offending field is named', r.body.fields, ['APC']);
+  const stored = JSON.parse(fs.readFileSync(path.join(reviewDir, 'reviews.json'), 'utf8'));
+  ok_('nothing was committed for that sheet', !stored[KEY3], JSON.stringify(stored[KEY3] || null));
+}
+
+// ── 16. a corrupt reviews.json must not read as "no reviews" ──────────────
+// It used to: the reader swallowed every error and returned {}, and the next
+// write truncated the file, replacing every committed reading with one record.
+{
+  const before = fs.readFileSync(path.join(reviewDir, 'reviews.json'), 'utf8');
+  fs.writeFileSync(path.join(reviewDir, 'reviews.json'), '{ this is not json');
+  let threw = false;
+  try {
+    await call('get', '/training/review/queue', { query: { set: 1 }, observerId: 7 });
+  } catch { threw = true; }
+  ok_('an unreadable reviews.json fails loudly rather than reading as empty', threw);
+  fs.writeFileSync(path.join(reviewDir, 'reviews.json'), before);
+  const after = JSON.parse(fs.readFileSync(path.join(reviewDir, 'reviews.json'), 'utf8'));
+  ok_('and the earlier reviews are still there', Object.keys(after).length >= 2,
+    `keys=${Object.keys(after).length}`);
 }
 
 fs.rmSync(tmp, { recursive: true, force: true });

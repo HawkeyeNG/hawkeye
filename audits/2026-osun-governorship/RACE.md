@@ -199,7 +199,7 @@ the two apart.
 
 ## Blind human review of the flagged sheets (Stage 4)
 
-The 495 tier-A sheets that carry an image — the ones where a check actually
+The tier-A sheets that carry an image — the ones where a check actually
 failed — go back to people, one at a time, **blind**. The reviewer sees the
 sheet and nothing else; the server refuses to release the machine's reading
 (HTTP 409) until their own is committed, and the commit cannot be revised. Then
@@ -210,14 +210,14 @@ labels a model produced while able to see its own earlier answer, and 16 of the
 20 came back identical (see **Calibration**). A person handed a plausible number
 agrees with it too, and leaves no trace of having done so.
 
-- **Queue**: tier A only. `tier_b` is deliberately excluded and must stay so —
+- **Queue**: tier A only, 490 sheets. `tier_b` is deliberately excluded and must stay so —
   it is a 300-sheet stride sample and the only unbiased accuracy estimate this
   project has; reviewing it as part of a flagged stream would convert a random
   sample into a selected one, undetectably. Tier A and tier C do not overlap at
   all, so excluding B costs nothing.
 - **Order**: conflict-first — sheets where the model's figures and its written
-  words disagreed, so it settled on no value. 316 of the 495 have at least one.
-  The queue is striped across the four training pages (124/124/124/123, no
+  words disagreed, so it settled on no value. 316 of the 490 have at least one.
+  The queue is striped across the four training pages (~123 each, no
   overlap), so two reviewers never draw the same sheet.
 - **Not `pass1Verdict`.** That field looks like the verdict and is not: it is
   carried forward from pass 1, byte-identical in `vlm_merged` and `vlm_stage0`,
@@ -228,6 +228,23 @@ agrees with it too, and leaves no trace of having done so.
   as model errors; rows the model produced but the human could not find are
   counted as **unsupported**, which is the worse failure. Collapsing these would
   reproduce the blank-versus-unreadable conflation the audit exists to resolve.
+
+- **Five sheets are excluded because their answers are already public.**
+  `backend/storage/training/` is served uncredentialed, and `truth.json` /
+  `boxes.json` there are not in server.js's `AUDIT_INTERNAL` denylist — so for
+  any sheet listed in them a reviewer could read the answer off the web before
+  committing. All five come from the first-20 set, i.e. exactly the sheets whose
+  "hand" labels turned out to be model-produced. Re-labelling those needs a
+  route that does not publish the answer; the build names them on every run.
+
+**Reviewers must be named.** `requireObserver` admits anyone who has passed a
+phone OTP — the same credential used to file an ordinary field report — and
+these endpoints write the audit's evidence base immutably, with no delete route.
+Set `REVIEW_OBSERVER_IDS=<comma-separated observer ids>`; the routes fail closed
+without it, so an unconfigured deployment cannot quietly accept audit readings
+from the public. The reveal and the final are additionally bound to the
+*committer*: only the reviewer who locked a reading may see the machine's answer
+for that sheet or settle it.
 
 Build the queue (regenerable; it lives under gitignored `backend/storage/`, and
 the predictions are deliberately outside the public `/training` mount):

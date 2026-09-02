@@ -69,8 +69,26 @@ const tierA = readJson(path.join(AUDIT, 'tier_a.json'));
 const vlm = readJsonl(path.join(AUDIT, SOURCE));
 const sheetsDir = path.join(AUDIT, 'sheets');
 
-const withImage = tierA.filter((t) => t.file);
-const noImage = tierA.length - withImage.length;
+// Sheets whose answer is ALREADY PUBLIC cannot be reviewed blind.
+// backend/storage/training/ is served uncredentialed by server.js, and
+// truth.json / boxes.json there are not in its AUDIT_INTERNAL denylist — so for
+// any sheet listed in them, a reviewer can simply read the answer off the web
+// before committing. Blindness is unenforceable for those, so they are kept out
+// rather than silently pretended over. (All of them come from the first-20 set,
+// which is exactly the set whose "hand" labels turned out to be model-produced;
+// re-labelling those needs a route that does not serve the answer publicly.)
+const trainingDir = path.join(ROOT, 'backend/storage/training');
+const publicAnswers = new Set();
+for (const f of ['truth.json', 'boxes.json']) {
+  const p = path.join(trainingDir, f);
+  if (fs.existsSync(p)) for (const k of Object.keys(readJson(p))) publicAnswers.add(k);
+}
+
+const withImageAll = tierA.filter((t) => t.file);
+const bareKey = (f) => f.replace(/[.][^.]+$/, "");
+const leaked = withImageAll.filter((t) => publicAnswers.has(bareKey(t.file)));
+const withImage = withImageAll.filter((t) => !publicAnswers.has(bareKey(t.file)));
+const noImage = tierA.length - withImageAll.length;
 
 // A sheet in the queue with no model record would be a blank card; a sheet with
 // no image would be an empty frame. Neither should reach a reviewer.
@@ -252,6 +270,8 @@ const conflictSheets = entries.filter((e) => e.priority.conflict > 0).length;
 console.log(`tier A rows:            ${tierA.length}`);
 console.log(`  with an image:        ${withImage.length}`);
 console.log(`  no sheet published:   ${noImage}  (skipped — nothing to review)`);
+console.log(`  answer already public: ${leaked.length}  (skipped — blindness unenforceable)`);
+if (leaked.length) console.log(`    ${leaked.map((t) => bareKey(t.file)).join(', ')}`);
 console.log(`predictions written:    ${wrote}`);
 if (skippedReviewed) console.log(`  left alone (reviewed): ${skippedReviewed}  (use --force to overwrite)`);
 console.log(`queue length:           ${entries.length}`);

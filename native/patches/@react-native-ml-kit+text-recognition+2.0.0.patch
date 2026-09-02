@@ -17,7 +17,7 @@ index 421bcfc..f91cfe0 100644
  end
  
 diff --git a/node_modules/@react-native-ml-kit/text-recognition/ios/TextRecognition.m b/node_modules/@react-native-ml-kit/text-recognition/ios/TextRecognition.m
-index 85a067d..57cc303 100644
+index d23fb71..57cc303 100644
 --- a/node_modules/@react-native-ml-kit/text-recognition/ios/TextRecognition.m
 +++ b/node_modules/@react-native-ml-kit/text-recognition/ios/TextRecognition.m
 @@ -3,10 +3,6 @@
@@ -25,9 +25,9 @@ index 85a067d..57cc303 100644
  @import MLKitTextRecognition;
  @import MLKitTextRecognitionCommon;
 -@import MLKitTextRecognitionChinese;
--@import MLKitTextRecognitionDevanagari;
 -@import MLKitTextRecognitionJapanese;
 -@import MLKitTextRecognitionKorean;
+-@import MLKitTextRecognitionDevanagari;
  
  @implementation TextRecognition
  

@@ -5,7 +5,6 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Linking,
   Modal,
@@ -20,6 +19,7 @@ import {
 import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
 import { ContestPicker } from '@/components/contest-picker';
+import { NoticeSheet, useNotice } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import {
   envelopeText,
@@ -387,6 +387,7 @@ const Chip = ({ label, onPress }: { label: string; onPress: () => void }) => (
  */
 export default function Practice() {
   const ui = useUi();
+  const notice = useNotice();
   const [cfg, setCfg] = useState<PracticeConfig | null>(null);
   const [step, setStep] = useState<Step>('unit');
 
@@ -726,7 +727,7 @@ export default function Practice() {
       if (!current()) return;
       if (ctl.signal.aborted) throw new Error('timeout');
       if (!res.ok || !body.unit) {
-        Alert.alert(
+        notice.show(
           'Could not open that unit',
           `${n.name} could not be loaded from the register — retry, or find it under “Browse the register”. (${body.error ?? 'lookup_failed'} / HTTP ${res.status})`,
         );
@@ -735,7 +736,7 @@ export default function Practice() {
       chooseUnit(body.unit);
     } catch (e) {
       if (!current()) return;
-      Alert.alert(
+      notice.show(
         'Could not open that unit',
         ctl.signal.aborted
           ? `Looking up ${n.name} took too long. Check your signal and tap it again, or find it under “Browse the register”. (timed out after ${PICK_TIMEOUT_MS / 1000}s)`
@@ -1519,6 +1520,8 @@ export default function Practice() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
+
+      <NoticeSheet {...notice.props} />
     </SafeScreen>
   );
 }

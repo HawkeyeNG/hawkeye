@@ -2,8 +2,9 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SecureStore from '@/lib/secure-store';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
+import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { BRAND } from '@/lib/api';
 import { authedGet, useAuth } from '@/lib/auth';
 import { useUi } from '@/lib/theme';
@@ -96,6 +97,7 @@ export function followSubject(contest: string | null, scope: string): string {
 export function FollowRace({ contest, scope }: { contest: string | null; scope: string }) {
   const ui = useUi();
   const auth = useAuth();
+  const notice = useNotice();
   const [subs, setSubs] = useState<Sub[]>([]);
   const [busy, setBusy] = useState(false);
   const [closed, setClosed] = useState(false);
@@ -189,7 +191,7 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
         return;
       }
       if (!res.ok) {
-        Alert.alert('Could not update', `Try again. (HTTP ${res.status})`);
+        notice.show('Could not update', `Try again. (HTTP ${res.status})`);
         return;
       }
       setSubs((s) =>
@@ -198,11 +200,11 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
           : [...s, { contest, state }],
       );
     } catch (e) {
-      Alert.alert('Could not update', e instanceof Error ? e.message : String(e));
+      notice.show('Could not update', e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
-  }, [auth.status, contest, followed, following, scope]);
+  }, [auth.status, contest, followed, following, notice, scope]);
 
   if (!contest || closed) return null;
 
@@ -233,44 +235,47 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
    * the page is asking for.
    */
   return (
-    <Pressable
-      disabled={busy}
-      onPress={toggle}
-      accessibilityRole="button"
-      accessibilityState={{ selected: following, busy }}
-      accessibilityLabel={following ? `Unfollow ${subject}. Alerts are on.` : `Follow ${subject}`}
-      className={`mb-3 flex-row items-center rounded-2xl px-4 py-3 active:opacity-80 ${
-        following ? 'border border-good-ink bg-card' : 'bg-hawk-green'
-      }`}
-    >
-      {busy ? (
-        <ActivityIndicator color={following ? ui.tint.good.ink : BRAND.gold} />
-      ) : (
-        <Feather
-          name={following ? 'bell' : 'bell-off'}
-          size={16}
-          color={following ? ui.tint.good.ink : BRAND.gold}
-        />
-      )}
-      {/* STACKED, NOT SIDE BY SIDE. These were two Texts on one row competing
-          for width, and the label lost — "Follow this race" once rendered as a
-          vertical column of single letters. Labels only got longer with "Follow
-          all House of Reps races", so the row is gone: one flexible column
-          beside the icon, each line free to wrap on its own. */}
-      <View className="flex-1 pl-3">
-        {/* THE LABEL IS THE ACTION, NOT THE STATE. "Following this race" told
-            you how things were and left what tapping does to be guessed at —
-            a reader wanting out had no reason to think the thing announcing
-            the subscription was also the way to end it. The state is still
-            here: the bell icon, the detail line's "Alerts on", and
-            accessibilityState.selected for anyone not seeing either. */}
-        <Text className={`text-sm font-bold ${following ? 'text-good-ink' : 'text-hawk-gold'}`}>
-          {following ? `Unfollow ${subject}` : `Follow ${subject}`}
-        </Text>
-        <Text className={`pt-0.5 text-xs ${following ? 'text-faint' : 'text-emerald-200'}`}>
-          {detail}
-        </Text>
-      </View>
-    </Pressable>
+    <>
+      <Pressable
+        disabled={busy}
+        onPress={toggle}
+        accessibilityRole="button"
+        accessibilityState={{ selected: following, busy }}
+        accessibilityLabel={following ? `Unfollow ${subject}. Alerts are on.` : `Follow ${subject}`}
+        className={`mb-3 flex-row items-center rounded-2xl px-4 py-3 active:opacity-80 ${
+          following ? 'border border-good-ink bg-card' : 'bg-hawk-green'
+        }`}
+      >
+        {busy ? (
+          <ActivityIndicator color={following ? ui.tint.good.ink : BRAND.gold} />
+        ) : (
+          <Feather
+            name={following ? 'bell' : 'bell-off'}
+            size={16}
+            color={following ? ui.tint.good.ink : BRAND.gold}
+          />
+        )}
+        {/* STACKED, NOT SIDE BY SIDE. These were two Texts on one row competing
+            for width, and the label lost — "Follow this race" once rendered as a
+            vertical column of single letters. Labels only got longer with "Follow
+            all House of Reps races", so the row is gone: one flexible column
+            beside the icon, each line free to wrap on its own. */}
+        <View className="flex-1 pl-3">
+          {/* THE LABEL IS THE ACTION, NOT THE STATE. "Following this race" told
+              you how things were and left what tapping does to be guessed at —
+              a reader wanting out had no reason to think the thing announcing
+              the subscription was also the way to end it. The state is still
+              here: the bell icon, the detail line's "Alerts on", and
+              accessibilityState.selected for anyone not seeing either. */}
+          <Text className={`text-sm font-bold ${following ? 'text-good-ink' : 'text-hawk-gold'}`}>
+            {following ? `Unfollow ${subject}` : `Follow ${subject}`}
+          </Text>
+          <Text className={`pt-0.5 text-xs ${following ? 'text-faint' : 'text-emerald-200'}`}>
+            {detail}
+          </Text>
+        </View>
+      </Pressable>
+      <NoticeSheet {...notice.props} />
+    </>
   );
 }

@@ -5,7 +5,6 @@ import * as SecureStore from '@/lib/secure-store';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Linking,
   Pressable,
@@ -29,6 +28,7 @@ import {
 } from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
 import { InfoDot } from '@/components/info-dot';
+import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { UnitSearch } from '@/components/unit-search';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
@@ -397,6 +397,7 @@ export default function MapUnit() {
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const [done, setDone] = useState<{ title: string; line: string } | null>(null);
+  const notice = useNotice();
 
   // NO contest filter: mapping is election-independent and nationwide. Passing
   // a contest narrows the register to that race's states (today: Osun only),
@@ -740,7 +741,7 @@ export default function MapUnit() {
   /** Errors go to a modal: inline text below a long unit list is never seen. */
   const fail = (msg: string) => {
     setLine(msg);
-    Alert.alert('Could not record the fix', msg);
+    notice.show('Could not record the fix', msg);
   };
 
   const isSaved = !!unit && saved?.pu_code === unit.pu_code;
@@ -774,7 +775,7 @@ export default function MapUnit() {
       const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok || !body.ok) {
         const code = body.error ?? `http_${res.status}`;
-        Alert.alert(
+        notice.show(
           removing ? 'Could not remove your polling unit' : 'Could not save your polling unit',
           code === 'unknown_unit'
             ? `${unit.name} is not in the register. (${code} / HTTP ${res.status})`
@@ -795,7 +796,7 @@ export default function MapUnit() {
             },
       );
     } catch (e) {
-      Alert.alert(
+      notice.show(
         'Could not update your polling unit',
         humanError(e, 'Please try again.'),
       );
@@ -1326,6 +1327,8 @@ export default function MapUnit() {
           ) : null}
         </View>
       ) : null}
+
+      <NoticeSheet {...notice.props} />
     </View>
   );
 }

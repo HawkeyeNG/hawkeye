@@ -6,7 +6,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -20,8 +19,10 @@ import {
 import { InfoDot } from '@/components/info-dot';
 import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera } from '@/components/capture-camera';
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { ContestPicker } from '@/components/contest-picker';
 import { NoElection } from '@/components/no-election';
+import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import { SheetReference } from '@/components/sheet-reference';
 import {
@@ -78,8 +79,18 @@ type Unit = {
   state: string;
   coords_source?: string | null;
   locationTier?: string;
+  /**
+   * THE LONGITUDES WERE MISSING FROM THIS TYPE, WHICH IS WHY NO SELECTION PATH
+   * COULD MEASURE ANYTHING. /register/search, /register/units and
+   * /register/unit are all `SELECT *`, so every one of these has always been on
+   * the wire; the type was the only thing discarding them.
+   */
   lat?: number | null;
+  lng?: number | null;
   crowd_lat?: number | null;
+  crowd_lng?: number | null;
+  approx_lat?: number | null;
+  approx_lng?: number | null;
 };
 
 /**
@@ -273,6 +284,39 @@ const PICK_TIMEOUT_MS = 12_000;
  * The server still owns the actual decision; these numbers only pick the moment
  * to warn, before two photos and a full tally have been spent.
  */
+/**
+ * The distance at which selecting a unit is REFUSED outright, rather than
+ * warned about.
+ *
+ * Chosen so that refusing here can never refuse a report the server would have
+ * accepted. The widest distance any server branch can accept is the approx
+ * envelope's `approx_radius_m * 1.5 + 2000`; the largest radius in the register
+ * is 20,000m, giving 32km. The ward-centroid fallback added to submissions.js
+ * alongside this change is 15km. 50km clears both.
+ *
+ * BELOW THIS, THE SCREEN STILL ONLY WARNS, and that is deliberate. Eight of
+ * 176,846 units have an officially verified coordinate; 117,159 carry geocodes
+ * recorded as roughly a third wrong. Blocking at the fence itself would turn
+ * away observers standing exactly where they should be — the failure that
+ * caused the 200m -> 500m raise recorded at config.js:242. A thousand-kilometre
+ * mismatch carries no such doubt.
+ */
+const GROSS_MISMATCH_M = 50_000;
+
+/**
+ * The best position the register offers for a unit, in the same order of
+ * confidence the server uses: verified pin, then crowd/geocoded median, then
+ * the GRID3 envelope centre. Null when the register places it nowhere at all —
+ * 14,464 units — in which case NOTHING is claimed about distance. Unknown must
+ * never be rendered as far.
+ */
+const unitPoint = (u: Unit): { lat: number; lng: number } | null => {
+  if (u.lat != null && u.lng != null) return { lat: u.lat, lng: u.lng };
+  if (u.crowd_lat != null && u.crowd_lng != null) return { lat: u.crowd_lat, lng: u.crowd_lng };
+  if (u.approx_lat != null && u.approx_lng != null) return { lat: u.approx_lat, lng: u.approx_lng };
+  return null;
+};
+
 const FAR_ENOUGH_TO_WARN_M: Record<UnitTier, number> = {
   verified: 500, // config.geofenceRadiusM — raised from 200 on 2026-08-31
   crowd: 750, // config.crowdGeofenceRadiusM
@@ -629,6 +673,7 @@ const NearbyRow = ({
 export default function ReportResult() {
   const ui = useUi();
   const auth = useAuth();
+  const notice = useNotice();
   // Opens straight into the camera: 'sheet' and 'venue' ARE the capture screen,
   // so there is nothing between arriving here and shooting.
   const [step, setStep] = useState<Step>('sheet');
@@ -689,6 +734,16 @@ export default function ReportResult() {
   /** The register lookup currently in flight, so a later tap can cancel it
    *  rather than queue behind it. Only the newest one may touch `picking`. */
   const pickReq = useRef<AbortController | null>(null);
+  /** A unit refused for being nowhere near the observer, held so the refusal
+   *  can be shown in the app's own sheet. This was a system `Alert`, which
+   *  Android draws as its grey Material dialog — the one screen in the flow
+   *  that stopped looking like Hawkeye, at the moment it says no. */
+  const [farUnit, setFarUnit] = useState<{
+    name: string;
+    lga: string;
+    state: string;
+    km: number;
+  } | null>(null);
   /** The register drill-down is the fallback, so it starts folded away. */
   const [browse, setBrowse] = useState(false);
   /** Typing in unit search (or opening the register drill) clears the map and
@@ -1289,6 +1344,35 @@ export default function ReportResult() {
    * exactly one is open here.
    */
   const chooseUnit = (u: Unit) => {
+    /**
+     * REFUSE A UNIT THAT IS NOWHERE NEAR THE OBSERVER, HERE, BEFORE ANYTHING IS
+     * SPENT.
+     *
+     * This is the single funnel every selection path reaches — the nearby list,
+     * free search, the register drill-down, the Tier-A sheet guess — so it is
+     * the only place one check covers all of them. It has to be here rather
+     * than in `unit-search.tsx`, which is shared with mapping (a deliberate
+     * 5,000m question), practice (documented as having no geofence) and
+     * incidents (filable with no unit at all); a fence in the shared component
+     * would be a regression in each.
+     *
+     * Both silences are load-bearing. No fix yet, or a unit the register places
+     * nowhere, means the distance is UNKNOWN, and unknown is not far.
+     */
+    const here = fix;
+    const there = unitPoint(u);
+    if (here && there) {
+      const awayM = haversineM(here.lat, here.lng, there.lat, there.lng);
+      if (awayM > GROSS_MISMATCH_M) {
+        setFarUnit({
+          name: u.name,
+          lga: u.lga,
+          state: u.state,
+          km: Math.round(awayM / 1000),
+        });
+        return;
+      }
+    }
     pick();
     setUnit(u);
     setRace(null);
@@ -1377,7 +1461,7 @@ export default function ReportResult() {
       // "lookup_failed" against an HTTP 200.
       if (ctl.signal.aborted) throw new Error('timeout');
       if (!res.ok || !body.unit) {
-        Alert.alert(
+        notice.show(
           'Could not open that unit',
           `${n.name} could not be loaded from the register — retry, or find it under “Browse the register instead”. (${body.error ?? 'lookup_failed'} / HTTP ${res.status})`,
         );
@@ -1388,7 +1472,7 @@ export default function ReportResult() {
       // Superseded by a later tap: that tap owns the screen now, and this one
       // has nothing to report.
       if (!current()) return;
-      Alert.alert(
+      notice.show(
         'Could not open that unit',
         ctl.signal.aborted
           // "(timed out after 12s)" is the kind of detail that belongs in the
@@ -1494,7 +1578,7 @@ export default function ReportResult() {
     tap();
     if (!unit) return;
     if (contests.length === 0) {
-      Alert.alert(
+      notice.show(
         'Election list not loaded',
         'Hawkeye could not load which elections are running — check your connection and reopen this screen. (no /api/contests response)',
       );
@@ -1503,7 +1587,7 @@ export default function ReportResult() {
     // Nothing Hawkeye covers runs in this state at all — not merely "not open
     // yet", but out of scope. Mapping stays possible; reporting does not.
     if (racesIn(unit.state, contests).length === 0) {
-      Alert.alert(
+      notice.show(
         `No active election in ${unit.state}`,
         `Hawkeye is covering the ${contests[0].election}. Nothing is open for reporting at ${unit.name} yet — but you can still map polling units anywhere in Nigeria.`,
       );
@@ -2513,6 +2597,32 @@ export default function ReportResult() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
+
+      {/* The refusal, in the app's own sheet rather than the OS dialog. One
+          action, because a refusal has nothing to cancel. Not `danger`: this
+          is "not from here", not a destructive act, so it wears the green and
+          gold rather than the red. */}
+      <ConfirmSheet
+        visible={!!farUnit}
+        icon="map-pin"
+        title="That unit is too far away"
+        body={
+          farUnit
+            ? `${farUnit.name} is in ${farUnit.lga}, ${farUnit.state}, about ` +
+              `${farUnit.km.toLocaleString()} km from where you are now.\n\n` +
+              'A result can only be filed from the polling unit itself, so this one cannot be ' +
+              'selected from here. If you are travelling there, choose it once you arrive.'
+            : ''
+        }
+        confirmLabel="Choose another unit"
+        cancelLabel={null}
+        onConfirm={() => setFarUnit(null)}
+        onCancel={() => setFarUnit(null)}
+      />
+
+      {/* The one-action notices — the same failures that used to open the
+          OS dialog, in the app's own sheet. */}
+      <NoticeSheet {...notice.props} />
     </SafeScreen>
   );
 }

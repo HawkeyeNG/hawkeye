@@ -11,7 +11,9 @@ import {
   GOVERNORSHIP_STATES,
   STATE_ASSEMBLY,
   STATES,
+  isRaceOpen,
   listRaces,
+  matchContest,
   raceLabel,
   type ElectionType,
   type ElectionTypeCode,
@@ -103,23 +105,17 @@ export function ContestPicker({
   const [stateSel, setStateSel] = useState<StateName | null>(value?.state ?? null);
 
   /**
-   * The match rule and per-type open counts, in one memo so the closure over
-   * `contests` is captured once. `match` mirrors races.ts:matchContest exactly
-   * (same code + states[] scope test) but is typed against the API Contest so
-   * `opensAt`/`open` are real fields, not the loose index-signature `unknown`
-   * that the races.ts shape would hand back.
+   * Per-type open counts and next-open dates, in one memo so the pass over
+   * `contests` happens once. Openness comes from races.ts:matchContest /
+   * isRaceOpen — the ONE rule, USED rather than re-implemented, so this picker
+   * cannot drift from the catalogue's idea of what a contest covers. The bare
+   * `c.code === race.contestCode` test that used to live here silently missed
+   * every by-election: a SHA by-election is `code: 'SHA_BYE_…'` with `tier:
+   * 'SHA'`, and matchContest is what narrows it to its own constituencies/LGAs.
    */
   const { match, isOpen, counts, soonest } = useMemo(() => {
-    const match = (race: Race): Contest | undefined =>
-      contests.find(
-        (c) =>
-          c.code === race.contestCode &&
-          // No states (or empty) ⇒ national scope; otherwise the race's state
-          // must be listed. A presidential race carries no state and matches a
-          // national contest.
-          (!c.states || c.states.length === 0 || (race.state != null && c.states.includes(race.state))),
-      );
-    const isOpen = (race: Race) => match(race)?.open === true;
+    const match = (race: Race): Contest | undefined => matchContest(race, contests);
+    const isOpen = (race: Race) => isRaceOpen(race, contests);
     const counts = { PRES: 0, GOV: 0, SEN: 0, REP: 0, SHA: 0 } as Record<ElectionTypeCode, number>;
     /**
      * THE NEXT DATE ANYTHING IN THIS TIER OPENS.
@@ -318,32 +314,10 @@ export function ContestPicker({
     );
   }
 
-  // ── Stage 3a: State House of Assembly — seat COUNT only. Names are not yet
-  // published (STATE_ASSEMBLY[*].constituencies === null), so listRaces('SHA',…)
-  // is empty by design: show the count and say so, never invent seats. ──
-  if (type.code === 'SHA') {
-    const info = STATE_ASSEMBLY[effectiveState as StateName];
-    return (
-      <View>
-        {filterToggle}
-        {crumbs}
-        <Prompt>State House of Assembly</Prompt>
-        <View className="rounded-2xl bg-card px-4 py-4">
-          <Text className="text-base font-bold text-ink">
-            {effectiveState} — {info.seats} state constituenc{info.seats === 1 ? 'y' : 'ies'}
-          </Text>
-          <Text className="pt-1.5 text-sm leading-5 text-muted">
-            {info.note
-              ? info.note
-              : 'Seat-level selection is coming — the individual constituency names have not yet been published, so a single seat cannot be chosen here yet.'}
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
-  // ── Stage 3b: the concrete races for this type (+ state). One row for GOV/PRES,
-  // a list for SEN/REP. ──
+  // ── Stage 3: the concrete races for this type (+ state). One row for GOV/PRES,
+  // a list for SEN/REP/SHA — SHA seats now come from STATE_ASSEMBLY via
+  // listRaces('SHA', state), exactly like SEN districts and REP constituencies.
+  // FCT never reaches here for SHA (statesFor('SHA') drops it, seats === 0). ──
   const races = listRaces(type.code, effectiveState ?? undefined);
   // NEVER OFFER A RACE NO CONTEST COVERS. listRaces() enumerates the whole
   // constitutional catalogue — all 36 governorships, all 109 districts — while

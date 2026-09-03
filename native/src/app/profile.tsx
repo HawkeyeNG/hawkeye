@@ -24,6 +24,7 @@ import { PasswordField } from '@/components/password-field';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND } from '@/lib/api';
+import { isBiometricAvailable, isSigningGateEnabled, setSigningGateEnabled } from '@/lib/biometric';
 import { pick } from '@/lib/haptics';
 import { shareHawkeye } from '@/lib/share';
 import { useUi } from '@/lib/theme';
@@ -191,6 +192,14 @@ export default function Profile() {
   const [copied, setCopied] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<'signout' | 'delete' | null>(null);
+  /**
+   * Face ID / fingerprint before signing. Two pieces of state, not one: a phone
+   * with no sensor (or nothing enrolled) can never satisfy the gate, so the row
+   * says so and stays unpressable instead of offering a switch that would do
+   * nothing. See lib/biometric.ts.
+   */
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioOn, setBioOn] = useState(false);
   const notice = useNotice();
   /** Practice runs are per-device, not per-observer — practice never asks
    *  anyone to sign in, so they arrive from their own endpoint. */
@@ -199,6 +208,36 @@ export default function Profile() {
   /** Contest code -> human name, from the same public /api/contests every other
    *  screen reads. Everything the profile shows carries only the code. */
   const [races, setRaces] = useState<Record<string, string>>({});
+
+  /**
+   * Read the biometric gate's state once. Availability is asked of the OS rather
+   * than assumed: a phone with no sensor, or one where nothing is enrolled, can
+   * never satisfy the prompt, and offering a switch there would be a control
+   * that silently does nothing.
+   */
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const [available, enabled] = await Promise.all([
+        isBiometricAvailable(),
+        isSigningGateEnabled(),
+      ]);
+      if (!alive) return;
+      setBioAvailable(available);
+      setBioOn(enabled);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  /** Optimistic: this is a stored preference, not a transaction to confirm. */
+  const toggleBio = () => {
+    pick();
+    const next = !bioOn;
+    setBioOn(next);
+    void setSigningGateEnabled(next);
+  };
 
   // --- password modal ------------------------------------------------------
   const [pwOpen, setPwOpen] = useState(false);
@@ -502,6 +541,21 @@ export default function Profile() {
                 value={me.hasPassword ? 'Change' : 'Not set'}
                 chevron
                 onPress={openPw}
+              />
+              {/* Unpressable when the phone cannot satisfy it, rather than a
+                  switch that would flip and change nothing. */}
+              <Row
+                icon="shield"
+                label="Face ID or fingerprint to sign"
+                value={bioAvailable ? (bioOn ? 'On' : 'Off') : 'Not available'}
+                onPress={bioAvailable ? toggleBio : undefined}
+                sub={
+                  <Text className="pt-0.5 text-xs text-muted">
+                    {bioAvailable
+                      ? 'Asked once, just before a real result is signed. Rehearsals are never gated.'
+                      : 'This phone has no fingerprint or face unlock set up.'}
+                  </Text>
+                }
               />
               <Row
                 icon="map-pin"

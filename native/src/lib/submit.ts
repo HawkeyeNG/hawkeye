@@ -11,6 +11,7 @@ import { File } from 'expo-file-system';
 import * as SecureStore from '@/lib/secure-store';
 
 import { bootstrapAuth } from '@/lib/auth';
+import { confirmSigning } from '@/lib/biometric';
 import { getIdentity } from '@/lib/identity';
 // TYPE-ONLY, so this edge is erased at compile time and creates no runtime
 // require cycle. outbox.ts legitimately imports filePart/remintSession from
@@ -394,6 +395,30 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     venueLat: input.venue.lat,
     venueLng: input.venue.lng,
   });
+  /**
+   * THE ONE MOMENT THE KEY IS EXERCISED FOR A REPORT THAT CAN REACH THE LEDGER.
+   *
+   * Gated here rather than at app launch because this is the action worth
+   * protecting: the signature is what gives a report its weight, and an unlocked
+   * phone in someone else's hands can otherwise produce one. Off by default and
+   * opt-in from Profile; see lib/biometric.ts for why it guards the action and
+   * never the key at rest.
+   *
+   * REHEARSALS ARE EXEMPT. A dry run signs, but the server refuses it and it is
+   * discarded rather than queued, so it can never reach the ledger — and
+   * practice is the flow we most want people repeating. Friction belongs on the
+   * real thing, not the rehearsal.
+   *
+   * Placed AFTER the photo hashing so a failure to read the photos does not
+   * prompt the observer for nothing.
+   */
+  if (!input.dryRun && (await confirmSigning()) === 'cancelled') {
+    return {
+      ok: false,
+      error: 'signing_cancelled',
+      message: 'Not signed, so nothing was filed. Your photos and figures are still here — try again.',
+    };
+  }
   const signature = id.sign(payload);
 
   // Fields and files kept apart from the FormData: the same pair feeds a live

@@ -91,6 +91,15 @@ const CAPTIONS = [
       + 'app had no front door in the set at all.',
   },
   {
+    file: '7-signed.png',
+    lines: ['Signed on your phone,', 'GPS-stamped'],
+    shoot: 'The practice review step, between Review and Sign & submit: the counts about to be '
+      + 'committed, with the location fix beside them. The middle beat of the trust story — '
+      + 'photograph, sign where you stand, publish — and the one step the set never showed. '
+      + '3-published asserts it in prose ("signed, GPS-checked and chained"); this frame shows '
+      + 'it happening, before the receipt exists. Practice chain, so nothing real is signed.',
+  },
+  {
     file: '3-published.png',
     lines: ['Published where', 'anyone can check'],
     shoot: 'The receipt after filing a PRACTICE run: entry hash and anchor, on the practice chain. '

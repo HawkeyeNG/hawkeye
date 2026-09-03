@@ -70,6 +70,13 @@ await ctx.addInitScript(
       localStorage.setItem('hawkeye.auth.token', token);
       localStorage.setItem('hawkeye.auth.observer', observer);
       localStorage.removeItem('hawkeye.auth.optedOut');
+      // THE FIRST-RUN TOUR, which a fresh profile always gets. It opens as a
+      // modal over the home screen, and a store frame showing it is a picture of
+      // an interruption sitting on top of the thing being advertised — the home
+      // shot came back with "Welcome to Hawkeye" covering the live feed. The
+      // flag is AsyncStorage, which IS localStorage on web, and lib/tour.ts
+      // treats any non-null value as seen.
+      localStorage.setItem('hawkeye_tour_seen', '1');
     } catch {
       /* storage blocked - the page will simply appear signed out */
     }
@@ -377,6 +384,12 @@ async function drivePractice(stopAfter = 99) {
 
   await tap('Review');
   await at(9, 'review step');
+  await clean();
+  // 7 - the review step: what is about to be signed, with the GPS fix beside it.
+  // This is the middle beat of the trust story — capture, THEN sign where you
+  // stand, THEN publish — and it was the one step no frame actually showed.
+  // 3-published states it in prose after the fact; this shows it happening.
+  await shot('7-signed.png');
 
   await tap('Sign & submit (practice)');
   await page.waitForTimeout(3500);

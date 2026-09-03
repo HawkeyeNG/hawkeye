@@ -35,14 +35,44 @@
  * OPT-IN, default off. This sits on the most important action in the app; adding
  * an auth prompt to it silently, for everyone, is not a change to make on the
  * observer's behalf. Profile turns it on.
+ *
+ * ── THE IMPORT IS LAZY, AND THAT IS NOT A STYLE CHOICE ──
+ * expo-local-authentication is a NATIVE module. A dev client — or any build —
+ * cut before it was added does not contain it, and expo-modules-core throws
+ * "Cannot find native module 'ExpoLocalAuthentication'" while EVALUATING the
+ * module. A top-level `import` therefore kills the app at startup, before any
+ * try/catch in this file can run: profile.tsx imports this, so every launch
+ * died on a phone running the older dev client. That is precisely the trap
+ * lib/review.ts documents for expo-store-review and outbox.ts for NetInfo, and
+ * the same fix applies — import inside the call, inside a try, and treat its
+ * absence as "cannot ask", which the rule above already resolves to "proceed".
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as LocalAuthentication from 'expo-local-authentication';
 
 const PREF_KEY = 'hawkeye_biometric_signing';
 
 /** 'ok' — go ahead and sign. 'cancelled' — the person declined or did not pass. */
 export type GateResult = 'ok' | 'cancelled';
+
+type LocalAuth = typeof import('expo-local-authentication');
+
+/** undefined = never tried, null = tried and unavailable. Cached either way. */
+let cached: LocalAuth | null | undefined;
+
+/**
+ * The native module, or null if this build does not carry it. Never throws: a
+ * missing native module is an ordinary state here (an older dev client, a build
+ * cut before the dependency landed), not an error condition.
+ */
+async function loadLocalAuth(): Promise<LocalAuth | null> {
+  if (cached !== undefined) return cached;
+  try {
+    cached = await import('expo-local-authentication');
+  } catch {
+    cached = null;
+  }
+  return cached;
+}
 
 /**
  * Can this device ask at all? Hardware present AND something enrolled — a phone
@@ -51,9 +81,11 @@ export type GateResult = 'ok' | 'cancelled';
  */
 export async function isBiometricAvailable(): Promise<boolean> {
   try {
+    const LA = await loadLocalAuth();
+    if (!LA) return false;
     const [hardware, enrolled] = await Promise.all([
-      LocalAuthentication.hasHardwareAsync(),
-      LocalAuthentication.isEnrolledAsync(),
+      LA.hasHardwareAsync(),
+      LA.isEnrolledAsync(),
     ]);
     return hardware && enrolled;
   } catch {
@@ -89,9 +121,11 @@ export async function setSigningGateEnabled(on: boolean): Promise<void> {
 export async function confirmSigning(): Promise<GateResult> {
   try {
     if (!(await isSigningGateEnabled())) return 'ok';
+    const LA = await loadLocalAuth();
+    if (!LA) return 'ok';
     if (!(await isBiometricAvailable())) return 'ok';
 
-    const res = await LocalAuthentication.authenticateAsync({
+    const res = await LA.authenticateAsync({
       promptMessage: 'Confirm it is you before signing this result',
       // The owner knows the passcode and a thief does not, so this is the escape
       // hatch that makes "stop on failure" safe rather than a lockout.

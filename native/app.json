@@ -17,6 +17,7 @@
         "NSMicrophoneUsageDescription": "Hawkeye uses the microphone only when you record a video of an incident, so the recording has sound.",
         "NSLocationWhenInUseUsageDescription": "Hawkeye records a GPS fix when you capture evidence or map a polling unit, to prove reports come from where they claim.",
         "NSPhotoLibraryUsageDescription": "Hawkeye lets you attach existing photos or videos from your library to an incident report.",
+        "NSFaceIDUsageDescription": "Hawkeye can ask for Face ID before it signs a result, so that only you can file a report with this device's signing key.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "buildNumber": "24",

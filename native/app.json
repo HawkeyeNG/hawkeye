@@ -19,7 +19,7 @@
         "NSPhotoLibraryUsageDescription": "Hawkeye lets you attach existing photos or videos from your library to an incident report.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "19",
+      "buildNumber": "24",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
           {

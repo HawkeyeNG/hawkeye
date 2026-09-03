@@ -6,8 +6,9 @@
  * An observer selects their race from this data. A missing constituency means
  * someone cannot report; a wrong one means a report filed against the wrong
  * race. Accuracy is the whole point — where a name could not be sourced with
- * confidence it is marked unavailable rather than invented (state assembly
- * constituency names, below).
+ * confidence it is marked unavailable rather than invented (today only FCT's
+ * state assembly, which has none; every other state's seat names are sourced —
+ * see STATE_ASSEMBLY below).
  *
  * ── Totals (validated at the bottom of this file, and by tools/validate) ──
  *   Presidential            1   national race
@@ -129,7 +130,7 @@ export const ELECTION_TYPES: readonly ElectionType[] = [
   { code: 'GOV',  label: 'Governorship',              seatLabel: 'Governor',               narrowBy: ['state'],                 seats: 36 },
   { code: 'SEN',  label: 'Senate',                    seatLabel: 'Senator',                narrowBy: ['state', 'district'],     seats: 109 },
   { code: 'REP',  label: 'House of Representatives',   seatLabel: 'Member (Rep)',           narrowBy: ['state', 'constituency'], seats: 360 },
-  { code: 'SHA',  label: 'State House of Assembly',    seatLabel: 'Member (State)',         narrowBy: ['state', 'seat'],         seats: 993 },
+  { code: 'SHA',  label: 'State House of Assembly',    seatLabel: 'Member (State)',         narrowBy: ['state', 'seat'],         seats: 1019 },
 ] as const;
 
 /** Register spellings — must string-match polling_units.state exactly. */
@@ -423,10 +424,11 @@ export interface AssemblyInfo {
 }
 
 /**
- * State Houses of Assembly. Per-state seat counts total 993; FCT has no
- * Assembly (Area Councils instead). Constituency names are marked unavailable
- * (null) pending a per-seat source — the count is authoritative, the names are
- * not yet sourced and are not invented.
+ * State Houses of Assembly. Per-state seat counts total 1019 (993 until the 26
+ * court-restored seats of 2026 — see the file header); FCT has no Assembly (Area
+ * Councils instead, so FCT is the ONLY null `constituencies`). Every other state
+ * carries its full named seat array (INEC 2023 ballot names), length equal to
+ * `seats`, so listRaces('SHA', state) enumerates real, selectable seats.
  */
 export const STATE_ASSEMBLY: Record<StateName, AssemblyInfo> = {
   'Abia': { seats: 24, constituencies: ['Aba South', 'Ukwa East', 'Ikwuano', 'Osisioma North', 'Osisioma South', 'Umuahia Central', 'Umuahia North', 'Ohafia South', 'Isiala Ngwa North', 'Umunneochi', 'Aba Central', 'Bende South', 'Ugwunaagbo', 'Bende North', 'Isuikwuato', 'Obingwa East', 'Aba North', 'Umuahia East', 'Ukwa West', 'Arochukwu', 'Isiala Ngwa South', 'Umuahia South', 'Obingwa West', 'Ohafia North'] },
@@ -1726,10 +1728,10 @@ export function raceLabel(
 }
 
 /**
- * Enumerate every concrete race for a given election type. For SHA this returns
- * [] for any state whose constituency names are unavailable (the seat count is
- * still exposed via STATE_ASSEMBLY) — anonymous numbered seats are deliberately
- * not fabricated.
+ * Enumerate every concrete race for a given election type. SHA returns one race
+ * per named seat in STATE_ASSEMBLY[state].constituencies; it is empty only for a
+ * state with no names at all (FCT, which has no Assembly) — anonymous numbered
+ * seats are deliberately not fabricated.
  *
  * SHA races also carry `lgas` and `centroid` from ASSEMBLY_LOCATIONS. `label`
  * and `key` are unchanged: the key is the report's race identity and other code

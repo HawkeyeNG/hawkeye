@@ -38,6 +38,7 @@ import {
 import { Crumb, Prompt } from '@/components/wizard';
 import { UnitSearch } from '@/components/unit-search';
 import { api, BRAND, type Contest } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import {
   envelopeHardLimitM,
   GROSS_MISMATCH_M,
@@ -446,6 +447,9 @@ const Chip = ({ label, onPress }: { label: string; onPress: () => void }) => (
  */
 export default function Practice() {
   const ui = useUi();
+  /** Only to decide where the ending sends them — practice itself asks for no
+   *  account, and must keep working for a signed-out visitor. */
+  const auth = useAuth();
   const notice = useNotice();
   const [cfg, setCfg] = useState<PracticeConfig | null>(null);
   const [step, setStep] = useState<Step>('sheet');
@@ -1736,11 +1740,23 @@ export default function Practice() {
 
         {step === 'done' && done ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+            {/* WHERE THIS GOES DEPENDS ON WHETHER THEY HAVE AN ACCOUNT.
+                Practice is reachable signed-out now, and /report/result is not:
+                sending a signed-out visitor there hands them to the root
+                layout's gate, which bounces them to welcome — losing both the
+                practice they just finished and the sign-in screen they came
+                from. Ending a good rehearsal on the wrong screen is the worst
+                moment in the flow to do it, because this is exactly when
+                someone decides to join. So the button becomes the invitation. */}
             <Pressable
               className="w-full items-center rounded-2xl bg-hawk-green py-3.5 active:opacity-80"
-              onPress={() => router.replace('/report/result')}
+              onPress={() => (auth.status === 'signedIn'
+                ? router.replace('/report/result')
+                : router.replace('/sign-in?intent=signup'))}
             >
-              <Text className="text-base font-bold text-hawk-gold">Report a real result</Text>
+              <Text className="text-base font-bold text-hawk-gold">
+                {auth.status === 'signedIn' ? 'Report a real result' : 'Become an observer'}
+              </Text>
             </Pressable>
             <Pressable className="mt-3 w-full items-center py-2" onPress={restart}>
               <Text className="text-sm font-semibold text-good-ink">Practise again</Text>

@@ -550,6 +550,27 @@ export default function SignIn() {
                   {purpose === 'signup' ? 'Already have an account? Sign in' : 'Back to password sign-in'}
                 </Text>
               </Pressable>
+              {/* SIGN-UP ONLY, and the condition is load-bearing rather than
+                  tidiness: this `request` step is shared by sign-up, forgot-
+                  password and rescue, so an unconditional link would offer
+                  "First time?" to someone recovering an account they have had
+                  for months. Practice is aimed at the person who has not
+                  decided, and this is the step that asks them for a phone
+                  number — the last moment before they hand one over.
+
+                  Deliberately not on the password screen: whoever is typing a
+                  password already joined, and a third link there competed with
+                  "Create an account", which is the action that screen wants.
+
+                  `push`, not `replace`, so closing practice returns to exactly
+                  this screen in the mode they left it in. */}
+              {purpose === 'signup' ? (
+                <Pressable className="mt-4 items-center" onPress={() => router.push('/practice')}>
+                  <Text className="text-sm text-muted">
+                    First time? <Text className="font-semibold text-good-ink">Try a practice run</Text>
+                  </Text>
+                </Pressable>
+              ) : null}
             </>
           ) : step === 'exists' ? (
             <>

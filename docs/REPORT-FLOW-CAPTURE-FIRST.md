@@ -36,6 +36,16 @@ Current → target, per flow:
 | Incident | unit → report | **report → locate** (§6) |
 | Practice | mirrors Result | mirrors Result — must move in lockstep, it is the rehearsal |
 
+**Practice: shipped 2026-09-04.** The "Now" column above was aspirational — Result
+moved to capture-first and Practice did not, so for a while the rehearsal taught
+`unit → race → sheet → venue` while election day did `sheet → venue → unit → race`.
+`native/src/app/practice.tsx` now carries the same `STEPS` array as
+`report/result.tsx` and the same transitions, and both import the geofence from
+`native/src/lib/geofence.ts` so the refusal and the distance warning are one
+definition rather than two that drift. Practice keeps exactly one divergence, on
+purpose: the race picker runs with `allowClosed`, so every race is selectable and
+the rehearsal works on the 364 days that are not election day.
+
 Two rules behind the shape:
 
 1. **Both photos back-to-back.** Sheet then venue, same physical position, one

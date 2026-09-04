@@ -298,9 +298,15 @@
       </div>
 
       <div class="pcard danger">
-        <h2>Delete my identity</h2>
-        <p class="hint">Wipes your key, device link, Telegram link and subscriptions. Reports already on the public ledger are permanent and stay; re-registering the same phone restores the same ID.</p>
-        <button id="btn-delete">Delete my observer identity</button>
+        <!-- "Account", not "identity", and that word is load-bearing. App Review
+             rejected this app for having no way to "initiate account deletion"
+             while this section sat on the profile screen: a reviewer scanning for
+             the word never matched "identity", which is what Hawkeye calls an
+             observer's account everywhere else. The concept keeps its name in the
+             hint below; the CONTROL says what a reader — or a reviewer — expects. -->
+        <h2>Delete account</h2>
+        <p class="hint">Deletes your observer identity: your key, device link, Telegram link and subscriptions are wiped. Reports already on the public ledger are permanent and stay; re-registering the same phone restores the same ID.</p>
+        <button id="btn-delete">Delete my account</button>
       </div>
 
     </div>
@@ -615,7 +621,7 @@
     $('btn-signout').onclick = () => { localStorage.removeItem('hawkeye_token'); location.href = 'index.html'; };
 
     $('btn-delete').onclick = async () => {
-      if (!confirm('Delete your observer identity? Your key, device binding, Telegram link and subscriptions are wiped. Ledger reports stay (they are public and permanent).')) return;
+      if (!confirm('Delete your account? Your key, device binding, Telegram link and subscriptions are wiped. Ledger reports stay (they are public and permanent).')) return;
       const { status } = await api('/api/observers/delete', { method: 'POST' });
       if (status === 200) { localStorage.removeItem('hawkeye_token'); alert('Identity deleted.'); location.href = 'index.html'; }
       else alert('Could not delete — try again.');

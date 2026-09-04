@@ -3,7 +3,7 @@ import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, type LayoutChangeEvent, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, type LayoutChangeEvent, Linking, Pressable, Text, View } from 'react-native';
 
 import { readSheet, type SheetRead } from '@/lib/ocr';
 import { scanSheet, scannerAvailable, scannerProven } from '@/lib/scan';
@@ -266,6 +266,25 @@ export function CaptureCamera({
     void scanDocRef.current?.();
   }, [readDocument, permission?.granted]);
 
+  /**
+   * Put the SYSTEM camera prompt up as soon as this screen exists, while the
+   * system will still ask. The render below explains why nothing precedes it —
+   * App Review rejected 1.0.1 (guideline 5.1.1) for a custom message with an
+   * "Allow camera" button and a "Cancel" that let the request be dodged.
+   *
+   * ONCE PER MOUNT. requestPermission() resolves to a *denied* permission object
+   * when the observer says no, which changes `permission` and re-runs this
+   * effect — without the ref that is a prompt loop, which is both worse for the
+   * observer and its own guideline problem.
+   */
+  const askedOnce = useRef(false);
+  useEffect(() => {
+    if (!permission || permission.granted || !permission.canAskAgain) return;
+    if (askedOnce.current) return;
+    askedOnce.current = true;
+    void requestPermission();
+  }, [permission, requestPermission]);
+
   const cancel = () => {
     cancelled.current = true;
     if (recording) cam.current?.stopRecording();
@@ -274,14 +293,44 @@ export function CaptureCamera({
 
   if (!permission) return <View className="flex-1 bg-black" />;
   if (!permission.granted) {
+    /**
+     * THE SYSTEM PROMPT IS ALLOWED TO STAND ALONE.
+     *
+     * What used to be here — "Hawkeye needs the camera…" with an "Allow camera"
+     * button and a "Cancel" — is exactly what App Review rejected 1.0.1 for
+     * (guideline 5.1.1): a custom message in front of the OS prompt, whose button
+     * echoed the system wording and whose Cancel let the request be dodged. The
+     * rule is that the user must always proceed to the permission request after
+     * such a message, and the surest way to always proceed is to put nothing in
+     * front of it.
+     *
+     * So while the OS will still ask (canAskAgain), this renders the plain black
+     * stage the dialog sits on. The observer already chose to photograph a sheet,
+     * and NSCameraUsageDescription carries the reason on the dialog itself. The
+     * ask is fired by the effect above, once per mount.
+     */
+    if (permission.canAskAgain) return <View className="flex-1 bg-black" />;
+
+    /**
+     * Permanently denied. There is no longer a request to "delay" — the OS will
+     * not ask again — so an explanation is now the useful thing rather than the
+     * prohibited one, and App Review's own note recommends exactly this: tell the
+     * user and point them at Settings.
+     */
     return (
       <View className="flex-1 items-center justify-center bg-black px-8">
         <Feather name="camera-off" size={32} color="#fff" />
         <Text className="pt-4 text-center text-base text-white">
-          Hawkeye needs the camera to capture evidence in-app.
+          Camera access is off for Hawkeye, so the sheet cannot be photographed in the app.
+          You can turn it back on in Settings.
         </Text>
-        <Pressable className="mt-5 rounded-2xl bg-hawk-gold px-6 py-3" onPress={requestPermission}>
-          <Text className="text-base font-bold text-hawk-ink">Allow camera</Text>
+        <Pressable
+          className="mt-5 rounded-2xl bg-hawk-gold px-6 py-3"
+          onPress={() => {
+            void Linking.openSettings().catch(() => {});
+          }}
+        >
+          <Text className="text-base font-bold text-hawk-ink">Open Settings</Text>
         </Pressable>
         {/* A denied camera must not dead-end a flow that has an escape (the
             PWA rule: no camera -> use a sample). */}

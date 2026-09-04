@@ -18,6 +18,7 @@ import {
 
 import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { ContestPicker } from '@/components/contest-picker';
 import { NoticeSheet, useNotice } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
@@ -36,6 +37,13 @@ import {
 import { Crumb, Prompt } from '@/components/wizard';
 import { UnitSearch } from '@/components/unit-search';
 import { api, BRAND, type Contest } from '@/lib/api';
+import {
+  envelopeHardLimitM,
+  GROSS_MISMATCH_M,
+  haversineM,
+  unitPoint,
+  warnRadiusM,
+} from '@/lib/geofence';
 import { getIdentity } from '@/lib/identity';
 import { describeFixFailure, DISCOVERY_RADIUS_M, tryQuickFix, type Fix } from '@/lib/location';
 import { STATES, type Race, type StateName } from '@/lib/races';
@@ -85,8 +93,22 @@ type Unit = {
   // can carry the same location badge the nearby rows and the web show.
   coords_source?: string | null;
   locationTier?: string;
+  /**
+   * THE LONGITUDES WERE MISSING, WHICH WOULD HAVE MADE THE FENCE MEASURE
+   * NOTHING. `unitPoint` needs a lat AND a lng from the same tier before it
+   * claims a position, so a type carrying only the latitudes returns null for
+   * every unit — a geofence that silently never fires and looks like one that
+   * always passes. report/result.tsx carries the same shouted note; this screen
+   * had the identical defect, and it only became load-bearing when practice
+   * gained the real fence. All three tiers are `SELECT *`d onto the wire
+   * already; the type was the only thing discarding them.
+   */
   lat?: number | null;
+  lng?: number | null;
   crowd_lat?: number | null;
+  crowd_lng?: number | null;
+  approx_lat?: number | null;
+  approx_lng?: number | null;
 };
 
 /** /api/polling-units row (whole register row, so it can name the state). */
@@ -128,6 +150,15 @@ type NearRow = {
   tier: UnitTier;
   /** The area the map may DRAW — set only when the pin IS the envelope's centre. */
   envelope?: MapEnvelope;
+  /**
+   * The same circle, kept for the SERVER's gate rather than the map's.
+   * submissions.js measures `too_far_from_unit` from this centre on every row
+   * whose `pu.lat IS NULL` — every `approx` row, seeded or not — so it is carried
+   * whether or not it may be drawn. Mirrors report/result.tsx's `fenceEnvelope`;
+   * without it practice is silently weaker than the real flow for exactly the
+   * tier most of the register falls in.
+   */
+  fenceEnvelope?: MapEnvelope;
   tierConfirmed: boolean;
   fixes: number;
   /** The register row, when the merge already had one (null ⇒ needs a lookup). */
@@ -159,11 +190,21 @@ type Searched = {
   capped: boolean;
 };
 
+// CAPTURE FIRST — the same array, in the same order, as report/result.tsx.
+// Keep the two identical: this is the rehearsal, and the whole point of it is
+// that election day holds no surprises (docs/REPORT-FLOW-CAPTURE-FIRST.md §2,
+// "Practice … must move in lockstep, it is the rehearsal").
+//
+// The one shape practice does NOT copy is result.tsx's dynamic removal of the
+// race step when exactly one race is open at the chosen unit. Practice runs
+// with allowClosed, so every race is selectable and "exactly one open" is not a
+// state it can be in — collapsing the step would hide the picker precisely
+// where the observer came to learn it.
 const STEPS: { key: Step; label: string }[] = [
-  { key: 'unit', label: 'Unit' },
-  { key: 'contest', label: 'Race' },
   { key: 'sheet', label: 'Sheet' },
   { key: 'venue', label: 'Venue' },
+  { key: 'unit', label: 'Unit' },
+  { key: 'contest', label: 'Race' },
   { key: 'votes', label: 'Votes' },
   { key: 'review', label: 'Send' },
 ];
@@ -369,18 +410,35 @@ const Chip = ({ label, onPress }: { label: string; onPress: () => void }) => (
 
 /**
  * Practice run — the no-auth sandbox (/api/practice), rehearsing the REAL shape
- * of a report end to end: find your polling unit → choose the race → photograph
- * the sheet and the venue → type the counts → review, sign & send. Same steps,
- * same order, same screens as report/result, so nothing on election day is a
+ * of a report end to end: photograph the sheet and the venue → name the unit →
+ * choose the race → type the counts → review, sign & send. Same steps, same
+ * order, same screens as report/result, so nothing on election day is a
  * surprise.
  *
- * Deliberate differences, all because this is a rehearsal:
- *  - NO geofence. Any unit (or none) may be chosen; a calm advisory notes that a
- *    real race rejects a report filed from anywhere but the unit itself. Practice
- *    does not enforce it, because people practise indoors.
- *  - NO GPS fix required on the photos ("Use a sample" skips the camera).
- *  - Any race, open or closed, may be rehearsed — the race picker runs with
- *    allowClosed, so a closed 2027 race is a legitimate practice target.
+ * THAT SENTENCE USED TO BE FALSE. This screen ran unit → race → sheet → venue
+ * while report/result.tsx moved to capture-first (sheet → venue → unit → race)
+ * — so the one flow that exists to remove surprises was teaching the wrong
+ * order, and an observer who had practised would meet an unfamiliar screen with
+ * a crowd forming. docs/REPORT-FLOW-CAPTURE-FIRST.md §2 already required the
+ * two to move in lockstep; only the code had not. STEPS below is now the same
+ * array as result.tsx's, and every transition matches.
+ *
+ * THE GEOFENCE IS THE REAL ONE. Both flows import lib/geofence, so a unit
+ * nowhere near the observer is refused here exactly as it is on election day,
+ * and the same "you are Nm away" warning appears at the same moment. A
+ * rehearsal that let you file from anywhere taught the single thing most likely
+ * to stop a real report. Both silences are load-bearing and identical to the
+ * real flow's: no fix, or a unit the register places nowhere, means the
+ * distance is UNKNOWN — and unknown is not far, so nothing is said.
+ *
+ * Deliberate differences that remain, all because this is a rehearsal:
+ *  - EVERY RACE IS OPEN. The picker runs with allowClosed, so a closed 2027
+ *    race is a legitimate practice target and the submit always completes. This
+ *    is the one gate practice does not mirror, on purpose: the rehearsal has to
+ *    work on the 364 days that are not election day.
+ *  - NO GPS fix required on the photos, and "Use a sample" skips the camera —
+ *    people practise indoors, where a fix may never arrive. The fence above
+ *    still fires whenever a fix IS available, which is the honest half.
  *  - GENERIC parties (Party A/B/C…), never the real manifest.
  * Nothing here is published, counted, chained to the public ledger or anchored;
  * the backend keeps practice in its own disposable table on its own chain.
@@ -389,12 +447,12 @@ export default function Practice() {
   const ui = useUi();
   const notice = useNotice();
   const [cfg, setCfg] = useState<PracticeConfig | null>(null);
-  const [step, setStep] = useState<Step>('unit');
+  const [step, setStep] = useState<Step>('sheet');
 
   // -- which elections exist (for the race picker's open/closed styling) ------
   const [contests, setContests] = useState<Contest[]>([]);
 
-  // -- step 1: which polling unit --------------------------------------------
+  // -- step 3: which polling unit (steps 1-2 are the two photographs) --------
   const [unit, setUnit] = useState<Unit | null>(null);
   // GPS discovery — the way an observer standing at their unit finds it.
   const [nearby, setNearby] = useState<NearRow[]>([]);
@@ -406,6 +464,16 @@ export default function Practice() {
    *  (location off, or permission blocked with no dialog left) — never for a
    *  timeout, where permission is granted and settings would be a dead end. */
   const [gpsSettings, setGpsSettings] = useState(false);
+  /** A unit refused for being nowhere near the observer, held so the refusal can
+   *  be shown in the app's own sheet rather than the OS dialog. Same state, same
+   *  sheet and same words as report/result.tsx — a rehearsal that refuses
+   *  differently is not a rehearsal of the refusal. */
+  const [farUnit, setFarUnit] = useState<{
+    name: string;
+    lga: string;
+    state: string;
+    km: number;
+  } | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
   const pickReq = useRef<AbortController | null>(null);
   const [browse, setBrowse] = useState(false);
@@ -629,6 +697,15 @@ export default function Practice() {
           distanceM: u.distanceM ?? 0,
           tier: crowdMapped ? 'crowd' : toTier(u.locationTier),
           tierConfirmed: crowdMapped,
+          /**
+           * This row IS the far-away case: it is listed because the observer is
+           * near its crowd point, which says nothing about how far the envelope
+           * centre is. `approx_lat`/`approx_lng` ride along on `SELECT *`.
+           */
+          fenceEnvelope:
+            u.approx_lat != null && u.approx_lng != null && (u.approx_radius_m ?? 0) > 0
+              ? { lat: u.approx_lat, lng: u.approx_lng, radiusM: u.approx_radius_m as number }
+              : undefined,
           fixes: u.crowd_reports ?? 0,
           unit:
             u.state && u.lga
@@ -658,6 +735,8 @@ export default function Practice() {
           tier,
           // Drawn only when the pin IS the centre (unseeded approx rows).
           envelope: drawnIsEnvelopeCentre ? area : undefined,
+          // Carried whether or not it may be drawn — this is the server's gate.
+          fenceEnvelope: area ?? seed?.fenceEnvelope,
           tierConfirmed: true,
           fixes: n.fixes || seed?.fixes || 0,
           unit: seed?.unit ?? null,
@@ -685,7 +764,81 @@ export default function Practice() {
     }
   };
 
+  /**
+   * Find the nearby units on mount, exactly as report/result.tsx does.
+   *
+   * Two reasons, and the second is the one that matters here. Under capture
+   * first the unit step comes AFTER both photographs, so firing on mount means
+   * the list is warm before the observer has finished shooting and the step
+   * opens populated instead of starting a round trip.
+   *
+   * And the fence needs a fix to say anything. Practice used to acquire one only
+   * when someone pressed "Find units near me", so a unit reached through search
+   * or the register browser was measured against nothing — a geofence that never
+   * fires reads exactly like one that always passes, which is the wrong lesson
+   * from the flow whose entire job is to remove surprises.
+   *
+   * Runs ONCE, never when a unit is already chosen. It SUGGESTS only — nothing
+   * here selects, and every failure path inside findNearby already ends
+   * somewhere usable, so firing it unprompted cannot strand anyone.
+   */
+  const [autoNearRan, setAutoNearRan] = useState(false);
+  useEffect(() => {
+    // WAIT FOR THE CONFIG. This effect declares hooks, so it cannot sit behind
+    // the `!cfg` / `!cfg.active` early returns below — without this guard it
+    // fires on the first render, which means an observer opening Practice
+    // between elections is asked for their location and has it sent to the
+    // discovery endpoints, and is then shown "Practice Is Closed". Ask only
+    // once there is something to practise.
+    if (!cfg?.active || autoNearRan || unit) return;
+    setAutoNearRan(true);
+    void findNearby();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfg?.active, autoNearRan, unit]);
+  /**
+   * ONE silent retry, same as the real flow. The auto-fire runs at mount — the
+   * coldest moment a GPS ever has — so its first attempt can time out where a
+   * tap ten seconds later succeeds purely because the first warmed the chip.
+   */
+  const nearRetried = useRef(false);
+  useEffect(() => {
+    if (!autoNearRan || nearRetried.current || fix || unit) return;
+    const t = setTimeout(() => {
+      nearRetried.current = true;
+      void findNearby();
+    }, 6000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoNearRan, fix, unit]);
+
   const chooseUnit = (u: Unit) => {
+    /**
+     * REFUSE A UNIT THAT IS NOWHERE NEAR THE OBSERVER — the same refusal, at the
+     * same threshold, from the same module as report/result.tsx.
+     *
+     * This is the single funnel every selection path reaches — the nearby list,
+     * free search, the register drill-down, the map pin — so it is the only
+     * place one check covers all of them, exactly as on the real screen.
+     *
+     * Both silences are load-bearing and are the real flow's silences too: no
+     * fix yet, or a unit the register places nowhere, means the distance is
+     * UNKNOWN, and unknown is not far. Practising indoors with no GPS therefore
+     * still works end to end — nothing is claimed that cannot be measured.
+     */
+    const here = fix;
+    const there = unitPoint(u);
+    if (here && there) {
+      const awayM = haversineM(here.lat, here.lng, there.lat, there.lng);
+      if (awayM > GROSS_MISMATCH_M) {
+        setFarUnit({
+          name: u.name,
+          lga: u.lga,
+          state: u.state,
+          km: Math.round(awayM / 1000),
+        });
+        return;
+      }
+    }
     // Changing the unit can change which state the race picker is scoped to, so
     // a race chosen under a different unit must not silently carry over.
     setUnit(u);
@@ -848,8 +1001,20 @@ export default function Practice() {
     setNearLine(null);
     setSearched(null);
     setFix(null);
+    setFarUnit(null);
     setBrowse(false);
-    setStep('unit');
+    /**
+     * RE-ARM DISCOVERY, or every run after the first has no fix and therefore no
+     * fence. The auto-fire effect returns early on `autoNearRan`, and the retry
+     * on `nearRetried`, so leaving both latched means "Practise again" clears
+     * `fix` and then never asks for another one — the second run would show an
+     * empty nearby list and a geofence that silently cannot fire, which reads
+     * exactly like one that always passes. `unit` is null again by this point,
+     * so clearing the flag is enough to make the effect run.
+     */
+    setAutoNearRan(false);
+    nearRetried.current = false;
+    setStep('sheet');
   };
 
   if (!cfg) {
@@ -888,7 +1053,7 @@ export default function Practice() {
     const skip = () => {
       if (isSheet) setSheet(null);
       else setVenue(null);
-      setStep(retaking ? 'review' : isSheet ? 'venue' : 'votes');
+      setStep(retaking ? 'review' : isSheet ? 'venue' : 'unit');
       setRetaking(false);
     };
     return (
@@ -933,7 +1098,7 @@ export default function Practice() {
             setStep(retaking ? 'review' : 'venue');
           } else {
             setVenue(shot);
-            setStep(retaking ? 'review' : 'votes');
+            setStep(retaking ? 'review' : 'unit');
           }
           setRetaking(false);
         }}
@@ -942,7 +1107,10 @@ export default function Practice() {
             setRetaking(false);
             setStep('review');
           } else if (isSheet) {
-            setStep('contest');
+            // The sheet is the FIRST step now, so cancelling it leaves practice
+            // rather than stepping back into a screen that has not happened yet.
+            // report/result.tsx does exactly this (router.back() on the sheet).
+            router.back();
           } else {
             setStep('sheet');
           }
@@ -950,6 +1118,39 @@ export default function Practice() {
       />
     );
   }
+
+  /** The nearby row the current selection came from, when it came from GPS. */
+  const pickedRow = unit ? (nearby.find((n) => n.puCode === unit.pu_code) ?? null) : null;
+
+  /**
+   * How far is too far to file from — measured at the fence that actually
+   * applies, and at the WIDEST plausible one whenever the tier was never
+   * confirmed. `warnRadiusM` is the same rule report/result.tsx asks, so the
+   * sentence appears here at the same distance it will on election day.
+   *
+   * Only rows that came from the nearby list carry a measured distance, which is
+   * the real flow's behaviour too: a unit typed into search has no distance
+   * until the server measures one, and inventing a warning for it would teach a
+   * fence that does not exist.
+   */
+  const tooFar =
+    pickedRow != null &&
+    pickedRow.distanceM > warnRadiusM(pickedRow.tier, pickedRow.tierConfirmed);
+
+  /**
+   * THE OTHER REFUSAL — the one an approx unit actually faces, and the one the
+   * distance above cannot see. `tooFar` measures the observer against the PIN;
+   * an approx unit is gated by the server against the centre of the mapped AREA,
+   * which is somewhere else entirely. Same derivation as report/result.tsx, so
+   * the rehearsal warns for the same units at the same limit.
+   */
+  const envelopeGate = (() => {
+    const e = pickedRow?.fenceEnvelope;
+    if (!e || !fix) return null;
+    const limitM = Math.round(envelopeHardLimitM(e.radiusM));
+    const centreM = Math.round(haversineM(fix.lat, fix.lng, e.lat, e.lng));
+    return centreM > limitM ? { centreM, limitM } : null;
+  })();
 
   const selectedName = unit?.name ?? cfg.unit?.name ?? 'Practice polling unit';
   const selectedSub = unit
@@ -1086,12 +1287,13 @@ export default function Practice() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         className="flex-1"
       >
-        {/* ── STEP 1: which polling unit ── */}
+        {/* ── STEP 3: which polling unit (steps 1-2 are the two photographs,
+               rendered full-screen above before this ScrollView is reached) ── */}
         {step === 'unit' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             <Text className="pb-1 text-xl font-bold text-ink">Which Polling Unit?</Text>
             <Text className="pb-3 text-sm text-muted">
-              Practise from your unit, from anywhere, or skip and use a sample.
+              Practise from the unit you would report at, or skip and use a sample.
             </Text>
 
             <Pressable
@@ -1260,17 +1462,39 @@ export default function Practice() {
         ) : null}
 
         {/* Pinned CTA — always live: practice may run against a chosen unit OR
-            none at all (the sample). The advisory is calm, not alarming: it
-            states the real-race rule and that practice does not enforce it. */}
+            none at all (the sample), which is the escape that keeps the fence
+            from ever dead-ending a rehearsal. */}
         {step === 'unit' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Text className="pb-1 text-xs text-muted" numberOfLines={1}>
               {unit ? `Selected: ${unit.name}` : 'No unit chosen — you’ll practise against the sample.'}
             </Text>
-            <Text className="pb-2 text-xs text-muted">
-              A real report is only accepted at the polling unit itself. Practice isn’t checked, so
-              you can rehearse from anywhere.
-            </Text>
+            {/* THE REAL FLOW'S SENTENCE, WORD FOR WORD, AT THE REAL FLOW'S
+                DISTANCE (report/result.tsx, same `warnRadiusM` call). The point
+                of the rehearsal is that this warning is not new on the day. */}
+            {tooFar && pickedRow ? (
+              <Text className="pb-2 text-xs font-semibold text-warn-ink">
+                You are {pickedRow.distanceM}m away. Filing checks your position against this
+                unit&apos;s own coordinates — report from the unit itself.
+              </Text>
+            ) : null}
+            {/* The approx unit's real gate, and it is not the distance above:
+                the server measures from the centre of the mapped AREA, so the
+                reason has to name that centre. Same sentence as the real flow. */}
+            {envelopeGate ? (
+              <Text className="pb-2 text-xs font-semibold text-warn-ink">
+                Hawkeye knows this unit only by a mapped area, and you are {envelopeGate.centreM}m
+                from that area&apos;s centre — past the {envelopeGate.limitM}m filing allows, so a
+                real report would be refused after the photos.
+              </Text>
+            ) : null}
+            {!tooFar && !envelopeGate ? (
+              <Text className="pb-2 text-xs text-muted">
+                A real report is only accepted at the polling unit itself. This step checks the
+                same way, so choosing a unit behaves as it will on the day — the practice run
+                itself always completes.
+              </Text>
+            ) : null}
             <Pressable
               onPress={() => setStep('contest')}
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
@@ -1282,7 +1506,7 @@ export default function Practice() {
           </View>
         ) : null}
 
-        {/* ── STEP 2: which race (allowClosed — practice rehearses ANY race) ── */}
+        {/* ── STEP 4: which race (allowClosed — practice rehearses ANY race) ── */}
         {step === 'contest' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             <Crumb label={selectedName} onPress={() => setStep('unit')} />
@@ -1310,12 +1534,12 @@ export default function Practice() {
             ) : null}
             <Pressable
               disabled={!race}
-              onPress={() => setStep('sheet')}
+              onPress={() => setStep('votes')}
               className={`items-center rounded-2xl py-4 ${
                 race ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'
               }`}
             >
-              <Text className="text-base font-bold text-hawk-gold">Continue to photos</Text>
+              <Text className="text-base font-bold text-hawk-gold">Continue to the figures</Text>
             </Pressable>
           </View>
         ) : null}
@@ -1367,8 +1591,8 @@ export default function Practice() {
             >
               <Text className="text-base font-bold text-hawk-gold">Review</Text>
             </Pressable>
-            <Pressable className="mt-3 items-center" onPress={() => setStep('venue')}>
-              <Text className="text-sm font-semibold text-good-ink">‹ Back to photos</Text>
+            <Pressable className="mt-3 items-center" onPress={() => setStep('contest')}>
+              <Text className="text-sm font-semibold text-good-ink">‹ Back to the race</Text>
             </Pressable>
           </View>
         ) : null}
@@ -1520,6 +1744,28 @@ export default function Practice() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
+
+      {/* The refusal, in the app's own sheet rather than the OS dialog — the
+          same component, icon, title and wording as report/result.tsx, because
+          this is the screen the observer is here to become familiar with. One
+          action, because a refusal has nothing to cancel. */}
+      <ConfirmSheet
+        visible={!!farUnit}
+        icon="map-pin"
+        title="That unit is too far away"
+        body={
+          farUnit
+            ? `${farUnit.name} is in ${farUnit.lga}, ${farUnit.state}, about ` +
+              `${farUnit.km.toLocaleString()} km from where you are now.\n\n` +
+              'A result can only be filed from the polling unit itself, so this one cannot be ' +
+              'selected from here. If you are travelling there, choose it once you arrive.'
+            : ''
+        }
+        confirmLabel="Choose another unit"
+        cancelLabel={null}
+        onConfirm={() => setFarUnit(null)}
+        onCancel={() => setFarUnit(null)}
+      />
 
       <NoticeSheet {...notice.props} />
     </SafeScreen>

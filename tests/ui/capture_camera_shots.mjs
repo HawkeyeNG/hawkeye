@@ -58,6 +58,9 @@ const page = await ctx.newPage();
 
 const text = async (n = 300) =>
   (await page.evaluate(() => document.body.innerText)).replace(/\n+/g, ' | ').slice(0, n);
+// Kept though the capture-first reorder left no step to walk: this script drives
+// the ONE screen it shoots, and the next frame added here will need it again.
+// eslint-disable-next-line no-unused-vars
 const tap = async (label) => {
   const el = page.getByText(label, { exact: false }).first();
   await el.waitFor({ timeout: 15000 });
@@ -102,11 +105,9 @@ await page.goto(`${BASE}/practice`, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(3500);
 
 console.log('[0]', await text());
-await tap('Continue without a unit');
-await tap('Governorship');
-await tap('Lagos');
-await tap('Lagos Governorship');
-await tap('Continue to photos');
+// CAPTURE FIRST: practice opens ON the sheet camera now (sheet -> venue -> unit
+// -> race, mirroring report/result), so the four taps that used to walk the unit
+// and race steps to reach it are gone — arriving IS the sheet step.
 console.log('[5] sheet step ::', await text());
 
 // THE LANDMARK. If the video never gets frames the screenshot is a black

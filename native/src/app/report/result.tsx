@@ -40,6 +40,13 @@ import {
 import { Crumb, Prompt } from '@/components/wizard';
 import { UnitSearch } from '@/components/unit-search';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
+import {
+  envelopeHardLimitM,
+  GROSS_MISMATCH_M,
+  haversineM,
+  unitPoint,
+  warnRadiusM,
+} from '@/lib/geofence';
 import { pick, tap } from '@/lib/haptics';
 import {
   ELECTION_TYPES,
@@ -264,118 +271,6 @@ type Searched = {
  * row spinning forever with no error and no way out of the screen.
  */
 const PICK_TIMEOUT_MS = 12_000;
-
-/**
- * Where the screen starts saying out loud that a located unit is far away.
- *
- * Discovery reaches 800m, the submission geofence does not — so a unit can be
- * listed here and still be too far to file from. These mirror
- * backend/src/routes/submissions.js: the fence widens for crowd-mapped
- * coordinates, because the booth can stand anywhere inside the area observers
- * mapped, and warning at 500m there would talk observers out of submissions the
- * server would have accepted.
- *
- * `approx` is INFINITY here and that is not "no gate" — it is "no gate measured
- * from this point". submissions.js fences on distance to `pu.lat` and only runs
- * that branch when `pu.lat` is set, which an approx unit's is not by
- * definition. Its gate is a circle round a DIFFERENT centre and is checked
- * separately, against `fenceEnvelope`, by `envelopeHardLimitM` below.
- *
- * The server still owns the actual decision; these numbers only pick the moment
- * to warn, before two photos and a full tally have been spent.
- */
-/**
- * The distance at which selecting a unit is REFUSED outright, rather than
- * warned about.
- *
- * Chosen so that refusing here can never refuse a report the server would have
- * accepted. The widest distance any server branch can accept is the approx
- * envelope's `approx_radius_m * 1.5 + 2000`; the largest radius in the register
- * is 20,000m, giving 32km. The ward-centroid fallback added to submissions.js
- * alongside this change is 15km. 50km clears both.
- *
- * BELOW THIS, THE SCREEN STILL ONLY WARNS, and that is deliberate. Eight of
- * 176,846 units have an officially verified coordinate; 117,159 carry geocodes
- * recorded as roughly a third wrong. Blocking at the fence itself would turn
- * away observers standing exactly where they should be — the failure that
- * caused the 200m -> 500m raise recorded at config.js:242. A thousand-kilometre
- * mismatch carries no such doubt.
- */
-const GROSS_MISMATCH_M = 50_000;
-
-/**
- * The best position the register offers for a unit, in the same order of
- * confidence the server uses: verified pin, then crowd/geocoded median, then
- * the GRID3 envelope centre. Null when the register places it nowhere at all —
- * 14,464 units — in which case NOTHING is claimed about distance. Unknown must
- * never be rendered as far.
- */
-const unitPoint = (u: Unit): { lat: number; lng: number } | null => {
-  if (u.lat != null && u.lng != null) return { lat: u.lat, lng: u.lng };
-  if (u.crowd_lat != null && u.crowd_lng != null) return { lat: u.crowd_lat, lng: u.crowd_lng };
-  if (u.approx_lat != null && u.approx_lng != null) return { lat: u.approx_lat, lng: u.approx_lng };
-  return null;
-};
-
-const FAR_ENOUGH_TO_WARN_M: Record<UnitTier, number> = {
-  verified: 500, // config.geofenceRadiusM — raised from 200 on 2026-08-31
-  crowd: 750, // config.crowdGeofenceRadiusM
-  approx: Number.POSITIVE_INFINITY,
-};
-
-/**
- * The gate an approx unit really has, copied from
- * backend/src/routes/submissions.js:143-150:
- *
- *   } else if (pu.approx_lat != null) {
- *     const approxDist = haversineM(lat, lng, pu.approx_lat, pu.approx_lng);
- *     if (approxDist > pu.approx_radius_m * 1.5 + 2000) {
- *       return res.status(403).json({ error: 'too_far_from_unit' });
- *
- * A hard 403, not a flag — the flag is the second, 1000m-and-accuracy test one
- * line further down, which only downgrades `locationPlausible` and is none of
- * this screen's business. Roughly the top decile of the 109,507 geocoded units
- * are far enough out to cross this, and crossing it costs the observer two
- * photos and a full tally before the server says no.
- */
-const envelopeHardLimitM = (radiusM: number) => radiusM * 1.5 + 2000;
-
-/**
- * Metres between two positions — the same arithmetic as
- * backend/src/services/geo.js (same earth radius, same formula), because this
- * one number decides whether the screen contradicts the server about a
- * threshold the server is about to enforce.
- */
-const haversineM = (aLat: number, aLng: number, bLat: number, bLng: number) => {
-  const R = 6_371_000;
-  const rad = (d: number) => (d * Math.PI) / 180;
-  const dLat = rad(bLat - aLat);
-  const dLng = rad(bLng - aLng);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(rad(aLat)) * Math.cos(rad(bLat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
-};
-
-/**
- * The fence to warn at when the tier was never confirmed — i.e. the row came
- * only from /api/polling-units, because /api/mapping/nearby failed.
- *
- * That lookup is wrapped in a catch and is ALLOWED to fail; on election day, on
- * one overloaded mast, it is the likelier of the two to. Without it every row
- * carries `verified`, since /api/polling-units tiers on which column is filled
- * and a crowd-mapped median lives in `lat` — so the 500m fence would have been
- * asserted over units the server accepts to 750m, and an observer standing 400m
- * from their own polling unit would be told to move for no reason.
- *
- * So the widest fence the server states in metres is used instead
- * (config.crowdGeofenceRadiusM). It is the widest any row this endpoint can
- * return is subject to: submissions.js fences only when `pu.lat` is set, at 500m
- * or 750m, and applies a far looser envelope check to everything else. Warning
- * late is recoverable — the server refuses and says the real distance. Warning
- * early on a guess talks an observer out of a submission that would have stood.
- */
-const UNCONFIRMED_FENCE_M = 750;
 
 type Step = 'unit' | 'contest' | 'sheet' | 'venue' | 'votes' | 'review' | 'done';
 
@@ -1352,9 +1247,11 @@ export default function ReportResult() {
      * free search, the register drill-down, the Tier-A sheet guess — so it is
      * the only place one check covers all of them. It has to be here rather
      * than in `unit-search.tsx`, which is shared with mapping (a deliberate
-     * 5,000m question), practice (documented as having no geofence) and
-     * incidents (filable with no unit at all); a fence in the shared component
-     * would be a regression in each.
+     * 5,000m question) and incidents (filable with no unit at all); a fence in
+     * the shared component would be a regression in each. Practice now runs the
+     * same check, but it does so in its OWN chooseUnit against the shared
+     * `lib/geofence` — same funnel, same threshold, same words — rather than by
+     * pushing the fence down into a component three flows disagree about.
      *
      * Both silences are load-bearing. No fix yet, or a unit the register places
      * nowhere, means the distance is UNKNOWN, and unknown is not far.
@@ -1539,8 +1436,7 @@ export default function ReportResult() {
    */
   const tooFar =
     pickedRow != null &&
-    pickedRow.distanceM >
-      (pickedRow.tierConfirmed ? FAR_ENOUGH_TO_WARN_M[pickedRow.tier] : UNCONFIRMED_FENCE_M);
+    pickedRow.distanceM > warnRadiusM(pickedRow.tier, pickedRow.tierConfirmed);
 
   /**
    * The OTHER refusal — the one an approx unit actually faces, and the one the

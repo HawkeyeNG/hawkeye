@@ -67,6 +67,28 @@ const parties = (arg('ballot') || OSUN_2026_BALLOT.join(',')).split(',').map((s)
  */
 const fillable = argv.includes('--fillable');
 
+/**
+ * --serial <digits>: print a sheet serial number, as a real EC8A carries.
+ *
+ * Nothing in the app READS this. native/src/lib/ocr.ts returns only
+ * { text, numericLines, counts }, and parseCounts extracts nothing but
+ * "party code -> last number on that line"; the sheetSerial field on the review
+ * step is typed by hand. So this exists to prove the sheet is not read, and to
+ * exercise the guard below.
+ *
+ * THE GUARD: parseCounts only accepts a token as a count when it matches
+ * /^\d{1,6}$/ — "anything longer than six digits is discarded as a serial or
+ * form number rather than a tally". A SEVEN-digit serial is therefore outside
+ * the count range by construction. A six-digit one is not, and would be
+ * eligible as a vote if it ever shared a recognised line with a party code —
+ * which is why this prints in the header, far from the party table, rather than
+ * in a corner of it.
+ *
+ * Opt-in with an explicit value: no serial is ever baked in as a default,
+ * for the same reason no example vote counts are.
+ */
+const serial = arg('serial', null);
+
 const W = 2480;
 const H = 3508;
 const M = 150;                       // page margin
@@ -93,6 +115,20 @@ y += 70;
 parts.push(t(W / 2, y, 'STATEMENT OF RESULT OF POLL FROM POLLING UNIT', { size: 42, weight: 700, anchor: 'middle' }));
 y += 46;
 parts.push(t(W / 2, y, 'Layout follows Form EC8A for training purposes only', { size: 26, anchor: 'middle', fill: FAINT }));
+
+// Sheet serial, top-right — where a real form carries it, and deliberately far
+// from the party table so it can never share a recognised line with a party
+// code. Boxed and monospaced so a camera reads the digits cleanly.
+if (serial) {
+  const sw2 = 26 * String(serial).length + 60;
+  const sx = W - M - sw2;
+  const sy = M - 40;
+  parts.push(t(W - M, sy - 14, 'Sheet Serial No.', { size: 24, anchor: 'end', fill: FAINT }));
+  parts.push(rect(sx, sy, sw2, 74, { sw: 3 }));
+  parts.push(`<text x="${sx + sw2 / 2}" y="${sy + 52}" text-anchor="middle"
+    font-family="'DejaVu Sans Mono', 'Courier New', monospace" font-size="40"
+    font-weight="700" fill="${INK}" letter-spacing="4">${esc(serial)}</text>`);
+}
 
 // ── identity fields + the #1-#8 box block ────────────────────────────────
 y += 80;

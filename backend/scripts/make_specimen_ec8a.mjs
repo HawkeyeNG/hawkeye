@@ -89,6 +89,33 @@ const fillable = argv.includes('--fillable');
  */
 const serial = arg('serial', null);
 
+/**
+ * --pu-code 29-01-01-001: print the delimitation code INTO the boxes, instead of
+ * leaving them blank to be written in.
+ *
+ * For demonstrating Tier A — native/src/lib/pu-code.ts reading the sheet's own
+ * polling unit — where handwriting is the weak link. The serial reads well
+ * because it is printed; a biro code in nine small boxes is exactly the case an
+ * on-device recogniser is worst at, so a sheet meant to show the feature working
+ * should print it.
+ *
+ * THE CODE HAS TO BE REAL, and that is not a contradiction of the specimen's
+ * whole design. The resolver checks the register, so an invented code resolves
+ * to nothing and the card never appears — the demo would show only the failure
+ * path. A real code in PRACTICE is contained: routes/practice.js writes to
+ * practice_submissions on its own genesis and never to `submissions`, so
+ * integrity.js never sees it and no real unit is touched.
+ *
+ * Accepts with or without dashes; validated to nine digits, because a code that
+ * is silently wrong produces a sheet that silently demonstrates nothing.
+ */
+const puCodeRaw = arg('pu-code', null);
+const puDigits = puCodeRaw ? String(puCodeRaw).replace(/[^0-9]/g, '') : null;
+if (puCodeRaw && puDigits.length !== 9) {
+  console.error(`--pu-code must be 9 digits (NN-NN-NN-NNN); got ${puDigits.length} in "${puCodeRaw}"`);
+  process.exit(1);
+}
+
 const W = 2480;
 const H = 3508;
 const M = 150;                       // page margin
@@ -182,10 +209,20 @@ if (fillable) {
   const GROUPS = [[2, 'STATE'], [2, 'LGA'], [2, 'WARD'], [3, 'UNIT']];
   let bx = M + label.length * 17 + 60;
   const by0 = fy - 14;
+  let digit = 0;               // walks puDigits across the four groups
   for (const [n, caption] of GROUPS) {
     const gStart = bx;
     for (let k = 0; k < n; k += 1) {
       parts.push(rect(bx, by0, BW, BH, { sw: 3 }));
+      // One digit per box, centred — the same one-character-per-cell shape the
+      // real form uses, which is why pu-code.ts parses a token stream: ML Kit
+      // returns each boxed character as its own text block.
+      if (puDigits) {
+        parts.push(`<text x="${bx + BW / 2}" y="${by0 + BH - 24}" text-anchor="middle"
+          font-family="'DejaVu Sans Mono', 'Courier New', monospace" font-size="52"
+          font-weight="700" fill="${INK}">${esc(puDigits[digit])}</text>`);
+      }
+      digit += 1;
       bx += BW + (k < n - 1 ? GAP : 0);
     }
     const gWidth = bx - gStart;

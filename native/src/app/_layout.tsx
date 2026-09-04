@@ -153,20 +153,37 @@ function RootShell() {
     };
   }, []);
 
-  // Signed-out access tier for the APP: a signed-out user gets ONLY the auth
-  // funnel (welcome / sign-in) only — practice is signed-in on the app (people who
-  // downloaded it came to observe; the WEB keeps practice open for ad/social traffic).
-  // Any other route — the tabs, a
-  // report flow, a trust page — bounces to welcome. Signed-in users are
-  // unrestricted; nothing runs until auth has resolved past 'loading'. This is
-  // the native counterpart of the web's authgate.js (which keeps more public,
-  // per that platform's tier). Device-verify: no flash, no loop, correct bounce.
+  // Signed-out access tier for the APP: the auth funnel (welcome / sign-in) and
+  // PRACTICE. Any other route — the tabs, a report flow, a trust page — bounces
+  // to welcome. Signed-in users are unrestricted; nothing runs until auth has
+  // resolved past 'loading'.
+  //
+  // PRACTICE WAS GATED HERE, and the reasoning written at the time was that
+  // "people who downloaded it came to observe". That holds for someone who
+  // sought the app out; it does not hold for the person being handed a phone,
+  // which is how observers are actually recruited — a demonstration, in a room,
+  // to someone who has not signed up and may not. Requiring an account before
+  // the rehearsal puts the sign-up in front of the reason to sign up.
+  //
+  // It also made native the odd client out. authgate.js has always kept
+  // practice.html in ALWAYS — "APP shell (Capacitor), signed out: only the auth
+  // funnel + practice stay open" — so Lite and the web already do this, and the
+  // comment here even asserted the web behaviour as the contrast. This is the
+  // native counterpart of authgate.js; it now matches it on practice.
+  //
+  // Nothing else opens. Practice is safe to expose because it is isolated by
+  // construction on both sides: routes/practice.js is explicitly unauthenticated
+  // ("No auth: an ad-campaign visitor can try the flow instantly"), writes only
+  // to the disposable practice_submissions table on its own genesis, and is
+  // never chained, anchored, counted or published.
+  //
+  // Device-verify: no flash, no loop, correct bounce.
   const auth = useAuth();
   const segments = useSegments();
   useEffect(() => {
     if (auth.status !== 'signedOut') return;
     const top = segments[0];
-    const allowed = top === 'welcome' || top === 'sign-in';
+    const allowed = top === 'welcome' || top === 'sign-in' || top === 'practice';
     if (allowed) return;
 
     /**

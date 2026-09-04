@@ -757,10 +757,16 @@ export default function Profile() {
               onPress={() => setConfirm('delete')}
             >
               <Feather name="trash-2" size={16} color={ui.tint.bad.ink} />
-              <Text className="pl-2 text-base font-bold text-bad-ink">Delete my identity</Text>
+              {/* "Account", not "identity". App Review rejected Hawkeye Lite for
+                  having no way to "initiate account deletion" while this exact
+                  control sat on its profile screen — a reviewer scanning for the
+                  word never matched "identity". The concept keeps its name in the
+                  line below; the control says what a reader expects. */}
+              <Text className="pl-2 text-base font-bold text-bad-ink">Delete my account</Text>
             </Pressable>
             <Text className="pt-2 text-center text-[11px] text-faint">
-              Deleting wipes your key and subscriptions. Ledger reports are public and permanent.
+              Deletes your observer identity — key and subscriptions are wiped. Ledger reports are
+              public and permanent.
             </Text>
           </>
         )}
@@ -799,9 +805,9 @@ export default function Profile() {
         visible={confirm === 'delete'}
         icon="trash-2"
         danger
-        title="Delete your observer identity?"
+        title="Delete your account?"
         body="Wipes your key, device, Telegram link and subscriptions. Ledger reports stay — they are permanent."
-        confirmLabel="Delete my identity"
+        confirmLabel="Delete my account"
         busy={confirmBusy}
         onConfirm={doDelete}
         onCancel={() => setConfirm(null)}

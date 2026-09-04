@@ -35,7 +35,12 @@ const ROUTES = [
   ['/terms', 'Terms of Service'],
   ['/integrity', 'Election Integrity'],
   ['/(tabs)/results', ''],
-  ['/practice', 'Which Polling Unit'],
+  // Practice is capture-first now (sheet -> venue -> unit -> race), so it opens
+  // on the full-screen camera and "Which Polling Unit" is three steps in. What
+  // that first screen renders depends on whether the harness has a camera at
+  // all, so there is no stable string to assert — same reason /report/result
+  // below carries no landmark. Mounting is still worth checking.
+  ['/practice', ''],
   ['/profile', ''],
   // The report flow is a fullScreenModal and the heaviest screen in the app —
   // which is exactly why the zero-inset first frame was visible there and

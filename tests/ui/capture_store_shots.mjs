@@ -342,28 +342,32 @@ async function drivePractice(stopAfter = 99) {
     }
   };
 
-  await at(0, 'unit step');
+  // CAPTURE FIRST. Practice mirrors report/result now — sheet, venue, THEN unit
+  // and race — so the run opens on the camera rather than the unit picker. The
+  // two "Use a sample" taps are the camera's extraAction, which renders whether
+  // or not this harness has a camera device.
+  await at(0, 'sheet step');
+  await tap('Use a sample');
+  await at(1, 'venue step');
+
+  await tapAny(['Use a sample', 'Continue']);
+  await at(2, 'unit step');
+
   await tap('Continue without a unit');
-  await at(1, 'race step');
+  await at(3, 'race step');
 
   await tap('Governorship');
-  await at(2, 'state list');
+  await at(4, 'state list');
 
   const state = await tapAny(['Osun', 'Lagos', 'Abia']);
-  await at(3, 'state chosen');
+  await at(5, 'state chosen');
 
   // Choosing the state only FILTERS; the race row itself still has to be
   // selected before Continue does anything.
   await tapAny([state + ' Governorship', 'Governorship (2027)', 'rehearsal']);
-  await at(4, 'race selected');
+  await at(6, 'race selected');
 
-  await tap('Continue to photos');
-  await at(5, 'sheet step');
-
-  await tap('Use a sample');
-  await at(6, 'venue step');
-
-  await tapAny(['Use a sample', 'Continue']);
+  await tap('Continue to the figures');
   await at(7, 'votes step');
 
   // Nominal counts. These are PRACTICE parties (Party A-D) on the practice

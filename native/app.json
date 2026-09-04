@@ -20,7 +20,7 @@
         "NSFaceIDUsageDescription": "Hawkeye can ask for Face ID before it signs a result, so that only you can file a report with this device's signing key.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "24",
+      "buildNumber": "25",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
           {

@@ -221,7 +221,7 @@ function MenuAccordion({
           setOpen((o) => !o);
         }}
       >
-        <Feather name={icon} size={17} color="#0b6b3a" />
+        <Feather name={icon} size={17} color={ui.tint.good.ink} />
         <Text className="flex-1 pl-3 text-base text-ink">{title}</Text>
         <Feather name={open ? 'chevron-down' : 'chevron-right'} size={16} color={ui.faint} />
       </Pressable>
@@ -232,7 +232,11 @@ function MenuAccordion({
             className="flex-row items-center border-t border-line py-3 pl-11 pr-4 active:bg-surface"
             onPress={() => go(it.href)}
           >
-            <Feather name={it.icon} size={16} color={ui.faint} />
+            {/* The LEADING icon is the row's own mark and takes the row colour,
+                the same as every top-level row above; `ui.faint` is the chevron
+                colour and giving it to a leading icon is what made these three
+                read as disabled. Only the trailing chevron stays faint. */}
+            <Feather name={it.icon} size={16} color={ui.tint.good.ink} />
             <Text className="flex-1 pl-3 text-[15px] text-ink">{it.label}</Text>
           </Pressable>
         ))}
@@ -286,7 +290,7 @@ export default function More() {
                           : WebBrowser.openBrowserAsync(`https://hawkeye.com.ng/${it.href}`)
                     }
                   >
-                    <Feather name={it.icon} size={17} color="#0b6b3a" />
+                    <Feather name={it.icon} size={17} color={ui.tint.good.ink} />
                     <Text className="flex-1 pl-3 text-base text-ink">{it.label}</Text>
                     <Feather name="chevron-right" size={16} color={ui.faint} />
                   </Pressable>

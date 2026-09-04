@@ -123,7 +123,16 @@ if (serial) {
   const sw2 = 26 * String(serial).length + 60;
   const sx = W - M - sw2;
   const sy = M - 40;
-  parts.push(t(W - M, sy - 14, 'Sheet Serial No.', { size: 24, anchor: 'end', fill: FAINT }));
+  // "S/N", because that is what a real EC8A prints — verified against the 2026
+  // Osun sheets in audits/: 29-01-01-001 reads "S/N 0000001", 29-02-01-001
+  // "S/N 0000078", 29-05-03-002 "S/N 0000388". Seven digits, zero-padded,
+  // printed rather than handwritten, sitting under the FORM EC 8A box.
+  //
+  // The label matters more than it looks: native/src/lib/ocr.ts anchors serial
+  // extraction on this exact token, so a training sheet labelled anything else
+  // ("Sheet Serial No.", as this first said) would demonstrate nothing — the
+  // matcher would never fire on it.
+  parts.push(t(W - M, sy - 14, 'S/N', { size: 28, anchor: 'end', weight: 700 }));
   parts.push(rect(sx, sy, sw2, 74, { sw: 3 }));
   parts.push(`<text x="${sx + sw2 / 2}" y="${sy + 52}" text-anchor="middle"
     font-family="'DejaVu Sans Mono', 'Courier New', monospace" font-size="40"

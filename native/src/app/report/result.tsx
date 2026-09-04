@@ -24,6 +24,7 @@ import { ContestPicker } from '@/components/contest-picker';
 import { NoElection } from '@/components/no-election';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
+import { SerialField } from '@/components/serial-field';
 import { SheetReference } from '@/components/sheet-reference';
 import {
   envelopeText,
@@ -1575,6 +1576,9 @@ export default function ReportResult() {
   // -- step 6: review + submit ---------------------------------------------
   /** Optional EC8A serial, mirroring the PWA's #sheet-serial field. */
   const [sheetSerial, setSheetSerial] = useState('');
+  /** What the on-device read proposed, kept so the FROM SHEET pill can tell a
+   *  read value apart from a typed one. */
+  const [readSerial, setReadSerial] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const [done, setDone] = useState<{ title: string; line: string }>({ title: '', line: '' });
@@ -1718,6 +1722,14 @@ export default function ReportResult() {
             // only a HIGH-confidence read is allowed to select: a wrong unit is
             // worse than a slower one. Never overrides a unit already chosen.
             if (shot.read?.text && !unit) void resolveUnitFromSheet(shot.read.text);
+            // The printed S/N, offered for confirmation at the votes step. Never
+            // overwrites something already typed, and never replaces a serial the
+            // observer has corrected — a read value is a proposal, not a fact
+            // (see lib/sheet-serial.ts for why that distinction is load-bearing).
+            if (shot.read?.serial && !sheetSerial) {
+              setReadSerial(shot.read.serial);
+              setSheetSerial(shot.read.serial);
+            }
             setStep(retaking ? 'review' : 'venue');
           } else {
             setVenue(shot);
@@ -2155,6 +2167,15 @@ export default function ReportResult() {
                 to say "copy the figures exactly as written on the sheet" while
                 showing no sheet. The photograph is already on the device. */}
             {sheet ? <SheetReference uri={sheet.uri} /> : null}
+            {/* Directly under the sheet thumbnail: the observer is looking at the
+                photograph to copy figures off it, so the one printed value we
+                also want is a glance away rather than a screen away. */}
+            <SerialField
+              value={sheetSerial}
+              onChange={setSheetSerial}
+              proposed={readSerial}
+              editable={!busy}
+            />
             <TextInput
               className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Search party (APC, PDP, LP…)"
@@ -2278,18 +2299,6 @@ export default function ReportResult() {
                   </View>
                 ))}
             </View>
-            {/* Optional serial — parity with the PWA's #sheet-serial input.
-                Sits immediately above the submit CTA so it cannot be missed. */}
-            <Prompt>Enter the sheet serial number (optional)</Prompt>
-            <TextInput
-              className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
-              placeholder="Printed on the EC8A, if visible"
-              placeholderTextColor={ui.faint}
-              autoCapitalize="characters"
-              value={sheetSerial}
-              onChangeText={setSheetSerial}
-              editable={!busy}
-            />
             {/* BEHIND A DOT, so the facts above stay on screen.
                 Three sentences of explanation sat between the observer and the
                 Send button — about 60pt on a phone, on the one screen that has

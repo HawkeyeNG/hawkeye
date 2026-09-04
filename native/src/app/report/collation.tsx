@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 
 import { SafeScreen } from '@/components/safe-screen';
+import { SerialField } from '@/components/serial-field';
 import { CaptureCamera } from '@/components/capture-camera';
 import { ContestPicker } from '@/components/contest-picker';
 import { NoElection } from '@/components/no-election';
@@ -271,6 +272,9 @@ export default function ReportCollation() {
   // -- submit ---------------------------------------------------------------
   /** Optional collation-form serial, mirroring the PWA field. */
   const [formSerial, setFormSerial] = useState('');
+  /** What the on-device read proposed, so a read value can be told apart
+   *  from a typed one. */
+  const [readSerial, setReadSerial] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   /** Set only when the last GPS failure is one the OS settings app has to fix
@@ -402,6 +406,13 @@ export default function ReportCollation() {
         onCapture={(shot) => {
           if (isSheet) {
             setSheet(shot);
+            // The printed serial, offered for confirmation at the figures step.
+            // This flow read shot.read for nothing at all before — it asked the
+            // recogniser to run and then discarded every word it came back with.
+            if (shot.read?.serial && !formSerial) {
+              setReadSerial(shot.read.serial);
+              setFormSerial(shot.read.serial);
+            }
             setStep(retaking ? 'review' : 'venue');
           } else {
             setVenue(shot);
@@ -632,6 +643,17 @@ export default function ReportCollation() {
             <Text className="pb-3 text-sm text-muted">
               Copy the figures exactly as announced. Leave blank for parties not listed.
             </Text>
+            {/* Asked here rather than above the Send button, for the reason in
+                components/serial-field.tsx: as a last field before an
+                irreversible action it was never once filled in. */}
+            <SerialField
+              value={formSerial}
+              onChange={setFormSerial}
+              proposed={readSerial}
+              editable={!busy}
+              label="Form serial number"
+              where="top of the collation form"
+            />
             <TextInput
               className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder="Search party (APC, PDP, LP…)"
@@ -740,17 +762,6 @@ export default function ReportCollation() {
                 </View>
               ))}
             </View>
-            {/* Optional form serial — parity with the PWA's collation field. */}
-            <Prompt>Enter the form serial number (optional)</Prompt>
-            <TextInput
-              className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
-              placeholder="Printed on the collation form, if visible"
-              placeholderTextColor={ui.faint}
-              autoCapitalize="characters"
-              value={formSerial}
-              onChangeText={setFormSerial}
-              editable={!busy}
-            />
           </ScrollView>
         ) : null}
 

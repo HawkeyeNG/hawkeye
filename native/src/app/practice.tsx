@@ -19,6 +19,7 @@ import {
 import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { SerialField } from '@/components/serial-field';
 import { ContestPicker } from '@/components/contest-picker';
 import { NoticeSheet, useNotice } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
@@ -500,6 +501,10 @@ export default function Practice() {
   // -- step 5: votes ----------------------------------------------------------
   const [counts, setCounts] = useState<Record<string, string>>({});
   const [sheetSerial, setSheetSerial] = useState('');
+  /** What the on-device read proposed, so a read value can be told apart
+   *  from a typed one. Practice rehearses the CONFIRMATION; the value is
+   *  still not sent, because a practice run is disposable by design. */
+  const [readSerial, setReadSerial] = useState<string | null>(null);
 
   // -- step 6: review + submit ------------------------------------------------
   const [busy, setBusy] = useState(false);
@@ -1095,6 +1100,10 @@ export default function Practice() {
                 return next;
               });
             }
+            if (shot.read?.serial && !sheetSerial) {
+              setReadSerial(shot.read.serial);
+              setSheetSerial(shot.read.serial);
+            }
             setStep(retaking ? 'review' : 'venue');
           } else {
             setVenue(shot);
@@ -1557,6 +1566,14 @@ export default function Practice() {
               <Text className="pt-1 text-lg font-bold text-white">{selectedName}</Text>
               <Text className="pt-0.5 text-xs text-emerald-100">{selectedSub}</Text>
             </View>
+            {/* Same position as the real flow's, so the rehearsal teaches where
+                this question actually appears on election day. */}
+            <SerialField
+              value={sheetSerial}
+              onChange={setSheetSerial}
+              proposed={readSerial}
+              editable={!busy}
+            />
             <Prompt>Enter the announced counts (practice parties)</Prompt>
             {parties.map((p) => (
               <View
@@ -1643,16 +1660,6 @@ export default function Practice() {
                   </View>
                 ))}
             </View>
-            <Prompt>Enter the sheet serial number (optional)</Prompt>
-            <TextInput
-              className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
-              placeholder="Printed on the EC8A, if visible"
-              placeholderTextColor={ui.faint}
-              autoCapitalize="characters"
-              value={sheetSerial}
-              onChangeText={setSheetSerial}
-              editable={!busy}
-            />
             <Text className="pb-3 text-xs text-muted">
               On election day this step takes a GPS fix, signs the report with this device&apos;s
               key and files it on the public ledger. Here it just completes the practice — nothing

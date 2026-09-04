@@ -33,6 +33,7 @@
 import { Platform } from 'react-native';
 
 import { recognize as visionRecognize, visionAvailable } from '@/modules/hawkeye-vision';
+import { parseSerial } from './sheet-serial';
 
 type MlkitResult = { text: string; blocks?: { text: string }[] };
 type Recogniser = { recognize: (uri: string) => Promise<MlkitResult> };
@@ -59,6 +60,8 @@ async function recogniseText(uri: string): Promise<string | null> {
   return res?.text ?? '';
 }
 
+export { parseSerial } from './sheet-serial';
+
 export const ocrAvailable = () => (Platform.OS === 'ios' ? visionAvailable() : TextRecognition != null);
 
 export type SheetRead = {
@@ -68,6 +71,12 @@ export type SheetRead = {
   numericLines: number;
   /** Party code → count, for codes that appear on the same line as a number. */
   counts: Record<string, number>;
+  /**
+   * The sheet's printed serial, when one was found. NEVER authoritative — the
+   * observer confirms it before it is sent, because of what it feeds (see
+   * parseSerial).
+   */
+  serial: string | null;
 };
 
 /**
@@ -113,9 +122,14 @@ export async function readSheet(uri: string, partyCodes: string[] = []): Promise
   try {
     const text = await recogniseText(uri);
     if (text == null) return null;
-    if (!text.trim()) return { text: '', numericLines: 0, counts: {} };
+    if (!text.trim()) return { text: '', numericLines: 0, counts: {}, serial: null };
     const numericLines = text.split(/\r?\n/).filter((l) => /\d/.test(l)).length;
-    return { text, numericLines, counts: parseCounts(text, partyCodes) };
+    return {
+      text,
+      numericLines,
+      counts: parseCounts(text, partyCodes),
+      serial: parseSerial(text),
+    };
   } catch {
     return null;
   }

@@ -47,6 +47,7 @@ import {
   warnRadiusM,
 } from '@/lib/geofence';
 import { getIdentity } from '@/lib/identity';
+import { extractCandidates, resolveUnitFromText } from '@/lib/pu-code';
 import { describeFixFailure, DISCOVERY_RADIUS_M, tryQuickFix, type Fix } from '@/lib/location';
 import { STATES, type Race, type StateName } from '@/lib/races';
 import { maybeAskForReview } from '@/lib/review';
@@ -463,6 +464,21 @@ export default function Practice() {
   const [nearby, setNearby] = useState<NearRow[]>([]);
   const [nearBusy, setNearBusy] = useState(false);
   const [nearLine, setNearLine] = useState<string | null>(null);
+  /**
+   * TIER A: what the sheet said about its own unit — OFFERED, never assumed.
+   *
+   * The real flow has read the EC8A header for its own polling-unit code since
+   * capture-first shipped; practice did not, so the rehearsal taught observers
+   * to hunt for their unit by hand when election day would have handed it to
+   * them. Same parser (lib/pu-code), same two-pass resolve, same confirm card.
+   *
+   * sheetMiss is the other half and matters as much: a Tier A that fails in
+   * silence is indistinguishable from one that never ran.
+   */
+  const [sheetGuess, setSheetGuess] = useState<
+    { code: string; name: string; where: string; repaired: boolean; row: NearRow | null; unit: Unit | null } | null
+  >(null);
+  const [sheetMiss, setSheetMiss] = useState('');
   const [searched, setSearched] = useState<Searched | null>(null);
   const [fix, setFix] = useState<Fix | null>(null);
   /** Set only when the last GPS failure is one the settings app has to fix
@@ -913,6 +929,74 @@ export default function Practice() {
     }
   };
 
+  /**
+   * TIER A — let the sheet name its own unit, exactly as report/result.tsx does.
+   *
+   * Two passes, and the order is the point. The first refuses repairs
+   * (maxRepair 0) and may reach the register over the network, so an exactly-read
+   * code wins outright. Only if that finds nothing does the second pass allow a
+   * single-digit repair, and then ONLY against rows already in hand — an 81-probe
+   * repair sweep must never hit the network on an election-day connection.
+   *
+   * Never overrides a unit already chosen, and never selects on its own: a wrong
+   * unit is worse than a slower one, so the answer is offered on a card and
+   * bound by a tap through the ordinary path.
+   */
+  const resolveUnitFromSheet = async (text: string) => {
+    if (unit) return;
+    const byCode = new Map(nearby.map((n) => [n.puCode, n]));
+    const local = async (code: string) => {
+      const n = byCode.get(code);
+      return n ? { name: n.name, lat: n.lat, lng: n.lng } : null;
+    };
+    const withNet = async (code: string) => {
+      const hit = await local(code);
+      if (hit) return hit;
+      try {
+        const r = await fetch(`${REG}/unit?pu_code=${encodeURIComponent(code)}`);
+        const b = r.ok ? await r.json() : null;
+        return b?.unit ?? null;
+      } catch { return null; }
+    };
+    const f = fix ? { lat: fix.lat, lng: fix.lng } : undefined;
+    let hit = null;
+    try {
+      hit = await resolveUnitFromText(text, { resolve: withNet, fix: f, maxRepair: 0 })
+        ?? await resolveUnitFromText(text, { resolve: local, fix: f });
+    } catch { return; }
+    if (unit) return;
+    if (!hit) {
+      let codes: string[] = [];
+      try { codes = extractCandidates(text); } catch { /* report as unread */ }
+      setSheetMiss(
+        codes.length
+          ? `Read ${codes[0]} off the sheet, but no unit with that code was found — pick yours below.`
+          : 'Could not read a unit code off the sheet. Pick one below, or practise without a unit.',
+      );
+      return;
+    }
+    const row = byCode.get(hit.code) ?? null;
+    const u = (row ? null : (hit.unit as unknown as Unit)) ?? null;
+    setSheetMiss('');
+    setSheetGuess({
+      code: hit.code,
+      name: hit.unit.name || row?.name || hit.code,
+      where: [u?.ward ?? row?.ward, u?.lga, u?.state].filter(Boolean).join(', '),
+      repaired: hit.source === 'repaired',
+      row,
+      unit: u,
+    });
+  };
+
+  /** The observer said yes: bind it exactly as a tapped unit binds. */
+  const acceptSheetGuess = () => {
+    const g = sheetGuess;
+    setSheetGuess(null);
+    if (!g) return;
+    if (g.row) void chooseNearby(g.row);
+    else if (g.unit) chooseUnit(g.unit);
+  };
+
   // Leaving the screen must take any in-flight lookup with it.
   useEffect(
     () => () => {
@@ -1023,6 +1107,11 @@ export default function Practice() {
      */
     setAutoNearRan(false);
     nearRetried.current = false;
+    // The Tier-A answer belongs to the sheet that was just photographed. Left
+    // standing, the next run opens its unit step already offering the PREVIOUS
+    // run's unit — same class of stale-state bug as the discovery latches above.
+    setSheetGuess(null);
+    setSheetMiss('');
     setStep('sheet');
   };
 
@@ -1108,6 +1197,10 @@ export default function Practice() {
               setReadSerial(shot.read.serial);
               setSheetSerial(shot.read.serial);
             }
+            // TIER A: let the sheet name its own unit, as the real flow does.
+            // Fired here rather than at the unit step so the answer is already
+            // waiting two steps later, and never when a unit is already chosen.
+            if (shot.read?.text && !unit) void resolveUnitFromSheet(shot.read.text);
             setStep(retaking ? 'review' : 'venue');
           } else {
             setVenue(shot);
@@ -1328,6 +1421,41 @@ export default function Practice() {
 
             {nearLine ? (
               <Text className="pt-3 text-sm font-semibold text-good-ink">{nearLine}</Text>
+            ) : null}
+
+            {/* TIER A: the sheet named a unit. Above the nearby list because it
+                is the most specific answer available — it came off the form in
+                the observer's hand — but still only an offer. Same card, same
+                words and same two buttons as report/result.tsx, because the
+                whole point of practice is that this is not new on the day. */}
+            {!unit && sheetGuess ? (
+              <View className="mt-3 rounded-2xl border-2 border-hawk-green bg-card p-4">
+                <Text className="pb-1.5 text-base font-bold text-ink">Is this your polling unit?</Text>
+                <Text className="text-base font-semibold text-ink">{sheetGuess.name}</Text>
+                <Text className="pb-3 text-xs text-muted">
+                  {sheetGuess.code}
+                  {sheetGuess.where ? ` · ${sheetGuess.where}` : ''} · read from the sheet
+                  {sheetGuess.repaired ? ' (one digit corrected)' : ''}
+                </Text>
+                <View className="flex-row gap-2.5">
+                  <Pressable
+                    onPress={acceptSheetGuess}
+                    className="flex-1 items-center rounded-xl bg-hawk-green py-3 active:opacity-80"
+                  >
+                    <Text className="text-sm font-bold text-hawk-gold">Yes, use this unit</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => { setSheetGuess(null); setSheetMiss('Pick your unit below, or search for it.'); }}
+                    className="flex-1 items-center rounded-xl border border-line py-3 active:opacity-70"
+                  >
+                    <Text className="text-sm font-bold text-ink">No, choose another</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+
+            {!unit && !sheetGuess && sheetMiss ? (
+              <Text className="pt-3 text-sm text-muted">{sheetMiss}</Text>
             ) : null}
 
             {/* Only for the failures system settings can actually fix. The

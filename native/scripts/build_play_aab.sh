@@ -151,7 +151,22 @@ chmod +x ./gradlew
 # directory, and reporting that one as the build's result would ship a stale AAB.
 STAMP=/tmp/aab_start.$$
 touch "$STAMP"
-./gradlew --no-daemon --no-watch-fs --console=plain \
+# --max-workers=2 IS LOAD-BEARING, not tuning. android/gradle.properties sets
+# org.gradle.parallel=true, so on this 8-CPU box gradle fans out that many worker
+# daemons, each with its own heap, while a RELEASE bundle is running R8, resource
+# shrinking and every ABI at once. Inside a 12GB WSL VM the workers get squeezed
+# and one dies:
+#
+#   Failed to run Gradle Worker Daemon
+#   Unable to connect to the child process 'Gradle Worker Daemon 7'.
+#   ... might occur when the build machine is extremely loaded.
+#
+# That killed two builds in a row (versionCode 10), and a third earlier that took
+# the whole WSL VM's exec path down with it. The debug APK survives the same
+# settings only because it does none of this work. Capping workers trades wall
+# clock for a build that finishes; the cap cannot live in gradle.properties
+# because expo prebuild regenerates android/ on every run.
+./gradlew --no-daemon --no-watch-fs --console=plain --max-workers=2 \
   -Pandroid.enableMinifyInReleaseBuilds=true \
   -Pandroid.enableShrinkResourcesInReleaseBuilds=true \
   -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" \

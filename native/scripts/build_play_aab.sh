@@ -75,7 +75,10 @@ echo "  version   : $VN (versionCode $VC)"
 # spending a twenty-minute bundle on an upload Play will reject as a
 # duplicate — and a guard that still names the release before last has
 # quietly stopped guarding anything.
-[ "$VC" -ge 9 ] || die "versionCode $VC would be rejected — 8 is UPLOADED (the 1.0.1 AAB) and live"
+# 9 was BUILT (2026-09-04) and may or may not have gone up; 10 skips past it
+# rather than risk a duplicate, because a skipped versionCode costs nothing and a
+# rejected upload costs the whole twenty-minute bundle.
+[ "$VC" -ge 10 ] || die "versionCode $VC would be rejected — 8 is UPLOADED and 9 was already built"
 
 SKIP_PREBUILD=0
 [ "${1:-}" = "--skip-prebuild" ] && SKIP_PREBUILD=1

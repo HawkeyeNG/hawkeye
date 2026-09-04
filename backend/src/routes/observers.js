@@ -327,8 +327,25 @@ observersRouter.post('/login', (req, res) => {
     return res.status(429).json({ error: 'too_many_attempts', hint: 'Too many wrong passwords. Wait an hour, or sign in with an OTP instead.' });
   }
   const observer = db.prepare('SELECT * FROM observers WHERE phone_hash = ?').get(hash);
+  // THREE STATES, ONE ANSWER, AND THAT IS THE POINT: no account, a DELETED
+  // account, and an account that simply never set a password all reply
+  // identically. Splitting them would be kinder to the deleted user and would
+  // also turn this form into an oracle for "is this number registered" — the
+  // exact pre-check the OTP path refuses to provide (see /verify below), because
+  // a phone is stored only as a hash so this database cannot become a list of
+  // who is observing. Anyone willing to type numbers would get that list.
+  //
+  // So the wording changed rather than the branching. The old hint — "No
+  // password on this account" — asserted that the account exists and merely
+  // lacks a password, which for a deleted account is simply untrue and hides the
+  // one fact that matters: signing in this way brings it back. Stated as a
+  // conditional, it helps whoever it applies to and confirms nothing about
+  // anyone.
   if (!observer || observer.status !== 'active' || !observer.password_hash) {
-    return res.status(401).json({ error: 'password_login_unavailable', hint: 'No password on this account — sign in with an OTP, then set one on your profile.' });
+    return res.status(401).json({
+      error: 'password_login_unavailable',
+      hint: 'Password sign-in is not available for this number. Sign in with a one-time code, then set a password on your profile. If you deleted your account, signing in this way restores it.',
+    });
   }
   if (!verifyPassword(password, observer.password_hash)) {
     notePwFail(hash);

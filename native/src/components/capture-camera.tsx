@@ -278,11 +278,29 @@ export function CaptureCamera({
    * observer and its own guideline problem.
    */
   const askedOnce = useRef(false);
+  /**
+   * Has the ask actually FINISHED? Without this the black stage below has no
+   * exit: it renders whenever the system "could" still ask, so any state where
+   * the dialog does not resolve — the request rejects, the platform declines to
+   * present it, the observer dismisses it without choosing — leaves a bare black
+   * screen with no button on it. That became reachable the moment practice.tsx
+   * started opening ON the camera rather than three steps in.
+   *
+   * Resolving this flag is not a message in front of the prompt: it is only ever
+   * read AFTER the request has been made and come back.
+   */
+  const [asked, setAsked] = useState(false);
   useEffect(() => {
+    // No `setAsked` for the already-blocked case: the render gate below reads
+    // `canAskAgain && !asked`, so a permanently-denied permission falls through
+    // to the explanation on its own. Setting it here would only be a synchronous
+    // setState in an effect that changes nothing.
     if (!permission || permission.granted || !permission.canAskAgain) return;
     if (askedOnce.current) return;
     askedOnce.current = true;
-    void requestPermission();
+    void requestPermission()
+      .catch(() => {})
+      .finally(() => setAsked(true));
   }, [permission, requestPermission]);
 
   const cancel = () => {
@@ -304,34 +322,72 @@ export function CaptureCamera({
      * such a message, and the surest way to always proceed is to put nothing in
      * front of it.
      *
-     * So while the OS will still ask (canAskAgain), this renders the plain black
-     * stage the dialog sits on. The observer already chose to photograph a sheet,
-     * and NSCameraUsageDescription carries the reason on the dialog itself. The
-     * ask is fired by the effect above, once per mount.
+     * So WHILE THE DIALOG IS UP, this renders the plain black stage it sits on.
+     * The observer already chose to photograph a sheet, and
+     * NSCameraUsageDescription carries the reason on the dialog itself. The ask
+     * is fired by the effect above, once per mount.
+     *
+     * `!asked` is what bounds it. Rendering black for as long as the OS *could*
+     * ask left no exit whenever the dialog never resolved, and there is no
+     * guideline reason to keep an empty screen after the ask has come back: the
+     * request has already happened, so nothing below can delay it.
      */
-    if (permission.canAskAgain) return <View className="flex-1 bg-black" />;
+    if (permission.canAskAgain && !asked) return <View className="flex-1 bg-black" />;
 
     /**
-     * Permanently denied. There is no longer a request to "delay" — the OS will
-     * not ask again — so an explanation is now the useful thing rather than the
-     * prohibited one, and App Review's own note recommends exactly this: tell the
-     * user and point them at Settings.
+     * The ask is over and the camera is still not ours. There is no longer a
+     * request to "delay" — either the OS will not ask again, or it has just
+     * asked and been answered — so an explanation is now the useful thing rather
+     * than the prohibited one, and App Review's own note recommends exactly
+     * this: tell the user and point them at Settings.
      */
     return (
       <View className="flex-1 items-center justify-center bg-black px-8">
         <Feather name="camera-off" size={32} color="#fff" />
         <Text className="pt-4 text-center text-base text-white">
-          Camera access is off for Hawkeye, so the sheet cannot be photographed in the app.
-          You can turn it back on in Settings.
+          {permission.canAskAgain
+            ? 'Hawkeye does not have camera access, so the sheet cannot be photographed in the app.'
+            : 'Camera access is off for Hawkeye, so the sheet cannot be photographed in the app. '
+              + 'You can turn it back on in Settings.'}
         </Text>
-        <Pressable
-          className="mt-5 rounded-2xl bg-hawk-gold px-6 py-3"
-          onPress={() => {
-            void Linking.openSettings().catch(() => {});
-          }}
-        >
-          <Text className="text-base font-bold text-hawk-ink">Open Settings</Text>
-        </Pressable>
+        {/* Still askable — offer the ask again rather than sending someone to
+            Settings for a switch that is not yet off. */}
+        {/* ONE primary, and it is the action that can actually work. While the
+            OS will still ask, asking again is the fix and Settings is a switch
+            that has not been turned off yet; once it will not ask, Settings is
+            the only route left. Two gold buttons stacked would compete. */}
+        {permission.canAskAgain ? (
+          <>
+            <Pressable
+              className="mt-5 rounded-2xl bg-hawk-gold px-6 py-3"
+              onPress={() => {
+                setAsked(false);
+                void requestPermission()
+                  .catch(() => {})
+                  .finally(() => setAsked(true));
+              }}
+            >
+              <Text className="text-base font-bold text-hawk-ink">Try again</Text>
+            </Pressable>
+            <Pressable
+              className="mt-4"
+              onPress={() => {
+                void Linking.openSettings().catch(() => {});
+              }}
+            >
+              <Text className="text-sm font-bold text-hawk-gold">Open Settings</Text>
+            </Pressable>
+          </>
+        ) : (
+          <Pressable
+            className="mt-5 rounded-2xl bg-hawk-gold px-6 py-3"
+            onPress={() => {
+              void Linking.openSettings().catch(() => {});
+            }}
+          >
+            <Text className="text-base font-bold text-hawk-ink">Open Settings</Text>
+          </Pressable>
+        )}
         {/* A denied camera must not dead-end a flow that has an escape (the
             PWA rule: no camera -> use a sample). */}
         {extraAction ? (

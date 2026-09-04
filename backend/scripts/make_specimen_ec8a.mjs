@@ -43,6 +43,30 @@ const arg = (n, d = null) => { const i = argv.indexOf(`--${n}`); return i > -1 ?
 const out = arg('out', '../app/play-shots/specimen-ec8a.png');
 const parties = (arg('ballot') || OSUN_2026_BALLOT.join(',')).split(',').map((s) => s.trim()).filter(Boolean);
 
+/**
+ * --fillable: leave the identity fields EMPTY so a demo audience can write a
+ * polling unit in by hand, and print the unit code as boxed characters.
+ *
+ * Off by default, because the default output is a committed asset: the store
+ * screenshot and the fake camera feed in tests/ui/capture_camera_shots.mjs both
+ * consume app/play-shots/specimen-ec8a.png, and silently blanking its fields
+ * would change a published screenshot.
+ *
+ * WHAT THIS COSTS, stated plainly: the docstring above lists the 00-00-00-000
+ * code as one of four reasons this sheet is not a forgery kit. This mode drops
+ * that one — a filled-in code is the whole point of a scan demo. The other
+ * three are untouched and are the load-bearing ones: no INEC branding of any
+ * kind, SPECIMEN struck across the page in 330px red under every field, and a
+ * red header and footer that both disclaim INEC. A page carrying all three
+ * cannot pass as an issued result no matter what is written on it.
+ *
+ * BOXED, not a dotted rule, for the unit code. A real EC8A boxes those
+ * characters, and native/src/lib/pu-code.ts parses a TOKEN STREAM precisely
+ * because ML Kit returns each boxed character as its own text block. A demo
+ * scan off a ruled line would exercise a different path than election day.
+ */
+const fillable = argv.includes('--fillable');
+
 const W = 2480;
 const H = 3508;
 const M = 150;                       // page margin
@@ -75,8 +99,10 @@ y += 80;
 const boxW = 900;
 const boxX = W - M - boxW;
 const fieldW = boxX - M - 60;
-const rows = [['State', 'SPECIMEN'], ['Local Government Area', 'SPECIMEN'],
-  ['Registration Area', 'SPECIMEN'], ['Polling Unit', 'SPECIMEN (code 00-00-00-000)']];
+const rows = fillable
+  ? [['State', ''], ['Local Government Area', ''], ['Registration Area', ''], ['Polling Unit', '']]
+  : [['State', 'SPECIMEN'], ['Local Government Area', 'SPECIMEN'],
+    ['Registration Area', 'SPECIMEN'], ['Polling Unit', 'SPECIMEN (code 00-00-00-000)']];
 // A ruled line rather than a run of dots: the dots were a fixed length, so a
 // short label like "State" left them running under the value and the two
 // collided. A rule starts where the label ends and stops at a fixed column.
@@ -89,6 +115,43 @@ for (const [label, val] of rows) {
                     stroke="${RULE}" stroke-width="2" stroke-dasharray="6 8"/>`);
   parts.push(t(M + labelW + 24, fy + 34, val, { size: 30, fill: FAINT }));
   fy += 92;
+}
+
+// ── the unit code, as boxed characters (fillable mode only) ──────────────
+// Grouped 2-2-2-3 because every code in the register is NN-NN-NN-NNN — state,
+// LGA, ward, unit — and all 176,846 of them are exactly that shape. The group
+// captions say which part is which so a demo audience can copy a code off a
+// phone without being told the format twice.
+//
+// NO EXAMPLE DIGITS ANYWHERE ON THIS SHEET. A sample value printed in a form
+// gets copied verbatim by people filling it in — that is not hypothetical here;
+// a worked example in an OCR prompt once ended up in 38 real sheets. The boxes
+// are captioned, never pre-filled.
+if (fillable) {
+  const label = 'Polling Unit Code';
+  parts.push(t(M, fy + 40, label, { size: 32 }));
+  const BW = 78;         // box width
+  const BH = 92;
+  const GAP = 8;         // between boxes inside a group
+  const DASH = 34;       // between groups
+  const GROUPS = [[2, 'STATE'], [2, 'LGA'], [2, 'WARD'], [3, 'UNIT']];
+  let bx = M + label.length * 17 + 60;
+  const by0 = fy - 14;
+  for (const [n, caption] of GROUPS) {
+    const gStart = bx;
+    for (let k = 0; k < n; k += 1) {
+      parts.push(rect(bx, by0, BW, BH, { sw: 3 }));
+      bx += BW + (k < n - 1 ? GAP : 0);
+    }
+    const gWidth = bx - gStart;
+    parts.push(t(gStart + gWidth / 2, by0 + BH + 34, caption,
+      { size: 22, anchor: 'middle', fill: FAINT, ls: 1 }));
+    if (caption !== 'UNIT') {
+      parts.push(t(bx + DASH / 2, by0 + BH / 2 + 14, '-', { size: 44, anchor: 'middle' }));
+      bx += DASH;
+    }
+  }
+  fy += BH + 60;
 }
 
 const BOXES = [
@@ -120,8 +183,24 @@ const cParty = 380;
 const cFig = 560;
 const cWords = 760;
 const cAgent = tw - cSn - cParty - cFig - cWords;
-const rowH = 96;
+/**
+ * Row height. 96px suits the 15-party Osun ballot, which fills the page on its
+ * own — but a 4-party practice sheet at 96px leaves two thirds of an A4 blank
+ * and gives 8mm boxes to write votes in.
+ *
+ * On a sheet whose job is to be READ BACK by OCR that is the wrong trade: digit
+ * height is the single biggest lever on recognition off a phone camera. So in
+ * fillable mode the rows grow to fill the space actually available, capped at
+ * 210px (~18mm at 300dpi) — comfortable for handwriting, and still leaving room
+ * for the certification block below.
+ */
 const headH = 120;
+const CERT_RESERVE = 420;               // certification lines + footer breathing room
+const FILL_CAP = 210;
+const rowH = fillable
+  ? Math.min(FILL_CAP, Math.max(96,
+    Math.floor((H - M - CERT_RESERVE - (ty + headH)) / (parties.length + 1))))
+  : 96;
 
 parts.push(rect(M, ty, tw, headH));
 let cx = M;
@@ -170,8 +249,12 @@ parts.push(`<text x="${W / 2}" y="${H / 2}" text-anchor="middle"
 // ── footer ───────────────────────────────────────────────────────────────
 parts.push(t(W / 2, H - 90, 'SPECIMEN — produced by Hawkeye for training. Not issued by, affiliated with, or endorsed by INEC.',
   { size: 26, anchor: 'middle', fill: '#b00' }));
-parts.push(t(W / 2, H - 50, 'Contains no result. Polling unit code 00-00-00-000 exists in no register.',
-  { size: 24, anchor: 'middle', fill: FAINT }));
+// The default sheet can point at its own impossible code. The fillable one
+// cannot — it no longer prints one — so it must not keep saying it does.
+parts.push(t(W / 2, H - 50, fillable
+  ? 'Contains no result. Anything written on this sheet is a practice entry, not a record of any poll.'
+  : 'Contains no result. Polling unit code 00-00-00-000 exists in no register.',
+{ size: 24, anchor: 'middle', fill: FAINT }));
 
 const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${parts.join('\n')}</svg>`;
 

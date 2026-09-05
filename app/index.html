@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=168" />
+  <link rel="stylesheet" href="styles.css?v=169" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -301,52 +301,21 @@
              signed in) the header bell. -->
         <div style="margin-top: 14px">
           <p id="install-hint" hidden class="hint" style="margin: 0 0 8px"></p>
-          <div class="install-row">
-          <!-- Google Play, once the listing went live. Hidden until JS confirms
-               this is not an iPhone: there is no iOS build yet, and a Play badge
-               on an iPhone is an offer the visitor cannot take.
-               NO HOMEMADE BADGE ARTWORK. Google's badge is a trademark with its
-               own brand guidelines, and a lookalike drawn here would breach them;
-               a plain text link to the listing is expressly allowed. Drop the
-               official PNG at app/play-badge.png and the script below
-               swaps it in on its own. -->
-          <!-- THE BADGE IS THE MARKUP, not an upgrade applied by script. It used
-               to render as our gold button and swap to the image once it loaded —
-               and because these assets are served with no CDN or browser cache
-               (cache-control: max-age=0), that swap can take seconds, so what a
-               visitor actually saw was a yellow button. The image is here from
-               the first paint; the text is the fallback if it ever fails. -->
-          <a class="play-badge-link" id="play-cta" hidden rel="noopener" target="_blank"
-             href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer"><img
-             src="play-badge.png" alt="Get it on Google Play" height="56"
-             onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Get it on Google Play ↗'" /></a>
-          <!-- The App Store, on iPhone and iPad, the moment review passes.
-               STAGED BUT OFF: the switch is IOS_STORE_LIVE in the script below,
-               and nothing here shows until it is true. Shipping the markup dark
-               means the swap is a one-line change reviewed in advance rather than
-               a rush against a live listing.
-               Apple's OFFICIAL artwork, fetched unmodified from their marketing
-               tools API — the same rule the Play badge follows two lines up. It
-               is a trademark with its own guidelines: no recolouring, cropping or
-               redrawing, and clear space on all sides, which is why the link
-               carries none of our own background, border or radius. Same 56px
-               visible height as the Play badge, because Apple asks that a badge
-               shown beside another store's is no smaller than it. -->
-          <a class="play-badge-link" id="ios-cta" hidden rel="noopener" target="_blank"
-             href="https://apps.apple.com/app/id6804218478"><img
-             src="app-store-badge.svg" alt="Download on the App Store" height="56"
-             onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Download on the App Store ↗'" /></a>
-          </div>
-          <!-- The web-app route, now BELOW the two store badges rather than
-               beside them. It sat in the row when it was one of only two ways in;
-               with the app on both stores it is the fallback for someone with no
-               store or no space, so it reads as a quieter third option. Still the
-               same #install-cta the script drives — an anchor takes hidden,
-               textContent and the click handler exactly as the button did, and
-               download.html links straight here for precisely this route. -->
-          <p class="hint install-alt-line" style="margin: 10px 0 0">
-            <a href="#install" id="install-cta" hidden role="button">Install Web App</a>
+          <!-- ONE BUTTON, NOT A BADGE WALL. There are now FOUR store listings
+               (Hawkeye and Hawkeye Lite, each on Play and the App Store) plus the
+               web app and the direct APK. Six routes cannot sit in a hero without
+               burying the primary CTA, and the badges here could only ever show
+               two of them. The button hands the whole decision to download.html,
+               which has room to state the difference between the apps.
+
+               This also retires the UA-gating that used to live in the script
+               below: with four listings, "which badge do we show" is a question
+               the download page answers with words instead of a guess about the
+               device someone is holding. -->
+          <p class="hero-get">
+            <a class="btn-ghost hero-get-btn" href="download.html">Get the app</a>
           </p>
+          <p class="hint hero-get-sub">Android and iPhone, free &mdash; or run it in your browser with no install.</p>
         </div>
 
         <!-- Manual install steps. Chromium's one-tap prompt covers most Android
@@ -406,12 +375,12 @@
                  which is how a debug build that Play Protect blocks kept being
                  installed after it had already been replaced. A new name cannot
                  be served stale. Bump it whenever the APK is rebuilt. -->
-            <p><a class="btn-ghost apk-dl" href="download/hawkeye-1.2-8.apk"
-                  download="hawkeye-1.2-8.apk" rel="nofollow">⬇ Download the Android App</a></p>
+            <p><a class="btn-ghost apk-dl" href="download/hawkeye-1.2-4-52900bc4.apk"
+                  download="hawkeye-1.2-4-52900bc4.apk" rel="nofollow">⬇ Download the Android App</a></p>
             <!-- "not yet on Play" stopped being the reason for that prompt the day
                  the listing went live. Android shows it for anything installed
                  outside Play at all, which is what this route is. -->
-            <p class="pwa-note">30&nbsp;MB. Android will ask you to allow installs from
+            <p class="pwa-note">35&nbsp;MB. Android will ask you to allow installs from
               your browser — that prompt is normal for any app installed outside the
               Play Store, and it only applies to this one install. The file is served
               from hawkeye.com.ng itself; do not install a Hawkeye APK from anywhere
@@ -687,6 +656,11 @@
     // so show the Add-to-Home-Screen hint there instead. Hide everything once the
     // app is already running standalone (i.e. installed).
     (function () {
+      // The hero's web-app button MOVED to download.html along with the store
+      // badges, so `btn` is now null here. Everything below is guarded rather
+      // than deleted: the beforeinstallprompt capture, the modal and its close
+      // handlers are all still needed, because download.html sends people to
+      // index.html#install for exactly this dialog.
       const btn = document.getElementById('install-cta');
       const hint = document.getElementById('install-hint');
       const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -697,46 +671,10 @@
       let deferred = null;
       // Chromium (desktop + Android) fires this when installable; stash for click.
       window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; });
-      window.addEventListener('appinstalled', () => { btn.hidden = true; hint.hidden = true; });
-      btn.hidden = false;                 // always offer it (iOS/Android have no auto-prompt)
+      window.addEventListener('appinstalled', () => { if (btn) btn.hidden = true; if (hint) hint.hidden = true; });
+      if (btn) btn.hidden = false;        // always offer it (iOS/Android have no auto-prompt)
 
-      // GOOGLE PLAY, everywhere except iPhone. There is no iOS build, and a Play
-      // link on an iPhone is an offer that cannot be taken — the iOS section of
-      // the dialog says so in words instead.
-      // The badge itself is in the MARKUP; script only decides whether to
-      // show it. Google's official artwork, used unmodified — their brand
-      // guidelines forbid recolouring, cropping or redrawing it, which is
-      // also why .play-badge-link carries no background, border or radius of
-      // ours, only the clear space they require.
-      // BOTH BADGES, EVERYWHERE. This used to hide Play on iPhone because there
-      // was no iOS build and the badge would have been an offer the visitor
-      // could not take. There is now, so a pair of badges is simply what is
-      // true — and people choose an app on a laptop for a phone they are not
-      // holding, which platform-gating hides from them.
-      const play = document.getElementById('play-cta');
-      if (play) play.hidden = false;
-
-      /**
-       * THE APP STORE SWITCH. Flip to true the day iOS review passes.
-       *
-       * One constant, because three things have to change together and any one
-       * of them left behind is a visible lie: the badge appears, the web-app
-       * button stops being the only route on iPhone, and the install dialog
-       * stops asserting there is no App Store version. Splitting that across
-       * three edits is how a page ends up offering a store build in one place
-       * and denying it in another.
-       *
-       * ON since 2026-09-02: review passed and the listing is live — verified
-       * before flipping, not assumed from the approval mail. itunes.apple.com's
-       * lookup for id6804218478 returns resultCount 1, "Hawkeye Election
-       * Monitor" 1.0.0, and apps.apple.com/app/id6804218478 answers 200. Check
-       * the same way before flipping this back on after any removal: an
-       * approved app and a purchasable one are not the same state.
-       */
-      const IOS_STORE_LIVE = true;
-
-      const ios = document.getElementById('ios-cta');
-      if (ios && IOS_STORE_LIVE) ios.hidden = false;
+      // The hero's store badges moved to download.html; nothing to reveal here.
       // The dialog used to have its iPhone note rewritten from this switch, to
       // replace "there is no App Store version yet" with a line pointing at the
       // store. Both are gone: the dialog no longer mentions stores at all, since
@@ -747,18 +685,25 @@
       // iPhone it was the ONLY route; with the app on the App Store that is no
       // longer true and the old label would send people down the fallback path
       // in preference to the store.
-      btn.textContent = 'Or install the web app — no store, no download';
+      if (btn) btn.textContent = 'Or install the web app — no store, no download';
+      // download.html sends people here with #install for the home-screen route.
+      // Without this the hash matched no element and they landed on the hero with
+      // no dialog — the one thing that page promised them.
+      if (location.hash === '#install') {
+        const d = document.getElementById('install-modal');
+        if (d && typeof d.showModal === 'function') { try { d.showModal(); } catch (e) {} }
+      }
       // Samsung Internet's PWA install is blocked by Play Protect ("built for an
       // older version of Android") — its wrapper, not our site; the same manifest
       // installs cleanly in Chrome and on iPhone. Say so BEFORE they tap: a
       // visitor who hits that warning on an election tool has every reason to
       // conclude it is malware and never come back.
-      if (/SamsungBrowser/i.test(ua)) {
+      if (btn && /SamsungBrowser/i.test(ua)) {
         hint.innerHTML = '⚠ <strong>Open this page in Chrome to install.</strong> '
           + 'Samsung Internet shows a false “unsafe app” warning — Chrome installs it cleanly.';
         hint.hidden = false;
       }
-      btn.addEventListener('click', async () => {
+      if (btn) btn.addEventListener('click', async () => {
         if (deferred) {                   // native one-tap install
           deferred.prompt();
           const { outcome } = await deferred.userChoice;

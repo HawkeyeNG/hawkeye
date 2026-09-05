@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=168" />
+  <link rel="stylesheet" href="styles.css?v=169" />
   <script src="native.js?v=114"></script>
   <!-- OG tags matter more here than on any other page: this is the URL people
        send each other, so the preview card in WhatsApp IS the first thing most
@@ -59,48 +59,97 @@
     preview crawler, and a dialog that only opens if JS runs does none of those.
   -->
   <main class="wrap dl-wrap">
-    <div class="card dl-card">
-      <h1>Get Hawkeye</h1>
-      <p class="lede">Watch an election from your own polling unit, and check the
-        results against INEC&rsquo;s own sheets. Free, independent, and not
-        affiliated with INEC or any government body.</p>
+<div class="card dl-card">
 
-      <div class="install-row dl-badges">
-        <a class="play-badge-link" rel="noopener" target="_blank"
-           href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer"><img
-           src="play-badge.png" alt="Get it on Google Play" height="56"
-           onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Get it on Google Play ↗'" /></a>
-        <!-- Live since 2026-09-02 — the switch is HAWKEYE_STORES.iosLive in
-             share.js, the same one index.html's install row reads. -->
-        <a class="play-badge-link" id="ios-cta" hidden rel="noopener" target="_blank"
-           href="https://apps.apple.com/app/id6804218478"><img
-           src="app-store-badge.svg" alt="Download on the App Store" height="56"
-           onerror="this.parentNode.className='btn-accent';this.parentNode.textContent='Download on the App Store ↗'" /></a>
-      </div>
+  <h1 class="dl-title">Get Hawkeye</h1>
+  <p class="lede dl-lede">Photograph the result sheet at your polling unit and enter the counts.</p>
 
-      <div class="dl-alt">
-        <p class="hint">No store, or a phone short on space?</p>
-        <p><a class="btn-ghost" href="index.html#install">Run it from your home screen</a></p>
-      </div>
+  <!-- THE MAIN ATTRACTION: the full app. Size is deliberately NOT the headline
+       here — it is 53 MB on iPhone, and setting that in the largest type on the
+       page would argue against the thing the page is promoting. What the app
+       DOES leads; the megabytes sit underneath as a quiet fact. The inverse is
+       true for Lite below, where small size IS the pitch. -->
+  <div class="dl-pick">
+    <p class="dl-pick-tag">Start here</p>
+    <h2 class="dl-pick-name">Hawkeye</h2>
+    <p class="dl-pick-why">The full app. A scanner that finds the edges of the sheet, the
+      polling-unit register held on the phone for when there is no network, maps, and alerts.</p>
 
-      <div class="dl-share">
-        <button type="button" class="btn-accent" data-share>Share Hawkeye</button>
-      </div>
+    <div class="install-row dl-badges">
+      <a class="play-badge-link" rel="noopener" target="_blank"
+         href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer"><img
+         src="play-badge.png" alt="Get Hawkeye on Google Play"
+         width="145" height="56" decoding="async" /></a>
+      <a class="play-badge-link" rel="noopener" target="_blank"
+         href="https://apps.apple.com/app/id6804218478"><img
+         class="dl-badge-ios" src="app-store-badge.svg" alt="Download Hawkeye on the App Store"
+         width="114" height="38" decoding="async" /></a>
     </div>
+
+    <p class="dl-pick-meta">35&nbsp;MB on Android &middot; 53&nbsp;MB on iPhone</p>
+  </div>
+
+  <!-- THE LIGHTER OPTION, stated in the open rather than folded away. It is
+       addressed to a condition the visitor knows about their own phone ("short
+       on space or data"), not to a product name they cannot rank. Here the
+       megabytes ARE the argument, so they carry the emphasis. -->
+  <section class="dl-lite">
+    <h2 class="dl-lite-head">Short on space or data?</h2>
+    <p class="dl-lite-why"><b>Hawkeye Lite</b> is <b class="dl-lite-mb">7.9&nbsp;MB</b> and does
+      the same reporting.</p>
+
+    <div class="install-row dl-badges dl-badges-lite">
+      <a class="play-badge-link" rel="noopener" target="_blank"
+         href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.lite"><img
+         src="play-badge.png" alt="Get Hawkeye Lite on Google Play"
+         width="145" height="56" loading="lazy" decoding="async" /></a>
+      <a class="play-badge-link" rel="noopener" target="_blank"
+         href="https://apps.apple.com/app/id6806090537"><img
+         class="dl-badge-ios" src="app-store-badge.svg" alt="Download Hawkeye Lite on the App Store"
+         width="114" height="38" loading="lazy" decoding="async" /></a>
+    </div>
+  </section>
+
+  <details class="dl-more" id="other-ways">
+    <summary>
+      <span class="dl-more-label">If you cannot use an app store</span>
+      <span class="dl-more-sub">Install the file directly, or run Hawkeye with no install at all</span>
+    </summary>
+    <div class="dl-more-body">
+
+      <section class="dl-opt">
+        <div class="dl-opt-head">
+          <h3 class="dl-opt-name">Install the Android file</h3>
+          <p class="dl-sizes"><span class="dl-size"><span class="dl-size-plat">Android</span> 35&nbsp;MB</span></p>
+        </div>
+        <p class="dl-opt-copy">Straight from this site. Your phone will ask you once to allow it.</p>
+        <p><a class="btn-ghost dl-action" href="download/hawkeye-1.2-4-52900bc4.apk" download>Download the Android file</a></p>
+      </section>
+
+      <section class="dl-opt">
+        <div class="dl-opt-head">
+          <h3 class="dl-opt-name">Run it in the browser</h3>
+          <p class="dl-sizes"><span class="dl-size">No download</span></p>
+        </div>
+        <p class="dl-opt-copy">Add Hawkeye to your home screen and it opens like an app.</p>
+        <p><a class="btn-ghost dl-action" href="index.html#install">Add it to your home screen</a></p>
+      </section>
+
+    </div>
+  </details>
+
+  <p class="hint dl-foot">Both apps sign in to the same account and send to the same public
+    record, so you can change later. Every version is free.</p>
+
+  <div class="dl-share">
+    <a class="btn-accent" data-share rel="noopener" target="_blank"
+       href="https://wa.me/?text=Hawkeye%20lets%20Nigerians%20watch%20an%20election%20from%20their%20own%20polling%20unit%20and%20check%20the%20results%20against%20INEC%27s%20own%20sheets.%20It%20is%20free%20and%20independent.%20https%3A%2F%2Fhawkeye.com.ng%2Fdownload">Share Hawkeye</a>
+  </div>
+
+</div>
   </main>
 
-  <script src="share.js?v=2"></script>
-  <script>
-    // The badge is all that is left of this: the Add-to-Home-Screen sentence
-    // that used to sit under it went when the App Store listing went live. It
-    // described the only iPhone route there was, and repeating it beside a real
-    // store badge pushed people toward the fallback. The web-app route is still
-    // here, one line down, under "No store, or a phone short on space?".
-    if (window.HAWKEYE_STORES && window.HAWKEYE_STORES.iosLive) {
-      const ios = document.getElementById('ios-cta');
-      if (ios) ios.hidden = false;
-    }
-  </script>
+  <script src="share.js?v=3"></script>
   <script src="menu.js?v=164"></script>
 </body>
 </html>

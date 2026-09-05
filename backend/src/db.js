@@ -3,6 +3,7 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import { config } from './config.js';
 import { repairName, searchFold } from './services/register-names.mjs';
+import { dhashBandTokens } from './services/images.js';
 
 fs.mkdirSync(path.dirname(config.dbPath), { recursive: true });
 fs.mkdirSync(config.uploadDir, { recursive: true });
@@ -10,6 +11,14 @@ fs.mkdirSync(config.uploadDir, { recursive: true });
 export const db = new Database(config.dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
+// SQLite's default is FULL, which fsyncs on every commit. Measured on the
+// submission path: 93 commits/s at FULL against 874/s at NORMAL — and the
+// election-night design peak is ~239 submissions/s, so the default alone puts us
+// under water while NORMAL clears it 3.6x over. NORMAL is the standard pairing
+// with WAL: a power loss can lose the last few commits, but the database cannot
+// be corrupted, and a lost trailing submission is recoverable (the observer
+// retries) in a way that a corrupt ledger is not.
+db.pragma('synchronous = NORMAL');
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS observers (
@@ -469,6 +478,29 @@ for (const ddl of [
      created_at  INTEGER NOT NULL
    )`,
   'CREATE INDEX IF NOT EXISTS idx_flags_status ON content_flags(status, id)',
+  // device_id is added by ALTER further down with no index, yet TWO queries per
+  // submission filter on it (routes/submissions.js — the anti-sybil race check
+  // and the spacing check). Without this both are full table scans on the
+  // hottest path in the app.
+  'CREATE INDEX IF NOT EXISTS idx_submissions_device ON submissions(device_id)',
+  // Banded-LSH index for the near-duplicate photo guard. One row per
+  // (submission, photo slot, band) — the slot pair mirrors the UNION ALL over
+  // image_dhash/venue_image_dhash that this replaces, so a sheet photo re-used
+  // as someone's venue photo is still caught. See services/images.js for the
+  // pigeonhole argument; the short version is that it changes the cost of the
+  // guard and never its verdict.
+  `CREATE TABLE IF NOT EXISTS dhash_bands (
+     submission_id INTEGER NOT NULL,
+     slot          INTEGER NOT NULL,   -- 0 = sheet photo, 1 = venue photo
+     band_token    TEXT    NOT NULL,   -- "<bandIndex>:<hex>"
+     dhash         TEXT    NOT NULL,
+     observer_id   INTEGER NOT NULL,
+     pu_code       TEXT    NOT NULL
+   )`,
+  // The lookup index. Everything else here exists to keep this one query cheap.
+  'CREATE INDEX IF NOT EXISTS idx_dhash_bands_token ON dhash_bands(band_token)',
+  // Lets the backfill ask "is this submission already indexed?" without a scan.
+  'CREATE INDEX IF NOT EXISTS idx_dhash_bands_sub ON dhash_bands(submission_id)',
   'CREATE UNIQUE INDEX IF NOT EXISTS idx_flags_dedupe ON content_flags(kind, target_id, ip_hash)',
   // Races INEC has declared and Hawkeye has closed — the receipt for a closure
   // that has already run. services/declarations.js re-reads its data file on
@@ -498,6 +530,41 @@ for (const ddl of [
   }
 }
 
+
+// ---- Backfill dhash_bands for submissions written before the index existed ---
+//
+// A fresh index that only saw NEW rows would silently stop detecting re-use of
+// every photo already on file — the guard would look healthy and be blind to the
+// entire existing archive. Idempotent by construction (it only touches rows with
+// no bands yet), so it is safe to re-run and safe to interrupt: a restart
+// half-way through simply resumes with what is left.
+try {
+  const pending = db.prepare(`
+    SELECT s.id, s.observer_id, s.pu_code, s.image_dhash, s.venue_image_dhash
+    FROM submissions s
+    WHERE NOT EXISTS (SELECT 1 FROM dhash_bands b WHERE b.submission_id = s.id)`).all();
+  if (pending.length) {
+    const ins = db.prepare(
+      'INSERT INTO dhash_bands (submission_id, slot, band_token, dhash, observer_id, pu_code) VALUES (?, ?, ?, ?, ?, ?)',
+    );
+    const run = db.transaction((rows) => {
+      for (const r of rows) {
+        for (const [slot, h] of [[0, r.image_dhash], [1, r.venue_image_dhash]]) {
+          if (!h) continue;
+          for (const tok of dhashBandTokens(h, config.dhashHammingThreshold)) {
+            ins.run(r.id, slot, tok, h, r.observer_id, r.pu_code);
+          }
+        }
+      }
+    });
+    run(pending);
+    console.log(JSON.stringify({ msg: 'dhash_bands backfilled', submissions: pending.length }));
+  }
+} catch (e) {
+  // Never take the server down over the index. A failed backfill degrades the
+  // guard, and that must be loud, but an election-night boot loop is worse.
+  console.error(JSON.stringify({ msg: 'dhash_bands backfill FAILED', error: String(e) }));
+}
 // Seed a handful of REAL Lagos Island polling units (official register codes/names)
 // with demo coordinates on first boot, so the app works out of the box.
 // Load the full register with scripts/load_inec_register.js --replace, then attach

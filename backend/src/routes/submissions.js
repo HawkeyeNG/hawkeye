@@ -5,9 +5,15 @@ import multer from 'multer';
 import { db, partyCodes, contestCodes, contests } from '../db.js';
 import { config } from '../config.js';
 import { haversineM, makeLocationProof } from '../services/geo.js';
-import { sha256Hex, dhashHex, hammingDistance } from '../services/images.js';
+import { sha256Hex, dhashHex, hammingDistance, dhashBandTokens } from '../services/images.js';
+// The head reported for an EMPTY chain — mirrors GENESIS_HASH in services/ledger.js.
+// This branch is only reached when there are zero submissions, which is exactly the
+// state production was in and the state the 120-row local fixture was not: the
+// constant was referenced before it was declared and every call to
+// /api/ledger/verify returned 502. Test the empty case explicitly.
+const GENESIS_HASH_PUBLIC = '0'.repeat(64);
 import { canonicalPayload, canonicalVotes, verifyObserverSignature } from '../services/signatures.js';
-import { nextEntry, verifyChain } from '../services/ledger.js';
+import { nextEntry, verifyChain, verifyChainAsync } from '../services/ledger.js';
 import { recomputeResult } from '../services/aggregate.js';
 import { extractFeatures, matchFeatures } from '../services/scene.js';
 import { requireObserver } from './observers.js';
@@ -214,14 +220,29 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // reporting several contests from one unit legitimately produces very similar
     // shots (same venue, same form layout) minutes apart. Cross-observer copies
     // stay rejected.
-    const knownHashes = db.prepare(`
-      SELECT image_dhash AS h, observer_id, pu_code FROM submissions
-      UNION ALL SELECT venue_image_dhash, observer_id, pu_code FROM submissions`).all();
-    const nearDuplicate = knownHashes.some(
+    //
+    // INDEXED, NOT SCANNED. This used to SELECT every dhash in the table (both
+    // columns, UNION ALL) and Hamming-compare in JS on every submission — 3.18M
+    // rows per insert at the 2027 ceiling, ~2.5 trillion comparisons over a run,
+    // blocking the only event loop we have. It now asks the banded index for the
+    // handful of rows that CAN be within the threshold and compares only those.
+    //
+    // The verdict is unchanged: services/images.js proves band lookup misses no
+    // true near-duplicate (pigeonhole), and hammingDistance() below still makes
+    // the actual decision, so nothing newly passes or newly fails.
+    const T = config.dhashHammingThreshold;
+    const tokens = [
+      ...dhashBandTokens(imageDhash, T),
+      ...dhashBandTokens(venueImageDhash, T),
+    ];
+    const candidates = db.prepare(`
+      SELECT DISTINCT dhash AS h, observer_id, pu_code FROM dhash_bands
+      WHERE band_token IN (${tokens.map(() => '?').join(',')})`).all(...tokens);
+    const nearDuplicate = candidates.some(
       (r) =>
         !(r.observer_id === req.observer.id && r.pu_code === puCode) &&
-        (hammingDistance(r.h, imageDhash) <= config.dhashHammingThreshold ||
-          hammingDistance(r.h, venueImageDhash) <= config.dhashHammingThreshold),
+        (hammingDistance(r.h, imageDhash) <= T ||
+          hammingDistance(r.h, venueImageDhash) <= T),
     );
     if (nearDuplicate) return res.status(409).json({ error: 'near_duplicate_image' });
 
@@ -296,7 +317,20 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
           accuracy, locationVerified, locationPlausible, capturedAt, venueCapturedAt,
           locationProof, signature, ledgerPayload, entry.prevHash, entry.entryHash, now, deviceId,
         );
-      return { entryHash: entry.entryHash, submissionId: info.lastInsertRowid };
+      // The band index is written INSIDE this transaction, so it can never drift
+      // from the row it describes: either both land or neither does. An index
+      // updated after the commit would leave a window in which a photo is stored
+      // but not yet guarded, and on election night that window is the attack.
+      const subId = info.lastInsertRowid;
+      const insBand = db.prepare(
+        'INSERT INTO dhash_bands (submission_id, slot, band_token, dhash, observer_id, pu_code) VALUES (?, ?, ?, ?, ?, ?)',
+      );
+      for (const [slot, h] of [[0, imageDhash], [1, venueImageDhash]]) {
+        for (const tok of dhashBandTokens(h, config.dhashHammingThreshold)) {
+          insBand.run(subId, slot, tok, h, req.observer.id, puCode);
+        }
+      }
+      return { entryHash: entry.entryHash, submissionId: subId };
     })();
 
     // Compare this venue photo against every OTHER observer's venue photo for the
@@ -435,15 +469,124 @@ submissionsRouter.get('/ocr/stats', (_req, res) => {
 });
 
 // Public audit: anyone can re-verify the entire hash chain at any time.
-submissionsRouter.get('/ledger/verify', (_req, res) => res.json(verifyChain(db)));
+// ---- Public chain verification ----------------------------------------------
+//
+// This used to be `res.json(verifyChain(db))`: a full synchronous re-hash of every
+// row, on an unauthenticated GET. At election-night volume that is a multi-second
+// freeze of the entire process — better-sqlite3 is synchronous and there is one
+// event loop — which any anonymous caller could trigger in a loop against the
+// endpoint the project's credibility rests on.
+//
+// The verification itself is NOT weakened. A full sweep from the genesis hash
+// still runs; it runs on a timer, off the request path, in batches that yield
+// (see services/ledger.js). The endpoint serves the last completed sweep and
+// says when it ran, so a reader can judge its freshness for themselves.
+//
+// The stronger guarantee is unchanged and stated in the response: anyone who
+// does not want to take our word for it replays the chain themselves from
+// /api/ledger/entries, or checks a published anchor. A verifier that only ever
+// asks the server "are you honest?" was never the real assurance.
+const LEDGER_VERIFY_INTERVAL_MS = Number(process.env.LEDGER_VERIFY_INTERVAL_MS || 5 * 60 * 1000);
+let ledgerVerifyState = { status: 'pending', verifiedAt: null };
+// A SHARED IN-FLIGHT PROMISE, not a boolean. A `running` flag would make the
+// endpoint's `await` a silent no-op: a second caller arriving mid-sweep returns
+// instantly, still sees status 'pending', and renders the broken-ledger banner —
+// the precise failure the await exists to prevent. Everyone waiting on a sweep
+// must wait on the SAME promise.
+let ledgerVerifyInFlight = null;
+
+function refreshLedgerVerification() {
+  if (!ledgerVerifyInFlight) {
+    ledgerVerifyInFlight = (async () => {
+      try {
+        const r = await verifyChainAsync(db);
+        ledgerVerifyState = { ...r, status: 'complete', verifiedAt: Date.now() };
+        if (!r.ok) {
+          // A broken chain is the most serious thing this software can report.
+          console.error(JSON.stringify({ msg: 'LEDGER CHAIN BROKEN', brokenAtId: r.brokenAtId, entries: r.entries }));
+        }
+      } catch (e) {
+        // Keep the last GOOD result rather than replacing it with an error shape
+        // that callers would read as a broken chain.
+        ledgerVerifyState = { ...ledgerVerifyState, lastError: String(e), verifiedAt: Date.now() };
+        console.error(JSON.stringify({ msg: 'ledger verification failed', error: String(e) }));
+      } finally {
+        ledgerVerifyInFlight = null;
+      }
+    })();
+  }
+  return ledgerVerifyInFlight;
+}
+refreshLedgerVerification();
+setInterval(refreshLedgerVerification, LEDGER_VERIFY_INTERVAL_MS).unref();
+
+submissionsRouter.get('/ledger/verify', async (_req, res) => {
+  // The first caller after a restart waits for the in-flight sweep rather than
+  // receiving a half-shaped object. app/ledger.html reads `verify.ok` and
+  // `verify.entries` directly and renders `Broken #${verify.brokenAtId}` when ok
+  // is falsy — so a 'pending' response with neither field would have shown the
+  // public verification page announcing a BROKEN LEDGER for the first few
+  // minutes after every deploy. Awaiting is safe: verifyChainAsync yields
+  // between batches, so this waits without blocking anyone else.
+  if (ledgerVerifyState.status === 'pending') await refreshLedgerVerification();
+  // The head is cheap and always current, so serve it live even when the sweep
+  // behind it is minutes old — it is what a caller comparing against a published
+  // anchor actually needs.
+  const head = db.prepare('SELECT entry_hash, id FROM submissions ORDER BY id DESC LIMIT 1').get();
+  const total = db.prepare('SELECT COUNT(*) AS c FROM submissions').get().c;
+  res.json({
+    ...ledgerVerifyState,
+    currentEntries: total,
+    currentHead: head ? head.entry_hash : GENESIS_HASH_PUBLIC,
+    ageMs: ledgerVerifyState.verifiedAt ? Date.now() - ledgerVerifyState.verifiedAt : null,
+    sweepIntervalMs: LEDGER_VERIFY_INTERVAL_MS,
+    howToVerifyYourself:
+      'Do not take this endpoint on trust. Page /api/ledger/entries?sinceId=&limit=, and for each row check '
+      + 'prev_hash equals the previous row entry_hash and sha256(prev_hash + ledger_payload) equals entry_hash, '
+      + 'starting from the all-zero genesis hash. Cross-check the final head against a published anchor.',
+  });
+});
 
 // Raw chain entries (ascending) so anyone can recompute the hashes client-side and
 // browse the evidence — the trustless heart of the audit page.
-submissionsRouter.get('/ledger/entries', (_req, res) => {
-  const rows = db.prepare(`
-    SELECT id, pu_code, contest, created_at, prev_hash, entry_hash, ledger_payload,
-           image_sha256, venue_image_sha256
-    FROM submissions ORDER BY id`).all();
+// BOUNDED, but still a bare ARRAY. This used to return the WHOLE table — every
+// row including every ledger_payload — on one unauthenticated GET, read into JS
+// with .all() and then JSON.stringify'd. At election-night volume that is a
+// multi-gigabyte response assembled in memory, a heavier way to stop the server
+// than the verify endpoint ever was. Fixing verify and leaving this open would
+// have moved the target, not closed it.
+//
+// THE SHAPE DOES NOT CHANGE, deliberately. Five callers consume this as an array
+// — app/index.html (`rows.slice(-3)`), app/ledger.html (`entries.length`), and
+// TWO SCREENS IN THE SHIPPED NATIVE APP, which cannot be updated retroactively.
+// Returning {entries:[...]} would have thrown a TypeError on a phone someone
+// installed last month. So: same array, with a cap and opt-in paging.
+//
+// Default (no params) returns the MOST RECENT page, ascending, because that is
+// what the existing callers want — index.html takes the last three. Explicit
+// ?sinceId=&limit= walks the chain forward from the genesis end, which is what
+// independent verification needs. X-Ledger-* headers tell a caller whether it
+// saw everything.
+const LEDGER_PAGE_MAX = 1000;
+submissionsRouter.get('/ledger/entries', (req, res) => {
+  const limit = Math.min(LEDGER_PAGE_MAX, Math.max(1, Number(req.query.limit) || LEDGER_PAGE_MAX));
+  const total = db.prepare('SELECT COUNT(*) AS c FROM submissions').get().c;
+  const cols = `id, pu_code, contest, created_at, prev_hash, entry_hash, ledger_payload,
+                image_sha256, venue_image_sha256`;
+  let rows;
+  if (req.query.sinceId !== undefined) {
+    // Explicit paging: forward from sinceId, for replaying the chain in order.
+    const sinceId = Math.max(0, Number(req.query.sinceId) || 0);
+    rows = db.prepare(`SELECT ${cols} FROM submissions WHERE id > ? ORDER BY id LIMIT ?`).all(sinceId, limit);
+  } else {
+    // Default: the newest `limit` rows, returned oldest-first so the array reads
+    // the same way it always did.
+    rows = db.prepare(`SELECT ${cols} FROM submissions ORDER BY id DESC LIMIT ?`).all(limit).reverse();
+  }
+  res.set('X-Ledger-Total', String(total));
+  res.set('X-Ledger-Page-Max', String(LEDGER_PAGE_MAX));
+  res.set('X-Ledger-Truncated', String(total > rows.length));
+  if (rows.length) res.set('X-Ledger-Next-Since-Id', String(rows[rows.length - 1].id));
   res.json(rows);
 });
 

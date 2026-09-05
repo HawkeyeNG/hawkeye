@@ -423,4 +423,88 @@
       }
     },
   };
+
+  // ── row mode: show the row you are typing, not the whole sheet ───────────
+  //
+  // The tier-A pile scales to ~73,000 sheets for 2027 against a pipeline that
+  // has processed 490 — about 2,400 hours at two minutes a sheet. Those 490
+  // carry only 751 actually-disputed cells, so a reviewer is scanning a whole
+  // form to answer one question about one number. This puts the row beside the
+  // box they are typing into: a band is ~13% of the image.
+  //
+  // AN ADDITION, NOT A REPLACEMENT. The full sheet stays exactly where it was.
+  // Everything here is driven by focus, so the existing keyboard flow is already
+  // the interaction — Tab moves down the ballot and the band follows. Nothing
+  // about reading, committing or the blind/compare ceremony changes, and if the
+  // band fails to load the page is precisely what it was before.
+  //
+  // THE BAND CARRIES THE PARTY NAME, by construction on the server. These are
+  // photographs of paper on a desk and the framing moves; a reviewer confidently
+  // reading the wrong row produces a correction that is trusted and never
+  // checked again. Seeing the party name in the crop is how they catch it.
+  let bandUrl = null;
+  let bandFor = null;
+
+  function bandEl() {
+    let el = document.getElementById('rv-band');
+    if (el) return el;
+    const parties = document.getElementById('rv-parties');
+    if (!parties) return null;
+    const wrap = document.createElement('div');
+    wrap.id = 'rv-band-wrap';
+    wrap.style.cssText = 'margin:0 0 10px;position:sticky;top:0;z-index:2;background:var(--card,#fff)';
+    wrap.innerHTML = '<p class="status" id="rv-band-label" style="margin:0 0 4px"></p>'
+      + '<img id="rv-band" alt="" style="width:100%;display:block;border-radius:6px" />';
+    parties.parentNode.insertBefore(wrap, parties);
+    return document.getElementById('rv-band');
+  }
+
+  async function showBand(key, index, label) {
+    const el = bandEl();
+    if (!el || bandFor === key + ':' + index) return;
+    bandFor = key + ':' + index;
+    try {
+      const r = await api('/api/training/review/row/' + encodeURIComponent(key) + '/' + index);
+      if (!r.ok) throw new Error('status ' + r.status);
+      if (bandUrl) URL.revokeObjectURL(bandUrl);
+      bandUrl = URL.createObjectURL(await r.blob());
+      el.src = bandUrl;
+      const lab = document.getElementById('rv-band-label');
+      if (lab) lab.textContent = label + ' — row ' + (index + 1) + '. Check the name in the crop matches.';
+      const wrap = document.getElementById('rv-band-wrap');
+      if (wrap) wrap.hidden = false;
+    } catch (e) {
+      // A band is an accelerator. If it cannot load — the sheet is not cached on
+      // this host yet, or the crop failed — hide it and leave the reviewer the
+      // full sheet they have always had. Never block the reading on it.
+      bandFor = null;
+      const wrap = document.getElementById('rv-band-wrap');
+      if (wrap) wrap.hidden = true;
+    }
+  }
+
+  document.addEventListener('focusin', (ev) => {
+    const el = ev.target;
+    if (!el || !el.dataset || !el.dataset.party) return;
+    if (!el.closest || !el.closest('#rv-parties')) return;
+    // cur and ballot are declared at the top of this IIFE; no sheet is loaded
+    // until the reviewer starts one, so both are legitimately null before then.
+    const key = cur && cur.key;
+    if (!key) return;
+    const idx = ballot.indexOf(el.dataset.party);
+    if (idx >= 0) showBand(key, idx, el.dataset.party);
+  });
+
+  // Enter walks down the ballot instead of submitting, so the whole reading is
+  // one uninterrupted keyboard pass and the band follows without a mouse.
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter') return;
+    const el = ev.target;
+    if (!el || !el.dataset || !el.dataset.party) return;
+    if (!el.closest || !el.closest('#rv-parties')) return;
+    const inputs = [].slice.call(document.querySelectorAll('#rv-parties input'));
+    const at = inputs.indexOf(el);
+    if (at > -1 && at + 1 < inputs.length) { ev.preventDefault(); inputs[at + 1].focus(); }
+  });
+
 }());

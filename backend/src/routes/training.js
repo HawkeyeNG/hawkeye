@@ -652,6 +652,71 @@ trainingRouter.get('/training/review/sheet/:key', requireObserver, requireReview
   }
 });
 
+// ---- one row, for review ---------------------------------------------------
+//
+// The tier-A pile scales to ~73,000 sheets for 2027 against a reviewer pipeline
+// that has processed 490. But those 490 carry only 751 actually-disputed cells:
+// the reviewer is scanning a whole form to answer one question about one number.
+// This serves the row instead, so the question can be asked directly.
+//
+// A BAND, NOT A CELL, and the reason is in ec8a_prompt.js: these are photographs
+// of paper on a desk and the framing moves — one sheet sat low enough that a
+// bound clipped a row's values while leaving its printed label visible. A model
+// reading the wrong cell produces a flag someone checks; a REVIEWER confidently
+// reading the wrong row produces a correction that is trusted and never checked
+// again. So the band carries a row either side and always includes the
+// party-name column, which is the reviewer's own check that they are on the
+// right row. See services/ec8a_cell_crop.js and tests/row-band.test.mjs.
+//
+// LOCAL OR CACHED ONLY. The full-sheet endpoint above will fetch and cache from
+// INEC; this one deliberately does not repeat that logic. Step 1 of the review
+// flow loads the whole sheet, so by the time a reviewer is working a row the
+// cache is warm — and a 409 that says "load the sheet first" is a better failure
+// than a second copy of a 60-line fetch-and-retry drifting out of step with it.
+trainingRouter.get('/training/review/row/:key/:row', requireObserver, requireReviewer, async (req, res) => {
+  const key = cleanKey(req.params.key);
+  const entry = readQueue().entries.find((e) => e.key === key);
+  if (!entry) return res.status(404).json({ error: 'not_in_queue' });
+
+  const rowIndex = Math.max(0, Math.floor(Number(req.params.row)));
+  if (!Number.isFinite(rowIndex)) return res.status(400).json({ error: 'bad_row' });
+
+  const local = path.join(sheetsDir(), path.basename(entry.file));
+  const cached = path.join(reviewDir(), 'sheets', `${key}.jpg`);
+  const src = fs.existsSync(local) ? local : (fs.existsSync(cached) ? cached : null);
+  if (!src) {
+    return res.status(409).json({
+      error: 'sheet_not_cached',
+      hint: `GET /api/training/review/sheet/${key} first — that fetches and caches it`,
+    });
+  }
+
+  try {
+    const { default: sharp } = await import('sharp');
+    const { rowBand, bandCoversRow } = await import('../services/ec8a_cell_crop.js');
+    const meta = await sharp(src).metadata();
+    const rows = Array.isArray(readQueue().ballot) && readQueue().ballot.length
+      ? readQueue().ballot.length : undefined;
+    const band = rowBand(meta, rowIndex, rows ? { rows } : {});
+    // Refuse rather than serve a band that does not contain its own row. The
+    // whole value of this view is that the reviewer trusts what it shows.
+    if (!bandCoversRow(meta, band, rowIndex, rows ? { rows } : {})) {
+      return res.status(500).json({ error: 'band_missed_row' });
+    }
+    const out = await sharp(src)
+      .extract({ left: band.left, top: band.top, width: band.width, height: band.height })
+      .jpeg({ quality: 88 })
+      .toBuffer();
+    res.type('image/jpeg');
+    res.set('Cache-Control', 'private, max-age=86400');
+    // So a client can show "row 7 of 16" and a reviewer can catch a mismatch.
+    res.set('X-Row-Index', String(rowIndex));
+    return res.send(out);
+  } catch (e) {
+    return res.status(500).json({ error: 'crop_failed', detail: String(e.message).slice(0, 120) });
+  }
+});
+
 // ---- 1. commit the blind reading (immutable) ------------------------------
 trainingRouter.post('/training/review/blind', requireObserver, requireReviewer, (req, res) => {
   const key = cleanKey(req.body?.key);

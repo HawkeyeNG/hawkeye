@@ -483,6 +483,29 @@ for (const ddl of [
   // and the spacing check). Without this both are full table scans on the
   // hottest path in the app.
   'CREATE INDEX IF NOT EXISTS idx_submissions_device ON submissions(device_id)',
+  // OCR moved OFF the submission request path. It used to be awaited with a 12s
+  // timeout, so a slow read delayed the observer's response by up to twelve
+  // seconds — at the election-night design peak of ~239 submissions/s that is not
+  // a latency annoyance, it is the whole throughput budget spent on an advisory
+  // cross-check.
+  //
+  // A DURABLE QUEUE rather than the fire-and-forget dynamic import used just below
+  // it for analyzeSheet: a dropped promise is lost on restart, and election night
+  // has no retry. Everything the job needs is already persisted — the sheet is on
+  // disk at submissions.image_path and the counts are in votes_json — so the row
+  // id is the whole payload.
+  //
+  // submission_id is the PRIMARY KEY, which makes enqueueing idempotent by
+  // construction: a retried submit cannot queue the same sheet twice.
+  `CREATE TABLE IF NOT EXISTS ocr_jobs (
+     submission_id INTEGER PRIMARY KEY,
+     status        TEXT    NOT NULL DEFAULT 'queued',   -- queued | done | failed
+     attempts      INTEGER NOT NULL DEFAULT 0,
+     error         TEXT,
+     created_at    INTEGER NOT NULL,
+     updated_at    INTEGER NOT NULL
+   )`,
+  'CREATE INDEX IF NOT EXISTS idx_ocr_jobs_status ON ocr_jobs(status, submission_id)',
   // Banded-LSH index for the near-duplicate photo guard. One row per
   // (submission, photo slot, band) — the slot pair mirrors the UNION ALL over
   // image_dhash/venue_image_dhash that this replaces, so a sheet photo re-used

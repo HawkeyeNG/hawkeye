@@ -6,12 +6,16 @@ import { db, partyCodes, contestCodes, contests } from '../db.js';
 import { config } from '../config.js';
 import { haversineM, makeLocationProof } from '../services/geo.js';
 import { sha256Hex, dhashHex, hammingDistance, dhashBandTokens } from '../services/images.js';
+import { enqueueOcr, startOcrWorker } from '../services/ocr-queue.js';
 // The head reported for an EMPTY chain — mirrors GENESIS_HASH in services/ledger.js.
 // This branch is only reached when there are zero submissions, which is exactly the
 // state production was in and the state the 120-row local fixture was not: the
 // constant was referenced before it was declared and every call to
 // /api/ledger/verify returned 502. Test the empty case explicitly.
 const GENESIS_HASH_PUBLIC = '0'.repeat(64);
+
+// Drains the OCR backlog off the request path (services/ocr-queue.js).
+startOcrWorker();
 import { canonicalPayload, canonicalVotes, verifyObserverSignature } from '../services/signatures.js';
 import { nextEntry, verifyChain, verifyChainAsync } from '../services/ledger.js';
 import { recomputeResult } from '../services/aggregate.js';
@@ -21,7 +25,6 @@ import { contestScope, contestApplies, reportingOpen, reportingOpensAt } from '.
 import { notifySubscribers } from './subscriptions.js';
 import { notifyChat, notifyMaster, chatIdByHash, notifyUnitSavers } from '../services/notify.js';
 import { checkSubmission, checkResult } from '../services/integrity.js';
-import { ocrMatchCounts } from '../services/ocr.js';
 import { anchorPublicKey } from '../services/anchor.js';
 
 export const submissionsRouter = Router();
@@ -369,19 +372,16 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
       `🦅 Report recorded — ${pu.name} (${puCode}), ${contestLabel}. Status: ${result?.status || 'reported'}. It is now on the public ledger.`);
     notifyMaster(`report · observer #${req.observer.id} · ${contestLabel} at ${pu.name}, ${pu.state}`);
 
-    // Best-effort OCR cross-check (typed counts vs the sheet), time-boxed so a slow
-    // or failed OCR never holds up the response.
-    let ocr = null;
-    try {
-      ocr = await Promise.race([
-        ocrMatchCounts(sheet.buffer, votes),
-        new Promise((r) => setTimeout(() => r(null), 12000)),
-      ]);
-    } catch { /* ignore */ }
-    if (ocr) {
-      db.prepare('UPDATE submissions SET ocr_matched = ?, ocr_total = ? WHERE id = ?')
-        .run(ocr.matched, ocr.total, submissionId);
-    }
+    // OCR cross-check, QUEUED rather than awaited. The comment this replaces said
+    // it was "time-boxed so a slow OCR never holds up the response" — but the box
+    // was 12 SECONDS, on a call measured at ~4.9 s, for a result that is advisory
+    // and can never change whether the submission is accepted. The observer was
+    // waiting on a number nobody blocks on.
+    //
+    // The row is already committed and on the ledger at this point, so a queued
+    // read cannot affect the outcome; it only fills ocr_matched/ocr_total in later.
+    // NULL there already means "not checked" everywhere it is read.
+    enqueueOcr(submissionId);
 
     // AI vision check of the EC8A sheet (count read-back + authenticity) — advisory,
     // fire-and-forget so it never delays or blocks the submission response.
@@ -409,7 +409,19 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
         `📋 New result report at your polling unit ${puCode} (${contest}).\nSee it: https://hawkeye.com.ng/dashboard.html`);
     } catch { /* never block the submission */ }
 
-    res.status(201).json({ ok: true, entryHash, locationVerified: Boolean(locationVerified), ocr, result });
+    // ocr is NULL BY CONSTRUCTION now, not omitted. The cross-check moved to a
+    // queue (services/ocr-queue.js), so it cannot be known at response time — and
+    // when the await was removed, `ocr` kept being referenced here, which threw a
+    // ReferenceError into this handler's own catch and returned 500 AFTER the
+    // submission had been committed and written to the ledger. The observer would
+    // have seen a failure on a report that WAS recorded, resubmitted, and been
+    // rejected by the duplicate-photo guard. node --check does not catch it, and
+    // no test reaches this line.
+    //
+    // The key is kept rather than dropped because five clients read it — app.js,
+    // case.html, and three native screens — all guarded on `.ocr && .ocr.total`,
+    // so null simply renders nothing. Two of those clients are in a shipped app.
+    res.status(201).json({ ok: true, entryHash, locationVerified: Boolean(locationVerified), ocr: null, result });
   } catch (err) {
     console.error('[submit]', err);
     res.status(500).json({ error: 'internal_error' });

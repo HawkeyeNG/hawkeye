@@ -39,6 +39,7 @@ import { chatComplete } from '../src/services/assistant.js';
 import {
   partyTablePrompt, partyTableSchema, OSUN_2026_BALLOT, parseModelJson, PARTY_TABLE_CROP, normaliseParty,
 } from '../src/services/ec8a_prompt.js';
+import { cellConfidences } from '../src/services/logprob_cells.js';
 
 const argv = process.argv.slice(2);
 const arg = (n, d = null) => { const i = argv.indexOf(`--${n}`); return i > -1 ? argv[i + 1] : d; };
@@ -158,9 +159,21 @@ async function readTable(file) {
         extra: {
           temperature: 0,
           response_format: { type: 'json_schema', json_schema: { name: 'ec8a_party_table', schema: SCHEMA } },
+          // ASK FOR THE UNCERTAINTY. The forward pass has computed this on every
+          // request since the first run and nothing has ever read it. It costs
+          // 1-3% of throughput and is the only thing that separates "I can see
+          // this cell is empty" from "I could not read it and guessed empty" —
+          // the failure behind 2,813 provably-false blanks in the Osun run.
+          //
+          // vLLM V1 returns logprobs RAW, before the grammar mask, so they
+          // survive the structured-output constraint already in force here.
+          logprobs: true,
+          top_logprobs: 5,
         },
       });
-      return m.content || '';
+      // The text is still the return value; confidence rides alongside so a run
+      // without logprobs behaves exactly as before.
+      return { text: m.content || '', logprobs: m._logprobs || null };
     } catch (e) {
       lastErr = e;
       if (attempt < retries - 1) await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
@@ -192,11 +205,21 @@ async function work() {
     const t0 = Date.now();
     const rec = { file, ms: 0 };
     try {
-      const text = await readTable(file);
+      const { text, logprobs } = await readTable(file);
       const v = parseModelJson(text);
       if (!v || !Array.isArray(v.parties)) { rec.error = 'unparseable'; rec.raw = String(text).slice(0, 2000); unparsed++; }
       else {
-        rec.parties = v.parties.map((p) => ({
+        // Per-cell confidence, aligned to the response text by token offsets.
+        // RECORDED, NOT ACTED ON. Where the abstention threshold sits is a
+        // calibration decision that must be made against the 2,813 rows whose
+        // figures cell came back blank while the words cell on the same row
+        // carried a value — known-false blanks with exactly the right failure
+        // distribution. Guessing a cutoff here would be the same mistake as the
+        // schema that let "" through: a number chosen because it seemed
+        // reasonable rather than because it was measured.
+        const figConf = cellConfidences(text, logprobs, 'figures');
+        const wordConf = cellConfidences(text, logprobs, 'words');
+        rec.parties = v.parties.map((p, i) => ({
           // normaliseParty, not toUpperCase: the model returned "ACCORD" for
           // row 1 of 29-01-01-003 — the party's real name, of which the ballot
           // code "A" is the abbreviation. A correct reading, thrown away by a
@@ -204,6 +227,9 @@ async function work() {
           party: normaliseParty(p?.party),
           figures: p?.figures ?? null,
           words: p?.words ?? null,
+          // null when the endpoint returned no logprobs, so a run without them
+          // is byte-identical to before rather than carrying empty scaffolding.
+          conf: figConf[i] ? { fig: figConf[i].minLogprob, word: wordConf[i]?.minLogprob ?? null } : null,
         }));
         rec.totalRow = v.totalRow ? { figures: v.totalRow.figures ?? null, words: v.totalRow.words ?? null } : null;
         // Counted here so a systematic regression is visible in the run log

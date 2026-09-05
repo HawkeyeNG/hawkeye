@@ -107,6 +107,16 @@ export async function chatComplete(provider, messages, { tools = null, maxTokens
     const data = await res.json();
     const m = data.choices?.[0]?.message;
     if (!m) throw new Error(`${provider.name} empty`);
+    // Carry the token logprobs through when the caller asked for them. They sit
+    // on the CHOICE, not the message, so returning the message alone silently
+    // dropped them — which is why nothing in this codebase had ever read a
+    // logprob despite the forward pass computing them on every request.
+    //
+    // Attached rather than returned separately so every existing caller stays
+    // byte-identical: they read .content and never see this field, and it is
+    // absent entirely unless `extra.logprobs` was set.
+    const lp = data.choices?.[0]?.logprobs;
+    if (lp) return { ...m, _logprobs: lp };
     return m;
   }
 }

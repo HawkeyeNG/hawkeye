@@ -1331,6 +1331,29 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
   .steps { grid-template-columns: 1fr; }
   .trust-grid { grid-template-columns: 1fr; }
 }
+/* PORTRAIT PHONES: centre the opening tile.
+ *
+ * On a narrow screen the ledger-stack illustration beside the hero is hidden
+ * (.ledger-stack display:none above), so the two-column grid collapses to one —
+ * and left-aligned text in a single centred column reads as though something is
+ * missing to its right. Centring closes that, and the tile is short enough that
+ * no line of body copy runs long enough for centring to hurt readability.
+ *
+ * ORIENTATION, not width alone. A phone in LANDSCAPE is still under 900px but is
+ * wide and short: the sub-paragraph runs nearly the full width there, which is
+ * exactly the case where centred body text becomes hard to track line-to-line.
+ * So this is scoped to portrait and landscape keeps the left edge.
+ *
+ * Only the first tile. Everything below it is multi-column content where centring
+ * would fight the grid.
+ */
+@media (max-width: 900px) and (orientation: portrait) {
+  .hero-fold .hero-grid > div:first-child { text-align: center; }
+  /* Both are flex rows, so text-align does not move them. */
+  .hero-fold .hero-cta { justify-content: center; }
+  .hero-fold .install-row { justify-content: center; }
+  /* The badge is inline-flex; centring its parent's text centres the pill. */
+}
 /* Short phones (360x640-class budget Androids — a big share of the Nigerian
    audience). ~555px of usable height still can't take the full-size hero, so
    tighten the type. Nothing has to be dropped any more: with the stats band below

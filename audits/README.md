@@ -130,6 +130,38 @@ a bad sheet. On the Osun sample, of the flagged sheets checked by hand only a
 minority were real. Nothing leaves this folder as a finding until a human has
 looked at the image.
 
+## A detected crop was measured and rejected
+
+The obvious next move after crop-then-ask-one-question is to stop using fixed
+fractions: detect the ruled lines, deskew, and cut a tight crop per sheet. It
+promises a large token saving that could be respent on running the party pass at
+100% coverage instead of 38.5%.
+
+Measured before building, and it does not survive the measurement.
+
+| claim | measured |
+|---|---|
+| frees ~40% of pass-3 tokens | the current crop is already **87.7% ink-covered** vertically across 40 sheets, so **12.3%** is the ceiling — before any safety margin |
+| the detector is reliable | fires on ~14% of sheets |
+| deskew improves reading | **AUC 0.505** for predicting an unread cell, i.e. none |
+
+12.3% of a 14% subset is roughly a **1.7%** saving, bought with a line detector, a
+deskew stage, a fallback path and a new failure mode — and that failure mode is
+the one this file already names as the worst available: a mis-firing detector
+clips a row while the crop still looks complete.
+
+Skew is real (about half the sheets sit more than a degree off) and it predicts
+nothing about whether a cell can be read. Keep deskew as plumbing if a detector
+is ever built; do not book accuracy against it.
+
+**The cheaper way to buy the same thing:** pinning the crop's OUTPUT width made
+the party pass resolution-independent, so running it on every sheet rather than
+the 38.5% it was targeted at costs no more per sheet than it did before. That is
+the coverage the tighter crop was going to fund, without the detector.
+
+Re-open this only with a measurement showing the crop carries materially more
+blank margin than 12.3% on a corpus that is not Osun.
+
 ## Building the workbook
 
 ```

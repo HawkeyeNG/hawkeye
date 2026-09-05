@@ -49,15 +49,19 @@
   // 36 + menu 43, plus the gaps — so between 900 and ~940 the wordmark and the
   // first link collided and rendered as "HAWKEYEMap a Polling Unit".
   //
-  // "Map a Polling Unit" is the one that goes: it is the least-used of the four
-  // and the only one that is not a reporting or explanatory entry point. Dropping
-  // it frees 142px (the link plus its 22px gap) and brings the requirement to
-  // ~796px, inside the 820px the breakpoint actually provides. Nothing is lost —
-  // the ☰ panel still carries it, on every width.
+  // "Map a Polling Unit" went first: least-used of the original four and the only
+  // one that is not a reporting or explanatory entry point. "Report an Incident"
+  // followed, because the landing page already carries it as a hero button — a
+  // header link to the page a visitor is looking at is a duplicate, not a
+  // shortcut, and it was costing 142px of the row.
+  //
+  // Two links plus the CTA leaves the requirement near 650px against the 820px
+  // the 900px breakpoint provides — comfortable rather than a fit that only just
+  // holds. Nothing is lost: the ☰ panel carries the full list at every width.
   //
   // If a link is ever added back here, re-measure at 900px rather than at a
-  // desktop window: this bug is invisible above ~940px.
-  const PRIMARY = ['incidents.html', 'how.html', 'observe.html'];
+  // desktop window: the collision this guards against is invisible above ~940px.
+  const PRIMARY = ['how.html', 'observe.html'];
   if (panel && btn && !document.querySelector('.desktop-primary')) {
     const nav = document.createElement('nav');
     nav.className = 'desktop-primary';

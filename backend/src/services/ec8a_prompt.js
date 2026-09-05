@@ -108,6 +108,30 @@ export const crossedOutRule = (fallback) =>
  *    election audit that is the one failure mode with no recovery: a wrong
  *    number that looks exactly like a right one. An explicit null costs us a row
  *    and buys back the ability to publish the rest.
+ *
+ * 3. THE EMPTY STRING IS NOT A LEGAL ANSWER — `minLength: 1`. This is the fix to
+ *    a failure the design above intended to prevent and did not.
+ *
+ *    Measured on the Osun party pass: **0 nulls in 21,630 cells**, and 10,983
+ *    figures cells (50.8%) returned as `""`. The schema said `['string','null']`,
+ *    so `""` satisfied it — the model always had a way to answer that was neither
+ *    a reading nor an abstention, and it took it every time. Worse, `""` reaches
+ *    ec8a_verify.js's DASHES_ONLY test as a blank and becomes a ZERO VOTE.
+ *
+ *    2,813 of those blanks are provably wrong: the words cell on the SAME ROW
+ *    carries a value. The officer wrote the number out and the model reported an
+ *    empty cell. That is 2,813 known-false zeroes in one race.
+ *
+ *    So the three answers are now distinct and none is the path of least
+ *    resistance:
+ *      - the cell as written  ("110", and "-02-" KEEPS its decoration — see the
+ *        DASHES_ONLY note in ec8a_verify.js; a drawn stroke is a written zero)
+ *      - the literal word BLANK, for a cell with nothing in it at all
+ *      - null, for marks that cannot be resolved
+ *
+ *    Those 2,813 rows are also a free calibration set with exactly the right
+ *    failure distribution, which is what any confidence threshold should be
+ *    tuned against before it goes near the archive.
  */
 export function auditSchema(ballot = OSUN_2026_BALLOT) {
   const s = JSON.parse(JSON.stringify(AUDIT_SCHEMA));
@@ -125,9 +149,26 @@ export function auditSchema(ballot = OSUN_2026_BALLOT) {
 export const AUDIT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['authentic', 'parties'],
+  required: ['authentic', 'formType', 'parties'],
   properties: {
     authentic: { type: 'string', enum: ['yes', 'unclear', 'no'] },
+    // WHICH INEC FORM IS THIS? Asked separately from `authentic`, because
+    // "not authentic" collapses two completely different things: a bad photo of
+    // a real EC8A, and a perfectly good photo of a DIFFERENT FORM.
+    //
+    // 15 Osun sheets came back authentic:no with reasons like "a summary of
+    // registered voters rather than a result sheet" — Form EC40G, filed when an
+    // election is cancelled or does not hold. An EC40G has NO party table, but
+    // the party schema demands exactly 15 rows, so the model fills them from the
+    // prompt's own example. That is the shared root cause of the duplicated-row
+    // and prompt-leak failures, and it is a property of the SCHEMA, not the
+    // weights — a second model told "return 15 rows" invents 15 rows too.
+    //
+    // Naming the form converts the loudest noise source into a finding class:
+    // a cancelled unit is the SAME kind of finding as the 21 "no sheet
+    // published" units that made up most of the Osun output. This costs nothing
+    // — pass 1 is already reading the header.
+    formType: { type: 'string', enum: ['EC8A', 'EC40G', 'EC8B', 'other', 'unclear'] },
     reason: { type: ['string', 'null'] },
     state: { type: ['string', 'null'] },
     puCode: { type: ['string', 'null'] },
@@ -147,8 +188,8 @@ export const AUDIT_SCHEMA = {
         required: ['party', 'figures', 'words'],
         properties: {
           party: { type: 'string', enum: PARTY_CODES },
-          figures: { type: ['string', 'null'] },
-          words: { type: ['string', 'null'] },
+          figures: { anyOf: [{ type: 'string', minLength: 1 }, { type: 'null' }] },
+          words: { anyOf: [{ type: 'string', minLength: 1 }, { type: 'null' }] },
         },
       },
     },
@@ -181,7 +222,7 @@ export const BOXES_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: [...BOX_FIELDS],
-  properties: Object.fromEntries(BOX_FIELDS.map((f) => [f, { type: ['string', 'null'] }])),
+  properties: Object.fromEntries(BOX_FIELDS.map((f) => [f, { anyOf: [{ type: 'string', minLength: 1 }, { type: 'null' }] }])),
 };
 
 export function boxesPrompt() {
@@ -203,7 +244,12 @@ export function boxesPrompt() {
     'RULES:',
     '1. Transcribe each value as TEXT, exactly as written. Keep leading zeros ("06" stays "06"). '
       + 'Keep dashes the officer drew around a figure ("-0-") - decoration, never a minus sign. '
-      + 'Keep words like NIL or ZERO as written. Do not tidy, pad or convert anything.',
+      + 'First say which INEC form this is. An EC8A is a polling-unit RESULT sheet with a party table. An EC40G is a summary of registered voters, filed when an election was cancelled or did not hold, and has NO party table — if you see one, say EC40G and leave every party cell null rather than inventing rows to fill the schema. Keep words like NIL or ZERO as written. Do not tidy, pad or convert anything. '
+      + 'THREE ANSWERS ARE POSSIBLE FOR ANY CELL AND YOU MUST CHOOSE ONE. Write the cell '
+      + 'exactly as it appears if you can read it. Write the single word BLANK if the cell '
+      + 'is genuinely empty. Write null if there are marks you cannot resolve. An empty '
+      + 'string is not an answer and will be rejected. Guessing a number you cannot '
+      + 'actually read is the worst possible answer: null is always better than a guess.',
     '2. Use null for any box that is blank or that you cannot read with confidence. null is always '
       + 'acceptable and always preferred over a guess. Do not infer a value from the other boxes or '
       + 'from what would make the arithmetic work.',
@@ -275,14 +321,40 @@ export function boxesPrompt() {
  * number changes what the model sees, so it is re-calibrated against the hand
  * labels afterwards — never assumed to be harmless.
  */
-export const PARTY_TABLE_CROP = { left: 0.06, right: 0.78, top: 0.24, bottom: 0.95, scale: 1.6 };
+// `outWidth` PINS THE OUTPUT IN PIXELS. `scale` is kept only so the preview tool
+// keeps working; nothing should multiply by it any more.
+//
+// The old form resized to (cropWidth * scale), derived from the INPUT width — so
+// what the model saw depended entirely on what resolution happened to be on disk.
+// On the 1500px derivative this crop is 1080px wide and 1.6x UPSCALES it to 1728,
+// inventing pixels. The comment above reasoned that was harmless because "the
+// source sheets are 1500x2000" — true of the derivative, and false of the source.
+//
+// Measured from audit-osun2026.db, which records dimensions BEFORE compression:
+// 3,721 of 3,742 Osun sheets are **3072 x 4096**, 99.9% exceed 2000px on the long
+// edge, and fetch_irev_sheets.js discards 91.3% of every sheet's bytes on
+// download (mean 3.93 MB -> 0.34 MB). The detail the 1.6x upscale is faking
+// existed and was thrown away minutes earlier.
+//
+// Pinning the output makes the crop RESOLUTION-INDEPENDENT: 1728px out whatever
+// goes in. Feed it the 1500px derivative and behaviour is byte-for-byte what it
+// was (1080 -> 1728, upscaled). Feed it the original and the same 1728px carries
+// real detail instead of interpolation — at an IDENTICAL token cost, which is the
+// property that matters, because vision tokens scale with output pixels and 2x
+// once put the encoder into CUDA OOM. Anything that changes outWidth changes what
+// the model sees and must be re-calibrated against the hand labels.
+export const PARTY_TABLE_CROP = {
+  left: 0.06, right: 0.78, top: 0.24, bottom: 0.95,
+  scale: 1.6,              // legacy, preview tool only
+  outWidth: 1728,          // = round(1500 * (0.78 - 0.06) * 1.6), the shipped size
+};
 
 export function partyTableSchema(ballot = OSUN_2026_BALLOT) {
   const cell = {
     type: 'object',
     additionalProperties: false,
     required: ['figures', 'words'],
-    properties: { figures: { type: ['string', 'null'] }, words: { type: ['string', 'null'] } },
+    properties: { figures: { anyOf: [{ type: 'string', minLength: 1 }, { type: 'null' }] }, words: { anyOf: [{ type: 'string', minLength: 1 }, { type: 'null' }] } },
   };
   return {
     type: 'object',
@@ -299,8 +371,8 @@ export function partyTableSchema(ballot = OSUN_2026_BALLOT) {
           required: ['party', 'figures', 'words'],
           properties: {
             party: { type: 'string' },
-            figures: { type: ['string', 'null'] },
-            words: { type: ['string', 'null'] },
+            figures: { anyOf: [{ type: 'string', minLength: 1 }, { type: 'null' }] },
+            words: { anyOf: [{ type: 'string', minLength: 1 }, { type: 'null' }] },
           },
         },
       },

@@ -47,6 +47,9 @@ const provider = {
  * that includes too much costs tokens; a crop that misses the block costs the
  * sheet — asymmetric, so err large.
  */
+// = the output a 1500px source produced under the old `width * 2` rule.
+const BOXES_CROP_OUT_WIDTH = 1500;
+
 async function cropBoxes(full) {
   const m = await sharp(full).metadata();
   const left = Math.round(m.width * 0.50);
@@ -55,7 +58,14 @@ async function cropBoxes(full) {
   const height = Math.round(m.height * 0.44);
   return sharp(full)
     .extract({ left, top, width, height })
-    .resize({ width: width * 2, kernel: 'lanczos3' })
+    // PINNED, like the party crop. This used to be `width * 2`, derived from the
+    // INPUT — so raising the stored sheet width from 1500 to 2400 would have
+    // silently taken this crop from 1500px to 2400px of output, a 1.6x linear /
+    // 2.6x area increase in vision tokens on every sheet. That is the blowup that
+    // once put the encoder into CUDA OOM and killed a run mid-flight. 1500 is
+    // exactly what a 1500px source produced before, so behaviour is unchanged on
+    // the old corpus and becomes a real downscale on the new one.
+    .resize({ width: BOXES_CROP_OUT_WIDTH, kernel: 'lanczos3' })
     .jpeg({ quality: 85 })
     .toBuffer();
 }

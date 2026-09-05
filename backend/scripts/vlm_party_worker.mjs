@@ -68,7 +68,11 @@ async function cropPartyTable(full) {
   const bottom = Math.round(m.height * PARTY_TABLE_CROP.bottom);
   return sharp(full)
     .extract({ left, top, width: right - left, height: bottom - top })
-    .resize({ width: Math.round((right - left) * PARTY_TABLE_CROP.scale), kernel: 'lanczos3' })
+    // Pinned output, NOT input-width x scale — see PARTY_TABLE_CROP. This is what
+    // makes the pass resolution-independent: the same 1728px reaches the model
+    // whether the crop came from the 1500px derivative (upscaled, as today) or
+    // from the 3072px original (downscaled, real detail). Same tokens either way.
+    .resize({ width: PARTY_TABLE_CROP.outWidth, kernel: 'lanczos3' })
     .jpeg({ quality: 88 })
     .toBuffer();
 }

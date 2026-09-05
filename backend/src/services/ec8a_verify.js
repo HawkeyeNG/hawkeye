@@ -88,7 +88,17 @@ export function resolveRow(row, { emptyMeansZero = false } = {}) {
   // was the gap. Struck through only when the whole cell is strokes: `-02-` is
   // a figure with decoration and must keep its 2.
   const DASHES_ONLY = /^[\s\-—–_=~/\\|.]*$/;
-  const isEmpty = (v) => emptyMeansZero && typeof v === 'string' && DASHES_ONLY.test(v);
+  // BLANK is the EXPLICIT empty-cell token (see note 3 in ec8a_prompt.js). The
+  // schema no longer accepts the empty string, because the model answered ""
+  // 10,983 times and null ZERO times: an empty string let it satisfy the schema
+  // without either reading the cell or admitting it could not. A cell is now
+  // empty only because the model SAID so, which is a claim it can be held to.
+  //
+  // The empty string is still honoured on the way IN. The archive holds 10,983
+  // of them written under the old prompt, and reinterpreting those after the
+  // fact would invent readings we never had.
+  const isEmpty = (v) => emptyMeansZero && typeof v === 'string'
+    && (v.trim().toUpperCase() === 'BLANK' || DASHES_ONLY.test(v));
   const figuresEmpty = isEmpty(row?.figures);
   const wordsEmpty = isEmpty(row?.words);
 

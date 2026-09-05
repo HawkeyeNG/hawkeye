@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
+const STORE_WIDTH = Number(process.env.SHEET_STORE_WIDTH || 2400);
 
 const electionId = process.argv[2];
 const stateId = process.argv[3];
@@ -43,8 +44,31 @@ outer: for (const lga of lgas.data || []) {
       try {
         const img = await fetch(url, { headers: H });
         if (!img.ok) continue;
-        // Compress on download (max 1500px, q76 mozjpeg) — same size the viewer
-        // serves, so sheets are small on disk and fast to upload/label.
+        // STORE AT 2400px, NOT 1500. This used to compress to 1500px "same size
+        // the viewer serves" — but the viewer and the VLM are not the same
+        // consumer, and the VLM is the one that decides what the audit can read.
+        //
+        // Measured from audit-osun2026.db, which records dimensions BEFORE this
+        // line runs: 3,721 of 3,742 Osun sheets arrive at 3072x4096, 99.9% exceed
+        // 2000px, and this resize was discarding 91.3% of every sheet's bytes
+        // (3.93 MB -> 0.34 MB). The party-table pass then cropped the 1500px
+        // result to 1080px and UPSCALED it to 1728 — inventing pixels an hour
+        // after the real ones were thrown away.
+        //
+        // 2400 is not a taste: the party crop takes 0.72 of the width and its
+        // output is pinned at 1728px, so 1728 / 0.72 = 2400 is the smallest
+        // source that makes that crop a downscale instead of an upscale. Below
+        // it the pass is still interpolating; above it costs storage for detail
+        // the crop then throws away.
+        //
+        // Cost: 212 KB -> 379 KB per sheet, so the 2027 corpus goes 107 GB ->
+        // 192 GB. That is ~$1.30/month of object storage, against an audit whose
+        // GPU bill is ~$150. The 1500px/q76 rule still governs what is SERVED —
+        // this is the archive the model reads, which is a different corpus with a
+        // different consumer.
+        //
+        // Both VLM crops now pin their OUTPUT width, so this change costs zero
+        // extra vision tokens. Do not raise it without checking that they still do.
         const raw = Buffer.from(await img.arrayBuffer());
         // IT MUST ACTUALLY BE AN IMAGE. The old code kept `raw` when sharp could
         // not decode it ("keep raw on decode failure"), which quietly wrote
@@ -55,7 +79,7 @@ outer: for (const lga of lgas.data || []) {
         // A file that does not decode is not a sheet: skip it and say so.
         let out;
         try {
-          out = await sharp(raw).rotate().resize({ width: 1500, withoutEnlargement: true }).jpeg({ quality: 76, mozjpeg: true }).toBuffer();
+          out = await sharp(raw).rotate().resize({ width: STORE_WIDTH, withoutEnlargement: true }).jpeg({ quality: 76, mozjpeg: true }).toBuffer();
         } catch {
           bad++;
           continue;

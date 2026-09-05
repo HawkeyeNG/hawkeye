@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=168" />
+  <link rel="stylesheet" href="styles.css?v=169" />
   <script src="native.js?v=114"></script>
   <style>
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -118,6 +118,33 @@
       return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
     };
     let ENTRIES = [];
+    let CHAIN_TRUNCATED = false;
+    // PAGE THE WHOLE CHAIN, from the genesis end.
+    //
+    // /api/ledger/entries is capped (it used to return the entire table on one
+    // unauthenticated GET). Its DEFAULT page is the NEWEST rows, which is right
+    // for the homepage's "latest three" but catastrophic here: this page replays
+    // from the genesis hash, so a page that does not start at entry 1 fails on
+    // its first row and renders "Chain broken - a report was altered or removed."
+    // A public verification page crying tampering because of its own pagination
+    // is the worst false positive this project can produce. So page explicitly
+    // from sinceId=0 and walk forward.
+    async function fetchWholeChain() {
+      const all = [];
+      let since = 0;
+      // A browser cannot hold an unbounded chain. If we stop early we must SAY
+      // so rather than verify a prefix and report it as the whole thing.
+      const CEILING = 50000;
+      for (;;) {
+        const page = await fetch(`/api/ledger/entries?sinceId=${since}&limit=1000`).then((r) => r.json());
+        if (!Array.isArray(page) || !page.length) break;
+        all.push(...page);
+        since = page[page.length - 1].id;
+        if (page.length < 1000) break;
+        if (all.length >= CEILING) { CHAIN_TRUNCATED = true; break; }
+      }
+      return all;
+    }
     // Lead with numbers (native parity): the four tiles are the verdict; the long
     // cryptography explanation is folded away above.
     const TS = { entries: '…', server: '…', serverT: '', onPhone: 'Not run', onPhoneT: '', anchor: '—' };
@@ -136,7 +163,7 @@
     (async () => {
       const [verify, entries, anchorsResp] = await Promise.all([
         fetch('/api/ledger/verify').then((r) => r.json()),
-        fetch('/api/ledger/entries').then((r) => r.json()),
+        fetchWholeChain(),
         fetch('/api/anchors').then((r) => r.json()).catch(() => ({ anchors: [] })),
       ]);
       ENTRIES = entries;
@@ -208,7 +235,9 @@
         }
         prev = e.entry_hash;
       }
-      out.innerHTML = `<span class="ok">✔ Verified ${ENTRIES.length} entries in your browser. Head matches: <code>${shortHash(prev)}</code></span>`;
+      out.innerHTML = CHAIN_TRUNCATED
+        ? `<span class="ok">✔ Verified the first ${ENTRIES.length} entries in your browser (stopped there to spare your phone; this is not the whole chain). Head so far: <code>${shortHash(prev)}</code></span>`
+        : `<span class="ok">✔ Verified ${ENTRIES.length} entries in your browser. Head matches: <code>${shortHash(prev)}</code></span>`;
       TS.onPhone = 'Verified'; TS.onPhoneT = 'ok'; renderTiles();
     };
 

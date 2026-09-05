@@ -137,6 +137,26 @@ async function jget<T>(path: string): Promise<T> {
  * the top, one sentence says what "verified" means, and the cryptography sits
  * in collapsed folds. The reader who only wants the verdict never scrolls.
  */
+// PAGE THE WHOLE CHAIN, from the genesis end. /api/ledger/entries is capped and
+// its DEFAULT page is the NEWEST rows; this screen replays from the genesis hash,
+// so a page not starting at entry 1 fails on its first row and tells the user
+// "Chain broken - a report was altered or removed." That false accusation is the
+// worst thing this screen can say, so ask for the chain explicitly, in order.
+async function fetchWholeChain(): Promise<Entry[]> {
+  const all: Entry[] = [];
+  let since = 0;
+  const CEILING = 50000;
+  for (;;) {
+    const page = await jget<Entry[]>(`/api/ledger/entries?sinceId=${since}&limit=1000`);
+    if (!Array.isArray(page) || page.length === 0) break;
+    all.push(...page);
+    since = page[page.length - 1].id;
+    if (page.length < 1000) break;
+    if (all.length >= CEILING) break;
+  }
+  return all;
+}
+
 export default function Ledger() {
   const ui = useUi();
   const insets = useSafeAreaInsets();
@@ -161,7 +181,7 @@ export default function Ledger() {
     try {
       const [v, e, a] = await Promise.all([
         jget<Verify>('/api/ledger/verify'),
-        jget<Entry[]>('/api/ledger/entries'),
+        fetchWholeChain(),
         jget<{ anchors: Anchor[] }>('/api/anchors'),
       ]);
       setVerify(v);

@@ -42,7 +42,22 @@
 
   // Desktop: a horizontal quick-nav of primary links (the ☰ still holds the full
   // list). Built from the panel so page HTML needs no changes. CSS shows it ≥900px.
-  const PRIMARY = ['map-unit.html', 'incidents.html', 'how.html', 'observe.html'];
+  //
+  // THREE LINKS, NOT FOUR, AND THE ARITHMETIC IS THE REASON. The CSS reveals this
+  // nav at 900px, where .wrap's 40px side padding leaves 820px of usable row. At
+  // four links the row wanted 938px — wordmark 137 + nav 578 + Sign in 74 + theme
+  // 36 + menu 43, plus the gaps — so between 900 and ~940 the wordmark and the
+  // first link collided and rendered as "HAWKEYEMap a Polling Unit".
+  //
+  // "Map a Polling Unit" is the one that goes: it is the least-used of the four
+  // and the only one that is not a reporting or explanatory entry point. Dropping
+  // it frees 142px (the link plus its 22px gap) and brings the requirement to
+  // ~796px, inside the 820px the breakpoint actually provides. Nothing is lost —
+  // the ☰ panel still carries it, on every width.
+  //
+  // If a link is ever added back here, re-measure at 900px rather than at a
+  // desktop window: this bug is invisible above ~940px.
+  const PRIMARY = ['incidents.html', 'how.html', 'observe.html'];
   if (panel && btn && !document.querySelector('.desktop-primary')) {
     const nav = document.createElement('nav');
     nav.className = 'desktop-primary';

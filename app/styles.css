@@ -818,9 +818,18 @@ a.bell-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
    out (a notifications bell is meaningless before there's an account). */
 a.signin-btn {
   border: 1.5px solid rgba(255, 255, 255, 0.45); color: #fff; background: none;
-  border-radius: 9px; padding: 8px 14px; margin: 0 10px 0 0;
+  border-radius: 9px; padding: 8px 14px;
+  /* margin-left:auto, the same push the bell carries. This button "takes the
+     bell's slot while signed out" per the note above, but it did NOT take the
+     bell's auto margin — so on a phone the push fell through to .theme-btn and
+     Sign in stayed welded to the wordmark: .brand ended at x=153 and this
+     started at x=153, no gap at all, with 41px of nothing after it. Now the
+     three controls travel right together as one group. */
+  margin: 0 10px 0 auto;
   font-weight: 700; font-size: 0.85rem; text-decoration: none; white-space: nowrap; flex: none;
 }
+/* One flex push only — the same rule the bell needs, for the same reason. */
+a.signin-btn + button.theme-btn { margin-left: 0; }
 a.signin-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
 @media (max-width: 420px) { a.signin-btn { padding: 8px 11px; font-size: 0.8rem; } }
 a.bell-btn {

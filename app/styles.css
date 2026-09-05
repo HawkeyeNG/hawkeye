@@ -1972,3 +1972,223 @@ html.native-app.is-landing .gov-header {
    like every other page. */
 html.native-app .dl-card h1 { font-size: 1.35rem; }
 html.native-app .dl-wrap { max-width: none; }
+
+/* ===== /download — four apps ==============================================
+   Native is the primary offer; Lite is the stated lighter option. Size is
+   deliberately NOT the headline for Native (53 MB would argue against the
+   page's own CTA) but IS the argument for Lite. See download.html.
+   ======================================================================== */
+/* ============================================================
+   /download — one recommendation; every other route stays quiet.
+   New classes only, all prefixed .dl-. Append after the existing
+   .dl-wrap / .dl-card block in styles.css.
+   ============================================================ */
+
+/* .dl-card h1 is (0,1,1) in the existing sheet, so these are written as
+   .dl-card .dl-title (0,2,0) to win. html.native-app .dl-card h1 is (0,2,1)
+   and still beats them, which is correct — inside Lite the title should keep
+   the app type scale. */
+.dl-card .dl-title{
+  margin:0 0 6px; border:0; padding:0;
+  font-size:28px; line-height:1.15; letter-spacing:-.01em; color:#fff;
+}
+@media (min-width:480px){ .dl-card .dl-title{ font-size:34px; } }
+
+/* ONE SENTENCE. The lede used to run four lines and pushed the only button on
+   the page under the fold on a 375x667 handset. The rest of the explanation
+   moved to .dl-foot, below. */
+.dl-card .dl-lede{ margin:0 auto 12px; max-width:38ch; font-size:16px; line-height:1.5; }
+
+/* ---- the one recommendation --------------------------------- */
+
+.dl-pick{
+  margin:14px 0 0;
+  padding:14px;
+  border-radius:var(--radius);
+  border-top:3px solid var(--gold);
+  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.035));
+  overflow-wrap:break-word;
+}
+@media (min-width:480px){ .dl-pick{ padding:20px 22px 22px; } }
+
+.dl-pick-tag{
+  display:inline-block; margin:0 0 8px; padding:5px 11px; border-radius:999px;
+  background:var(--gold); color:var(--green-950);
+  font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+}
+
+/* display:block is load-bearing. The global `h2 { display:flex }` at styles.css
+   :513 makes the heading's text an anonymous flex item, which ignores the
+   inherited text-align and pins it left inside this centred panel. */
+.dl-card .dl-pick-name{
+  display:block; margin:0; border:0; padding:0;
+  font-size:22px; line-height:1.15; color:#fff;
+}
+
+/* THE MEGABYTES ARE THE HEADLINE. This is the only number on the page a visitor
+   can act on without reading a sentence — it answers "will it fit" and "what
+   will it cost me in data" at once — so it is the largest type in the panel. */
+.dl-pick-size{
+  margin:4px 0 0; color:var(--gold); font-weight:700; font-size:15px;
+  font-variant-numeric:tabular-nums;
+}
+.dl-pick-size b{ font-size:28px; line-height:1.1; font-weight:800; letter-spacing:-.02em; }
+.dl-pick-plat{
+  margin-left:2px; font-size:12.5px; font-weight:600; letter-spacing:.04em;
+  text-transform:uppercase; color:rgba(255,255,255,.72);
+}
+
+.dl-pick-why{ margin:8px auto 0; max-width:34ch; font-size:15px; line-height:1.5; color:rgba(255,255,255,.92); }
+
+/* ---- store badges ------------------------------------------- */
+
+/* LAYOUT ONLY. No background, border, radius, shadow or padding is ever applied
+   to .play-badge-link or to the artwork inside it. */
+.dl-badges{
+  display:flex; flex-wrap:wrap; gap:8px;
+  align-items:center; justify-content:center;
+  margin-top:12px;
+}
+
+/* Badges WRAP, they never shrink. Flex items shrink by default, and a squashed
+   Play badge breaches Google's guidelines — so the artwork is frozen at its
+   intrinsic size and the row breaks instead. This replaces the `img{max-width:100%}`
+   that would otherwise distort the artwork against its fixed height. */
+.dl-badges .play-badge-link{ flex:0 0 auto; }
+
+/* THE TWO BADGES ARE NOT THE SAME KIND OF ASSET, so an equal `height` renders
+   them unequal. Google's PNG (646x250) is only 67.7% ink — it carries its
+   required clear space inside the artwork — so at the 56px set by
+   .play-badge-link its visible button is 37.9px. Apple's SVG (119.66x40) is
+   100% ink. 38px matches Google's ink and still satisfies Apple's rule that
+   their badge be no smaller than a neighbouring store's (38 >= 37.9); measured
+   in the browser, not assumed. This reproduces the existing `#ios-cta img`
+   rule as a class, because this page now carries two App Store badges and only
+   one of them can hold that id. Do not "tidy" these to one height without
+   re-measuring the ink. */
+.dl-badges .dl-badge-ios{ height:38px; }
+
+/* An author `display` BEATS the hidden attribute, which is only a UA rule.
+   styles.css already carries .play-badge-link[hidden]{display:none}; this is the
+   belt to that braces, scoped and !important so the unreleased Lite iOS badge
+   cannot be revealed by a later layout rule. Verified against an injected
+   `display:inline-flex !important`: still display:none, still 0 client rects. */
+.dl-badges .play-badge-link[hidden]{ display:none !important; }
+
+.dl-card .dl-note{ margin:8px auto 0; max-width:38ch; font-size:13.5px; line-height:1.45; }
+
+/* ---- everything else, folded away --------------------------- */
+
+.dl-more{ margin-top:10px; border-top:1px solid rgba(255,255,255,.14); text-align:left; }
+
+.dl-more > summary{
+  position:relative;
+  display:block;            /* also removes the default marker box */
+  list-style:none;
+  min-height:44px;
+  padding:13px 34px 13px 0;
+  cursor:pointer;
+  color:#fff;
+}
+.dl-more > summary::-webkit-details-marker{ display:none; }
+
+.dl-more > summary::after{
+  content:""; position:absolute; right:8px; top:50%;
+  width:9px; height:9px; margin-top:-8px;
+  border-right:2px solid var(--gold); border-bottom:2px solid var(--gold);
+  transform:rotate(45deg);
+  transition:transform .15s ease, margin-top .15s ease;
+}
+.dl-more[open] > summary::after{ transform:rotate(-135deg); margin-top:-3px; }
+@media (prefers-reduced-motion:reduce){ .dl-more > summary::after{ transition:none; } }
+
+.dl-more-label{ display:block; font-size:16px; font-weight:700; }
+.dl-more-sub{ display:block; margin-top:3px; font-size:13px; line-height:1.4; color:rgba(255,255,255,.72); }
+
+.dl-opt{ padding:16px 0; border-top:1px solid rgba(255,255,255,.10); }
+.dl-opt:first-child{ border-top:0; }
+
+/* Name left, cost right. `auto` on the second track lets the chips size to their
+   content and keeps their right edges flush down the whole list, which is what
+   makes the sizes scannable as one vertical band. */
+.dl-opt-head{ display:grid; grid-template-columns:1fr auto; column-gap:12px; align-items:start; }
+.dl-card .dl-opt-name{ margin:0; border:0; padding:0; font-size:17px; line-height:1.25; color:#fff; }
+
+.dl-sizes{ margin:0; display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+.dl-size{
+  display:block; padding:3px 8px; border-radius:999px; white-space:nowrap;
+  background:rgba(255,255,255,.10); color:#fff;
+  font-size:12px; font-weight:700; font-variant-numeric:tabular-nums;
+}
+.dl-size-plat{ font-weight:600; color:rgba(255,255,255,.72); }
+
+.dl-opt-copy{ margin:8px 0 0; font-size:14.5px; line-height:1.5; color:rgba(255,255,255,.92); }
+
+/* Left-aligned inside the disclosure; both stores keep the heights set above. */
+.dl-more-body .dl-badges{ justify-content:flex-start; margin-top:8px; }
+
+.dl-card .dl-action{ display:inline-flex; align-items:center; min-height:44px; margin-top:12px; }
+
+/* ---- footer -------------------------------------------------- */
+
+.dl-card .dl-foot{
+  margin:18px 0 0; padding-top:14px;
+  border-top:1px solid rgba(255,255,255,.14);
+  font-size:13px; line-height:1.5;
+}
+
+/* ---- focus --------------------------------------------------- */
+
+/* No border-radius here: an outline inherits the element's own radius, so the
+   ghost buttons round themselves and the badge links stay rectangular — nothing
+   of ours is drawn onto the store artwork. */
+.dl-more > summary:focus-visible,
+.dl-card a:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+/* ---- v2: Native primary, Lite as the stated lighter option ---------- */
+
+/* Size under the full app: a fact, not a headline. Native is 97 MB on iPhone
+   and promoting it in 28px type would argue against the page's own primary CTA.
+   Lite inverts this — see .dl-lite-mb. */
+.dl-card .dl-pick-meta{
+  margin:12px 0 0; font-size:13px; line-height:1.4;
+  color:rgba(255,255,255,.72); font-variant-numeric:tabular-nums;
+}
+
+.dl-lite{
+  margin-top:14px; padding:16px 14px 18px;
+  border:1px solid rgba(255,255,255,.16); border-radius:var(--radius);
+  background:rgba(255,255,255,.04);
+}
+@media (min-width:480px){ .dl-lite{ padding:18px 20px 20px; } }
+
+/* display:block defeats the global h2{display:flex} at styles.css:513, which
+   otherwise makes the text an anonymous flex item and ignores text-align. */
+.dl-card .dl-lite-head{
+  display:block; margin:0; border:0; padding:0;
+  font-size:17px; line-height:1.25; color:#fff;
+}
+.dl-lite-why{ margin:6px auto 0; max-width:34ch; font-size:15px; line-height:1.5; color:rgba(255,255,255,.92); }
+.dl-lite-why b{ color:#fff; font-weight:700; }
+/* HERE the megabytes are the argument, so they get the accent and the weight. */
+.dl-lite-mb{ color:var(--gold); font-weight:800; font-variant-numeric:tabular-nums; }
+.dl-badges-lite{ margin-top:12px; }
+
+/* BADGE FIT AT 375px — measured, not assumed. At the base padding the pair
+   needs 294.4px inside a 269px row, so they wrapped and cost 82px of height.
+   Scaling both down keeps them on one line. Apple's rule is about INK, not box
+   height: Google's PNG is 67.7% ink, so at 48px its visible button is 32.5px,
+   and Apple's 33px SVG (100% ink) is still the larger of the two. */
+@media (max-width:420px){
+  .dl-pick, .dl-lite{ padding-left:8px; padding-right:8px; }
+  .dl-badges .play-badge-link{ padding-right:8px; }
+  .dl-badges .play-badge-link img:not(.dl-badge-ios){ height:48px; }
+  .dl-badges .play-badge-link img.dl-badge-ios{ height:33px; }
+}
+
+
+/* Hero "Get the app" — deliberately NOT .btn-accent: gold is already spent on
+   "Become an observer", and a second gold button in the same fold makes the
+   page ask for two primary actions at once. */
+.hero-get { margin: 0; }
+.hero-get-btn { display: inline-flex; align-items: center; min-height: 44px; }
+.hero-get-sub { margin: 8px 0 0; }

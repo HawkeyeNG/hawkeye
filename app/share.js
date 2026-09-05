@@ -51,6 +51,13 @@
     // rather than merely approved: itunes.apple.com/lookup?id=6804218478
     // returns resultCount 1 for "Hawkeye Election Monitor" 1.0.0.
     iosLive: true,
+    // Hawkeye Lite — a separate pair of listings, not a variant of the above.
+    // Verified the same way as `ios` before being added here:
+    // itunes.apple.com/lookup?bundleId=ng.com.hawkeye.lite returns resultCount 1,
+    // "Hawkeye Lite: Election Monitor" 1.2, trackId 6806090537.
+    liteAndroid: 'https://play.google.com/store/apps/details?id=ng.com.hawkeye.lite',
+    liteIos: 'https://apps.apple.com/app/id6806090537',
+    liteIosLive: true,
   };
 
   /** Where a shared link lands: store badges, and the routes for phones with

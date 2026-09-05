@@ -25,6 +25,8 @@
  * Read-only.
  */
 import fs from 'node:fs';
+import { loadLabels } from '../src/services/labels.js';
+import path from 'node:path';
 import { OSUN_2026_BALLOT } from '../src/services/ec8a_prompt.js';
 
 const [mergedPath, labelsPath] = process.argv.slice(2);
@@ -35,7 +37,24 @@ if (!mergedPath || !labelsPath) {
 
 const merged = new Map(fs.readFileSync(mergedPath, 'utf8').trim().split('\n')
   .map((l) => JSON.parse(l)).map((r) => [r.file.replace(/\.[^.]+$/, ''), r]));
-const labels = JSON.parse(fs.readFileSync(labelsPath, 'utf8'));
+// LABELS COME THROUGH services/labels.js NOW, not straight off disk.
+//
+// This used to read hand_labels.json directly, and hand_labels.json says in its
+// own header that a model wrote it. Every accuracy figure derived here therefore
+// rested on a ruler drawn by the thing being measured. The loader prefers the
+// HUMAN BLIND readings from the review console and stamps every label with where
+// it came from, and this script prints that provenance beside its numbers — so a
+// figure can no longer be quoted without saying what it rests on.
+//
+// REVIEWS_PATH overrides the default location of reviews.json.
+const _loaded = loadLabels({
+  reviewsPath: process.env.REVIEWS_PATH
+    || path.join(path.dirname(labelsPath), '..', '..', 'backend', 'storage', 'audit_review', 'reviews.json'),
+  handLabelsPath: labelsPath,
+});
+const labels = _loaded.labels;
+console.log('[labels] ' + _loaded.provenance.note);
+
 
 const units = Object.keys(labels).filter((k) => !k.startsWith('_'));
 console.log(`${units.length} hand-labelled sheets\n`);

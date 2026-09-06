@@ -349,6 +349,30 @@ export const PARTY_TABLE_CROP = {
   outWidth: 1728,          // = round(1500 * (0.78 - 0.06) * 1.6), the shipped size
 };
 
+/**
+ * The #1-#8 summary block, as a fraction of the whole sheet.
+ *
+ * These numbers were inline in scripts/vlm_boxes_worker.mjs and are unchanged;
+ * they live here now for the reason PARTY_TABLE_CROP does. The review UI shows
+ * a reviewer this same block while they type the boxes, and the reviewer's
+ * entire job is to check what the MACHINE read. Two copies of the geometry
+ * would let the human's view and the model's input drift apart silently, and
+ * the drift would look exactly like a disagreement about the numbers.
+ *
+ * Generous on purpose, per the worker's original note: across the hand-labelled
+ * 20 the block sits at roughly x 60-95%, y 18-40%, but photos arrive tilted and
+ * off-centre, so this takes the whole right half of the upper portion. Too much
+ * costs tokens; too little costs the sheet.
+ *
+ * `height` is a fraction, NOT a bottom edge, and `right` is 1.0 so the rect runs
+ * to the true right edge — both preserve the worker's original arithmetic
+ * exactly (see summaryBoxesRect, and tests/box-crop.test.mjs which pins it).
+ */
+export const SUMMARY_BOXES_CROP = {
+  left: 0.50, right: 1.00, top: 0.04, height: 0.44,
+  outWidth: 1500,          // = the output a 1500px source produced under `width * 2`
+};
+
 export function partyTableSchema(ballot = OSUN_2026_BALLOT) {
   const cell = {
     type: 'object',

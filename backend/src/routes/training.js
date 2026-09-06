@@ -693,24 +693,105 @@ trainingRouter.get('/training/review/row/:key/:row', requireObserver, requireRev
 
   try {
     const { default: sharp } = await import('sharp');
-    const { rowBand, bandCoversRow } = await import('../services/ec8a_cell_crop.js');
+    const { detectRows, bandFromLines, TABLE_ROWS } =
+      await import('../services/ec8a_table_detect.js');
+
+    // FIND the table on this sheet. The previous implementation divided a fixed
+    // fraction of the image into equal rows, which put row 1's band on the
+    // "Local Government Area / Registration Area" header — measured across the
+    // corpus it was a median of 4.0 true row heights out, and up to 11.8. See
+    // services/ec8a_table_detect.js for why its self-check never noticed.
     const meta = await sharp(src).metadata();
-    const rows = Array.isArray(readQueue().ballot) && readQueue().ballot.length
-      ? readQueue().ballot.length : undefined;
-    const band = rowBand(meta, rowIndex, rows ? { rows } : {});
-    // Refuse rather than serve a band that does not contain its own row. The
-    // whole value of this view is that the reviewer trusts what it shows.
-    if (!bandCoversRow(meta, band, rowIndex, rows ? { rows } : {})) {
-      return res.status(500).json({ error: 'band_missed_row' });
+    const WORK_W = 1000;
+    const { data, info } = await sharp(src)
+      .greyscale().resize({ width: WORK_W }).raw().toBuffer({ resolveWithObject: true });
+    const det = detectRows(data, info);
+
+    // A REFUSAL IS A CORRECT ANSWER. On roughly 4 sheets in 10 the rules are too
+    // faint or too broken to locate, and the honest response is no band at all —
+    // the client hides it and the reviewer keeps the full sheet they always had.
+    // Pointing confidently at the wrong row is the one outcome worth avoiding:
+    // a reviewer's correction is trusted and never checked again.
+    if (!det) return res.status(409).json({ error: 'rows_not_detected' });
+    if (rowIndex >= TABLE_ROWS) return res.status(400).json({ error: 'bad_row' });
+
+    // Detection ran on a downscale; map the band back to the source pixels.
+    const scale = meta.width / info.width;
+    const b = bandFromLines(det, info, rowIndex);
+    const band = {
+      left: Math.max(0, Math.round(b.left * scale)),
+      top: Math.max(0, Math.round(b.top * scale)),
+      width: Math.round(b.width * scale),
+      height: Math.round(b.height * scale),
+    };
+    band.width = Math.min(band.width, meta.width - band.left);
+    band.height = Math.min(band.height, meta.height - band.top);
+    if (band.width <= 0 || band.height <= 0) {
+      return res.status(409).json({ error: 'rows_not_detected' });
+    }
+
+    const out = await sharp(src).extract(band).jpeg({ quality: 88 }).toBuffer();
+    res.type('image/jpeg');
+    res.set('Cache-Control', 'private, max-age=86400');
+    // So a client can show "row 7 of 15" and a reviewer can catch a mismatch.
+    res.set('X-Row-Index', String(rowIndex));
+    res.set('X-Row-Inliers', String(det.inliers));
+    return res.send(out);
+  } catch (e) {
+    return res.status(500).json({ error: 'crop_failed', detail: String(e.message).slice(0, 120) });
+  }
+});
+
+// ---- the summary-box block, for review ------------------------------------
+//
+// The same accelerator as the row endpoint above, for the other half of the
+// form. The party rows get a per-row band; the #1-#8 boxes get the whole block,
+// and the difference is deliberate — see services/ec8a_cell_crop.js. The party
+// table is a known count of evenly-pitched rows, so a band can be PROVEN to
+// contain its row. Nothing has measured where each individual box sits, so
+// slicing the block into eight would be inventing geometry, and a reviewe
+// confidently reading the wrong figure produces a correction that is trusted
+// and never checked again.
+//
+// SAME CROP THE MACHINE READ. summaryBoxesRect() is the geometry
+// scripts/vlm_boxes_worker.mjs feeds the model, shared rather than copied. The
+// reviewer's job is to check what the machine read, so showing them a different
+// region would turn a geometry bug into what looks like a disagreement about
+// the numbers. tests/box-crop.test.mjs pins the two together.
+//
+// LOCAL OR CACHED ONLY, exactly as the row endpoint: step 1 of the review flow
+// loads the whole sheet, so the cache is warm by the time anyone is typing.
+trainingRouter.get('/training/review/boxes/:key', requireObserver, requireReviewer, async (req, res) => {
+  const key = cleanKey(req.params.key);
+  const entry = readQueue().entries.find((e) => e.key === key);
+  if (!entry) return res.status(404).json({ error: 'not_in_queue' });
+
+  const local = path.join(sheetsDir(), path.basename(entry.file));
+  const cached = path.join(reviewDir(), 'sheets', `${key}.jpg`);
+  const src = fs.existsSync(local) ? local : (fs.existsSync(cached) ? cached : null);
+  if (!src) {
+    return res.status(409).json({
+      error: 'sheet_not_cached',
+      hint: `GET /api/training/review/sheet/${key} first — that fetches and caches it`,
+    });
+  }
+
+  try {
+    const { default: sharp } = await import('sharp');
+    const { summaryBoxesRect, rectIsUsable } = await import('../services/ec8a_cell_crop.js');
+    const meta = await sharp(src).metadata();
+    const rect = summaryBoxesRect(meta);
+    // Refuse rather than serve a sliver. The value of this view is that the
+    // reviewer trusts it; a crop that is off the sheet is worse than no crop.
+    if (!rectIsUsable(meta, rect)) {
+      return res.status(500).json({ error: 'box_crop_unusable' });
     }
     const out = await sharp(src)
-      .extract({ left: band.left, top: band.top, width: band.width, height: band.height })
+      .extract(rect)
       .jpeg({ quality: 88 })
       .toBuffer();
     res.type('image/jpeg');
     res.set('Cache-Control', 'private, max-age=86400');
-    // So a client can show "row 7 of 16" and a reviewer can catch a mismatch.
-    res.set('X-Row-Index', String(rowIndex));
     return res.send(out);
   } catch (e) {
     return res.status(500).json({ error: 'crop_failed', detail: String(e.message).slice(0, 120) });

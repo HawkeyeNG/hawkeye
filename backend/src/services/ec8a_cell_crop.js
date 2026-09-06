@@ -1,77 +1,69 @@
-import { PARTY_TABLE_CROP } from './ec8a_prompt.js';
+import { PARTY_TABLE_CROP, SUMMARY_BOXES_CROP } from './ec8a_prompt.js';
 
 /**
- * A ROW BAND for human review — one question instead of a whole sheet.
+ * ── rowBand() and bandCoversRow() were REMOVED here on 2026-09-06 ──────────
  *
- * WHY. The tier-A review pile scales to ~73,000 sheets for 2027, against a
- * pipeline that has processed 490. At 2 minutes a sheet that is ~2,400 hours.
- * But those 490 sheets carry only 751 actually-disputed cells: the reviewer is
- * scanning a whole form to answer one question about one number. Showing the row
- * and asking that question directly is where the throughput is.
+ * They divided PARTY_TABLE_CROP into equal rows. That constant is a
+ * deliberately GENEROUS containing box for the VLM pass, not a tight bound on
+ * the rows, so every row came out in the wrong place: measured across a spread
+ * of the corpus, row 1's band was a median of 4.0 true row heights away from
+ * row 1 (max 11.8). A reviewer saw the sheet header where party A should be.
  *
- * WHY A BAND AND NOT A CELL. ec8a_prompt.js records the hard-won warning: these
- * are photographs of paper on a desk and the framing moves. On 29-13-07-001 the
- * table sat low enough that a bottom bound clipped the TOTAL row's values while
- * leaving its printed label visible — "the most dangerous kind of miss, since
- * the crop still looks complete."
+ * bandCoversRow() did not catch it because it derived the row centre from the
+ * same constants that drew the band — it agreed with itself by construction.
  *
- * A tight cell crop inherits that failure and makes it worse. A model reading
- * the wrong cell produces a flag someone checks; a REVIEWER confidently reading
- * the wrong row produces a correction that is trusted and never checked again.
- * So the band is deliberately generous, and it ALWAYS INCLUDES THE PARTY-NAME
- * COLUMN — the reviewer can see which row they are on and catch a misalignment
- * themselves, which is the only defence that survives a moved frame.
- *
- * The asymmetry from the same note applies unchanged: too much costs a little
- * screen space, too little costs the row silently.
+ * Row geometry now comes from services/ec8a_table_detect.js, which finds the
+ * rules on each sheet and RETURNS NULL when it cannot. PARTY_TABLE_CROP keeps
+ * its original job — the generous crop fed to the model — which it does well.
  */
-
-// The party table, as a fraction of the whole sheet. Same constant the VLM pass
-// crops with, so the two cannot drift apart.
-const T = PARTY_TABLE_CROP;
-
-/** Rows on an EC8A party table: the ballot's parties, plus the TOTAL line. */
-export const ROWS_DEFAULT = 15;
 
 /**
- * Vertical band for one row, in absolute pixels, with neighbours included.
+ * The summary-box block in absolute pixels.
  *
- * `context` is in ROW HEIGHTS, not pixels, so the margin scales with the sheet
- * and with the ballot length rather than being tuned to one resolution.
+ * ONE BLOCK, NOT ONE BOX. rowBand above bands a single party row because the
+ * party table is a known count of evenly-pitched rows, and bandCoversRow can
+ * prove a band contains its target. The #1-#8 block has no such calibration:
+ * this crop deliberately includes the sheet header as well as the boxes, so
+ * dividing it into eight equal slices would invent a geometry nobody has
+ * measured. Per the warning in ec8a_prompt.js, a reviewer confidently reading
+ * the wrong figure produces a correction that is trusted and never checked
+ * again -- so the whole block is served and the reviewer keeps the printed
+ * labels that let them see which box they are on.
+ *
+ * The arithmetic is the worker's, unchanged: `right: 1.0` makes the width
+ * `W - left` exactly, and `height` is a fraction of H rather than a bottom edge,
+ * so rounding lands on the same pixels it always did.
  */
-export function rowBand(meta, rowIndex, { rows = ROWS_DEFAULT, context = 1 } = {}) {
+export function summaryBoxesRect(meta) {
   const W = meta.width;
   const H = meta.height;
-  if (!W || !H) throw new Error('rowBand needs image dimensions');
-  const n = Math.max(1, rows + 1);                    // + the TOTAL row
-  const i = Math.min(Math.max(0, rowIndex), n - 1);
-
-  const tableTop = H * T.top;
-  const tableBottom = H * T.bottom;
-  const rowH = (tableBottom - tableTop) / n;
-
-  const top = Math.max(0, Math.round(tableTop + (i - context) * rowH));
-  const bottom = Math.min(H, Math.round(tableTop + (i + 1 + context) * rowH));
-
-  // Always from the party column across to the end of the words column. Cropping
-  // to the figures cell alone would remove the reviewer's only way to tell they
-  // are looking at the right party.
-  const left = Math.max(0, Math.round(W * T.left));
-  const right = Math.min(W, Math.round(W * T.right));
-
-  return { left, top, width: right - left, height: bottom - top, rowHeight: rowH };
+  if (!W || !H) throw new Error('summaryBoxesRect needs image dimensions');
+  const S = SUMMARY_BOXES_CROP;
+  const left = Math.round(W * S.left);
+  const top = Math.round(H * S.top);
+  return {
+    left,
+    top,
+    width: Math.round(W * S.right) - left,
+    height: Math.round(H * S.height),
+  };
 }
 
 /**
- * Does the band actually contain the row it claims to?
+ * Is this rect actually usable as evidence?
  *
- * Exported so the endpoint and the tests use the SAME predicate, and so a
- * geometry change cannot quietly stop covering its target.
+ * The equivalent of bandCoversRow: a predicate the endpoint and the tests share,
+ * so a geometry change cannot quietly start serving a sliver. It cannot verify
+ * WHICH boxes are inside -- nothing has measured that -- but it can refuse a
+ * crop that is off the sheet or too small to be the block at all.
  */
-export function bandCoversRow(meta, band, rowIndex, { rows = ROWS_DEFAULT } = {}) {
-  const n = Math.max(1, rows + 1);
-  const tableTop = meta.height * T.top;
-  const rowH = (meta.height * T.bottom - tableTop) / n;
-  const centre = tableTop + (rowIndex + 0.5) * rowH;
-  return centre >= band.top && centre <= band.top + band.height;
+export function rectIsUsable(meta, rect, { minWidth = 0.25, minHeight = 0.2 } = {}) {
+  if (!meta.width || !meta.height) return false;
+  if (rect.width <= 0 || rect.height <= 0) return false;
+  if (rect.left < 0 || rect.top < 0) return false;
+  if (rect.left + rect.width > meta.width) return false;
+  if (rect.top + rect.height > meta.height) return false;
+  if (rect.width < meta.width * minWidth) return false;
+  if (rect.height < meta.height * minHeight) return false;
+  return true;
 }

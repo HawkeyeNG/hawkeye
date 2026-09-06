@@ -21,6 +21,7 @@ import sharp from 'sharp';
 import { config } from '../src/config.js';
 import { chatComplete } from '../src/services/assistant.js';
 import { boxesPrompt, BOXES_SCHEMA, BOX_FIELDS, parseModelJson } from '../src/services/ec8a_prompt.js';
+import { summaryBoxesRect } from '../src/services/ec8a_cell_crop.js';
 
 const argv = process.argv.slice(2);
 const arg = (n, d = null) => { const i = argv.indexOf(`--${n}`); return i > -1 ? argv[i + 1] : d; };
@@ -50,12 +51,15 @@ const provider = {
 // = the output a 1500px source produced under the old `width * 2` rule.
 const BOXES_CROP_OUT_WIDTH = 1500;
 
+// GEOMETRY MOVED, NOT CHANGED. The four lines that used to compute this rect
+// inline now live in services/ec8a_cell_crop.js, because the review UI shows a
+// human this same crop while they check what this worker read. Two copies would
+// drift, and the drift would present as a disagreement about the numbers rathe
+// than as the geometry bug it is. tests/box-crop.test.mjs pins the new helper to
+// the exact pixels the old arithmetic produced, on real sheet dimensions.
 async function cropBoxes(full) {
   const m = await sharp(full).metadata();
-  const left = Math.round(m.width * 0.50);
-  const top = Math.round(m.height * 0.04);
-  const width = m.width - left;
-  const height = Math.round(m.height * 0.44);
+  const { left, top, width, height } = summaryBoxesRect(m);
   return sharp(full)
     .extract({ left, top, width, height })
     // PINNED, like the party crop. This used to be `width * 2`, derived from the

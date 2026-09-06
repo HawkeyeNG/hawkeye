@@ -37,6 +37,16 @@ const TENS = {
   EIGHTY: 80, NINETY: 90,
 };
 const SCALES = { HUNDRED: 100, THOUSAND: 1000 };
+/**
+ * The digits, on their own. Not every presiding officer writes the words cell
+ * as a place-value phrase: "130" is written "ONE THREE ZERO" as readily as
+ * "ONE HUNDRED AND THIRTY", and both are correct completions of the form.
+ * TEN..NINETEEN are deliberately absent — a digit spelling never uses them.
+ */
+const DIGIT_WORDS = {
+  ZERO: 0, ONE: 1, TWO: 2, THREE: 3, FOUR: 4,
+  FIVE: 5, SIX: 6, SEVEN: 7, EIGHT: 8, NINE: 9,
+};
 const VOCAB = [...Object.keys(UNITS), ...Object.keys(TENS), ...Object.keys(SCALES), 'AND'];
 // NIL and NILL appear in the words column as often as ZERO on these sheets.
 const NIL_WORDS = new Set(['NIL', 'NILL', 'NILE', 'NILS']);
@@ -93,6 +103,26 @@ export function wordsToNumber(phrase) {
   if (NIL_WORDS.has(normaliseWord(phrase))) return 0;
   const words = String(phrase).split(/[\s-]+/).map(snapWord).filter(Boolean);
   if (!words.length) return null;
+
+  // DIGIT-BY-DIGIT FIRST. Some officers spell the count out one digit at a
+  // time. Read as a place-value phrase, "ONE THREE ZERO" sums to 4 and "NINE
+  // FIVE SIX" to 20 — so a correctly filled sheet was being reported as a
+  // figures-vs-words DISAGREEMENT. That is worse than missing the row: it
+  // manufactures a finding against an officer who did nothing wrong, and sends
+  // a clean sheet to a human to adjudicate a fault that is ours.
+  //
+  // Applied only when EVERY token is a single-digit word AND there are at least
+  // two of them. There is no English reading of "ONE THREE ZERO" that means 4,
+  // while a lone "THREE" is just three and must stay three. "THIRTEEN" is not
+  // in DIGIT_WORDS, so a real place-value phrase cannot be captured by mistake.
+  const digitTokens = words.filter((w) => w !== 'AND');
+  if (digitTokens.length >= 2 && digitTokens.every((w) => w in DIGIT_WORDS)) {
+    const joined = digitTokens.map((w) => DIGIT_WORDS[w]).join('');
+    // Same ceiling figuresOf() uses: a run that long is table furniture, not a
+    // count, and a polling unit cannot have a million votes.
+    return joined.length > 6 ? null : Number(joined);
+  }
+
   let total = 0, current = 0, seen = false;
   for (const w of words) {
     if (w === 'AND') continue;

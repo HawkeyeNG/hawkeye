@@ -571,6 +571,97 @@ for (const ddl of [
 }
 
 
+/**
+ * Drop NOT NULL from image_dhash / venue_image_dhash. Returns a verdict object.
+ *
+ * ONE COPY, TWO CALLERS: scripts/migrate_dhash_nullable.mjs (deliberate, with a
+ * dry run) and the guarded boot path below (the only way to reach production,
+ * which has no shell). Duplicating a table rebuild would be asking for the two
+ * copies to drift.
+ *
+ * In direct mode the origin never receives the pixels, so it cannot compute a
+ * perceptual hash at submission time; services/analysis-queue.js fills these in
+ * from the bucket moments later. A client-supplied value was measured and does
+ * not work (browser canvas vs sharp: 0/24 exact, median 10 bits apart, against a
+ * threshold of 4), so NULL-until-computed is the only honest option.
+ */
+export function migrateDhashNullable(database = db) {
+  const cols = () => Object.fromEntries(
+    database.prepare("SELECT name, `notnull` FROM pragma_table_info('submissions')").all()
+      .filter((c) => ['image_dhash', 'venue_image_dhash'].includes(c.name))
+      .map((c) => [c.name, c.notnull]),
+  );
+  const before = cols();
+  if (Object.keys(before).length !== 2) {
+    return { ok: false, reason: 'columns not found', before };
+  }
+  if (before.image_dhash === 0 && before.venue_image_dhash === 0) {
+    return { ok: true, already: true, before };
+  }
+
+  const rowsBefore = database.prepare('SELECT COUNT(*) c FROM submissions').get().c;
+  const createSql = database.prepare(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='submissions'").get().sql;
+  const indexes = database.prepare(
+    "SELECT sql FROM sqlite_master WHERE type='index' AND tbl_name='submissions' AND sql IS NOT NULL").all();
+  const info = database.prepare("SELECT name FROM pragma_table_info('submissions')").all();
+
+  let newSql = createSql;
+  for (const t of ['image_dhash', 'venue_image_dhash']) {
+    const re = new RegExp(`(\\b${t}\\s+TEXT)\\s+NOT\\s+NULL`, 'i');
+    if (!re.test(newSql)) return { ok: false, reason: `cannot find "${t} TEXT NOT NULL"`, before };
+    newSql = newSql.replace(re, '$1');
+  }
+  newSql = newSql.replace(/CREATE TABLE\s+"?submissions"?/i, 'CREATE TABLE submissions_new');
+  const colList = info.map((c) => `"${c.name}"`).join(', ');
+
+  database.pragma('foreign_keys = OFF');
+  try {
+    database.transaction(() => {
+      database.exec(newSql);
+      database.exec(`INSERT INTO submissions_new (${colList}) SELECT ${colList} FROM submissions`);
+      database.exec('DROP TABLE submissions');
+      database.exec('ALTER TABLE submissions_new RENAME TO submissions');
+      for (const ix of indexes) database.exec(ix.sql);
+    })();
+  } catch (e) {
+    return { ok: false, reason: String(e.message).slice(0, 200), before };
+  } finally {
+    database.pragma('foreign_keys = ON');
+  }
+
+  const after = cols();
+  const rowsAfter = database.prepare('SELECT COUNT(*) c FROM submissions').get().c;
+  const ixAfter = database.prepare(
+    "SELECT COUNT(*) c FROM sqlite_master WHERE type='index' AND tbl_name='submissions' AND sql IS NOT NULL").get().c;
+  const ok = after.image_dhash === 0 && after.venue_image_dhash === 0
+    && rowsAfter === rowsBefore && ixAfter === indexes.length;
+  return { ok, before, after, rows: `${rowsBefore} -> ${rowsAfter}`, indexes: `${indexes.length} -> ${ixAfter}` };
+}
+
+/** Can a direct-mode INSERT actually succeed on this database? */
+export function dhashColumnsNullable() {
+  return db.prepare("SELECT name, `notnull` FROM pragma_table_info('submissions')").all()
+    .filter((c) => ['image_dhash', 'venue_image_dhash'].includes(c.name))
+    .every((c) => c.notnull === 0);
+}
+
+// UPLOAD_MODE=direct needs those columns nullable, and the production host has
+// no shell to run the migration script in. So it runs here — but ONLY when
+// someone has deliberately asked for direct mode, never on an ordinary restart.
+// A failure falls back to proxy rather than taking the site down or serving a
+// mode that would 500 every submission.
+if (config.uploadMode === 'direct' && !dhashColumnsNullable()) {
+  const verdict = migrateDhashNullable();
+  console.log(JSON.stringify({ msg: 'dhash nullable migration (UPLOAD_MODE=direct)', ...verdict }));
+  if (!verdict.ok) {
+    console.error(JSON.stringify({
+      msg: 'DIRECT MODE DISABLED — schema migration failed; serving proxy mode instead',
+      reason: verdict.reason,
+    }));
+  }
+}
+
 // ---- Backfill dhash_bands for submissions written before the index existed ---
 //
 // A fresh index that only saw NEW rows would silently stop detecting re-use of

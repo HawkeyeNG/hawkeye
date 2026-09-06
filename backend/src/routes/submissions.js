@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Router } from 'express';
 import multer from 'multer';
-import { db, partyCodes, contestCodes, contests } from '../db.js';
+import { db, partyCodes, contestCodes, contests, dhashColumnsNullable } from '../db.js';
 import { config } from '../config.js';
 import { haversineM, makeLocationProof } from '../services/geo.js';
 import { sha256Hex, dhashHex, hammingDistance, dhashBandTokens } from '../services/images.js';
@@ -77,6 +77,22 @@ const isFresh = (ts, now) =>
  * Short expiry: the phone uploads immediately after capture. A URL that outlives
  * the moment is a URL someone else can use.
  */
+// ALL THREE have to be true, and the schema check is the one that is easy to
+// forget: UPLOAD_MODE=direct against a database whose dhash columns are still
+// NOT NULL would 500 at the INSERT, after both photos were already committed to
+// the bucket. Evaluated once at load — the schema does not change under a
+// running process.
+const DIRECT_CAPABLE = config.uploadMode === 'direct'
+  && BLOB_DRIVER === 's3'
+  && dhashColumnsNullable();
+if (config.uploadMode === 'direct' && !DIRECT_CAPABLE) {
+  console.error(JSON.stringify({
+    msg: 'UPLOAD_MODE=direct requested but NOT ACTIVE — serving proxy mode',
+    blobDriver: BLOB_DRIVER,
+    dhashColumnsNullable: dhashColumnsNullable(),
+  }));
+}
+
 const presignLimiter = makeLimiter({ windowMs: 60_000, max: 30, name: 'presign' });
 
 submissionsRouter.post('/uploads/presign', requireObserver, presignLimiter, async (req, res) => {
@@ -85,7 +101,7 @@ submissionsRouter.post('/uploads/presign', requireObserver, presignLimiter, asyn
   // and then headBlob() — which reads the fs driver — would look on local disk,
   // not find them, and 409 every submission forever. Answering 409 here instead
   // puts the client back on the multipart path, which still works.
-  if (config.uploadMode !== 'direct' || BLOB_DRIVER !== 's3') {
+  if (!DIRECT_CAPABLE) {
     // Not an error — the client asks, and a 'proxy' server tells it to post the
     // files the old way. That is what makes the switch a server-side decision
     // and lets one client build work against either mode.
@@ -293,7 +309,7 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // So: files present means handle them the old way, whatever the mode says.
     // It costs the origin the bytes it was trying to avoid, which is the correct
     // trade when the alternative is losing an observer's signed report.
-    const DIRECT = config.uploadMode === 'direct' && !(sheet && venue);
+    const DIRECT = DIRECT_CAPABLE && !(sheet && venue);
     let imageSha256;
     let venueImageSha256;
     let imageDhash;

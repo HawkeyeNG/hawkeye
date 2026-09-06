@@ -123,6 +123,36 @@ export function wordsToNumber(phrase) {
     return joined.length > 6 ? null : Number(joined);
   }
 
+  // HUNDREDS WITHOUT THE WORD "HUNDRED". A third grammar, and the one that
+  // reads most like speech: "172" written "ONE SEVENTY TWO". Read as a plain
+  // sum that is 1 + 70 + 2 = 73, so a correct sheet became a disagreement the
+  // same way digit spellings did.
+  //
+  // The shape is narrow on purpose: a single digit 1-9, then a TENS or teen
+  // word, then at most one more unit — and no scale word anywhere, because
+  // "ONE HUNDRED AND SEVENTY TWO" must keep its own reading. "TWENTY ONE"
+  // starts with a TENS word and is untouched; "ONE HUNDRED" has a scale and is
+  // untouched. Capped at 9xx, which is what this grammar can express.
+  //
+  // A TEEN MAY NOT FILL THE TENS SLOT, and this was measured rather than
+  // guessed. "NINE TEEN" is not 910 — it is OCR splitting NINETEEN, and the
+  // figures on those rows say 19. Across the corpus the teen shape scored 6
+  // right against 18 where neither reading matched, so it is refused outright.
+  // The TENS shape scored 233-0 on three tokens and 31-4 on two.
+  if (digitTokens.length >= 2 && digitTokens.length <= 3
+      && digitTokens[0] in DIGIT_WORDS && DIGIT_WORDS[digitTokens[0]] > 0
+      && digitTokens[1] in TENS
+      && !digitTokens.some((w) => w in SCALES)) {
+    const rest = digitTokens.slice(1);
+    // TENS, then at most one unit under ten. Anything else is not this grammar.
+    const tail = rest.length === 1
+      ? TENS[rest[0]]
+      : (rest.length === 2 && rest[1] in UNITS && UNITS[rest[1]] < 10
+        ? TENS[rest[0]] + UNITS[rest[1]]
+        : null);
+    if (tail !== null) return DIGIT_WORDS[digitTokens[0]] * 100 + tail;
+  }
+
   let total = 0, current = 0, seen = false;
   for (const w of words) {
     if (w === 'AND') continue;

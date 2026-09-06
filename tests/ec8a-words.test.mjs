@@ -59,6 +59,47 @@ for (const [phrase, want] of [
 ]) eq(phrase, want, 'place value');
 console.log(`  PASS  ${n - before} place-value phrases unchanged`);
 
+// ---- the third grammar: hundreds without the word "hundred" ----------------
+// "172" spoken as "ONE SEVENTY TWO". Read as a plain sum that is 1 + 70 + 2 =
+// 73, so a correct sheet became a figures-vs-words disagreement.
+{
+  const t = n;
+  for (const [phrase, want] of [
+    ['ONE SEVENTY TWO', 172],
+    ['ONE SEVENTY', 170],
+    ['TWO THIRTY FIVE', 235],
+    ['NINE NINETY NINE', 999],
+    ['THREE FORTY', 340],
+    ['EIGHT SIXTY ONE', 861],
+  ]) eq(phrase, want, 'spoken hundreds');
+  console.log(`  PASS  ${n - t} spoken-hundreds phrases`);
+}
+
+// ---- CONTROLS for the third grammar ----------------------------------------
+{
+  // A TENS-first phrase is an ordinary number and must not gain a hundred.
+  eq('TWENTY ONE', 21, 'tens first');
+  eq('SEVENTY FIVE', 75, 'tens first');
+  eq('NINETY', 90, 'tens alone');
+  // A scale word forces the place-value reading.
+  eq('ONE HUNDRED AND SEVENTY TWO', 172, 'scale wins');
+  eq('TWO THOUSAND AND FIVE', 2005, 'scale wins');
+  // ZERO cannot lead a hundreds phrase — "ZERO SEVENTY" is not 70 by this rule.
+  assert.notStrictEqual(wordsToNumber('ZERO SEVENTY'), 170,
+    'CONTROL FAILED: ZERO was treated as a hundreds digit');
+  // A malformed tail is not this grammar.
+  assert.notStrictEqual(wordsToNumber('ONE SEVENTY FIFTEEN'), 185,
+    'CONTROL FAILED: a malformed tail was read as spoken hundreds');
+  // A TEEN in the tens slot is REFUSED. "NINE TEEN" is OCR splitting NINETEEN,
+  // and the figures on those rows say 19 — measured, 6 right against 18 where
+  // neither reading matched.
+  assert.notStrictEqual(wordsToNumber('NINE TEEN'), 910,
+    'CONTROL FAILED: a split teen was read as spoken hundreds');
+  assert.strictEqual(wordsToNumber('NINE TEEN'), 19,
+    'a split NINETEEN should still sum to 19');
+  console.log('  PASS  controls: tens-first, scale words, leading zero, malformed tails');
+}
+
 // ---- CONTROLS --------------------------------------------------------------
 {
   // A lone digit word is that digit, NOT a one-element digit string. Same

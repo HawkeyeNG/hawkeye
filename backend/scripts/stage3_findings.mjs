@@ -169,12 +169,54 @@ for (const f of findings.slice(0, 3)) {
   console.log(`    confirmed by: ${f.confirmedBy}`);
 }
 
+/**
+ * CARRY HUMAN DECISIONS FORWARD.
+ *
+ * This register is rebuilt from the machine's evidence every run, which is
+ * right for everything the machine knows. A WITHDRAWAL is not one of those
+ * things: it is a person deciding a finding no longer stands — the ten
+ * no-sheet findings INEC has since answered, for instance — and nothing
+ * upstream can reconstruct that.
+ *
+ * Re-running this file after the words parser was fixed silently dropped all
+ * ten. The count stayed at 23, because withdrawal is a mark rather than a
+ * deletion, so nothing looked wrong: the register simply went back to claiming
+ * ten findings that had already been answered. Caught only by reading the diff.
+ *
+ * So the previous register is read first and its withdrawal marks are merged
+ * back by id. Anything else in it is discarded, as before.
+ */
+const priorPath = path.join(dir, 'findings.json');
+let carried = 0;
+if (fs.existsSync(priorPath)) {
+  try {
+    const prior = new Map(JSON.parse(fs.readFileSync(priorPath, 'utf8'))
+      .filter((f) => f.withdrawnAt)
+      .map((f) => [f.id, f]));
+    for (const f of findings) {
+      const was = prior.get(f.id);
+      if (!was) continue;
+      f.withdrawnAt = was.withdrawnAt;
+      f.withdrawnReason = was.withdrawnReason;
+      carried += 1;
+    }
+    if (prior.size !== carried) {
+      // A withdrawn finding that no longer appears in the register is not an
+      // error, but it must be said out loud rather than vanishing.
+      console.log(`\n  NOTE: ${prior.size - carried} withdrawn finding(s) are no longer produced by this run.`);
+    }
+    console.log(`  carried forward ${carried} withdrawal mark(s) from the previous register`);
+  } catch (e) {
+    console.error(`  WARNING: could not read the previous register (${e.message}); withdrawals NOT carried forward`);
+  }
+}
+
 fs.writeFileSync(path.join(dir, 'findings.json'), JSON.stringify(findings, null, 2));
 
 // A CSV alongside, because the people who act on this register work in
 // spreadsheets and a JSON file they cannot open is a register nobody reads.
 const csvCell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-const cols = ['id', 'type', 'unit', 'lga', 'ward', 'pollingUnit', 'check', 'severity', 'magnitude', 'statement', 'basis', 'confirmedBy', 'confirmedAt', 'image'];
+const cols = ['id', 'type', 'unit', 'lga', 'ward', 'pollingUnit', 'check', 'severity', 'magnitude', 'statement', 'basis', 'confirmedBy', 'confirmedAt', 'image', 'withdrawnAt', 'withdrawnReason'];
 const csv = [cols.join(',')]
   .concat(findings.map((f) => cols.map((c) => csvCell(f[c])).join(',')))
   .join('\n');

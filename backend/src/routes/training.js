@@ -717,7 +717,14 @@ trainingRouter.get('/training/review/row/:key/:row', requireObserver, requireRev
 
     // Detection ran on a downscale; map the band back to the source pixels.
     const scale = meta.width / info.width;
-    const b = bandFromLines(det, info, rowIndex);
+    // WIDER THAN THE DETECTION WINDOW, deliberately. SEARCH.xLeft/xRight
+    // (0.10..0.80) bound where rules are LOOKED FOR, so the page edge and the
+    // photo background cannot vote in the profile. A human needs the whole row:
+    // at 0.80 the last column is cut mid-word — a sampled sheet showed the
+    // agent's name as "ADEBOROQ..." with the rest off the edge — and a reviewe
+    // cannot confirm they are on the right row from a truncated one. Detection
+    // geometry is untouched; only the picture widens.
+    const b = bandFromLines(det, info, rowIndex, { xLeft: 0.02, xRight: 0.99 });
     const band = {
       left: Math.max(0, Math.round(b.left * scale)),
       top: Math.max(0, Math.round(b.top * scale)),

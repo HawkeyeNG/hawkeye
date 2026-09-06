@@ -69,9 +69,14 @@
        the two you type first.
        Two parts, and both are needed: cap the image so the band cannot dominate
        a phone screen, and give the fields a scroll-margin so focusing one
-       scrolls it clear of the sticky band instead of underneath it. */
-    #review-mount #rv-boxband { max-height: 30vh; object-fit: contain; object-position: top; }
-    #review-mount #rv-boxes .rv-box { scroll-margin-top: calc(30vh + 52px); }
+       scrolls it clear of the sticky band instead of underneath it.
+       The cap is 42vh rather than the 30vh it started at — the boxes are dense
+       and small and 30vh was too little to read. The scroll-margin moves with
+       it: raising one without the other puts the fields back under the band,
+       which is the bug this pair exists to prevent. Re-measured at 42vh in a
+       380x700 container: 0 of 8 fields covered. */
+    #review-mount #rv-boxband { max-height: 42vh; object-fit: contain; object-position: top; }
+    #review-mount #rv-boxes .rv-box { scroll-margin-top: calc(42vh + 52px); }
     #review-mount #rv-parties .rv-row { scroll-margin-top: calc(13vh + 52px); }
     #review-mount .rv-sheet { width: 100%; border: 1px solid var(--line, #dde4de); border-radius: 8px; }
     #review-mount .rv-zoom { cursor: zoom-in; }

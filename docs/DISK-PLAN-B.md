@@ -106,19 +106,45 @@ than 100 GB.
    observer's signature covers the content hash; a verifier fetches the file and
    re-hashes it, and a missing file is an unverifiable report.
 
-## Known gap
+## Orphan sweeping
 
-**Orphaned objects are never reclaimed.** The presign endpoint will hand out a
-URL, the phone will PUT to it, and if the submission never completes the object
-stays in the bucket forever, referenced by nothing. Bounded per observer by the
-30/min presign limit and the 8 MB signed length, so it is a cost leak rather
-than a safety problem — but it should have a sweeper before direct mode carries
-real volume: list objects, subtract every hash the `submissions` table
-references, delete what is older than a day and matches nothing.
+An object can be presigned, PUT, and then never attached to a submission — the
+observer abandons the flow, or the submit fails after the upload. Nothing
+referenced it, and nothing used to reclaim it.
 
-Not built. It needs bucket LIST permission, which the app's Object Read & Write
-token deliberately does not have — so it belongs in a separate maintenance
-credential, not in `.env`.
+`backend/scripts/sweep_orphans.mjs` does now:
+
+```bash
+BLOB_DRIVER=s3 node backend/scripts/sweep_orphans.mjs               # dry run
+BLOB_DRIVER=s3 node backend/scripts/sweep_orphans.mjs --apply
+```
+
+*(An earlier note here said this needed a second credential with LIST
+permission. That was inferred from the CORS refusal and was wrong — bucket
+configuration and object listing are different permissions. The app's Object
+Read & Write token lists the bucket fine, measured.)*
+
+**It deletes evidence if it is wrong**, so the bias is heavily toward keeping
+things, and every guard is exercised against the real bucket by
+`sweep_rehearsal.mjs`:
+
+| Guard | Why |
+|---|---|
+| Reference set built from the **live schema** | Two tables hold photo hashes today (`submissions`, `collation_reports`). A third added later would otherwise be silently unprotected |
+| **Refuses** if the database has no evidence rows | A failed query or a wrong `DB_PATH` would make the whole bucket look orphaned |
+| Skips objects newer than `--min-age-h` (24) | An upload in flight, or a report sitting in an outbox for hours, has its photos in the bucket before the row exists |
+| **Refuses** if orphans exceed `--max-fraction` (25%) without `--force` | Wanting to delete most of the bucket is more likely a bug than a result |
+| Re-checks the reference set immediately before each delete | The listing may be minutes old on a large bucket |
+| Verifies each delete with a HEAD | A 204 is not proof |
+| Control: referenced objects present **before** must still be present **after** | Measured as a difference, so a pre-existing gap cannot be mistaken for damage this sweep did |
+
+That last one matters more than it looks. The first version simply asserted
+that referenced objects exist, and it fired on a photo that had never been
+uploaded at all — reporting a pre-existing condition as though the sweep had
+caused it. An alarm that goes off for the wrong reason is one nobody trusts the
+second time. Pre-existing gaps are `backfill_check.mjs`'s job.
+
+Run it monthly once direct mode is live, and after any election.
 
 ## Why the trigger is 50 GB and not higher
 

@@ -96,6 +96,122 @@ function signedHeaders(method, key, body) {
 // wrong canonical request returns 403, not a clue — so it is checked directly.
 export const _signedHeaders = signedHeaders;
 
+// ---- presigned PUT: the client uploads, the origin never sees the bytes -----
+//
+// WHY THIS EXISTS. putBlob() above sends the bytes from the SERVER, which means
+// every photo crosses the origin twice: inbound from the observer, then
+// outbound to the bucket. GO54 confirmed in writing on 2026-09-06 that inbound
+// counts toward the 150 GB monthly allowance ("providers measure traffic at the
+// network interface level, not just what is served out"). So switching
+// BLOB_DRIVER to s3 as it stands FIXES the 120 GB disk cap and roughly DOUBLES
+// the bandwidth problem. That is the opposite of the intended effect.
+//
+// A presigned URL moves the transfer off the origin entirely: the phone PUTs
+// straight to R2 and the origin handles only a few hundred bytes of JSON.
+//
+// INTEGRITY IS NOT WEAKENED, and this is the part worth being careful about.
+// The URL is signed for ONE key and ONE checksum:
+//   * the key is the content hash the client claims (`<sha256>.jpg`), and
+//   * `x-amz-checksum-sha256` is a SIGNED header, so the client cannot drop o
+//     alter it without invalidating the signature.
+// R2 verifies the body against that checksum and rejects a mismatch with 400.
+// An object therefore cannot exist at key X unless its bytes hash to X — which
+// is exactly the property the ledger relies on, and it is now enforced by the
+// storage layer rather than by the origin having read the file.
+//
+// WHAT IS GENUINELY LOST is analysis, not integrity. The origin can no longe
+// compute the perceptual dhash, extract ORB venue features, or OCR the sheet at
+// submission time, because it does not have the pixels. Those must move to a
+// worker that pulls from the bucket (R2 egress is free) — see
+// docs/DIRECT-UPLOAD.md. Duplicate detection changes from a synchronous
+// rejection into a prompt asynchronous flag. That is a real behaviour change
+// and must be a decision, not a side effect.
+
+/**
+ * A presigned PUT URL for one content-addressed key.
+ *
+ * @param {string} key       `<sha256>.jpg`
+ * @param {string} sha256Hex the same hash, hex — bound into the signature
+ * @param {number} expiresIn seconds; keep short, the client uploads immediately
+ */
+export function presignPut(key, sha256Hex, expiresIn = 300) {
+  if (!isBlobKey(key)) throw new Error(`blobstore: refusing a non-content-addressed key: ${key}`);
+  if (!/^[0-9a-f]{64}$/i.test(String(sha256Hex || ''))) {
+    throw new Error('blobstore: presignPut needs a hex sha256');
+  }
+  // The key IS the hash, so a mismatch here would sign a URL that can never be
+  // satisfied — fail now rather than at the phone on election night.
+  if (key.slice(0, 64).toLowerCase() !== String(sha256Hex).toLowerCase()) {
+    throw new Error('blobstore: presignPut key does not match its sha256');
+  }
+  const S3 = s3();
+  const missing = ['endpoint', 'bucket', 'key', 'secret'].filter((f) => !S3[f]);
+  if (missing.length) throw new Error(`blobstore: presignPut needs ${missing.join(', ')}`);
+
+  const checksumB64 = Buffer.from(String(sha256Hex), 'hex').toString('base64');
+  const url = new URL(`${S3.endpoint.replace(/\/+$/, '')}/${S3.bucket}/${key}`);
+  const now = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
+  const date = now.slice(0, 8);
+  const scope = `${date}/${S3.region}/s3/aws4_request`;
+
+  // host is implicit in the request; the checksum header is what makes the URL
+  // usable for these bytes and no others.
+  const signedHeaderNames = 'host;x-amz-checksum-sha256';
+  const q = new URLSearchParams({
+    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+    'X-Amz-Credential': `${S3.key}/${scope}`,
+    'X-Amz-Date': now,
+    'X-Amz-Expires': String(Math.max(1, Math.floor(expiresIn))),
+    'X-Amz-SignedHeaders': signedHeaderNames,
+  });
+  // Query string must be sorted by key for the canonical request.
+  const canonicalQuery = [...q.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([k2, v]) => `${encodeURIComponent(k2)}=${encodeURIComponent(v)}`)
+    .join('&');
+
+  const canonical = [
+    'PUT',
+    url.pathname,
+    canonicalQuery,
+    `host:${url.host}`,
+    `x-amz-checksum-sha256:${checksumB64}`,
+    '',
+    signedHeaderNames,
+    'UNSIGNED-PAYLOAD',
+  ].join('\n');
+  const toSign = ['AWS4-HMAC-SHA256', now, scope, sha256hex(Buffer.from(canonical))].join('\n');
+  let k = hmac(`AWS4${S3.secret}`, date);
+  for (const part of [S3.region, 's3', 'aws4_request']) k = hmac(k, part);
+  const sig = crypto.createHmac('sha256', k).update(toSign).digest('hex');
+
+  return {
+    url: `${url.origin}${url.pathname}?${canonicalQuery}&X-Amz-Signature=${sig}`,
+    method: 'PUT',
+    // The client MUST send these verbatim or the signature fails / R2 rejects.
+    headers: { 'x-amz-checksum-sha256': checksumB64 },
+    expiresIn,
+    key,
+  };
+}
+
+/**
+ * Does this object exist, and how big is it? HEAD transfers no body, so
+ * confirming an upload costs the origin a few hundred bytes rather than a photo.
+ */
+export async function headBlob(key) {
+  if (!isBlobKey(key)) throw new Error(`blobstore: refusing a non-content-addressed key: ${key}`);
+  if (DRIVER === 'fs') {
+    const p = fsPath(key);
+    return fs.existsSync(p) ? { exists: true, size: fs.statSync(p).size } : { exists: false, size: 0 };
+  }
+  const { url, headers } = signedHeaders('HEAD', key, null);
+  const r = await fetch(url, { method: 'HEAD', headers });
+  if (r.status === 404) return { exists: false, size: 0 };
+  if (!r.ok) throw new Error(`blobstore: HEAD ${key} -> ${r.status}`);
+  return { exists: true, size: Number(r.headers.get('content-length') || 0) };
+}
+
 // ---- the interface ---------------------------------------------------------
 
 export async function putBlob(key, buffer) {

@@ -60,6 +60,19 @@
     #review-mount .rv-row label { width: 62px; font-weight: 700; font-size: 0.9rem; }
     #review-mount .rv-row input { margin: 0; width: 100%; }
     #review-mount .rv-box label { display: block; font-size: 0.78rem; opacity: 0.8; margin-bottom: 2px; }
+    /* THE BAND MUST NOT COVER THE FIELDS IT EXISTS TO HELP WITH.
+       Both bands are position:sticky at top:0, which is right for the party
+       rows — a thin strip that follows you down the ballot. The boxes band is
+       the whole #1-#8 block, which is far taller: measured at 365px of a 704px
+       screen, 52% of the viewport, and it hid the first two fields (Registered
+       and Accredited voters) by 36px each while they were focused. Those are
+       the two you type first.
+       Two parts, and both are needed: cap the image so the band cannot dominate
+       a phone screen, and give the fields a scroll-margin so focusing one
+       scrolls it clear of the sticky band instead of underneath it. */
+    #review-mount #rv-boxband { max-height: 30vh; object-fit: contain; object-position: top; }
+    #review-mount #rv-boxes .rv-box { scroll-margin-top: calc(30vh + 52px); }
+    #review-mount #rv-parties .rv-row { scroll-margin-top: calc(13vh + 52px); }
     #review-mount .rv-sheet { width: 100%; border: 1px solid var(--line, #dde4de); border-radius: 8px; }
     #review-mount .rv-zoom { cursor: zoom-in; }
     #review-mount table.rv-cmp { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
@@ -507,6 +520,11 @@
   // ONLY ONE IS EVER VISIBLE. Both grids sit inside the SAME `.card`, so two
   // `position:sticky` wraps would share a containing block and pin on top of
   // each other at the top of the viewport. Showing a band hides the other.
+  //
+  // THE BOXES BAND IS MUCH TALLER than the parties band — one is the whole
+  // #1-#8 block, the other a ~13% strip — so it is capped in CSS and the fields
+  // carry a matching scroll-margin. Without both it sat over the first two
+  // inputs while they were focused.
   const BANDS = {
     parties: { grid: 'rv-parties', wrap: 'rv-band-wrap', img: 'rv-band', label: 'rv-band-label' },
     boxes: { grid: 'rv-boxes', wrap: 'rv-boxband-wrap', img: 'rv-boxband', label: 'rv-boxband-label' },

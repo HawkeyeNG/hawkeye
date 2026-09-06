@@ -48,38 +48,42 @@ on **~500 KB per observer** (a 1.35× allowance).
 
 ## When to activate
 
-At 500 KB/observer, against a 120 GB disk cap (≈115 GB usable) and 150 GB/month:
+At 500 KB/observer (the measured 369 KB plus a 1.35x allowance, since the corpus
+is already a downscaled derivative), against a 120 GB disk cap (~115 GB usable)
+and 150 GB/month:
 
 | Constraint | Ceiling | Resets? |
 |---|---|---|
-| Disk | ~235,000 observers | never — cumulative |
-| Bandwidth, uploads only | ~307,000 / month | monthly |
-| Bandwidth, uploads + one cached read each | **~153,000 / month** | monthly |
-| Bandwidth, uploads + uncached reads | as low as ~75,000 | monthly |
+| **Disk** | **~230,000 observers** | **never — cumulative** |
+| Bandwidth, uploads only | ~294,000 / month | monthly |
+| Bandwidth, uploads + one uncached read each | ~147,000 / month | monthly |
 
-Allowing ~15% for HTML/JS/API traffic, the realistic ceiling is **~130,000
-observers in an election month** — and only if the Cloudflare cache rules in
-`cloudflare-rules.md` are live. Today they are not: the `Vary: User-Agent`
-header means every asset read reaches the origin, which puts the ceiling in the
-bottom row instead.
+**Since the cache rules went live on 2026-09-06, reads are absorbed by the edge**
+(verified `HIT` across every asset class), so the middle row is the realistic
+bandwidth number and **disk is now the binding constraint** — which is worse in
+one specific way: bandwidth resets monthly, disk never does, and hitting it
+makes uploads *fail* rather than merely slow.
 
-### The trigger
+Baseline non-observer traffic, measured from Cloudflare for the 15 days to
+2026-09-06: **1,322 MB reached the origin**, projecting to ~2.6 GB/month, o
+1.7% of the allowance. That is before the cache rules; it should fall.
 
-**Activate R2 at 75,000 registered observers.** Whichever of these fires first:
+### The trigge
+
+**Activate R2 at 100,000 registered observers.** Whichever fires first:
 
 | Trigger | Why this one |
 |---|---|
-| **75,000 registered observers** | ~58% of the 130k ceiling — the requested margin, and it leaves room for the gap between registering and actually submitting |
-| **Disk ≥ 50 GB** (42% of cap) | Directly observable *today*: the DirectAdmin `quota` field works. Assumes nothing about views |
-| **Cache rules still not live at 40,000 observers** | Without them outbound is unbounded and the ceiling roughly halves |
+| **100,000 registered observers** | ~43% of the 230,000 disk ceiling — the requested margin, with room for the gap between registering and submitting |
+| **Disk >= 50 GB** (42% of cap) | Directly observable: the DirectAdmin `quota` field works, unlike `bandwidth`. Assumes nothing |
 
-Being early costs about **$5/month**. Being late costs the site on election day.
-The asymmetry is the whole argument; do not optimise this number downward.
+Raised from 75,000 because the cache rules roughly doubled the ceiling and moved
+the constraint from bandwidth to disk. Being early costs about $5/month; being
+late costs the site on election day, so do not optimise this downward.
 
-**Lead time to allow:** bucket + credentials (1 h), the client change and its
-test (½ day), backfilling existing objects (minutes at current volume), and a
-real end-to-end round trip from a phone. Call it two days of unhurried work —
-which is exactly what the 75,000 trigger buys.
+**Lead time to allow:** bucket and credentials (1 h), the client change and its
+test (half a day), backfill (minutes at current volume), and one real round trip
+from a phone. Two unhurried days — which is what the trigger buys.
 
 ## Who we pay
 

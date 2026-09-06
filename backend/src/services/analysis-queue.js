@@ -107,10 +107,33 @@ async function runOne(job) {
     const imageDhash = await dhashHex(sheet);
     const venueImageDhash = await dhashHex(venue);
 
+    // ── did the client tell the truth? ────────────────────────────────────
+    //
+    // In direct mode the submission was accepted using a dhash the CLIENT
+    // computed, because the origin never received the pixels and the column is
+    // NOT NULL. That is only safe because of this comparison. An attacker who
+    // sends a fabricated dhash to slip a duplicate past the synchronous guard
+    // buys a few seconds and leaves `dhash_mismatch` on the record — a
+    // deliberate, provable act of tampering, which is a stronger finding than
+    // the duplicate itself. An honest client sees nothing here.
+    //
+    // The recomputed value always wins: what follows is what the BYTES say.
+    let finding = null;
+    const claimed = { sheet: row.image_dhash, venue: row.venue_image_dhash };
+    const lied = (claimed.sheet && claimed.sheet !== imageDhash)
+      || (claimed.venue && claimed.venue !== venueImageDhash);
+    if (lied) {
+      finding = 'dhash_mismatch';
+      console.error(JSON.stringify({
+        msg: 'CLIENT DHASH DID NOT MATCH THE STORED BYTES',
+        submissionId: row.id, observerId: row.observer_id, puCode: row.pu_code,
+        claimed, actual: { sheet: imageDhash, venue: venueImageDhash },
+      }));
+    }
+
     // The sheet photo re-used as its own venue photo — the request path checks
     // this too, and in direct mode nothing else can.
-    let finding = null;
-    if (hammingDistance(imageDhash, venueImageDhash) <= config.dhashHammingThreshold) {
+    if (!finding && hammingDistance(imageDhash, venueImageDhash) <= config.dhashHammingThreshold) {
       finding = 'sheet_and_venue_near_identical';
     }
 

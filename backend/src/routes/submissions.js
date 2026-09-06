@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { haversineM, makeLocationProof } from '../services/geo.js';
 import { sha256Hex, dhashHex, hammingDistance, dhashBandTokens } from '../services/images.js';
 import { enqueueOcr, startOcrWorker } from '../services/ocr-queue.js';
+import { enqueueAnalysis } from '../services/analysis-queue.js';
 import { putBlob } from '../services/blobstore.js';
 // The head reported for an EMPTY chain — mirrors GENESIS_HASH in services/ledger.js.
 // This branch is only reached when there are zero submissions, which is exactly the
@@ -255,19 +256,75 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     }
 
     // 2. Both photos, both freshly captured in-app moments ago.
+    //
+    // TWO WAYS IN, ONE SET OF RULES. In 'proxy' mode (the default, and exactly
+    // what has always happened) the phone POSTs the files and we hash them
+    // ourselves. In 'direct' mode it has already PUT them to the bucket with a
+    // presigned URL and sends only hashes, because GO54 counts inbound bytes and
+    // at 369 KB per observer the request path is the bandwidth ceiling.
+    // See docs/DIRECT-UPLOAD.md and config.uploadMode.
     const now = Date.now();
+    const DIRECT = config.uploadMode === 'direct';
     const sheet = req.files?.photo?.[0];
     const venue = req.files?.venuePhoto?.[0];
-    if (!sheet) return res.status(400).json({ error: 'photo_required', hint: 'EC8A sheet, captured in-app' });
-    if (!venue) return res.status(400).json({ error: 'venue_photo_required', hint: 'polling unit surroundings, captured in-app' });
+    let imageSha256;
+    let venueImageSha256;
+    let imageDhash;
+    let venueImageDhash;
+
+    if (!DIRECT) {
+      if (!sheet) return res.status(400).json({ error: 'photo_required', hint: 'EC8A sheet, captured in-app' });
+      if (!venue) return res.status(400).json({ error: 'venue_photo_required', hint: 'polling unit surroundings, captured in-app' });
+      imageSha256 = sha256Hex(sheet.buffer);
+      venueImageSha256 = sha256Hex(venue.buffer);
+    } else {
+      const hex64 = (v) => /^[0-9a-f]{64}$/i.test(String(v || ''));
+      const hex16 = (v) => /^[0-9a-f]{16}$/i.test(String(v || ''));
+      if (!hex64(req.body?.imageSha256) || !hex64(req.body?.venueImageSha256)) {
+        return res.status(400).json({ error: 'photo_required', hint: 'imageSha256 and venueImageSha256 required in direct mode' });
+      }
+      // The dhash is CLIENT-COMPUTED here, and that is safe only because it is
+      // checked later. See the note below.
+      if (!hex16(req.body?.imageDhash) || !hex16(req.body?.venueImageDhash)) {
+        return res.status(400).json({ error: 'dhash_required', hint: 'imageDhash and venueImageDhash (16 hex) required in direct mode' });
+      }
+      imageSha256 = String(req.body.imageSha256).toLowerCase();
+      venueImageSha256 = String(req.body.venueImageSha256).toLowerCase();
+      imageDhash = String(req.body.imageDhash).toLowerCase();
+      venueImageDhash = String(req.body.venueImageDhash).toLowerCase();
+
+      // The bytes must actually BE in the bucket before this is recorded as
+      // evidence. HEAD costs a few hundred bytes, not a photo. And because the
+      // presigned URL bound the object's key to its own sha256 checksum, an
+      // object existing at `<hash>.jpg` proves its bytes hash to that value —
+      // so the origin never having seen them costs nothing evidentiary.
+      try {
+        const [a, b] = await Promise.all([
+          headBlob(`${imageSha256}.jpg`),
+          headBlob(`${venueImageSha256}.jpg`),
+        ]);
+        if (!a.exists || !b.exists) {
+          return res.status(409).json({
+            error: 'photo_not_uploaded',
+            hint: 'PUT both photos to the presigned URLs first',
+            missing: [!a.exists && 'sheet', !b.exists && 'venue'].filter(Boolean),
+          });
+        }
+      } catch (e) {
+        return res.status(503).json({ error: 'storage_unavailable' });
+      }
+    }
+
     if (!isFresh(capturedAt, now) || !isFresh(venueCapturedAt, now)) {
       return res.status(400).json({ error: 'photo_not_fresh', maxAgeS: config.photoMaxAgeS });
     }
 
     // 3. Duplicate-image guards across BOTH photo columns — a sheet photo cannot be
     //    reused as someone's venue photo or vice versa, exact or re-encoded.
-    const imageSha256 = sha256Hex(sheet.buffer);
-    const venueImageSha256 = sha256Hex(venue.buffer);
+    //
+    // THE EXACT GUARD IS UNAFFECTED BY UPLOAD MODE. It compares sha256s, and in
+    // direct mode those are enforced by the bucket's own checksum check, so a
+    // client cannot claim a hash its bytes do not have.
     if (imageSha256 === venueImageSha256) {
       return res.status(400).json({ error: 'venue_photo_required', hint: 'sheet and venue photos must differ' });
     }
@@ -277,8 +334,22 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
       .get(imageSha256, venueImageSha256, imageSha256, venueImageSha256);
     if (dupe) return res.status(409).json({ error: 'duplicate_image' });
 
-    const imageDhash = await dhashHex(sheet.buffer);
-    const venueImageDhash = await dhashHex(venue.buffer);
+    // The PERCEPTUAL guard is the one that needs the pixels.
+    //
+    // In direct mode the origin does not have them, so the client's own dhash is
+    // used here and RE-COMPUTED FROM THE BUCKET moments later by
+    // services/analysis-queue.js, which overwrites these columns and flags a
+    // mismatch. An earlier draft rejected client-supplied dhashes outright, on
+    // the grounds that an attacker uploading duplicates would be supplying the
+    // very input meant to catch them. Verification answers that: they can evade
+    // for a few seconds, and in doing so they leave `dhash_mismatch` on the
+    // record — a deliberate, provable act of tampering, which is a loude
+    // finding than the duplicate would have been. An honest client, meanwhile,
+    // still gets the same synchronous rejection it always did.
+    if (!DIRECT) {
+      imageDhash = await dhashHex(sheet.buffer);
+      venueImageDhash = await dhashHex(venue.buffer);
+    }
     if (hammingDistance(imageDhash, venueImageDhash) <= config.dhashHammingThreshold) {
       return res.status(400).json({ error: 'venue_photo_required', hint: 'venue photo looks identical to the sheet photo' });
     }
@@ -365,11 +436,16 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // OCR queue, and existing rows keep working — while the BYTES may live in a
     // bucket. Nothing evidentiary moves: the signature covers the content hash,
     // never the path. See services/blobstore.js.
-    await putBlob(`${imageSha256}.jpg`, sheet.buffer);
-    await putBlob(`${venueImageSha256}.jpg`, venue.buffer);
+    // In direct mode the bytes are already in the bucket — the phone put them
+    // there — so there is nothing to write and nothing to read back.
+    if (!DIRECT) {
+      await putBlob(`${imageSha256}.jpg`, sheet.buffer);
+      await putBlob(`${venueImageSha256}.jpg`, venue.buffer);
+    }
 
     // ORB features for scene corroboration; null on failure — evidence is additive.
-    const venueFeatures = await extractFeatures(venue.buffer);
+    // Direct mode defers this to the analysis worker, which has the pixels.
+    const venueFeatures = DIRECT ? null : await extractFeatures(venue.buffer);
 
     const { entryHash, submissionId } = db.transaction(() => {
       const entry = nextEntry(db, ledgerPayload);
@@ -450,10 +526,14 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // read cannot affect the outcome; it only fills ocr_matched/ocr_total in later.
     // NULL there already means "not checked" everywhere it is read.
     enqueueOcr(submissionId);
+    // Direct mode owes the record a real dhash, ORB features, and a verdict on
+    // whether the client's claimed dhash was honest. That work reads from the
+    // bucket, where egress is free.
+    if (DIRECT) enqueueAnalysis(submissionId);
 
     // AI vision check of the EC8A sheet (count read-back + authenticity) — advisory,
     // fire-and-forget so it never delays or blocks the submission response.
-    import('../services/vision.js').then((v) => v.analyzeSheet(sheet.buffer, { contest, votes, pu, submissionId })).catch(() => {});
+    if (sheet) import('../services/vision.js').then((v) => v.analyzeSheet(sheet.buffer, { contest, votes, pu, submissionId })).catch(() => {});
 
     // In-app notification centre (persisted) + native push, for the reporter and
     // for everyone who saved this unit. Telegram fan-out is kept for savers who

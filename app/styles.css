@@ -596,6 +596,28 @@ input, select {
   background: var(--card);
   color: var(--ink);
 }
+/* A CHECKBOX IS NOT A TEXT FIELD.
+   The `input, select` rule above sets display:block and width:100%, which is
+   right for text and wrong for a checkbox: the control stretches across the
+   whole line and its label drops to the next row, so the box floats above the
+   words it belongs to. incidents.html had been working around it inline with
+   `style="width:auto"` on two inputs; every other checkbox on the site — the
+   review pages, admin, meta, post, map-unit — still had the bug. Fixed here
+   once instead of per page.
+   Spacing is expressed ONE way, as the input's own margin-right, so a label
+   that also sets a flex gap cannot silently double it. */
+input[type="checkbox"], input[type="radio"] {
+  display: inline-block;
+  width: auto;
+  margin: 0 8px 0 0;
+  padding: 0;
+  vertical-align: middle;
+  accent-color: var(--green-700);
+}
+/* The wrapping label is a block with a 600 weight meant for field captions;
+   as a checkbox caption it should read as a sentence and sit on one line. */
+label > input[type="checkbox"], label > input[type="radio"] { flex: none; }
+
 input:hover, select:hover { border-color: var(--green-700); }
 input:focus, select:focus, button:focus, summary:focus, a:focus {
   outline: 3px solid var(--focus);

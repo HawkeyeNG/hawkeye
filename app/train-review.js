@@ -122,6 +122,59 @@
     }
   }
 
+  /**
+   * Running total of the party rows, next to the rows themselves.
+   *
+   * The EC8A states the same number four times — the party column, the TOTAL
+   * VALID VOTES row, box #7, and the words beside each figure — and the audit
+   * exists because those four do not always agree. Sheet 29-01-03-003 needed a
+   * human to notice its party column said 348, its TOTAL row 347 and box #7
+   * 349. Adding up fifteen handwritten numbers is exactly the tedious step
+   * where a reviewer's attention is worth least, so the page does it.
+   *
+   * IT REPORTS, IT DOES NOT CORRECT. Nothing here writes to a field, and a
+   * disagreement is stated as a fact rather than an error: a sheet whose own
+   * arithmetic does not add up is a FINDING, and quietly nudging the reviewe
+   * towards internal consistency would erase the very thing being measured.
+   * Box #7 is never auto-filled — the reviewer's independent reading of it is
+   * the second opinion that makes the comparison mean anything.
+   */
+  function updatePartySum() {
+    const el = document.getElementById('rv-partysum');
+    if (!el) return;
+    let sum = 0;
+    let filled = 0;
+    document.querySelectorAll('#rv-parties input').forEach((i) => {
+      const v = i.value.trim();
+      if (v === '') return;
+      const n = Number(v);
+      if (Number.isFinite(n)) { sum += n; filled += 1; }
+    });
+    const total = document.getElementById('rv-b-totalValid');
+    const tv = total && total.value.trim() !== '' ? Number(total.value) : null;
+
+    if (!filled) { el.textContent = ''; return; }
+    const rows = `${filled} of ${ballot.length} rows entered — they add up to ${sum}`;
+    if (tv == null || !Number.isFinite(tv)) {
+      el.textContent = `${rows}.`;
+      return;
+    }
+    if (tv === sum) {
+      el.textContent = `${rows}, which matches total valid votes (${tv}).`;
+      return;
+    }
+    const diff = Math.abs(tv - sum);
+    const short = filled < ballot.length ? ' Some rows are still blank.' : '';
+    el.textContent = `${rows}. Total valid votes says ${tv} — a difference of ${diff}.`
+      + `${short} If that is what the sheet says, leave it: a sheet that does not add up is a finding.`;
+  }
+
+  document.addEventListener('input', (ev) => {
+    const el = ev.target;
+    if (!el || !el.closest) return;
+    if (el.closest('#rv-parties') || el.id === 'rv-b-totalValid') updatePartySum();
+  });
+
   function readInputs() {
     const parties = {};
     document.querySelectorAll('#rv-parties input').forEach((el) => {
@@ -167,6 +220,7 @@
         <p class="hint">Enter every party row you can read, including zeros. Leave a row blank
         only if it genuinely cannot be read — blank means "unreadable", not "zero".</p>
         <div class="rv-grid" id="rv-parties">${partyRows(null)}</div>
+        <p class="hint" id="rv-partysum" aria-live="polite"></p>
         <h3 style="margin-top:18px">Summary boxes</h3>
         <div class="rv-grid" id="rv-boxes">${boxRows(null)}</div>
         <p style="margin-top:14px">
@@ -179,6 +233,7 @@
       </div>`;
 
     loadSheet(item.key);
+    updatePartySum();
     $('rv-submit').onclick = () => commitBlind(false);
     $('rv-unreadable').onclick = () => {
       if (window.confirm('Record this sheet as impossible to read? This is a finding in its own right.')) {
@@ -313,6 +368,7 @@
         <p class="hint">Pre-filled with <em>your</em> reading. Change a figure only if the
         comparison has genuinely convinced you that you misread it.</p>
         <div class="rv-grid" id="rv-parties">${partyRows(blind.parties)}</div>
+        <p class="hint" id="rv-partysum" aria-live="polite"></p>
         <h3 style="margin-top:18px">Summary boxes</h3>
         <div class="rv-grid" id="rv-boxes">${boxRows(blind.boxes)}</div>
         <p style="margin-top:14px">
@@ -324,6 +380,7 @@
       </div>`;
 
     loadSheet(cur.key);
+    updatePartySum();
     $('rv-final').onclick = submitFinal;
   }
 
@@ -442,67 +499,117 @@
   // photographs of paper on a desk and the framing moves; a reviewer confidently
   // reading the wrong row produces a correction that is trusted and never
   // checked again. Seeing the party name in the crop is how they catch it.
-  let bandUrl = null;
-  let bandFor = null;
+  // TWO BANDS, ONE MECHANISM. The party rows get a per-row crop; the summary
+  // boxes get the whole #1-#8 block. The asymmetry is on the server and is
+  // deliberate — services/ec8a_cell_crop.js explains it — but from here they are
+  // the same thing: focus a field, see the part of the sheet it came from.
+  //
+  // ONLY ONE IS EVER VISIBLE. Both grids sit inside the SAME `.card`, so two
+  // `position:sticky` wraps would share a containing block and pin on top of
+  // each other at the top of the viewport. Showing a band hides the other.
+  const BANDS = {
+    parties: { grid: 'rv-parties', wrap: 'rv-band-wrap', img: 'rv-band', label: 'rv-band-label' },
+    boxes: { grid: 'rv-boxes', wrap: 'rv-boxband-wrap', img: 'rv-boxband', label: 'rv-boxband-label' },
+  };
+  const bandState = { parties: { url: null, at: null }, boxes: { url: null, at: null } };
 
-  function bandEl() {
-    let el = document.getElementById('rv-band');
+  function bandEl(slot) {
+    const ids = BANDS[slot];
+    let el = document.getElementById(ids.img);
     if (el) return el;
-    const parties = document.getElementById('rv-parties');
-    if (!parties) return null;
+    const grid = document.getElementById(ids.grid);
+    if (!grid) return null;
     const wrap = document.createElement('div');
-    wrap.id = 'rv-band-wrap';
+    wrap.id = ids.wrap;
     wrap.style.cssText = 'margin:0 0 10px;position:sticky;top:0;z-index:2;background:var(--card,#fff)';
-    wrap.innerHTML = '<p class="status" id="rv-band-label" style="margin:0 0 4px"></p>'
-      + '<img id="rv-band" alt="" style="width:100%;display:block;border-radius:6px" />';
-    parties.parentNode.insertBefore(wrap, parties);
-    return document.getElementById('rv-band');
+    wrap.innerHTML = '<p class="status" id="' + ids.label + '" style="margin:0 0 4px"></p>'
+      + '<img id="' + ids.img + '" alt="" style="width:100%;display:block;border-radius:6px" />';
+    grid.parentNode.insertBefore(wrap, grid);
+    return document.getElementById(ids.img);
   }
 
-  async function showBand(key, index, label) {
-    const el = bandEl();
-    if (!el || bandFor === key + ':' + index) return;
-    bandFor = key + ':' + index;
+  function hideBand(slot) {
+    const wrap = document.getElementById(BANDS[slot].wrap);
+    if (wrap) wrap.hidden = true;
+  }
+
+  /**
+   * `at` is whatever identifies the crop currently shown in this slot, so a
+   * refocus does not refetch: the row index for parties, the sheet key fo
+   * boxes (there is one block per sheet, not one per field).
+   */
+  async function showBand(slot, key, at, url, label) {
+    const el = bandEl(slot);
+    const st = bandState[slot];
+    if (!el) return;
+    // Hide the other band FIRST, so a slow fetch cannot leave both on screen.
+    Object.keys(BANDS).forEach((s) => { if (s !== slot) hideBand(s); });
+    if (st.at === key + ':' + at) {
+      const wrap = document.getElementById(BANDS[slot].wrap);
+      if (wrap) wrap.hidden = false;
+      return;
+    }
+    st.at = key + ':' + at;
     try {
-      const r = await api('/api/training/review/row/' + encodeURIComponent(key) + '/' + index);
+      const r = await api(url);
       if (!r.ok) throw new Error('status ' + r.status);
-      if (bandUrl) URL.revokeObjectURL(bandUrl);
-      bandUrl = URL.createObjectURL(await r.blob());
-      el.src = bandUrl;
-      const lab = document.getElementById('rv-band-label');
-      if (lab) lab.textContent = label + ' — row ' + (index + 1) + '. Check the name in the crop matches.';
-      const wrap = document.getElementById('rv-band-wrap');
+      if (st.url) URL.revokeObjectURL(st.url);
+      st.url = URL.createObjectURL(await r.blob());
+      el.src = st.url;
+      const lab = document.getElementById(BANDS[slot].label);
+      if (lab) lab.textContent = label;
+      const wrap = document.getElementById(BANDS[slot].wrap);
       if (wrap) wrap.hidden = false;
     } catch (e) {
       // A band is an accelerator. If it cannot load — the sheet is not cached on
       // this host yet, or the crop failed — hide it and leave the reviewer the
       // full sheet they have always had. Never block the reading on it.
-      bandFor = null;
-      const wrap = document.getElementById('rv-band-wrap');
-      if (wrap) wrap.hidden = true;
+      st.at = null;
+      hideBand(slot);
     }
   }
 
   document.addEventListener('focusin', (ev) => {
     const el = ev.target;
-    if (!el || !el.dataset || !el.dataset.party) return;
-    if (!el.closest || !el.closest('#rv-parties')) return;
+    if (!el || !el.dataset || !el.closest) return;
     // cur and ballot are declared at the top of this IIFE; no sheet is loaded
     // until the reviewer starts one, so both are legitimately null before then.
     const key = cur && cur.key;
     if (!key) return;
-    const idx = ballot.indexOf(el.dataset.party);
-    if (idx >= 0) showBand(key, idx, el.dataset.party);
+
+    if (el.dataset.party && el.closest('#rv-parties')) {
+      const idx = ballot.indexOf(el.dataset.party);
+      if (idx >= 0) {
+        showBand('parties', key, idx,
+          '/api/training/review/row/' + encodeURIComponent(key) + '/' + idx,
+          el.dataset.party + ' — row ' + (idx + 1) + '. Check the name in the crop matches.');
+      }
+      return;
+    }
+
+    if (el.dataset.box && el.closest('#rv-boxes')) {
+      // One crop for the whole block, keyed on the sheet: every box field shows
+      // the same image, so moving between them costs nothing after the first.
+      // The printed labels are inside the crop — that is how the reviewer knows
+      // which box they are on, the same self-check the party name provides.
+      showBand('boxes', key, 'block',
+        '/api/training/review/boxes/' + encodeURIComponent(key),
+        'Summary boxes, as the machine read them. Match the printed label beside each number.');
+    }
   });
 
-  // Enter walks down the ballot instead of submitting, so the whole reading is
-  // one uninterrupted keyboard pass and the band follows without a mouse.
+  // Enter walks down the fields instead of submitting, so the whole reading is
+  // one uninterrupted keyboard pass and the band follows without a mouse. It
+  // walks WITHIN a grid: running off the end of the parties into the boxes would
+  // move the reviewer to a different part of the sheet without them asking.
   document.addEventListener('keydown', (ev) => {
     if (ev.key !== 'Enter') return;
     const el = ev.target;
-    if (!el || !el.dataset || !el.dataset.party) return;
-    if (!el.closest || !el.closest('#rv-parties')) return;
-    const inputs = [].slice.call(document.querySelectorAll('#rv-parties input'));
+    if (!el || !el.dataset || !el.closest) return;
+    const grid = (el.dataset.party && el.closest('#rv-parties'))
+      || (el.dataset.box && el.closest('#rv-boxes'));
+    if (!grid) return;
+    const inputs = [].slice.call(grid.querySelectorAll('input'));
     const at = inputs.indexOf(el);
     if (at > -1 && at + 1 < inputs.length) { ev.preventDefault(); inputs[at + 1].focus(); }
   });

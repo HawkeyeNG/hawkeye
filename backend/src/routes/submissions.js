@@ -22,6 +22,8 @@ import { nextEntry, verifyChain, verifyChainAsync } from '../services/ledger.js'
 import { recomputeResult } from '../services/aggregate.js';
 import { extractFeatures, matchFeatures } from '../services/scene.js';
 import { requireObserver } from './observers.js';
+import { presignPut, headBlob } from '../services/blobstore.js';
+import { makeLimiter } from '../services/security.js';
 import { contestScope, contestApplies, reportingOpen, reportingOpensAt } from '../services/scope.js';
 import { notifySubscribers } from './subscriptions.js';
 import { notifyChat, notifyMaster, chatIdByHash, notifyUnitSavers } from '../services/notify.js';
@@ -47,6 +49,66 @@ const photoFields = upload.fields([
 
 const isFresh = (ts, now) =>
   Number.isFinite(ts) && ts <= now + 120_000 && now - ts <= config.photoMaxAgeS * 1000;
+
+/**
+ * Hand the phone a URL it can upload to directly.
+ *
+ * WHY. `putBlob()` writes from the SERVER, so in 'proxy' mode every photo
+ * crosses the origin twice once BLOB_DRIVER=s3 — inbound from the observer,
+ * then outbound to the bucket — and GO54 counts both. This is the other half of
+ * that switch: the phone PUTs to the bucket itself and we handle a few hundred
+ * bytes of JSON instead of 369 KB of JPEG.
+ *
+ * THE URL IS NOT A BLANK CHEQUE. It is signed for ONE key and ONE checksum. The
+ * key is the content hash the client claims; `x-amz-checksum-sha256` is a
+ * SIGNED header, so it cannot be dropped or altered without breaking the
+ * signature, and the bucket rejects a body that does not match it. An object
+ * cannot exist at key X unless its bytes hash to X — which is the only property
+ * the ledger ever relied on, since the observer's signature covers content
+ * hashes and never paths.
+ *
+ * Short expiry: the phone uploads immediately after capture. A URL that outlives
+ * the moment is a URL someone else can use.
+ */
+const presignLimiter = makeLimiter({ windowMs: 60_000, max: 30, name: 'presign' });
+
+submissionsRouter.post('/uploads/presign', requireObserver, presignLimiter, async (req, res) => {
+  if (config.uploadMode !== 'direct') {
+    // Not an error — the client asks, and a 'proxy' server tells it to post the
+    // files the old way. That is what makes the switch a server-side decision
+    // and lets one client build work against either mode.
+    return res.status(409).json({ error: 'direct_upload_disabled', mode: config.uploadMode });
+  }
+  const wanted = [
+    ['sheet', req.body?.sheetSha256],
+    ['venue', req.body?.venueSha256],
+  ];
+  const out = {};
+  for (const [slot, hash] of wanted) {
+    if (!/^[0-9a-f]{64}$/i.test(String(hash || ''))) {
+      return res.status(400).json({ error: 'bad_sha256', slot });
+    }
+  }
+  // The same photo cannot be both the sheet and the venue. Checked here as well
+  // as at submit, so the client finds out before it uploads anything.
+  if (String(req.body.sheetSha256).toLowerCase() === String(req.body.venueSha256).toLowerCase()) {
+    return res.status(400).json({ error: 'sheet_and_venue_identical' });
+  }
+  try {
+    for (const [slot, hash] of wanted) {
+      const key = `${String(hash).toLowerCase()}.jpg`;
+      // Already there? Content-addressed storage makes re-upload a no-op, so
+      // say so and save the phone its mobile data.
+      const head = await headBlob(key).catch(() => ({ exists: false }));
+      out[slot] = head.exists
+        ? { key, alreadyStored: true }
+        : { ...presignPut(key, String(hash).toLowerCase(), 300), alreadyStored: false };
+    }
+  } catch (e) {
+    return res.status(500).json({ error: 'presign_failed', detail: String(e.message).slice(0, 160) });
+  }
+  return res.json({ mode: 'direct', ...out });
+});
 
 submissionsRouter.post('/submissions', requireObserver, photoFields, async (req, res) => {
   try {

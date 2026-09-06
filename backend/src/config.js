@@ -290,6 +290,27 @@ export const config = {
   // is catching accidental staleness and casual replay, and it still does that.
   photoMaxAgeS: num('PHOTO_MAX_AGE_S', 3600),
   dhashHammingThreshold: num('DHASH_HAMMING_THRESHOLD', 4),
+
+  /**
+   * How evidence photos reach storage.
+   *
+   *   'proxy'  (default) — exactly today: the phone POSTs the files to us, we
+   *                        hash, dhash and store them. Every byte crosses the
+   *                        origin.
+   *   'direct'           — the phone PUTs straight to the bucket with a
+   *                        presigned URL and POSTs only hashes. The origin
+   *                        never sees a photo.
+   *
+   * WHY IT MATTERS: GO54 confirmed on 2026-09-06 that INBOUND counts toward the
+   * 150 GB monthly allowance. At a measured 369 KB per observer, 'proxy' puts a
+   * hard ceiling around 130,000 observers in an election month. See
+   * docs/DIRECT-UPLOAD.md for the trigger to switch (75,000 observers) and fo
+   * what changes: without the pixels, duplicate detection moves off the request
+   * path and becomes a prompt flag rather than a synchronous rejection.
+   *
+   * 'proxy' stays the default and the rollback. Switching is a decision.
+   */
+  uploadMode: (process.env.UPLOAD_MODE || 'proxy').toLowerCase() === 'direct' ? 'direct' : 'proxy',
   minReportsForVerified: num('MIN_REPORTS_FOR_VERIFIED', 3),
   minConfidenceForVerified: num('MIN_CONFIDENCE_FOR_VERIFIED', 66),
   otpTtlS: num('OTP_TTL_S', 600),

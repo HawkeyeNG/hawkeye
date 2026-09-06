@@ -506,6 +506,23 @@ for (const ddl of [
      updated_at    INTEGER NOT NULL
    )`,
   'CREATE INDEX IF NOT EXISTS idx_ocr_jobs_status ON ocr_jobs(status, submission_id)',
+  // Pixel work that UPLOAD_MODE=direct moves off the request path: the
+  // perceptual dhash behind the near-duplicate guard, and ORB venue features.
+  // In 'direct' mode the origin never receives the photo, so it cannot compute
+  // either at submit time — see services/analysis-queue.js for what that costs.
+  // `finding` is the verdict, kept on the job rather than invented as a new
+  // concept elsewhere: null when clean, otherwise why.
+  `CREATE TABLE IF NOT EXISTS analysis_jobs (
+     submission_id INTEGER PRIMARY KEY,
+     status        TEXT    NOT NULL DEFAULT 'queued',   -- queued | done | failed
+     attempts      INTEGER NOT NULL DEFAULT 0,
+     finding       TEXT,
+     error         TEXT,
+     created_at    INTEGER NOT NULL,
+     updated_at    INTEGER NOT NULL
+   )`,
+  'CREATE INDEX IF NOT EXISTS idx_analysis_jobs_status ON analysis_jobs(status, submission_id)',
+  "CREATE INDEX IF NOT EXISTS idx_analysis_jobs_finding ON analysis_jobs(finding) WHERE finding IS NOT NULL",
   // Banded-LSH index for the near-duplicate photo guard. One row per
   // (submission, photo slot, band) — the slot pair mirrors the UNION ALL over
   // image_dhash/venue_image_dhash that this replaces, so a sheet photo re-used

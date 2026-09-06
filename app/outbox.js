@@ -34,6 +34,20 @@
       const base = (window.HAWKEYE && window.HAWKEYE.apiBase) || '';
       let sent = 0;
       for (const it of (await Outbox.all() || [])) {
+        // The mode is decided HERE, not when the report was queued. A report
+        // captured underground and flushed on the surface should use whatever
+        // the server offers now; and a queue written before direct upload
+        // existed still flushes, because it carries the blobs either way.
+        let directBody = null;
+        if (window.HawkeyeDirect && it.fields.imageSha256 && it.fields.venueImageSha256) {
+          const ok = await window.HawkeyeDirect.upload({
+            base,
+            token,
+            blobs: { sheet: it.sheet, venue: it.venue },
+            hashes: { sheet: it.fields.imageSha256, venue: it.fields.venueImageSha256 },
+          });
+          if (ok) directBody = JSON.stringify({ ...it.fields });
+        }
         const form = new FormData();
         for (const [k, v] of Object.entries(it.fields)) form.set(k, v);
         form.set('photo', it.sheet, 'ec8a.jpg');
@@ -41,10 +55,24 @@
         let resp;
         try {
           resp = await fetch(base + '/api/submissions', {
-            method: 'POST', headers: { authorization: 'Bearer ' + token }, body: form,
+            method: 'POST',
+            headers: directBody
+              ? { authorization: 'Bearer ' + token, 'content-type': 'application/json' }
+              : { authorization: 'Bearer ' + token },
+            body: directBody || form,
           });
         } catch { break; } // still offline — stop and keep the rest for next time
-        if (resp.ok || resp.status === 409) { await Outbox.remove(it.id); sent++; }        // landed or already there
+        // 409 USED TO MEAN "the server already has it" — already_submitted or
+        // duplicate_image — so dropping the queue entry was right. Direct upload
+        // added a 409 that means the OPPOSITE: photo_not_uploaded, i.e. the bucket
+        // does not have the photos yet. Treating that as "landed" would delete a
+        // signed report AND count it as sent, telling the observer it succeeded.
+        let body = null;
+        try { body = await resp.clone().json(); } catch { /* not json */ }
+        const retryable409 = resp.status === 409
+          && body && (body.error === 'photo_not_uploaded' || body.error === 'storage_unavailable');
+        if (retryable409) { /* leave queued — the next flush re-presigns and re-PUTs */ }
+        else if (resp.ok || resp.status === 409) { await Outbox.remove(it.id); sent++; }        // landed or already there
         else if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) { await Outbox.remove(it.id); } // unfixable -> drop
         // 5xx / 429 -> leave queued, retry later
       }

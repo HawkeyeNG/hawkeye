@@ -68,7 +68,7 @@ Baseline non-observer traffic, measured from Cloudflare for the 15 days to
 2026-09-06: **1,322 MB reached the origin**, projecting to ~2.6 GB/month, o
 1.7% of the allowance. That is before the cache rules; it should fall.
 
-### The trigge
+### The trigger
 
 **Activate R2 at 100,000 registered observers.** Whichever fires first:
 
@@ -165,7 +165,7 @@ record — a stronger finding than the duplicate would have been. An honest clie
 sees precisely the behaviour it always did.
 
 This also avoids the alternative it would otherwise have forced: rebuilding the
-`submissions` table to make two columns nullable. That is the table the ledge
+`submissions` table to make two columns nullable. That is the table the ledger
 hangs off, and rebuilding it for a feature that is off by default is a bad trade.
 
 ## Status

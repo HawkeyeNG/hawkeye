@@ -7,6 +7,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { Router } from 'express';
 import multer from 'multer';
+import { putBlob } from '../services/blobstore.js';
 import { db, contestCodes, partyCodes, contests } from '../db.js';
 import { config } from '../config.js';
 import { reportingOpen, reportingOpensAt } from '../services/scope.js';
@@ -99,8 +100,8 @@ collationRouter.post('/collations', requireObserver, photoFields, async (req, re
 
     const imagePath = path.join(config.uploadDir, `${imageSha256}.jpg`);
     const venuePath = path.join(config.uploadDir, `${venueImageSha256}.jpg`);
-    fs.writeFileSync(imagePath, sheet.buffer);
-    fs.writeFileSync(venuePath, venue.buffer);
+    await putBlob(`${imageSha256}.jpg`, sheet.buffer);
+    await putBlob(`${venueImageSha256}.jpg`, venue.buffer);
 
     const formSerial = String(req.body.formSerial || '').trim().slice(0, 40) || null;
     const ledgerPayload = JSON.stringify({ observerId: req.observer.id, payload, signature: req.body.signature });

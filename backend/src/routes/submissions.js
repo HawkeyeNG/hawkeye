@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { haversineM, makeLocationProof } from '../services/geo.js';
 import { sha256Hex, dhashHex, hammingDistance, dhashBandTokens } from '../services/images.js';
 import { enqueueOcr, startOcrWorker } from '../services/ocr-queue.js';
+import { putBlob } from '../services/blobstore.js';
 // The head reported for an EMPTY chain — mirrors GENESIS_HASH in services/ledger.js.
 // This branch is only reached when there are zero submissions, which is exactly the
 // state production was in and the state the 120-row local fixture was not: the
@@ -297,8 +298,13 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
 
     const imagePath = path.join(config.uploadDir, `${imageSha256}.jpg`);
     const venueImagePath = path.join(config.uploadDir, `${venueImageSha256}.jpg`);
-    fs.writeFileSync(imagePath, sheet.buffer);
-    fs.writeFileSync(venueImagePath, venue.buffer);
+    // Through the blobstore, so the destination is a config switch. The column
+    // still stores the same path string it always did — nothing reads it but the
+    // OCR queue, and existing rows keep working — while the BYTES may live in a
+    // bucket. Nothing evidentiary moves: the signature covers the content hash,
+    // never the path. See services/blobstore.js.
+    await putBlob(`${imageSha256}.jpg`, sheet.buffer);
+    await putBlob(`${venueImageSha256}.jpg`, venue.buffer);
 
     // ORB features for scene corroboration; null on failure — evidence is additive.
     const venueFeatures = await extractFeatures(venue.buffer);

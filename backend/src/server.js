@@ -1,5 +1,9 @@
 import express from 'express';
 import { config, envFileStatus } from './config.js';
+import {
+  DRIVER as blobDriver, isBlobKey, publicUrl as blobPublicUrl,
+  getBlob as getBlobBytes, assertConfigured as assertBlobConfigured,
+} from './services/blobstore.js';
 import { db } from './db.js';
 import { bootstrapData } from './services/register.js';
 import { observersRouter } from './routes/observers.js';
@@ -246,6 +250,38 @@ app.use('/training', express.static(trainRoot));
 // immutable. Harden the responses: nosniff + a sandbox CSP so a polyglot
 // upload (a video that's also valid HTML/JS) can never execute as a document
 // on our origin; media still loads fine as an <img>/<video> resource.
+// CONTENT-ADDRESSED EVIDENCE, WHEREVER IT LIVES. Mounted BEFORE the static
+// handler below so a `<sha256>.jpg` is answered from the blobstore while
+// everything else under /uploads (incidents/, social/) still comes off disk.
+//
+// With BLOB_DRIVER=fs this does nothing at all — it falls straight through to
+// the same express.static that has always served these files, byte for byte.
+// With a bucket that has a public base, the origin never touches the bytes: it
+// redirects and the CDN and the client do the rest. The URL a visitor uses does
+// not change either way, which is what keeps the two shipped store apps and
+// every installed PWA working.
+app.get('/uploads/:key', async (req, res, next) => {
+  const { key } = req.params;
+  if (blobDriver === 'fs' || !isBlobKey(key)) return next();
+  const url = blobPublicUrl(key);
+  // 302, not 301: the bucket is an implementation detail we may move again, and
+  // a permanent redirect would be cached in browsers we cannot reach.
+  if (url) return res.redirect(302, url);
+  try {
+    const buf = await getBlobBytes(key);
+    res.type('image/jpeg');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Content-Security-Policy', "sandbox; default-src 'none'");
+    return res.send(buf);
+  } catch (e) {
+    // A miss here is a genuinely absent object, not a routing problem — falling
+    // through to express.static would turn it into a confusing 404 from a
+    // directory that was never going to hold it.
+    return res.status(404).json({ error: 'not_found' });
+  }
+});
+
 app.use('/uploads', express.static(config.uploadDir, {
   immutable: true,
   maxAge: '1y',

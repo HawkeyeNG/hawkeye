@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import path from 'node:path';
+import { getBlob } from './blobstore.js';
 import { db } from '../db.js';
 import { config } from '../config.js';
 import { ocrMatchCounts } from './ocr.js';
@@ -56,7 +58,10 @@ async function runOne(job) {
   }
   let result = null;
   try {
-    const buf = fs.readFileSync(row.image_path);
+    // Keyed off the basename, not the stored path: the column holds a local
+    // path for every row ever written, but the bytes may now be in a bucket, and
+    // the filename IS the content hash either way.
+    const buf = await getBlob(path.basename(row.image_path));
     result = await ocrMatchCounts(buf, JSON.parse(row.votes_json));
   } catch (e) {
     const attempts = job.attempts + 1;

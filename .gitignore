@@ -114,3 +114,6 @@ native/credentials.json
 # private working documents — budgets, donor material, anything not for a public repo.
 # ONE rule: a new file here is ignored without touching .gitignore again.
 docs/private/
+
+# Pipeline re-run backups: large, local, and regenerated on demand.
+audits/*/backups/

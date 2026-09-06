@@ -136,42 +136,55 @@ by the origin having read the file. The observer's signature still covers
 `imageSha256`/`venueImageSha256` — content hashes, never paths — so verification
 is byte-for-byte the same operation it always was.
 
-### What genuinely changes: analysis, not integrity
+### What genuinely changes — less than first thought
 
-The origin no longer has the pixels, so it cannot at submission time:
+The origin no longer has the pixels, so it cannot extract **ORB venue features**
+or run **OCR** at submission time. Both move to a worker that pulls from R2
+(egress is free) and writes results back. OCR was already off the request path.
 
-- compute the perceptual **dhash** used for duplicate detection,
-- extract **ORB venue features**,
-- run **OCR** (already off the request path — `ocr_jobs`).
+**The exact-duplicate guard is completely unaffected.** It compares sha256s, and
+the presigned URL binds an object's key to its own checksum, so a client cannot
+claim a hash its bytes do not have. Re-using a photo is still rejected on the
+spot, exactly as before.
 
-These move to a worker that pulls from R2 (egress is free) and writes results
-back. **Duplicate detection becomes a prompt asynchronous flag rather than a
-synchronous rejection.**
+**The perceptual (dhash) guard keeps working too, via a claim that gets
+checked.** An earlier draft of this document said client-supplied dhashes had to
+be rejected outright, since an attacker uploading duplicates would be supplying
+the very input meant to catch them. That was too pessimistic. What it missed is
+verification:
 
-That is a real behaviour change and the one decision here that is not purely
-technical. It is defensible — the ledger is append-only, every submission is
-recorded and reviewable, and a duplicate flagged a minute later is still caught
-before collation — but it converts an enforcement point into a detection point
-and should be an explicit choice.
+- the client sends its dhash, so `image_dhash` (which is `NOT NULL`) is
+  satisfied and the synchronous near-duplicate check runs as it always has;
+- `services/analysis-queue.js` re-computes it from the stored bytes moments
+  later and **overwrites** the columns — what the bytes say always wins;
+- a mismatch is recorded as `dhash_mismatch` and logged loudly.
 
-*The alternative that preserves synchronous rejection is to have the client also
-send a small greyscale thumbnail. Reject it: a client that supplies its own
-duplicate-detection input can defeat the check, which is worse than detecting
-late.*
+So an attacker who fabricates a dhash to slip a duplicate past buys a few
+seconds, and pays for them with a deliberate, provable act of tampering on the
+record — a stronger finding than the duplicate would have been. An honest client
+sees precisely the behaviour it always did.
+
+This also avoids the alternative it would otherwise have forced: rebuilding the
+`submissions` table to make two columns nullable. That is the table the ledge
+hangs off, and rebuilding it for a feature that is off by default is a bad trade.
 
 ## Status
 
 | Piece | State |
 |---|---|
-| `presignPut()`, `headBlob()` in `blobstore.js` | **written**, `tests/presign.test.mjs` passing with controls on every signing input |
-| `POST /api/uploads/presign` route | not written |
-| `UPLOAD_MODE=proxy\|direct` flag (default `proxy`) | not written |
-| `submissions.js` direct branch | not written — touches the ledger path, wants review |
-| Analysis worker (dhash/ORB/OCR from R2) | not written |
-| Backfill of existing objects | not written |
+| `presignPut()`, `headBlob()` in `blobstore.js` | **done** — `tests/presign.test.mjs`, controls on every signing input |
+| `POST /api/uploads/presign` | **done** — verified mounted on a booted server |
+| `UPLOAD_MODE=proxy\|direct` (default `proxy`) | **done** |
+| `submissions.js` direct branch | **done** — accepts hashes, HEADs the bucket, enqueues analysis |
+| `analysis-queue.js` + `analysis_jobs` | **done** — recomputes dhash, re-indexes `dhash_bands`, flags `dhash_mismatch` |
+| `scripts/backfill_blobs.mjs` | **done** — refuses under `fs`, re-hashes before upload, HEADs after |
+| Deploy purge (`scripts/cf_purge.py`) | **done** — HIT→MISS proven, control unaffected |
+| Client change (phone must presign, PUT, then send hashes) | **not written** |
 
-Nothing above is active. `BLOB_DRIVER` stays `fs`; `putBlob` is untouched and
-still the only write path. The new functions are additive and unreferenced.
+Nothing is active. `BLOB_DRIVER=fs` and `UPLOAD_MODE=proxy` are the defaults, so
+the running behaviour is exactly what it was. The remaining piece is the client:
+until the app learns the presign → PUT → submit-hashes flow, `direct` has nobody
+to talk to.
 
 ## Before switching, in order
 

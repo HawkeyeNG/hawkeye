@@ -94,13 +94,27 @@ verify() {                                     # verify <localfile>  -> 0 ok
   return 1
 }
 
-ok=0; failed=(); unverified=0
+# Public URL for a deployed file, or empty when it has none.
+#
+# Only files under app/ are web-served, and only with the DEFAULT remote path —
+# an explicit --path puts a file somewhere this mapping cannot describe (backend
+# source, for instance), and guessing a URL for it would purge the wrong thing
+# or nothing at all. Silence is the right answer there.
+public_url() {
+  local f="$1"
+  [ "$PATH_EXPLICIT" = 1 ] && return
+  case "$f" in
+    app/*) echo "$SITE/${f#app/}" ;;
+  esac
+}
+
+ok=0; failed=(); unverified=0; purge_urls=()
 for f in "${FILES[@]}"; do
   [ -f "$f" ] || { echo "  MISSING  $f"; failed+=("$f"); continue; }
   if ! upload "$f"; then echo "  UPLOAD   FAILED $f"; failed+=("$f"); continue; fi
   verify "$f"; rc=$?
   case $rc in
-    0) echo "  ok       $f"; ok=$((ok+1)) ;;
+    0) echo "  ok       $f"; ok=$((ok+1)); u=$(public_url "$f"); [ -n "$u" ] && purge_urls+=("$u") ;;
     2) echo "  ok*      $f  (not web-served — upload accepted, not verified)"; ok=$((ok+1)); unverified=$((unverified+1)) ;;
     *) echo "  TRUNCATED $f — re-uploading once"
        if upload "$f" && verify "$f"; then echo "    recovered $f"; ok=$((ok+1)); else failed+=("$f"); fi ;;
@@ -113,6 +127,19 @@ if [ "$RESTART" = 1 ]; then
   REMOTE_PATH=/hawkeye/backend/tmp upload /tmp/restart.txt && echo "  ok       backend restart triggered"
   sleep 20
   echo -n "  health:  "; curl -s -m 25 "$SITE/api/health"; echo
+fi
+
+# PURGE WHAT WE JUST REPLACED. Since 2026-09-06 the zone caches static assets
+# for 7 days and .json/.geojson for 1 day at the edge (docs/cloudflare-rules.md
+# §4.2). Assets are cache-busted by query string so a new ?v= is a new key, but
+# the DATA files are fetched at fixed URLs — register-osun.json, nga_wards.geojson
+# — so without this a deploy serves yesterday's copy for up to a day while
+# looking entirely healthy.
+#
+# By URL, never "purge everything": a full purge would dump the whole zone's warm
+# cache back onto the origin, which is the failure the cache rules exist to stop.
+if [ ${#purge_urls[@]} -gt 0 ]; then
+  python3 "$(dirname "$0")/cf_purge.py" "${purge_urls[@]}" || true
 fi
 
 echo "deployed $ok/${#FILES[@]}${unverified:+ ($unverified unverified)}"

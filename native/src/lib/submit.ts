@@ -11,6 +11,7 @@ import { File } from 'expo-file-system';
 import * as SecureStore from '@/lib/secure-store';
 
 import { bootstrapAuth } from '@/lib/auth';
+import { uploadDirect } from '@/lib/direct-upload';
 import { confirmSigning } from '@/lib/biometric';
 import { getIdentity } from '@/lib/identity';
 // TYPE-ONLY, so this edge is erased at compile time and creates no runtime
@@ -289,12 +290,18 @@ async function deliver(
   buildForm: () => FormData,
   token: string,
   deviceId: string,
+  // Set when the photos are already in the bucket: the request carries hashes
+  // as JSON instead of the files. Rebuilt per attempt like the form is, so a
+  // session re-mint replays cleanly.
+  buildJson?: (() => string) | null,
 ): Promise<Response> {
   const go = (t: string) =>
     fetch(`${BASE}${path}`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${t}`, 'x-device-id': deviceId },
-      body: buildForm(),
+      headers: buildJson
+        ? { authorization: `Bearer ${t}`, 'x-device-id': deviceId, 'content-type': 'application/json' }
+        : { authorization: `Bearer ${t}`, 'x-device-id': deviceId },
+      body: buildJson ? buildJson() : buildForm(),
     });
   const res = await go(token);
   if (res.status !== 401) return res;
@@ -437,6 +444,12 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     venueLat: String(input.venue.lat),
     venueLng: String(input.venue.lng),
     signature,
+    // Carried so a LATER outbox flush can presign without re-hashing the files.
+    // In multipart mode the server recomputes both from the uploaded bytes and
+    // ignores these, so they change nothing evidentiary — the signature already
+    // covers exactly these values.
+    imageSha256,
+    venueImageSha256,
     ...(input.sheetSerial ? { sheetSerial: input.sheetSerial } : {}),
   };
   // The outbox copies these files verbatim, so the hashes above — and therefore
@@ -457,9 +470,25 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   const park = (why: string, lead?: string): SubmitResult | Promise<SubmitResult> =>
     input.dryRun ? undeliveredDryRun(why) : handOff('result', fields, files, label, why, lead);
 
+  // DIRECT UPLOAD WHEN THE SERVER OFFERS IT. The photos go straight to the
+  // bucket and only hashes come here, because inbound bytes count against the
+  // host's monthly allowance and the photos are the whole of it. Any failure at
+  // all returns null and the multipart post below runs untouched — the server
+  // accepts either shape, so the fallback genuinely works.
+  let buildJson: (() => string) | null = null;
+  const direct = await uploadDirect({
+    token,
+    deviceId: id.deviceId,
+    sheetUri: input.sheet.uri,
+    venueUri: input.venue.uri,
+    sheetSha256: imageSha256,
+    venueSha256: venueImageSha256,
+  }).catch(() => null);
+  if (direct) buildJson = () => JSON.stringify(fields);
+
   let res: Response;
   try {
-    res = await deliver('/api/submissions', buildForm, token, id.deviceId);
+    res = await deliver('/api/submissions', buildForm, token, id.deviceId, buildJson);
   } catch (e) {
     return park(`network: ${errText(e)}`);
   }

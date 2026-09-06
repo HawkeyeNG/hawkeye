@@ -32,6 +32,7 @@ import { getIdentity } from '@/lib/identity';
 // with submit's multipart + session helpers. Both directions are function calls
 // made at runtime, never at module-evaluation time, so the cycle resolves.
 import { filePart, remintSession } from '@/lib/submit';
+import { uploadDirect } from '@/lib/direct-upload';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -326,11 +327,31 @@ function buildForm(job: StoredJob): FormData {
   return form;
 }
 
-function post(job: StoredJob, token: string, deviceId: string): Promise<Response> {
+async function post(job: StoredJob, token: string, deviceId: string): Promise<Response> {
+  // The mode is decided HERE, not when the report was queued. A report captured
+  // with no signal and flushed hours later should use whatever the server
+  // offers now, and a job queued before direct upload existed still flushes
+  // because it carries its files either way.
+  let json: string | null = null;
+  const sheet = job.files.find((f) => f.field === 'photo');
+  const venue = job.files.find((f) => f.field === 'venuePhoto');
+  if (job.kind === 'result' && sheet && venue && job.body.imageSha256 && job.body.venueImageSha256) {
+    const ok = await uploadDirect({
+      token,
+      deviceId,
+      sheetUri: sheet.uri,
+      venueUri: venue.uri,
+      sheetSha256: job.body.imageSha256,
+      venueSha256: job.body.venueImageSha256,
+    }).catch(() => null);
+    if (ok) json = JSON.stringify(job.body);
+  }
   return fetch(`${BASE}${PATHS[job.kind]}`, {
     method: 'POST',
-    headers: { authorization: `Bearer ${token}`, 'x-device-id': deviceId },
-    body: buildForm(job),
+    headers: json
+      ? { authorization: `Bearer ${token}`, 'x-device-id': deviceId, 'content-type': 'application/json' }
+      : { authorization: `Bearer ${token}`, 'x-device-id': deviceId },
+    body: json ?? buildForm(job),
   });
 }
 
@@ -341,6 +362,18 @@ function readable(f: JobFile): boolean {
   } catch {
     return true; // exotic URI scheme — let the upload be the judge
   }
+}
+
+/**
+ * Is this 409 the retryable kind?
+ *
+ * Reads a CLONE: refusal() below may read the same response, and a body can
+ * only be consumed once — draining it here would make the drop reason
+ * unreadable and, worse, do it silently.
+ */
+async function isRetryable409(res: Response): Promise<boolean> {
+  const body = (await res.clone().json().catch(() => ({}))) as { error?: string };
+  return body.error === 'photo_not_uploaded' || body.error === 'storage_unavailable';
 }
 
 /** The server's own words for a permanent refusal, so the drop is explicable. */
@@ -420,7 +453,16 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
         }
       }
 
-      if (res.ok || res.status === 409) {
+      // 409 USED TO MEAN "the server already has it" — already_submitted or
+      // duplicate_image — so retiring the job was right. Direct upload adds a
+      // 409 that means the OPPOSITE: photo_not_uploaded, i.e. the bucket does
+      // not have the photos yet. Retiring on that would delete a signed report
+      // AND count it as sent, so the observer is told it succeeded. The next
+      // flush re-presigns and re-PUTs, which is exactly what it needs.
+      const retryable = res.status === 409 && (await isRetryable409(res));
+      if (retryable) {
+        defer(job, 'photos not yet in storage (HTTP 409)');
+      } else if (res.ok || res.status === 409) {
         await retire(job); // landed, or the server already had it
         sent += 1;
       } else if (res.status === 401) {

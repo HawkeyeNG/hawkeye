@@ -1959,10 +1959,34 @@ $('btn-submit').onclick = async () => {
   form.set('venuePhoto', shots.venue.blob, 'venue.jpg');
 
   $('submit-status').textContent = 'Submitting…';
+
+  // DIRECT UPLOAD, WHEN THE SERVER OFFERS IT. The photos go straight to the
+  // bucket and only hashes come here, because inbound bytes count against the
+  // host's monthly allowance and the photos are the whole of it. If anything at
+  // all goes wrong — proxy mode, no bucket, CORS, a flaky link — direct() gives
+  // back null and the original multipart post runs untouched. A report is never
+  // lost to a storage optimisation.
+  let directBody = null;
+  if (window.HawkeyeDirect) {
+    const okDirect = await window.HawkeyeDirect.upload({
+      base: (window.HAWKEYE && window.HAWKEYE.apiBase) || '',
+      token: localStorage.getItem('hawkeye_token'),
+      blobs: { sheet: shots.sheet.blob, venue: shots.venue.blob },
+      hashes: { sheet: imageSha256, venue: venueImageSha256 },
+    });
+    if (okDirect) {
+      const f = {};
+      for (const [k, v] of form.entries()) if (typeof v === 'string') f[k] = v;
+      directBody = JSON.stringify({ ...f, imageSha256, venueImageSha256 });
+    }
+  }
+
   const post = () => api('/api/submissions', {
     method: 'POST',
-    headers: { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}` },
-    body: form,
+    headers: directBody
+      ? { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}`, 'content-type': 'application/json' }
+      : { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}` },
+    body: directBody || form,
   });
   let status, body;
   try {
@@ -1975,6 +1999,11 @@ $('btn-submit').onclick = async () => {
     if (window.HAWKEYE && window.HawkeyeOutbox) {
       const fields = {};
       for (const [k, v] of form.entries()) if (typeof v === 'string') fields[k] = v;
+      // Carried so a later flush can presign without re-hashing the blobs. The
+      // signature already covers these exact values, so recording them changes
+      // nothing evidentiary.
+      fields.imageSha256 = imageSha256;
+      fields.venueImageSha256 = venueImageSha256;
       try { await window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob }); } catch { /* ignore */ }
       shots.sheet = null; shots.venue = null;
       alert('Saved offline — your signed report will send automatically when you are back online.');

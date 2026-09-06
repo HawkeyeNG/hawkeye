@@ -134,7 +134,7 @@
    *
    * IT REPORTS, IT DOES NOT CORRECT. Nothing here writes to a field, and a
    * disagreement is stated as a fact rather than an error: a sheet whose own
-   * arithmetic does not add up is a FINDING, and quietly nudging the reviewe
+   * arithmetic does not add up is a FINDING, and quietly nudging the reviewer
    * towards internal consistency would erase the very thing being measured.
    * Box #7 is never auto-filled — the reviewer's independent reading of it is
    * the second opinion that makes the comparison mean anything.

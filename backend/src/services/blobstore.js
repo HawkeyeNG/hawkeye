@@ -119,7 +119,7 @@ export const _signedHeaders = signedHeaders;
 // is exactly the property the ledger relies on, and it is now enforced by the
 // storage layer rather than by the origin having read the file.
 //
-// WHAT IS GENUINELY LOST is analysis, not integrity. The origin can no longe
+// WHAT IS GENUINELY LOST is analysis, not integrity. The origin can no longer
 // compute the perceptual dhash, extract ORB venue features, or OCR the sheet at
 // submission time, because it does not have the pixels. Those must move to a
 // worker that pulls from the bucket (R2 egress is free) — see
@@ -134,7 +134,9 @@ export const _signedHeaders = signedHeaders;
  * @param {string} sha256Hex the same hash, hex — bound into the signature
  * @param {number} expiresIn seconds; keep short, the client uploads immediately
  */
-export function presignPut(key, sha256Hex, expiresIn = 300) {
+export const MAX_BLOB_BYTES = Number(process.env.MAX_BLOB_BYTES || 8 * 1024 * 1024);
+
+export function presignPut(key, sha256Hex, expiresIn = 300, contentLength = null) {
   if (!isBlobKey(key)) throw new Error(`blobstore: refusing a non-content-addressed key: ${key}`);
   if (!/^[0-9a-f]{64}$/i.test(String(sha256Hex || ''))) {
     throw new Error('blobstore: presignPut needs a hex sha256');
@@ -148,6 +150,17 @@ export function presignPut(key, sha256Hex, expiresIn = 300) {
   const missing = ['endpoint', 'bucket', 'key', 'secret'].filter((f) => !S3[f]);
   if (missing.length) throw new Error(`blobstore: presignPut needs ${missing.join(', ')}`);
 
+  // SIGN THE EXACT LENGTH. Without it the URL accepts a body of any size whose
+  // sha256 matches the key, so direct mode had no equivalent of multer's 8 MB
+  // cap and nothing reclaimed an object that was never attached to a
+  // submission. The client knows the byte count, so pinning it exactly is
+  // better than a maximum: R2 refuses a different length before storing it.
+  if (contentLength !== null) {
+    const n = Number(contentLength);
+    if (!Number.isInteger(n) || n <= 0 || n > MAX_BLOB_BYTES) {
+      throw new Error(`blobstore: contentLength must be 1..${MAX_BLOB_BYTES}, got ${contentLength}`);
+    }
+  }
   const checksumB64 = Buffer.from(String(sha256Hex), 'hex').toString('base64');
   const url = new URL(`${S3.endpoint.replace(/\/+$/, '')}/${S3.bucket}/${key}`);
   const now = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
@@ -156,7 +169,9 @@ export function presignPut(key, sha256Hex, expiresIn = 300) {
 
   // host is implicit in the request; the checksum header is what makes the URL
   // usable for these bytes and no others.
-  const signedHeaderNames = 'host;x-amz-checksum-sha256';
+  const signedHeaderNames = contentLength === null
+    ? 'host;x-amz-checksum-sha256'
+    : 'content-length;host;x-amz-checksum-sha256';
   const q = new URLSearchParams({
     'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
     'X-Amz-Credential': `${S3.key}/${scope}`,
@@ -170,12 +185,16 @@ export function presignPut(key, sha256Hex, expiresIn = 300) {
     .map(([k2, v]) => `${encodeURIComponent(k2)}=${encodeURIComponent(v)}`)
     .join('&');
 
+  // Canonical headers must be sorted by name: content-length, host, then
+  // x-amz-checksum-sha256.
+  const canonicalHeaders = contentLength === null
+    ? [`host:${url.host}`, `x-amz-checksum-sha256:${checksumB64}`]
+    : [`content-length:${contentLength}`, `host:${url.host}`, `x-amz-checksum-sha256:${checksumB64}`];
   const canonical = [
     'PUT',
     url.pathname,
     canonicalQuery,
-    `host:${url.host}`,
-    `x-amz-checksum-sha256:${checksumB64}`,
+    ...canonicalHeaders,
     '',
     signedHeaderNames,
     'UNSIGNED-PAYLOAD',

@@ -749,7 +749,7 @@ trainingRouter.get('/training/review/row/:key/:row', requireObserver, requireRev
 // and the difference is deliberate — see services/ec8a_cell_crop.js. The party
 // table is a known count of evenly-pitched rows, so a band can be PROVEN to
 // contain its row. Nothing has measured where each individual box sits, so
-// slicing the block into eight would be inventing geometry, and a reviewe
+// slicing the block into eight would be inventing geometry, and a reviewer
 // confidently reading the wrong figure produces a correction that is trusted
 // and never checked again.
 //

@@ -7,7 +7,7 @@ import { config } from '../config.js';
 import { haversineM, makeLocationProof } from '../services/geo.js';
 import { sha256Hex, dhashHex, hammingDistance, dhashBandTokens } from '../services/images.js';
 import { enqueueOcr, startOcrWorker } from '../services/ocr-queue.js';
-import { enqueueAnalysis } from '../services/analysis-queue.js';
+import { enqueueAnalysis, startAnalysisWorker } from '../services/analysis-queue.js';
 import { putBlob } from '../services/blobstore.js';
 // The head reported for an EMPTY chain — mirrors GENESIS_HASH in services/ledger.js.
 // This branch is only reached when there are zero submissions, which is exactly the
@@ -18,12 +18,18 @@ const GENESIS_HASH_PUBLIC = '0'.repeat(64);
 
 // Drains the OCR backlog off the request path (services/ocr-queue.js).
 startOcrWorker();
+// Direct mode's ENTIRE compensating control lives in this worker: the perceptual
+// dhash, the near-duplicate check and the venue features all move here because
+// the origin never receives the pixels. enqueueAnalysis() was being called and
+// nothing ever drained the queue, so the jobs simply accumulated. Starting it
+// beside the OCR worker, which has the same shape and the same reason to exist.
+startAnalysisWorker();
 import { canonicalPayload, canonicalVotes, verifyObserverSignature } from '../services/signatures.js';
 import { nextEntry, verifyChain, verifyChainAsync } from '../services/ledger.js';
 import { recomputeResult } from '../services/aggregate.js';
 import { extractFeatures, matchFeatures } from '../services/scene.js';
 import { requireObserver } from './observers.js';
-import { presignPut, headBlob } from '../services/blobstore.js';
+import { presignPut, headBlob, DRIVER as BLOB_DRIVER, MAX_BLOB_BYTES } from '../services/blobstore.js';
 import { makeLimiter } from '../services/security.js';
 import { contestScope, contestApplies, reportingOpen, reportingOpensAt } from '../services/scope.js';
 import { notifySubscribers } from './subscriptions.js';
@@ -74,20 +80,31 @@ const isFresh = (ts, now) =>
 const presignLimiter = makeLimiter({ windowMs: 60_000, max: 30, name: 'presign' });
 
 submissionsRouter.post('/uploads/presign', requireObserver, presignLimiter, async (req, res) => {
-  if (config.uploadMode !== 'direct') {
+  // BOTH switches have to agree. UPLOAD_MODE=direct with BLOB_DRIVER=fs would
+  // hand out perfectly good bucket URLs, the phone would upload to the bucket,
+  // and then headBlob() — which reads the fs driver — would look on local disk,
+  // not find them, and 409 every submission forever. Answering 409 here instead
+  // puts the client back on the multipart path, which still works.
+  if (config.uploadMode !== 'direct' || BLOB_DRIVER !== 's3') {
     // Not an error — the client asks, and a 'proxy' server tells it to post the
     // files the old way. That is what makes the switch a server-side decision
     // and lets one client build work against either mode.
-    return res.status(409).json({ error: 'direct_upload_disabled', mode: config.uploadMode });
+    return res.status(409).json({ error: 'direct_upload_disabled', mode: config.uploadMode, driver: BLOB_DRIVER });
   }
   const wanted = [
-    ['sheet', req.body?.sheetSha256],
-    ['venue', req.body?.venueSha256],
+    ['sheet', req.body?.sheetSha256, req.body?.sheetBytes],
+    ['venue', req.body?.venueSha256, req.body?.venueBytes],
   ];
   const out = {};
-  for (const [slot, hash] of wanted) {
+  for (const [slot, hash, bytes] of wanted) {
     if (!/^[0-9a-f]{64}$/i.test(String(hash || ''))) {
       return res.status(400).json({ error: 'bad_sha256', slot });
+    }
+    // Proxy mode is capped at 8 MB by multer; direct mode has to state its own
+    // cap or it has none at all.
+    const n = Number(bytes);
+    if (!Number.isInteger(n) || n <= 0 || n > MAX_BLOB_BYTES) {
+      return res.status(400).json({ error: 'bad_size', slot, maxBytes: MAX_BLOB_BYTES });
     }
   }
   // The same photo cannot be both the sheet and the venue. Checked here as well
@@ -96,14 +113,14 @@ submissionsRouter.post('/uploads/presign', requireObserver, presignLimiter, asyn
     return res.status(400).json({ error: 'sheet_and_venue_identical' });
   }
   try {
-    for (const [slot, hash] of wanted) {
+    for (const [slot, hash, bytes] of wanted) {
       const key = `${String(hash).toLowerCase()}.jpg`;
       // Already there? Content-addressed storage makes re-upload a no-op, so
       // say so and save the phone its mobile data.
       const head = await headBlob(key).catch(() => ({ exists: false }));
       out[slot] = head.exists
         ? { key, alreadyStored: true }
-        : { ...presignPut(key, String(hash).toLowerCase(), 300), alreadyStored: false };
+        : { ...presignPut(key, String(hash).toLowerCase(), 300, Number(bytes)), alreadyStored: false };
     }
   } catch (e) {
     return res.status(500).json({ error: 'presign_failed', detail: String(e.message).slice(0, 160) });
@@ -264,13 +281,24 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // at 369 KB per observer the request path is the bandwidth ceiling.
     // See docs/DIRECT-UPLOAD.md and config.uploadMode.
     const now = Date.now();
-    const DIRECT = config.uploadMode === 'direct';
     const sheet = req.files?.photo?.[0];
     const venue = req.files?.venuePhoto?.[0];
+    // KEY ON WHAT THE REQUEST CARRIES, NOT ON CONFIG ALONE. The client falls back
+    // to multipart whenever the direct path fails for any reason — a dead bucket,
+    // CORS, a flaky link — and a server that keyed purely on config.uploadMode
+    // rejected exactly those requests with 400 photo_required. The fallback the
+    // whole design rests on would have failed precisely when it was needed, and
+    // the outbox would then have discarded the report as unfixable.
+    //
+    // So: files present means handle them the old way, whatever the mode says.
+    // It costs the origin the bytes it was trying to avoid, which is the correct
+    // trade when the alternative is losing an observer's signed report.
+    const DIRECT = config.uploadMode === 'direct' && !(sheet && venue);
     let imageSha256;
     let venueImageSha256;
     let imageDhash;
     let venueImageDhash;
+    let enqueueAnalysisAfterInsert = false;
 
     if (!DIRECT) {
       if (!sheet) return res.status(400).json({ error: 'photo_required', hint: 'EC8A sheet, captured in-app' });
@@ -279,19 +307,17 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
       venueImageSha256 = sha256Hex(venue.buffer);
     } else {
       const hex64 = (v) => /^[0-9a-f]{64}$/i.test(String(v || ''));
-      const hex16 = (v) => /^[0-9a-f]{16}$/i.test(String(v || ''));
       if (!hex64(req.body?.imageSha256) || !hex64(req.body?.venueImageSha256)) {
         return res.status(400).json({ error: 'photo_required', hint: 'imageSha256 and venueImageSha256 required in direct mode' });
       }
-      // The dhash is CLIENT-COMPUTED here, and that is safe only because it is
-      // checked later. See the note below.
-      if (!hex16(req.body?.imageDhash) || !hex16(req.body?.venueImageDhash)) {
-        return res.status(400).json({ error: 'dhash_required', hint: 'imageDhash and venueImageDhash (16 hex) required in direct mode' });
-      }
       imageSha256 = String(req.body.imageSha256).toLowerCase();
       venueImageSha256 = String(req.body.venueImageSha256).toLowerCase();
-      imageDhash = String(req.body.imageDhash).toLowerCase();
-      venueImageDhash = String(req.body.venueImageDhash).toLowerCase();
+      // NULL until services/analysis-queue.js computes them from the bucket.
+      // Needs the columns to be nullable: run
+      // scripts/migrate_dhash_nullable.mjs before enabling direct mode.
+      imageDhash = null;
+      venueImageDhash = null;
+
 
       // The bytes must actually BE in the bucket before this is recorded as
       // evidence. HEAD costs a few hundred bytes, not a photo. And because the
@@ -303,6 +329,13 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
           headBlob(`${imageSha256}.jpg`),
           headBlob(`${venueImageSha256}.jpg`),
         ]);
+        // headBlob returns the stored size; ignoring it would let an object
+        // uploaded outside this flow slip past the cap.
+        for (const [slot, h] of [['sheet', a], ['venue', b]]) {
+          if (h.exists && h.size > MAX_BLOB_BYTES) {
+            return res.status(413).json({ error: 'photo_too_large', slot, maxBytes: MAX_BLOB_BYTES });
+          }
+        }
         if (!a.exists || !b.exists) {
           return res.status(409).json({
             error: 'photo_not_uploaded',
@@ -334,24 +367,38 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
       .get(imageSha256, venueImageSha256, imageSha256, venueImageSha256);
     if (dupe) return res.status(409).json({ error: 'duplicate_image' });
 
-    // The PERCEPTUAL guard is the one that needs the pixels.
+    // The PERCEPTUAL guard is the one that genuinely needs the pixels, and in
+    // direct mode it moves to services/analysis-queue.js.
     //
-    // In direct mode the origin does not have them, so the client's own dhash is
-    // used here and RE-COMPUTED FROM THE BUCKET moments later by
-    // services/analysis-queue.js, which overwrites these columns and flags a
-    // mismatch. An earlier draft rejected client-supplied dhashes outright, on
-    // the grounds that an attacker uploading duplicates would be supplying the
-    // very input meant to catch them. Verification answers that: they can evade
-    // for a few seconds, and in doing so they leave `dhash_mismatch` on the
-    // record — a deliberate, provable act of tampering, which is a loude
-    // finding than the duplicate would have been. An honest client, meanwhile,
-    // still gets the same synchronous rejection it always did.
-    if (!DIRECT) {
+    // A CLIENT-SUPPLIED DHASH WAS TRIED, MEASURED, AND ABANDONED. The idea was
+    // that the phone would send its own dhash so this check could stay
+    // synchronous, with the worker re-computing from the bucket and flagging any
+    // mismatch as tampering. A browser canvas cannot reproduce sharp's pipeline:
+    // over 24 real sheets, canvas vs sharp gave ZERO exact matches, a median
+    // Hamming distance of 10 bits and a max of 16 — against a near-duplicate
+    // threshold of 4. Two canvas variants were tried (direct 9x8 draw, and
+    // stepwise halving) and both landed there. An honest client's value is
+    // further from the truth than two genuinely similar photos are from each
+    // other, so the scheme would have detected nothing and flagged everyone.
+    //
+    // Direct-mode rows therefore carry NULL here until the worker fills them in,
+    // and near-duplicate detection for those rows is prompt rather than
+    // synchronous. The EXACT duplicate guard above is unaffected: it compares
+    // sha256s, which the bucket's own checksum enforces.
+    if (DIRECT) {
+      // Nothing below this point may touch imageDhash/venueImageDhash: they are
+      // null here, and both hammingDistance() and dhashBandTokens() do
+      // BigInt('0x' + value), which throws SyntaxError on null rather than
+      // returning anything. The perceptual checks and the dhash_bands write are
+      // therefore skipped as a block and done by services/analysis-queue.js,
+      // which has the bytes.
+      enqueueAnalysisAfterInsert = true;
+    } else {
       imageDhash = await dhashHex(sheet.buffer);
       venueImageDhash = await dhashHex(venue.buffer);
-    }
-    if (hammingDistance(imageDhash, venueImageDhash) <= config.dhashHammingThreshold) {
-      return res.status(400).json({ error: 'venue_photo_required', hint: 'venue photo looks identical to the sheet photo' });
+      if (hammingDistance(imageDhash, venueImageDhash) <= config.dhashHammingThreshold) {
+        return res.status(400).json({ error: 'venue_photo_required', hint: 'venue photo looks identical to the sheet photo' });
+      }
     }
     // Near-duplicate guard — relaxed for THIS observer's own photos at THIS unit:
     // reporting several contests from one unit legitimately produces very similar
@@ -367,21 +414,23 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // The verdict is unchanged: services/images.js proves band lookup misses no
     // true near-duplicate (pigeonhole), and hammingDistance() below still makes
     // the actual decision, so nothing newly passes or newly fails.
-    const T = config.dhashHammingThreshold;
-    const tokens = [
-      ...dhashBandTokens(imageDhash, T),
-      ...dhashBandTokens(venueImageDhash, T),
-    ];
-    const candidates = db.prepare(`
-      SELECT DISTINCT dhash AS h, observer_id, pu_code FROM dhash_bands
-      WHERE band_token IN (${tokens.map(() => '?').join(',')})`).all(...tokens);
-    const nearDuplicate = candidates.some(
-      (r) =>
-        !(r.observer_id === req.observer.id && r.pu_code === puCode) &&
-        (hammingDistance(r.h, imageDhash) <= T ||
-          hammingDistance(r.h, venueImageDhash) <= T),
-    );
-    if (nearDuplicate) return res.status(409).json({ error: 'near_duplicate_image' });
+    if (!DIRECT) {
+      const T = config.dhashHammingThreshold;
+      const tokens = [
+        ...dhashBandTokens(imageDhash, T),
+        ...dhashBandTokens(venueImageDhash, T),
+      ];
+      const candidates = db.prepare(`
+        SELECT DISTINCT dhash AS h, observer_id, pu_code FROM dhash_bands
+        WHERE band_token IN (${tokens.map(() => '?').join(',')})`).all(...tokens);
+      const nearDuplicate = candidates.some(
+        (r) =>
+          !(r.observer_id === req.observer.id && r.pu_code === puCode) &&
+          (hammingDistance(r.h, imageDhash) <= T ||
+            hammingDistance(r.h, venueImageDhash) <= T),
+      );
+      if (nearDuplicate) return res.status(409).json({ error: 'near_duplicate_image' });
+    }
 
     // 4. Votes — known parties only, non-negative integer counts.
     let votes;
@@ -472,7 +521,11 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
       const insBand = db.prepare(
         'INSERT INTO dhash_bands (submission_id, slot, band_token, dhash, observer_id, pu_code) VALUES (?, ?, ?, ?, ?, ?)',
       );
+      // Same `if (!h) continue` shape db.js:592 uses on the identical loop:
+      // in direct mode these are null until the analysis worker fills them in,
+      // and it writes the bands itself once it has.
       for (const [slot, h] of [[0, imageDhash], [1, venueImageDhash]]) {
+        if (!h) continue;
         for (const tok of dhashBandTokens(h, config.dhashHammingThreshold)) {
           insBand.run(subId, slot, tok, h, req.observer.id, puCode);
         }
@@ -529,7 +582,7 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // Direct mode owes the record a real dhash, ORB features, and a verdict on
     // whether the client's claimed dhash was honest. That work reads from the
     // bucket, where egress is free.
-    if (DIRECT) enqueueAnalysis(submissionId);
+    if (DIRECT || enqueueAnalysisAfterInsert) enqueueAnalysis(submissionId);
 
     // AI vision check of the EC8A sheet (count read-back + authenticity) — advisory,
     // fire-and-forget so it never delays or blocks the submission response.

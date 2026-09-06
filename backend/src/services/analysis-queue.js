@@ -1,6 +1,6 @@
 import { db } from '../db.js';
 import { config } from '../config.js';
-import { getBlob } from './blobstore.js';
+import { getBlob, headBlob, MAX_BLOB_BYTES } from './blobstore.js';
 import { dhashHex, hammingDistance, dhashBandTokens } from './images.js';
 
 /**
@@ -100,40 +100,28 @@ async function runOne(job) {
   if (!row) return done('done');                 // purged or deleted; not an error
 
   try {
-    const [sheet, venue] = await Promise.all([
-      getBlob(`${row.image_sha256}.jpg`),
-      getBlob(`${row.venue_image_sha256}.jpg`),
-    ]);
+    // HEAD BEFORE GET. This pulls both objects into Node Buffers at once, in the
+    // same process that serves submissions. An object larger than the cap should
+    // never exist, but "should never" is not a memory bound — ask first.
+    const keys = [`${row.image_sha256}.jpg`, `${row.venue_image_sha256}.jpg`];
+    const heads = await Promise.all(keys.map((k) => headBlob(k)));
+    for (let i = 0; i < heads.length; i++) {
+      if (!heads[i].exists) throw new Error(`analysis: ${keys[i]} is not in the store`);
+      if (heads[i].size > MAX_BLOB_BYTES) {
+        return done('failed', 'oversize_blob', `${keys[i]} is ${heads[i].size} bytes`);
+      }
+    }
+    const [sheet, venue] = await Promise.all(keys.map((k) => getBlob(k)));
     const imageDhash = await dhashHex(sheet);
     const venueImageDhash = await dhashHex(venue);
 
-    // ── did the client tell the truth? ────────────────────────────────────
-    //
-    // In direct mode the submission was accepted using a dhash the CLIENT
-    // computed, because the origin never received the pixels and the column is
-    // NOT NULL. That is only safe because of this comparison. An attacker who
-    // sends a fabricated dhash to slip a duplicate past the synchronous guard
-    // buys a few seconds and leaves `dhash_mismatch` on the record — a
-    // deliberate, provable act of tampering, which is a stronger finding than
-    // the duplicate itself. An honest client sees nothing here.
-    //
-    // The recomputed value always wins: what follows is what the BYTES say.
+    // These columns were NULL: in direct mode the origin never had the pixels,
+    // so this is the first time anything has looked at them. There is no client
+    // claim to check — a client-supplied dhash was tried and measured and cannot
+    // work (canvas vs sharp: 0/24 exact, median 10 bits apart, threshold 4),
+    // which is why the columns are nullable and why this runs at all.
     let finding = null;
-    const claimed = { sheet: row.image_dhash, venue: row.venue_image_dhash };
-    const lied = (claimed.sheet && claimed.sheet !== imageDhash)
-      || (claimed.venue && claimed.venue !== venueImageDhash);
-    if (lied) {
-      finding = 'dhash_mismatch';
-      console.error(JSON.stringify({
-        msg: 'CLIENT DHASH DID NOT MATCH THE STORED BYTES',
-        submissionId: row.id, observerId: row.observer_id, puCode: row.pu_code,
-        claimed, actual: { sheet: imageDhash, venue: venueImageDhash },
-      }));
-    }
-
-    // The sheet photo re-used as its own venue photo — the request path checks
-    // this too, and in direct mode nothing else can.
-    if (!finding && hammingDistance(imageDhash, venueImageDhash) <= config.dhashHammingThreshold) {
+    if (hammingDistance(imageDhash, venueImageDhash) <= config.dhashHammingThreshold) {
       finding = 'sheet_and_venue_near_identical';
     }
 
@@ -161,7 +149,11 @@ async function runOne(job) {
       const ins = db.prepare(
         'INSERT OR IGNORE INTO dhash_bands (submission_id, slot, band_token, dhash, observer_id, pu_code) VALUES (?, ?, ?, ?, ?, ?)',
       );
-      for (const [slot, h] of [['sheet', imageDhash], ['venue', venueImageDhash]]) {
+      // db.js:534 declares `slot INTEGER NOT NULL -- 0 = sheet photo, 1 = venue
+      // photo`, and routes/submissions.js writes 0/1. Writing 'sheet'/'venue'
+      // here would not error (SQLite keeps the text) but the rows would disagree
+      // with every other writer and reader of this table.
+      for (const [slot, h] of [[0, imageDhash], [1, venueImageDhash]]) {
         for (const tok of dhashBandTokens(h, config.dhashHammingThreshold)) {
           ins.run(row.id, slot, tok, h, row.observer_id, row.pu_code);
         }

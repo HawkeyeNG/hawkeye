@@ -125,17 +125,35 @@ html.native-app:not([data-theme="dark"]) {
   --header-ctl-border: rgba(0, 0, 0, 0.18);
   --header-ctl-hover: rgba(0, 0, 0, 0.06);
 }
-/* Self-hosted type: Inter for UI/body, Lora serif for headings. */
+/* Self-hosted type: Inter for UI and body, Spline Sans for display.
+   Both are subset from the upstream VARIABLE fonts, instanced per weight —
+   see the note on --display for why the display face is swapped per language
+   rather than relied on for Yoruba and Hausa. */
 /* ONE FILE, FOUR WEIGHTS — because inter-400/500/600/700.woff2 are BYTE
    IDENTICAL (same md5, 25,970 B each). They always were: four names, one face.
    So the browser has been synthesising 500/600/700 from the 400 file all along,
    and pointing all four rules at it changes nothing on screen while removing
    three redundant downloads. Worth ~78 KB in the Lite APK, which ships all four.
    If a real multi-weight Inter is ever added, give each rule its own file again. */
-@font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-weight: 500; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-weight: 600; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-weight: 700; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url('fonts/inter-400.woff2?v=1') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 500; font-display: swap; src: url('fonts/inter-500.woff2?v=1') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 600; font-display: swap; src: url('fonts/inter-600.woff2?v=1') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 700; font-display: swap; src: url('fonts/inter-700.woff2?v=1') format('woff2'); }
+@font-face { font-family: 'Spline Sans'; font-weight: 600; font-display: swap; src: url('fonts/spline-600.woff2?v=1') format('woff2'); }
+@font-face { font-family: 'Spline Sans'; font-weight: 700; font-display: swap; src: url('fonts/spline-700.woff2?v=1') format('woff2'); }
+
+/* THE DISPLAY FACE GOES THROUGH ONE TOKEN. Spline Sans upstream has no naira
+   sign, no Yoruba e/s-subdot and none of the Hausa hooked letters, so in those
+   languages a heading would mix Spline Sans and fallback Inter inside a single
+   word. Swapping the whole stack per language keeps each heading in one face.
+   Inert until <html lang> is set by the i18n work. */
+:root { --display: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; }
+/* Igbo belongs here too: Spline Sans has ị ọ ụ but NOT ṅ/Ṅ (U+1E44/45), so a
+   heading containing it would render one glyph from Inter mid-word. Verified
+   by dumping each font's cmap, with a codepoint that must be ABSENT as the
+   control — see hawkeye-app-fonts. */
+:root:lang(yo), :root:lang(ha), :root:lang(ig) { --display: Inter, ui-sans-serif, system-ui, sans-serif; }
+
 
 * { box-sizing: border-box; }
 html { background: var(--bg); scroll-behavior: smooth; }
@@ -153,7 +171,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
-h1, h2, h3 { font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; line-height: 1.2; letter-spacing: -0.01em; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.2; letter-spacing: -0.01em; }
 h1 { font-weight: 700; }
 h2, h3 { font-weight: 600; }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
@@ -201,7 +219,7 @@ main.wrap { max-width: 840px; }
    and clearly secondary. */
 .hero-fold #install-cta { display: inline-block; width: auto; margin: 0; padding: 9px 15px; font-size: 0.85rem; box-shadow: none; }
 .brand-text { display: flex; flex-direction: column; }
-.brand-text strong { font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; font-size: 1.08rem; letter-spacing: 0.07em; }
+.brand-text strong { font-family: var(--display); font-size: 1.08rem; letter-spacing: 0.07em; }
 .brand-text span { font-size: 0.68rem; color: var(--header-sub); letter-spacing: 0.03em; }
 .gov-header nav a { color: var(--header-ink); font-weight: 700; text-decoration: none; border-bottom: 2px solid transparent; }
 .gov-header nav a:hover { border-bottom-color: var(--accent); }
@@ -422,7 +440,7 @@ main.wrap { max-width: 840px; }
 /* stats band (hero bottom) */
 .stats-band { margin-top: 52px; background: rgba(0, 0, 0, 0.25); border-top: 1px solid rgba(255, 255, 255, 0.08); padding: 24px 0; }
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; }
-.stats-row strong { display: block; font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; font-size: 1.8rem; color: var(--accent); }
+.stats-row strong { display: block; font-family: var(--display); font-size: 1.8rem; color: var(--accent); }
 .stats-row span { font-size: 0.76rem; color: #a9c3b4; }
 /* legacy hero-stats (kept) */
 .hero-stats { display: flex; gap: 10px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
@@ -444,7 +462,7 @@ section.how-sec h2 { font-size: 1.9rem; margin: 0 0 12px; }
 .step .num {
   width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, var(--green-dark), var(--green-700)); color: var(--accent);
-  font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 16px;
+  font-family: var(--display); font-weight: 700; font-size: 1.1rem; margin-bottom: 16px;
 }
 .step h3 { font-size: 1.1rem; margin: 0 0 8px; }
 .step p { font-size: 0.9rem; color: var(--muted); margin: 0; }
@@ -681,7 +699,7 @@ button.secondary:hover { background: var(--tint); filter: none; }
 .auth-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 18px; }
 .auth-brand {
   display: inline-flex; align-items: center; gap: 7px;
-  font-family: 'Spline Sans', Inter, ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 0.95rem;
+  font-family: var(--display); font-weight: 700; font-size: 0.95rem;
   letter-spacing: 0.07em; color: var(--ink);
 }
 .auth-brand img { display: block; width: 26px; height: 26px; }
@@ -2214,3 +2232,53 @@ html.native-app .dl-wrap { max-width: none; }
 .hero-get { margin: 0; }
 .hero-get-btn { display: inline-flex; align-items: center; min-height: 44px; }
 .hero-get-sub { margin: 8px 0 0; }
+
+/* LANGUAGE PICKER — SELF-CONTAINED. It cannot reuse .pw-modal-back: that class
+   is defined inline in profile.html only, so a modal borrowing it renders in
+   normal document flow on every other page (found exactly that way on
+   index.html, sitting below the footer). These classes live here, in the shared
+   stylesheet, so the picker behaves identically wherever it opens.
+   The tab-bar padding is copied deliberately: in the app shell the bottom 66px
+   is the tab bar, and centring in the full viewport hides the buttons under it. The native
+   name leads because that is what a speaker scans for — the English name is the
+   secondary line, not the heading. */
+.lang-brand { display: flex; align-items: center; gap: 8px; }
+.lang-brand strong { font-family: var(--display); letter-spacing: 0.06em; }
+.lang-list { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 4px; }
+.lang-opt {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px;
+  padding: 11px 13px; border: 1px solid var(--line, #d8e0da); border-radius: 12px;
+  cursor: pointer; background: var(--card, #fff);
+}
+.lang-opt:has(input:checked) { border-color: var(--accent, #f0b323); box-shadow: 0 0 0 2px rgba(240,179,35,0.22); }
+.lang-opt .lang-native { font-weight: 600; }
+.lang-opt .lang-en { color: var(--muted, #6a7a70); font-size: 0.85rem; }
+.lang-opt .lang-badge {
+  grid-column: 2 / -1; font-size: 0.7rem; color: var(--muted, #6a7a70);
+  border: 1px solid var(--line, #d8e0da); border-radius: 999px; padding: 1px 8px; justify-self: start;
+}
+.lang-opt.is-pending { opacity: 0.55; cursor: not-allowed; }
+
+.lang-back[hidden] { display: none; }
+/* z-125: above the Ask Hawkeye FAB (menu.js, z-110), the camera overlay (100)
+   and the report sheet (120); below the tour (130) and a blocking alert (140).
+   It shipped at 60, which put the floating FAB on top of a modal asking the
+   reader to choose a language — caught by tests/modal_layering_test.mjs, which
+   enumerates every full-viewport fixed layer rather than naming three. */
+.lang-back {
+  position: fixed; inset: 0; z-index: 125; display: flex;
+  align-items: center; justify-content: center; padding: 20px;
+  background: rgba(0, 0, 0, 0.55);
+}
+body.has-tabbar .lang-back {
+  align-items: stretch;
+  padding-top: calc(var(--hdr-h, 56px) + 14px);
+  padding-bottom: calc(var(--bar-h, 66px) + 14px + env(safe-area-inset-bottom));
+}
+.lang-card {
+  background: var(--card, #fff); color: var(--ink, #12211a);
+  border-radius: 16px; padding: 20px; width: min(440px, 100%);
+  max-height: 86vh; overflow-y: auto; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+}
+body.has-tabbar .lang-card { max-height: 100%; }
+.lang-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }

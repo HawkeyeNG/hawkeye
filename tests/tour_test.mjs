@@ -300,7 +300,16 @@ const JWT = () => {
   return `x.${body}.y`;
 };
 
-async function shell({ lite = true, seen = false, faultStorage = false, width = 390 } = {}) {
+/**
+ * `langAsked` defaults to TRUE, and that is a statement about the app, not a
+ * convenience. The language prompt (app/lang.js) is the other one-time
+ * onboarding surface, it is eligible at the same instant as the tour, and it
+ * deliberately goes FIRST — a five-card tour in a language the reader does not
+ * use is worth nothing. So every assertion below about the tour's own behaviour
+ * runs as the reader who has already answered that question. The ordering
+ * itself is asserted separately, with langAsked: false.
+ */
+async function shell({ lite = true, seen = false, faultStorage = false, width = 390, langAsked = true } = {}) {
   const ctx = await b.newContext({ viewport: { width, height: 780 } });
   await ctx.addInitScript((o) => {
     if (o.lite) {
@@ -313,6 +322,7 @@ async function shell({ lite = true, seen = false, faultStorage = false, width = 
     }
     try { localStorage.setItem('hawkeye_token', o.token); } catch (e) { /* ignore */ }
     if (o.seen) { try { localStorage.setItem('hawkeye_tour_seen', '1'); } catch (e) { /* ignore */ } }
+    if (o.langAsked) { try { localStorage.setItem('hawkeye_lang_prompted', '1'); } catch (e) { /* ignore */ } }
     if (o.faultStorage) {
       // ONLY the tour's own key. A globally throwing getItem would take out
       // menu.js's very first line (the theme read) and abort the whole script,
@@ -323,7 +333,7 @@ async function shell({ lite = true, seen = false, faultStorage = false, width = 
         return real.call(this, k);
       };
     }
-  }, { lite, seen, faultStorage, token: JWT() });
+  }, { lite, seen, faultStorage, langAsked, token: JWT() });
   const p = await ctx.newPage();
   await p.goto(`${base}/index.html`);
   await p.waitForTimeout(500);
@@ -938,6 +948,42 @@ console.log('\n=== the website (no Lite shell) is untouched ===');
   const shown = await p.evaluate(() => getComputedStyle(document.querySelector('#menu-panel a[href="#tour"]')).display);
   control('the desktop gate — the same measurement against a rendered bar must go red', shown === 'none');
   check('control sanity: at a phone width the row really is displayed', shown, 'block');
+  await ctx.close();
+}
+
+/* ====================================== the language prompt goes first */
+/**
+ * Two one-time onboarding surfaces, both eligible the instant a new observer
+ * reaches the shell's home screen. They used to open together: the picker
+ * rendered over the tour and swallowed every click aimed at it, so Next could
+ * not be pressed at all. Language wins, deliberately — the tour is unreadable
+ * until that question is answered.
+ */
+console.log('\n=== Lite: the language prompt precedes the tour ===');
+{
+  const { ctx, p } = await shell({ langAsked: false });
+  await p.waitForTimeout(1500);
+  const picker = await p.$('#lang-modal:not([hidden])');
+  check('12. the language picker is up', !!picker, true);
+  check('12. and the tour is NOT — one modal at a time', await card(p), null);
+
+  await p.click('#lang-cancel');
+  await p.waitForTimeout(900);
+  check('12. dismissing the picker hands over to the tour', (await card(p)) !== null, true);
+  check('12. which opens on its own first card', (await card(p))?.title, 'Welcome to Hawkeye');
+  await ctx.close();
+}
+{
+  // CONTROL: the check above is only meaningful if the tour WOULD have been
+  // eligible in that fixture. Same fixture, language already answered — the
+  // tour must open with no picker to dismiss. If this went red the assertion
+  // above would be passing on a tour that never runs here at all.
+  const { ctx, p } = await shell({ langAsked: true });
+  await p.waitForTimeout(900);
+  control('the handover check — the same fixture with no picker in the way must still open the tour',
+    (await card(p)) === null);
+  check('control sanity: with the question already answered the tour opens directly',
+    (await card(p)) !== null, true);
   await ctx.close();
 }
 

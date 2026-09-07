@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=170" />
+  <link rel="stylesheet" href="styles.css?v=174" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -179,28 +179,28 @@
         <span class="crest" aria-hidden="true">🦅</span>
         <div class="brand-text">
           <strong>HAWKEYE</strong>
-          <span>Independent Election Results Monitor</span>
+          <span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span>
         </div>
       </a>
-      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
         onclick="const m=document.getElementById(&quot;menu-panel&quot;);const open=m.hidden;m.hidden=!open;this.setAttribute(&quot;aria-expanded&quot;,String(open));">&#9776;</button>
       <nav id="menu-panel" class="menu-panel" hidden>
-        <a href="observe.html">Report a Result</a>
-        <a href="collation.html">Report a Collation Result</a>
-        <a href="results.html">Leaderboard</a>
-        <a href="dashboard.html">Public Reports Log</a>
-        <a href="ledger.html">Verify the Ledger</a>
-        <a href="integrity.html">Election Integrity</a>
-        <a href="docket.html">Public Docket</a>
-        <a href="map-unit.html">Map a Polling Unit</a>
-        <a href="incidents.html">Report an Incident</a>
-        <a href="candidates.html">2027 Candidates</a>
-        <a href="political.html">Political Data</a>
-        <a href="how.html">How Hawkeye Works</a>
-        <a href="guide.html">Observer Guide</a>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
         <a href="faq.html">FAQ</a>
-        <a href="about.html">About & Contact</a>
-        <a href="privacy.html">Privacy & Data</a>
+        <a data-i18n="common.about-contact" href="about.html">About & Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy & Data</a>
       </nav>
     </div>
   </header>
@@ -218,36 +218,36 @@
       <div class="qa-grid">
         <a class="qa primary" href="observe.html?intent=observe">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/></svg>
-          <strong>Report a Result</strong><small>Photograph the EC8A sheet at your unit</small></a>
+          <strong data-i18n="common.report-a-result">Report a Result</strong><small data-i18n="index.photograph-the-ec8a-sheet-at-your">Photograph the EC8A sheet at your unit</small></a>
         <a class="qa" href="incidents.html">
           <svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.5"/></svg>
-          <strong>Report an Incident</strong><small>Violence, vote-buying, BVAS failure…</small></a>
+          <strong data-i18n="common.report-an-incident">Report an Incident</strong><small data-i18n="index.violence-vote-buying-bvas-failure">Violence, vote-buying, BVAS failure…</small></a>
         <a class="qa" href="collation.html">
           <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
-          <strong>Collation Result</strong><small>Ward, LGA or state collation (EC8B/C/D)</small></a>
+          <strong data-i18n="index.collation-result">Collation Result</strong><small data-i18n="index.ward-lga-or-state-collation-ec8b">Ward, LGA or state collation (EC8B/C/D)</small></a>
         <a class="qa" href="map-unit.html">
           <svg viewBox="0 0 24 24"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-          <strong>My Polling Unit</strong><small>Save or map your unit for alerts</small></a>
+          <strong data-i18n="index.my-polling-unit">My Polling Unit</strong><small data-i18n="index.save-or-map-your-unit-for">Save or map your unit for alerts</small></a>
       </div>
 
       <div class="home-cols">
         <div class="home-stack">
           <div class="home-card">
-            <h2>Latest Alerts <a href="notifications.html">All Alerts →</a></h2>
-            <div id="home-alerts"><p class="home-empty">Loading…</p></div>
+            <h2>Latest Alerts <a data-i18n="index.all-alerts" href="notifications.html">All Alerts →</a></h2>
+            <div id="home-alerts"><p data-i18n="index.loading" class="home-empty">Loading…</p></div>
           </div>
           <div class="home-card">
-            <h2>My Activity <a href="profile.html">My Profile →</a></h2>
+            <h2>My Activity <a data-i18n="index.my-profile" href="profile.html">My Profile →</a></h2>
             <div class="mystats">
-              <div><strong id="ms-reports">0</strong><span>result reports</span></div>
-              <div><strong id="ms-incidents">0</strong><span>incidents</span></div>
-              <div><strong id="ms-races">0</strong><span>races followed</span></div>
+              <div><strong id="ms-reports">0</strong><span data-i18n="index.result-reports">result reports</span></div>
+              <div><strong id="ms-incidents">0</strong><span data-i18n="index.incidents">incidents</span></div>
+              <div><strong id="ms-races">0</strong><span data-i18n="index.races-followed">races followed</span></div>
             </div>
           </div>
         </div>
         <div class="home-card">
-          <h2>Live on the Ledger <a href="dashboard.html">All Reports →</a></h2>
-          <div id="home-ledger"><p class="home-empty">No reports on the ledger yet — yours could be first.</p></div>
+          <h2>Live on the Ledger <a data-i18n="index.all-reports" href="dashboard.html">All Reports →</a></h2>
+          <div id="home-ledger"><p data-i18n="index.no-reports-on-the-ledger-yet" class="home-empty">No reports on the ledger yet — yours could be first.</p></div>
         </div>
       </div>
     </main>
@@ -261,19 +261,19 @@
     <div class="aw-inner">
       <span class="aw-mark"><img src="logo-crest.svg?v=98" alt="" width="62" height="62" /></span>
       <h1 id="aw-title">Hawkeye</h1>
-      <p class="aw-tag">Independent election results monitor</p>
+      <p data-i18n="index.independent-election-results-monitor" class="aw-tag">Independent election results monitor</p>
       <!-- No feature bullets: anyone who installed the app already knows what it
            does, and the screen reads as a clean auth step without them. -->
       <div class="aw-actions">
-        <a class="btn-accent" href="observe.html?intent=observe">Create an account</a>
-        <a class="btn-ghost" href="observe.html?intent=signin">Sign in</a>
+        <a data-i18n="index.create-an-account" class="btn-accent" href="observe.html?intent=observe">Create an account</a>
+        <a data-i18n="index.sign-in" class="btn-ghost" href="observe.html?intent=signin">Sign in</a>
       </div>
-      <p class="aw-alt"><a href="practice.html">Try a practice run first</a></p>
-      <p class="aw-fine">Not affiliated with INEC or any political party.
+      <p class="aw-alt"><a data-i18n="index.try-a-practice-run-first" href="practice.html">Try a practice run first</a></p>
+      <p data-i18n="index.not-affiliated-with-inec-or-any" class="aw-fine">Not affiliated with INEC or any political party.
         Official results remain INEC's.</p>
       <!-- The welcome screen hides the header, so the menu's copyright line
            can't reach it — it carries its own. -->
-      <p class="aw-copy">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+      <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="aw-copy">&copy; 2026 IniXien, LLC. All rights reserved.</p>
     </div>
   </section>
 
@@ -282,17 +282,17 @@
     <div class="wrap hero-grid">
       <div>
         <p class="hero-badge"><span class="live-dot"></span> Monitoring the 2027 general elections</p>
-        <h1>The count at your polling unit,<br /><em>witnessed and unchangeable.</em></h1>
-        <p class="hero-sub">Photograph, sign and publish the results announced at your polling unit.
+        <h1>The count at your polling unit,<br /><em data-i18n="index.witnessed-and-unchangeable">witnessed and unchangeable.</em></h1>
+        <p data-i18n="index.photograph-sign-and-publish-the-results" class="hero-sub">Photograph, sign and publish the results announced at your polling unit.
         Independent reports must agree before a count is trusted — and every report lives on a
         public ledger nobody can edit.</p>
         <div class="hero-cta">
-          <a class="btn-accent" href="observe.html?intent=observe">Become an observer</a>
-          <a class="btn-ghost" href="incidents.html">Report an incident</a>
+          <a data-i18n="index.become-an-observer" class="btn-accent" href="observe.html?intent=observe">Become an observer</a>
+          <a data-i18n="index.report-an-incident" class="btn-ghost" href="incidents.html">Report an incident</a>
         </div>
         <!-- Returning observers: one quiet line, not a third button — it must not
              compete with the primary CTA for first-time visitors. -->
-        <p class="hero-signin">Already an observer? <a href="observe.html?intent=signin">Sign in</a></p>
+        <p class="hero-signin">Already an observer? <a data-i18n="index.sign-in" href="observe.html?intent=signin">Sign in</a></p>
         <!-- The emoji "🎓 practice run" and "🔔 Get Alerts" rows were removed: five
              stacked calls-to-action diluted the primary one, the emoji made the
              page read like sticky notes, and together they pushed the fold ~200px
@@ -313,9 +313,9 @@
                the download page answers with words instead of a guess about the
                device someone is holding. -->
           <p class="hero-get">
-            <a class="btn-ghost hero-get-btn" href="download.html">Get the app</a>
+            <a data-i18n="index.get-the-app" class="btn-ghost hero-get-btn" href="download.html">Get the app</a>
           </p>
-          <p class="hint hero-get-sub">Android and iPhone, free &mdash; or run it in your browser with no install.</p>
+          <p data-i18n="index.android-and-iphone-free-or-run" class="hint hero-get-sub">Android and iPhone, free &mdash; or run it in your browser with no install.</p>
         </div>
 
         <!-- Manual install steps. Chromium's one-tap prompt covers most Android
@@ -325,7 +325,7 @@
              Chrome on iOS cannot do it at all). Both platforms are shown, with
              the visitor's own first. -->
         <dialog id="install-modal" class="pwa-modal">
-          <h2 tabindex="-1">Install Hawkeye</h2>
+          <h2 data-i18n="index.install-hawkeye" tabindex="-1">Install Hawkeye</h2>
           <!-- NO STORE BUTTONS IN HERE, deliberately. This dialog opens from
                "Or install the web app — no store, no download", which sits
                directly beneath both store badges. Everyone who reaches it has
@@ -334,7 +334,7 @@
                argues with a decision the visitor has just made, and buries the
                steps they actually came for. The badges do the store job; this
                dialog does exactly one job. -->
-          <p class="pwa-lede">Hawkeye runs from your home screen like any other app — no
+          <p data-i18n="index.hawkeye-runs-from-your-home-screen" class="pwa-lede">Hawkeye runs from your home screen like any other app — no
             app store needed. It takes about ten seconds.</p>
 
           <section class="pwa-os" id="pwa-android">
@@ -343,12 +343,12 @@
                  clear people were reaching this dialog BY declining the badges
                  above and then finding the same store offered again. See the
                  note on .pwa-lede. -->
-            <p class="pwa-note" style="margin-top:0">Run it from your home screen, with no store and no download:</p>
+            <p data-i18n="index.run-it-from-your-home-screen" class="pwa-note" style="margin-top:0">Run it from your home screen, with no store and no download:</p>
             <ol>
               <li>Open <strong>hawkeye.com.ng</strong> in <strong>Chrome</strong>.</li>
               <li>Tap the <strong>⋮</strong> menu, top-right.</li>
-              <li>Tap <strong>Install app</strong> (or <strong>Add to Home screen</strong>).</li>
-              <li>Tap <strong>Install</strong> to confirm.</li>
+              <li>Tap <strong data-i18n="index.install-app">Install app</strong> (or <strong data-i18n="index.add-to-home-screen">Add to Home screen</strong>).</li>
+              <li>Tap <strong data-i18n="index.install">Install</strong> to confirm.</li>
             </ol>
             <!-- Samsung Internet is the default browser on every Samsung handset
                  and is widely used here, so this is not an edge case. Its PWA
@@ -358,7 +358,7 @@
                  because an unexplained "unsafe app" warning on an election tool
                  reads as proof of exactly what our critics claim. -->
             <p class="pwa-note" style="border-left:3px solid var(--amber-border,#d4770c);padding-left:10px">
-              <strong>Use Chrome, not Samsung Internet.</strong> Samsung's browser
+              <strong data-i18n="index.use-chrome-not-samsung-internet">Use Chrome, not Samsung Internet.</strong> Samsung's browser
               builds the home-screen app in a way Android rejects, so it shows an
               “unsafe app” warning. Nothing is wrong with Hawkeye — Chrome installs
               it cleanly, and so does the direct download below.</p>
@@ -368,19 +368,19 @@
                  exists to help people resist; hawkeye.com.ng is the one origin a
                  visitor can already check. Android blocks sideloading by default,
                  so the permission step is stated rather than left to be discovered. -->
-            <p class="pwa-alt">Or install it directly:</p>
+            <p data-i18n="index.or-install-it-directly" class="pwa-alt">Or install it directly:</p>
             <!-- VERSIONED FILENAME, deliberately. The APK is served with
                  cache-control max-age=14400, so for four hours after a rebuild a
                  CDN edge or the phone itself can hand back the previous file —
                  which is how a debug build that Play Protect blocks kept being
                  installed after it had already been replaced. A new name cannot
                  be served stale. Bump it whenever the APK is rebuilt. -->
-            <p><a class="btn-ghost apk-dl" href="download/hawkeye-1.2-4-52900bc4.apk"
+            <p><a data-i18n="index.download-the-android-app" class="btn-ghost apk-dl" href="download/hawkeye-1.2-4-52900bc4.apk"
                   download="hawkeye-1.2-4-52900bc4.apk" rel="nofollow">⬇ Download the Android App</a></p>
             <!-- "not yet on Play" stopped being the reason for that prompt the day
                  the listing went live. Android shows it for anything installed
                  outside Play at all, which is what this route is. -->
-            <p class="pwa-note">35&nbsp;MB. Android will ask you to allow installs from
+            <p data-i18n="index.35-mb-android-will-ask-you" class="pwa-note">35&nbsp;MB. Android will ask you to allow installs from
               your browser — that prompt is normal for any app installed outside the
               Play Store, and it only applies to this one install. The file is served
               from hawkeye.com.ng itself; do not install a Hawkeye APK from anywhere
@@ -388,25 +388,25 @@
           </section>
 
           <section class="pwa-os" id="pwa-ios">
-            <h3>🍎 iPhone &amp; iPad</h3>
+            <h3 data-i18n="index.iphone-ipad">🍎 iPhone &amp; iPad</h3>
             <!-- No App Store button here either, for the same reason as Android.
                  The old copy asserted there was no App Store version, which was
                  true then and is not now; it is simply dropped rather than
                  replaced, because in this dialog the answer to "how do I get it"
                  is the home-screen route. -->
-            <p class="pwa-note" id="pwa-ios-note" style="margin-top:0">Safari installs it to your home screen,
+            <p data-i18n="index.safari-installs-it-to-your-home" class="pwa-note" id="pwa-ios-note" style="margin-top:0">Safari installs it to your home screen,
               and it works the same way:</p>
             <ol>
               <li>Open <strong>hawkeye.com.ng</strong> in <strong>Safari</strong>.
-                <em>Chrome and Firefox on iPhone cannot install it — it must be Safari.</em></li>
-              <li>Tap the <strong>Share</strong> button (the square with an arrow) at the
+                <em data-i18n="index.chrome-and-firefox-on-iphone-cannot">Chrome and Firefox on iPhone cannot install it — it must be Safari.</em></li>
+              <li>Tap the <strong data-i18n="index.share">Share</strong> button (the square with an arrow) at the
                 bottom of the screen.</li>
-              <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
-              <li>Tap <strong>Add</strong>, top-right.</li>
+              <li>Scroll down and tap <strong data-i18n="index.add-to-home-screen-2">Add to Home Screen</strong>.</li>
+              <li>Tap <strong data-i18n="index.add">Add</strong>, top-right.</li>
             </ol>
           </section>
 
-          <p class="pwa-foot">The Hawkeye icon then sits on your home screen and opens
+          <p data-i18n="index.the-hawkeye-icon-then-sits-on" class="pwa-foot">The Hawkeye icon then sits on your home screen and opens
             full-screen. Alerts work once it has been added.</p>
           <button type="button" class="gov-disc-close" id="install-modal-close">Close</button>
         </dialog>
@@ -415,10 +415,10 @@
     </div>
     <div class="stats-band">
       <div class="wrap stats-row" id="stats-row">
-        <div><strong data-n="176846">0</strong><span>polling units on the register</span></div>
-        <div><strong id="stat-located" data-n="0">0</strong><span>units with a confirmed location</span></div>
-        <div><strong data-n="9307">0</strong><span>electoral wards mapped</span></div>
-        <div><strong>100%</strong><span>reports publicly verifiable</span></div>
+        <div><strong data-n="176846">0</strong><span data-i18n="index.polling-units-on-the-register">polling units on the register</span></div>
+        <div><strong id="stat-located" data-n="0">0</strong><span data-i18n="index.units-with-a-confirmed-location">units with a confirmed location</span></div>
+        <div><strong data-n="9307">0</strong><span data-i18n="index.electoral-wards-mapped">electoral wards mapped</span></div>
+        <div><strong>100%</strong><span data-i18n="index.reports-publicly-verifiable">reports publicly verifiable</span></div>
       </div>
     </div>
   </section>
@@ -430,16 +430,16 @@
       <h2 class="reveal">Three Steps to a Rig-proof Record</h2>
       <p class="sec-sub reveal">No training required. If you can take a photo, you can defend the vote at your polling unit.</p>
       <div class="steps">
-        <div class="step reveal"><div class="num">1</div><h3>Witness the Count</h3>
-          <p>Stay for the public counting after voting closes. Photograph the result sheet (EC8A) the moment it's announced.</p></div>
-        <div class="step reveal"><div class="num">2</div><h3>Sign &amp; Submit</h3>
-          <p>Your report is signed on your own phone with GPS and time — proof it came from that place, at that moment.</p></div>
-        <div class="step reveal"><div class="num">3</div><h3>Corroborate</h3>
-          <p>Counts only become trusted when independent observers at the same unit agree. One person can't fake it — that's the point.</p></div>
+        <div class="step reveal"><div class="num">1</div><h3 data-i18n="index.witness-the-count">Witness the Count</h3>
+          <p data-i18n="index.stay-for-the-public-counting-after">Stay for the public counting after voting closes. Photograph the result sheet (EC8A) the moment it's announced.</p></div>
+        <div class="step reveal"><div class="num">2</div><h3 data-i18n="index.sign-submit">Sign &amp; Submit</h3>
+          <p data-i18n="index.your-report-is-signed-on-your">Your report is signed on your own phone with GPS and time — proof it came from that place, at that moment.</p></div>
+        <div class="step reveal"><div class="num">3</div><h3 data-i18n="index.corroborate">Corroborate</h3>
+          <p data-i18n="index.counts-only-become-trusted-when-independent">Counts only become trusted when independent observers at the same unit agree. One person can't fake it — that's the point.</p></div>
       </div>
       <p class="how-links" style="margin-top: 28px">
-        <a href="how.html">How Hawkeye works →</a>
-        <a href="guide.html">Observer Guide →</a>
+        <a data-i18n="index.how-hawkeye-works" href="how.html">How Hawkeye works →</a>
+        <a data-i18n="index.observer-guide" href="guide.html">Observer Guide →</a>
         <a href="faq.html">FAQ →</a>
       </p>
     </div>
@@ -449,18 +449,18 @@
   <section class="trust">
     <div class="wrap trust-grid">
       <div class="reveal">
-        <p class="kicker">Why trust it</p>
-        <h2>Built so nobody — including us — can quietly change a number</h2>
+        <p data-i18n="index.why-trust-it" class="kicker">Why trust it</p>
+        <h2 data-i18n="index.built-so-nobody-including-us-can">Built so nobody — including us — can quietly change a number</h2>
         <p>Every report is chained to the one before it on a public ledger. Change anything and the
         chain breaks visibly. Anyone can verify it — no permission needed.
-        <a class="link" style="color: var(--accent)" href="ledger.html">Verify the Ledger Yourself →</a></p>
+        <a data-i18n="index.verify-the-ledger-yourself" class="link" style="color: var(--accent)" href="ledger.html">Verify the Ledger Yourself →</a></p>
       </div>
       <ul class="tick-list reveal">
-        <li>Tamper-evident ledger anyone can audit</li>
-        <li>Reports signed on the observer's device — keys never leave the phone</li>
-        <li>Independent observers must agree before a count is trusted</li>
-        <li>Phone numbers stored only as one-way hashes</li>
-        <li>Open evidence: photos, GPS and totals visible to everyone</li>
+        <li data-i18n="index.tamper-evident-ledger-anyone-can-audit">Tamper-evident ledger anyone can audit</li>
+        <li data-i18n="index.reports-signed-on-the-observer-s">Reports signed on the observer's device — keys never leave the phone</li>
+        <li data-i18n="index.independent-observers-must-agree-before-a">Independent observers must agree before a count is trusted</li>
+        <li data-i18n="index.phone-numbers-stored-only-as-one">Phone numbers stored only as one-way hashes</li>
+        <li data-i18n="index.open-evidence-photos-gps-and-totals">Open evidence: photos, GPS and totals visible to everyone</li>
       </ul>
     </div>
   </section>
@@ -469,27 +469,27 @@
   <section class="cta-band">
     <div class="wrap reveal">
       <h2>2027 is decided at the polling unit.<br />Be there. Be counted.</h2>
-      <p>Signing up takes two minutes. All you need is a phone.</p>
-      <a class="btn-primary" href="observe.html?intent=observe">Become an observer</a>
+      <p data-i18n="index.signing-up-takes-two-minutes-all">Signing up takes two minutes. All you need is a phone.</p>
+      <a data-i18n="index.become-an-observer" class="btn-primary" href="observe.html?intent=observe">Become an observer</a>
     </div>
   </section>
 
   <footer class="gov-footer">
     <div class="wrap">
       <nav>
-        <a href="observe.html">Report a Result</a>
-        <a href="results.html">Public Results</a>
-        <a href="how.html">How It Works</a>
-        <a href="guide.html">Observer Guide</a>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="index.public-results" href="results.html">Public Results</a>
+        <a data-i18n="index.how-it-works" href="how.html">How It Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
         <a href="faq.html">FAQ</a>
-        <a href="ledger.html">Verify the Ledger</a>
-        <a href="candidates.html">2027 Candidates</a>
-        <a href="political.html">Political Data</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
       </nav>
-      <p>Hawkeye is an independent transparency initiative. It does not declare election
+      <p data-i18n="common.hawkeye-is-an-independent-transparency-initiative">Hawkeye is an independent transparency initiative. It does not declare election
       results; all official results are announced by the Independent National
       Electoral Commission (INEC).</p>
-    <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+    <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
     </div>
   </footer>
 
@@ -743,6 +743,8 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="menu.js?v=164"></script>
+  <script src="/i18n.js?v=2"></script>
+  <script src="/lang.js?v=2"></script>
+  <script src="menu.js?v=165"></script>
 </body>
 </html>

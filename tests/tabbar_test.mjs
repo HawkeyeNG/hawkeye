@@ -140,6 +140,12 @@ console.log('\n=== the tour is once per DEVICE, not once per sign-in ===');
     mark();
     document.addEventListener('readystatechange', mark);
     try { if (!localStorage.getItem('hawkeye_token')) localStorage.setItem('hawkeye_token', tok); } catch (e) { /* ignore */ }
+    /* "Brand new" here means brand new to the TOUR. The language prompt
+       (app/lang.js) is the other one-time surface and it deliberately goes
+       first, so leaving it unanswered would hold the tour back and this section
+       would be measuring the handover instead of the once-per-device rule —
+       which tests/tour_test.mjs asserts on its own. */
+    try { localStorage.setItem('hawkeye_lang_prompted', '1'); } catch (e) { /* ignore */ }
   }, JWT());
   const p = await ctx.newPage();
   const open = () => p.evaluate(() => { const t = document.querySelector('.tour'); return !!t && !t.hidden; });

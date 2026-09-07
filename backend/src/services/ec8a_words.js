@@ -49,7 +49,11 @@ const DIGIT_WORDS = {
 };
 const VOCAB = [...Object.keys(UNITS), ...Object.keys(TENS), ...Object.keys(SCALES), 'AND'];
 // NIL and NILL appear in the words column as often as ZERO on these sheets.
-const NIL_WORDS = new Set(['NIL', 'NILL', 'NILE', 'NILS']);
+// NONE BELONGS HERE, AND ITS ABSENCE WAS A LIVE BUG. "NONE" is one edit from
+// "ONE", so a cell meaning ZERO was read as 1 — measured on ~20 cells in the
+// Osun corpus, several of which then agreed with a figures cell of 0 only by
+// failing to. A word meaning nothing must resolve before any fuzzy matching.
+const NIL_WORDS = new Set(['NIL', 'NILL', 'NILE', 'NILS', 'NONE', 'NONES', 'NON']);
 
 /**
  * Handwriting OCR confuses letters with digits constantly — real observed
@@ -86,13 +90,21 @@ function snapWord(raw) {
   // Tolerance scales with length: short words must be near-exact or "ONE"
   // swallows every three-letter smudge on the sheet.
   const budget = w.length <= 3 ? 1 : (w.length <= 6 ? 2 : 3);
-  let best = null, bestD = Infinity;
+  let bestD = Infinity, best = [];
   for (const cand of VOCAB) {
     if (Math.abs(cand.length - w.length) > budget) continue;
     const d = editDistance(w, cand);
-    if (d < bestD) { bestD = d; best = cand; }
+    if (d < bestD) { bestD = d; best = [cand]; }
+    else if (d === bestD) best.push(cand);
   }
-  return bestD <= budget ? best : null;
+  if (bestD > budget || !best.length) return null;
+  if (best.length === 1) return { word: best[0], d: bestD };
+  // AN AMBIGUOUS SMUDGE IS NOT A WORD. Two vocabulary entries at the same edit
+  // distance give no basis for choosing, and the wrong choice does not fail
+  // loudly — it becomes a confident number that agrees or disagrees with the
+  // figures cell on its own account. Hand the tie back for the caller to
+  // resolve with the rest of the phrase in view; it has context this does not.
+  return { tie: best };
 }
 
 /**
@@ -101,7 +113,83 @@ function snapWord(raw) {
  */
 export function wordsToNumber(phrase) {
   if (NIL_WORDS.has(normaliseWord(phrase))) return 0;
-  const words = String(phrase).split(/[\s-]+/).map(snapWord).filter(Boolean);
+  const raw = String(phrase).split(/[\s-]+/);
+  // Punctuation-only tokens ("&", a stray dash) normalise to nothing. They are
+  // not failed reads and must not count against the phrase — officers write
+  // "ONE HUNDRED & SEVENTY TWO" and that is a clean sheet, not a doubtful one.
+  const meaningful = raw.filter((t) => normaliseWord(t).length > 0);
+
+  // Resolve ties with the whole phrase in view. The only tie that occurs in the
+  // corpus is 'OND', one edit from BOTH 'ONE' and 'AND', and its correct
+  // reading depends entirely on position:
+  //   lone cell  ['—OND', 1]                       — 'AND' carries no count, so
+  //                                                  the cell can only be ONE
+  //   mid-phrase 'CNE HUNDRED AHD FORTH HIREE'     — here the garbled token IS
+  //                                                  the connector, and reading
+  //                                                  it as ONE would silently
+  //                                                  add 1 to a party's total
+  // So: prefer the connector when other value words are present, prefer the
+  // value word when the cell has nothing else in it. A value-versus-value tie
+  // is never resolved — that one stays refused.
+  const snaps = meaningful.map(snapWord);
+
+  // A FUZZY MATCH NEEDS AN ANCHOR. "QWERTY ZXCV" used to return a confident 20,
+  // because QWERTY is two substitutions from TWENTY and that sits inside the
+  // length-6 budget. What separates it from "NINTI FIVE" (a real 95) is not how
+  // far the words are from the vocabulary — both are 2 — but whether anything
+  // ELSE in the cell was read exactly. FIVE anchors NINTI; nothing anchors
+  // QWERTY. So in a multi-word cell a fuzzy reading is trusted only alongside
+  // an exact one.
+  //
+  // A LONE token is exempt, because it has nothing to be anchored by and the
+  // corpus is full of legitimate single-token smudges: '—ONE——', 'GONE',
+  // '-2ERD', 's1x'. Refusing those would throw away real rows to catch a case
+  // that needs two words to occur.
+  //
+  // Rejected the obvious alternative — requiring a majority of tokens to snap —
+  // after running it over the corpus: it discarded "FIFTY VOTES" (50, agreeing
+  // with the figures) and "NIL ZERO" (0, likewise), because one token was a
+  // word the vocabulary has no reason to contain. Ten genuine corroborations
+  // lost to catch thirty bad ones is the wrong trade.
+  const hasExact = snaps.some((s) => typeof s === 'string');
+  const lone = meaningful.length === 1;
+  const trust = (s) => (typeof s === 'string' ? s
+    : (hasExact || lone ? s.word : null));
+
+  const provisional = snaps.map((s) => (typeof s === 'string' || (s && s.word) ? s : null));
+  const hasValue = provisional.some((s) => {
+    const w = typeof s === 'string' ? s : s?.word;
+    return w && w !== 'AND';
+  });
+
+  const words = snaps.map((s) => {
+    if (typeof s === 'string') return s;
+    if (!s) return null;
+    if (s.word) return trust(s);
+    if (!s.tie) return null;
+    // 'OND' sits one edit from BOTH 'ONE' and 'AND'. Position decides: in a lone
+    // cell it can only be the value (['—OND', 1] in the corpus), but mid-phrase
+    // it is the connector, and reading it as ONE would silently add 1 to a
+    // party's total. A value-versus-value tie is never resolved.
+    const values = s.tie.filter((c) => c !== 'AND');
+    if (s.tie.includes('AND') && values.length === 1) {
+      const picked = hasValue ? 'AND' : values[0];
+      return picked === 'AND' ? 'AND' : (hasExact || lone ? picked : null);
+    }
+    // A UNIT AGAINST ITS OWN TENS FORM RESOLVES TO THE UNIT. Every tens word is
+    // its unit plus a suffix, so a dropped or smudged tail puts 'NINEY' exactly
+    // one edit from both NINE and NINETY, and 'EIGHTE' from both EIGHT and
+    // EIGHTY. Refusing these cost real rows: 'NINEY-ONE' (figures 91) and
+    // 'TWO ONE EIGHTE' (figures 218) both read correctly once the unit is
+    // chosen, because the digit-by-digit grammar above then takes them — and
+    // it is the conservative choice, since the unit is the smaller magnitude.
+    const units = s.tie.filter((c) => c in UNITS);
+    const tens = s.tie.filter((c) => c in TENS);
+    if (s.tie.length === 2 && units.length === 1 && tens.length === 1) {
+      return hasExact || lone ? units[0] : null;
+    }
+    return null;
+  }).filter(Boolean);
   if (!words.length) return null;
 
   // DIGIT-BY-DIGIT FIRST. Some officers spell the count out one digit at a
@@ -153,13 +241,22 @@ export function wordsToNumber(phrase) {
     if (tail !== null) return DIGIT_WORDS[digitTokens[0]] * 100 + tail;
   }
 
-  let total = 0, current = 0, seen = false;
+  let total = 0, current = 0, seen = false, hundreds = 0;
   for (const w of words) {
     if (w === 'AND') continue;
     if (w in UNITS) { current += UNITS[w]; seen = true; continue; }
     if (w in TENS) { current += TENS[w]; seen = true; continue; }
-    if (w === 'HUNDRED') { current = (current || 1) * 100; seen = true; continue; }
-    if (w === 'THOUSAND') { total += (current || 1) * 1000; current = 0; seen = true; continue; }
+    if (w === 'HUNDRED') {
+      // A SCALE WORD CANNOT REPEAT INSIDE ONE GROUP. "HUNDRED HUNDRED HUNDRED"
+      // compounded silently to 1,000,000 — each pass multiplying the last. No
+      // officer writes that; it is OCR reading a ruled line three times.
+      // THOUSAND opens a fresh group, so "ONE THOUSAND TWO HUNDRED" is fine.
+      if (++hundreds > 1) return null;
+      current = (current || 1) * 100; seen = true; continue;
+    }
+    if (w === 'THOUSAND') {
+      total += (current || 1) * 1000; current = 0; hundreds = 0; seen = true; continue;
+    }
   }
   return seen ? total + current : null;
 }

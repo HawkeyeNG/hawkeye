@@ -929,19 +929,22 @@
   if (inAppShell && !document.querySelector('.tabbar')) {
     const page = (location.pathname.replace(/^.*\//, '') || 'index.html');
     const ic = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+    /* `key` is the i18n key for `label`. The English label STAYS here and is
+       what renders when i18n.js is absent, blocked or still fetching — the tab
+       bar must never come up with five blank captions. */
     const TABS = [
-      { href: 'index.html', label: 'Home', icon: '<path d="M3 11 12 4l9 7"/><path d="M5 10v9h5v-6h4v6h5v-9"/>' },
-      { href: 'results.html', label: 'Results', icon: '<path d="M4 20V4"/><path d="M4 20h16"/><rect x="7" y="12" width="3" height="5"/><rect x="12" y="8" width="3" height="9"/><rect x="17" y="14" width="3" height="3"/>' },
-      { href: 'observe.html', label: 'Report', cta: true, icon: '<circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/>' },
-      { href: 'notifications.html', label: 'Alerts', bell: true, icon: '<path d="M6 9a6 6 0 1 1 12 0c0 4.5 2 5.5 2 5.5H4S6 13.5 6 9"/><path d="M10 20a2 2 0 0 0 4 0"/>' },
-      { href: '#more', label: 'More', more: true, icon: '<path d="M4 6h16M4 12h16M4 18h16"/>' },
+      { href: 'index.html', label: 'Home', key: 'nav.home', icon: '<path d="M3 11 12 4l9 7"/><path d="M5 10v9h5v-6h4v6h5v-9"/>' },
+      { href: 'results.html', label: 'Results', key: 'nav.results', icon: '<path d="M4 20V4"/><path d="M4 20h16"/><rect x="7" y="12" width="3" height="5"/><rect x="12" y="8" width="3" height="9"/><rect x="17" y="14" width="3" height="3"/>' },
+      { href: 'observe.html', label: 'Report', key: 'nav.report', cta: true, icon: '<circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/>' },
+      { href: 'notifications.html', label: 'Alerts', key: 'nav.alerts', bell: true, icon: '<path d="M6 9a6 6 0 1 1 12 0c0 4.5 2 5.5 2 5.5H4S6 13.5 6 9"/><path d="M10 20a2 2 0 0 0 4 0"/>' },
+      { href: '#more', label: 'More', key: 'nav.more', more: true, icon: '<path d="M4 6h16M4 12h16M4 18h16"/>' },
     ];
     const isOn = (h) => h.replace(/#.*/, '') === page;
     const nav = document.createElement('nav');
     nav.className = 'tabbar';
     nav.setAttribute('aria-label', 'Primary');
     nav.innerHTML = TABS.map((t) => `<a class="tab${t.cta ? ' tab-cta' : ''}${isOn(t.href) ? ' on' : ''}" href="${t.href}"${t.more ? ' data-more="1"' : ''}${t.cta ? ' data-report="1"' : ''}>`
-      + `<span class="ti">${t.bell ? '<span class="tab-dot" hidden></span>' : ''}${ic(t.icon)}</span><span class="tl">${t.label}</span></a>`).join('');
+      + `<span class="ti">${t.bell ? '<span class="tab-dot" hidden></span>' : ''}${ic(t.icon)}</span><span class="tl" data-i18n="${t.key}">${t.label}</span></a>`).join('');
     document.body.appendChild(nav);
     document.body.classList.add('has-tabbar');
     nav.querySelector('[data-more]').addEventListener('click', (e) => {
@@ -957,8 +960,8 @@
     const sheet = document.createElement('div');
     sheet.className = 'report-sheet';
     sheet.hidden = true;
-    sheet.innerHTML = `<div class="rs-backdrop"></div><div class="rs-panel" role="dialog" aria-label="What are you reporting?">
-      <div class="rs-grab"></div><h3>What are you reporting?</h3>
+    sheet.innerHTML = `<div class="rs-backdrop"></div><div class="rs-panel" role="dialog" aria-label="What are you reporting?" data-i18n-attr="aria-label:nav.what-are-you-reporting">
+      <div class="rs-grab"></div><h3 data-i18n="nav.what-are-you-reporting">What are you reporting?</h3>
       <!-- LABELS AND SUB-LINES ARE THE APP'S, VERBATIM
            (native/src/components/report-sheet.tsx). The two sheets are the same
            control reached from the same tab, and they were naming the same three
@@ -966,13 +969,23 @@
            "Incident" against "Report an Incident". Each option is an ACTION, so
            it starts with the verb. -->
       <a class="rs-opt" href="observe.html?intent=observe">${ic('<circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/>')}
-        <span><strong>Report a Result</strong><small>Photograph result sheet at your unit</small></span></a>
+        <span><strong data-i18n="common.report-a-result">Report a Result</strong><small data-i18n="nav.photograph-result-sheet-at-your-unit">Photograph result sheet at your unit</small></span></a>
       <a class="rs-opt" href="incidents.html">${ic('<path d="M12 3 2.5 20h19z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.5"/>')}
-        <span><strong>Report an Incident</strong><small>Photo or video of what you witnessed</small></span></a>
+        <span><strong data-i18n="common.report-an-incident">Report an Incident</strong><small data-i18n="nav.photo-or-video-of-what-you-witnessed">Photo or video of what you witnessed</small></span></a>
       <a class="rs-opt" href="collation.html">${ic('<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>')}
-        <span><strong>Report a Collation</strong><small>Ward or LGA collation announcement</small></span></a>
+        <span><strong data-i18n="nav.report-a-collation">Report a Collation</strong><small data-i18n="nav.ward-or-lga-collation-announcement">Ward or LGA collation announcement</small></span></a>
     </div>`;
     document.body.appendChild(sheet);
+
+    /* The tab bar and the report sheet are built HERE, after i18n.js has very
+       likely already run its own DOM pass — so nothing would translate them
+       unless we ask. Idempotent: applying twice writes the same text, and
+       applying with no dictionary loaded is a no-op that leaves the English
+       above in place. Re-run on a language change, since these nodes outlive it. */
+    const i18nShell = () => window.HawkeyeI18n && window.HawkeyeI18n.apply(document);
+    i18nShell();
+    document.addEventListener('hawkeye-lang', i18nShell);
+
     const openSheet = (o) => { sheet.hidden = !o; document.body.style.overflow = o ? 'hidden' : ''; };
     nav.querySelector('[data-report]').addEventListener('click', (e) => { e.preventDefault(); openSheet(true); });
     sheet.querySelector('.rs-backdrop').addEventListener('click', () => openSheet(false));
@@ -1292,7 +1305,25 @@
      * whether the bar is on screen rather than assuming it -- which also, for
      * free, keeps the tour off desktop widths, where the bar is display:none.
      */
-    if (page === 'index.html' && tourGap() > 0 && !tourSeen()) openTour();
+    /* ONE ONBOARDING MODAL AT A TIME. The language prompt (lang.js) is eligible
+       at exactly this moment too, and it rendered ON TOP of the tour and ate
+       every click meant for it — tests/tour_test.mjs could not press Next.
+       Language wins the race on purpose: a five-card tour in a language the
+       reader does not use is worth nothing, and answering the question first is
+       what makes the tour legible. `hawkeye-lang-prompt-done` fires however
+       that question resolves, including "never asked". The timeout is the
+       backstop for lang.js being absent, blocked or broken — a missing event
+       must not cost every new observer the tour. */
+    if (page === 'index.html' && tourGap() > 0 && !tourSeen()) {
+      if (window.HawkeyeLang && window.HawkeyeLang.willPrompt && window.HawkeyeLang.willPrompt()) {
+        let started = false;
+        const start = () => { if (!started && !tourSeen()) { started = true; openTour(); } };
+        document.addEventListener('hawkeye-lang-prompt-done', start, { once: true });
+        setTimeout(start, 12000);
+      } else {
+        openTour();
+      }
+    }
   }
 
   // Mascot trial: swap the emoji crest for the hawk mark on every page from

@@ -97,6 +97,12 @@ audits/*/party_targets.json
 audits/*/row_integrity.json
 audits/*/labelled_20.json
 
+# Safety copies taken before a re-run. rerun_verify.mjs --in-place has clobbered
+# a live audit once, so taking one is the rule — but a stale duplicate of
+# findings.json sitting in the repo next to the real one is worse than no
+# backup at all, because a reader cannot tell which is the deliverable.
+audits/_backup_*/
+
 # Rented-GPU pod connection details. Holds the pod's Jupyter access token, which
 # is not an account credential but is still a live key to a running machine, and
 # this repo is public.

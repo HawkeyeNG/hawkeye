@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=170" />
+  <link rel="stylesheet" href="styles.css?v=174" />
   <style>
     /* The step-5 facts block. Page-local on purpose — styles.css is pinned by
        every page in the app, so a shared rule for one card would mean bumping
@@ -19,7 +19,7 @@
     .submit-facts strong { display: block; font-size: 0.95rem; }
     .submit-facts small { display: block; color: var(--muted); font-size: 0.78rem; }
     .submit-facts .sf-race { display: block; margin-top: 4px; font-size: 0.78rem; font-weight: 700; color: var(--link); }
-    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=170, so
+    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=174, so
        putting three rules in the shared sheet would mean bumping and
        redeploying all forty to defeat the HTTP cache — a large blast radius
        for CSS only this page uses. Move it into styles.css whenever that file
@@ -146,28 +146,28 @@
         <span class="crest" aria-hidden="true">🦅</span>
         <div class="brand-text">
           <strong>HAWKEYE</strong>
-          <span>Independent Election Results Monitor</span>
+          <span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span>
         </div>
       </a>
-      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
         onclick="const m=document.getElementById(&quot;menu-panel&quot;);const open=m.hidden;m.hidden=!open;this.setAttribute(&quot;aria-expanded&quot;,String(open));">&#9776;</button>
       <nav id="menu-panel" class="menu-panel" hidden>
-        <a href="observe.html">Report a Result</a>
-        <a href="collation.html">Report a Collation Result</a>
-        <a href="results.html">Leaderboard</a>
-        <a href="dashboard.html">Public Reports Log</a>
-        <a href="ledger.html">Verify the Ledger</a>
-        <a href="integrity.html">Election Integrity</a>
-        <a href="docket.html">Public Docket</a>
-        <a href="map-unit.html">Map a Polling Unit</a>
-        <a href="incidents.html">Report an Incident</a>
-        <a href="candidates.html">2027 Candidates</a>
-        <a href="political.html">Political Data</a>
-        <a href="how.html">How Hawkeye Works</a>
-        <a href="guide.html">Observer Guide</a>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
         <a href="faq.html">FAQ</a>
-        <a href="about.html">About & Contact</a>
-        <a href="privacy.html">Privacy & Data</a>
+        <a data-i18n="common.about-contact" href="about.html">About & Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy & Data</a>
       </nav>
     </div>
   </header>
@@ -182,8 +182,8 @@
       <div class="auth-top">
         <span class="auth-brand"><img src="logo-crest.svg?v=98" alt="" width="26" height="26" />HAWKEYE</span>
       </div>
-      <h1 id="register-title">Verify Your Phone</h1>
-      <p class="lede" id="register-lede">One number, one observer. Your number is never published.</p>
+      <h1 data-i18n="observe.verify-your-phone" id="register-title">Verify Your Phone</h1>
+      <p data-i18n="observe.one-number-one-observer-your-number" class="lede" id="register-lede">One number, one observer. Your number is never published.</p>
       <!-- Practice: a proper card instead of a tinted sentence. Hidden in
            sign-in mode (returning observers don't need it). -->
       <a class="starter-card" id="starter-card" href="practice.html">
@@ -193,8 +193,8 @@
           </svg>
         </span>
         <span class="sc-text">
-          <strong>New to Hawkeye?</strong>
-          <small>Run a practice election first — no sign-up, and nothing you enter is published.</small>
+          <strong data-i18n="observe.new-to-hawkeye">New to Hawkeye?</strong>
+          <small data-i18n="observe.run-a-practice-election-first-no">Run a practice election first — no sign-up, and nothing you enter is published.</small>
         </span>
         <span class="sc-go" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
@@ -204,18 +204,18 @@
         <!-- app.js retitles this to "Enter OTP" once a code is in flight: the
              field itself switches from a phone number to the code, so a label
              still reading "Nigerian mobile number" describes the wrong input. -->
-        <label for="auth-input" id="auth-input-label">Nigerian Mobile Number</label>
+        <label data-i18n="observe.nigerian-mobile-number" for="auth-input" id="auth-input-label">Nigerian Mobile Number</label>
         <input id="auth-input" type="tel" inputmode="tel" placeholder="e.g. 0803 123 4567" autocomplete="tel" />
         <p id="otp-phone" class="hint" hidden></p>
         <fieldset id="channel-pick" style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:10px 0">
-          <legend style="font-size:.85rem;font-weight:700;padding:0 6px">Get Your Code By</legend>
+          <legend data-i18n="observe.get-your-code-by" style="font-size:.85rem;font-weight:700;padding:0 6px">Get Your Code By</legend>
           <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
             <input type="radio" name="otp-channel" value="telegram" style="width:auto;margin:0" />
-            <span>Telegram</span>
+            <span data-i18n="observe.telegram">Telegram</span>
           </label>
           <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
             <input type="radio" name="otp-channel" value="whatsapp" style="width:auto;margin:0" />
-            <span>WhatsApp</span>
+            <span data-i18n="observe.whatsapp">WhatsApp</span>
           </label>
           <!-- SMS is offered only when the SERVER says it can deliver it.
                Nigerian carriers drop SMS from unapproved sender IDs, so for
@@ -229,12 +229,12 @@
           <label id="otp-sms-opt" hidden
                  style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
             <input type="radio" name="otp-channel" value="sms" style="width:auto;margin:0" />
-            <span>SMS</span>
+            <span data-i18n="observe.sms">SMS</span>
           </label>
         </fieldset>
         <div id="pw-signin-wrap" hidden>
-          <label for="pw-signin-input">Password</label>
-          <input id="pw-signin-input" type="password" placeholder="Your password" autocomplete="current-password" />
+          <label data-i18n="common.password" for="pw-signin-input">Password</label>
+          <input data-i18n-attr="placeholder:observe.your-password" id="pw-signin-input" type="password" placeholder="Your password" autocomplete="current-password" />
         </div>
         <p id="otp-hint" class="hint"></p>
         <!-- Sign-up only (app.js reveals it): a first-time observer has no
@@ -248,28 +248,28 @@
           <!-- The length rule lives in the PLACEHOLDER and in the error you get
                for breaking it — not as a permanent parenthetical beside every
                password field on every page. -->
-          <label for="pw-opt-input">Create a Password</label>
-          <input id="pw-opt-input" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+          <label data-i18n="observe.create-a-password" for="pw-opt-input">Create a Password</label>
+          <input data-i18n-attr="placeholder:common.at-least-8-characters" id="pw-opt-input" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
         </div>
         <button id="btn-auth" disabled>Request OTP</button>
         <!-- Sign-up mode: the only link that makes sense under "Request OTP" is
              the way OVER to sign-in — someone signing up for the first time
              cannot already have a password. -->
         <p class="hint auth-alt" id="signin-line">Have an account?
-          <a href="observe.html?intent=signin">Sign In</a></p>
+          <a data-i18n="observe.sign-in" href="observe.html?intent=signin">Sign In</a></p>
         <!-- Sign-in mode only (?intent=signin): OTP is always the recovery path
              when the password is forgotten, so it stays one tap away in place. -->
-        <p class="hint auth-alt"><a id="pw-link" href="#" hidden>Sign in with a one-time code instead</a></p>
+        <p class="hint auth-alt"><a data-i18n="observe.sign-in-with-a-one-time" id="pw-link" href="#" hidden>Sign in with a one-time code instead</a></p>
         <!-- Sign-in mode only: sends new users into the normal OTP registration
              instead of leaving them stuck on a password field for an account
              they don't have yet. -->
         <p class="hint auth-alt" id="signup-line" hidden>Don't have an account?
-          <a href="observe.html?intent=observe">Sign Up</a></p>
+          <a data-i18n="observe.sign-up" href="observe.html?intent=observe">Sign Up</a></p>
         <!-- Practice link for BOTH modes: sign-up shows the big starter-card above;
              sign-in (where that card is hidden) gets this lighter link instead. -->
-        <p class="hint auth-alt" id="practice-line" hidden><a href="practice.html">Try a practice run first — no sign-up needed</a></p>
-        <p class="hint"><a id="otp-resend" href="#" hidden>Resend Code</a></p>
-        <p class="hint"><a id="auth-reset" href="#" hidden>← Use a Different Number</a></p>
+        <p class="hint auth-alt" id="practice-line" hidden><a data-i18n="observe.try-a-practice-run-first-no" href="practice.html">Try a practice run first — no sign-up needed</a></p>
+        <p class="hint"><a data-i18n="observe.resend-code" id="otp-resend" href="#" hidden>Resend Code</a></p>
+        <p class="hint"><a data-i18n="observe.use-a-different-number" id="auth-reset" href="#" hidden>← Use a Different Number</a></p>
       </div>
     </section>
 
@@ -307,30 +307,30 @@
              location-stamped") is enforced by the product, not by telling
              people about it — the camera never offers a gallery and the stamps
              happen at the shutter either way. Not worth an ⓘ. -->
-        <p class="hint">Take photos while standing at Unit.</p>
+        <p data-i18n="observe.take-photos-while-standing-at-unit" class="hint">Take photos while standing at Unit.</p>
 
         <div class="capture-slot" id="slot-sheet">
           <div class="slot-head">
             <div>
-              <strong>Results sheet (EC8A)</strong>
-              <small>The official announced results form</small>
+              <strong data-i18n="observe.results-sheet-ec8a">Results sheet (EC8A)</strong>
+              <small data-i18n="observe.the-official-announced-results-form">The official announced results form</small>
             </div>
-            <span class="slot-status" id="status-sheet">Required</span>
+            <span data-i18n="common.required" class="slot-status" id="status-sheet">Required</span>
           </div>
           <img id="preview-sheet" alt="Results sheet preview" hidden />
-          <button id="btn-cam-sheet" class="secondary">Take photo</button>
+          <button data-i18n="common.take-photo" id="btn-cam-sheet" class="secondary">Take photo</button>
         </div>
 
         <div class="capture-slot" id="slot-venue">
           <div class="slot-head">
             <div>
-              <strong>Polling venue</strong>
-              <small>The building, booth or surroundings of this unit</small>
+              <strong data-i18n="observe.polling-venue">Polling venue</strong>
+              <small data-i18n="observe.the-building-booth-or-surroundings-of">The building, booth or surroundings of this unit</small>
             </div>
-            <span class="slot-status" id="status-venue">Required</span>
+            <span data-i18n="common.required" class="slot-status" id="status-venue">Required</span>
           </div>
           <img id="preview-venue" alt="Polling venue preview" hidden />
-          <button id="btn-cam-venue" class="secondary">Take photo</button>
+          <button data-i18n="common.take-photo" id="btn-cam-venue" class="secondary">Take photo</button>
         </div>
       </details>
 
@@ -347,7 +347,7 @@
           <h2 style="display:inline-block;margin:0"><span class="step-no">2</span> Which polling unit?</h2>
           <span id="unit-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
-        <button id="btn-locate">Find polling units near me</button>
+        <button data-i18n="observe.find-polling-units-near-me" id="btn-locate">Find polling units near me</button>
         <p id="locate-status" class="status" role="status"></p>
         <!-- What the SHEET said about its own unit (Tier A). Its own container,
              because btn-locate clears #pu-list on every search and would
@@ -359,13 +359,13 @@
              serve it. Populated by pu-search.js. -->
         <div id="pu-search-host"></div>
         <details id="browse-block">
-          <summary>Can't see your unit? Browse the register</summary>
-          <label for="sel-state">State</label>
-          <select id="sel-state"><option value="">— select —</option></select>
-          <label for="sel-lga">Local Government Area</label>
-          <select id="sel-lga" disabled><option value="">— select —</option></select>
-          <label for="sel-ward">Ward</label>
-          <select id="sel-ward" disabled><option value="">— select —</option></select>
+          <summary data-i18n="observe.can-t-see-your-unit-browse">Can't see your unit? Browse the register</summary>
+          <label data-i18n="common.state" for="sel-state">State</label>
+          <select id="sel-state"><option data-i18n="common.select" value="">— select —</option></select>
+          <label data-i18n="common.local-government-area" for="sel-lga">Local Government Area</label>
+          <select id="sel-lga" disabled><option data-i18n="common.select" value="">— select —</option></select>
+          <label data-i18n="common.ward" for="sel-ward">Ward</label>
+          <select id="sel-ward" disabled><option data-i18n="common.select" value="">— select —</option></select>
           <div id="register-units" class="option-list"></div>
         </details>
       </details>
@@ -377,7 +377,7 @@
         </summary>
         <select id="sel-contest"></select>
         <p id="contest-scope" class="scope-note"></p>
-        <p class="hint">One report per election — each needs photos of its own results sheet.</p>
+        <p data-i18n="observe.one-report-per-election-each-needs" class="hint">One report per election — each needs photos of its own results sheet.</p>
       </details>
 
       <details class="card step-card" id="counts-fold" data-step="4">
@@ -394,20 +394,20 @@
              native/src/components/sheet-reference.tsx. -->
         <button type="button" id="counts-sheet" class="sheet-ref" hidden>
           <img id="counts-sheet-img" alt="Your photo of the result sheet" />
-          <span>Your result sheet — tap to enlarge and read the figures off it.</span>
+          <span data-i18n="observe.your-result-sheet-tap-to-enlarge">Your result sheet — tap to enlarge and read the figures off it.</span>
         </button>
         <!-- ~20 parties, three-line names: the list is taller than the screen and
              finding one meant scrolling past all of it. Native has had this
              filter; web/Capacitor did not. -->
-        <input id="vote-filter" type="search" autocomplete="off" placeholder="Filter parties — name or code"
+        <input data-i18n-attr="placeholder:common.filter-parties-name-or-code" id="vote-filter" type="search" autocomplete="off" placeholder="Filter parties — name or code"
                aria-label="Filter parties by name or code" style="margin-bottom:8px" />
         <div id="vote-inputs"></div>
-        <label for="sheet-serial">EC8A form serial number <small>(optional — printed on the sheet)</small></label>
+        <label for="sheet-serial">EC8A form serial number <small data-i18n="observe.optional-printed-on-the-sheet">(optional — printed on the sheet)</small></label>
         <input id="sheet-serial" type="text" inputmode="text" placeholder="e.g. 0451233" autocomplete="off" />
         <!-- Counts have no natural confirmer the way a picker does — typing a
              number is not a decision. This button is it, and it is also the
              moment to look again at figures the OCR proposed. -->
-        <button id="btn-verify-counts" class="secondary" style="margin-top:12px">Verify counts</button>
+        <button data-i18n="observe.verify-counts" id="btn-verify-counts" class="secondary" style="margin-top:12px">Verify counts</button>
       </details>
 
       <div class="card">
@@ -420,10 +420,10 @@
              Filled by paintSubmitFacts() in app.js; hidden until there is
              something to say. -->
         <div id="submit-facts" class="submit-facts" hidden></div>
-        <p class="hint">Signed on this device and written to the public tamper-evident
+        <p data-i18n="observe.signed-on-this-device-and-written" class="hint">Signed on this device and written to the public tamper-evident
         ledger — it cannot be edited or withdrawn. Its fingerprint is published to the
         public Rekor transparency log in the next daily anchor.</p>
-        <button id="btn-submit" disabled>Sign &amp; submit report</button>
+        <button data-i18n="observe.sign-submit-report" id="btn-submit" disabled>Sign &amp; submit report</button>
         <p id="submit-status" class="status" role="status"></p>
       </div>
     </section>
@@ -431,28 +431,28 @@
     <!-- 4. Result -->
     <section id="screen-result" hidden>
       <div class="confirm-panel">
-        <h1>Report Recorded</h1>
-        <p>Your report is on the public tamper-evident ledger now — it cannot be edited or withdrawn. Its fingerprint is published to the public Rekor transparency log in the next daily anchor.</p>
+        <h1 data-i18n="observe.report-recorded">Report Recorded</h1>
+        <p data-i18n="observe.your-report-is-on-the-public">Your report is on the public tamper-evident ledger now — it cannot be edited or withdrawn. Its fingerprint is published to the public Rekor transparency log in the next daily anchor.</p>
       </div>
       <div class="card" id="result-summary"></div>
       <p class="hint">Ledger entry: <code id="entry-hash"></code></p>
-      <a class="link" href="dashboard.html">View the Public Dashboard →</a><br /><br />
-      <button id="btn-another" class="secondary">Report another unit</button>
+      <a data-i18n="observe.view-the-public-dashboard" class="link" href="dashboard.html">View the Public Dashboard →</a><br /><br />
+      <button data-i18n="observe.report-another-unit" id="btn-another" class="secondary">Report another unit</button>
     </section>
   </main>
 
   <!-- The sheet, full screen. Outside <main> so it can sit over everything, and
        inert until the reference button above opens it. -->
   <div id="sheet-zoom" hidden>
-    <button type="button" class="zoom-x" id="sheet-zoom-x" aria-label="Close the sheet">&times;</button>
+    <button data-i18n-attr="aria-label:observe.close-the-sheet" type="button" class="zoom-x" id="sheet-zoom-x" aria-label="Close the sheet">&times;</button>
     <img id="sheet-zoom-img" alt="Your photo of the result sheet" />
-    <p class="zoom-tip">Pinch or tap the sheet to zoom · drag to move</p>
+    <p data-i18n="observe.pinch-or-tap-the-sheet-to" class="zoom-tip">Pinch or tap the sheet to zoom · drag to move</p>
   </div>
 
   <!-- Camera: opens only when a "Take photo" button is pressed -->
   <div id="camera-overlay" hidden>
     <div class="camera-frame">
-      <p id="camera-title">Results sheet (EC8A)</p>
+      <p data-i18n="observe.results-sheet-ec8a" id="camera-title">Results sheet (EC8A)</p>
       <p id="camera-guide" hidden></p>
       <div class="video-wrap">
         <video id="video" playsinline></video>
@@ -460,8 +460,8 @@
       </div>
       <p id="scan-hint" hidden></p>
       <div class="camera-actions">
-        <button id="btn-cancel-camera" class="secondary">Cancel</button>
-        <button id="btn-capture">Capture</button>
+        <button data-i18n="common.cancel" id="btn-cancel-camera" class="secondary">Cancel</button>
+        <button data-i18n="common.capture" id="btn-capture">Capture</button>
       </div>
     </div>
   </div>
@@ -469,16 +469,16 @@
   <footer class="gov-footer">
     <div class="wrap">
       <nav>
-        <a href="observe.html">Report a result</a>
-        <a href="results.html">Public results</a>
-        <a href="dashboard.html">Public Reports Log</a>
-        <a href="ledger.html">Verify the Ledger</a>
-        <a href="political.html">Political data</a>
+        <a data-i18n="observe.report-a-result" href="observe.html">Report a result</a>
+        <a data-i18n="observe.public-results" href="results.html">Public results</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="observe.political-data" href="political.html">Political data</a>
       </nav>
-      <p>Hawkeye is an independent transparency initiative. It does not declare election
+      <p data-i18n="common.hawkeye-is-an-independent-transparency-initiative">Hawkeye is an independent transparency initiative. It does not declare election
       results; all official results are announced by the Independent National
       Electoral Commission (INEC).</p>
-    <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+    <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
     </div>
   </footer>
 
@@ -501,6 +501,8 @@
   <script src="geo-msg.js?v=1"></script>
   <script src="app.js?v=157" defer></script>
   <script src="tg.js?v=95" defer></script>
-  <script src="menu.js?v=164" defer></script>
+  <script src="/i18n.js?v=2"></script>
+  <script src="/lang.js?v=2"></script>
+  <script src="menu.js?v=165" defer></script>
 </body>
 </html>

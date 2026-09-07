@@ -56,6 +56,11 @@ async function shell({ seen = false } = {}) {
       localStorage.setItem('hawkeye_token', o.token);
       if (o.seen) localStorage.setItem('hawkeye_tour_seen', '1');
       else localStorage.removeItem('hawkeye_tour_seen');
+      /* The language prompt (app/lang.js) is the other one-time surface and it
+         deliberately opens BEFORE the tour, so an unanswered language question
+         would hold the tour shut and every assertion here would be about the
+         wrong modal. The handover is asserted in tests/tour_test.mjs. */
+      localStorage.setItem('hawkeye_lang_prompted', '1');
     } catch (e) { /* ignore */ }
   }, { token: JWT(), seen });
   const p = await ctx.newPage();

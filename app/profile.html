@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=170" />
+  <link rel="stylesheet" href="styles.css?v=174" />
   <script src="native.js?v=114"></script>
   <style>
     .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
@@ -120,34 +120,34 @@
   <header class="gov-header">
     <div class="wrap brand-row">
       <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
-        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
-      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
         onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
       <nav id="menu-panel" class="menu-panel" hidden>
-        <a href="observe.html">Report a Result</a>
-        <a href="collation.html">Report a Collation Result</a>
-        <a href="results.html">Leaderboard</a>
-        <a href="dashboard.html">Public Reports Log</a>
-        <a href="ledger.html">Verify the Ledger</a>
-        <a href="integrity.html">Election Integrity</a>
-        <a href="docket.html">Public Docket</a>
-        <a href="map-unit.html">Map a Polling Unit</a>
-        <a href="incidents.html">Report an Incident</a>
-        <a href="candidates.html">2027 Candidates</a>
-        <a href="political.html">Political Data</a>
-        <a href="how.html">How Hawkeye Works</a>
-        <a href="guide.html">Observer Guide</a>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
         <a href="faq.html">FAQ</a>
-        <a href="about.html">About & Contact</a>
-        <a href="privacy.html">Privacy & Data</a>
+        <a data-i18n="common.about-contact" href="about.html">About & Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy & Data</a>
       </nav>
     </div>
   </header>
 
   <main class="wrap">
-    <h1>My Profile</h1>
+    <h1 data-i18n="profile.my-profile">My Profile</h1>
     <div id="signed-out" hidden>
-      <p class="empty">You're not signed in. <a href="observe.html">Sign in or register</a> to see your profile.</p>
+      <p class="empty">You're not signed in. <a data-i18n="profile.sign-in-or-register" href="observe.html">Sign in or register</a> to see your profile.</p>
     </div>
     <div id="profile" hidden>
 
@@ -156,13 +156,13 @@
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>
         </div>
         <div class="phero-body">
-          <strong id="p-id">Observer</strong>
+          <strong data-i18n="profile.observer" id="p-id">Observer</strong>
           <span id="p-since"></span>
         </div>
-        <button class="phero-copy" id="btn-copy">Copy ID</button>
+        <button data-i18n="profile.copy-id" class="phero-copy" id="btn-copy">Copy ID</button>
       </div>
-      <details class="fold"><summary>Your Identity Hash</summary>
-        <p>Your public identity on the ledger — your phone number is never stored.</p>
+      <details class="fold"><summary data-i18n="profile.your-identity-hash">Your Identity Hash</summary>
+        <p data-i18n="profile.your-public-identity-on-the-ledger">Your public identity on the ledger — your phone number is never stored.</p>
         <div class="hashbox" id="p-hash"></div></details>
 
       <!-- Password: one line + one button; the form itself lives in a modal
@@ -174,16 +174,25 @@
            The row states the setting and its current value and opens the thing
            that changes it; the advice moved into those modals, where it is read
            when it applies rather than on every visit. -->
-      <h2 class="sec-label">Account</h2>
+      <h2 data-i18n="profile.account" class="sec-label">Account</h2>
       <div class="pcard prows">
         <button type="button" class="prow" id="btn-pw-open">
-          <span class="prow-k">Password</span>
-          <span class="prow-v" id="pw-state">Change</span>
+          <span data-i18n="common.password" class="prow-k">Password</span>
+          <span data-i18n="profile.change" class="prow-v" id="pw-state">Change</span>
           <span class="prow-c" aria-hidden="true">›</span>
         </button>
         <button type="button" class="prow" id="btn-pick-unit">
-          <span class="prow-k prow-stack">My polling unit</span>
-          <span class="prow-v" id="p-unit">None saved</span>
+          <span data-i18n="profile.my-polling-unit" class="prow-k prow-stack">My polling unit</span>
+          <span data-i18n="profile.none-saved" class="prow-v" id="p-unit">None saved</span>
+          <span class="prow-c" aria-hidden="true">›</span>
+        </button>
+
+        <!-- LANGUAGE. Sits with the other account choices rather than in
+             Settings, because for most observers it is a one-time decision made
+             once and then forgotten, exactly like the polling unit above. -->
+        <button type="button" class="prow" id="btn-lang">
+          <span class="prow-k prow-stack" data-i18n="profile.language">Language</span>
+          <span class="prow-v" id="p-lang">English</span>
           <span class="prow-c" aria-hidden="true">›</span>
         </button>
         <!-- PUSH STATUS, in the app only.
@@ -194,7 +203,7 @@
              that question about itself. Tapping it retries registration, which
              is also the fix when someone signed in AFTER launch. -->
         <button type="button" class="prow" id="btn-push-state" hidden>
-          <span class="prow-k prow-stack">Notifications</span>
+          <span data-i18n="profile.notifications" class="prow-k prow-stack">Notifications</span>
           <span class="prow-v" id="push-state">Checking…<small id="push-detail"></small></span>
           <span class="prow-c" aria-hidden="true">›</span>
         </button>
@@ -206,43 +215,43 @@
            mounted lazily on first open because it warms a register pack. -->
       <div id="unit-modal" class="pw-modal-back" hidden>
         <div class="pw-modal" role="dialog" aria-modal="true" aria-labelledby="unit-modal-title">
-          <h2 id="unit-modal-title" style="margin-top:0">Choose your polling unit</h2>
+          <h2 data-i18n="profile.choose-your-polling-unit" id="unit-modal-title" style="margin-top:0">Choose your polling unit</h2>
           <div class="pw-body">
-          <p class="hint" style="margin-top:0">This is the unit you'll get alerts about.
+          <p data-i18n="profile.this-is-the-unit-you-ll" class="hint" style="margin-top:0">This is the unit you'll get alerts about.
             You don't need to be there now.</p>
           <!-- The confirmed choice. Empty until something is picked; tapping it
                clears the pick and hands the pickers back. -->
           <button type="button" id="unit-picked" class="unit-picked" hidden></button>
           <!-- GPS first: the search below answers "I know the name", this answers
                "I am standing near it", and the second is one tap. -->
-          <button id="btn-unit-near" class="secondary" style="width:auto">📍 Find units near me</button>
+          <button data-i18n="profile.find-units-near-me" id="btn-unit-near" class="secondary" style="width:auto">📍 Find units near me</button>
           <p class="hint" id="unit-near-status" role="status" aria-live="polite"></p>
           <div id="unit-near-results"></div>
           <div id="unit-search-host"></div>
           <p class="hint" id="unit-msg" role="status" aria-live="polite"></p>
           </div>
           <div class="pw-actions" style="display:flex;gap:10px;justify-content:flex-end">
-            <button id="btn-unit-cancel" class="secondary" style="width:auto">Cancel</button>
-            <button id="btn-unit-save" style="width:auto" disabled>Save this unit</button>
+            <button data-i18n="common.cancel" id="btn-unit-cancel" class="secondary" style="width:auto">Cancel</button>
+            <button data-i18n="profile.save-this-unit" id="btn-unit-save" style="width:auto" disabled>Save this unit</button>
           </div>
         </div>
       </div>
 
       <div id="pw-modal" class="pw-modal-back" hidden>
         <div class="pw-modal" role="dialog" aria-modal="true" aria-labelledby="pw-modal-title">
-          <h2 id="pw-modal-title" style="margin-top:0">Set password</h2>
+          <h2 data-i18n="profile.set-password" id="pw-modal-title" style="margin-top:0">Set password</h2>
           <div id="pw-current-wrap" hidden>
-            <label for="pw-current">Current Password</label>
+            <label data-i18n="profile.current-password" for="pw-current">Current Password</label>
             <input id="pw-current" type="password" autocomplete="current-password" />
           </div>
-          <label for="pw-new">New Password</label>
-          <input id="pw-new" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
-          <label for="pw-new2">Confirm New Password</label>
+          <label data-i18n="profile.new-password" for="pw-new">New Password</label>
+          <input data-i18n-attr="placeholder:common.at-least-8-characters" id="pw-new" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+          <label data-i18n="profile.confirm-new-password" for="pw-new2">Confirm New Password</label>
           <input id="pw-new2" type="password" autocomplete="new-password" />
           <p class="hint" id="pw-msg"></p>
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
-            <button id="btn-pw-cancel" class="secondary" style="width:auto">Cancel</button>
-            <button id="btn-pw" style="width:auto">Save</button>
+            <button data-i18n="common.cancel" id="btn-pw-cancel" class="secondary" style="width:auto">Cancel</button>
+            <button data-i18n="profile.save" id="btn-pw" style="width:auto">Save</button>
           </div>
         </div>
       </div>
@@ -259,11 +268,11 @@
       </div>
 
       <div class="pcard">
-        <h2>Races you follow</h2>
-        <div id="p-subs" class="empty">None yet — follow a race from the <a href="results.html">leaderboard</a>.</div>
+        <h2 data-i18n="profile.races-you-follow">Races you follow</h2>
+        <div id="p-subs" class="empty">None yet — follow a race from the <a data-i18n="profile.leaderboard" href="results.html">leaderboard</a>.</div>
       </div>
 
-      <h2 class="sec-label" style="margin-top:18px">My activity</h2>
+      <h2 data-i18n="profile.my-activity" class="sec-label" style="margin-top:18px">My activity</h2>
       <details class="fold"><summary>Result Reports <span class="cnt" id="cnt-reports">0</span></summary>
         <div id="p-reports" class="empty">No result reports yet.</div></details>
       <details class="fold"><summary>Collation Reports <span class="cnt" id="cnt-collation">0</span></summary>
@@ -283,18 +292,18 @@
            it fails to, this opens the download page, which carries the same
            store badges and its own share button. The handler upgrades it to the
            phone's own share sheet. -->
-      <h2 class="sec-label" style="margin-top:18px">Find Hawkeye</h2>
+      <h2 data-i18n="profile.find-hawkeye" class="sec-label" style="margin-top:18px">Find Hawkeye</h2>
       <div class="pcard prows">
         <a class="prow" href="download.html" data-share>
-          <span class="prow-k">Share Hawkeye</span>
-          <span class="prow-v">Send the app to someone</span>
+          <span data-i18n="profile.share-hawkeye" class="prow-k">Share Hawkeye</span>
+          <span data-i18n="profile.send-the-app-to-someone" class="prow-v">Send the app to someone</span>
           <span class="prow-c" aria-hidden="true">›</span>
         </a>
       </div>
 
       <div class="pcard">
-        <h2>Session</h2>
-        <button class="secondary signout" id="btn-signout">Sign out on this device</button>
+        <h2 data-i18n="profile.session">Session</h2>
+        <button data-i18n="profile.sign-out-on-this-device" class="secondary signout" id="btn-signout">Sign out on this device</button>
       </div>
 
       <div class="pcard danger">
@@ -304,9 +313,9 @@
              the word never matched "identity", which is what Hawkeye calls an
              observer's account everywhere else. The concept keeps its name in the
              hint below; the CONTROL says what a reader — or a reviewer — expects. -->
-        <h2>Delete account</h2>
-        <p class="hint">Deletes your observer identity: your key, device link, Telegram link and subscriptions are wiped. Reports already on the public ledger are permanent and stay; re-registering the same phone restores the same ID.</p>
-        <button id="btn-delete">Delete my account</button>
+        <h2 data-i18n="profile.delete-account">Delete account</h2>
+        <p data-i18n="profile.deletes-your-observer-identity-your-key" class="hint">Deletes your observer identity: your key, device link, Telegram link and subscriptions are wiped. Reports already on the public ledger are permanent and stay; re-registering the same phone restores the same ID.</p>
+        <button data-i18n="profile.delete-my-account" id="btn-delete">Delete my account</button>
       </div>
 
     </div>
@@ -635,6 +644,8 @@
   <script src="pu-search.js?v=6"></script>
   <script src="device.js"></script>
   <script src="share.js?v=3"></script>
-  <script src="menu.js?v=164"></script>
+  <script src="/i18n.js?v=2"></script>
+  <script src="/lang.js?v=2"></script>
+  <script src="menu.js?v=165"></script>
 </body>
 </html>

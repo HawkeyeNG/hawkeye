@@ -62,6 +62,15 @@ export type TourStep = {
   icon: string;
   title: string;
   body: string;
+  /* Resolved during render in components/tour.tsx, NOT here: TOUR_STEPS is a
+     module-level const, evaluated once at import and long before AsyncStorage
+     has returned the stored language, so a translated string baked in here would
+     freeze in whatever was current then. The English stays because
+     tests/tour_test.mjs parses this file and diffs it against what app/menu.js
+     renders — the two clients cannot drift apart silently, and the web carries
+     the same five cards under these very keys. */
+  titleKey: string;
+  bodyKey: string;
   /**
    * WHICH TAB THIS STEP IS ABOUT. The tour describes the bar the reader is
    * looking at, so while a step is open its tab is lit up down there — a
@@ -92,6 +101,8 @@ export const TOUR_STEPS: TourStep[] = [
     icon: 'home',
     route: 'index',
     title: 'Home',
+    titleKey: 'nav.home',
+    bodyKey: 'tour.home.body',
     body:
       'Elections open now, reports accepted so far, and a live feed.',
   },
@@ -99,6 +110,8 @@ export const TOUR_STEPS: TourStep[] = [
     icon: 'bar-chart-2',
     route: 'results',
     title: 'Results',
+    titleKey: 'nav.results',
+    bodyKey: 'tour.results.body',
     body:
       'Pick a race for its map and running tally. Follow one to get alerts.',
   },
@@ -107,6 +120,8 @@ export const TOUR_STEPS: TourStep[] = [
     route: 'report',
     cta: true,
     title: 'Report — the green button',
+    titleKey: 'tour.report.title',
+    bodyKey: 'tour.report.body',
     body:
       'Report a result sheet, a collation result, or an incident. This is what makes you an observer.',
   },
@@ -114,6 +129,8 @@ export const TOUR_STEPS: TourStep[] = [
     icon: 'bell',
     route: 'alerts',
     title: 'Alerts',
+    titleKey: 'nav.alerts',
+    bodyKey: 'tour.alerts.body',
     body:
       'What has happened on the races you follow — reports accepted, units flagged, and anything Hawkeye needs to tell you.',
   },
@@ -121,6 +138,8 @@ export const TOUR_STEPS: TourStep[] = [
     icon: 'menu',
     route: 'more',
     title: 'More',
+    titleKey: 'nav.more',
+    bodyKey: 'tour.more.body',
     body:
       'Practice runs, the ledger, the docket and the guide. Start with Practice Run.',
   },

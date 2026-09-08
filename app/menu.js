@@ -15,6 +15,47 @@
   }
 })();
 
+/**
+ * i18n FOR TEXT menu.js PAINTS ITSELF.
+ *
+ * The page's own markup carries data-i18n and is handled by i18n.js. Everything
+ * menu.js BUILDS — the canonical footer, the injected ☰ links, the header page
+ * name, the tab bar, the modals — has no markup to carry a key, so it has to
+ * ask for one here.
+ *
+ * TWO MECHANISMS, and they are not interchangeable:
+ *
+ * · i18nSet(el, key, english) — for a node menu.js creates SYNCHRONOUSLY. It
+ *   writes the ENGLISH text and the key, then leaves. i18n.js resolves a
+ *   non-English bundle through fetch().then(), i.e. in a later task, so its
+ *   apply() pass still sees the node and honours the attribute; and because
+ *   apply() re-runs on every language change (load() calls it), the node keeps
+ *   following the language for the rest of the session. Writing the TRANSLATED
+ *   text here would be worse than useless: apply() remembers whatever it first
+ *   finds as the element's English, so a pre-translated node can never be
+ *   switched back to English.
+ *
+ * · i18nLate(root) — for a node built AFTER that pass: on a click (the ⓘ modal,
+ *   the disclaimer dialog), or from a fetch callback (the account rows after a
+ *   no-reload sign-in). Those never met apply(), so data-i18n alone is inert on
+ *   them; this sweeps them once, now.
+ *
+ * i18nT(key, english) is the escape hatch for text that is not a node at all —
+ * a string a later handler repaints (the theme row), or one returned to a
+ * caller (timeAgo). Anything using it must also repaint on 'hawkeye-lang', or
+ * it freezes at whatever language was current when it first ran.
+ */
+function i18nT(key, english) {
+  return window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english;
+}
+function i18nSet(el, key, english) {
+  el.setAttribute('data-i18n', key);
+  el.textContent = english;
+}
+function i18nLate(root) {
+  if (window.HawkeyeI18n) window.HawkeyeI18n.apply(root || document);
+}
+
 // Shared header-menu behaviour: close the dropdown when clicking anywhere
 // outside it (the button's own inline onclick still toggles it) and on Escape.
 (function () {
@@ -80,7 +121,7 @@
     if (localStorage.getItem('hawkeye_token')) {
       const pf = document.createElement('a');
       pf.href = 'profile.html';
-      pf.textContent = 'My Profile';
+      i18nSet(pf, 'profile.my-profile', 'My Profile');
       nav.insertBefore(pf, cta || null);
     }
     if (nav.children.length) btn.parentNode.insertBefore(nav, btn);
@@ -129,6 +170,18 @@
   // Trust & verify beside the Docket, distinct from "Report an Incident" (filing,
   // inside the Report accordion). Ask Hawkeye is native-only (no web page yet), so
   // it's the one native entry with no counterpart here.
+  // The group headings are painted from the array below, so the key cannot
+  // live in markup. Keyed by their English label: that label is also the
+  // accordion's localStorage identity ('hk_acc_' + title), which must NOT move
+  // with the language or every reader's open/closed state resets on a switch.
+  const GROUP_KEYS = {
+    'Take part': 'nav.take-part',
+    'Trust & verify': 'nav.trust-verify',
+    'Live data': 'nav.live-data',
+    'Learn & about': 'nav.learn-about',
+    'Find Hawkeye': 'profile.find-hawkeye',
+    Report: 'nav.report',
+  };
   const GROUPS = [
     ['Take part', ['profile.html', { acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'practice.html', 'map-unit.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html', 'incident-reports.html']],
@@ -169,7 +222,7 @@
     if (!panel.querySelector('a[href="races.html"]')) {
       const ra = document.createElement('a');
       ra.href = 'races.html';
-      ra.textContent = 'Races';
+      i18nSet(ra, 'races.races', 'Races');
       panel.appendChild(ra);
     }
     // My Profile leads Take part (mirrors native); injected so it appears on every
@@ -177,7 +230,7 @@
     if (!panel.querySelector('a[href="profile.html"]')) {
       const pf = document.createElement('a');
       pf.href = 'profile.html';
-      pf.textContent = 'My Profile';
+      i18nSet(pf, 'profile.my-profile', 'My Profile');
       panel.appendChild(pf);
     }
     // Support Hawkeye — under Learn & about in native. The page exists (support.html)
@@ -185,14 +238,14 @@
     if (!panel.querySelector('a[href="support.html"]')) {
       const sp = document.createElement('a');
       sp.href = 'support.html';
-      sp.textContent = 'Support Hawkeye';
+      i18nSet(sp, 'support.support-hawkeye', 'Support Hawkeye');
       panel.appendChild(sp);
     }
     // Public incident feed (viewing) — distinct from "Report an Incident" (filing).
     if (!panel.querySelector('a[href="incident-reports.html"]')) {
       const ir = document.createElement('a');
       ir.href = 'incident-reports.html';
-      ir.textContent = 'Incident Reports';
+      i18nSet(ir, 'incident-reports.incident-reports', 'Incident Reports');
       panel.appendChild(ir);
     }
     // Practice run — injected everywhere (like Osun) so new users can find it
@@ -200,7 +253,7 @@
     if (!panel.querySelector('a[href="practice.html"]')) {
       const pr = document.createElement('a');
       pr.href = 'practice.html';
-      pr.textContent = 'Practice Run';
+      i18nSet(pr, 'nav.practice-run', 'Practice Run');
       panel.appendChild(pr);
     }
     /**
@@ -221,7 +274,7 @@
     if (!panel.querySelector('a[href="download.html"]')) {
       var sh = document.createElement('a');
       sh.href = 'download.html';
-      sh.textContent = 'Share Hawkeye';
+      i18nSet(sh, 'profile.share-hawkeye', 'Share Hawkeye');
       sh.setAttribute('data-share', '');
       panel.appendChild(sh);
       // Already loaded (download.html and profile.html carry it): its own sweep
@@ -240,7 +293,7 @@
     if (!panel.querySelector('a[href="terms.html"]')) {
       const tm = document.createElement('a');
       tm.href = 'terms.html';
-      tm.textContent = 'Terms of Service';
+      i18nSet(tm, 'nav.terms-of-service', 'Terms of Service');
       panel.appendChild(tm);
     }
     /**
@@ -265,7 +318,7 @@
     if (isAppShell() && !panel.querySelector('a[href="#tour"]')) {
       const tr = document.createElement('a');
       tr.href = '#tour';
-      tr.textContent = 'Take the tour';
+      i18nSet(tr, 'nav.take-the-tour', 'Take the tour');
       tr.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -280,7 +333,7 @@
     // pages ("Leaderboard" / "Live Results" / "Public Results"). Native calls it
     // just "Leaderboard", so normalise every page's drifted label to that.
     const lb = links.get('results.html');
-    if (lb) lb.textContent = 'Leaderboard';
+    if (lb) i18nSet(lb, 'common.leaderboard', 'Leaderboard');
     /**
      * PRESIDENCY 2027 IS NOT A MENU ENTRY. Native's More screen has no such
      * item, and this menu is a 1:1 mirror of it.
@@ -307,7 +360,8 @@
       head.className = 'menu-acc' + (tp ? ' tp-hide' : '');
       head.setAttribute('role', 'button');
       head.setAttribute('tabindex', '0');
-      head.innerHTML = '<span>' + title + '</span><svg class="mg-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+      const ak = GROUP_KEYS[title];
+      head.innerHTML = '<span' + (ak ? ' data-i18n="' + ak + '"' : '') + '>' + title + '</span><svg class="mg-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
       const body = document.createElement('div');
       body.className = 'mg-body' + (tp ? ' tp-hide' : '');
       for (const a of members) body.appendChild(a);
@@ -335,7 +389,8 @@
       if (!resolved.length) continue;
       const head = document.createElement('div');
       head.className = 'menu-group' + (tp ? ' tp-hide' : '');
-      head.textContent = label;
+      if (GROUP_KEYS[label]) i18nSet(head, GROUP_KEYS[label], label);
+      else head.textContent = label;
       panel.appendChild(head);
       for (const r of resolved) {
         if (r.a) {
@@ -393,6 +448,7 @@
     cb.className = 'theme-btn close-btn';
     cb.type = 'button';
     cb.setAttribute('aria-label', 'Close and go back');
+    cb.setAttribute('data-i18n-attr', 'aria-label:nav.close-and-go-back');
     cb.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     cb.addEventListener('click', () => {
       /* A deep link or a cold start has nothing to go back TO, and history.back()
@@ -432,6 +488,45 @@
   }
 
   /**
+   * Language, immediately left of the theme toggle.
+   *
+   * A CODE, NOT A GLOBE. The header has room for two letters and the reader is
+   * looking for a language they can already name — "HA" answers "what am I in,
+   * and can I change it" in one glance, where a globe icon answers neither. It
+   * doubles as the only place outside Profile that states the current language.
+   *
+   * IT RUNS AFTER THE THEME BLOCK ON PURPOSE, and keys off the toggle it found
+   * rather than repeating that block's four-clause guard. The toggle already
+   * encodes "is this a screen that gets header controls" — website: every page;
+   * app shell: Home only, and never where the close button has taken the slot.
+   * Re-deriving that here would be a second copy of a rule to drift from.
+   *
+   * It also has to run after, not before: the theme block's own guard is
+   * `!document.querySelector('.theme-btn')`, and this button wears that class to
+   * inherit the 36px box. Inserted first, it would have satisfied that guard and
+   * silently suppressed the theme toggle.
+   */
+  const themeToggle = document.querySelector('.theme-btn:not(.close-btn)');
+  if (themeToggle && !document.querySelector('.lang-btn')
+      && window.HawkeyeI18n && window.HawkeyeLang) {
+    const lb = document.createElement('button');
+    // Both classes: .theme-btn for the box, .lang-btn for the text sizing and
+    // the one margin rule that keeps a single flex push in the group.
+    lb.className = 'theme-btn lang-btn';
+    const paintLang = () => {
+      const code = (window.HawkeyeI18n.current || 'en').toUpperCase();
+      lb.textContent = code;
+      lb.setAttribute('aria-label', window.HawkeyeI18n.t('lang.current', 'Language') + ': ' + code);
+    };
+    lb.addEventListener('click', () => window.HawkeyeLang.open());
+    // i18n.js fires this after EVERY dictionary load, not only on an explicit
+    // change — so the code is correct on first paint too, once the bundle lands.
+    document.addEventListener('hawkeye-lang', paintLang);
+    paintLang();
+    themeToggle.parentNode.insertBefore(lb, themeToggle);
+  }
+
+  /**
    * ...AND THE TOGGLE GOES INTO THE MENU, so giving it up in the header costs
    * nothing. Only in the app shell: on the website it is already on every page.
    *
@@ -451,8 +546,13 @@
     row.className = 'menu-theme' + (sample ? ' ' + sample.className : '');
     row.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;font:inherit;color:inherit;';
     const eff = () => document.documentElement.dataset.theme || 'dark';
-    const label = () => (eff() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    const label = () => (eff() === 'dark'
+      ? i18nT('nav.switch-to-light-mode', 'Switch to light mode')
+      : i18nT('nav.switch-to-dark-mode', 'Switch to dark mode'));
     row.textContent = label();
+    // The click handler repaints this row, so a data-i18n attribute would be
+    // wiped by the next toggle. It has to be repainted on a language change too.
+    document.addEventListener('hawkeye-lang', () => { row.textContent = label(); });
     row.addEventListener('click', () => {
       const next = eff() === 'dark' ? 'light' : 'dark';
       document.documentElement.dataset.theme = next;
@@ -563,8 +663,9 @@
     const s = document.createElement('a');
     s.className = 'signin-btn';
     s.href = 'observe.html?intent=signin';   // password-first, lands on the dashboard
-    s.textContent = 'Sign in';
+    i18nSet(s, 'index.sign-in', 'Sign in');
     btn.parentNode.insertBefore(s, slot());
+    i18nLate(s.parentNode);
   }
 
   // The ☰ dropdown's height and the one-screen hero both need REAL measurements,
@@ -759,7 +860,7 @@
      * drawn from an older rejection, and the sources are still one tap away.
      */
     bar.innerHTML = '<strong>Not government or INEC affiliated.</strong> '
-      + '<span class="gov-disc-more" role="button" tabindex="0">Details ›</span>';
+      + '<span class="gov-disc-more" role="button" tabindex="0" data-i18n="common.details">Details ›</span>';
     // On the sign-in / sign-up screen the disclaimer goes BELOW the form: it is a
     // legal footnote, and at the top of a bare auth page it was the first and
     // loudest thing on screen, overshadowing the brand.
@@ -790,8 +891,10 @@
         + '<p class="gov-disc-links"><a href="https://www.inecnigeria.org" target="_blank" rel="noopener">inecnigeria.org</a> '
         + '&middot; <a href="https://www.inecelectionresults.ng" target="_blank" rel="noopener">inecelectionresults.ng</a></p>'
         + '</div>'
-        + '<button type="button" class="gov-disc-close">Close</button>';
+        + '<button type="button" class="gov-disc-close" data-i18n="common.close">Close</button>';
       document.body.appendChild(dlg);
+      // Built on the first Details tap — long after i18n.js's apply() pass.
+      i18nLate(dlg);
       dlg.querySelector('.gov-disc-close').onclick = () => dlg.close();
       dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
     }
@@ -833,13 +936,15 @@
         // screen, or was clipped outright.
         dlg.innerHTML = '<h2 tabindex="-1"></h2>'
           + '<div class="info-body"><p></p><div class="info-links"></div></div>'
-          + '<button type="button" class="gov-disc-close">Close</button>';
+          + '<button type="button" class="gov-disc-close" data-i18n="common.close">Close</button>';
         document.body.appendChild(dlg);
+        // Built on the first ⓘ tap — after i18n.js's apply() pass.
+        i18nLate(dlg);
         dlg.querySelector('.gov-disc-close').onclick = () => dlg.close();
         dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
       }
       const h = dlg.querySelector('h2');
-      h.textContent = title || 'About this';
+      h.textContent = title || i18nT('common.about-this', 'About this');
       h.hidden = !title;
       dlg.querySelector('p').textContent = body;
       // Optional sources, as REAL links. The body is set with textContent (so a
@@ -900,23 +1005,30 @@
       // Explicit header names where the page's own H1 is a poor fit — multi-step
       // flows whose H1 changes as you advance (observe, practice), and pages whose
       // H1 is longer or worded differently from what the menu calls them.
+      // [english, key]. HAWKEYE is the wordmark, not prose — no key, and the
+      // is-page comparison below still keys off it.
       const TITLES = {
-        'index.html': 'HAWKEYE',
-        'observe.html': 'Report a Result',
-        'practice.html': 'Practice',
-        'dashboard.html': 'Reports Log',
-        'collation.html': 'Report Collation Result',
-        'candidates.html': 'Presidency 2027',
-        'osun.html': 'Osun 2026',
+        'index.html': ['HAWKEYE', ''],
+        'observe.html': ['Report a Result', 'common.report-a-result'],
+        'practice.html': ['Practice', 'practice.practice'],
+        'dashboard.html': ['Reports Log', 'nav.reports-log'],
+        'collation.html': ['Report Collation Result', 'nav.report-collation-result'],
+        'candidates.html': ['Presidency 2027', 'nav.presidency-2027'],
+        'osun.html': ['Osun 2026', 'nav.osun-2026'],
       };
-      const title = TITLES[page]
+      const entry = TITLES[page];
+      const title = (entry && entry[0])
         || ((h1 && h1.textContent) || document.title.split('—').pop() || '').trim();
+      // Pages NOT in the map are named from their own H1 — so carry that H1's
+      // key across too, or the header names them in English forever.
+      const titleKey = (entry && entry[1]) || (!entry && h1 && h1.getAttribute('data-i18n')) || '';
       // The header now names the page, so an H1 repeating it is dead weight.
       if (h1 && title && h1.textContent.trim() === title) h1.hidden = true;
       if (title) {
         bt.innerHTML = '';
         const st = document.createElement('strong');
-        st.textContent = title;
+        if (titleKey) i18nSet(st, titleKey, title);
+        else st.textContent = title;
         bt.appendChild(st);
         // A page name is prose, not a wordmark — the brand's wide tracking and
         // uppercase treatment make "Report Collation Result" unreadable. Home
@@ -943,6 +1055,7 @@
     const nav = document.createElement('nav');
     nav.className = 'tabbar';
     nav.setAttribute('aria-label', 'Primary');
+    nav.setAttribute('data-i18n-attr', 'aria-label:nav.primary');
     nav.innerHTML = TABS.map((t) => `<a class="tab${t.cta ? ' tab-cta' : ''}${isOn(t.href) ? ' on' : ''}" href="${t.href}"${t.more ? ' data-more="1"' : ''}${t.cta ? ' data-report="1"' : ''}>`
       + `<span class="ti">${t.bell ? '<span class="tab-dot" hidden></span>' : ''}${ic(t.icon)}</span><span class="tl" data-i18n="${t.key}">${t.label}</span></a>`).join('');
     document.body.appendChild(nav);
@@ -1366,7 +1479,7 @@
     const skip = document.createElement('a');
     skip.className = 'skip-link';
     skip.href = `#${main.id}`;
-    skip.textContent = 'Skip to content';
+    i18nSet(skip, 'nav.skip-to-content', 'Skip to content');
     document.body.prepend(skip);
   }
 
@@ -1374,19 +1487,24 @@
   window.timeAgo = (ts) => {
     const d = new Date(ts); const diff = (Date.now() - d.getTime()) / 1000;
     const hm = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-    if (d.toDateString() === new Date().toDateString()) return `today ${hm}`;
-    if (diff < 172800) return `yesterday ${hm}`;
+    if (diff < 60) return i18nT('time.just-now', 'just now');
+    if (diff < 3600) return i18nT('time.min-ago', '{n} min ago').replace('{n}', String(Math.floor(diff / 60)));
+    if (d.toDateString() === new Date().toDateString()) return i18nT('time.today', 'today {time}').replace('{time}', hm);
+    if (diff < 172800) return i18nT('time.yesterday', 'yesterday {time}').replace('{time}', hm);
     return `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })}, ${hm}`;
   };
   const foot = document.querySelector('.gov-footer nav');
   if (foot) {
-    foot.innerHTML = '<a href="about.html">About</a><a href="how.html">How Hawkeye Works</a>'
-      + '<a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a>'
-      + '<a href="faq.html">FAQ</a><a href="guide.html">Observer Guide</a>'
-      + '<a href="support.html">Support</a>'
-      + (localStorage.getItem('hawkeye_token') ? '<a href="profile.html">My Profile</a>' : '');
+    foot.innerHTML = '<a href="about.html" data-i18n="nav.about">About</a>'
+      + '<a href="how.html" data-i18n="common.how-hawkeye-works">How Hawkeye Works</a>'
+      + '<a href="privacy.html" data-i18n="nav.privacy-policy">Privacy Policy</a>'
+      + '<a href="terms.html" data-i18n="nav.terms-of-service">Terms of Service</a>'
+      + '<a href="faq.html" data-i18n="nav.faq">FAQ</a>'
+      + '<a href="guide.html" data-i18n="common.observer-guide">Observer Guide</a>'
+      + '<a href="support.html" data-i18n="nav.support">Support</a>'
+      + (localStorage.getItem('hawkeye_token') ? '<a href="profile.html" data-i18n="profile.my-profile">My Profile</a>' : '');
+    // The privacy/terms PAGES stay English by policy (_meta.englishOnlyPages);
+    // their nav LABELS are chrome, and get nav.* keys of their own.
   }
 
   // Social bar in the footer — one source of truth, every page. Each icon renders
@@ -1482,12 +1600,13 @@
         // orphans dangling under "Live data".
         const gl = document.createElement('div');
         gl.className = 'menu-group auth-only';
-        gl.textContent = 'Your account';
+        i18nSet(gl, 'nav.your-account', 'Your account');
         p.appendChild(gl);
         const add = (href, text, cls) => {
           const a = document.createElement('a');
           a.href = href;
-          a.textContent = text;
+          if (cls === 'sign-out') i18nSet(a, 'nav.sign-out', text);
+          else a.textContent = text;
           a.className = 'auth-only' + (cls ? ' ' + cls : '');
           p.appendChild(a);
           return a;
@@ -1496,6 +1615,7 @@
         // "Take part" section for everyone — so "Your account" carries just Sign out.
         // Sign out clears the token AND the device key so auto-resume can't
         // silently sign back in; sends the user to a fresh sign-up.
+        i18nLate(p);
         add('#', 'Sign out', 'sign-out').addEventListener('click', (e) => {
           e.preventDefault();
           localStorage.removeItem('hawkeye_token');
@@ -1673,7 +1793,7 @@
 
   function mount() {
     const css = `
-    #hk-fab{position:fixed;right:18px;bottom:18px;z-index:110;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+    #hk-fab{position:fixed;right:18px;bottom:18px;z-index:98;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
     /* z-index 110, NOT 1200. At 1200 this button floated above EVERY modal in
        the app — the report sheet (120), the tour (130), the refusal modal (140)
        and the menu panel (80). With the tour open it was the only thing on
@@ -1688,7 +1808,7 @@
        is the one accent not already used for a party colour or a status state,
        so it says "assistant" without competing with the results palette. The
        tinted shadow does the rest of the lifting off the page. */
-    #hk-panel{position:fixed;right:18px;bottom:84px;z-index:1200;width:min(360px,calc(100vw - 36px));max-height:min(560px,calc(100vh - 120px));display:none;flex-direction:column;background:var(--card,#fff);border:2px solid var(--gold,#f5b301);border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.32),0 0 0 4px rgba(245,179,1,.16)}
+    #hk-panel{position:fixed;right:18px;bottom:84px;z-index:98;width:min(360px,calc(100vw - 36px));max-height:min(560px,calc(100vh - 120px));display:none;flex-direction:column;background:var(--card,#fff);border:2px solid var(--gold,#f5b301);border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.32),0 0 0 4px rgba(245,179,1,.16)}
     #hk-panel.open{display:flex}
     #hk-head{background:var(--green-darker,#00331e);color:#fff;padding:11px 14px;font-weight:700;font-size:.95rem;display:flex;justify-content:space-between;align-items:center;gap:8px;white-space:nowrap}
     #hk-head button{display:inline-block;width:auto;margin:0;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:0 2px;flex:none;box-shadow:none}
@@ -1707,10 +1827,12 @@
     // read like a sticky note next to otherwise line-art iconography.
     fab.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 9 9 0 0 1-3.8-.8L3 21l1.9-4.6A8.2 8.2 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg>';
     const panel = document.createElement('div'); panel.id = 'hk-panel';
-    panel.innerHTML = '<div id="hk-head"><span>Ask Hawkeye</span><button aria-label="Close" id="hk-x">×</button></div>'
+    panel.innerHTML = '<div id="hk-head"><span data-i18n="nav.ask-hawkeye">Ask Hawkeye</span>'
+      + '<button aria-label="Close" data-i18n-attr="aria-label:common.close" id="hk-x">×</button></div>'
       + '<div id="hk-msgs"></div>'
-      + '<div id="hk-note">Crowd-reported, unofficial figures. INEC declares official results.</div>'
-      + '<form id="hk-form"><input id="hk-in" autocomplete="off" placeholder="e.g. presidential tally so far" /><button>Ask</button></form>';
+      + '<div id="hk-note" data-i18n="assistant.note">Crowd-reported, unofficial figures. INEC declares official results.</div>'
+      + '<form id="hk-form"><input id="hk-in" autocomplete="off" placeholder="e.g. presidential tally so far"'
+      + ' data-i18n-attr="placeholder:assistant.placeholder" /><button data-i18n="assistant.ask">Ask</button></form>';
     document.body.append(fab, panel);
     const msgs = panel.querySelector('#hk-msgs');
     const add = (who, text) => { const d = document.createElement('div'); d.className = 'hk-b ' + (who === 'u' ? 'hk-u' : 'hk-a'); d.textContent = text; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d; };
@@ -1730,7 +1852,7 @@
       e.stopPropagation();
       const open = panel.classList.toggle('open');
       if (open) closeMenu();
-      if (open && !greeted) { greeted = true; add('a', 'Hi! Ask me about the crowd-reported results — a national tally, a polling unit, or how much of the country is mapped.'); }
+      if (open && !greeted) { greeted = true; add('a', i18nT('assistant.greeting', 'Hi! Ask me about the crowd-reported results — a national tally, a polling unit, or how much of the country is mapped.')); }
     };
     // The other direction. Capture phase, because the ☰ button's own inline
     // onclick and the app-shell "More" tab both stop propagation before a
@@ -1756,8 +1878,10 @@
         const r = await fetch('/api/assistant', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ question: q }) });
         const j = await r.json().catch(() => ({}));
         t.textContent = j.answer
-          || (j.error === 'assistant_unconfigured' ? "The assistant isn't switched on yet." : 'Something went wrong — try again.');
-      } catch { t.textContent = 'Network error — try again.'; }
+          || (j.error === 'assistant_unconfigured'
+            ? i18nT('assistant.unconfigured', "The assistant isn't switched on yet.")
+            : i18nT('assistant.error', 'Something went wrong — try again.'));
+      } catch { t.textContent = i18nT('assistant.network-error', 'Network error — try again.'); }
       msgs.scrollTop = msgs.scrollHeight;
     });
   }
@@ -1802,11 +1926,11 @@
    * from /api/contests and groups by polling date.
    */
   const RACE_ORDER = [
-    { code: 'PRES', name: 'Presidency' },
-    { code: 'GOV', name: 'Governorship' },
-    { code: 'SEN', name: 'Senate' },
-    { code: 'REP', name: 'House of Reps' },
-    { code: 'SHA', name: 'State Assembly' },
+    { code: 'PRES', name: 'Presidency', key: 'race.presidency' },
+    { code: 'GOV', name: 'Governorship', key: 'race.governorship' },
+    { code: 'SEN', name: 'Senate', key: 'race.senate' },
+    { code: 'REP', name: 'House of Reps', key: 'race.house-of-reps' },
+    { code: 'SHA', name: 'State Assembly', key: 'race.state-assembly' },
   ];
 
   window.HAWKEYE_RACES = {
@@ -1824,7 +1948,7 @@
         .replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const by = new Map((available || []).map((c) => [c.code, c]));
       const prev = sel.value;
-      const head = o.placeholder === false ? '' : `<option value="">${esc(o.placeholder || '— select election —')}</option>`;
+      const head = o.placeholder === false ? '' : `<option value="">${esc(o.placeholder || i18nT('race.select-election', '— select election —'))}</option>`;
       /**
        * THE FIVE GENERAL CONTESTS, THEN ANY BY-ELECTION ON THE WIRE.
        *
@@ -1849,7 +1973,7 @@
         if (c) return `<option value="${esc(c.code)}">${esc(c.name)}</option>`;
         // Named, visible, and unselectable — it tells people the race exists and
         // is coming without letting them file against an election with no date.
-        return `<option value="${esc(r.code)}" disabled>${esc(r.name)} — not open yet</option>`;
+        return `<option value="${esc(r.code)}" disabled>${esc(i18nT(r.key, r.name))} — ${esc(i18nT('race.not-open-yet', 'not open yet'))}</option>`;
       }).concat(extras.map((c) => `<option value="${esc(c.code)}">${esc(c.name)}</option>`)).join('');
       if (prev && by.has(prev)) { sel.value = prev; return prev; }
       // Exactly one race actually reportable (today: Osun GOV) ⇒ pick it, rather
@@ -1933,8 +2057,9 @@
         box.className = 'hk-alert';
         box.hidden = true;
         box.innerHTML = '<div class="hk-alert-card" role="alertdialog" aria-modal="true" aria-labelledby="hk-alert-title">'
-          + '<h3 id="hk-alert-title"></h3><p></p><button type="button" id="hk-alert-ok">OK</button></div>';
+          + '<h3 id="hk-alert-title"></h3><p></p><button type="button" id="hk-alert-ok" data-i18n="common.ok">OK</button></div>';
         document.body.appendChild(box);
+        i18nLate(box);
         box.addEventListener('click', function (e) { if (e.target === box) close(); });
         box.querySelector('#hk-alert-ok').addEventListener('click', close);
         document.addEventListener('keydown', function (e) {
@@ -1943,7 +2068,7 @@
       }
       lastFocus = document.activeElement;
       after = onClose;
-      box.querySelector('h3').textContent = title || 'Not yet';
+      box.querySelector('h3').textContent = title || i18nT('common.not-yet', 'Not yet');
       box.querySelector('p').textContent = body || '';
       box.hidden = false;
       document.body.style.overflow = 'hidden';

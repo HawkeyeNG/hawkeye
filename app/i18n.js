@@ -105,8 +105,42 @@
     return slot[id];
   }
 
+  /**
+   * SENTENCES THAT CONTAIN MARKUP.
+   *
+   * data-i18n sets textContent, which DELETES every child element. That is
+   * correct for a leaf, and destructive for the thing English prose does all the
+   * time: `<li>Tap <strong>Install app</strong> to confirm.</li>`. Keying the
+   * <li> would drop the <strong>; keying only the <strong> — which is what the
+   * extractor did — translates two words and leaves the sentence around them in
+   * English, which reads worse than leaving the whole line alone.
+   *
+   * Splitting the bare runs into their own <span>s does not fix it either: word
+   * order is not a translation invariant, and "Tap X to confirm" does not
+   * survive being reassembled from fragments pinned in English order.
+   *
+   * So a sentence carrying inline markup is ONE string, and the markup travels
+   * inside it. The value is written as innerHTML.
+   *
+   * WHY innerHTML IS SAFE HERE, and only here: these strings come from
+   * app/i18n/<lang>.json — static first-party files we ship, in the same trust
+   * bucket as the markup they replace. Nothing a user or a server sends ever
+   * reaches this path. If a bundle ever becomes user-supplied, this branch is
+   * the one that has to go.
+   *
+   * A data-i18n-html subtree must contain NO nested data-i18n: replacing the
+   * innerHTML builds fresh elements, and a later pass would then record the
+   * TRANSLATED text as their English and make the switch back impossible.
+   * scripts/i18n/i18n_check.mjs enforces this.
+   */
   function apply(root) {
     var scope = root || document;
+    scope.querySelectorAll('[data-i18n-html]').forEach(function (el) {
+      var k = el.getAttribute('data-i18n-html');
+      var english = remember(el, 'html', k, el.innerHTML);
+      var v = t(k, english);
+      if (v !== el.innerHTML) el.innerHTML = v;
+    });
     scope.querySelectorAll('[data-i18n]').forEach(function (el) {
       var k = el.getAttribute('data-i18n');
       var english = remember(el, 'text', k, el.textContent);

@@ -5,6 +5,8 @@
  */
 // Same override as lib/api.ts, and for the same reason: in a browser these two
 // fetches are cross-origin and production blocks them. See the note there.
+import { currentLang_ } from './i18n';
+
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
 export type Candidate = {
@@ -187,7 +189,75 @@ let cache: Promise<{
   members: Members | null;
 }> | null = null;
 
+/**
+ * THE TRANSLATION OVERLAY FOR political_data.json.
+ *
+ * That file is DATA — fetched at runtime, amended between deploys (INEC revised
+ * its 2023 candidate list seven times after publication) — so it is translated
+ * by an overlay keyed on the English string rather than by shipping four copies
+ * of the file. Four copies go out of sync the first time somebody corrects a
+ * party in English and forgets the rest, and the result of that on an election
+ * tool is not an untranslated label: it is a Hausa reader shown WRONG DATA,
+ * confidently. A missing overlay entry falls through AS ENGLISH — correct, and
+ * visibly untranslated, which is the failure you want.
+ *
+ * Fetched from /i18n/, which the website's service worker already serves
+ * network-first, so a corrected translation lands without a cache bump.
+ * Its failure is non-fatal: no overlay means English, which is still true.
+ */
+let overlayCache: Promise<Record<string, Record<string, string>>> | null = null;
+function loadOverlay() {
+  if (!overlayCache) {
+    overlayCache = fetch(`${BASE}/i18n/political.json`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .catch(() => ({}))
+      .then((j) => j as Record<string, Record<string, string>>);
+  }
+  return overlayCache;
+}
+
+/**
+ * Swap every string that the overlay has an entry for, at any depth.
+ *
+ * SELF-LIMITING BY CONSTRUCTION: the only strings it can change are the ones
+ * scripts/i18n/build_political_i18n.mjs put in the overlay, and that build
+ * refuses to emit a key that collides with any name, party or state in the data.
+ * A candidate, a running mate, a party code or a register spelling therefore
+ * cannot be rewritten here.
+ */
+function swap<T>(node: T, dict: Record<string, string>): T {
+  if (typeof node === 'string') return (Object.prototype.hasOwnProperty.call(dict, node) ? dict[node] : node) as unknown as T;
+  if (Array.isArray(node)) return node.map((v) => swap(v, dict)) as unknown as T;
+  if (node && typeof node === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(node as Record<string, unknown>)) out[k] = swap(v, dict);
+    return out as unknown as T;
+  }
+  return node;
+}
+
+/**
+ * TRANSLATED AT CALL TIME, NOT INSIDE THE MEMO.
+ *
+ * `cache` holds the RAW data for the life of the runtime. If the translation
+ * happened in there it would freeze at whatever language was current on the
+ * first call — and on a cold start that is English, before AsyncStorage has
+ * answered. Every caller invokes loadPolitical() inside an effect, and the
+ * provider remounts its children on a language change (key={lang}), so the
+ * effect re-runs, this function is called again, and the current language wins.
+ * English skips the walk entirely.
+ */
 export function loadPolitical() {
+  const raw = loadPoliticalRaw();
+  const lang = currentLang_();
+  if (lang === 'en') return raw;
+  return Promise.all([raw, loadOverlay()]).then(([r, overlay]) => {
+    const dict = overlay[lang];
+    return dict ? { ...r, data: swap(r.data, dict) } : r;
+  });
+}
+
+function loadPoliticalRaw() {
   if (!cache) {
     cache = Promise.all([
       // CHECK THE STATUS, AND DO NOT MEMOISE A FAILURE.

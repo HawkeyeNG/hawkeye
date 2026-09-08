@@ -43,7 +43,8 @@ check('web emits nothing for a non-presidency',
   /\$\{boardOnly \? `<a class="\$\{done \? 'btn-accent' : 'btn-quiet'\}" data-cta="results"/.test(RACE_JS), true);
 // The report button is the one that stays, and it is unconditional on a live race.
 check('the report button survives on native', /Report from your unit<\/Text>/.test(RACE_TSX), true);
-check('and on the web', /data-cta="observe"[^>]*>Report from your unit</.test(RACE_JS), true);
+check('and on the web',
+  /data-cta="observe"[^>]*>\$\{T\('race\.report-from-your-unit', 'Report from your unit'\)\}</.test(RACE_JS), true);
 
 console.log('\n=== an empty pinned bar must not be mounted ===');
 // PinnedFooter draws a border and a safe-area inset around whatever it is
@@ -73,6 +74,8 @@ const RACES_HTML = fs.readFileSync(`${ROOT}/app/races.html`, 'utf8');
 check('the web twin still does the same',
   /\(c\.constituencies \|\| \[\]\)\.length \? `race\.html\?contest=/.test(RACES_HTML), true);
 
+/* The web's labels are now T('key', 'English') calls; the English fallback is
+   still the one place the wording lives, so these patterns match that. */
 console.log('\n=== buttons are sentence case where a reader sees them ===');
 const PROPER = /^(Hawkeye|INEC|Nigeria|Nigerian|Osun|Telegram|WhatsApp|Google|Play|Apple|PU|EC8A|EC8B|EC8C|EC8D|SMS|OTP|ID|GPS|Rekor|Sigstore|SHA|FCT|Store|App|I|TikTok|X|Web|Android|iOS|iPhone|Chrome|Safari)$/;
 const SKIP = /^(admin|post|preview|bench|review|tiktok|train|train2|traindavina|trainderek)\./;
@@ -101,8 +104,10 @@ for (const name of fs.readdirSync(`${ROOT}/app`)) {
   });
 }
 check('no Title-Case buttons remain on user-facing pages', offenders.slice(0, 6), []);
-check('the web CTA row is sentence case', /Review the results' : 'Live results'/.test(RACE_JS), true);
-check('and so is the ledger link', /Verify the record<\/a>/.test(RACE_JS), true);
+check('the web CTA row is sentence case',
+  /T\('race\.review-the-results', 'Review the results'\) : T\('race\.live-results', 'Live results'\)/.test(RACE_JS), true);
+check('and so is the ledger link',
+  /T\('race\.verify-the-record', 'Verify the record'\)\}<\/a>/.test(RACE_JS), true);
 
 /**
  * A TOGGLE IS LABELLED WITH WHAT IT DOES.

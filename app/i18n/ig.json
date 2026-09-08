@@ -320,6 +320,8 @@
   "incidents.published-incidents": "Ihe Merenụ E Bipụtara",
   "incidents.report-another-incident": "Kọọ ihe ọzọ merenụ",
   "incidents.sent-for-review": "✅ E Zigara Ya Maka Nyocha",
+  "incidents.once-approved-it-appears-in-the-feed": "Ozugbo a kwadoro ya, ọ ga-apụta na ndepụta dị n'okpuru. Ọ bụ mmadụ na-enyocha akụkọ ọ bụla tupu e bipụta ihe ọ bụla.",
+  "incidents.once-approved-it-appears-in-the-feed-unit": "Ozugbo a kwadoro ya, ọ ga-apụta na ndepụta dị n'okpuru, ndị na-eso ngalaba ntuli aka ahụ ga-enwetakwa ọkwa (Telegram ma ọ bụ ebe ọkwa nke ngwa ahụ). Ọ bụ mmadụ na-enyocha akụkọ ọ bụla tupu e bipụta ihe ọ bụla.",
   "incidents.submit-report": "Zipu akụkọ",
   "incidents.to-report-an-incident-register-your": "Iji kọọ ihe merenụ, buru ụzọ debanye aha ngwaọrụ gị.",
   "incidents.type-of-incident": "Ụdị Ihe Merenụ",

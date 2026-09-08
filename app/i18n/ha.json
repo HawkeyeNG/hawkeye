@@ -321,6 +321,8 @@
   "incidents.published-incidents": "Lamurra da aka Wallafa",
   "incidents.report-another-incident": "Kai rahoton wani lamari",
   "incidents.sent-for-review": "✅ An Aika don Bita",
+  "incidents.once-approved-it-appears-in-the-feed": "Da zarar an amince da rahoton, sai ya bayyana a jerin da ke ƙasa. Mutum ne ke duba kowane rahoto kafin a wallafa shi.",
+  "incidents.once-approved-it-appears-in-the-feed-unit": "Da zarar an amince da rahoton, sai ya bayyana a jerin da ke ƙasa, kuma waɗanda suka ajiye wannan rukunin zaɓe za su samu sanarwa (a Telegram ko a jerin sanarwar manhajar). Mutum ne ke duba kowane rahoto kafin a wallafa shi.",
   "incidents.submit-report": "Aika rahoto",
   "incidents.to-report-an-incident-register-your": "Don kai rahoton lamari, sai ka fara yin rijistar na'urarka.",
   "incidents.type-of-incident": "Nau'in Lamari",

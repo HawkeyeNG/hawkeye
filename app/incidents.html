@@ -342,6 +342,12 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const token = localStorage.getItem('hawkeye_token');
 
+    // Same shape as integrity.html and ledger.html: resolve through the runtime
+    // when it has loaded, fall back to the English argument when it has not.
+    // /i18n.js loads AFTER this block, so a call at parse time would get the
+    // fallback — every call here happens on user action, long after load.
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+
     /**
      * The instruction that stands in for a pre-selected kind, and the sentence
      * shown when someone submits without answering it. One constant each, so
@@ -915,9 +921,17 @@
         if (res.status === 201) {
           $('desc').value = ''; attachments.length = 0; renderPreview();
           $('status').textContent = '';
-          $('done-msg').textContent = 'Once approved it appears in the feed below'
-            + (puAttached ? ', and watchers of that polling unit are alerted (Telegram, or the in-app feed).' : '.')
-            + ' A human reviews every report before anything is published.';
+          // One whole sentence per branch, not fragments concatenated: clause
+          // order is not a translation invariant, so an English-shaped join
+          // cannot be made to read correctly in three other languages at once.
+          // The attribute goes on as well as the text, so the paragraph is
+          // repainted by apply() if the reader changes language while it shows.
+          const doneKey = puAttached ? 'incidents.once-approved-it-appears-in-the-feed-unit' : 'incidents.once-approved-it-appears-in-the-feed';
+          const doneEn = puAttached
+            ? 'Once approved it appears in the feed below, and watchers of that polling unit are alerted (Telegram or the in-app feed). A human reviews every report before anything is published.'
+            : 'Once approved it appears in the feed below. A human reviews every report before anything is published.';
+          $('done-msg').setAttribute('data-i18n', doneKey);
+          $('done-msg').textContent = T(doneKey, doneEn);
           $('done-modal').hidden = false;
           $('btn-submit').disabled = false;
           return; // the modal IS the outcome; skip the inline status/scroll below

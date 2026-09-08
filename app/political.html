@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=175">
-  <script src="native.js?v=115"></script>
+  <script src="native.js?v=116"></script>
   <style>
     /* The tapped-state line under the governors map. Page-local: styles.css is
        pinned by every page in the app, so a shared rule for one caption would
@@ -368,6 +368,13 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
     }
 
     (async () => {
+      /* WAIT FOR i18n BEFORE PAINTING. This page loads /i18n.js after this
+         script, so without the gate the fetches below can win the race and every
+         T() call takes its English fallback — permanently, since these elements
+         hold resolved strings. That is exactly what shipped: the zone headings
+         rendered in English on the live site while passing locally, where
+         i18n.js is there in a millisecond. See window.i18nReady in native.js. */
+      if (window.i18nReady) await window.i18nReady();
       const [geo, data, logos, live, own] = await Promise.all([
         fetch('states_geo.json').then(r=>r.json()),
         fetchData('political_data.json').then(r=>r.json())

@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 
 import { SafeScreen } from '@/components/safe-screen';
+import { ButtonText } from '@/components/button-text';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
 import {
   envelopeText,
@@ -1529,10 +1530,12 @@ export default function ReportIncident() {
                 size={16}
                 color={BRAND.gold}
               />
-              <Text className="flex-1 pl-2 text-base font-bold text-hawk-gold">
-                Browse the register instead
+              <ButtonText className="flex-1 pl-2 text-base font-bold text-hawk-gold" numberOfLines={1}>
+                {i18nT('n.components.choose-unit.browse-register')}
+              </ButtonText>
+              <Text className="shrink text-xs text-emerald-100" numberOfLines={1}>
+                {i18nT('n.app.map-unit.state-lga-ward')}
               </Text>
-              <Text className="text-xs text-emerald-100">{i18nT('n.app.map-unit.state-lga-ward')}</Text>
             </Pressable>
 
             {browse ? (

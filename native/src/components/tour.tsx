@@ -174,9 +174,9 @@ export function Tour({
             color={step.cta ? BRAND.gold : ui.tint.good.ink}
           />
         </View>
-        <Text className="pl-3 text-base font-bold text-ink">{step.title}</Text>
+        <Text className="pl-3 text-base font-bold text-ink">{i18nT(step.titleKey)}</Text>
       </View>
-      <Text className="text-sm leading-5 text-muted">{step.body}</Text>
+      <Text className="text-sm leading-5 text-muted">{i18nT(step.bodyKey)}</Text>
       {/* The nonpartisan line, on the first card only. It is the first thing the
           app says to a new observer everywhere else — the board, the race pages
           and the store listing all carry it — and a welcome screen that omitted

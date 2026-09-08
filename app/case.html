@@ -40,34 +40,34 @@
   <header class="gov-header">
     <div class="wrap brand-row">
       <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
-        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
-      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
         onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
       <nav id="menu-panel" class="menu-panel" hidden>
-        <a href="observe.html">Report a Result</a>
-        <a href="results.html">Leaderboard</a>
-        <a href="dashboard.html">Public Reports Log</a>
-        <a href="ledger.html">Verify the Ledger</a>
-        <a href="integrity.html">Election Integrity</a>
-        <a href="docket.html">Public Docket</a>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
         <a href="faq.html">FAQ</a>
-        <a href="about.html">About & Contact</a>
+        <a data-i18n="common.about-contact" href="about.html">About & Contact</a>
       </nav>
     </div>
   </header>
 <main class="wrap">
-    <p><a href="docket.html">← All cases</a></p>
-    <h1 id="title">Case</h1>
+    <p><a data-i18n="case.all-cases" href="docket.html">← All cases</a></p>
+    <h1 data-i18n="case.case" id="title">Case</h1>
     <p class="hint" id="meta"></p>
     <div id="flags"></div>
 
     <div class="card">
-      <h2>Evidence</h2>
+      <h2 data-i18n="case.evidence">Evidence</h2>
       <div id="evidence"><div class="skel" style="height:80px"></div></div>
     </div>
 
     <div class="card verdict-box">
-      <h2>The Crowd's Verdict</h2>
+      <h2 data-i18n="case.the-crowd-s-verdict">The Crowd's Verdict</h2>
       <div class="tallybar" id="tallybar"></div>
       <p class="note" id="tallytext"></p>
       <div id="judge"></div>
@@ -171,6 +171,8 @@
     }
     load();
   </script>
+  <script src="/i18n.js?v=2"></script>
+  <script src="/lang.js?v=2"></script>
   <script src="menu.js?v=165"></script>
 </body>
 </html>

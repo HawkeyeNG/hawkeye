@@ -39,33 +39,33 @@
 </style>
 </head>
 <body>
-<h1>Register pack bench</h1>
-<p class="sub">docs/PU-SEARCH-2027.md step 2 — measure on the real device, not the laptop.</p>
+<h1 data-i18n="bench.register-pack-bench">Register pack bench</h1>
+<p data-i18n="bench.docs-pu-search-2027-md-step" class="sub">docs/PU-SEARCH-2027.md step 2 — measure on the real device, not the laptop.</p>
 
 <fieldset>
-  <legend>Environment</legend>
+  <legend data-i18n="bench.environment">Environment</legend>
   <div id="env">checking…</div>
 </fieldset>
 
 <fieldset>
-  <legend>Load a state pack</legend>
-  <select id="state"><option value="">loading manifest…</option></select>
-  <button id="load">Load</button>
-  <button id="reload" title="Ignore the cached copy and re-fetch">Re-fetch</button>
-  <button id="clear" title="Delete every stored pack">Clear storage</button>
+  <legend data-i18n="bench.load-a-state-pack">Load a state pack</legend>
+  <select id="state"><option data-i18n="bench.loading-manifest" value="">loading manifest…</option></select>
+  <button data-i18n="bench.load" id="load">Load</button>
+  <button data-i18n="bench.re-fetch" id="reload" title="Ignore the cached copy and re-fetch">Re-fetch</button>
+  <button data-i18n="bench.clear-storage" id="clear" title="Delete every stored pack">Clear storage</button>
   <div id="loadOut"></div>
 </fieldset>
 
 <fieldset>
-  <legend>Search</legend>
-  <input id="q" placeholder="e.g. primary school" size="26" />
-  <button id="run">Search</button>
-  <button id="bench">Bench 200 queries</button>
+  <legend data-i18n="bench.search">Search</legend>
+  <input data-i18n-attr="placeholder:bench.e-g-primary-school" id="q" placeholder="e.g. primary school" size="26" />
+  <button data-i18n="bench.search" id="run">Search</button>
+  <button data-i18n="bench.bench-200-queries" id="bench">Bench 200 queries</button>
   <div id="searchOut"></div>
 </fieldset>
 
 <fieldset>
-  <legend>Verdict against the acceptance targets</legend>
+  <legend data-i18n="bench.verdict-against-the-acceptance-targets">Verdict against the acceptance targets</legend>
   <div id="verdict">load a state pack first</div>
 </fieldset>
 
@@ -219,5 +219,7 @@
   }
 })();
 </script>
+<script src="/i18n.js?v=2"></script>
+<script src="/lang.js?v=2"></script>
 </body>
 </html>

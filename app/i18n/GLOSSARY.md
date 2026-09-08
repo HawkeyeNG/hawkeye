@@ -27,12 +27,21 @@ anonymity, not a missing field — do not "fix" it by inventing an attribution.
 it reaches the target, set `_meta.review` to `human` and the picker's draft badge
 disappears on its own — the badge is read from the bundle, not hardcoded.
 
-**These terms are provisional; the ~200 UI strings that use them are not
-reviewed at all.** They are a language-model draft written on top of this
-vocabulary, and that is what `_meta.review: "machine-draft"` means. The next
-review pass is the UI strings, and `_meta.priority` in each bundle lists the
-four that matter most: the two evidential ledger notices, the account-deletion
-warning, and the corroboration explainer.
+**These terms are provisional; the 588 UI strings that use them are not reviewed
+at all.** They are a language-model draft written on top of this vocabulary,
+and that is what `_meta.review: "machine-draft"` means.
+
+The next review pass is those UI strings, and it does not have to start from
+one end. **`_meta.priority` in each bundle lists fifteen to read first**: the
+two evidential ledger notices, the account-deletion warning, the corroboration
+explainer, and the strings that either carry the INEC notice as a trailing
+clause or state a hard rule an observer must not misread — one report per
+election per device, reports are permanent, a phone number is stored only as a
+hash. Getting those fifteen right matters more than the other 573 combined.
+
+**The privacy policy and the terms are not in the bundles at all** and render in
+English on every language. That is deliberate (`_meta.englishOnlyPages`), not an
+omission — see the last section.
 
 ### One question for the Yorùbá reviewers
 

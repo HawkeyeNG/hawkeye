@@ -65,17 +65,17 @@
   <header class="gov-header">
     <div class="wrap brand-row">
       <span class="brand"><span class="crest" aria-hidden="true">🦅</span>
-        <div class="brand-text"><strong>HAWKEYE</strong><span>Review Console — private</span></div></span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="review.review-console-private">Review Console — private</span></div></span>
     </div>
   </header>
 
   <main class="wrap">
     <section id="login" class="card">
-      <h1>Review Console</h1>
-      <p class="lede">Owner access only.</p>
-      <label for="pass">Passphrase</label>
-      <input id="pass" type="password" autocomplete="off" placeholder="Enter console passphrase" />
-      <button id="btn-login">Unlock</button>
+      <h1 data-i18n="common.review-console">Review Console</h1>
+      <p data-i18n="common.owner-access-only" class="lede">Owner access only.</p>
+      <label data-i18n="common.passphrase" for="pass">Passphrase</label>
+      <input data-i18n-attr="placeholder:common.enter-console-passphrase" id="pass" type="password" autocomplete="off" placeholder="Enter console passphrase" />
+      <button data-i18n="common.unlock" id="btn-login">Unlock</button>
       <p id="login-status" class="status" role="status"></p>
     </section>
 
@@ -83,17 +83,17 @@
       <!-- Growth first: it is the number asked for most often, including by
            funders, and it was previously only reachable by hand-rolling a curl
            with the console secret. -->
-      <h1>Reach</h1>
-      <div id="stats" class="statgrid"><p class="empty">Loading…</p></div>
+      <h1 data-i18n="common.reach">Reach</h1>
+      <div id="stats" class="statgrid"><p data-i18n="index.loading" class="empty">Loading…</p></div>
       <details id="obs-wrap" style="margin-top:10px">
-        <summary style="cursor:pointer;font-weight:700">Observer Roll</summary>
-        <p class="meta">Phone hashes are truncated. They are one-way, but Nigerian mobile
+        <summary data-i18n="common.observer-roll" style="cursor:pointer;font-weight:700">Observer Roll</summary>
+        <p data-i18n="common.phone-hashes-are-truncated-they-are" class="meta">Phone hashes are truncated. They are one-way, but Nigerian mobile
           numbers are a small enough space to brute-force offline, and these figures get
           screenshotted — a 12-character prefix identifies a row without carrying that risk.</p>
-        <div id="obs-list"><p class="empty">Loading…</p></div>
+        <div id="obs-list"><p data-i18n="index.loading" class="empty">Loading…</p></div>
       </details>
 
-      <h1 style="margin-top:34px">Incident Review</h1>
+      <h1 data-i18n="common.incident-review" style="margin-top:34px">Incident Review</h1>
       <div class="tabs" id="tabs">
         <span class="tab on" data-s="pending">Pending <b id="c-pending"></b></span>
         <!-- Reviewed incidents are done with; they are reference, not a queue.
@@ -101,17 +101,17 @@
              rather than an ever-growing archive of settled cases. -->
         <label class="seen">Reviewed
           <select id="inc-seen">
-            <option value="">— Pick —</option>
-            <option value="published">Published</option>
-            <option value="rejected">Rejected</option>
+            <option data-i18n="common.pick" value="">— Pick —</option>
+            <option data-i18n="common.published" value="published">Published</option>
+            <option data-i18n="common.rejected" value="rejected">Rejected</option>
           </select>
         </label>
         <span class="tab" data-s="_logout" style="margin-left:auto">Lock 🔒</span>
       </div>
-      <div id="list"><p class="empty">Loading…</p></div>
+      <div id="list"><p data-i18n="index.loading" class="empty">Loading…</p></div>
 
-      <h1 style="margin-top:34px">Label Review</h1>
-      <p class="meta">Spot-check the counts each scorer typed against the sheet itself (tap a photo for full size).</p>
+      <h1 data-i18n="common.label-review" style="margin-top:34px">Label Review</h1>
+      <p data-i18n="common.spot-check-the-counts-each-scorer" class="meta">Spot-check the counts each scorer typed against the sheet itself (tap a photo for full size).</p>
       <div class="tabs" id="set-tabs">
         <span class="tab on" data-set="3">Derek <b id="s3"></b></span>
         <span class="tab" data-set="4">Davina <b id="s4"></b></span>
@@ -119,7 +119,7 @@
         <span class="tab" data-set="2">Set 2 <b id="s2"></b></span>
       </div>
       <p class="meta" id="lab-summary"></p>
-      <div id="lab-list"><p class="empty">Loading…</p></div>
+      <div id="lab-list"><p data-i18n="index.loading" class="empty">Loading…</p></div>
     </section>
   </main>
 
@@ -342,5 +342,7 @@
 
     if (secret) { $('login').hidden = true; $('console').hidden = false; load(); loadLabels(); loadStats(); }
   </script>
+<script src="/i18n.js?v=2"></script>
+<script src="/lang.js?v=2"></script>
 </body>
 </html>

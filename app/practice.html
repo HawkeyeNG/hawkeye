@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#00482b" />
   <meta name="description" content="Practise reporting a polling-unit result on Hawkeye — a safe run-through for new observers. Nothing here is published." />
-  <title>Hawkeye — Practice Run</title>
+  <title data-i18n="practice.hawkeye-practice-run">Hawkeye — Practice Run</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=174" />
+  <link rel="stylesheet" href="styles.css?v=175" />
   <script src="native.js?v=114"></script>
   <style>
     .prac-banner { background: var(--tint-warn); border-left: 6px solid #f9a825; padding: 12px 14px; border-radius: 8px; margin: 0 0 16px; font-size: 0.92rem; }
@@ -55,9 +55,7 @@
   <main class="wrap" id="main">
     <section id="closed" hidden>
       <h1 data-i18n="practice.practice-is-closed-right-now">Practice Is Closed Right Now</h1>
-      <p class="lede">The practice election has ended. A fresh practice run will reopen after the
-      Osun election so you can prepare for the 2027 general elections. In the meantime you can
-      <a data-i18n="practice.read-how-hawkeye-works" href="how.html">read how Hawkeye works</a> or <a data-i18n="practice.become-an-observer" href="observe.html?intent=observe">become an observer</a>.</p>
+      <p data-i18n-html="practice.the-practice-election-has-ended-a-fresh" class="lede">The practice election has ended. A fresh practice run will reopen after the Osun election so you can prepare for the 2027 general elections. In the meantime you can <a href="how.html">read how Hawkeye works</a> or <a href="observe.html?intent=observe">become an observer</a>.</p>
     </section>
 
     <section id="flow" hidden>
@@ -74,7 +72,7 @@
       </div>
 
       <div class="card">
-        <h2><span class="step-no">1</span> Capture the Evidence</h2>
+        <h2 data-i18n-html="observe.1-capture-the-evidence"><span class="step-no">1</span> Capture the Evidence</h2>
         <p data-i18n="practice.on-election-day-you-take-two" class="hint">On election day you take two live photos here — the results sheet and the venue.
         Try it now (or tap “Use a sample” if you’d rather skip the camera in practice).</p>
         <div class="capture-slot">
@@ -94,13 +92,13 @@
       </div>
 
       <div class="card">
-        <h2><span class="step-no">2</span> Enter the Announced Counts</h2>
+        <h2 data-i18n-html="practice.2-enter-the-announced-counts"><span class="step-no">2</span> Enter the Announced Counts</h2>
         <p data-i18n="practice.type-the-number-of-votes-each" class="hint">Type the number of votes each party was announced to have at the unit.</p>
         <div id="vote-inputs"></div>
       </div>
 
       <div class="card">
-        <h2><span class="step-no">3</span> Sign &amp; Submit</h2>
+        <h2 data-i18n-html="practice.3-sign-submit"><span class="step-no">3</span> Sign &amp; Submit</h2>
         <p data-i18n="practice.on-election-day-your-report-is" class="hint">On election day your report is signed on your phone and added to the public,
         tamper-evident ledger. Here it just completes the practice.</p>
         <button data-i18n="practice.sign-submit-practice" id="btn-submit" disabled>Sign &amp; submit (practice)</button>
@@ -114,8 +112,7 @@
         <p data-i18n="practice.nicely-done-that-s-exactly-how">Nicely done — that’s exactly how you report a result on election day.</p>
       </div>
       <div class="card">
-        <p><strong data-i18n="practice.nothing-was-published">Nothing was published.</strong> A real report is signed on your phone and recorded
-        on Hawkeye’s public, tamper-evident ledger.</p>
+        <p data-i18n-html="practice.nothing-was-published-a-real-report-is"><strong>Nothing was published.</strong> A real report is signed on your phone and recorded on Hawkeye’s public, tamper-evident ledger.</p>
         <p class="hint">Practice ledger entry: <code id="entry-hash"></code></p>
       </div>
       <div class="race-cta">
@@ -148,8 +145,8 @@
   <script src="device.js"></script>
   <script src="practice.js?v=4"></script>
   <script src="tg.js?v=95"></script>
-  <script src="/i18n.js?v=3"></script>
+  <script src="/i18n.js?v=4"></script>
   <script src="/lang.js?v=3"></script>
-  <script src="menu.js?v=166"></script>
+  <script src="menu.js?v=167"></script>
 </body>
 </html>

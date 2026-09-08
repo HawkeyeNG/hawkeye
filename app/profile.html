@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#00482b" />
   <meta name="description" content="Your Hawkeye observer profile — identity hash, saved polling unit, followed races, past reports, and password." />
-  <title>Hawkeye — My Profile</title>
+  <title data-i18n="profile.hawkeye-my-profile">Hawkeye — My Profile</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=174" />
+  <link rel="stylesheet" href="styles.css?v=175" />
   <script src="native.js?v=114"></script>
   <style>
     .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
@@ -147,7 +147,7 @@
   <main class="wrap">
     <h1 data-i18n="profile.my-profile">My Profile</h1>
     <div id="signed-out" hidden>
-      <p class="empty">You're not signed in. <a data-i18n="profile.sign-in-or-register" href="observe.html">Sign in or register</a> to see your profile.</p>
+      <p data-i18n-html="profile.you-re-not-signed-in-sign-in" class="empty">You're not signed in. <a href="observe.html">Sign in or register</a> to see your profile.</p>
     </div>
     <div id="profile" hidden>
 
@@ -204,7 +204,7 @@
              is also the fix when someone signed in AFTER launch. -->
         <button type="button" class="prow" id="btn-push-state" hidden>
           <span data-i18n="profile.notifications" class="prow-k prow-stack">Notifications</span>
-          <span class="prow-v" id="push-state">Checking…<small id="push-detail"></small></span>
+          <span data-i18n-html="profile.checking" class="prow-v" id="push-state">Checking…<small id="push-detail"></small></span>
           <span class="prow-c" aria-hidden="true">›</span>
         </button>
       </div>
@@ -644,8 +644,8 @@
   <script src="pu-search.js?v=6"></script>
   <script src="device.js"></script>
   <script src="share.js?v=3"></script>
-  <script src="/i18n.js?v=3"></script>
+  <script src="/i18n.js?v=4"></script>
   <script src="/lang.js?v=3"></script>
-  <script src="menu.js?v=166"></script>
+  <script src="menu.js?v=167"></script>
 </body>
 </html>

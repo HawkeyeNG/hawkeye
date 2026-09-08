@@ -859,7 +859,7 @@ function i18nLate(root) {
      * links in the modal, and was accepted. A published app beats an inference
      * drawn from an older rejection, and the sources are still one tap away.
      */
-    bar.innerHTML = '<strong>Not government or INEC affiliated.</strong> '
+    bar.innerHTML = '<strong data-i18n="nav.not-government-or-inec-affiliated">Not government or INEC affiliated.</strong> '
       + '<span class="gov-disc-more" role="button" tabindex="0" data-i18n="common.details">Details ›</span>';
     // On the sign-in / sign-up screen the disclaimer goes BELOW the form: it is a
     // legal footnote, and at the top of a bare auth page it was the first and

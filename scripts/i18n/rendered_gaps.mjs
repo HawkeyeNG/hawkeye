@@ -64,7 +64,15 @@ const ENGLISH_TEXT = new Set([...ENGLISH_KEYS].map((k) => EN[k]).filter(Boolean)
 const KEEP = new Set(['HAWKEYE', 'Hawkeye', 'INEC', 'EC8A', 'EC8B', 'IReV', 'PDP', 'APC', 'LP', 'NNPP', 'ADC', 'APGA', 'SDP',
   'Nigeria', 'Osun', 'TikTok', 'WhatsApp', 'Telegram', 'X', 'Facebook', 'YouTube', 'Instagram', 'Chrome', 'Safari',
   'Firefox', 'Android', 'iPhone', 'Samsung', 'Google', 'Apple', 'Play', 'App Store', 'PWA', 'SHA-256', 'Rekor',
-  'hawkeye.com.ng', 'inecnigeria.org', 'inecelectionresults.ng', 'GPS', 'OTP', 'PU', 'LGA', 'NIN', 'ID', 'SMS']);
+  'hawkeye.com.ng', 'inecnigeria.org', 'inecelectionresults.ng', 'GPS', 'OTP', 'PU', 'LGA', 'NIN', 'ID', 'SMS',
+  // Crypto networks on support.html. Chain names are proper nouns and the
+  // addresses beside them MUST be byte-identical in every language — a
+  // "translated" wallet address is money sent nowhere.
+  'Solana', 'Ethereum', 'Bitcoin', 'Base', 'Polygon', 'Robinhood Chain', 'Monad', 'Sui', 'HyperEVM',
+  'Arbitrum', 'Optimism', 'Avalanche', 'BNB Chain', 'Tron', 'Litecoin']);
+
+/** A wallet address / hash: long, unspaced, mixed case or hex. Never translated. */
+const ADDRESSY = /^(?:0x[0-9a-fA-F]{16,}|[A-Za-z0-9]{26,})$/;
 
 const looksTranslatable = (s) => {
   const t = s.trim();
@@ -76,6 +84,7 @@ const looksTranslatable = (s) => {
   if (ENGLISH_TEXT.has(t)) return false;
   for (const e of ENGLISH_TEXT) if (e.startsWith(t) || t.startsWith(e)) return false;
   if (!/[A-Za-z]{2}/.test(t)) return false;             // numbers, punctuation, emoji
+  if (ADDRESSY.test(t)) return false;
   if (/^https?:\/\//.test(t)) return false;
   if (/^[\d\s.,:/%+-]+$/.test(t)) return false;
   // A bare proper-noun run: every word capitalised AND every word in KEEP.
@@ -163,14 +172,24 @@ for (const page of pages) {
   const b = await textOf('ha', page, signedIn);
   if (a.errs.length || b.errs.length) report.push(`  ! ${page}: page errors: ${[...new Set([...a.errs, ...b.errs])].slice(0, 2).join(' | ')}`);
 
-  const haText = new Set(b.nodes.map((n) => n.t));
+  /**
+   * Matched on WHERE + WHAT, not text alone.
+   *
+   * A page can carry the same English word in two places — support.html has
+   * "Copy" both inside a translated sentence and on nine JS-built wallet buttons.
+   * Keyed on text alone, the translated <strong> was reported as the gap because
+   * the untranslated buttons kept the word alive somewhere on the page: the right
+   * verdict (something says "Copy" in Hausa) attached to the wrong element, which
+   * sends the fix to a line that is already correct.
+   */
+  const haAt = new Set(b.nodes.map((n) => `${n.w}\t${n.t}`));
   const seen = new Set();
   const gaps = [];
   for (const n of a.nodes) {
     if (!looksTranslatable(n.t)) continue;
-    if (!haText.has(n.t)) continue;         // it moved -> translated
-    if (seen.has(n.t)) continue;
-    seen.add(n.t);
+    if (!haAt.has(`${n.w}\t${n.t}`)) continue;   // it moved here -> translated
+    if (seen.has(`${n.w}\t${n.t}`)) continue;
+    seen.add(`${n.w}\t${n.t}`);
     gaps.push(n);
   }
   totalGaps += gaps.length;

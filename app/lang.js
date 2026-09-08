@@ -25,6 +25,28 @@
   var I18N = window.HawkeyeI18n;
   if (!I18N) return;
 
+  /**
+   * Tell the server, so the things it SENDS follow the choice too — push
+   * notifications, Telegram, the OTP on the next device, the alert feed. The
+   * browser's own copy in localStorage only governs what this page renders.
+   *
+   * BEST-EFFORT AND NEVER BLOCKING. The picker has already closed and the page
+   * has already changed language by the time this runs; if it fails, the app is
+   * still correct and only the notifications lag until the next successful
+   * call. Signed out, there is no row to write to and nothing to do — the
+   * language rides on the OTP request at sign-up instead (app.js chosenLang).
+   */
+  function tellServer(code) {
+    var token = null;
+    try { token = localStorage.getItem('hawkeye_token'); } catch (e) { /* private mode */ }
+    if (!token) return;
+    fetch('/api/observers/language', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+      body: JSON.stringify({ lang: code }),
+    }).catch(function () { /* the app is already in the right language */ });
+  }
+
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
@@ -109,6 +131,7 @@
         remember();
         close();
         refreshRow();
+        tellServer(code);
       });
     });
     return el;

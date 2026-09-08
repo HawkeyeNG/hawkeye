@@ -81,7 +81,7 @@
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
-  <script src="race.js?v=22"></script>
+  <script src="race.js?v=23"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -302,6 +302,11 @@
   </footer>
 
   <script>
+    /* i18n for text this block paints. Every element below is rewritten by JS,
+       so an attribute would be wiped on the next render; and this page loads
+       i18n.js AFTER this script, so the first paint can precede the bundle. */
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+
     const PARTY_COLORS = {
       APC: '#2e7d32', PDP: '#c62828', LP: '#8bc34a', NNPP: '#1565c0', APGA: '#f9a825',
       SDP: '#5e35b1', ADC: '#00897b', YPP: '#ef6c00', PRP: '#8d6e63', ADP: '#455a64',
@@ -770,7 +775,7 @@
      * a second GOV contest is configured. Mirrors races.ts:raceLabel.
      */
     const raceLabel = (c) => {
-      if (!c) return 'Choose a race';
+      if (!c) return T('results.choose-a-race', 'Choose a race');
       const year = Number(String(c.date || '').slice(0, 4)) || GENERAL_ELECTION_YEAR;
       // A contest on exactly one state's ballot reads as that state's own race
       // ("Osun Governorship"); a nationwide one keeps the bare name.
@@ -943,9 +948,25 @@
       const on = open === undefined ? panel.hidden : open;
       panel.hidden = !on;
       document.getElementById('btn-race').setAttribute('aria-expanded', String(on));
-      document.getElementById('race-change').textContent = on ? 'Cancel' : 'Change';
+      document.getElementById('race-change').textContent = on ? T('common.cancel', 'Cancel') : T('profile.change', 'Change');
     }
     document.getElementById('btn-race').onclick = () => togglePicker();
+
+    /* THE RACE BUTTON'S TWO LABELS HOLD RESOLVED STRINGS, NOT KEYS.
+       This page loads i18n.js AFTER this script, so the first paint can land
+       before the bundle has arrived — in English, and then never move again,
+       because apply() has no attribute to find. Repaint on a language change,
+       deriving both from the same state the rest of the page reads: raceLabel()
+       already answers "Choose a race" for no selection, and the picker being
+       open is what makes the second label Cancel rather than Change. */
+    document.addEventListener('hawkeye-lang', () => {
+      const n = document.getElementById('race-name');
+      const c = document.getElementById('race-change');
+      const sel = document.getElementById('sel-contest');
+      const pick = document.getElementById('race-picker');
+      if (n && sel) n.textContent = raceLabel(CONTESTS.find((x) => x.code === sel.value));
+      if (c && pick) c.textContent = pick.hidden ? T('profile.change', 'Change') : T('common.cancel', 'Cancel');
+    });
 
     async function refresh() {
       const contest = document.getElementById('sel-contest').value || 'PRES';
@@ -1101,8 +1122,8 @@
       // chooser IS the page.
       if (!deepLinked) {
         renderRaceList('');
-        document.getElementById('race-name').textContent = 'Choose a race';
-        document.getElementById('race-change').textContent = 'Cancel';
+        document.getElementById('race-name').textContent = T('results.choose-a-race', 'Choose a race');
+        document.getElementById('race-change').textContent = T('common.cancel', 'Cancel');
         document.getElementById('race-picker').hidden = false;
         document.getElementById('btn-race').setAttribute('aria-expanded', 'true');
         return;   // no board, and no polling for a race nobody has picked
@@ -1252,6 +1273,6 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=4"></script>
   <script src="/lang.js?v=3"></script>
-  <script src="menu.js?v=168"></script>
+  <script src="menu.js?v=169"></script>
 </body>
 </html>

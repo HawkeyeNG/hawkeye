@@ -2179,6 +2179,17 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
       applyIntentCopy();
       applySignUpMode();
       applySignInMode();
+      /* The primary button is painted by resetAuthPane(), which this listener
+         must NOT call — it clears the number the reader has already typed. So
+         repaint just the button, from the mode it is already in. */
+      const b = $('btn-auth');
+      if (b) {
+        b.textContent = authMode === 'otp'
+          ? T('observe.verify-otp', 'Verify OTP')
+          : authMode === 'password'
+            ? T('observe.sign-in', 'Sign In')
+            : T('observe.request-otp', 'Request OTP');
+      }
     }
   });
 

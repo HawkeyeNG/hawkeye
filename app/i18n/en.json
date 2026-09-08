@@ -944,5 +944,13 @@
   "integrity.based-on-unit-results-party-counts": "Based on {units} unit result(s), {counts} party count(s).",
   "integrity.waiting-for-inec-to-open-the-election": "Waiting for INEC to open the election on IReV — the check activates automatically once configured.",
   "integrity.no-collation-reports-yet": "No collation reports yet — they arrive on election night as results move up the ladder.",
-  "race.from-one-polling-unit-not-an-official-count": "— from {n} polling unit, not an official count."
+  "race.from-one-polling-unit-not-an-official-count": "— from {n} polling unit, not an official count.",
+  "results.choose-a-race": "Choose a race",
+  "race.race-data-unavailable": "Race data unavailable.",
+  "nav.race": "Race",
+  "dashboard.ledger-tampered-inspect-the-chain": "LEDGER TAMPERED (entry {id}) · inspect the chain",
+  "dashboard.no-reports-yet": "No reports yet.",
+  "incident-reports.no-published-incidents-yet": "No published incidents yet.",
+  "practice.nothing-here-is-published-or-counted": "— nothing here is published or counted.",
+  "incident-reports.could-not-load-incidents-try-again-shortly": "Could not load incidents — try again shortly."
 }

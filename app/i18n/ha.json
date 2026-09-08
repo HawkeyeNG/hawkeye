@@ -920,5 +920,13 @@
   "integrity.based-on-unit-results-party-counts": "Bisa sakamakon rumfuna {units}, kirge-kirgen jam’iyya {counts}.",
   "integrity.waiting-for-inec-to-open-the-election": "Ana jiran INEC ta bude zaben a IReV — binciken zai fara aiki ta atomatik da zarar an saita shi.",
   "integrity.no-collation-reports-yet": "Babu rahotannin tattarawa tukuna — suna zuwa a daren zabe yayin da sakamako ke hawa matakai.",
-  "race.from-one-polling-unit-not-an-official-count": "— daga rumfar zabe {n}, ba kidaya na hukuma ba."
+  "race.from-one-polling-unit-not-an-official-count": "— daga rumfar zabe {n}, ba kidaya na hukuma ba.",
+  "results.choose-a-race": "Zabi gasa",
+  "race.race-data-unavailable": "Babu bayanan gasar.",
+  "nav.race": "Gasa",
+  "dashboard.ledger-tampered-inspect-the-chain": "AN TABA LITTAFIN RIKODI (rikodi {id}) · duba sarkar",
+  "dashboard.no-reports-yet": "Babu rahotanni tukuna.",
+  "incident-reports.no-published-incidents-yet": "Babu lamurran da aka buga tukuna.",
+  "practice.nothing-here-is-published-or-counted": "— ba a buga ko kirga komai a nan.",
+  "incident-reports.could-not-load-incidents-try-again-shortly": "An kasa loda lamurra — sake gwadawa nan ba da jimawa ba."
 }

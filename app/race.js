@@ -269,7 +269,7 @@
   function mountRace(main, race, LOGOS, opts) {
     opts = opts || {};
     LOGOS = LOGOS || {};
-    if (!race) { main.innerHTML = '<p class="race-absence">Race data unavailable.</p>'; return; }
+    if (!race) { main.innerHTML = '<p class="race-absence">' + T('race.race-data-unavailable', 'Race data unavailable.') + '</p>'; return; }
 
     const flagIcon = (p) => LOGOS[p]
       ? `<img class="flag" src="${LOGOS[p]}" alt="${esc(p)} logo" loading="lazy" onerror="this.outerHTML='<span class=&quot;fallback&quot;>${esc(p)}</span>'">`

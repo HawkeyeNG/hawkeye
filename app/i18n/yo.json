@@ -919,5 +919,13 @@
   "integrity.based-on-unit-results-party-counts": "Dá lórí àbájáde ibùdó {units}, ìkà ẹgbẹ́ {counts}.",
   "integrity.waiting-for-inec-to-open-the-election": "Ń dúró de INEC láti ṣí ìdìbò náà lórí IReV — àyẹ̀wò náà yóò bẹ̀rẹ̀ fúnra rẹ̀ ní kété tí a bá ṣètò rẹ̀.",
   "integrity.no-collation-reports-yet": "Kò sí ìròyìn àkójọpọ̀ síbẹ̀ — wọ́n ń dé ní alẹ́ ọjọ́ ìdìbò bí àwọn àbájáde ṣe ń gòkè lọ.",
-  "race.from-one-polling-unit-not-an-official-count": "— láti ibùdò ìdìbò {n}, kì í ṣe ìkà ìjọba."
+  "race.from-one-polling-unit-not-an-official-count": "— láti ibùdò ìdìbò {n}, kì í ṣe ìkà ìjọba.",
+  "results.choose-a-race": "Yan ìdíje",
+  "race.race-data-unavailable": "Dátà ìdíje kò sí.",
+  "nav.race": "Ìdíje",
+  "dashboard.ledger-tampered-inspect-the-chain": "A TI FỌWỌ́ KAN ÌWÉ ÀKỌSÍLẸ̀ (àkọsílẹ̀ {id}) · ṣàyẹ̀wò ẹ̀wọ̀n náà",
+  "dashboard.no-reports-yet": "Kò sí ìròyìn kankan síbẹ̀.",
+  "incident-reports.no-published-incidents-yet": "Kò sí ìṣẹlẹ̀ tí a ti tẹ̀ jáde síbẹ̀.",
+  "practice.nothing-here-is-published-or-counted": "— a kò tẹ ohunkóhun jáde tàbí kà á níbí.",
+  "incident-reports.could-not-load-incidents-try-again-shortly": "A kò lè gbé àwọn ìṣẹlẹ̀ jáde — gbiyanju lẹ́ẹ̀kan sí láìpẹ́."
 }

@@ -436,7 +436,7 @@ export function ChooseUnitModal({
         // with working permission that they have none is how this screen loses
         // the people it is for — the same discrimination map-unit makes.
         const d = describeFixFailure(r);
-        setNearLine(`${d.lead}, or search for it above. (${d.code})`);
+        setNearLine(i18nT('n.components.choose-unit.or-search-for-it-above', { v0: d.lead, v1: d.code }));
         setGpsSettings(d.settings);
         return;
       }
@@ -605,14 +605,14 @@ export function ChooseUnitModal({
         const m = scope.registerM ?? scope.envelopeM;
         setNearLine(
           m != null
-            ? `No unit found within ${m}m — search by name above.`
+            ? i18nT('n.components.choose-unit.no-unit-found-within-m-search', { v0: m })
             : 'Could not check nearby units — search by name above.',
         );
         return;
       }
       setNearLine(
         all.length > list.length
-          ? `The ${list.length} closest of ${all.length} found — tap yours:`
+          ? i18nT('n.components.choose-unit.the-closest-of-found-tap-yours', { v0: list.length, v1: all.length })
           : 'Tap your polling unit:',
       );
     } catch {
@@ -686,8 +686,8 @@ export function ChooseUnitModal({
         notice.show(
           'Could not save your polling unit',
           code === 'unknown_unit'
-            ? `${unit.name} is not in the register. (${code} / HTTP ${res.status})`
-            : `Please check your connection and try again. (${code} / HTTP ${res.status})`,
+            ? i18nT('n.components.choose-unit.is-not-in-the-register-http', { v0: unit.name, v1: code, v2: res.status })
+            : i18nT('n.components.choose-unit.please-check-your-connection-and-try', { v0: code, v1: res.status }),
         );
         return;
       }
@@ -823,7 +823,7 @@ export function ChooseUnitModal({
             disabled={nearBusy}
             onPress={findNearby}
             accessibilityRole="button"
-            accessibilityLabel={near.length || nearLine ? 'Search near me again' : 'Find units near me'}
+            accessibilityLabel={near.length || nearLine ? i18nT('n.components.choose-unit.search-near-me-again') : i18nT('incidents.find-units-near-me')}
             accessibilityState={{ disabled: nearBusy, busy: nearBusy }}
             className={`flex-row items-center justify-center rounded-2xl py-3 ${nearBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
           >
@@ -837,7 +837,7 @@ export function ChooseUnitModal({
                     saying why there are none — rather than on the tab, which
                     would offer to search "again" before it ever succeeded. */}
                 <Text className="pl-2 text-sm font-bold text-hawk-gold">
-                  {near.length || nearLine ? 'Search near me again' : 'Find units near me'}
+                  {near.length || nearLine ? i18nT('n.components.choose-unit.search-near-me-again-2') : i18nT('incidents.find-units-near-me')}
                 </Text>
               </>
             )}

@@ -68,8 +68,9 @@ export function openCaseFor(puCode, contest, windowDays = WINDOW_DAYS) {
   appendDocket('case_open', { caseId, puCode, contest, flagIds: flags.map((f) => f.id).join(','), closesAt: closes });
   recomputeResult(db, puCode, contest);
   import('./notifications.js').then((n) => n.noteUnitSavers(puCode, {
-    kind: 'case', title: 'A result at your unit is in dispute',
-    body: `${puCode} · ${contest} — open for crowd review. Judge the evidence.`,
+    kind: 'case',
+    titleKey: 'note.case.open.title', bodyKey: 'note.case.open.body',
+    params: { code: puCode, contest },
     url: `https://hawkeye.com.ng/case.html?id=${caseId}`,
   })).catch(() => {});
   notifyMaster(`⚖️ docket: case #${caseId} opened for ${puCode} ${contest}`);
@@ -97,8 +98,9 @@ export function openCases(windowDays = WINDOW_DAYS) {
       appendDocket('case_open', { caseId: id, puCode: f.pu_code, contest: f.contest, flagIds: f.ids, closesAt: closes });
       recomputeResult(db, f.pu_code, f.contest);
       import('./notifications.js').then((n) => n.noteUnitSavers(f.pu_code, {
-        kind: 'case', title: 'A result at your unit is in dispute',
-        body: `${f.pu_code} · ${f.contest} — open for crowd review. Judge the evidence.`,
+        kind: 'case',
+        titleKey: 'note.case.open.title', bodyKey: 'note.case.open.body',
+        params: { code: f.pu_code, contest: f.contest },
         url: `https://hawkeye.com.ng/case.html?id=${id}`,
       })).catch(() => {});
     }
@@ -166,10 +168,14 @@ export function resolveDueCases() {
     appendDocket('resolution', { caseId: c.id, puCode: c.pu_code, contest: c.contest, outcome, tally: t });
     recomputeResult(db, c.pu_code, c.contest);
     notifyMaster(`⚖️ case #${c.id} ${c.pu_code} ${c.contest}: ${outcome} (${t.fraudulent}F/${t.legit}L/${t.inconclusive}I of ${t.total})`);
-    const say = { upheld: 'struck by the crowd (fraud upheld)', cleared: 'cleared by the crowd', unresolved: 'left unresolved (no quorum)' }[outcome] || outcome;
+    // The outcome word is keyed too — it is the whole point of the sentence, and
+    // "cleared by the crowd" left in English inside a Hausa alert reads as the
+    // one part that was not worth translating.
+    const sayKey = { upheld: 'case.outcome.upheld', cleared: 'case.outcome.cleared', unresolved: 'case.outcome.unresolved' }[outcome];
     import('./notifications.js').then((n) => noteVoters(n, c.id, c.pu_code, {
-      kind: 'case', title: 'A case you judged is resolved',
-      body: `${c.pu_code} · ${c.contest} — ${say}.`,
+      kind: 'case',
+      titleKey: 'note.case.resolved.title', bodyKey: 'note.case.resolved.body',
+      params: { code: c.pu_code, contest: c.contest, outcome, sayKey },
       url: `https://hawkeye.com.ng/case.html?id=${c.id}`,
     })).catch(() => {});
     resolved++;

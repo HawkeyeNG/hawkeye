@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { config } from '../config.js';
 import { db } from '../db.js';
+import { t } from './i18n.js';
 
 // OTP delivery. Providers:
 //   console  — dev only: logs the code, register endpoint echoes it as devOtp
@@ -17,8 +18,23 @@ import { db } from '../db.js';
 // against Sendchamp instead of our local `code`.
 // `channel` is the USER'S delivery choice from the sign-up form ('telegram' |
 // 'sms' | 'whatsapp'); empty = legacy clients, auto behaviour.
-export async function sendOtp(phone, code, phoneHash, channel = '') {
-  const message = `Hawkeye code: ${code}. Expires in ${Math.round(config.otpTtlS / 60)} min. Never share it.`;
+export async function sendOtp(phone, code, phoneHash, channel = '', lang = 'en') {
+  /**
+   * The code itself is the first thing Hawkeye ever sends anyone, so it goes in
+   * their language when they have told us one.
+   *
+   * EXCEPT ON WHATSAPP, and that is not our choice: WhatsApp OTPs ride
+   * Sendchamp's Verification API against a Meta-APPROVED TEMPLATE — Sendchamp
+   * generates the code and Meta renders the wording. There is no message body
+   * for us to translate on that path, which is why `message` below is only ever
+   * used by Telegram and SMS. Translating WhatsApp means registering
+   * per-language templates with Meta first.
+   *
+   * On SMS this text is UCS-2 for all three languages (see smsSegments in
+   * services/i18n.js) — 70 characters a segment instead of 160. It fits in one
+   * either way, and SMS OTP is off regardless.
+   */
+  const message = t(lang, 'otp.code', { code, mins: Math.round(config.otpTtlS / 60) });
   // SMS is gated behind config.smsOtpEnabled (see config.js): with no approved
   // Nigerian sender ID, SMS silently fails to deliver, which looks like a broken
   // sign-up. While it's off, an explicit 'sms' choice — including from clients

@@ -5,7 +5,8 @@ import { db } from '../db.js';
 import { config } from '../config.js';
 import { validatePublicKeyJwk } from '../services/signatures.js';
 import { sendOtp, confirmScOtp } from '../services/sms.js';
-import { notifyChat, notifyMaster, chatIdByHash } from '../services/notify.js';
+import { notifyChat, notifyMaster, notifyObserver, notifyHash } from '../services/notify.js';
+import { t, langOf, langOfHash, normalise, DEFAULT_LANG, LANGS } from '../services/i18n.js';
 import { noteRegistration } from '../services/integrity.js';
 import { verifyWebAppPayload, parseJsonField } from '../services/telegramWebApp.js';
 import { clientIp } from '../services/security.js';
@@ -125,14 +126,28 @@ observersRouter.post('/register', async (req, res) => {
   }
 
   const code = String(crypto.randomInt(100000, 1000000));
+  /**
+   * THE LANGUAGE ARRIVES BEFORE THE OBSERVER DOES.
+   *
+   * Sign-up asks for a code first; the observers row that would hold the
+   * preference is only created once that code comes back verified. So the
+   * client's choice rides on the OTP row and is copied across at /verify —
+   * otherwise the very first message a new observer receives, the code itself,
+   * would be the one message that could not be in their language.
+   *
+   * A returning observer's stored choice wins over whatever this device sent,
+   * unless they have none: the profile setting is the deliberate one, and a
+   * second phone with a fresh browser should not silently reset it.
+   */
+  const askedLang = normalise(req.body?.lang);
   db.prepare(`
-    INSERT INTO otps (phone_hash, code, expires_at, attempts, sc_reference) VALUES (?, ?, ?, 0, NULL)
-    ON CONFLICT(phone_hash) DO UPDATE SET code = excluded.code, expires_at = excluded.expires_at, attempts = 0, sc_reference = NULL`)
-    .run(hash, code, Date.now() + config.otpTtlS * 1000);
+    INSERT INTO otps (phone_hash, code, expires_at, attempts, sc_reference, lang) VALUES (?, ?, ?, 0, NULL, ?)
+    ON CONFLICT(phone_hash) DO UPDATE SET code = excluded.code, expires_at = excluded.expires_at, attempts = 0, sc_reference = NULL, lang = excluded.lang`)
+    .run(hash, code, Date.now() + config.otpTtlS * 1000, askedLang);
 
   // 'telegram' | 'sms' | 'whatsapp' — the delivery choice made on the sign-up form.
   const channel = ['telegram', 'sms', 'whatsapp'].includes(req.body?.channel) ? req.body.channel : '';
-  const sent = await sendOtp(phone, code, hash, channel);
+  const sent = await sendOtp(phone, code, hash, channel, langOfHash(hash) === DEFAULT_LANG ? (askedLang || DEFAULT_LANG) : langOfHash(hash));
   if (!sent.ok && sent.telegramLink) {
     // Not an error: the observer must open the bot once to link their Telegram.
     return res.json({ ok: true, telegramLink: sent.telegramLink });
@@ -177,6 +192,9 @@ observersRouter.post('/verify', async (req, res) => {
     db.prepare('UPDATE otps SET attempts = attempts + 1 WHERE phone_hash = ?').run(hash);
     return res.status(400).json({ error: 'otp_incorrect' });
   }
+  // Read before the delete: the language the client sent with the code request
+  // is on this row, and it is about to be thrown away.
+  const otpLang = normalise(row.lang);
   db.prepare('DELETE FROM otps WHERE phone_hash = ?').run(hash);
 
   const jwkJson = JSON.stringify(jwk);
@@ -199,11 +217,19 @@ observersRouter.post('/verify', async (req, res) => {
       .run(jwkJson, deviceId, observer.id);
   }
 
+  /* Carry the language across from the OTP row now that there is somewhere to
+     put it. Only when the observer has none: a returning observer's stored
+     choice is the deliberate one and must not be reset by a fresh browser. */
+  if (otpLang && !normalise(observer.lang)) {
+    db.prepare('UPDATE observers SET lang = ? WHERE id = ?').run(otpLang, observer.id);
+    observer = { ...observer, lang: otpLang };
+  }
+
   // Telegram: send the observer their identity details, and ping the master.
-  const chatId = chatIdByHash(hash);
   const when = new Date(observer.created_at).toISOString().replace('T', ' ').slice(0, 16);
-  notifyChat(chatId,
-    `✅ Hawkeye verification complete.\nObserver ID: ${observer.id}\nIdentity hash: ${hash.slice(0, 16)}…\nRegistered: ${when} UTC\nThis device is now saved — you won't need to sign up again on it.`);
+  notifyObserver(observer, 'tg.verified', {
+    id: observer.id, hash: hash.slice(0, 16), when,
+  });
   notifyMaster(`${isNew ? 'NEW' : 'repeat'} phone verified · observer #${observer.id} · ${hash.slice(0, 12)}…`);
   if (isNew) { try { noteRegistration(); } catch { /* informational only */ } }
 
@@ -284,8 +310,9 @@ observersRouter.post('/telegram-verify', (req, res) => {
   db.prepare('INSERT OR REPLACE INTO telegram_links (phone_hash, chat_id, created_at) VALUES (?, ?, ?)')
     .run(hash, tgUser.id, Date.now());
 
-  notifyChat(tgUser.id,
-    `✅ Signed in to Hawkeye via Telegram.\nObserver ID: ${observer.id}\nNo codes needed on this device again.`);
+  // The chat id is already to hand here — it is how they signed in — so only
+  // the language needs looking up.
+  notifyChat(tgUser.id, t(langOf(observer.id), 'tg.tgSignin', { id: observer.id }));
   notifyMaster(`${isNew ? 'NEW' : 'repeat'} Telegram sign-in · observer #${observer.id} · ${hash.slice(0, 12)}…`);
   if (isNew) { try { noteRegistration(); } catch { /* informational only */ } }
 
@@ -357,8 +384,7 @@ observersRouter.post('/login', (req, res) => {
   db.prepare('UPDATE observers SET public_key_jwk = ?, device_id = ? WHERE id = ?')
     .run(JSON.stringify(jwk), deviceId, observer.id);
   // Password ≠ phone proof, so tell the owner a password sign-in happened.
-  notifyChat(chatIdByHash(hash),
-    `🔑 Password sign-in to your Hawkeye ID (observer #${observer.id}). If this wasn't you, sign in with an OTP and change your password.`);
+  notifyHash(hash, 'tg.pwSignin', { id: observer.id });
 
   const token = issueToken(observer.id, deviceId, 'pw');
   res.json({ ok: true, observerId: observer.id, token });
@@ -394,8 +420,7 @@ observersRouter.post('/verify-owner', requireObserver, async (req, res) => {
   db.prepare('DELETE FROM otps WHERE phone_hash = ?').run(hash);
 
   const deviceId = String(req.headers['x-device-id'] || '').slice(0, 64) || null;
-  notifyChat(chatIdByHash(hash),
-    `🔑 A password reset was authorised on your Hawkeye ID (observer #${req.observer.id}). If this wasn't you, change your password now.`);
+  notifyHash(hash, 'tg.pwReset', { id: req.observer.id });
   res.json({ ok: true, observerId: req.observer.id, token: issueToken(req.observer.id, deviceId, 'otp') });
 });
 
@@ -415,8 +440,10 @@ observersRouter.post('/set-password', requireObserver, (req, res) => {
     }
   }
   db.prepare('UPDATE observers SET password_hash = ? WHERE id = ?').run(hashPassword(pw), o.id);
-  notifyChat(chatIdByHash(o.phone_hash),
-    `🔒 Your Hawkeye password was ${o.password_hash ? 'changed' : 'set'}. If this wasn't you, sign in with an OTP and change it.`);
+  // Read o.password_hash BEFORE the UPDATE above would have changed it — it is
+  // the row fetched at the top of the handler, so this still says which of the
+  // two things happened.
+  notifyObserver(o, o.password_hash ? 'tg.pwChanged' : 'tg.pwSet');
   res.json({ ok: true });
 });
 
@@ -488,9 +515,32 @@ observersRouter.post('/my-unit', requireObserver, (req, res) => {
   if (!pu) return res.status(404).json({ error: 'unknown_unit' });
   db.prepare('INSERT OR REPLACE INTO saved_units (observer_id, pu_code, created_at) VALUES (?, ?, ?)')
     .run(req.observer.id, puCode, Date.now());
-  notifyChat(chatIdByHash(req.observer.phone_hash),
-    `⭐ Saved as your polling unit: ${pu.name} (${pu.pu_code})\n${pu.ward} ward, ${pu.lga}, ${pu.state}.\nYou'll get an alert here for every result report and approved incident at this unit.`);
+  notifyObserver(req.observer, 'tg.savedUnit', {
+    name: pu.name, code: pu.pu_code, ward: pu.ward, lga: pu.lga, state: pu.state,
+  });
   res.json({ ok: true, unit: pu });
+});
+
+/**
+ * The language the SERVER should use for this observer.
+ *
+ * The browser keeps its own copy in localStorage for what it renders; this is
+ * the copy the server needs for what it SENDS — a push at 4am, a Telegram
+ * message, an OTP on a new device. They are set from the same control and are
+ * deliberately two records: one of them has to survive the browser being closed
+ * and the other has to work before anyone has signed in.
+ *
+ * Best-effort by design. If this call fails the app still renders in the chosen
+ * language; only the notifications lag, and the next successful call fixes them.
+ * So the client does not block the picker on it.
+ */
+// The router is mounted at /api/observers, so the path here is '/language' —
+// writing the full path made it /api/observers/observers/language, which 404s.
+observersRouter.put('/language', requireObserver, (req, res) => {
+  const lang = normalise(req.body?.lang);
+  if (!lang) return res.status(400).json({ error: 'unknown_language', hint: 'One of: ' + LANGS.join(', ') });
+  db.prepare('UPDATE observers SET lang = ? WHERE id = ?').run(lang, req.observer.id);
+  res.json({ ok: true, lang });
 });
 
 observersRouter.post('/my-unit/clear', requireObserver, (req, res) => {

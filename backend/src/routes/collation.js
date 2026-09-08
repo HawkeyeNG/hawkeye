@@ -16,7 +16,7 @@ import { canonicalCollationPayload, canonicalVotes, verifyObserverSignature } fr
 import { checkCollation } from '../services/integrity.js';
 import { ocrMatchCounts } from '../services/ocr.js';
 import { requireObserver } from './observers.js';
-import { notifyChat, notifyMaster, chatIdByHash } from '../services/notify.js';
+import { notifyObserver, notifyMaster } from '../services/notify.js';
 
 export const collationRouter = Router();
 
@@ -146,8 +146,7 @@ collationRouter.post('/collations', requireObserver, photoFields, async (req, re
     try { checkCollation(report); } catch (e) { console.error('[collation-check]', e.message); }
 
     const scope = [state, lga, ward].filter(Boolean).join(' / ');
-    notifyChat(chatIdByHash(req.observer.phone_hash),
-      `🦅 ${FORM[level]} collation report recorded — ${scope} (${contest}). It is now on the public record.`);
+    notifyObserver(req.observer, 'tg.collationRecorded', { form: FORM[level], scope, contest });
     notifyMaster(`collation · observer #${req.observer.id} · ${FORM[level]} ${scope} (${contest})`);
     res.status(201).json({ ok: true, entryHash: inserted.entryHash, form: FORM[level] });
   } catch (err) {

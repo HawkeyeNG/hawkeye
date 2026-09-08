@@ -30,6 +30,7 @@ import { config } from '../config.js';
 import { contestLabel, contests, db, scopeIsState } from '../db.js';
 import { noteOnly } from './notifications.js';
 import { sendToObserver } from './push.js';
+import { t, langOf, DEFAULT_LANG } from './i18n.js';
 
 // ---------------------------------------------------------------- the file ---
 
@@ -138,28 +139,34 @@ function longDate(iso) {
  * Exported for tests/declarations_test.mjs and for the admin dry run, which
  * prints exactly what would be sent before anything is.
  */
-export function declarationNote(d) {
+export function declarationNote(d, lang = DEFAULT_LANG) {
   const label = declarationLabel(d);
   const w = d.winner || {};
   const by = d.by || 'INEC';
   const top = (Array.isArray(d.results) ? d.results : []).slice(0, 3);
 
+  /* The ranked lines are a name, a party code and a number — nothing to
+     translate, and translating a candidate's name would be a bug. Only the
+     sentence underneath them changes language. */
   const lines = [];
   if (top.length) {
     top.forEach((r, i) => {
       lines.push(`${i + 1}. ${r.name}${r.party ? ` (${r.party})` : ''} — ${group(r.votes)}`);
     });
   } else if (w.name) {
-    lines.push(`${w.name}${w.party ? ` (${w.party})` : ''}${w.votes ? ` — ${group(w.votes)} votes` : ''}`);
+    lines.push(`${w.name}${w.party ? ` (${w.party})` : ''}`
+      + (w.votes ? ` — ${t(lang, 'decl.votes', { count: group(w.votes) })}` : ''));
   }
   lines.push(
-    `Declared by ${by}${d.declaredOn ? ` on ${longDate(d.declaredOn)}` : ''}.`
-    + ' This race is closed, so it has left your follow list.',
+    (d.declaredOn
+      ? t(lang, 'decl.declaredByOn', { by, date: longDate(d.declaredOn) })
+      : t(lang, 'decl.declaredBy', { by }))
+    + ' ' + t(lang, 'decl.closed'),
   );
 
   return {
     kind: 'declared',
-    title: `${label}: ${by} declares ${w.name || 'the result'}`,
+    title: t(lang, 'decl.title', { label, by, winner: w.name || t(lang, 'decl.theResult') }),
     body: lines.join('\n'),
     url: d.url || null,
   };
@@ -237,12 +244,23 @@ export async function applyDeclarations({ dryRun = false, entries = declarations
     // push fails. Then the phones, one at a time and never fatally: a device
     // that has uninstalled must not stop the next observer being told.
     if (announce) {
+      /* Built per language, not per follower: the winner's name, the party and
+         the vote counts are the same in every language and only the sentences
+         around them change, so at most four versions exist however many
+         thousand people follow the race. Cached by code. */
+      const byLang = new Map();
+      const noteFor = (id) => {
+        const lang = langOf(id);
+        if (!byLang.has(lang)) byLang.set(lang, declarationNote(d, lang));
+        return byLang.get(lang);
+      };
       for (const id of followers) {
-        try { noteOnly(id, note); } catch { /* one bad row must not stop the fan-out */ }
+        try { noteOnly(id, noteFor(id)); } catch { /* one bad row must not stop the fan-out */ }
       }
       for (const id of followers) {
+        const n = noteFor(id);
         // eslint-disable-next-line no-await-in-loop
-        await sendToObserver(id, { title: note.title, body: note.body, data: note.url ? { url: note.url } : {} })
+        await sendToObserver(id, { title: n.title, body: n.body, data: n.url ? { url: n.url } : {} })
           .catch(() => {});
       }
     }

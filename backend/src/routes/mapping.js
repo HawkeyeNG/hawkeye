@@ -68,14 +68,17 @@ mappingRouter.post('/mappings', requireObserver, (req, res) => {
   import('../services/notifications.js').then((n) => {
     if (mapped) {
       for (const f of fixes) n.pushNote(f.observer_id, {
-        kind: 'mapping', title: 'Unit crowd-confirmed',
-        body: `${unitName} (${puCode}) — ${fixes.length} observer fixes agreed. Thank you for mapping it.`,
+        kind: 'mapping',
+        titleKey: 'note.mapping.confirmed.title', bodyKey: 'note.mapping.confirmed.body',
+        params: { unit: unitName, code: puCode, count: fixes.length },
         url: 'https://hawkeye.com.ng/map-unit.html',
       });
     } else {
       n.pushNote(req.observer.id, {
-        kind: 'mapping', title: replaced ? 'Fix updated' : 'Fix recorded',
-        body: `${unitName} (${puCode}) — ${fixes.length} of ${config.mapMinReports} observers needed to confirm.`,
+        kind: 'mapping',
+        titleKey: replaced ? 'note.mapping.updated.title' : 'note.mapping.recorded.title',
+        bodyKey: 'note.mapping.pending.body',
+        params: { unit: unitName, code: puCode, count: fixes.length, needed: config.mapMinReports },
         url: 'https://hawkeye.com.ng/map-unit.html',
       });
     }

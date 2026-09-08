@@ -231,6 +231,19 @@ for (const ddl of [
   'ALTER TABLE polling_units ADD COLUMN approx_lng REAL',
   'ALTER TABLE polling_units ADD COLUMN approx_radius_m REAL',
   'ALTER TABLE polling_units ADD COLUMN approx_source TEXT',
+  // The observer's chosen language, for everything the server SENDS them: OTP
+  // codes, Telegram pings, push notifications and the in-app alert feed. The web
+  // app keeps its own copy in localStorage for what it renders itself; this
+  // column exists because the server cannot read that.
+  //
+  // NULL means "never told us", which is not the same as English — an observer
+  // who signed up before this shipped has not chosen anything, and treating that
+  // as a choice would mean never asking. Readers coalesce it to 'en'.
+  'ALTER TABLE observers ADD COLUMN lang TEXT',
+  // Carried on the OTP row because the language arrives BEFORE the observer
+  // exists: sign-up asks for a code first, and the row that would hold the
+  // preference is only created once that code is verified.
+  'ALTER TABLE otps ADD COLUMN lang TEXT',
   // Search-fold of name/ward — see docs/PU-SEARCH-2027.md. The offline packs
   // search folded text, so the server must fold identically or the same query
   // gives two answers at the same polling unit depending on signal. NOT a

@@ -10,6 +10,23 @@
 const $ = (id) => document.getElementById(id);
 const API = ''; // same origin
 
+/**
+ * The language to tell the SERVER about.
+ *
+ * Sent with the code request because the observer row does not exist yet — the
+ * code itself is the first thing Hawkeye sends anyone, and without this it
+ * would be the one message that could not be in their language. The server
+ * parks it on the OTP row and copies it across at /verify.
+ *
+ * Reads localStorage directly rather than going through HawkeyeI18n: this file
+ * loads on pages that do not carry the i18n runtime, and a sign-up must not
+ * depend on it being there. `undefined` drops the field from the JSON body,
+ * which is what a client with no preference should send.
+ */
+function chosenLang() {
+  try { return localStorage.getItem('hawkeye_lang') || undefined; } catch (e) { return undefined; }
+}
+
 // ---------- tiny IndexedDB key-value store (holds the CryptoKeyPair) ----------
 function idbOpen() {
   return new Promise((resolve, reject) => {
@@ -662,7 +679,7 @@ async function resendVia(channel) {
   try {
     const { status, body } = await api('/api/observers/register', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ phone: pendingPhone, channel }),
+      body: JSON.stringify({ phone: pendingPhone, channel, lang: chosenLang() }),
     });
     if (status !== 200) { $('otp-hint').textContent = explain(body); return; }
     renderOtpSent(body);
@@ -709,7 +726,7 @@ if ($('otp-resend')) $('otp-resend').onclick = async (e) => {
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ phone: pendingPhone, channel: pendingChannel }),
+      body: JSON.stringify({ phone: pendingPhone, channel: pendingChannel, lang: chosenLang() }),
     });
     if (status !== 200) { $('otp-hint').textContent = explain(body); return; }
     renderOtpSent(body);
@@ -732,7 +749,7 @@ $('btn-auth').onclick = async () => {
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ phone, channel }),
+      body: JSON.stringify({ phone, channel, lang: chosenLang() }),
     });
     if (status !== 200) return alert(explain(body));
     // same pane flips to OTP entry

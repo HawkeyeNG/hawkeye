@@ -33,7 +33,7 @@ import { presignPut, headBlob, DRIVER as BLOB_DRIVER, MAX_BLOB_BYTES } from '../
 import { makeLimiter } from '../services/security.js';
 import { contestScope, contestApplies, reportingOpen, reportingOpensAt } from '../services/scope.js';
 import { notifySubscribers } from './subscriptions.js';
-import { notifyChat, notifyMaster, chatIdByHash, notifyUnitSavers } from '../services/notify.js';
+import { notifyObserver, notifyMaster, notifyUnitSavers } from '../services/notify.js';
 import { checkSubmission, checkResult } from '../services/integrity.js';
 import { anchorPublicKey } from '../services/anchor.js';
 
@@ -581,8 +581,9 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
 
     // Confirm to the reporter, and ping the master, with the activity basics.
     const contestLabel = (contestCodes.has(contest) && contest) || contest;
-    notifyChat(chatIdByHash(req.observer.phone_hash),
-      `🦅 Report recorded — ${pu.name} (${puCode}), ${contestLabel}. Status: ${result?.status || 'reported'}. It is now on the public ledger.`);
+    notifyObserver(req.observer, 'tg.reportRecorded', {
+      name: pu.name, code: puCode, contest: contestLabel, status: result?.status || 'reported',
+    });
     notifyMaster(`report · observer #${req.observer.id} · ${contestLabel} at ${pu.name}, ${pu.state}`);
 
     // OCR cross-check, QUEUED rather than awaited. The comment this replaces said
@@ -610,20 +611,22 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     import('../services/notifications.js').then((n) => {
       n.pushNote(req.observer.id, {
         kind: 'report',
-        title: 'Report recorded',
-        body: `${pu.name} (${puCode}) · ${contestLabel} — status ${result?.status || 'reported'}. It is on the public ledger.`,
+        titleKey: 'note.report.mine.title', bodyKey: 'note.report.mine.body',
+        params: { unit: pu.name, code: puCode, contest: contestLabel, status: result?.status || 'reported' },
         url: 'https://hawkeye.com.ng/dashboard.html',
       });
       n.noteUnitSavers(puCode, {
         kind: 'unit',
-        title: 'New report at your unit',
+        titleKey: 'note.report.unit.title',
+        // Unit name, code and contest — data, composed here rather than keyed.
         body: `${pu.name} (${puCode}) · ${contest}`,
         url: 'https://hawkeye.com.ng/dashboard.html',
       });
     }).catch(() => {});
     try {
-      notifyUnitSavers(puCode,
-        `📋 New result report at your polling unit ${puCode} (${contest}).\nSee it: https://hawkeye.com.ng/dashboard.html`);
+      notifyUnitSavers(puCode, 'tg.unitReport', {
+        code: puCode, contest, url: 'https://hawkeye.com.ng/dashboard.html',
+      });
     } catch { /* never block the submission */ }
 
     // ocr is NULL BY CONSTRUCTION now, not omitted. The cross-check moved to a

@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { db, contests, contestLabel, scopeIsState } from '../db.js';
 import { config } from '../config.js';
 import { tgSendMessage } from '../services/sms.js';
-import { notifyChat, notifyMaster, chatIdByHash } from '../services/notify.js';
+import { notifyObserver, notifyMaster } from '../services/notify.js';
+import { t, normalise, DEFAULT_LANG } from '../services/i18n.js';
 import { pushNote } from '../services/notifications.js';
 import { isRaceClosed } from '../services/declarations.js';
 import { requireObserver } from './observers.js';
@@ -30,10 +31,11 @@ subscriptionsRouter.post('/subscriptions', requireObserver, (req, res) => {
   const r = db.prepare('INSERT OR IGNORE INTO subscriptions (observer_id, contest, state, created_at) VALUES (?, ?, ?, ?)')
     .run(req.observer.id, contest, state, Date.now());
   if (r.changes) {
-    const where = state || 'everywhere';
-    notifyChat(chatIdByHash(req.observer.phone_hash),
-      `🔔 You're now following ${contestName(contest)} (${where}). Every new report lands in your Alerts, on your phone, and here.`);
-    notifyMaster(`subscription · observer #${req.observer.id} · ${contestName(contest)} (${where})`);
+    const lang = normalise(req.observer.lang) || DEFAULT_LANG;
+    const where = state || t(lang, 'word.everywhere');
+    notifyObserver(req.observer, 'tg.following', { race: contestName(contest), where });
+    // The master ping is always English: it goes to the owner, not an observer.
+    notifyMaster(`subscription · observer #${req.observer.id} · ${contestName(contest)} (${state || 'everywhere'})`);
   }
   res.status(201).json({ ok: true });
 });
@@ -91,8 +93,8 @@ export function notifySubscribers(dbh, { contest, pu, exceptObserverId = null })
     try {
       pushNote(observer_id, {
         kind: 'result',
-        title: `New ${label} report`,
-        body: `A result was reported at ${where}.`,
+        titleKey: 'note.result.title', bodyKey: 'note.result.body',
+        params: { label, where },
         // The board for this race, not the generic log — the reader followed a
         // specific race and this is the screen about it.
         url: `https://hawkeye.com.ng/results.html?contest=${encodeURIComponent(contest)}`
@@ -103,11 +105,14 @@ export function notifySubscribers(dbh, { contest, pu, exceptObserverId = null })
 
   if (!config.telegramBotToken) return;
   const chats = dbh.prepare(`
-    SELECT DISTINCT tl.chat_id FROM subscriptions s
+    SELECT DISTINCT tl.chat_id, o.lang FROM subscriptions s
     JOIN observers o ON o.id = s.observer_id
     JOIN telegram_links tl ON tl.phone_hash = o.phone_hash
     WHERE s.contest = ? AND (s.state = '' OR s.state = ?)`).all(contest, scope);
   if (!chats.length) return;
-  const msg = `🦅 Hawkeye: new ${label} report at ${where}. hawkeye.com.ng/dashboard.html`;
-  for (const { chat_id } of chats) tgSendMessage(chat_id, msg).catch(() => {});
+  // Per row, not once: the people following a race do not share a language.
+  for (const { chat_id, lang } of chats) {
+    const msg = t(normalise(lang) || DEFAULT_LANG, 'tg.newReport', { label, where });
+    tgSendMessage(chat_id, msg).catch(() => {});
+  }
 }

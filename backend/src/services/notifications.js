@@ -3,6 +3,42 @@
 // pushNote also fires a native push (FCM) best-effort, so a notification arrives
 // on the lock screen AND stays in the feed.
 import { db } from '../db.js';
+import { t, langOf } from './i18n.js';
+
+/**
+ * RESOLVE THE LANGUAGE PER RECIPIENT, HERE.
+ *
+ * A note carries either literal `title`/`body` (admin broadcasts, where a human
+ * typed the words and there is nothing to translate) or `titleKey`/`bodyKey`
+ * plus `params`. Keys win when present.
+ *
+ * It has to happen at this depth because ONE EVENT FANS OUT TO MANY PEOPLE who
+ * may not share a language — noteUnitSavers writes a row per saver — and the
+ * notifications table stores literal text, because that same text is the
+ * payload of a push that has already left. Translating on read would be tidier
+ * and would arrive too late.
+ */
+function resolve(observerId, note) {
+  const { titleKey, bodyKey } = note;
+  if (!titleKey && !bodyKey) return { title: note.title, body: note.body || '' };
+  const lang = langOf(observerId);
+  /**
+   * A PARAM NAMED `somethingKey` IS ITSELF A KEY, and lands as `{something}`.
+   *
+   * Some sentences have a translated word inside them — a case is "cleared by
+   * the crowd" or "struck by the crowd", and that phrase is the whole point of
+   * the alert. Passing it as a literal would leave the one word that carries the
+   * meaning in English inside an otherwise-Hausa notification.
+   */
+  const params = { ...note.params };
+  for (const [k, v] of Object.entries(note.params || {})) {
+    if (k.endsWith('Key') && v) params[k.slice(0, -3)] = t(lang, v);
+  }
+  return {
+    title: titleKey ? t(lang, titleKey, params) : note.title,
+    body: bodyKey ? t(lang, bodyKey, params) : (note.body || ''),
+  };
+}
 
 /**
  * The row ONLY — no push.
@@ -11,8 +47,11 @@ import { db } from '../db.js';
  * to every device directly, so calling pushNote there would deliver the same
  * announcement twice to every phone in the country.
  */
-export function noteOnly(observerId, { kind = 'info', title, body = '', url = null } = {}) {
-  if (!observerId || !title) return null;
+export function noteOnly(observerId, note = {}) {
+  if (!observerId) return null;
+  const { kind = 'info', url = null } = note;
+  const { title, body } = resolve(observerId, note);
+  if (!title) return null;
   const info = db.prepare(`
     INSERT INTO notifications (observer_id, kind, title, body, url, read, created_at)
     VALUES (?, ?, ?, ?, ?, 0, ?)`)
@@ -25,9 +64,13 @@ export function noteOnly(observerId, { kind = 'info', title, body = '', url = nu
  * that is only a push dies when it is swiped away, and one that is only a row is
  * never seen until the app is next opened.
  */
-export function pushNote(observerId, { kind = 'info', title, body = '', url = null } = {}) {
-  const id = noteOnly(observerId, { kind, title, body, url });
+export function pushNote(observerId, note = {}) {
+  const id = noteOnly(observerId, note);
   if (id === null) return null;
+  /* The push must carry the SAME words the row got, so resolve once more rather
+     than pushing note.title — which is undefined whenever a key was used. */
+  const { title, body } = resolve(observerId, note);
+  const url = note.url || null;
   import('./push.js').then((p) => p.sendToObserver(observerId, { title, body, data: url ? { url } : {} })).catch(() => {});
   return id;
 }
@@ -42,7 +85,7 @@ export function pushNote(observerId, { kind = 'info', title, body = '', url = nu
  */
 export function noteMany(observerIds, note) {
   const ids = [...new Set(observerIds)].filter(Boolean);
-  if (!ids.length || !note?.title) return 0;
+  if (!ids.length || !(note?.title || note?.titleKey)) return 0;
   const run = db.transaction((list) => {
     for (const id of list) noteOnly(id, note);
   });

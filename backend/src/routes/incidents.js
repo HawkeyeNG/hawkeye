@@ -12,7 +12,7 @@ import sharp from 'sharp';
 import { db } from '../db.js';
 import { config } from '../config.js';
 import { requireObserver } from './observers.js';
-import { notifyMaster, notifyChat, chatIdByHash } from '../services/notify.js';
+import { notifyMaster, notifyObserver } from '../services/notify.js';
 import { clientIp } from '../services/security.js';
 
 export const incidentsRouter = Router();
@@ -377,7 +377,7 @@ incidentsRouter.post('/incidents', requireObserver, uploadOr400, async (req, res
 
   import('../services/triage.js').then((t) => t.triageIncident(info.lastInsertRowid)).catch(() => {});
   notifyMaster(`🆘 incident [${kind}] from observer #${req.observer.id}${pu?.state ? ' · ' + pu.state : ''} · ${media.length} file(s) · awaiting review (#${info.lastInsertRowid})`);
-  notifyChat(chatIdByHash(req.observer.phone_hash), `🆘 Your incident report was received and is under review. Thank you for helping protect the vote.`);
+  notifyObserver(req.observer, 'tg.incidentReceived');
   res.status(201).json({ ok: true, id: info.lastInsertRowid, status: 'pending' });
 });
 

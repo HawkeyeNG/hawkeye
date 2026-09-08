@@ -13,6 +13,7 @@ import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 import { InfoDot } from '@/components/info-dot';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -284,7 +285,7 @@ export default function Integrity() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Election Integrity" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('common.election-integrity')} translateY={translateY} onClose={() => router.back()} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
@@ -311,7 +312,7 @@ export default function Integrity() {
             Automated checks on every result. Anything that looks wrong is logged here.
           </Text>
           <InfoDot
-            title="What gets checked"
+            title={i18nT('n.app.integrity.what-gets-checked')}
             text="Over-voting, impossible turnout, forged form serials, conflicting counts and statistical outliers. A flag is a signal for scrutiny, not a verdict — and never proof of fraud."
           />
         </View>
@@ -329,19 +330,19 @@ export default function Integrity() {
         <View className="flex-row flex-wrap">
           <Stat
             value={String(bySev.high || 0)}
-            label="High-severity flags"
+            label={i18nT('n.app.integrity.high-severity-flags')}
             tone={bySev.high ? 'bad' : undefined}
             topBar="#d4351c"
           />
           <Stat
             value={String(bySev.medium || 0)}
-            label="Medium flags"
+            label={i18nT('n.app.integrity.medium-flags')}
             tone={bySev.medium ? 'warn' : undefined}
             topBar="#d4770c"
           />
-          <Stat value={String(bySev.low || 0)} label="Low flags" topBar="#004225" />
-          <Stat value={String(summary?.unitsFlagged ?? 0)} label="Units flagged" topBar="#004225" />
-          <Stat value={(summary?.reports ?? 0).toLocaleString()} label="Reports screened" topBar="#004225" />
+          <Stat value={String(bySev.low || 0)} label={i18nT('n.app.integrity.low-flags')} topBar="#004225" />
+          <Stat value={String(summary?.unitsFlagged ?? 0)} label={i18nT('n.app.integrity.units-flagged')} topBar="#004225" />
+          <Stat value={(summary?.reports ?? 0).toLocaleString()} label={i18nT('n.app.integrity.reports-screened')} topBar="#004225" />
         </View>
 
         <SectionLabel text="Detected Discrepancies" />
@@ -357,7 +358,7 @@ export default function Integrity() {
         </View>
         {types.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-1">
-            <Chip label="All types" on={!type} onPress={() => setType('')} />
+            <Chip label={i18nT('integrity.all-types')} on={!type} onPress={() => setType('')} />
             {types.map((t) => (
               <Chip
                 key={t}
@@ -370,7 +371,7 @@ export default function Integrity() {
         ) : null}
         {states.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-1">
-            <Chip label="All states" on={!stateSel} onPress={() => setStateSel('')} />
+            <Chip label={i18nT('integrity.all-states')} on={!stateSel} onPress={() => setStateSel('')} />
             {states.map((s) => (
               <Chip
                 key={s}
@@ -454,7 +455,7 @@ export default function Integrity() {
             {benford ? ` Based on ${benford.n} unit result(s), ${benford.nFirst || 0} party count(s).` : ''}
           </Text>
           <InfoDot
-            title="Digit-distribution screening"
+            title={i18nT('n.app.integrity.digit-distribution-screening')}
             text="Fabricated figures cluster on favourite digits, while genuine counts follow known distributions — Benford's law for first digits, and a roughly even spread for last digits. A departure means these numbers are worth a closer look, nothing more. Real elections throw up odd-looking distributions for innocent reasons, so a flag here is a prompt to check the evidence, not a finding of fraud."
           />
         </View>
@@ -473,17 +474,17 @@ export default function Integrity() {
           {benford?.firstDigit ? (
             <DigitBars items={benford.firstDigit} n={benford.nFirst} />
           ) : (
-            <Text className="pt-2 text-xs text-faint">No counts yet.</Text>
+            <Text className="pt-2 text-xs text-faint">{i18nT('n.app.integrity.no-counts-yet')}</Text>
           )}
 
-          <Text className="pt-4 text-sm font-bold text-ink">Last Digit — Uniformity</Text>
+          <Text className="pt-4 text-sm font-bold text-ink">{i18nT('integrity.last-digit-uniformity')}</Text>
           <Text className="pt-0.5 text-xs text-muted">
             Last digit of winning-party counts. A healthy spread sits near the 10% line.
           </Text>
           {benford?.lastDigit?.length ? (
             <DigitBars items={benford.lastDigit} n={benford.n} />
           ) : (
-            <Text className="pt-2 text-xs text-faint">No counts yet.</Text>
+            <Text className="pt-2 text-xs text-faint">{i18nT('n.app.integrity.no-counts-yet')}</Text>
           )}
         </View>
 
@@ -493,7 +494,7 @@ export default function Integrity() {
             The crowd&apos;s count, checked against INEC&apos;s own uploaded sheet.
           </Text>
           <InfoDot
-            title="INEC IReV cross-check"
+            title={i18nT('n.app.integrity.inec-irev-cross-check')}
             text="For each polling unit, the crowd's reported count is compared against the EC8A sheet INEC itself uploads to its Results Viewing portal (IReV) — INEC's own evidence checked against the crowd's, neither one trusted over the other. Any mismatch appears in the discrepancies above."
           />
         </View>
@@ -507,14 +508,14 @@ export default function Integrity() {
             Announced totals, checked against the units underneath them.
           </Text>
           <InfoDot
-            title="Collation reconciliation"
+            title={i18nT('n.app.integrity.collation-reconciliation')}
             text="Ward (EC8B), LGA (EC8C) and state (EC8D) collation totals are checked against the polling-unit sheets they are built from. A collated figure can never be LESS than the sum of the covered units alone — when it is, that is arithmetic proof of subtraction, not a matter of opinion. This is the step where a count is most often changed."
           />
         </View>
         <View className="rounded-2xl bg-card px-4 py-3">
           <Text className="text-sm text-ink">{collLine}</Text>
           <Pressable className="pt-2" onPress={() => router.push('/report/collation')}>
-            <Text className="text-sm font-bold text-good-ink">Report a collation result →</Text>
+            <Text className="text-sm font-bold text-good-ink">{i18nT('integrity.report-a-collation-result')}</Text>
           </Pressable>
         </View>
 

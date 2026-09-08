@@ -17,6 +17,7 @@ import { bootstrapAuth, useAuth } from '@/lib/auth';
 import '@/lib/memory';
 import { usePushNotifications } from '@/lib/push';
 import { ThemePrefProvider, themeClass, useThemePref } from '@/lib/theme-pref';
+import { LangProvider, t as i18nT } from '@/lib/i18n';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -58,7 +59,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Pro
               paddingVertical: 14,
             }}
           >
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#f5b301' }}>Try again</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#f5b301' }}>{i18nT('n.app._layout.try-again')}</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -89,7 +90,12 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Pro
 export default function RootLayout() {
   return (
     <ThemePrefProvider>
-      <RootShell />
+      {/* Outside the shell so a language change re-renders every screen under
+          it — that re-render is what makes the module-level t() pick up the new
+          bundle. See the long note in lib/i18n.tsx. */}
+      <LangProvider>
+        <RootShell />
+      </LangProvider>
     </ThemePrefProvider>
   );
 }

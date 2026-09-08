@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 import type { Contest } from '@/lib/api';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * The answer an observer gets when they pick a state no election is running in.
@@ -29,7 +30,7 @@ export function NoElection({ state, contest }: { state: string; contest: Contest
         className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
         onPress={() => router.replace('/map-unit')}
       >
-        <Text className="text-base font-bold text-hawk-gold">Map a polling unit</Text>
+        <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.map-unit.map-a-polling-unit')}</Text>
       </Pressable>
     </View>
   );

@@ -41,6 +41,7 @@ import {
 import { ELECTION_TYPES, listRaces, raceLabel, STATES, type Race, type StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -1150,7 +1151,7 @@ export default function Results() {
       // Reached only when /api/national reports a level this build does not know
       // how to draw. Saying so beats drawing the wrong shapes.
       <View className="mt-4 rounded-2xl bg-card px-4 py-4">
-        <Text className="text-sm font-bold text-ink">No map for this race</Text>
+        <Text className="text-sm font-bold text-ink">{i18nT('n.app.tabs.results.no-map-for-this-race')}</Text>
         <Text className="pt-1 text-xs text-muted">
           {data
             ? `This tally is grouped by “${data.level}”, which this version of the app has no outlines for. The website's results map can draw it.`
@@ -1165,7 +1166,7 @@ export default function Results() {
         </Text>
         <View className="flex-row items-center pt-1">
           <Text className="flex-1 text-xs text-muted">{mapNote.lead}</Text>
-          {mapNote.more ? <InfoDot title="About this map" text={mapNote.more} /> : null}
+          {mapNote.more ? <InfoDot title={i18nT('n.app.tabs.results.about-this-map')} text={mapNote.more} /> : null}
         </View>
 
         <View className="pt-3">
@@ -1389,7 +1390,7 @@ export default function Results() {
           className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
           onPress={() => router.push('/report/result')}
         >
-          <Text className="text-sm font-bold text-hawk-gold">Report from your unit</Text>
+          <Text className="text-sm font-bold text-hawk-gold">{i18nT('n.app.tabs.results.report-from-your-unit')}</Text>
         </Pressable>
       </View>
     ) : null;
@@ -1403,7 +1404,7 @@ export default function Results() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Leaderboard" right="none" />
+      <ScreenHeader title={i18nT('common.leaderboard')} right="none" />
       <View className="px-4 pb-2" style={{ paddingTop: headerH + 8 }}>
         {/* Which race is being ranked, and the way to change it — pinned in the
             header so the control is never something you have to scroll to find.
@@ -1488,7 +1489,7 @@ export default function Results() {
               instruction one line below it just moved the reader's eye twice
               to learn the same thing. The seat path keeps its line because it
               says something the card does not. */}
-          {pickSeat ? <Text className="pb-3 text-sm text-muted">Narrow to one seat.</Text> : null}
+          {pickSeat ? <Text className="pb-3 text-sm text-muted">{i18nT('n.app.tabs.results.narrow-to-one-seat')}</Text> : null}
 
           {pickSeat ? (
             <>
@@ -1499,7 +1500,7 @@ export default function Results() {
                 onPress={() => setPickSeat(false)}
                 className="mt-3 items-center rounded-2xl border border-good-ink py-3 active:opacity-70"
               >
-                <Text className="text-sm font-bold text-good-ink">← Back to the whole elections</Text>
+                <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.tabs.results.back-to-the-whole-elections')}</Text>
               </Pressable>
             </>
           ) : (
@@ -1565,7 +1566,7 @@ export default function Results() {
                     </View>
                     {c.open ? (
                       <View className="mr-1.5 shrink-0 rounded-full bg-good px-2.5 py-1">
-                        <Text className="text-[11px] font-bold text-good-ink">Open</Text>
+                        <Text className="text-[11px] font-bold text-good-ink">{i18nT('notifications.open')}</Text>
                       </View>
                     ) : null}
                     <Feather name="chevron-right" size={18} color={on ? BRAND.gold : ui.faint} />
@@ -1586,7 +1587,7 @@ export default function Results() {
                 onPress={() => setPickSeat(true)}
                 className="mt-3 items-center rounded-2xl border border-good-ink py-3 active:opacity-70"
               >
-                <Text className="text-sm font-bold text-good-ink">Rank a single seat instead →</Text>
+                <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.tabs.results.rank-a-single-seat-instead')}</Text>
               </Pressable>
             </>
           )}

@@ -10,6 +10,7 @@ import { useUi } from '@/lib/theme';
 import { loadPolitical, type Race } from '@/lib/political';
 import { humanError } from '@/lib/errors';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
+import { t as i18nT } from '@/lib/i18n';
 
 /** Osun 2026 — Hawkeye's first live pilot election. */
 export default function Osun() {
@@ -31,7 +32,7 @@ export default function Osun() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Osun 2026" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('n.app.osun.osun-2026')} translateY={translateY} onClose={() => router.back()} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}

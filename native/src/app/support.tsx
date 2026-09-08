@@ -9,6 +9,7 @@ import { SvgXml } from 'react-native-svg';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * Support Hawkeye — the founder-funded donation screen (native twin of
@@ -69,7 +70,7 @@ export default function Support() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Support Hawkeye" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('support.support-hawkeye')} translateY={translateY} onClose={() => router.back()} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
@@ -77,7 +78,7 @@ export default function Support() {
       >
         <View className="gap-4 p-4">
           <View className="gap-2 rounded-2xl border border-line bg-card p-4">
-            <Text className="text-lg font-bold text-ink">Keep Hawkeye Independent</Text>
+            <Text className="text-lg font-bold text-ink">{i18nT('support.keep-hawkeye-independent')}</Text>
             <Text className="leading-6 text-muted">
               Hawkeye is built and paid for by its founder — no political funding, no
               advertisers, no strings attached. If the work is useful to you, a donation helps

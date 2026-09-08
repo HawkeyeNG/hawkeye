@@ -7,6 +7,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * THE SHEET, STILL READABLE WHEN THE FIGURES ARE TYPED.
@@ -149,7 +150,7 @@ function Zoomable({ uri, onClose }: { uri: string; onClose: () => void }) {
             source={{ uri }}
             style={{ width: '100%', height: '100%' }}
             contentFit="contain"
-            accessibilityLabel="Your photograph of the result sheet"
+            accessibilityLabel={i18nT('n.components.sheet-reference.your-photograph-of-the-result-sheet')}
           />
         </Animated.View>
       </GestureDetector>
@@ -157,7 +158,7 @@ function Zoomable({ uri, onClose }: { uri: string; onClose: () => void }) {
       <Pressable
         onPress={onClose}
         accessibilityRole="button"
-        accessibilityLabel="Close the sheet"
+        accessibilityLabel={i18nT('observe.close-the-sheet')}
         style={{ position: 'absolute', top: insets.top + 10, right: 16 }}
         className="h-11 w-11 items-center justify-center rounded-full bg-black/60 active:opacity-70"
       >

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * A centred modal whose BODY SCROLLS and whose actions stay put.
@@ -85,7 +86,7 @@ export function ModalCard({
                   onPress={onCloseIcon}
                   hitSlop={10}
                   accessibilityRole="button"
-                  accessibilityLabel="Close"
+                  accessibilityLabel={i18nT('common.close')}
                   className="-mr-1 -mt-1 rounded-full p-1 active:opacity-60"
                 >
                   <Feather name="x" size={20} color={ui.muted} />

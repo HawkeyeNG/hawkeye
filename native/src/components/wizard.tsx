@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * Shared wizard furniture — one visual language across every report flow.
@@ -38,7 +39,7 @@ export function Crumb({ label, onPress }: { label: string; onPress: () => void }
     >
       <Feather name="arrow-left" size={15} color={ui.tint.good.ink} />
       <Text className="pl-2 text-sm font-bold text-good-ink">{label}</Text>
-      <Text className="pl-2 text-xs font-semibold text-faint">change</Text>
+      <Text className="pl-2 text-xs font-semibold text-faint">{i18nT('n.components.wizard.change')}</Text>
     </Pressable>
   );
 }

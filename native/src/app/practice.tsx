@@ -54,6 +54,7 @@ import { maybeAskForReview } from '@/lib/review';
 import { useUi } from '@/lib/theme';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -300,7 +301,7 @@ const Slot = ({
     ) : (
       <View className="h-[110px] items-center justify-center bg-surface">
         <Feather name="image" size={20} color={ui.tint.good.ink} />
-        <Text className="pt-1 text-[11px] font-semibold text-muted">Sample used</Text>
+        <Text className="pt-1 text-[11px] font-semibold text-muted">{i18nT('n.app.practice.sample-used')}</Text>
       </View>
     )}
     <View className="flex-row items-center justify-between px-3 py-2">
@@ -342,7 +343,7 @@ const UnitRow = ({
         className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
         onPress={onContinue}
       >
-        <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
+        <Text className="pr-1 text-sm font-bold text-hawk-ink">{i18nT('n.app.practice.continue')}</Text>
         <Feather name="arrow-right" size={14} color={BRAND.ink} />
       </Pressable>
     ) : null}
@@ -397,7 +398,7 @@ const NearbyRow = ({
           className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
           onPress={onContinue}
         >
-          <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
+          <Text className="pr-1 text-sm font-bold text-hawk-ink">{i18nT('n.app.practice.continue')}</Text>
           <Feather name="arrow-right" size={14} color={BRAND.ink} />
         </Pressable>
       ) : null}
@@ -1138,7 +1139,7 @@ export default function Practice() {
           className="mt-5 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
           onPress={() => router.back()}
         >
-          <Text className="text-base font-bold text-hawk-gold">Back</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('tour.back')}</Text>
         </Pressable>
       </SafeScreen>
     );
@@ -1275,7 +1276,7 @@ export default function Practice() {
           hitSlop={8}
           className="mr-1.5"
           accessibilityRole="button"
-          accessibilityLabel="Home"
+          accessibilityLabel={i18nT('nav.home')}
         >
           <Image
             source={require('@/assets/images/icon.png')}
@@ -1289,7 +1290,7 @@ export default function Practice() {
         >
           <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Practice Run</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">{i18nT('n.app.practice.practice-run')}</Text>
         {/* bg-hawk-gold is a fixed brand surface: its label must be the fixed
             hawk ink, since text-ink flips near-white and dies in the gold. */}
         <View className="ml-2 rounded-full bg-hawk-gold px-2 py-0.5">
@@ -1343,7 +1344,7 @@ export default function Practice() {
         <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setShowHistory(false)}>
           <Pressable className="max-h-[70%] rounded-t-3xl bg-surface px-5 pb-8 pt-5" onPress={() => {}}>
             <View className="flex-row items-center pb-2">
-              <Text className="flex-1 text-lg font-bold text-ink">Your Practice Runs</Text>
+              <Text className="flex-1 text-lg font-bold text-ink">{i18nT('n.app.practice.your-practice-runs')}</Text>
               <Pressable
                 hitSlop={12}
                 onPress={() => setShowHistory(false)}
@@ -1397,7 +1398,7 @@ export default function Practice() {
                rendered full-screen above before this ScrollView is reached) ── */}
         {step === 'unit' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
-            <Text className="pb-1 text-xl font-bold text-ink">Which Polling Unit?</Text>
+            <Text className="pb-1 text-xl font-bold text-ink">{i18nT('n.app.practice.which-polling-unit')}</Text>
             <Text className="pb-3 text-sm text-muted">
               Practise from the unit you would report at, or skip and use a sample.
             </Text>
@@ -1414,7 +1415,7 @@ export default function Practice() {
               ) : (
                 <>
                   <Feather name="crosshair" size={17} color={BRAND.gold} />
-                  <Text className="pl-2 text-base font-bold text-hawk-gold">Find units near me</Text>
+                  <Text className="pl-2 text-base font-bold text-hawk-gold">{i18nT('incidents.find-units-near-me')}</Text>
                 </>
               )}
             </Pressable>
@@ -1430,7 +1431,7 @@ export default function Practice() {
                 whole point of practice is that this is not new on the day. */}
             {!unit && sheetGuess ? (
               <View className="mt-3 rounded-2xl border-2 border-hawk-green bg-card p-4">
-                <Text className="pb-1.5 text-base font-bold text-ink">Is this your polling unit?</Text>
+                <Text className="pb-1.5 text-base font-bold text-ink">{i18nT('n.app.practice.is-this-your-polling-unit')}</Text>
                 <Text className="text-base font-semibold text-ink">{sheetGuess.name}</Text>
                 <Text className="pb-3 text-xs text-muted">
                   {sheetGuess.code}
@@ -1442,13 +1443,13 @@ export default function Practice() {
                     onPress={acceptSheetGuess}
                     className="flex-1 items-center rounded-xl bg-hawk-green py-3 active:opacity-80"
                   >
-                    <Text className="text-sm font-bold text-hawk-gold">Yes, use this unit</Text>
+                    <Text className="text-sm font-bold text-hawk-gold">{i18nT('n.app.practice.yes-use-this-unit')}</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => { setSheetGuess(null); setSheetMiss('Pick your unit below, or search for it.'); }}
                     className="flex-1 items-center rounded-xl border border-line py-3 active:opacity-70"
                   >
-                    <Text className="text-sm font-bold text-ink">No, choose another</Text>
+                    <Text className="text-sm font-bold text-ink">{i18nT('n.app.practice.no-choose-another')}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -1466,7 +1467,7 @@ export default function Practice() {
                 className="mt-2 flex-row items-center self-start rounded-xl border border-line px-3 py-2 active:opacity-70"
               >
                 <Feather name="settings" size={14} color={ui.muted} />
-                <Text className="pl-2 text-sm font-semibold text-ink">Open phone settings</Text>
+                <Text className="pl-2 text-sm font-semibold text-ink">{i18nT('n.app.map-unit.open-phone-settings')}</Text>
               </Pressable>
             ) : null}
 
@@ -1537,14 +1538,14 @@ export default function Practice() {
               <Text className="flex-1 pl-2 text-base font-bold text-hawk-gold">
                 Browse the register instead
               </Text>
-              <Text className="text-xs text-emerald-100">state › LGA › ward</Text>
+              <Text className="text-xs text-emerald-100">{i18nT('n.app.map-unit.state-lga-ward')}</Text>
             </Pressable>
 
             {browse ? (
               <View className="pt-3">
                 {!stateSel ? (
                   <>
-                    <Prompt>Select a state</Prompt>
+                    <Prompt>{i18nT('n.app.practice.select-a-state')}</Prompt>
                     <View className="flex-row flex-wrap">
                       {states.map((s) => (
                         <Chip key={s} label={s} onPress={() => pickState(s)} />
@@ -1556,7 +1557,7 @@ export default function Practice() {
                 {stateSel && !lgaSel ? (
                   <>
                     <Crumb label={stateSel} onPress={() => pickState(null)} />
-                    <Prompt>Select an LGA</Prompt>
+                    <Prompt>{i18nT('n.app.practice.select-an-lga')}</Prompt>
                     <View className="flex-row flex-wrap">
                       {lgas.map((l) => (
                         <Chip key={l} label={l} onPress={() => pickLga(l)} />
@@ -1568,7 +1569,7 @@ export default function Practice() {
                 {stateSel && lgaSel && !wardSel ? (
                   <>
                     <Crumb label={lgaSel} onPress={() => pickLga(null)} />
-                    <Prompt>Select a ward</Prompt>
+                    <Prompt>{i18nT('n.app.practice.select-a-ward')}</Prompt>
                     <View className="flex-row flex-wrap">
                       {wards.map((w) => (
                         <Chip key={w} label={w} onPress={() => pickWard(w)} />
@@ -1580,7 +1581,7 @@ export default function Practice() {
                 {stateSel && lgaSel && wardSel ? (
                   <>
                     <Crumb label={`${lgaSel} · ${wardSel}`} onPress={() => pickWard(null)} />
-                    <Prompt>Select a polling unit</Prompt>
+                    <Prompt>{i18nT('n.app.practice.select-a-polling-unit')}</Prompt>
                     {units.map((u) => (
                       <UnitRow
                         key={u.pu_code}
@@ -1651,7 +1652,7 @@ export default function Practice() {
         {step === 'contest' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             <Crumb label={selectedName} onPress={() => setStep('unit')} />
-            <Text className="pb-1 text-xl font-bold text-ink">Which Race?</Text>
+            <Text className="pb-1 text-xl font-bold text-ink">{i18nT('n.app.practice.which-race')}</Text>
             <Text className="pb-3 text-sm text-muted">
               Green races are live now; the rest are the full 2027 picture. Practice can rehearse any
               of them — a dim one is just a rehearsal.
@@ -1680,7 +1681,7 @@ export default function Practice() {
                 race ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'
               }`}
             >
-              <Text className="text-base font-bold text-hawk-gold">Continue to the figures</Text>
+              <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.practice.continue-to-the-figures')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -1738,10 +1739,10 @@ export default function Practice() {
                 votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'
               }`}
             >
-              <Text className="text-base font-bold text-hawk-gold">Review</Text>
+              <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.practice.review')}</Text>
             </Pressable>
             <Pressable className="mt-3 items-center" onPress={() => setStep('contest')}>
-              <Text className="text-sm font-semibold text-good-ink">‹ Back to the race</Text>
+              <Text className="text-sm font-semibold text-good-ink">{i18nT('n.app.practice.back-to-the-race')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -1749,7 +1750,7 @@ export default function Practice() {
         {/* ── STEP 6: review + submit ── */}
         {step === 'review' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
-            <Text className="pb-3 text-xl font-bold text-ink">Confirm and Send</Text>
+            <Text className="pb-3 text-xl font-bold text-ink">{i18nT('n.app.practice.confirm-and-send')}</Text>
             <View className="mb-3 rounded-2xl bg-card px-4 py-3">
               <Text className="text-base font-semibold text-ink">{selectedName}</Text>
               <Text className="text-xs text-muted">{selectedSub}</Text>
@@ -1760,7 +1761,7 @@ export default function Practice() {
             <View className="mb-3 flex-row gap-3">
               <Slot
                 shot={sheet}
-                label="Result sheet"
+                label={i18nT('n.app.practice.result-sheet')}
                 busy={busy}
                 ui={ui}
                 onPress={() => {
@@ -1770,7 +1771,7 @@ export default function Practice() {
               />
               <Slot
                 shot={venue}
-                label="Venue"
+                label={i18nT('n.app.practice.venue')}
                 busy={busy}
                 ui={ui}
                 onPress={() => {
@@ -1825,7 +1826,7 @@ export default function Practice() {
               onPress={() => setStep('votes')}
               disabled={busy}
             >
-              <Text className="text-sm font-semibold text-good-ink">‹ Back to votes</Text>
+              <Text className="text-sm font-semibold text-good-ink">{i18nT('n.app.practice.back-to-votes')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -1887,10 +1888,10 @@ export default function Practice() {
               </Text>
             </Pressable>
             <Pressable className="mt-3 w-full items-center py-2" onPress={restart}>
-              <Text className="text-sm font-semibold text-good-ink">Practise again</Text>
+              <Text className="text-sm font-semibold text-good-ink">{i18nT('practice.practise-again')}</Text>
             </Pressable>
             <Pressable className="mt-1 w-full items-center py-1" onPress={() => router.back()}>
-              <Text className="text-sm text-muted">Done</Text>
+              <Text className="text-sm text-muted">{i18nT('n.app.map-unit.done')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -1903,7 +1904,7 @@ export default function Practice() {
       <ConfirmSheet
         visible={!!farUnit}
         icon="map-pin"
-        title="That unit is too far away"
+        title={i18nT('n.app.practice.that-unit-is-too-far-away')}
         body={
           farUnit
             ? `${farUnit.name} is in ${farUnit.lga}, ${farUnit.state}, about ` +
@@ -1912,7 +1913,7 @@ export default function Practice() {
               'selected from here. If you are travelling there, choose it once you arrive.'
             : ''
         }
-        confirmLabel="Choose another unit"
+        confirmLabel={i18nT('n.app.practice.choose-another-unit')}
         cancelLabel={null}
         onConfirm={() => setFarUnit(null)}
         onCancel={() => setFarUnit(null)}

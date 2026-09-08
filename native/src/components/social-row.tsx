@@ -7,6 +7,7 @@ import { SectionLabel } from '@/components/content-kit';
 import { shareHawkeye } from '@/lib/share';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /** Optical size for every mark in the accounts strip. One constant, so the
  *  Feather glyphs and the hand-drawn X below can never drift apart. */
@@ -108,7 +109,7 @@ export function SocialRow() {
           being offered. */}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Share Hawkeye — send the app to someone"
+        accessibilityLabel={i18nT('n.components.social-row.share-hawkeye-send-the-app-to')}
         className="mb-2 flex-row rounded-2xl bg-card p-4 active:opacity-80"
         onPress={shareHawkeye}
       >
@@ -116,12 +117,12 @@ export function SocialRow() {
           <Feather name="share-2" size={19} color={BRAND.gold} />
         </View>
         <View className="flex-1 pl-3.5">
-          <Text className="text-base font-bold text-ink">Share Hawkeye</Text>
+          <Text className="text-base font-bold text-ink">{i18nT('profile.share-hawkeye')}</Text>
           <Text className="pt-1 text-sm leading-5 text-muted">
             Send the app to someone who votes.
           </Text>
           <View className="flex-row items-center pt-2">
-            <Text className="text-sm font-bold text-good-ink">Share the download link</Text>
+            <Text className="text-sm font-bold text-good-ink">{i18nT('n.components.social-row.share-the-download-link')}</Text>
             <Feather
               name="arrow-right"
               size={13}
@@ -134,7 +135,7 @@ export function SocialRow() {
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Open Hawkeye on Telegram, @HawkEyeNGBot"
+        accessibilityLabel={i18nT('n.components.social-row.open-hawkeye-on-telegram-hawkeyengbot')}
         className="flex-row rounded-2xl bg-card p-4 active:opacity-80"
         onPress={() => open(TELEGRAM_BOT)}
       >
@@ -142,12 +143,12 @@ export function SocialRow() {
           <Feather name="send" size={19} color={ui.tint.good.ink} />
         </View>
         <View className="flex-1 pl-3.5">
-          <Text className="text-base font-bold text-ink">Hawkeye on Telegram</Text>
+          <Text className="text-base font-bold text-ink">{i18nT('n.components.social-row.hawkeye-on-telegram')}</Text>
           <Text className="pt-1 text-sm leading-5 text-muted">
             Your OTP codes and result alerts arrive here.
           </Text>
           <View className="flex-row items-center pt-2">
-            <Text className="text-sm font-bold text-good-ink">Open @HawkEyeNGBot</Text>
+            <Text className="text-sm font-bold text-good-ink">{i18nT('n.components.social-row.open-hawkeyengbot')}</Text>
             <Feather
               name="arrow-right"
               size={13}

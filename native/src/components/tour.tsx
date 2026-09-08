@@ -8,6 +8,7 @@ import { ModalCard } from '@/components/modal-card';
 import { BRAND } from '@/lib/api';
 import { markTourSeen, setTourSpotlight, shouldShowTour, TOUR_STEPS } from '@/lib/tour';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * The first-run tour — five cards, one per tab, with Skip visible on every one.
@@ -108,7 +109,7 @@ export function Tour({
        * needs it.
        */
       bottomGap={BAR_CONTENT_HEIGHT + insets.bottom + CTA_LIFT}
-      title="Welcome to Hawkeye"
+      title={i18nT('tour.welcome')}
       footer={
         <View>
           {/* Progress first, so the reader knows how long this is before
@@ -137,7 +138,7 @@ export function Tour({
                 i === 0 ? 'opacity-40' : 'active:opacity-70'
               }`}
             >
-              <Text className="text-sm font-bold text-muted">Back</Text>
+              <Text className="text-sm font-bold text-muted">{i18nT('tour.back')}</Text>
             </Pressable>
             <Pressable
               onPress={() => (last ? finish() : setI(i + 1))}

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * The native half of the Android App Link (docs/DEEP-LINKS.md).
@@ -49,7 +50,7 @@ export default function Open() {
   return (
     <View className="flex-1 items-center justify-center bg-surface">
       <ActivityIndicator />
-      <Text className="pt-3 text-sm text-muted">Opening…</Text>
+      <Text className="pt-3 text-sm text-muted">{i18nT('n.app.open.opening')}</Text>
     </View>
   );
 }

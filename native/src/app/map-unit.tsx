@@ -46,6 +46,7 @@ import {
 } from '@/lib/location';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 type Unit = {
   pu_code: string;
@@ -892,10 +893,10 @@ export default function MapUnit() {
           className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
           onPress={() => router.push('/sign-in')}
         >
-          <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('index.sign-in')}</Text>
         </Pressable>
         <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-muted">Not now</Text>
+          <Text className="text-sm text-muted">{i18nT('lang.later')}</Text>
         </Pressable>
       </View>
     );
@@ -913,7 +914,7 @@ export default function MapUnit() {
           className="mt-6 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
           onPress={() => router.back()}
         >
-          <Text className="text-base font-bold text-hawk-gold">Done</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.map-unit.done')}</Text>
         </Pressable>
       </View>
     );
@@ -985,7 +986,7 @@ export default function MapUnit() {
   return (
     <View className="flex-1 bg-surface">
       <ScreenHeader
-        title="Map a polling unit"
+        title={i18nT('n.app.map-unit.map-a-polling-unit')}
         translateY={translateY}
         onClose={() => router.back()}
       />
@@ -1005,7 +1006,7 @@ export default function MapUnit() {
             Stand at the polling unit and record one GPS fix.
           </Text>
           <InfoDot
-            title="Why mapping units matters"
+            title={i18nT('n.app.map-unit.why-mapping-units-matters')}
             text="Most polling units have no confirmed location on record, so results reported from them cannot be location-checked. When enough independent observers agree on a unit's position it becomes location-verified, and every result filed there on election day can be matched against it."
           />
         </View>
@@ -1020,8 +1021,8 @@ export default function MapUnit() {
                 value={`${pct < 10 ? pct.toFixed(1) : Math.round(pct)}%`}
                 label={`${num(stats.verified)} of ${num(stats.total)} located`}
               />
-              <StatCell value={num(stats.crowdMapped)} label="crowd-mapped by observers" />
-              <StatCell value={num(stats.unitsWithFixes)} label="have at least one fix" />
+              <StatCell value={num(stats.crowdMapped)} label={i18nT('n.app.map-unit.crowd-mapped-by-observers')} />
+              <StatCell value={num(stats.unitsWithFixes)} label={i18nT('n.app.map-unit.have-at-least-one-fix')} />
             </View>
           </View>
         ) : null}
@@ -1090,7 +1091,7 @@ export default function MapUnit() {
           ) : (
             <>
               <Feather name="crosshair" size={17} color={BRAND.gold} />
-              <Text className="pl-2 text-base font-bold text-hawk-gold">Find units near me</Text>
+              <Text className="pl-2 text-base font-bold text-hawk-gold">{i18nT('incidents.find-units-near-me')}</Text>
             </>
           )}
         </Pressable>
@@ -1111,7 +1112,7 @@ export default function MapUnit() {
             className="mt-2 flex-row items-center self-start rounded-xl border border-line px-3 py-2 active:opacity-70"
           >
             <Feather name="settings" size={14} color={ui.muted} />
-            <Text className="pl-2 text-sm font-semibold text-ink">Open phone settings</Text>
+            <Text className="pl-2 text-sm font-semibold text-ink">{i18nT('n.app.map-unit.open-phone-settings')}</Text>
           </Pressable>
         ) : null}
 
@@ -1204,14 +1205,14 @@ export default function MapUnit() {
           <Text className="flex-1 pl-2 text-base font-bold text-hawk-gold">
             Browse the register instead
           </Text>
-          <Text className="text-xs text-emerald-100">state › LGA › ward</Text>
+          <Text className="text-xs text-emerald-100">{i18nT('n.app.map-unit.state-lga-ward')}</Text>
         </Pressable>
 
         {browse ? (
           <View className="pt-3">
             {!stateSel ? (
               <>
-                <Prompt>Select the state</Prompt>
+                <Prompt>{i18nT('n.app.map-unit.select-the-state')}</Prompt>
                 <View className="flex-row flex-wrap">
                   {states.map((s) => (
                     <Chip key={s} label={s} onPress={() => setStateSel(s)} />
@@ -1223,7 +1224,7 @@ export default function MapUnit() {
             {stateSel && !lgaSel ? (
               <>
                 <Crumb label={stateSel} onPress={() => setStateSel(null)} />
-                <Prompt>Select the LGA</Prompt>
+                <Prompt>{i18nT('n.app.map-unit.select-the-lga')}</Prompt>
                 <View className="flex-row flex-wrap">
                   {lgas.map((l) => (
                     <Chip key={l} label={l} onPress={() => setLgaSel(l)} />
@@ -1235,7 +1236,7 @@ export default function MapUnit() {
             {lgaSel && !wardSel ? (
               <>
                 <Crumb label={lgaSel} onPress={() => setLgaSel(null)} />
-                <Prompt>Select the ward</Prompt>
+                <Prompt>{i18nT('n.app.map-unit.select-the-ward')}</Prompt>
                 <View className="flex-row flex-wrap">
                   {wards.map((w) => (
                     <Chip key={w} label={w} onPress={() => setWardSel(w)} />
@@ -1247,7 +1248,7 @@ export default function MapUnit() {
             {wardSel ? (
               <>
                 <Crumb label={`${lgaSel} · ${wardSel}`} onPress={() => setWardSel(null)} />
-                <Prompt>Select the unit you are standing at</Prompt>
+                <Prompt>{i18nT('n.app.map-unit.select-the-unit-you-are-standing')}</Prompt>
                 {units.map((u) => (
                   <UnitRow key={u.pu_code} u={u} />
                 ))}

@@ -26,6 +26,7 @@ import {
 } from '@/lib/auth';
 import { BASE, BRAND, api } from '@/lib/api';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 type Channel = 'whatsapp' | 'telegram' | 'sms';
 
@@ -440,7 +441,7 @@ export default function SignIn() {
         <View className="px-5 pt-6">
           {step === 'password' ? (
             <>
-              <Text className="text-2xl font-bold text-ink">Welcome Back</Text>
+              <Text className="text-2xl font-bold text-ink">{i18nT('n.app.sign-in.welcome-back')}</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">
                 Your phone number and password. Your number is never stored — only a one-way hash.
               </Text>
@@ -456,7 +457,7 @@ export default function SignIn() {
               />
               <View className="pt-3">
                 <PasswordField
-                  placeholder="Password"
+                  placeholder={i18nT('common.password')}
                   value={password}
                   onChangeText={setPasswordText}
                   editable={!busy}
@@ -480,15 +481,15 @@ export default function SignIn() {
                 {busy ? (
                   <ActivityIndicator color={BRAND.gold} />
                 ) : (
-                  <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
+                  <Text className="text-base font-bold text-hawk-gold">{i18nT('index.sign-in')}</Text>
                 )}
               </Pressable>
               <Pressable className="mt-4 items-center" onPress={() => startOtp('reset')}>
-                <Text className="text-sm font-semibold text-good-ink">Forgot password?</Text>
+                <Text className="text-sm font-semibold text-good-ink">{i18nT('n.app.sign-in.forgot-password')}</Text>
               </Pressable>
               <Pressable className="mt-5 items-center" onPress={() => startOtp('signup')}>
                 <Text className="text-sm text-muted">
-                  New here? <Text className="font-semibold text-good-ink">Create an account</Text>
+                  New here? <Text className="font-semibold text-good-ink">{i18nT('index.create-an-account')}</Text>
                 </Text>
               </Pressable>
             </>
@@ -535,7 +536,7 @@ export default function SignIn() {
                 {busy ? (
                   <ActivityIndicator color={BRAND.gold} />
                 ) : (
-                  <Text className="text-base font-bold text-hawk-gold">Send code</Text>
+                  <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.profile.send-code')}</Text>
                 )}
               </Pressable>
               <Pressable
@@ -567,7 +568,7 @@ export default function SignIn() {
               {purpose === 'signup' ? (
                 <Pressable className="mt-4 items-center" onPress={() => router.push('/practice')}>
                   <Text className="text-sm text-muted">
-                    First time? <Text className="font-semibold text-good-ink">Try a practice run</Text>
+                    First time? <Text className="font-semibold text-good-ink">{i18nT('n.app.sign-in.try-a-practice-run')}</Text>
                   </Text>
                 </Pressable>
               ) : null}
@@ -584,7 +585,7 @@ export default function SignIn() {
                   AFTER a code — an older server, or the account gained a
                   password between the two calls. The phone is proved and the
                   session is live, so the offer is to carry on. */}
-              <Text className="text-2xl font-bold text-ink">This account already exists</Text>
+              <Text className="text-2xl font-bold text-ink">{i18nT('n.app.sign-in.this-account-already-exists')}</Text>
               <Text className="pb-5 pt-2 text-sm text-muted">
                 {existsAfterOtp
                   ? `${phone.trim()} is already registered as an observer, and it already has a password. Nothing new was created — your reports and your observer ID are as you left them.`
@@ -596,7 +597,7 @@ export default function SignIn() {
                   onPress={() => router.replace('/(tabs)')}
                   className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
                 >
-                  <Text className="text-base font-bold text-hawk-gold">Continue to Hawkeye</Text>
+                  <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.sign-in.continue-to-hawkeye')}</Text>
                 </Pressable>
               ) : (
                 <Pressable
@@ -608,7 +609,7 @@ export default function SignIn() {
                   }}
                   className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
                 >
-                  <Text className="text-base font-bold text-hawk-gold">Sign in instead</Text>
+                  <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.sign-in.sign-in-instead')}</Text>
                 </Pressable>
               )}
 
@@ -663,13 +664,13 @@ export default function SignIn() {
                     setStep('request');
                   }}
                 >
-                  <Text className="text-sm font-semibold text-muted">Use a different number</Text>
+                  <Text className="text-sm font-semibold text-muted">{i18nT('n.app.sign-in.use-a-different-number')}</Text>
                 </Pressable>
               )}
             </>
           ) : step === 'otp' ? (
             <>
-              <Text className="text-2xl font-bold text-ink">Enter the Code</Text>
+              <Text className="text-2xl font-bold text-ink">{i18nT('n.app.sign-in.enter-the-code')}</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">{line}</Text>
               <TextInput
                 ref={otpRef}
@@ -692,7 +693,7 @@ export default function SignIn() {
                 {busy ? (
                   <ActivityIndicator color={BRAND.gold} />
                 ) : (
-                  <Text className="text-base font-bold text-hawk-gold">Verify</Text>
+                  <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.profile.verify')}</Text>
                 )}
               </Pressable>
               <View className="mt-4 flex-row items-center justify-center gap-6">
@@ -704,7 +705,7 @@ export default function SignIn() {
                   </Text>
                 </Pressable>
                 <Pressable onPress={() => setStep('request')}>
-                  <Text className="text-sm font-semibold text-good-ink">Use a different number</Text>
+                  <Text className="text-sm font-semibold text-good-ink">{i18nT('n.app.sign-in.use-a-different-number')}</Text>
                 </Pressable>
               </View>
             </>
@@ -722,7 +723,7 @@ export default function SignIn() {
               />
               <View className="pt-3">
                 <PasswordField
-                  placeholder="Repeat new password"
+                  placeholder={i18nT('n.app.profile.repeat-new-password')}
                   value={newPw2}
                   onChangeText={setNewPw2}
                   editable={!busy}
@@ -740,7 +741,7 @@ export default function SignIn() {
                 {busy ? (
                   <ActivityIndicator color={BRAND.gold} />
                 ) : (
-                  <Text className="text-base font-bold text-hawk-gold">Save password and continue</Text>
+                  <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.sign-in.save-password-and-continue')}</Text>
                 )}
               </Pressable>
               <Pressable className="mt-4 items-center" onPress={onAbandonPassword}>
@@ -759,7 +760,7 @@ export default function SignIn() {
               className="mt-3 items-center rounded-2xl bg-card py-3"
               onPress={() => WebBrowser.openBrowserAsync(tgLink)}
             >
-              <Text className="text-base font-semibold text-good-ink">Open Telegram</Text>
+              <Text className="text-base font-semibold text-good-ink">{i18nT('n.app.sign-in.open-telegram')}</Text>
             </Pressable>
           ) : null}
         </View>

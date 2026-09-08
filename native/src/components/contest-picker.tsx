@@ -20,6 +20,7 @@ import {
   type Race,
   type StateName,
 } from '@/lib/races';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * contest-picker — the one shared election-type → … → single-race selector.
@@ -229,7 +230,7 @@ export function ContestPicker({
     return (
       <View>
         {filterToggle}
-        <Prompt>Choose an election</Prompt>
+        <Prompt>{i18nT('n.components.contest-picker.choose-an-election')}</Prompt>
         {shown.map((t) => {
           const open = counts[t.code];
           const next = soonest[t.code];
@@ -262,7 +263,7 @@ export function ContestPicker({
                   </Text>
                 </View>
               ) : (
-                <Text className="mr-1.5 text-[11px] font-semibold text-faint">No open races</Text>
+                <Text className="mr-1.5 text-[11px] font-semibold text-faint">{i18nT('n.components.contest-picker.no-open-races')}</Text>
               )}
               <Feather name="chevron-right" size={18} color={ui.faint} />
             </Pressable>
@@ -286,7 +287,7 @@ export function ContestPicker({
       <View>
         {filterToggle}
         {crumbs}
-        <Prompt>Choose a state</Prompt>
+        <Prompt>{i18nT('n.components.contest-picker.choose-a-state')}</Prompt>
         {shown.length === 0 ? (
           <Text className="px-1 py-2 text-sm text-muted">
             No {type.label.toLowerCase()} race is open yet. Turn off “Open races only” to browse the

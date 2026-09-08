@@ -24,6 +24,7 @@ import { describeFixFailure, DISCOVERY_RADIUS_M, tryQuickFix, type Fix } from '@
 import { regFetch } from '@/lib/register-fetch';
 import * as SecureStore from '@/lib/secure-store';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
@@ -187,7 +188,7 @@ const PickRow = ({
       </Text>
       {badge}
     </View>
-    {saved ? <Text className="pr-2 text-[10px] font-bold uppercase text-faint">Saved</Text> : null}
+    {saved ? <Text className="pr-2 text-[10px] font-bold uppercase text-faint">{i18nT('n.components.choose-unit.saved')}</Text> : null}
     {selected ? <Feather name="check" size={16} color={BRAND.gold} /> : null}
   </Pressable>
 );
@@ -736,16 +737,16 @@ export function ChooseUnitModal({
     <ModalCard
       visible={visible}
       onClose={close}
-      title="Choose your polling unit"
+      title={i18nT('profile.choose-your-polling-unit')}
       footer={
         <View className="flex-row">
           <Pressable
             onPress={close}
             accessibilityRole="button"
-            accessibilityLabel="Cancel"
+            accessibilityLabel={i18nT('common.cancel')}
             className="mr-2 flex-1 items-center rounded-full border border-line py-3 active:opacity-70"
           >
-            <Text className="text-sm font-bold text-muted">Cancel</Text>
+            <Text className="text-sm font-bold text-muted">{i18nT('common.cancel')}</Text>
           </Pressable>
           {/* The commit is disabled until something is chosen, rather than
               hidden: a footer that appears and disappears moves the Cancel
@@ -754,7 +755,7 @@ export function ChooseUnitModal({
             disabled={!chosen || saving}
             onPress={() => chosen && save(chosen)}
             accessibilityRole="button"
-            accessibilityLabel="Save this unit"
+            accessibilityLabel={i18nT('profile.save-this-unit')}
             accessibilityState={{ disabled: !chosen || saving, busy: saving }}
             className={`flex-1 items-center rounded-full py-3 ${!chosen || saving ? 'bg-disabled' : 'bg-good active:opacity-80'}`}
           >
@@ -772,16 +773,16 @@ export function ChooseUnitModal({
       {/* Two phrases. The difference between choosing and mapping is an
           explanation, so it goes behind the dot rather than on the screen. */}
       <View className="flex-row items-center">
-        <Text className="text-sm font-semibold text-ink">The unit you get alerts about.</Text>
+        <Text className="text-sm font-semibold text-ink">{i18nT('n.components.choose-unit.the-unit-you-get-alerts-about')}</Text>
         <InfoDot
-          title="Choosing vs mapping"
+          title={i18nT('n.components.choose-unit.choosing-vs-mapping')}
           text={
             'Choosing a unit is a preference — it decides which unit you get alerts about, and you do not need to be there to set it.\n\n' +
             "Mapping is a different job: it records a unit's GPS position into the register, and it does require you to be standing at the unit. Use “Map a Polling Unit” under More for that."
           }
         />
       </View>
-      <Text className="pb-1 text-sm text-muted">You do not need to be there now.</Text>
+      <Text className="pb-1 text-sm text-muted">{i18nT('n.components.choose-unit.you-do-not-need-to-be')}</Text>
 
       {/* NOTHING RUNS UNTIL A TAB IS TAPPED — no GPS fix, no register fetch.
           This modal opens from a profile row someone may have tapped while just
@@ -789,14 +790,14 @@ export function ChooseUnitModal({
       <View className="mt-3 flex-row rounded-full bg-surface p-1" accessibilityRole="tablist">
         <TabButton
           icon="crosshair"
-          label="Near me"
+          label={i18nT('n.components.choose-unit.near-me')}
           on={tab === 'near'}
           mutedInk={ui.muted}
           onPress={() => openTab('near')}
         />
         <TabButton
           icon="list"
-          label="Browse register"
+          label={i18nT('n.components.choose-unit.browse-register')}
           on={tab === 'register'}
           mutedInk={ui.muted}
           onPress={() => openTab('register')}
@@ -864,11 +865,11 @@ export function ChooseUnitModal({
             <Pressable
               onPress={() => Linking.openSettings()}
               accessibilityRole="button"
-              accessibilityLabel="Open phone settings"
+              accessibilityLabel={i18nT('n.app.map-unit.open-phone-settings')}
               className="mt-2 flex-row items-center self-start rounded-xl border border-line bg-card px-3 py-2 active:opacity-70"
             >
               <Feather name="settings" size={14} color={ui.muted} />
-              <Text className="pl-2 text-sm font-semibold text-ink">Open phone settings</Text>
+              <Text className="pl-2 text-sm font-semibold text-ink">{i18nT('n.app.map-unit.open-phone-settings')}</Text>
             </Pressable>
           ) : null}
 
@@ -924,7 +925,7 @@ export function ChooseUnitModal({
       {tab === 'register' ? (
         <Pane>
           {regBusy && !states.length ? (
-            <Text className="text-sm text-muted">Loading the register…</Text>
+            <Text className="text-sm text-muted">{i18nT('n.components.choose-unit.loading-the-register')}</Text>
           ) : null}
           {/* A dead end needs a way out, not a spinner to be waited on. */}
           {regFailed ? (
@@ -937,7 +938,7 @@ export function ChooseUnitModal({
 
           {!stateSel && states.length ? (
             <>
-              <Prompt>Select your state</Prompt>
+              <Prompt>{i18nT('n.app.report.result.select-your-state')}</Prompt>
               <View className="flex-row flex-wrap">
                 {states.map((s) => (
                   <Chip key={s} label={s} onPress={() => pickState(s)} />
@@ -949,33 +950,33 @@ export function ChooseUnitModal({
           {stateSel && !lgaSel ? (
             <>
               <Crumb label={stateSel} onPress={() => pickState(null)} />
-              <Prompt>Select your LGA</Prompt>
+              <Prompt>{i18nT('n.app.report.result.select-your-lga')}</Prompt>
               <View className="flex-row flex-wrap">
                 {lgas.map((l) => (
                   <Chip key={l} label={l} onPress={() => pickLga(l)} />
                 ))}
               </View>
-              {!lgas.length ? <Text className="text-sm text-muted">Loading LGAs…</Text> : null}
+              {!lgas.length ? <Text className="text-sm text-muted">{i18nT('n.components.choose-unit.loading-lgas')}</Text> : null}
             </>
           ) : null}
 
           {stateSel && lgaSel && !wardSel ? (
             <>
               <Crumb label={lgaSel} onPress={() => pickLga(null)} />
-              <Prompt>Select your ward</Prompt>
+              <Prompt>{i18nT('n.app.report.result.select-your-ward')}</Prompt>
               <View className="flex-row flex-wrap">
                 {wards.map((w) => (
                   <Chip key={w} label={w} onPress={() => pickWard(w)} />
                 ))}
               </View>
-              {!wards.length ? <Text className="text-sm text-muted">Loading wards…</Text> : null}
+              {!wards.length ? <Text className="text-sm text-muted">{i18nT('n.components.choose-unit.loading-wards')}</Text> : null}
             </>
           ) : null}
 
           {stateSel && lgaSel && wardSel ? (
             <>
               <Crumb label={`${lgaSel} · ${wardSel}`} onPress={() => pickWard(null)} />
-              <Prompt>Select your polling unit</Prompt>
+              <Prompt>{i18nT('n.app.report.result.select-your-polling-unit')}</Prompt>
               {units.map((u) => {
                 const on = chosen?.pu_code === u.pu_code;
                 return (
@@ -1004,7 +1005,7 @@ export function ChooseUnitModal({
 
       {chosen ? (
         <View className="mt-3 rounded-2xl border border-line bg-surface px-3 py-2.5">
-          <Text className="text-[11px] font-bold uppercase tracking-wider text-faint">Selected</Text>
+          <Text className="text-[11px] font-bold uppercase tracking-wider text-faint">{i18nT('n.components.choose-unit.selected')}</Text>
           <Text className="pt-1 text-sm font-bold text-ink">{chosen.name}</Text>
           <Text className="text-[11px] text-muted">
             {[chosen.ward, chosen.lga, chosen.state].filter(Boolean).join(' · ')}

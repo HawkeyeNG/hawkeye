@@ -18,6 +18,7 @@ import { ContentBlock, SectionLabel } from '@/components/content-kit';
 import { SocialRow } from '@/components/social-row';
 import { useUi } from '@/lib/theme';
 import type { Page } from '@/lib/content';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * Terms of Service — the native twin of app/terms.html.
@@ -205,7 +206,7 @@ export default function Terms() {
             hitSlop={8}
             className="mr-1"
             accessibilityRole="button"
-            accessibilityLabel="Home"
+            accessibilityLabel={i18nT('nav.home')}
           >
             <Image
               source={require('@/assets/images/icon.png')}
@@ -237,7 +238,7 @@ export default function Terms() {
             onPress={() => router.back()}
             className="h-9 w-9 items-center justify-center rounded-full bg-card"
             accessibilityRole="button"
-            accessibilityLabel="Close"
+            accessibilityLabel={i18nT('common.close')}
           >
             <Feather name="x" size={18} color={ui.ink} />
           </Pressable>

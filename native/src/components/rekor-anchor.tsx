@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -230,7 +231,7 @@ export function RekorAnchor({
           className="mt-3 flex-row items-center justify-center rounded-xl border border-line py-2.5 active:opacity-70"
           onPress={() => WebBrowser.openBrowserAsync(state.url)}
         >
-          <Text className="pr-1.5 text-sm font-bold text-good-ink">View in Sigstore Rekor</Text>
+          <Text className="pr-1.5 text-sm font-bold text-good-ink">{i18nT('n.components.rekor-anchor.view-in-sigstore-rekor')}</Text>
           <Feather name="external-link" size={14} color={ui.tint.good.ink} />
         </Pressable>
       ) : null}
@@ -238,7 +239,7 @@ export function RekorAnchor({
       {/* No dead link in either unproven state — a way to look again instead. */}
       {state.kind === 'pending' || state.kind === 'unknown' ? (
         <Pressable className="mt-3 self-start py-1 active:opacity-70" onPress={recheck}>
-          <Text className="text-sm font-semibold text-good-ink">Check again</Text>
+          <Text className="text-sm font-semibold text-good-ink">{i18nT('n.components.rekor-anchor.check-again')}</Text>
         </Pressable>
       ) : null}
     </View>

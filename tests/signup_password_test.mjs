@@ -14,6 +14,7 @@
 // That is why these checks live on welcome.tsx and not on the sign-up screen:
 // the bug was never where the symptom was.
 import fs from 'node:fs';
+import { readNative } from './helpers/native-text.mjs';
 
 const N = '/home/elrio/hawkeye/native/src';
 const B = '/home/elrio/hawkeye/backend/src';
@@ -24,9 +25,9 @@ const check = (label, got, want) => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}${ok ? '' : `\n        got  ${JSON.stringify(got)}`}`);
 };
 
-const welcome = fs.readFileSync(`${N}/app/welcome.tsx`, 'utf8');
-const signin = fs.readFileSync(`${N}/app/sign-in.tsx`, 'utf8');
-const auth = fs.readFileSync(`${N}/lib/auth.ts`, 'utf8');
+const welcome = readNative(`${N}/app/welcome.tsx`);
+const signin = readNative(`${N}/app/sign-in.tsx`);
+const auth = readNative(`${N}/lib/auth.ts`);
 const observers = fs.readFileSync(`${B}/routes/observers.js`, 'utf8');
 
 console.log('=== the screen underneath must not steer ===');

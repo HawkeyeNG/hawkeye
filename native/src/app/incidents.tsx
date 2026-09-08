@@ -15,6 +15,7 @@ import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND, type Incident } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -118,7 +119,7 @@ export default function Incidents() {
           Election-day incidents reported by observers, each reviewed before it appears.
         </Text>
         <InfoDot
-          title="What appears here"
+          title={i18nT('n.app.incidents.what-appears-here')}
           text="Violence, vote-buying, BVAS failures, obstruction and more, filed by observers at the scene. Every report is reviewed by a person before it is published, and reporters are identified by observer ID only — never by name or phone number."
         />
       </View>
@@ -127,7 +128,7 @@ export default function Incidents() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Published Incidents" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('incidents.published-incidents')} translateY={translateY} onClose={() => router.back()} />
       <FlashList
         data={rows ?? []}
         keyExtractor={(i) => String(i.id)}
@@ -204,7 +205,7 @@ export default function Incidents() {
                         // honest thumbnail: it says "video, tap to watch".
                         <View className="h-full w-full items-center justify-center bg-hawk-ink">
                           <Feather name="play" size={22} color="#fff" />
-                          <Text className="pt-1 text-[10px] font-semibold text-white">Video</Text>
+                          <Text className="pt-1 text-[10px] font-semibold text-white">{i18nT('n.app.incidents.video')}</Text>
                         </View>
                       ) : (
                         <Image
@@ -236,7 +237,7 @@ export default function Incidents() {
           onPress={() => router.push('/report/incident')}
         >
           <Feather name="alert-triangle" size={16} color={BRAND.gold} />
-          <Text className="pl-2 text-base font-bold text-hawk-gold">Report an incident</Text>
+          <Text className="pl-2 text-base font-bold text-hawk-gold">{i18nT('index.report-an-incident')}</Text>
         </Pressable>
       </View>
 

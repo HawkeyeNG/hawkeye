@@ -9,6 +9,7 @@ import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -408,14 +409,14 @@ export default function Home() {
           onPress={() => router.push('/reports-log')}
         >
           <Text className="text-2xl font-bold text-ink">{integrity?.reports ?? '—'}</Text>
-          <Text className="text-xs text-muted">Accepted Reports</Text>
+          <Text className="text-xs text-muted">{i18nT('n.app.tabs.index.accepted-reports')}</Text>
         </Pressable>
         <Pressable
           className="flex-1 rounded-2xl bg-card px-4 py-4 active:opacity-80"
           onPress={() => router.push('/integrity')}
         >
           <Text className="text-2xl font-bold text-ink">{integrity?.unitsFlagged ?? '—'}</Text>
-          <Text className="text-xs text-muted">Units Flagged</Text>
+          <Text className="text-xs text-muted">{i18nT('n.app.tabs.index.units-flagged')}</Text>
         </Pressable>
       </View>
 

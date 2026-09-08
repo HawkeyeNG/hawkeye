@@ -6,6 +6,7 @@ import * as SecureStore from '@/lib/secure-store';
 import { useSyncExternalStore } from 'react';
 
 import { getIdentity } from '@/lib/identity';
+import { currentLangForOtp } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -26,6 +27,18 @@ const listeners = new Set<() => void>();
 function set(next: AuthState) {
   state = next;
   listeners.forEach((l) => l());
+}
+
+/**
+ * The session token, outside React.
+ *
+ * `useAuth()` is the hook every screen uses, but a few callers are not
+ * components and cannot hold a hook — i18n's tellServer() fires from a state
+ * setter. Reading the module state directly is what those need, and it is the
+ * same value the hook publishes.
+ */
+export function getToken(): string | null {
+  return state.token;
 }
 
 export function useAuth(): AuthState {
@@ -71,7 +84,16 @@ export function requestOtp(
   channel: 'whatsapp' | 'sms' | 'telegram',
   intent?: 'signup',
 ): Promise<RegisterResult> {
-  return post<RegisterResult>('/api/observers/register', { phone, channel, intent });
+  /**
+   * The language rides along because the observer row does not exist yet.
+   *
+   * The code is the first thing Hawkeye ever sends anyone, and it is sent
+   * before there is anywhere to store a preference — the server parks this on
+   * the OTP row and copies it across at /verify. Without it, the one message a
+   * new observer is guaranteed to receive would be the one that could not be in
+   * their language.
+   */
+  return post<RegisterResult>('/api/observers/register', { phone, channel, intent, lang: currentLangForOtp() });
 }
 
 /** Step 2 — confirm the OTP; binds this device's keypair and stores the session. */

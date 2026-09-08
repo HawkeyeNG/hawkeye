@@ -20,6 +20,7 @@ import {
   type Members,
   type Political,
 } from '@/lib/political';
+import { t as i18nT } from '@/lib/i18n';
 
 // Same base every other call uses — see lib/api.ts. Overridable so the app
 // can run against a local backend; production blocks cross-origin calls.
@@ -162,7 +163,7 @@ export default function PoliticalData() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Political Data" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('common.political-data')} translateY={translateY} onClose={() => router.back()} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
@@ -174,7 +175,7 @@ export default function PoliticalData() {
             The parties in power now — the incumbents this election confirms or unseats.
           </Text>
           <InfoDot
-            title="Reading this page"
+            title={i18nT('n.app.political.reading-this-page')}
             text="Each state is listed with its governing party, its governor and the year of its next election. Figures are compiled from public records and updated as results are declared."
           />
         </View>
@@ -398,7 +399,7 @@ export default function PoliticalData() {
                                   {governorParty(d.governors, pickedState)}
                                 </Text>
                               ) : (
-                                <Text className="text-xs text-muted">No governor</Text>
+                                <Text className="text-xs text-muted">{i18nT('n.app.political.no-governor')}</Text>
                               )}
                             </View>
                           ) : (

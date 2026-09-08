@@ -15,6 +15,7 @@ import {
 
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -111,7 +112,7 @@ export function ReportContent({
               list between them scrolls. Same shape practice.tsx already uses. */}
           <View className="rounded-t-3xl bg-surface px-5 pb-8 pt-5" style={{ maxHeight: '90%' }}>
             <View className="flex-row items-center pb-3">
-              <Text className="flex-1 text-lg font-bold text-ink">Report This Content</Text>
+              <Text className="flex-1 text-lg font-bold text-ink">{i18nT('n.components.report-content.report-this-content')}</Text>
               <Pressable
                 hitSlop={12}
                 onPress={() => setOpen(false)}
@@ -172,14 +173,14 @@ export function ReportContent({
               {busy ? (
                 <ActivityIndicator color={BRAND.gold} />
               ) : (
-                <Text className="text-base font-bold text-hawk-gold">Send report</Text>
+                <Text className="text-base font-bold text-hawk-gold">{i18nT('n.components.report-content.send-report')}</Text>
               )}
             </Pressable>
             <Pressable
               className="mt-2 items-center rounded-2xl bg-card py-3.5 active:opacity-70"
               onPress={() => setOpen(false)}
             >
-              <Text className="text-base font-semibold text-muted">Cancel</Text>
+              <Text className="text-base font-semibold text-muted">{i18nT('common.cancel')}</Text>
             </Pressable>
           </View>
         </KeyboardAvoidingView>

@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { BRAND } from '@/lib/api';
+import { t as i18nT } from '@/lib/i18n';
 
 /** Diameter of the bubble. Below ~48 it stops being a comfortable one-thumb target. */
 const SIZE = 52;
@@ -170,7 +171,7 @@ export function AskFab() {
           style={[styles.hint, { right: EDGE + SIZE + 8, top: bounds.restY + 13 }]}
           className="rounded-full border border-line bg-card px-2.5 py-1"
         >
-          <Text className="text-xs font-semibold text-ink">Ask Hawkeye</Text>
+          <Text className="text-xs font-semibold text-ink">{i18nT('n.app.assistant.ask-hawkeye')}</Text>
         </Animated.View>
       ) : null}
       <Bubble start={pos} bounds={bounds} onSettle={settle} />
@@ -252,8 +253,8 @@ function Bubble({
     <GestureDetector gesture={Gesture.Race(pan, tap)}>
       <Animated.View
         accessibilityRole="button"
-        accessibilityLabel="Ask Hawkeye about the results"
-        accessibilityHint="Opens the assistant. Drag to move the button."
+        accessibilityLabel={i18nT('n.components.ask-fab.ask-hawkeye-about-the-results')}
+        accessibilityHint={i18nT('n.components.ask-fab.opens-the-assistant-drag-to-move')}
         style={[fab, styles.fab]}
         className="items-center justify-center rounded-full border border-line bg-hawk-green"
       >

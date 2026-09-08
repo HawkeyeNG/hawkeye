@@ -25,6 +25,7 @@ import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -194,7 +195,7 @@ export default function CaseScreen() {
           className="mt-5 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
           onPress={() => router.back()}
         >
-          <Text className="text-base font-bold text-hawk-gold">All cases</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.case.all-cases')}</Text>
         </Pressable>
       </View>
     );
@@ -281,7 +282,7 @@ export default function CaseScreen() {
           </View>
         ))}
 
-        <Text className="pb-1 pt-5 text-base font-bold text-ink">Evidence</Text>
+        <Text className="pb-1 pt-5 text-base font-bold text-ink">{i18nT('case.evidence')}</Text>
         {c.submissions.map((s) => (
           <View key={s.id} className="mb-3 rounded-2xl bg-card px-4 py-3">
             <Text className="text-sm font-bold text-ink">
@@ -323,7 +324,7 @@ export default function CaseScreen() {
                     </View>
                   ))
               ) : (
-                <Text className="text-sm text-muted">all zeros</Text>
+                <Text className="text-sm text-muted">{i18nT('n.app.case.all-zeros')}</Text>
               )}
             </View>
 
@@ -348,7 +349,7 @@ export default function CaseScreen() {
             </Pressable>
             {/* Published observer photos are user content: App Store 1.2 and
                 Play's UGC policy both require a way to object to them. */}
-            <ReportContent kind="result" targetId={s.id} label="Report this evidence" />
+            <ReportContent kind="result" targetId={s.id} label={i18nT('n.app.case.report-this-evidence')} />
           </View>
         ))}
 
@@ -373,7 +374,7 @@ export default function CaseScreen() {
                 className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
                 onPress={() => router.push('/sign-in')}
               >
-                <Text className="text-base font-bold text-hawk-gold">Become an observer</Text>
+                <Text className="text-base font-bold text-hawk-gold">{i18nT('index.become-an-observer')}</Text>
               </Pressable>
             </>
           ) : mine?.verdict ? (
@@ -419,7 +420,7 @@ export default function CaseScreen() {
 
         {noted.length ? (
           <>
-            <Text className="pb-1 pt-4 text-base font-bold text-ink">What Jurors Noted</Text>
+            <Text className="pb-1 pt-4 text-base font-bold text-ink">{i18nT('n.app.case.what-jurors-noted')}</Text>
             {noted.map((v, i) => (
               <View key={i} className="mb-2 rounded-2xl bg-card px-4 py-3">
                 <Text className="text-sm italic text-ink">“{v.comment}”</Text>
@@ -459,7 +460,7 @@ export default function CaseScreen() {
             {busy ? (
               <ActivityIndicator color={BRAND.gold} />
             ) : (
-              <Text className="text-base font-bold text-hawk-gold">Cast my verdict</Text>
+              <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.case.cast-my-verdict')}</Text>
             )}
           </Pressable>
           <Text className="pt-2 text-xs text-muted">

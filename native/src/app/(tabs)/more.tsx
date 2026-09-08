@@ -13,6 +13,7 @@ import { SocialRow } from '@/components/social-row';
 import { Tour } from '@/components/tour';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
+import { LANGS, LANG_NAMES, t as i18nT, useI18n } from '@/lib/i18n';
 
 /**
  * More — the menu.js panel groups, carried over 1:1. Until each page is
@@ -134,7 +135,7 @@ function AppearanceGroup() {
               the dark card — under the 3:1 minimum for non-text, and a visible
               smudge beside tints that had all moved. */}
           <Feather name="droplet" size={17} color={ui.tint.good.ink} />
-          <Text className="flex-1 pl-3 text-base text-ink">Theme</Text>
+          <Text className="flex-1 pl-3 text-base text-ink">{i18nT('n.app.tabs.more.theme')}</Text>
           <Text className="text-sm text-muted">
             {/* Saying which way "System" currently lands saves anyone wondering
                 whether the setting took effect at all. */}
@@ -181,6 +182,74 @@ function AppearanceGroup() {
               );
             })}
           </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Language — the same shape as Appearance directly above it, for the same
+ * reason: a preference nobody can find is a preference nobody has. Four
+ * options fit a segmented control, and each is labelled in ITS OWN language,
+ * because someone looking for Hausa is looking for the word "Hausa" and not
+ * for a row that currently says something they cannot read.
+ *
+ * The draft caveat is stated once under the control rather than against each
+ * option: all three translations have the same standing, and repeating it four
+ * times would crowd a row that has to stay scannable.
+ */
+function LanguageGroup() {
+  const ui = useUi();
+  const { lang, setLang } = useI18n();
+
+  return (
+    <View className="pb-2">
+      <Text className="pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-muted">
+        {i18nT('n.app.tabs.more.language')}
+      </Text>
+      <View className="overflow-hidden rounded-2xl bg-card">
+        <View className="flex-row items-center px-4 py-3.5">
+          <Feather name="globe" size={17} color={ui.tint.good.ink} />
+          <Text className="flex-1 pl-3 text-base text-ink">
+            {i18nT('n.app.tabs.more.language')}
+          </Text>
+          <Text className="text-sm text-muted">{LANG_NAMES[lang].native}</Text>
+        </View>
+        <View className="border-t border-line p-3">
+          <View className="flex-row rounded-full bg-surface p-1">
+            {LANGS.map((code) => {
+              const on = code === lang;
+              return (
+                <Pressable
+                  key={code}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: on }}
+                  accessibilityLabel={LANG_NAMES[code].english}
+                  onPress={() => {
+                    if (on) return;
+                    Haptics.selectionAsync();
+                    setLang(code);
+                  }}
+                  className={`flex-1 items-center justify-center rounded-full py-2 active:opacity-70 ${
+                    on ? 'bg-card' : ''
+                  }`}
+                >
+                  <Text
+                    numberOfLines={1}
+                    className={`text-xs font-bold ${on ? 'text-good-ink' : 'text-muted'}`}
+                  >
+                    {LANG_NAMES[code].native}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {lang !== 'en' ? (
+            <Text className="px-1 pt-2.5 text-[11px] leading-4 text-muted">
+              {i18nT('n.app.tabs.more.draft-translation-being-reviewed')}
+            </Text>
+          ) : null}
         </View>
       </View>
     </View>
@@ -256,7 +325,7 @@ export default function More() {
       {/* Tab screen: right="none" — the tab bar owns navigation, and this IS the
           menu the shared header's menu button points at. The big in-scroll
           "More" title is gone; the header carries it now. */}
-      <ScreenHeader title="More" right="none" translateY={translateY} />
+      <ScreenHeader title={i18nT('nav.more')} right="none" translateY={translateY} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
@@ -267,6 +336,7 @@ export default function More() {
             below are all one scroll away either way. */}
         <GovDisclaimer />
         <AppearanceGroup />
+        <LanguageGroup />
         {GROUPS.map((g) => (
           <View key={g.title} className="pb-2">
             <Text className="pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-muted">
@@ -303,7 +373,7 @@ export default function More() {
         <SocialRow />
         {/* The independence/INEC sentence lived here AND in the disclaimer bar at
             the top of this same screen. One of them had to go. */}
-        <Text className="pt-5 text-center text-xs text-faint">© IniXien, LLC</Text>
+        <Text className="pt-5 text-center text-xs text-faint">{i18nT('n.app.tabs.more.inixien-llc')}</Text>
       </Animated.ScrollView>
     </View>
   );

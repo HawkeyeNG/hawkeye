@@ -10,6 +10,7 @@ import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api, bySeat, type Contest } from '@/lib/api';
 import { loadPolitical, type Political, type Race as RaceData } from '@/lib/political';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * Races — the all-races selector, native twin of app/races.html. Reached from
@@ -363,7 +364,7 @@ export default function Races() {
           </View>
         ) : (
           <View className="rounded-full border border-line px-3 py-1">
-            <Text className="text-xs font-semibold text-muted">Soon</Text>
+            <Text className="text-xs font-semibold text-muted">{i18nT('n.app.races.soon')}</Text>
           </View>
         )}
       </Pressable>
@@ -372,7 +373,7 @@ export default function Races() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Races" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('races.races')} translateY={translateY} onClose={() => router.back()} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
@@ -386,7 +387,7 @@ export default function Races() {
             Pick a race to follow, report on, or verify.
           </Text>
           <InfoDot
-            title="How races are grouped"
+            title={i18nT('n.app.races.how-races-are-grouped')}
             text="Ongoing is an election being reported today. Upcoming is one whose polling day is still ahead. Completed is one whose polling day has passed — its page stays up, because the record is the point. Candidate lists appear on each race's page as INEC publishes them, roughly 28 days out."
           />
         </View>
@@ -398,7 +399,7 @@ export default function Races() {
             <View
               className="flex-row flex-wrap pt-4"
               accessibilityRole="radiogroup"
-              accessibilityLabel="Filter races by status"
+              accessibilityLabel={i18nT('races.filter-races-by-status')}
             >
               {chip('all', 'All')}
               {GROUPS.map(([k, title]) =>

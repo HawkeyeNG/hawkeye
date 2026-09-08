@@ -70,6 +70,7 @@ import {
 import { submitResult, type Receipt, type Shot, type Vote } from '@/lib/submit';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -450,7 +451,7 @@ const UnitRow = ({
         {/* Fixed ink on a fixed brand surface. text-ink/ui.ink flip with the
             theme, and near-white on hawk-gold is 1.6:1 — invisible in dark
             mode. The gold does not flip, so neither may the text on it. */}
-        <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
+        <Text className="pr-1 text-sm font-bold text-hawk-ink">{i18nT('n.app.practice.continue')}</Text>
         <Feather name="arrow-right" size={14} color={BRAND.ink} />
       </Pressable>
     ) : null}
@@ -525,7 +526,7 @@ const NearbyRow = ({
             className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
             onPress={onContinue}
           >
-            <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
+            <Text className="pr-1 text-sm font-bold text-hawk-ink">{i18nT('n.app.practice.continue')}</Text>
             <Feather name="arrow-right" size={14} color={BRAND.ink} />
           </Pressable>
         ) : null}
@@ -1666,10 +1667,10 @@ export default function ReportResult() {
           className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
           onPress={() => router.push('/sign-in')}
         >
-          <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('index.sign-in')}</Text>
         </Pressable>
         <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-muted">Not now</Text>
+          <Text className="text-sm text-muted">{i18nT('lang.later')}</Text>
         </Pressable>
       </SafeScreen>
     );
@@ -1764,7 +1765,7 @@ export default function ReportResult() {
           hitSlop={8}
           className="mr-1.5"
           accessibilityRole="button"
-          accessibilityLabel="Home"
+          accessibilityLabel={i18nT('nav.home')}
         >
           <Image
             source={require('@/assets/images/icon.png')}
@@ -1778,7 +1779,7 @@ export default function ReportResult() {
         >
           <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Report a result</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">{i18nT('observe.report-a-result')}</Text>
       </View>
 
       {step !== 'done' ? (
@@ -1862,7 +1863,7 @@ export default function ReportResult() {
                 the form in the observer's hand — but it is still only an offer. */}
             {!unit && sheetGuess ? (
               <View className="mt-3 rounded-2xl border-2 border-hawk-green bg-card p-4">
-                <Text className="pb-1.5 text-base font-bold text-ink">Is this your polling unit?</Text>
+                <Text className="pb-1.5 text-base font-bold text-ink">{i18nT('n.app.practice.is-this-your-polling-unit')}</Text>
                 <Text className="text-base font-semibold text-ink">{sheetGuess.name}</Text>
                 <Text className="pb-3 text-xs text-muted">
                   {sheetGuess.code}
@@ -1874,13 +1875,13 @@ export default function ReportResult() {
                     onPress={acceptSheetGuess}
                     className="flex-1 items-center rounded-xl bg-hawk-green py-3 active:opacity-80"
                   >
-                    <Text className="text-sm font-bold text-hawk-gold">Yes, use this unit</Text>
+                    <Text className="text-sm font-bold text-hawk-gold">{i18nT('n.app.practice.yes-use-this-unit')}</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => { setSheetGuess(null); setSheetMiss('Pick your unit below, or search for it.'); }}
                     className="flex-1 items-center rounded-xl border border-line py-3 active:opacity-70"
                   >
-                    <Text className="text-sm font-bold text-ink">No, choose another</Text>
+                    <Text className="text-sm font-bold text-ink">{i18nT('n.app.practice.no-choose-another')}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -1900,7 +1901,7 @@ export default function ReportResult() {
                 className="mt-2 flex-row items-center self-start rounded-xl border border-line px-3 py-2 active:opacity-70"
               >
                 <Feather name="settings" size={14} color={ui.muted} />
-                <Text className="pl-2 text-sm font-semibold text-ink">Open phone settings</Text>
+                <Text className="pl-2 text-sm font-semibold text-ink">{i18nT('n.app.map-unit.open-phone-settings')}</Text>
               </Pressable>
             ) : null}
 
@@ -1986,14 +1987,14 @@ export default function ReportResult() {
               <Text className="flex-1 pl-2 text-base font-bold text-hawk-gold">
                 Browse the register instead
               </Text>
-              <Text className="text-xs text-emerald-100">state › LGA › ward</Text>
+              <Text className="text-xs text-emerald-100">{i18nT('n.app.map-unit.state-lga-ward')}</Text>
             </Pressable>
 
             {browse ? (
               <View className="pt-3">
                 {!stateSel ? (
                   <>
-                    <Prompt>Select your state</Prompt>
+                    <Prompt>{i18nT('n.app.report.result.select-your-state')}</Prompt>
                     <View className="flex-row flex-wrap">{states.map((s) => <Chip key={s} label={s} onPress={() => pickState(s)} />)}</View>
                   </>
                 ) : null}
@@ -2008,7 +2009,7 @@ export default function ReportResult() {
                 {stateSel && covered && !lgaSel ? (
                   <>
                     <Crumb label={stateSel} onPress={() => pickState(null)} />
-                    <Prompt>Select your LGA</Prompt>
+                    <Prompt>{i18nT('n.app.report.result.select-your-lga')}</Prompt>
                     <View className="flex-row flex-wrap">{lgas.map((l) => <Chip key={l} label={l} onPress={() => pickLga(l)} />)}</View>
                   </>
                 ) : null}
@@ -2016,7 +2017,7 @@ export default function ReportResult() {
                 {stateSel && covered && lgaSel && !wardSel ? (
                   <>
                     <Crumb label={lgaSel} onPress={() => pickLga(null)} />
-                    <Prompt>Select your ward</Prompt>
+                    <Prompt>{i18nT('n.app.report.result.select-your-ward')}</Prompt>
                     <View className="flex-row flex-wrap">{wards.map((w) => <Chip key={w} label={w} onPress={() => pickWard(w)} />)}</View>
                   </>
                 ) : null}
@@ -2024,7 +2025,7 @@ export default function ReportResult() {
                 {stateSel && covered && wardSel ? (
                   <>
                     <Crumb label={`${lgaSel} · ${wardSel}`} onPress={() => pickWard(null)} />
-                    <Prompt>Select your polling unit</Prompt>
+                    <Prompt>{i18nT('n.app.report.result.select-your-polling-unit')}</Prompt>
                     {units.map((u) => (
                       <UnitRow
                         key={u.pu_code}
@@ -2036,7 +2037,7 @@ export default function ReportResult() {
                       />
                     ))}
                     {units.length === 0 ? (
-                      <Text className="pt-2 text-sm text-muted">No units in the register for this ward yet.</Text>
+                      <Text className="pt-2 text-sm text-muted">{i18nT('n.app.report.result.no-units-in-the-register-for')}</Text>
                     ) : null}
                   </>
                 ) : null}
@@ -2128,7 +2129,7 @@ export default function ReportResult() {
                 first clause repeated what the reader could already see, and the
                 last one explained a padlocked row that explains itself: every
                 closed race prints "Opens 16 Jan" beside a lock glyph. */}
-            <Text className="pb-2 text-sm text-muted">Tap an open race to report.</Text>
+            <Text className="pb-2 text-sm text-muted">{i18nT('n.app.report.result.tap-an-open-race-to-report')}</Text>
             <ContestPicker
               contests={contests}
               value={race}
@@ -2149,14 +2150,14 @@ export default function ReportResult() {
               onPress={() => setStep('votes')}
               className={`items-center rounded-2xl py-4 ${race ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
-              <Text className="text-base font-bold text-hawk-gold">Continue to the figures</Text>
+              <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.practice.continue-to-the-figures')}</Text>
             </Pressable>
           </View>
         ) : null}
 
         {step === 'votes' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
-            <Text className="pb-1 text-xl font-bold text-ink">Votes per party</Text>
+            <Text className="pb-1 text-xl font-bold text-ink">{i18nT('n.app.report.result.votes-per-party')}</Text>
             <Text className="pb-3 text-sm text-muted">
               Copy the figures exactly as written on the sheet. Leave blank for parties not listed.
             </Text>
@@ -2211,7 +2212,7 @@ export default function ReportResult() {
                 </View>
                 {readCodes.includes(p.code) ? (
                   <View className="mr-2 rounded-full bg-surface px-2 py-0.5">
-                    <Text className="text-[9px] font-bold text-hawk-leaf">FROM SHEET</Text>
+                    <Text className="text-[9px] font-bold text-hawk-leaf">{i18nT('n.app.report.result.from-sheet')}</Text>
                   </View>
                 ) : null}
                 <TextInput
@@ -2236,14 +2237,14 @@ export default function ReportResult() {
               onPress={() => setStep('review')}
               className={`items-center rounded-2xl py-4 ${votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
-              <Text className="text-base font-bold text-hawk-gold">Review report</Text>
+              <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.report.collation.review-report')}</Text>
             </Pressable>
           </View>
         ) : null}
 
         {step === 'review' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4">
-            <Text className="pb-3 text-xl font-bold text-ink">Confirm and send</Text>
+            <Text className="pb-3 text-xl font-bold text-ink">{i18nT('n.app.report.result.confirm-and-send')}</Text>
             {/* WHAT IS ABOUT TO BE FILED, in full, before it is signed.
                 The state was missing — "Shira, Bauchi" and "Shira, Kano" are
                 both real, and the one thing a report cannot be wrong about is
@@ -2282,7 +2283,7 @@ export default function ReportResult() {
                       <Text className="text-xs font-semibold text-muted">
                         {i === 0 ? 'Result sheet' : 'Venue'}
                       </Text>
-                      <Text className="text-xs font-bold text-hawk-leaf">Retake</Text>
+                      <Text className="text-xs font-bold text-hawk-leaf">{i18nT('n.app.report.collation.retake')}</Text>
                     </View>
                   </Pressable>
                 ) : null,
@@ -2307,9 +2308,9 @@ export default function ReportResult() {
                 InfoDot exists for. Nothing is lost: the dot is beside the
                 heading it belongs to and the words are unchanged. */}
             <View className="flex-row items-center pb-3">
-              <Text className="text-xs text-muted">What happens when you send</Text>
+              <Text className="text-xs text-muted">{i18nT('n.app.report.result.what-happens-when-you-send')}</Text>
               <InfoDot
-                title="What happens when you send"
+                title={i18nT('n.app.report.result.what-happens-when-you-send')}
                 text={
                   'Submitting takes a GPS fix at your position, signs the report with this device’s key, '
                   + 'and files it for review.\n\nYour number is never attached — only your observer ID.'
@@ -2335,7 +2336,7 @@ export default function ReportResult() {
               )}
             </Pressable>
             <Pressable className="mt-3 items-center" onPress={() => setStep('votes')} disabled={busy}>
-              <Text className="text-sm font-semibold text-hawk-leaf">‹ Back to votes</Text>
+              <Text className="text-sm font-semibold text-hawk-leaf">{i18nT('n.app.practice.back-to-votes')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -2410,7 +2411,7 @@ export default function ReportResult() {
               <View className="mt-3 rounded-2xl bg-card px-4 py-2">
                 {receipt.result?.status ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="text-sm text-muted">Status</Text>
+                    <Text className="text-sm text-muted">{i18nT('n.app.report.collation.status')}</Text>
                     <Text
                       // Same contrast fault as the amber above, same fix:
                       // red-700 is a fixed #b91c1c and lands ~3.4:1 on the dark
@@ -2423,7 +2424,7 @@ export default function ReportResult() {
                 ) : null}
                 {receipt.result?.confidence != null ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="text-sm text-muted">Confidence</Text>
+                    <Text className="text-sm text-muted">{i18nT('n.app.report.result.confidence')}</Text>
                     <Text className="text-sm font-bold text-ink">
                       {receipt.result.confidence}%
                     </Text>
@@ -2431,7 +2432,7 @@ export default function ReportResult() {
                 ) : null}
                 {receipt.result?.totalReports != null ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="text-sm text-muted">Reports agreeing</Text>
+                    <Text className="text-sm text-muted">{i18nT('n.app.report.result.reports-agreeing')}</Text>
                     <Text className="text-sm font-bold text-ink">
                       {receipt.result.matchingReports ?? 0} of {receipt.result.totalReports}
                     </Text>
@@ -2439,7 +2440,7 @@ export default function ReportResult() {
                 ) : null}
                 {receipt.result?.locationStatus || receipt.locationVerified != null ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="pr-3 text-sm text-muted">Location</Text>
+                    <Text className="pr-3 text-sm text-muted">{i18nT('n.app.report.result.location')}</Text>
                     <View className="flex-1 flex-row items-center justify-end">
                       <View
                         style={{
@@ -2458,7 +2459,7 @@ export default function ReportResult() {
                 ) : null}
                 {receipt.result?.venueMatches ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="text-sm text-muted">Venue photo matches</Text>
+                    <Text className="text-sm text-muted">{i18nT('n.app.report.result.venue-photo-matches')}</Text>
                     <Text className="text-sm font-bold text-ink">
                       {receipt.result.venueMatches}
                     </Text>
@@ -2468,7 +2469,7 @@ export default function ReportResult() {
                     the observer should see the machine's second opinion too. */}
                 {receipt.ocr?.total ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="pr-3 text-sm text-muted">Read off your photo</Text>
+                    <Text className="pr-3 text-sm text-muted">{i18nT('n.app.report.result.read-off-your-photo')}</Text>
                     <Text className="text-sm font-bold text-ink">
                       {receipt.ocr.matched} of {receipt.ocr.total} counts matched
                     </Text>
@@ -2497,7 +2498,7 @@ export default function ReportResult() {
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
               onPress={() => router.back()}
             >
-              <Text className="text-base font-bold text-hawk-gold">Done</Text>
+              <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.map-unit.done')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -2510,7 +2511,7 @@ export default function ReportResult() {
       <ConfirmSheet
         visible={!!farUnit}
         icon="map-pin"
-        title="That unit is too far away"
+        title={i18nT('n.app.practice.that-unit-is-too-far-away')}
         body={
           farUnit
             ? `${farUnit.name} is in ${farUnit.lga}, ${farUnit.state}, about ` +
@@ -2519,7 +2520,7 @@ export default function ReportResult() {
               'selected from here. If you are travelling there, choose it once you arrive.'
             : ''
         }
-        confirmLabel="Choose another unit"
+        confirmLabel={i18nT('n.app.practice.choose-another-unit')}
         cancelLabel={null}
         onConfirm={() => setFarUnit(null)}
         onCancel={() => setFarUnit(null)}

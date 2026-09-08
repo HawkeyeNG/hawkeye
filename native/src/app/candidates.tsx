@@ -10,6 +10,7 @@ import { useUi } from '@/lib/theme';
 import { loadPolitical, type Race } from '@/lib/political';
 import { humanError } from '@/lib/errors';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
+import { t as i18nT } from '@/lib/i18n';
 
 /** 2027 Candidates — the declared presidential field, plus the side-by-side
  *  compare the web page carries (kept, scrolled horizontally, not dropped). */
@@ -32,7 +33,7 @@ export default function Candidates() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Presidency 2027" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('n.app.candidates.presidency-2027')} translateY={translateY} onClose={() => router.back()} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}

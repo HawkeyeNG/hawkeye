@@ -1277,15 +1277,22 @@ export default function ReportIncident() {
                 between the question and the controls that answer it, on a step
                 someone may be completing in a hurry or somewhere unsafe. The
                 house rule is one sentence per line of UI. */}
-            <Text className="pb-3 text-sm text-muted">
-              The unit you are AT, not the one you are registered at.
+            {/* ROW, NOT A DOT NESTED IN THE TEXT. An embedded view inside a
+                <Text> is laid out inline by Android, which clipped this line
+                mid-sentence — "not the one you are" and then nothing, with the
+                dot sitting on top of the rest. Every other InfoDot on the app
+                is a flex row with the copy on flex-1; this one was the outlier.
+                See components/info-dot.tsx, whose docblock still shows the
+                inline form as if it worked. */}
+            <View className="flex-row items-center pb-3">
+              <Text className="flex-1 text-sm text-muted">
+                {i18nT('n.app.report.incident.the-unit-you-are-at-not-the-one')}
+              </Text>
               <InfoDot
                 title={i18nT('n.app.report.incident.why-the-unit-matters')}
-                text={`It decides which state the report is filed under and which unit watchers are alerted.
-
-Answer it from somewhere safe — your report is already saved on this device, so nothing is lost by waiting.`}
+                text={i18nT('n.app.report.incident.why-the-unit-matters-body')}
               />
-            </Text>
+            </View>
 
             {/* THE ANSWER, ONCE THERE IS ONE.
                 Picking a unit used to change nothing on screen except a faint

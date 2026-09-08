@@ -57,9 +57,13 @@ const SAME_OK = new Set([
   'nav.osun-2026',
 ]);
 
+/* A NEWLINE IS ALLOWED. A paragraph break is not a script: the info-modal
+   bodies are deliberately two paragraphs. This check exists to catch a
+   Devanagari fragment typed into an Igbo string, which a line break cannot
+   be, so passing over it is not a loophole. */
 /* Latin plus the marks these three orthographies need, punctuation, arrows and
    the emoji the UI uses. Anything else is a typo from another keyboard. */
-const ALLOWED = /^[ -~ -ɏɐ-ʯ̀-ͯḀ-ỿ -⁯₠-₿←-⇿∀-⋿✀-➿⬀-⯿️\u{1F300}-\u{1FAFF}‘’“”‹›«»]*$/u;
+const ALLOWED = /^[\n -~ -ɏɐ-ʯ̀-ͯḀ-ỿ -⁯₠-₿←-⇿∀-⋿✀-➿⬀-⯿️\u{1F300}-\u{1FAFF}‘’“”‹›«»]*$/u;
 
 let bad = 0;
 const bundles = { en: {} };

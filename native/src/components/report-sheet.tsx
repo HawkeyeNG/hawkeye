@@ -18,10 +18,40 @@ export type ReportAction = 'result' | 'incident' | 'collation';
 
 type Props = { onAction: (a: ReportAction) => void };
 
-const ACTIONS: { key: ReportAction; label: string; sub: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { key: 'result', label: 'Report a Result', sub: 'Photograph the result sheet at your unit', icon: 'camera' },
-  { key: 'incident', label: 'Report an Incident', sub: 'Photo or video of what you witnessed', icon: 'alert-triangle' },
-  { key: 'collation', label: 'Report a Collation', sub: 'Ward or LGA collation announcement', icon: 'layers' },
+/**
+ * KEYS HERE, RESOLVED AT RENDER — not strings, and not i18nT() calls.
+ *
+ * This array is module-level, so it is built once at import. A translated
+ * string baked in here would be whatever the language was when the module
+ * loaded, which on a cold start is before AsyncStorage has answered — i.e.
+ * English, permanently, however many times the reader switches language.
+ * The labels reuse the keys the More menu already uses for the same three
+ * actions, so the sheet and the menu cannot drift into two wordings.
+ */
+const ACTIONS: {
+  key: ReportAction;
+  labelKey: string;
+  subKey: string;
+  icon: keyof typeof Feather.glyphMap;
+}[] = [
+  {
+    key: 'result',
+    labelKey: 'common.report-a-result',
+    subKey: 'n.components.report-sheet.photograph-the-result-sheet-at-your',
+    icon: 'camera',
+  },
+  {
+    key: 'incident',
+    labelKey: 'common.report-an-incident',
+    subKey: 'n.components.report-sheet.photo-or-video-of-what-you',
+    icon: 'alert-triangle',
+  },
+  {
+    key: 'collation',
+    labelKey: 'nav.report-a-collation',
+    subKey: 'n.components.report-sheet.ward-or-lga-collation-announcement',
+    icon: 'layers',
+  },
 ];
 
 /** Module-level so the array identity is stable across renders. */
@@ -102,7 +132,7 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
       <BottomSheetView style={{ paddingBottom: insets.bottom + 12 }}>
         <Text className="px-5 pb-1 pt-1 text-lg font-bold text-ink">{i18nT('nav.report')}</Text>
         <Text className="px-5 pb-3 text-sm text-muted">
-          Every report is signed, hash-chained and publicly verifiable.
+          {i18nT('n.components.report-sheet.every-report-is-signed-hash-chained')}
         </Text>
         {ACTIONS.map((a) => (
           <Pressable
@@ -117,8 +147,8 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
               <Feather name={a.icon} size={18} color={BRAND.gold} />
             </View>
             <View className="flex-1">
-              <Text className="text-base font-semibold text-ink">{a.label}</Text>
-              <Text className="text-xs text-muted">{a.sub}</Text>
+              <Text className="text-base font-semibold text-ink">{i18nT(a.labelKey)}</Text>
+              <Text className="text-xs text-muted">{i18nT(a.subKey)}</Text>
             </View>
             <Feather name="chevron-right" size={18} color={ui.faint} />
           </Pressable>

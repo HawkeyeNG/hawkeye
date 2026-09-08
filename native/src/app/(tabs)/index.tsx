@@ -256,7 +256,7 @@ export default function Home() {
         id: `r${e.id}`,
         kind: 'report',
         at: e.created_at,
-        title: `Result reported · ${e.contest}`,
+        title: i18nT('n.app.tabs.index.result-reported', { v0: e.contest }),
         detail: e.pu_code,
         href: '/reports-log',
       });
@@ -287,7 +287,7 @@ export default function Home() {
         id: `c${k.id}`,
         kind: 'case',
         at: k.resolvedAt ?? k.openedAt,
-        title: k.resolvedAt ? `Case resolved — ${k.status}` : 'Case opened',
+        title: k.resolvedAt ? i18nT('n.app.tabs.index.case-resolved', { v0: k.status }) : 'Case opened',
         detail: `${k.name || k.puCode} · ${k.contest}`,
         href: `/case?id=${k.id}`,
       });
@@ -357,7 +357,7 @@ export default function Home() {
         >
           <View className="px-5 pb-4 pt-5">
             <Text className="text-xs font-semibold uppercase tracking-wider text-hawk-gold">
-              {c.open ? 'Reporting open' : 'Upcoming election'}
+              {c.open ? i18nT('n.app.tabs.index.reporting-open') : i18nT('n.app.tabs.index.upcoming-election')}
             </Text>
             <Text className="pt-1 text-xl font-bold text-white">{cardTitle(c, contests)}</Text>
             <Text className="pt-1 text-sm text-emerald-100">
@@ -371,7 +371,7 @@ export default function Home() {
           </View>
           <View className="flex-row items-center justify-between bg-[#00351e] px-5 py-3">
             <Text className="text-sm font-semibold text-hawk-gold">
-              {c.open ? 'Report from your polling unit now' : `Opens in ${daysUntil(c.date)} days`}
+              {c.open ? 'Report from your polling unit now' : i18nT('n.app.tabs.index.opens-in-days', { v0: daysUntil(c.date) })}
             </Text>
             <Feather name="chevron-right" size={16} color={BRAND.gold} />
           </View>

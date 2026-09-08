@@ -661,7 +661,7 @@ export default function Results() {
         // only ever set to a code /api/contests listed — so this branch is the
         // per-seat one in practice. The fallback keeps the sentence readable
         // rather than printing "undefined" if that ever stops being true.
-        body: `Hawkeye is not collecting results for ${race ? raceLabel(race, contests) : 'this election'} yet, so there is nothing to rank. It will appear here once the race is added.`,
+        body: i18nT('n.app.tabs.results.hawkeye-is-not-collecting-results-for', { v0: race ? raceLabel(race, contests) : 'this election' }),
       };
     // Closed is checked BEFORE the fetch state on purpose: for a race that has
     // not opened, "nothing can be reported yet" is the whole truth, and it stays
@@ -669,7 +669,7 @@ export default function Results() {
     if (!contest.open)
       return {
         title: 'Reporting has not opened',
-        body: `${contest.election} is set for ${whenLine(contest)}. Nothing can be reported until then, so this board stays empty — it is not missing data.`,
+        body: i18nT('n.app.tabs.results.is-set-for-nothing-can-be', { v0: contest.election, v1: whenLine(contest) }),
       };
     // An open race with no answer yet is not an open race with no votes. Saying
     // "no results yet" while the request is still out — or after it failed —
@@ -680,11 +680,11 @@ export default function Results() {
         body: 'The tally did not reach this device. Pull down to try again.',
       };
     if (updatedAt === null)
-      return { title: 'Loading results…', body: `Fetching the tally for ${contest.election}.` };
+      return { title: 'Loading results…', body: i18nT('n.app.tabs.results.fetching-the-tally-for', { v0: contest.election }) };
     if (scope && elsewhere > 0)
       return {
-        title: `No reports from ${scope} yet`,
-        body: `${elsewhere} unit(s) have reported elsewhere in this election, but nothing has come in from ${scope}.`,
+        title: i18nT('n.app.tabs.results.no-reports-from-yet', { v0: scope }),
+        body: i18nT('n.app.tabs.results.unit-s-have-reported-elsewhere-in', { v0: elsewhere, v1: scope }),
       };
     return {
       title: 'No results yet',
@@ -953,18 +953,18 @@ export default function Results() {
     const out: string[] = [];
     const row = inspect.row;
     if (!row) {
-      out.push(`No reports from ${regionLabel(inspect.name)} yet.`);
+      out.push(i18nT('n.app.tabs.results.no-reports-from-yet-2', { v0: regionLabel(inspect.name) }));
     } else {
       const L = leadersOf(row.votes);
       const lead =
         L.length > 2
-          ? `${L.length}-way tie`
+          ? i18nT('n.app.tabs.results.way-tie', { v0: L.length })
           : L.length === 2
-            ? `${L[0]} and ${L[1]} tied`
+            ? i18nT('n.app.tabs.results.and-tied', { v0: L[0], v1: L[1] })
             : L.length === 1
               ? `${L[0]} leads`
               : 'No votes counted yet';
-      out.push(`${lead} · ${row.unitsReporting} unit(s) reporting, ${row.unitsVerified} verified.`);
+      out.push(i18nT('n.app.tabs.results.unit-s-reporting-verified', { v0: lead, v1: row.unitsReporting, v2: row.unitsVerified }));
       const top = Object.entries(row.votes)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
@@ -981,9 +981,9 @@ export default function Results() {
     // map of a single LGA invited the reader to look for the rest of a country
     // that is not part of this election.
     if (inspect.home && confined) {
-      out.push(`This election is held only here, so this ${word.one} is the whole race.`);
+      out.push(i18nT('n.app.tabs.results.this-election-is-held-only-here', { v0: word.one }));
     } else if (inspect.home) {
-      out.push(`This is the ${word.one} the board above ranks.`);
+      out.push(i18nT('n.app.tabs.results.this-is-the-the-board-above', { v0: word.one }));
     } else if (!scope && !confined) {
       out.push('The board above ranks the nationwide total.');
     }
@@ -1105,7 +1105,7 @@ export default function Results() {
     const lead =
       level === 'lga'
         ? 'Coloured by the party leading in each state.'
-        : `Every ${word.one} that has reported, filled with the party leading there.`;
+        : i18nT('n.app.tabs.results.every-that-has-reported-filled-with', { v0: word.one });
     const parts: string[] = [];
     if (level === 'lga') {
       // One clause. The full explanation — that the tally groups by state
@@ -1120,7 +1120,7 @@ export default function Results() {
     // and the comparison turns into a false claim about national coverage.
     if (!mapScope && shapeNames.length > 0 && shapeNames.length < total) {
       parts.push(
-        `${shapeNames.length} of Nigeria's ${total} ${word.many} have a mapped boundary; the rest cannot be drawn.`,
+        i18nT('n.app.tabs.results.of-nigeria-s-have-a-mapped', { v0: shapeNames.length, v1: total, v2: word.many }),
       );
     }
     const only = contest?.states ?? [];
@@ -1128,11 +1128,11 @@ export default function Results() {
     // list of states, and comparing it to an LGA count was only ever right by
     // accident of both being 37.
     if ((level === 'state' || level === 'lga') && only.length > 0 && only.length < REGIONS_EXPECTED.state) {
-      parts.push(`Contested only in ${only.join(', ')} — every other state stays grey.`);
+      parts.push(i18nT('n.app.tabs.results.contested-only-in-every-other-state', { v0: only.join(', ') }));
     }
     if (scope && shapeNames.length > 0 && !homeShape) {
       parts.push(
-        `${scope} could not be matched to an outline, so nothing is highlighted for this race.`,
+        i18nT('n.app.tabs.results.could-not-be-matched-to-an', { v0: scope }),
       );
     }
     // The residue of the name-matching above, stated rather than swallowed. These
@@ -1162,7 +1162,7 @@ export default function Results() {
         <Text className="text-sm font-bold text-ink">{i18nT('n.app.tabs.results.no-map-for-this-race')}</Text>
         <Text className="pt-1 text-xs text-muted">
           {data
-            ? `This tally is grouped by “${data.level}”, which this version of the app has no outlines for. The website's results map can draw it.`
+            ? i18nT('n.app.tabs.results.this-tally-is-grouped-by-which', { v0: data.level })
             : 'The map appears once the race is chosen.'}
         </Text>
       </View>
@@ -1187,8 +1187,8 @@ export default function Results() {
             onPress={onRegionPress}
             accessibilityLabel={
               mapScope
-                ? `Map of ${mapScope}: leading party by ${word.one}`
-                : `Map of Nigeria: leading party by ${word.one}`
+                ? i18nT('n.app.tabs.results.map-of-leading-party-by', { v0: mapScope, v1: word.one })
+                : i18nT('n.app.tabs.results.map-of-nigeria-leading-party-by', { v0: word.one })
             }
           />
         </View>
@@ -1230,7 +1230,7 @@ export default function Results() {
             way to trigger; this is the panel that replaces it. */}
         <View className="mt-2 rounded-2xl bg-surface px-3.5 py-3">
           <Text className="text-xs font-bold text-ink">
-            {inspect ? regionLabel(inspect.name) : `Tap a ${word.one} for its numbers`}
+            {inspect ? regionLabel(inspect.name) : i18nT('n.app.tabs.results.tap-a-for-its-numbers', { v0: word.one })}
           </Text>
           {inspect ? (
             inspectLines.map((line, i) => (
@@ -1478,7 +1478,7 @@ export default function Results() {
             expected content; here they have not chosen any yet. */}
         {nothingChosen ? null : (
         <Text className="pl-3.5 pt-1.5 text-sm text-muted" numberOfLines={1}>
-          {contest ? `${unitsReporting} unit(s) reporting` : race ? 'Not covered yet' : 'Loading…'}
+          {contest ? i18nT('n.app.tabs.results.unit-s-reporting', { v0: unitsReporting }) : race ? 'Not covered yet' : 'Loading…'}
           {contest && updatedAt
             ? ` · updated ${new Date(updatedAt).toLocaleTimeString([], {
                 hour: '2-digit',

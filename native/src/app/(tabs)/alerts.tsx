@@ -117,7 +117,7 @@ export default function Alerts() {
     // Under a full-height list an inline error sits below the fold and is never
     // read. The pull was deliberate, so a failed one gets an answer.
     if (failed && items?.length) {
-      notice.show('Could not refresh', `Your alerts did not load. (${failed})`);
+      notice.show('Could not refresh', i18nT('n.app.tabs.alerts.your-alerts-did-not-load', { v0: failed }));
     }
   };
 
@@ -332,7 +332,7 @@ export default function Alerts() {
                   <>
                     <Feather name="check-circle" size={16} color={BRAND.gold} />
                     <Text className="pl-2 text-base font-bold text-hawk-gold">
-                      {unread > 0 ? `Mark all read (${unread})` : 'All read'}
+                      {unread > 0 ? i18nT('n.app.tabs.alerts.mark-all-read', { v0: unread }) : 'All read'}
                     </Text>
                   </>
                 )}

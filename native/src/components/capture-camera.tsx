@@ -554,7 +554,7 @@ export function CaptureCamera({
     }
     setBusy(true);
     setRecording(true);
-    setLine(`Recording — up to ${VIDEO_MAX_S}s. Tap again to stop.`);
+    setLine(i18nT('n.components.capture-camera.recording-up-to-s-tap-again', { v0: VIDEO_MAX_S }));
     try {
       const fixP = getFix();
       const video = await cam.current!.recordAsync({

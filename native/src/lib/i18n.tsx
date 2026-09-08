@@ -90,7 +90,7 @@ function plural(bundle: Record<string, string>, key: string, count: number | und
  * `{placeholder}` is left with its braces on: a sentence with a visible hole is
  * a bug someone reports, a sentence missing a number silently is not.
  */
-export function translate(lang: Lang, key: string, params?: Record<string, string | number>): string {
+export function translate(lang: Lang, key: string, params?: Record<string, string | number | null | undefined>): string {
   const count = typeof params?.count === 'number' ? params.count : undefined;
   const s = plural(BUNDLES[lang] ?? BUNDLES.en, key, count) ?? plural(BUNDLES.en, key, count);
   if (s == null) return key;
@@ -122,7 +122,7 @@ export function translate(lang: Lang, key: string, params?: Record<string, strin
  */
 let currentLang: Lang = 'en';
 
-export function t(key: string, params?: Record<string, string | number>): string {
+export function t(key: string, params?: Record<string, string | number | null | undefined>): string {
   return translate(currentLang, key, params);
 }
 
@@ -156,7 +156,7 @@ type LangState = {
   /** Has the reader ever chosen? Distinct from "is English": drives the prompt. */
   chosen: boolean;
   setLang: (next: Lang) => void;
-  t: (key: string, params?: Record<string, string | number>) => string;
+  t: (key: string, params?: Record<string, string | number | null | undefined>) => string;
 };
 
 const Ctx = createContext<LangState | null>(null);

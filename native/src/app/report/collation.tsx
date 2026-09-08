@@ -195,8 +195,8 @@ export default function ReportCollation() {
     const races = racesIn(stateSel, contests);
     if (races.length === 0) {
       notice.show(
-        `No active election in ${stateSel}`,
-        `Hawkeye is covering the ${contests[0].election}. No collation is open for reporting in ${stateSel} yet — but you can still map polling units anywhere in Nigeria.`,
+        i18nT('n.app.report.collation.no-active-election-in', { v0: stateSel }),
+        i18nT('n.app.report.collation.hawkeye-is-covering-the-no-collation', { v0: contests[0].election, v1: stateSel }),
       );
       return;
     }
@@ -308,7 +308,7 @@ export default function ReportCollation() {
       const got = await trySubmitFix();
       if (!got.ok) {
         const d = describeFixFailure(got);
-        setLine(`${d.lead}. Nothing was sent — your figures and photos are still here. (${d.code})`);
+        setLine(i18nT('n.app.report.collation.nothing-was-sent-your-figures-and', { v0: d.lead, v1: d.code }));
         setGpsSettings(d.settings);
         setBusy(false);
         return;
@@ -388,7 +388,7 @@ export default function ReportCollation() {
     return (
       <CaptureCamera
         key={step}
-        title={isSheet ? 'Photo 1 of 2 — the collation form' : 'Photo 2 of 2 — the centre'}
+        title={isSheet ? i18nT('n.app.report.collation.photo-1-of-2-the-collation') : i18nT('n.app.report.collation.photo-2-of-2-the-centre')}
         frameGuide={isSheet}
         venueGuide={isSheet ? undefined : '📸 VENUE PHOTO — aim at the collation centre itself: the building, the room or the officials. This is NOT the collation form.'}
         hint={
@@ -396,7 +396,7 @@ export default function ReportCollation() {
             ? 'Fit the whole form in frame. Every figure must be readable.'
             : 'Step back and capture the collation centre — building, banner, officials.'
         }
-        confirmTitle={isSheet ? 'Check the form' : 'Check the venue photo'}
+        confirmTitle={isSheet ? i18nT('n.app.report.collation.check-the-form') : i18nT('n.app.report.collation.check-the-venue-photo')}
         readDocument={isSheet}
         partyCodes={parties.map((p) => p.code)}
         confirmHint={
@@ -597,10 +597,10 @@ export default function ReportCollation() {
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Text className="pb-2 text-xs text-muted" numberOfLines={1}>
               {level === 'state'
-                ? `State collation — ${stateSel}`
+                ? i18nT('n.app.report.collation.state-collation', { v0: stateSel })
                 : level === 'lga'
-                  ? `LGA collation — ${lgaSel}, ${stateSel}`
-                  : `Ward collation — ${wardSel}, ${lgaSel}`}
+                  ? i18nT('n.app.report.collation.lga-collation', { v0: lgaSel, v1: stateSel })
+                  : i18nT('n.app.report.collation.ward-collation', { v0: wardSel, v1: lgaSel })}
             </Text>
             <Pressable
               onPress={continueFromScope}

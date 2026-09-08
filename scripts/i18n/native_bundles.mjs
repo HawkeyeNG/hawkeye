@@ -26,9 +26,9 @@ const web = {};
 for (const c of ['ha', 'ig', 'yo']) web[c] = JSON.parse(fs.readFileSync(path.join(ROOT, 'app/i18n/' + c + '.json'), 'utf8'));
 
 const tr = {
-  ha: (await import(path.join(ROOT, 'tmp/native_tr.mjs'))).default.ha,
-  ig: (await import(path.join(ROOT, 'tmp/native_tr_ig.mjs'))).default,
-  yo: (await import(path.join(ROOT, 'tmp/native_tr_yo.mjs'))).default,
+  ha: (await import(path.join(ROOT, 'scripts/i18n/native_tr.mjs'))).default.ha,
+  ig: (await import(path.join(ROOT, 'scripts/i18n/native_tr_ig.mjs'))).default,
+  yo: (await import(path.join(ROOT, 'scripts/i18n/native_tr_yo.mjs'))).default,
 };
 
 /* Identical to English on purpose: product names, handles, domains, a year, and

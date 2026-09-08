@@ -65,9 +65,27 @@ const SAME_OK = new Set([
    the emoji the UI uses. Anything else is a typo from another keyboard. */
 const ALLOWED = /^[\n -~ -ɏɐ-ʯ̀-ͯḀ-ỿ -⁯₠-₿←-⇿∀-⋿✀-➿⬀-⯿️\u{1F300}-\u{1FAFF}‘’“”‹›«»]*$/u;
 
+/**
+ * WEB COPY CARRIES MARKUP; NATIVE RENDERS PLAIN TEXT.
+ *
+ * Keys shared with the web catalogue can contain <span>/<a>/<strong>, which the
+ * PWA needs and a React Native <Text> prints literally. The Political screen
+ * shipped showing "<span>The 2027 Presidential Race…</span>" as its own label,
+ * in every language, because this build copied the web value across untouched.
+ *
+ * Strip the tags, collapse the whitespace that removing them leaves behind, and
+ * then REFUSE anything still holding a tag — a strip without a check is how the
+ * next one gets through.
+ */
+const stripMarkup = (v) =>
+  v.replace(/<[^>]+>/g, '').replace(/\s{2,}/g, ' ').trim();
+
 let bad = 0;
 const bundles = { en: {} };
-for (const [k, v] of Object.entries(cat)) bundles.en[k] = v;
+// English goes through the same strip. It is built here rather than in the
+// per-language loop below, so the first version of this fix cleaned ha/ig/yo
+// and left the English screen still printing its own span tags.
+for (const [k, v] of Object.entries(cat)) bundles.en[k] = stripMarkup(v);
 
 for (const code of ['ha', 'ig', 'yo']) {
   const out = {};
@@ -79,6 +97,13 @@ for (const code of ['ha', 'ig', 'yo']) {
   }
   const orphan = Object.keys(tr[code]).filter((k) => !(k in cat));
   const same = Object.entries(out).filter(([k, v]) => v === cat[k] && !SAME_OK.has(k));
+  // Strip BEFORE the checks read `out` — the markup check below is one of
+  // them, and on the first attempt it correctly failed the build on markup
+  // this line was about to remove.
+  for (const key of Object.keys(out)) out[key] = stripMarkup(out[key]);
+
+  const markup = Object.entries(out).filter(([, v]) => /<[^>]+>/.test(v));
+  for (const [k] of markup.slice(0, 6)) console.log('    HTML in a native string: ' + k);
   const wrongScript = Object.entries(out).filter(([, v]) => !ALLOWED.test(v));
 
   console.log(code + ': ' + Object.keys(out).length + ' keys'
@@ -93,7 +118,8 @@ for (const code of ['ha', 'ig', 'yo']) {
     const stray = [...v].filter((ch) => !ALLOWED.test(ch)).map((ch) => ch + ' U+' + ch.codePointAt(0).toString(16).toUpperCase());
     console.log('    wrong script: ' + k + ' -> ' + stray.join(', '));
   }
-  if (missing.length || orphan.length || same.length || wrongScript.length) bad++;
+  if (missing.length || orphan.length || same.length || wrongScript.length
+    || markup.length) bad++;
   bundles[code] = out;
 }
 

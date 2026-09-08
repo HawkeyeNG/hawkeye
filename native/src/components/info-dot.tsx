@@ -13,9 +13,20 @@ import { useUi } from '@/lib/theme';
  * dot beside the thing it explains; anything that INSTRUCTS mid-flow (which
  * photo to take, what to type) stays visible — those are not explanations.
  *
- *   <Text className="…">Automated checks on every result.<InfoDot title="What gets checked" text="…" /></Text>
+ * PUT IT IN A ROW, NOT INSIDE THE <Text>:
  *
- * Renders inline inside a <Text> as well as standalone.
+ *   <View className="flex-row items-center">
+ *     <Text className="flex-1 …">Automated checks on every result.</Text>
+ *     <InfoDot title="What gets checked" text="…" />
+ *   </View>
+ *
+ * This docblock used to show the dot nested inside the <Text>, and said it
+ * "renders inline inside a <Text> as well as standalone". It does not, reliably:
+ * Android lays an embedded view out inline and can clip the surrounding text.
+ * The incident flow's "The unit you are AT…" line shipped truncated mid-sentence
+ * with the dot sitting over the remainder, and it was the only caller following
+ * this example — every other one is already a flex row. `flex-1` on the Text is
+ * what lets the copy wrap instead of pushing the dot off the edge.
  */
 export function InfoDot({
   title,

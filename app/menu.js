@@ -56,6 +56,30 @@ function i18nLate(root) {
   if (window.HawkeyeI18n) window.HawkeyeI18n.apply(root || document);
 }
 
+/**
+ * DO NOT RELY ON SCRIPT ORDER. Registered once, at the top, and honoured by every
+ * block below.
+ *
+ * The first version of this file reasoned: i18n.js resolves a non-English bundle
+ * through fetch().then(), so its apply() pass runs in a LATER task than menu.js's
+ * synchronous body, and therefore always sees the nodes menu.js builds. That
+ * held locally and was false on the live site: on index.html — the biggest page,
+ * with the most script before menu.js — the bundle fetch resolved FIRST, apply()
+ * ran against a footer that did not exist yet, and menu.js then replaced the
+ * page's own keyed <nav> with its English rebuild. The result was the exact bug
+ * this work set out to fix, still on Home, while how.html was correct: a race,
+ * so it reproduced on one page and not another and never locally at all.
+ *
+ * The ordering assumption is now gone entirely. menu.js sweeps the document once
+ * when it has finished building, and again on every language change — on the
+ * website as well as in the app shell, where the sweep already existed but was
+ * sealed inside `if (inAppShell)`.
+ */
+function i18nSweep() {
+  i18nLate(document);
+}
+document.addEventListener('hawkeye-lang', i18nSweep);
+
 // Shared header-menu behaviour: close the dropdown when clicking anywhere
 // outside it (the button's own inline onclick still toggles it) and on Escape.
 (function () {
@@ -2077,3 +2101,15 @@ function i18nLate(root) {
     } catch (e) { return false; }
   };
 })();
+
+/**
+ * THE FINAL SWEEP. menu.js has now built the footer, the ☰ panel, the header,
+ * the tab bar and the skip link — every one of them after the page's own markup
+ * was keyed, and possibly after i18n.js's one post-fetch apply() pass already
+ * ran (see i18nSweep above: on the live site it did, on Home). Apply once more,
+ * here, when there is nothing left to build.
+ *
+ * Cheap: apply() is two querySelectorAll sweeps and writes only where the text
+ * actually differs.
+ */
+i18nSweep();

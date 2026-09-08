@@ -1,5 +1,8 @@
 import type Feather from '@expo/vector-icons/Feather';
 
+import { CONTENT_I18N } from './content-i18n';
+import { currentLang_ } from './i18n';
+
 /**
  * Structured content for the explainer pages.
  *
@@ -454,3 +457,39 @@ export const PAGES: Record<string, Page> = {
     ],
   },
 };
+
+/**
+ * THE TRANSLATED PAGES — what every consumer should read.
+ *
+ * PAGES above stays the English source of truth and stays a plain const, so this
+ * file still reads as prose. Translating it here, at read time, is what avoids
+ * threading a key beside all 105 strings of a five-deep content tree.
+ *
+ * CALLED DURING RENDER, never at module scope. currentLang_() is the same module
+ * variable `t` reads, and it is not populated until AsyncStorage returns; a
+ * translated copy built at import would freeze in whatever was current then.
+ * Consumers call getPages() inside their component body, and the provider
+ * remounts them with key={lang}, so the content follows the language.
+ *
+ * Anything with no entry in CONTENT_I18N falls through AS ENGLISH — which is
+ * what the privacy page wants (English by policy) and the safe degradation for
+ * copy reworded here before the translations were rebuilt. It can never render a
+ * raw key, because there are no keys.
+ */
+function translateNode<T>(node: T, dict: Record<string, string>): T {
+  if (typeof node === 'string') return (dict[node] ?? node) as unknown as T;
+  if (Array.isArray(node)) return node.map((v) => translateNode(v, dict)) as unknown as T;
+  if (node && typeof node === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(node as Record<string, unknown>)) out[k] = translateNode(v, dict);
+    return out as unknown as T;
+  }
+  return node;
+}
+
+export function getPages(): Record<string, Page> {
+  const dict = CONTENT_I18N[currentLang_()];
+  // English needs no walk at all, and this is the common case.
+  if (!dict) return PAGES;
+  return translateNode(PAGES, dict);
+}

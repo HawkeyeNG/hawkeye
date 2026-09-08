@@ -267,7 +267,7 @@ const ringLine = (_s: Searched): string =>
  *  rather than the one that was drawn. */
 const nothingFoundLine = (s: Searched): string => {
   const m = s.registerM ?? s.envelopeM;
-  if (m != null) return `No unit found within ${m}m. Browse the register below.`;
+  if (m != null) return i18nT('n.app.report.incident.no-unit-found-within-m-browse', { v0: m });
   // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
   // /units), so on a lookup failure it is the one other path that cannot work
   // either. Search answers from the register bundled into the app.
@@ -366,7 +366,7 @@ const NearbyRow = ({
           {/* Read off `n.envelope`, so the area appears only where the dot
               beside it IS that area's centre. */}
           {n.tier === 'approx' && n.envelope ? envelopeText(n.envelope.radiusM) : ''}
-          {n.tier !== 'approx' && n.fixes ? ` · ${n.fixes} observer fix(es)` : ''}
+          {n.tier !== 'approx' && n.fixes ? i18nT('n.app.report.incident.observer-fix-es', { v0: n.fixes }) : ''}
         </Text>
       </View>
     </View>
@@ -486,11 +486,11 @@ export default function ReportIncident() {
           tooBig = m.type === 'video'
             ? {
               title: 'That video is too large',
-              body: `It is ${mb} MB and the limit is ${Math.round(VIDEO_BYTES / 1048576)} MB. Record one here instead — the camera stops at ${MAX_VIDEO_SECONDS}s, which always fits — or trim it before attaching.`,
+              body: i18nT('n.app.report.incident.it-is-mb-and-the-limit', { v0: mb, v1: Math.round(VIDEO_BYTES / 1048576), v2: MAX_VIDEO_SECONDS }),
             }
             : {
               title: 'That photo is too large',
-              body: `It is ${mb} MB and the limit is ${Math.round(PHOTO_BYTES / 1048576)} MB.`,
+              body: i18nT('n.app.report.incident.it-is-mb-and-the-limit-2', { v0: mb, v1: Math.round(PHOTO_BYTES / 1048576) }),
             };
           continue;
         }
@@ -516,8 +516,8 @@ export default function ReportIncident() {
      */
     if (refusedVideo) {
       setBlocked({
-        title: `Only ${MAX_VIDEOS} videos per report`,
-        body: `You already have ${MAX_VIDEOS}. Add the rest as photos, or file a second report — every report is reviewed separately, so nothing is lost by splitting them.`,
+        title: i18nT('n.app.report.incident.only-videos-per-report', { v0: MAX_VIDEOS }),
+        body: i18nT('n.app.report.incident.you-already-have-add-the-rest', { v0: MAX_VIDEOS }),
       });
     } else if (tooBig) {
       // A modal too. I argued this one could stay a status line because it
@@ -722,13 +722,13 @@ export default function ReportIncident() {
       const r = await tryQuickFix();
       if (!r.ok) {
         const d = describeFixFailure(r);
-        setNearLine(`${d.lead}, or browse the register below. (${d.code})`);
+        setNearLine(i18nT('n.app.report.incident.or-browse-the-register-below', { v0: d.lead, v1: d.code }));
         setGpsSettings(d.settings);
         return;
       }
       const f = r.fix;
       setFix(f);
-      setNearLine(`Location fixed (±${Math.round(f.accuracy)}m). Looking up nearby units…`);
+      setNearLine(i18nT('n.app.report.incident.location-fixed-m-looking-up-nearby', { v0: Math.round(f.accuracy) }));
 
       const [located, envelope] = await Promise.all([
         // No radius parameter exists on this one — it filters at
@@ -876,7 +876,7 @@ export default function ReportIncident() {
       }
       setNearLine(
         all.length > found.length
-          ? `Tap the unit this happened at — the ${found.length} closest of the ${all.length} found:`
+          ? i18nT('n.app.report.incident.tap-the-unit-this-happened-at', { v0: found.length, v1: all.length })
           : 'Tap the unit this happened at:',
       );
     } catch (e) {
@@ -1022,7 +1022,7 @@ export default function ReportIncident() {
       const files = media.map((m, i) => ({
         field: 'media',
         uri: m.uri,
-        name: m.type === 'video' ? `clip${i}.mp4` : `photo${i}.jpg`,
+        name: m.type === 'video' ? i18nT('n.app.report.incident.clip-mp4', { v0: i }) : i18nT('n.app.report.incident.photo-jpg', { v0: i }),
         type: m.type === 'video' ? 'video/mp4' : 'image/jpeg',
       }));
 
@@ -1093,7 +1093,7 @@ export default function ReportIncident() {
             kind: 'incident',
             body: fields,
             files,
-            label: `Incident — ${KINDS.find((k) => k.code === kind)?.label ?? kind}`,
+            label: i18nT('n.app.report.incident.incident', { v0: KINDS.find((k) => k.code === kind)?.label ?? kind }),
           });
         } catch (e) {
           setLine(
@@ -1137,7 +1137,7 @@ export default function ReportIncident() {
       // identity, the token read or the GPS fix threw. Name the exception:
       // "Network request failed" and a JS error are very different diagnoses.
       const msg = humanError(e);
-      setLine(`Could not prepare the report — nothing was sent. (${msg})`);
+      setLine(i18nT('n.app.report.incident.could-not-prepare-the-report-nothing', { v0: msg }));
     } finally {
       setBusy(false);
     }
@@ -1168,7 +1168,7 @@ export default function ReportIncident() {
     return (
       <CaptureCamera
         title={i18nT('n.app.report.incident.capture-evidence')}
-        hint={`Photo, or switch to video (up to ${MAX_VIDEO_SECONDS}s). Stay safe — distance first.`}
+        hint={i18nT('n.app.report.incident.photo-or-switch-to-video-up', { v0: MAX_VIDEO_SECONDS })}
         allowVideo
         onCapture={(m) => {
           // 'camera': the recorder already stopped this at MAX_VIDEO_SECONDS,
@@ -1310,7 +1310,7 @@ export default function ReportIncident() {
               <Pressable
                 onPress={() => setUnit(null)}
                 accessibilityRole="button"
-                accessibilityLabel={`Chosen unit ${unit.name ?? unit.pu_code}. Tap to choose a different one.`}
+                accessibilityLabel={i18nT('n.app.report.incident.chosen-unit-tap-to-choose-a', { v0: unit.name ?? unit.pu_code })}
                 className="mb-3 flex-row items-center rounded-2xl border border-good-ink bg-card px-4 py-3 active:opacity-80"
               >
                 <Feather name="check-circle" size={19} color={BRAND.leaf} />
@@ -1352,7 +1352,7 @@ export default function ReportIncident() {
                       kick-off, so this offered to search "again" before it had
                       ever succeeded once. Mirrors result.tsx. */}
                   <Text className="pl-2 text-base font-bold text-hawk-gold">
-                    {nearby.length || nearLine ? 'Search near me again' : 'Find units near me'}
+                    {nearby.length || nearLine ? i18nT('n.app.report.incident.search-near-me-again') : i18nT('incidents.find-units-near-me')}
                   </Text>
                 </>
               )}
@@ -1664,8 +1664,8 @@ export default function ReportIncident() {
             {videoCount > 0 ? (
               <Text className="pb-1 text-xs text-muted">
                 {videoCount >= MAX_VIDEOS
-                  ? `${MAX_VIDEOS} of ${MAX_VIDEOS} videos — photos only from here.`
-                  : `${videoCount} of ${MAX_VIDEOS} videos — you can add ${MAX_VIDEOS - videoCount} more.`}
+                  ? i18nT('n.app.report.incident.of-videos-photos-only-from-here', { v0: MAX_VIDEOS, v1: MAX_VIDEOS })
+                  : i18nT('n.app.report.incident.of-videos-you-can-add-more', { v0: videoCount, v1: MAX_VIDEOS, v2: MAX_VIDEOS - videoCount })}
               </Text>
             ) : null}
 
@@ -1849,9 +1849,9 @@ export default function ReportIncident() {
                   </View>
                   <Text className="pt-1.5 text-xs font-semibold text-muted">
                     {up.pct !== null && up.total
-                      ? `Uploading ${up.pct}% — ${humanBytes(up.sent)} of ${humanBytes(up.total)}`
-                      : `Uploading — ${humanBytes(up.sent)} sent`}
-                    {media.length > 1 ? ` · ${media.length} attachments` : ''}
+                      ? i18nT('n.app.report.incident.uploading-of', { v0: up.pct, v1: humanBytes(up.sent), v2: humanBytes(up.total) })
+                      : i18nT('n.app.report.incident.uploading-sent', { v0: humanBytes(up.sent) })}
+                    {media.length > 1 ? i18nT('n.app.report.incident.attachments', { v0: media.length }) : ''}
                   </Text>
                 </View>
               ) : null}

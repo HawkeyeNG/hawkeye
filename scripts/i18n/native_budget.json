@@ -904,6 +904,16 @@
   "en": 16,
   "max": 30
  },
+ "n.app.report.collation.check-the-form": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.app.report.collation.check-the-venue-photo": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
  "n.app.report.collation.collated-totals": {
   "kind": "heading",
   "en": 15,
@@ -924,6 +934,36 @@
   "en": 18,
   "max": 58
  },
+ "n.app.report.collation.hawkeye-is-covering-the-no-collation": {
+  "kind": "body",
+  "en": 135,
+  "max": 237
+ },
+ "n.app.report.collation.lga-collation": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.report.collation.no-active-election-in": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.report.collation.nothing-was-sent-your-figures-and": {
+  "kind": "body",
+  "en": 71,
+  "max": 125
+ },
+ "n.app.report.collation.photo-1-of-2-the-collation": {
+  "kind": "button",
+  "en": 33,
+  "max": 47
+ },
+ "n.app.report.collation.photo-2-of-2-the-centre": {
+  "kind": "button",
+  "en": 25,
+  "max": 39
+ },
  "n.app.report.collation.retake": {
   "kind": "button",
   "en": 6,
@@ -939,15 +979,30 @@
   "en": 26,
   "max": 46
  },
+ "n.app.report.collation.state-collation": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
  "n.app.report.collation.status": {
   "kind": "body",
   "en": 6,
   "max": 46
  },
+ "n.app.report.collation.ward-collation": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
  "n.app.report.incident.attach-my-current-location": {
   "kind": "button",
   "en": 26,
   "max": 40
+ },
+ "n.app.report.incident.attachments": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
  },
  "n.app.report.incident.camera": {
   "kind": "button",
@@ -969,10 +1024,90 @@
   "en": 33,
   "max": 73
  },
+ "n.app.report.incident.chosen-unit-tap-to-choose-a": {
+  "kind": "body",
+  "en": 48,
+  "max": 88
+ },
+ "n.app.report.incident.clip-mp4": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.report.incident.could-not-prepare-the-report-nothing": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
+ },
  "n.app.report.incident.description": {
   "kind": "body",
   "en": 11,
   "max": 51
+ },
+ "n.app.report.incident.incident": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.report.incident.it-is-mb-and-the-limit": {
+  "kind": "body",
+  "en": 141,
+  "max": 247
+ },
+ "n.app.report.incident.it-is-mb-and-the-limit-2": {
+  "kind": "body",
+  "en": 39,
+  "max": 79
+ },
+ "n.app.report.incident.location-fixed-m-looking-up-nearby": {
+  "kind": "body",
+  "en": 49,
+  "max": 89
+ },
+ "n.app.report.incident.no-unit-found-within-m-browse": {
+  "kind": "body",
+  "en": 54,
+  "max": 95
+ },
+ "n.app.report.incident.observer-fix-es": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.report.incident.of-videos-photos-only-from-here": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
+ "n.app.report.incident.of-videos-you-can-add-more": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
+ "n.app.report.incident.only-videos-per-report": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "n.app.report.incident.or-browse-the-register-below": {
+  "kind": "body",
+  "en": 42,
+  "max": 82
+ },
+ "n.app.report.incident.photo-jpg": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.report.incident.photo-or-switch-to-video-up": {
+  "kind": "body",
+  "en": 68,
+  "max": 119
+ },
+ "n.app.report.incident.search-near-me-again": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
  },
  "n.app.report.incident.select-the-polling-unit": {
   "kind": "chip",
@@ -984,6 +1119,11 @@
   "en": 20,
   "max": 40
  },
+ "n.app.report.incident.tap-the-unit-this-happened-at": {
+  "kind": "body",
+  "en": 67,
+  "max": 118
+ },
  "n.app.report.incident.the-unit-you-are-at-not-the-one": {
   "kind": "body",
   "en": 55,
@@ -993,6 +1133,16 @@
   "kind": "button",
   "en": 6,
   "max": 20
+ },
+ "n.app.report.incident.uploading-of": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "n.app.report.incident.uploading-sent": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
  },
  "n.app.report.incident.what-did-you-witness-where-when": {
   "kind": "body",
@@ -1013,6 +1163,11 @@
   "kind": "body",
   "en": 194,
   "max": 340
+ },
+ "n.app.report.incident.you-already-have-add-the-rest": {
+  "kind": "body",
+  "en": 147,
+  "max": 258
  },
  "n.app.report.result.confidence": {
   "kind": "body",
@@ -1149,6 +1304,11 @@
   "en": 12,
   "max": 32
  },
+ "n.app.tabs.alerts.mark-all-read": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
  "n.app.tabs.alerts.nothing-yet": {
   "kind": "body",
   "en": 11,
@@ -1159,15 +1319,45 @@
   "en": 21,
   "max": 61
  },
+ "n.app.tabs.alerts.your-alerts-did-not-load": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
  "n.app.tabs.index.accepted-reports": {
   "kind": "button",
   "en": 16,
   "max": 30
  },
+ "n.app.tabs.index.case-resolved": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.app.tabs.index.opens-in-days": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.app.tabs.index.reporting-open": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.app.tabs.index.result-reported": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
  "n.app.tabs.index.units-flagged": {
   "kind": "button",
   "en": 13,
   "max": 27
+ },
+ "n.app.tabs.index.upcoming-election": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
  },
  "n.app.tabs.more.dark": {
   "kind": "body",
@@ -1214,10 +1404,55 @@
   "en": 14,
   "max": 34
  },
+ "n.app.tabs.results.and-tied": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
  "n.app.tabs.results.back-to-the-whole-elections": {
   "kind": "button",
   "en": 29,
   "max": 43
+ },
+ "n.app.tabs.results.contested-only-in-every-other-state": {
+  "kind": "body",
+  "en": 54,
+  "max": 95
+ },
+ "n.app.tabs.results.could-not-be-matched-to-an": {
+  "kind": "body",
+  "en": 81,
+  "max": 142
+ },
+ "n.app.tabs.results.every-that-has-reported-filled-with": {
+  "kind": "body",
+  "en": 66,
+  "max": 116
+ },
+ "n.app.tabs.results.fetching-the-tally-for": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
+ "n.app.tabs.results.hawkeye-is-not-collecting-results-for": {
+  "kind": "body",
+  "en": 120,
+  "max": 210
+ },
+ "n.app.tabs.results.is-set-for-nothing-can-be": {
+  "kind": "body",
+  "en": 109,
+  "max": 191
+ },
+ "n.app.tabs.results.map-of-leading-party-by": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "n.app.tabs.results.map-of-nigeria-leading-party-by": {
+  "kind": "body",
+  "en": 37,
+  "max": 77
  },
  "n.app.tabs.results.narrow-to-one-seat": {
   "kind": "body",
@@ -1228,6 +1463,21 @@
   "kind": "body",
   "en": 20,
   "max": 60
+ },
+ "n.app.tabs.results.no-reports-from-yet": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.tabs.results.no-reports-from-yet-2": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "n.app.tabs.results.of-nigeria-s-have-a-mapped": {
+  "kind": "body",
+  "en": 77,
+  "max": 135
  },
  "n.app.tabs.results.open-a-single-seat": {
   "kind": "button",
@@ -1249,6 +1499,46 @@
   "en": 21,
   "max": 35
  },
+ "n.app.tabs.results.tap-a-for-its-numbers": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.tabs.results.this-election-is-held-only-here": {
+  "kind": "body",
+  "en": 64,
+  "max": 112
+ },
+ "n.app.tabs.results.this-is-the-the-board-above": {
+  "kind": "body",
+  "en": 39,
+  "max": 79
+ },
+ "n.app.tabs.results.this-tally-is-grouped-by-which": {
+  "kind": "body",
+  "en": 122,
+  "max": 214
+ },
+ "n.app.tabs.results.unit-s-have-reported-elsewhere-in": {
+  "kind": "body",
+  "en": 89,
+  "max": 156
+ },
+ "n.app.tabs.results.unit-s-reporting": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.app.tabs.results.unit-s-reporting-verified": {
+  "kind": "body",
+  "en": 45,
+  "max": 85
+ },
+ "n.app.tabs.results.way-tie": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
  "n.components.ask-fab.ask-hawkeye-about-the-results": {
   "kind": "body",
   "en": 29,
@@ -1268,6 +1558,11 @@
   "kind": "body",
   "en": 16,
   "max": 56
+ },
+ "n.components.capture-camera.recording-up-to-s-tap-again": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
  },
  "n.components.capture-camera.retry-gps": {
   "kind": "button",
@@ -1294,6 +1589,11 @@
   "en": 19,
   "max": 39
  },
+ "n.components.choose-unit.is-not-in-the-register-http": {
+  "kind": "body",
+  "en": 47,
+  "max": 87
+ },
  "n.components.choose-unit.loading-lgas": {
   "kind": "chip",
   "en": 13,
@@ -1314,15 +1614,45 @@
   "en": 7,
   "max": 47
  },
+ "n.components.choose-unit.no-unit-found-within-m-search": {
+  "kind": "body",
+  "en": 50,
+  "max": 90
+ },
+ "n.components.choose-unit.or-search-for-it-above": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "n.components.choose-unit.please-check-your-connection-and-try": {
+  "kind": "body",
+  "en": 62,
+  "max": 109
+ },
  "n.components.choose-unit.saved": {
   "kind": "body",
   "en": 5,
   "max": 45
  },
+ "n.components.choose-unit.search-near-me-again": {
+  "kind": "button",
+  "en": 20,
+  "max": 34
+ },
+ "n.components.choose-unit.search-near-me-again-2": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
  "n.components.choose-unit.selected": {
   "kind": "body",
   "en": 8,
   "max": 48
+ },
+ "n.components.choose-unit.the-closest-of-found-tap-yours": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
  },
  "n.components.choose-unit.the-unit-you-get-alerts-about": {
   "kind": "body",

@@ -5,6 +5,7 @@ import Svg, { G, Image as SvgImage, Path, Rect } from 'react-native-svg';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
 import { logoUrl } from '@/lib/political';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -240,7 +241,7 @@ export function NigeriaMap({
         className="items-center justify-center rounded-2xl bg-card px-6 py-10"
         style={{ width: '100%' }}
       >
-        <Text className="text-sm font-semibold text-warn-ink">Map Unavailable</Text>
+        <Text className="text-sm font-semibold text-warn-ink">{i18nT('n.components.nigeria-map.map-unavailable')}</Text>
         <Text className="pt-1 text-center text-xs text-muted">
           {err ?? `states_geo.json → unusable viewBox "${geo?.viewBox}"`}
         </Text>

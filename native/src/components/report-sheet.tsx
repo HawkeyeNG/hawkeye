@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from '@expo/vector-icons/Feather';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * The "Report" action sheet — native twin of the chooser menu.js attaches to
@@ -99,7 +100,7 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
       backgroundStyle={{ backgroundColor: ui.card, borderRadius: 24 }}
     >
       <BottomSheetView style={{ paddingBottom: insets.bottom + 12 }}>
-        <Text className="px-5 pb-1 pt-1 text-lg font-bold text-ink">Report</Text>
+        <Text className="px-5 pb-1 pt-1 text-lg font-bold text-ink">{i18nT('nav.report')}</Text>
         <Text className="px-5 pb-3 text-sm text-muted">
           Every report is signed, hash-chained and publicly verifiable.
         </Text>

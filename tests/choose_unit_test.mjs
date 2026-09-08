@@ -14,6 +14,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
+import { readNative } from './helpers/native-text.mjs';
 const require_ = createRequire('/home/elrio/hawkeye/tests/ui/');
 const { chromium } = require_('playwright-core');
 
@@ -29,8 +30,8 @@ const check = (label, got, want) => {
 
 console.log('=== native: the profile row opens the picker, not /map-unit ===');
 {
-  const profile = fs.readFileSync(`${ROOT}/native/src/app/profile.tsx`, 'utf8');
-  const modal = fs.readFileSync(`${ROOT}/native/src/components/choose-unit.tsx`, 'utf8');
+  const profile = readNative(`${ROOT}/native/src/app/profile.tsx`);
+  const modal = readNative(`${ROOT}/native/src/components/choose-unit.tsx`);
   // The row must no longer navigate. Scoped to the My Polling Unit row so an
   // unrelated /map-unit link elsewhere on the screen would not mask a regression.
   check('the row exists', profile.includes('label="My Polling Unit"'), true);
@@ -49,7 +50,7 @@ console.log('=== native: the profile row opens the picker, not /map-unit ===');
   check('it tells the reader they need not be there', /do not need to be there|don&apos;t need to be there|not need to be there/i.test(modal), true);
 
   // /map-unit must survive untouched — it is still the right screen for mapping.
-  const mapUnit = fs.readFileSync(`${ROOT}/native/src/app/map-unit.tsx`, 'utf8');
+  const mapUnit = readNative(`${ROOT}/native/src/app/map-unit.tsx`);
   check('map-unit is still the surveying screen', /Map a polling unit/.test(mapUnit), true);
   check('and still asks for a GPS fix', /record fix|record one GPS fix/i.test(mapUnit), true);
 }

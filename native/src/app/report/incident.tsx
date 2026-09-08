@@ -56,6 +56,7 @@ import { humanError } from '@/lib/errors';
 import { InfoDot } from '@/components/info-dot';
 import { ModalCard } from '@/components/modal-card';
 import { humanBytes, uploadWithProgress, xhrFilePart, type UploadProgress } from '@/lib/upload';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -1153,10 +1154,10 @@ export default function ReportIncident() {
           className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
           onPress={() => router.push('/sign-in')}
         >
-          <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('index.sign-in')}</Text>
         </Pressable>
         <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-muted">Not now</Text>
+          <Text className="text-sm text-muted">{i18nT('lang.later')}</Text>
         </Pressable>
       </SafeScreen>
     );
@@ -1165,7 +1166,7 @@ export default function ReportIncident() {
   if (camera) {
     return (
       <CaptureCamera
-        title="Capture Evidence"
+        title={i18nT('n.app.report.incident.capture-evidence')}
         hint={`Photo, or switch to video (up to ${MAX_VIDEO_SECONDS}s). Stay safe — distance first.`}
         allowVideo
         onCapture={(m) => {
@@ -1193,7 +1194,7 @@ export default function ReportIncident() {
           className="mt-6 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
           onPress={() => router.back()}
         >
-          <Text className="text-base font-bold text-hawk-gold">Done</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.map-unit.done')}</Text>
         </Pressable>
       </SafeScreen>
     );
@@ -1222,7 +1223,7 @@ export default function ReportIncident() {
           hitSlop={8}
           className="mr-1.5"
           accessibilityRole="button"
-          accessibilityLabel="Home"
+          accessibilityLabel={i18nT('nav.home')}
         >
           <Image
             source={require('@/assets/images/icon.png')}
@@ -1236,7 +1237,7 @@ export default function ReportIncident() {
         >
           <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Report an incident</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">{i18nT('index.report-an-incident')}</Text>
       </View>
 
       {/* Two stages. Naming the place is still a stage of its own — visible,
@@ -1271,7 +1272,7 @@ export default function ReportIncident() {
               onPress={() => setStep('report')}
             />
 
-            <Prompt>Which polling unit is this about?</Prompt>
+            <Prompt>{i18nT('n.app.report.incident.which-polling-unit-is-this-about')}</Prompt>
             {/* ONE LINE, DETAIL BEHIND THE DOT. Three sentences of explanation sat
                 between the question and the controls that answer it, on a step
                 someone may be completing in a hurry or somewhere unsafe. The
@@ -1279,7 +1280,7 @@ export default function ReportIncident() {
             <Text className="pb-3 text-sm text-muted">
               The unit you are AT, not the one you are registered at.
               <InfoDot
-                title="Why the unit matters"
+                title={i18nT('n.app.report.incident.why-the-unit-matters')}
                 text={`It decides which state the report is filed under and which unit watchers are alerted.
 
 Answer it from somewhere safe — your report is already saved on this device, so nothing is lost by waiting.`}
@@ -1309,7 +1310,7 @@ Answer it from somewhere safe — your report is already saved on this device, s
                   <Text className="text-sm font-bold text-ink">{unit.name ?? unit.pu_code}</Text>
                   <Text className="text-xs text-muted">{unit.pu_code}</Text>
                 </View>
-                <Text className="pl-2 text-sm font-bold text-good-ink">Change</Text>
+                <Text className="pl-2 text-sm font-bold text-good-ink">{i18nT('profile.change')}</Text>
               </Pressable>
             ) : null}
 
@@ -1361,7 +1362,7 @@ Answer it from somewhere safe — your report is already saved on this device, s
                 className="mt-2 flex-row items-center self-start rounded-xl border border-line px-3 py-2 active:opacity-70"
               >
                 <Feather name="settings" size={14} color={ui.muted} />
-                <Text className="pl-2 text-sm font-semibold text-ink">Open phone settings</Text>
+                <Text className="pl-2 text-sm font-semibold text-ink">{i18nT('n.app.map-unit.open-phone-settings')}</Text>
               </Pressable>
             ) : null}
 
@@ -1469,7 +1470,7 @@ Answer it from somewhere safe — your report is already saved on this device, s
                 </View>
               </Pressable>
             ) : savedKnown ? null : (
-              <Text className="mt-4 text-xs text-faint">Checking your saved polling unit…</Text>
+              <Text className="mt-4 text-xs text-faint">{i18nT('n.app.report.incident.checking-your-saved-polling-unit')}</Text>
             )}
 
               </>
@@ -1524,14 +1525,14 @@ Answer it from somewhere safe — your report is already saved on this device, s
               <Text className="flex-1 pl-2 text-base font-bold text-hawk-gold">
                 Browse the register instead
               </Text>
-              <Text className="text-xs text-emerald-100">state › LGA › ward</Text>
+              <Text className="text-xs text-emerald-100">{i18nT('n.app.map-unit.state-lga-ward')}</Text>
             </Pressable>
 
             {browse ? (
               <View className="pt-3">
                 {!stateSel ? (
                   <>
-                    <Prompt>Select the state</Prompt>
+                    <Prompt>{i18nT('n.app.map-unit.select-the-state')}</Prompt>
                     <View className="flex-row flex-wrap">
                       {states.map((s) => (
                         <Chip key={s} label={s} onPress={() => pickState(s)} />
@@ -1543,7 +1544,7 @@ Answer it from somewhere safe — your report is already saved on this device, s
                 {stateSel && !lgaSel ? (
                   <>
                     <Crumb label={stateSel} onPress={() => pickState(null)} />
-                    <Prompt>Select the LGA</Prompt>
+                    <Prompt>{i18nT('n.app.map-unit.select-the-lga')}</Prompt>
                     <View className="flex-row flex-wrap">
                       {lgas.map((l) => (
                         <Chip key={l} label={l} onPress={() => pickLga(l)} />
@@ -1555,7 +1556,7 @@ Answer it from somewhere safe — your report is already saved on this device, s
                 {stateSel && lgaSel && !wardSel ? (
                   <>
                     <Crumb label={lgaSel} onPress={() => pickLga(null)} />
-                    <Prompt>Select the ward</Prompt>
+                    <Prompt>{i18nT('n.app.map-unit.select-the-ward')}</Prompt>
                     <View className="flex-row flex-wrap">
                       {wards.map((w) => (
                         <Chip key={w} label={w} onPress={() => pickWard(w)} />
@@ -1567,7 +1568,7 @@ Answer it from somewhere safe — your report is already saved on this device, s
                 {stateSel && lgaSel && wardSel ? (
                   <>
                     <Crumb label={`${lgaSel} · ${wardSel}`} onPress={() => pickWard(null)} />
-                    <Prompt>Select the polling unit</Prompt>
+                    <Prompt>{i18nT('n.app.report.incident.select-the-polling-unit')}</Prompt>
                     {regUnits.map((u) => (
                       <RegisterRow
                         key={u.pu_code}
@@ -1598,7 +1599,7 @@ Answer it from somewhere safe — your report is already saved on this device, s
                 to sit above this — a taxonomy quiz between the observer and the
                 shutter. Classification keeps perfectly well; the scene does
                 not, so the kind chips now come after the description. */}
-            <Prompt>Capture what you can — or describe it below</Prompt>
+            <Prompt>{i18nT('n.app.report.incident.capture-what-you-can-or-describe')}</Prompt>
             <View className="flex-row flex-wrap">
               {media.map((m, i) => (
                 <View key={m.uri} className="mb-2 mr-2 overflow-hidden rounded-xl bg-card">
@@ -1628,14 +1629,14 @@ Answer it from somewhere safe — your report is already saved on this device, s
                     onPress={() => setCamera(true)}
                   >
                     <Feather name="camera" size={20} color={BRAND.leaf} />
-                    <Text className="pt-1 text-[10px] font-semibold text-hawk-leaf">Camera</Text>
+                    <Text className="pt-1 text-[10px] font-semibold text-hawk-leaf">{i18nT('n.app.report.incident.camera')}</Text>
                   </Pressable>
                   <Pressable
                     className="mb-2 h-[76px] w-[76px] items-center justify-center rounded-xl border-2 border-dashed border-hawk-leaf bg-card"
                     onPress={pickFromLibrary}
                   >
                     <Feather name="image" size={20} color={BRAND.leaf} />
-                    <Text className="pt-1 text-[10px] font-semibold text-hawk-leaf">Upload</Text>
+                    <Text className="pt-1 text-[10px] font-semibold text-hawk-leaf">{i18nT('n.app.report.incident.upload')}</Text>
                   </Pressable>
                 </>
               ) : null}
@@ -1658,10 +1659,10 @@ Answer it from somewhere safe — your report is already saved on this device, s
               </Text>
             ) : null}
 
-            <Text className="pb-2 pt-3 text-sm font-semibold text-muted">Description</Text>
+            <Text className="pb-2 pt-3 text-sm font-semibold text-muted">{i18nT('n.app.report.incident.description')}</Text>
             <TextInput
               className="min-h-[110px] rounded-2xl bg-card px-4 py-3 text-base text-ink"
-              placeholder="What did you witness? Where, when, who was involved…"
+              placeholder={i18nT('n.app.report.incident.what-did-you-witness-where-when')}
               placeholderTextColor={ui.faint}
               multiline
               textAlignVertical="top"
@@ -1671,7 +1672,7 @@ Answer it from somewhere safe — your report is already saved on this device, s
             />
 
             <View className="pt-3">
-              <Prompt>Select what happened</Prompt>
+              <Prompt>{i18nT('n.app.report.incident.select-what-happened')}</Prompt>
             </View>
             <View className="flex-row flex-wrap">
               {KINDS.map((k) => (
@@ -1715,7 +1716,7 @@ Answer it from somewhere safe — your report is already saved on this device, s
                 color={useGps ? BRAND.leaf : ui.faint}
               />
               <View className="flex-1 pl-3">
-                <Text className="text-sm font-semibold text-ink">Attach my current location</Text>
+                <Text className="text-sm font-semibold text-ink">{i18nT('n.app.report.incident.attach-my-current-location')}</Text>
                 <Text className="text-xs text-muted">
                   {useGps
                     ? 'Helps reviewers place the incident. Coordinates are never published.'

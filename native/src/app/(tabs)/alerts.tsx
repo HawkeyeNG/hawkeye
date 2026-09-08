@@ -12,6 +12,7 @@ import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
 import { markRead, openNotificationTarget, refreshUnread, setUnread, useUnread } from '@/lib/push';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 type Notification = {
   id: number;
@@ -175,7 +176,7 @@ export default function Alerts() {
           sent you to. Pull-to-refresh already exists but is not discoverable
           in that moment, and it is unreachable while the list is empty. */}
       <ScreenHeader
-        title="Alerts"
+        title={i18nT('nav.alerts')}
         translateY={translateY}
         right="none"
         rightSlot={
@@ -185,7 +186,7 @@ export default function Alerts() {
               disabled={refreshing}
               hitSlop={12}
               accessibilityRole="button"
-              accessibilityLabel="Refresh alerts"
+              accessibilityLabel={i18nT('notifications.refresh-alerts')}
             >
               {refreshing ? (
                 <ActivityIndicator size="small" color={ui.tint.good.ink} />
@@ -203,7 +204,7 @@ export default function Alerts() {
           style={{ marginTop: headerH + 16 }}
         >
           <Feather name="bell" size={28} color={ui.tint.good.ink} />
-          <Text className="pt-3 text-base font-semibold text-ink">Sign in to get alerts</Text>
+          <Text className="pt-3 text-base font-semibold text-ink">{i18nT('n.app.tabs.alerts.sign-in-to-get-alerts')}</Text>
           <Text className="pt-1 text-center text-sm text-muted">
             Race updates, docket cases and replies to your reports arrive here.
           </Text>
@@ -211,7 +212,7 @@ export default function Alerts() {
             className="mt-4 rounded-2xl bg-hawk-green px-6 py-3 active:opacity-80"
             onPress={() => router.push('/sign-in')}
           >
-            <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
+            <Text className="text-base font-bold text-hawk-gold">{i18nT('index.sign-in')}</Text>
           </Pressable>
         </View>
       ) : (
@@ -251,7 +252,7 @@ export default function Alerts() {
                 </View>
               ) : (
                 <View className="mt-4 items-center rounded-2xl bg-card px-6 py-10">
-                  <Text className="text-base font-semibold text-ink">Nothing Yet</Text>
+                  <Text className="text-base font-semibold text-ink">{i18nT('n.app.tabs.alerts.nothing-yet')}</Text>
                   <Text className="pt-1 text-center text-sm text-muted">
                     You are signed in. Updates on races you follow and reports you file land here.
                   </Text>
@@ -289,7 +290,7 @@ export default function Alerts() {
                         {item.body}
                       </Text>
                       {item.body.length > ONE_LINE ? (
-                        <Text className="pl-2 text-xs font-bold text-good-ink">More</Text>
+                        <Text className="pl-2 text-xs font-bold text-good-ink">{i18nT('nav.more')}</Text>
                       ) : null}
                     </View>
                   ) : null}
@@ -369,7 +370,7 @@ export default function Alerts() {
                 hitSlop={12}
                 className="absolute right-3 top-2.5 z-10"
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={i18nT('common.close')}
               >
                 <Feather name="x" size={20} color={ui.muted} />
               </Pressable>
@@ -398,7 +399,7 @@ export default function Alerts() {
                   className="mt-3 flex-row items-center justify-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
                 >
                   <Feather name="arrow-right" size={16} color={BRAND.gold} />
-                  <Text className="pl-2 text-base font-bold text-hawk-gold">Open</Text>
+                  <Text className="pl-2 text-base font-bold text-hawk-gold">{i18nT('notifications.open')}</Text>
                 </Pressable>
               ) : null}
             </Pressable>

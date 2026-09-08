@@ -6,6 +6,7 @@ import { RegisterTierBadge } from '@/components/unit-map';
 import { BRAND } from '@/lib/api';
 import { localSearch, warmRegister } from '@/lib/register';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * Free-text polling-unit search — the native twin of app/pu-search.js, sharing
@@ -135,7 +136,7 @@ export function UnitSearch<T extends Row>({
 
   return (
     <View className="mt-4">
-      <Text className="pb-1.5 text-sm font-bold text-ink">Search for your polling unit</Text>
+      <Text className="pb-1.5 text-sm font-bold text-ink">{i18nT('n.components.unit-search.search-for-your-polling-unit')}</Text>
       <View className="flex-row items-center rounded-2xl bg-card px-3.5">
         <TextInput
           value={q}
@@ -187,7 +188,7 @@ export function UnitSearch<T extends Row>({
             >
               {/* Fixed ink on a fixed brand surface — the gold does not flip
                   with the theme, so the text on it must not either. */}
-              <Text className="pr-1 text-sm font-bold text-hawk-ink">Continue</Text>
+              <Text className="pr-1 text-sm font-bold text-hawk-ink">{i18nT('n.app.practice.continue')}</Text>
               <Feather name="arrow-right" size={14} color={BRAND.ink} />
             </Pressable>
           ) : null}

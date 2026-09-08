@@ -11,6 +11,7 @@ import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { api } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -202,7 +203,7 @@ export default function Docket() {
           Flagged results, judged by the crowd. Nobody at Hawkeye decides.
         </Text>
         <InfoDot
-          title="How the docket works"
+          title={i18nT('n.app.docket.how-the-docket-works')}
           color={ui.tint.warn.ink}
           text={docketExplainer}
         />
@@ -217,7 +218,7 @@ export default function Docket() {
             className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
             onPress={load}
           >
-            <Text className="text-base font-bold text-hawk-gold">Retry</Text>
+            <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.docket.retry')}</Text>
           </Pressable>
         </View>
       ) : cases === null ? (
@@ -226,29 +227,29 @@ export default function Docket() {
         <View className="flex-row flex-wrap">
           <Stat
             value={String(n.open)}
-            label="Open cases"
+            label={i18nT('n.app.docket.open-cases')}
             tone={n.open ? 'warn' : undefined}
           />
           {/* Only rendered once the server has told us the real figure. */}
           {heldOut === null ? null : (
             <Stat
               value={String(heldOut)}
-              label="Held out of tallies"
+              label={i18nT('n.app.docket.held-out-of-tallies')}
               tone={heldOut ? 'bad' : undefined}
             />
           )}
           <Stat
             value={String(n.upheld)}
-            label="Struck by the crowd"
+            label={i18nT('n.app.docket.struck-by-the-crowd')}
             tone={n.upheld ? 'bad' : undefined}
           />
           <Stat
             value={String(n.cleared)}
-            label="Cleared by the crowd"
+            label={i18nT('n.app.docket.cleared-by-the-crowd')}
             tone={n.cleared ? 'good' : undefined}
           />
-          <Stat value={String(n.unresolved)} label="Left unresolved" />
-          <Stat value={n.verdicts.toLocaleString()} label="Verdicts cast" />
+          <Stat value={String(n.unresolved)} label={i18nT('n.app.docket.left-unresolved')} />
+          <Stat value={n.verdicts.toLocaleString()} label={i18nT('n.app.docket.verdicts-cast')} />
         </View>
       )}
 
@@ -269,7 +270,7 @@ export default function Docket() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Public Docket" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('common.public-docket')} translateY={translateY} onClose={() => router.back()} />
       <FlashList
         data={cases ?? []}
         keyExtractor={(c) => String(c.id)}

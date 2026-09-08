@@ -19,6 +19,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { readNative } from './helpers/native-text.mjs';
 
 const ROOT = '/home/elrio/hawkeye';
 
@@ -29,10 +30,10 @@ const check = (label, got, want) => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}${ok ? '' : `\n        got  ${JSON.stringify(got)}`}`);
 };
 
-const RACE_TSX = fs.readFileSync(`${ROOT}/native/src/components/race.tsx`, 'utf8');
-const POLITICAL = fs.readFileSync(`${ROOT}/native/src/lib/political.ts`, 'utf8');
+const RACE_TSX = readNative(`${ROOT}/native/src/components/race.tsx`);
+const POLITICAL = readNative(`${ROOT}/native/src/lib/political.ts`);
 const RACE_JS = fs.readFileSync(`${ROOT}/app/race.js`, 'utf8');
-const HOME = fs.readFileSync(`${ROOT}/native/src/app/(tabs)/index.tsx`, 'utf8');
+const HOME = readNative(`${ROOT}/native/src/app/(tabs)/index.tsx`);
 
 console.log('=== the results button is presidency-only, on both clients ===');
 check('native gates it on isPresidency', /const boardOnly = isPresidency\(race\)/.test(RACE_TSX), true);
@@ -49,7 +50,7 @@ console.log('\n=== an empty pinned bar must not be mounted ===');
 // given; a completed non-presidential race now has no actions at all.
 check('race.tsx exports the predicate', /export function hasRaceActions/.test(RACE_TSX), true);
 for (const host of ['race.tsx', 'candidates.tsx', 'osun.tsx']) {
-  const src = fs.readFileSync(`${ROOT}/native/src/app/${host}`, 'utf8');
+  const src = readNative(`${ROOT}/native/src/app/${host}`);
   check(`${host} asks before mounting the footer`, /hasRaceActions\(race\)/.test(src), true);
 }
 
@@ -112,7 +113,7 @@ check('and so is the ledger link', /Verify the record<\/a>/.test(RACE_JS), true)
  * the icon, the detail line and aria/accessibilityState.
  */
 console.log('\n=== the follow control names the action, and is findable ===');
-const FOLLOW_TSX = fs.readFileSync(`${ROOT}/native/src/components/follow-race.tsx`, 'utf8');
+const FOLLOW_TSX = readNative(`${ROOT}/native/src/components/follow-race.tsx`);
 const FOLLOW_JS = fs.readFileSync(`${ROOT}/app/follow.js`, 'utf8');
 check('native says Unfollow once subscribed',
   /following \? `Unfollow \$\{subject\}` : `Follow \$\{subject\}`/.test(FOLLOW_TSX), true);

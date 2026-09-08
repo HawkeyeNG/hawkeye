@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 const POINTS: { icon: keyof typeof Feather.glyphMap; text: string }[] = [
   { icon: 'camera', text: 'Photograph the result sheet where it was announced' },
@@ -111,13 +112,13 @@ export default function Welcome() {
         >
           {/* text-hawk-ink, not text-ink: the gold is fixed, so a label that
               flips near-white with the theme disappears into it (1.6:1). */}
-          <Text className="text-base font-bold text-hawk-ink">Become an observer</Text>
+          <Text className="text-base font-bold text-hawk-ink">{i18nT('index.become-an-observer')}</Text>
         </Pressable>
         <Pressable
           className="mt-3 items-center rounded-2xl border border-white/30 py-4 active:opacity-70"
           onPress={() => router.push('/sign-in')}
         >
-          <Text className="text-base font-bold text-white">Sign in</Text>
+          <Text className="text-base font-bold text-white">{i18nT('index.sign-in')}</Text>
         </Pressable>
         <Text className="pt-4 text-center text-[11px] leading-4 text-emerald-200/70">
           Hawkeye is independent and nonpartisan. It does not declare results — all official

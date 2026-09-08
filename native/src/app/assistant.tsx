@@ -18,6 +18,7 @@ import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -148,7 +149,7 @@ export default function Assistant() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Ask Hawkeye" onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('n.app.assistant.ask-hawkeye')} onClose={() => router.back()} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
@@ -218,13 +219,13 @@ export default function Assistant() {
               ) : busy && t.id === turns[turns.length - 1]?.id ? (
                 <View className="mb-2 flex-row items-center self-start rounded-2xl rounded-bl-md bg-card px-4 py-3">
                   <ActivityIndicator size="small" color={ui.tint.good.ink} />
-                  <Text className="pl-2 text-sm text-muted">Reading the reports…</Text>
+                  <Text className="pl-2 text-sm text-muted">{i18nT('n.app.assistant.reading-the-reports')}</Text>
                 </View>
               ) : (
                 // No pretend answer bubble for a failure: the named reason and the
                 // retry both live in the footer, where they can't scroll away.
                 <View className="mb-2 self-start rounded-2xl rounded-bl-md bg-surface px-4 py-2">
-                  <Text className="text-xs font-semibold text-muted">Unanswered</Text>
+                  <Text className="text-xs font-semibold text-muted">{i18nT('n.app.assistant.unanswered')}</Text>
                 </View>
               )}
             </View>

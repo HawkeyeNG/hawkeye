@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 import { loadStatesGeo } from '@/components/nigeria-map';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
+import { useT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -403,6 +404,16 @@ export const ResultsMap = memo(function ResultsMap({
   accessibilityLabel,
 }: ResultsMapProps) {
   const ui = useUi();
+  /**
+   * THE ONLY memo() IN THE APP, so the only place that needs this.
+   *
+   * `t` elsewhere is a module function and re-renders come free from the
+   * provider above. React.memo skips a re-render when props are shallow-equal,
+   * and changing the language changes no prop here — so this subtree would keep
+   * the old words. Taking `t` from the hook subscribes it to the context, and
+   * the local binding shadows the module import for the rest of this function.
+   */
+  const i18nT = useT();
   const empty = emptyFill ?? ui.noData;
   const [geo, setGeo] = useState<MapGeo | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -530,7 +541,7 @@ export const ResultsMap = memo(function ResultsMap({
   if (err || (geo && !box)) {
     return (
       <View className="items-center justify-center rounded-2xl bg-card px-6 py-10">
-        <Text className="text-sm font-semibold text-warn-ink">Map Unavailable</Text>
+        <Text className="text-sm font-semibold text-warn-ink">{i18nT('n.components.nigeria-map.map-unavailable')}</Text>
         <Text className="pt-1 text-center text-xs text-muted">
           {err ?? `region outlines → unusable viewBox "${geo?.viewBox}"`}
         </Text>

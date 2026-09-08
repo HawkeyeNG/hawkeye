@@ -26,6 +26,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import { BASE } from '@/lib/api';
 import { loadPolitical, loadSeats, type SeatTable } from '@/lib/political';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * Compare state names by shape, not spelling. The contest catalogue and the
@@ -299,13 +300,13 @@ function RacePickerFor({ code, states: given }: { code: string; states?: string[
                   governorship the card title already says "Find your state",
                   so a "STATE" bar under it labels the same thing twice. */}
               {meta.statesAreRaces ? null : (
-                <Text className="pb-1 pt-3 text-xs font-bold uppercase tracking-wide text-muted">State</Text>
+                <Text className="pb-1 pt-3 text-xs font-bold uppercase tracking-wide text-muted">{i18nT('common.state')}</Text>
               )}
               {stateRows.length === 0 ? (
                 // Never an empty list under a heading: that is indistinguishable
                 // from a list still loading, and it is what the screenshot of
                 // the stuck governorship card actually showed.
-                <Text className="py-4 text-sm text-muted">Waiting for the list of states.</Text>
+                <Text className="py-4 text-sm text-muted">{i18nT('n.components.race-picker.waiting-for-the-list-of-states')}</Text>
               ) : null}
               <ScrollView className="max-h-80" nestedScrollEnabled>
                 {stateRows.map((s) => (
@@ -336,7 +337,7 @@ function RacePickerFor({ code, states: given }: { code: string; states?: string[
             <>
               <Pressable onPress={() => setState(null)} className="flex-row items-center py-3 active:opacity-70">
                 <Feather name="chevron-left" size={16} color={ui.tint.good.ink} />
-                <Text className="pl-1 text-sm font-semibold text-good-ink">All states</Text>
+                <Text className="pl-1 text-sm font-semibold text-good-ink">{i18nT('integrity.all-states')}</Text>
               </Pressable>
               <Text className="pb-1 text-xs font-bold uppercase tracking-wide text-muted">
                 {rows.length} {rows.length === 1 ? meta.label : meta.plural} in {state}

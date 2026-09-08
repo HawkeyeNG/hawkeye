@@ -3,6 +3,7 @@ import { Linking, Pressable, Text, View } from 'react-native';
 
 import { ModalCard } from '@/components/modal-card';
 import { IconLink } from '@/components/icon-link';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * THIS IS THE ONLY COMPONENT IN THE APP THAT UNDERLINES TEXT — checked, and the
@@ -71,7 +72,7 @@ export function GovDisclaimer() {
             Not government or INEC affiliated.{' '}
           </Text>
           <IconLink
-            label="Details"
+            label={i18nT('n.components.gov-disclaimer.details')}
             icon="chevron-right"
             className="text-xs font-bold"
             color="#2b1f00"
@@ -84,7 +85,7 @@ export function GovDisclaimer() {
           reachable on a small screen. This is a Play compliance notice — a
           reader must be able to get to the whole of it and to the INEC links,
           which sit at the BOTTOM of the text. */}
-      <ModalCard visible={open} onClose={() => setOpen(false)} title="Not a government service">
+      <ModalCard visible={open} onClose={() => setOpen(false)} title={i18nT('n.components.gov-disclaimer.not-a-government-service')}>
         <Text className="pb-3 text-sm leading-5 text-ink">
           Hawkeye is an independent, citizen-run transparency tool. It is not affiliated with,
           endorsed by, or acting on behalf of INEC or any government entity, and it does not
@@ -97,11 +98,11 @@ export function GovDisclaimer() {
             Claims" remedy — the worst text in the app to truncate. */}
         <View className="flex-row flex-wrap gap-4">
           <IconLink
-            label="inecnigeria.org"
+            label={i18nT('n.components.gov-disclaimer.inecnigeria-org')}
             onPress={() => Linking.openURL('https://www.inecnigeria.org')}
           />
           <IconLink
-            label="inecelectionresults.ng"
+            label={i18nT('n.components.gov-disclaimer.inecelectionresults-ng')}
             onPress={() => Linking.openURL('https://www.inecelectionresults.ng')}
           />
         </View>

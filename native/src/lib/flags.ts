@@ -77,6 +77,8 @@ export function titleCase(s: string): string {
     .join(' ');
 }
 
+import { t } from '@/lib/i18n';
+
 export const FLAG_LABEL: Record<string, string> = {
   over_voting: 'Over-Voting',
   high_turnout: 'Impossible Turnout',
@@ -94,6 +96,37 @@ export const FLAG_LABEL: Record<string, string> = {
   signup_burst: 'Signup Burst (Informational)',
 };
 
+/**
+ * The translated card title for each flag.
+ *
+ * FLAG_LABEL above stays exactly as it is: it is the English, and the fallback
+ * for a flag type the server invents that nothing here has a key for.
+ *
+ * RESOLVED INSIDE flagLabel(), not folded into FLAG_LABEL, because a
+ * module-level constant is evaluated once at import — before AsyncStorage has
+ * returned the stored language — so a translated string baked in up there would
+ * freeze at whatever was current then and never move again, however many times
+ * the provider remounts. flagLabel() is called during render, so it follows.
+ */
+const FLAG_KEY: Record<string, string> = {
+  over_voting: 'n.flags.over-voting',
+  high_turnout: 'n.flags.impossible-turnout',
+  turnout_outlier: 'n.flags.turnout-outlier',
+  single_party_sweep: 'n.flags.single-party-sweep',
+  duplicate_serial: 'n.flags.duplicate-serial',
+  disputed_counts: 'n.flags.conflicting-counts',
+  location_inconsistent: 'n.flags.location-inconsistent',
+  irev_mismatch: 'n.flags.inec-irev-mismatch',
+  collation_undercount: 'n.flags.collation-undercount',
+  collation_disputed: 'n.flags.conflicting-collation-reports',
+  collation_mismatch: 'n.flags.collation-mismatch-full-coverage',
+  collation_chain_undercount: 'n.flags.collation-chain-undercount',
+  collation_ocr_mismatch: 'n.flags.collation-form-ocr-mismatch',
+  signup_burst: 'n.flags.signup-burst-informational',
+};
+
 export function flagLabel(type: string): string {
+  const k = FLAG_KEY[type];
+  if (k) return t(k);
   return FLAG_LABEL[type] ?? titleCase(String(type).replace(/_/g, ' '));
 }

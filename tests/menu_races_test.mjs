@@ -72,7 +72,12 @@ console.log('\n=== the app menu matches ===');
 const { readFileSync } = await import('node:fs');
 const more = readFileSync('/home/elrio/hawkeye/native/src/app/(tabs)/more.tsx', 'utf8');
 check('no Races accordion in the app menu', /acc:\s*'Races'/.test(more), false);
-check('one plain Races row instead', /\{ label: 'Races', href: 'native:\/races'/.test(more), true);
+/* The row now carries a translation key between its label and its href
+   (`{ label: 'Races', labelKey: 'races.races', href: … }`), so the old
+   label-immediately-followed-by-href regex stopped matching. The assertion is
+   unchanged — one plain Races row pointing at /races, not an accordion — only
+   the pattern is looser about what else the entry declares. */
+check('one plain Races row instead', /\{ label: 'Races',[^}]*href: 'native:\/races'/.test(more), true);
 // Osun was a finished election pinned to a menu. It stays REACHABLE - races.tsx
 // links to it - it just is not a permanent menu entry any more.
 check('Osun 2026 is not pinned in the app menu', /label: 'Osun 2026'/.test(more), false);

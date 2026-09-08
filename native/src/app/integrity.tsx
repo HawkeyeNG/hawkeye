@@ -62,47 +62,67 @@ const VERDICT_TEXT: Record<string, (mad: number) => string> = {
 };
 
 /** The checklist from integrity.html — what an automated flag can even mean. */
-const CHECKS: { title: string; items: [string, string][] }[] = [
+/**
+ * Each entry is [english-label, english-description, label-key, description-key].
+ *
+ * The English stays because this file still has to read as English source and
+ * render correctly with no bundle; the keys are resolved during render, because
+ * CHECKS is a module-level const evaluated once at import, before AsyncStorage
+ * has returned the stored language.
+ *
+ * The label and section keys are the WEB's — the same terms, in the same
+ * sentence case the web uses for them (flags.ts keeps its own Title Case keys
+ * for card titles; see the note there). The description keys are n.* but their
+ * VALUES were derived from the web's own translated sentences by
+ * tmp/patch_native_integrity.py, so the two clients cannot describe the same
+ * check differently.
+ */
+const CHECKS: { title: string; titleKey: string; items: [string, string, string, string][] }[] = [
   {
     title: 'Against INEC & Collation Records',
+    titleKey: 'integrity.against-inec-collation-records',
     items: [
-      ['INEC IReV mismatch', "the crowd's counts don't appear on INEC's own uploaded sheet for that unit."],
-      ['Collation undercount', 'a ward/LGA/state form showing less for a party than its covered polling units alone add up to.'],
-      ['Collation mismatch', "every unit in the scope is verified, yet the form's totals still differ."],
-      ['Collation chain undercount', 'an LGA/state form showing less than the collation forms directly under it.'],
-      ['Conflicting collation reports', 'observers at the same collation centre reporting different totals.'],
+      ['INEC IReV mismatch', "the crowd's counts don't appear on INEC's own uploaded sheet for that unit.", 'integrity.inec-irev-mismatch', 'n.app.integrity.desc.inec-irev-mismatch'],
+      ['Collation undercount', 'a ward/LGA/state form showing less for a party than its covered polling units alone add up to.', 'integrity.collation-undercount', 'n.app.integrity.desc.collation-undercount'],
+      ['Collation mismatch', "every unit in the scope is verified, yet the form's totals still differ.", 'integrity.collation-mismatch', 'n.app.integrity.desc.collation-mismatch'],
+      ['Collation chain undercount', 'an LGA/state form showing less than the collation forms directly under it.', 'integrity.collation-chain-undercount', 'n.app.integrity.desc.collation-chain-undercount'],
+      ['Conflicting collation reports', 'observers at the same collation centre reporting different totals.', 'integrity.conflicting-collation-reports', 'n.app.integrity.desc.conflicting-collation-reports'],
     ],
   },
   {
     title: 'Statistical Tripwires',
+    titleKey: 'integrity.statistical-tripwires',
     items: [
-      ['Over-voting', 'more votes than registered voters at a unit (impossible).'],
-      ['Impossible turnout', 'turnout above ~95%, or a strong outlier vs. its state.'],
-      ['Single-party sweep', 'one party taking ≥98% of a sizeable unit.'],
-      ['Vote-share outlier', "a winner's share far above its own state's distribution for that race."],
-      ['Neighbour divergence', 'a unit voting wildly unlike the rest of its own ward (≥50-point gap).'],
-      ['Digit tests', 'first-digit Benford deviation and excess round numbers (…0/…5) per contest; screening signals, not proof.'],
+      ['Over-voting', 'more votes than registered voters at a unit (impossible).', 'integrity.over-voting', 'n.app.integrity.desc.over-voting'],
+      ['Impossible turnout', 'turnout above ~95%, or a strong outlier vs. its state.', 'integrity.impossible-turnout', 'n.app.integrity.desc.impossible-turnout'],
+      ['Single-party sweep', 'one party taking ≥98% of a sizeable unit.', 'integrity.single-party-sweep', 'n.app.integrity.desc.single-party-sweep'],
+      ['Vote-share outlier', "a winner's share far above its own state's distribution for that race.", 'integrity.vote-share-outlier', 'n.app.integrity.desc.vote-share-outlier'],
+      ['Neighbour divergence', 'a unit voting wildly unlike the rest of its own ward (≥50-point gap).', 'integrity.neighbour-divergence', 'n.app.integrity.desc.neighbour-divergence'],
+      ['Digit tests', 'first-digit Benford deviation and excess round numbers (…0/…5) per contest; screening signals, not proof.', 'integrity.digit-tests', 'n.app.integrity.desc.digit-tests'],
     ],
   },
   {
     title: 'AI Vision on the Result Sheet',
+    titleKey: 'integrity.ai-vision-on-the-result-sheet',
     items: [
-      ['Sheet authenticity', 'the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.'],
-      ['Vision count mismatch', "an AI read of the sheet photo disagreeing with the observer's typed counts."],
+      ['Sheet authenticity', 'the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.', 'integrity.sheet-authenticity', 'n.app.integrity.desc.sheet-authenticity'],
+      ['Vision count mismatch', "an AI read of the sheet photo disagreeing with the observer's typed counts.", 'integrity.vision-count-mismatch', 'n.app.integrity.desc.vision-count-mismatch'],
     ],
   },
   {
     title: 'Provenance & Duplicates',
+    titleKey: 'integrity.provenance-duplicates',
     items: [
-      ['Duplicate form serial', 'the same EC8A serial reported at two units.'],
-      ['Conflicting counts', 'independent observers at one unit disagreeing.'],
-      ['Location inconsistency', 'a GPS cluster far from where a unit can be.'],
+      ['Duplicate form serial', 'the same EC8A serial reported at two units.', 'integrity.duplicate-form-serial', 'n.app.integrity.desc.duplicate-form-serial'],
+      ['Conflicting counts', 'independent observers at one unit disagreeing.', 'integrity.conflicting-counts', 'n.app.integrity.desc.conflicting-counts'],
+      ['Location inconsistency', 'a GPS cluster far from where a unit can be.', 'integrity.location-inconsistency', 'n.app.integrity.desc.location-inconsistency'],
     ],
   },
   {
     title: 'Incident Patterns',
+    titleKey: 'integrity.incident-patterns',
     items: [
-      ['Incident hotspot', 'several incident reports of the same kind in one state within a short window.'],
+      ['Incident hotspot', 'several incident reports of the same kind in one state within a short window.', 'integrity.incident-hotspot', 'n.app.integrity.desc.incident-hotspot'],
     ],
   },
 ];
@@ -537,7 +557,7 @@ export default function Integrity() {
                   setOpen((o) => (o[i] ? {} : { [i]: true }));
                 }}
               >
-                <Text className="flex-1 text-sm font-bold text-ink">{g.title}</Text>
+                <Text className="flex-1 text-sm font-bold text-ink">{i18nT(g.titleKey)}</Text>
                 <Feather name={open[i] ? 'chevron-up' : 'chevron-down'} size={16} color={ui.faint} />
               </Pressable>
               {/* Each item is a DISTINCT check, so partition the rows the way the
@@ -545,13 +565,13 @@ export default function Integrity() {
                   The first row is divided from its own summary already, hence
                   the j > 0 guard. Web twin: .acc-wrap.checks .acc li. */}
               {open[i]
-                ? g.items.map(([name, what], j) => (
+                ? g.items.map(([name, what, nameKey, whatKey], j) => (
                     <View
                       key={name}
                       className={`px-4 py-2.5 ${j > 0 ? 'border-t border-line' : ''}`}
                     >
                       <Text className="text-sm text-ink">
-                        <Text className="font-bold text-ink">{name}</Text> — {what}
+                        <Text className="font-bold text-ink">{i18nT(nameKey)}</Text> — {i18nT(whatKey)}
                       </Text>
                     </View>
                   ))

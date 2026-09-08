@@ -126,12 +126,30 @@
     document.documentElement.lang = current;
   }
 
+  /**
+   * ANNOUNCED ON EVERY LOAD, not only on an explicit change.
+   *
+   * `apply()` reaches anything carrying data-i18n, but not text a script paints
+   * itself — and the first-run tour paints its first card from menu.js, which
+   * runs before this fetch resolves. It called t(), got the English fallback,
+   * and card one stayed in English while cards two to five came out translated.
+   * The event fires after the dictionary is in place so those consumers can
+   * repaint; the listeners are all idempotent.
+   *
+   * Not dispatched from apply(): menu.js listens for this and calls apply(),
+   * which would then dispatch again, forever.
+   */
+  function announce() {
+    document.dispatchEvent(new CustomEvent('hawkeye-lang', { detail: { lang: current } }));
+  }
+
   /** Fetch a bundle and apply it. English needs no fetch: it is the markup. */
   function load(code) {
     current = has(code) ? code : 'en';
     if (current === 'en') {
       dict = {}; meta = { review: 'source' };
       apply();
+      announce();
       return Promise.resolve();
     }
     return fetch('/i18n/' + current + '.json', { cache: 'no-cache' })
@@ -141,6 +159,7 @@
         delete json._meta;
         dict = json;
         apply();
+        announce();
       })
       .catch(function () {
         /* A missing or broken bundle must not blank the page — stay on the
@@ -148,6 +167,7 @@
            later load can succeed. */
         dict = {};
         apply();
+        announce();
       });
   }
 
@@ -180,9 +200,7 @@
 
   function set(code) {
     try { localStorage.setItem(KEY, code); } catch (e) { /* private mode */ }
-    return load(code).then(function () {
-      document.dispatchEvent(new CustomEvent('hawkeye-lang', { detail: { lang: current } }));
-    });
+    return load(code);   // load() announces
   }
 
   window.HawkeyeI18n = {

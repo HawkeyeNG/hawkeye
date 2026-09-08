@@ -56,6 +56,25 @@ const UI = {
   'nav.photo-or-video-of-what-you-witnessed': 'Photo or video of what you witnessed',
   'nav.report-a-collation': 'Report a Collation',
   'nav.ward-or-lga-collation-announcement': 'Ward or LGA collation announcement',
+
+  /* The five-card first-run tour, also built by menu.js. Its five titles reuse
+     the nav.* keys above so the card and the tab it points at cannot be named
+     differently; only Report needs its own, because its title says which
+     button. THE ENGLISH HERE MUST STAY BYTE-IDENTICAL TO
+     native/src/lib/tour.ts — tests/tour_test.mjs parses that file and diffs it
+     against what the web renders. */
+  'tour.welcome': 'Welcome to Hawkeye',
+  'tour.close': 'Close tour',
+  'tour.back': 'Back',
+  'tour.next': 'Next',
+  'tour.start': 'Start observing',
+  'tour.note': 'Hawkeye is independent and nonpartisan. It is not affiliated with INEC or any government body, and it does not declare results — it records what observers report and lets anyone check the record.',
+  'tour.report.title': 'Report — the green button',
+  'tour.home.body': 'Elections open now, reports accepted so far, and a live feed.',
+  'tour.results.body': 'Pick a race for its map and running tally. Follow one to get alerts.',
+  'tour.report.body': 'Report a result sheet, a collation result, or an incident. This is what makes you an observer.',
+  'tour.alerts.body': 'What has happened on the races you follow — reports accepted, units flagged, and anything Hawkeye needs to tell you.',
+  'tour.more.body': 'Practice runs, the ledger, the docket and the guide. Start with Practice Run.',
 };
 
 if (process.argv.includes('--build-en')) {

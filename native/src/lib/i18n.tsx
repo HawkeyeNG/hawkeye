@@ -137,6 +137,18 @@ export function currentLangForOtp(): Lang {
   return currentLang;
 }
 
+/**
+ * The chosen language, for lib/content.ts.
+ *
+ * Same module variable, a second name: content.ts asks for it during render, to
+ * translate the explainer tree, and calling it "ForOtp" at that site would read
+ * as a mistake. It is a plain function rather than a hook for exactly the reason
+ * `t` is — see the note above.
+ */
+export function currentLang_(): Lang {
+  return currentLang;
+}
+
 type LangState = {
   lang: Lang;
   /** True once the stored choice has been read — nothing has to wait on it. */

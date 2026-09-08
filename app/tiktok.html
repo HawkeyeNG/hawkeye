@@ -25,38 +25,38 @@
 <body>
   <header class="gov-header"><div class="wrap brand-row">
     <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
-      <div class="brand-text"><strong>HAWKEYE</strong><span>TikTok Poster (Admin)</span></div></a>
+      <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="tiktok.tiktok-poster-admin">TikTok Poster (Admin)</span></div></a>
   </div></header>
 
   <main class="wrap box">
-    <h1>Post to TikTok</h1>
+    <h1 data-i18n="tiktok.post-to-tiktok">Post to TikTok</h1>
     <p class="hint">Owner-only. Publishes a video to Hawkeye's own official TikTok account via the
-    Content Posting API. Before the app is audited, TikTok only allows <strong>SELF_ONLY</strong>
+    Content Posting API. Before the app is audited, TikTok only allows <strong data-i18n="tiktok.self-only">SELF_ONLY</strong>
     (private) posts and the video URL's domain must be verified in the developer portal.</p>
 
-    <label for="secret">Admin Passphrase</label>
-    <div class="row"><input id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
-      <button id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
+    <label data-i18n="common.admin-passphrase" for="secret">Admin Passphrase</label>
+    <div class="row"><input data-i18n-attr="placeholder:common.x-admin-secret" id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
+      <button data-i18n="profile.save" id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
 
     <div id="conn" class="status info">Checking connection…</div>
     <div class="row">
-      <button id="connect" class="secondary" style="width:auto">🔗 Connect / Re-connect TikTok</button>
-      <button id="check" class="secondary" style="width:auto">🩺 Check Account (Diagnostics)</button>
+      <button data-i18n="tiktok.connect-re-connect-tiktok" id="connect" class="secondary" style="width:auto">🔗 Connect / Re-connect TikTok</button>
+      <button data-i18n="tiktok.check-account-diagnostics" id="check" class="secondary" style="width:auto">🩺 Check Account (Diagnostics)</button>
     </div>
     <pre id="diag" class="mono" style="white-space:pre-wrap;background:var(--tint);padding:10px;border-radius:8px" hidden></pre>
 
     <hr style="margin:20px 0" />
 
-    <label for="title">Caption</label>
-    <textarea id="title" rows="3" placeholder="e.g. How to verify a Hawkeye result on the public ledger — hawkeye.com.ng">How to verify a polling-unit result on Hawkeye's public ledger. Independent. Tamper-evident. hawkeye.com.ng</textarea>
-    <label for="video">Video file (MP4/MOV — uploaded straight to TikTok, no domain verification needed)</label>
+    <label data-i18n="common.caption" for="title">Caption</label>
+    <textarea data-i18n-attr="placeholder:tiktok.e-g-how-to-verify-a" id="title" rows="3" placeholder="e.g. How to verify a Hawkeye result on the public ledger — hawkeye.com.ng">How to verify a polling-unit result on Hawkeye's public ledger. Independent. Tamper-evident. hawkeye.com.ng</textarea>
+    <label data-i18n="tiktok.video-file-mp4-mov-uploaded-straight" for="video">Video file (MP4/MOV — uploaded straight to TikTok, no domain verification needed)</label>
     <input id="video" type="file" accept="video/mp4,video/quicktime" />
-    <label for="privacy">Privacy</label>
+    <label data-i18n="common.privacy" for="privacy">Privacy</label>
     <select id="privacy">
-      <option value="SELF_ONLY">SELF_ONLY (required before audit)</option>
-      <option value="PUBLIC_TO_EVERYONE">PUBLIC_TO_EVERYONE (after audit)</option>
+      <option data-i18n="tiktok.self-only-required-before-audit" value="SELF_ONLY">SELF_ONLY (required before audit)</option>
+      <option data-i18n="tiktok.public-to-everyone-after-audit" value="PUBLIC_TO_EVERYONE">PUBLIC_TO_EVERYONE (after audit)</option>
     </select>
-    <button id="post" style="margin-top:14px">Post to TikTok</button>
+    <button data-i18n="tiktok.post-to-tiktok" id="post" style="margin-top:14px">Post to TikTok</button>
     <div id="result"></div>
   </main>
 
@@ -127,5 +127,7 @@
     if (err) setStatus($('result'), 'bad', 'OAuth error: ' + err);
     refresh();
   </script>
+<script src="/i18n.js?v=2"></script>
+<script src="/lang.js?v=2"></script>
 </body>
 </html>

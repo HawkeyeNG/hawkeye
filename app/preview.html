@@ -21,12 +21,12 @@
   <script src="map-label.js?v=2"></script>
 </head>
 <body>
-  <header class="gov-header"><div class="wrap brand-row"><a class="brand" href="index.html"><span class="crest">🦅</span><div class="brand-text"><strong>HAWKEYE</strong><span>Map Preview</span></div></a></div></header>
+  <header class="gov-header"><div class="wrap brand-row"><a class="brand" href="index.html"><span class="crest">🦅</span><div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="preview.map-preview">Map Preview</span></div></a></div></header>
   <main class="wrap">
-    <h1>Presidential Map — Election-Day Preview</h1>
-    <p class="unofficial" style="background:var(--tint-danger);border-left:6px solid #b3261e;padding:12px">MOCK DATA — random winners, for layout preview only. On election day each state fills with the leading party's official emblem as reports arrive.</p>
+    <h1 data-i18n="preview.presidential-map-election-day-preview">Presidential Map — Election-Day Preview</h1>
+    <p data-i18n="preview.mock-data-random-winners-for-layout" class="unofficial" style="background:var(--tint-danger);border-left:6px solid #b3261e;padding:12px">MOCK DATA — random winners, for layout preview only. On election day each state fills with the leading party's official emblem as reports arrive.</p>
     <div class="card"><div id="map">Loading…</div></div>
-    <button class="secondary" onclick="draw()">Randomise Winners</button>
+    <button data-i18n="preview.randomise-winners" class="secondary" onclick="draw()">Randomise Winners</button>
   </main>
   <script>
     // Same palette as the seat arch on political.html — one party, one colour,
@@ -81,5 +81,7 @@
     }
     (async()=>{[GEO,LOGOS]=await Promise.all([fetch('states_geo.json').then(r=>r.json()),fetch('logos/manifest.json').then(r=>r.json()).catch(()=>({}))]);draw();})();
   </script>
+<script src="/i18n.js?v=2"></script>
+<script src="/lang.js?v=2"></script>
 </body>
 </html>

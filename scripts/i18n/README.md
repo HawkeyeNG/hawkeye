@@ -31,18 +31,36 @@ submit report*.
 
 ## What is covered
 
-index, observe, incidents, collation, profile, and the shell chrome menu.js
-builds at runtime (tab bar, report sheet). The other 35 pages have no keys yet,
-and the five-card first-run tour in menu.js is still English-only.
+**All 40 pages**, plus the shell chrome menu.js builds at runtime (tab bar,
+report sheet). 631 English keys; 588 in each of ha / ig / yo. Still English-only:
+the five-card first-run tour in menu.js, and everything the backend sends
+(SMS/OTP/Telegram/push).
+
+Roughly a third of the surface is the shared header, menu and footer, which is
+why the extractor keys a string seen on two or more pages as `common.*` and
+translates it once. It also reuses keys already present in the markup, so a
+second pass over a page set that is partly done does not re-key its chrome.
 
 ## What must never be machine-translated
 
-The INEC disclaimer, the non-affiliation notice, privacy, terms, consent
-wording, and any "unverified" label. `_meta.englishOnly` in `en.json` is the
-list. Those keys are deliberately absent from every bundle, and the English
-still in the markup is what renders — which only works because `t(key, english)`
+Two kinds, both listed in `en.json`'s `_meta`:
+
+- `englishOnly` — the INEC disclaimer (three wordings) and the non-affiliation
+  notice.
+- `englishOnlyPages` — **`privacy` and `terms` in their entirety.** Every
+  sentence of those two documents is legal text, and they are where a
+  mistranslation is most expensive. Their header, menu and footer still
+  translate, because those strings are `common.*` and live on twenty other
+  pages, so the page reads in the chosen language and the policy does not.
+
+Those keys are deliberately absent from every bundle, and the English still in
+the markup is what renders — which only works because `t(key, english)`
 distinguishes a `null` fallback from an `undefined` one. It did not, once, and
 printed `index.not-affiliated-with-inec-or-any` where the disclaimer belongs.
+
+Also never translated, and allowlisted in the checker as legitimately identical:
+handles, URLs, `x-admin-secret`, and third-party field names like `App ID` —
+which is what the admin is copying out of Facebook's own console.
 
 ## Review state lives in the bundle
 

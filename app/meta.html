@@ -27,46 +27,46 @@
 <body>
   <header class="gov-header"><div class="wrap brand-row">
     <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
-      <div class="brand-text"><strong>HAWKEYE</strong><span>Meta Poster (Admin)</span></div></a>
+      <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="meta.meta-poster-admin">Meta Poster (Admin)</span></div></a>
   </div></header>
 
   <main class="wrap box">
-    <h1>Post to Instagram &amp; Facebook</h1>
-    <p class="hint">Owner-only. Publishes Hawkeye's own content to its Facebook Page and/or Instagram
+    <h1 data-i18n="meta.post-to-instagram-facebook">Post to Instagram &amp; Facebook</h1>
+    <p data-i18n="meta.owner-only-publishes-hawkeye-s-own" class="hint">Owner-only. Publishes Hawkeye's own content to its Facebook Page and/or Instagram
     Business account via the Graph API. Media must be a public URL on hawkeye.com.ng (Instagram has no
     file upload). Text-only posts go to the Facebook Page only.</p>
 
-    <label for="secret">Admin Passphrase</label>
-    <div class="row"><input id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
-      <button id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
+    <label data-i18n="common.admin-passphrase" for="secret">Admin Passphrase</label>
+    <div class="row"><input data-i18n-attr="placeholder:common.x-admin-secret" id="secret" type="password" placeholder="x-admin-secret" style="flex:1" />
+      <button data-i18n="profile.save" id="save-secret" class="secondary" style="width:auto;margin:0">Save</button></div>
 
     <div id="conn" class="status info">Checking connection…</div>
 
     <hr style="margin:20px 0" />
 
-    <label>Post To</label>
+    <label data-i18n="common.post-to">Post To</label>
     <div class="targets">
       <label><input type="checkbox" id="t-fb" checked /> Facebook Page</label>
       <label><input type="checkbox" id="t-ig" checked /> Instagram</label>
     </div>
 
-    <label for="caption">Caption / Message</label>
+    <label data-i18n="meta.caption-message" for="caption">Caption / Message</label>
     <textarea id="caption" rows="3">Verify any polling-unit result yourself on Hawkeye's public, tamper-evident ledger. Independent. Nonpartisan. hawkeye.com.ng</textarea>
 
-    <label for="mtype">Media Type</label>
+    <label data-i18n="common.media-type" for="mtype">Media Type</label>
     <select id="mtype">
-      <option value="video">Video / Reel</option>
-      <option value="image">Image</option>
-      <option value="text">Text only (Facebook only)</option>
+      <option data-i18n="common.video-reel" value="video">Video / Reel</option>
+      <option data-i18n="common.image" value="image">Image</option>
+      <option data-i18n="common.text-only-facebook-only" value="text">Text only (Facebook only)</option>
     </select>
 
-    <label for="media">Media URL (Public, hawkeye.com.ng)</label>
-    <input id="media" type="url" value="https://hawkeye.com.ng/media/demo.mp4" placeholder="https://hawkeye.com.ng/media/…" />
+    <label data-i18n="common.media-url-public-hawkeye-com-ng" for="media">Media URL (Public, hawkeye.com.ng)</label>
+    <input data-i18n-attr="placeholder:common.https-hawkeye-com-ng-media" id="media" type="url" value="https://hawkeye.com.ng/media/demo.mp4" placeholder="https://hawkeye.com.ng/media/…" />
 
-    <label for="link">Link (Optional, Facebook Text Posts)</label>
-    <input id="link" type="url" placeholder="https://hawkeye.com.ng/" />
+    <label data-i18n="meta.link-optional-facebook-text-posts" for="link">Link (Optional, Facebook Text Posts)</label>
+    <input data-i18n-attr="placeholder:meta.https-hawkeye-com-ng" id="link" type="url" placeholder="https://hawkeye.com.ng/" />
 
-    <button id="post" style="margin-top:14px">Post</button>
+    <button data-i18n="meta.post" id="post" style="margin-top:14px">Post</button>
     <div id="result"></div>
   </main>
 
@@ -116,5 +116,7 @@
     };
     refresh();
   </script>
+<script src="/i18n.js?v=2"></script>
+<script src="/lang.js?v=2"></script>
 </body>
 </html>

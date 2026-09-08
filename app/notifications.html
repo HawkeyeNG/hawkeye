@@ -92,53 +92,53 @@
   <header class="gov-header">
     <div class="wrap brand-row">
       <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
-        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
-      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
         onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
       <nav id="menu-panel" class="menu-panel" hidden>
-        <a href="observe.html">Report a Result</a>
-        <a href="collation.html">Report a Collation Result</a>
-        <a href="results.html">Leaderboard</a>
-        <a href="dashboard.html">Public Reports Log</a>
-        <a href="ledger.html">Verify the Ledger</a>
-        <a href="integrity.html">Election Integrity</a>
-        <a href="docket.html">Public Docket</a>
-        <a href="map-unit.html">Map a Polling Unit</a>
-        <a href="incidents.html">Report an Incident</a>
-        <a href="candidates.html">2027 Candidates</a>
-        <a href="political.html">Political Data</a>
-        <a href="how.html">How Hawkeye Works</a>
-        <a href="guide.html">Observer Guide</a>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
         <a href="faq.html">FAQ</a>
-        <a href="about.html">About & Contact</a>
-        <a href="privacy.html">Privacy & Data</a>
+        <a data-i18n="common.about-contact" href="about.html">About & Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy & Data</a>
       </nav>
     </div>
   </header>
 
   <main class="wrap">
     <div class="top">
-      <h1 style="margin:0">Notifications</h1>
+      <h1 data-i18n="profile.notifications" style="margin:0">Notifications</h1>
       <div class="top-actions">
-        <button class="secondary" id="mark-all" hidden>Mark all read</button>
+        <button data-i18n="notifications.mark-all-read" class="secondary" id="mark-all" hidden>Mark all read</button>
         <!-- A push can land while this page is already open, and tapping a
              notification arrives here before the feed has been re-read — so the
              alert you were sent is briefly missing from the page it sent you to.
              Pull-to-refresh does not exist on the web, so this is the only way
              to ask again. -->
-        <button class="secondary" id="refresh" title="Refresh" aria-label="Refresh alerts">
+        <button data-i18n-attr="aria-label:notifications.refresh-alerts" class="secondary" id="refresh" title="Refresh" aria-label="Refresh alerts">
           <span id="refresh-icon">&#8635;</span>
         </button>
       </div>
     </div>
     <div id="push-card" class="card" hidden style="margin-bottom:14px">
-      <strong>Get alerts on this device</strong>
-      <p class="hint" style="margin:4px 0 10px">Turn on browser notifications for new reports, incidents and cases at the
+      <strong data-i18n="notifications.get-alerts-on-this-device">Get alerts on this device</strong>
+      <p data-i18n="notifications.turn-on-browser-notifications-for-new" class="hint" style="margin:4px 0 10px">Turn on browser notifications for new reports, incidents and cases at the
       units you follow — even when Hawkeye isn't open.</p>
-      <button id="push-enable" style="width:auto;display:inline-block">Enable notifications</button>
+      <button data-i18n="notifications.enable-notifications" id="push-enable" style="width:auto;display:inline-block">Enable notifications</button>
       <span id="push-status" class="hint" style="margin-left:10px"></span>
     </div>
-    <div id="list"><p class="empty">Loading…</p></div>
+    <div id="list"><p data-i18n="index.loading" class="empty">Loading…</p></div>
   </main>
 
   <!-- Full text of a long alert. Same back/card treatment as the profile
@@ -150,8 +150,8 @@
       <p class="nm-body" id="nm-body"></p>
       <time class="nm-when" id="nm-when"></time>
       <div class="nm-actions">
-        <a id="nm-open" class="secondary" hidden style="display:none">Open</a>
-        <button id="nm-close">Close</button>
+        <a data-i18n="notifications.open" id="nm-open" class="secondary" hidden style="display:none">Open</a>
+        <button data-i18n="common.close" id="nm-close">Close</button>
       </div>
     </div>
   </div>
@@ -368,6 +368,8 @@
     });
     load();
   </script>
+  <script src="/i18n.js?v=2"></script>
+  <script src="/lang.js?v=2"></script>
   <script src="menu.js?v=165"></script>
 </body>
 </html>

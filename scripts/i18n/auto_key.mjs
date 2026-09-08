@@ -130,16 +130,39 @@ function writtenByJs(el, js) {
   return false;
 }
 
-/** True when every child element is inline and none of them is already keyed. */
+/**
+ * May this element be keyed as ONE html string?
+ *
+ * Every child must be inline — that part is structural. The interesting rule is
+ * what to do when a child ALREADY carries a key, because both answers are right
+ * in different places and the codemod got each of them wrong in turn:
+ *
+ *  · `<li><strong data-i18n="how.photograph-the-evidence">Photograph the
+ *    evidence.</strong> Two live photos — …</li>`
+ *    The child key covers a FRAGMENT and the rest of the sentence is bare. That
+ *    is the half-translated bug: a bold lead in Hausa, its own sentence in
+ *    English. Fold it up — the whole <li> becomes one string.
+ *
+ *  · `<h2><span data-i18n="index.latest-alerts">Latest Alerts</span> <a
+ *    data-i18n="index.all-alerts">All Alerts →</a></h2>`
+ *    Every word is already covered; the element's own text nodes are whitespace.
+ *    Folding here would DISCARD two good keys and their translations to say the
+ *    same thing more coarsely. Leave it alone.
+ *
+ * So the test is not "is a child keyed" but "is there translatable text this
+ * element's existing keys do NOT cover".
+ */
 function inlineOnly(el) {
   for (const c of el.children) {
     if (!INLINE.has(c.tagName.toLowerCase())) return false;
-    if (c.querySelector && c.querySelector('[data-i18n],[data-i18n-html]')) return false;
     for (const d of [c, ...(c.querySelectorAll ? c.querySelectorAll('*') : [])]) {
       if (!INLINE.has(d.tagName.toLowerCase())) return false;
     }
   }
-  return true;
+  const keyedChild = !!el.querySelector('[data-i18n],[data-i18n-html]');
+  if (!keyedChild) return true;
+  // Uncovered text of its own? Then the existing keying is incomplete: fold up.
+  return [...el.childNodes].some((n) => n.nodeType === 3 && worth(n.textContent || ''));
 }
 
 function keyFor(page, text, used) {
@@ -187,7 +210,59 @@ for (const page of pages) {
     if (writtenByJs(el, js)) return;              // a script owns this text
 
     const hasChildren = el.children.length > 0;
-    if (hasChildren && !inlineOnly(el)) return;   // block children: recurse instead
+
+    /**
+     * TEXT BESIDE A CONTROL — the third mechanism, and the one the first version
+     * of this codemod had no answer for.
+     *
+     * `<p class="lede">Automated checks on every result…<button class="info-dot"
+     * data-info="…">ⓘ</button></p>` has a NON-inline child, so data-i18n-html is
+     * out (it rebuilds the innerHTML, and with it the button — losing whatever
+     * handler was bound to that element) and data-i18n is out (it deletes the
+     * button outright). The sentence was therefore left in English on pages whose
+     * every other line was translated.
+     *
+     * Here the child is a CONTROL, not part of the sentence, so word order is not
+     * at stake: wrap the element's own text runs in their own <span data-i18n>
+     * and leave every child element exactly where it is.
+     */
+    if (hasChildren && !inlineOnly(el)) {
+      const runs = [...el.childNodes].filter((n) => n.nodeType === 3 && worth(n.textContent || ''));
+      if (!runs.length) return;                   // block children only: recurse instead
+      const before = el.outerHTML;
+      let wrapped = 0;
+      for (const n of runs) {
+        const t = (n.textContent || '').replace(/\s+/g, ' ').trim();
+        if (ENGLISH_TEXT.has(t)) continue;
+        const k = byText.get(t) || keyFor(page, t, used);
+        if (!byText.has(t)) { added[k] = t; byText.set(t, k); }
+        const span = el.ownerDocument.createElement('span');
+        span.setAttribute('data-i18n', k);
+        span.textContent = t;
+        n.replaceWith(span);
+        wrapped++;
+      }
+      if (!wrapped) return;
+      edits.push({ before, after: el.outerHTML, key: '(text runs)', value: text.slice(0, 80) });
+      totalKeyed += wrapped;
+      return;
+    }
+
+    /**
+     * A DESCENDANT a script writes into disqualifies the WHOLE element.
+     *
+     * data-i18n-html replaces innerHTML, which destroys every child and builds
+     * fresh ones — so `<button id="btn-race"><span id="race-name">Loading…</span>
+     * <span id="race-change">Change</span></button>` cannot be keyed on the
+     * button, however innocent the button itself looks: results.html writes to
+     * both spans by id, and after the first language change it would be writing
+     * to elements that no longer exist. The first run of this codemod keyed
+     * exactly that button, and the "Copy Address" one whose .lbl span flips to
+     * "Copied!". Checking only the element's own id and classes is not enough.
+     */
+    if (hasChildren) {
+      for (const d of el.querySelectorAll('*')) if (writtenByJs(d, js)) return;
+    }
 
     const attr = hasChildren ? 'data-i18n-html' : 'data-i18n';
     const before = el.outerHTML;
@@ -257,5 +332,17 @@ if (CONTROL) {
   const g = writtenByJs(d.getElementById('decorated'), js);
   console.log(`${w ? 'PASS' : 'FAIL'}  CONTROL a textContent write IS detected`);
   console.log(`${!g ? 'PASS' : 'FAIL'}  CONTROL classList.add / onclick is NOT mistaken for a text write`);
-  if (!w || g) process.exit(1);
+
+  // The defect this codemod actually shipped on its first run: a clean-looking
+  // parent whose CHILD is the thing a script writes to.
+  const { document: d2 } = parseHTML(`<body>
+    <button id="btn-race"><span class="ico">x</span> <span id="race-name">Loading…</span></button>
+  </body>`);
+  const js2 = `document.getElementById('race-name').textContent = 'Governorship';`;
+  const parent = d2.getElementById('btn-race');
+  const parentClean = !writtenByJs(parent, js2);
+  const childDirty = [...parent.querySelectorAll('*')].some((c) => writtenByJs(c, js2));
+  console.log(`${parentClean ? 'PASS' : 'FAIL'}  CONTROL the parent itself looks clean (so the child check is what saves it)`);
+  console.log(`${childDirty ? 'PASS' : 'FAIL'}  CONTROL a JS-written CHILD disqualifies its parent`);
+  if (!w || g || !parentClean || !childDirty) process.exit(1);
 }

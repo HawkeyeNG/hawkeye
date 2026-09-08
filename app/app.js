@@ -7,6 +7,19 @@
  *    browse reaches the rest, whose reports stay badged location-unverified
  *  - canonicalPayload() must stay byte-identical to backend/src/services/signatures.js
  */
+/**
+ * i18n for text this file PAINTS. See scripts/i18n/key_js.mjs for why these
+ * cannot be data-i18n attributes: every element below is one a script writes
+ * into, and auto_key.mjs refuses to key those in markup precisely so the two
+ * writers never fight.
+ *
+ * The English literal stays as the second argument, so this file still reads as
+ * English source and still renders correctly with no bundle loaded at all.
+ */
+function T(key, english) {
+  return window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english;
+}
+
 const $ = (id) => document.getElementById(id);
 const API = ''; // same origin
 
@@ -485,18 +498,18 @@ function applySignInMode() {
   if (!IS_SIGNIN) return;
   authMode = 'password';
   const title = $('register-title');
-  if (title) title.textContent = 'Sign In';
+  if (title) title.textContent = T('observe.sign-in', 'Sign In');
   // "One number, one observer" is a sign-UP promise; a returning observer has
   // already made it.
   const lede = $('register-lede');
-  if (lede) lede.textContent = 'Welcome back — sign in to your observer account.';
+  if (lede) lede.textContent = T('observe.welcome-back-sign-in-to-your-observer', 'Welcome back — sign in to your observer account.');
   if ($('pw-signin-wrap')) $('pw-signin-wrap').hidden = false;
   if ($('channel-pick')) $('channel-pick').hidden = true;   // password sign-in sends no code
   syncChannelGate();
-  $('btn-auth').textContent = 'Sign In';
+  $('btn-auth').textContent = T('observe.sign-in', 'Sign In');
   if ($('pw-link')) {
     $('pw-link').hidden = false;                            // reset path, sign-in only
-    $('pw-link').textContent = 'Forgot your password?';
+    $('pw-link').textContent = T('observe.forgot-your-password', 'Forgot your password?');
   }
   if ($('signin-line')) $('signin-line').hidden = true;     // they ARE on sign-in
   if ($('signup-line')) $('signup-line').hidden = false;
@@ -533,10 +546,10 @@ function resetAuthPane() {
   pendingPhone = '';
   const input = $('auth-input');
   input.value = '';
-  input.placeholder = 'Enter Phone Number';
+  input.placeholder = T('observe.enter-phone-number', 'Enter Phone Number');
   input.type = 'tel';
   input.inputMode = 'tel';
-  $('btn-auth').textContent = 'Request OTP';
+  $('btn-auth').textContent = T('observe.request-otp', 'Request OTP');
   $('otp-hint').textContent = '';
   $('auth-reset').hidden = true;
   if ($('otp-resend')) $('otp-resend').hidden = true;
@@ -675,7 +688,7 @@ function showOtpPhone() {
 // "get it on WhatsApp instead" switch shown under a Telegram send.
 async function resendVia(channel) {
   pendingChannel = channel;
-  $('otp-hint').textContent = 'Sending a fresh code…';
+  $('otp-hint').textContent = T('observe.sending-a-fresh-code', 'Sending a fresh code…');
   try {
     const { status, body } = await api('/api/observers/register', {
       method: 'POST', headers: { 'content-type': 'application/json' },
@@ -683,7 +696,7 @@ async function resendVia(channel) {
     });
     if (status !== 200) { $('otp-hint').textContent = explain(body); return; }
     renderOtpSent(body);
-  } catch { $('otp-hint').textContent = 'Network problem — check your connection and try again.'; }
+  } catch { $('otp-hint').textContent = T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'); }
 }
 
 // How the code was delivered — shared by the first send and "Resend code".
@@ -694,7 +707,7 @@ function renderOtpSent(body) {
   const hint = $('otp-hint');
   const waSwitch = ' <a class="btn-link" id="switch-wa" href="#">Prefer WhatsApp? Get the code there instead.</a>';
   if (body.devOtp) {
-    hint.textContent = `DEV MODE — your code is ${body.devOtp}`;
+    hint.textContent = T('observe.dev-mode-your-code-is', 'DEV MODE — your code is {code}').replace('{code}', body.devOtp);
   } else if (body.viaWhatsapp) {
     hint.innerHTML = `Code sent on WhatsApp to ${to}.`;
   } else if (body.viaSms) {
@@ -721,7 +734,7 @@ function renderOtpSent(body) {
 // happily re-issues on a fresh /register call for the same number.
 if ($('otp-resend')) $('otp-resend').onclick = async (e) => {
   e.preventDefault();
-  $('otp-hint').textContent = 'Sending a fresh code…';
+  $('otp-hint').textContent = T('observe.sending-a-fresh-code', 'Sending a fresh code…');
   try {
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
@@ -731,7 +744,7 @@ if ($('otp-resend')) $('otp-resend').onclick = async (e) => {
     if (status !== 200) { $('otp-hint').textContent = explain(body); return; }
     renderOtpSent(body);
   } catch {
-    $('otp-hint').textContent = 'Network problem — check your connection and tap Resend code again.';
+    $('otp-hint').textContent = T('observe.network-problem-check-your-connection-and-tap', 'Network problem — check your connection and tap Resend code again.');
   }
 };
 
@@ -757,13 +770,13 @@ $('btn-auth').onclick = async () => {
     pendingChannel = channel;
     authMode = 'otp';
     input.value = '';
-    input.placeholder = 'Enter OTP';
+    input.placeholder = T('observe.enter-otp', 'Enter OTP');
     input.inputMode = 'numeric';
     // The LABEL has to move with the field. It kept saying "Nigerian Mobile
     // Number" over an input that now wants a code, which is the one thing on
     // this screen the observer reads before typing.
-    if ($('auth-input-label')) $('auth-input-label').textContent = 'Enter OTP';
-    $('btn-auth').textContent = 'Verify OTP';
+    if ($('auth-input-label')) $('auth-input-label').textContent = T('observe.enter-otp', 'Enter OTP');
+    $('btn-auth').textContent = T('observe.verify-otp', 'Verify OTP');
     $('auth-reset').hidden = false;
     if ($('otp-resend')) $('otp-resend').hidden = false;
     // A code is in flight — every "go somewhere else to sign in" link is noise
@@ -861,7 +874,7 @@ function geoLog(where, err) {
 
 // ---------- locate: geofenced discovery ----------
 $('btn-locate').onclick = async () => {
-  $('locate-status').textContent = 'Getting your location…';
+  $('locate-status').textContent = T('observe.getting-your-location', 'Getting your location…');
   $('pu-list').innerHTML = '';
   let pos;
   try {
@@ -880,7 +893,8 @@ $('btn-locate').onclick = async () => {
   // step opens populated rather than spending its first seconds on a round trip.
   const warm = nearbyCacheUsable() ? nearbyCache.body : null;
   if (!warm) {
-    $('locate-status').textContent = `Location fixed (±${Math.round(accuracy)} m). Looking up nearby units…`;
+    $('locate-status').textContent = T('observe.location-fixed-looking-up-nearby-units', 'Location fixed (±{m} m). Looking up nearby units…')
+      .replace('{m}', String(Math.round(accuracy)));
   }
   /**
    * TWO ENDPOINTS, MERGED — the same pair native asks, for the same reason.
@@ -937,19 +951,19 @@ $('btn-locate').onclick = async () => {
     // sentence there, different and stronger reason. Closing that gap is the
     // post-election "native browse offline" item.
     $('locate-status').textContent =
-      'Could not check nearby units. Search by name below.';
+      T('observe.could-not-check-nearby-units-search-by', 'Could not check nearby units. Search by name below.');
     $('browse-block').open = true;
-    $('btn-locate').textContent = 'Try Searching Near Me Again';
+    $('btn-locate').textContent = T('observe.try-searching-near-me-again', 'Try Searching Near Me Again');
     return;
   }
   const body = r.body;
   if (!body.units || body.units.length === 0) {
     $('locate-status').textContent =
-      'No units found — search or browse the register below.';
+      T('observe.no-units-found-search-or-browse-the', 'No units found — search or browse the register below.');
     $('browse-block').open = true;
     return;
   }
-  $('locate-status').textContent = 'Select the unit you are standing at:';
+  $('locate-status').textContent = T('observe.select-the-unit-you-are-standing-at', 'Select the unit you are standing at:');
   for (const u of body.units) {
     const btn = document.createElement('button');
     btn.className = 'pu-option';
@@ -964,7 +978,7 @@ $('btn-locate').onclick = async () => {
     $('pu-list').appendChild(btn);
   }
   // A search has now genuinely run, so offering to repeat it is honest.
-  $('btn-locate').textContent = 'Search Near Me Again';
+  $('btn-locate').textContent = T('observe.search-near-me-again', 'Search Near Me Again');
 };
 
 // ---------- locate: register browse (units without coordinates) ----------
@@ -1149,7 +1163,7 @@ function resetReportState() {
   if (oldHint) oldHint.remove();
   for (const t of ['sheet', 'venue']) {
     $(`preview-${t}`).hidden = true;
-    $(`btn-cam-${t}`).textContent = 'Take photo';
+    $(`btn-cam-${t}`).textContent = T('common.take-photo', 'Take photo');
   }
   // A new report has no sheet yet, so the counts step must not still be offering
   // the PREVIOUS report's — the worst possible thing to type figures from.
@@ -1410,7 +1424,7 @@ async function applyPrefill() {
       const inp = document.querySelector(`#vote-inputs input[data-party="${v.party}"]`);
       if (inp && Number.isFinite(+v.count)) inp.value = v.count;
     }
-    $('submit-status').textContent = 'Prefilled from Telegram — now capture the sheet & venue photos to finish.';
+    $('submit-status').textContent = T('observe.prefilled-from-telegram-now-capture-the-sheet', 'Prefilled from Telegram — now capture the sheet & venue photos to finish.');
   } catch { enterReportFlow(); }
 }
 
@@ -1714,7 +1728,7 @@ async function resolveUnitFromSheet(text) {
   card.querySelector('.pu-yes').onclick = () => { card.remove(); selectUnit(u); };
   card.querySelector('.pu-no').onclick = () => {
     card.remove();
-    $('locate-status').textContent = 'Pick your unit below, or search for it.';
+    $('locate-status').textContent = T('observe.pick-your-unit-below-or-search-for', 'Pick your unit below, or search for it.');
   };
   box.prepend(card);
 }
@@ -1884,7 +1898,7 @@ async function finalizeShot(target, blob) {
   // observer has usually left the crowd, and their own photo was two collapsed
   // steps up the page — while the step said to copy the figures off it.
   if (target === 'sheet') showSheetReference(img.src);
-  $(`btn-cam-${target}`).textContent = 'Retake photo';
+  $(`btn-cam-${target}`).textContent = T('observe.retake-photo', 'Retake photo');
   updateSubmitState();
   return true;
 }
@@ -1893,7 +1907,7 @@ async function finalizeShot(target, blob) {
 $('btn-submit').onclick = async () => {
   if (!shots.sheet || !shots.venue || !selectedPu) return;
   if (!$('sel-contest').value) {
-    $('submit-status').textContent = 'Select which election you are reporting.';
+    $('submit-status').textContent = T('observe.select-which-election-you-are-reporting', 'Select which election you are reporting.');
     $('sel-contest').focus();
     return;
   }
@@ -1909,17 +1923,17 @@ $('btn-submit').onclick = async () => {
   const auto = [...document.querySelectorAll('#vote-inputs input.ocr-filled')]
     .map((i) => `${i.dataset.party}: ${i.value || 0}`);
   if (auto.length && !confirm(`These counts were auto-filled from your sheet photo — confirm they match the sheet:\n\n${auto.join('\n')}\n\nSubmit with these numbers?`)) {
-    $('submit-status').textContent = 'Check the highlighted counts against your sheet, then submit again.';
+    $('submit-status').textContent = T('observe.check-the-highlighted-counts-against-your-sheet', 'Check the highlighted counts against your sheet, then submit again.');
     return;
   }
   $('btn-submit').disabled = true;
-  $('submit-status').textContent = 'Getting a fresh GPS fix…';
+  $('submit-status').textContent = T('observe.getting-a-fresh-gps-fix', 'Getting a fresh GPS fix…');
 
   let pos;
   try {
     pos = await getPosition();
   } catch {
-    $('submit-status').textContent = 'Could not get your location.';
+    $('submit-status').textContent = T('observe.could-not-get-your-location', 'Could not get your location.');
     $('btn-submit').disabled = false;
     return;
   }
@@ -1934,7 +1948,7 @@ $('btn-submit').onclick = async () => {
     })),
   );
 
-  $('submit-status').textContent = 'Signing your report…';
+  $('submit-status').textContent = T('observe.signing-your-report', 'Signing your report…');
   const pair = await ensureKeys();
   const imageSha256 = await sha256Hex(await shots.sheet.blob.arrayBuffer());
   const venueImageSha256 = await sha256Hex(await shots.venue.blob.arrayBuffer());
@@ -1975,7 +1989,7 @@ $('btn-submit').onclick = async () => {
   form.set('photo', shots.sheet.blob, 'ec8a.jpg');
   form.set('venuePhoto', shots.venue.blob, 'venue.jpg');
 
-  $('submit-status').textContent = 'Submitting…';
+  $('submit-status').textContent = T('observe.submitting', 'Submitting…');
 
   // DIRECT UPLOAD, WHEN THE SERVER OFFERS IT. The photos go straight to the
   // bucket and only hashes come here, because inbound bytes count against the
@@ -2028,7 +2042,7 @@ $('btn-submit').onclick = async () => {
       $('btn-submit').disabled = false;
       return;
     }
-    $('submit-status').textContent = 'You appear to be offline — check your connection and try again.';
+    $('submit-status').textContent = T('observe.you-appear-to-be-offline-check-your', 'You appear to be offline — check your connection and try again.');
     $('btn-submit').disabled = false;
     return;
   }
@@ -2037,11 +2051,11 @@ $('btn-submit').onclick = async () => {
   // once; only if that fails does the user get sent back to verification.
   if (status === 401) {
     localStorage.removeItem('hawkeye_token');
-    $('submit-status').textContent = 'Refreshing your session…';
+    $('submit-status').textContent = T('observe.refreshing-your-session', 'Refreshing your session…');
     if (await tryResume()) ({ status, body } = await post());
   }
   if (status === 401) {
-    $('submit-status').textContent = 'Session expired — verify your phone again to submit.';
+    $('submit-status').textContent = T('observe.session-expired-verify-your-phone-again-to', 'Session expired — verify your phone again to submit.');
     resetAuthPane();
     show('screen-register');
     return;
@@ -2134,7 +2148,7 @@ $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
       HAWKEYE_ALERT('No counts entered', rows
         ? 'Type the votes each party was announced to have, then tap Verify counts again.'
         : 'The party list could not be loaded. Close and reopen the report to try again.');
-    } else { $('submit-status').textContent = 'Enter at least one party count.'; }
+    } else { $('submit-status').textContent = T('observe.enter-at-least-one-party-count', 'Enter at least one party count.'); }
     return;
   }
   $('submit-status').textContent = '';
@@ -2155,6 +2169,18 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
     applySignInMode();
     show('screen-register');
   };
+  /* The auth screen's copy is painted by JS, and T() resolves when it is called.
+     Without this, switching language on this page moves every keyed element in
+     the markup and leaves the sign-in title, lede, button and hint in the old
+     one. i18n.js dispatches 'hawkeye-lang' immediately after its apply() pass,
+     so re-running the painters here always wins. */
+  document.addEventListener('hawkeye-lang', () => {
+    if (document.getElementById('screen-register')?.hidden === false) {
+      applyIntentCopy();
+      applySignUpMode();
+      applySignInMode();
+    }
+  });
 
   // Expired/corrupt tokens are dropped BEFORE deciding which screen to show —
   // never let a dead session masquerade as signed-in (resume re-mints silently).
@@ -2204,17 +2230,17 @@ function armTelegramLogin() {
   const btn = document.createElement('button');
   btn.id = 'btn-tg-login';
   btn.type = 'button';
-  btn.textContent = '✈️ Continue with Telegram — no code needed';
+  btn.textContent = T('observe.continue-with-telegram-no-code-needed', '✈️ Continue with Telegram — no code needed');
   btn.style.cssText = 'background:#2aabee;box-shadow:0 4px 14px rgba(42,171,238,.35);margin:0 0 4px';
   const or = document.createElement('p');
   or.className = 'hint';
   or.style.cssText = 'text-align:center;margin:8px 0 2px';
-  or.textContent = '— or sign in with SMS —';
+  or.textContent = T('observe.or-sign-in-with-sms', '— or sign in with SMS —');
   label.parentNode.insertBefore(btn, label);
   label.parentNode.insertBefore(or, label);
   btn.onclick = async () => {
     btn.disabled = true;
-    btn.textContent = 'Waiting for Telegram…';
+    btn.textContent = T('observe.waiting-for-telegram', 'Waiting for Telegram…');
     try {
       const pair = await ensureKeys();
       const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
@@ -2241,7 +2267,7 @@ function armTelegramLogin() {
       afterVerified();
     } catch (e) {
       btn.disabled = false;
-      btn.textContent = '✈️ Continue with Telegram — no code needed';
+      btn.textContent = T('observe.continue-with-telegram-no-code-needed', '✈️ Continue with Telegram — no code needed');
       alert('Telegram sign-in did not complete — you can use the SMS option below.');
     }
   };

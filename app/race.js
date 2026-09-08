@@ -5,6 +5,11 @@
 //                   others[], notableAbsence }                                   (statbar + ballot)
 // Usage: window.mountRace(mainEl, race, LOGOS, { compare: true|false });
 (function () {
+  /* i18n for labels this block PAINTS. An element JS rewrites cannot carry a
+     data-i18n attribute — the next render would wipe it — so the label is
+     resolved here, at render time, and the render is re-run on a language
+     change. */
+  const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
   // Party colours — every code that can appear on a Nigerian ballot we render.
   const PC = {
     A: '#00838f', APC: '#2e7d32', ADC: '#00897b', AA: '#3e2723', AAC: '#6d4c41',
@@ -322,7 +327,7 @@
      */
     if (race.date) cells.push([new Date(race.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }), 'Election day']);
     else if (race.dateText) cells.push([race.dateText, race.dateLabel || 'Date']);
-    else if (yr) cells.push([yr, 'Election year']);
+    else if (yr) cells.push([yr, T('race.election-year', 'Election year')]);
     /**
      * TBD, NOT A SUPPRESSED CELL.
      *
@@ -440,7 +445,7 @@
     // and the list beneath it come from the same array.
     if (seatField && wholeField.length) {
       parts.push('<h2 style="margin-top:26px">Declared candidates</h2>');
-      parts.push('<p class="hint" id="field-hint">Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.</p>');
+      parts.push('<p class="hint" id="field-hint">' + T('race.listed-alphabetically-by-party', 'Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.') + '</p>');
       /**
        * `data-party` is the join key for the running totals filled in later —
        * see fillFieldTotals. The slot is rendered EMPTY rather than omitted, so
@@ -462,14 +467,14 @@
     if (!seatField && race.candidates.length) {
     const heading = opts.frontLabel || (race.others ? 'Front-runners' : 'Declared candidates');
     parts.push(`<h2 style="margin-top:26px">${esc(heading)}</h2>`);
-    parts.push('<p class="hint">Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.</p>');
+    parts.push('<p class="hint">' + T('race.listed-alphabetically-by-party', 'Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.') + '</p>');
     parts.push(`<div class="cand-grid">${race.candidates.map((c) => `
       <div class="cand" style="--pc:${color(c.party)}">
         <div class="row1">${avatar(c)}
           <div><span class="pill">${flagInline(c.party, 13)}${esc(c.party)}</span>
-            <h3>${esc(c.name)}${c.incumbent ? '<span class="inc">Incumbent</span>' : ''}</h3></div></div>
+            <h3>${esc(c.name)}${c.incumbent ? '<span class="inc">' + T('race.incumbent', 'Incumbent') + '</span>' : ''}</h3></div></div>
         <p>${esc(c.line || '')}</p>
-        <dl><dt>Home base</dt><dd>${esc(c.home || '—')}</dd>
+        <dl><dt>${T('race.home-base', 'Home base')}</dt><dd>${esc(c.home || '—')}</dd>
             <dt>Bid</dt><dd>${esc(c.bids || '—')}</dd>
             <dt>Status</dt><dd>${esc(c.status || '—')}</dd></dl>
       </div>`).join('')}</div>`);
@@ -487,7 +492,7 @@
           <div class="b" style="--pc:${color(c.party)}">${flagIcon(c.party)}
             <div><strong>${esc(c.name)}</strong><span>${esc(c.party)}${c.incumbent ? ' · incumbent' : ''}</span></div></div>`).join('')}</div>`);
       } else {
-        parts.push('<h2 style="margin-top:26px">Other declared candidates</h2>');
+        parts.push('<h2 style="margin-top:26px">' + T('race.other-declared-candidates', 'Other declared candidates') + '</h2>');
         parts.push(`<div class="ballot">${race.minors.map((m) => `
           <div class="b" style="--pc:${color(m.party)}">${flagIcon(m.party)}
             <div><strong>${esc(m.name)}</strong><span>${esc(m.meta || m.party)}</span></div></div>`).join('')}</div>`);
@@ -506,7 +511,7 @@
     if (!seatField && race.candidates.length) {
     parts.push('<h2 style="margin-top:26px">Quick compare</h2>');
     parts.push(`<div class="race-compare"><table><thead>
-      <tr><th>Candidate</th><th>Party</th><th>Home base</th><th>Bid</th><th>Status</th></tr></thead><tbody>${
+      <tr><th>${T('race.candidate', 'Candidate')}</th><th>${T('race.party', 'Party')}</th><th>${T('race.home-base', 'Home base')}</th><th>${T('race.bid', 'Bid')}</th><th>${T('race.status', 'Status')}</th></tr></thead><tbody>${
       race.candidates.map((c) => `<tr><td><strong>${esc(c.name)}</strong></td>
         <td>${flagInline(c.party)}<span style="font-weight:700;color:${color(c.party)}">${esc(c.party)}</span></td>
         <td>${esc(c.home || '—')}</td><td>${esc(c.bids || '—')}</td><td>${esc(c.status || '—')}</td></tr>`).join('')}</tbody></table></div>`);
@@ -862,9 +867,13 @@
     const units = board.unitsReporting;
     const hint = main.querySelector('#field-hint');
     if (hint) {
-      hint.innerHTML = 'Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan. '
-        + `<strong>Totals are what observers have reported so far</strong> — from ${units.toLocaleString()} `
-        + `polling unit${units === 1 ? '' : 's'}, not an official count.`;
+      hint.innerHTML = T('race.listed-alphabetically-by-party', 'Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.') + ' '
+        + '<strong>' + T('race.totals-are-what-observers-have-reported', 'Totals are what observers have reported so far') + '</strong> '
+        + T(units === 1 ? 'race.from-one-polling-unit-not-an-official-count'
+          : 'race.from-polling-units-not-an-official-count',
+        units === 1 ? '— from {n} polling unit, not an official count.'
+          : '— from {n} polling units, not an official count.')
+          .replace('{n}', units.toLocaleString());
     }
   }
 

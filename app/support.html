@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#00251a" />
   <meta name="description" content="Support Hawkeye — an independent, founder-funded Nigerian election monitor. Donate crypto to help keep it running." />
-  <title>Hawkeye — Support</title>
+  <title data-i18n="support.hawkeye-support">Hawkeye — Support</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=174" />
+  <link rel="stylesheet" href="styles.css?v=175" />
   <script src="native.js?v=114"></script>
   <style>
     .wallet-row { display: flex; align-items: center; gap: 11px; }
@@ -89,7 +89,7 @@
     </div>
 
     <h2 data-i18n="support.crypto-wallets" style="margin-top:24px">Crypto Wallets</h2>
-    <p class="hint" style="margin-bottom:10px">Tap <strong data-i18n="support.copy">Copy</strong> for wallet address, or <strong data-i18n="support.qr">QR</strong> to generate a scannable code.</p>
+    <p data-i18n-html="support.tap-copy-for-wallet-address-or-qr" class="hint" style="margin-bottom:10px">Tap <strong>Copy</strong> for wallet address, or <strong>QR</strong> to generate a scannable code.</p>
     <div id="wallets" class="option-list"></div>
 
     <p data-i18n="support.always-confirm-the-address-after-pasting" class="hint" style="margin-top:14px">Always confirm the address after pasting.
@@ -159,18 +159,21 @@
           <span class="wallet-name">${esc(w.label)}</span>
           <span class="wallet-addr" title="${esc(w.address)}">${esc(w.address)}</span>
           <span class="w-actions">
-            <button class="pill-btn copy-btn" type="button" data-addr="${esc(w.address)}"><span class="lbl">Copy</span></button>
-            <button class="pill-btn qr-btn" type="button" data-slug="${esc(w.slug)}" data-label="${esc(w.label)}" data-addr="${esc(w.address)}">QR</button>
+            <button class="pill-btn copy-btn" type="button" data-addr="${esc(w.address)}"><span class="lbl" data-i18n="support.copy">Copy</span></button>
+            <button class="pill-btn qr-btn" type="button" data-slug="${esc(w.slug)}" data-label="${esc(w.label)}" data-addr="${esc(w.address)}" data-i18n="support.qr">QR</button>
           </span>
         </div>
       </div>`).join('');
+    /* These rows are built after i18n.js's apply() pass, so their data-i18n
+       attributes have never been seen. Sweep them once, here. */
+    if (window.HawkeyeI18n) window.HawkeyeI18n.apply(document.getElementById('wallets'));
 
     const modal = document.getElementById('qr-modal');
     async function copyAddr(btn) {
       try {
         await navigator.clipboard.writeText(btn.dataset.addr);
         const lbl = btn.querySelector('.lbl'); const orig = lbl.textContent;
-        lbl.textContent = 'Copied';
+        lbl.textContent = window.HawkeyeI18n ? window.HawkeyeI18n.t('support.copied', 'Copied') : 'Copied';
         setTimeout(() => { lbl.textContent = orig; }, 1800);
       } catch { /* clipboard blocked (insecure context) — the address is selectable */ }
     }
@@ -197,8 +200,8 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) closeQr(); });
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="/i18n.js?v=3"></script>
+  <script src="/i18n.js?v=4"></script>
   <script src="/lang.js?v=3"></script>
-  <script src="menu.js?v=166"></script>
+  <script src="menu.js?v=167"></script>
 </body>
 </html>

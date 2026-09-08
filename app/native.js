@@ -567,6 +567,36 @@
  * path, so this cannot hang on a missing bundle; the timeout covers i18n.js
  * failing to load at all, in which case English IS the correct answer.
  */
+/**
+ * RESOLVES ONCE i18n.js HAS RUN AND CHOSEN A LANGUAGE.
+ *
+ * Every page in app/ loads /i18n.js AFTER its own inline script, so a page that
+ * paints from a fetch callback is in a race: if the data arrives before i18n.js
+ * has executed, `HawkeyeI18n.t()` is not there, the painter takes its English
+ * fallback, and the text never moves again because the element holds a resolved
+ * string with no attribute for apply() to find.
+ *
+ * That race is invisible on localhost — i18n.js is there in a millisecond — and
+ * real on hawkeye.com.ng, where it competes with the page's own data fetches. It
+ * shipped the untranslated footer on Home, and then shipped the untranslated zone
+ * headings on Political one commit later, both times passing every local test.
+ *
+ * Awaiting this at the top of such a block removes the class rather than the
+ * instance: no ordering assumption, no repaint to remember, no per-page listener.
+ * It resolves immediately once i18n has announced (it announces on EVERY load
+ * path, including failure), and the timeout means a missing i18n.js degrades to
+ * English rather than to a page that never renders.
+ */
+window.i18nReady = function () {
+  if (window.HawkeyeI18n && window.HawkeyeI18n.current) return Promise.resolve();
+  return new Promise(function (resolve) {
+    var done = false;
+    var finish = function () { if (!done) { done = true; resolve(); } };
+    document.addEventListener('hawkeye-lang', finish, { once: true });
+    setTimeout(finish, 4000);
+  });
+};
+
 window.i18nData = function (obj) {
   if (window.HawkeyeI18n) return window.HawkeyeI18n.data(obj);
   return new Promise(function (resolve) {

@@ -38,7 +38,15 @@ import {
   partyName,
   type Political,
 } from '@/lib/political';
-import { ELECTION_TYPES, listRaces, raceLabel, STATES, type Race, type StateName } from '@/lib/races';
+import {
+  ELECTION_TYPES,
+  listRaces,
+  raceHrefFor,
+  raceLabel,
+  STATES,
+  type Race,
+  type StateName,
+} from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 import { t as i18nT } from '@/lib/i18n';
@@ -1489,13 +1497,52 @@ export default function Results() {
               instruction one line below it just moved the reader's eye twice
               to learn the same thing. The seat path keeps its line because it
               says something the card does not. */}
-          {pickSeat ? <Text className="pb-3 text-sm text-muted">{i18nT('n.app.tabs.results.narrow-to-one-seat')}</Text> : null}
+          {pickSeat ? <Text className="pb-3 text-sm text-muted">{i18nT('n.app.tabs.results.pick-a-seat-to-open-it')}</Text> : null}
 
           {pickSeat ? (
             <>
               {/* allowClosed: viewing is not reporting. No lockedState: the board
                   is nationwide, so the full type → state → race path applies. */}
-              <ContestPicker contests={contests} value={race} onSelect={selectRace} allowClosed />
+              {/**
+                * A SEAT PICKED HERE OPENS THAT SEAT, it does not re-rank the board.
+                *
+                * This used to call selectRace, which scopes the board to the seat —
+                * and a board about one seat is the "three steps to say there is
+                * only one" this screen already rejects for by-elections a few
+                * lines below: a NATIONAL map with one outline picked out, over a
+                * card explaining that this constituency is what the board ranks,
+                * over a button offering to go and look at the race the reader had
+                * already named. Reported from the app, on Bauchi Federal
+                * Constituency.
+                *
+                * The website has never done this: race-picker.js:targetUrl sends a
+                * seat pick to race.html. So did this screen's OWN header picker
+                * (components/race-picker.tsx:target). Two affordances on one
+                * screen disagreed about what picking a seat means, and this was
+                * the one that disagreed with everything else.
+                *
+                * selectRace stays for the map's "Rank X instead" button, which is
+                * a deliberate re-rank of the board a reader is already looking at,
+                * and applyLink's ?scope= branch stays exactly as it is — that is
+                * where "See live results" ON a race page lands, and routing it
+                * back to the race page would bounce the reader straight to where
+                * they came from.
+                *
+                * A null href means no page exists for that race; the board is then
+                * still better than refusing to move.
+                */}
+              <ContestPicker
+                contests={contests}
+                value={race}
+                allowClosed
+                onSelect={(r) => {
+                  const href = raceHrefFor(r, contests);
+                  if (!href) { selectRace(r); return; }
+                  setPicking(false);
+                  setPickSeat(false);
+                  router.push(href as never);
+                }}
+              />
               <Pressable
                 onPress={() => setPickSeat(false)}
                 className="mt-3 items-center rounded-2xl border border-good-ink py-3 active:opacity-70"
@@ -1587,7 +1634,10 @@ export default function Results() {
                 onPress={() => setPickSeat(true)}
                 className="mt-3 items-center rounded-2xl border border-good-ink py-3 active:opacity-70"
               >
-                <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.tabs.results.rank-a-single-seat-instead')}</Text>
+                {/* Says what it now does. It used to say "Rank a single seat
+                    instead", which described re-scoping the board — the behaviour
+                    that was the bug. */}
+                <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.tabs.results.open-a-single-seat')}</Text>
               </Pressable>
             </>
           )}

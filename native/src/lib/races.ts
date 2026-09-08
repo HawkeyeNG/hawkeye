@@ -1830,6 +1830,53 @@ export interface Contest {
  * (it matched on `code` where this matches on `tier ?? code`, and ignored
  * `constituencies`). One rule, both shapes.
  */
+/**
+ * Where a race's OWN PAGE lives — the counterpart to political.ts's
+ * resultsHrefFor, which answers the opposite question ("where is its board").
+ *
+ * Derived from the race rather than built by each caller, for the same reason
+ * that one is: a caller that has to assemble the link is a caller that can
+ * assemble a different one. Twin of app/race-picker.js:targetUrl and of
+ * components/race-picker.tsx:target, which the website and this screen's own
+ * header picker have always used — this exists so the third caller, the
+ * Leaderboard's seat picker, stops disagreeing with both.
+ *
+ * Returns null where there is no single page to open — the presidency is one
+ * national race, not a seat, and its board IS the thing to look at. A null means
+ * "stay put"; it is never a guessed destination, because sending a reader to a
+ * race they did not choose is worse than not moving.
+ */
+export function raceHrefFor<T extends Contest>(race: Race, contests?: T[] | null): string | null {
+  const e = encodeURIComponent;
+  const def = contests ? matchContest(race, contests) : undefined;
+  /**
+   * A BY-ELECTION NAMES ITS OWN SEAT, in the same `constituencies` allowlist the
+   * backend gates its reports with — so the contest code is the whole address,
+   * and a seat name passed alongside could only ever disagree with it.
+   */
+  if (((def as { constituencies?: string[] } | undefined)?.constituencies ?? []).length) {
+    return `/race?contest=${e(def!.code)}`;
+  }
+  switch (race.type) {
+    // The state IS the race; there is no seat to name.
+    case 'GOV':
+      return race.state ? `/race?contest=GOV&state=${e(race.state)}` : null;
+    case 'SEN':
+      return race.district ? `/race?contest=SEN&seat=${e(race.district)}` : null;
+    case 'REP':
+      return race.constituency ? `/race?contest=REP&seat=${e(race.constituency)}` : null;
+    // SHA seat names repeat across states, so the state is not optional here.
+    case 'SHA':
+      return race.state && race.seat
+        ? `/race?contest=SHA&state=${e(race.state)}&seat=${e(race.seat)}`
+        : null;
+    // PRES is one national race. Its board is the destination, so the caller
+    // keeps doing what it did.
+    default:
+      return null;
+  }
+}
+
 export function matchContest<T extends Contest>(race: Race, contests: T[]): T | undefined {
   return contests.find((c) => {
     if ((c.tier ?? c.code) !== race.contestCode) return false;

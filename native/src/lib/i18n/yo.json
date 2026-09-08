@@ -243,6 +243,8 @@
   "n.app.tabs.results.back-to-the-whole-elections": "← Padà sí gbogbo ìdìbò náà",
   "n.app.tabs.results.narrow-to-one-seat": "Dín kù sí ìjókòó kan.",
   "n.app.tabs.results.no-map-for-this-race": "Kò sí àwòrán fún ìdíje yìí",
+  "n.app.tabs.results.open-a-single-seat": "Ṣí ìjókòó kan dípò bẹ́ẹ̀",
+  "n.app.tabs.results.pick-a-seat-to-open-it": "Yan ìjókòó kan láti ṣí ojú-ìwé ìdíje rẹ̀.",
   "n.app.tabs.results.rank-a-single-seat-instead": "Dípò, ṣe àtòjọ ìjókòó kan →",
   "n.app.tabs.results.report-from-your-unit": "Jábọ̀ láti ẹ̀ka rẹ",
   "n.components.ask-fab.ask-hawkeye-about-the-results": "Bi Hawkeye léèrè nípa àwọn àbájáde",

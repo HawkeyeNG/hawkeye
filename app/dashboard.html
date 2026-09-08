@@ -80,6 +80,11 @@
   </footer>
 
   <script>
+    /* i18n for text this block paints. These elements are rewritten by JS, so
+       an attribute would be wiped on the next render; and this page loads
+       i18n.js AFTER this script, so the first paint can precede the bundle. */
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+
     async function refresh() {
       const [results, ledger] = await Promise.all([
         fetch('/api/results').then((r) => r.json()),
@@ -90,11 +95,11 @@
       lc.className = 'ledger-card ' + (ledger.ok ? 'ok' : 'bad');
       lc.innerHTML = ledger.ok
         ? `Ledger intact — ${ledger.entries} entries · verify it yourself`
-        : `LEDGER TAMPERED (entry ${ledger.brokenAtId}) · inspect the chain`;
+        : T('dashboard.ledger-tampered-inspect-the-chain', 'LEDGER TAMPERED (entry {id}) · inspect the chain').replace('{id}', ledger.brokenAtId);
 
       const wrap = document.getElementById('results');
       if (!results.length) {
-        wrap.innerHTML = '<p class="meta">No reports yet.</p>';
+        wrap.innerHTML = `<p class="meta">${T('dashboard.no-reports-yet', 'No reports yet.')}</p>`;
         return;
       }
       wrap.innerHTML = results.map((r) => `
@@ -119,11 +124,15 @@
         </section>`).join('');
     }
     refresh();
+    /* refresh() writes RESOLVED strings, and this page loads i18n.js after this
+       script — so the first paint can land before the bundle and never move.
+       'hawkeye-lang' is dispatched immediately after apply(), so this wins. */
+    document.addEventListener('hawkeye-lang', refresh);
     setInterval(refresh, 30000);
   </script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=4"></script>
   <script src="/lang.js?v=3"></script>
-  <script src="menu.js?v=168"></script>
+  <script src="menu.js?v=169"></script>
 </body>
 </html>

@@ -1039,6 +1039,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
         'collation.html': ['Report Collation Result', 'nav.report-collation-result'],
         'candidates.html': ['Presidency 2027', 'nav.presidency-2027'],
         'osun.html': ['Osun 2026', 'nav.osun-2026'],
+        'race.html': ['Race', 'nav.race'],
       };
       const entry = TITLES[page];
       const title = (entry && entry[0])

@@ -82,6 +82,11 @@
   </div></footer>
 
   <script>
+    /* i18n for text this block paints. These elements are rewritten by JS, so
+       an attribute would be wiped on the next render; and this page loads
+       i18n.js AFTER this script, so the first paint can precede the bundle. */
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+
     const KIND_LABEL = { violence: 'Violence', ballot_snatching: 'Ballot snatching', vote_buying: 'Vote buying', intimidation: 'Intimidation', bvas_failure: 'BVAS failure', late_materials: 'Late materials', obstruction: 'Obstruction', other: 'Other' };
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const timeAgo = (ms) => {
@@ -91,9 +96,13 @@
       if (s < 86400) return Math.floor(s / 3600) + 'h ago';
       return new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     };
-    fetch('/api/incidents').then((r) => r.json()).then((d) => {
+    /* Re-runnable, so a language change can repaint it: everything below holds
+       a RESOLVED string rather than a key, and this page loads i18n.js AFTER
+       this script — so the first paint can precede the bundle entirely and
+       apply() would have nothing to find afterwards. */
+    const paintIncidents = () => fetch('/api/incidents').then((r) => r.json()).then((d) => {
       const items = d.incidents || [];
-      if (!items.length) { document.getElementById('list').innerHTML = '<div class="empty">No published incidents yet.</div>'; return; }
+      if (!items.length) { document.getElementById('list').innerHTML = `<div class="empty">${T('incident-reports.no-published-incidents-yet', 'No published incidents yet.')}</div>`; return; }
       document.getElementById('list').innerHTML = items.map((i) => {
         let media = 0; try { media = JSON.parse(i.media_json || '[]').length; } catch (e) { /* ignore */ }
         const place = i.state || (i.pu_code ? 'Polling unit ' + i.pu_code : '');
@@ -111,7 +120,9 @@
       // incidents.html had it — found while writing the Lite review notes, which
       // would otherwise have claimed a capability one of the two pages lacked.
       for (const b of document.querySelectorAll('[data-flag]')) b.onclick = () => flagContent(Number(b.dataset.flag), b);
-    }).catch(() => { document.getElementById('list').innerHTML = '<div class="empty">Could not load incidents — try again shortly.</div>'; });
+    }).catch(() => { document.getElementById('list').innerHTML = `<div class="empty">${T('incident-reports.could-not-load-incidents-try-again-shortly', 'Could not load incidents — try again shortly.')}</div>`; });
+    paintIncidents();
+    document.addEventListener('hawkeye-lang', paintIncidents);
 
     // Same reasons and the same endpoint as incidents.html, deliberately: a
     // reader who reports something here should reach the one moderation queue.
@@ -139,6 +150,6 @@
   </script>
   <script src="/i18n.js?v=4"></script>
   <script src="/lang.js?v=3"></script>
-  <script src="menu.js?v=168"></script>
+  <script src="menu.js?v=169"></script>
 </body>
 </html>

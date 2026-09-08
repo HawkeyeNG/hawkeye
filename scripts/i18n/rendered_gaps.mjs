@@ -74,6 +74,27 @@ const KEEP = new Set(['HAWKEYE', 'Hawkeye', 'INEC', 'EC8A', 'EC8B', 'IReV', 'PDP
 /** A wallet address / hash: long, unspaced, mixed case or hex. Never translated. */
 const ADDRESSY = /^(?:0x[0-9a-fA-F]{16,}|[A-Za-z0-9]{26,})$/;
 
+/**
+ * Strings that are correctly byte-identical in every language, matched by shape
+ * rather than listed one by one.
+ *
+ * These are not exemptions from translation — they are things a translation
+ * would BREAK: a product name, an email address, a Telegram handle, a company's
+ * registered name, a file size. Leaving them in the count would mean the sweep
+ * could never reach zero, and a number that cannot reach zero stops being a
+ * signal: the ten real gaps hide among forty permanent ones and nobody looks.
+ *
+ * Kept narrow on purpose. Anything that is prose, however short, is still a gap.
+ */
+const NEVER_TRANSLATED = [
+  /^Hawkeye( Lite)?$/,                       // the product and its small build
+  /^IniXien(, LLC)?$/,                       // the company, as registered
+  /^@[A-Za-z0-9_]+$/,                        // a social/Telegram handle
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/,              // an email address
+  /^[\d.,]+\s*(?:[KMGT]?B|MB|kB)$/i,         // a file size
+  /^\+?\d[\d\s()-]{6,}$/,                    // a phone number
+];
+
 const looksTranslatable = (s) => {
   const t = s.trim();
   if (t.length < 3) return false;
@@ -85,6 +106,7 @@ const looksTranslatable = (s) => {
   for (const e of ENGLISH_TEXT) if (e.startsWith(t) || t.startsWith(e)) return false;
   if (!/[A-Za-z]{2}/.test(t)) return false;             // numbers, punctuation, emoji
   if (ADDRESSY.test(t)) return false;
+  if (NEVER_TRANSLATED.some((re) => re.test(t))) return false;
   if (/^https?:\/\//.test(t)) return false;
   if (/^[\d\s.,:/%+-]+$/.test(t)) return false;
   // A bare proper-noun run: every word capitalised AND every word in KEEP.

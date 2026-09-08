@@ -320,6 +320,8 @@
   "incidents.published-incidents": "Àwọn Iṣẹlẹ Tí A Ti Tẹ̀ Jáde",
   "incidents.report-another-incident": "Jábọ̀ iṣẹlẹ mìíràn",
   "incidents.sent-for-review": "✅ A Ti Fi Ránṣẹ́ Fún Àyẹ̀wò",
+  "incidents.once-approved-it-appears-in-the-feed": "Ní kété tí a bá fọwọ́sí i, yóò farahàn nínú àtòjọ tí ó wà nísàlẹ̀. Ènìyàn ni ó ń ṣàyẹ̀wò ìròyìn kọ̀ọ̀kan ṣáájú kí a tó tẹ̀ ohunkóhun jáde.",
+  "incidents.once-approved-it-appears-in-the-feed-unit": "Ní kété tí a bá fọwọ́sí i, yóò farahàn nínú àtòjọ tí ó wà nísàlẹ̀, àwọn tí ó ń tẹ̀lé ẹ̀ka ìdìbò yẹn yóò sì gba ìkìlọ̀ (Telegram tàbí àtòjọ ìkìlọ̀ ohun èlò náà). Ènìyàn ni ó ń ṣàyẹ̀wò ìròyìn kọ̀ọ̀kan ṣáájú kí a tó tẹ̀ ohunkóhun jáde.",
   "incidents.submit-report": "Fi ìròyìn ránṣẹ́",
   "incidents.to-report-an-incident-register-your": "Láti jábọ̀ iṣẹlẹ, kọ́kọ́ forúkọ ẹ̀rọ rẹ sílẹ̀.",
   "incidents.type-of-incident": "Irú Iṣẹlẹ",

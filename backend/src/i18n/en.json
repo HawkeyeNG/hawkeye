@@ -47,5 +47,7 @@
   "note.case.resolved.body": "{code} · {contest} — {say}.",
   "case.outcome.upheld": "struck by the crowd (fraud upheld)",
   "case.outcome.cleared": "cleared by the crowd",
-  "case.outcome.unresolved": "left unresolved (no quorum)"
+  "case.outcome.unresolved": "left unresolved (no quorum)",
+  "note.result.bodyTally": "A result was reported at {where}. Running total across {units} units: {tally}.",
+  "tg.newReportTally": "New {label} report — {where}. Running total across {units} units: {tally}."
 }

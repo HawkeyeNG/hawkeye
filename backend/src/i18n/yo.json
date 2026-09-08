@@ -47,5 +47,7 @@
   "note.case.resolved.body": "{code} · {contest} — {say}.",
   "case.outcome.upheld": "ìjọ ènìyàn fagilé e (a fọwọ́sí ìjìbìtì)",
   "case.outcome.cleared": "ìjọ ènìyàn dá a láre",
-  "case.outcome.unresolved": "kò yanjú (kò tó iye tí a nílò)"
+  "case.outcome.unresolved": "kò yanjú (kò tó iye tí a nílò)",
+  "note.result.bodyTally": "A jábọ̀ àbájáde ní {where}. Àpapọ̀ lọ́wọ́lọ́wọ́ ní ibùdó {units}: {tally}.",
+  "tg.newReportTally": "Ìròyìn {label} tuntun — {where}. Àpapọ̀ lọ́wọ́lọ́wọ́ ní ibùdó {units}: {tally}."
 }

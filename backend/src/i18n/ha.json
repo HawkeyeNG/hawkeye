@@ -47,5 +47,7 @@
   "note.case.resolved.body": "{code} · {contest} — {say}.",
   "case.outcome.upheld": "jama'a sun soke shi (an tabbatar da magudi)",
   "case.outcome.cleared": "jama'a sun wanke shi",
-  "case.outcome.unresolved": "bai warware ba (babu isasshen adadi)"
+  "case.outcome.unresolved": "bai warware ba (babu isasshen adadi)",
+  "note.result.bodyTally": "An kai rahoton sakamako a {where}. Jimillar da ake da ita a rumfuna {units}: {tally}.",
+  "tg.newReportTally": "Sabon rahoton {label} — {where}. Jimillar da ake da ita a rumfuna {units}: {tally}."
 }

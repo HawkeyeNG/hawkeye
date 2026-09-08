@@ -47,5 +47,7 @@
   "note.case.resolved.body": "{code} · {contest} — {say}.",
   "case.outcome.upheld": "ìgwè mmadụ kagburu ya (a kwadoro aghụghọ)",
   "case.outcome.cleared": "ìgwè mmadụ kwụsịrị ya",
-  "case.outcome.unresolved": "a dozighị ya (enweghị ọnụọgụ zuru ezu)"
+  "case.outcome.unresolved": "a dozighị ya (enweghị ọnụọgụ zuru ezu)",
+  "note.result.bodyTally": "A kọrọ nsonaazụ na {where}. Ngụkọta dị ugbu a n’ebe {units}: {tally}.",
+  "tg.newReportTally": "Akụkọ {label} ọhụrụ — {where}. Ngụkọta dị ugbu a n’ebe {units}: {tally}."
 }

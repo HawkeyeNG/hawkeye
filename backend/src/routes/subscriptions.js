@@ -56,6 +56,58 @@ const reportScope = (pu, contest) =>
   scopeIsState(contest) ? pu.state : contest === 'SEN' ? pu.senatorial : pu.federal_constituency;
 
 /**
+ * The running tally for a race, as the alert should say it.
+ *
+ * SAME EXCLUSIONS AS THE BOARD, and that matters more than it looks: a disputed
+ * result is out of the headline total on results.html (an open high-severity
+ * flag or an open case), so a tally in an alert that counted them would put a
+ * different number in someone's pocket from the one on the screen the alert
+ * links to. Two numbers for one race is worse than no number.
+ *
+ * `scope` is the region the follower picked, mapped through the same column
+ * reportScope writes — state for president/governor/assembly, senatorial
+ * district for the Senate, federal constituency for the House. Empty scope means
+ * they follow the whole race, and the tally is the whole race.
+ *
+ * Returns null when there is nothing yet to report, so the caller can send the
+ * plain sentence rather than "Running total: " followed by nothing.
+ */
+function runningTally(dbh, contest, scope) {
+  try {
+    const col = scopeIsState(contest) ? 'state' : contest === 'SEN' ? 'senatorial' : 'federal_constituency';
+    const rows = scope
+      ? dbh.prepare(`
+          SELECT r.votes_json FROM results r JOIN polling_units p ON p.pu_code = r.pu_code
+          WHERE r.contest = ? AND r.disputed = 0 AND p.${col} = ?`).all(contest, scope)
+      : dbh.prepare(
+          'SELECT votes_json FROM results WHERE contest = ? AND disputed = 0').all(contest);
+    if (!rows.length) return null;
+    const totals = {};
+    for (const row of rows) {
+      let votes = [];
+      try { votes = JSON.parse(row.votes_json) || []; } catch { continue; }
+      for (const v of votes) {
+        if (!v || !v.count) continue;
+        totals[v.party] = (totals[v.party] || 0) + v.count;
+      }
+    }
+    const ranked = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    if (!ranked.length) return null;
+    /* THREE PARTIES, NOT ALL OF THEM. A push notification is truncated by the
+       operating system at a length neither we nor the reader controls, and a
+       tally cut off mid-party reads as a result rather than as a fragment. The
+       board carries the full field, one tap away. */
+    const top = ranked.slice(0, 3).map(([party, n]) => `${party} ${n.toLocaleString('en-NG')}`);
+    return { tally: top.join(' \u00b7 '), units: rows.length };
+  } catch {
+    // A tally is an enrichment. If this throws on election night the alert must
+    // still go out — the follower needs to know a result landed far more than
+    // they need the number attached to it.
+    return null;
+  }
+}
+
+/**
  * Tell everyone following this race that a report landed.
  *
  * THIS USED TO REACH TELEGRAM AND NOWHERE ELSE, and the promise it was breaking
@@ -81,20 +133,40 @@ export function notifySubscribers(dbh, { contest, pu, exceptObserverId = null })
 
   // EVERY subscriber, whether or not they use Telegram. Active observers only —
   // a suspended account should not be pushed to.
+  /* MIN(s.state), not DISTINCT observer_id: someone can follow the whole race
+     AND this region, which used to collapse to one row by accident. Grouping
+     makes that deliberate and keeps it to one notification — and MIN puts ''
+     first, so a follower of the whole race gets the whole race's number rather
+     than one region's. */
   const subs = dbh.prepare(`
-    SELECT DISTINCT s.observer_id FROM subscriptions s
+    SELECT s.observer_id, MIN(s.state) AS follows FROM subscriptions s
     JOIN observers o ON o.id = s.observer_id AND o.status = 'active'
-    WHERE s.contest = ? AND (s.state = '' OR s.state = ?)`).all(contest, scope);
-  for (const { observer_id } of subs) {
+    WHERE s.contest = ? AND (s.state = '' OR s.state = ?)
+    GROUP BY s.observer_id`).all(contest, scope);
+  /* Computed at most twice for the whole fan-out rather than once per
+     subscriber: on election night this runs on the submission path. */
+  const tallies = { whole: undefined, scoped: undefined };
+  const tallyFor = (follows) => {
+    const k = follows ? 'scoped' : 'whole';
+    if (tallies[k] === undefined) tallies[k] = runningTally(dbh, contest, follows || '');
+    return tallies[k];
+  };
+  for (const { observer_id, follows } of subs) {
     // NOT THE PERSON WHO JUST FILED IT. Being notified of your own report is
     // noise, and on a quiet race it would be most of the notifications someone
     // receives.
     if (exceptObserverId && observer_id === exceptObserverId) continue;
     try {
+      const running = tallyFor(follows);
       pushNote(observer_id, {
         kind: 'result',
-        titleKey: 'note.result.title', bodyKey: 'note.result.body',
-        params: { label, where },
+        titleKey: 'note.result.title',
+        // The plain sentence when there is nothing to count yet — "Running
+        // total:" followed by nothing is worse than not saying it.
+        bodyKey: running ? 'note.result.bodyTally' : 'note.result.body',
+        params: running
+          ? { label, where, tally: running.tally, units: running.units.toLocaleString('en-NG') }
+          : { label, where },
         // The board for this race, not the generic log — the reader followed a
         // specific race and this is the screen about it.
         url: `https://hawkeye.com.ng/results.html?contest=${encodeURIComponent(contest)}`
@@ -112,7 +184,13 @@ export function notifySubscribers(dbh, { contest, pu, exceptObserverId = null })
   if (!chats.length) return;
   // Per row, not once: the people following a race do not share a language.
   for (const { chat_id, lang } of chats) {
-    const msg = t(normalise(lang) || DEFAULT_LANG, 'tg.newReport', { label, where });
+    /* The same words the push and the Alerts row got. A follower linked to
+       Telegram should not receive a thinner message than one who is not. */
+    const running = runningTally(dbh, contest, scope);
+    const msg = running
+      ? t(normalise(lang) || DEFAULT_LANG, 'tg.newReportTally',
+        { label, where, tally: running.tally, units: running.units.toLocaleString('en-NG') })
+      : t(normalise(lang) || DEFAULT_LANG, 'tg.newReport', { label, where });
     tgSendMessage(chat_id, msg).catch(() => {});
   }
 }

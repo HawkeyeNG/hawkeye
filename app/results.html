@@ -90,33 +90,33 @@
         <span class="crest" aria-hidden="true">🦅</span>
         <div class="brand-text">
           <strong>HAWKEYE</strong>
-          <span>Independent Election Results Monitor</span>
+          <span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span>
         </div>
       </a>
-      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
         onclick="const m=document.getElementById(&quot;menu-panel&quot;);const open=m.hidden;m.hidden=!open;this.setAttribute(&quot;aria-expanded&quot;,String(open));">&#9776;</button>
       <nav id="menu-panel" class="menu-panel" hidden>
-        <a href="observe.html">Report a Result</a>
-        <a href="collation.html">Report a Collation Result</a>
-        <a href="results.html">Leaderboard</a>
-        <a href="dashboard.html">Public Reports Log</a>
-        <a href="ledger.html">Verify the Ledger</a>
-        <a href="integrity.html">Election Integrity</a>
-        <a href="docket.html">Public Docket</a>
-        <a href="map-unit.html">Map a Polling Unit</a>
-        <a href="incidents.html">Report an Incident</a>
-        <a href="candidates.html">2027 Candidates</a>
-        <a href="political.html">Political Data</a>
-        <a href="how.html">How Hawkeye Works</a>
-        <a href="guide.html">Observer Guide</a>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
         <a href="faq.html">FAQ</a>
-        <a href="about.html">About & Contact</a>
-        <a href="privacy.html">Privacy & Data</a>
+        <a data-i18n="common.about-contact" href="about.html">About & Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy & Data</a>
       </nav>
     </div>
   </header>
 <main class="wrap">
-    <h1>Leaderboard</h1>
+    <h1 data-i18n="common.leaderboard">Leaderboard</h1>
     <!-- The "Tentative and unofficial" block is gone: the .gov-disclaimer bar on
          every page makes the same claim in one line, and its modal states it in
          full. The disputed-results detail lives on docket.html, where it can be
@@ -133,8 +133,8 @@
          every other handler already reads (refresh(), the Follow button). The
          picker writes to it and calls refresh(), so nothing downstream changed. -->
     <div hidden>
-      <label for="sel-contest">Election</label>
-      <select id="sel-contest"><option value="">Loading elections…</option></select>
+      <label data-i18n="results.election" for="sel-contest">Election</label>
+      <select id="sel-contest"><option data-i18n="results.loading-elections" value="">Loading elections…</option></select>
     </div>
 
     <div class="race-card">
@@ -152,7 +152,7 @@
     <div class="card" id="race-picker" hidden>
       <!-- "Choose any race to see its board" said what the heading above and the
            list below already say. What is left is the only non-obvious part. -->
-      <p class="hint" style="margin-top:0">Unopened races can be viewed — they simply have no results yet.</p>
+      <p data-i18n="results.unopened-races-can-be-viewed-they" class="hint" style="margin-top:0">Unopened races can be viewed — they simply have no results yet.</p>
       <div id="race-list"></div>
     </div>
 
@@ -176,7 +176,7 @@
          vanished — a Follow-all-109 button briefly offered on every load. The
          safe default is the restrictive one. -->
     <div class="toolbar" id="follow" style="display:none">
-      <select id="sel-scope" aria-label="Filter the leaderboard by state or district" style="width:auto;min-width:200px"><option value="">Everywhere</option></select>
+      <select data-i18n-attr="aria-label:results.filter-the-leaderboard-by-state-or" id="sel-scope" aria-label="Filter the leaderboard by state or district" style="width:auto;min-width:200px"><option data-i18n="results.everywhere" value="">Everywhere</option></select>
       <button id="btn-follow" class="secondary" style="width:auto;margin:0">🔔 Follow</button>
     </div>
     <p id="follow-msg" class="hint"></p>
@@ -240,14 +240,14 @@
     </div>
 
     <div class="card">
-      <h2>Data at a Glance</h2>
-      <div id="glance" class="glance"><p class="meta">Charts appear as soon as reports arrive.</p></div>
+      <h2 data-i18n="results.data-at-a-glance">Data at a Glance</h2>
+      <div id="glance" class="glance"><p data-i18n="results.charts-appear-as-soon-as-reports" class="meta">Charts appear as soon as reports arrive.</p></div>
     </div>
 
     <div class="card" id="gaps-card" hidden>
       <!-- Both rewritten by loadGaps() — the noun depends on the contest's scope. -->
       <h2 id="gaps-title">Help Cover These States</h2>
-      <p class="hint" id="gaps-hint">These states have no reports yet for this election. Voting or observing in one? Be the first. <a href="observe.html?intent=observe">Become an observer →</a></p>
+      <p class="hint" id="gaps-hint">These states have no reports yet for this election. Voting or observing in one? Be the first. <a data-i18n="common.become-an-observer" href="observe.html?intent=observe">Become an observer →</a></p>
       <!-- THE COUNT IS THE POINT; THE LIST IS THE DETAIL.
            On a Senate board this printed all 109 district names inline, which
            buried the sentence that actually says how far coverage has got and
@@ -277,13 +277,13 @@
     </div>
 
     <div class="card">
-      <h2>Party Totals</h2>
+      <h2 data-i18n="results.party-totals">Party Totals</h2>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>#</th><th>Party</th><th class="num">Votes</th><th class="num">Share</th><th class="num" id="led-col">States&nbsp;led</th></tr>
+            <tr><th>#</th><th data-i18n="results.party">Party</th><th data-i18n="results.votes" class="num">Votes</th><th data-i18n="index.share" class="num">Share</th><th class="num" id="led-col">States&nbsp;led</th></tr>
           </thead>
-          <tbody id="board-rows"><tr><td colspan="5" class="meta">No reports yet.</td></tr></tbody>
+          <tbody id="board-rows"><tr><td data-i18n="results.no-reports-yet" colspan="5" class="meta">No reports yet.</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -293,14 +293,14 @@
   <footer class="gov-footer">
     <div class="wrap">
       <nav>
-        <a href="observe.html">Report a result</a>
-        <a href="results.html">Public results</a>
-        <a href="dashboard.html">Public Reports Log</a>
-        <a href="ledger.html">Verify the Ledger</a>
-        <a href="political.html">Political data</a>
+        <a data-i18n="observe.report-a-result" href="observe.html">Report a result</a>
+        <a data-i18n="observe.public-results" href="results.html">Public results</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="observe.political-data" href="political.html">Political data</a>
       </nav>
-      <p>Party emblems are used for identification only. Auto-refreshes every 30 seconds.</p>
-    <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+      <p data-i18n="results.party-emblems-are-used-for-identification">Party emblems are used for identification only. Auto-refreshes every 30 seconds.</p>
+    <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
     </div>
   </footer>
 
@@ -1253,6 +1253,8 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
+  <script src="/i18n.js?v=2"></script>
+  <script src="/lang.js?v=2"></script>
   <script src="menu.js?v=165"></script>
 </body>
 </html>

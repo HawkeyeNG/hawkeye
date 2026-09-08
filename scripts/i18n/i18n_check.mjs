@@ -12,11 +12,19 @@ const cat = JSON.parse(fs.readFileSync('/home/elrio/hawkeye/scripts/i18n/catalog
 /* Deliberately NOT translated. Legal and evidential wording goes to a human
    translator or stays in English; a mistranslated disclaimer is a legal
    exposure. These render from the English in the markup. */
-const ENGLISH_ONLY = [
+const ENGLISH_ONLY_KEYS = [
   'common.hawkeye-is-an-independent-transparency-initiative',
   'common.hawkeye-is-an-independent-transparency-initiative-2',
+  'common.hawkeye-is-an-independent-transparency-initiative-3',
   'index.not-affiliated-with-inec-or-any',
 ];
+/* Whole pages, not single strings: the privacy policy and the terms are the
+   documents a mistranslation is most expensive in, and every sentence of them
+   is legal text. Their shared header, menu and footer still translate, because
+   those strings are `common.*` and live on twenty other pages. */
+const ENGLISH_ONLY_PAGES = ['privacy', 'terms'];
+const isEnglishOnly = (k) => ENGLISH_ONLY_KEYS.includes(k)
+  || ENGLISH_ONLY_PAGES.includes(k.split('.')[0]);
 
 const UI = {
   'lang.title': 'Choose your language',
@@ -34,6 +42,20 @@ const UI = {
   'lang.name.ig': 'Igbo',
   'lang.name.yo': 'Yoruba',
   'lang.name.pcm': 'Nigerian Pidgin',
+
+  /* The shell chrome menu.js builds at runtime. It has no markup for the
+     extractor to scan, so its keys are declared here or they exist in the
+     bundles and nowhere else. */
+  'nav.home': 'Home',
+  'nav.results': 'Results',
+  'nav.report': 'Report',
+  'nav.alerts': 'Alerts',
+  'nav.more': 'More',
+  'nav.what-are-you-reporting': 'What are you reporting?',
+  'nav.photograph-result-sheet-at-your-unit': 'Photograph result sheet at your unit',
+  'nav.photo-or-video-of-what-you-witnessed': 'Photo or video of what you witnessed',
+  'nav.report-a-collation': 'Report a Collation',
+  'nav.ward-or-lga-collation-announcement': 'Ward or LGA collation announcement',
 };
 
 if (process.argv.includes('--build-en')) {
@@ -43,7 +65,8 @@ if (process.argv.includes('--build-en')) {
       code: 'en',
       review: 'source',
       note: 'The source strings, and the key set translators work from. English also lives in the HTML as the fallback, so this file is never fetched at runtime — a missing key renders the English already on the page.',
-      englishOnly: ENGLISH_ONLY,
+      englishOnly: ENGLISH_ONLY_KEYS,
+      englishOnlyPages: ENGLISH_ONLY_PAGES,
       englishOnlyReason: 'Legal and evidential wording: the INEC disclaimer and the non-affiliation notice. A mistranslated disclaimer is a legal exposure. These stay in English until a human translator signs for them.',
     },
     ...UI,
@@ -69,14 +92,24 @@ for (const code of ['ha', 'ig', 'yo']) {
   }
   const keys = Object.keys(b).filter((k) => k !== '_meta');
   const orphan = keys.filter((k) => !enKeys.has(k));
-  const missing = [...enKeys].filter((k) => !keys.includes(k) && !ENGLISH_ONLY.includes(k));
+  const missing = [...enKeys].filter((k) => !keys.includes(k) && !isEnglishOnly(k));
   /* Legitimately identical to English in the target language: loanwords, the
      Igbo glossary's own choice for "Ward", and product names. Listed so the
      check stays a real check — anything else matching English is a gap. */
+  /* Identifiers, handles, URLs and third-party field names, which must read the
+     same in every language — "App ID" is what the admin is copying out of
+     Facebook's own console, and a translated Play Store link is a broken one. */
+  const IDENTIFIERS = [
+    'about.hawkeyengbot', 'admin.https-play-google-com-store-apps',
+    'common.app-id', 'common.app-secret', 'common.https-hawkeye-com-ng-media',
+    'common.info-hawkeye-com-ng', 'common.meta-facebook-instagram', 'common.tiktok',
+    'common.x-admin-secret', 'common.x-twitter', 'meta.https-hawkeye-com-ng',
+    'support.qr', 'download.hawkeye-lite', 'download.7-9-mb', 'tiktok.self-only', 'tiktok.public-to-everyone-after-audit',
+  ];
   const SAME_OK = {
-    ha: ['common.menu', 'index.iphone-ipad'],
-    ig: ['common.menu', 'common.ward', 'index.iphone-ipad'],
-    yo: ['index.iphone-ipad'],
+    ha: ['common.menu', 'index.iphone-ipad', ...IDENTIFIERS],
+    ig: ['common.menu', 'common.ward', 'index.iphone-ipad', ...IDENTIFIERS],
+    yo: ['index.iphone-ipad', ...IDENTIFIERS],
   };
   const untranslated = keys.filter((k) => b[k] === en[k]
     && !/^(lang\.name\.|observe\.(sms|telegram|whatsapp))/.test(k)

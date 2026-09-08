@@ -95,6 +95,13 @@ function scan(page, onHit) {
   let out = text.replace(
     new RegExp('<(' + TAGS + ')((?:\\s[^<>]*)?)>([^<>]+)</\\1>', 'g'),
     (m, tag, attrs, inner) => {
+      /* A page that has already been through this carries the answer. Report
+         its key so later pages reuse it — otherwise "Public Docket", keyed
+         common.public-docket on observe.html, would be keyed again as
+         faq.public-docket the first time it is met on an unprocessed page, and
+         the same sentence would need translating twice. */
+      const had = /\sdata-i18n="([^"]+)"/.exec(attrs);
+      if (had) { onHit(norm(inner), 'existing', had[1]); return m; }
       if (/data-i18n/.test(attrs) || !worth(inner) || dynamic(attrs)) return m;
       const k = onHit(norm(inner), 'text');
       return k ? '<' + tag + ' data-i18n="' + k + '"' + attrs + '>' + inner + '</' + tag + '>' : m;
@@ -102,6 +109,8 @@ function scan(page, onHit) {
   );
   for (const a of ATTRS) {
     out = out.replace(new RegExp('<([a-z][a-z0-9-]*)((?:\\s[^<>]*)?)\\s' + a + '="([^"]+)"', 'g'), (m, tag, attrs, val) => {
+      const had = new RegExp('\\sdata-i18n-attr="' + a + ':([^"]+)"').exec(m);
+      if (had) { onHit(norm(val), 'existing', had[1]); return m; }
       if (/data-i18n/.test(m) || !worth(val)) return m;
       const k = onHit(norm(val), 'attr');
       return k ? '<' + tag + ' data-i18n-attr="' + a + ':' + k + '"' + attrs + ' ' + a + '="' + val + '"' : m;
@@ -110,25 +119,29 @@ function scan(page, onHit) {
   return { orig, out: out.replace(/ HOLE(\d+) /g, (m, i) => holes[Number(i)]) };
 }
 
-// ---- pass 1: which strings appear on more than one page? --------------------
+// ---- pass 1: which strings appear on more than one page, and what is keyed? -
 const seen = new Map();
+const existing = new Map();
 for (const page of pages) {
-  scan(page, (s) => {
+  scan(page, (s, kind, key) => {
     if (!seen.has(s)) seen.set(s, new Set());
     seen.get(s).add(page);
+    if (kind === 'existing') existing.set(s, key);
     return null;
   });
 }
 
 // ---- pass 2: assign keys and write -----------------------------------------
 const catalogue = new Map();
-const byText = new Map();
+const byText = new Map(existing);
+for (const [s, k] of existing) catalogue.set(k, s);
 const report = [];
 
 for (const page of pages) {
   const name = page.replace(/\.html$/, '');
   let added = 0;
-  const { orig, out } = scan(page, (s) => {
+  const { orig, out } = scan(page, (s, kind) => {
+    if (kind === 'existing') return null;          // already keyed in the markup
     if (byText.has(s)) { added++; return byText.get(s); }
     const scope = seen.get(s).size > 1 ? 'common' : name;
     let k = scope + '.' + slug(s);
@@ -154,5 +167,5 @@ console.log('\nunique strings: ' + catalogue.size + '  (shared chrome: ' + share
 if (WRITE) {
   fs.writeFileSync('/home/elrio/hawkeye/scripts/i18n/catalogue.json',
     JSON.stringify(Object.fromEntries([...catalogue].sort()), null, 2));
-  console.log('catalogue -> tmp/catalogue.json');
+  console.log('catalogue -> scripts/i18n/catalogue.json');
 }

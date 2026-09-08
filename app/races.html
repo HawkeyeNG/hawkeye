@@ -71,44 +71,44 @@
   <header class="gov-header">
     <div class="wrap brand-row">
       <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
-        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div></a>
-      <button class="menu-btn" aria-label="Menu" aria-expanded="false"
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
         onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
       <nav id="menu-panel" class="menu-panel" hidden>
-        <a href="observe.html">Report a Result</a>
-        <a href="collation.html">Report a Collation Result</a>
-        <a href="results.html">Leaderboard</a>
-        <a href="dashboard.html">Public Reports Log</a>
-        <a href="ledger.html">Verify the Ledger</a>
-        <a href="integrity.html">Election Integrity</a>
-        <a href="docket.html">Public Docket</a>
-        <a href="map-unit.html">Map a Polling Unit</a>
-        <a href="incidents.html">Report an Incident</a>
-        <a href="candidates.html">2027 Candidates</a>
-        <a href="political.html">Political Data</a>
-        <a href="how.html">How Hawkeye Works</a>
-        <a href="guide.html">Observer Guide</a>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
         <a href="faq.html">FAQ</a>
-        <a href="about.html">About & Contact</a>
-        <a href="privacy.html">Privacy & Data</a>
+        <a data-i18n="common.about-contact" href="about.html">About & Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy & Data</a>
       </nav>
     </div>
   </header>
 <main class="wrap">
-    <h1>Races</h1>
+    <h1 data-i18n="races.races">Races</h1>
     <p class="lede">Pick a race to follow, report on, or verify.<button
       class="info-i" data-info-title="How races are grouped"
       data-info="Ongoing is an election being reported today. Upcoming is one whose polling day is still ahead. Completed is one whose polling day has passed — its page stays up, because the record is the point. Candidate lists appear on each race's page as INEC publishes them, roughly 28 days out." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
 
-    <div class="rc-filter" id="rc-filter" role="radiogroup" aria-label="Filter races by status"></div>
-    <div id="races"><p class="hint">Loading races…</p></div>
+    <div data-i18n-attr="aria-label:races.filter-races-by-status" class="rc-filter" id="rc-filter" role="radiogroup" aria-label="Filter races by status"></div>
+    <div id="races"><p data-i18n="races.loading-races" class="hint">Loading races…</p></div>
   </main>
 
   <footer class="gov-footer"><div class="wrap">
-    <nav><a href="index.html">Home</a><a href="results.html">Leaderboard</a>
-      <a href="how.html">How Hawkeye Works</a><a href="about.html">About & Contact</a></nav>
-    <p>Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
-    <p class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+    <nav><a data-i18n="common.home" href="index.html">Home</a><a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+      <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a><a data-i18n="common.about-contact" href="about.html">About & Contact</a></nav>
+    <p data-i18n="common.hawkeye-is-an-independent-transparency-initiative-2">Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+    <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
   </div></footer>
 
   <script>
@@ -323,6 +323,8 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
+  <script src="/i18n.js?v=2"></script>
+  <script src="/lang.js?v=2"></script>
   <script src="menu.js?v=165"></script>
 </body>
 </html>

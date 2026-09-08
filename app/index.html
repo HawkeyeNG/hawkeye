@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#00251a" />
   <meta name="description" content="Hawkeye — independent, crowd-verified monitoring of polling unit results in Nigeria. Observe, follow live results, get alerts." />
-  <title>Hawkeye — Independent Election Results Monitor</title>
+  <title data-i18n="index.title">Hawkeye — Independent Election Results Monitor</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -209,9 +209,9 @@
   <div class="home-obs">
     <section class="home-hero">
       <div class="wrap">
-        <h1 id="home-greet">Welcome Back</h1>
-        <p class="sub" id="home-sub">Your polling unit is your post — here's today's picture.</p>
-        <a class="unit-chip" id="home-unit-chip" href="map-unit.html"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Save Your Polling Unit</a>
+        <h1 id="home-greet" data-i18n="index.welcome-back">Welcome Back</h1>
+        <p class="sub" id="home-sub" data-i18n="index.your-polling-unit-is-your-post">Your polling unit is your post — here's today's picture.</p>
+        <a class="unit-chip" id="home-unit-chip" href="map-unit.html" data-i18n-html="index.save-your-polling-unit"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Save Your Polling Unit</a>
       </div>
     </section>
     <main class="wrap">
@@ -233,11 +233,11 @@
       <div class="home-cols">
         <div class="home-stack">
           <div class="home-card">
-            <h2>Latest Alerts <a data-i18n="index.all-alerts" href="notifications.html">All Alerts →</a></h2>
+            <h2><span data-i18n="index.latest-alerts">Latest Alerts</span> <a data-i18n="index.all-alerts" href="notifications.html">All Alerts →</a></h2>
             <div id="home-alerts"><p data-i18n="index.loading" class="home-empty">Loading…</p></div>
           </div>
           <div class="home-card">
-            <h2>My Activity <a data-i18n="index.my-profile" href="profile.html">My Profile →</a></h2>
+            <h2><span data-i18n="index.my-activity">My Activity</span> <a data-i18n="index.my-profile" href="profile.html">My Profile →</a></h2>
             <div class="mystats">
               <div><strong id="ms-reports">0</strong><span data-i18n="index.result-reports">result reports</span></div>
               <div><strong id="ms-incidents">0</strong><span data-i18n="index.incidents">incidents</span></div>
@@ -246,7 +246,7 @@
           </div>
         </div>
         <div class="home-card">
-          <h2>Live on the Ledger <a data-i18n="index.all-reports" href="dashboard.html">All Reports →</a></h2>
+          <h2><span data-i18n="index.live-on-the-ledger">Live on the Ledger</span> <a data-i18n="index.all-reports" href="dashboard.html">All Reports →</a></h2>
           <div id="home-ledger"><p data-i18n="index.no-reports-on-the-ledger-yet" class="home-empty">No reports on the ledger yet — yours could be first.</p></div>
         </div>
       </div>
@@ -281,8 +281,8 @@
   <section class="hero hero-fold">
     <div class="wrap hero-grid">
       <div>
-        <p class="hero-badge"><span class="live-dot"></span> Monitoring the 2027 general elections</p>
-        <h1>The count at your polling unit,<br /><em data-i18n="index.witnessed-and-unchangeable">witnessed and unchangeable.</em></h1>
+        <p class="hero-badge"><span class="live-dot"></span> <span data-i18n="index.monitoring-the-2027-general-elections">Monitoring the 2027 general elections</span></p>
+        <h1><span data-i18n="index.the-count-at-your-polling-unit">The count at your polling unit,</span><br /><em data-i18n="index.witnessed-and-unchangeable">witnessed and unchangeable.</em></h1>
         <p data-i18n="index.photograph-sign-and-publish-the-results" class="hero-sub">Photograph, sign and publish the results announced at your polling unit.
         Independent reports must agree before a count is trusted — and every report lives on a
         public ledger nobody can edit.</p>
@@ -292,7 +292,7 @@
         </div>
         <!-- Returning observers: one quiet line, not a third button — it must not
              compete with the primary CTA for first-time visitors. -->
-        <p class="hero-signin">Already an observer? <a data-i18n="index.sign-in" href="observe.html?intent=signin">Sign in</a></p>
+        <p class="hero-signin"><span data-i18n="index.already-an-observer">Already an observer?</span> <a data-i18n="index.sign-in" href="observe.html?intent=signin">Sign in</a></p>
         <!-- The emoji "🎓 practice run" and "🔔 Get Alerts" rows were removed: five
              stacked calls-to-action diluted the primary one, the emoji made the
              page read like sticky notes, and together they pushed the fold ~200px
@@ -345,10 +345,10 @@
                  note on .pwa-lede. -->
             <p data-i18n="index.run-it-from-your-home-screen" class="pwa-note" style="margin-top:0">Run it from your home screen, with no store and no download:</p>
             <ol>
-              <li>Open <strong>hawkeye.com.ng</strong> in <strong>Chrome</strong>.</li>
-              <li>Tap the <strong>⋮</strong> menu, top-right.</li>
-              <li>Tap <strong data-i18n="index.install-app">Install app</strong> (or <strong data-i18n="index.add-to-home-screen">Add to Home screen</strong>).</li>
-              <li>Tap <strong data-i18n="index.install">Install</strong> to confirm.</li>
+              <li data-i18n-html="index.install-step-open-chrome">Open <strong>hawkeye.com.ng</strong> in <strong>Chrome</strong>.</li>
+              <li data-i18n-html="index.install-step-tap-menu">Tap the <strong>⋮</strong> menu, top-right.</li>
+              <li data-i18n-html="index.install-step-tap-install-app">Tap <strong>Install app</strong> (or <strong>Add to Home screen</strong>).</li>
+              <li data-i18n-html="index.install-step-tap-install-confirm">Tap <strong>Install</strong> to confirm.</li>
             </ol>
             <!-- Samsung Internet is the default browser on every Samsung handset
                  and is widely used here, so this is not an edge case. Its PWA
@@ -357,11 +357,7 @@
                  manifest installs cleanly in Chrome and on iPhone. Said plainly,
                  because an unexplained "unsafe app" warning on an election tool
                  reads as proof of exactly what our critics claim. -->
-            <p class="pwa-note" style="border-left:3px solid var(--amber-border,#d4770c);padding-left:10px">
-              <strong data-i18n="index.use-chrome-not-samsung-internet">Use Chrome, not Samsung Internet.</strong> Samsung's browser
-              builds the home-screen app in a way Android rejects, so it shows an
-              “unsafe app” warning. Nothing is wrong with Hawkeye — Chrome installs
-              it cleanly, and so does the direct download below.</p>
+            <p class="pwa-note" data-i18n-html="index.use-chrome-note" style="border-left:3px solid var(--amber-border,#d4770c);padding-left:10px"><strong>Use Chrome, not Samsung Internet.</strong> Samsung’s browser builds the home-screen app in a way Android rejects, so it shows an “unsafe app” warning. The same site installs cleanly in Chrome.</p>
             <!-- Direct APK, served from our OWN domain rather than a file-sharing
                  link. An election tool asking people to install software from a
                  third-party drive link is indistinguishable from the phishing it
@@ -397,18 +393,16 @@
             <p data-i18n="index.safari-installs-it-to-your-home" class="pwa-note" id="pwa-ios-note" style="margin-top:0">Safari installs it to your home screen,
               and it works the same way:</p>
             <ol>
-              <li>Open <strong>hawkeye.com.ng</strong> in <strong>Safari</strong>.
-                <em data-i18n="index.chrome-and-firefox-on-iphone-cannot">Chrome and Firefox on iPhone cannot install it — it must be Safari.</em></li>
-              <li>Tap the <strong data-i18n="index.share">Share</strong> button (the square with an arrow) at the
-                bottom of the screen.</li>
-              <li>Scroll down and tap <strong data-i18n="index.add-to-home-screen-2">Add to Home Screen</strong>.</li>
-              <li>Tap <strong data-i18n="index.add">Add</strong>, top-right.</li>
+              <li data-i18n-html="index.install-step-open-safari">Open <strong>hawkeye.com.ng</strong> in <strong>Safari</strong>. <em>Chrome and Firefox on iPhone cannot install it — it must be Safari.</em></li>
+              <li data-i18n-html="index.install-step-tap-share">Tap the <strong>Share</strong> button (the square with an arrow) at the bottom of the screen.</li>
+              <li data-i18n-html="index.install-step-add-to-home">Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+              <li data-i18n-html="index.install-step-tap-add">Tap <strong>Add</strong>, top-right.</li>
             </ol>
           </section>
 
           <p data-i18n="index.the-hawkeye-icon-then-sits-on" class="pwa-foot">The Hawkeye icon then sits on your home screen and opens
             full-screen. Alerts work once it has been added.</p>
-          <button type="button" class="gov-disc-close" id="install-modal-close">Close</button>
+          <button type="button" class="gov-disc-close" id="install-modal-close" data-i18n="common.close">Close</button>
         </dialog>
       </div>
       <div class="ledger-stack" id="ledger-stack" aria-hidden="true"></div>
@@ -426,9 +420,9 @@
   <!-- How it works -->
   <section class="how-sec">
     <div class="wrap">
-      <p class="kicker reveal">How it works</p>
-      <h2 class="reveal">Three Steps to a Rig-proof Record</h2>
-      <p class="sec-sub reveal">No training required. If you can take a photo, you can defend the vote at your polling unit.</p>
+      <p class="kicker reveal" data-i18n="index.how-it-works-kicker">How it works</p>
+      <h2 class="reveal" data-i18n="index.three-steps-to-a-rig-proof-record">Three Steps to a Rig-proof Record</h2>
+      <p class="sec-sub reveal" data-i18n="index.no-training-required">No training required. If you can take a photo, you can defend the vote at your polling unit.</p>
       <div class="steps">
         <div class="step reveal"><div class="num">1</div><h3 data-i18n="index.witness-the-count">Witness the Count</h3>
           <p data-i18n="index.stay-for-the-public-counting-after">Stay for the public counting after voting closes. Photograph the result sheet (EC8A) the moment it's announced.</p></div>
@@ -451,8 +445,8 @@
       <div class="reveal">
         <p data-i18n="index.why-trust-it" class="kicker">Why trust it</p>
         <h2 data-i18n="index.built-so-nobody-including-us-can">Built so nobody — including us — can quietly change a number</h2>
-        <p>Every report is chained to the one before it on a public ledger. Change anything and the
-        chain breaks visibly. Anyone can verify it — no permission needed.
+        <p><span data-i18n="index.every-report-is-chained">Every report is chained to the one before it on a public ledger. Change anything and the
+        chain breaks visibly. Anyone can verify it — no permission needed.</span>
         <a data-i18n="index.verify-the-ledger-yourself" class="link" style="color: var(--accent)" href="ledger.html">Verify the Ledger Yourself →</a></p>
       </div>
       <ul class="tick-list reveal">
@@ -468,7 +462,7 @@
   <!-- CTA -->
   <section class="cta-band">
     <div class="wrap reveal">
-      <h2>2027 is decided at the polling unit.<br />Be there. Be counted.</h2>
+      <h2><span data-i18n="index.2027-is-decided-at-the-polling-unit">2027 is decided at the polling unit.</span><br /><span data-i18n="index.be-there-be-counted">Be there. Be counted.</span></h2>
       <p data-i18n="index.signing-up-takes-two-minutes-all">Signing up takes two minutes. All you need is a phone.</p>
       <a data-i18n="index.become-an-observer" class="btn-primary" href="observe.html?intent=observe">Become an observer</a>
     </div>
@@ -566,13 +560,27 @@
         document.documentElement.classList.remove('obs-home');
         return;
       }
-      document.getElementById('home-greet').textContent = 'Welcome back, Observer #' + me.observerId;
-      if (me.unit) {
-        const u = me.unit;
-        const chip = document.getElementById('home-unit-chip');
-        chip.textContent = `📍 ${u.name || u.pu_code} · ${u.lga || ''}${u.state ? ', ' + u.state : ''}`;
-        document.getElementById('home-sub').textContent = 'Alerts are on for your unit — you\'ll hear the moment anything is reported there.';
-      }
+      /**
+       * PERSONALISED, SO IT CANNOT LIVE IN THE MARKUP — and the markup version
+       * IS keyed, which means i18n.js's apply() rewrites these three elements
+       * back to their generic text on every language change. Re-painting on
+       * 'hawkeye-lang' is what keeps the personal text: i18n.js dispatches that
+       * event immediately AFTER apply(), so this always runs last.
+       */
+      const tt = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+      const paintHome = () => {
+        document.getElementById('home-greet').textContent =
+          tt('index.welcome-back-observer', 'Welcome back, Observer #{id}').replace('{id}', me.observerId);
+        if (me.unit) {
+          const u = me.unit;
+          const chip = document.getElementById('home-unit-chip');
+          chip.textContent = `📍 ${u.name || u.pu_code} · ${u.lga || ''}${u.state ? ', ' + u.state : ''}`;
+          document.getElementById('home-sub').textContent =
+            tt('index.alerts-are-on-for-your-unit', 'Alerts are on for your unit — you\'ll hear the moment anything is reported there.');
+        }
+      };
+      paintHome();
+      document.addEventListener('hawkeye-lang', paintHome);
       document.getElementById('ms-reports').textContent = (me.reports || []).length + (me.collation || []).length;
       document.getElementById('ms-incidents').textContent = (me.incidents || []).length;
       document.getElementById('ms-races').textContent = (me.subscriptions || []).length;

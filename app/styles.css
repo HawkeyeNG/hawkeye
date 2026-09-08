@@ -843,6 +843,20 @@ button.theme-btn {
   display: inline-flex; align-items: center; justify-content: center;
 }
 button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); filter: none; }
+/* The language button wears .theme-btn for the box and adds only what a
+   two-letter code needs: it cannot be a 36px square because "PCM" is three
+   characters, so the width goes auto with the square as a floor. */
+button.lang-btn {
+  width: auto; min-width: 36px; padding: 0 9px;
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+}
+/* ONE FLEX PUSH, the same rule the bell and Sign in already need. The group is
+   [bell|Sign in][lang][theme][menu] and only its leftmost member may carry the
+   auto margin. The existing `a.bell-btn + button.theme-btn` and
+   `a.signin-btn + button.theme-btn` rules already neutralise THIS button when
+   it follows one of those (it is a button.theme-btn too); this is the pair they
+   cannot see — theme following lang. */
+button.lang-btn + button.theme-btn { margin-left: 0; }
 /* The bell is an <a>, so it was inheriting the UA's default link blue
    (rgb(0,0,238)) on a dark green header — effectively invisible. Match the
    theme button: white, same 36px bordered box, same hover. */

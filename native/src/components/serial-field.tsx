@@ -1,6 +1,7 @@
 import { Text, TextInput, View } from 'react-native';
 
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * The form serial, offered for confirmation beside the figures.
@@ -61,7 +62,7 @@ export function SerialField({
         <Text className="flex-1 text-sm font-bold text-ink">{label}</Text>
         {fromSheet ? (
           <View className="rounded-full bg-surface px-2 py-0.5">
-            <Text className="text-[9px] font-bold text-hawk-leaf">FROM SHEET</Text>
+            <Text className="text-[9px] font-bold text-hawk-leaf">{i18nT('n.app.report.result.from-sheet')}</Text>
           </View>
         ) : null}
       </View>

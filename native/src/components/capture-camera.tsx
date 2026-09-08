@@ -11,6 +11,7 @@ import type { Shot } from '@/lib/submit';
 import { describeFixFailure, trySubmitFix, type FixFailure } from '@/lib/location';
 import { BRAND } from '@/lib/api';
 import { MAX_VIDEO_SECONDS, compressVideo } from '@/lib/media-compress';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * In-app capture with a GPS stamp taken at capture time — the property the
@@ -367,7 +368,7 @@ export function CaptureCamera({
                   .finally(() => setAsked(true));
               }}
             >
-              <Text className="text-base font-bold text-hawk-ink">Try again</Text>
+              <Text className="text-base font-bold text-hawk-ink">{i18nT('n.app._layout.try-again')}</Text>
             </Pressable>
             <Pressable
               className="mt-4"
@@ -375,7 +376,7 @@ export function CaptureCamera({
                 void Linking.openSettings().catch(() => {});
               }}
             >
-              <Text className="text-sm font-bold text-hawk-gold">Open Settings</Text>
+              <Text className="text-sm font-bold text-hawk-gold">{i18nT('n.components.capture-camera.open-settings')}</Text>
             </Pressable>
           </>
         ) : (
@@ -385,7 +386,7 @@ export function CaptureCamera({
               void Linking.openSettings().catch(() => {});
             }}
           >
-            <Text className="text-base font-bold text-hawk-ink">Open Settings</Text>
+            <Text className="text-base font-bold text-hawk-ink">{i18nT('n.components.capture-camera.open-settings')}</Text>
           </Pressable>
         )}
         {/* A denied camera must not dead-end a flow that has an escape (the
@@ -398,7 +399,7 @@ export function CaptureCamera({
         {/* Fixed neutral, not text-faint: this screen is always black, and
             --faint follows the theme down to #6e8076 (2.5:1 on black). */}
         <Pressable className="mt-3" onPress={cancel}>
-          <Text className="text-sm text-neutral-300">Cancel</Text>
+          <Text className="text-sm text-neutral-300">{i18nT('common.cancel')}</Text>
         </Pressable>
       </View>
     );
@@ -680,7 +681,7 @@ export function CaptureCamera({
               low alpha — bg-card/15 turned into a near-invisible dark-on-dark
               plate once --card followed the theme. */}
           <Pressable className="rounded-2xl bg-white/15 px-6 py-3.5" onPress={retake}>
-            <Text className="text-base font-semibold text-white">Retake</Text>
+            <Text className="text-base font-semibold text-white">{i18nT('n.app.report.collation.retake')}</Text>
           </Pressable>
           {fixState === 'failed' ? (
             <Pressable
@@ -690,7 +691,7 @@ export function CaptureCamera({
                 usePhoto();
               }}
             >
-              <Text className="text-base font-bold text-hawk-ink">Retry GPS</Text>
+              <Text className="text-base font-bold text-hawk-ink">{i18nT('n.components.capture-camera.retry-gps')}</Text>
             </Pressable>
           ) : (
             <Pressable className="rounded-2xl bg-hawk-gold px-6 py-3.5" onPress={usePhoto} disabled={busy}>
@@ -700,7 +701,7 @@ export function CaptureCamera({
               {busy ? (
                 <ActivityIndicator color={BRAND.ink} />
               ) : (
-                <Text className="text-base font-bold text-hawk-ink">Use photo</Text>
+                <Text className="text-base font-bold text-hawk-ink">{i18nT('n.components.capture-camera.use-photo')}</Text>
               )}
             </Pressable>
           )}
@@ -718,14 +719,14 @@ export function CaptureCamera({
       <View className="flex-1 items-center justify-center bg-black px-10">
         <Feather name="crop" size={30} color={BRAND.gold} />
         <Text className="pt-4 text-center text-lg font-bold text-white">{title}</Text>
-        <Text className="pt-2 text-center text-sm text-neutral-300">Opening scanner…</Text>
+        <Text className="pt-2 text-center text-sm text-neutral-300">{i18nT('n.components.capture-camera.opening-scanner')}</Text>
         <View className="pt-7">
           <ActivityIndicator color={BRAND.gold} />
         </View>
         {/* The scanner is another app's activity — if it never comes back, this
             is the only way out. Same rule as the shutter screen's Cancel. */}
         <Pressable className="mt-12" hitSlop={12} onPress={cancel}>
-          <Text className="text-base font-semibold text-white">Cancel</Text>
+          <Text className="text-base font-semibold text-white">{i18nT('common.cancel')}</Text>
         </Pressable>
       </View>
     );
@@ -951,7 +952,7 @@ export function CaptureCamera({
             className="flex-row items-center rounded-full bg-hawk-gold px-5 py-2.5 active:opacity-80"
           >
             <Feather name="crop" size={15} color={BRAND.ink} />
-            <Text className="pl-2 text-sm font-bold text-hawk-ink">Try scanner again</Text>
+            <Text className="pl-2 text-sm font-bold text-hawk-ink">{i18nT('n.components.capture-camera.try-scanner-again')}</Text>
           </Pressable>
         </View>
       ) : null}
@@ -962,7 +963,7 @@ export function CaptureCamera({
       >
         {/* Cancel is never disabled — a stuck capture must always have an exit. */}
         <Pressable hitSlop={12} onPress={cancel}>
-          <Text className="text-base font-semibold text-white">Cancel</Text>
+          <Text className="text-base font-semibold text-white">{i18nT('common.cancel')}</Text>
         </Pressable>
         <Pressable
           onPress={mode === 'picture' ? shootPhoto : toggleVideo}

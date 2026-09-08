@@ -33,6 +33,7 @@ import { describeFixFailure, trySubmitFix } from '@/lib/location';
 import { submitCollation, type CollationLevel, type Receipt, type Shot, type Vote } from '@/lib/submit';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -373,10 +374,10 @@ export default function ReportCollation() {
           className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
           onPress={() => router.push('/sign-in')}
         >
-          <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('index.sign-in')}</Text>
         </Pressable>
         <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-muted">Not now</Text>
+          <Text className="text-sm text-muted">{i18nT('lang.later')}</Text>
         </Pressable>
       </SafeScreen>
     );
@@ -458,7 +459,7 @@ export default function ReportCollation() {
           hitSlop={8}
           className="mr-1.5"
           accessibilityRole="button"
-          accessibilityLabel="Home"
+          accessibilityLabel={i18nT('nav.home')}
         >
           <Image
             source={require('@/assets/images/icon.png')}
@@ -472,7 +473,7 @@ export default function ReportCollation() {
         >
           <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">Report a Collation</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">{i18nT('nav.report-a-collation')}</Text>
       </View>
 
       {step !== 'done' ? (
@@ -515,7 +516,7 @@ export default function ReportCollation() {
                 to a Crumb, which is also how you go back. */}
             {!level ? (
               <>
-                <Prompt>Select the collation level</Prompt>
+                <Prompt>{i18nT('n.app.report.collation.select-the-collation-level')}</Prompt>
                 {LEVELS.map((l) => (
                   <Pressable
                     key={l.key}
@@ -544,7 +545,7 @@ export default function ReportCollation() {
 
             {level && !stateSel ? (
               <>
-                <Prompt>Select the state</Prompt>
+                <Prompt>{i18nT('n.app.map-unit.select-the-state')}</Prompt>
                 <View className="flex-row flex-wrap">
                   {states.map((s) => (
                     <Chip key={s} label={s} onPress={() => chooseState(s)} />
@@ -562,7 +563,7 @@ export default function ReportCollation() {
 
             {level && covered && level !== 'state' && stateSel && !lgaSel ? (
               <>
-                <Prompt>Select the LGA</Prompt>
+                <Prompt>{i18nT('n.app.map-unit.select-the-lga')}</Prompt>
                 <View className="flex-row flex-wrap">
                   {lgas.map((l) => (
                     <Chip key={l} label={l} onPress={() => setLgaSel(l)} />
@@ -577,7 +578,7 @@ export default function ReportCollation() {
 
             {level === 'ward' && lgaSel && !wardSel ? (
               <>
-                <Prompt>Select the ward</Prompt>
+                <Prompt>{i18nT('n.app.map-unit.select-the-ward')}</Prompt>
                 <View className="flex-row flex-wrap">
                   {wards.map((w) => (
                     <Chip key={w} label={w} onPress={() => setWardSel(w)} />
@@ -605,7 +606,7 @@ export default function ReportCollation() {
               onPress={continueFromScope}
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
             >
-              <Text className="text-base font-bold text-hawk-gold">Continue — choose the race</Text>
+              <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.report.collation.continue-choose-the-race')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -639,7 +640,7 @@ export default function ReportCollation() {
 
         {step === 'votes' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
-            <Text className="pb-1 text-xl font-bold text-ink">Collated Totals</Text>
+            <Text className="pb-1 text-xl font-bold text-ink">{i18nT('n.app.report.collation.collated-totals')}</Text>
             <Text className="pb-3 text-sm text-muted">
               Copy the figures exactly as announced. Leave blank for parties not listed.
             </Text>
@@ -651,7 +652,7 @@ export default function ReportCollation() {
               onChange={setFormSerial}
               proposed={readSerial}
               editable={!busy}
-              label="Form serial number"
+              label={i18nT('n.app.report.collation.form-serial-number')}
               where="top of the collation form"
             />
             <TextInput
@@ -708,14 +709,14 @@ export default function ReportCollation() {
               onPress={() => setStep('review')}
               className={`items-center rounded-2xl py-4 ${votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'}`}
             >
-              <Text className="text-base font-bold text-hawk-gold">Review report</Text>
+              <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.report.collation.review-report')}</Text>
             </Pressable>
           </View>
         ) : null}
 
         {step === 'review' ? (
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
-            <Text className="pb-3 text-xl font-bold text-ink">Confirm and Send</Text>
+            <Text className="pb-3 text-xl font-bold text-ink">{i18nT('n.app.practice.confirm-and-send')}</Text>
             <View className="mb-3 rounded-2xl bg-card px-4 py-3">
               <Text className="text-base font-semibold text-ink">
                 {levelDef?.label} collation · {levelDef?.form}
@@ -746,7 +747,7 @@ export default function ReportCollation() {
                       <Text className="text-xs font-semibold text-muted">
                         {i === 0 ? 'Collation form' : 'Venue'}
                       </Text>
-                      <Text className="text-xs font-bold text-good-ink">Retake</Text>
+                      <Text className="text-xs font-bold text-good-ink">{i18nT('n.app.report.collation.retake')}</Text>
                     </View>
                   </Pressable>
                 ) : null,
@@ -787,7 +788,7 @@ export default function ReportCollation() {
                 className="mb-3 flex-row items-center self-start rounded-xl border border-line px-3 py-2 active:opacity-70"
               >
                 <Feather name="settings" size={14} color={ui.muted} />
-                <Text className="pl-2 text-sm font-semibold text-ink">Open phone settings</Text>
+                <Text className="pl-2 text-sm font-semibold text-ink">{i18nT('n.app.map-unit.open-phone-settings')}</Text>
               </Pressable>
             ) : null}
 
@@ -807,7 +808,7 @@ export default function ReportCollation() {
               onPress={() => setStep('votes')}
               disabled={busy}
             >
-              <Text className="text-sm font-semibold text-good-ink">‹ Back to totals</Text>
+              <Text className="text-sm font-semibold text-good-ink">{i18nT('n.app.report.collation.back-to-totals')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -879,7 +880,7 @@ export default function ReportCollation() {
                 a unit result — so the receipt states the record itself. */}
             <View className="mt-3 rounded-2xl bg-card px-4 py-2">
               <View className="flex-row items-center justify-between py-1.5">
-                <Text className="text-sm text-muted">Status</Text>
+                <Text className="text-sm text-muted">{i18nT('n.app.report.collation.status')}</Text>
                 <Text
                   className={`text-sm font-bold ${queued ? 'text-warn-ink' : receipt.entryHash ? 'text-good-ink' : 'text-muted'}`}
                 >
@@ -887,18 +888,18 @@ export default function ReportCollation() {
                 </Text>
               </View>
               <View className="flex-row items-center justify-between py-1.5">
-                <Text className="text-sm text-muted">Form</Text>
+                <Text className="text-sm text-muted">{i18nT('n.app.report.collation.form')}</Text>
                 <Text className="text-sm font-bold text-ink">
                   {levelDef?.form} · {levelDef?.label} collation
                 </Text>
               </View>
               <View className="flex-row items-center justify-between py-1.5">
-                <Text className="pr-3 text-sm text-muted">Scope</Text>
+                <Text className="pr-3 text-sm text-muted">{i18nT('political.scope')}</Text>
                 <Text className="flex-1 text-right text-sm font-bold text-ink">{scopeLine}</Text>
               </View>
               {contest ? (
                 <View className="flex-row items-center justify-between py-1.5">
-                  <Text className="pr-3 text-sm text-muted">Election</Text>
+                  <Text className="pr-3 text-sm text-muted">{i18nT('results.election')}</Text>
                   {/* The ELECTION, not the contest's short name. This row was
                       labelled "Election" and printed "Governorship" — the tier,
                       which does not say which one or which year. `election` is
@@ -944,7 +945,7 @@ export default function ReportCollation() {
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
               onPress={() => router.back()}
             >
-              <Text className="text-base font-bold text-hawk-gold">Done</Text>
+              <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.map-unit.done')}</Text>
             </Pressable>
           </View>
         ) : null}

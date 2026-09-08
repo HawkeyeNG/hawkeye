@@ -31,6 +31,7 @@ import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -445,10 +446,10 @@ export default function Profile() {
           className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
           onPress={() => router.push('/sign-in')}
         >
-          <Text className="text-base font-bold text-hawk-gold">Sign in</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('index.sign-in')}</Text>
         </Pressable>
         <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-muted">Not now</Text>
+          <Text className="text-sm text-muted">{i18nT('lang.later')}</Text>
         </Pressable>
       </View>
     );
@@ -474,7 +475,7 @@ export default function Profile() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="My Profile" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('profile.my-profile')} translateY={translateY} onClose={() => router.back()} />
 
       <Animated.ScrollView
         onScroll={onScroll}
@@ -537,7 +538,7 @@ export default function Profile() {
               <Row
                 first
                 icon="key"
-                label="Password"
+                label={i18nT('common.password')}
                 value={me.hasPassword ? 'Change' : 'Not set'}
                 chevron
                 onPress={openPw}
@@ -546,7 +547,7 @@ export default function Profile() {
                   switch that would flip and change nothing. */}
               <Row
                 icon="shield"
-                label="Face ID or fingerprint to sign"
+                label={i18nT('n.app.profile.face-id-or-fingerprint-to-sign')}
                 value={bioAvailable ? (bioOn ? 'On' : 'Off') : 'Not available'}
                 onPress={bioAvailable ? toggleBio : undefined}
                 sub={
@@ -559,7 +560,7 @@ export default function Profile() {
               />
               <Row
                 icon="map-pin"
-                label="My Polling Unit"
+                label={i18nT('index.my-polling-unit')}
                 // Right-hand column only carries the empty state; a saved unit
                 // needs its whole identification, which lives in `sub`.
                 value={savedUnit ? undefined : 'None saved'}
@@ -645,7 +646,7 @@ export default function Profile() {
                     />
                   </Pressable>
                   {openSection === a.key && a.count === 0 ? (
-                    <Text className="px-4 pb-3 text-sm text-muted">Nothing yet.</Text>
+                    <Text className="px-4 pb-3 text-sm text-muted">{i18nT('n.app.profile.nothing-yet')}</Text>
                   ) : null}
                   {openSection === 'reports' && a.key === 'reports'
                     ? me.reports?.map((r, j) => (
@@ -743,7 +744,7 @@ export default function Profile() {
               <Row
                 first
                 icon="share-2"
-                label="Share Hawkeye"
+                label={i18nT('profile.share-hawkeye')}
                 value="Send it on"
                 chevron
                 onPress={shareHawkeye}
@@ -762,7 +763,7 @@ export default function Profile() {
                   control sat on its profile screen — a reviewer scanning for the
                   word never matched "identity". The concept keeps its name in the
                   line below; the control says what a reader expects. */}
-              <Text className="pl-2 text-base font-bold text-bad-ink">Delete my account</Text>
+              <Text className="pl-2 text-base font-bold text-bad-ink">{i18nT('profile.delete-my-account')}</Text>
             </Pressable>
             <Text className="pt-2 text-center text-[11px] text-faint">
               Deletes your observer identity — key and subscriptions are wiped. Ledger reports are
@@ -785,7 +786,7 @@ export default function Profile() {
             onPress={() => setConfirm('signout')}
           >
             <Feather name="log-out" size={16} color={ui.tint.good.ink} />
-            <Text className="pl-2 text-base font-bold text-good-ink">Sign out</Text>
+            <Text className="pl-2 text-base font-bold text-good-ink">{i18nT('n.app.profile.sign-out')}</Text>
           </Pressable>
         </View>
       ) : null}
@@ -793,9 +794,9 @@ export default function Profile() {
       <ConfirmSheet
         visible={confirm === 'signout'}
         icon="log-out"
-        title="Sign out?"
+        title={i18nT('n.app.profile.sign-out-2')}
         body='You can sign back in with your number and password. Your reports are unaffected.'
-        confirmLabel="Sign out"
+        confirmLabel={i18nT('n.app.profile.sign-out')}
         busy={confirmBusy}
         onConfirm={doSignOut}
         onCancel={() => setConfirm(null)}
@@ -805,9 +806,9 @@ export default function Profile() {
         visible={confirm === 'delete'}
         icon="trash-2"
         danger
-        title="Delete your account?"
-        body="Wipes your key, device, Telegram link and subscriptions. Ledger reports stay — they are permanent."
-        confirmLabel="Delete my account"
+        title={i18nT('n.app.profile.delete-your-account')}
+        body={i18nT('n.app.profile.wipes-your-key-device-telegram-link')}
+        confirmLabel={i18nT('profile.delete-my-account')}
         busy={confirmBusy}
         onConfirm={doDelete}
         onCancel={() => setConfirm(null)}
@@ -847,7 +848,7 @@ export default function Profile() {
                     <PasswordField
                       value={pwCurrent}
                       onChangeText={setPwCurrent}
-                      placeholder="Current password"
+                      placeholder={i18nT('n.app.profile.current-password')}
                       textContentType="password"
                     />
                   </View>
@@ -862,7 +863,7 @@ export default function Profile() {
                   <PasswordField
                     value={pwConfirm}
                     onChangeText={setPwConfirm}
-                    placeholder="Repeat new password"
+                    placeholder={i18nT('n.app.profile.repeat-new-password')}
                     textContentType="newPassword"
                     onSubmitEditing={() => savePassword(true)}
                   />
@@ -880,7 +881,7 @@ export default function Profile() {
                   {pwBusy ? (
                     <ActivityIndicator color={BRAND.gold} />
                   ) : (
-                    <Text className="text-base font-bold text-hawk-gold">Save password</Text>
+                    <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.profile.save-password')}</Text>
                   )}
                 </Pressable>
                 {me?.hasPassword ? (
@@ -910,7 +911,7 @@ export default function Profile() {
                   value={resetPhone}
                   onChangeText={setResetPhone}
                   keyboardType="phone-pad"
-                  placeholder="Your phone number"
+                  placeholder={i18nT('n.app.profile.your-phone-number')}
                   placeholderTextColor={ui.faint}
                   className="rounded-2xl bg-card px-4 py-3.5 text-base text-ink"
                 />
@@ -946,7 +947,7 @@ export default function Profile() {
                   {pwBusy ? (
                     <ActivityIndicator color={BRAND.gold} />
                   ) : (
-                    <Text className="text-base font-bold text-hawk-gold">Send code</Text>
+                    <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.profile.send-code')}</Text>
                   )}
                 </Pressable>
               </>
@@ -976,7 +977,7 @@ export default function Profile() {
                   {pwBusy ? (
                     <ActivityIndicator color={BRAND.gold} />
                   ) : (
-                    <Text className="text-base font-bold text-hawk-gold">Verify</Text>
+                    <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.profile.verify')}</Text>
                   )}
                 </Pressable>
               </>
@@ -997,7 +998,7 @@ export default function Profile() {
                   <PasswordField
                     value={pwConfirm}
                     onChangeText={setPwConfirm}
-                    placeholder="Repeat new password"
+                    placeholder={i18nT('n.app.profile.repeat-new-password')}
                     textContentType="newPassword"
                     onSubmitEditing={() => savePassword(false)}
                   />
@@ -1015,7 +1016,7 @@ export default function Profile() {
                   {pwBusy ? (
                     <ActivityIndicator color={BRAND.gold} />
                   ) : (
-                    <Text className="text-base font-bold text-hawk-gold">Save new password</Text>
+                    <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.profile.save-new-password')}</Text>
                   )}
                 </Pressable>
               </>

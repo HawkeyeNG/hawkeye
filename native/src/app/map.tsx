@@ -8,6 +8,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { loadPolitical, partyColor, partyName, type Political } from '@/lib/political';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -261,7 +262,7 @@ export default function MapScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Map of Nigeria" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('n.app.map.map-of-nigeria')} translateY={translateY} onClose={() => router.back()} />
 
       <Animated.ScrollView
         style={{ flex: 1 }}

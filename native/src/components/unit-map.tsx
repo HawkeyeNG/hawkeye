@@ -9,6 +9,7 @@ import type { MapStyleElement, Region } from 'react-native-maps';
 import { BRAND } from '@/lib/api';
 import { DISCOVERY_RADIUS_M } from '@/lib/location';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * Native module, so it exists in a dev/production build and NOT in Expo Go —
@@ -485,14 +486,14 @@ function Placeholder({
       style={{ height }}
     >
       <Feather name="map" size={22} color={ui.faint} />
-      <Text className="pt-2 text-sm font-semibold text-ink">Map Unavailable</Text>
+      <Text className="pt-2 text-sm font-semibold text-ink">{i18nT('n.components.nigeria-map.map-unavailable')}</Text>
       <Text className="pt-1 text-center text-xs text-muted">{note}</Text>
       {onRetry ? (
         <Pressable
           onPress={onRetry}
           className="mt-3 rounded-full bg-surface px-4 py-2 active:opacity-70"
         >
-          <Text className="text-xs font-bold text-hawk-leaf">Retry</Text>
+          <Text className="text-xs font-bold text-hawk-leaf">{i18nT('n.app.docket.retry')}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -891,7 +892,7 @@ export function UnitMap({
             tracksViewChanges={false}
             zIndex={3}
           >
-            <View accessibilityLabel="Your location">
+            <View accessibilityLabel={i18nT('n.components.unit-map.your-location')}>
               <MeDot color={c.me} ring={c.ring} />
             </View>
           </Marker>
@@ -904,7 +905,7 @@ export function UnitMap({
         <Pressable
           onPress={() => map.current?.animateToRegion(region, 450)}
           hitSlop={8}
-          accessibilityLabel="Recentre the map on my location"
+          accessibilityLabel={i18nT('n.components.unit-map.recentre-the-map-on-my-location')}
           className="absolute right-2.5 top-2.5 h-9 w-9 items-center justify-center rounded-full border border-line bg-card active:opacity-70"
         >
           <Feather name="crosshair" size={16} color={BRAND.leaf} />
@@ -918,7 +919,7 @@ export function UnitMap({
 
         {!ready ? (
           <View className="absolute inset-0 items-center justify-center bg-card/70">
-            <Text className="text-xs font-semibold text-muted">Loading map…</Text>
+            <Text className="text-xs font-semibold text-muted">{i18nT('n.components.unit-map.loading-map')}</Text>
           </View>
         ) : null}
       </View>

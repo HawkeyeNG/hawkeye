@@ -6,6 +6,7 @@ import { useTopInset } from '@/lib/safe-area';
 
 import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * Shared top pane for native screens — the native twin of the web's .gov-header:
@@ -87,7 +88,7 @@ export function ScreenHeader({
             hitSlop={8}
             className="mr-3"
             accessibilityRole="button"
-            accessibilityLabel="Home"
+            accessibilityLabel={i18nT('nav.home')}
           >
             <Image
               source={require('@/assets/images/icon.png')}
@@ -103,7 +104,7 @@ export function ScreenHeader({
               onPress={onClose ?? (() => router.back())}
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel={i18nT('common.close')}
             >
               <Feather name="x" size={24} color={ui.ink} />
             </Pressable>
@@ -112,7 +113,7 @@ export function ScreenHeader({
               onPress={() => router.navigate('/(tabs)/more' as never)}
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Menu"
+              accessibilityLabel={i18nT('common.menu')}
             >
               <Feather name="menu" size={24} color={ui.ink} />
             </Pressable>

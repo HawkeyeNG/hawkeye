@@ -8,6 +8,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -114,7 +115,7 @@ export default function ReportsLog() {
           Confidence is the share of independent observers reporting the same numbers.
         </Text>
         <InfoDot
-          title="How these reports are held"
+          title={i18nT('n.app.reports-log.how-these-reports-are-held')}
           text="Every report is digitally signed on the observer's own device and permanently recorded on a public, tamper-evident ledger, so it cannot be edited or removed after the fact. Confidence rises as independent observers at the same unit file matching numbers."
         />
       </View>
@@ -126,7 +127,7 @@ export default function ReportsLog() {
         onPress={() => router.push('/ledger')}
       >
         {!ledger ? (
-          <Text className="flex-1 text-sm text-muted">Checking ledger integrity…</Text>
+          <Text className="flex-1 text-sm text-muted">{i18nT('n.app.reports-log.checking-ledger-integrity')}</Text>
         ) : ledger.ok ? (
           <>
             <Feather name="shield" size={16} color={ui.tint.good.ink} />
@@ -155,7 +156,7 @@ export default function ReportsLog() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Public Reports Log" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('common.public-reports-log')} translateY={translateY} onClose={() => router.back()} />
       <FlashList
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}

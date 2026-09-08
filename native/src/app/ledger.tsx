@@ -16,6 +16,7 @@ import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -80,7 +81,7 @@ function Result({ ok, text, link }: { ok: boolean; text: string; link?: string }
       </View>
       {link ? (
         <Pressable className="pt-2" onPress={() => WebBrowser.openBrowserAsync(link)}>
-          <Text className="text-sm font-bold text-good-ink">Confirm in Rekor ↗</Text>
+          <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.ledger.confirm-in-rekor')}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -315,7 +316,7 @@ export default function Ledger() {
           className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
           onPress={load}
         >
-          <Text className="text-base font-bold text-hawk-gold">Retry</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.docket.retry')}</Text>
         </Pressable>
       </View>
     </View>
@@ -327,16 +328,16 @@ export default function Ledger() {
         <ActivityIndicator className="py-8" color={ui.tint.good.ink} />
       ) : (
         <View className="flex-row flex-wrap">
-          <Stat value={(verify?.entries ?? 0).toLocaleString()} label="Entries chained" />
+          <Stat value={(verify?.entries ?? 0).toLocaleString()} label={i18nT('n.app.ledger.entries-chained')} />
           {/* A missing verdict is not a failing one — never colour it red. */}
           <Stat
             value={!verify ? '—' : verify.ok ? 'Intact' : `Broken at #${verify.brokenAtId ?? '?'}`}
-            label="Server check"
+            label={i18nT('n.app.ledger.server-check')}
             tone={!verify ? undefined : verify.ok ? 'good' : 'bad'}
             tight={!!verify && !verify.ok}
           />
-          <Stat value={local.value} label="On this phone" tone={local.tone} tight={local.tight} />
-          <Stat value={anchor ? shortDay(anchor.day) : 'None yet'} label="Last anchor" tight />
+          <Stat value={local.value} label={i18nT('n.app.ledger.on-this-phone')} tone={local.tone} tight={local.tight} />
+          <Stat value={anchor ? shortDay(anchor.day) : 'None yet'} label={i18nT('n.app.ledger.last-anchor')} tight />
         </View>
       )}
 
@@ -347,7 +348,7 @@ export default function Ledger() {
           Verified means your phone recomputed every hash itself and got the same head we publish.
         </Text>
         <InfoDot
-          title="How the chain is checked"
+          title={i18nT('n.app.ledger.how-the-chain-is-checked')}
           text="Each entry stores the hash of the one before it, so altering or removing any past report breaks every hash after it. This screen recomputes the whole chain on your own device and compares the head it gets to the one we publish — you don't have to trust us."
         />
       </View>
@@ -365,7 +366,7 @@ export default function Ledger() {
             Recomputing… {progress.done}/{progress.total}
           </Text>
         ) : (
-          <Text className="text-base font-bold text-hawk-gold">Re-verify on this phone</Text>
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.ledger.re-verify-on-this-phone')}</Text>
         )}
       </Pressable>
       {chain ? <Result ok={chain.ok} text={chain.text} /> : null}
@@ -397,9 +398,9 @@ export default function Ledger() {
                 <Text className="font-bold text-ink">{anchor.racesCount}</Text> race(s) · root{' '}
                 {(anchor.racesRoot || GENESIS).slice(0, 16)}…{'  '}
                 {rekor ? (
-                  <Text className="font-bold text-good-ink">View in Rekor ↗</Text>
+                  <Text className="font-bold text-good-ink">{i18nT('n.app.ledger.view-in-rekor')}</Text>
                 ) : (
-                  <Text className="font-bold text-warn-ink">Not published to Rekor yet</Text>
+                  <Text className="font-bold text-warn-ink">{i18nT('n.app.ledger.not-published-to-rekor-yet')}</Text>
                 )}
               </Text>
             );
@@ -413,7 +414,7 @@ export default function Ledger() {
 
         {races.length ? (
           <View className="pt-3">
-            <Prompt>Select a race</Prompt>
+            <Prompt>{i18nT('n.app.ledger.select-a-race')}</Prompt>
             <View className="flex-row flex-wrap">
               {races.map((r) => {
                 const on = raceSel === r.race_key;
@@ -448,7 +449,7 @@ export default function Ledger() {
       <View className="flex-row items-center pt-2">
         <Text className="flex-1 text-sm text-muted">Check one race&apos;s paper trail on its own.</Text>
         <InfoDot
-          title="What a single-race proof shows"
+          title={i18nT('n.app.ledger.what-a-single-race-proof-shows')}
           text="Each anchor folds every race into one Merkle root published to Sigstore's Rekor log, which we cannot rewrite. Your phone folds one race's proof up to that root, without replaying the others."
         />
       </View>
@@ -462,7 +463,7 @@ export default function Ledger() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title="Verify the Ledger" translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('common.verify-the-ledger')} translateY={translateY} onClose={() => router.back()} />
       {/* One virtualised list: on election day this chain is thousands of rows,
           so the header rides along rather than sitting in a ScrollView. */}
       <FlashList
@@ -496,7 +497,7 @@ export default function Ledger() {
                   WebBrowser.openBrowserAsync(`${BASE}/uploads/${item.image_sha256}.jpg`)
                 }
               >
-                <Text className="text-sm font-bold text-good-ink">Sheet photo</Text>
+                <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.ledger.sheet-photo')}</Text>
               </Pressable>
               <Pressable
                 className="pl-4"
@@ -504,7 +505,7 @@ export default function Ledger() {
                   WebBrowser.openBrowserAsync(`${BASE}/uploads/${item.venue_image_sha256}.jpg`)
                 }
               >
-                <Text className="text-sm font-bold text-good-ink">Venue photo</Text>
+                <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.ledger.venue-photo')}</Text>
               </Pressable>
             </View>
           </View>
@@ -529,7 +530,7 @@ export default function Ledger() {
             {raceBusy ? (
               <ActivityIndicator color={BRAND.gold} />
             ) : (
-              <Text className="text-base font-bold text-hawk-gold">Verify this race</Text>
+              <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.ledger.verify-this-race')}</Text>
             )}
           </Pressable>
         </View>

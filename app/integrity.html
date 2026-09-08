@@ -1,15 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#00482b" />
-  <meta name="description" content="Hawkeye Election Integrity — a live log of automatically-detected anomalies in crowd-reported polling-unit results." />
-  <title>Hawkeye — Election Integrity</title>
-  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#00482b">
+  <meta name="description" content="Hawkeye Election Integrity — a live log of automatically-detected anomalies in crowd-reported polling-unit results.">
+  <title data-i18n="integrity.hawkeye-election-integrity">Hawkeye — Election Integrity</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=174" />
+  <link rel="stylesheet" href="styles.css?v=175">
   <script src="native.js?v=114"></script>
   <style>
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
@@ -49,15 +49,15 @@
     .benford .lbl { text-align: center; font-size: 0.72rem; color: var(--muted); }
     .empty { color: var(--muted); padding: 20px; text-align: center; }
   </style>
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Hawkeye" />
-  <meta property="og:title" content="Hawkeye — Election Integrity" />
-  <meta property="og:description" content="Hawkeye Election Integrity — a live log of automatically-detected anomalies in crowd-reported polling-unit results." />
-  <meta property="og:url" content="https://hawkeye.com.ng/integrity.html" />
-  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Hawkeye">
+  <meta property="og:title" content="Hawkeye — Election Integrity">
+  <meta property="og:description" content="Hawkeye Election Integrity — a live log of automatically-detected anomalies in crowd-reported polling-unit results.">
+  <meta property="og:url" content="https://hawkeye.com.ng/integrity.html">
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <script src="authgate.js?v=2"></script>
 </head>
 <body>
@@ -65,8 +65,7 @@
     <div class="wrap brand-row">
       <a class="brand" href="index.html"><span class="crest" aria-hidden="true">🦅</span>
         <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
-      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
-        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false" onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">☰</button>
       <nav id="menu-panel" class="menu-panel" hidden>
         <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
         <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
@@ -82,16 +81,15 @@
         <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
         <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
         <a href="faq.html">FAQ</a>
-        <a data-i18n="common.about-contact" href="about.html">About & Contact</a>
-        <a data-i18n="common.privacy-data" href="privacy.html">Privacy & Data</a>
+        <a data-i18n="common.about-contact" href="about.html">About &amp; Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy &amp; Data</a>
       </nav>
     </div>
   </header>
 <main class="wrap">
     <h1 data-i18n="common.election-integrity">Election Integrity</h1>
-    <p class="lede">Automated checks on every result. Anything that looks wrong is logged here.<button
-      class="info-i" data-info-title="What gets checked"
-      data-info="Over-voting, impossible turnout, forged form serials, conflicting counts and statistical outliers. A flag is a signal for scrutiny, not a verdict — and never proof of fraud." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
+    <p class="lede"><span data-i18n="integrity.automated-checks-on-every-result-anything-that">Automated checks on every result. Anything that looks wrong is logged here.</span><button class="info-i" data-info-title="What gets checked" data-info="Over-voting, impossible turnout, forged form serials, conflicting counts and statistical outliers. A flag is a signal for scrutiny, not a verdict — and never proof of fraud." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org
+INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
 
     <div class="cards" id="cards"></div>
 
@@ -99,10 +97,10 @@
       <h2 data-i18n="integrity.detected-discrepancies">Detected Discrepancies</h2>
       <div class="filters" id="sev-filters">
         <div class="sev-row">
-          <span class="chip on" data-sev="">All</span>
-          <span class="chip" data-sev="high">🚩 High</span>
-          <span class="chip" data-sev="medium">⚠️ Medium</span>
-          <span class="chip" data-sev="low">ℹ️ Low</span>
+          <span data-i18n="integrity.all" class="chip on" data-sev="">All</span>
+          <span data-i18n="integrity.high" class="chip" data-sev="high">🚩 High</span>
+          <span data-i18n="integrity.medium" class="chip" data-sev="medium">⚠️ Medium</span>
+          <span data-i18n="integrity.low" class="chip" data-sev="low">ℹ️ Low</span>
         </div>
         <select data-i18n-attr="aria-label:integrity.filter-by-discrepancy-type" id="type-filter" aria-label="Filter by discrepancy type"><option data-i18n="integrity.all-types" value="">All types</option></select>
         <select data-i18n-attr="aria-label:integrity.filter-by-state" id="state-filter" aria-label="Filter by state"><option data-i18n="integrity.all-states" value="">All states</option></select>
@@ -112,11 +110,10 @@
 
     <div class="card">
       <h2 data-i18n="integrity.digit-distribution-screening">Digit-distribution Screening</h2>
-      <p class="hint">Screening signal, never proof on its own.<button class="info-i"
-        data-info-title="Digit-distribution screening"
-        data-info="Fabricated figures cluster on favourite digits, while genuine counts follow known distributions — Benford's law for first digits, and a roughly even spread for last digits. A departure means these numbers are worth a closer look, nothing more. Real elections throw up odd-looking distributions for innocent reasons, so a flag here is a prompt to check the evidence, not a finding of fraud." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button>
+      <p class="hint"><span data-i18n="integrity.screening-signal-never-proof-on-its-own">Screening signal, never proof on its own.</span><button class="info-i" data-info-title="Digit-distribution screening" data-info="Fabricated figures cluster on favourite digits, while genuine counts follow known distributions — Benford's law for first digits, and a roughly even spread for last digits. A departure means these numbers are worth a closer look, nothing more. Real elections throw up odd-looking distributions for innocent reasons, so a flag here is a prompt to check the evidence, not a finding of fraud." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org
+INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button>
         <span id="benford-n"></span></p>
-      <h3 style="margin:14px 0 2px;font-size:0.95rem">First Digit — Benford's Law <span id="benford-verdict" class="verdict-tag"></span></h3>
+      <h3 style="margin:14px 0 2px;font-size:0.95rem"><span data-i18n="integrity.first-digit-benford-s-law">First Digit — Benford's Law</span> <span id="benford-verdict" class="verdict-tag"></span></h3>
       <p data-i18n="integrity.first-digit-of-every-party-count" class="hint">First digit of every party count vs Benford's expected curve (dashed).</p>
       <div class="benford" id="benford-first"></div>
       <h3 data-i18n="integrity.last-digit-uniformity" style="margin:18px 0 2px;font-size:0.95rem">Last Digit — Uniformity</h3>
@@ -126,17 +123,15 @@
 
     <div class="card">
       <h2 data-i18n="integrity.inec-irev-cross-check">INEC IReV Cross-check</h2>
-      <p class="hint">The crowd's count, checked against INEC's own uploaded sheet.<button
-        class="info-i" data-info-title="INEC IReV cross-check"
-        data-info="For each polling unit, the crowd's reported count is compared against the EC8A sheet INEC itself uploads to its Results Viewing portal (IReV) — INEC's own evidence checked against the crowd's, neither one trusted over the other. Any mismatch appears in the discrepancies above, with a link straight to INEC's sheet so you can look yourself." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
+      <p class="hint"><span data-i18n="integrity.the-crowd-s-count-checked-against-inec">The crowd's count, checked against INEC's own uploaded sheet.</span><button class="info-i" data-info-title="INEC IReV cross-check" data-info="For each polling unit, the crowd's reported count is compared against the EC8A sheet INEC itself uploads to its Results Viewing portal (IReV) — INEC's own evidence checked against the crowd's, neither one trusted over the other. Any mismatch appears in the discrepancies above, with a link straight to INEC's sheet so you can look yourself." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org
+INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
       <p data-i18n="index.loading" id="irev-status" class="scope-note">Loading…</p>
     </div>
 
     <div class="card">
       <h2 data-i18n="integrity.collation-reconciliation-ec8b-c-d">Collation Reconciliation (EC8B/C/D)</h2>
-      <p class="hint">Announced totals, checked against the units underneath them.<button
-        class="info-i" data-info-title="Collation reconciliation"
-        data-info="Ward (EC8B), LGA (EC8C) and state (EC8D) collation totals are checked against the polling-unit sheets they are built from. A collated figure can never be LESS than the sum of the covered units alone — when it is, that is arithmetic proof of subtraction, not a matter of opinion, and it is flagged in the discrepancies above. This is the step where a count is most often changed." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org&#10;INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button>
+      <p class="hint"><span data-i18n="integrity.announced-totals-checked-against-the-units-underneath">Announced totals, checked against the units underneath them.</span><button class="info-i" data-info-title="Collation reconciliation" data-info="Ward (EC8B), LGA (EC8C) and state (EC8D) collation totals are checked against the polling-unit sheets they are built from. A collated figure can never be LESS than the sum of the covered units alone — when it is, that is arithmetic proof of subtraction, not a matter of opinion, and it is flagged in the discrepancies above. This is the step where a count is most often changed." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org
+INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button>
         <a data-i18n="integrity.report-a-collation-result" href="collation.html">Report a collation result →</a></p>
       <p data-i18n="index.loading" id="collation-status" class="scope-note">Loading…</p>
     </div>
@@ -152,43 +147,43 @@
       <details class="acc">
         <summary data-i18n="integrity.against-inec-collation-records">Against INEC &amp; Collation Records</summary>
         <ul>
-          <li><strong data-i18n="integrity.inec-irev-mismatch">INEC IReV mismatch</strong> — the crowd's counts don't appear on INEC's own uploaded sheet for that unit.</li>
-          <li><strong data-i18n="integrity.collation-undercount">Collation undercount</strong> — a ward/LGA/state form showing less for a party than its covered polling units alone add up to.</li>
-          <li><strong data-i18n="integrity.collation-mismatch">Collation mismatch</strong> — every unit in the scope is verified, yet the form's totals still differ.</li>
-          <li><strong data-i18n="integrity.collation-chain-undercount">Collation chain undercount</strong> — an LGA/state form showing less than the collation forms directly under it.</li>
-          <li><strong data-i18n="integrity.conflicting-collation-reports">Conflicting collation reports</strong> — observers at the same collation centre reporting different totals.</li>
+          <li data-i18n-html="integrity.inec-irev-mismatch-the-crowd-s-counts"><strong>INEC IReV mismatch</strong> — the crowd's counts don't appear on INEC's own uploaded sheet for that unit.</li>
+          <li data-i18n-html="integrity.collation-undercount-a-ward-lga-state-form"><strong>Collation undercount</strong> — a ward/LGA/state form showing less for a party than its covered polling units alone add up to.</li>
+          <li data-i18n-html="integrity.collation-mismatch-every-unit-in-the-scope"><strong>Collation mismatch</strong> — every unit in the scope is verified, yet the form's totals still differ.</li>
+          <li data-i18n-html="integrity.collation-chain-undercount-an-lga-state-form"><strong>Collation chain undercount</strong> — an LGA/state form showing less than the collation forms directly under it.</li>
+          <li data-i18n-html="integrity.conflicting-collation-reports-observers-at-the-same"><strong>Conflicting collation reports</strong> — observers at the same collation centre reporting different totals.</li>
         </ul>
       </details>
       <details class="acc">
         <summary data-i18n="integrity.statistical-tripwires">Statistical Tripwires</summary>
         <ul>
-          <li><strong data-i18n="integrity.over-voting">Over-voting</strong> — more votes than registered voters at a unit (impossible).</li>
-          <li><strong data-i18n="integrity.impossible-turnout">Impossible turnout</strong> — turnout above ~95%, or a strong outlier vs. its state.</li>
-          <li><strong data-i18n="integrity.single-party-sweep">Single-party sweep</strong> — one party taking ≥98% of a sizeable unit.</li>
-          <li><strong data-i18n="integrity.vote-share-outlier">Vote-share outlier</strong> — a winner's share far above its own state's distribution for that race.</li>
-          <li><strong data-i18n="integrity.neighbour-divergence">Neighbour divergence</strong> — a unit voting wildly unlike the rest of its own ward (≥50-point gap).</li>
-          <li><strong data-i18n="integrity.digit-tests">Digit tests</strong> — first-digit Benford deviation and excess round numbers (…0/…5) per contest; screening signals, not proof.</li>
+          <li data-i18n-html="integrity.over-voting-more-votes-than-registered-voters"><strong>Over-voting</strong> — more votes than registered voters at a unit (impossible).</li>
+          <li data-i18n-html="integrity.impossible-turnout-turnout-above-95-or-a"><strong>Impossible turnout</strong> — turnout above ~95%, or a strong outlier vs. its state.</li>
+          <li data-i18n-html="integrity.single-party-sweep-one-party-taking-98"><strong>Single-party sweep</strong> — one party taking ≥98% of a sizeable unit.</li>
+          <li data-i18n-html="integrity.vote-share-outlier-a-winner-s-share"><strong>Vote-share outlier</strong> — a winner's share far above its own state's distribution for that race.</li>
+          <li data-i18n-html="integrity.neighbour-divergence-a-unit-voting-wildly-unlike"><strong>Neighbour divergence</strong> — a unit voting wildly unlike the rest of its own ward (≥50-point gap).</li>
+          <li data-i18n-html="integrity.digit-tests-first-digit-benford-deviation-and"><strong>Digit tests</strong> — first-digit Benford deviation and excess round numbers (…0/…5) per contest; screening signals, not proof.</li>
         </ul>
       </details>
       <details class="acc">
         <summary data-i18n="integrity.ai-vision-on-the-result-sheet">AI Vision on the Result Sheet</summary>
         <ul>
-          <li><strong data-i18n="integrity.sheet-authenticity">Sheet authenticity</strong> — the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.</li>
-          <li><strong data-i18n="integrity.vision-count-mismatch">Vision count mismatch</strong> — an AI read of the sheet photo disagreeing with the observer's typed counts.</li>
+          <li data-i18n-html="integrity.sheet-authenticity-the-ec8a-photo-flagged-as"><strong>Sheet authenticity</strong> — the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.</li>
+          <li data-i18n-html="integrity.vision-count-mismatch-an-ai-read-of"><strong>Vision count mismatch</strong> — an AI read of the sheet photo disagreeing with the observer's typed counts.</li>
         </ul>
       </details>
       <details class="acc">
         <summary data-i18n="integrity.provenance-duplicates">Provenance &amp; Duplicates</summary>
         <ul>
-          <li><strong data-i18n="integrity.duplicate-form-serial">Duplicate form serial</strong> — the same EC8A serial reported at two units.</li>
-          <li><strong data-i18n="integrity.conflicting-counts">Conflicting counts</strong> — independent observers at one unit disagreeing.</li>
-          <li><strong data-i18n="integrity.location-inconsistency">Location inconsistency</strong> — a GPS cluster far from where a unit can be.</li>
+          <li data-i18n-html="integrity.duplicate-form-serial-the-same-ec8a-serial"><strong>Duplicate form serial</strong> — the same EC8A serial reported at two units.</li>
+          <li data-i18n-html="integrity.conflicting-counts-independent-observers-at-one-unit"><strong>Conflicting counts</strong> — independent observers at one unit disagreeing.</li>
+          <li data-i18n-html="integrity.location-inconsistency-a-gps-cluster-far-from"><strong>Location inconsistency</strong> — a GPS cluster far from where a unit can be.</li>
         </ul>
       </details>
       <details class="acc">
         <summary data-i18n="integrity.incident-patterns">Incident Patterns</summary>
         <ul>
-          <li><strong data-i18n="integrity.incident-hotspot">Incident hotspot</strong> — several incident reports of the same kind in one state within a short window.</li>
+          <li data-i18n-html="integrity.incident-hotspot-several-incident-reports-of-the"><strong>Incident hotspot</strong> — several incident reports of the same kind in one state within a short window.</li>
         </ul>
       </details>
     </div>
@@ -197,13 +192,13 @@
   <footer class="gov-footer"><div class="wrap">
     <nav><a data-i18n="common.leaderboard" href="results.html">Leaderboard</a><a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a><a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a></nav>
     <p data-i18n="integrity.automated-flags-aid-scrutiny-they-are">Automated flags aid scrutiny; they are not proof of fraud. Official results remain INEC's.</p>
-  <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+  <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">© 2026 IniXien, LLC. All rights reserved.</p>
   </div></footer>
 
   <script src="tg.js?v=95"></script>
-  <script src="/i18n.js?v=3"></script>
+  <script src="/i18n.js?v=4"></script>
   <script src="/lang.js?v=3"></script>
-  <script src="menu.js?v=166"></script>
+  <script src="menu.js?v=167"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const TYPE_LABEL = {
@@ -270,7 +265,8 @@
 
     async function loadBenford() {
       const b = await fetch('/api/integrity/benford').then((r) => r.json());
-      $('benford-n').textContent = `Based on ${b.n} unit result(s), ${b.nFirst || 0} party count(s).`;
+      $('benford-n').textContent = T('integrity.based-on-unit-results-party-counts', 'Based on {units} unit result(s), {counts} party count(s).')
+        .replace('{units}', String(b.n)).replace('{counts}', String(b.nFirst || 0));
       const bars = (items, n) => {
         const max = Math.max(1, ...items.map((d) => d.observed));
         return items.map((d) => {
@@ -299,7 +295,7 @@
       const v = await fetch('/api/integrity/irev').then((r) => r.json());
       const c = v.counts || {};
       $('irev-status').textContent = !v.electionId
-        ? 'Waiting for INEC to open the election on IReV — the check activates automatically once configured.'
+        ? T('integrity.waiting-for-inec-to-open-the-election', 'Waiting for INEC to open the election on IReV — the check activates automatically once configured.')
         : `Checked ${Object.values(c).reduce((s, n) => s + n, 0)} unit(s): ${c.consistent || 0} consistent · ${c.mismatch || 0} mismatched · ${c.inconclusive || 0} inconclusive · ${c.no_doc || 0} not yet on IReV.`;
     }
 
@@ -309,10 +305,16 @@
       const total = (b.ward || 0) + (b.lga || 0) + (b.state || 0);
       $('collation-status').textContent = total
         ? `${total} collation report(s): ${b.ward || 0} ward · ${b.lga || 0} LGA · ${b.state || 0} state — ${f.collation_undercount || 0} undercount flag(s), ${f.collation_disputed || 0} disputed.`
-        : 'No collation reports yet — they arrive on election night as results move up the ladder.';
+        : T('integrity.no-collation-reports-yet', 'No collation reports yet — they arrive on election night as results move up the ladder.');
     }
 
+    /* i18n for labels this block paints. Every one is written by JS, so an
+       attribute would be wiped on the next refresh; and this page loads i18n.js
+       AFTER this script, so the first paint can precede the bundle entirely —
+       which is what the 'hawkeye-lang' listener below is for. */
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
     function refresh() { loadSummary(); loadRows(); loadBenford(); loadIrev(); loadCollation(); }
+    document.addEventListener('hawkeye-lang', refresh);
     $('sev-filters').addEventListener('click', (e) => {
       const chip = e.target.closest('.chip'); if (!chip) return;
       sev = chip.dataset.sev;

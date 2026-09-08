@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#00482b" />
   <meta name="description" content="Hawkeye — independent, crowd-verified monitoring of polling unit results in Nigeria." />
-  <title>Hawkeye — Report a Polling Unit Result</title>
+  <title data-i18n="observe.hawkeye-report-a-polling-unit-result">Hawkeye — Report a Polling Unit Result</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=174" />
+  <link rel="stylesheet" href="styles.css?v=175" />
   <style>
     /* The step-5 facts block. Page-local on purpose — styles.css is pinned by
        every page in the app, so a shared rule for one card would mean bumping
@@ -19,7 +19,7 @@
     .submit-facts strong { display: block; font-size: 0.95rem; }
     .submit-facts small { display: block; color: var(--muted); font-size: 0.78rem; }
     .submit-facts .sf-race { display: block; margin-top: 4px; font-size: 0.78rem; font-weight: 700; color: var(--link); }
-    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=174, so
+    /* Scoped to this page ON PURPOSE. Forty files pin styles.css?v=175, so
        putting three rules in the shared sheet would mean bumping and
        redeploying all forty to defeat the HTTP cache — a large blast radius
        for CSS only this page uses. Move it into styles.css whenever that file
@@ -192,10 +192,7 @@
             <path d="M12 3 3 7.5l9 4.5 9-4.5L12 3z"/><path d="M3 7.5v6l9 4.5 9-4.5v-6"/><path d="M7.5 16.5V21"/>
           </svg>
         </span>
-        <span class="sc-text">
-          <strong data-i18n="observe.new-to-hawkeye">New to Hawkeye?</strong>
-          <small data-i18n="observe.run-a-practice-election-first-no">Run a practice election first — no sign-up, and nothing you enter is published.</small>
-        </span>
+        <span data-i18n-html="observe.new-to-hawkeye-run-a-practice-election" class="sc-text"><strong data-i18n="observe.new-to-hawkeye">New to Hawkeye?</strong> <small data-i18n="observe.run-a-practice-election-first-no">Run a practice election first — no sign-up, and nothing you enter is published.</small></span>
         <span class="sc-go" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
         </span>
@@ -255,21 +252,19 @@
         <!-- Sign-up mode: the only link that makes sense under "Request OTP" is
              the way OVER to sign-in — someone signing up for the first time
              cannot already have a password. -->
-        <p class="hint auth-alt" id="signin-line">Have an account?
-          <a data-i18n="observe.sign-in" href="observe.html?intent=signin">Sign In</a></p>
+        <p data-i18n-html="observe.have-an-account-sign-in" class="hint auth-alt" id="signin-line">Have an account? <a href="observe.html?intent=signin">Sign In</a></p>
         <!-- Sign-in mode only (?intent=signin): OTP is always the recovery path
              when the password is forgotten, so it stays one tap away in place. -->
         <p class="hint auth-alt"><a data-i18n="observe.sign-in-with-a-one-time" id="pw-link" href="#" hidden>Sign in with a one-time code instead</a></p>
         <!-- Sign-in mode only: sends new users into the normal OTP registration
              instead of leaving them stuck on a password field for an account
              they don't have yet. -->
-        <p class="hint auth-alt" id="signup-line" hidden>Don't have an account?
-          <a data-i18n="observe.sign-up" href="observe.html?intent=observe">Sign Up</a></p>
+        <p data-i18n-html="observe.don-t-have-an-account-sign-up" class="hint auth-alt" id="signup-line" hidden>Don't have an account? <a href="observe.html?intent=observe">Sign Up</a></p>
         <!-- Practice link for BOTH modes: sign-up shows the big starter-card above;
              sign-in (where that card is hidden) gets this lighter link instead. -->
-        <p class="hint auth-alt" id="practice-line" hidden><a data-i18n="observe.try-a-practice-run-first-no" href="practice.html">Try a practice run first — no sign-up needed</a></p>
-        <p class="hint"><a data-i18n="observe.resend-code" id="otp-resend" href="#" hidden>Resend Code</a></p>
-        <p class="hint"><a data-i18n="observe.use-a-different-number" id="auth-reset" href="#" hidden>← Use a Different Number</a></p>
+        <p data-i18n-html="observe.try-a-practice-run-first-no-sign" class="hint auth-alt" id="practice-line" hidden><a href="practice.html">Try a practice run first — no sign-up needed</a></p>
+        <p data-i18n-html="observe.resend-code-2" class="hint"><a id="otp-resend" href="#" hidden>Resend Code</a></p>
+        <p data-i18n-html="observe.use-a-different-number-2" class="hint"><a id="auth-reset" href="#" hidden>← Use a Different Number</a></p>
       </div>
     </section>
 
@@ -300,7 +295,7 @@
            summary keeps the ✓ and stays tappable for review/retake. -->
       <details class="card step-card" id="photo-fold" open>
         <summary style="cursor:pointer;list-style:none">
-          <h2 style="display:inline-block;margin:0"><span class="step-no">1</span> Capture the Evidence</h2>
+          <h2 data-i18n-html="observe.1-capture-the-evidence" style="display:inline-block;margin:0"><span class="step-no">1</span> Capture the Evidence</h2>
           <span id="photo-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
         <!-- One line. The rest ("live only, no gallery uploads", "time- and
@@ -344,7 +339,7 @@
            name/code (pu-search.js), then the register cascade. -->
       <details class="card step-card" id="unit-fold" data-step="2">
         <summary style="cursor:pointer;list-style:none">
-          <h2 style="display:inline-block;margin:0"><span class="step-no">2</span> Which polling unit?</h2>
+          <h2 data-i18n-html="observe.2-which-polling-unit" style="display:inline-block;margin:0"><span class="step-no">2</span> Which polling unit?</h2>
           <span id="unit-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
         <button data-i18n="observe.find-polling-units-near-me" id="btn-locate">Find polling units near me</button>
@@ -372,7 +367,7 @@
 
       <details class="card step-card" id="race-fold" data-step="3">
         <summary style="cursor:pointer;list-style:none">
-          <h2 style="display:inline-block;margin:0"><span class="step-no">3</span> Which election?</h2>
+          <h2 data-i18n-html="collation.3-which-election" style="display:inline-block;margin:0"><span class="step-no">3</span> Which election?</h2>
           <span id="race-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
         <select id="sel-contest"></select>
@@ -382,7 +377,7 @@
 
       <details class="card step-card" id="counts-fold" data-step="4">
         <summary style="cursor:pointer;list-style:none">
-          <h2 style="display:inline-block;margin:0"><span class="step-no">4</span> The Announced Counts</h2>
+          <h2 data-i18n-html="observe.4-the-announced-counts" style="display:inline-block;margin:0"><span class="step-no">4</span> The Announced Counts</h2>
           <span id="counts-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
         <!-- THE SHEET, WHERE THE FIGURES ARE TYPED. Capture comes first because
@@ -402,7 +397,7 @@
         <input data-i18n-attr="placeholder:common.filter-parties-name-or-code" id="vote-filter" type="search" autocomplete="off" placeholder="Filter parties — name or code"
                aria-label="Filter parties by name or code" style="margin-bottom:8px" />
         <div id="vote-inputs"></div>
-        <label for="sheet-serial">EC8A form serial number <small data-i18n="observe.optional-printed-on-the-sheet">(optional — printed on the sheet)</small></label>
+        <label data-i18n-html="observe.ec8a-form-serial-number-optional-printed-on" for="sheet-serial">EC8A form serial number <small>(optional — printed on the sheet)</small></label>
         <input id="sheet-serial" type="text" inputmode="text" placeholder="e.g. 0451233" autocomplete="off" />
         <!-- Counts have no natural confirmer the way a picker does — typing a
              number is not a decision. This button is it, and it is also the
@@ -411,7 +406,7 @@
       </details>
 
       <div class="card">
-        <h2><span class="step-no">5</span> Sign and Submit</h2>
+        <h2 data-i18n-html="collation.5-sign-and-submit"><span class="step-no">5</span> Sign and Submit</h2>
         <!-- WHAT IS ABOUT TO BE SIGNED. This card had no facts on it at all:
              the unit and the election were visible only as ellipsised "✔ …"
              receipts on folds two and three, which are shut by the time anyone
@@ -499,10 +494,10 @@
        fallback, so a missing tag degrades quietly rather than loudly --
        which is exactly why the tag has to be asserted, not eyeballed. -->
   <script src="geo-msg.js?v=1"></script>
-  <script src="app.js?v=158" defer></script>
+  <script src="app.js?v=159" defer></script>
   <script src="tg.js?v=95" defer></script>
-  <script src="/i18n.js?v=3"></script>
+  <script src="/i18n.js?v=4"></script>
   <script src="/lang.js?v=3"></script>
-  <script src="menu.js?v=166" defer></script>
+  <script src="menu.js?v=167" defer></script>
 </body>
 </html>

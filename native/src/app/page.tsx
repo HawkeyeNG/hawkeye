@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ContentBlock, QuestionRow, SectionLabel } from '@/components/content-kit';
 import { SocialRow } from '@/components/social-row';
 import { useUi } from '@/lib/theme';
-import { PAGES } from '@/lib/content';
+import { getPages } from '@/lib/content';
 import RAW from '@/lib/pages.json';
 import { t as i18nT } from '@/lib/i18n';
 
@@ -58,7 +58,9 @@ export default function StaticPage() {
   const ui = useUi();
   const { slug } = useLocalSearchParams<{ slug?: string }>();
   const key = slug ?? '';
-  const page = PAGES[key];
+  /* getPages(), not PAGES: the content is translated at read time and this call
+     has to happen during render so it follows the language (see lib/content.ts). */
+  const page = getPages()[key];
   const faq = key === 'faq' ? faqPairs() : null;
 
   const scroll = useRef<ScrollView>(null);

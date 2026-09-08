@@ -1037,18 +1037,33 @@
      * not `icon === 'camera'`, because what makes Report special is that it is
      * the CTA, not which glyph it happens to use.
      */
+    /**
+     * `titleKey`/`bodyKey` are the i18n keys; the English stays here and is what
+     * renders with no dictionary loaded, which is also what tests/tour_test.mjs
+     * compares against native's file.
+     *
+     * FOUR OF THE FIVE TITLES REUSE THE TAB BAR'S OWN KEY (`nav.*`) rather than
+     * declaring `tour.home.title` beside it. The card exists to point at a
+     * control six centimetres below it, so a translation that named the tab one
+     * way on the bar and another way on the card would break the only thing the
+     * card does. Sharing the key makes that impossible rather than merely
+     * unlikely. Report is the exception — its title says which button.
+     */
     const TOUR = [
-      { route: 'index.html', title: 'Home',
+      { route: 'index.html', title: 'Home', titleKey: 'nav.home', bodyKey: 'tour.home.body',
         body: 'Elections open now, reports accepted so far, and a live feed.' },
-      { route: 'results.html', title: 'Results',
+      { route: 'results.html', title: 'Results', titleKey: 'nav.results', bodyKey: 'tour.results.body',
         body: 'Pick a race for its map and running tally. Follow one to get alerts.' },
       { route: 'observe.html', cta: true, title: 'Report — the green button',
+        titleKey: 'tour.report.title', bodyKey: 'tour.report.body',
         body: 'Report a result sheet, a collation result, or an incident. This is what makes you an observer.' },
-      { route: 'notifications.html', title: 'Alerts',
+      { route: 'notifications.html', title: 'Alerts', titleKey: 'nav.alerts', bodyKey: 'tour.alerts.body',
         body: 'What has happened on the races you follow — reports accepted, units flagged, and anything Hawkeye needs to tell you.' },
-      { route: '#more', title: 'More',
+      { route: '#more', title: 'More', titleKey: 'nav.more', bodyKey: 'tour.more.body',
         body: 'Practice runs, the ledger, the docket and the guide. Start with Practice Run.' },
     ];
+    /** Translation, or the English passed in. A no-op before i18n.js has run. */
+    const tt = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
     /**
      * The nonpartisan line, on the FIRST card only (native: tour.tsx renders it
      * when i === 0). It is the first thing the app says to a new observer
@@ -1088,8 +1103,8 @@
       // A DELIBERATE EXIT, IN THE CORNER. The backdrop no longer dismisses (see
       // below), so leaving has to be possible somewhere obvious — and the footer
       // slot that used to do it is now Back.
-      + '<button type="button" class="tour-x" aria-label="Close tour">\u00d7</button>'
-      + '<h3 id="tour-title">Welcome to Hawkeye</h3>'
+      + '<button type="button" class="tour-x" data-i18n-attr="aria-label:tour.close" aria-label="Close tour">\u00d7</button>'
+      + '<h3 id="tour-title" data-i18n="tour.welcome">Welcome to Hawkeye</h3>'
       // The body scrolls and the footer is its SIBLING, not its last child --
       // native's ModalCard exists to enforce exactly those two rules, because a
       // primary action reachable only by scrolling is a bug this codebase has
@@ -1111,6 +1126,12 @@
       + '<button type="button" class="tour-next"></button>'
       + '</div></div></div>';
     document.body.appendChild(tour);
+    /* The card's fixed chrome (heading, close label) carries data-i18n, but it
+       is appended after the earlier pass, so ask for one more. The five steps
+       are painted by paintTour() instead — their text depends on which card is
+       showing, so an attribute cannot carry it. */
+    i18nShell();
+    document.addEventListener('hawkeye-lang', () => { if (!tour.hidden) paintTour(); });
 
     /**
      * LIGHT THE REAL TAB THIS CARD IS ABOUT.
@@ -1163,18 +1184,19 @@
       // the card is a picture of the control six centimetres below it.
       tour.querySelector('.tour-step').classList.toggle('is-cta', !!s.cta);
       tour.querySelector('.tour-chip').innerHTML = tab ? ic(tab.icon) : '';
-      tour.querySelector('.tour-name').textContent = s.title;
-      tour.querySelector('.tour-text').textContent = s.body;
+      tour.querySelector('.tour-name').textContent = tt(s.titleKey, s.title);
+      tour.querySelector('.tour-text').textContent = tt(s.bodyKey, s.body);
       const note = tour.querySelector('.tour-note');
-      note.textContent = ti === 0 ? TOUR_NOTE : '';
+      note.textContent = ti === 0 ? tt('tour.note', TOUR_NOTE) : '';
       note.hidden = ti !== 0;
       tour.querySelectorAll('.tour-dots span').forEach((d, n) => d.classList.toggle('on', n === ti));
       const back = tour.querySelector('.tour-skip');
-      back.textContent = 'Back';
+      back.textContent = tt('tour.back', 'Back');
       // Nothing behind card one. Disabled rather than hidden, so the footer does
       // not change shape as the reader moves through it.
       back.disabled = ti === 0;
-      tour.querySelector('.tour-next').textContent = last ? 'Start observing' : 'Next';
+      tour.querySelector('.tour-next').textContent = last
+        ? tt('tour.start', 'Start observing') : tt('tour.next', 'Next');
       tour.style.setProperty('--tour-gap', tourGap() + 'px');
       tour.querySelector('.tour-body').scrollTop = 0;
       litTab(s.route);

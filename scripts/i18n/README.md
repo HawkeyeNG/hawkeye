@@ -31,10 +31,29 @@ submit report*.
 
 ## What is covered
 
-**All 40 pages**, plus the shell chrome menu.js builds at runtime (tab bar,
-report sheet). 631 English keys; 588 in each of ha / ig / yo. Still English-only:
-the five-card first-run tour in menu.js, and everything the backend sends
-(SMS/OTP/Telegram/push).
+**All 40 pages**, plus everything menu.js builds at runtime — tab bar, report
+sheet and the five-card first-run tour. 643 English keys; 600 in each of
+ha / ig / yo. Still English-only: everything the backend sends (SMS / OTP /
+Telegram / push), and the native app.
+
+## Text a script paints, not markup
+
+The tour is the one surface `data-i18n` cannot carry: `paintTour()` rewrites the
+card on every step, so an attribute would be overwritten, and the right string
+depends on which card is showing. It calls `t(key, english)` itself, keeping the
+English in the source as the fallback — which is also what
+`tests/tour_test.mjs` diffs against `native/src/lib/tour.ts`.
+
+Anything else written this way must **repaint on `hawkeye-lang`**. `i18n.js`
+fires that after every dictionary load, not only on an explicit language change,
+because a script that painted before the fetch resolved has the English and
+nothing to tell it otherwise — which is precisely how card one shipped in
+English while cards two to five came out translated.
+
+`tour_lang_check.mjs` drives the five cards end to end in English, Hausa and
+Yorùbá and compares every field **against the English run** — not against
+"is it ASCII", which passes on correct English containing an em dash and is how
+card one got through the first time.
 
 Roughly a third of the surface is the shared header, menu and footer, which is
 why the extractor keys a string seen on two or more pages as `common.*` and

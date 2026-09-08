@@ -40,6 +40,21 @@ const SAME_OK = new Set([
   'n.components.gov-disclaimer.inecnigeria-org',
   // "Menu" is the loanword in Hausa and Igbo; the web bundles say the same.
   'common.menu',
+  /**
+   * Identical because translating them would make the app disagree with the
+   * register and with INEC, not because nobody got to them:
+   *  · race.lga / race.lgas — LGA is the acronym every screen, the unit picker
+   *    and INEC's own publications use. Spelling it out in one place only would
+   *    be the inconsistency, not the fix.
+   *  · race.ward — "Ward" is the loanword in Igbo, as "Menu" is above.
+   *  · nav.osun-2026 — a state plus a year. Place names keep the register's
+   *    spelling in every language so a reader can match what the unit picker
+   *    shows them; see tmp/fix_political_tr.py for the full argument.
+   */
+  'race.lga',
+  'race.lgas',
+  'race.ward',
+  'nav.osun-2026',
 ]);
 
 /* Latin plus the marks these three orthographies need, punctuation, arrows and

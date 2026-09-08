@@ -159,8 +159,9 @@
         .filter((x) => norm(String(x.key).split('|')[0]) === want)
         .map((x) => ({ path: x.path, name: titleCase(String(x.key).split('|')[1] || '') }));
       if (parts.length > 1) {
-        return svgFor(parts, `Map of ${j.value} State, by local government area`,
-          `${j.value} State — ${parts.length} local government areas`);
+        return svgFor(parts,
+          T('race.map-of-state-by-lga', 'Map of {state} State, by local government area').replace('{state}', j.value),
+          T('race.state-lgas', '{state} State — {n} local government areas').replace('{state}', j.value).replace('{n}', parts.length));
       }
       // No LGAs for this state means the key did not match, not that the state
       // has one LGA — fall back to its outline rather than draw a lone shape.
@@ -325,8 +326,8 @@
      * label exists, which keeps the promise (every card shows a year) without
      * saying the same thing in two boxes.
      */
-    if (race.date) cells.push([new Date(race.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }), 'Election day']);
-    else if (race.dateText) cells.push([race.dateText, race.dateLabel || 'Date']);
+    if (race.date) cells.push([new Date(race.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }), T('race.election-day', 'Election day')]);
+    else if (race.dateText) cells.push([race.dateText, race.dateLabel || T('race.date', 'Date')]);
     else if (yr) cells.push([yr, T('race.election-year', 'Election year')]);
     /**
      * TBD, NOT A SUPPRESSED CELL.
@@ -342,8 +343,8 @@
      * Hawkeye, not from the election. Every race now carries the same four
      * facts, and three of them are known for every seat in the country.
      */
-    cells.push([candTotal || 'TBD', 'Candidates']);
-    if (st.heldBy) cells.push([st.heldBy, 'Currently held by']);
+    cells.push([candTotal || T('race.tbd', 'TBD'), T('race.candidates', 'Candidates')]);
+    if (st.heldBy) cells.push([st.heldBy, T('race.currently-held-by', 'Currently held by')]);
     /**
      * THE COUNT SHOULD DESCRIBE WHAT THE MAP DRAWS — except where it cannot.
      *
@@ -369,10 +370,13 @@
     const seatLevel = race.join && race.join.level === 'lga';
     // A count of one is still a count of one. "1 LGAs" appears on 80 of the 366
     // federal constituencies and 986 of the 1,005 state seats — not a rare edge.
-    const plural = (n, word) => (Number(n) === 1 ? word : word + 's');
-    if (seatLevel && st.wards != null) cells.push([st.wards, plural(st.wards, 'Ward')]);
-    else if (st.lgas != null) cells.push([st.lgas, plural(st.lgas, 'LGA')]);
-    if (st.pollingUnits != null) cells.push(['~' + Number(st.pollingUnits).toLocaleString(), plural(st.pollingUnits, 'Polling unit')]);
+    /* English inflects the noun after a numeral and none of ha/ig/yo does, so
+       each noun is two keys whose non-English values are identical. Cheaper
+       and more honest than a plural engine for three nouns. */
+    const plural = (n, one, many, enOne) => (Number(n) === 1 ? T(one, enOne) : T(many, enOne + 's'));
+    if (seatLevel && st.wards != null) cells.push([st.wards, plural(st.wards, 'race.ward', 'race.wards', 'Ward')]);
+    else if (st.lgas != null) cells.push([st.lgas, plural(st.lgas, 'race.lga', 'race.lgas', 'LGA')]);
+    if (st.pollingUnits != null) cells.push(['~' + Number(st.pollingUnits).toLocaleString(), plural(st.pollingUnits, 'race.polling-unit', 'race.polling-units', 'Polling unit')]);
     if (cells.length) parts.push(`<div class="race-statbar">${cells.map(([n, l]) => `<div class="s"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join('')}</div>`);
 
     // WHO INEC DECLARED — on a finished race, the first thing a reader wants.
@@ -401,11 +405,11 @@
                section is — and read as Hawkeye announcing a person rather than
                recording a declaration. The pill IS the heading now; the name is
                the content under it. -->
-          <h2 class="declared-tag" id="declared-h">Declared result</h2>
+          <h2 class="declared-tag" id="declared-h">${T('race.declared-result', 'Declared result')}</h2>
           <p class="declared-winner">${esc(D.winner)}${D.party ? ` <span class="declared-party">${flagInline(D.party, 18)}${esc(D.party)}</span>` : ''}</p>
-          <p class="declared-by">Declared by ${esc(D.by || 'INEC')}${
-            D.date ? ` on ${esc(new Date(D.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }))}` : ''
-          }${D.place ? `, ${esc(D.place)}` : ''}${D.returningOfficer ? ` · Returning Officer ${esc(D.returningOfficer)}` : ''}.</p>
+          <p class="declared-by">${T('race.declared-by', 'Declared by {by}').replace('{by}', esc(D.by || 'INEC'))}${
+            D.date ? T('race.on-date', ' on {date}').replace('{date}', esc(new Date(D.date + 'T00:00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }))) : ''
+          }${D.place ? `, ${esc(D.place)}` : ''}${D.returningOfficer ? T('race.returning-officer', ' · Returning Officer {name}').replace('{name}', esc(D.returningOfficer)) : ''}.</p>
         </div>
         ${rows.length ? `<ol class="declared-rows">${rows.map((r) => {
           const v = Number(r.votes) || 0;
@@ -417,8 +421,8 @@
             <span class="dv">${v.toLocaleString()}</span></li>`;
         }).join('')}</ol>` : ''}
         <p class="declared-note">${esc(D.note || '')}</p>
-        ${Array.isArray(D.sources) && D.sources.length ? `<p class="declared-src">Recorded from: ${
-          D.sources.map((u, i) => `<a href="${esc(u)}" rel="noopener noreferrer" target="_blank">source ${i + 1}</a>`).join(' · ')
+        ${Array.isArray(D.sources) && D.sources.length ? `<p class="declared-src">${T('race.recorded-from', 'Recorded from:')} ${
+          D.sources.map((u, i) => `<a href="${esc(u)}" rel="noopener noreferrer" target="_blank">${T('race.source-n', 'source {n}').replace('{n}', i + 1)}</a>`).join(' · ')
         }</p>` : ''}
       </section>`);
     }
@@ -444,7 +448,7 @@
     // rule behind it are derived up with the stat bar, so the count in the card
     // and the list beneath it come from the same array.
     if (seatField && wholeField.length) {
-      parts.push('<h2 style="margin-top:26px">Declared candidates</h2>');
+      parts.push('<h2 style="margin-top:26px">' + T('race.declared-candidates', 'Declared candidates') + '</h2>');
       parts.push('<p class="hint" id="field-hint">' + T('race.listed-alphabetically-by-party', 'Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.') + '</p>');
       /**
        * `data-party` is the join key for the running totals filled in later —
@@ -453,7 +457,7 @@
        */
       parts.push(`<div class="ballot" id="field-list">${wholeField.map((c) => `
         <div class="b" style="--pc:${color(c.party)}" data-party="${esc(c.party)}">${flagIcon(c.party)}
-          <div><strong>${esc(c.name)}</strong><span>${esc(c.meta || c.party)}${!c.meta && c.incumbent ? ' · incumbent' : ''}</span></div>
+          <div><strong>${esc(c.name)}</strong><span>${esc(c.meta || c.party)}${!c.meta && c.incumbent ? T('race.incumbent-suffix', ' · incumbent') : ''}</span></div>
           <b class="b-votes" hidden></b></div>`).join('')}</div>`);
     }
 
@@ -465,7 +469,7 @@
     // nonpartisan disclaimer and then nothing at all. 470 Senate and House pages
     // would each have opened on that.
     if (!seatField && race.candidates.length) {
-    const heading = opts.frontLabel || (race.others ? 'Front-runners' : 'Declared candidates');
+    const heading = opts.frontLabel || (race.others ? T('race.front-runners', 'Front-runners') : T('race.declared-candidates', 'Declared candidates'));
     parts.push(`<h2 style="margin-top:26px">${esc(heading)}</h2>`);
     parts.push('<p class="hint">' + T('race.listed-alphabetically-by-party', 'Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.') + '</p>');
     parts.push(`<div class="cand-grid">${race.candidates.map((c) => `
@@ -475,8 +479,8 @@
             <h3>${esc(c.name)}${c.incumbent ? '<span class="inc">' + T('race.incumbent', 'Incumbent') + '</span>' : ''}</h3></div></div>
         <p>${esc(c.line || '')}</p>
         <dl><dt>${T('race.home-base', 'Home base')}</dt><dd>${esc(c.home || '—')}</dd>
-            <dt>Bid</dt><dd>${esc(c.bids || '—')}</dd>
-            <dt>Status</dt><dd>${esc(c.status || '—')}</dd></dl>
+            <dt>${T('race.bid', 'Bid')}</dt><dd>${esc(c.bids || '—')}</dd>
+            <dt>${T('race.status', 'Status')}</dt><dd>${esc(c.status || '—')}</dd></dl>
       </div>`).join('')}</div>`);
     }
 
@@ -490,7 +494,7 @@
         parts.push(`<h2 style="margin-top:26px">Full ballot — ${all.length} candidates</h2>`);
         parts.push(`<div class="ballot">${all.map((c) => `
           <div class="b" style="--pc:${color(c.party)}">${flagIcon(c.party)}
-            <div><strong>${esc(c.name)}</strong><span>${esc(c.party)}${c.incumbent ? ' · incumbent' : ''}</span></div></div>`).join('')}</div>`);
+            <div><strong>${esc(c.name)}</strong><span>${esc(c.party)}${c.incumbent ? T('race.incumbent-suffix', ' · incumbent') : ''}</span></div></div>`).join('')}</div>`);
       } else {
         parts.push('<h2 style="margin-top:26px">' + T('race.other-declared-candidates', 'Other declared candidates') + '</h2>');
         parts.push(`<div class="ballot">${race.minors.map((m) => `
@@ -509,7 +513,7 @@
     // rule: its columns are Home base / Bid / Status, three facts a seat's field
     // does not carry, so on a seat page every cell would be an em dash.
     if (!seatField && race.candidates.length) {
-    parts.push('<h2 style="margin-top:26px">Quick compare</h2>');
+    parts.push('<h2 style="margin-top:26px">' + T('race.quick-compare', 'Quick compare') + '</h2>');
     parts.push(`<div class="race-compare"><table><thead>
       <tr><th>${T('race.candidate', 'Candidate')}</th><th>${T('race.party', 'Party')}</th><th>${T('race.home-base', 'Home base')}</th><th>${T('race.bid', 'Bid')}</th><th>${T('race.status', 'Status')}</th></tr></thead><tbody>${
       race.candidates.map((c) => `<tr><td><strong>${esc(c.name)}</strong></td>
@@ -582,10 +586,10 @@
     const boardOnly = isPresidency(race);
     parts.push(`<div class="race-cta${done ? '' : ' race-cta-pinned'}">
       ${canFollow ? '<button type="button" class="btn-quiet" data-cta="follow" id="race-follow-btn">🔔 Follow this race</button>' : ''}
-      ${done ? '' : `<a class="btn-accent" data-cta="observe" id="race-report-btn" href="observe.html?intent=observe${race.join && race.join.contest ? '&contest=' + encodeURIComponent(race.join.contest) : ''}">Report from your unit</a>`}
+      ${done ? '' : `<a class="btn-accent" data-cta="observe" id="race-report-btn" href="observe.html?intent=observe${race.join && race.join.contest ? '&contest=' + encodeURIComponent(race.join.contest) : ''}">${T('race.report-from-your-unit', 'Report from your unit')}</a>`}
       ${boardOnly ? `<a class="${done ? 'btn-accent' : 'btn-quiet'}" data-cta="results" href="${esc(opts.resultsHref || resultsHrefFor(race))}">${
-        done ? 'Review the results' : 'Live results'}</a>` : ''}
-      ${done ? '<a class="btn-quiet" data-cta="verify" href="ledger.html">Verify the record</a>' : ''}</div>
+        done ? T('race.review-the-results', 'Review the results') : T('race.live-results', 'Live results')}</a>` : ''}
+      ${done ? `<a class="btn-quiet" data-cta="verify" href="ledger.html">${T('race.verify-the-record', 'Verify the record')}</a>` : ''}</div>
       ${canFollow ? '<p class="hint" id="race-follow-msg" hidden></p>' : ''}`);
 
     const credit = [noteLeads ? '' : (race.note || ''), race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit || ''].filter(Boolean).join(' ');
@@ -706,9 +710,9 @@
           // for the second would hold back the first for no reason.
           if (slot.querySelectorAll('path[data-region]').length > 1) {
             slot.insertAdjacentHTML('beforeend',
-              `<label class="race-map-pickwrap"><span class="sr-only">Jump to an area</span>
+              `<label class="race-map-pickwrap"><span class="sr-only">${T('race.jump-to-an-area', 'Jump to an area')}</span>
                  <select class="race-map-pick"></select></label>
-               <p class="race-map-info" aria-live="polite"><span class="race-mi-sub">Tap an area of the map for what has been reported from it.</span></p>`);
+               <p class="race-map-info" aria-live="polite"><span class="race-mi-sub">${T('race.tap-an-area', 'Tap an area of the map for what has been reported from it.')}</span></p>`);
             // The same promise the totals used — one request, two readers.
             board
               .then((b) => wireRaceMap(slot, race, b))
@@ -947,7 +951,7 @@
     // the paths.
     const picker = root.querySelector('.race-map-pick');
     if (picker) {
-      picker.innerHTML = `<option value="">Jump to an area…</option>`
+      picker.innerHTML = `<option value="">${T('race.jump-to-an-area', 'Jump to an area')}…</option>`
         + paths.map((p) => `<option value="${esc(p.dataset.region)}">${esc(p.dataset.region)}</option>`).join('');
       picker.addEventListener('change', () => {
         const p = paths.find((x) => x.dataset.region === picker.value);

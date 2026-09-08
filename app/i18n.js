@@ -206,6 +206,54 @@
   }
 
   /**
+   * TRANSLATE A FETCHED DATA OBJECT — political_data.json, on the three screens
+   * that render it (candidates, political, osun, and race.html).
+   *
+   * That file is DATA, not UI: fetched at runtime by both clients, and amended
+   * between deploys — INEC revised its 2023 candidate list seven times after
+   * publication. So it is translated by an OVERLAY at /i18n/political.json,
+   * keyed by the English string, rather than by shipping four copies of the file.
+   * Four copies go out of sync the first time somebody corrects a party in
+   * English and forgets the rest, and on an election tool the result of that is
+   * not an untranslated label — it is a Hausa reader being shown WRONG DATA,
+   * confidently. With an overlay, a corrected or reworded English value simply
+   * has no entry and falls through as English: visibly untranslated, and true.
+   *
+   * The walk only ever swaps a string that is a key in the overlay, and
+   * scripts/i18n/build_political_i18n.mjs refuses to emit a key that collides
+   * with any name, party or state in the data — so a candidate, a running mate,
+   * a party code or a polling-unit register spelling cannot be rewritten by it.
+   *
+   * Async because the overlay is a separate fetch; callers already await the
+   * data. English resolves immediately and does no walk at all.
+   */
+  var overlays = {};
+  function overlay(code) {
+    if (overlays[code]) return overlays[code];
+    overlays[code] = fetch('/i18n/political.json', { cache: 'no-cache' })
+      .then(function (r) { return r.ok ? r.json() : {}; })
+      .then(function (j) { return (j && j[code]) || {}; })
+      .catch(function () { return {}; });   // no overlay -> English, which is correct data
+    return overlays[code];
+  }
+
+  function swap(node, dict) {
+    if (typeof node === 'string') return Object.prototype.hasOwnProperty.call(dict, node) ? dict[node] : node;
+    if (Array.isArray(node)) return node.map(function (v) { return swap(v, dict); });
+    if (node && typeof node === 'object') {
+      var out = {};
+      for (var k in node) if (Object.prototype.hasOwnProperty.call(node, k)) out[k] = swap(node[k], dict);
+      return out;
+    }
+    return node;
+  }
+
+  function data(obj) {
+    if (current === 'en') return Promise.resolve(obj);
+    return overlay(current).then(function (dict) { return swap(obj, dict); });
+  }
+
+  /**
    * Review status of every bundle, for the picker's badges.
    *
    * FETCHED, NOT HARDCODED. A table in this file would be a second place to
@@ -242,6 +290,8 @@
     PENDING: PENDING,
     t: t,
     apply: apply,
+    /* Translate a fetched political_data.json object. See the note above. */
+    data: data,
     set: set,
     statuses: statuses,
     get current() { return current; },

@@ -98,7 +98,7 @@ function CandidateCard({ c, logos }: { c: Candidate; logos: Record<string, strin
             </Text>
             {c.incumbent ? (
               <View className="ml-2 rounded-full bg-surface px-2 py-0.5">
-                <Text className="text-[9px] font-bold text-good-ink">INCUMBENT</Text>
+                <Text className="text-[9px] font-bold text-good-ink">{i18nT('race.incumbent').toUpperCase()}</Text>
               </View>
             ) : null}
           </View>
@@ -108,9 +108,9 @@ function CandidateCard({ c, logos }: { c: Candidate; logos: Record<string, strin
       {c.line ? <Text className="pt-2 text-sm text-muted">{c.line}</Text> : null}
       <View className="pt-2">
         {[
-          ['Home base', c.home],
-          ['Bid', c.bids],
-          ['Status', c.status],
+          [i18nT('race.home-base'), c.home],
+          [i18nT('race.bid'), c.bids],
+          [i18nT('race.status'), c.status],
         ].map(([k, v]) => (
           <View key={k} className="flex-row py-0.5">
             <Text className="w-24 text-[11px] font-semibold uppercase tracking-wide text-faint">
@@ -241,16 +241,16 @@ export function RaceView({
               month: 'short',
               year: 'numeric',
             }),
-            'Election day',
+            i18nT('race.election-day'),
           ]);
         } else if (race.dateText) {
-          cells.push([race.dateText, race.dateLabel ?? 'Date']);
+          cells.push([race.dateText, race.dateLabel ?? i18nT('race.date')]);
         } else if (yr) {
           // THE YEAR IS A FALLBACK, NOT A FIFTH CELL. A full election day
           // already contains it ("16 Jan 2027"), and the written races carry
           // their own dated label — one of which is literally "Election year",
           // so an unconditional cell printed that label TWICE on those screens.
-          cells.push([yr, 'Election year']);
+          cells.push([yr, i18nT('race.election-year')]);
         }
         /**
          * TBD, NOT A SUPPRESSED CELL.
@@ -264,8 +264,8 @@ export function RaceView({
          * `TBD` says what the zero could not — the number is missing from
          * Hawkeye, not from the election.
          */
-        cells.push([candTotal || 'TBD', 'Candidates']);
-        if (st?.heldBy) cells.push([st.heldBy, 'Held by']);
+        cells.push([candTotal || i18nT('race.tbd'), i18nT('race.candidates')]);
+        if (st?.heldBy) cells.push([st.heldBy, i18nT('n.components.race.held-by')]);
         /**
          * THE COUNT SHOULD DESCRIBE WHAT THE MAP DRAWS — except where it cannot.
          *
@@ -293,11 +293,14 @@ export function RaceView({
         // A count of one is still a count of one. "1 LGAs" appears on 80 of the
         // 366 federal constituencies and 986 of the 1,005 state seats — not a
         // rare edge.
-        const plural = (n: number, word: string) => (n === 1 ? word : `${word}s`);
-        if (seatLevel && st?.wards != null) cells.push([st.wards, plural(st.wards, 'Ward')]);
-        else if (st?.lgas != null) cells.push([st.lgas, plural(st.lgas, 'LGA')]);
+        /* English inflects the noun after a numeral; ha/ig/yo do not. Two keys
+           per noun, identical in the three, rather than a plural engine for
+           three words — the same call app/race.js makes. */
+        const plural = (n: number, one: string, many: string) => i18nT(n === 1 ? one : many);
+        if (seatLevel && st?.wards != null) cells.push([st.wards, plural(st.wards, 'race.ward', 'race.wards')]);
+        else if (st?.lgas != null) cells.push([st.lgas, plural(st.lgas, 'race.lga', 'race.lgas')]);
         if (st?.pollingUnits != null) {
-          cells.push([`~${st.pollingUnits.toLocaleString()}`, plural(st.pollingUnits, 'Unit')]);
+          cells.push([`~${st.pollingUnits.toLocaleString()}`, plural(st.pollingUnits, 'n.components.race.unit', 'n.components.race.units')]);
         }
         /**
          * COLUMNS SIZED BY WHAT IS IN THEM, not five equal fifths.

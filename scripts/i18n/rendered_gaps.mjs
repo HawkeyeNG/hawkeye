@@ -65,6 +65,7 @@ const KEEP = new Set(['HAWKEYE', 'Hawkeye', 'INEC', 'EC8A', 'EC8B', 'IReV', 'PDP
   'Nigeria', 'Osun', 'TikTok', 'WhatsApp', 'Telegram', 'X', 'Facebook', 'YouTube', 'Instagram', 'Chrome', 'Safari',
   'Firefox', 'Android', 'iPhone', 'Samsung', 'Google', 'Apple', 'Play', 'App Store', 'PWA', 'SHA-256', 'Rekor',
   'hawkeye.com.ng', 'inecnigeria.org', 'inecelectionresults.ng', 'GPS', 'OTP', 'PU', 'LGA', 'NIN', 'ID', 'SMS',
+  'FCT', 'NASS', 'IReV', 'EC8B', 'NIWA',   // acronyms the app uses untranslated throughout
   // Crypto networks on support.html. Chain names are proper nouns and the
   // addresses beside them MUST be byte-identical in every language — a
   // "translated" wallet address is money sent nowhere.
@@ -86,6 +87,34 @@ const ADDRESSY = /^(?:0x[0-9a-fA-F]{16,}|[A-Za-z0-9]{26,})$/;
  *
  * Kept narrow on purpose. Anything that is prose, however short, is still a gap.
  */
+/**
+ * The people, parties and places in app/political_data.json.
+ *
+ * Read FROM THE DATA, never listed here. candidates/political/osun render 130
+ * candidate names, running mates, governors, states and party codes, all of
+ * which are correctly identical in every language — and a hardcoded list of them
+ * would be a second place to remember a by-election, going stale exactly when a
+ * new name arrives. scripts/i18n/build_political_i18n.mjs derives the same set
+ * for its own name-preservation check; this is that set used the other way
+ * round, to stop the sweep reporting a correctly-untranslated name as a gap.
+ */
+const POLITICAL_IDENTITY = (() => {
+  const out = new Set();
+  let data;
+  try { data = JSON.parse(fs.readFileSync(`${APP}/political_data.json`, 'utf8')); } catch { return out; }
+  const walk = (node, path) => {
+    if (typeof node === 'string') {
+      if (/\.(name|party|initials|winner|returningOfficer|by|state|value|heldBy)$/.test(path) && path !== 'president.name') out.add(node);
+      if (/^(governors|governorNames|stateStats)\./.test(path)) { out.add(path.split('.')[1]); out.add(node); }
+      return;
+    }
+    if (Array.isArray(node)) { node.forEach((v, i) => walk(v, `${path}.${i}`)); return; }
+    if (node && typeof node === 'object') for (const [k, v] of Object.entries(node)) walk(v, path ? `${path}.${k}` : k);
+  };
+  walk(data, '');
+  return out;
+})();
+
 const NEVER_TRANSLATED = [
   /^Hawkeye( Lite)?$/,                       // the product and its small build
   /^IniXien(, LLC)?$/,                       // the company, as registered
@@ -93,6 +122,13 @@ const NEVER_TRANSLATED = [
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/,              // an email address
   /^[\d.,]+\s*(?:[KMGT]?B|MB|kB)$/i,         // a file size
   /^\+?\d[\d\s()-]{6,}$/,                    // a phone number
+  // A formatted date. Month abbreviations stay English for the same reason
+  // place names do: they are matched against INEC publications and the
+  // register, neither of which is localised.
+  /^\d{1,2} [A-Z][a-z]{2} \d{4}$/,
+  // A race name: "Osun 2026" is a state plus a year, identical in every
+  // language by the register rule.
+  /^[A-Z][a-zA-Z]+ \d{4}$/,
 ];
 
 const looksTranslatable = (s) => {
@@ -107,6 +143,7 @@ const looksTranslatable = (s) => {
   if (!/[A-Za-z]{2}/.test(t)) return false;             // numbers, punctuation, emoji
   if (ADDRESSY.test(t)) return false;
   if (NEVER_TRANSLATED.some((re) => re.test(t))) return false;
+  if (POLITICAL_IDENTITY.has(t)) return false;
   if (/^https?:\/\//.test(t)) return false;
   if (/^[\d\s.,:/%+-]+$/.test(t)) return false;
   // A bare proper-noun run: every word capitalised AND every word in KEEP.

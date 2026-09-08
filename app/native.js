@@ -549,6 +549,38 @@
  * would be blocked. If that plugin is ever disabled this silently falls back to
  * the bundle, which looks like "the app works" while showing stale candidates.
  */
+/**
+ * TRANSLATE A FETCHED DATA OBJECT, WITHOUT DEPENDING ON SCRIPT ORDER.
+ *
+ * The four pages that render political_data.json call this between the parse and
+ * the render. It lives HERE, in native.js, for one reason: those pages call
+ * `fetchData` from their inline script, so native.js is guaranteed to have
+ * executed by then — while `/i18n.js` is loaded near the BOTTOM of all four and
+ * may not have. Calling window.HawkeyeI18n.data() directly from the inline script
+ * therefore reads `undefined` whenever the data fetch wins the race, and the page
+ * falls back to English permanently, with nothing to repaint it. That is the
+ * exact failure that shipped the untranslated footer on Home; it is not being
+ * reintroduced one file later.
+ *
+ * So: use i18n if it is already there, and otherwise wait for it to announce
+ * itself. i18n.js dispatches 'hawkeye-lang' on every load including the failure
+ * path, so this cannot hang on a missing bundle; the timeout covers i18n.js
+ * failing to load at all, in which case English IS the correct answer.
+ */
+window.i18nData = function (obj) {
+  if (window.HawkeyeI18n) return window.HawkeyeI18n.data(obj);
+  return new Promise(function (resolve) {
+    var done = false;
+    var finish = function () {
+      if (done) return;
+      done = true;
+      resolve(window.HawkeyeI18n ? window.HawkeyeI18n.data(obj) : obj);
+    };
+    document.addEventListener('hawkeye-lang', finish, { once: true });
+    setTimeout(finish, 4000);
+  });
+};
+
 window.HAWKEYE_LIVE_ORIGIN = 'https://hawkeye.com.ng';
 window.fetchData = function (name) {
   var onLive = /(^|\.)hawkeye\.com\.ng$/i.test(location.hostname);

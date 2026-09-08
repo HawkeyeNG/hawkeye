@@ -60,7 +60,7 @@
     <div id="result"></div>
   </main>
 
-  <script src="native.js?v=114"></script>
+  <script src="native.js?v=115"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const secret = () => localStorage.getItem('hawkeye_admin') || '';
@@ -127,7 +127,7 @@
     if (err) setStatus($('result'), 'bad', 'OAuth error: ' + err);
     refresh();
   </script>
-<script src="/i18n.js?v=4"></script>
+<script src="/i18n.js?v=5"></script>
 <script src="/lang.js?v=3"></script>
 </body>
 </html>

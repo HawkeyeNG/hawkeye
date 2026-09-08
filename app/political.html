@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=175">
-  <script src="native.js?v=114"></script>
+  <script src="native.js?v=115"></script>
   <style>
     /* The tapped-state line under the governors map. Page-local: styles.css is
        pinned by every page in the app, so a shared rule for one caption would
@@ -237,6 +237,11 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
     <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">© 2026 IniXien, LLC. All rights reserved.</p></div></footer>
 
   <script>
+    /* i18n for text this block paints. Every element below is rewritten by
+       JS, and this page loads i18n.js AFTER this script, so the first paint
+       can precede the bundle — hence the repaint bound at the end. */
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+
     const PC = { APC:'#2e7d32', PDP:'#c62828', LP:'#8bc34a', NNPP:'#1565c0', APGA:'#f9a825', SDP:'#5e35b1', ADC:'#00897b', YPP:'#ef6c00', APM:'#283593', NDC:'#2e3192', A:'#00838f' };
     const color = (p) => PC[p] || '#9aa7a0';
     const norm = (s) => { const n = String(s||'').toLowerCase().replace(/[^a-z ]+/g,' ').replace(/\s+/g,' ').trim(); return /fct|federal capital|abuja/.test(n)?'fct':n; };
@@ -244,6 +249,17 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
 
     // The six geopolitical zones. Fixed, constitutional groupings — not a
     // presentation choice — so they live as data, not as a sort.
+    /* Geopolitical ZONES are descriptive regions in no register, so unlike a
+       state or a senatorial district they translate. The object's KEYS stay
+       English because they are the grouping identity. */
+    const ZONE_KEY = {
+      'North Central': 'political.north-central',
+      'North East': 'political.north-east',
+      'North West': 'political.north-west',
+      'South East': 'political.south-east',
+      'South South': 'political.south-south',
+      'South West': 'political.south-west',
+    };
     const ZONES = {
       'North Central': ['Benue','Kogi','Kwara','Nasarawa','Niger','Plateau','FCT'],
       'North East': ['Adamawa','Bauchi','Borno','Gombe','Taraba','Yobe'],
@@ -354,7 +370,8 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
     (async () => {
       const [geo, data, logos, live, own] = await Promise.all([
         fetch('states_geo.json').then(r=>r.json()),
-        fetchData('political_data.json').then(r=>r.json()),
+        fetchData('political_data.json').then(r=>r.json())
+          .then(window.i18nData),
         fetchData('logos/manifest.json').then(r=>r.json()).catch(()=>({})),
         // Server-refreshed upstream (Wikipedia/NASS). Enrichment only — the page
         // renders fully from the committed JSON if this is unavailable.
@@ -374,7 +391,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         const el = document.getElementById('prez-card');
         document.getElementById('prez-name').textContent = data.president.name;
         const partyEl = document.getElementById('prez-party');
-        partyEl.textContent = 'Governing party: ';
+        partyEl.textContent = T('political.governing-party', 'Governing party: ');
         const span = document.createElement('span');
         span.textContent = data.president.party;
         span.style.color = color(data.president.party);
@@ -405,8 +422,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         const nameNote = (key) => {
           const r = roster[key];
           if (!r || !r.listed) return '';
-          return `<p class="sub" style="margin-top:8px">Tap a seat for the
-            ${key === 'senate' ? 'Senator' : 'Member'}.</p>`;
+          return `<p class="sub" style="margin-top:8px">${key === 'senate'
+            ? T('political.tap-a-seat-for-the-senator', 'Tap a seat for the Senator.')
+            : T('political.tap-a-seat-for-the-member', 'Tap a seat for the Member.')}</p>`;
         };
         // Federal chambers only. The composition file also carries governors,
         // who are not in the National Assembly and are already covered by the
@@ -429,8 +447,8 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
             // provenance for it lives in the info dot above.
             return `<div class="chamber">
               <h3>${esc(ch.label)}</h3>
-              <p class="sub">${held} of ${ch.size} seats attributed${held<ch.size
-                  ? ` · ${ch.size-held} held by a member whose party no source publishes`
+              <p class="sub">${T('political.seats-attributed', '{held} of {size} seats attributed').replace('{held}', held).replace('{size}', ch.size)}${held<ch.size
+                  ? T('political.held-by-unpublished-party', ' · {n} held by a member whose party no source publishes').replace('{n}', ch.size-held)
                   : ''}</p>
               ${seatArch(ch.parties, ch.size, roster[key])}
               <div class="seat-card" id="seat-card-${key}"></div>${nameNote(key)}
@@ -507,7 +525,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         const srcLines = ((live && live.ok && live.sources) || [])
           .map((x) => `${x.name}|${x.url}`).join('\n');
         document.getElementById('comp-note').innerHTML =
-          `Who holds the 469 federal seats today.<button class="info-i"
+          `${T('political.who-holds-the-469-federal-seats', 'Who holds the 469 federal seats today.')}<button class="info-i"
              data-info-title="Where these numbers come from"
              data-info="${esc(info)}" data-info-links="${esc(srcLines)}"></button>`;
       }
@@ -531,9 +549,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       // states with a tail or a crescent the emblem sat on the border or off the
       // state entirely. See map-label.js.
       const mapEl = document.getElementById('map');
-      mapEl.innerHTML = `<svg viewBox="${geo.viewBox}" role="img" aria-label="Governing party by state">${s}<g class="badges"></g></svg>`
+      mapEl.innerHTML = `<svg viewBox="${geo.viewBox}" role="img" aria-label="${T('political.governing-party-by-state', 'Governing party by state')}">${s}<g class="badges"></g></svg>`
         + `<p class="gov-pick" id="gov-pick" hidden></p>`
-        + `<p class="hint gov-pick-hint" id="gov-pick-hint">Tap a state for its governor.</p>`;
+        + `<p class="hint gov-pick-hint" id="gov-pick-hint">${T('political.tap-a-state-for-its-governor', 'Tap a state for its governor.')}</p>`;
       const msvg = mapEl.querySelector('svg');
       const R = window.HAWKEYE_MAP.badgeScale(msvg);  // constant on-screen size
       let b = '';
@@ -591,6 +609,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
             : `<span class="dot" style="background:${color(p)}">${esc(p.slice(0, 3))}</span>`}${esc(p)}</span>`
         : '\u2014';
       document.getElementById('zones').innerHTML = Object.entries(ZONES).map(([zone, states]) => {
+        /* The ZONES key stays English — it is the grouping identity. Only the
+           heading a reader sees is translated. */
+        const zoneLabel = T(ZONE_KEY[zone] || '', zone);
         const rows = states.filter((st) => st in data.governors);
         const mix = {};
         rows.forEach((st) => { const p = data.governors[st]; if (p) mix[p] = (mix[p] || 0) + 1; });
@@ -598,9 +619,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         const dots = ranked.map(([p, n]) =>
           `<i style="background:${color(p)}" title="${esc(p)}: ${n}"></i>`.repeat(n)).join('');
         const lead = ranked[0];
-        return `<details class="zone acc"><summary>${esc(zone)}
+        return `<details class="zone acc"><summary>${esc(zoneLabel)}
             <span class="zone-mix">${dots}</span>
-            <span class="zone-n">${rows.length} state${rows.length === 1 ? '' : 's'}${lead ? ` \u00b7 ${esc(lead[0])} leads` : ''}</span>
+            <span class="zone-n">${T(rows.length === 1 ? 'political.state-count' : 'political.states-count', rows.length === 1 ? '{n} state' : '{n} states').replace('{n}', rows.length)}${lead ? T('political.party-leads', ' \u00b7 {party} leads').replace('{party}', esc(lead[0])) : ''}</span>
           </summary>
           <table><tbody>${rows.map((st) =>
             `<tr><td>${esc(st)}</td><td>${chipOf(data.governors[st])}</td></tr>`).join('')}</tbody></table>
@@ -615,9 +636,12 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         document.getElementById('sha-note').textContent =
           `${sts.length} of 36 state assemblies, from Wikipedia. Each row keeps its own "as of" date — some are several years old.`;
         document.getElementById('sha').innerHTML = Object.entries(ZONES).map(([zone, states]) => {
+        /* The ZONES key stays English — it is the grouping identity. Only the
+           heading a reader sees is translated. */
+        const zoneLabel = T(ZONE_KEY[zone] || '', zone);
           const rows = sts.filter(([st]) => states.includes(st));
           if (!rows.length) return '';
-          return `<details class="zone acc"><summary>${esc(zone)}
+          return `<details class="zone acc"><summary>${esc(zoneLabel)}
               <span class="zone-n">${rows.length} assembl${rows.length === 1 ? 'y' : 'ies'}</span>
             </summary>
             <table><tbody>${rows.map(([st, a]) => {
@@ -632,7 +656,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         }).join('');
       } else {
         document.getElementById('sha-note').textContent =
-          'State assembly data is unavailable right now — it is pulled live and the source did not answer.';
+          T('political.state-assembly-unavailable', 'State assembly data is unavailable right now — it is pulled live and the source did not answer.');
       }
 
       if (data.upcoming) {
@@ -643,7 +667,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="/i18n.js?v=4"></script>
+  <script src="/i18n.js?v=5"></script>
   <script src="/lang.js?v=3"></script>
   <script src="menu.js?v=169"></script>
 </body>

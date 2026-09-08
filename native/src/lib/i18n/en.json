@@ -243,6 +243,8 @@
   "n.app.tabs.results.back-to-the-whole-elections": "← Back to the whole elections",
   "n.app.tabs.results.narrow-to-one-seat": "Narrow to one seat.",
   "n.app.tabs.results.no-map-for-this-race": "No map for this race",
+  "n.app.tabs.results.open-a-single-seat": "Open a single seat instead",
+  "n.app.tabs.results.pick-a-seat-to-open-it": "Pick a seat to open its race page.",
   "n.app.tabs.results.rank-a-single-seat-instead": "Rank a single seat instead →",
   "n.app.tabs.results.report-from-your-unit": "Report from your unit",
   "n.components.ask-fab.ask-hawkeye-about-the-results": "Ask Hawkeye about the results",

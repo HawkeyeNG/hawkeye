@@ -1,0 +1,2052 @@
+{
+ "case.evidence": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "common.about-contact": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "common.cancel": {
+  "kind": "button",
+  "en": 6,
+  "max": 20
+ },
+ "common.close": {
+  "kind": "button",
+  "en": 5,
+  "max": 19
+ },
+ "common.election-integrity": {
+  "kind": "heading",
+  "en": 18,
+  "max": 38
+ },
+ "common.how-hawkeye-works": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "common.leaderboard": {
+  "kind": "heading",
+  "en": 11,
+  "max": 31
+ },
+ "common.map-a-polling-unit": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "common.menu": {
+  "kind": "button",
+  "en": 4,
+  "max": 18
+ },
+ "common.observer-guide": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "common.password": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "common.political-data": {
+  "kind": "heading",
+  "en": 14,
+  "max": 34
+ },
+ "common.privacy-data": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "common.public-docket": {
+  "kind": "heading",
+  "en": 13,
+  "max": 33
+ },
+ "common.public-reports-log": {
+  "kind": "heading",
+  "en": 18,
+  "max": 38
+ },
+ "common.report-a-collation-result": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "common.report-a-result": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "common.report-an-incident": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "common.state": {
+  "kind": "button",
+  "en": 5,
+  "max": 19
+ },
+ "common.verify-the-ledger": {
+  "kind": "heading",
+  "en": 17,
+  "max": 37
+ },
+ "incident-reports.incident-reports": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "incidents.find-units-near-me": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "incidents.published-incidents": {
+  "kind": "heading",
+  "en": 19,
+  "max": 39
+ },
+ "index.become-an-observer": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "index.create-an-account": {
+  "kind": "button",
+  "en": 17,
+  "max": 31
+ },
+ "index.my-polling-unit": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "index.report-an-incident": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "index.sign-in": {
+  "kind": "button",
+  "en": 7,
+  "max": 21
+ },
+ "integrity.against-inec-collation-records": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
+ "integrity.ai-vision-on-the-result-sheet": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "integrity.all-states": {
+  "kind": "button",
+  "en": 10,
+  "max": 24
+ },
+ "integrity.all-types": {
+  "kind": "chip",
+  "en": 9,
+  "max": 21
+ },
+ "integrity.collation-chain-undercount": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "integrity.collation-mismatch": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "integrity.collation-undercount": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "integrity.conflicting-collation-reports": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "integrity.conflicting-counts": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "integrity.digit-tests": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "integrity.duplicate-form-serial": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "integrity.impossible-turnout": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "integrity.incident-hotspot": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "integrity.incident-patterns": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "integrity.inec-irev-mismatch": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "integrity.last-digit-uniformity": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "integrity.location-inconsistency": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "integrity.neighbour-divergence": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "integrity.over-voting": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "integrity.provenance-duplicates": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "integrity.report-a-collation-result": {
+  "kind": "button",
+  "en": 27,
+  "max": 41
+ },
+ "integrity.sheet-authenticity": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "integrity.single-party-sweep": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "integrity.statistical-tripwires": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "integrity.vision-count-mismatch": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "integrity.vote-share-outlier": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "lang.later": {
+  "kind": "button",
+  "en": 7,
+  "max": 21
+ },
+ "n.app._layout.try-again": {
+  "kind": "button",
+  "en": 9,
+  "max": 23
+ },
+ "n.app.assistant.ask-hawkeye": {
+  "kind": "heading",
+  "en": 11,
+  "max": 31
+ },
+ "n.app.assistant.reading-the-reports": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.app.assistant.unanswered": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.app.candidates.could-not-load": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "n.app.candidates.presidency-2027": {
+  "kind": "heading",
+  "en": 15,
+  "max": 35
+ },
+ "n.app.case.all-cases": {
+  "kind": "button",
+  "en": 9,
+  "max": 23
+ },
+ "n.app.case.all-zeros": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "n.app.case.cast-my-verdict": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
+ "n.app.case.report-this-evidence": {
+  "kind": "button",
+  "en": 20,
+  "max": 34
+ },
+ "n.app.case.what-jurors-noted": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.app.docket.cleared-by-the-crowd": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.app.docket.held-out-of-tallies": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.docket.how-the-docket-works": {
+  "kind": "heading",
+  "en": 20,
+  "max": 40
+ },
+ "n.app.docket.left-unresolved": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.docket.open-cases": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.app.docket.retry": {
+  "kind": "button",
+  "en": 5,
+  "max": 19
+ },
+ "n.app.docket.struck-by-the-crowd": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.docket.verdicts-cast": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.incidents.video": {
+  "kind": "button",
+  "en": 5,
+  "max": 19
+ },
+ "n.app.incidents.what-appears-here": {
+  "kind": "heading",
+  "en": 17,
+  "max": 37
+ },
+ "n.app.integrity.collation-reconciliation": {
+  "kind": "heading",
+  "en": 24,
+  "max": 44
+ },
+ "n.app.integrity.desc.collation-chain-undercount": {
+  "kind": "body",
+  "en": 74,
+  "max": 130
+ },
+ "n.app.integrity.desc.collation-mismatch": {
+  "kind": "body",
+  "en": 72,
+  "max": 126
+ },
+ "n.app.integrity.desc.collation-undercount": {
+  "kind": "body",
+  "en": 94,
+  "max": 165
+ },
+ "n.app.integrity.desc.conflicting-collation-reports": {
+  "kind": "body",
+  "en": 66,
+  "max": 116
+ },
+ "n.app.integrity.desc.conflicting-counts": {
+  "kind": "body",
+  "en": 46,
+  "max": 86
+ },
+ "n.app.integrity.desc.digit-tests": {
+  "kind": "body",
+  "en": 105,
+  "max": 184
+ },
+ "n.app.integrity.desc.duplicate-form-serial": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
+ },
+ "n.app.integrity.desc.impossible-turnout": {
+  "kind": "body",
+  "en": 54,
+  "max": 95
+ },
+ "n.app.integrity.desc.incident-hotspot": {
+  "kind": "body",
+  "en": 77,
+  "max": 135
+ },
+ "n.app.integrity.desc.inec-irev-mismatch": {
+  "kind": "body",
+  "en": 75,
+  "max": 132
+ },
+ "n.app.integrity.desc.location-inconsistency": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
+ },
+ "n.app.integrity.desc.neighbour-divergence": {
+  "kind": "body",
+  "en": 69,
+  "max": 121
+ },
+ "n.app.integrity.desc.over-voting": {
+  "kind": "body",
+  "en": 57,
+  "max": 100
+ },
+ "n.app.integrity.desc.sheet-authenticity": {
+  "kind": "body",
+  "en": 117,
+  "max": 205
+ },
+ "n.app.integrity.desc.single-party-sweep": {
+  "kind": "body",
+  "en": 41,
+  "max": 81
+ },
+ "n.app.integrity.desc.vision-count-mismatch": {
+  "kind": "body",
+  "en": 75,
+  "max": 132
+ },
+ "n.app.integrity.desc.vote-share-outlier": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
+ },
+ "n.app.integrity.digit-distribution-screening": {
+  "kind": "heading",
+  "en": 28,
+  "max": 48
+ },
+ "n.app.integrity.high-severity-flags": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.integrity.inec-irev-cross-check": {
+  "kind": "heading",
+  "en": 21,
+  "max": 41
+ },
+ "n.app.integrity.low-flags": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "n.app.integrity.medium-flags": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.integrity.no-counts-yet": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.app.integrity.reports-screened": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "n.app.integrity.units-flagged": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.integrity.what-gets-checked": {
+  "kind": "heading",
+  "en": 17,
+  "max": 37
+ },
+ "n.app.ledger.confirm-in-rekor": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "n.app.ledger.entries-chained": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.ledger.how-the-chain-is-checked": {
+  "kind": "heading",
+  "en": 24,
+  "max": 44
+ },
+ "n.app.ledger.last-anchor": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.app.ledger.not-published-to-rekor-yet": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.ledger.on-this-phone": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.ledger.re-verify-on-this-phone": {
+  "kind": "button",
+  "en": 23,
+  "max": 37
+ },
+ "n.app.ledger.select-a-race": {
+  "kind": "button",
+  "en": 13,
+  "max": 27
+ },
+ "n.app.ledger.server-check": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.ledger.sheet-photo": {
+  "kind": "button",
+  "en": 11,
+  "max": 25
+ },
+ "n.app.ledger.venue-photo": {
+  "kind": "button",
+  "en": 11,
+  "max": 25
+ },
+ "n.app.ledger.verify-this-race": {
+  "kind": "button",
+  "en": 16,
+  "max": 30
+ },
+ "n.app.ledger.view-in-rekor": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.ledger.what-a-single-race-proof-shows": {
+  "kind": "heading",
+  "en": 30,
+  "max": 50
+ },
+ "n.app.map-unit.crowd-mapped-by-observers": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "n.app.map-unit.done": {
+  "kind": "button",
+  "en": 4,
+  "max": 18
+ },
+ "n.app.map-unit.have-at-least-one-fix": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.app.map-unit.map-a-polling-unit": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "n.app.map-unit.open-phone-settings": {
+  "kind": "button",
+  "en": 19,
+  "max": 33
+ },
+ "n.app.map-unit.select-the-lga": {
+  "kind": "chip",
+  "en": 14,
+  "max": 26
+ },
+ "n.app.map-unit.select-the-state": {
+  "kind": "button",
+  "en": 16,
+  "max": 30
+ },
+ "n.app.map-unit.select-the-unit-you-are-standing": {
+  "kind": "chip",
+  "en": 35,
+  "max": 47
+ },
+ "n.app.map-unit.select-the-ward": {
+  "kind": "chip",
+  "en": 15,
+  "max": 27
+ },
+ "n.app.map-unit.state-lga-ward": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "n.app.map-unit.why-mapping-units-matters": {
+  "kind": "heading",
+  "en": 25,
+  "max": 45
+ },
+ "n.app.map.map-of-nigeria": {
+  "kind": "heading",
+  "en": 14,
+  "max": 34
+ },
+ "n.app.open.opening": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.osun.osun-2026": {
+  "kind": "heading",
+  "en": 9,
+  "max": 29
+ },
+ "n.app.political.as-of": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.political.could-not-load": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "n.app.political.held-of-size-seats": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.app.political.n-of-36-state-assemblies": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.political.n-of-size-attributed": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.political.n-seats": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "n.app.political.no-governor": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.app.political.no-governor-minister": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
+ "n.app.political.one-seat": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.political.reading-this-page": {
+  "kind": "heading",
+  "en": 17,
+  "max": 37
+ },
+ "n.app.political.reading-this-page-body": {
+  "kind": "body",
+  "en": 172,
+  "max": 301
+ },
+ "n.app.political.who-holds-power-now": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.practice.back-to-the-race": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "n.app.practice.back-to-votes": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
+ "n.app.practice.choose-another-unit": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.practice.confirm-and-send": {
+  "kind": "button",
+  "en": 16,
+  "max": 30
+ },
+ "n.app.practice.continue": {
+  "kind": "button",
+  "en": 8,
+  "max": 22
+ },
+ "n.app.practice.continue-to-the-figures": {
+  "kind": "button",
+  "en": 23,
+  "max": 37
+ },
+ "n.app.practice.is-this-your-polling-unit": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.practice.no-choose-another": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "n.app.practice.practice-run": {
+  "kind": "button",
+  "en": 12,
+  "max": 26
+ },
+ "n.app.practice.result-sheet": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.practice.review": {
+  "kind": "button",
+  "en": 6,
+  "max": 20
+ },
+ "n.app.practice.sample-used": {
+  "kind": "button",
+  "en": 11,
+  "max": 25
+ },
+ "n.app.practice.select-a-polling-unit": {
+  "kind": "chip",
+  "en": 21,
+  "max": 33
+ },
+ "n.app.practice.select-a-state": {
+  "kind": "button",
+  "en": 14,
+  "max": 28
+ },
+ "n.app.practice.select-a-ward": {
+  "kind": "chip",
+  "en": 13,
+  "max": 25
+ },
+ "n.app.practice.select-an-lga": {
+  "kind": "chip",
+  "en": 13,
+  "max": 25
+ },
+ "n.app.practice.that-unit-is-too-far-away": {
+  "kind": "heading",
+  "en": 25,
+  "max": 45
+ },
+ "n.app.practice.venue": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.app.practice.which-polling-unit": {
+  "kind": "heading",
+  "en": 19,
+  "max": 39
+ },
+ "n.app.practice.which-race": {
+  "kind": "heading",
+  "en": 11,
+  "max": 31
+ },
+ "n.app.practice.yes-use-this-unit": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "n.app.practice.your-practice-runs": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "n.app.profile.current-password": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "n.app.profile.delete-your-account": {
+  "kind": "heading",
+  "en": 20,
+  "max": 40
+ },
+ "n.app.profile.face-id-or-fingerprint-to-sign": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "n.app.profile.nothing-yet": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.profile.repeat-new-password": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.profile.save-new-password": {
+  "kind": "button",
+  "en": 17,
+  "max": 31
+ },
+ "n.app.profile.save-password": {
+  "kind": "button",
+  "en": 13,
+  "max": 27
+ },
+ "n.app.profile.send-code": {
+  "kind": "button",
+  "en": 9,
+  "max": 23
+ },
+ "n.app.profile.sign-out": {
+  "kind": "button",
+  "en": 8,
+  "max": 22
+ },
+ "n.app.profile.sign-out-2": {
+  "kind": "heading",
+  "en": 9,
+  "max": 29
+ },
+ "n.app.profile.verify": {
+  "kind": "button",
+  "en": 6,
+  "max": 20
+ },
+ "n.app.profile.wipes-your-key-device-telegram-link": {
+  "kind": "body",
+  "en": 98,
+  "max": 172
+ },
+ "n.app.profile.your-phone-number": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.app.races.how-races-are-grouped": {
+  "kind": "heading",
+  "en": 21,
+  "max": 41
+ },
+ "n.app.races.soon": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.app.report.collation.back-to-totals": {
+  "kind": "button",
+  "en": 16,
+  "max": 30
+ },
+ "n.app.report.collation.collated-totals": {
+  "kind": "heading",
+  "en": 15,
+  "max": 35
+ },
+ "n.app.report.collation.continue-choose-the-race": {
+  "kind": "button",
+  "en": 26,
+  "max": 40
+ },
+ "n.app.report.collation.form": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.app.report.collation.form-serial-number": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.app.report.collation.retake": {
+  "kind": "button",
+  "en": 6,
+  "max": 20
+ },
+ "n.app.report.collation.review-report": {
+  "kind": "button",
+  "en": 13,
+  "max": 27
+ },
+ "n.app.report.collation.select-the-collation-level": {
+  "kind": "heading",
+  "en": 26,
+  "max": 46
+ },
+ "n.app.report.collation.status": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "n.app.report.incident.attach-my-current-location": {
+  "kind": "button",
+  "en": 26,
+  "max": 40
+ },
+ "n.app.report.incident.camera": {
+  "kind": "button",
+  "en": 6,
+  "max": 20
+ },
+ "n.app.report.incident.capture-evidence": {
+  "kind": "button",
+  "en": 16,
+  "max": 30
+ },
+ "n.app.report.incident.capture-what-you-can-or-describe": {
+  "kind": "heading",
+  "en": 43,
+  "max": 63
+ },
+ "n.app.report.incident.checking-your-saved-polling-unit": {
+  "kind": "body",
+  "en": 33,
+  "max": 73
+ },
+ "n.app.report.incident.description": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.app.report.incident.select-the-polling-unit": {
+  "kind": "chip",
+  "en": 23,
+  "max": 35
+ },
+ "n.app.report.incident.select-what-happened": {
+  "kind": "heading",
+  "en": 20,
+  "max": 40
+ },
+ "n.app.report.incident.the-unit-you-are-at-not-the-one": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
+ },
+ "n.app.report.incident.upload": {
+  "kind": "button",
+  "en": 6,
+  "max": 20
+ },
+ "n.app.report.incident.what-did-you-witness-where-when": {
+  "kind": "body",
+  "en": 52,
+  "max": 92
+ },
+ "n.app.report.incident.which-polling-unit-is-this-about": {
+  "kind": "heading",
+  "en": 33,
+  "max": 53
+ },
+ "n.app.report.incident.why-the-unit-matters": {
+  "kind": "heading",
+  "en": 20,
+  "max": 40
+ },
+ "n.app.report.incident.why-the-unit-matters-body": {
+  "kind": "body",
+  "en": 194,
+  "max": 340
+ },
+ "n.app.report.result.confidence": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.app.report.result.confirm-and-send": {
+  "kind": "button",
+  "en": 16,
+  "max": 30
+ },
+ "n.app.report.result.from-sheet": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.app.report.result.location": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.report.result.no-units-in-the-register-for": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
+ },
+ "n.app.report.result.read-off-your-photo": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.report.result.reports-agreeing": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "n.app.report.result.select-your-lga": {
+  "kind": "chip",
+  "en": 15,
+  "max": 27
+ },
+ "n.app.report.result.select-your-polling-unit": {
+  "kind": "chip",
+  "en": 24,
+  "max": 36
+ },
+ "n.app.report.result.select-your-state": {
+  "kind": "button",
+  "en": 17,
+  "max": 31
+ },
+ "n.app.report.result.select-your-ward": {
+  "kind": "chip",
+  "en": 16,
+  "max": 28
+ },
+ "n.app.report.result.tap-an-open-race-to-report": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "n.app.report.result.venue-photo-matches": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.report.result.votes-per-party": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
+ "n.app.report.result.what-happens-when-you-send": {
+  "kind": "heading",
+  "en": 26,
+  "max": 46
+ },
+ "n.app.reports-log.checking-ledger-integrity": {
+  "kind": "button",
+  "en": 26,
+  "max": 40
+ },
+ "n.app.reports-log.how-these-reports-are-held": {
+  "kind": "heading",
+  "en": 26,
+  "max": 46
+ },
+ "n.app.sign-in.continue-to-hawkeye": {
+  "kind": "button",
+  "en": 19,
+  "max": 33
+ },
+ "n.app.sign-in.enter-the-code": {
+  "kind": "heading",
+  "en": 14,
+  "max": 34
+ },
+ "n.app.sign-in.forgot-password": {
+  "kind": "button",
+  "en": 16,
+  "max": 30
+ },
+ "n.app.sign-in.open-telegram": {
+  "kind": "button",
+  "en": 13,
+  "max": 27
+ },
+ "n.app.sign-in.save-password-and-continue": {
+  "kind": "button",
+  "en": 26,
+  "max": 40
+ },
+ "n.app.sign-in.sign-in-instead": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
+ "n.app.sign-in.this-account-already-exists": {
+  "kind": "heading",
+  "en": 27,
+  "max": 47
+ },
+ "n.app.sign-in.try-a-practice-run": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "n.app.sign-in.use-a-different-number": {
+  "kind": "button",
+  "en": 22,
+  "max": 36
+ },
+ "n.app.sign-in.welcome-back": {
+  "kind": "heading",
+  "en": 12,
+  "max": 32
+ },
+ "n.app.tabs.alerts.nothing-yet": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.app.tabs.alerts.sign-in-to-get-alerts": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.app.tabs.index.accepted-reports": {
+  "kind": "button",
+  "en": 16,
+  "max": 30
+ },
+ "n.app.tabs.index.units-flagged": {
+  "kind": "button",
+  "en": 13,
+  "max": 27
+ },
+ "n.app.tabs.more.dark": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.app.tabs.more.draft-translation-being-reviewed": {
+  "kind": "body",
+  "en": 76,
+  "max": 133
+ },
+ "n.app.tabs.more.inixien-llc": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.app.tabs.more.language": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.tabs.more.light": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.app.tabs.more.preferences": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.app.tabs.more.system": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "n.app.tabs.more.theme": {
+  "kind": "button",
+  "en": 5,
+  "max": 19
+ },
+ "n.app.tabs.results.about-this-map": {
+  "kind": "heading",
+  "en": 14,
+  "max": 34
+ },
+ "n.app.tabs.results.back-to-the-whole-elections": {
+  "kind": "button",
+  "en": 29,
+  "max": 43
+ },
+ "n.app.tabs.results.narrow-to-one-seat": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.tabs.results.no-map-for-this-race": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.app.tabs.results.open-a-single-seat": {
+  "kind": "button",
+  "en": 26,
+  "max": 40
+ },
+ "n.app.tabs.results.pick-a-seat-to-open-it": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "n.app.tabs.results.rank-a-single-seat-instead": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
+ "n.app.tabs.results.report-from-your-unit": {
+  "kind": "button",
+  "en": 21,
+  "max": 35
+ },
+ "n.components.ask-fab.ask-hawkeye-about-the-results": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "n.components.ask-fab.opens-the-assistant-drag-to-move": {
+  "kind": "body",
+  "en": 45,
+  "max": 85
+ },
+ "n.components.capture-camera.open-settings": {
+  "kind": "button",
+  "en": 13,
+  "max": 27
+ },
+ "n.components.capture-camera.opening-scanner": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "n.components.capture-camera.retry-gps": {
+  "kind": "button",
+  "en": 9,
+  "max": 23
+ },
+ "n.components.capture-camera.try-scanner-again": {
+  "kind": "button",
+  "en": 17,
+  "max": 31
+ },
+ "n.components.capture-camera.use-photo": {
+  "kind": "button",
+  "en": 9,
+  "max": 23
+ },
+ "n.components.choose-unit.browse-register": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
+ "n.components.choose-unit.choosing-vs-mapping": {
+  "kind": "heading",
+  "en": 19,
+  "max": 39
+ },
+ "n.components.choose-unit.loading-lgas": {
+  "kind": "chip",
+  "en": 13,
+  "max": 25
+ },
+ "n.components.choose-unit.loading-the-register": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.components.choose-unit.loading-wards": {
+  "kind": "chip",
+  "en": 14,
+  "max": 26
+ },
+ "n.components.choose-unit.near-me": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
+ "n.components.choose-unit.saved": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.components.choose-unit.selected": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.components.choose-unit.the-unit-you-get-alerts-about": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "n.components.choose-unit.you-do-not-need-to-be": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
+ "n.components.contest-picker.choose-a-state": {
+  "kind": "heading",
+  "en": 14,
+  "max": 34
+ },
+ "n.components.contest-picker.choose-an-election": {
+  "kind": "heading",
+  "en": 18,
+  "max": 38
+ },
+ "n.components.contest-picker.no-open-races": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.components.gov-disclaimer.details": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
+ "n.components.gov-disclaimer.inecelectionresults-ng": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.components.gov-disclaimer.inecnigeria-org": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.components.gov-disclaimer.not-a-government-service": {
+  "kind": "heading",
+  "en": 24,
+  "max": 44
+ },
+ "n.components.nigeria-map.map-unavailable": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.components.race-picker.waiting-for-the-list-of-states": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
+ "n.components.race.alphabetical-by-party": {
+  "kind": "body",
+  "en": 58,
+  "max": 102
+ },
+ "n.components.race.file-when-polls-open": {
+  "kind": "body",
+  "en": 58,
+  "max": 102
+ },
+ "n.components.race.full-ballot-n-candidates": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
+ "n.components.race.held-by": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
+ "n.components.race.inc-suffix": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "n.components.race.recorded-from": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.components.race.reporting-is-not-open-yet": {
+  "kind": "heading",
+  "en": 25,
+  "max": 45
+ },
+ "n.components.race.reporting-not-open-yet": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "n.components.race.unit": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.components.race.units": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.components.rekor-anchor.check-again": {
+  "kind": "button",
+  "en": 11,
+  "max": 25
+ },
+ "n.components.rekor-anchor.view-in-sigstore-rekor": {
+  "kind": "button",
+  "en": 22,
+  "max": 36
+ },
+ "n.components.report-content.report-this-content": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.components.report-content.send-report": {
+  "kind": "button",
+  "en": 11,
+  "max": 25
+ },
+ "n.components.report-sheet.every-report-is-signed-hash-chained": {
+  "kind": "body",
+  "en": 61,
+  "max": 107
+ },
+ "n.components.report-sheet.photo-or-video-of-what-you": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "n.components.report-sheet.photograph-the-result-sheet-at-your": {
+  "kind": "body",
+  "en": 40,
+  "max": 80
+ },
+ "n.components.report-sheet.ward-or-lga-collation-announcement": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "n.components.sheet-reference.your-photograph-of-the-result-sheet": {
+  "kind": "body",
+  "en": 35,
+  "max": 75
+ },
+ "n.components.social-row.hawkeye-on-telegram": {
+  "kind": "button",
+  "en": 19,
+  "max": 33
+ },
+ "n.components.social-row.open-hawkeye-on-telegram-hawkeyengbot": {
+  "kind": "button",
+  "en": 39,
+  "max": 53
+ },
+ "n.components.social-row.open-hawkeyengbot": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.components.social-row.share-hawkeye-send-the-app-to": {
+  "kind": "button",
+  "en": 39,
+  "max": 53
+ },
+ "n.components.social-row.share-the-download-link": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "n.components.unit-map.loading-map": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.components.unit-map.recentre-the-map-on-my-location": {
+  "kind": "button",
+  "en": 31,
+  "max": 45
+ },
+ "n.components.unit-map.your-location": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.components.unit-search.search-for-your-polling-unit": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
+ "n.components.wizard.change": {
+  "kind": "button",
+  "en": 6,
+  "max": 20
+ },
+ "n.flags.collation-chain-undercount": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.flags.collation-form-ocr-mismatch": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "n.flags.collation-mismatch-full-coverage": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "n.flags.collation-undercount": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.flags.conflicting-collation-reports": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "n.flags.conflicting-counts": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.flags.duplicate-serial": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "n.flags.impossible-turnout": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.flags.inec-irev-mismatch": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.flags.location-inconsistent": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.flags.over-voting": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.flags.signup-burst-informational": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
+ "n.flags.single-party-sweep": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.flags.turnout-outlier": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "nav.alerts": {
+  "kind": "heading",
+  "en": 6,
+  "max": 26
+ },
+ "nav.ask-hawkeye": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "nav.faq": {
+  "kind": "body",
+  "en": 3,
+  "max": 43
+ },
+ "nav.home": {
+  "kind": "button",
+  "en": 4,
+  "max": 18
+ },
+ "nav.learn-about": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "nav.live-data": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "nav.more": {
+  "kind": "heading",
+  "en": 4,
+  "max": 24
+ },
+ "nav.osun-2026": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "nav.practice-run": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "nav.presidency-2027": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "nav.race": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "nav.report": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "nav.report-a-collation": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "nav.results": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
+ "nav.take-part": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "nav.take-the-tour": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "nav.terms-of-service": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "nav.trust-verify": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "notifications.open": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "notifications.refresh-alerts": {
+  "kind": "button",
+  "en": 14,
+  "max": 28
+ },
+ "observe.close-the-sheet": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
+ "observe.report-a-result": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
+ "political.governing-party": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "political.governing-party-by-state": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "political.scope": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "political.seats-attributed": {
+  "kind": "body",
+  "en": 33,
+  "max": 73
+ },
+ "political.state-count": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "political.states-count": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "political.tap-a-seat-for-the-member": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "political.tap-a-seat-for-the-senator": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "political.tap-a-state-for-its-governor": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "political.the-2027-presidential-race-full-profiles-2": {
+  "kind": "button",
+  "en": 89,
+  "max": 112
+ },
+ "political.the-parties-in-power-the-incumbents-this": {
+  "kind": "body",
+  "en": 75,
+  "max": 132
+ },
+ "political.upcoming-elections": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "practice.practise-again": {
+  "kind": "button",
+  "en": 14,
+  "max": 28
+ },
+ "profile.change": {
+  "kind": "button",
+  "en": 6,
+  "max": 20
+ },
+ "profile.choose-your-polling-unit": {
+  "kind": "heading",
+  "en": 24,
+  "max": 44
+ },
+ "profile.delete-my-account": {
+  "kind": "button",
+  "en": 17,
+  "max": 31
+ },
+ "profile.my-profile": {
+  "kind": "heading",
+  "en": 10,
+  "max": 30
+ },
+ "profile.save-this-unit": {
+  "kind": "button",
+  "en": 14,
+  "max": 28
+ },
+ "profile.share-hawkeye": {
+  "kind": "button",
+  "en": 13,
+  "max": 27
+ },
+ "race.bid": {
+  "kind": "body",
+  "en": 3,
+  "max": 43
+ },
+ "race.candidate": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "race.candidates": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "race.date": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "race.declared-by": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "race.declared-candidates": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "race.declared-result": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "race.election-day": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "race.election-year": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "race.from-one-polling-unit-not-an-official-count": {
+  "kind": "body",
+  "en": 47,
+  "max": 87
+ },
+ "race.from-polling-units-not-an-official-count": {
+  "kind": "body",
+  "en": 48,
+  "max": 88
+ },
+ "race.front-runners": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "race.home-base": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "race.incumbent": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "race.incumbent-suffix": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "race.lga": {
+  "kind": "body",
+  "en": 3,
+  "max": 43
+ },
+ "race.lgas": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "race.listed-alphabetically-by-party": {
+  "kind": "body",
+  "en": 92,
+  "max": 161
+ },
+ "race.live-results": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "race.on-date": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "race.other-declared-candidates": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "race.party": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "race.polling-unit": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "race.polling-units": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "race.quick-compare": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "race.race-data-unavailable": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "race.recorded-from": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "race.report-from-your-unit": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "race.returning-officer": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "race.review-the-results": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "race.source-n": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "race.status": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "race.tbd": {
+  "kind": "body",
+  "en": 3,
+  "max": 43
+ },
+ "race.totals-are-what-observers-have-reported": {
+  "kind": "body",
+  "en": 46,
+  "max": 86
+ },
+ "race.verify-the-record": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "race.ward": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "race.wards": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "races.filter-races-by-status": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "races.races": {
+  "kind": "heading",
+  "en": 5,
+  "max": 25
+ },
+ "results.election": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "support.keep-hawkeye-independent": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "support.support-hawkeye": {
+  "kind": "heading",
+  "en": 15,
+  "max": 35
+ },
+ "tour.alerts.body": {
+  "kind": "body",
+  "en": 116,
+  "max": 203
+ },
+ "tour.back": {
+  "kind": "button",
+  "en": 4,
+  "max": 18
+ },
+ "tour.home.body": {
+  "kind": "body",
+  "en": 61,
+  "max": 107
+ },
+ "tour.more.body": {
+  "kind": "body",
+  "en": 77,
+  "max": 135
+ },
+ "tour.report.body": {
+  "kind": "body",
+  "en": 94,
+  "max": 165
+ },
+ "tour.report.title": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "tour.results.body": {
+  "kind": "body",
+  "en": 68,
+  "max": 119
+ },
+ "tour.welcome": {
+  "kind": "heading",
+  "en": 18,
+  "max": 38
+ }
+}

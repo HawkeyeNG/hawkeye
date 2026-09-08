@@ -365,6 +365,8 @@
   "incidents.published-incidents": "Published Incidents",
   "incidents.report-another-incident": "Report another incident",
   "incidents.sent-for-review": "✅ Sent for Review",
+  "incidents.once-approved-it-appears-in-the-feed": "Once approved it appears in the feed below. A human reviews every report before anything is published.",
+  "incidents.once-approved-it-appears-in-the-feed-unit": "Once approved it appears in the feed below, and watchers of that polling unit are alerted (Telegram or the in-app feed). A human reviews every report before anything is published.",
   "incidents.submit-report": "Submit report",
   "incidents.to-report-an-incident-register-your": "To report an incident, register your device first.",
   "incidents.type-of-incident": "Type of Incident",

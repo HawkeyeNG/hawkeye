@@ -172,16 +172,22 @@ export default function PoliticalData() {
         <GovDisclaimer />
         <View className="flex-row items-center pb-3">
           <Text className="flex-1 text-sm text-muted">
-            The parties in power now — the incumbents this election confirms or unseats.
+            {/* The web says the same thing in different words ("will confirm or
+                unseat"). One sentence, one key, one translation — the shared
+                catalogue exists precisely so this cannot become two. The web's
+                wording wins because it is the one already translated. */}
+            {i18nT('political.the-parties-in-power-the-incumbents-this')}
           </Text>
           <InfoDot
             title={i18nT('n.app.political.reading-this-page')}
-            text="Each state is listed with its governing party, its governor and the year of its next election. Figures are compiled from public records and updated as results are declared."
+            text={i18nT('n.app.political.reading-this-page-body')}
           />
         </View>
 
         {err ? (
-          <Text className="text-sm font-semibold text-warn-ink">Could not load. ({err})</Text>
+          <Text className="text-sm font-semibold text-warn-ink">
+            {i18nT('n.app.political.could-not-load', { err: String(err) })}
+          </Text>
         ) : !d ? (
           <ActivityIndicator className="pt-6" color={ui.tint.good.ink} />
         ) : (
@@ -192,7 +198,7 @@ export default function PoliticalData() {
                 <View className="flex-1 pl-3">
                   <Text className="text-sm font-bold text-ink">{d.president.name}</Text>
                   <Text className="text-xs text-muted">
-                    Governing party:{' '}
+                    {i18nT('political.governing-party')}
                     <Text style={{ color: partyColor(d.president.party) }}>
                       {partyName(d.president.party)}
                     </Text>
@@ -207,7 +213,7 @@ export default function PoliticalData() {
             >
               <Feather name="users" size={17} color={ui.tint.good.ink} />
               <Text className="flex-1 pl-3 text-sm font-semibold text-ink">
-                The 2027 Presidential Race — Full Profiles
+                {i18nT('political.the-2027-presidential-race-full-profiles-2')}
               </Text>
               <Feather name="chevron-right" size={16} color={ui.faint} />
             </Pressable>
@@ -216,7 +222,7 @@ export default function PoliticalData() {
             {d.composition ? (
               <>
                 <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-                  Who holds power now
+                  {i18nT('n.app.political.who-holds-power-now')}
                 </Text>
                 {orderedChambers(d.composition.chambers).map(([key, ch]) => {
                   // Counts come from our own roster wherever we have one, so the
@@ -232,7 +238,7 @@ export default function PoliticalData() {
                       <View className="flex-row items-baseline">
                         <Text className="flex-1 text-sm font-bold text-ink">{ch.label}</Text>
                         <Text className="text-[11px] text-faint">
-                          {held}/{ch.size} attributed
+                          {i18nT('n.app.political.n-of-size-attributed', { held, size: ch.size })}
                         </Text>
                       </View>
                       {seats ? (
@@ -245,10 +251,15 @@ export default function PoliticalData() {
                               reader looking at 109 dots asks how many there
                               are. */}
                           <Text className="pt-1 text-[11px] font-semibold text-muted">
-                            {held} of {ch.size} seats
+                            {i18nT('n.app.political.held-of-size-seats', { held, size: ch.size })}
                           </Text>
+                          {/* Assembled by concatenation before this — "Tap a seat for the "
+                              + role + "." — which no target language tolerates. Two whole
+                              sentences instead. */}
                           <Text className="pt-0.5 text-[11px] text-faint">
-                            Tap a seat for the {key === 'senate' ? 'Senator' : 'Member'}.
+                            {key === 'senate'
+                              ? i18nT('political.tap-a-seat-for-the-senator')
+                              : i18nT('political.tap-a-seat-for-the-member')}
                           </Text>
                         </>
                       ) : null}
@@ -404,7 +415,7 @@ export default function PoliticalData() {
                             </View>
                           ) : (
                             <Text className="pt-1 text-[11px] text-faint">
-                              Tap a state for its governor.
+                              {i18nT('political.tap-a-state-for-its-governor')}
                             </Text>
                           )}
             {/* WHICH PARTY GOVERNS WHERE, directly under the Governors row it
@@ -414,7 +425,7 @@ export default function PoliticalData() {
                       {byParty.groups.length ? (
                         <>
                           <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-                            Governing party by state
+                            {i18nT('political.governing-party-by-state')}
                           </Text>
                           {byParty.groups.map(([party, sts]) => (
                             <View key={party} className="mb-2 rounded-2xl bg-card px-4 py-3">
@@ -426,8 +437,12 @@ export default function PoliticalData() {
                                 >
                                   {partyName(party)}
                                 </Text>
+                                {/* Was `{n} ` + 'state'/'states' — a sentence built by
+                                    concatenation, which no target language tolerates.
+                                    Two whole keys; ha/ig/yo carry the same value in
+                                    both, since none of them inflects here. */}
                                 <Text className="text-xs font-semibold text-muted">
-                                  {sts.length} {sts.length === 1 ? 'state' : 'states'}
+                                  {i18nT(sts.length === 1 ? 'political.state-count' : 'political.states-count', { n: sts.length })}
                                 </Text>
                               </View>
                               <Text className="pt-1.5 text-xs text-muted">
@@ -437,7 +452,8 @@ export default function PoliticalData() {
                           ))}
                           {byParty.none.length ? (
                             <Text className="pt-1 text-xs text-faint">
-                              {byParty.none.join(' · ')} — no governor (administered by a minister).
+                              {byParty.none.join(' · ')}
+                              {i18nT('n.app.political.no-governor-minister')}
                             </Text>
                           ) : null}
                         </>
@@ -460,7 +476,7 @@ export default function PoliticalData() {
             {d.upcoming ? (
               <>
                 <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-                  Upcoming elections
+                  {i18nT('political.upcoming-elections')}
                 </Text>
                 <View className="overflow-hidden rounded-2xl bg-card">
                   {d.upcoming.elections.map((e, i) => (
@@ -471,7 +487,7 @@ export default function PoliticalData() {
                       <View className="flex-row items-baseline">
                         <Text className="flex-1 text-sm font-bold text-ink">{e.office}</Text>
                         <Text className="text-xs font-semibold text-good-ink">
-                          {e.seats} seat(s)
+                          {i18nT(Number(e.seats) === 1 ? 'n.app.political.one-seat' : 'n.app.political.n-seats', { n: e.seats })}
                         </Text>
                       </View>
                       <Text className="pt-0.5 text-xs text-muted">

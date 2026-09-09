@@ -75,7 +75,17 @@ function ensureImport(src) {
   const lines = src.split('\n');
   let last = -1;
   for (let i = 0; i < lines.length; i++) if (/^import .*from '.*';\s*$/.test(lines[i])) last = i;
-  if (last === -1) return src;
+  if (last === -1) {
+    // No imports at all — a pure helper module. Insert after the leading block
+    // comment; those docblocks are load-bearing here and stay at the top.
+    let at = 0;
+    if (lines[0] && lines[0].trim().startsWith('/*')) {
+      while (at < lines.length && !lines[at].includes('*/')) at++;
+      at++;
+    }
+    lines.splice(at, 0, '', "import { t as i18nT } from '@/lib/i18n';");
+    return lines.join('\n');
+  }
   lines.splice(last + 1, 0, "import { t as i18nT } from '@/lib/i18n';");
   return lines.join('\n');
 }

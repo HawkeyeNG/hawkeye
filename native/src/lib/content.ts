@@ -495,6 +495,17 @@ function translateNode<T>(node: T, dict: Record<string, string>): T {
   return node;
 }
 
+/**
+ * The same English-keyed substitution getPages() performs, for content that
+ * lives outside PAGES — the terms screen keeps its own structure. Exported so
+ * the two legal documents translate through ONE mechanism rather than two that
+ * can drift.
+ */
+export function translateContent<T>(node: T): T {
+  const dict = CONTENT_I18N[currentLang_()];
+  return dict ? translateNode(node, dict) : node;
+}
+
 export function getPages(): Record<string, Page> {
   const dict = CONTENT_I18N[currentLang_()];
   // English needs no walk at all, and this is the common case.

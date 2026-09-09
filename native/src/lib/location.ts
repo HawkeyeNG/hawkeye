@@ -14,6 +14,7 @@
  * and `describeFixFailure` supplies the matching sentence.
  */
 import * as Location from 'expo-location';
+import { t as i18nT } from '@/lib/i18n';
 
 export type Fix = { lat: number; lng: number; accuracy: number };
 
@@ -300,25 +301,25 @@ export function describeFixFailure(f: FixFailure): {
     case 'denied':
       return f.canAskAgain
         ? {
-            lead: 'Hawkeye needs location permission to find units near you — try again and choose Allow',
+            lead: i18nT('n.lib.location.hawkeye-needs-location-permission-to-find'),
             code: 'permission_not_granted',
             settings: false,
           }
         : {
-            lead: 'Location permission for Hawkeye is blocked in your phone settings — allow Location for Hawkeye there, then try again',
+            lead: i18nT('n.lib.location.location-permission-for-hawkeye-is-blocked'),
             code: 'permission_blocked',
             settings: true,
           };
     case 'timeout':
       // Permission IS granted here. Never the word "permitted".
       return {
-        lead: 'Could not get a GPS fix — the signal is weak indoors. Move near a window or step outside and try again',
+        lead: i18nT('n.lib.location.could-not-get-a-gps-fix'),
         code: 'gps_timeout',
         settings: false,
       };
     default:
       return {
-        lead: 'This phone could not report its location just now — try again',
+        lead: i18nT('n.lib.location.this-phone-could-not-report-its'),
         code: f.detail ? `location_error / ${f.detail}` : 'location_error',
         settings: false,
       };

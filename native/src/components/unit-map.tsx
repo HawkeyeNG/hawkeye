@@ -97,9 +97,9 @@ export type UnitTier = 'verified' | 'crowd' | 'approx';
  * append their own detail (`— within ~400m`, `· 3 observer fix(es)`) after it.
  */
 export const TIER_LABEL: Record<UnitTier, string> = {
-  verified: 'Verified location',
-  crowd: 'Crowd-confirmed location',
-  approx: 'Approximate area only',
+  verified: i18nT('n.components.unit-map.verified-location'),
+  crowd: i18nT('n.components.unit-map.crowd-confirmed-location'),
+  approx: i18nT('n.components.unit-map.approximate-area-only'),
 };
 
 /**
@@ -129,7 +129,7 @@ export const TIER_COLOR: Record<UnitTier, string> = {
  * drawing anything bigger than the frame, so the wording carries real weight.
  */
 export const envelopeText = (radiusM: number) =>
-  ` — within ~${Math.round(radiusM).toLocaleString()}m`;
+  i18nT('n.components.unit-map.within-m', { v0: Math.round(radiusM).toLocaleString() });
 
 /**
  * Anything that is not an outright verified or crowd-confirmed fix is drawn as
@@ -151,7 +151,7 @@ export function toTier(status?: string | null): UnitTier {
 export type RegisterTier = UnitTier | 'unmapped';
 export const REGISTER_TIER_LABEL: Record<RegisterTier, string> = {
   ...TIER_LABEL,
-  unmapped: 'Not located yet',
+  unmapped: i18nT('n.app.map-unit.not-located-yet'),
 };
 export function registerTier(u: {
   coords_source?: string | null;
@@ -377,7 +377,7 @@ function chrome(dark: boolean) {
  * with no seam down the shoulders. The viewBox is padded on all sides to leave
  * room for the selection ring without clipping it.
  */
-const PIN_PATH = 'M3.5 17.26 A10 10 0 1 1 20.5 17.26 L12 31 Z';
+const PIN_PATH = "M3.5 17.26 A10 10 0 1 1 20.5 17.26 L12 31 Z";
 const PIN_VB = { x: -4, y: -4, w: 32, h: 40 };
 /** Where the tip sits inside the padded box, as a 0-1 fraction of each side —
  *  which is exactly what Google's marker `anchor` wants. */

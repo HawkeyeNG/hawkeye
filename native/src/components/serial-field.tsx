@@ -39,7 +39,7 @@ export function SerialField({
   onChange,
   proposed,
   editable = true,
-  label = 'Sheet serial number',
+  label = i18nT('n.components.serial-field.sheet-serial-number'),
   where = 'top right of the EC8A',
 }: {
   value: string;
@@ -68,8 +68,8 @@ export function SerialField({
       </View>
       <Text className="pb-2 text-xs text-muted">
         {fromSheet
-          ? `Read from your photo — check it matches the S/N printed at the ${where}.`
-          : `Printed at the ${where}, after “S/N”. Optional, but it is how a sheet copied to a second unit gets caught.`}
+          ? i18nT('n.components.serial-field.read-from-your-photo-check-it', { v0: where })
+          : i18nT('n.components.serial-field.printed-at-the-after-s-n', { v0: where })}
       </Text>
       <TextInput
         className="rounded-xl bg-surface px-4 py-3 text-base font-bold text-ink"

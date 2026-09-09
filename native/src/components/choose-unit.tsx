@@ -428,7 +428,7 @@ export function ChooseUnitModal({
     setFix(null);
     setSearched(null);
     setGpsSettings(false);
-    setNearLine('Getting your location…');
+    setNearLine(i18nT('n.app.report.result.getting-your-location'));
     try {
       const r = await tryQuickFix();
       if (!r.ok) {
@@ -442,7 +442,7 @@ export function ChooseUnitModal({
       }
       const f = r.fix;
       setFix(f);
-      setNearLine('Looking up nearby units…');
+      setNearLine(i18nT('n.components.choose-unit.looking-up-nearby-units'));
 
       /** A real deadline. React Native's fetch has none, so on a stalled link
        *  the lookup would hang with no error and no way out. */
@@ -470,7 +470,7 @@ export function ChooseUnitModal({
         // POINT AT SEARCH, NOT THE REGISTER DRILL. This is the network-failure
         // case, and browsing is itself network-backed once the packs run out;
         // search answers from the register bundled into the app.
-        setNearLine('Could not check nearby units — search by name above.');
+        setNearLine(i18nT('n.components.choose-unit.could-not-check-nearby-units-search'));
         return;
       }
 
@@ -606,17 +606,17 @@ export function ChooseUnitModal({
         setNearLine(
           m != null
             ? i18nT('n.components.choose-unit.no-unit-found-within-m-search', { v0: m })
-            : 'Could not check nearby units — search by name above.',
+            : i18nT('n.components.choose-unit.could-not-check-nearby-units-search'),
         );
         return;
       }
       setNearLine(
         all.length > list.length
           ? i18nT('n.components.choose-unit.the-closest-of-found-tap-yours', { v0: list.length, v1: all.length })
-          : 'Tap your polling unit:',
+          : i18nT('n.components.choose-unit.tap-your-polling-unit'),
       );
     } catch {
-      setNearLine('Could not check nearby units — search by name above.');
+      setNearLine(i18nT('n.components.choose-unit.could-not-check-nearby-units-search'));
     } finally {
       setNearBusy(false);
     }
@@ -684,7 +684,7 @@ export function ChooseUnitModal({
         // The code is in the message on purpose: "try again" with nothing to
         // report is the message that wastes a support round-trip.
         notice.show(
-          'Could not save your polling unit',
+          i18nT('n.app.map-unit.could-not-save-your-polling-unit'),
           code === 'unknown_unit'
             ? i18nT('n.components.choose-unit.is-not-in-the-register-http', { v0: unit.name, v1: code, v2: res.status })
             : i18nT('n.components.choose-unit.please-check-your-connection-and-try', { v0: code, v1: res.status }),
@@ -695,7 +695,7 @@ export function ChooseUnitModal({
       onSaved?.(unit);
       close();
     } catch {
-      notice.show('Could not save your polling unit', 'Please check your connection and try again.');
+      notice.show(i18nT('n.app.map-unit.could-not-save-your-polling-unit'), i18nT('n.components.choose-unit.please-check-your-connection-and-try-2'));
     } finally {
       setSaving(false);
     }

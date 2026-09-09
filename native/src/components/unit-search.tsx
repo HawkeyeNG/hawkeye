@@ -43,7 +43,7 @@ export function UnitSearch<T extends Row>({
   onSelect,
   state,
   lga,
-  placeholder = 'Name, ward or unit number',
+  placeholder = i18nT('n.components.unit-search.name-ward-or-unit-number'),
   onEngaged,
   selectedCode,
   onContinue,
@@ -101,8 +101,8 @@ export function UnitSearch<T extends Row>({
       setBusy(false);
       setRows(local.units as T[]);
       setNote(local.truncated
-        ? `First ${local.units.length} matches — keep typing to narrow it.`
-        : `${local.units.length} match${local.units.length === 1 ? '' : 'es'}.`);
+        ? i18nT('n.components.unit-search.first-matches-keep-typing-to-narrow', { v0: local.units.length })
+        : i18nT('n.components.unit-search.match', { v0: local.units.length, v1: local.units.length === 1 ? '' : 'es' }));
       return;
     }
 
@@ -120,13 +120,13 @@ export function UnitSearch<T extends Row>({
         setRows(units);
         setNote(
           units.length === 0
-            ? `No unit matches “${term}”. Try fewer letters, or browse the register below.`
+            ? i18nT('n.components.unit-search.no-unit-matches-try-fewer-letters', { v0: term })
             : r.truncated
-              ? `First ${units.length} matches — keep typing to narrow it.`
-              : `${units.length} match${units.length === 1 ? '' : 'es'}.`,
+              ? i18nT('n.components.unit-search.first-matches-keep-typing-to-narrow-2', { v0: units.length })
+              : i18nT('n.components.unit-search.match-2', { v0: units.length, v1: units.length === 1 ? '' : 'es' }),
         );
       } catch {
-        if (mine === seq.current) { setRows(null); setNote('Could not search just now — check your connection.'); }
+        if (mine === seq.current) { setRows(null); setNote(i18nT('n.components.unit-search.could-not-search-just-now-check')); }
       } finally {
         if (mine === seq.current) setBusy(false);
       }

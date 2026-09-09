@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * Password input with a reveal toggle.
@@ -52,7 +53,7 @@ export function PasswordField({
         hitSlop={10}
         className="h-9 w-9 items-center justify-center"
         onPress={() => setShown((s) => !s)}
-        accessibilityLabel={shown ? 'Hide password' : 'Show password'}
+        accessibilityLabel={shown ? i18nT('n.components.password-field.hide-password') : i18nT('n.components.password-field.show-password')}
       >
         <Feather name={shown ? 'eye-off' : 'eye'} size={17} color={ui.tint.good.ink} />
       </Pressable>

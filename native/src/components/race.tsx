@@ -502,7 +502,7 @@ export function RaceView({
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="overflow-hidden rounded-2xl bg-card">
           <View className="flex-row bg-surface px-3 py-2">
-            {['Candidate', 'Party', 'Home base', 'Bid', 'Status'].map((h, i) => (
+            {['Candidate', 'Party', i18nT('race.home-base'), 'Bid', 'Status'].map((h, i) => (
               <Text
                 key={h}
                 className="text-[10px] font-bold uppercase tracking-wide text-muted"
@@ -557,11 +557,11 @@ export function RaceView({
       {/* The action row USED to sit here, in the scroll. It is now pinned by the
           screen — see RaceActions below and the hosts that render it. */}
 
-      {[noteLeads ? '' : race.note, race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit]
+      {[noteLeads ? '' : race.note, race.asOf ? i18nT('n.components.race.as-of', { v0: race.asOf }) : '', race.photoCredit]
         .filter(Boolean)
         .join(' ') ? (
         <Text className="pt-4 text-xs text-faint">
-          {[noteLeads ? '' : race.note, race.asOf ? `(as of ${race.asOf})` : '', race.photoCredit]
+          {[noteLeads ? '' : race.note, race.asOf ? i18nT('n.components.race.as-of-2', { v0: race.asOf }) : '', race.photoCredit]
             .filter(Boolean)
             .join(' ')}
         </Text>
@@ -708,7 +708,7 @@ export function RaceActions({
           onPress={() => router.push((resultsHref ?? resultsHrefFor(race)) as never)}
         >
           <Text className="text-sm font-bold text-good-ink">
-            {done ? 'Review the results' : 'Live results'}
+            {done ? i18nT('race.review-the-results') : i18nT('race.live-results')}
           </Text>
         </Pressable>
       ) : null}
@@ -771,7 +771,7 @@ function Declared({ d, logos }: { d: NonNullable<Race['declared']>; logos: Recor
         Declared by {d.by || 'INEC'}
         {when ? ` on ${when}` : ''}
         {d.place ? `, ${d.place}` : ''}
-        {d.returningOfficer ? ` · Returning Officer ${d.returningOfficer}` : ''}.
+        {d.returningOfficer ? i18nT('n.components.race.returning-officer', { v0: d.returningOfficer }) : ''}.
       </Text>
 
       {rows.map((r) => (

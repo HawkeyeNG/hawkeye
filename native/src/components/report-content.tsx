@@ -41,7 +41,7 @@ const REASONS: { key: 'abuse' | 'false' | 'privacy' | 'other'; label: string }[]
 export function ReportContent({
   kind,
   targetId,
-  label = 'Report this content',
+  label = i18nT('n.components.report-content.report-this-content-2'),
 }: {
   kind: 'incident' | 'result';
   targetId: number;
@@ -71,13 +71,13 @@ export function ReportContent({
       });
       if (!res.ok) {
         const b = (await res.json().catch(() => ({}))) as { error?: string };
-        setMsg(`Could not send the report. (${b.error ?? 'error'} / HTTP ${res.status})`);
+        setMsg(i18nT('n.components.report-content.could-not-send-the-report-http', { v0: b.error ?? 'error', v1: res.status }));
         return;
       }
       setSent(true);
       setOpen(false);
     } catch (e) {
-      setMsg(`Could not send the report. (${e instanceof Error ? e.message : String(e)})`);
+      setMsg(i18nT('n.components.report-content.could-not-send-the-report', { v0: e instanceof Error ? e.message : String(e) }));
     } finally {
       setBusy(false);
     }

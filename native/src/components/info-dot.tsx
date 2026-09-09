@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { ModalCard } from '@/components/modal-card';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * The ⓘ that replaces a paragraph. Native twin of the web's `.info-i`
@@ -51,7 +52,7 @@ export function InfoDot({
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel={title ? `More information: ${title}` : 'More information'}
+        accessibilityLabel={title ? i18nT('n.components.info-dot.more-information', { v0: title }) : 'More information'}
         // Padding rather than size: keeps the tap target honest without pushing
         // the line it sits on around.
         hitSlop={10}

@@ -48,6 +48,7 @@
  * absence as "cannot ask", which the rule above already resolves to "proceed".
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { t as i18nT } from '@/lib/i18n';
 
 const PREF_KEY = 'hawkeye_biometric_signing';
 
@@ -126,7 +127,7 @@ export async function confirmSigning(): Promise<GateResult> {
     if (!(await isBiometricAvailable())) return 'ok';
 
     const res = await LA.authenticateAsync({
-      promptMessage: 'Confirm it is you before signing this result',
+      promptMessage: i18nT('n.lib.biometric.confirm-it-is-you-before-signing'),
       // The owner knows the passcode and a thief does not, so this is the escape
       // hatch that makes "stop on failure" safe rather than a lockout.
       disableDeviceFallback: false,

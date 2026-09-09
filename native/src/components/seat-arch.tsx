@@ -4,6 +4,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { partyColor, type Chamber } from '@/lib/political';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * A hemicycle — one dot per seat, the way a chamber actually sits. Port of the
@@ -124,17 +125,17 @@ export function SeatArch({ parties, size, roster }: {
                 {!sel.m.party
                   ? 'No source publishes a party for this seat'
                   : sel.m.source
-                    ? `Party per ${sel.m.source === 'hawkeye' ? 'Hawkeye (sourced attribution)' : sel.m.source}`
+                    ? i18nT('n.components.seat-arch.party-per', { v0: sel.m.source === 'hawkeye' ? 'Hawkeye (sourced attribution)' : sel.m.source })
                     : ''}
               </Text>
             </>
           ) : (
             <>
               <Text className="text-sm font-bold text-ink">
-                {sel.party ? `${sel.party} — seat not named` : 'Vacant / undeclared'}
+                {sel.party ? i18nT('n.components.seat-arch.seat-not-named', { v0: sel.party }) : 'Vacant / undeclared'}
               </Text>
               <Text className="pt-0.5 text-[11px] text-muted">
-                {sel.party ? 'No source we have found names this seat' : 'No member declared'}
+                {sel.party ? i18nT('n.components.seat-arch.no-source-we-have-found-names') : i18nT('n.components.seat-arch.no-member-declared')}
               </Text>
             </>
           )}

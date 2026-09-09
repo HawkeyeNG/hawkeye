@@ -43,9 +43,9 @@ export const COMBINED: Record<
   { title: string; label: string; plural: string; lgaSource?: true; statesAreRaces?: true }
 > = {
   SEN: { title: 'Senate', label: 'senatorial district', plural: 'senatorial districts' },
-  REP: { title: 'House of Representatives', label: 'federal constituency', plural: 'federal constituencies' },
-  SHA: { title: 'State Houses of Assembly', label: 'state constituency', plural: 'state constituencies' },
-  LGA: { title: 'Local Government Chairmanship', label: 'local government area', plural: 'local government areas', lgaSource: true },
+  REP: { title: i18nT('n.components.race-picker.house-of-representatives'), label: 'federal constituency', plural: 'federal constituencies' },
+  SHA: { title: i18nT('n.components.race-picker.state-houses-of-assembly'), label: 'state constituency', plural: 'state constituencies' },
+  LGA: { title: i18nT('n.components.race-picker.local-government-chairmanship'), label: 'local government area', plural: 'local government areas', lgaSource: true },
   /**
    * GOVERNORSHIP IS ONE STEP: the state IS the race, so the first list is also
    * the last and picking from it navigates.
@@ -114,7 +114,7 @@ function rowsOf(code: string, data: SeatTable | Record<string, unknown>, state: 
       const name = row.seat || (key.includes('|') ? key.slice(key.indexOf('|') + 1) : key);
       const bits: string[] = [];
       if (row.wards) bits.push(`${row.wards} ward${row.wards === 1 ? '' : 's'}`);
-      if (row.pollingUnits) bits.push(`${row.pollingUnits.toLocaleString()} polling units`);
+      if (row.pollingUnits) bits.push(i18nT('n.components.race-picker.polling-units', { v0: row.pollingUnits.toLocaleString() }));
       out.push({ name, sub: bits.join(' · ') });
     });
   }
@@ -265,7 +265,7 @@ function RacePickerFor({ code, states: given }: { code: string; states?: string[
         onPress={toggle}
         className="flex-row items-center px-4 py-3.5 active:opacity-80"
         accessibilityRole="button"
-        accessibilityLabel={`Find your ${meta.label}`}
+        accessibilityLabel={i18nT('n.components.race-picker.find-your', { v0: meta.label })}
       >
         <View className="flex-1">
           <Text className="text-base font-bold text-ink">Find your {meta.label}</Text>
@@ -276,8 +276,8 @@ function RacePickerFor({ code, states: given }: { code: string; states?: string[
             {meta.statesAreRaces
               ? 'Pick a state to open its race'
               : state
-                ? `${state} — pick a ${meta.label}`
-                : `Pick a state, then your ${meta.label}`}
+                ? i18nT('n.components.race-picker.pick-a', { v0: state, v1: meta.label })
+                : i18nT('n.components.race-picker.pick-a-state-then-your', { v0: meta.label })}
           </Text>
         </View>
         <Feather name={open ? 'chevron-down' : 'chevron-right'} size={20} color={ui.muted} />

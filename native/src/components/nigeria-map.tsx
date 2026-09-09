@@ -165,7 +165,7 @@ export function NigeriaMap({
     let alive = true;
     loadStatesGeo()
       .then((g) => alive && setGeo(g))
-      .catch((e) => alive && setErr(humanError(e, 'Could not load the map.')));
+      .catch((e) => alive && setErr(humanError(e, i18nT('n.app.map.could-not-load-the-map'))));
     return () => {
       alive = false;
     };
@@ -243,7 +243,7 @@ export function NigeriaMap({
       >
         <Text className="text-sm font-semibold text-warn-ink">{i18nT('n.components.nigeria-map.map-unavailable')}</Text>
         <Text className="pt-1 text-center text-xs text-muted">
-          {err ?? `states_geo.json → unusable viewBox "${geo?.viewBox}"`}
+          {err ?? i18nT('n.components.nigeria-map.states-geo-json-unusable-viewbox', { v0: geo?.viewBox })}
         </Text>
       </View>
     );

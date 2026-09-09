@@ -158,8 +158,8 @@ export function CaptureCamera({
   hint,
   allowVideo,
   frameGuide,
-  confirmTitle = 'Check the photo',
-  confirmHint = 'Is every figure readable? Blurry photos cannot back a report.',
+  confirmTitle = i18nT('n.components.capture-camera.check-the-photo'),
+  confirmHint = i18nT('n.components.capture-camera.is-every-figure-readable-blurry-photos'),
   onCapture,
   onCancel,
   requireFix = true,
@@ -477,7 +477,7 @@ export function CaptureCamera({
   const shootPhoto = async () => {
     if (busy) return;
     setBusy(true);
-    setLine('Hold still…');
+    setLine(i18nT('n.components.capture-camera.hold-still'));
     try {
       // `quality` is JPEG compression, NOT resolution: expo-camera decodes the
       // full-sensor frame (pictureSize unset -> CameraX HIGHEST_AVAILABLE) and
@@ -491,7 +491,7 @@ export function CaptureCamera({
       setPreview({ uri: photo.uri, capturedAt: Date.now() });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {
-      setLine('Capture failed — try again.');
+      setLine(i18nT('n.components.capture-camera.capture-failed-try-again'));
     } finally {
       setBusy(false);
     }
@@ -515,7 +515,7 @@ export function CaptureCamera({
     if (!preview || busy) return;
     const g = gen.current;
     setBusy(true);
-    setLine('Confirming your location…');
+    setLine(i18nT('n.components.capture-camera.confirming-your-location'));
     const fix = await fixRef.current;
     if (cancelled.current || g !== gen.current) return; // user retook/cancelled meanwhile
     if (!fix && requireFix) {
@@ -548,7 +548,7 @@ export function CaptureCamera({
     if (!micPermission?.granted) {
       const m = await requestMic();
       if (!m.granted) {
-        setLine('Microphone is needed to record video with sound.');
+        setLine(i18nT('n.components.capture-camera.microphone-is-needed-to-record-video'));
         return;
       }
     }
@@ -568,7 +568,7 @@ export function CaptureCamera({
       if (cancelled.current) return;
       const fix = got.ok ? got.fix : null;
       if (!video?.uri || !fix) {
-        if (fix) setLine('Recording failed — try again.');
+        if (fix) setLine(i18nT('n.components.capture-camera.recording-failed-try-again'));
         else if (!got.ok) {
           const d = describeFixFailure(got);
           setFixFail(got);
@@ -595,13 +595,13 @@ export function CaptureCamera({
       // The recording is never lost — compressVideo returns the original on
       // failure — but the observer is told, because an uncompressed clip is
       // larger and stays in the phone's codec.
-      if (!out.compressed) setLine('Could not compress — uploading the original.');
+      if (!out.compressed) setLine(i18nT('n.components.capture-camera.could-not-compress-uploading-the-original'));
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onCapture({ uri, capturedAt: Date.now(), ...fix, type: 'video' });
     } catch {
       setRecording(false);
-      setLine('Recording failed — try again.');
+      setLine(i18nT('n.components.capture-camera.recording-failed-try-again'));
       setBusy(false);
     }
   };

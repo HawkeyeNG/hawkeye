@@ -27,6 +27,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { t as i18nT } from '@/lib/i18n';
 
 const SEEN_KEY = 'hawkeye_tour_seen';
 
@@ -104,7 +105,7 @@ export const TOUR_STEPS: TourStep[] = [
     titleKey: 'nav.home',
     bodyKey: 'tour.home.body',
     body:
-      'Elections open now, reports accepted so far, and a live feed.',
+      i18nT('tour.home.body'),
   },
   {
     icon: 'bar-chart-2',
@@ -113,17 +114,17 @@ export const TOUR_STEPS: TourStep[] = [
     titleKey: 'nav.results',
     bodyKey: 'tour.results.body',
     body:
-      'Pick a race for its map and running tally. Follow one to get alerts.',
+      i18nT('tour.results.body'),
   },
   {
     icon: 'camera',
     route: 'report',
     cta: true,
-    title: 'Report — the green button',
+    title: i18nT('tour.report.title'),
     titleKey: 'tour.report.title',
     bodyKey: 'tour.report.body',
     body:
-      'Report a result sheet, a collation result, or an incident. This is what makes you an observer.',
+      i18nT('tour.report.body'),
   },
   {
     icon: 'bell',
@@ -132,7 +133,7 @@ export const TOUR_STEPS: TourStep[] = [
     titleKey: 'nav.alerts',
     bodyKey: 'tour.alerts.body',
     body:
-      'What has happened on the races you follow — reports accepted, units flagged, and anything Hawkeye needs to tell you.',
+      i18nT('tour.alerts.body'),
   },
   {
     icon: 'menu',
@@ -141,7 +142,7 @@ export const TOUR_STEPS: TourStep[] = [
     titleKey: 'nav.more',
     bodyKey: 'tour.more.body',
     body:
-      'Practice runs, the ledger, the docket and the guide. Start with Practice Run.',
+      i18nT('tour.more.body'),
   },
 ];
 

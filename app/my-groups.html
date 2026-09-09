@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <title>Hawkeye — Your groups</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=175" />
+  <script src="native.js?v=116"></script>
+  <meta name="robots" content="noindex" />
+  <script src="authgate.js?v=2"></script>
+<style>
+.mg { max-width: 560px; margin: 0 auto; padding: 28px 18px 64px; }
+.mg button { display: inline-block; width: auto; margin: 0; box-shadow: none; }
+.mg button:hover { filter: none; }
+.mg h1 { font-family: var(--display); font-size: 1.3rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+.mg .lede { color: var(--muted); font-size: 0.88rem; line-height: 1.55; margin: 0 0 22px; }
+.mg .g { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 17px; margin-bottom: 12px; }
+.mg .g h2 { font-size: 1rem; margin: 0 0 2px; font-family: var(--display); }
+.mg .g .sub { color: var(--muted); font-size: 0.78rem; }
+.mg .unit { margin: 13px 0 0; padding: 11px 12px; background: var(--bg); border-radius: 9px; border: 1px solid var(--line); }
+.mg .unit .lab { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.mg .unit .nm { font-weight: 600; font-size: 0.92rem; margin-top: 2px; }
+.mg .unit .cd { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.76rem; color: var(--muted); }
+.mg .acts { display: flex; gap: 8px; margin-top: 13px; flex-wrap: wrap; }
+.mg .btn { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 0.82rem; cursor: pointer; }
+.mg .btn:hover { border-color: var(--accent); }
+.mg .btn.warn:hover { border-color: #c4463a; color: #c4463a; }
+.mg .declined { color: var(--muted); font-size: 0.8rem; margin-top: 9px; }
+.mg .none { text-align: center; padding: 40px 16px; color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+.mg .note { color: var(--muted); font-size: 0.78rem; line-height: 1.55; margin-top: 22px; }
+</style>
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html">
+        <span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Your groups</span></div>
+      </a>
+    </div>
+  </header>
+
+  <main class="mg" id="mg"><p class="lede">Loading…</p></main>
+
+<script>
+/**
+ * The observer's side of a group membership.
+ *
+ * This page exists because join.html PROMISES it. The consent notice there says
+ * a suggested unit can be declined and that a membership can be left; a promise
+ * with no screen behind it is the worst kind of untrue, because it reads as
+ * handled in review. Every verb offered at consent time is offered here.
+ *
+ * Its own page rather than a section of profile.html, which is fully keyed and
+ * translated — an English block inside a Hausa profile is worse than an English
+ * page. It joins the i18n tranche with situation-room.html and join.html.
+ */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (localStorage.getItem('hawkeye_token') || ''), ...(opts.headers || {}) },
+  });
+  if (res.status === 401) { location.replace('observe.html?intent=signin&next=my-groups.html'); throw new Error('signed out'); }
+  return { status: res.status, body: await res.json().catch(() => ({})) };
+}
+
+let GROUPS = [];
+
+async function load() {
+  const { body } = await api('/api/groups');
+  GROUPS = (body && body.member) || [];
+  render();
+}
+
+function render() {
+  if (!GROUPS.length) {
+    $('mg').innerHTML = `<h1>Your groups</h1>
+      <p class="none">You have not joined any campaign or observer group.<br />
+      You do not need one — you can report on your own, exactly as you do now.</p>`;
+    return;
+  }
+  $('mg').innerHTML = `
+    <h1>Your groups</h1>
+    <p class="lede">These groups can see the reports you have filed since you joined them.
+       They cannot see anything the public cannot, and they cannot change how your
+       reports are checked or counted.</p>
+    ${GROUPS.map(card).join('')}
+    <p class="note">Being in a group never limits where you can report from. If you are
+       sent somewhere else on the day, report from where you actually are — that
+       report still counts, and your group will see where it came from.</p>`;
+  document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => act(b)));
+}
+
+function card(g) {
+  const kind = g.kind === 'cso' ? 'Observer group' : 'Campaign';
+  const declined = g.assign_state === 'declined';
+  return `<div class="g">
+    <h2>${esc(g.name)}</h2>
+    <div class="sub">${esc(kind)} &middot; ${esc(g.contest)}${g.scope ? ' &middot; ' + esc(g.scope) : ''}</div>
+    ${g.assigned_pu ? `<div class="unit">
+      <div class="lab">${declined ? 'Unit you declined' : 'Unit they have you down for'}</div>
+      <div class="nm">${esc(g.assigned_name || 'Polling unit')}</div>
+      <div class="cd">${esc(g.assigned_pu)}${g.assigned_ward ? ' &middot; ' + esc(g.assigned_ward) : ''}${g.assigned_lga ? ' &middot; ' + esc(g.assigned_lga) : ''}</div>
+    </div>` : '<div class="declined">They have not given you a polling unit.</div>'}
+    ${declined ? '<div class="declined">You told them this is not where you will be. They can suggest another one.</div>' : ''}
+    <div class="acts">
+      ${g.assigned_pu && !declined ? `<button class="btn" data-act="decline" data-gid="${g.id}">That is not where I will be</button>` : ''}
+      <button class="btn warn" data-act="leave" data-gid="${g.id}" data-name="${esc(g.name)}">Leave this group</button>
+    </div>
+  </div>`;
+}
+
+async function act(b) {
+  const gid = b.dataset.gid;
+  if (b.dataset.act === 'decline') {
+    const { status } = await api('/api/groups/' + gid + '/decline', { method: 'POST' });
+    if (status !== 200) return alert('Could not send that just now.');
+    return load();
+  }
+  /* Confirmed, because leaving is not reversible from here — the invite link
+     may be spent, revoked, or simply not to hand any more. */
+  if (!confirm('Leave ' + b.dataset.name + '? They will stop seeing which reports are yours. You will need a fresh invite to rejoin.')) return;
+  const { status } = await api('/api/groups/' + gid + '/membership', { method: 'DELETE' });
+  if (status !== 200) return alert('Could not leave just now.');
+  load();
+}
+
+load().catch(() => { $('mg').innerHTML = '<p class="none">Could not load your groups. Check your connection and try again.</p>'; });
+</script>
+</body>
+</html>

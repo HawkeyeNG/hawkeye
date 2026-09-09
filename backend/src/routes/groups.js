@@ -262,7 +262,10 @@ groupsRouter.patch('/groups/:id/members/:observerId/assignment', requireObserver
     titleKey: 'note.assigned.title',
     bodyKey: 'note.assigned.body',
     params: { group: req.group.name, unit: where },
-    url: 'https://hawkeye.com.ng/observe.html',
+    // The screen ABOUT the assignment, not the generic report funnel — this is
+    // also where they decline it, and a notification that cannot reach its own
+    // correction route is how a wrong assignment survives to election day.
+    url: 'https://hawkeye.com.ng/my-groups.html',
   });
   notifyObserverId(observerId, 'tg.assigned', { group: req.group.name, unit: where });
 

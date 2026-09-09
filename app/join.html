@@ -108,12 +108,11 @@ async function main() {
           They may suggest a polling unit for you, but you can always report from
           wherever you actually are — and you can decline the unit.</span></li>
         <!-- This list is a CONSENT NOTICE, so every line has to be true on the
-             day it ships. The planned "and every group you are in is listed on
-             your profile" is not here yet, and a consent notice describing a
-             screen that does not exist is the worst kind of untrue: it reads as
-             handled. Restore the clause with the profile section, not before. -->
-        <li><i>&#9679;</i><span><b>You can leave whenever you want</b>, and joining
-          one group never stops you joining another.</span></li>
+             day it ships — every verb offered here has a screen behind it in
+             my-groups.html. Do not add a line before the screen that honours it
+             exists: a promise with nothing behind it reads as handled. -->
+        <li><i>&#9679;</i><span><b>You can leave whenever you want</b>, and every
+          group you are in is listed under <a class="plain" href="my-groups.html">Your groups</a>.</span></li>
       </ul>
       <button id="go">${signedIn() ? 'Join ' + esc(g.name) : 'Sign in to join'}</button>
       <p class="fine">Hawkeye is not run by any party, candidate or campaign, and joining a
@@ -150,7 +149,7 @@ async function main() {
       <p>${b.already ? '' : esc(g.name) + ' can now see the reports you file from here on.'}
         ${b.proposed_pu ? 'They have your saved polling unit (<span class="num">' + esc(b.proposed_pu) + '</span>) as a starting point, and may confirm or change it.' : ''}</p>
       <p style="margin-top:14px"><a class="plain" href="observe.html">Report a result</a> &middot;
-         <a class="plain" href="profile.html">Your profile</a></p>
+         <a class="plain" href="my-groups.html">Your groups</a></p>
     </div>`;
   });
 }

@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "smoke": "node scripts/smoke_test.js"
+    "smoke": "node scripts/smoke_test.js",
+    "test:groups": "node scripts/groups_test.mjs && node scripts/groups_status_test.mjs"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

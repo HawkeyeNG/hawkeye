@@ -575,6 +575,63 @@ for (const ddl of [
   "UPDATE polling_units SET federal_constituency = REPLACE(federal_constituency, 'Fct', 'FCT') WHERE federal_constituency LIKE '%Fct%'",
   "UPDATE polling_units SET ward = REPLACE(ward, 'Fct', 'FCT') WHERE ward LIKE '%Fct%'",
   "UPDATE polling_units SET name = REPLACE(name, 'Fct', 'FCT') WHERE name LIKE '%Fct%'",
+
+  // --- Situation room: campaign / CSO groups (routes/groups.js) ---------------
+  // Four tables that JOIN against the public record and never write to it. The
+  // dashboard cannot corrupt or privilege results because nothing here touches
+  // `submissions`, `results` or the ledger — see the file header for why that
+  // structural fact, and not a policy, is what keeps the neutrality claim true.
+  //
+  // Named `campaign_groups`, not `groups`: GROUPS is a window-frame keyword in
+  // SQLite and a bare table of that name is a boot failure waiting on a version
+  // bump. Not worth the four saved characters.
+  `CREATE TABLE IF NOT EXISTS campaign_groups (
+     id         INTEGER PRIMARY KEY,
+     name       TEXT NOT NULL,
+     kind       TEXT NOT NULL DEFAULT 'campaign',   -- 'campaign' | 'cso'
+     contest    TEXT NOT NULL DEFAULT 'PRES',
+     scope      TEXT NOT NULL DEFAULT '',           -- state, or '' for national
+     created_by INTEGER NOT NULL REFERENCES observers(id),
+     created_at INTEGER NOT NULL
+   )`,
+  // Delegation is downward only, and a coordinator's scope is stored on the row
+  // rather than inferred, so one coordinator's mistake cannot reach another
+  // state. Owner is the only role that can remove managers.
+  `CREATE TABLE IF NOT EXISTS group_managers (
+     group_id    INTEGER NOT NULL REFERENCES campaign_groups(id),
+     observer_id INTEGER NOT NULL REFERENCES observers(id),
+     role        TEXT NOT NULL DEFAULT 'manager',   -- 'owner' | 'manager' | 'coordinator'
+     scope_kind  TEXT NOT NULL DEFAULT '',          -- '' | 'state' | 'lga' | 'ward'
+     scope_value TEXT NOT NULL DEFAULT '',
+     created_at  INTEGER NOT NULL,
+     PRIMARY KEY (group_id, observer_id)
+   )`,
+  // `joined_at` is load-bearing, not bookkeeping: every read JOINs submissions
+  // with `created_at >= joined_at`, so joining reveals only reports going
+  // FORWARD. An observer's past work is not the campaign's to see.
+  // `assign_state` carries 'declined' because a wrong assignment with no
+  // correction route sits on the board looking correct.
+  `CREATE TABLE IF NOT EXISTS group_members (
+     group_id     INTEGER NOT NULL REFERENCES campaign_groups(id),
+     observer_id  INTEGER NOT NULL REFERENCES observers(id),
+     assigned_pu  TEXT,                             -- NULL = unassigned
+     assign_state TEXT NOT NULL DEFAULT '',         -- '' | 'proposed' | 'confirmed' | 'declined'
+     assigned_by  INTEGER,
+     assigned_at  INTEGER,
+     joined_at    INTEGER NOT NULL,
+     PRIMARY KEY (group_id, observer_id)
+   )`,
+  `CREATE TABLE IF NOT EXISTS group_tokens (
+     token      TEXT PRIMARY KEY,
+     group_id   INTEGER NOT NULL REFERENCES campaign_groups(id),
+     created_by INTEGER NOT NULL REFERENCES observers(id),
+     expires_at INTEGER NOT NULL,
+     revoked    INTEGER NOT NULL DEFAULT 0,
+     uses       INTEGER NOT NULL DEFAULT 0,
+     created_at INTEGER NOT NULL
+   )`,
+  'CREATE INDEX IF NOT EXISTS idx_group_members_obs ON group_members(observer_id)',
+  'CREATE INDEX IF NOT EXISTS idx_group_members_pu ON group_members(assigned_pu)',
 ]) {
   try {
     db.exec(ddl);

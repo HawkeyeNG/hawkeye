@@ -52,17 +52,17 @@ function locationLine(r: Row) {
     r.locationStatus === 'verified'
       ? '📍 location verified'
       : r.locationStatus === 'provisional'
-        ? `◌ crowd-confirmed location (${r.locationConfidence}% of reports agree)`
-        : `⚠ location unverified (${r.locationConfidence ?? 0}% GPS agreement)`;
+        ? i18nT('n.app.reports-log.crowd-confirmed-location-of-reports-agree', { v0: r.locationConfidence })
+        : i18nT('n.app.reports-log.location-unverified-gps-agreement', { v0: r.locationConfidence ?? 0 });
   const venue =
     r.venueMatches > 0
-      ? ` · 🏫 ${r.venueMatches} venue photo pair${r.venueMatches > 1 ? 's' : ''} match`
+      ? i18nT('n.app.reports-log.venue-photo-pair-match', { v0: r.venueMatches, v1: r.venueMatches > 1 ? 's' : '' })
       : '';
   const clash =
     r.locationPlausibility === 'inconsistent'
       ? ' · ⚠ GPS reports contradict this unit’s expected area'
       : '';
-  const score = r.locationScore != null ? ` · location evidence ${r.locationScore}/100` : '';
+  const score = r.locationScore != null ? i18nT('n.app.reports-log.location-evidence-100', { v0: r.locationScore }) : '';
   return head + venue + clash + score;
 }
 
@@ -201,7 +201,7 @@ export default function ReportsLog() {
                 <Text className={`font-bold ${bad ? 'text-bad-ink' : 'text-good-ink'}`}>
                   {r.status.toUpperCase()}
                 </Text>
-                {` · ${r.confidence}% confidence · ${r.matchingReports}/${r.totalReports} matching reports`}
+                {i18nT('n.app.reports-log.confidence-matching-reports', { v0: r.confidence, v1: r.matchingReports, v2: r.totalReports })}
               </Text>
 
               <Text className="pt-1 text-xs text-muted">{locationLine(r)}</Text>

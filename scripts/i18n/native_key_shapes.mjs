@@ -172,6 +172,12 @@ function processFile(file) {
     if (!isProse(litText)) return whole;
     // A template that is mostly expression is a composed value, not a sentence.
     if (litText.replace(/\s+/g, '').length < 6) return whole;
+    // A DATA FORMAT IS NOT A SENTENCE. `race|v1|${a}|${b}` builds a ledger leaf;
+    // translating it would stop the proof folding. Pipes, and lowercase runs
+    // with no sentence punctuation, are machine syntax. This is the same class
+    // as the filenames: a rewrite that is mechanically perfect and semantically
+    // wrong, which a round-trip check cannot see by construction.
+    if (/[|;=]/.test(litText)) return whole;
     // A FILENAME IS NOT A SENTENCE. clip${n}.mp4 and photo${n}.jpg were keyed
     // by the first version of this tool: they start with a letter, contain a
     // dot, and rewrote perfectly — the round-trip check cannot catch a rewrite

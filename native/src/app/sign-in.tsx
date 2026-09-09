@@ -120,15 +120,15 @@ export default function SignIn() {
   }, []);
 
   const sentLine = (r: RegisterResult) => {
-    if (r.devOtp) return `DEV MODE — your code is ${r.devOtp}`;
-    if (r.viaWhatsapp) return `Code sent on WhatsApp to ${phone}.`;
-    if (r.viaSms) return `Code sent by SMS to ${phone}.`;
-    if (r.viaTelegram) return `Code sent on Telegram to ${phone}.`;
-    return `Code sent to ${phone}.`;
+    if (r.devOtp) return i18nT('n.app.sign-in.dev-mode-your-code-is', { v0: r.devOtp });
+    if (r.viaWhatsapp) return i18nT('n.app.sign-in.code-sent-on-whatsapp-to', { v0: phone });
+    if (r.viaSms) return i18nT('n.app.sign-in.code-sent-by-sms-to', { v0: phone });
+    if (r.viaTelegram) return i18nT('n.app.sign-in.code-sent-on-telegram-to', { v0: phone });
+    return i18nT('n.app.sign-in.code-sent-to', { v0: phone });
   };
 
   const send = (verb: string) => {
-    setLine(`${verb} code to ${phone.trim()}…`);
+    setLine(i18nT('n.app.sign-in.code-to', { v0: verb, v1: phone.trim() }));
     setCooldown(30);
     // Non-null: Send code is disabled until a channel is picked.
     // `signup` lets the server refuse a registered number WITHOUT sending —
@@ -141,7 +141,7 @@ export default function SignIn() {
           // Telegram needs a one-time bot link — that UI lives on the request step.
           setStep('request');
           setTgLink(r.telegramLink);
-          setLine('Open Telegram, tap Start, then Share my phone number.');
+          setLine(i18nT('n.app.sign-in.open-telegram-tap-start-then-share'));
         } else if (r.ok) {
           setLine(sentLine(r));
         } else if (r.error === 'account_exists') {
@@ -159,13 +159,13 @@ export default function SignIn() {
                 ? 'Too many code requests from this network — wait a few minutes.'
                 : r.error === 'sms_send_failed'
                   ? 'That code could not be delivered — try another channel below.'
-                  : (r.hint ?? 'Could not send a code — check the number.'),
+                  : (r.hint ?? i18nT('n.app.sign-in.could-not-send-a-code-check')),
           );
         }
       })
       .catch(() => {
         setStep('request');
-        setLine('Network error — try again.');
+        setLine(i18nT('n.app.sign-in.network-error-try-again'));
       });
   };
 
@@ -194,7 +194,7 @@ export default function SignIn() {
           r.error === 'otp_incorrect' ? 'Wrong code — check and retry.'
           : r.error === 'otp_expired' ? 'Code expired — request a new one.'
           : r.error === 'too_many_attempts' ? 'Too many wrong codes — request a new one.'
-          : (r.hint ?? 'Verification failed — try again.'),
+          : (r.hint ?? i18nT('n.app.sign-in.verification-failed-try-again')),
         );
         return;
       }
@@ -257,7 +257,7 @@ export default function SignIn() {
       // someone on a password screen over a failed status call.
       router.replace('/(tabs)');
     } catch {
-      setLine('Network error — try again.');
+      setLine(i18nT('n.app.sign-in.network-error-try-again'));
     } finally {
       setBusy(false);
     }
@@ -308,7 +308,7 @@ export default function SignIn() {
       // stop the blank shortcut for this number so taps can't burn the lockout.
       if (wasBlank && r.error === 'wrong_password') {
         setPwRequiredFor(typedPhone);
-        setLine('This account has a password — type it, or tap “Forgot password?” to get a code.');
+        setLine(i18nT('n.app.sign-in.this-account-has-a-password-type'));
         return;
       }
       setLine(
@@ -316,10 +316,10 @@ export default function SignIn() {
           ? 'Enter a Nigerian mobile number, e.g. 08031234567.'
           // wrong_password / too_many_attempts hints are user-ready copy and
           // both already point at the code path — show them verbatim.
-          : (r.hint ?? 'Sign-in failed — try again.'),
+          : (r.hint ?? i18nT('n.app.sign-in.sign-in-failed-try-again')),
       );
     } catch {
-      setLine('Network error — try again.');
+      setLine(i18nT('n.app.sign-in.network-error-try-again'));
     } finally {
       setBusy(false);
     }
@@ -327,13 +327,13 @@ export default function SignIn() {
 
   const onSavePassword = async () => {
     if (newPw.length < 8) {
-      setLine('Use at least 8 characters.');
+      setLine(i18nT('n.app.sign-in.use-at-least-8-characters'));
       return;
     }
     // Typed twice: a typo in a blind field would otherwise lock this account out
     // of its own password path until another code reset.
     if (newPw !== newPw2) {
-      setLine('The two passwords do not match.');
+      setLine(i18nT('n.app.sign-in.the-two-passwords-do-not-match'));
       return;
     }
     setBusy(true);
@@ -351,10 +351,10 @@ export default function SignIn() {
         // The no-current-password window is 15 min from the code — past that the
         // server asks for the old one, which is exactly what they don't have.
         : r.error === 'current_password_wrong' ? 'That took too long — request a new code and try again.'
-        : (r.hint ?? 'Could not save that password — try again.'),
+        : (r.hint ?? i18nT('n.app.sign-in.could-not-save-that-password-try')),
       );
     } catch {
-      setLine('Network error — try again.');
+      setLine(i18nT('n.app.sign-in.network-error-try-again'));
     } finally {
       setBusy(false);
     }
@@ -385,25 +385,25 @@ export default function SignIn() {
   const requestCopy =
     purpose === 'signup'
       ? {
-          title: 'Create Your Account',
-          body: 'Enter your phone number. We send a code to confirm it, then you choose a password.',
+          title: i18nT('n.app.sign-in.create-your-account'),
+          body: i18nT('n.app.sign-in.enter-your-phone-number-we-send'),
         }
       : purpose === 'reset'
         ? {
-            title: 'Reset Your Password',
-            body: 'We send a one-time code (OTP) to your number. Enter it and you can choose a new password.',
+            title: i18nT('n.app.sign-in.reset-your-password'),
+            body: i18nT('n.app.sign-in.we-send-a-one-time-code'),
           }
         : {
-            title: 'No Password on This Account',
-            body: 'This account has no password yet. Sign in with a code and set one now.',
+            title: i18nT('n.app.sign-in.no-password-on-this-account'),
+            body: i18nT('n.app.sign-in.this-account-has-no-password-yet'),
           };
 
   const setPwCopy =
     purpose === 'reset'
-      ? { title: 'Choose a New Password', body: 'Your number is verified. Pick a new password — at least 8 characters.' }
+      ? { title: i18nT('n.app.sign-in.choose-a-new-password'), body: 'Your number is verified. Pick a new password — at least 8 characters.' }
       : purpose === 'no-password'
-        ? { title: 'Set Your Password', body: 'Your number is verified. Choose a password — at least 8 characters — and use it to sign in on any device from now on.' }
-        : { title: 'Create Your Password', body: 'Verified. Choose a password — at least 8 characters.' };
+        ? { title: i18nT('n.app.sign-in.set-your-password'), body: 'Your number is verified. Choose a password — at least 8 characters — and use it to sign in on any device from now on.' }
+        : { title: i18nT('n.app.sign-in.create-your-password'), body: 'Verified. Choose a password — at least 8 characters.' };
 
   const pwSaveDisabled = busy || newPw.length < 8 || newPw2.length < 8;
 
@@ -588,8 +588,8 @@ export default function SignIn() {
               <Text className="text-2xl font-bold text-ink">{i18nT('n.app.sign-in.this-account-already-exists')}</Text>
               <Text className="pb-5 pt-2 text-sm text-muted">
                 {existsAfterOtp
-                  ? `${phone.trim()} is already registered as an observer, and it already has a password. Nothing new was created — your reports and your observer ID are as you left them.`
-                  : `${phone.trim()} is already registered as an observer. Sign in with your password — no code was sent, and nothing new was created.`}
+                  ? i18nT('n.app.sign-in.is-already-registered-as-an-observer', { v0: phone.trim() })
+                  : i18nT('n.app.sign-in.is-already-registered-as-an-observer-2', { v0: phone.trim() })}
               </Text>
 
               {existsAfterOtp ? (
@@ -634,7 +634,7 @@ export default function SignIn() {
                 }}
               >
                 <Text className="text-sm font-semibold text-good-ink">
-                  Forgot your password? {existsAfterOtp ? 'Set a new one' : 'Reset it'}
+                  Forgot your password? {existsAfterOtp ? i18nT('n.app.sign-in.set-a-new-one') : i18nT('n.app.sign-in.reset-it')}
                 </Text>
               </Pressable>
 
@@ -701,7 +701,7 @@ export default function SignIn() {
                   <Text
                     className={`text-sm font-semibold ${cooldown > 0 ? 'text-faint' : 'text-good-ink'}`}
                   >
-                    {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
+                    {cooldown > 0 ? i18nT('n.app.sign-in.resend-in-s', { v0: cooldown }) : 'Resend code'}
                   </Text>
                 </Pressable>
                 <Pressable onPress={() => setStep('request')}>
@@ -746,7 +746,7 @@ export default function SignIn() {
               </Pressable>
               <Pressable className="mt-4 items-center" onPress={onAbandonPassword}>
                 <Text className="text-sm font-semibold text-good-ink">
-                  {mustSetPassword ? 'Not now — sign out' : 'Keep my current password'}
+                  {mustSetPassword ? i18nT('n.app.sign-in.not-now-sign-out') : i18nT('n.app.sign-in.keep-my-current-password')}
                 </Text>
               </Pressable>
             </>

@@ -111,7 +111,7 @@ function timeAgo(ts: number) {
   const diff = (Date.now() - d.getTime()) / 1000;
   const hm = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 3600) return i18nT('n.app.ledger.min-ago', { v0: Math.floor(diff / 60) });
   if (d.toDateString() === new Date().toDateString()) return `today ${hm}`;
   if (diff < 172800) return `yesterday ${hm}`;
   return `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })}, ${hm}`;
@@ -200,7 +200,7 @@ export default function Ledger() {
         setRaces([]);
       }
     } catch (err) {
-      setLoadErr(humanError(err, 'Could not load the ledger.'));
+      setLoadErr(humanError(err, i18nT('n.app.ledger.could-not-load-the-ledger')));
     } finally {
       setLoading(false);
     }
@@ -226,7 +226,7 @@ export default function Ledger() {
         setProgress(null);
         setChain({
           ok: false,
-          text: `Chain broken at entry ${e.id} — a report was altered or removed.`,
+          text: i18nT('n.app.ledger.chain-broken-at-entry-a-report', { v0: e.id }),
         });
         return;
       }
@@ -240,8 +240,8 @@ export default function Ledger() {
     setChain({
       ok: true,
       text: entries.length
-        ? `Verified all ${entries.length} entries on this phone. Head matches: ${prev}`
-        : 'The chain is empty — no report has been recorded yet. Head is the genesis hash.',
+        ? i18nT('n.app.ledger.verified-all-entries-on-this-phone', { v0: entries.length, v1: prev })
+        : i18nT('n.app.ledger.the-chain-is-empty-no-report'),
     });
   };
 
@@ -261,7 +261,7 @@ export default function Ledger() {
       if (hex(`race|v1|${d.raceKey}|${d.head}|${d.entries}`) !== d.leaf) {
         setRaceOut({
           ok: false,
-          text: 'Leaf mismatch — the race head and count do not match the stored leaf.',
+          text: i18nT('n.app.ledger.leaf-mismatch-the-race-head-and'),
         });
         return;
       }
@@ -273,18 +273,18 @@ export default function Ledger() {
         h === d.racesRoot
           ? {
               ok: true,
-              text: `"${d.raceKey}" verified — ${d.entries} report(s) fold to the anchored root, computed here on your phone.`,
+              text: i18nT('n.app.ledger.verified-report-s-fold-to-the', { v0: d.raceKey, v1: d.entries }),
               link: d.rekorSearchUrl || d.rekorUrl,
             }
           : {
               ok: false,
-              text: 'Proof does not fold to the anchored root — this race’s record may have been altered.',
+              text: i18nT('n.app.ledger.proof-does-not-fold-to-the'),
             },
       );
     } catch (err) {
       setRaceOut({
         ok: false,
-        text: humanError(err, 'Could not fetch the proof.'),
+        text: humanError(err, i18nT('n.app.ledger.could-not-fetch-the-proof')),
       });
     } finally {
       setRaceBusy(false);
@@ -331,7 +331,7 @@ export default function Ledger() {
           <Stat value={(verify?.entries ?? 0).toLocaleString()} label={i18nT('n.app.ledger.entries-chained')} />
           {/* A missing verdict is not a failing one — never colour it red. */}
           <Stat
-            value={!verify ? '—' : verify.ok ? 'Intact' : `Broken at #${verify.brokenAtId ?? '?'}`}
+            value={!verify ? '—' : verify.ok ? 'Intact' : i18nT('n.app.ledger.broken-at', { v0: verify.brokenAtId ?? '?' })}
             label={i18nT('n.app.ledger.server-check')}
             tone={!verify ? undefined : verify.ok ? 'good' : 'bad'}
             tight={!!verify && !verify.ok}

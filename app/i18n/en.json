@@ -4,12 +4,7 @@
     "code": "en",
     "review": "source",
     "note": "The source strings, and the key set translators work from. English also lives in the HTML as the fallback, so this file is never fetched at runtime — a missing key renders the English already on the page.",
-    "englishOnly": [
-      "common.hawkeye-is-an-independent-transparency-initiative",
-      "common.hawkeye-is-an-independent-transparency-initiative-2",
-      "common.hawkeye-is-an-independent-transparency-initiative-3",
-      "index.not-affiliated-with-inec-or-any"
-    ],
+    "englishOnly": [],
     "englishOnlyPages": [
       "privacy",
       "terms"

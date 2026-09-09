@@ -45,6 +45,12 @@ export type Page = {
   /** One-line subtitle in the collapsing header. */
   kicker: string;
   /**
+   * Governing-language clause, on the two documents that create
+   * obligations. English is authoritative; a translation is a
+   * convenience. Optional because it belongs only on terms and privacy.
+   */
+  governing?: string;
+  /**
    * Jump chips, in order; each maps to a 'label' block of the same text —
    * byte-identical, since the scroll anchors are keyed by the string itself.
    * Written in Title Case: the in-page label renders ALL-CAPS, but the chip
@@ -350,6 +356,8 @@ export const PAGES: Record<string, Page> = {
   privacy: {
     title: 'Privacy & Data',
     kicker: 'What we keep, and what we never do',
+    governing:
+      'The English version of this document is the authoritative one. Any translation is provided for convenience; where they differ, the English version applies.',
     sections: ['What We Collect', 'Public vs Private', 'What We Never Do', 'Your Rights'],
     blocks: [
       {

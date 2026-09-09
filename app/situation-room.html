@@ -63,6 +63,8 @@
 }
 .sr-btn:hover { border-color: var(--accent); }
 .sr-btn.primary { background: var(--accent); border-color: var(--accent); color: #06231a; font-weight: 600; }
+.sr-btn.mini { padding: 3px 9px; font-size: 0.76rem; }
+.sr-acts { display: flex; gap: 6px; justify-content: flex-end; }
 
 /* --- tabs --- */
 .sr-tabs { display: flex; gap: 4px; margin: 14px 0 0; border-bottom: 1px solid var(--line); }
@@ -447,6 +449,7 @@ function renderTeam() {
   const ms = t.members.slice().sort((a, b) =>
     (STATUS[a.status].rank - STATUS[b.status].rank) || (a.joined_at - b.joined_at));
   const count = (s) => t.members.filter((m) => m.status === s).length;
+  const proposed = t.members.filter((m) => m.assign_state === 'proposed').length;
 
   $('sr-body').innerHTML = `
     <div class="sr-heads">
@@ -456,6 +459,11 @@ function renderTeam() {
       <div class="sr-head wait"><b class="num">${n(count('silent'))}</b><span>Yet to report</span></div>
       <div class="sr-head"><b class="num">${n(count('unassigned') + count('declined'))}</b><span>No unit set</span></div>
     </div>
+    ${proposed ? `<div class="sr-bar" style="border:0;padding:0 0 10px">
+      <span class="meta">${n(proposed)} observer${proposed === 1 ? '' : 's'} joined with a unit already saved.</span>
+      <div class="spacer"></div>
+      <button class="sr-btn" id="confirm-proposed">Accept all ${n(proposed)}</button>
+    </div>` : ''}
     ${t.members.length ? `
     <div class="sr-wrap"><table class="sr-tbl text">
       <thead><tr><th>Observer</th><th>Status</th><th>Assigned unit</th><th>Reported from</th><th></th></tr></thead>
@@ -468,7 +476,30 @@ function renderTeam() {
       wrong. Ask before you conclude.
     </div>` : emptyTeamHtml()}`;
 
-  document.querySelectorAll('[data-rename]').forEach((b) => b.addEventListener('click', () => rename(b.dataset.rename)));
+  document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => runAction(b)));
+  if ($('confirm-proposed')) $('confirm-proposed').addEventListener('click', confirmProposed);
+}
+
+async function runAction(b) {
+  const id = b.dataset.obs;
+  if (b.dataset.act === 'rename') return rename(id);
+  if (b.dataset.act === 'clear') return assign(id, null);
+  if (b.dataset.act === 'move' || b.dataset.act === 'confirm') return assign(id, b.dataset.pu);
+  if (b.dataset.act === 'set') {
+    const code = prompt('Polling unit code for this observer (for example 24-14-01-020):', '');
+    if (code && code.trim()) assign(id, code.trim());
+  }
+}
+
+/* Accepting a proposal moves nobody — it is the observer's OWN saved unit — so
+   the server sends no notification for it. Telling several hundred people they
+   have been assigned to the unit they themselves chose is the notification that
+   teaches them to ignore the next one, which will be the one that moved them. */
+async function confirmProposed() {
+  const { body } = await api('/api/groups/' + S.gid + '/assignments/confirm-proposed', { method: 'POST' });
+  S.team = S.coverage = null;
+  loadTab(true);
+  return body;
 }
 
 function memberRow(m) {
@@ -480,8 +511,47 @@ function memberRow(m) {
     <td><span class="pill ${s.cls}"><i>${s.glyph}</i>${s.word}</span></td>
     <td>${place(m.assigned)}</td>
     <td>${place(m.reported)}${mismatched ? '<span class="sr-sub" style="color:var(--off)">not the assigned unit</span>' : ''}</td>
-    <td><button class="sr-btn" data-rename="${m.observer_id}" style="padding:3px 9px;font-size:0.76rem">Rename</button></td>
+    <td>${actionsHtml(m)}</td>
   </tr>`;
+}
+
+/**
+ * The exception queue, one row at a time.
+ *
+ * ONE contextual action per row, not a menu of five. A manager works this
+ * screen at speed on election night; the question a row raises is almost always
+ * singular, and offering every verb next to every row is how the right one gets
+ * missed.
+ *
+ * "Move here" is the valuable one and the reason mismatch is a state rather
+ * than an error: the observer is demonstrably standing at a unit, so make that
+ * their assignment in one tap instead of asking anyone to type a 12-character
+ * code for a unit the system already knows.
+ */
+function actionsHtml(m) {
+  const btn = (act, label, extra = '') =>
+    `<button class="sr-btn mini" data-act="${act}" data-obs="${m.observer_id}" ${extra}>${label}</button>`;
+  let main = '';
+  if (m.status === 'mismatch' && m.reported) main = btn('move', 'Move here', `data-pu="${esc(m.reported.pu_code)}"`);
+  else if (m.assign_state === 'proposed' && m.assigned) main = btn('confirm', 'Confirm', `data-pu="${esc(m.assigned.pu_code)}"`);
+  else if (!m.assigned) main = btn('set', 'Set unit');
+  else main = btn('clear', 'Clear');
+  return `<div class="sr-acts">${main}${btn('rename', 'Rename')}</div>`;
+}
+
+async function assign(observerId, puCode) {
+  const { status, body } = await api('/api/groups/' + S.gid + '/members/' + observerId + '/assignment', {
+    method: 'PATCH', body: JSON.stringify({ pu_code: puCode }),
+  });
+  if (status !== 200) {
+    alert(body.error === 'no_such_unit' ? 'No polling unit has that code.'
+      : body.error === 'outside_your_scope' ? 'That unit is outside the area you cover.'
+      : 'Could not save that assignment.');
+    return false;
+  }
+  S.team = S.coverage = null;
+  loadTab(true);
+  return true;
 }
 
 function emptyTeamHtml() {

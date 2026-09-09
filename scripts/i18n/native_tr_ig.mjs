@@ -353,4 +353,6 @@ export default {
   "n.app.report.result.tap-the-unit-you-are-standing": "Pịa ngalaba ị na-eguzo na ya — {v0} kacha nso n'ime {v1} achọtara:",
   "n.app.report.result.tap-the-unit-you-are-standing-2": "Pịa ngalaba ị na-eguzo na ya:",
   "n.app.report.result.units-found-within-800m-unmapped-units": "Ngalaba ndị dị n'ime 800m. Ngalaba ndị e sepụtabeghị nwere ike ghara ịpụta.",
+  "n.components.gov-disclaimer.not-government-or-inec-affiliated": "Ọ bụghị nke gọmenti, o nweghịkwa njikọ na INEC.",
+  "n.components.gov-disclaimer.hawkeye-is-an-independent-citizen-run": "Hawkeye bụ atụmatụ nghọta ọha nweere onwe ya nke ndị obodo na-elekọta. O nweghị njikọ na INEC ma ọ bụ ụlọ ọrụ gọọmentị ọ bụla, o nweghịkwa nkwado ha, ọ naghị arụ ọrụ n'aha ha, ọ naghịkwa ekwupụta nsonaazụ ntuli aka. Ọnụọgụ dị ebe a bụ akụkọ ndị obodo kọrọ, abụghị nke gọọmentị. Nsonaazụ gọọmentị na ozi ntuli aka na-esite n'aka INEC:",
 };

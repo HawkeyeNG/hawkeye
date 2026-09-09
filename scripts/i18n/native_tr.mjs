@@ -354,5 +354,7 @@ export default {
     "n.app.report.result.tap-the-unit-you-are-standing": "Taɓa rukunin da kake tsaye a ciki — {v0} da suka fi kusa daga cikin {v1} da aka samu:",
     "n.app.report.result.tap-the-unit-you-are-standing-2": "Taɓa rukunin da kake tsaye a ciki:",
     "n.app.report.result.units-found-within-800m-unmapped-units": "An samu rukunan cikin 800m. Rukunan da ba a tsara ba ƙila ba za su bayyana ba.",
+    "n.components.gov-disclaimer.not-government-or-inec-affiliated": "Hawkeye ba ta da alaƙa da gwamnati ko INEC.",
+    "n.components.gov-disclaimer.hawkeye-is-an-independent-citizen-run": "Hawkeye tsari ne mai zaman kansa na bayyana gaskiya wanda jama'a ke gudanarwa. Ba ta da alaƙa da INEC ko wata hukumar gwamnati, ba ta da amincewarsu, ba ta aiki a madadinsu, kuma ba ta sanar da sakamakon zaɓe. Alkaluman da ke nan rahotannin jama'a ne, ba na hukuma ba. Sakamako na hukuma da bayanan zaɓe suna fitowa ne daga INEC:",
   },
 };

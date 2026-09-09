@@ -49,6 +49,20 @@ const prefixFor = (f) =>
     .replace(/[()]/g, '').replace(/\//g, '.').replace(/\.+/g, '.');
 
 /** Prose a person reads, not code that happens to be quoted. */
+/** Add the i18nT import if this file gained its first call. The keyers rewrite
+ *  call sites; a file with no previous i18nT has no import, and the rewrite
+ *  then does not compile. tsc catches it, but only after the write. */
+function ensureImport(src) {
+  if (!/\bi18nT\(/.test(src)) return src;
+  if (/import \{[^}]*\bt as i18nT\b[^}]*\} from '@\/lib\/i18n'/.test(src)) return src;
+  const lines = src.split('\n');
+  let last = -1;
+  for (let i = 0; i < lines.length; i++) if (/^import .*from '.*';\s*$/.test(lines[i])) last = i;
+  if (last === -1) return src;
+  lines.splice(last + 1, 0, "import { t as i18nT } from '@/lib/i18n';");
+  return lines.join('\n');
+}
+
 function isProse(s) {
   if (s.length < 8 || s.length > 220) return false;
   if (!/^[A-Z]/.test(s)) return false;
@@ -108,7 +122,7 @@ for (const f of files) {
     console.log(`    ${k.slice(-52).padEnd(52)} ${v.slice(0, 54)}`);
   }
   if (WRITE && found.length) {
-    fs.writeFileSync(abs, out);
+    fs.writeFileSync(abs, ensureImport(out));
     Object.assign(catOut, added);
   }
 }

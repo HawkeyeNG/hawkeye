@@ -279,15 +279,55 @@
   "en": 9,
   "max": 23
  },
+ "n.app.assistant.ask-about-the-results": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.app.assistant.ask-me-about-the-crowd-reported": {
+  "kind": "body",
+  "en": 113,
+  "max": 198
+ },
+ "n.app.assistant.could-not-answer-that-http": {
+  "kind": "body",
+  "en": 41,
+  "max": 81
+ },
+ "n.app.assistant.could-not-reach-the-assistant": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "n.app.assistant.how-much-of-nigeria-is-mapped": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
  "n.app.assistant.reading-the-reports": {
   "kind": "body",
   "en": 20,
   "max": 60
  },
+ "n.app.assistant.the-assistant-is-switched-off": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
  "n.app.assistant.unanswered": {
   "kind": "body",
   "en": 10,
   "max": 50
+ },
+ "n.app.assistant.what-is-the-presidential-tally-so": {
+  "kind": "body",
+  "en": 38,
+  "max": 78
+ },
+ "n.app.assistant.which-states-still-have-no-reports": {
+  "kind": "body",
+  "en": 35,
+  "max": 75
  },
  "n.app.case.all-cases": {
   "kind": "button",
@@ -734,6 +774,36 @@
   "en": 30,
   "max": 50
  },
+ "n.app.map-unit.alerts-you-to-every-result-and": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
+ },
+ "n.app.map-unit.could-not-record-the-fix": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "n.app.map-unit.could-not-record-the-fix-2": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.map-unit.could-not-record-the-fix-http": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
+ "n.app.map-unit.could-not-save-your-polling-unit": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
+ "n.app.map-unit.could-not-update-your-polling-unit": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
  "n.app.map-unit.crowd-mapped-by-observers": {
   "kind": "body",
   "en": 25,
@@ -744,20 +814,115 @@
   "en": 4,
   "max": 18
  },
+ "n.app.map-unit.fix-recorded": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.map-unit.getting-an-accurate-fix-stand-still": {
+  "kind": "body",
+  "en": 38,
+  "max": 78
+ },
+ "n.app.map-unit.gps-accuracy-too-low-needs-m": {
+  "kind": "body",
+  "en": 76,
+  "max": 133
+ },
  "n.app.map-unit.have-at-least-one-fix": {
   "kind": "body",
   "en": 21,
   "max": 61
+ },
+ "n.app.map-unit.is-not-in-the-register-http": {
+  "kind": "body",
+  "en": 47,
+  "max": 87
+ },
+ "n.app.map-unit.is-now-crowd-confirmed-observer-fixes": {
+  "kind": "body",
+  "en": 107,
+  "max": 188
+ },
+ "n.app.map-unit.its-position-is-known-only-to": {
+  "kind": "body",
+  "en": 94,
+  "max": 165
+ },
+ "n.app.map-unit.location-fixed-m-looking-up-units": {
+  "kind": "body",
+  "en": 53,
+  "max": 93
+ },
+ "n.app.map-unit.m-away": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
  },
  "n.app.map-unit.map-a-polling-unit": {
   "kind": "button",
   "en": 18,
   "max": 32
  },
+ "n.app.map-unit.no-unit-within-m-search-by": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
+ },
+ "n.app.map-unit.no-unit-within-m-search-by-2": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
+ },
+ "n.app.map-unit.not-located-yet": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.map-unit.observer-fix-es": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.map-unit.of-located": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.app.map-unit.of-observers-needed-to-confirm-ask": {
+  "kind": "body",
+  "en": 85,
+  "max": 149
+ },
  "n.app.map-unit.open-phone-settings": {
   "kind": "button",
   "en": 19,
   "max": 33
+ },
+ "n.app.map-unit.or-browse-the-register-below": {
+  "kind": "body",
+  "en": 42,
+  "max": 82
+ },
+ "n.app.map-unit.please-check-your-connection-and-try": {
+  "kind": "body",
+  "en": 62,
+  "max": 109
+ },
+ "n.app.map-unit.please-try-again": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.app.map-unit.save-as-my-polling-unit": {
+  "kind": "button",
+  "en": 23,
+  "max": 37
+ },
+ "n.app.map-unit.saved-as-your-polling-unit-tap": {
+  "kind": "button",
+  "en": 42,
+  "max": 56
  },
  "n.app.map-unit.select-the-lga": {
   "kind": "chip",
@@ -783,6 +948,16 @@
   "kind": "button",
   "en": 18,
   "max": 32
+ },
+ "n.app.map-unit.tap-the-unit-you-are-standing": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
+ },
+ "n.app.map-unit.unit-confirmed": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
  },
  "n.app.map-unit.why-mapping-units-matters": {
   "kind": "heading",
@@ -869,15 +1044,30 @@
   "en": 8,
   "max": 48
  },
+ "n.app.page.answers-to-the-common-questions": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
  "n.app.political.as-of": {
   "kind": "body",
   "en": 12,
   "max": 52
  },
+ "n.app.political.as-of-2": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
  "n.app.political.could-not-load": {
   "kind": "body",
   "en": 23,
   "max": 63
+ },
+ "n.app.political.could-not-load-political-data": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
  },
  "n.app.political.held-of-size-seats": {
   "kind": "body",
@@ -939,6 +1129,11 @@
   "en": 15,
   "max": 29
  },
+ "n.app.practice.browse-the-register-below-or-just": {
+  "kind": "body",
+  "en": 81,
+  "max": 142
+ },
  "n.app.practice.choose-another-unit": {
   "kind": "body",
   "en": 19,
@@ -959,15 +1154,90 @@
   "en": 23,
   "max": 37
  },
+ "n.app.practice.continue-without-a-unit": {
+  "kind": "button",
+  "en": 23,
+  "max": 37
+ },
+ "n.app.practice.could-not-be-loaded-from-the": {
+  "kind": "body",
+  "en": 110,
+  "max": 193
+ },
+ "n.app.practice.could-not-read-a-unit-code": {
+  "kind": "body",
+  "en": 85,
+  "max": 149
+ },
+ "n.app.practice.is-in-about": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
  "n.app.practice.is-this-your-polling-unit": {
   "kind": "body",
   "en": 26,
   "max": 66
  },
+ "n.app.practice.km-from-where-you-are-now": {
+  "kind": "body",
+  "en": 35,
+  "max": 75
+ },
+ "n.app.practice.location-fixed-m-looking-up-nearby": {
+  "kind": "body",
+  "en": 49,
+  "max": 89
+ },
+ "n.app.practice.looking-up-took-too-long-check": {
+  "kind": "body",
+  "en": 130,
+  "max": 228
+ },
+ "n.app.practice.network-error": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
  "n.app.practice.no-choose-another": {
   "kind": "button",
   "en": 18,
   "max": 32
+ },
+ "n.app.practice.no-polling-unit-within-m-of": {
+  "kind": "body",
+  "en": 101,
+  "max": 177
+ },
+ "n.app.practice.no-unit-found-within-m-browse": {
+  "kind": "body",
+  "en": 73,
+  "max": 128
+ },
+ "n.app.practice.no-unit-found-within-m-browse-2": {
+  "kind": "body",
+  "en": 73,
+  "max": 128
+ },
+ "n.app.practice.observer-fix-es": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.practice.practice-polling-unit": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.app.practice.practice-submit-failed-http": {
+  "kind": "body",
+  "en": 42,
+  "max": 82
+ },
+ "n.app.practice.read-off-the-sheet-but-no": {
+  "kind": "body",
+  "en": 81,
+  "max": 142
  },
  "n.app.practice.result-sheet": {
   "kind": "body",
@@ -1004,10 +1274,25 @@
   "en": 13,
   "max": 25
  },
+ "n.app.practice.selected": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.app.practice.tap-the-unit-you-are-standing": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
+ },
  "n.app.practice.that-unit-is-too-far-away": {
   "kind": "heading",
   "en": 25,
   "max": 45
+ },
+ "n.app.practice.use-a-sample": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
  },
  "n.app.practice.venue": {
   "kind": "body",
@@ -1148,6 +1433,21 @@
   "kind": "body",
   "en": 17,
   "max": 57
+ },
+ "n.app.race.lga-elects-state-members": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "n.app.race.state-assembly": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.race.state-constituencies": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
  },
  "n.app.races.being-reported-now": {
   "kind": "body",

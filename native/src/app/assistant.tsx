@@ -28,7 +28,7 @@ const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const MAX_Q = 500;
 
 const GREETING =
-  'Ask me about the crowd-reported results — a national tally, a polling unit, or how much of the country is mapped.';
+  i18nT('n.app.assistant.ask-me-about-the-crowd-reported');
 
 /**
  * Tapping one FILLS the box instead of sending. The send button is pinned in the
@@ -37,9 +37,9 @@ const GREETING =
  * lets someone swap "presidential" for the race they actually care about.
  */
 const SUGGESTIONS = [
-  'What is the presidential tally so far?',
-  'How much of Nigeria is mapped?',
-  'Which states still have no reports?',
+  i18nT('n.app.assistant.what-is-the-presidential-tally-so'),
+  i18nT('n.app.assistant.how-much-of-nigeria-is-mapped'),
+  i18nT('n.app.assistant.which-states-still-have-no-reports'),
 ];
 
 type Turn = { id: number; q: string; a: string | null };
@@ -133,11 +133,11 @@ export default function Assistant() {
       setErr(
         j.error === 'assistant_unconfigured'
           ? "The assistant isn't switched on yet. (assistant_unconfigured / HTTP " + res.status + ')'
-          : `Could not answer that. (${j.error ?? 'no_answer'} / HTTP ${res.status})`,
+          : i18nT('n.app.assistant.could-not-answer-that-http', { v0: j.error ?? 'no_answer', v1: res.status }),
       );
     } catch (e) {
       setFailedId(id);
-      setErr(humanError(e, 'Could not reach the assistant.'));
+      setErr(humanError(e, i18nT('n.app.assistant.could-not-reach-the-assistant')));
     } finally {
       setBusy(false);
     }
@@ -244,7 +244,7 @@ export default function Assistant() {
           <View className="flex-row items-end">
             <TextInput
               className="mr-2 max-h-28 flex-1 rounded-2xl bg-card px-4 py-3 text-base text-ink"
-              placeholder={off ? 'The assistant is switched off' : 'Ask about the results…'}
+              placeholder={off ? i18nT('n.app.assistant.the-assistant-is-switched-off') : i18nT('n.app.assistant.ask-about-the-results')}
               placeholderTextColor={ui.faint}
               editable={!off}
               multiline

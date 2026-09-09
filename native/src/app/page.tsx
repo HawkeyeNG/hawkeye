@@ -69,7 +69,7 @@ export default function StaticPage() {
   const [active, setActive] = useState(0);
 
   const title = page?.title ?? (faq ? 'FAQ' : 'Hawkeye');
-  const kicker = page?.kicker ?? 'Answers to the common questions';
+  const kicker = page?.kicker ?? i18nT('n.app.page.answers-to-the-common-questions');
   const sections = page?.sections ?? [];
 
   // ONE TITLE, IN THE HEADER, ALWAYS THERE.

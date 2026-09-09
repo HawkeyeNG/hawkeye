@@ -66,6 +66,20 @@ const prefixFor = (file) =>
     .replace(/[()]/g, '').replace(/\//g, '.').replace(/\.+/g, '.');
 
 /** Prose, or code that happens to be quoted? */
+/** Add the i18nT import if this file gained its first call. The keyers rewrite
+ *  call sites; a file with no previous i18nT has no import, and the rewrite
+ *  then does not compile. tsc catches it, but only after the write. */
+function ensureImport(src) {
+  if (!/\bi18nT\(/.test(src)) return src;
+  if (/import \{[^}]*\bt as i18nT\b[^}]*\} from '@\/lib\/i18n'/.test(src)) return src;
+  const lines = src.split('\n');
+  let last = -1;
+  for (let i = 0; i < lines.length; i++) if (/^import .*from '.*';\s*$/.test(lines[i])) last = i;
+  if (last === -1) return src;
+  lines.splice(last + 1, 0, "import { t as i18nT } from '@/lib/i18n';");
+  return lines.join('\n');
+}
+
 function isProse(t) {
   const s = t.trim();
   if (s.length < 3 || s.length > 240) return false;
@@ -178,6 +192,11 @@ function processFile(file) {
     // as the filenames: a rewrite that is mechanically perfect and semantically
     // wrong, which a round-trip check cannot see by construction.
     if (/[|;=]/.test(litText)) return whole;
+    // A URI IS NOT A SENTENCE. ethereum:{addr}@8453 is an EIP-681 payment URI
+    // behind a donation QR; translating it routes money to nothing. Any scheme
+    // followed by a colon, or an @ in a string with no spaces, is machine.
+    if (/^[a-z][a-z0-9+.-]*:/.test(litText.trim())) return whole;
+    if (/@/.test(litText) && !/\s/.test(litText.trim())) return whole;
     // A FILENAME IS NOT A SENTENCE. clip${n}.mp4 and photo${n}.jpg were keyed
     // by the first version of this tool: they start with a letter, contain a
     // dot, and rewrote perfectly — the round-trip check cannot catch a rewrite
@@ -278,7 +297,7 @@ for (const f of targets) {
     for (const m of r.manual.slice(0, 6)) console.log(`    line ${m.line} ${m.prop}: ${m.text.slice(0, 60)}`);
   }
   if (WRITE && r.roundTrips && n) {
-    fs.writeFileSync(path.join(ROOT, f), r.src);
+    fs.writeFileSync(path.join(ROOT, f), ensureImport(r.src));
     Object.assign(catOut, r.added);
   }
 }

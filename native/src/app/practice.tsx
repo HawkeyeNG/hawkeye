@@ -235,22 +235,22 @@ const PICK_TIMEOUT_MS = 12_000;
 /** The map ring names one circle; the search was two. Say which, so an empty
  *  ring is never read as "nothing is near you". */
 const ringLine = (_s: Searched): string =>
-  'Units found within 800m. Unmapped units may not appear.';
+  i18nT('n.app.report.result.units-found-within-800m-unmapped-units');
 
 const nothingFoundLine = (s: Searched): string => {
   if (s.envelopeM != null && s.registerM != null) {
-    return `No unit found within ${s.registerM}m. Browse the register, or practise without one.`;
+    return i18nT('n.app.practice.no-unit-found-within-m-browse', { v0: s.registerM });
   }
   if (s.envelopeM != null) {
-    return `No unit found within ${s.envelopeM}m. Browse the register, or practise without one.`;
+    return i18nT('n.app.practice.no-unit-found-within-m-browse-2', { v0: s.envelopeM });
   }
   if (s.registerM != null) {
-    return `No polling unit within ${s.registerM}m of you — browse the register below, or practise without a specific unit.`;
+    return i18nT('n.app.practice.no-polling-unit-within-m-of', { v0: s.registerM });
   }
   // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
   // /units), so on a lookup failure it is the one other path that cannot work
   // either. Search answers from the register bundled into the app.
-  return 'Could not check nearby units. Search by name below.';
+  return i18nT('n.app.report.result.could-not-check-nearby-units-search');
 };
 
 /** The tier's colour, sized for a line of text, so a row and the pin it refers
@@ -385,7 +385,7 @@ const NearbyRow = ({
           <Text className={`flex-1 text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>
             {TIER_LABEL[n.tier]}
             {n.tier === 'approx' && n.envelope ? envelopeText(n.envelope.radiusM) : ''}
-            {n.tier !== 'approx' && n.fixes ? ` · ${n.fixes} observer fix(es)` : ''}
+            {n.tier !== 'approx' && n.fixes ? i18nT('n.app.practice.observer-fix-es', { v0: n.fixes }) : ''}
           </Text>
         </View>
       </View>
@@ -637,7 +637,7 @@ export default function Practice() {
     // A re-search invalidates the selection it was made from.
     setUnit(null);
     setGpsSettings(false);
-    setNearLine('Getting your location…');
+    setNearLine(i18nT('n.app.report.result.getting-your-location'));
     try {
       // DISCRIMINATED failure — the reason decides the sentence. Practice is
       // where people learn the app; teaching them that a slow GPS lock means
@@ -646,14 +646,14 @@ export default function Practice() {
       if (!r.ok) {
         const d = describeFixFailure(r);
         setNearLine(
-          `${d.lead}, browse the register below, or just practise without a specific unit. (${d.code})`,
+          i18nT('n.app.practice.browse-the-register-below-or-just', { v0: d.lead, v1: d.code }),
         );
         setGpsSettings(d.settings);
         return;
       }
       const f = r.fix;
       setFix(f);
-      setNearLine(`Location fixed (±${Math.round(f.accuracy)}m). Looking up nearby units…`);
+      setNearLine(i18nT('n.app.practice.location-fixed-m-looking-up-nearby', { v0: Math.round(f.accuracy) }));
 
       const [located, envelope] = await Promise.all([
         fetch(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`).catch(() => null),
@@ -665,7 +665,7 @@ export default function Practice() {
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
         setNearLine(
-          'Could not check nearby units. Search by name below.',
+          i18nT('n.app.report.result.could-not-check-nearby-units-search'),
         );
         return;
       }
@@ -779,12 +779,12 @@ export default function Practice() {
       }
       setNearLine(
         all.length > found.length
-          ? `Tap the unit you are standing at — the ${found.length} closest of the ${all.length} found:`
-          : 'Tap the unit you are standing at:',
+          ? i18nT('n.app.practice.tap-the-unit-you-are-standing', { v0: found.length, v1: all.length })
+          : i18nT('n.app.report.result.tap-the-unit-you-are-standing-2'),
       );
     } catch (e) {
       setNearLine(
-        humanError(e, 'Could not check nearby units. Search by name below.'),
+        humanError(e, i18nT('n.app.report.result.could-not-check-nearby-units-search')),
       );
     } finally {
       setNearBusy(false);
@@ -908,8 +908,8 @@ export default function Practice() {
       if (ctl.signal.aborted) throw new Error('timeout');
       if (!res.ok || !body.unit) {
         notice.show(
-          'Could not open that unit',
-          `${n.name} could not be loaded from the register — retry, or find it under “Browse the register”. (${body.error ?? 'lookup_failed'} / HTTP ${res.status})`,
+          i18nT('n.app.report.result.could-not-open-that-unit'),
+          i18nT('n.app.practice.could-not-be-loaded-from-the', { v0: n.name, v1: body.error ?? 'lookup_failed', v2: res.status }),
         );
         return;
       }
@@ -917,10 +917,10 @@ export default function Practice() {
     } catch (e) {
       if (!current()) return;
       notice.show(
-        'Could not open that unit',
+        i18nT('n.app.report.result.could-not-open-that-unit'),
         ctl.signal.aborted
-          ? `Looking up ${n.name} took too long. Check your signal and tap it again, or find it under “Browse the register”. (timed out after ${PICK_TIMEOUT_MS / 1000}s)`
-          : humanError(e, 'Check your connection and retry.'),
+          ? i18nT('n.app.practice.looking-up-took-too-long-check', { v0: n.name, v1: PICK_TIMEOUT_MS / 1000 })
+          : humanError(e, i18nT('n.app.report.result.check-your-connection-and-retry')),
       );
     } finally {
       clearTimeout(timer);
@@ -972,8 +972,8 @@ export default function Practice() {
       try { codes = extractCandidates(text); } catch { /* report as unread */ }
       setSheetMiss(
         codes.length
-          ? `Read ${codes[0]} off the sheet, but no unit with that code was found — pick yours below.`
-          : 'Could not read a unit code off the sheet. Pick one below, or practise without a unit.',
+          ? i18nT('n.app.practice.read-off-the-sheet-but-no', { v0: codes[0] })
+          : i18nT('n.app.practice.could-not-read-a-unit-code'),
       );
       return;
     }
@@ -1073,11 +1073,11 @@ export default function Practice() {
             ? 'Practice has just closed — reopen this screen.'
             : body.error === 'no_counts'
               ? 'Enter at least one count.'
-              : `Practice submit failed. (${body.error ?? 'error'} / HTTP ${res.status})`,
+              : i18nT('n.app.practice.practice-submit-failed-http', { v0: body.error ?? 'error', v1: res.status }),
         );
       }
     } catch (e) {
-      setLine(humanError(e, 'Network error.'));
+      setLine(humanError(e, i18nT('n.app.practice.network-error')));
     } finally {
       setBusy(false);
     }
@@ -1172,7 +1172,7 @@ export default function Practice() {
             ? 'On election day every figure must be readable. Try it now, or use a sample.'
             : 'Step back and capture the polling unit itself — building, banner, crowd.'
         }
-        confirmTitle={isSheet ? 'Check the result sheet' : 'Check the venue photo'}
+        confirmTitle={isSheet ? i18nT('n.app.report.result.check-the-result-sheet') : i18nT('n.app.report.collation.check-the-venue-photo')}
         readDocument={isSheet}
         partyCodes={parties.map((p) => p.code)}
         confirmHint={
@@ -1180,7 +1180,7 @@ export default function Practice() {
             ? 'Is every figure readable? On election day a blurry photo cannot back a report.'
             : 'Is the polling unit itself visible? On election day this photo proves you were there.'
         }
-        extraAction={{ label: 'Use a sample', onPress: skip }}
+        extraAction={{ label: i18nT('n.app.practice.use-a-sample'), onPress: skip }}
         onCapture={(shot) => {
           if (isSheet) {
             setSheet(shot);
@@ -1260,7 +1260,7 @@ export default function Practice() {
     return centreM > limitM ? { centreM, limitM } : null;
   })();
 
-  const selectedName = unit?.name ?? cfg.unit?.name ?? 'Practice polling unit';
+  const selectedName = unit?.name ?? cfg.unit?.name ?? i18nT('n.app.practice.practice-polling-unit');
   const selectedSub = unit
     ? `${unit.pu_code} · ${unit.ward}, ${unit.lga}`
     : cfg.unit
@@ -1447,7 +1447,7 @@ export default function Practice() {
                     <Text className="text-sm font-bold text-hawk-gold">{i18nT('n.app.practice.yes-use-this-unit')}</Text>
                   </Pressable>
                   <Pressable
-                    onPress={() => { setSheetGuess(null); setSheetMiss('Pick your unit below, or search for it.'); }}
+                    onPress={() => { setSheetGuess(null); setSheetMiss(i18nT('n.app.report.result.pick-your-unit-below-or-search')); }}
                     className="flex-1 items-center rounded-xl border border-line py-3 active:opacity-70"
                   >
                     <Text className="text-sm font-bold text-ink">{i18nT('n.app.practice.no-choose-another')}</Text>
@@ -1612,7 +1612,7 @@ export default function Practice() {
         {step === 'unit' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Text className="pb-1 text-xs text-muted" numberOfLines={1}>
-              {unit ? `Selected: ${unit.name}` : 'No unit chosen — you’ll practise against the sample.'}
+              {unit ? i18nT('n.app.practice.selected', { v0: unit.name }) : 'No unit chosen — you’ll practise against the sample.'}
             </Text>
             {/* THE REAL FLOW'S SENTENCE, WORD FOR WORD, AT THE REAL FLOW'S
                 DISTANCE (report/result.tsx, same `warnRadiusM` call). The point
@@ -1645,7 +1645,7 @@ export default function Practice() {
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
             >
               <Text className="text-base font-bold text-hawk-gold">
-                {unit ? 'Continue — choose the race' : 'Continue without a unit'}
+                {unit ? i18nT('n.app.report.collation.continue-choose-the-race') : i18nT('n.app.practice.continue-without-a-unit')}
               </Text>
             </Pressable>
           </View>
@@ -1910,8 +1910,8 @@ export default function Practice() {
         title={i18nT('n.app.practice.that-unit-is-too-far-away')}
         body={
           farUnit
-            ? `${farUnit.name} is in ${farUnit.lga}, ${farUnit.state}, about ` +
-              `${farUnit.km.toLocaleString()} km from where you are now.\n\n` +
+            ? i18nT('n.app.practice.is-in-about', { v0: farUnit.name, v1: farUnit.lga, v2: farUnit.state }) +
+              i18nT('n.app.practice.km-from-where-you-are-now', { v0: farUnit.km.toLocaleString() }) +
               'A result can only be filed from the polling unit itself, so this one cannot be ' +
               'selected from here. If you are travelling there, choose it once you arrive.'
             : ''

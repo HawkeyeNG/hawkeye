@@ -24,6 +24,7 @@ import {
 } from '@/lib/political';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * One race, by route params. Native twin of app/race.html, and reached the same
@@ -141,13 +142,13 @@ export default function RaceScreen() {
             setPick({
               state: stateName,
               seats: hits,
-              why: `${lga} LGA elects ${hits.length} state members`,
+              why: i18nT('n.app.race.lga-elects-state-members', { v0: lga, v1: hits.length }),
             });
           }
         } else if (stateName) {
           const all = assemblySeats(seats, stateName);
           setRace(null);
-          setPick({ state: stateName, seats: all, why: `${all.length} state constituencies` });
+          setPick({ state: stateName, seats: all, why: i18nT('n.app.race.state-constituencies', { v0: all.length }) });
         } else {
           setRace(null);
         }
@@ -186,7 +187,7 @@ export default function RaceScreen() {
 
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const title = pick
-    ? `${pick.state} State Assembly`
+    ? i18nT('n.app.race.state-assembly', { v0: pick.state })
     : race?.office || race?.election || 'Race';
 
   return (

@@ -6,6 +6,7 @@ import { loadStatesGeo } from '@/components/nigeria-map';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
 import { useT } from '@/lib/i18n';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -204,7 +205,7 @@ const FILES: Record<Exclude<GeoLevel, 'state'>, string> = {
  * app/results.html:231. SVG has no z-index: painting these last is what stops a
  * neighbour drawn afterwards from cutting into them.
  */
-const FRONT = ['Ogun West', 'Kaduna South', 'Kebbi Central', 'Ondo Central'];
+const FRONT = ['Ogun West', "Kaduna South", "Kebbi Central", 'Ondo Central'];
 
 type RawRegions = { viewBox: string; regions: { name: string; path: string }[] };
 /** lga_geo.json's own shape: keyed `"<state>|<lga>"`, lowercase, and no name field. */
@@ -231,7 +232,7 @@ export function loadMapGeo(level: MapLevel): Promise<MapGeo> {
       ? fetch(`${BASE}/${FILES.lga}`, { headers: { accept: 'application/json' } }).then(async (r) => {
           if (!r.ok) throw new Error(`${FILES.lga} → HTTP ${r.status}`);
           const raw = (await r.json()) as RawLgas;
-          if (!raw?.lgas?.length) throw new Error(`${FILES.lga} → no LGA shapes`);
+          if (!raw?.lgas?.length) throw new Error(i18nT('n.components.results-map.no-lga-shapes', { v0: FILES.lga }));
           return {
             viewBox: raw.viewBox,
             geoLevel,
@@ -248,7 +249,7 @@ export function loadMapGeo(level: MapLevel): Promise<MapGeo> {
           .then(async (r) => {
             if (!r.ok) throw new Error(`${FILES[geoLevel]} → HTTP ${r.status}`);
             const raw = (await r.json()) as RawRegions;
-            if (!raw?.regions?.length) throw new Error(`${FILES[geoLevel]} → no region shapes`);
+            if (!raw?.regions?.length) throw new Error(i18nT('n.components.results-map.no-region-shapes', { v0: FILES[geoLevel] }));
             const ordered = [...raw.regions].sort(
               (a, b) => FRONT.indexOf(a.name) - FRONT.indexOf(b.name),
             );
@@ -431,7 +432,7 @@ export const ResultsMap = memo(function ResultsMap({
     setErr(null);
     loadMapGeo(level)
       .then((g) => alive && setGeo(g))
-      .catch((e) => alive && setErr(humanError(e, 'Could not load the map.')));
+      .catch((e) => alive && setErr(humanError(e, i18nT('n.app.map.could-not-load-the-map'))));
     return () => {
       alive = false;
     };
@@ -543,7 +544,7 @@ export const ResultsMap = memo(function ResultsMap({
       <View className="items-center justify-center rounded-2xl bg-card px-6 py-10">
         <Text className="text-sm font-semibold text-warn-ink">{i18nT('n.components.nigeria-map.map-unavailable')}</Text>
         <Text className="pt-1 text-center text-xs text-muted">
-          {err ?? `region outlines → unusable viewBox "${geo?.viewBox}"`}
+          {err ?? i18nT('n.components.results-map.region-outlines-unusable-viewbox', { v0: geo?.viewBox })}
         </Text>
       </View>
     );

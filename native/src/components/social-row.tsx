@@ -167,7 +167,7 @@ export function SocialRow() {
           <Pressable
             key={s.name}
             accessibilityRole="button"
-            accessibilityLabel={`Hawkeye on ${s.name}`}
+            accessibilityLabel={i18nT('n.components.social-row.hawkeye-on', { v0: s.name })}
             onPress={() => open(s.url)}
             className={`flex-1 items-center py-3.5 active:bg-surface ${
               i > 0 ? 'border-l border-line' : ''

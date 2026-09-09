@@ -19,7 +19,7 @@ export function NoElection({ state, contest }: { state: string; contest: Contest
       <Text className="text-base font-bold text-ink">No Active Election in {state}</Text>
       <Text className="pt-1 text-sm text-muted">
         {contest
-          ? `Hawkeye is currently covering the ${contest.election}. Reporting opens for other states when their elections are scheduled.`
+          ? i18nT('n.components.no-election.hawkeye-is-currently-covering-the-reporting', { v0: contest.election })
           : 'No election is currently open for reporting.'}
       </Text>
       <Text className="pt-2 text-sm text-muted">

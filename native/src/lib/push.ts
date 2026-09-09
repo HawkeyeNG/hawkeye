@@ -17,6 +17,7 @@ import { AppState, Platform } from 'react-native';
 
 import { BRAND } from '@/lib/api';
 import { authedGet, renewSession, useAuth } from '@/lib/auth';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -263,7 +264,7 @@ async function ensureAndroidChannel(): Promise<void> {
   // arrives or API 26+ drops it on the floor.
   await Notifications.setNotificationChannelAsync(CHANNEL, {
     name: 'Alerts',
-    description: 'Reports at your unit, results in dispute, and replies to what you filed.',
+    description: i18nT('n.lib.push.reports-at-your-unit-results-in'),
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: BRAND.gold,

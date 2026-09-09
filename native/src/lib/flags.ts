@@ -78,22 +78,23 @@ export function titleCase(s: string): string {
 }
 
 import { t } from '@/lib/i18n';
+import { t as i18nT } from '@/lib/i18n';
 
 export const FLAG_LABEL: Record<string, string> = {
   over_voting: 'Over-Voting',
-  high_turnout: 'Impossible Turnout',
-  turnout_outlier: 'Turnout Outlier',
-  single_party_sweep: 'Single-Party Sweep',
-  duplicate_serial: 'Duplicate Serial',
-  disputed_counts: 'Conflicting Counts',
-  location_inconsistent: 'Location Inconsistent',
-  irev_mismatch: 'INEC IReV Mismatch',
-  collation_undercount: 'Collation Undercount',
-  collation_disputed: 'Conflicting Collation Reports',
-  collation_mismatch: 'Collation Mismatch (Full Coverage)',
-  collation_chain_undercount: 'Collation Chain Undercount',
-  collation_ocr_mismatch: 'Collation Form OCR Mismatch',
-  signup_burst: 'Signup Burst (Informational)',
+  high_turnout: i18nT('n.flags.impossible-turnout'),
+  turnout_outlier: i18nT('n.flags.turnout-outlier'),
+  single_party_sweep: i18nT('n.flags.single-party-sweep'),
+  duplicate_serial: i18nT('n.flags.duplicate-serial'),
+  disputed_counts: i18nT('n.flags.conflicting-counts'),
+  location_inconsistent: i18nT('n.flags.location-inconsistent'),
+  irev_mismatch: i18nT('n.flags.inec-irev-mismatch'),
+  collation_undercount: i18nT('n.flags.collation-undercount'),
+  collation_disputed: i18nT('n.flags.conflicting-collation-reports'),
+  collation_mismatch: i18nT('n.flags.collation-mismatch-full-coverage'),
+  collation_chain_undercount: i18nT('n.flags.collation-chain-undercount'),
+  collation_ocr_mismatch: i18nT('n.flags.collation-form-ocr-mismatch'),
+  signup_burst: i18nT('n.flags.signup-burst-informational'),
 };
 
 /**

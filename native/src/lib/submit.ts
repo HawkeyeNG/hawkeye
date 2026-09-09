@@ -20,6 +20,7 @@ import { getIdentity } from '@/lib/identity';
 // start ("Require cycles are allowed, but can result in uninitialized values").
 // The value import moved to the single call site below, as a dynamic import.
 import type { JobFile } from '@/lib/outbox';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -234,28 +235,28 @@ export type CollationInput = {
 
 /** Human line per backend error code — same tone as the web flow's one-liners. */
 const ERRORS: Record<string, string> = {
-  internal_error: 'The server rejected the report while saving it. Nothing was recorded.',
-  invalid_level: 'Choose whether this is a ward, LGA or state collation.',
-  scope_required: 'Select the full scope for this collation level.',
-  unknown_scope: 'That scope is not in the register.',
-  reporting_not_open: 'Reporting opens on election day — this was a full dry run, nothing was filed.',
-  outside_geofence: 'You are too far from this polling unit to report it.',
-  too_far_from_unit: 'You are too far from this polling unit to report it.',
-  gps_required: 'GPS fix missing — turn location on and retry.',
-  gps_accuracy_too_low: 'GPS accuracy is too low — step outside or wait for a better fix.',
-  photo_required: 'The result-sheet photo is missing — capture it in the app.',
-  venue_photo_required: 'The venue photo is missing or looks identical to the sheet photo.',
-  photo_not_fresh: 'Photos are too old — capture them again and submit right away.',
-  duplicate_image: 'One of these photos was already used in another report.',
-  near_duplicate_image: 'One of these photos looks identical to another report’s photo.',
-  already_submitted: 'You already reported this race from this device.',
-  device_already_reported_race: 'This device already reported this race.',
-  device_too_fast: 'Too soon after the last report from this device — wait a few minutes.',
-  unknown_polling_unit: 'That polling unit is not in the register.',
-  contest_not_applicable: 'This election does not run at that polling unit.',
-  invalid_votes: 'Check the vote counts — whole numbers only, known parties only.',
-  bad_signature: 'Could not sign the report on this device — sign out and in, then retry.',
-  unknown_contest: 'Select which election you are reporting.',
+  internal_error: i18nT('n.lib.submit.the-server-rejected-the-report-while'),
+  invalid_level: i18nT('n.lib.submit.choose-whether-this-is-a-ward'),
+  scope_required: i18nT('n.lib.submit.select-the-full-scope-for-this'),
+  unknown_scope: i18nT('n.lib.submit.that-scope-is-not-in-the'),
+  reporting_not_open: i18nT('n.lib.submit.reporting-opens-on-election-day-this'),
+  outside_geofence: i18nT('n.lib.submit.you-are-too-far-from-this'),
+  too_far_from_unit: i18nT('n.lib.submit.you-are-too-far-from-this'),
+  gps_required: i18nT('n.lib.submit.gps-fix-missing-turn-location-on'),
+  gps_accuracy_too_low: i18nT('n.lib.submit.gps-accuracy-is-too-low-step'),
+  photo_required: i18nT('n.lib.submit.the-result-sheet-photo-is-missing'),
+  venue_photo_required: i18nT('n.lib.submit.the-venue-photo-is-missing-or'),
+  photo_not_fresh: i18nT('n.lib.submit.photos-are-too-old-capture-them'),
+  duplicate_image: i18nT('n.lib.submit.one-of-these-photos-was-already'),
+  near_duplicate_image: i18nT('n.lib.submit.one-of-these-photos-looks-identical'),
+  already_submitted: i18nT('n.lib.submit.you-already-reported-this-race-from'),
+  device_already_reported_race: i18nT('n.lib.submit.this-device-already-reported-this-race'),
+  device_too_fast: i18nT('n.lib.submit.too-soon-after-the-last-report-2'),
+  unknown_polling_unit: i18nT('n.lib.submit.that-polling-unit-is-not-in'),
+  contest_not_applicable: i18nT('n.lib.submit.this-election-does-not-run-at'),
+  invalid_votes: i18nT('n.lib.submit.check-the-vote-counts-whole-numbers'),
+  bad_signature: i18nT('n.lib.submit.could-not-sign-the-report-on'),
+  unknown_contest: i18nT('n.lib.submit.select-which-election-you-are-reporting'),
 };
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -326,7 +327,7 @@ async function handOff(
   files: JobFile[],
   label: string,
   why: string,
-  lead = 'Saved on this phone — your signed report will send itself as soon as the network allows.',
+  lead = i18nT('n.lib.submit.saved-on-this-phone-your-signed'),
 ): Promise<SubmitResult> {
   try {
     // Resolved here rather than at module load: see the import note at the top.
@@ -342,7 +343,7 @@ async function handOff(
     return {
       ok: false,
       error: 'queue_failed',
-      message: `Upload failed and the report could not be saved — stay on this screen and retry. (${why} / ${errText(e)})`,
+      message: i18nT('n.lib.submit.upload-failed-and-the-report-could', { v0: why, v1: errText(e) }),
     };
   }
 }
@@ -363,7 +364,7 @@ async function handOff(
 const undeliveredDryRun = (why: string): SubmitResult => ({
   ok: false,
   error: 'dry_run_undelivered',
-  message: `The practice run could not reach the server, so there was nothing to rehearse — nothing was saved, queued or filed. Retry when you have signal. (${why})`,
+  message: i18nT('n.lib.submit.the-practice-run-could-not-reach', { v0: why }),
 });
 
 export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
@@ -383,7 +384,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     return {
       ok: false,
       error: 'photo_read_failed',
-      message: `Could not read the captured photos — retake them. (${errText(e)})`,
+      message: i18nT('n.lib.submit.could-not-read-the-captured-photos', { v0: errText(e) }),
     };
   }
 
@@ -423,7 +424,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     return {
       ok: false,
       error: 'signing_cancelled',
-      message: 'Not signed, so nothing was filed. Your photos and figures are still here — try again.',
+      message: i18nT('n.lib.submit.not-signed-so-nothing-was-filed'),
     };
   }
   const signature = id.sign(payload);
@@ -464,7 +465,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     for (const f of files) form.append(f.field, filePart(f.uri, f.name, f.type));
     return form;
   };
-  const label = `Result · ${input.puCode} · ${input.contest}`;
+  const label = i18nT('n.lib.submit.result', { v0: input.puCode, v1: input.contest });
 
   /** Outbox for a real report, nothing at all for a rehearsal. */
   const park = (why: string, lead?: string): SubmitResult | Promise<SubmitResult> =>
@@ -500,7 +501,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   if (res.status === 401) {
     return park(
       'session expired / HTTP 401',
-      'Signed out — your signed report is saved on this phone and will send itself once you sign in again.',
+      i18nT('n.lib.submit.signed-out-your-signed-report-is'),
     );
   }
   // The report is fine, the server is not. Exactly the class the outbox retries,
@@ -530,12 +531,12 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     };
   }
   const code = body.error ?? `http_${res.status}`;
-  let message = ERRORS[code] ?? body.hint ?? 'Submission failed — try again.';
+  let message = ERRORS[code] ?? body.hint ?? i18nT('n.lib.submit.submission-failed-try-again');
   if (code === 'outside_geofence' && body.distanceM) {
-    message = `You are ${body.distanceM}m from this unit (allowed: ${body.allowedM}m).`;
+    message = i18nT('n.lib.submit.you-are-m-from-this-unit', { v0: body.distanceM, v1: body.allowedM });
   }
   if (code === 'device_too_fast' && body.retryAfterS) {
-    message = `Too soon after the last report — retry in ${body.retryAfterS}s.`;
+    message = i18nT('n.lib.submit.too-soon-after-the-last-report', { v0: body.retryAfterS });
   }
   return { ok: false, error: code, message: `${message} (${code} / HTTP ${res.status})` };
 }
@@ -561,7 +562,7 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
     return {
       ok: false,
       error: 'photo_read_failed',
-      message: `Could not read the captured photos — retake them. (${errText(e)})`,
+      message: i18nT('n.lib.submit.could-not-read-the-captured-photos-2', { v0: errText(e) }),
     };
   }
 
@@ -606,7 +607,7 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
     for (const f of files) form.append(f.field, filePart(f.uri, f.name, f.type));
     return form;
   };
-  const label = `${input.level} collation · ${input.ward || input.lga || input.state} · ${input.contest}`;
+  const label = i18nT('n.lib.submit.collation', { v0: input.level, v1: input.ward || input.lga || input.state, v2: input.contest });
 
   /** Outbox for a real report, nothing at all for a rehearsal. */
   const park = (why: string, lead?: string): SubmitResult | Promise<SubmitResult> =>
@@ -622,7 +623,7 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
   if (res.status === 401) {
     return park(
       'session expired / HTTP 401',
-      'Signed out — your signed report is saved on this phone and will send itself once you sign in again.',
+      i18nT('n.lib.submit.signed-out-your-signed-report-is'),
     );
   }
   if (res.status >= 500 || res.status === 429) {

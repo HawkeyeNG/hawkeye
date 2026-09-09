@@ -16,6 +16,8 @@
  *     rendered: a truncated pack lists the wrong units rather than failing
  */
 
+import { t as i18nT } from '@/lib/i18n';
+
 export const MAGIC = 0x4b504b48; // 'HKPK'
 export const FORMAT_VERSION = 1;
 export const KIND_INDEX = 0;
@@ -142,7 +144,7 @@ export function readHeader(pack: Uint8Array): { meta: PackMeta; body: Uint8Array
   const dv = new DataView(pack.buffer, pack.byteOffset, pack.byteLength);
   if (dv.getUint32(0, true) !== MAGIC) throw new Error('bad magic');
   const formatVersion = dv.getUint16(4, true);
-  if (formatVersion !== FORMAT_VERSION) throw new Error(`unsupported pack format v${formatVersion}`);
+  if (formatVersion !== FORMAT_VERSION) throw new Error(i18nT('n.lib.register-pack.unsupported-pack-format-v', { v0: formatVersion }));
   const meta: PackMeta = {
     formatVersion,
     kind: dv.getUint8(6),
@@ -155,7 +157,7 @@ export function readHeader(pack: Uint8Array): { meta: PackMeta; body: Uint8Array
   };
   const body = pack.subarray(HEADER_BYTES);
   if (body.length !== meta.bodyLength) throw new Error('body length mismatch (truncated?)');
-  if (crc32(body) !== meta.crc32) throw new Error('CRC mismatch (corrupt)');
+  if (crc32(body) !== meta.crc32) throw new Error(i18nT('n.lib.register-pack.crc-mismatch-corrupt'));
   return { meta, body };
 }
 

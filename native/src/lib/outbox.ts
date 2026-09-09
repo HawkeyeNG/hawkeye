@@ -33,6 +33,7 @@ import { getIdentity } from '@/lib/identity';
 // made at runtime, never at module-evaluation time, so the cycle resolves.
 import { filePart, remintSession } from '@/lib/submit';
 import { uploadDirect } from '@/lib/direct-upload';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -418,7 +419,7 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
         const why = 'the photos are no longer on this device';
         await retire(job);
         await recordDrop(job, why);
-        publish({ lastError: `A queued report was dropped — ${why}.` });
+        publish({ lastError: i18nT('n.lib.outbox.a-queued-report-was-dropped', { v0: why }) });
         continue;
       }
 

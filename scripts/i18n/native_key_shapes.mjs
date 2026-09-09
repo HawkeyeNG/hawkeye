@@ -120,7 +120,7 @@ function processFile(file) {
       const kb = keyFor(prefix, b, used);
       added[ka] = a;
       added[kb] = b;
-      rewrites.push({ kind: 'ternary', from: whole, a, b });
+      rewrites.push({ kind: 'ternary', from: whole, a, b, to: `{${cond} ? i18nT('${ka}') : i18nT('${kb}')}` });
       return `{${cond} ? i18nT('${ka}') : i18nT('${kb}')}`;
     },
   );
@@ -188,43 +188,37 @@ function processFile(file) {
     }
     const k = keyFor(prefix, english.replace(/\{\w+\}/g, '').trim() || 'x', used);
     added[k] = english;
-    rewrites.push({ kind: 'template', from: whole, english });
+    rewrites.push({ kind: 'template', from: whole, english, names, key: k });
     const params = names.map((x) => `${x.nm}: ${x.expr}`).join(', ');
     return `i18nT('${k}', { ${params} })`;
   });
 
-  /* ---- SAFETY: substitute the English back and require byte-identity ------ */
-  let back = src;
-  for (const [k, v] of Object.entries(added)) {
-    // ternary form
-    back = back.split(`i18nT('${k}')`).join(`'${v}'`);
-    // template form: rebuild the original literal
-    back = back.replace(
-      new RegExp(`i18nT\\('${k.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}',\\s*\\{([^}]*)\\}\\)`, 'g'),
-      (whole, params) => {
-        let out = v;
-        for (const pair of params.split(/,(?![^(]*\))/)) {
-          const mm = pair.match(/^\s*(\w+)\s*:\s*([\s\S]+)$/);
-          if (!mm) return whole;
-          out = out.split(`{${mm[1]}}`).join('${' + mm[2].trim() + '}');
-        }
-        return '`' + out + '`';
-      },
-    );
+  /* ---- SAFETY: rebuild each rewrite from its catalogue English -----------
+   *
+   * PER REWRITE, not per file. The whole-file version substituted every
+   * occurrence of a key, which broke as soon as a rewrite REUSED a key that
+   * already existed elsewhere in the same file — it rewrote the pre-existing
+   * call too, and then refused a rewrite that was correct. Reuse is the
+   * behaviour we want, so the check has to tolerate it.
+   */
+  function verifyRewrite(rw) {
+    if (rw.kind === 'ternary') {
+      const a = added[byText.get(rw.a) ?? ''] ?? cat[byText.get(rw.a) ?? ''] ?? rw.a;
+      const b = added[byText.get(rw.b) ?? ''] ?? cat[byText.get(rw.b) ?? ''] ?? rw.b;
+      // The English on both sides must be exactly what was there.
+      return a === rw.a && b === rw.b;
+    }
+    // Template: put the expressions back into the English and compare.
+    let out = rw.english;
+    for (const { nm, expr } of rw.names) out = out.split(`{${nm}}`).join('${' + expr + '}');
+    return '`' + out + '`' === rw.from;
   }
-  const roundTrips = back === orig;
-  let divergence = null;
-  if (!roundTrips) {
-    // Report the first byte that differs, with context, so a refusal is a
-    // diagnosis rather than just a brake.
-    let i = 0;
-    while (i < Math.min(back.length, orig.length) && back[i] === orig[i]) i++;
-    divergence = {
-      at: orig.slice(0, i).split('\n').length,
-      was: orig.slice(Math.max(0, i - 40), i + 60).replace(/\n/g, '\\n'),
-      now: back.slice(Math.max(0, i - 40), i + 60).replace(/\n/g, '\\n'),
-    };
-  }
+
+  const broken = rewrites.filter((rw) => !verifyRewrite(rw));
+  const roundTrips = broken.length === 0;
+  const divergence = broken.length
+    ? { at: 0, was: broken[0].from.slice(0, 100), now: `${broken[0].kind} did not rebuild` }
+    : null;
 
   return { file, src, orig, added, rewrites, manual, roundTrips, divergence };
 }

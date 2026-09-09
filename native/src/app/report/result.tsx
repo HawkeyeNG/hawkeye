@@ -326,11 +326,11 @@ const receiptLocation = (r: Receipt): { label: string; color: string } => {
   if (status === 'verified') return { label: TIER_LABEL.verified, color: TIER_COLOR.verified };
   if (status === 'provisional') {
     return {
-      label: `${TIER_LABEL.crowd} (${r.result?.locationConfidence ?? 0}% agree)`,
+      label: i18nT('n.app.report.result.agree', { v0: TIER_LABEL.crowd, v1: r.result?.locationConfidence ?? 0 }),
       color: TIER_COLOR.crowd,
     };
   }
-  return { label: 'Location not verified', color: TIER_COLOR.approx };
+  return { label: i18nT('n.app.report.result.location-not-verified'), color: TIER_COLOR.approx };
 };
 
 /**
@@ -347,19 +347,19 @@ const receiptLocation = (r: Receipt): { label: string; color: string } => {
  * only the narrow lookup can see. So the ring is named.
  */
 const ringLine = (_s: Searched): string =>
-  'Units found within 800m. Unmapped units may not appear.';
+  i18nT('n.app.report.result.units-found-within-800m-unmapped-units');
 
 /** The same honesty for an empty answer: name the circles that were searched,
  *  rather than the one that was drawn. */
 const nothingFoundLine = (s: Searched): string => {
   const m = s.registerM ?? s.envelopeM;
-  if (m != null) return `No unit found within ${m}m. Browse the register below.`;
+  if (m != null) return i18nT('n.app.report.result.no-unit-found-within-m-browse', { v0: m });
   // POINT AT SEARCH, NOT BROWSE. This is the NETWORK-failure case, and browsing
   // the register is itself network-backed (/lgas, /wards, /units) — so the old
   // copy sent an observer whose DNS had just failed to the one other path that
   // could not work either. Search answers from the register bundled into the
   // app, which is the only unit lookup that survives having no connection.
-  return 'Could not check nearby units. Search by name below.';
+  return i18nT('n.app.report.result.could-not-check-nearby-units-search');
 };
 
 /**
@@ -378,7 +378,7 @@ const lookupFailedLine = (detail: string): string => {
   // how "fetch failed: java.net.UnknownHostException: Unable to resolve host" came
   // to be four lines of Java under "Report a result" on a phone with no signal.
   if (detail) console.warn('[hawkeye] near-me lookup failed', detail);
-  return 'Could not check nearby units. Search by name below.';
+  return i18nT('n.app.report.result.could-not-check-nearby-units-search');
 };
 
 /** The tier's colour, sized for a line of text — so a row, a receipt line and
@@ -514,7 +514,7 @@ const NearbyRow = ({
                   stops drawing envelopes it cannot show the edge of, and real
                   radii average 2.8km against an 800m search. */}
               {tier === 'approx' && n.envelope ? envelopeText(n.envelope.radiusM) : ''}
-              {tier !== 'approx' && n.fixes ? ` · ${n.fixes} observer fix(es)` : ''}
+              {tier !== 'approx' && n.fixes ? i18nT('n.app.report.result.observer-fix-es', { v0: n.fixes }) : ''}
             </Text>
           </View>
         </View>
@@ -816,7 +816,7 @@ export default function ReportResult() {
     // for the same reason; discovery is no different.
     setUnit(null);
     setGpsSettings(false);
-    setNearLine('Getting your location…');
+    setNearLine(i18nT('n.app.report.result.getting-your-location'));
     try {
       // Quick fix, not the submit-grade one: this only shortlists candidates.
       // The accurate fix is taken again at submit, where the server checks it.
@@ -830,13 +830,13 @@ export default function ReportResult() {
       const r = await tryQuickFix();
       if (!r.ok) {
         const d = describeFixFailure(r);
-        setNearLine(`${d.lead}, or browse the register below. (${d.code})`);
+        setNearLine(i18nT('n.app.report.result.or-browse-the-register-below', { v0: d.lead, v1: d.code }));
         setGpsSettings(d.settings);
         return;
       }
       const f = r.fix;
       setFix(f);
-      setNearLine(`Location fixed (±${Math.round(f.accuracy)}m). Looking up nearby units…`);
+      setNearLine(i18nT('n.app.report.result.location-fixed-m-looking-up-nearby', { v0: Math.round(f.accuracy) }));
 
       /**
        * ONE RETRY, AND A REAL DEADLINE. These two were plain fetches whose only
@@ -1092,8 +1092,8 @@ export default function ReportResult() {
       }
       setNearLine(
         all.length > found.length
-          ? `Tap the unit you are standing at — the ${found.length} closest of the ${all.length} found:`
-          : 'Tap the unit you are standing at:',
+          ? i18nT('n.app.report.result.tap-the-unit-you-are-standing', { v0: found.length, v1: all.length })
+          : i18nT('n.app.report.result.tap-the-unit-you-are-standing-2'),
       );
     } catch (e) {
       setNearLine(lookupFailedLine(e instanceof Error ? e.message : String(e)));
@@ -1153,8 +1153,8 @@ export default function ReportResult() {
       try { codes = extractCandidates(text); } catch { /* report as unread */ }
       setSheetMiss(
         codes.length
-          ? `Read ${codes[0]} off the sheet, but no unit with that code was found — pick yours below.`
-          : 'Could not read unit code off sheet. Pick unit below.',
+          ? i18nT('n.app.report.result.read-off-the-sheet-but-no', { v0: codes[0] })
+          : i18nT('n.app.report.result.could-not-read-unit-code-off'),
       );
       return;
     }
@@ -1362,8 +1362,8 @@ export default function ReportResult() {
       if (ctl.signal.aborted) throw new Error('timeout');
       if (!res.ok || !body.unit) {
         notice.show(
-          'Could not open that unit',
-          `${n.name} could not be loaded from the register — retry, or find it under “Browse the register instead”. (${body.error ?? 'lookup_failed'} / HTTP ${res.status})`,
+          i18nT('n.app.report.result.could-not-open-that-unit'),
+          i18nT('n.app.report.result.could-not-be-loaded-from-the', { v0: n.name, v1: body.error ?? 'lookup_failed', v2: res.status }),
         );
         return;
       }
@@ -1373,13 +1373,13 @@ export default function ReportResult() {
       // has nothing to report.
       if (!current()) return;
       notice.show(
-        'Could not open that unit',
+        i18nT('n.app.report.result.could-not-open-that-unit'),
         ctl.signal.aborted
           // "(timed out after 12s)" is the kind of detail that belongs in the
           // console: the dialog already says it took too long, and the number
           // does not change what to do about it.
           ? 'That took too long. Check your signal and tap it again.'
-          : humanError(e, 'Check your connection and retry.'),
+          : humanError(e, i18nT('n.app.report.result.check-your-connection-and-retry')),
       );
     } finally {
       clearTimeout(timer);
@@ -1478,8 +1478,8 @@ export default function ReportResult() {
     if (!unit) return;
     if (contests.length === 0) {
       notice.show(
-        'Election list not loaded',
-        'Hawkeye could not load which elections are running — check your connection and reopen this screen. (no /api/contests response)',
+        i18nT('n.app.report.result.election-list-not-loaded'),
+        i18nT('n.app.report.result.hawkeye-could-not-load-which-elections'),
       );
       return;
     }
@@ -1487,8 +1487,8 @@ export default function ReportResult() {
     // yet", but out of scope. Mapping stays possible; reporting does not.
     if (racesIn(unit.state, contests).length === 0) {
       notice.show(
-        `No active election in ${unit.state}`,
-        `Hawkeye is covering the ${contests[0].election}. Nothing is open for reporting at ${unit.name} yet — but you can still map polling units anywhere in Nigeria.`,
+        i18nT('n.app.report.result.no-active-election-in', { v0: unit.state }),
+        i18nT('n.app.report.result.hawkeye-is-covering-the-nothing-is', { v0: contests[0].election, v1: unit.name }),
       );
       return;
     }
@@ -1593,7 +1593,7 @@ export default function ReportResult() {
     tap();
     if (!unit || !contest || !sheet || !venue) return;
     setBusy(true);
-    setLine('Getting your location…');
+    setLine(i18nT('n.app.report.result.getting-your-location'));
     try {
       // Bounded, accuracy-aware fix — the server rejects accuracy >100m, and an
       // unbounded High wait indoors can hang the submit button indefinitely.
@@ -1610,7 +1610,7 @@ export default function ReportResult() {
         return;
       }
       const fix = got.fix;
-      setLine('Signing and submitting…');
+      setLine(i18nT('n.app.report.result.signing-and-submitting'));
       const r = await submitResult({
         puCode: unit.pu_code,
         contest: contest.code,
@@ -1628,8 +1628,8 @@ export default function ReportResult() {
         setQueued(false);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
-          title: 'Report filed',
-          line: 'It is now queued for review and will appear on the public log.',
+          title: i18nT('n.app.report.result.report-filed'),
+          line: i18nT('n.app.report.result.it-is-now-queued-for-review'),
         });
         setStep('done');
       } else if (r.queued) {
@@ -1641,8 +1641,8 @@ export default function ReportResult() {
         setQueued(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
-          title: 'Saved on this phone',
-          line: 'Already signed. It sends itself once you have signal.',
+          title: i18nT('n.app.report.result.saved-on-this-phone'),
+          line: i18nT('n.app.report.result.already-signed-it-sends-itself-once'),
         });
         setStep('done');
       } else {
@@ -1650,7 +1650,7 @@ export default function ReportResult() {
         setLine(r.message);
       }
     } catch (e) {
-      setLine(humanError(e, 'Something went wrong — nothing was sent. Retry.'));
+      setLine(humanError(e, i18nT('n.app.report.result.something-went-wrong-nothing-was-sent')));
     } finally {
       setBusy(false);
     }
@@ -1684,7 +1684,7 @@ export default function ReportResult() {
         // Fresh mount per step: without the key, the venue step inherits the
         // sheet step's internal preview/busy state (same element position).
         key={step}
-        title={isSheet ? 'Photo 1 of 2 — the result sheet' : 'Photo 2 of 2 — the surroundings'}
+        title={isSheet ? i18nT('n.app.report.result.photo-1-of-2-the-result') : i18nT('n.app.report.result.photo-2-of-2-the-surroundings')}
         frameGuide={isSheet}
         venueGuide={isSheet ? undefined : '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd. This is NOT the results sheet.'}
         hint={
@@ -1692,7 +1692,7 @@ export default function ReportResult() {
             ? 'Fit the EC8A inside the frame. Every figure must be readable.'
             : 'Step back and capture the polling unit itself — building, banner, crowd.'
         }
-        confirmTitle={isSheet ? 'Check the result sheet' : 'Check the venue photo'}
+        confirmTitle={isSheet ? i18nT('n.app.report.result.check-the-result-sheet') : i18nT('n.app.report.collation.check-the-venue-photo')}
         confirmHint={
           isSheet
             ? 'Is every figure readable? Blurry photos cannot back a report.'
@@ -1849,7 +1849,7 @@ export default function ReportResult() {
                       when the search STARTS — so the button offered to search
                       "again" before it had ever succeeded once. */}
                   <Text className="pl-2 text-base font-bold text-hawk-gold">
-                    {nearby.length || nearLine ? 'Search near me again' : 'Find units near me'}
+                    {nearby.length || nearLine ? i18nT('n.app.report.incident.search-near-me-again') : i18nT('incidents.find-units-near-me')}
                   </Text>
                 </>
               )}
@@ -1879,7 +1879,7 @@ export default function ReportResult() {
                     <Text className="text-sm font-bold text-hawk-gold">{i18nT('n.app.practice.yes-use-this-unit')}</Text>
                   </Pressable>
                   <Pressable
-                    onPress={() => { setSheetGuess(null); setSheetMiss('Pick your unit below, or search for it.'); }}
+                    onPress={() => { setSheetGuess(null); setSheetMiss(i18nT('n.app.report.result.pick-your-unit-below-or-search')); }}
                     className="flex-1 items-center rounded-xl border border-line py-3 active:opacity-70"
                   >
                     <Text className="text-sm font-bold text-ink">{i18nT('n.app.practice.no-choose-another')}</Text>
@@ -2095,7 +2095,7 @@ export default function ReportResult() {
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
             >
               <Text className="text-base font-bold text-hawk-gold">
-                {skipPicker ? 'Continue to the figures' : 'Continue — choose the race'}
+                {skipPicker ? i18nT('n.app.practice.continue-to-the-figures') : i18nT('n.app.report.collation.continue-choose-the-race')}
               </Text>
             </Pressable>
             {/* When exactly one race is open here the button above skips straight
@@ -2146,7 +2146,7 @@ export default function ReportResult() {
         {step === 'contest' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Text className="pb-2 text-xs text-muted" numberOfLines={1}>
-              {race ? `Selected: ${race.label}` : 'Choose an open race to continue.'}
+              {race ? i18nT('n.app.report.result.selected', { v0: race.label }) : 'Choose an open race to continue.'}
             </Text>
             <Pressable
               disabled={!race}
@@ -2414,7 +2414,7 @@ export default function ReportResult() {
               <View className="mt-3 rounded-2xl bg-card px-4 py-2">
                 {receipt.result?.status ? (
                   <View className="flex-row items-center justify-between py-1.5">
-                    <Text className="text-sm text-muted">{i18nT('n.app.report.collation.status')}</Text>
+                    <Text className="text-sm text-muted">{i18nT('race.status')}</Text>
                     <Text
                       // Same contrast fault as the amber above, same fix:
                       // red-700 is a fixed #b91c1c and lands ~3.4:1 on the dark
@@ -2494,7 +2494,7 @@ export default function ReportResult() {
               <Text className="text-sm font-semibold text-hawk-leaf">
                 {/* A queued report has no ledger entry to look for yet, so it is
                     not sent looking for one. */}
-                {queued ? 'See the public log ›' : 'Find your report in the public log ›'}
+                {queued ? i18nT('n.app.report.result.see-the-public-log') : i18nT('n.app.report.result.find-your-report-in-the-public')}
               </Text>
             </Pressable>
             <Pressable
@@ -2517,8 +2517,8 @@ export default function ReportResult() {
         title={i18nT('n.app.practice.that-unit-is-too-far-away')}
         body={
           farUnit
-            ? `${farUnit.name} is in ${farUnit.lga}, ${farUnit.state}, about ` +
-              `${farUnit.km.toLocaleString()} km from where you are now.\n\n` +
+            ? i18nT('n.app.report.result.is-in-about', { v0: farUnit.name, v1: farUnit.lga, v2: farUnit.state }) +
+              i18nT('n.app.report.result.km-from-where-you-are-now', { v0: farUnit.km.toLocaleString() }) +
               'A result can only be filed from the polling unit itself, so this one cannot be ' +
               'selected from here. If you are travelling there, choose it once you arrive.'
             : ''

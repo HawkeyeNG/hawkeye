@@ -1291,7 +1291,7 @@ export default function Practice() {
         >
           <Feather name="x" size={18} color={ui.ink} />
         </Pressable>
-        <Text className="pl-3 text-lg font-bold text-ink">{i18nT('n.app.practice.practice-run')}</Text>
+        <Text className="pl-3 text-lg font-bold text-ink">{i18nT('nav.practice-run')}</Text>
         {/* bg-hawk-gold is a fixed brand surface: its label must be the fixed
             hawk ink, since text-ink flips near-white and dies in the gold. */}
         <View className="ml-2 rounded-full bg-hawk-gold px-2 py-0.5">

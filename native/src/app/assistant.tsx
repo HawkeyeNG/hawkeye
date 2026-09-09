@@ -149,7 +149,7 @@ export default function Assistant() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title={i18nT('n.app.assistant.ask-hawkeye')} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('nav.ask-hawkeye')} onClose={() => router.back()} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}

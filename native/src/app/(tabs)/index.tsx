@@ -310,9 +310,6 @@ export default function Home() {
 
   const header = (
     <View className="px-4">
-      <Text className="pb-4 pt-1 text-sm text-muted">
-        Independent election observation — every report public, signed and verifiable.
-      </Text>
 
       {/* Two contests can share one election NAME — Senate and House of
           Representatives are both the "2027 National Assembly Election" — so

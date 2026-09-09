@@ -61,8 +61,8 @@ if (process.argv.includes('--clean')) {
 purge();
 
 const mgr = mk('mgr');
-const gid = Number(db.prepare('INSERT INTO campaign_groups (name, kind, contest, scope, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-  .run(GROUP, 'campaign', 'PRES', 'Lagos', mgr, now).lastInsertRowid);
+const gid = Number(db.prepare('INSERT INTO campaign_groups (name, kind, contest, scope, party, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+  .run(GROUP, 'campaign', 'PRES', 'Lagos', 'PDP', mgr, now).lastInsertRowid);
 db.prepare('INSERT INTO group_managers (group_id, observer_id, role, created_at) VALUES (?, ?, ?, ?)').run(gid, mgr, 'owner', now);
 db.prepare('INSERT INTO group_tokens (token, group_id, created_by, expires_at, created_at) VALUES (?, ?, ?, ?, ?)')
   .run('demo-invite-token', gid, mgr, now + 2592000000, now);

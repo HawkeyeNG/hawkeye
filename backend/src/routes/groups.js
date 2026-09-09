@@ -24,7 +24,7 @@
  */
 import { Router } from 'express';
 import crypto from 'node:crypto';
-import { db, contests } from '../db.js';
+import { db, contests, scopeIsState } from '../db.js';
 import { notifyMaster, notifyObserverId } from '../services/notify.js';
 import { pushNote } from '../services/notifications.js';
 import { requireObserver } from './observers.js';
@@ -61,6 +61,79 @@ function requireManager(req, res, next) {
 const isOwner = (m) => m.role === 'owner';
 
 /**
+ * Which register column a group's scope names — DERIVED from the contest, never
+ * stored.
+ *
+ * A GROUP WATCHES ONE RACE, and a race is not always a state. The Senate seat
+ * for Kaduna South is a senatorial district; a House of Reps seat is a federal
+ * constituency; a governorship IS its state. Storing the column alongside the
+ * contest would create two facts that can disagree, and the one that disagreed
+ * would silently scope a district-level group to a whole state.
+ *
+ * `scopeIsState` in db.js is the single authority — the same one the follow
+ * alerts and the subscription prune already read, so a Senate group here and a
+ * Senate follow there cannot mean different regions.
+ */
+const scopeColumn = (contest) =>
+  (scopeIsState(contest) ? 'state' : contest === 'SEN' ? 'senatorial' : 'federal_constituency');
+
+/**
+ * A sub-state scope is pinned to the state it actually belongs to.
+ *
+ * A REGISTER DEFECT, guarded rather than rewritten. Two senatorial districts
+ * carry units from the wrong state: 169 Kano units are labelled "Kaduna North"
+ * and 337 Kaduna units are labelled "Kano South". Every other district of the
+ * 109 is clean, and all 360 federal constituencies are clean, so this is a
+ * handful of bad rows in the import rather than a modelling problem.
+ *
+ * Left in place because I cannot tell which district those units SHOULD carry,
+ * and guessing would put real polling units in the wrong race. What this does
+ * instead is refuse to count them: a district is scoped to the state holding
+ * the majority of its units, so a Kaduna North room covers Kaduna's 2,699 and
+ * not Kano's stray 169. Silently inflating a denominator by 6% is the failure
+ * mode that matters here — every coverage percentage in the room would be
+ * quietly wrong, and nothing on screen would say so.
+ *
+ * Fix the register rows and this becomes a no-op rather than a lie.
+ */
+const homeState = (col, value) => db
+  .prepare(`SELECT state FROM polling_units WHERE ${col} = ? GROUP BY state ORDER BY COUNT(*) DESC LIMIT 1`)
+  .get(value)?.state || null;
+
+/**
+ * Every seat in a contest, with the state that actually holds it.
+ *
+ * ONE GROUPED PASS, not a correlated subquery. The obvious
+ * `WHERE state = ? AND seat = (SELECT majority state FOR THIS ROW)` re-runs the
+ * inner query once per row of a 176,846-row table and does not return — I hung
+ * a request on exactly that. Grouping once and deciding the winner in JS is a
+ * single scan over ~500 aggregate rows.
+ */
+const seatCache = {};
+function seatsByState(col) {
+  if (seatCache[col]) return seatCache[col];
+  const rows = db
+    .prepare(`SELECT ${col} AS seat, state, COUNT(*) n FROM polling_units WHERE ${col} IS NOT NULL GROUP BY ${col}, state`)
+    .all();
+  const best = new Map();
+  for (const r of rows) {
+    const cur = best.get(r.seat);
+    if (!cur || r.n > cur.n) best.set(r.seat, { state: r.state, n: r.n });
+  }
+  const out = new Map();
+  for (const [seat, { state }] of best) {
+    if (!out.has(state)) out.set(state, []);
+    out.get(state).push(seat);
+  }
+  for (const list of out.values()) list.sort();
+  // Memoised for the process: the register is loaded at boot and does not
+  // change under a running server, and this is a full pass over 176,846 rows
+  // on a form that fires it on every contest change.
+  seatCache[col] = out;
+  return out;
+}
+
+/**
  * A coordinator's scope, as SQL against `polling_units pu`. Returns a clause and
  * its parameters, or an empty clause for an unscoped manager. Applied to BOTH
  * the coverage tree and the team list, because a scope that only narrows one of
@@ -73,6 +146,52 @@ function scopeClause(manager, alias = 'pu') {
   return { sql: ` AND ${alias}.${col} = ?`, params: [manager.scope_value] };
 }
 
+/**
+ * The races inside a contest, so the setup form can land on exactly ONE.
+ *
+ * "Governorship" is not a race — twenty-eight of them are held that day. Asking
+ * a manager to pick a contest and then type a state is asking them to name the
+ * race in two halves, in free text, with no way to be told they got it wrong;
+ * the coverage tree would simply come back empty and look like an election
+ * nobody had reported yet.
+ *
+ * The shape of the answer follows the contest, because the register is what
+ * decides it: a governorship IS its state, a Senate seat is a senatorial
+ * district, a Reps seat is a federal constituency, and the presidency is one
+ * race over the whole country. Read from `polling_units` rather than a list
+ * kept beside it — the register is the same source the coverage tree counts
+ * against, so a race offered here cannot be one the tree cannot find.
+ *
+ * Open to any signed-in observer: it is the public map of the election.
+ */
+groupsRouter.get('/group-races', requireObserver, (req, res) => {
+  const contest = String(req.query.contest || 'PRES');
+  const c = contests.find((x) => x.code === contest);
+  if (!c) return res.status(400).json({ error: 'unknown_contest' });
+
+  const col = scopeColumn(contest);
+  if (contest === 'PRES') return res.json({ kind: 'national', column: '', states: [], races: [] });
+
+  // A by-election, or a contest that names its own states, is confined to them.
+  const only = Array.isArray(c.states) && c.states.length ? c.states : null;
+  const state = String(req.query.state || '').trim();
+
+  if (col === 'state') {
+    const rows = db.prepare('SELECT DISTINCT state AS v FROM polling_units WHERE state IS NOT NULL ORDER BY state').all();
+    const races = rows.map((r) => r.v).filter((v) => !only || only.includes(v));
+    return res.json({ kind: 'state', column: col, states: races, races });
+  }
+
+  // Two steps: the state narrows a 109-seat or 360-seat list to a readable one.
+  const states = db.prepare('SELECT DISTINCT state AS v FROM polling_units WHERE state IS NOT NULL ORDER BY state')
+    .all().map((r) => r.v).filter((v) => !only || only.includes(v));
+  if (!state) return res.json({ kind: col, column: col, states, races: [] });
+  /* Only the seats this state actually holds. A plain DISTINCT would offer
+     Kaduna a "Kano South" seat, because 337 Kaduna units carry that label —
+     see homeState. */
+  return res.json({ kind: col, column: col, states, races: seatsByState(col).get(state) || [] });
+});
+
 // --- groups -------------------------------------------------------------------
 
 groupsRouter.post('/groups', requireObserver, (req, res) => {
@@ -80,18 +199,29 @@ groupsRouter.post('/groups', requireObserver, (req, res) => {
   const kind = req.body?.kind === 'cso' ? 'cso' : 'campaign';
   const contest = String(req.body?.contest || 'PRES');
   const scope = String(req.body?.scope || '').trim();
+  // Acronym only, and only for a campaign — a civil-society group carrying a
+  // party emblem would misrepresent it to its own observers.
+  const party = kind === 'campaign' ? String(req.body?.party || '').trim().toUpperCase().slice(0, 12) : '';
   if (!name) return res.status(400).json({ error: 'name_required' });
   if (!contests.some((c) => c.code === contest)) return res.status(400).json({ error: 'unknown_contest' });
+  // A named scope has to be a region that actually exists in the register for
+  // this contest, or the coverage tree silently returns nothing and the console
+  // reports a real election as empty.
+  if (scope) {
+    const col = scopeColumn(contest);
+    const hit = db.prepare(`SELECT 1 FROM polling_units WHERE ${col} = ? LIMIT 1`).get(scope);
+    if (!hit) return res.status(400).json({ error: 'unknown_scope' });
+  }
 
   const t = now();
   const info = db
-    .prepare('INSERT INTO campaign_groups (name, kind, contest, scope, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(name, kind, contest, scope, req.observer.id, t);
+    .prepare('INSERT INTO campaign_groups (name, kind, contest, scope, party, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(name, kind, contest, scope, party || null, req.observer.id, t);
   db.prepare('INSERT INTO group_managers (group_id, observer_id, role, created_at) VALUES (?, ?, ?, ?)')
     .run(info.lastInsertRowid, req.observer.id, 'owner', t);
 
   notifyMaster(`situation room · new ${kind} "${name}" (${contest}${scope ? ' · ' + scope : ''}) · observer #${req.observer.id}`);
-  res.status(201).json({ id: info.lastInsertRowid, name, kind, contest, scope });
+  res.status(201).json({ id: info.lastInsertRowid, name, kind, contest, scope, party: party || null });
 });
 
 /**
@@ -103,7 +233,7 @@ groupsRouter.post('/groups', requireObserver, (req, res) => {
 groupsRouter.get('/groups', requireObserver, (req, res) => {
   const managing = db
     .prepare(
-      `SELECT g.id, g.name, g.kind, g.contest, g.scope, gm.role, gm.scope_kind, gm.scope_value,
+      `SELECT g.id, g.name, g.kind, g.contest, g.scope, g.party, gm.role, gm.scope_kind, gm.scope_value,
               (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS members
          FROM group_managers gm JOIN campaign_groups g ON g.id = gm.group_id
         WHERE gm.observer_id = ? ORDER BY g.created_at DESC`,
@@ -111,7 +241,7 @@ groupsRouter.get('/groups', requireObserver, (req, res) => {
     .all(req.observer.id);
   const member = db
     .prepare(
-      `SELECT g.id, g.name, g.kind, g.contest, g.scope, m.assigned_pu, m.assign_state, m.joined_at,
+      `SELECT g.id, g.name, g.kind, g.contest, g.scope, g.party, m.assigned_pu, m.assign_state, m.joined_at,
               pu.name AS assigned_name, pu.ward AS assigned_ward, pu.lga AS assigned_lga, pu.state AS assigned_state
          FROM group_members m JOIN campaign_groups g ON g.id = m.group_id
          LEFT JOIN polling_units pu ON pu.pu_code = m.assigned_pu
@@ -126,7 +256,8 @@ groupsRouter.get('/groups/:id', requireObserver, requireManager, (req, res) => {
   const members = db.prepare('SELECT COUNT(*) n FROM group_members WHERE group_id = ?').get(g.id).n;
   const assigned = db.prepare("SELECT COUNT(*) n FROM group_members WHERE group_id = ? AND assigned_pu IS NOT NULL AND assign_state != 'declined'").get(g.id).n;
   res.json({
-    id: g.id, name: g.name, kind: g.kind, contest: g.contest, scope: g.scope,
+    id: g.id, name: g.name, kind: g.kind, contest: g.contest, scope: g.scope, party: g.party || null,
+    scope_kind: g.scope ? scopeColumn(g.contest) : '',
     members, assigned,
     me: { role: req.manager.role, scope_kind: req.manager.scope_kind, scope_value: req.manager.scope_value },
     managers: db
@@ -325,7 +456,19 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
   const g = req.group;
   const where = [];
   const params = [];
-  if (g.scope) { where.push('pu.state = ?'); params.push(g.scope); }
+  // The group's OWN race, scoped by whichever column that race is drawn on —
+  // a Senate group covers a senatorial district, not the whole state — and
+  // pinned to that district's own state, because a few register rows are not
+  // (see majorityStateSql).
+  if (g.scope) {
+    const col = scopeColumn(g.contest);
+    where.push(`pu.${col} = ?`);
+    params.push(g.scope);
+    if (col !== 'state') {
+      const home = homeState(col, g.scope);
+      if (home) { where.push('pu.state = ?'); params.push(home); }
+    }
+  }
   for (const k of ['state', 'lga', 'ward']) {
     const v = req.query[k] ? String(req.query[k]) : '';
     if (v) { where.push(`pu.${LEVELS[k]} = ?`); params.push(v); }

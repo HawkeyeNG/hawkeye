@@ -630,6 +630,12 @@ for (const ddl of [
      uses       INTEGER NOT NULL DEFAULT 0,
      created_at INTEGER NOT NULL
    )`,
+  // The party a campaign is running for, as its INEC acronym (APC, PDP, LP…),
+  // NULL for a civil-society group. Only ever used to brand their own console
+  // with their own emblem — it grants nothing, filters nothing, and is not
+  // readable by any other group. A campaign watching a race is not a claim
+  // about the race.
+  'ALTER TABLE campaign_groups ADD COLUMN party TEXT',
   // A roster label the MANAGER writes, scoped to their own group.
   //
   // Hawkeye stores no names: an observer is a phone hash and an id, and that is
@@ -638,6 +644,10 @@ for (const ddl of [
   // group, in a column no other group and no public surface reads — the roster
   // is theirs, the identity layer stays nameless.
   'ALTER TABLE group_members ADD COLUMN label TEXT',
+  // A Senate or Reps situation room scopes on these columns, and without an
+  // index every coverage query full-scans 176,846 rows.
+  'CREATE INDEX IF NOT EXISTS idx_pu_senatorial ON polling_units(senatorial)',
+  'CREATE INDEX IF NOT EXISTS idx_pu_fedcon ON polling_units(federal_constituency)',
   'CREATE INDEX IF NOT EXISTS idx_group_members_obs ON group_members(observer_id)',
   'CREATE INDEX IF NOT EXISTS idx_group_members_pu ON group_members(assigned_pu)',
 ]) {

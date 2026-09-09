@@ -299,10 +299,35 @@
   "en": 9,
   "max": 49
  },
+ "n.app.case.answer-every-question": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
  "n.app.case.cast-my-verdict": {
   "kind": "button",
   "en": 15,
   "max": 29
+ },
+ "n.app.case.could-not-record": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.app.case.could-not-record-http": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "n.app.case.recorded-computed-verdict": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "n.app.case.registered-voters": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
  },
  "n.app.case.report-this-evidence": {
   "kind": "button",
@@ -314,6 +339,11 @@
   "en": 17,
   "max": 57
  },
+ "n.app.docket.a-flag-never-decides-anything-it": {
+  "kind": "body",
+  "en": 106,
+  "max": 186
+ },
  "n.app.docket.cleared-by-the-crowd": {
   "kind": "body",
   "en": 20,
@@ -323,6 +353,11 @@
   "kind": "body",
   "en": 19,
   "max": 59
+ },
+ "n.app.docket.how-a-case-resolves-a-case": {
+  "kind": "body",
+  "en": 154,
+  "max": 270
  },
  "n.app.docket.how-the-docket-works": {
   "kind": "heading",
@@ -354,20 +389,85 @@
   "en": 13,
   "max": 53
  },
+ "n.app.incidents.ballot-snatching": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "n.app.incidents.bvas-failure": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.incidents.late-materials": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.app.incidents.min-ago": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.incidents.open-evidence-full-size": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
+ "n.app.incidents.the-incident-feed-did-not-load": {
+  "kind": "body",
+  "en": 38,
+  "max": 78
+ },
  "n.app.incidents.video": {
   "kind": "button",
   "en": 5,
   "max": 19
+ },
+ "n.app.incidents.vote-buying": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
  },
  "n.app.incidents.what-appears-here": {
   "kind": "heading",
   "en": 17,
   "max": 37
  },
+ "n.app.integrity.acceptable-conformity-mad": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
+ "n.app.integrity.based-on-unit-result-s-party": {
+  "kind": "body",
+  "en": 51,
+  "max": 91
+ },
+ "n.app.integrity.checked-unit-s-consistent-mismatched-inconclusive": {
+  "kind": "body",
+  "en": 99,
+  "max": 174
+ },
+ "n.app.integrity.close-conformity-mad": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
  "n.app.integrity.collation-reconciliation": {
   "kind": "heading",
   "en": 24,
   "max": 44
+ },
+ "n.app.integrity.collation-report-s-ward-lga-state": {
+  "kind": "body",
+  "en": 101,
+  "max": 177
+ },
+ "n.app.integrity.departs-from-benford-mad": {
+  "kind": "body",
+  "en": 33,
+  "max": 73
  },
  "n.app.integrity.desc.collation-chain-undercount": {
   "kind": "body",
@@ -474,10 +574,25 @@
   "en": 9,
   "max": 49
  },
+ "n.app.integrity.marginal-conformity-mad": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
  "n.app.integrity.medium-flags": {
   "kind": "body",
   "en": 12,
   "max": 52
+ },
+ "n.app.integrity.min-ago": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.integrity.no-collation-reports-yet-they-arrive": {
+  "kind": "body",
+  "en": 87,
+  "max": 153
  },
  "n.app.integrity.no-counts-yet": {
   "kind": "body",
@@ -499,10 +614,30 @@
   "en": 17,
   "max": 37
  },
+ "n.app.ledger.broken-at": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.ledger.chain-broken-at-entry-a-report": {
+  "kind": "body",
+  "en": 61,
+  "max": 107
+ },
  "n.app.ledger.confirm-in-rekor": {
   "kind": "button",
   "en": 18,
   "max": 32
+ },
+ "n.app.ledger.could-not-fetch-the-proof": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.ledger.could-not-load-the-ledger": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
  },
  "n.app.ledger.entries-chained": {
   "kind": "body",
@@ -519,6 +654,16 @@
   "en": 11,
   "max": 51
  },
+ "n.app.ledger.leaf-mismatch-the-race-head-and": {
+  "kind": "body",
+  "en": 69,
+  "max": 121
+ },
+ "n.app.ledger.min-ago": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
  "n.app.ledger.not-published-to-rekor-yet": {
   "kind": "body",
   "en": 26,
@@ -528,6 +673,11 @@
   "kind": "body",
   "en": 13,
   "max": 53
+ },
+ "n.app.ledger.proof-does-not-fold-to-the": {
+  "kind": "body",
+  "en": 84,
+  "max": 147
  },
  "n.app.ledger.re-verify-on-this-phone": {
   "kind": "button",
@@ -549,10 +699,25 @@
   "en": 11,
   "max": 25
  },
+ "n.app.ledger.the-chain-is-empty-no-report": {
+  "kind": "body",
+  "en": 79,
+  "max": 139
+ },
  "n.app.ledger.venue-photo": {
   "kind": "button",
   "en": 11,
   "max": 25
+ },
+ "n.app.ledger.verified-all-entries-on-this-phone": {
+  "kind": "body",
+  "en": 59,
+  "max": 104
+ },
+ "n.app.ledger.verified-report-s-fold-to-the": {
+  "kind": "body",
+  "en": 88,
+  "max": 154
  },
  "n.app.ledger.verify-this-race": {
   "kind": "button",
@@ -624,10 +789,80 @@
   "en": 25,
   "max": 45
  },
+ "n.app.map.and-tied": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.app.map.could-not-load-incumbency-data": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
+ "n.app.map.could-not-load-the-map": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "n.app.map.excluded-pending-arbitration": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "n.app.map.governed-by": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.app.map.governing-party-by-state": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.map.is-not-contested-here-it-covers": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
  "n.app.map.map-of-nigeria": {
   "kind": "heading",
   "en": 14,
   "max": 34
+ },
+ "n.app.map.map-of-nigeria-2": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.app.map.no-contest-is-configured-yet-api": {
+  "kind": "body",
+  "en": 59,
+  "max": 104
+ },
+ "n.app.map.no-counts-yet": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.map.no-votes-recorded": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.app.map.unit-s-reporting-verified": {
+  "kind": "body",
+  "en": 45,
+  "max": 85
+ },
+ "n.app.map.way-tie": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.map.who-holds-each-governorship-now-the": {
+  "kind": "body",
+  "en": 83,
+  "max": 146
  },
  "n.app.open.opening": {
   "kind": "body",
@@ -799,6 +1034,11 @@
   "en": 18,
   "max": 32
  },
+ "n.app.profile.could-not-load-your-profile-http": {
+  "kind": "body",
+  "en": 40,
+  "max": 80
+ },
  "n.app.profile.current-password": {
   "kind": "body",
   "en": 16,
@@ -809,15 +1049,40 @@
   "en": 20,
   "max": 40
  },
+ "n.app.profile.dev-mode-your-code-is": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
  "n.app.profile.face-id-or-fingerprint-to-sign": {
   "kind": "body",
   "en": 30,
   "max": 70
  },
+ "n.app.profile.failed-http": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.profile.fix-es-so-far": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
  "n.app.profile.nothing-yet": {
   "kind": "body",
   "en": 12,
   "max": 52
+ },
+ "n.app.profile.password-saved": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.app.profile.practice-runs": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
  },
  "n.app.profile.repeat-new-password": {
   "kind": "body",
@@ -849,30 +1114,90 @@
   "en": 9,
   "max": 29
  },
+ "n.app.profile.the-two-new-passwords-do-not": {
+  "kind": "body",
+  "en": 35,
+  "max": 75
+ },
+ "n.app.profile.try-again-http": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
  "n.app.profile.verify": {
   "kind": "button",
   "en": 6,
   "max": 20
+ },
+ "n.app.profile.verify-the-code-sent-to-your": {
+  "kind": "body",
+  "en": 42,
+  "max": 82
  },
  "n.app.profile.wipes-your-key-device-telegram-link": {
   "kind": "body",
   "en": 98,
   "max": 172
  },
+ "n.app.profile.you-can-now-sign-in-with": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
+ },
  "n.app.profile.your-phone-number": {
   "kind": "body",
   "en": 17,
   "max": 57
+ },
+ "n.app.races.being-reported-now": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.app.races.candidates-lgas-the-full-result-permanently": {
+  "kind": "body",
+  "en": 59,
+  "max": 104
  },
  "n.app.races.how-races-are-grouped": {
   "kind": "heading",
   "en": 21,
   "max": 41
  },
+ "n.app.races.no-election-is-being-reported-today": {
+  "kind": "body",
+  "en": 68,
+  "max": 119
+ },
+ "n.app.races.one-governorship-per-state-each-state": {
+  "kind": "body",
+  "en": 64,
+  "max": 112
+ },
  "n.app.races.soon": {
   "kind": "body",
   "en": 4,
   "max": 44
+ },
+ "n.app.races.the-36-state-legislatures": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.races.the-declared-presidential-field-quick-compare": {
+  "kind": "body",
+  "en": 64,
+  "max": 112
+ },
+ "n.app.races.the-full-result-permanently": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "n.app.races.this-race-has-no-page-yet": {
+  "kind": "body",
+  "en": 132,
+  "max": 231
  },
  "n.app.report.collation.back-to-totals": {
   "kind": "button",
@@ -994,11 +1319,6 @@
   "en": 48,
   "max": 88
  },
- "n.app.report.incident.clip-mp4": {
-  "kind": "body",
-  "en": 12,
-  "max": 52
- },
  "n.app.report.incident.could-not-prepare-the-report-nothing": {
   "kind": "body",
   "en": 55,
@@ -1038,11 +1358,6 @@
   "kind": "body",
   "en": 27,
   "max": 67
- },
- "n.app.report.incident.photo-jpg": {
-  "kind": "body",
-  "en": 13,
-  "max": 53
  },
  "n.app.report.incident.photo-or-switch-to-video-up": {
   "kind": "body",
@@ -1369,45 +1684,210 @@
   "en": 26,
   "max": 40
  },
+ "n.app.reports-log.confidence-matching-reports": {
+  "kind": "body",
+  "en": 48,
+  "max": 88
+ },
+ "n.app.reports-log.crowd-confirmed-location-of-reports-agree": {
+  "kind": "body",
+  "en": 51,
+  "max": 91
+ },
  "n.app.reports-log.how-these-reports-are-held": {
   "kind": "heading",
   "en": 26,
   "max": 46
+ },
+ "n.app.reports-log.location-evidence-100": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "n.app.reports-log.location-unverified-gps-agreement": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
+ },
+ "n.app.reports-log.venue-photo-pair-match": {
+  "kind": "body",
+  "en": 37,
+  "max": 77
+ },
+ "n.app.sign-in.choose-a-new-password": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.app.sign-in.code-sent-by-sms-to": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "n.app.sign-in.code-sent-on-telegram-to": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "n.app.sign-in.code-sent-on-whatsapp-to": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "n.app.sign-in.code-sent-to": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.app.sign-in.code-to": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
  },
  "n.app.sign-in.continue-to-hawkeye": {
   "kind": "button",
   "en": 19,
   "max": 33
  },
+ "n.app.sign-in.could-not-save-that-password-try": {
+  "kind": "body",
+  "en": 41,
+  "max": 81
+ },
+ "n.app.sign-in.could-not-send-a-code-check": {
+  "kind": "body",
+  "en": 41,
+  "max": 81
+ },
+ "n.app.sign-in.create-your-account": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.sign-in.create-your-password": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.app.sign-in.dev-mode-your-code-is": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
  "n.app.sign-in.enter-the-code": {
   "kind": "heading",
   "en": 14,
   "max": 34
+ },
+ "n.app.sign-in.enter-your-phone-number-we-send": {
+  "kind": "body",
+  "en": 82,
+  "max": 144
  },
  "n.app.sign-in.forgot-password": {
   "kind": "button",
   "en": 16,
   "max": 30
  },
+ "n.app.sign-in.is-already-registered-as-an-observer": {
+  "kind": "body",
+  "en": 155,
+  "max": 272
+ },
+ "n.app.sign-in.is-already-registered-as-an-observer-2": {
+  "kind": "body",
+  "en": 118,
+  "max": 207
+ },
+ "n.app.sign-in.keep-my-current-password": {
+  "kind": "button",
+  "en": 24,
+  "max": 38
+ },
+ "n.app.sign-in.network-error-try-again": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.sign-in.no-password-on-this-account": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "n.app.sign-in.not-now-sign-out": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
  "n.app.sign-in.open-telegram": {
   "kind": "button",
   "en": 13,
   "max": 27
+ },
+ "n.app.sign-in.open-telegram-tap-start-then-share": {
+  "kind": "body",
+  "en": 53,
+  "max": 93
+ },
+ "n.app.sign-in.resend-in-s": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.sign-in.reset-it": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.sign-in.reset-your-password": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
  },
  "n.app.sign-in.save-password-and-continue": {
   "kind": "button",
   "en": 26,
   "max": 40
  },
+ "n.app.sign-in.set-a-new-one": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.sign-in.set-your-password": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.app.sign-in.sign-in-failed-try-again": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
  "n.app.sign-in.sign-in-instead": {
   "kind": "button",
   "en": 15,
   "max": 29
  },
+ "n.app.sign-in.the-two-passwords-do-not-match": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
  "n.app.sign-in.this-account-already-exists": {
   "kind": "heading",
   "en": 27,
   "max": 47
+ },
+ "n.app.sign-in.this-account-has-a-password-type": {
+  "kind": "body",
+  "en": 79,
+  "max": 139
+ },
+ "n.app.sign-in.this-account-has-no-password-yet": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
  },
  "n.app.sign-in.try-a-practice-run": {
   "kind": "button",
@@ -1418,6 +1898,21 @@
   "kind": "button",
   "en": 22,
   "max": 36
+ },
+ "n.app.sign-in.use-at-least-8-characters": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.sign-in.verification-failed-try-again": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
+ "n.app.sign-in.we-send-a-one-time-code": {
+  "kind": "body",
+  "en": 89,
+  "max": 156
  },
  "n.app.sign-in.welcome-back": {
   "kind": "heading",
@@ -1789,6 +2284,11 @@
   "en": 7,
   "max": 47
  },
+ "n.components.gov-disclaimer.hawkeye-is-an-independent-citizen-run": {
+  "kind": "body",
+  "en": 295,
+  "max": 517
+ },
  "n.components.gov-disclaimer.inecelectionresults-ng": {
   "kind": "body",
   "en": 22,
@@ -1803,6 +2303,11 @@
   "kind": "heading",
   "en": 24,
   "max": 44
+ },
+ "n.components.gov-disclaimer.not-government-or-inec-affiliated": {
+  "kind": "button",
+  "en": 34,
+  "max": 48
  },
  "n.components.nigeria-map.map-unavailable": {
   "kind": "body",

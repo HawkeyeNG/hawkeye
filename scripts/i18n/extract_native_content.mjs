@@ -47,7 +47,34 @@ const literal = src.slice(open, end);
 const PAGES = new Function(`return (${literal});`)();
 console.log(`parsed ${Object.keys(PAGES).length} pages: ${Object.keys(PAGES).join(', ')}`);
 
-const SKIP_PAGES = new Set(['privacy']);
+/* THE TERMS SCREEN IS A SECOND SOURCE. It keeps its own TERMS const rather than
+   living in PAGES, and now routes through the same translateContent() walker,
+   so its prose is translatable and has to be extracted with the rest. Parsed
+   the same way: slice the object literal and evaluate it. */
+const TSRC = '/home/elrio/hawkeye/native/src/app/terms.tsx';
+try {
+  const tsrc = fs.readFileSync(TSRC, 'utf8');
+  const ts = tsrc.indexOf('const TERMS');
+  if (ts >= 0) {
+    const open = tsrc.indexOf('{', ts);
+    let depth = 0, te = -1;
+    for (let i = open; i < tsrc.length; i++) {
+      if (tsrc[i] === '{') depth++;
+      else if (tsrc[i] === '}') { depth--; if (depth === 0) { te = i + 1; break; } }
+    }
+    if (te > 0) {
+      const TERMS = new Function(`return (${tsrc.slice(open, te)});`)();
+      PAGES.terms = TERMS;
+      console.log('parsed the terms screen as a second source');
+    }
+  }
+} catch (e) {
+  console.log('terms.tsx not parsed: ' + e.message);
+}
+
+// PRIVACY IS NO LONGER SKIPPED. It was English-by-policy; that policy was
+// lifted deliberately, so its prose is now extracted like every other page.
+const SKIP_PAGES = new Set([]);
 const out = new Set();
 
 function walk(node, field) {

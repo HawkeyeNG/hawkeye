@@ -31,12 +31,13 @@
     { code: 'yo', name: 'Yoruba', native: 'Èdè Yorùbá' },
   ];
 
-  /* Not offered yet, shown so the choice is visibly coming rather than absent.
-     Pidgin has no usable machine translation and has to be written by a person;
-     BBC News Pidgin's orthography is the one to follow when it is. */
-  var PENDING = [
-    { code: 'pcm', name: 'Nigerian Pidgin', native: 'Naija' },
-  ];
+  /* Languages to show as coming-but-not-yet. EMPTY ON PURPOSE.
+     Nigerian Pidgin sat here as "coming" and did not move; a picker that offers
+     a language the product cannot speak reads as a promise. GLOSSARY.md still
+     has Pidgin as not started. The mechanism stays so re-adding it is one line:
+     Pidgin has no usable machine translation and must be written by a person,
+     and BBC News Pidgin's orthography is the one to follow when it is. */
+  var PENDING = [];
 
   var dict = {};
   var meta = {};

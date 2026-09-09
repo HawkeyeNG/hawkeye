@@ -25,7 +25,8 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
 import { db, contests } from '../db.js';
-import { notifyMaster } from '../services/notify.js';
+import { notifyMaster, notifyObserverId } from '../services/notify.js';
+import { pushNote } from '../services/notifications.js';
 import { requireObserver } from './observers.js';
 
 export const groupsRouter = Router();
@@ -216,6 +217,85 @@ groupsRouter.patch('/groups/:id/members/:observerId', requireObserver, requireMa
     .run(label || null, req.group.id, Number(req.params.observerId));
   if (!r.changes) return res.status(404).json({ error: 'not_a_member' });
   res.json({ ok: true, label: label || null });
+});
+
+/**
+ * Assign a member to a polling unit, or clear the assignment.
+ *
+ * THE ASSIGNMENT IS A LABEL ON THE BOARD, NOT A PERMISSION. Nothing in the
+ * submission path reads it. An observer whose party moved them, who was turned
+ * away, or who was simply assigned wrongly still files from where they stand —
+ * a clerical error that silenced a real observer at a real unit would be far
+ * worse than an inaccurate coverage number.
+ *
+ * A coordinator cannot assign outside their own scope. Without this the scope
+ * would narrow only what they can SEE, and a scope that does not narrow what
+ * someone can DO is not a scope.
+ */
+groupsRouter.patch('/groups/:id/members/:observerId/assignment', requireObserver, requireManager, (req, res) => {
+  const observerId = Number(req.params.observerId);
+  const member = db.prepare('SELECT * FROM group_members WHERE group_id = ? AND observer_id = ?').get(req.group.id, observerId);
+  if (!member) return res.status(404).json({ error: 'not_a_member' });
+
+  const puCode = req.body?.pu_code ? String(req.body.pu_code).trim() : null;
+  if (!puCode) {
+    db.prepare("UPDATE group_members SET assigned_pu = NULL, assign_state = '', assigned_by = ?, assigned_at = ? WHERE group_id = ? AND observer_id = ?")
+      .run(req.observer.id, now(), req.group.id, observerId);
+    return res.json({ ok: true, assigned: null });
+  }
+
+  const pu = db.prepare('SELECT pu_code, name, ward, lga, state FROM polling_units WHERE pu_code = ?').get(puCode);
+  if (!pu) return res.status(404).json({ error: 'no_such_unit' });
+  const sc = req.manager.scope_kind && req.manager.scope_value;
+  if (sc && pu[req.manager.scope_kind] !== req.manager.scope_value) {
+    return res.status(403).json({ error: 'outside_your_scope' });
+  }
+
+  db.prepare("UPDATE group_members SET assigned_pu = ?, assign_state = 'confirmed', assigned_by = ?, assigned_at = ? WHERE group_id = ? AND observer_id = ?")
+    .run(pu.pu_code, req.observer.id, now(), req.group.id, observerId);
+
+  // In-app + push, and Telegram where it is linked. NEVER WhatsApp — race and
+  // assignment alerts go to free channels only (in-app or Telegram).
+  const where = `${pu.name} (${pu.pu_code})`;
+  pushNote(observerId, {
+    kind: 'assignment',
+    titleKey: 'note.assigned.title',
+    bodyKey: 'note.assigned.body',
+    params: { group: req.group.name, unit: where },
+    url: 'https://hawkeye.com.ng/observe.html',
+  });
+  notifyObserverId(observerId, 'tg.assigned', { group: req.group.name, unit: where });
+
+  res.json({ ok: true, assigned: pu });
+});
+
+/**
+ * Accept every auto-proposed assignment at once.
+ *
+ * DELIBERATELY SILENT. A proposal is the observer's OWN saved unit — confirming
+ * it moves nobody, and telling several hundred people they have been assigned
+ * to the unit they themselves chose is a notification that teaches them to
+ * ignore the next one, which will be the one that actually moved them.
+ */
+groupsRouter.post('/groups/:id/assignments/confirm-proposed', requireObserver, requireManager, (req, res) => {
+  const r = db.prepare("UPDATE group_members SET assign_state = 'confirmed', assigned_by = ?, assigned_at = ? WHERE group_id = ? AND assign_state = 'proposed'")
+    .run(req.observer.id, now(), req.group.id);
+  res.json({ ok: true, confirmed: r.changes });
+});
+
+/**
+ * The observer's own way out of a wrong assignment.
+ *
+ * Without a correction route a wrong assignment sits on the board looking
+ * correct, and the manager spends election night chasing someone who was never
+ * going to be there. A declined member drops back into the exception queue as a
+ * KNOWN case rather than reading as a silent no-show.
+ */
+groupsRouter.post('/groups/:id/decline', requireObserver, (req, res) => {
+  const r = db.prepare("UPDATE group_members SET assign_state = 'declined' WHERE group_id = ? AND observer_id = ? AND assigned_pu IS NOT NULL")
+    .run(Number(req.params.id), req.observer.id);
+  if (!r.changes) return res.status(404).json({ error: 'nothing_to_decline' });
+  res.json({ ok: true });
 });
 
 groupsRouter.delete('/groups/:id/membership', requireObserver, (req, res) => {

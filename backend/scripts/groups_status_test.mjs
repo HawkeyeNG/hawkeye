@@ -14,6 +14,14 @@ import { db } from '../src/db.js';
 import { config } from '../src/config.js';
 import { groupsRouter } from '../src/routes/groups.js';
 
+/* Clear any debris from a run that died before its cleanup. A crashed test
+   leaves a group nothing ever removes, and the next run then measures a
+   database that is not the one it set up. */
+for (const g of db.prepare("SELECT id FROM campaign_groups WHERE name = 'Status Test'").all()) {
+  for (const t of ['group_tokens', 'group_members', 'group_managers']) db.prepare('DELETE FROM ' + t + ' WHERE group_id = ?').run(g.id);
+  db.prepare('DELETE FROM campaign_groups WHERE id = ?').run(g.id);
+}
+
 const now = Date.now();
 const mkObs = (t) => Number(db.prepare('INSERT INTO observers (phone_hash, public_key_jwk, created_at) VALUES (?, ?, ?)').run('st-' + t + '-' + now, '{}', now).lastInsertRowid);
 const mgr = mkObs('m'), onUnit = mkObs('on'), mism = mkObs('mm'), silent = mkObs('si'), past = mkObs('pa');

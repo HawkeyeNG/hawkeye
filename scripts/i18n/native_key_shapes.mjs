@@ -172,6 +172,12 @@ function processFile(file) {
     if (!isProse(litText)) return whole;
     // A template that is mostly expression is a composed value, not a sentence.
     if (litText.replace(/\s+/g, '').length < 6) return whole;
+    // A FILENAME IS NOT A SENTENCE. clip${n}.mp4 and photo${n}.jpg were keyed
+    // by the first version of this tool: they start with a letter, contain a
+    // dot, and rewrote perfectly — the round-trip check cannot catch a rewrite
+    // that is mechanically right and semantically wrong. A literal with no
+    // space that ends in a file extension is refused here instead.
+    if (!/\s/.test(litText) && /\.[a-z0-9]{2,4}$/i.test(litText)) return whole;
     // Nested quotes or a className are not prose.
     if (/className|style=|http/.test(body)) return whole;
 

@@ -51,6 +51,19 @@
   padding: 14px 0 12px; border-bottom: 1px solid var(--line);
 }
 .sr-bar h1 { font-size: 1.15rem; margin: 0; font-family: var(--display); letter-spacing: -0.01em; }
+/* The party emblem, on a white plate. Party logos are supplied as opaque JPEGs
+   and PNGs designed for paper, and several are white-on-white or near it — a
+   logo dropped straight onto the dark console loses its outline entirely. */
+.sr-emblem { width: 34px; height: 34px; border-radius: 8px; background: #fff; padding: 3px;
+  display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.sr-emblem img { max-width: 100%; max-height: 100%; display: block; }
+.sr-party-pick { display: flex; align-items: center; gap: 10px; }
+.sr-party-pick select { flex: 1 1 auto; }
+.sr-party-mark { width: 38px; height: 38px; border-radius: 8px; flex: 0 0 auto; display: flex;
+  align-items: center; justify-content: center; }
+.sr-party-mark:has(img) { background: #fff; padding: 3px; }
+.sr-party-mark img { max-width: 100%; max-height: 100%; display: block; }
+.sr-fine { color: var(--muted); font-size: 0.74rem; margin: 5px 0 0; line-height: 1.45; }
 .sr-bar .meta { color: var(--muted); font-size: 0.8rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .sr-bar .spacer { flex: 1 1 auto; }
 .sr-sel {
@@ -167,7 +180,7 @@
   <header class="gov-header">
     <div class="wrap brand-row">
       <a class="brand" href="index.html">
-        <span class="crest" aria-hidden="true">🦅</span>
+        <span class="crest" aria-hidden="true"><img src="icon-192.png?v=hawk2" alt="" width="30" height="30" style="display:block;border-radius:7px" /></span>
         <div class="brand-text">
           <strong>HAWKEYE</strong>
           <span>Situation Room</span>
@@ -233,9 +246,10 @@ function render() {
   const scope = g.scope || 'Nationwide';
   $('sr').innerHTML = `
     <div class="sr-bar">
+      ${g.party && LOGOS[g.party] ? `<span class="sr-emblem"><img src="${esc(LOGOS[g.party])}" alt="${esc(g.party)}" /></span>` : ''}
       <h1>${esc(g.name || '')}</h1>
       <div class="meta">
-        <span>${esc(g.kind === 'cso' ? 'Civil society' : 'Campaign')}</span>
+        <span>${esc(g.kind === 'cso' ? 'Civil society' : 'Campaign')}${g.party ? ' &middot; ' + esc(g.party) : ''}</span>
         <span>&middot;</span><span>${esc(g.contest || '')}</span>
         <span>&middot;</span><span>${esc(scope)}</span>
         <span>&middot;</span><span class="num">${n(g.members)}</span><span>observers</span>
@@ -277,29 +291,104 @@ function renderWelcome() {
           <input id="mk-name" maxlength="80" required placeholder="e.g. Adaeze 2027" /></div>
         <div><label for="mk-kind">Type</label>
           <select id="mk-kind"><option value="campaign">Campaign</option><option value="cso">Civil society / observer group</option></select></div>
-        <div><label for="mk-contest">Race</label><select id="mk-contest"></select></div>
-        <div><label for="mk-scope">State (leave blank to watch the whole country)</label>
-          <input id="mk-scope" maxlength="40" placeholder="e.g. Lagos" /></div>
+        <div id="mk-party-row"><label for="mk-party">Party</label>
+          <div class="sr-party-pick"><select id="mk-party"><option value="">Not saying</option></select>
+            <span class="sr-party-mark" id="mk-party-mark"></span></div>
+          <p class="sr-fine">Only used to put your emblem on your own console.</p></div>
+        <div><label for="mk-contest">Which election</label><select id="mk-contest"></select></div>
+        <div id="mk-state-row" hidden><label for="mk-state">State</label><select id="mk-state"></select></div>
+        <div id="mk-race-row" hidden><label for="mk-race" id="mk-race-label">Seat</label><select id="mk-race"></select></div>
+        <p class="sr-fine" id="mk-race-note"></p>
         <button class="sr-btn primary" type="submit">Create situation room</button>
       </form>
       ${disclosureHtml()}
     </div>`;
-  api('/api/contests').then(({ body }) => {
-    const list = Array.isArray(body) ? body : [];
-    $('mk-contest').innerHTML = list.map((c) =>
-      `<option value="${esc(c.code)}">${esc(c.label || c.title || c.name || c.code)}</option>`).join('')
-      || '<option value="PRES">Presidential</option>';
+  setupForm();
+}
+
+/**
+ * The setup form, which has to land on exactly ONE race.
+ *
+ * "Governorship" is not a race — twenty-eight of them are held that day, and
+ * the first version asked for a contest and then a free-text state, which is
+ * naming a race in two halves with no way to be told you got it wrong. A typo
+ * returned an empty coverage tree that looked exactly like an election nobody
+ * had reported yet.
+ *
+ * So the controls appear as the answer narrows, and what appears depends on
+ * what the race is drawn on: the presidency needs nothing, a governorship needs
+ * its state, a Senate seat needs a state and then its senatorial district.
+ * The server decides which — see /group-races — because the register is what
+ * knows, and a race offered here has to be one the tree can actually count.
+ */
+async function setupForm() {
+  const { body } = await api('/api/contests');
+  const list = Array.isArray(body) ? body : [];
+  $('mk-contest').innerHTML = list.map((c) =>
+    `<option value="${esc(c.code)}">${esc(c.name || c.label || c.code)}</option>`).join('')
+    || '<option value="PRES">Presidential</option>';
+
+  // Party emblems, from the manifest the ballot boards already use.
+  const logos = await (window.fetchData ? window.fetchData('logos/manifest.json') : fetch('logos/manifest.json'))
+    .then((r) => r.json()).catch(() => ({}));
+  $('mk-party').innerHTML = '<option value="">Not saying</option>'
+    + Object.keys(logos).sort().map((k) => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+  const paintMark = () => {
+    const p = $('mk-party').value;
+    $('mk-party-mark').innerHTML = p && logos[p] ? `<img src="${esc(logos[p])}" alt="" />` : '';
+  };
+  $('mk-party').addEventListener('change', paintMark);
+  $('mk-kind').addEventListener('change', () => {
+    $('mk-party-row').hidden = $('mk-kind').value !== 'campaign';
+    if ($('mk-party-row').hidden) { $('mk-party').value = ''; paintMark(); }
   });
+
+  const LABEL = { senatorial: 'Senatorial district', federal_constituency: 'Federal constituency' };
+  let shape = { kind: 'national' };
+
+  async function loadRaces(state) {
+    const q = '?contest=' + encodeURIComponent($('mk-contest').value) + (state ? '&state=' + encodeURIComponent(state) : '');
+    shape = (await api('/api/group-races' + q)).body;
+    const twoStep = shape.kind === 'senatorial' || shape.kind === 'federal_constituency';
+
+    $('mk-state-row').hidden = shape.kind === 'national';
+    $('mk-race-row').hidden = !twoStep || !state;
+    $('mk-race-label').textContent = LABEL[shape.kind] || 'Seat';
+
+    if (!state) {
+      $('mk-state').innerHTML = '<option value="">Choose a state…</option>'
+        + (shape.states || []).map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+    }
+    if (twoStep && state) {
+      $('mk-race').innerHTML = '<option value="">Choose a seat…</option>'
+        + (shape.races || []).map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+    }
+    $('mk-race-note').textContent = shape.kind === 'national'
+      ? 'One nationwide race — every polling unit in the country.'
+      : twoStep
+        ? 'A ' + (LABEL[shape.kind] || 'seat').toLowerCase() + ' is the race here, not the whole state.'
+        : 'The state is the race.';
+  }
+
+  $('mk-contest').addEventListener('change', () => { $('mk-state').value = ''; loadRaces(''); });
+  $('mk-state').addEventListener('change', () => {
+    if (shape.kind === 'senatorial' || shape.kind === 'federal_constituency') loadRaces($('mk-state').value);
+  });
+  await loadRaces('');
+
   $('mk').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const twoStep = shape.kind === 'senatorial' || shape.kind === 'federal_constituency';
+    const scope = shape.kind === 'national' ? '' : twoStep ? $('mk-race').value : $('mk-state').value;
+    if (shape.kind !== 'national' && !scope) return alert('Pick the race this room is watching.');
     const { status, body } = await api('/api/groups', {
       method: 'POST',
       body: JSON.stringify({
         name: $('mk-name').value.trim(), kind: $('mk-kind').value,
-        contest: $('mk-contest').value, scope: $('mk-scope').value.trim(),
+        party: $('mk-party').value, contest: $('mk-contest').value, scope,
       }),
     });
-    if (status !== 201) return alert(body.error || 'Could not create the group.');
+    if (status !== 201) return alert(body.error === 'unknown_scope' ? 'That race is not in the register.' : (body.error || 'Could not create the group.'));
     await boot(body.id);
   });
 }
@@ -828,7 +917,13 @@ async function loadGroup() {
   render();
 }
 
+/* Party code -> emblem path, from the manifest the ballot boards already use.
+   Fetched once; a failure just means no emblem, never a broken console. */
+let LOGOS = {};
+
 async function boot(preferId) {
+  LOGOS = await (window.fetchData ? window.fetchData('logos/manifest.json') : fetch('logos/manifest.json'))
+    .then((r) => r.json()).catch(() => ({}));
   const { body } = await api('/api/groups');
   S.groups = (body && body.managing) || [];
   if (!S.groups.length) return renderWelcome();

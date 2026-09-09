@@ -198,7 +198,7 @@ type Searched = {
  * narrow lookup can see. So the ring is named.
  */
 const ringLine = (_s: Searched): string =>
-  'Units found within 800m. Unmapped units may not appear.';
+  i18nT('n.app.report.result.units-found-within-800m-unmapped-units');
 
 /** The same honesty for an empty answer: name the circles that were searched,
  *  rather than the one that was drawn. */
@@ -210,12 +210,12 @@ const nothingFoundLine = (s: Searched): string => {
    * of it actionable — the reader's next move is the search box directly below
    * either way, and the radius is already stated by `ringLine` above.
    */
-  if (s.registerM != null) return `No unit within ${s.registerM}m. Search by name below.`;
-  if (s.envelopeM != null) return `No unit within ${s.envelopeM}m. Search by name below.`;
+  if (s.registerM != null) return i18nT('n.app.map-unit.no-unit-within-m-search-by', { v0: s.registerM });
+  if (s.envelopeM != null) return i18nT('n.app.map-unit.no-unit-within-m-search-by-2', { v0: s.envelopeM });
   // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
   // /units), so on a lookup failure it is the one other path that cannot work
   // either. Search answers from the register bundled into the app.
-  return 'Could not check nearby units. Search by name below.';
+  return i18nT('n.app.report.result.could-not-check-nearby-units-search');
 };
 
 /**
@@ -238,7 +238,7 @@ type RowTier = UnitTier | 'unmapped';
  */
 const ROW_LABEL: Record<RowTier, string> = {
   ...TIER_LABEL,
-  unmapped: 'Not located yet',
+  unmapped: i18nT('n.app.map-unit.not-located-yet'),
 };
 
 /**
@@ -304,7 +304,7 @@ const tierDetail = (u: Unit, tier: RowTier) =>
       tier === 'approx' && u.areaOnlyM
       ? envelopeText(u.areaOnlyM)
       : u.crowd_reports
-        ? ` · ${u.crowd_reports} observer fix(es)`
+        ? i18nT('n.app.map-unit.observer-fix-es', { v0: u.crowd_reports })
         : '';
 
 /** Tailwind's emerald-100 — the colour a row's sub-text already switches to on
@@ -533,7 +533,7 @@ export default function MapUnit() {
     setFix(null);
     setSearched(null);
     setGpsSettings(false);
-    setNearLine('Getting your location…');
+    setNearLine(i18nT('n.app.report.result.getting-your-location'));
     try {
       // Quick fix, not the submit-grade one: this only shortlists candidates.
       // The accurate fix is taken again at submit, where the server checks it.
@@ -544,13 +544,13 @@ export default function MapUnit() {
       const r = await tryQuickFix();
       if (!r.ok) {
         const d = describeFixFailure(r);
-        setNearLine(`${d.lead}, or browse the register below. (${d.code})`);
+        setNearLine(i18nT('n.app.map-unit.or-browse-the-register-below', { v0: d.lead, v1: d.code }));
         setGpsSettings(d.settings);
         return;
       }
       const fix = r.fix;
       setFix(fix);
-      setNearLine(`Location fixed (±${Math.round(fix.accuracy)}m). Looking up units around you…`);
+      setNearLine(i18nT('n.app.map-unit.location-fixed-m-looking-up-units', { v0: Math.round(fix.accuracy) }));
 
       const [located, envelope] = await Promise.all([
         fetch(`${BASE}/api/polling-units?lat=${fix.lat}&lng=${fix.lng}`).catch(() => null),
@@ -571,7 +571,7 @@ export default function MapUnit() {
         // The status is CONSOLE detail, not UI: "HTTP 503" tells the reader
         // nothing they can act on, and the next move is the search box below.
         if (status) console.warn('[hawkeye] near-me lookup failed', status);
-        setNearLine('Could not check nearby units. Search by name below.');
+        setNearLine(i18nT('n.app.report.result.could-not-check-nearby-units-search'));
         return;
       }
 
@@ -713,12 +713,12 @@ export default function MapUnit() {
       }
       setNearLine(
         all.length > found.length
-          ? `Tap the unit you are standing at — the ${found.length} closest of the ${all.length} found:`
-          : 'Tap the unit you are standing at:',
+          ? i18nT('n.app.map-unit.tap-the-unit-you-are-standing', { v0: found.length, v1: all.length })
+          : i18nT('n.app.report.result.tap-the-unit-you-are-standing-2'),
       );
     } catch (e) {
       setNearLine(
-        humanError(e, 'Could not check nearby units. Search by name below.'),
+        humanError(e, i18nT('n.app.report.result.could-not-check-nearby-units-search')),
       );
     } finally {
       setNearBusy(false);
@@ -743,7 +743,7 @@ export default function MapUnit() {
   /** Errors go to a modal: inline text below a long unit list is never seen. */
   const fail = (msg: string) => {
     setLine(msg);
-    notice.show('Could not record the fix', msg);
+    notice.show(i18nT('n.app.map-unit.could-not-record-the-fix-2'), msg);
   };
 
   const isSaved = !!unit && saved?.pu_code === unit.pu_code;
@@ -778,10 +778,10 @@ export default function MapUnit() {
       if (!res.ok || !body.ok) {
         const code = body.error ?? `http_${res.status}`;
         notice.show(
-          removing ? 'Could not remove your polling unit' : 'Could not save your polling unit',
+          removing ? 'Could not remove your polling unit' : i18nT('n.app.map-unit.could-not-save-your-polling-unit'),
           code === 'unknown_unit'
-            ? `${unit.name} is not in the register. (${code} / HTTP ${res.status})`
-            : `Please check your connection and try again. (${code} / HTTP ${res.status})`,
+            ? i18nT('n.app.map-unit.is-not-in-the-register-http', { v0: unit.name, v1: code, v2: res.status })
+            : i18nT('n.app.map-unit.please-check-your-connection-and-try', { v0: code, v1: res.status }),
         );
         return;
       }
@@ -799,8 +799,8 @@ export default function MapUnit() {
       );
     } catch (e) {
       notice.show(
-        'Could not update your polling unit',
-        humanError(e, 'Please try again.'),
+        i18nT('n.app.map-unit.could-not-update-your-polling-unit'),
+        humanError(e, i18nT('n.app.map-unit.please-try-again')),
       );
     } finally {
       setSaving(false);
@@ -811,7 +811,7 @@ export default function MapUnit() {
     tap();
     if (!unit) return;
     setBusy(true);
-    setLine('Getting an accurate fix — stand still…');
+    setLine(i18nT('n.app.map-unit.getting-an-accurate-fix-stand-still'));
     try {
       // Named failure, not "no GPS fix". Mapping a unit is a standing-outside
       // task, so a timeout here is genuinely a signal problem and should say
@@ -855,12 +855,12 @@ export default function MapUnit() {
         setDone(
           body.mapped
             ? {
-                title: 'Unit confirmed',
-                line: `${unit.name} is now crowd-confirmed — ${body.fixes} observer fixes agreed. Result reports here can now be location-verified.`,
+                title: i18nT('n.app.map-unit.unit-confirmed'),
+                line: i18nT('n.app.map-unit.is-now-crowd-confirmed-observer-fixes', { v0: unit.name, v1: body.fixes }),
               }
             : {
-                title: body.replaced ? 'Fix updated' : 'Fix recorded',
-                line: `${body.fixes} of ${body.needed} observers needed to confirm ${unit.name}. Ask others at this unit to map it too.`,
+                title: body.replaced ? 'Fix updated' : i18nT('n.app.map-unit.fix-recorded'),
+                line: i18nT('n.app.map-unit.of-observers-needed-to-confirm-ask', { v0: body.fixes, v1: body.needed, v2: unit.name }),
               },
         );
         return;
@@ -869,15 +869,15 @@ export default function MapUnit() {
       const code = body.error ?? `http_${res.status}`;
       fail(
         code === 'gps_accuracy_too_low'
-          ? `GPS accuracy too low (needs ${body.maxAccuracyM ?? 100}m or better) — step into the open and retry.`
+          ? i18nT('n.app.map-unit.gps-accuracy-too-low-needs-m', { v0: body.maxAccuracyM ?? 100 })
           : code === 'too_far_from_unit'
             ? 'You are too far from this unit — map it while standing at the unit.'
             : code === 'unknown_polling_unit'
               ? 'That unit is not in the register.'
-              : `Could not record the fix. (${code} / HTTP ${res.status})`,
+              : i18nT('n.app.map-unit.could-not-record-the-fix-http', { v0: code, v1: res.status }),
       );
     } catch (e) {
-      fail(humanError(e, 'Could not record the fix.'));
+      fail(humanError(e, i18nT('n.app.map-unit.could-not-record-the-fix')));
     } finally {
       setBusy(false);
     }
@@ -943,7 +943,7 @@ export default function MapUnit() {
             {u.name}
           </Text>
           <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
-            {u.distanceM != null ? `${u.pu_code} · ${u.distanceM}m away` : u.pu_code}
+            {u.distanceM != null ? i18nT('n.app.map-unit.m-away', { v0: u.pu_code, v1: u.distanceM }) : u.pu_code}
           </Text>
           {/* The tier gets its own line beside its dot rather than trailing the
               code on one: this is the line the map above is read against, and a
@@ -1020,7 +1020,7 @@ export default function MapUnit() {
             <View className="flex-row">
               <StatCell
                 value={`${pct < 10 ? pct.toFixed(1) : Math.round(pct)}%`}
-                label={`${num(stats.verified)} of ${num(stats.total)} located`}
+                label={i18nT('n.app.map-unit.of-located', { v0: num(stats.verified), v1: num(stats.total) })}
               />
               <StatCell value={num(stats.crowdMapped)} label={i18nT('n.app.map-unit.crowd-mapped-by-observers')} />
               <StatCell value={num(stats.unitsWithFixes)} label={i18nT('n.app.map-unit.have-at-least-one-fix')} />
@@ -1280,7 +1280,7 @@ export default function MapUnit() {
           <Text className="pb-2 text-xs leading-4 text-muted">
             Selected: <Text className="font-semibold text-ink">{unit.name}</Text>
             {envelopeM
-              ? ` — its position is known only to within ${envelopeM.toLocaleString()}m. Your fix replaces that whole area with a point.`
+              ? i18nT('n.app.map-unit.its-position-is-known-only-to', { v0: envelopeM.toLocaleString() })
               : selUnlocated
                 ? ' — it has no recorded position at all, which is why it has no pin on the map. Your fix is what puts it there.'
                 : ' — record a fix here to confirm it.'}
@@ -1300,13 +1300,13 @@ export default function MapUnit() {
             )}
             <View className="flex-1 pl-2">
               <Text className="text-sm font-bold text-hawk-leaf">
-                {isSaved ? 'Saved as your polling unit — tap to remove' : 'Save as my polling unit'}
+                {isSaved ? i18nT('n.app.map-unit.saved-as-your-polling-unit-tap') : i18nT('n.app.map-unit.save-as-my-polling-unit')}
               </Text>
               <Text className="text-xs text-muted">
                 {isSaved
                   ? 'You are alerted for every result report and approved incident here.'
                   : saved
-                    ? `Alerts you to every result and approved incident here — replaces ${saved.name ?? saved.pu_code}.`
+                    ? i18nT('n.app.map-unit.alerts-you-to-every-result-and', { v0: saved.name ?? saved.pu_code })
                     : 'Alerts you to every result report and approved incident at this unit.'}
               </Text>
             </View>

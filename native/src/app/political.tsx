@@ -133,7 +133,7 @@ export default function PoliticalData() {
         setLogos(l);
         setMembers(m);
       })
-      .catch((e) => setErr(humanError(e, 'Could not load political data.')));
+      .catch((e) => setErr(humanError(e, i18nT('n.app.political.could-not-load-political-data'))));
   }, []);
 
   useEffect(() => {
@@ -466,7 +466,7 @@ export default function PoliticalData() {
                 {d.composition.note ? (
                   <Text className="pt-1 text-xs text-faint">
                     {d.composition.note}
-                    {d.composition.asOf ? ` (as of ${d.composition.asOf})` : ''}
+                    {d.composition.asOf ? i18nT('n.app.political.as-of-2', { v0: d.composition.asOf }) : ''}
                   </Text>
                 ) : null}
               </>

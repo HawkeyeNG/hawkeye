@@ -77,8 +77,14 @@ const ALLOWED = /^[\n -~ -ɏɐ-ʯ̀-ͯḀ-ỿ -⁯₠-₿←-⇿∀-⋿✀-�
  * then REFUSE anything still holding a tag — a strip without a check is how the
  * next one gets through.
  */
-const stripMarkup = (v) =>
-  v.replace(/<[^>]+>/g, '').replace(/\s{2,}/g, ' ').trim();
+const stripMarkup = (v) => {
+  // NO TAGS, NO TOUCHING. The collapse-and-trim exists to tidy up after tag
+  // removal; run unconditionally it also eats meaningful boundary whitespace.
+  // n.app.report.result.is-in-about ends in a space on purpose and is
+  // concatenated with a second fragment, so trimming it renders "about12 km".
+  if (!/<[^>]+>/.test(v)) return v;
+  return v.replace(/<[^>]+>/g, '').replace(/\s{2,}/g, ' ').trim();
+};
 
 let bad = 0;
 const bundles = { en: {} };

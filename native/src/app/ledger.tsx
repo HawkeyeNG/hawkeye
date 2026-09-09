@@ -472,7 +472,7 @@ export default function Ledger() {
         ListHeaderComponent={loadErr ? errorHeader : header}
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
-        contentContainerStyle={{ paddingTop: headerH + 12, paddingBottom: raceSel ? 16 : 32 }}
+        contentContainerStyle={{ paddingTop: headerH, paddingBottom: raceSel ? 16 : 32 }}
         ListEmptyComponent={
           loading || loadErr ? null : (
             <Text className="px-4 pt-2 text-sm text-muted">

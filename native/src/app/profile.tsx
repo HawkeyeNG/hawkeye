@@ -272,7 +272,7 @@ export default function Profile() {
     try {
       const { status, body } = await authed('/api/observers/me');
       if (status !== 200) {
-        setErr(`Could not load your profile. (HTTP ${status})`);
+        setErr(i18nT('n.app.profile.could-not-load-your-profile-http', { v0: status }));
         return;
       }
       setMe(body as unknown as Me);
@@ -322,17 +322,17 @@ export default function Profile() {
     // Belt and braces: the reset step is only rendered after a proven OTP, but
     // never let a stale mode reach the server without one.
     if (!withCurrent && !resetProven) {
-      setPwMsg('Verify the code sent to your number first.');
+      setPwMsg(i18nT('n.app.profile.verify-the-code-sent-to-your'));
       return;
     }
     if (pwNew.length < 8) {
-      setPwMsg('Use at least 8 characters.');
+      setPwMsg(i18nT('n.app.sign-in.use-at-least-8-characters'));
       return;
     }
     // Typed twice: a typo in a blind field would otherwise lock this account
     // out of its own password path until an OTP reset.
     if (pwNew !== pwConfirm) {
-      setPwMsg('The two new passwords do not match.');
+      setPwMsg(i18nT('n.app.profile.the-two-new-passwords-do-not'));
       return;
     }
     setPwBusy(true);
@@ -348,7 +348,7 @@ export default function Profile() {
         ),
       });
       if (status !== 200) {
-        setPwMsg(String(body.hint ?? body.error ?? `Failed. (HTTP ${status})`));
+        setPwMsg(String(body.hint ?? body.error ?? i18nT('n.app.profile.failed-http', { v0: status })));
         return;
       }
       setMe((m) => (m ? { ...m, hasPassword: true } : m));
@@ -357,8 +357,8 @@ export default function Profile() {
       setPwCurrent('');
       setPwOpen(false);
       notice.show(
-        'Password saved',
-        'You can now sign in with your phone number and password on any device.',
+        i18nT('n.app.profile.password-saved'),
+        i18nT('n.app.profile.you-can-now-sign-in-with'),
         'good',
       );
     } finally {
@@ -373,12 +373,12 @@ export default function Profile() {
       const r = await requestOtp(resetPhone.trim(), resetChannel as ResetChannel);
       if (r.ok || r.viaSms || r.viaWhatsapp) {
         setPwMode('reset-otp');
-        setPwMsg(r.devOtp ? `DEV MODE — your code is ${r.devOtp}` : 'Code sent — check WhatsApp/SMS.');
+        setPwMsg(r.devOtp ? i18nT('n.app.profile.dev-mode-your-code-is', { v0: r.devOtp }) : 'Code sent — check WhatsApp/SMS.');
       } else {
-        setPwMsg(r.hint ?? 'Could not send a code — check the number.');
+        setPwMsg(r.hint ?? i18nT('n.app.sign-in.could-not-send-a-code-check'));
       }
     } catch {
-      setPwMsg('Network error — try again.');
+      setPwMsg(i18nT('n.app.sign-in.network-error-try-again'));
     } finally {
       setPwBusy(false);
     }
@@ -404,11 +404,11 @@ export default function Profile() {
               ? 'Wrong code — check and retry.'
               : r.error === 'otp_expired'
                 ? 'Code expired — send a new one.'
-                : r.hint ?? 'Verification failed — try again.',
+                : r.hint ?? i18nT('n.app.sign-in.verification-failed-try-again'),
         );
       }
     } catch {
-      setPwMsg('Network error — try again.');
+      setPwMsg(i18nT('n.app.sign-in.network-error-try-again'));
     } finally {
       setPwBusy(false);
     }
@@ -431,7 +431,7 @@ export default function Profile() {
       await signOut();
       router.replace('/welcome');
     } else {
-      notice.show('Could not delete', `Try again. (HTTP ${status})`);
+      notice.show('Could not delete', i18nT('n.app.profile.try-again-http', { v0: status }));
     }
   };
 
@@ -468,9 +468,9 @@ export default function Profile() {
   const acts: { key: string; icon: keyof typeof Feather.glyphMap; label: string; count: number }[] = [
     { key: 'reports', icon: 'file-text', label: 'Result Reports', count: me?.reports?.length ?? 0 },
     { key: 'collation', icon: 'layers', label: 'Collation Reports', count: me?.collation?.length ?? 0 },
-    { key: 'incidents', icon: 'alert-triangle', label: 'Incident Reports', count: me?.incidents?.length ?? 0 },
+    { key: 'incidents', icon: 'alert-triangle', label: i18nT('incident-reports.incident-reports'), count: me?.incidents?.length ?? 0 },
     { key: 'mappings', icon: 'map-pin', label: 'Units Mapped', count: me?.mappings?.length ?? 0 },
-    { key: 'practice', icon: 'play-circle', label: 'Practice Runs', count: practice.length },
+    { key: 'practice', icon: 'play-circle', label: i18nT('n.app.profile.practice-runs'), count: practice.length },
   ];
 
   return (
@@ -703,7 +703,7 @@ export default function Profile() {
                             {[m.ward, m.lga, m.state].filter(Boolean).join(', ')} · {dt(m.created_at)}
                           </Text>
                           <Text className="pt-0.5 text-[11px] font-semibold text-good-ink">
-                            {m.confirmed ? 'Located ✓' : `${m.crowd_reports ?? 0} fix(es) so far`}
+                            {m.confirmed ? 'Located ✓' : i18nT('n.app.profile.fix-es-so-far', { v0: m.crowd_reports ?? 0 })}
                             {m.source === 'report' ? ' · via your verified report' : ''}
                           </Text>
                         </View>

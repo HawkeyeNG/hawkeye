@@ -110,7 +110,20 @@ for (const code of ['ha', 'ig', 'yo']) {
 
   const markup = Object.entries(out).filter(([, v]) => /<[^>]+>/.test(v));
   for (const [k] of markup.slice(0, 6)) console.log('    HTML in a native string: ' + k);
-  const wrongScript = Object.entries(out).filter(([, v]) => !ALLOWED.test(v));
+  // ALLOWED, PLUS WHAT THE ENGLISH FOR THIS KEY ALREADY USES.
+  //
+  // The class rejected the warning sign and the dotted circle, both of which
+  // are in the English source and correctly preserved. Widening the class by
+  // guesswork means guessing again next time. This check is for a wrong WRITING
+  // SYSTEM — Devanagari in an Igbo string — and a character the English itself
+  // uses for this key cannot be that. Self-limiting: it only ever admits what
+  // the source already contains.
+  const wrongScript = Object.entries(out).filter(([k, v]) => {
+    if (ALLOWED.test(v)) return false;
+    const src = bundles.en[k] ?? cat[k] ?? '';
+    const extra = new Set([...src]);
+    return [...v].some((ch) => !ALLOWED.test(ch) && !extra.has(ch));
+  });
 
   console.log(code + ': ' + Object.keys(out).length + ' keys'
     + (missing.length ? '  MISSING ' + missing.length : '')
@@ -121,7 +134,9 @@ for (const code of ['ha', 'ig', 'yo']) {
   for (const k of orphan.slice(0, 6)) console.log('    not in the catalogue: ' + k);
   for (const [k] of same.slice(0, 6)) console.log('    same as English: ' + k);
   for (const [k, v] of wrongScript.slice(0, 6)) {
-    const stray = [...v].filter((ch) => !ALLOWED.test(ch)).map((ch) => ch + ' U+' + ch.codePointAt(0).toString(16).toUpperCase());
+    const src = bundles.en[k] ?? cat[k] ?? '';
+    const extra = new Set([...src]);
+    const stray = [...v].filter((ch) => !ALLOWED.test(ch) && !extra.has(ch)).map((ch) => ch + ' U+' + ch.codePointAt(0).toString(16).toUpperCase());
     console.log('    wrong script: ' + k + ' -> ' + stray.join(', '));
   }
   if (missing.length || orphan.length || same.length || wrongScript.length

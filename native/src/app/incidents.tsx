@@ -30,11 +30,11 @@ const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
  */
 const KIND_LABEL: Record<string, string> = {
   violence: 'Violence',
-  ballot_snatching: 'Ballot snatching',
-  vote_buying: 'Vote buying',
+  ballot_snatching: i18nT('n.app.incidents.ballot-snatching'),
+  vote_buying: i18nT('n.app.incidents.vote-buying'),
   intimidation: 'Intimidation',
-  bvas_failure: 'BVAS failure',
-  late_materials: 'Late materials',
+  bvas_failure: i18nT('n.app.incidents.bvas-failure'),
+  late_materials: i18nT('n.app.incidents.late-materials'),
   obstruction: 'Obstruction',
   other: 'Other',
 };
@@ -56,7 +56,7 @@ function timeAgo(ts: number) {
   const d = new Date(ts);
   const diff = (Date.now() - d.getTime()) / 1000;
   if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 3600) return i18nT('n.app.incidents.min-ago', { v0: Math.floor(diff / 60) });
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
 }
@@ -108,7 +108,7 @@ export default function Incidents() {
     // read. The pull was deliberate, so a failed one gets an answer that can't
     // be scrolled past.
     if (failed && rows?.length) {
-      notice.show('Could not refresh', `The incident feed did not load. (${failed})`);
+      notice.show('Could not refresh', i18nT('n.app.incidents.the-incident-feed-did-not-load', { v0: failed }));
     }
   };
 
@@ -196,7 +196,7 @@ export default function Incidents() {
                     <Pressable
                       key={m.file}
                       className="mb-2 mr-2 h-24 w-24 overflow-hidden rounded-xl bg-surface active:opacity-80"
-                      accessibilityLabel={`Open ${m.type === 'video' ? 'video' : 'photo'} evidence full size`}
+                      accessibilityLabel={i18nT('n.app.incidents.open-evidence-full-size', { v0: m.type === 'video' ? 'video' : 'photo' })}
                       onPress={() => WebBrowser.openBrowserAsync(mediaUrl(m.file))}
                     >
                       {m.type === 'video' ? (

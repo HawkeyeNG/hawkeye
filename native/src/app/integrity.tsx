@@ -55,10 +55,10 @@ type CollationStat = { byLevel?: Record<string, number>; flags?: Record<string, 
 
 const VERDICT_TEXT: Record<string, (mad: number) => string> = {
   insufficient_data: () => 'needs ≥100 counts for a verdict',
-  close_conformity: (m) => `close conformity (MAD ${m})`,
-  acceptable_conformity: (m) => `acceptable conformity (MAD ${m})`,
-  marginal_conformity: (m) => `marginal conformity (MAD ${m})`,
-  nonconformity: (m) => `⚠ departs from Benford (MAD ${m})`,
+  close_conformity: (m) => i18nT('n.app.integrity.close-conformity-mad', { v0: m }),
+  acceptable_conformity: (m) => i18nT('n.app.integrity.acceptable-conformity-mad', { v0: m }),
+  marginal_conformity: (m) => i18nT('n.app.integrity.marginal-conformity-mad', { v0: m }),
+  nonconformity: (m) => i18nT('n.app.integrity.departs-from-benford-mad', { v0: m }),
 };
 
 /** The checklist from integrity.html — what an automated flag can even mean. */
@@ -79,7 +79,7 @@ const VERDICT_TEXT: Record<string, (mad: number) => string> = {
  */
 const CHECKS: { title: string; titleKey: string; items: [string, string, string, string][] }[] = [
   {
-    title: 'Against INEC & Collation Records',
+    title: i18nT('integrity.against-inec-collation-records'),
     titleKey: 'integrity.against-inec-collation-records',
     items: [
       ['INEC IReV mismatch', "the crowd's counts don't appear on INEC's own uploaded sheet for that unit.", 'integrity.inec-irev-mismatch', 'n.app.integrity.desc.inec-irev-mismatch'],
@@ -90,7 +90,7 @@ const CHECKS: { title: string; titleKey: string; items: [string, string, string,
     ],
   },
   {
-    title: 'Statistical Tripwires',
+    title: i18nT('integrity.statistical-tripwires'),
     titleKey: 'integrity.statistical-tripwires',
     items: [
       ['Over-voting', 'more votes than registered voters at a unit (impossible).', 'integrity.over-voting', 'n.app.integrity.desc.over-voting'],
@@ -102,7 +102,7 @@ const CHECKS: { title: string; titleKey: string; items: [string, string, string,
     ],
   },
   {
-    title: 'AI Vision on the Result Sheet',
+    title: i18nT('integrity.ai-vision-on-the-result-sheet'),
     titleKey: 'integrity.ai-vision-on-the-result-sheet',
     items: [
       ['Sheet authenticity', 'the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.', 'integrity.sheet-authenticity', 'n.app.integrity.desc.sheet-authenticity'],
@@ -110,7 +110,7 @@ const CHECKS: { title: string; titleKey: string; items: [string, string, string,
     ],
   },
   {
-    title: 'Provenance & Duplicates',
+    title: i18nT('integrity.provenance-duplicates'),
     titleKey: 'integrity.provenance-duplicates',
     items: [
       ['Duplicate form serial', 'the same EC8A serial reported at two units.', 'integrity.duplicate-form-serial', 'n.app.integrity.desc.duplicate-form-serial'],
@@ -119,7 +119,7 @@ const CHECKS: { title: string; titleKey: string; items: [string, string, string,
     ],
   },
   {
-    title: 'Incident Patterns',
+    title: i18nT('integrity.incident-patterns'),
     titleKey: 'integrity.incident-patterns',
     items: [
       ['Incident hotspot', 'several incident reports of the same kind in one state within a short window.', 'integrity.incident-hotspot', 'n.app.integrity.desc.incident-hotspot'],
@@ -151,7 +151,7 @@ function timeAgo(ts: number) {
   const d = new Date(ts);
   const diff = (Date.now() - d.getTime()) / 1000;
   if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 3600) return i18nT('n.app.integrity.min-ago', { v0: Math.floor(diff / 60) });
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
 }
@@ -288,7 +288,7 @@ export default function Integrity() {
       : (() => {
           const c = irev.counts ?? {};
           const total = Object.values(c).reduce((s, n) => s + n, 0);
-          return `Checked ${total} unit(s): ${c.consistent || 0} consistent · ${c.mismatch || 0} mismatched · ${c.inconclusive || 0} inconclusive · ${c.no_doc || 0} not yet on IReV.`;
+          return i18nT('n.app.integrity.checked-unit-s-consistent-mismatched-inconclusive', { v0: total, v1: c.consistent || 0, v2: c.mismatch || 0, v3: c.inconclusive || 0, v4: c.no_doc || 0 });
         })();
 
   const collLine = (() => {
@@ -297,8 +297,8 @@ export default function Integrity() {
     const f = coll.flags ?? {};
     const total = (b.ward || 0) + (b.lga || 0) + (b.state || 0);
     return total
-      ? `${total} collation report(s): ${b.ward || 0} ward · ${b.lga || 0} LGA · ${b.state || 0} state — ${f.collation_undercount || 0} undercount flag(s), ${f.collation_disputed || 0} disputed.`
-      : 'No collation reports yet — they arrive on election night as results move up the ladder.';
+      ? i18nT('n.app.integrity.collation-report-s-ward-lga-state', { v0: total, v1: b.ward || 0, v2: b.lga || 0, v3: b.state || 0, v4: f.collation_undercount || 0, v5: f.collation_disputed || 0 })
+      : i18nT('n.app.integrity.no-collation-reports-yet-they-arrive');
   })();
 
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
@@ -472,7 +472,7 @@ export default function Integrity() {
         <View className="flex-row items-center pb-2">
           <Text className="flex-1 text-sm text-muted">
             Screening signal, never proof on its own.
-            {benford ? ` Based on ${benford.n} unit result(s), ${benford.nFirst || 0} party count(s).` : ''}
+            {benford ? i18nT('n.app.integrity.based-on-unit-result-s-party', { v0: benford.n, v1: benford.nFirst || 0 }) : ''}
           </Text>
           <InfoDot
             title={i18nT('n.app.integrity.digit-distribution-screening')}

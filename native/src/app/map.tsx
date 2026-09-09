@@ -104,7 +104,7 @@ export default function MapScreen() {
   useEffect(() => {
     loadPolitical()
       .then(({ data }) => setPolitical(data))
-      .catch((e) => setErr(humanError(e, 'Could not load incumbency data.')));
+      .catch((e) => setErr(humanError(e, i18nT('n.app.map.could-not-load-incumbency-data'))));
   }, []);
 
   // The contest list is fixed for the run — only the tally under it moves, so
@@ -114,12 +114,12 @@ export default function MapScreen() {
       .then((list) => {
         setContests(list);
         if (!list.length) {
-          setErr('No contest is configured yet. (/api/contests returned none)');
+          setErr(i18nT('n.app.map.no-contest-is-configured-yet-api'));
           return;
         }
         setCode((prev) => (prev && list.some((c) => c.code === prev) ? prev : list[0].code));
       })
-      .catch((e) => setErr(humanError(e, 'Could not load the map.')));
+      .catch((e) => setErr(humanError(e, i18nT('n.app.map.could-not-load-the-map'))));
   }, []);
 
   const load = useCallback(async () => {
@@ -128,7 +128,7 @@ export default function MapScreen() {
       setTally(await jget<Tally>(`/api/national/${code}`));
       setErr(null);
     } catch (e) {
-      setErr(humanError(e, 'Could not load the map.'));
+      setErr(humanError(e, i18nT('n.app.map.could-not-load-the-map')));
     }
   }, [code]);
 
@@ -208,7 +208,7 @@ export default function MapScreen() {
     if (mode === 'power') {
       const party = byGovernor[key];
       if (!political) return { title, lines: ['Loading incumbency data…'] };
-      if (party) return { title, lines: [`Governed by ${partyName(party)}.`] };
+      if (party) return { title, lines: [i18nT('n.app.map.governed-by', { v0: partyName(party) })] };
       if (key in byGovernor) {
         return { title, lines: ['No governor — administered by a federal minister.'] };
       }
@@ -219,7 +219,7 @@ export default function MapScreen() {
     if (contest && !contest.states.some((s) => normState(s) === key)) {
       return {
         title,
-        lines: [`${contest.name} is not contested here — it covers ${contest.states.join(', ')}.`],
+        lines: [i18nT('n.app.map.is-not-contested-here-it-covers', { v0: contest.name, v1: contest.states.join(', ') })],
       };
     }
     const r = byRegion[key];
@@ -228,12 +228,12 @@ export default function MapScreen() {
     const L = r.leaders?.length ? r.leaders : r.leader ? [r.leader] : [];
     const lead =
       L.length > 2
-        ? `${L.length}-way tie`
+        ? i18nT('n.app.map.way-tie', { v0: L.length })
         : L.length === 2
-          ? `${L[0]} and ${L[1]} tied`
+          ? i18nT('n.app.map.and-tied', { v0: L[0], v1: L[1] })
           : L.length === 1
             ? `${L[0]} leads`
-            : 'No counts yet';
+            : i18nT('n.app.map.no-counts-yet');
     const top = Object.entries(r.votes)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
@@ -242,13 +242,13 @@ export default function MapScreen() {
     return {
       title,
       lines: [
-        `${lead} · ${r.unitsReporting} unit(s) reporting, ${r.unitsVerified} verified.`,
-        top || 'No votes recorded.',
+        i18nT('n.app.map.unit-s-reporting-verified', { v0: lead, v1: r.unitsReporting, v2: r.unitsVerified }),
+        top || i18nT('n.app.map.no-votes-recorded'),
       ],
     };
   })();
 
-  const heading = mode === 'results' ? 'Leading party by state' : 'Governing party by state';
+  const heading = mode === 'results' ? 'Leading party by state' : i18nT('n.app.map.governing-party-by-state');
 
   // A by-election or a single-state governorship leaves most of the map grey.
   // Saying which states it covers stops that reading as "nobody has reported".
@@ -258,7 +258,7 @@ export default function MapScreen() {
       ? contest
         ? `${contest.election}${partial ? ` — contested in ${contest.states.join(', ')}; every other state stays grey.` : ''}`
         : 'Unofficial running tally from accepted observer reports.'
-      : 'Who holds each governorship now — the incumbents this election confirms or unseats.';
+      : i18nT('n.app.map.who-holds-each-governorship-now-the');
 
   return (
     <View className="flex-1 bg-surface">
@@ -339,7 +339,7 @@ export default function MapScreen() {
           fills={fills}
           selected={selected}
           onPress={setSelected}
-          accessibilityLabel={`Map of Nigeria: ${heading.toLowerCase()}`}
+          accessibilityLabel={i18nT('n.app.map.map-of-nigeria-2', { v0: heading.toLowerCase() })}
         />
 
         <View className="flex-row flex-wrap pt-3">
@@ -371,7 +371,7 @@ export default function MapScreen() {
         {mode === 'results' && tally ? (
           <Text className="pt-1 text-[11px] text-faint">
             {tally.regions.length} state(s) reporting · {tally.unitsReporting} unit(s) counted
-            {tally.inDispute ? ` · ${tally.inDispute} excluded pending arbitration` : ''} · updated{' '}
+            {tally.inDispute ? i18nT('n.app.map.excluded-pending-arbitration', { v0: tally.inDispute }) : ''} · updated{' '}
             {new Date(tally.updatedAt).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',

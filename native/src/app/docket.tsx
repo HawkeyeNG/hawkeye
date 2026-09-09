@@ -171,7 +171,7 @@ export default function Docket() {
    * one, so the count above can exceed the number of cases below.
    */
   const docketExplainer = [
-    'A flag never decides anything — it holds that unit’s votes out of every tally until the crowd clears them.',
+    i18nT('n.app.docket.a-flag-never-decides-anything-it'),
     'Why a disputed result is excluded — a unit is marked disputed while a serious flag on it is unresolved, or while its case is open, upheld, or timed out without quorum. Disputed means badged everywhere, barred from ever reading as verified, and left out of the headline tallies. That is why the count above can be higher than the number of cases below: a result is held back the moment it is flagged, and the case putting it to the crowd may only be opened once polls close. A result the crowd clears goes straight back into the count, and the flag stays on the public record either way.',
     'Who judges, and how — verified observers worldwide answer factual questions about evidence they can see, one verdict per person, published with the answers behind it. Nobody at Hawkeye votes, and no juror picks a side: a published rule computes each verdict from the answers.',
     quorum && pct
@@ -180,7 +180,7 @@ export default function Docket() {
         }. Anything short of that closes unresolved — still disputed, still revisitable.${
           rule ? ` Resolution rule: ${rule}` : ''
         }`
-      : 'How a case resolves — a case needs a quorum of verdicts and a supermajority. Anything short of that closes unresolved — still disputed, still revisitable.',
+      : i18nT('n.app.docket.how-a-case-resolves-a-case'),
     "The docket is on the chain — every flag, case opening and verdict is appended to the docket's own hash chain, whose head is folded into the same public Rekor anchor as the results. The arbitration is as rollback-proof as what it judges.",
   ].join('\n\n');
 

@@ -49,15 +49,15 @@ const GENERAL_ELECTION_YEAR = 2027;
 // Seat magnitude, by TIER — see (tabs)/results.tsx bySeat, which this imports
 // rather than keeping a fifth copy of.
 const DESC: Record<string, string> = {
-  PRES: 'The declared presidential field, quick compare and live results.',
-  GOV: 'One governorship per state. Each state has its own page and map.',
+  PRES: i18nT('n.app.races.the-declared-presidential-field-quick-compare'),
+  GOV: i18nT('n.app.races.one-governorship-per-state-each-state'),
   SEN: '109 seats across 36 states and the FCT.',
   REP: '360 federal constituencies.',
-  SHA: 'The 36 state legislatures.',
+  SHA: i18nT('n.app.races.the-36-state-legislatures'),
 };
 
 const SOON =
-  'This race has no page yet — we publish each one as its election nears, about 28 days out, once INEC has released the candidate list.';
+  i18nT('n.app.races.this-race-has-no-page-yet');
 
 const fmt = (d: string) =>
   new Date(`${d}T00:00:00`).toLocaleDateString('en-NG', {
@@ -94,8 +94,8 @@ function label(c: Contest): string {
 const GROUPS: [Status, string, string][] = [
   [
     'ongoing',
-    'Being reported now',
-    'No election is being reported today. The next one is under Upcoming.',
+    i18nT('n.app.races.being-reported-now'),
+    i18nT('n.app.races.no-election-is-being-reported-today'),
   ],
   ['upcoming', 'Upcoming', 'Nothing scheduled.'],
   ['completed', 'Completed', 'No election has been reported through Hawkeye yet.'],
@@ -178,8 +178,8 @@ export default function Races() {
       out.push({
         name: `${r.join.value} ${r.office?.includes('Governor') ? 'Governorship' : 'Race'} (${String(r.date).slice(0, 4)})`,
         desc: r.stats?.candidates
-          ? `${r.stats.candidates} candidates · ${r.stats.lgas} LGAs · the full result, permanently.`
-          : 'The full result, permanently.',
+          ? i18nT('n.app.races.candidates-lgas-the-full-result-permanently', { v0: r.stats.candidates, v1: r.stats.lgas })
+          : i18nT('n.app.races.the-full-result-permanently'),
         date: r.date,
         status: 'completed',
         href: key === 'raceOsun2026' ? '/osun' : `/race?key=${encodeURIComponent(key)}`,

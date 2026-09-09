@@ -134,7 +134,7 @@ export default function CaseScreen() {
     const flags: Record<string, Answer | undefined> = {};
     for (const f of c.flags) flags[f.id] = answers[`flag_${f.id}`];
     if (!answers.sheet || !answers.counts || Object.values(flags).some((v) => !v)) {
-      setMsg('Answer every question.');
+      setMsg(i18nT('n.app.case.answer-every-question'));
       return;
     }
     setBusy(true);
@@ -166,16 +166,16 @@ export default function CaseScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setMine({ verdict: r.verdict ?? 'recorded' });
         setC({ ...c, tally: r.tally ?? c.tally });
-        setMsg(`Recorded — computed verdict: ${r.verdict}.`);
+        setMsg(i18nT('n.app.case.recorded-computed-verdict', { v0: r.verdict }));
       } else {
         setMsg(
           r.error === 'already_judged'
             ? 'You already judged this case.'
-            : `Could not record. (${r.error ?? 'error'} / HTTP ${res.status})`,
+            : i18nT('n.app.case.could-not-record-http', { v0: r.error ?? 'error', v1: res.status }),
         );
       }
     } catch (e) {
-      setMsg(humanError(e, 'Could not record.'));
+      setMsg(humanError(e, i18nT('n.app.case.could-not-record')));
     } finally {
       setBusy(false);
     }
@@ -263,7 +263,7 @@ export default function CaseScreen() {
         <Text className="pt-1 text-xs text-muted">
           {c.contest} · {c.unit.ward} ward, {c.unit.lga}, {c.unit.state}
           {c.unit.registeredVoters
-            ? ` · ${c.unit.registeredVoters.toLocaleString()} registered voters`
+            ? i18nT('n.app.case.registered-voters', { v0: c.unit.registeredVoters.toLocaleString() })
             : ''}{' '}
           · {c.status === 'open' ? `closes ${new Date(c.closesAt).toLocaleString()}` : 'resolved'}
         </Text>

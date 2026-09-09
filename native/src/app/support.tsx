@@ -74,7 +74,7 @@ export default function Support() {
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
-        contentContainerStyle={{ paddingTop: headerH }}
+        contentContainerStyle={{ paddingTop: headerH + 12 }}
       >
         <View className="gap-4 p-4">
           <View className="gap-2 rounded-2xl border border-line bg-card p-4">

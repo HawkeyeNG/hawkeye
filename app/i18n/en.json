@@ -5,10 +5,7 @@
     "review": "source",
     "note": "The source strings, and the key set translators work from. English also lives in the HTML as the fallback, so this file is never fetched at runtime — a missing key renders the English already on the page.",
     "englishOnly": [],
-    "englishOnlyPages": [
-      "privacy",
-      "terms"
-    ],
+    "englishOnlyPages": [],
     "englishOnlyReason": "Legal and evidential wording: the INEC disclaimer and the non-affiliation notice. A mistranslated disclaimer is a legal exposure. These stay in English until a human translator signs for them."
   },
   "lang.title": "Choose your language",

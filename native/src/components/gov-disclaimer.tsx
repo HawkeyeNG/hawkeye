@@ -69,7 +69,7 @@ export function GovDisclaimer() {
             pressable inside it competes for the touch. */}
         <View className="flex-row flex-wrap items-center">
           <Text className="text-xs font-bold leading-5 text-[#2b1f00]">
-            Not government or INEC affiliated.{' '}
+            {i18nT('n.components.gov-disclaimer.not-government-or-inec-affiliated')}{' '}
           </Text>
           <IconLink
             label={i18nT('n.components.gov-disclaimer.details')}
@@ -87,10 +87,7 @@ export function GovDisclaimer() {
           which sit at the BOTTOM of the text. */}
       <ModalCard visible={open} onClose={() => setOpen(false)} title={i18nT('n.components.gov-disclaimer.not-a-government-service')}>
         <Text className="pb-3 text-sm leading-5 text-ink">
-          Hawkeye is an independent, citizen-run transparency tool. It is not affiliated with,
-          endorsed by, or acting on behalf of INEC or any government entity, and it does not
-          declare election results. Figures here are unofficial crowd reports. Official results
-          and electoral information come from INEC:
+          {i18nT('n.components.gov-disclaimer.hawkeye-is-an-independent-citizen-run')}
         </Text>
         {/* flex-wrap: the two URLs are ~250dp side by side and the card is
             narrower than that at a large font scale, and neither shrinks

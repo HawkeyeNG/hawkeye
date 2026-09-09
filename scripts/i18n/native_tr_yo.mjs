@@ -353,4 +353,6 @@ export default {
   "n.app.report.result.tap-the-unit-you-are-standing": "Tẹ ẹ̀ka tí o dúró sí — {v0} tí ó sún mọ́ ọ jùlọ nínú {v1} tí a rí:",
   "n.app.report.result.tap-the-unit-you-are-standing-2": "Tẹ ẹ̀ka tí o dúró sí:",
   "n.app.report.result.units-found-within-800m-unmapped-units": "Àwọn ẹ̀ka tí a rí láàrín 800m. Àwọn ẹ̀ka tí a kò tíì ṣàwòrán lè má fara hàn.",
+  "n.components.gov-disclaimer.not-government-or-inec-affiliated": "Kì í ṣe ti ìjọba, kò sì ní ìbátan pẹ̀lú INEC.",
+  "n.components.gov-disclaimer.hawkeye-is-an-independent-citizen-run": "Hawkeye jẹ́ ètò olómìnira fún ìtàkùn ojú tí àwọn ọmọ ìlú ń ṣàkóso. Hawkeye kò ní ìbátan pẹ̀lú INEC tàbí ilé iṣẹ́ ìjọba kankan, kò ní ìfọwọ́sí wọn, kì í sì í ṣiṣẹ́ ní orúkọ wọn. Hawkeye kì í kéde àbájáde ìdìbò. Àwọn nọ́mbà tí ó wà níbí jẹ́ ìròyìn àwọn ènìyàn, kì í ṣe ti ìjọba. INEC ni ó ń pèsè àbájáde ìjọba àti ìwífún nípa ìdìbò:",
 };

@@ -33,7 +33,7 @@ export default function Candidates() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title={i18nT('n.app.candidates.presidency-2027')} translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('nav.presidency-2027')} translateY={translateY} onClose={() => router.back()} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}

@@ -267,7 +267,7 @@ const ringLine = (_s: Searched): string =>
  *  rather than the one that was drawn. */
 const nothingFoundLine = (s: Searched): string => {
   const m = s.registerM ?? s.envelopeM;
-  if (m != null) return i18nT('n.app.report.incident.no-unit-found-within-m-browse', { v0: m });
+  if (m != null) return i18nT('n.app.report.result.no-unit-found-within-m-browse', { v0: m });
   // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
   // /units), so on a lookup failure it is the one other path that cannot work
   // either. Search answers from the register bundled into the app.
@@ -366,7 +366,7 @@ const NearbyRow = ({
           {/* Read off `n.envelope`, so the area appears only where the dot
               beside it IS that area's centre. */}
           {n.tier === 'approx' && n.envelope ? envelopeText(n.envelope.radiusM) : ''}
-          {n.tier !== 'approx' && n.fixes ? i18nT('n.app.report.incident.observer-fix-es', { v0: n.fixes }) : ''}
+          {n.tier !== 'approx' && n.fixes ? i18nT('n.app.report.result.observer-fix-es', { v0: n.fixes }) : ''}
         </Text>
       </View>
     </View>
@@ -722,13 +722,13 @@ export default function ReportIncident() {
       const r = await tryQuickFix();
       if (!r.ok) {
         const d = describeFixFailure(r);
-        setNearLine(i18nT('n.app.report.incident.or-browse-the-register-below', { v0: d.lead, v1: d.code }));
+        setNearLine(i18nT('n.app.report.result.or-browse-the-register-below', { v0: d.lead, v1: d.code }));
         setGpsSettings(d.settings);
         return;
       }
       const f = r.fix;
       setFix(f);
-      setNearLine(i18nT('n.app.report.incident.location-fixed-m-looking-up-nearby', { v0: Math.round(f.accuracy) }));
+      setNearLine(i18nT('n.app.report.result.location-fixed-m-looking-up-nearby', { v0: Math.round(f.accuracy) }));
 
       const [located, envelope] = await Promise.all([
         // No radius parameter exists on this one — it filters at

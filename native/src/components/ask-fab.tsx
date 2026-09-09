@@ -171,7 +171,7 @@ export function AskFab() {
           style={[styles.hint, { right: EDGE + SIZE + 8, top: bounds.restY + 13 }]}
           className="rounded-full border border-line bg-card px-2.5 py-1"
         >
-          <Text className="text-xs font-semibold text-ink">{i18nT('n.app.assistant.ask-hawkeye')}</Text>
+          <Text className="text-xs font-semibold text-ink">{i18nT('nav.ask-hawkeye')}</Text>
         </Animated.View>
       ) : null}
       <Bubble start={pos} bounds={bounds} onSettle={settle} />

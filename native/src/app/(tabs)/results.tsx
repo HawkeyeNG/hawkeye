@@ -1398,7 +1398,7 @@ export default function Results() {
           className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
           onPress={() => router.push('/report/result')}
         >
-          <Text className="text-sm font-bold text-hawk-gold">{i18nT('n.app.tabs.results.report-from-your-unit')}</Text>
+          <Text className="text-sm font-bold text-hawk-gold">{i18nT('race.report-from-your-unit')}</Text>
         </Pressable>
       </View>
     ) : null;

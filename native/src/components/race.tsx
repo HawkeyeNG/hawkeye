@@ -680,7 +680,7 @@ export function RaceActions({
               : router.push(`/report/result?contest=${encodeURIComponent(code)}` as never)
           }
         >
-          <Text className="text-sm font-bold text-hawk-gold">{i18nT('n.app.tabs.results.report-from-your-unit')}</Text>
+          <Text className="text-sm font-bold text-hawk-gold">{i18nT('race.report-from-your-unit')}</Text>
         </Pressable>
       )}
       {/* The wording is the collation wizard's, not a third phrasing of the same
@@ -690,7 +690,7 @@ export function RaceActions({
       <ModalCard
         visible={blocked}
         onClose={() => setBlocked(false)}
-        title={i18nT('n.components.race.reporting-is-not-open-yet')}
+        title={i18nT('n.components.race.reporting-not-open-yet')}
       >
         <Text className="text-sm leading-5 text-muted">{opensLine(contest)}</Text>
         <Text className="pt-2 text-sm leading-5 text-muted">
@@ -799,7 +799,7 @@ function Declared({ d, logos }: { d: NonNullable<Race['declared']>; logos: Recor
       {d.note ? <Text className="pt-3 text-[11px] text-muted">{d.note}</Text> : null}
       {d.sources?.length ? (
         <View className="flex-row flex-wrap pt-1.5">
-          <Text className="text-[11px] text-muted">{i18nT('n.components.race.recorded-from')} </Text>
+          <Text className="text-[11px] text-muted">{i18nT('race.recorded-from')} </Text>
           {d.sources.map((u, i) => (
             <Pressable key={u} onPress={() => Linking.openURL(u)}>
               <Text className="text-[11px] font-semibold text-good-ink">

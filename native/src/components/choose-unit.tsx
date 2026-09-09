@@ -823,7 +823,7 @@ export function ChooseUnitModal({
             disabled={nearBusy}
             onPress={findNearby}
             accessibilityRole="button"
-            accessibilityLabel={near.length || nearLine ? i18nT('n.components.choose-unit.search-near-me-again') : i18nT('incidents.find-units-near-me')}
+            accessibilityLabel={near.length || nearLine ? i18nT('n.app.report.incident.search-near-me-again') : i18nT('incidents.find-units-near-me')}
             accessibilityState={{ disabled: nearBusy, busy: nearBusy }}
             className={`flex-row items-center justify-center rounded-2xl py-3 ${nearBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
           >
@@ -837,7 +837,7 @@ export function ChooseUnitModal({
                     saying why there are none — rather than on the tab, which
                     would offer to search "again" before it ever succeeded. */}
                 <Text className="pl-2 text-sm font-bold text-hawk-gold">
-                  {near.length || nearLine ? i18nT('n.components.choose-unit.search-near-me-again-2') : i18nT('incidents.find-units-near-me')}
+                  {near.length || nearLine ? i18nT('n.app.report.incident.search-near-me-again') : i18nT('incidents.find-units-near-me')}
                 </Text>
               </>
             )}

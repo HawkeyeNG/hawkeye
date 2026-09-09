@@ -195,7 +195,7 @@ export default function ReportCollation() {
     const races = racesIn(stateSel, contests);
     if (races.length === 0) {
       notice.show(
-        i18nT('n.app.report.collation.no-active-election-in', { v0: stateSel }),
+        i18nT('n.app.report.result.no-active-election-in', { v0: stateSel }),
         i18nT('n.app.report.collation.hawkeye-is-covering-the-no-collation', { v0: contests[0].election, v1: stateSel }),
       );
       return;
@@ -880,7 +880,7 @@ export default function ReportCollation() {
                 a unit result — so the receipt states the record itself. */}
             <View className="mt-3 rounded-2xl bg-card px-4 py-2">
               <View className="flex-row items-center justify-between py-1.5">
-                <Text className="text-sm text-muted">{i18nT('n.app.report.collation.status')}</Text>
+                <Text className="text-sm text-muted">{i18nT('race.status')}</Text>
                 <Text
                   className={`text-sm font-bold ${queued ? 'text-warn-ink' : receipt.entryHash ? 'text-good-ink' : 'text-muted'}`}
                 >

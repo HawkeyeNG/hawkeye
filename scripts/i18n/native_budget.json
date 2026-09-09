@@ -279,11 +279,6 @@
   "en": 9,
   "max": 23
  },
- "n.app.assistant.ask-hawkeye": {
-  "kind": "heading",
-  "en": 11,
-  "max": 31
- },
  "n.app.assistant.reading-the-reports": {
   "kind": "body",
   "en": 20,
@@ -293,16 +288,6 @@
   "kind": "body",
   "en": 10,
   "max": 50
- },
- "n.app.candidates.could-not-load": {
-  "kind": "body",
-  "en": 23,
-  "max": 63
- },
- "n.app.candidates.presidency-2027": {
-  "kind": "heading",
-  "en": 15,
-  "max": 35
  },
  "n.app.case.all-cases": {
   "kind": "button",
@@ -649,11 +634,6 @@
   "en": 8,
   "max": 48
  },
- "n.app.osun.osun-2026": {
-  "kind": "heading",
-  "en": 9,
-  "max": 29
- },
  "n.app.political.as-of": {
   "kind": "body",
   "en": 12,
@@ -753,11 +733,6 @@
   "kind": "button",
   "en": 18,
   "max": 32
- },
- "n.app.practice.practice-run": {
-  "kind": "button",
-  "en": 12,
-  "max": 26
  },
  "n.app.practice.result-sheet": {
   "kind": "body",
@@ -944,11 +919,6 @@
   "en": 26,
   "max": 66
  },
- "n.app.report.collation.no-active-election-in": {
-  "kind": "body",
-  "en": 26,
-  "max": 66
- },
  "n.app.report.collation.nothing-was-sent-your-figures-and": {
   "kind": "body",
   "en": 71,
@@ -983,11 +953,6 @@
   "kind": "body",
   "en": 22,
   "max": 62
- },
- "n.app.report.collation.status": {
-  "kind": "body",
-  "en": 6,
-  "max": 46
  },
  "n.app.report.collation.ward-collation": {
   "kind": "body",
@@ -1059,21 +1024,6 @@
   "en": 39,
   "max": 79
  },
- "n.app.report.incident.location-fixed-m-looking-up-nearby": {
-  "kind": "body",
-  "en": 49,
-  "max": 89
- },
- "n.app.report.incident.no-unit-found-within-m-browse": {
-  "kind": "body",
-  "en": 54,
-  "max": 95
- },
- "n.app.report.incident.observer-fix-es": {
-  "kind": "body",
-  "en": 24,
-  "max": 64
- },
  "n.app.report.incident.of-videos-photos-only-from-here": {
   "kind": "body",
   "en": 44,
@@ -1089,11 +1039,6 @@
   "en": 27,
   "max": 67
  },
- "n.app.report.incident.or-browse-the-register-below": {
-  "kind": "body",
-  "en": 42,
-  "max": 82
- },
  "n.app.report.incident.photo-jpg": {
   "kind": "body",
   "en": 13,
@@ -1105,9 +1050,9 @@
   "max": 119
  },
  "n.app.report.incident.search-near-me-again": {
-  "kind": "body",
+  "kind": "button",
   "en": 20,
-  "max": 60
+  "max": 34
  },
  "n.app.report.incident.select-the-polling-unit": {
   "kind": "chip",
@@ -1169,6 +1114,26 @@
   "en": 147,
   "max": 258
  },
+ "n.app.report.result.agree": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.app.report.result.already-signed-it-sends-itself-once": {
+  "kind": "body",
+  "en": 53,
+  "max": 93
+ },
+ "n.app.report.result.check-the-result-sheet": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.app.report.result.check-your-connection-and-retry": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
  "n.app.report.result.confidence": {
   "kind": "body",
   "en": 10,
@@ -1179,30 +1144,155 @@
   "en": 16,
   "max": 30
  },
+ "n.app.report.result.could-not-be-loaded-from-the": {
+  "kind": "body",
+  "en": 118,
+  "max": 207
+ },
+ "n.app.report.result.could-not-check-nearby-units-search": {
+  "kind": "body",
+  "en": 51,
+  "max": 91
+ },
+ "n.app.report.result.could-not-open-that-unit": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.report.result.could-not-read-unit-code-off": {
+  "kind": "body",
+  "en": 52,
+  "max": 92
+ },
+ "n.app.report.result.election-list-not-loaded": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.report.result.find-your-report-in-the-public": {
+  "kind": "button",
+  "en": 36,
+  "max": 50
+ },
  "n.app.report.result.from-sheet": {
   "kind": "body",
   "en": 10,
   "max": 50
+ },
+ "n.app.report.result.getting-your-location": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.app.report.result.hawkeye-could-not-load-which-elections": {
+  "kind": "body",
+  "en": 126,
+  "max": 221
+ },
+ "n.app.report.result.hawkeye-is-covering-the-nothing-is": {
+  "kind": "body",
+  "en": 130,
+  "max": 228
+ },
+ "n.app.report.result.is-in-about": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "n.app.report.result.it-is-now-queued-for-review": {
+  "kind": "body",
+  "en": 62,
+  "max": 109
+ },
+ "n.app.report.result.km-from-where-you-are-now": {
+  "kind": "body",
+  "en": 35,
+  "max": 75
  },
  "n.app.report.result.location": {
   "kind": "body",
   "en": 8,
   "max": 48
  },
+ "n.app.report.result.location-fixed-m-looking-up-nearby": {
+  "kind": "body",
+  "en": 49,
+  "max": 89
+ },
+ "n.app.report.result.location-not-verified": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.app.report.result.no-active-election-in": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.report.result.no-unit-found-within-m-browse": {
+  "kind": "body",
+  "en": 54,
+  "max": 95
+ },
  "n.app.report.result.no-units-in-the-register-for": {
   "kind": "body",
   "en": 43,
   "max": 83
+ },
+ "n.app.report.result.observer-fix-es": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.report.result.or-browse-the-register-below": {
+  "kind": "body",
+  "en": 42,
+  "max": 82
+ },
+ "n.app.report.result.photo-1-of-2-the-result": {
+  "kind": "heading",
+  "en": 31,
+  "max": 51
+ },
+ "n.app.report.result.photo-2-of-2-the-surroundings": {
+  "kind": "heading",
+  "en": 31,
+  "max": 51
+ },
+ "n.app.report.result.pick-your-unit-below-or-search": {
+  "kind": "button",
+  "en": 39,
+  "max": 53
+ },
+ "n.app.report.result.read-off-the-sheet-but-no": {
+  "kind": "body",
+  "en": 81,
+  "max": 142
  },
  "n.app.report.result.read-off-your-photo": {
   "kind": "body",
   "en": 19,
   "max": 59
  },
+ "n.app.report.result.report-filed": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
  "n.app.report.result.reports-agreeing": {
   "kind": "body",
   "en": 16,
   "max": 56
+ },
+ "n.app.report.result.saved-on-this-phone": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.report.result.see-the-public-log": {
+  "kind": "button",
+  "en": 20,
+  "max": 34
  },
  "n.app.report.result.select-your-lga": {
   "kind": "chip",
@@ -1224,10 +1314,40 @@
   "en": 16,
   "max": 28
  },
+ "n.app.report.result.selected": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.app.report.result.signing-and-submitting": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "n.app.report.result.something-went-wrong-nothing-was-sent": {
+  "kind": "body",
+  "en": 47,
+  "max": 87
+ },
  "n.app.report.result.tap-an-open-race-to-report": {
   "kind": "body",
   "en": 27,
   "max": 67
+ },
+ "n.app.report.result.tap-the-unit-you-are-standing": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
+ },
+ "n.app.report.result.tap-the-unit-you-are-standing-2": {
+  "kind": "body",
+  "en": 33,
+  "max": 73
+ },
+ "n.app.report.result.units-found-within-800m-unmapped-units": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
  },
  "n.app.report.result.venue-photo-matches": {
   "kind": "body",
@@ -1494,11 +1614,6 @@
   "en": 28,
   "max": 68
  },
- "n.app.tabs.results.report-from-your-unit": {
-  "kind": "button",
-  "en": 21,
-  "max": 35
- },
  "n.app.tabs.results.tap-a-for-its-numbers": {
   "kind": "body",
   "en": 26,
@@ -1634,16 +1749,6 @@
   "en": 5,
   "max": 45
  },
- "n.components.choose-unit.search-near-me-again": {
-  "kind": "button",
-  "en": 20,
-  "max": 34
- },
- "n.components.choose-unit.search-near-me-again-2": {
-  "kind": "body",
-  "en": 20,
-  "max": 60
- },
  "n.components.choose-unit.selected": {
   "kind": "body",
   "en": 8,
@@ -1734,20 +1839,10 @@
   "en": 6,
   "max": 46
  },
- "n.components.race.recorded-from": {
-  "kind": "body",
-  "en": 14,
-  "max": 54
- },
- "n.components.race.reporting-is-not-open-yet": {
+ "n.components.race.reporting-not-open-yet": {
   "kind": "heading",
   "en": 25,
   "max": 45
- },
- "n.components.race.reporting-not-open-yet": {
-  "kind": "body",
-  "en": 25,
-  "max": 65
  },
  "n.components.race.unit": {
   "kind": "body",
@@ -1930,9 +2025,9 @@
   "max": 26
  },
  "nav.ask-hawkeye": {
-  "kind": "body",
+  "kind": "heading",
   "en": 11,
-  "max": 51
+  "max": 31
  },
  "nav.faq": {
   "kind": "body",
@@ -1960,19 +2055,19 @@
   "max": 24
  },
  "nav.osun-2026": {
-  "kind": "body",
+  "kind": "heading",
   "en": 9,
-  "max": 49
+  "max": 29
  },
  "nav.practice-run": {
-  "kind": "body",
+  "kind": "button",
   "en": 12,
-  "max": 52
+  "max": 26
  },
  "nav.presidency-2027": {
-  "kind": "body",
+  "kind": "heading",
   "en": 15,
-  "max": 55
+  "max": 35
  },
  "nav.race": {
   "kind": "body",
@@ -2265,9 +2360,9 @@
   "max": 54
  },
  "race.report-from-your-unit": {
-  "kind": "body",
+  "kind": "button",
   "en": 21,
-  "max": 61
+  "max": 35
  },
  "race.returning-officer": {
   "kind": "body",

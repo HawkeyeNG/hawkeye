@@ -178,26 +178,26 @@ export function RekorAnchor({
   let body = '';
 
   if (state.kind === 'checking') {
-    title = 'Checking the public anchor…';
+    title = i18nT('n.components.rekor-anchor.checking-the-public-anchor');
   } else if (state.kind === 'anchored') {
     icon = 'anchor';
     tint = ui.tint.good.ink;
-    title = practice ? 'This practice chain is in the public log' : 'In the public log';
-    const where = state.logIndex != null ? ` at entry #${state.logIndex}` : '';
+    title = practice ? 'This practice chain is in the public log' : i18nT('n.components.rekor-anchor.in-the-public-log');
+    const where = state.logIndex != null ? i18nT('n.components.rekor-anchor.at-entry', { v0: state.logIndex }) : '';
     body = practice
-      ? `The ${thisChain} was signed into Sigstore Rekor${where} on ${stamp(state.at)} — the same public, append-only log the real ledger uses. What that proves is that this practice chain existed at that moment. It is a rehearsal: not a result, never counted.`
-      : `The ${thisChain} holding your entry was signed into Sigstore Rekor${where} on ${stamp(state.at)}. Rekor is not ours and cannot be edited, so that timestamp cannot be taken back — nor can your entry be removed from the chain it commits to.`;
+      ? i18nT('n.components.rekor-anchor.the-was-signed-into-sigstore-rekor', { v0: thisChain, v1: where, v2: stamp(state.at) })
+      : i18nT('n.components.rekor-anchor.the-holding-your-entry-was-signed', { v0: thisChain, v1: where, v2: stamp(state.at) });
     if (state.exact) {
       body += ' Your entry is the exact chain head that was signed.';
     }
   } else if (state.kind === 'pending') {
-    title = 'Not in a public anchor yet';
+    title = i18nT('n.components.rekor-anchor.not-in-a-public-anchor-yet');
     body = practice
       ? `Your run is chained on the ${thisChain}, and that chain's fingerprint is published to Sigstore Rekor — a public log Hawkeye does not run — at least once a day. This run will be inside the next one; the link appears here once it genuinely exists. Practice is never a result and never counted.`
       : `Your entry is on the ${thisChain} now. The ${thisChain}'s fingerprint is published to Sigstore Rekor — a public, append-only log Hawkeye does not run — at least once a day. Your entry will be inside the next anchor; the link appears here once it genuinely exists, not before.`;
   } else {
     icon = 'wifi-off';
-    title = 'Could not check the public anchor';
+    title = i18nT('n.components.rekor-anchor.could-not-check-the-public-anchor');
     body = `No answer from the server just now, so we cannot say whether an anchor covering this entry has been published. Your entry hash above is unchanged either way — check again when you have signal.`;
   }
 

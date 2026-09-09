@@ -19,6 +19,7 @@ import { SocialRow } from '@/components/social-row';
 import { useUi } from '@/lib/theme';
 import type { Page } from '@/lib/content';
 import { t as i18nT } from '@/lib/i18n';
+import { translateContent } from '@/lib/content';
 
 /**
  * Terms of Service — the native twin of app/terms.html.
@@ -176,7 +177,10 @@ export default function Terms() {
   const [anchors, setAnchors] = useState<Record<string, number>>({});
   const [active, setActive] = useState(0);
 
-  const { title, kicker, governing, sections, blocks } = TERMS;
+  /* Translated at READ time, inside the component body, so it follows the
+     language — the provider remounts on key={lang}. Same call the privacy
+     page makes through getPages(); see lib/content.ts. */
+  const { title, kicker, governing, sections, blocks } = translateContent(TERMS);
 
   // ONE TITLE, IN THE HEADER, ALWAYS THERE — see the note in page.tsx, of
   // which this screen is a near-copy. The cross-fade opened the page on a

@@ -6,6 +6,7 @@
 // Same override as lib/api.ts, and for the same reason: in a browser these two
 // fetches are cross-origin and production blocks them. See the note there.
 import { currentLang_ } from './i18n';
+import { t as i18nT } from '@/lib/i18n';
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
@@ -504,7 +505,7 @@ export function seatRace(
   const senate = (tier || code) === 'SEN';
   return {
     office: `${senate ? 'Senator' : 'House of Representatives'} — ${canon}`,
-    election: `${s.state} State · ${senate ? 'Senate' : 'House of Representatives'}`,
+    election: i18nT('n.lib.political.state', { v0: s.state, v1: senate ? 'Senate' : 'House of Representatives' }),
     date: contest?.date,
     stats: { lgas: s.lgas.length, wards: s.wards, pollingUnits: s.pollingUnits },
     // A seat the register cannot tell from its neighbour says so, rather than
@@ -513,7 +514,7 @@ export function seatRace(
       (s.sharedRegister
         ? "INEC's register does not separate this seat from the other constituency in the same LGA, so the LGA and polling-unit figures on this page cover both. "
         : '') +
-      'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.',
+      i18nT('n.lib.political.inec-has-not-published-the-candidate-2'),
     candidates: [],
     others: [],
     join: {
@@ -568,13 +569,13 @@ export function stateRace(
   const inCycle = !!contest?.states?.some((s) => normRegion(s) === normRegion(canon));
   const held = pd.governors?.[canon];
   return {
-    office: `Governor of ${canon} State`,
-    election: `${canon} State Governorship Election`,
+    office: i18nT('n.lib.political.governor-of-state', { v0: canon }),
+    election: i18nT('n.lib.political.state-governorship-election', { v0: canon }),
     date: inCycle ? contest?.date : undefined,
     stats: { ...stats, heldBy: held },
     note: inCycle
       ? 'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.'
-      : `${canon} votes for governor off the general-election cycle, so this race is not part of the 2027 general election and Hawkeye has no date for it yet. The map and seat facts on this page come from the electoral register and are current.`,
+      : i18nT('n.lib.political.votes-for-governor-off-the-general', { v0: canon }),
     candidates: [],
     others: [],
     join: { contest: 'GOV', level: 'state', value: canon, state: canon },
@@ -584,7 +585,7 @@ export function stateRace(
 /** @param what what the reader is being told has no list yet — see the twin
  *  wording in app/race.js, which the parity test compares string for string. */
 const seatNote = (what: 'race' | 'by-election') =>
-  `INEC has not published the candidate list for this ${what} yet. Candidates ` +
+  i18nT('n.lib.political.inec-has-not-published-the-candidate', { v0: what }) +
   'appear here as soon as the official list is out. The seat and map on this ' +
   'page come from the electoral register and are current.';
 
@@ -660,7 +661,7 @@ export function byElectionRace(
 
   if (tier === 'SEN' || tier === 'REP') {
     const r = seatRace(seats, contest.code, seat, contest, tier);
-    if (r) r.election = `${state} State · ${contest.name}`;
+    if (r) r.election = i18nT('n.lib.political.state-2', { v0: state, v1: contest.name });
     return r;
   }
   if (tier === 'GOV') return stateRace(political, state, contest);
@@ -689,8 +690,8 @@ export function byElectionRace(
   const stats = shaStats(seats, state, seat);
   const seatName = contest.seat || seat;
   return {
-    office: `${seatName} State Constituency — ${state} State`,
-    election: `${state} State · ${contest.name}`,
+    office: i18nT('n.lib.political.state-constituency-state', { v0: seatName, v1: state }),
+    election: i18nT('n.lib.political.state-3', { v0: state, v1: contest.name }),
     date: contest.date || undefined,
     stats,
     note:
@@ -736,13 +737,13 @@ export function assemblyRace(
   if (!canon) return null;
   const s = table[canon];
   return {
-    office: `${s.seat ?? seat} State Constituency`,
-    election: `${s.state} State · House of Assembly`,
+    office: i18nT('n.lib.political.state-constituency', { v0: s.seat ?? seat }),
+    election: i18nT('n.lib.political.state-house-of-assembly', { v0: s.state }),
     date: contest?.date,
     stats: { lgas: (s.lgas ?? []).length, wards: s.wards, pollingUnits: s.pollingUnits },
     note:
       (s.sharedRegister
-        ? `${(s.lgas ?? []).join(', ')} elects more than one state member, and INEC's ` +
+        ? i18nT('n.lib.political.elects-more-than-one-state-member', { v0: (s.lgas ?? []).join(', ') }) +
           'register does not separate them, so the ward and polling-unit figures on this ' +
           'page cover every seat in that LGA rather than this one alone. '
         : '') + seatNote('race'),

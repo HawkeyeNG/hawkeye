@@ -83,8 +83,8 @@ function statesFor(type: ElectionTypeCode): readonly StateName[] {
 
 /** A short "opens …" tag for a closed race, from the contest's opensAt. */
 function opensTag(c: Contest | undefined): string {
-  if (!c) return 'Not yet scheduled';
-  if (!c.opensAt) return 'Not yet open';
+  if (!c) return i18nT('n.components.contest-picker.not-yet-scheduled');
+  if (!c.opensAt) return i18nT('n.components.contest-picker.not-yet-open');
   const d = new Date(c.opensAt);
   if (Number.isNaN(d.getTime())) return `Opens ${c.opensAt}`;
   return `Opens ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
@@ -333,7 +333,7 @@ export function ContestPicker({
     <View>
       {filterToggle}
       {crumbs}
-      <Prompt>{races.length > 1 ? 'Choose the race' : 'Confirm the race'}</Prompt>
+      <Prompt>{races.length > 1 ? i18nT('n.components.contest-picker.choose-the-race') : i18nT('n.components.contest-picker.confirm-the-race')}</Prompt>
       {shown.length === 0 ? (
         <Text className="px-1 py-2 text-sm text-muted">
           No open race here yet. Turn off “Open races only” to see every race Hawkeye covers.

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { InteractionManager } from 'react-native';
 
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * A one-action notice in the app's own sheet, replacing `Alert.alert`.
@@ -18,7 +19,7 @@ import { ConfirmSheet } from '@/components/confirm-sheet';
  * owns the state, so a file adds three lines however many notices it raises.
  *
  *   const notice = useNotice();
- *   notice.show('Could not refresh', `Your alerts did not load. (${failed})`);
+ *   notice.show('Could not refresh', i18nT('n.components.notice-sheet.your-alerts-did-not-load', { v0: failed }));
  *   <NoticeSheet {...notice.props} />
  *
  * TONE, NOT DANGER. Failures here are "that did not work", not destructive

@@ -6,6 +6,7 @@ import { bboxViewBox, loadMapGeo, matchRegion } from '@/components/results-map';
 import { api, type National, type NationalRegion } from '@/lib/api';
 import { partyColor, type RaceJoin } from '@/lib/political';
 import { useUi } from '@/lib/theme';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * The seat's own map, on a race screen. Native twin of app/race.js:raceMapHtml.
@@ -40,7 +41,7 @@ async function shapesFor(join: RaceJoin): Promise<{ shapes: Shape[]; caption: st
     if (shapes.length > 1) {
       return {
         shapes: shapes.map((s) => ({ key: s.key, name: s.name, path: s.path })),
-        caption: `${join.value} State — ${shapes.length} local government areas`,
+        caption: i18nT('n.components.race-map.state-local-government-areas', { v0: join.value, v1: shapes.length }),
       };
     }
     const states = await loadMapGeo('state');
@@ -79,7 +80,7 @@ async function shapesFor(join: RaceJoin): Promise<{ shapes: Shape[]; caption: st
     if (shapes.length === join.lgas.length) {
       return {
         shapes,
-        caption: `${join.value} — ${shapes.length} local government area${shapes.length === 1 ? '' : 's'}`,
+        caption: i18nT('n.components.race-map.local-government-area', { v0: join.value, v1: shapes.length, v2: shapes.length === 1 ? '' : 's' }),
       };
     }
   }
@@ -124,14 +125,14 @@ const fmtDay = (d: string) =>
  * three would read as a failure on polling day and as a silence months early.
  */
 function silenceReason(date?: string): string {
-  if (!date) return 'No date has been set for this election yet.';
+  if (!date) return i18nT('n.components.race-map.no-date-has-been-set-for');
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const day = new Date(`${date}T00:00:00`);
   day.setHours(0, 0, 0, 0);
-  if (day > today) return `Polls open on ${fmtDay(date)}.`;
-  if (day.getTime() === today.getTime()) return 'Polls are open — no reports from here yet.';
-  return 'No reports were filed from here.';
+  if (day > today) return i18nT('n.components.race-map.polls-open-on', { v0: fmtDay(date) });
+  if (day.getTime() === today.getTime()) return i18nT('n.components.race-map.polls-are-open-no-reports-from');
+  return i18nT('n.components.race-map.no-reports-were-filed-from-here');
 }
 
 /** One line per fact, most important first. Twin of app/race.js:inspectLines. */
@@ -140,12 +141,12 @@ function inspectLines(date: string | undefined, name: string, row: NationalRegio
   const L = row.leaders?.length ? row.leaders : row.leader ? [row.leader] : [];
   const lead =
     L.length > 2
-      ? `${L.length}-way tie`
+      ? i18nT('n.components.race-map.way-tie', { v0: L.length })
       : L.length === 2
-        ? `${L[0]} and ${L[1]} tied`
+        ? i18nT('n.components.race-map.and-tied', { v0: L[0], v1: L[1] })
         : L.length === 1
           ? `${L[0]} leads`
-          : 'No votes counted yet';
+          : i18nT('n.components.race-map.no-votes-counted-yet');
   // Typed empty fallback: `?? {}` widens the entries to `unknown` and the sort
   // below stops being a number comparison.
   const votes: Record<string, number> = row.votes ?? {};
@@ -156,7 +157,7 @@ function inspectLines(date: string | undefined, name: string, row: NationalRegio
     .join(' · ');
   return [
     `${name} — ${lead}`,
-    `${row.unitsReporting} unit${row.unitsReporting === 1 ? '' : 's'} reporting, ${row.unitsVerified ?? 0} verified`,
+    i18nT('n.components.race-map.unit-reporting-verified', { v0: row.unitsReporting, v1: row.unitsReporting === 1 ? '' : 's', v2: row.unitsVerified ?? 0 }),
     top,
   ].filter(Boolean);
 }

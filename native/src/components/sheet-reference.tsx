@@ -30,8 +30,8 @@ const DOUBLE_TAP_SCALE = 3;
 
 export function SheetReference({
   uri,
-  label = 'Your result sheet',
-  hint = 'Tap to enlarge — read the figures off your own photo.',
+  label = i18nT('n.components.sheet-reference.your-result-sheet'),
+  hint = i18nT('n.components.sheet-reference.tap-to-enlarge-read-the-figures'),
 }: {
   uri: string;
   label?: string;
@@ -45,7 +45,7 @@ export function SheetReference({
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel={`${label}. Opens full screen, zoomable.`}
+        accessibilityLabel={i18nT('n.components.sheet-reference.opens-full-screen-zoomable', { v0: label })}
         className="mb-3 overflow-hidden rounded-2xl bg-card active:opacity-80"
       >
         <Image source={{ uri }} style={{ width: '100%', height: 120 }} contentFit="cover" />

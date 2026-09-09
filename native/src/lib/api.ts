@@ -4,6 +4,7 @@
  * routes, everything here is the same public API the website consumes.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { t as i18nT } from '@/lib/i18n';
 
 /**
  * Production, unless a dev build points somewhere else.
@@ -56,9 +57,9 @@ export type Contest = {
  * same sentence. One phrasing, two screens.
  */
 export function opensLine(c: Contest | null | undefined): string {
-  if (!c || !c.opensAt) return 'Reporting has not opened for this election yet.';
+  if (!c || !c.opensAt) return i18nT('n.lib.api.reporting-has-not-opened-for-this');
   const d = new Date(c.opensAt);
-  if (Number.isNaN(d.getTime())) return `Reporting opens ${c.opensAt}.`;
+  if (Number.isNaN(d.getTime())) return i18nT('n.lib.api.reporting-opens', { v0: c.opensAt });
   return `Reporting opens ${d.toLocaleString('en-GB', {
     weekday: 'long',
     day: 'numeric',
@@ -131,7 +132,7 @@ const CARD_ELECTION: Record<string, string> = {
 /** Shorter chamber labels; "House of Representatives" alone wraps a card. */
 const CARD_CHAMBER: Record<string, string> = {
   SEN: 'Senate',
-  REP: 'House of Reps',
+  REP: i18nT('n.components.follow-race.house-of-reps'),
 };
 
 /**

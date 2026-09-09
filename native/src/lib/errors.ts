@@ -22,6 +22,8 @@
  * control that does it — not appended to every error.
  */
 
+import { t as i18nT } from '@/lib/i18n';
+
 /** Anything that reads like a lost/refused connection rather than a real fault. */
 function isOffline(raw: string): boolean {
   return /UnknownHostException|Unable to resolve host|Network request failed|network error|ERR_INTERNET|ERR_NAME_NOT_RESOLVED|ERR_NETWORK|Failed to fetch|ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|ENETUNREACH|offline/i
@@ -38,22 +40,22 @@ function isTimeout(raw: string): boolean {
  *                 specific to the action that failed ("Could not save your
  *                 unit."), because that is the part a generic handler cannot know
  */
-export function humanError(e: unknown, fallback = 'Something went wrong. Try again.'): string {
+export function humanError(e: unknown, fallback = i18nT('n.lib.errors.something-went-wrong-try-again')): string {
   const raw = e instanceof Error ? e.message : String(e ?? '');
   // Diagnosable without being visible. Not console.error: this is an expected
   // condition on a bad line, not a fault, and a red box in the dev client for
   // every dropped request trains people to ignore it.
   if (raw) console.warn('[hawkeye]', raw);
 
-  if (isOffline(raw)) return 'No connection. Check your network and try again.';
-  if (isTimeout(raw)) return 'That took too long. Try again.';
+  if (isOffline(raw)) return i18nT('n.lib.errors.no-connection-check-your-network-and');
+  if (isTimeout(raw)) return i18nT('n.lib.errors.that-took-too-long-try-again');
 
   // A server status that came through as a message ("HTTP 503", "503").
   const status = raw.match(/\b(4\d\d|5\d\d)\b/);
   if (status) {
     return status[1].startsWith('5')
       ? 'The server had a problem. Try again shortly.'
-      : 'That request was refused. Try again.';
+      : i18nT('n.lib.errors.that-request-was-refused-try-again');
   }
   return fallback;
 }

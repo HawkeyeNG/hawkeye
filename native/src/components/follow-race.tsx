@@ -9,6 +9,7 @@ import { BRAND } from '@/lib/api';
 import { authedGet, useAuth } from '@/lib/auth';
 import { useUi } from '@/lib/theme';
 import { getIdentity } from '@/lib/identity';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -70,8 +71,8 @@ const isClosed = (list: Declaration[], contest: string, scope: string) =>
 const CONTEST_PLURAL: Record<string, string> = {
   GOV: 'governorship',
   SEN: 'Senate',
-  REP: 'House of Reps',
-  SHA: 'State Assembly',
+  REP: i18nT('n.components.follow-race.house-of-reps'),
+  SHA: i18nT('n.components.follow-race.state-assembly'),
 };
 
 /**
@@ -85,7 +86,7 @@ const CONTEST_PLURAL: Record<string, string> = {
 export function followSubject(contest: string | null, scope: string): string {
   if (scope) return 'this race';
   if (!contest || contest === 'PRES') return 'this race';
-  return `all ${CONTEST_PLURAL[contest] ?? contest} races`;
+  return i18nT('n.components.follow-race.all-races', { v0: CONTEST_PLURAL[contest] ?? contest });
 }
 
 /**
@@ -191,7 +192,7 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
         return;
       }
       if (!res.ok) {
-        notice.show('Could not update', `Try again. (HTTP ${res.status})`);
+        notice.show('Could not update', i18nT('n.components.follow-race.try-again-http', { v0: res.status }));
         return;
       }
       setSubs((s) =>
@@ -200,7 +201,7 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
           : [...s, { contest, state }],
       );
     } catch (e) {
-      notice.show('Could not update', e instanceof Error ? e.message : String(e));
+      notice.show(i18nT('n.components.follow-race.could-not-update'), e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -219,7 +220,7 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
    * region is named in the heading directly above, and how the subscription
    * came about is not something a reader is deciding between.
    */
-  const detail = following ? 'Alerts on' : 'Get alerts on every report';
+  const detail = following ? 'Alerts on' : i18nT('n.components.follow-race.get-alerts-on-every-report');
 
   /**
    * SUBSCRIBED, AND IT HAS TO LOOK LIKE A CONTROL.
@@ -241,7 +242,7 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
         onPress={toggle}
         accessibilityRole="button"
         accessibilityState={{ selected: following, busy }}
-        accessibilityLabel={following ? `Unfollow ${subject}. Alerts are on.` : `Follow ${subject}`}
+        accessibilityLabel={following ? i18nT('n.components.follow-race.unfollow-alerts-are-on', { v0: subject }) : `Follow ${subject}`}
         className={`mb-3 flex-row items-center rounded-2xl px-4 py-3 active:opacity-80 ${
           following ? 'border border-good-ink bg-card' : 'bg-hawk-green'
         }`}

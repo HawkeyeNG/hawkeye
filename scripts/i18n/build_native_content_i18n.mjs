@@ -16,7 +16,11 @@ import fs from 'node:fs';
 
 const ROOT = '/home/elrio/hawkeye';
 const EN = JSON.parse(fs.readFileSync(`${ROOT}/tmp/native_content_en.json`, 'utf8'));
-const batches = ['tmp/content_tr_a.json', 'tmp/content_tr_b.json']
+// content_tr_legal.json is the terms and privacy text. It stays a SEPARATE
+// source rather than being merged into a or b: it came through a different
+// review — a literal back-translation of every promise — and a later
+// retranslation of either half should be isolatable from the other.
+const batches = ['tmp/content_tr_a.json', 'tmp/content_tr_b.json', 'tmp/content_tr_legal.json']
   .map((f) => JSON.parse(fs.readFileSync(`${ROOT}/${f}`, 'utf8')));
 
 const TR = {};
@@ -53,7 +57,7 @@ for (const s of english) for (const l of ['ha', 'ig', 'yo']) out[l][s] = TR[s][l
 const body = `/**
  * Translations for the explainer content in lib/content.ts.
  *
- * GENERATED — do not edit. Source: tmp/content_tr_{a,b}.json, built by
+ * GENERATED — do not edit. Source: tmp/content_tr_{a,b,legal}.json, built by
  * scripts/i18n/build_native_content_i18n.mjs.
  *
  * KEYED BY THE ENGLISH STRING. content.ts is a nested typed content tree with

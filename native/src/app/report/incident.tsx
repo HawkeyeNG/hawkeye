@@ -1022,7 +1022,7 @@ export default function ReportIncident() {
       const files = media.map((m, i) => ({
         field: 'media',
         uri: m.uri,
-        name: m.type === 'video' ? i18nT('n.app.report.incident.clip-mp4', { v0: i }) : i18nT('n.app.report.incident.photo-jpg', { v0: i }),
+        name: m.type === 'video' ? `clip${i}.mp4` : `photo${i}.jpg`,
         type: m.type === 'video' ? 'video/mp4' : 'image/jpeg',
       }));
 

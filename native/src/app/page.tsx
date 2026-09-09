@@ -197,6 +197,11 @@ export default function StaticPage() {
         <Text className="pb-4 text-[11px] font-bold uppercase tracking-[1.5px] text-good-ink">
           {kicker}
         </Text>
+        {page?.governing ? (
+          /* The governing-language clause. Muted and directly under the kicker:
+             it has to be present and findable, not prominent. */
+          <Text className="pb-4 text-xs leading-5 text-muted">{page.governing}</Text>
+        ) : null}
 
         {page
           ? page.blocks.map((b, i) =>

@@ -36,6 +36,11 @@ import { t as i18nT } from '@/lib/i18n';
 const TERMS: Page = {
   title: 'Terms of Service',
   kicker: 'Last updated 13 July 2026',
+  // Governing language. English is authoritative; the translations that
+  // follow are a convenience. Plain English here rather than a key, because
+  // a key with no bundle entry renders as its own name.
+  governing:
+    'The English version of this document is the authoritative one. Any translation is provided for convenience; where they differ, the English version applies.',
   // These strings are rendered twice: ALL-CAPS as the in-page SectionLabel, and
   // as-is on the jump chips in the header — so they carry Title Case for the
   // chips' sake. Each must stay byte-identical to its 'label' block below; the
@@ -171,7 +176,7 @@ export default function Terms() {
   const [anchors, setAnchors] = useState<Record<string, number>>({});
   const [active, setActive] = useState(0);
 
-  const { title, kicker, sections, blocks } = TERMS;
+  const { title, kicker, governing, sections, blocks } = TERMS;
 
   // ONE TITLE, IN THE HEADER, ALWAYS THERE — see the note in page.tsx, of
   // which this screen is a near-copy. The cross-fade opened the page on a
@@ -275,6 +280,11 @@ export default function Terms() {
         <Text className="pb-4 text-[11px] font-bold uppercase tracking-[1.5px] text-good-ink">
           {kicker}
         </Text>
+        {governing ? (
+          /* The governing-language clause. Muted and directly under the kicker:
+             it has to be present and findable, not prominent. */
+          <Text className="pb-4 text-xs leading-5 text-muted">{governing}</Text>
+        ) : null}
 
         {blocks.map((b, i) =>
           b.kind === 'label' ? (

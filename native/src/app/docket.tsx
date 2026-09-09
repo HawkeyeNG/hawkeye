@@ -277,7 +277,7 @@ export default function Docket() {
         ListHeaderComponent={header}
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
-        contentContainerStyle={{ paddingTop: headerH, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingTop: headerH + 12, paddingBottom: 32 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

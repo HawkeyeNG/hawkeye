@@ -458,7 +458,7 @@ export default function Home() {
         ListHeaderComponent={header}
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
-        contentContainerStyle={{ paddingTop: headerH, paddingBottom: 24 }}
+        contentContainerStyle={{ paddingTop: headerH + 12, paddingBottom: 24 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

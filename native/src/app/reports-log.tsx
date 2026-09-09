@@ -163,7 +163,7 @@ export default function ReportsLog() {
         data={rows ?? []}
         keyExtractor={(r) => `${r.puCode}|${r.contest}`}
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingTop: headerH, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingTop: headerH + 12, paddingBottom: 32 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ui.tint.good.ink} />
         }

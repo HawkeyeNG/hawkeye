@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <!-- REQUIRED, not tidiness. This page is served at /join/<token> as well as
+       /join.html, and at the two-segment path every relative href resolves
+       under /join/ — styles.css, native.js, the crest and every in-page link
+       404 silently, leaving an unstyled wall of text as someone's first
+       impression of Hawkeye. Anchors everything at the root instead. -->
+  <base href="/" />
+  <meta name="theme-color" content="#00482b" />
+  <title>Hawkeye — Join a group</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=175" />
+  <script src="native.js?v=116"></script>
+  <meta name="robots" content="noindex" />
+  <!-- NO authgate.js, deliberately. This page has to be readable SIGNED OUT:
+       the disclosure below is the whole point of the deliberate tap, and a
+       disclosure nobody can read until after they have authenticated is not a
+       disclosure. The join itself still requires a signed-in account. -->
+<style>
+.jn { max-width: 520px; margin: 0 auto; padding: 34px 18px 64px; }
+.jn button { display: block; width: 100%; }
+.jn .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+.jn h1 { font-family: var(--display); font-size: 1.4rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+.jn .who { color: var(--muted); font-size: 0.86rem; margin: 0 0 18px; }
+.jn .name { font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+.jn ul { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: 11px; }
+.jn li { display: flex; gap: 10px; font-size: 0.88rem; line-height: 1.5; color: var(--muted); }
+.jn li b { color: var(--ink); font-weight: 600; }
+.jn li i { font-style: normal; flex: 0 0 16px; color: var(--accent); font-size: 0.9rem; line-height: 1.5; }
+.jn .fine { color: var(--muted); font-size: 0.78rem; line-height: 1.55; margin-top: 16px; }
+.jn .bad { text-align: center; padding: 30px 10px; }
+.jn .bad h1 { margin-bottom: 10px; }
+.jn .bad p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+.jn a.plain { color: var(--accent); }
+</style>
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html">
+        <span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div>
+      </a>
+    </div>
+  </header>
+
+  <main class="jn" id="jn"><div class="card">Checking that invitation…</div></main>
+
+<script>
+/**
+ * Join a campaign or CSO roster from an invite link.
+ *
+ * NEVER AUTOMATIC. These links get forwarded into party WhatsApp groups and
+ * opened by hundreds of people, most of whom were not the intended recipient.
+ * A visit must never enrol anyone: the tap on the button below is the consent,
+ * and the list above it is what they are consenting to.
+ */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+/* /join/<token> is the canonical form (see the route in server.js); ?t= is
+   kept working because it costs one line and an old link that 404s is a lost
+   observer. */
+const token = (location.pathname.match(/^\/join\/([^/]+)/) || [])[1]
+  || new URLSearchParams(location.search).get('t') || '';
+
+function signedIn() {
+  try {
+    const t = localStorage.getItem('hawkeye_token');
+    if (!t) return false;
+    return JSON.parse(atob(t.split('.')[1])).exp * 1000 > Date.now() + 60000;
+  } catch (e) { return false; }
+}
+
+function bad(title, msg) {
+  $('jn').innerHTML = `<div class="card bad"><h1>${esc(title)}</h1><p>${msg}</p></div>`;
+}
+
+async function main() {
+  if (!token) return bad('That link is incomplete', 'Ask whoever sent it for the full link.');
+  const res = await fetch('/api/join/' + encodeURIComponent(token));
+  const g = await res.json().catch(() => ({}));
+  if (res.status === 404) return bad('We do not recognise that invitation', 'The link may have been mistyped, or the group may have been deleted.');
+  if (res.status === 410) {
+    return bad(g.error === 'invite_revoked' ? 'That invitation was withdrawn' : 'That invitation has expired',
+      'Ask whoever sent it for a fresh link — they can create one in seconds.');
+  }
+  if (!res.ok) return bad('Something went wrong', 'Try the link again in a moment.');
+
+  const kind = g.kind === 'cso' ? 'observer group' : 'campaign';
+  $('jn').innerHTML = `
+    <div class="card">
+      <h1>Join <span class="name">${esc(g.name)}</span></h1>
+      <p class="who">You have been invited to observe with this ${esc(kind)}
+         for the ${esc(g.contest)} race${g.scope ? ' in ' + esc(g.scope) : ''}.</p>
+      <ul>
+        <li><i>&#9679;</i><span><b>They will see the reports you file from now on.</b>
+          Which polling unit, and when. Your reports from before today stay yours.</span></li>
+        <li><i>&#9679;</i><span><b>They cannot see anything the public cannot.</b>
+          Your reports are already published on Hawkeye. Joining only tells this
+          ${esc(kind)} which of them are yours.</span></li>
+        <li><i>&#9679;</i><span><b>Nothing about how you report changes.</b>
+          They may suggest a polling unit for you, but you can always report from
+          wherever you actually are — and you can decline the unit.</span></li>
+        <!-- This list is a CONSENT NOTICE, so every line has to be true on the
+             day it ships. The planned "and every group you are in is listed on
+             your profile" is not here yet, and a consent notice describing a
+             screen that does not exist is the worst kind of untrue: it reads as
+             handled. Restore the clause with the profile section, not before. -->
+        <li><i>&#9679;</i><span><b>You can leave whenever you want</b>, and joining
+          one group never stops you joining another.</span></li>
+      </ul>
+      <button id="go">${signedIn() ? 'Join ' + esc(g.name) : 'Sign in to join'}</button>
+      <p class="fine">Hawkeye is not run by any party, candidate or campaign, and joining a
+        group does not change how your reports are checked or counted.
+        <a class="plain" href="privacy.html">Privacy</a> &middot;
+        <a class="plain" href="terms.html">Terms</a></p>
+    </div>`;
+
+  $('go').addEventListener('click', async () => {
+    if (!signedIn()) {
+      /* The query form, NOT the /join/<token> path we arrived on. app.js only
+         honours `next` matching `<page>.html[?query]` — a deliberate guard
+         against turning sign-in into an open redirect, and worth keeping. So
+         the round-trip uses the form that guard accepts, which is why this page
+         still reads ?t= at all. Sending the path form would pass the guard's
+         test never, and the invite would be silently dropped at sign-in. */
+      const back = 'join.html?t=' + encodeURIComponent(token);
+      return location.assign('/observe.html?intent=signin&next=' + encodeURIComponent(back));
+    }
+    $('go').disabled = true;
+    $('go').textContent = 'Joining…';
+    const r = await fetch('/api/join/' + encodeURIComponent(token), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') },
+    });
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      $('go').disabled = false;
+      $('go').textContent = 'Try again';
+      return alert(b.error === 'invite_expired' ? 'That invitation has expired.' : 'Could not join just now.');
+    }
+    $('jn').innerHTML = `<div class="card bad">
+      <h1>${b.already ? 'You are already with ' + esc(g.name) : 'You are in'}</h1>
+      <p>${b.already ? '' : esc(g.name) + ' can now see the reports you file from here on.'}
+        ${b.proposed_pu ? 'They have your saved polling unit (<span class="num">' + esc(b.proposed_pu) + '</span>) as a starting point, and may confirm or change it.' : ''}</p>
+      <p style="margin-top:14px"><a class="plain" href="observe.html">Report a result</a> &middot;
+         <a class="plain" href="profile.html">Your profile</a></p>
+    </div>`;
+  });
+}
+
+main().catch(() => bad('Something went wrong', 'Check your connection and try the link again.'));
+</script>
+</body>
+</html>

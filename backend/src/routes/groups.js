@@ -206,6 +206,18 @@ groupsRouter.post('/join/:token', requireObserver, (req, res) => {
   res.status(201).json({ ok: true, group_id: row.group_id, name: row.name, proposed_pu: saved?.pu_code || null });
 });
 
+/**
+ * Rename a member on this group's roster. Manager-only, and the write is
+ * confined to this group's row — a label never leaves the group that wrote it.
+ */
+groupsRouter.patch('/groups/:id/members/:observerId', requireObserver, requireManager, (req, res) => {
+  const label = String(req.body?.label ?? '').trim().slice(0, MAX_NAME);
+  const r = db.prepare('UPDATE group_members SET label = ? WHERE group_id = ? AND observer_id = ?')
+    .run(label || null, req.group.id, Number(req.params.observerId));
+  if (!r.changes) return res.status(404).json({ error: 'not_a_member' });
+  res.json({ ok: true, label: label || null });
+});
+
 groupsRouter.delete('/groups/:id/membership', requireObserver, (req, res) => {
   db.prepare('DELETE FROM group_members WHERE group_id = ? AND observer_id = ?').run(Number(req.params.id), req.observer.id);
   res.json({ ok: true });
@@ -340,7 +352,7 @@ groupsRouter.get('/groups/:id/team', requireObserver, requireManager, (req, res)
   const sc = scopeClause(req.manager, 'apu');
   const rows = db
     .prepare(
-      `SELECT m.observer_id, m.assigned_pu, m.assign_state, m.joined_at,
+      `SELECT m.observer_id, m.label, m.assigned_pu, m.assign_state, m.joined_at,
               apu.name AS assigned_name, apu.ward AS assigned_ward, apu.lga AS assigned_lga, apu.state AS assigned_state,
               s.pu_code AS reported_pu, s.created_at AS reported_at,
               rpu.name AS reported_name, rpu.ward AS reported_ward, rpu.lga AS reported_lga
@@ -357,6 +369,7 @@ groupsRouter.get('/groups/:id/team', requireObserver, requireManager, (req, res)
     contest: req.group.contest,
     members: rows.map((r) => ({
       observer_id: r.observer_id,
+      label: r.label || null,
       joined_at: r.joined_at,
       assign_state: r.assign_state,
       assigned: r.assigned_pu ? { pu_code: r.assigned_pu, name: r.assigned_name, ward: r.assigned_ward, lga: r.assigned_lga, state: r.assigned_state } : null,

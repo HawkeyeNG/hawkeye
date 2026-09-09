@@ -630,6 +630,14 @@ for (const ddl of [
      uses       INTEGER NOT NULL DEFAULT 0,
      created_at INTEGER NOT NULL
    )`,
+  // A roster label the MANAGER writes, scoped to their own group.
+  //
+  // Hawkeye stores no names: an observer is a phone hash and an id, and that is
+  // deliberate. But a team screen listing "#115, #116, #117" is a screen no
+  // campaign can act on. So the campaign labels its own people, in its own
+  // group, in a column no other group and no public surface reads — the roster
+  // is theirs, the identity layer stays nameless.
+  'ALTER TABLE group_members ADD COLUMN label TEXT',
   'CREATE INDEX IF NOT EXISTS idx_group_members_obs ON group_members(observer_id)',
   'CREATE INDEX IF NOT EXISTS idx_group_members_pu ON group_members(assigned_pu)',
 ]) {

@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="Situation room for campaigns and civil-society groups: coverage by LGA, ward and unit, and where your own observers have reported from." />
+  <title>Hawkeye — Situation Room</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=175" />
+  <script src="native.js?v=116"></script>
+  <meta name="robots" content="noindex" />
+  <script src="authgate.js?v=2"></script>
+<style>
+/* Situation room — an operator console, not a reading page. Everything below is
+   scoped to .sr so it cannot leak into the public pages that share styles.css.
+
+   FOUR STATES, NOT TWO, and none of them is the brand accent. Gold means "this
+   is Hawkeye" everywhere else on the site; if it also meant "covered" here, the
+   one colour a manager scans for would be the one colour already on every
+   chrome element. Red is reserved for something genuinely wrong — a red screen
+   at 08:00 teaches managers that red means nothing, and then it cannot warn
+   them at 16:00. Every state carries a WORD and a GLYPH as well as a hue:
+   colour alone fails for colourblind users and in direct Nigerian sun. */
+.sr {
+  --ok:      #17914c;   /* reported from the assigned unit — the only green */
+  --off:     #2f6fed;   /* reported, but from a different unit */
+  --wait:    #b8791a;   /* assigned and silent — the actionable one */
+  --idle:    var(--muted);
+  --sr-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+:root[data-theme="dark"] .sr { --ok: #3ecf80; --off: #6fa4ff; --wait: #e0a341; }
+
+.sr { max-width: 1180px; margin: 0 auto; padding: 0 16px 64px; }
+
+/* styles.css sets a GLOBAL button rule — display:block, width:100%, a green
+   block with a 16px top margin. That is right for the public pages, where a
+   button is a full-width call to action; it is wrong for every control on a
+   console, where buttons sit in rows, in table cells and inside breadcrumbs.
+   Neutralised once here rather than fought in each rule below. */
+.sr button { display: inline-block; width: auto; margin: 0; box-shadow: none; }
+.sr button:hover { filter: none; }
+.sr button:active { transform: none; }
+.sr .num { font-variant-numeric: tabular-nums; font-family: var(--sr-mono); }
+
+/* --- console bar --- */
+.sr-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  padding: 14px 0 12px; border-bottom: 1px solid var(--line);
+}
+.sr-bar h1 { font-size: 1.15rem; margin: 0; font-family: var(--display); letter-spacing: -0.01em; }
+.sr-bar .meta { color: var(--muted); font-size: 0.8rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.sr-bar .spacer { flex: 1 1 auto; }
+.sr-sel {
+  background: var(--card); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 10px; font: inherit; font-size: 0.85rem;
+}
+.sr-btn {
+  background: var(--card); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 12px; font: inherit; font-size: 0.85rem; cursor: pointer;
+}
+.sr-btn:hover { border-color: var(--accent); }
+.sr-btn.primary { background: var(--accent); border-color: var(--accent); color: #06231a; font-weight: 600; }
+
+/* --- tabs --- */
+.sr-tabs { display: flex; gap: 4px; margin: 14px 0 0; border-bottom: 1px solid var(--line); }
+.sr-tabs button {
+  background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted);
+  padding: 9px 14px; font: inherit; font-size: 0.9rem; cursor: pointer;
+}
+.sr-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+
+/* --- headline strip --- */
+.sr-heads { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 10px; margin: 16px 0; }
+.sr-head { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; }
+.sr-head b { display: block; font-size: 1.5rem; font-family: var(--sr-mono); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.sr-head span { display: block; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+.sr-head.ok b { color: var(--ok); } .sr-head.off b { color: var(--off); } .sr-head.wait b { color: var(--wait); }
+
+/* --- crumbs + controls --- */
+.sr-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.86rem; margin: 4px 0 12px; }
+.sr-crumbs button { background: none; border: 0; color: var(--accent); font: inherit; cursor: pointer; padding: 2px 0; }
+.sr-crumbs span { color: var(--muted); }
+.sr-crumbs .now { color: var(--ink); font-weight: 600; }
+
+/* --- table --- */
+.sr-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.sr-tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 720px; }
+.sr-tbl th {
+  text-align: right; padding: 9px 12px; color: var(--muted); font-weight: 600; font-size: 0.7rem;
+  text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.sr-tbl th:first-child, .sr-tbl td:first-child { text-align: left; }
+.sr-tbl td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.sr-tbl tr:last-child td { border-bottom: 0; }
+.sr-tbl tbody tr:hover { background: rgba(127, 127, 127, 0.06); }
+.sr-tbl .drill { background: none; border: 0; color: var(--ink); font: inherit; cursor: pointer; text-align: left; padding: 0; }
+.sr-tbl .drill:hover { color: var(--accent); text-decoration: underline; }
+.sr-tbl .z { color: var(--idle); }
+/* The team table holds no quantities — right-aligning place names against
+   place names is a habit borrowed from the number columns next door. */
+.sr-tbl.text th, .sr-tbl.text td { text-align: left; }
+.sr-tbl .ok-t { color: var(--ok); }
+.sr-tbl .off-t { color: var(--off); }
+.sr-tbl .wait-t { color: var(--wait); }
+
+/* Coverage bar — the percentage AND the counts, because 8/10 and 8,000/10,000
+   are the same percentage and only one of them needs people moved. */
+.sr-bar-cell { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.sr-track { width: 66px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.sr-fill { height: 100%; background: var(--ok); border-radius: 3px; }
+
+/* --- status pills --- */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 7px; border-radius: 999px;
+  font-size: 0.74rem; font-weight: 600; border: 1px solid currentColor; white-space: nowrap;
+}
+.pill i { font-style: normal; font-size: 0.8em; }
+.pill.ok { color: var(--ok); } .pill.off { color: var(--off); }
+.pill.wait { color: var(--wait); } .pill.idle { color: var(--idle); }
+
+/* --- panels, notes, empty states --- */
+.sr-note {
+  background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 8px; padding: 12px 14px; margin: 14px 0; font-size: 0.85rem; color: var(--muted); line-height: 1.55;
+}
+.sr-note strong { color: var(--ink); }
+.sr-empty { text-align: center; padding: 44px 20px; }
+.sr-empty h2 { font-family: var(--display); font-size: 1.25rem; margin: 0 0 8px; }
+.sr-empty p { color: var(--muted); max-width: 46ch; margin: 0 auto 8px; font-size: 0.9rem; line-height: 1.6; }
+.sr-form { max-width: 420px; margin: 20px auto 0; display: grid; gap: 10px; text-align: left; }
+.sr-form label { font-size: 0.76rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.sr-form input, .sr-form select {
+  width: 100%; background: var(--card); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 0.9rem;
+}
+.sr-link {
+  display: flex; gap: 8px; align-items: center; margin-top: 10px;
+  background: var(--bg); border: 1px dashed var(--line); border-radius: 8px; padding: 9px 11px;
+}
+.sr-link code { flex: 1 1 auto; font-family: var(--sr-mono); font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; }
+.sr-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0 0; font-size: 0.76rem; color: var(--muted); }
+.sr-msg { padding: 26px; text-align: center; color: var(--muted); font-size: 0.88rem; }
+.sr-sub { color: var(--muted); font-size: 0.75rem; display: block; margin-top: 2px; }
+@media (max-width: 640px) { .sr-bar h1 { width: 100%; } }
+</style>
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html">
+        <span class="crest" aria-hidden="true">🦅</span>
+        <div class="brand-text">
+          <strong>HAWKEYE</strong>
+          <span>Situation Room</span>
+        </div>
+      </a>
+    </div>
+  </header>
+
+  <main class="sr" id="sr">
+    <div class="sr-msg">Loading…</div>
+  </main>
+
+<script>
+/**
+ * Situation room — the read console for a campaign or CSO group.
+ *
+ * THE SENTENCE THIS SCREEN HAS TO KEEP TRUE: a group never gains visibility
+ * into the count. Everything here comes off the same public feed everybody
+ * else reads; the group layer only says which of those public reports came
+ * from its own people. That is printed in the UI, not just in the code — it is
+ * what a rival campaign is owed when they ask what this dashboard can see.
+ */
+const API = '';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const n = (v) => Number(v || 0).toLocaleString('en-NG');
+const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+/* Rounding 4 units in 13,327 to "0%" tells a manager the night has not started
+   when in fact it has. Below 1% the first significant digit is the whole
+   message, so keep it. */
+const finePct = (a, b) => {
+  if (!b) return '0%';
+  const p = (a / b) * 100;
+  return (p > 0 && p < 1 ? p.toFixed(p < 0.1 ? 2 : 1) : Math.round(p)) + '%';
+};
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    ...opts,
+    headers: {
+      'content-type': 'application/json',
+      authorization: 'Bearer ' + (localStorage.getItem('hawkeye_token') || ''),
+      ...(opts.headers || {}),
+    },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401) { location.replace('observe.html?intent=signin&next=situation-room.html'); throw new Error('signed out'); }
+  return { status: res.status, body };
+}
+
+const S = {
+  groups: [], gid: null, group: null, tab: 'coverage',
+  path: { state: '', lga: '', ward: '' },
+  filter: 'all', sort: 'status', coverage: null, team: null, invites: [],
+};
+
+/* --- shell ------------------------------------------------------------- */
+
+function render() {
+  if (!S.groups.length) return renderWelcome();
+  const g = S.group || {};
+  const scope = g.scope || 'Nationwide';
+  $('sr').innerHTML = `
+    <div class="sr-bar">
+      <h1>${esc(g.name || '')}</h1>
+      <div class="meta">
+        <span>${esc(g.kind === 'cso' ? 'Civil society' : 'Campaign')}</span>
+        <span>&middot;</span><span>${esc(g.contest || '')}</span>
+        <span>&middot;</span><span>${esc(scope)}</span>
+        <span>&middot;</span><span class="num">${n(g.members)}</span><span>observers</span>
+      </div>
+      <div class="spacer"></div>
+      ${S.groups.length > 1 ? `<select class="sr-sel" id="gpick">${S.groups.map((x) =>
+        `<option value="${x.id}"${x.id === S.gid ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}
+      <button class="sr-btn" id="invite-btn">Invite observers</button>
+      <button class="sr-btn" id="refresh-btn" title="Reload from the live feed">Refresh</button>
+    </div>
+    <div class="sr-tabs" role="tablist">
+      <button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage">Coverage</button>
+      <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team">Team</button>
+    </div>
+    <div id="sr-body"><div class="sr-msg">Loading…</div></div>`;
+
+  $('gpick') && $('gpick').addEventListener('change', (e) => { pickGroup(Number(e.target.value)); });
+  $('invite-btn').addEventListener('click', showInvite);
+  $('refresh-btn').addEventListener('click', () => loadTab(true));
+  document.querySelectorAll('.sr-tabs button').forEach((b) =>
+    b.addEventListener('click', () => { S.tab = b.dataset.tab; render(); loadTab(); }));
+  loadTab();
+}
+
+/* THE EMPTY STATE IS DESIGNED FIRST, on purpose. A manager opens this weeks
+   before polls with every number at zero, and that is exactly when they decide
+   whether this product is worth funding. Show them the plan, not a void. */
+function renderWelcome() {
+  $('sr').innerHTML = `
+    <div class="sr-empty">
+      <h2>Set up your situation room</h2>
+      <p>Watch a race and your own observers on one screen: which units have
+         reported, where your coverage is thin, and who has yet to file.</p>
+      <p><strong>Your observers report the way everyone else does</strong> — the group is
+         a roster, never a gate. Nothing here changes what they can send or when.</p>
+      <form class="sr-form" id="mk">
+        <div><label for="mk-name">Campaign or organisation</label>
+          <input id="mk-name" maxlength="80" required placeholder="e.g. Adaeze 2027" /></div>
+        <div><label for="mk-kind">Type</label>
+          <select id="mk-kind"><option value="campaign">Campaign</option><option value="cso">Civil society / observer group</option></select></div>
+        <div><label for="mk-contest">Race</label><select id="mk-contest"></select></div>
+        <div><label for="mk-scope">State (leave blank to watch the whole country)</label>
+          <input id="mk-scope" maxlength="40" placeholder="e.g. Lagos" /></div>
+        <button class="sr-btn primary" type="submit">Create situation room</button>
+      </form>
+      ${disclosureHtml()}
+    </div>`;
+  api('/api/contests').then(({ body }) => {
+    const list = Array.isArray(body) ? body : [];
+    $('mk-contest').innerHTML = list.map((c) =>
+      `<option value="${esc(c.code)}">${esc(c.label || c.title || c.name || c.code)}</option>`).join('')
+      || '<option value="PRES">Presidential</option>';
+  });
+  $('mk').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const { status, body } = await api('/api/groups', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: $('mk-name').value.trim(), kind: $('mk-kind').value,
+        contest: $('mk-contest').value, scope: $('mk-scope').value.trim(),
+      }),
+    });
+    if (status !== 201) return alert(body.error || 'Could not create the group.');
+    await boot(body.id);
+  });
+}
+
+/** Printed on screen, not just in the source. See the header comment. */
+function disclosureHtml() {
+  return `<div class="sr-note" style="max-width:560px;margin:24px auto 0;text-align:left">
+    <strong>What this can and cannot see.</strong> Every figure here comes from the
+    same public feed as the rest of Hawkeye — this room gets no early access, no
+    unpublished numbers, and no sight of any other group&rsquo;s observers. It shows
+    which of the <em>already-public</em> reports came from your people, and only from
+    the moment they joined: their earlier reports are not yours to see.
+  </div>`;
+}
+
+/* --- coverage ---------------------------------------------------------- */
+
+async function loadTab(force) {
+  const body = $('sr-body');
+  if (!body) return;
+  if (S.tab === 'coverage') {
+    if (force || !S.coverage) {
+      const q = new URLSearchParams();
+      for (const k of ['state', 'lga', 'ward']) if (S.path[k]) q.set(k, S.path[k]);
+      const { body: c } = await api('/api/groups/' + S.gid + '/coverage' + (q.toString() ? '?' + q : ''));
+      S.coverage = c;
+    }
+    renderCoverage();
+  } else {
+    if (force || !S.team) S.team = (await api('/api/groups/' + S.gid + '/team')).body;
+    renderTeam();
+  }
+}
+
+// Uppercased by the stylesheet, so no mixed-case acronym would survive here.
+const LEVEL_WORD = { state: 'States', lga: 'Local governments', ward: 'Wards', unit: 'Polling units' };
+
+function renderCoverage() {
+  const c = S.coverage || { nodes: [] };
+  const nodes = c.nodes || [];
+  const tot = nodes.reduce((a, x) => ({
+    units: a.units + x.units, reported: a.reported + x.reported,
+    assigned: a.assigned + x.assigned, on_unit: a.on_unit + x.on_unit, mismatched: a.mismatched + x.mismatched,
+  }), { units: 0, reported: 0, assigned: 0, on_unit: 0, mismatched: 0 });
+  const silent = tot.assigned - tot.on_unit - tot.mismatched;
+
+  const shown = nodes.filter((x) => {
+    if (S.filter === 'gaps') return x.reported < x.units;
+    if (S.filter === 'silent') return x.assigned - x.on_unit - x.mismatched > 0;
+    if (S.filter === 'ours') return x.assigned > 0 || x.member_reported > 0;
+    return true;
+  });
+
+  $('sr-body').innerHTML = `
+    <div class="sr-heads">
+      <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>of ${n(tot.units)} units reported</span></div>
+      <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>Coverage</span></div>
+      <div class="sr-head ok"><b class="num">${n(tot.on_unit)}</b><span>On their unit</span></div>
+      <div class="sr-head off"><b class="num">${n(tot.mismatched)}</b><span>Filed elsewhere</span></div>
+      <div class="sr-head wait"><b class="num">${n(silent > 0 ? silent : 0)}</b><span>Yet to report</span></div>
+    </div>
+    ${crumbsHtml()}
+    <div class="sr-bar" style="border:0;padding:0 0 10px">
+      <select class="sr-sel" id="cov-filter">
+        <option value="all"${S.filter === 'all' ? ' selected' : ''}>Show everything</option>
+        <option value="gaps"${S.filter === 'gaps' ? ' selected' : ''}>Only where units are unreported</option>
+        <option value="silent"${S.filter === 'silent' ? ' selected' : ''}>Only where our observers are silent</option>
+        <option value="ours"${S.filter === 'ours' ? ' selected' : ''}>Only where we have people</option>
+      </select>
+      <div class="spacer"></div>
+      <button class="sr-btn" id="csv">Export CSV</button>
+    </div>
+    <div class="sr-wrap"><table class="sr-tbl">
+      <thead><tr>
+        <th>${LEVEL_WORD[c.level] || 'Places'}</th>
+        <th>Units</th><th>Reported</th><th>Coverage</th>
+        <th>Ours</th><th>On unit</th><th>Elsewhere</th><th>Silent</th>
+      </tr></thead>
+      <tbody>${shown.length ? shown.map(rowHtml).join('') :
+        `<tr><td colspan="8" class="sr-msg">Nothing matches that filter here.</td></tr>`}</tbody>
+    </table></div>
+    <div class="sr-legend">
+      <span><b style="color:var(--ok)">&#9679;</b> On unit &mdash; reported from the unit they were assigned</span>
+      <span><b style="color:var(--off)">&#9670;</b> Elsewhere &mdash; reported, from a different unit</span>
+      <span><b style="color:var(--wait)">&#9632;</b> Silent &mdash; assigned, nothing filed yet</span>
+    </div>
+    ${c.level !== 'unit' ? '<div class="sr-note">Select a row to open the places inside it.</div>' : ''}`;
+
+  $('cov-filter').addEventListener('change', (e) => { S.filter = e.target.value; renderCoverage(); });
+  $('csv').addEventListener('click', () => exportCsv(c.level, shown));
+  document.querySelectorAll('.sr-tbl .drill').forEach((b) =>
+    b.addEventListener('click', () => drill(c.level, b.dataset.key)));
+}
+
+function rowHtml(x) {
+  const silent = Math.max(0, x.assigned - x.on_unit - x.mismatched);
+  const p = pct(x.reported, x.units);
+  const cell = (v, cls) => `<td class="num${v ? (cls ? ' ' + cls : '') : ' z'}">${n(v)}</td>`;
+  return `<tr>
+    <td>${x.key === x.name ? `<button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>`
+      : `<button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button><span class="sr-sub num">${esc(x.key)}</span>`}</td>
+    <td class="num">${n(x.units)}</td>
+    <td class="num${x.reported ? '' : ' z'}">${n(x.reported)}</td>
+    <td><div class="sr-bar-cell"><span class="num">${p}%</span>
+      <span class="sr-track"><span class="sr-fill" style="width:${p}%"></span></span></div></td>
+    ${cell(x.assigned)}
+    ${cell(x.on_unit, 'ok-t')}
+    ${cell(x.mismatched, 'off-t')}
+    ${cell(silent, 'wait-t')}
+  </tr>`;
+}
+
+function crumbsHtml() {
+  const p = S.path;
+  const parts = [`<button data-lvl="root">${esc(S.group.scope || 'Nigeria')}</button>`];
+  for (const k of ['state', 'lga', 'ward']) if (p[k]) parts.push(`<button data-lvl="${k}">${esc(p[k])}</button>`);
+  const last = parts.pop().replace(/^<button[^>]*>/, '<span class="now">').replace('</button>', '</span>');
+  return `<div class="sr-crumbs" id="crumbs">${parts.map((x) => x + '<span>&rsaquo;</span>').join('')}${last}</div>`;
+}
+
+/* Drilling replaces the table under a scroll position set by the PREVIOUS,
+   longer list — go down two levels and the new list can be entirely above the
+   viewport, which reads as a blank screen. */
+function toTop() { window.scrollTo({ top: 0, behavior: 'instant' }); }
+
+function drill(level, key) {
+  if (level === 'unit') return;
+  if (level === 'state') S.path = { state: key, lga: '', ward: '' };
+  else if (level === 'lga') S.path = { ...S.path, lga: key, ward: '' };
+  else S.path = { ...S.path, ward: key };
+  S.coverage = null;
+  toTop();
+  loadTab(true);
+}
+
+function exportCsv(level, rows) {
+  const head = [level, 'code', 'units', 'reported', 'coverage_pct', 'ours', 'on_unit', 'elsewhere', 'silent'];
+  const lines = [head.join(',')].concat(rows.map((x) => [
+    JSON.stringify(x.name), JSON.stringify(x.key), x.units, x.reported, pct(x.reported, x.units),
+    x.assigned, x.on_unit, x.mismatched, Math.max(0, x.assigned - x.on_unit - x.mismatched),
+  ].join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+  a.download = 'hawkeye-coverage-' + level + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* --- team -------------------------------------------------------------- */
+
+const STATUS = {
+  on_unit:             { cls: 'ok',   glyph: '&#9679;', word: 'On unit',  rank: 3 },
+  mismatch:            { cls: 'off',  glyph: '&#9670;', word: 'Elsewhere', rank: 1 },
+  reported_unassigned: { cls: 'off',  glyph: '&#9670;', word: 'Reported',  rank: 2 },
+  silent:              { cls: 'wait', glyph: '&#9632;', word: 'Silent',    rank: 0 },
+  declined:            { cls: 'idle', glyph: '&#9633;', word: 'Declined',  rank: 4 },
+  unassigned:          { cls: 'idle', glyph: '&#9633;', word: 'No unit',   rank: 5 },
+};
+
+function renderTeam() {
+  const t = S.team || { members: [] };
+  const ms = t.members.slice().sort((a, b) =>
+    (STATUS[a.status].rank - STATUS[b.status].rank) || (a.joined_at - b.joined_at));
+  const count = (s) => t.members.filter((m) => m.status === s).length;
+
+  $('sr-body').innerHTML = `
+    <div class="sr-heads">
+      <div class="sr-head"><b class="num">${n(t.members.length)}</b><span>Observers</span></div>
+      <div class="sr-head ok"><b class="num">${n(count('on_unit'))}</b><span>On their unit</span></div>
+      <div class="sr-head off"><b class="num">${n(count('mismatch') + count('reported_unassigned'))}</b><span>Reported elsewhere</span></div>
+      <div class="sr-head wait"><b class="num">${n(count('silent'))}</b><span>Yet to report</span></div>
+      <div class="sr-head"><b class="num">${n(count('unassigned') + count('declined'))}</b><span>No unit set</span></div>
+    </div>
+    ${t.members.length ? `
+    <div class="sr-wrap"><table class="sr-tbl text">
+      <thead><tr><th>Observer</th><th>Status</th><th>Assigned unit</th><th>Reported from</th><th></th></tr></thead>
+      <tbody>${ms.map(memberRow).join('')}</tbody>
+    </table></div>
+    <div class="sr-note">
+      <strong>A different unit is a discrepancy to explain, not a verdict.</strong>
+      Observers get moved by their own party, turned away at the gate, or sent to a
+      unit that was merged or relocated &mdash; and an assignment can simply have been
+      wrong. Ask before you conclude.
+    </div>` : emptyTeamHtml()}`;
+
+  document.querySelectorAll('[data-rename]').forEach((b) => b.addEventListener('click', () => rename(b.dataset.rename)));
+}
+
+function memberRow(m) {
+  const s = STATUS[m.status];
+  const place = (u) => u ? `${esc(u.name)}<span class="sr-sub num">${esc(u.pu_code)}</span>` : '<span class="z">&mdash;</span>';
+  const mismatched = m.status === 'mismatch';
+  return `<tr>
+    <td>${esc(m.label || 'Observer #' + m.observer_id)}${m.label ? `<span class="sr-sub num">#${m.observer_id}</span>` : ''}</td>
+    <td><span class="pill ${s.cls}"><i>${s.glyph}</i>${s.word}</span></td>
+    <td>${place(m.assigned)}</td>
+    <td>${place(m.reported)}${mismatched ? '<span class="sr-sub" style="color:var(--off)">not the assigned unit</span>' : ''}</td>
+    <td><button class="sr-btn" data-rename="${m.observer_id}" style="padding:3px 9px;font-size:0.76rem">Rename</button></td>
+  </tr>`;
+}
+
+function emptyTeamHtml() {
+  return `<div class="sr-empty">
+    <h2>No observers yet</h2>
+    <p>Share your invite link however you already talk to your people. Anyone who
+       taps it, signs in and joins appears here.</p>
+    <p><strong>Joining is always a deliberate tap</strong> &mdash; a link forwarded into a
+       group chat never enrols whoever opens it.</p>
+    <button class="sr-btn primary" onclick="showInvite()" style="margin-top:12px">Get the invite link</button>
+  </div>`;
+}
+
+async function rename(observerId) {
+  const cur = (S.team.members.find((m) => String(m.observer_id) === String(observerId)) || {}).label || '';
+  const label = prompt('Name for this observer on your roster (only your group sees it):', cur);
+  if (label === null) return;
+  const { status } = await api('/api/groups/' + S.gid + '/members/' + observerId, {
+    method: 'PATCH', body: JSON.stringify({ label: label.trim() }),
+  });
+  if (status !== 200) return alert('Could not save that name.');
+  S.team = null;
+  loadTab(true);
+}
+
+/* --- invites ----------------------------------------------------------- */
+
+async function showInvite() {
+  let { body } = await api('/api/groups/' + S.gid + '/invites');
+  let live = (Array.isArray(body) ? body : []).find((t) => !t.revoked && t.expires_at > Date.now());
+  if (!live) live = (await api('/api/groups/' + S.gid + '/invites', { method: 'POST' })).body;
+  const url = location.origin + '/join/' + live.token;
+  const body_ = document.createElement('div');
+  body_.className = 'sr-note';
+  body_.innerHTML = `<strong>Invite link</strong>
+    <div class="sr-link"><code id="inv-url">${esc(url)}</code>
+      <button class="sr-btn" id="inv-copy">Copy</button></div>
+    <div style="margin-top:8px">Anyone with this link can join your roster after signing in.
+      It expires in ${Math.max(1, Math.round((live.expires_at - Date.now()) / 86400000))} days, and you can revoke it at any time.</div>`;
+  const anchor = $('sr-body');
+  const old = document.getElementById('inv-panel');
+  if (old) old.remove();
+  body_.id = 'inv-panel';
+  anchor.prepend(body_);
+  $('inv-copy').addEventListener('click', () => {
+    navigator.clipboard.writeText(url).then(() => { $('inv-copy').textContent = 'Copied'; });
+  });
+}
+
+/* --- boot -------------------------------------------------------------- */
+
+function pickGroup(id) {
+  S.gid = id;
+  S.coverage = S.team = null;
+  S.path = { state: '', lga: '', ward: '' };
+  loadGroup();
+}
+
+async function loadGroup() {
+  const { body } = await api('/api/groups/' + S.gid);
+  S.group = body;
+  render();
+}
+
+async function boot(preferId) {
+  const { body } = await api('/api/groups');
+  S.groups = (body && body.managing) || [];
+  if (!S.groups.length) return renderWelcome();
+  S.gid = preferId || S.groups[0].id;
+  await loadGroup();
+}
+
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('#crumbs button');
+  if (!b) return;
+  if (b.dataset.lvl === 'root') S.path = { state: '', lga: '', ward: '' };
+  else if (b.dataset.lvl === 'state') S.path = { state: S.path.state, lga: '', ward: '' };
+  else if (b.dataset.lvl === 'lga') S.path = { ...S.path, ward: '' };
+  S.coverage = null;
+  toTop();
+  loadTab(true);
+});
+
+boot().catch((e) => { $('sr').innerHTML = '<div class="sr-msg">Could not load the situation room. ' + esc(e.message) + '</div>'; });
+</script>
+</body>
+</html>

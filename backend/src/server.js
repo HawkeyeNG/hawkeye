@@ -344,6 +344,21 @@ app.get('/get', (req, res) => {
  */
 app.get('/download', (_req, res) => res.sendFile(path.join(config.appDir, 'download.html')));
 
+/**
+ * /join/<token> — a campaign or CSO invite link.
+ *
+ * A PATH, not `join.html?t=…`, and the difference is not cosmetic. These links
+ * are pasted into WhatsApp threads and live there for weeks; the day the app
+ * claims `/join/` as an App Link (it claims `/open` only today — see
+ * app/.well-known/assetlinks.json), every link already in circulation has to
+ * still work and open the app. A query-string form could not be adopted later
+ * without stranding every invite a campaign had already sent.
+ *
+ * BEFORE express.static, like /get and /download above, and for the same
+ * reason: this is a route, not a file.
+ */
+app.get('/join/:token', (_req, res) => res.sendFile(path.join(config.appDir, 'join.html')));
+
 // Observer PWA + public dashboard.
 app.use(express.static(config.appDir));
 

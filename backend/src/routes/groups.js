@@ -415,6 +415,44 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
   });
 });
 
+/**
+ * What this group's people have filed lately, newest first.
+ *
+ * The "what changed" half of the overview. Reads the same public stream as
+ * everything else, from each member's joined_at forward, and says whether each
+ * report came from the unit that member was down for — the mismatch is most
+ * legible at the moment it happens, while the manager can still ring someone.
+ */
+groupsRouter.get('/groups/:id/activity', requireObserver, requireManager, (req, res) => {
+  const sc = scopeClause(req.manager);
+  const rows = db
+    .prepare(
+      `SELECT s.pu_code, s.created_at, m.observer_id, m.label, m.assigned_pu,
+              pu.name, pu.ward, pu.lga
+         FROM group_members m
+         JOIN submissions s ON s.observer_id = m.observer_id AND s.contest = ? AND s.created_at >= m.joined_at
+         JOIN polling_units pu ON pu.pu_code = s.pu_code
+        WHERE m.group_id = ?${sc.sql}
+        ORDER BY s.created_at DESC LIMIT 25`,
+    )
+    .all(req.group.contest, req.group.id, ...sc.params);
+  res.json({
+    reports: rows.map((r) => ({
+      observer_id: r.observer_id,
+      label: r.label || null,
+      at: r.created_at,
+      pu_code: r.pu_code,
+      name: r.name,
+      ward: r.ward,
+      lga: r.lga,
+      // null when they had no assignment at all — which is not a mismatch, and
+      // must not be shown as one.
+      on_unit: r.assigned_pu ? r.pu_code === r.assigned_pu : null,
+      assigned_pu: r.assigned_pu || null,
+    })),
+  });
+});
+
 // --- team ---------------------------------------------------------------------
 
 /**

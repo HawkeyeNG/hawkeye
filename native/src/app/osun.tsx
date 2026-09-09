@@ -32,7 +32,7 @@ export default function Osun() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title={i18nT('n.app.osun.osun-2026')} translateY={translateY} onClose={() => router.back()} />
+      <ScreenHeader title={i18nT('nav.osun-2026')} translateY={translateY} onClose={() => router.back()} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}

@@ -135,7 +135,7 @@ export default function Incidents() {
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingTop: headerH + 12, paddingBottom: 16 }}
+        contentContainerStyle={{ paddingTop: headerH, paddingBottom: 16 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ui.tint.good.ink} />
         }

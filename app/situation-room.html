@@ -123,6 +123,20 @@
 .pill.ok { color: var(--ok); } .pill.off { color: var(--off); }
 .pill.wait { color: var(--wait); } .pill.idle { color: var(--idle); }
 
+/* --- overview --- */
+.sr-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .sr-two { grid-template-columns: minmax(0, 1fr); } }
+.sr-h2 { font-family: var(--display); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--muted); margin: 4px 0 9px; font-weight: 600; }
+.sr-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 13px; margin-bottom: 20px; }
+.sr-card .sr-tbl td { padding: 7px 6px; }
+.sr-map { width: 100%; height: auto; max-height: 340px; display: block; color: var(--ink); }
+.sr-act { display: flex; align-items: center; gap: 10px; padding: 8px 2px; border-bottom: 1px solid var(--line); }
+.sr-act:last-child { border-bottom: 0; }
+.sr-act-t { flex: 1 1 auto; min-width: 0; font-size: 0.84rem; line-height: 1.35; }
+.sr-act-t b { font-weight: 600; }
+.sr-act-w { color: var(--muted); font-size: 0.74rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
 /* --- panels, notes, empty states --- */
 .sr-note {
   background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--accent);
@@ -206,7 +220,7 @@ async function api(path, opts = {}) {
 }
 
 const S = {
-  groups: [], gid: null, group: null, tab: 'coverage',
+  groups: [], gid: null, group: null, tab: 'overview',
   path: { state: '', lga: '', ward: '' },
   filter: 'all', sort: 'status', coverage: null, team: null, invites: [],
 };
@@ -233,6 +247,7 @@ function render() {
       <button class="sr-btn" id="refresh-btn" title="Reload from the live feed">Refresh</button>
     </div>
     <div class="sr-tabs" role="tablist">
+      <button role="tab" aria-selected="${S.tab === 'overview'}" data-tab="overview">Overview</button>
       <button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage">Coverage</button>
       <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team">Team</button>
     </div>
@@ -305,6 +320,20 @@ function disclosureHtml() {
 async function loadTab(force) {
   const body = $('sr-body');
   if (!body) return;
+  if (S.tab === 'overview') {
+    /* The ROOT level, always — Overview answers "where do I stand", and a
+       manager who drilled into one ward an hour ago did not mean to make that
+       the definition of standing. Cached apart from S.coverage for that reason. */
+    if (force || !S.overview) {
+      const [cov, act] = await Promise.all([
+        api('/api/groups/' + S.gid + '/coverage'),
+        api('/api/groups/' + S.gid + '/activity'),
+      ]);
+      S.overview = cov.body;
+      S.activity = act.body;
+    }
+    return renderOverview();
+  }
   if (S.tab === 'coverage') {
     if (force || !S.coverage) {
       const q = new URLSearchParams();
@@ -317,6 +346,189 @@ async function loadTab(force) {
     if (force || !S.team) S.team = (await api('/api/groups/' + S.gid + '/team')).body;
     renderTeam();
   }
+}
+
+/* --- overview ----------------------------------------------------------- */
+
+const timeAgo = (ms) => {
+  const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+  if (s < 90) return 'just now';
+  const m = Math.round(s / 60);
+  if (m < 60) return m + ' min ago';
+  const h = Math.round(m / 60);
+  return h < 24 ? h + ' hr ago' : Math.round(h / 24) + ' d ago';
+};
+
+/**
+ * The screen a manager opens first, answering one question: where do I stand,
+ * and where do I send the next person.
+ *
+ * NOT a second copy of Coverage. The tree is for working a specific place; this
+ * is for deciding which place. So the gap list is ranked by UNREPORTED UNITS,
+ * not by percentage — a 60%-covered LGA with 700 units has more of the election
+ * missing than a 0%-covered one with 12, and sorting by percentage puts the
+ * small one on top every time.
+ */
+function renderOverview() {
+  const c = S.overview || { nodes: [] };
+  const nodes = c.nodes || [];
+  const tot = nodes.reduce((a, x) => ({
+    units: a.units + x.units, reported: a.reported + x.reported,
+    assigned: a.assigned + x.assigned, on_unit: a.on_unit + x.on_unit, mismatched: a.mismatched + x.mismatched,
+  }), { units: 0, reported: 0, assigned: 0, on_unit: 0, mismatched: 0 });
+  const silent = Math.max(0, tot.assigned - tot.on_unit - tot.mismatched);
+  const gaps = nodes.slice().sort((a, b) => (b.units - b.reported) - (a.units - a.reported)).slice(0, 6);
+  const reports = (S.activity && S.activity.reports) || [];
+
+  $('sr-body').innerHTML = `
+    <div class="sr-heads">
+      <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>of ${n(tot.units)} units reported</span></div>
+      <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>Coverage</span></div>
+      <div class="sr-head ok"><b class="num">${n(tot.on_unit)}</b><span>On their unit</span></div>
+      <div class="sr-head off"><b class="num">${n(tot.mismatched)}</b><span>Filed elsewhere</span></div>
+      <div class="sr-head wait"><b class="num">${n(silent)}</b><span>Yet to report</span></div>
+    </div>
+    <div class="sr-two">
+      <div>
+        <h2 class="sr-h2">${esc(S.group.scope || 'Nigeria')} at a glance</h2>
+        <div class="sr-card" id="sr-map"><div class="sr-msg">Drawing the map…</div></div>
+      </div>
+      <div>
+        <h2 class="sr-h2">Where the election is most missing</h2>
+        <div class="sr-card">${gaps.length ? `<table class="sr-tbl" style="min-width:0">
+          <tbody>${gaps.map((x) => `<tr>
+            <td><button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>
+              ${x.assigned ? `<span class="sr-sub">${n(x.assigned)} of ours here</span>`
+                : '<span class="sr-sub" style="color:var(--wait)">nobody assigned</span>'}</td>
+            <td class="num">${n(x.units - x.reported)}<span class="sr-sub">unreported</span></td>
+            <td style="width:80px"><div class="sr-bar-cell"><span class="num">${pct(x.reported, x.units)}%</span>
+              <span class="sr-track"><span class="sr-fill" style="width:${pct(x.reported, x.units)}%"></span></span></div></td>
+          </tr>`).join('')}</tbody></table>` : '<div class="sr-msg">Nothing to show yet.</div>'}</div>
+
+        <h2 class="sr-h2">What your people just filed</h2>
+        <div class="sr-card">${reports.length ? reports.slice(0, 8).map(activityRow).join('')
+          : `<div class="sr-msg">No reports from your observers yet.<br />
+             They will appear here the moment one is published.</div>`}</div>
+      </div>
+    </div>`;
+
+  document.querySelectorAll('#sr-body .drill').forEach((b) =>
+    b.addEventListener('click', () => { S.tab = 'coverage'; S.filter = 'all'; render(); drill(c.level, b.dataset.key); }));
+  drawMap(nodes);
+}
+
+function activityRow(r) {
+  const off = r.on_unit === false;
+  return `<div class="sr-act">
+    <span class="pill ${off ? 'off' : 'ok'}"><i>${off ? '&#9670;' : '&#9679;'}</i>${off ? 'Elsewhere' : 'Filed'}</span>
+    <div class="sr-act-t">
+      <b>${esc(r.label || 'Observer #' + r.observer_id)}</b> &mdash; ${esc(r.name)}
+      <span class="sr-sub">${esc(r.lga || '')}${r.ward ? ' &middot; ' + esc(r.ward) : ''}${off ? ' &middot; not the unit they were down for' : ''}</span>
+    </div>
+    <span class="sr-act-w">${timeAgo(r.at)}</span>
+  </div>`;
+}
+
+/**
+ * A choropleth cut from the national layers the site already ships.
+ *
+ * app/states_geo.json and app/lga_geo.json hold every shape as a PRE-PROJECTED
+ * SVG path on one shared 800x660 viewBox, so this is a filter over a file that
+ * is already there and already cached — no projection, no library, no new
+ * geometry. Same reasoning as the seat maps on the race pages.
+ *
+ * Names are matched on a folded key because the INEC register and the geo files
+ * disagree by a letter or two on shapes that are plainly the same place
+ * ("Somolu" / "Shomolu", "Danbata" / "Dambatta"). An unmatched shape is simply
+ * not drawn — a map that quietly mislabels an LGA is worse than one with a gap.
+ */
+async function drawMap(nodes) {
+  const host = $('sr-map');
+  if (!host) return;
+  const scope = S.group.scope || '';
+  const file = scope ? 'lga_geo.json' : 'states_geo.json';
+  // fetchData, not fetch: Lite does not bundle the geo layers and native.js's
+  // helper pulls them from the live site. A no-op on hawkeye.com.ng.
+  const geo = await (window.fetchData ? window.fetchData(file) : fetch(file))
+    .then((r) => r.json()).catch(() => null);
+  if (!geo) { host.innerHTML = '<div class="sr-msg">Map unavailable offline.</div>'; return; }
+
+  const fold = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const shapes = scope ? geo.lgas : geo.states;
+  const byKey = new Map();
+  for (const s of shapes) {
+    const k = scope ? String(s.key || '').split('|') : [String(s.key || '')];
+    if (scope && fold(k[0]) !== fold(scope)) continue;
+    byKey.set(fold(scope ? k[1] : k[0]), s.path);
+  }
+
+  const drawn = nodes.map((x) => ({ node: x, path: byKey.get(fold(x.name)) })).filter((x) => x.path);
+
+  /**
+   * The near-misses, and ONLY where there is exactly one of them.
+   *
+   * The register and the geo file disagree by a letter or two on shapes that
+   * are plainly the same place — Lagos alone loses Somolu/Shomolu, and about
+   * fifty of the 774 LGAs differ this way nationally. Dropping them leaves a
+   * hole in the middle of a state, which reads as "nothing happened there".
+   *
+   * Bounded three ways, because a mislabelled LGA is worse than a missing one:
+   * an edit distance of at most two, only against shapes NOTHING else matched,
+   * and only when exactly one candidate qualifies. Two candidates means the
+   * name is genuinely ambiguous and the shape stays undrawn.
+   */
+  const dist = (a, b) => {
+    if (Math.abs(a.length - b.length) > 2) return 99;
+    let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      }
+      prev = cur;
+    }
+    return prev[b.length];
+  };
+  const usedPaths = new Set(drawn.map((d) => d.path));
+  const spare = [...byKey.entries()].filter(([, p]) => !usedPaths.has(p));
+  for (const x of nodes) {
+    if (drawn.some((d) => d.node === x)) continue;
+    const near = spare.filter(([k]) => dist(fold(x.name), k) <= 2);
+    if (near.length === 1) drawn.push({ node: x, path: near[0][1] });
+  }
+
+  if (!drawn.length) { host.innerHTML = '<div class="sr-msg">No map for this area.</div>'; return; }
+
+  const nums = [];
+  for (const d of drawn) for (const m of d.path.match(/-?\d+(?:\.\d+)?/g) || []) nums.push(+m);
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    if (nums[i] < x0) x0 = nums[i];
+    if (nums[i] > x1) x1 = nums[i];
+    if (nums[i + 1] < y0) y0 = nums[i + 1];
+    if (nums[i + 1] > y1) y1 = nums[i + 1];
+  }
+  const pad = Math.max(x1 - x0, y1 - y0) * 0.05 || 1;
+
+  host.innerHTML = `<svg viewBox="${(x0 - pad).toFixed(1)} ${(y0 - pad).toFixed(1)} ${(x1 - x0 + pad * 2).toFixed(1)} ${(y1 - y0 + pad * 2).toFixed(1)}"
+      role="img" aria-label="Coverage across ${esc(scope || 'Nigeria')}" class="sr-map">
+    ${drawn.map(({ node, path }) => {
+      const p = pct(node.reported, node.units);
+      /* Coverage is the FILL and our people are the STROKE, so the two facts do
+         not compete for one channel: a well-covered place we have nobody in and
+         a bare place full of our observers are the two the manager most needs
+         to tell apart at a glance. */
+      return `<path d="${path}" fill="var(--ok)" fill-opacity="${(0.05 + (p / 100) * 0.8).toFixed(3)}"
+        stroke="${node.assigned ? 'var(--accent)' : 'currentColor'}"
+        stroke-opacity="${node.assigned ? 0.95 : 0.35}" stroke-width="${node.assigned ? 1.6 : 0.9}"
+        stroke-linejoin="round" vector-effect="non-scaling-stroke"
+        ><title>${esc(node.name)} — ${p}% reported (${n(node.reported)} of ${n(node.units)})${node.assigned ? ', ' + n(node.assigned) + ' of ours' : ', nobody assigned'}</title></path>`;
+    }).join('')}
+  </svg>
+  <div class="sr-legend" style="margin-top:10px">
+    <span>Deeper green &mdash; more units reported</span>
+    <span><b style="color:var(--accent)">&#9633;</b> outlined &mdash; we have observers there</span>
+  </div>`;
 }
 
 // Uppercased by the stylesheet, so no mixed-case acronym would survive here.
@@ -605,7 +817,7 @@ async function showInvite() {
 
 function pickGroup(id) {
   S.gid = id;
-  S.coverage = S.team = null;
+  S.coverage = S.team = S.overview = S.activity = null;
   S.path = { state: '', lga: '', ward: '' };
   loadGroup();
 }

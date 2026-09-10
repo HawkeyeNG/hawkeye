@@ -254,6 +254,7 @@ groupsRouter.get('/groups/:id', requireObserver, requireManager, (req, res) => {
     id: g.id, name: g.name, kind: g.kind, contest: g.contest, scope: g.scope, party: g.party || null,
     scope_kind: g.scope ? scopeColumn(g.contest) : '',
     members, assigned,
+    me_id: req.observer.id,
     me: { role: req.manager.role, scope_kind: req.manager.scope_kind, scope_value: req.manager.scope_value },
     managers: db
       .prepare('SELECT observer_id, role, scope_kind, scope_value FROM group_managers WHERE group_id = ? ORDER BY created_at')
@@ -331,6 +332,57 @@ groupsRouter.post('/join/:token', requireObserver, (req, res) => {
   ).run(row.group_id, req.observer.id, saved?.pu_code || null, saved?.pu_code ? 'proposed' : '', t);
   db.prepare('UPDATE group_tokens SET uses = uses + 1 WHERE token = ?').run(row.token);
   res.status(201).json({ ok: true, group_id: row.group_id, name: row.name, proposed_pu: saved?.pu_code || null });
+});
+
+/**
+ * Promote a member to manager, or demote one back.
+ *
+ * PROMOTION IS FROM THE ROSTER, not from a box you type an id into. A manager
+ * already sees their own people on the Team tab; asking them to transcribe an
+ * observer id would be asking them to get it wrong silently, and a mistyped id
+ * hands another campaign's observer the keys to this one.
+ *
+ * OWNER ONLY. Delegation is downward, and a manager who could appoint peers
+ * could appoint their way around the owner. The owner cannot be demoted here
+ * either — a group with no owner has no one who can fix it.
+ */
+groupsRouter.post('/groups/:id/managers/:observerId', requireObserver, requireManager, (req, res) => {
+  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
+  const observerId = Number(req.params.observerId);
+  const member = db.prepare('SELECT 1 FROM group_members WHERE group_id = ? AND observer_id = ?').get(req.group.id, observerId);
+  if (!member) return res.status(404).json({ error: 'not_a_member' });
+
+  const role = req.body?.role === 'coordinator' ? 'coordinator' : 'manager';
+  const scopeKind = role === 'coordinator' ? String(req.body?.scope_kind || '') : '';
+  const scopeValue = role === 'coordinator' ? String(req.body?.scope_value || '').trim() : '';
+  if (role === 'coordinator' && !['state', 'lga', 'ward'].includes(scopeKind)) {
+    return res.status(400).json({ error: 'bad_scope' });
+  }
+  db.prepare(
+    `INSERT INTO group_managers (group_id, observer_id, role, scope_kind, scope_value, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(group_id, observer_id) DO UPDATE SET role = excluded.role,
+       scope_kind = excluded.scope_kind, scope_value = excluded.scope_value`,
+  ).run(req.group.id, observerId, role, scopeKind, scopeValue, now());
+
+  notifyObserverId(observerId, 'tg.made-manager', { group: req.group.name });
+  pushNote(observerId, {
+    kind: 'group_role',
+    titleKey: 'note.made-manager.title',
+    bodyKey: 'note.made-manager.body',
+    params: { group: req.group.name },
+    url: 'https://hawkeye.com.ng/situation-room.html',
+  });
+  res.json({ ok: true, role });
+});
+
+groupsRouter.delete('/groups/:id/managers/:observerId', requireObserver, requireManager, (req, res) => {
+  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
+  const observerId = Number(req.params.observerId);
+  if (observerId === req.observer.id) return res.status(400).json({ error: 'cannot_demote_owner' });
+  db.prepare("DELETE FROM group_managers WHERE group_id = ? AND observer_id = ? AND role != 'owner'")
+    .run(req.group.id, observerId);
+  res.json({ ok: true });
 });
 
 /**
@@ -578,6 +630,7 @@ groupsRouter.get('/groups/:id/activity', requireObserver, requireManager, (req, 
     reports: rows.map((r) => ({
       observer_id: r.observer_id,
       label: r.label || null,
+      role: r.role || null,
       at: r.created_at,
       pu_code: r.pu_code,
       name: r.name,
@@ -676,11 +729,12 @@ groupsRouter.get('/groups/:id/team', requireObserver, requireManager, (req, res)
   const sc = scopeClause(req.manager, 'apu');
   const rows = db
     .prepare(
-      `SELECT m.observer_id, m.label, m.assigned_pu, m.assign_state, m.joined_at,
+      `SELECT m.observer_id, m.label, m.assigned_pu, m.assign_state, m.joined_at, gm.role,
               apu.name AS assigned_name, apu.ward AS assigned_ward, apu.lga AS assigned_lga, apu.state AS assigned_state,
               s.pu_code AS reported_pu, s.created_at AS reported_at,
               rpu.name AS reported_name, rpu.ward AS reported_ward, rpu.lga AS reported_lga
          FROM group_members m
+         LEFT JOIN group_managers gm ON gm.group_id = m.group_id AND gm.observer_id = m.observer_id
          LEFT JOIN polling_units apu ON apu.pu_code = m.assigned_pu
          LEFT JOIN submissions s ON s.observer_id = m.observer_id AND s.contest = ? AND s.created_at >= m.joined_at
          LEFT JOIN polling_units rpu ON rpu.pu_code = s.pu_code
@@ -694,6 +748,7 @@ groupsRouter.get('/groups/:id/team', requireObserver, requireManager, (req, res)
     members: rows.map((r) => ({
       observer_id: r.observer_id,
       label: r.label || null,
+      role: r.role || null,
       joined_at: r.joined_at,
       assign_state: r.assign_state,
       assigned: r.assigned_pu ? { pu_code: r.assigned_pu, name: r.assigned_name, ward: r.assigned_ward, lga: r.assigned_lga, state: r.assigned_state } : null,

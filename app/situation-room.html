@@ -258,7 +258,9 @@ function render() {
       ${S.groups.length > 1 ? `<select class="sr-sel" id="gpick">${S.groups.map((x) =>
         `<option value="${x.id}"${x.id === S.gid ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}
       <button class="sr-btn" id="invite-btn">Invite observers</button>
+      <button class="sr-btn" id="new-btn" title="Set up another situation room">New room</button>
       <button class="sr-btn" id="refresh-btn" title="Reload from the live feed">Refresh</button>
+      <button class="sr-btn" id="leave-btn" title="${g.me && g.me.role === 'owner' ? 'The owner cannot step back from their own room' : 'Stop managing this room'}"${g.me && g.me.role === 'owner' ? ' disabled style="opacity:.45"' : ''}>Sign out of this room</button>
     </div>
     <div class="sr-tabs" role="tablist">
       <button role="tab" aria-selected="${S.tab === 'overview'}" data-tab="overview">Overview</button>
@@ -271,6 +273,11 @@ function render() {
   $('gpick') && $('gpick').addEventListener('change', (e) => { pickGroup(Number(e.target.value)); });
   $('invite-btn').addEventListener('click', showInvite);
   $('refresh-btn').addEventListener('click', () => loadTab(true));
+  /* "New room", not a wizard — a manager who runs a campaign AND a state
+     watchdog needs two rooms, and the switcher above already handles having
+     them. This just gets back to the setup form. */
+  $('new-btn').addEventListener('click', () => { S.groups = []; renderWelcome(); });
+  $('leave-btn').addEventListener('click', leaveRoom);
   document.querySelectorAll('.sr-tabs button').forEach((b) =>
     b.addEventListener('click', () => { S.tab = b.dataset.tab; render(); loadTab(); }));
   loadTab();
@@ -852,6 +859,14 @@ function renderTeam() {
 async function runAction(b) {
   const id = b.dataset.obs;
   if (b.dataset.act === 'rename') return rename(id);
+  if (b.dataset.act === 'promote' || b.dataset.act === 'demote') {
+    const up = b.dataset.act === 'promote';
+    if (up && !confirm('Make this observer a manager? They will see coverage and the whole team, and can assign units.')) return;
+    const { status, body } = await api('/api/groups/' + S.gid + '/managers/' + id, { method: up ? 'POST' : 'DELETE' });
+    if (status !== 200) return alert(body.error === 'owner_only' ? 'Only the owner can change who manages this room.' : 'Could not change that.');
+    S.team = null; S.group = (await api('/api/groups/' + S.gid)).body;
+    return loadTab(true);
+  }
   if (b.dataset.act === 'clear') return assign(id, null);
   if (b.dataset.act === 'move' || b.dataset.act === 'confirm') return assign(id, b.dataset.pu);
   if (b.dataset.act === 'set') {
@@ -876,7 +891,7 @@ function memberRow(m) {
   const place = (u) => u ? `${esc(u.name)}<span class="sr-sub num">${esc(u.pu_code)}</span>` : '<span class="z">&mdash;</span>';
   const mismatched = m.status === 'mismatch';
   return `<tr>
-    <td>${esc(m.label || 'Observer #' + m.observer_id)}${m.label ? `<span class="sr-sub num">#${m.observer_id}</span>` : ''}</td>
+    <td>${esc(m.label || 'Observer #' + m.observer_id)}${m.role ? ` <span class="pill idle" style="font-size:.68rem">${esc(m.role)}</span>` : ''}${m.label ? `<span class="sr-sub num">#${m.observer_id}</span>` : ''}</td>
     <td><span class="pill ${s.cls}"><i>${s.glyph}</i>${s.word}</span></td>
     <td>${place(m.assigned)}</td>
     <td>${place(m.reported)}${mismatched ? '<span class="sr-sub" style="color:var(--off)">not the assigned unit</span>' : ''}</td>
@@ -905,7 +920,14 @@ function actionsHtml(m) {
   else if (m.assign_state === 'proposed' && m.assigned) main = btn('confirm', 'Confirm', `data-pu="${esc(m.assigned.pu_code)}"`);
   else if (!m.assigned) main = btn('set', 'Set unit');
   else main = btn('clear', 'Clear');
-  return `<div class="sr-acts">${main}${btn('rename', 'Rename')}</div>`;
+  /* Promotion sits BESIDE the person, because that is the only place a manager
+     can be sure who they are promoting. A box you type an observer id into
+     would let one mistyped digit hand another campaign's observer the keys. */
+  const owner = S.group.me && S.group.me.role === 'owner';
+  const role = owner && m.observer_id !== S.group.me_id
+    ? (m.role ? btn('demote', 'Remove manager') : btn('promote', 'Make manager'))
+    : '';
+  return `<div class="sr-acts">${main}${role}${btn('rename', 'Rename')}</div>`;
 }
 
 async function assign(observerId, puCode) {
@@ -948,25 +970,67 @@ async function rename(observerId) {
 
 /* --- invites ----------------------------------------------------------- */
 
+/**
+ * Stepping back from a room you help manage.
+ *
+ * The OWNER cannot, and the button says why rather than failing on the tap: a
+ * group whose last owner walked away has nobody who can add a manager, revoke
+ * a link, or answer for it. Handing them a "leave" that orphans the room would
+ * be offering a door that locks behind everyone.
+ */
+async function leaveRoom() {
+  if (!confirm('Stop managing ' + S.group.name + '? You will lose access to this room unless the owner adds you back.')) return;
+  const { status } = await api('/api/groups/' + S.gid + '/managers/' + S.group.me_id, { method: 'DELETE' });
+  if (status !== 200) return alert('Could not step back from this room.');
+  S.gid = null; S.group = null;
+  boot();
+}
+
+/**
+ * The invite panel — every link, with the revoke the copy promises.
+ *
+ * The first version said "you can revoke it at any time" and offered no way to.
+ * A promise with no control behind it is the same failure as a consent notice
+ * describing a screen that does not exist: it reads as handled.
+ */
 async function showInvite() {
-  let { body } = await api('/api/groups/' + S.gid + '/invites');
-  let live = (Array.isArray(body) ? body : []).find((t) => !t.revoked && t.expires_at > Date.now());
-  if (!live) live = (await api('/api/groups/' + S.gid + '/invites', { method: 'POST' })).body;
-  const url = location.origin + '/join/' + live.token;
-  const body_ = document.createElement('div');
-  body_.className = 'sr-note';
-  body_.innerHTML = `<strong>Invite link</strong>
-    <div class="sr-link"><code id="inv-url">${esc(url)}</code>
-      <button class="sr-btn" id="inv-copy">Copy</button></div>
-    <div style="margin-top:8px">Anyone with this link can join your roster after signing in.
-      It expires in ${Math.max(1, Math.round((live.expires_at - Date.now()) / 86400000))} days, and you can revoke it at any time.</div>`;
-  const anchor = $('sr-body');
+  const { body } = await api('/api/groups/' + S.gid + '/invites');
+  const all = Array.isArray(body) ? body : [];
+  const live = all.filter((t) => !t.revoked && t.expires_at > Date.now());
+  if (!live.length) {
+    await api('/api/groups/' + S.gid + '/invites', { method: 'POST' });
+    return showInvite();
+  }
+  const days = (t) => Math.max(1, Math.round((t.expires_at - Date.now()) / 86400000));
+  const panel = document.createElement('div');
+  panel.className = 'sr-note';
+  panel.id = 'inv-panel';
+  panel.innerHTML = `<strong>Invite links</strong>
+    ${live.map((t) => `<div class="sr-link">
+      <code>${esc(location.origin + '/join/' + t.token)}</code>
+      <span class="sr-sub num" style="white-space:nowrap">${n(t.uses)} used &middot; ${days(t)}d</span>
+      <button class="sr-btn mini" data-copy="${esc(t.token)}">Copy</button>
+      <button class="sr-btn mini" data-revoke="${esc(t.token)}">Revoke</button>
+    </div>`).join('')}
+    <div style="margin-top:8px">Anyone with a live link can join your roster after signing in.
+      Revoking one stops it working immediately; observers who already joined stay.</div>
+    <button class="sr-btn mini" id="inv-new" style="margin-top:10px">Create another link</button>`;
   const old = document.getElementById('inv-panel');
   if (old) old.remove();
-  body_.id = 'inv-panel';
-  anchor.prepend(body_);
-  $('inv-copy').addEventListener('click', () => {
-    navigator.clipboard.writeText(url).then(() => { $('inv-copy').textContent = 'Copied'; });
+  $('sr-body').prepend(panel);
+
+  panel.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
+    navigator.clipboard.writeText(location.origin + '/join/' + b.dataset.copy)
+      .then(() => { b.textContent = 'Copied'; });
+  }));
+  panel.querySelectorAll('[data-revoke]').forEach((b) => b.addEventListener('click', async () => {
+    if (!confirm('Revoke this link? Anyone who has not used it yet will not be able to join with it.')) return;
+    await api('/api/groups/' + S.gid + '/invites/' + b.dataset.revoke, { method: 'DELETE' });
+    showInvite();
+  }));
+  $('inv-new').addEventListener('click', async () => {
+    await api('/api/groups/' + S.gid + '/invites', { method: 'POST' });
+    showInvite();
   });
 }
 

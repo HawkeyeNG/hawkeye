@@ -75,19 +75,41 @@ entry in the array.
 > NOT contain it). That page renders a ready-made Digital Asset Links JSON
 > snippet with the value already in place.
 
-## iOS — blocked
+## iOS
 
-Universal Links need `apple-app-site-association` containing an Apple **Team ID**,
-and no Apple Developer team is configured yet (`native/app.json` has no
-`appleTeamId`, `eas.json` has no `ascAppId`). Once the team exists, add:
+Live as of 2026-09-10. `app/.well-known/apple-app-site-association` carries the
+Team ID from `native/eas.json` (`G99KD9RW94`) and claims `/open`, `/open/*` and
+`/join/*`; `native/app.json` has `"associatedDomains": ["applinks:hawkeye.com.ng"]`
+under `ios`.
 
-```json
-{ "applinks": { "details": [
-  { "appID": "<TEAMID>.ng.com.hawkeye.observer", "paths": ["/open", "/open/*"] } ] } }
-```
+Apple requires that file to have **no extension**, so `express.static` would
+serve it as `application/octet-stream` and iOS would decline to verify the
+domain — failing in the way that looks like nothing is wrong, because the link
+simply opens Safari. `server.js` has an explicit route setting the JSON
+content-type for it. Android needs no equivalent: `assetlinks.json` has a `.json`
+extension and static serves it correctly.
 
-at `app/.well-known/apple-app-site-association` (no extension, served as JSON),
-plus `"associatedDomains": ["applinks:hawkeye.com.ng"]` under `ios` in app.json.
+Takes effect on the next iOS build; the association file is live now, so the
+build is the only remaining step.
+
+## `/join/<token>` — campaign invites
+
+Claimed on both platforms and handled natively by
+`native/src/app/join/[token].tsx`.
+
+The flow it exists for: someone with no app taps an invite in a WhatsApp thread,
+lands on the website, installs, and **taps the same link again** — the store
+hands over no referring URL, so the second tap is the only thing carrying the
+token. Without the native route that URL still renders `app/join.html` and works,
+but costs a second sign-in because the browser has no app session.
+
+Sign-in **pushes** rather than replaces, so the invite screen stays underneath in
+the stack and becomes a Join button when the session lands. Nothing has to carry
+the token across the hop.
+
+A PATH, not `join.html?t=`, and that was settled before any invite shipped:
+these links sit in group chats for weeks, so a query-string form could never
+have been adopted here later without stranding every invite already sent.
 
 ## Verifying
 

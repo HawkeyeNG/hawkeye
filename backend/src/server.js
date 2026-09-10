@@ -359,6 +359,19 @@ app.get('/download', (_req, res) => res.sendFile(path.join(config.appDir, 'downl
  */
 app.get('/join/:token', (_req, res) => res.sendFile(path.join(config.appDir, 'join.html')));
 
+/**
+ * Apple's association file, which has NO EXTENSION by Apple's own rule — so
+ * express.static would serve it as application/octet-stream and iOS would
+ * silently decline to verify the domain. Universal Links then fail in the one
+ * way that looks like nothing is wrong: the link just opens Safari.
+ *
+ * Content-Type set explicitly here for that reason. Android's assetlinks.json
+ * needs no such route — it has a .json extension and static serves it correctly.
+ */
+app.get('/.well-known/apple-app-site-association', (_req, res) => {
+  res.type('application/json').sendFile(path.join(config.appDir, '.well-known', 'apple-app-site-association'));
+});
+
 // Observer PWA + public dashboard.
 app.use(express.static(config.appDir));
 

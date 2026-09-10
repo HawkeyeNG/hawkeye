@@ -48,7 +48,10 @@
             ]
           }
         ]
-      }
+      },
+      "associatedDomains": [
+        "applinks:hawkeye.com.ng"
+      ]
     },
     "android": {
       "package": "ng.com.hawkeye.observer.dev",
@@ -62,6 +65,11 @@
               "scheme": "https",
               "host": "hawkeye.com.ng",
               "pathPrefix": "/open"
+            },
+            {
+              "scheme": "https",
+              "host": "hawkeye.com.ng",
+              "pathPrefix": "/join"
             }
           ],
           "category": [

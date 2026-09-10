@@ -46,6 +46,7 @@ function purge() {
     db.prepare('DELETE FROM submissions WHERE observer_id = ?').run(id);
     db.prepare('DELETE FROM saved_units WHERE observer_id = ?').run(id);
     db.prepare('DELETE FROM notifications WHERE observer_id = ?').run(id);
+    db.prepare('DELETE FROM incidents WHERE observer_id = ?').run(id);
   }
   return ids.length;
 }
@@ -107,6 +108,16 @@ for (const [label, idx, kind, other] of roster) {
 // A unit reported by somebody OUTSIDE the group — public coverage this group did
 // not produce, which is the contrast the console has to show honestly.
 sub(mk('outsider'), units[6].pu_code, joined + 300000);
+
+// Published incidents: one from a member, one from a stranger, one with no unit
+// given. The tab has to show all three the same way the public feed does, and
+// only mark the first as one of ours.
+db.prepare("DELETE FROM incidents WHERE description LIKE 'SEED:%'").run();
+const inc = db.prepare('INSERT INTO incidents (observer_id, kind, description, pu_code, state, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
+inc.run(mk('chidi-okeke'), 'voter_intimidation', 'SEED: Group of men turning voters away at the gate.', units[0].pu_code, 'Lagos', 'published', joined + 1200000);
+inc.run(mk('outsider'), 'late_start', 'SEED: Materials arrived after 11am, accreditation only just started.', units[4].pu_code, 'Lagos', 'published', joined + 1500000);
+inc.run(mk('outsider'), 'other', 'SEED: Reported from the LGA collation centre, no unit given.', null, 'Lagos', 'published', joined + 1800000);
+inc.run(mk('outsider'), 'other', 'SEED: Still under review, must never appear in the room.', units[1].pu_code, 'Lagos', 'pending', joined + 1900000);
 
 console.log('group ' + gid + ' seeded: 8 observers (3 on unit, 2 elsewhere, 3 silent) + 1 outside report');
 console.log('invite:  /join/demo-invite-token');

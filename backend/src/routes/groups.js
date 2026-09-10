@@ -591,6 +591,71 @@ groupsRouter.get('/groups/:id/activity', requireObserver, requireManager, (req, 
   });
 });
 
+/**
+ * Published incidents inside this group's race.
+ *
+ * `status = 'published'` is the SAME GATE the public incident feed uses, and it
+ * is the whole reason this tab is allowed to exist. A group seeing a pending
+ * incident would be seeing something the public cannot, which is the one thing
+ * this feature promises never to do — so the filter is copied from
+ * routes/incidents.js rather than reasoned about again here.
+ *
+ * Whether the reporter is one of the group's own observers is shown, from their
+ * joined_at forward like everything else. That is the only thing the group
+ * layer adds: the same public incident, with "this was one of ours" attached.
+ */
+groupsRouter.get('/groups/:id/incidents', requireObserver, requireManager, (req, res) => {
+  const g = req.group;
+  const where = ["i.status = 'published'"];
+  const params = [];
+  if (g.scope) {
+    const col = scopeColumn(g.contest);
+    if (col === 'state') {
+      // An incident can be filed without a unit — those carry only a state, and
+      // dropping them would hide exactly the reports too chaotic to pin down.
+      where.push('(pu.state = ? OR (i.pu_code IS NULL AND i.state = ?))');
+      params.push(g.scope, g.scope);
+    } else {
+      where.push(`pu.${col} = ?`);
+      params.push(g.scope);
+      const home = homeState(col, g.scope);
+      if (home) { where.push('pu.state = ?'); params.push(home); }
+    }
+  }
+  const sc = scopeClause(req.manager);
+
+  const rows = db
+    .prepare(
+      `SELECT i.id, i.kind, i.description, i.pu_code, i.state, i.created_at, i.observer_id,
+              pu.name, pu.ward, pu.lga,
+              m.label AS member_label, m.observer_id AS member_id
+         FROM incidents i
+         LEFT JOIN polling_units pu ON pu.pu_code = i.pu_code
+         LEFT JOIN group_members m
+           ON m.observer_id = i.observer_id AND m.group_id = ? AND i.created_at >= m.joined_at
+        WHERE ${where.join(' AND ')}${sc.sql}
+        ORDER BY i.created_at DESC LIMIT 40`,
+    )
+    .all(g.id, ...params, ...sc.params);
+
+  res.json({
+    incidents: rows.map((r) => ({
+      id: r.id,
+      kind: r.kind,
+      // Free text written by a member of the public. It is already published,
+      // but it is data — the client escapes it and never renders it as markup.
+      description: r.description ? String(r.description).slice(0, 400) : null,
+      at: r.created_at,
+      pu_code: r.pu_code || null,
+      name: r.name || null,
+      ward: r.ward || null,
+      lga: r.lga || null,
+      state: r.state || null,
+      ours: r.member_id ? { label: r.member_label || null, observer_id: r.member_id } : null,
+    })),
+  });
+});
+
 // --- team ---------------------------------------------------------------------
 
 /**

@@ -665,14 +665,44 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
     const v = req.query[k] ? String(req.query[k]) : '';
     if (v) { where.push(`pu.${LEVELS[k]} = ?`); params.push(v); }
   }
-  /* NO scopeClause HERE — see its docblock. A coordinator sees the whole race's
-     totals so their own area has something to be measured against; the team,
-     activity and incident feeds stay narrowed, because those name people. */
-  const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : 'WHERE 1=1';
-  const all = params;
+  /**
+   * A COORDINATOR'S TREE IS THEIR AREA. Reversed from the earlier design, which
+   * left coverage unfiltered so a coordinator could measure themselves against
+   * the whole race. That reads well and works badly: a ward coordinator was
+   * handed 13,325 polling units and a national manager's list of every LGA in
+   * Lagos, none of which is theirs to do anything about. The place they work is
+   * the place they should be looking at.
+   *
+   * The comparison that motivated the old choice is not lost — it belongs in a
+   * headline figure beside their own ("your ward 34%, campaign 28%"), not in
+   * the tree they drill. A number to be measured against is one row; a list you
+   * cannot act on is noise.
+   *
+   * The team, activity and incident feeds were narrowed all along, because
+   * those name people.
+   */
+  const sc = scopeClause(req.manager);
+  const whereSql = (where.length ? 'WHERE ' + where.join(' AND ') : 'WHERE 1=1') + sc.sql;
+  const all = [...params, ...sc.params];
 
-  // Which level are we listing? The deepest filter present decides.
-  const level = req.query.ward ? 'unit' : req.query.lga ? 'ward' : req.query.state || g.scope ? 'lga' : 'state';
+  /**
+   * Which level are we listing? The deepest filter present decides — and a
+   * coordinator's own scope is a filter, so the tree ROOTS at their area.
+   *
+   * The rows above narrow to their area; this decides what those rows ARE. The
+   * list a coordinator needs is the level BELOW the thing they run — a ward
+   * coordinator manages polling units, a state coordinator manages LGAs — so
+   * without this a ward coordinator opened on "local governments" and saw one
+   * row: their own LGA, containing their one ward.
+   *
+   * Drilling still works from there, because the query filters below still win.
+   */
+  const BELOW = { zone: 'state', state: 'lga', lga: 'ward', ward: 'unit' };
+  const mine = BELOW[req.manager.scope_kind] || null;
+  const level = req.query.ward ? 'unit'
+    : req.query.lga ? 'ward'
+      : req.query.state ? 'lga'
+        : mine || (g.scope ? 'lga' : 'state');
   const col = level === 'unit' ? 'pu.pu_code' : `pu.${level}`;
 
   const rows = db

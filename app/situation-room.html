@@ -141,6 +141,13 @@
 .sr-tbl .ok-t { color: var(--ok); }
 .sr-tbl .off-t { color: var(--off); }
 .sr-tbl .wait-t { color: var(--wait); }
+/* The reader's own patch, in a standings table where every other row is
+   somebody else's. A left rail rather than a fill: it has to survive a row that
+   is already carrying four coloured numbers. */
+.sr-tbl tr.mine td { background: rgba(127, 127, 127, 0.07); }
+.sr-tbl tr.mine td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.sr-who { color: var(--muted); font-size: 0.72rem; }
+.sr-who b { color: var(--ink); font-weight: 600; }
 
 /* Coverage bar — the percentage AND the counts, because 8/10 and 8,000/10,000
    are the same percentage and only one of them needs people moved. */
@@ -528,7 +535,32 @@ function renderOverview() {
     .sort((a, b) => (b.units - b.reported) - (a.units - a.reported) || a.name.localeCompare(b.name));
   const reports = (S.activity && S.activity.reports) || [];
 
+  /**
+   * A coordinator's own area, beside the campaign's total.
+   *
+   * THE CONFUSION THIS FIXES: scoped to one state, a coordinator saw "12%
+   * covered" and had no way to tell whether that was ahead or behind. A number
+   * with no denominator a person recognises is not information. Their patch and
+   * the whole race, side by side, and the gap between them named.
+   */
+  const mineNodes = c.mine ? nodes.filter((x) => isMine(c, x.key)) : [];
+  const mineTot = mineNodes.reduce((a, x) => ({ units: a.units + x.units, reported: a.reported + x.reported }),
+    { units: 0, reported: 0 });
+  const minePct = mineTot.units ? (mineTot.reported / mineTot.units) * 100 : 0;
+  const allPct = tot.units ? (tot.reported / tot.units) * 100 : 0;
+  const delta = Math.round((minePct - allPct) * 10) / 10;
+
   $('sr-body').innerHTML = `
+    ${mineNodes.length ? `<div class="sr-note" style="border-left-color:var(--ok)">
+      <strong>${esc(c.my_scope ? c.my_scope.value : 'Your area')}</strong> &mdash;
+      <span class="num">${n(mineTot.reported)}</span> of <span class="num">${n(mineTot.units)}</span> units
+      (<span class="num">${finePct(mineTot.reported, mineTot.units)}</span>).
+      The whole ${esc(S.group.contest)} race is at <span class="num">${finePct(tot.reported, tot.units)}</span>, so you are
+      ${delta === 0 ? 'level with it' : delta > 0
+        ? `<b style="color:var(--ok)">${delta} point${delta === 1 ? '' : 's'} ahead</b>`
+        : `<b style="color:var(--wait)">${Math.abs(delta)} point${Math.abs(delta) === 1 ? '' : 's'} behind</b>`}.
+      You manage the observers in your area; the totals are the campaign&rsquo;s.
+    </div>` : ''}
     <div class="sr-heads">
       <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>of ${n(tot.units)} units reported</span></div>
       <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>Coverage</span></div>
@@ -545,7 +577,7 @@ function renderOverview() {
         <h2 class="sr-h2">Where the election is most missing</h2>
         <div class="sr-card sr-panel">${gaps.length ? `<div class="sr-scroll">
           <table class="sr-tbl" style="min-width:0">
-          <tbody>${gaps.map((x) => `<tr>
+          <tbody>${gaps.map((x) => `<tr${isMine(c, x.key) ? ' class="mine"' : ''}>
             <td><button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>
               ${x.assigned ? `<span class="sr-sub">${n(x.assigned)} of ours here</span>`
                 : '<span class="sr-sub" style="color:var(--wait)">nobody assigned</span>'}</td>
@@ -729,7 +761,7 @@ function renderCoverage() {
         <th>Units</th><th>Reported</th><th>Coverage</th>
         <th>Ours</th><th>On unit</th><th>Elsewhere</th><th>Silent</th>
       </tr></thead>
-      <tbody>${shown.length ? shown.map(rowHtml).join('') :
+      <tbody>${shown.length ? shown.map((x) => rowHtml(x, c)).join('') :
         `<tr><td colspan="8" class="sr-msg">Nothing matches that filter here.</td></tr>`}</tbody>
     </table></div>
     <div class="sr-legend">
@@ -745,13 +777,21 @@ function renderCoverage() {
     b.addEventListener('click', () => drill(c.level, b.dataset.key)));
 }
 
-function rowHtml(x) {
+/* Whose area is this, and is it mine? `mine` may be a single key or a list of
+   them — a zone coordinator owns every state in their zone. */
+const isMine = (cov, key) => (Array.isArray(cov.mine) ? cov.mine.includes(key) : cov.mine === key);
+const ownerOf = (cov, key) => ((cov.coordinators || {})[key] || [])
+  .map((c) => c.label || 'Observer #' + c.observer_id);
+
+function rowHtml(x, cov) {
   const silent = Math.max(0, x.assigned - x.on_unit - x.mismatched);
   const p = pct(x.reported, x.units);
   const cell = (v, cls) => `<td class="num${v ? (cls ? ' ' + cls : '') : ' z'}">${n(v)}</td>`;
-  return `<tr>
+  const who = ownerOf(cov, x.key);
+  return `<tr${isMine(cov, x.key) ? ' class="mine"' : ''}>
     <td>${x.key === x.name ? `<button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>`
-      : `<button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button><span class="sr-sub num">${esc(x.key)}</span>`}</td>
+      : `<button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button><span class="sr-sub num">${esc(x.key)}</span>`}
+      ${who.length ? `<span class="sr-who">${isMine(cov, x.key) ? '<b>yours</b>' : esc(who.join(', '))}</span>` : ''}</td>
     <td class="num">${n(x.units)}</td>
     <td class="num${x.reported ? '' : ' z'}">${n(x.reported)}</td>
     <td><div class="sr-bar-cell"><span class="num">${p}%</span>
@@ -888,6 +928,7 @@ function renderTeam() {
       <div class="sr-head wait"><b class="num">${n(count('silent'))}</b><span>Yet to report</span></div>
       <div class="sr-head"><b class="num">${n(count('unassigned') + count('declined'))}</b><span>No unit set</span></div>
     </div>
+    ${managersHtml()}
     ${proposed ? `<div class="sr-bar" style="border:0;padding:0 0 10px">
       <span class="meta">${n(proposed)} observer${proposed === 1 ? '' : 's'} joined with a unit already saved.</span>
       <div class="spacer"></div>
@@ -912,13 +953,12 @@ function renderTeam() {
 async function runAction(b) {
   const id = b.dataset.obs;
   if (b.dataset.act === 'rename') return rename(id);
-  if (b.dataset.act === 'promote' || b.dataset.act === 'demote') {
-    const up = b.dataset.act === 'promote';
-    if (up && !confirm('Make this observer a manager? They will see coverage and the whole team, and can assign units.')) return;
-    const { status, body } = await api('/api/groups/' + S.gid + '/managers/' + id, { method: up ? 'POST' : 'DELETE' });
+  if (b.dataset.act === 'promote') return promote(id, b.dataset.name || ('Observer #' + id));
+  if (b.dataset.act === 'demote') {
+    if (!confirm('Remove this manager? They keep their place on the roster as an observer.')) return;
+    const { status, body } = await api('/api/groups/' + S.gid + '/managers/' + id, { method: 'DELETE' });
     if (status !== 200) return alert(body.error === 'owner_only' ? 'Only the owner can change who manages this room.' : 'Could not change that.');
-    S.team = null; S.group = (await api('/api/groups/' + S.gid)).body;
-    return loadTab(true);
+    return afterRoleChange();
   }
   if (b.dataset.act === 'clear') return assign(id, null);
   if (b.dataset.act === 'move' || b.dataset.act === 'confirm') return assign(id, b.dataset.pu);
@@ -937,6 +977,34 @@ async function confirmProposed() {
   S.team = S.coverage = null;
   loadTab(true);
   return body;
+}
+
+/**
+ * Who manages this room, and over what.
+ *
+ * The endpoint has returned this list since the first commit and nothing showed
+ * it — so a room with four managers looked exactly like a room with one, and
+ * the only way to learn who could reassign your observers was to watch it
+ * happen. Names come off the roster where the person is also a member; an owner
+ * who never joined as an observer has no label, and shows as their id.
+ */
+function managersHtml() {
+  const list = (S.group.managers || []);
+  if (list.length < 2) return '';
+  const label = (o) => {
+    const m = (S.team && S.team.members || []).find((x) => x.observer_id === o.observer_id);
+    return (m && m.label) || 'Observer #' + o.observer_id;
+  };
+  return `<div class="sr-card" style="margin-bottom:16px">
+    <div class="sr-h2" style="margin:0 0 8px">Who manages this room</div>
+    ${list.map((o) => `<div class="sr-act">
+      <span class="pill ${o.role === 'owner' ? 'ok' : 'idle'}"><i>&#9679;</i>${esc(o.role)}</span>
+      <div class="sr-act-t"><b>${esc(label(o))}</b>${o.observer_id === S.group.me_id ? ' &mdash; you' : ''}
+        <span class="sr-sub">${o.scope_value
+          ? esc(o.scope_value) + ' &middot; manages only observers there, sees the whole race'
+          : 'the whole race, and everyone in it'}</span></div>
+    </div>`).join('')}
+  </div>`;
 }
 
 function memberRow(m) {
@@ -978,7 +1046,8 @@ function actionsHtml(m) {
      would let one mistyped digit hand another campaign's observer the keys. */
   const owner = S.group.me && S.group.me.role === 'owner';
   const role = owner && m.observer_id !== S.group.me_id
-    ? (m.role ? btn('demote', 'Remove manager') : btn('promote', 'Make manager'))
+    ? (m.role ? btn('demote', 'Remove manager')
+       : btn('promote', 'Give access', 'data-name="' + esc(m.label || 'Observer #' + m.observer_id) + '"'))
     : '';
   return `<div class="sr-acts">${main}${role}${btn('rename', 'Rename')}</div>`;
 }
@@ -1007,6 +1076,100 @@ function emptyTeamHtml() {
        group chat never enrols whoever opens it.</p>
     <button class="sr-btn primary" onclick="showInvite()" style="margin-top:12px">Get the invite link</button>
   </div>`;
+}
+
+async function afterRoleChange() {
+  S.team = S.coverage = S.overview = null;
+  S.group = (await api('/api/groups/' + S.gid)).body;
+  render();
+}
+
+/**
+ * Promote to manager, or to a coordinator over one area.
+ *
+ * THE AREA IS PICKED, NEVER TYPED, and the values come from the group's own
+ * coverage tree — the same list the console is already showing. A free-text
+ * area would let one typo scope a coordinator to a place that does not exist,
+ * and the failure is silent: their console simply reports an empty election.
+ *
+ * A coordinator sees the whole race's numbers and only their own area's people
+ * (see scopeClause in routes/groups.js), and the dialog says so, because a role
+ * whose limits are discovered by bumping into them is a role nobody trusts.
+ */
+async function promote(observerId, who) {
+  const g = S.group;
+  const level = S.coverage && S.coverage.level === 'unit' ? 'ward' : (S.overview || S.coverage || {}).level || 'state';
+  const wrap = document.createElement('div');
+  wrap.className = 'sr-note';
+  wrap.id = 'promote-panel';
+  wrap.innerHTML = `<strong>Give ${esc(who)} more access</strong>
+    <div class="sr-form" style="max-width:none;margin-top:10px">
+      <div><label for="pr-role">Role</label>
+        <select id="pr-role">
+          <option value="manager">Manager &mdash; the whole race, and everyone in it</option>
+          <option value="coordinator">Coordinator &mdash; one area&rsquo;s people</option>
+        </select></div>
+      <div id="pr-where" hidden>
+        <label for="pr-kind">Area</label>
+        <div style="display:flex;gap:8px">
+          <select class="sr-sel" id="pr-kind" style="flex:0 0 auto">
+            ${g.scope ? '' : '<option value="zone">Geopolitical zone</option>'}
+            <option value="state"${g.scope ? ' selected' : ''}>State</option>
+            <option value="lga">Local government</option>
+            <option value="ward">Ward</option>
+          </select>
+          <select class="sr-sel" id="pr-value" style="flex:1 1 auto"></select>
+        </div>
+        <p class="sr-fine">A coordinator sees the whole race&rsquo;s totals &mdash; so their own
+          area means something &mdash; but manages only the observers inside it.</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="sr-btn primary" id="pr-go">Confirm</button>
+        <button class="sr-btn" id="pr-cancel">Cancel</button>
+      </div>
+    </div>`;
+  const old = $('promote-panel');
+  if (old) old.remove();
+  $('sr-body').prepend(wrap);
+
+  const fillValues = async () => {
+    const kind = $('pr-kind').value;
+    if (kind === 'zone') {
+      $('pr-value').innerHTML = (g.zones || []).map((z) => `<option value="${esc(z)}">${esc(z)}</option>`).join('');
+      return;
+    }
+    // Straight off the coverage tree, so an offered area is one the tree can count.
+    const q = kind === 'state' ? '' : kind === 'lga'
+      ? '?state=' + encodeURIComponent(S.path.state || g.scope || '')
+      : '?state=' + encodeURIComponent(S.path.state || g.scope || '') + '&lga=' + encodeURIComponent(S.path.lga || '');
+    const { body } = await api('/api/groups/' + S.gid + '/coverage' + q);
+    $('pr-value').innerHTML = (body.nodes || []).map((x) => `<option value="${esc(x.key)}">${esc(x.name)}</option>`).join('')
+      || '<option value="">Drill into a place on Coverage first</option>';
+  };
+
+  $('pr-role').addEventListener('change', () => {
+    $('pr-where').hidden = $('pr-role').value !== 'coordinator';
+    if (!$('pr-where').hidden) fillValues();
+  });
+  $('pr-kind').addEventListener('change', fillValues);
+  $('pr-cancel').addEventListener('click', () => wrap.remove());
+  $('pr-go').addEventListener('click', async () => {
+    const role = $('pr-role').value;
+    const payload = role === 'coordinator'
+      ? { role, scope_kind: $('pr-kind').value, scope_value: $('pr-value').value }
+      : { role };
+    if (role === 'coordinator' && !payload.scope_value) return alert('Pick the area they will cover.');
+    const { status, body } = await api('/api/groups/' + S.gid + '/managers/' + observerId, {
+      method: 'POST', body: JSON.stringify(payload),
+    });
+    if (status !== 200) {
+      return alert(body.error === 'owner_only' ? 'Only the owner can change who manages this room.'
+        : body.error === 'bad_scope' ? 'That is not an area a coordinator can be given.'
+        : 'Could not change that.');
+    }
+    wrap.remove();
+    afterRoleChange();
+  });
 }
 
 async function rename(observerId) {

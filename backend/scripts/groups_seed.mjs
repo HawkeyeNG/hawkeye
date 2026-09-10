@@ -41,6 +41,9 @@ function purge() {
     }
     db.prepare('DELETE FROM campaign_groups WHERE id = ?').run(g.id);
   }
+  {
+    db.prepare("DELETE FROM results WHERE pu_code IN (SELECT pu_code FROM polling_units WHERE lga = 'Lagos Island')").run();
+  }
   for (const id of ids) {
     db.prepare('DELETE FROM group_members WHERE observer_id = ?').run(id);
     db.prepare('DELETE FROM submissions WHERE observer_id = ?').run(id);
@@ -118,6 +121,26 @@ inc.run(mk('chidi-okeke'), 'voter_intimidation', 'SEED: Group of men turning vot
 inc.run(mk('outsider'), 'late_start', 'SEED: Materials arrived after 11am, accreditation only just started.', units[4].pu_code, 'Lagos', 'published', joined + 1500000);
 inc.run(mk('outsider'), 'other', 'SEED: Reported from the LGA collation centre, no unit given.', null, 'Lagos', 'published', joined + 1800000);
 inc.run(mk('outsider'), 'other', 'SEED: Still under review, must never appear in the room.', units[1].pu_code, 'Lagos', 'pending', joined + 1900000);
+
+// Per-unit results, so the party table has something to total. One is marked
+// DISPUTED: the public board leaves those out of the headline tally, and the
+// room shows the board's own response, so a disputed row that changed the
+// totals here would mean the two had drifted apart.
+db.prepare("DELETE FROM results WHERE pu_code IN (SELECT pu_code FROM polling_units WHERE lga = 'Lagos Island')").run();
+const res = db.prepare('INSERT OR REPLACE INTO results (pu_code, contest, votes_json, confidence,'
+  + ' matching_reports, total_reports, status, location_status, venue_matches, updated_at, disputed)'
+  + " VALUES (?, 'PRES', ?, 0.9, 2, 2, 'verified', 'verified', 1, ?, ?)");
+const tally = [
+  [0, { APC: 210, PDP: 305, LP: 142, NNPP: 27 }, 0],
+  [1, { APC: 188, PDP: 260, LP: 175, NNPP: 19 }, 0],
+  [5, { APC: 240, PDP: 198, LP: 121, NNPP: 33 }, 0],
+  [6, { APC: 176, PDP: 221, LP: 160, NNPP: 22 }, 0],
+  [2, { APC: 999, PDP: 12, LP: 8, NNPP: 3 }, 1],   // disputed: must not count
+];
+for (const [idx, votes, disputed] of tally) {
+  const json = JSON.stringify(Object.entries(votes).map(([party, count]) => ({ party, count })));
+  res.run(units[idx].pu_code, json, now, disputed);
+}
 
 console.log('group ' + gid + ' seeded: 8 observers (3 on unit, 2 elsewhere, 3 silent) + 1 outside report');
 console.log('invite:  /join/demo-invite-token');

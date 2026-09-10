@@ -196,6 +196,15 @@
 .sr-act-t { flex: 1 1 auto; min-width: 0; font-size: 0.84rem; line-height: 1.35; }
 .sr-act-t b { font-weight: 600; }
 .sr-act-w { color: var(--muted); font-size: 0.74rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Party totals. The own-party row is OUTLINED, not filled: the four coverage
+   states already own filled colour, and a fifth filled meaning would make the
+   accent stop meaning anything. */
+.sr-mine { display: flex; align-items: center; gap: 11px; padding: 2px 2px 12px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.sr-mine b { font-size: 1.35rem; }
+.sr-plogo { width: 18px; height: 18px; border-radius: 4px; background: #fff; object-fit: contain; vertical-align: -4px; margin-right: 7px; }
+.sr-tbl tr.sr-own td { box-shadow: inset 0 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
+.sr-tbl tr.sr-own td:first-child { box-shadow: inset 1px 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
+.sr-tbl tr.sr-own td:last-child { box-shadow: inset -1px 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
 
 /* --- panels, notes, empty states --- */
 .sr-note {
@@ -490,12 +499,23 @@ async function loadTab(force) {
        manager who drilled into one ward an hour ago did not mean to make that
        the definition of standing. Cached apart from S.coverage for that reason. */
     if (force || !S.overview) {
-      const [cov, act] = await Promise.all([
+      /* The tally comes from the PUBLIC board endpoint, not from a query of our
+         own. The correct total already exists there and it carries a rule that
+         is easy to miss — disputed results are excluded from the headline and
+         judged separately on the docket. A second tally here would drift from
+         the public board the first time that rule changed, and a campaign would
+         believe its own screen. Same response, so they cannot disagree. */
+      const crop = tallyCrop();
+      const [cov, act, nat] = await Promise.all([
         api('/api/groups/' + S.gid + '/coverage'),
         api('/api/groups/' + S.gid + '/activity'),
+        api('/api/national/' + encodeURIComponent(S.group.contest) + (crop ? '?state=' + encodeURIComponent(crop) : '')),
       ]);
       S.overview = cov.body;
       S.activity = act.body;
+      S.tally = nat.status === 200 ? nat.body : null;
+      S.tallyArea = crop || 'this race';
+      S.tallyIsMine = !!crop && crop === homeArea().name;
     }
     return renderOverview();
   }
@@ -610,6 +630,7 @@ function renderOverview() {
 
       </div>
     </div>
+    ${partiesHtml()}
     <h2 class="sr-h2">What your people just filed</h2>
     <div class="sr-card${reports.length > 4 ? ' sr-panel' : ''}">${reports.length
           ? `<div class="sr-scroll">${reports.map(activityRow).join('')}</div>`
@@ -621,6 +642,67 @@ function renderOverview() {
   document.querySelectorAll('#sr-body .drill').forEach((b) =>
     b.addEventListener('click', () => { S.tab = 'coverage'; S.filter = 'all'; render(); drill(c.level, b.dataset.key); }));
   drawMap(nodes);
+}
+
+/**
+ * Party totals, honestly ordered.
+ *
+ * DESCENDING BY VOTES, never the campaign's party first. Their own row is
+ * outlined and lifted into a line above the table, which answers "where am I"
+ * without reordering what is true — and this table WILL be screenshotted. A
+ * table that puts your party on top regardless of standing is a propaganda
+ * asset the moment it leaves the room, and the neutrality claim has to survive
+ * a rival seeing this screen. A second reason: an order that depends on who is
+ * looking is one two coordinators cannot compare.
+ *
+ * THE DENOMINATOR IS PART OF THE NUMBER. A total from 9% of units is not a
+ * standing, and a campaign console is exactly where someone reads it as one —
+ * so the unit count sits in the heading, positions are written "4th of 18 so
+ * far", and nothing here says leading or winning. A percentage is shown only
+ * when the crop matches the area this console is about; otherwise the
+ * denominator would come from a different scope than the votes.
+ */
+function partiesHtml() {
+  const t = S.tally;
+  if (!t) return '';
+  const rows = (t.national || []).filter((x) => x.votes > 0);
+  const cast = rows.reduce((a, x) => a + x.votes, 0);
+  const mine = (S.group.party || '').toUpperCase();
+  const minePos = rows.findIndex((x) => String(x.party).toUpperCase() === mine);
+  const share = (v) => (cast ? ((v / cast) * 100).toFixed(1) : '0.0') + '%';
+  const areaNote = S.tallyIsMine ? esc(S.tallyArea)
+    : `${esc(S.tallyArea)} &mdash; wider than your own area`;
+
+  if (!rows.length) {
+    return `<h2 class="sr-h2">Party totals</h2>
+      <div class="sr-card"><div class="sr-msg">No results published yet for ${esc(S.tallyArea)}.<br />
+        Totals appear here as units are counted, at the same moment the public board shows them.</div></div>`;
+  }
+
+  return `<h2 class="sr-h2">Party totals so far &mdash; ${areaNote}</h2>
+    <div class="sr-card">
+      ${mine && minePos >= 0 ? `<div class="sr-mine">
+        <span class="sr-emblem">${LOGOS[mine] ? `<img src="${esc(LOGOS[mine])}" alt="" />` : ''}</span>
+        <div><b class="num">${n(rows[minePos].votes)}</b> <span class="num">${share(rows[minePos].votes)}</span>
+          <span class="sr-sub">${esc(mine)} &middot; ${minePos + 1}${['st', 'nd', 'rd'][minePos] || 'th'} of ${n(rows.length)} so far</span></div>
+      </div>` : ''}
+      <div class="sr-scroll" style="max-height:230px">
+      <table class="sr-tbl" style="min-width:0"><tbody>
+        ${rows.map((x, i) => {
+          const own = String(x.party).toUpperCase() === mine;
+          return `<tr${own ? ' class="sr-own"' : ''}>
+            <td style="width:26px" class="num z">${i + 1}</td>
+            <td>${LOGOS[String(x.party).toUpperCase()]
+              ? `<img class="sr-plogo" src="${esc(LOGOS[String(x.party).toUpperCase()])}" alt="" />` : ''}${esc(x.party)}</td>
+            <td class="num">${n(x.votes)}</td>
+            <td class="num" style="width:64px">${share(x.votes)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody></table></div>
+      <div class="sr-count">${n(t.unitsReporting || 0)} unit${t.unitsReporting === 1 ? '' : 's'} counted
+        ${t.inDispute ? `&middot; ${n(t.inDispute)} disputed and left out, as on the public docket` : ''}
+        &middot; the same figures the public board shows</div>
+    </div>`;
 }
 
 function activityRow(r) {
@@ -654,6 +736,23 @@ function activityRow(r) {
  * A coordinator's room IS their area: the tree, the map and the gap list all
  * start there. The group's own scope is the fallback for everyone else.
  */
+/**
+ * Which state the party tally can be cropped to, or '' for the whole race.
+ *
+ * The public board crops by STATE and nothing finer, so a ward or LGA
+ * coordinator inside a state-scoped room gets their state's totals — labelled
+ * as their state, never as their area. Naming the area the numbers actually
+ * cover is the whole job here: a total labelled with the wrong place is worse
+ * than no total. Their own area's tally arrives when the tally is extracted
+ * into a shared helper (see the plan).
+ */
+function tallyCrop() {
+  const me = (S.group && S.group.me) || {};
+  if (me.scope_kind === 'state') return me.scope_value;
+  if (S.group.scope && S.group.scope_kind === 'state') return S.group.scope;
+  return '';
+}
+
 function homeArea() {
   const me = (S.group && S.group.me) || {};
   if (me.scope_kind && me.scope_value) return { name: me.scope_value, kind: me.scope_kind, mine: true };

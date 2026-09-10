@@ -85,6 +85,11 @@
 .sr-party-mark:has(img) { background: #fff; padding: 3px; }
 .sr-party-mark img { max-width: 100%; max-height: 100%; display: block; }
 .sr-fine { color: var(--muted); font-size: 0.74rem; margin: 5px 0 0; line-height: 1.45; }
+/* Stacked, not a flex row. The row fought .sr-form's `select { width: 100% }`:
+   the first select claimed the full width and the second was squeezed to a bare
+   chevron hanging off the edge of the panel. */
+.sr-chain { display: grid; gap: 8px; margin-top: 8px; }
+.sr-chain select { width: 100%; }
 .sr-bar .meta { color: var(--muted); font-size: 0.8rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .sr-bar .spacer { flex: 1 1 auto; }
 .sr-sel {
@@ -1096,8 +1101,23 @@ async function afterRoleChange() {
  * (see scopeClause in routes/groups.js), and the dialog says so, because a role
  * whose limits are discovered by bumping into them is a role nobody trusts.
  */
+/* The levels on offer, and the hierarchy each one has to walk to reach a value.
+   A group already scoped to one area has no state step — the group IS that
+   area, and a "state" coordinator inside it would just be a manager. */
+const LABEL_STEP = { zone: 'Choose a zone…', state: 'Choose a state…', lga: 'Choose a local government…', ward: 'Choose a ward…' };
+
 async function promote(observerId, who) {
   const g = S.group;
+  const NAT = !g.scope;
+  const KINDS = NAT
+    ? [['zone', 'Geopolitical zone'], ['state', 'State'], ['lga', 'Local government'], ['ward', 'Ward']]
+    : [['lga', 'Local government'], ['ward', 'Ward']];
+  const STEPS = {
+    zone: ['zone'],
+    state: ['state'],
+    lga: NAT ? ['state', 'lga'] : ['lga'],
+    ward: NAT ? ['state', 'lga', 'ward'] : ['lga', 'ward'],
+  };
   const level = S.coverage && S.coverage.level === 'unit' ? 'ward' : (S.overview || S.coverage || {}).level || 'state';
   const wrap = document.createElement('div');
   wrap.className = 'sr-note';
@@ -1111,15 +1131,10 @@ async function promote(observerId, who) {
         </select></div>
       <div id="pr-where" hidden>
         <label for="pr-kind">Area</label>
-        <div style="display:flex;gap:8px">
-          <select class="sr-sel" id="pr-kind" style="flex:0 0 auto">
-            ${g.scope ? '' : '<option value="zone">Geopolitical zone</option>'}
-            <option value="state"${g.scope ? ' selected' : ''}>State</option>
-            <option value="lga">Local government</option>
-            <option value="ward">Ward</option>
-          </select>
-          <select class="sr-sel" id="pr-value" style="flex:1 1 auto"></select>
-        </div>
+        <select class="sr-sel" id="pr-kind" style="width:100%">
+          ${KINDS.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}
+        </select>
+        <div class="sr-chain" id="pr-chain"></div>
         <p class="sr-fine">A coordinator sees the whole race&rsquo;s totals &mdash; so their own
           area means something &mdash; but manages only the observers inside it.</p>
       </div>
@@ -1132,31 +1147,65 @@ async function promote(observerId, who) {
   if (old) old.remove();
   $('sr-body').prepend(wrap);
 
-  const fillValues = async () => {
-    const kind = $('pr-kind').value;
-    if (kind === 'zone') {
-      $('pr-value').innerHTML = (g.zones || []).map((z) => `<option value="${esc(z)}">${esc(z)}</option>`).join('');
-      return;
-    }
-    // Straight off the coverage tree, so an offered area is one the tree can count.
-    const q = kind === 'state' ? '' : kind === 'lga'
-      ? '?state=' + encodeURIComponent(S.path.state || g.scope || '')
-      : '?state=' + encodeURIComponent(S.path.state || g.scope || '') + '&lga=' + encodeURIComponent(S.path.lga || '');
-    const { body } = await api('/api/groups/' + S.gid + '/coverage' + q);
-    $('pr-value').innerHTML = (body.nodes || []).map((x) => `<option value="${esc(x.key)}">${esc(x.name)}</option>`).join('')
-      || '<option value="">Drill into a place on Coverage first</option>';
+  /**
+   * The area picker, as a CASCADE.
+   *
+   * The first version showed one level select and one value select, and filled
+   * the value list from S.path — the manager's own drill position on the
+   * Coverage tab. So picking "Ward" offered the wards of wherever that manager
+   * happened to be standing, or nothing at all, and there was no way to reach a
+   * ward in a state you had not already drilled into. A picker that depends on
+   * where you last clicked is not a picker.
+   *
+   * Now the steps are the hierarchy: choosing Ward walks state, then local
+   * government, then ward, each list fetched for the choice above it. Every
+   * option comes off the same /coverage endpoint the tree uses, so an area
+   * offered here is one the tree can actually count.
+   */
+  const picked = {};
+  const optionsFor = async (step) => {
+    if (step === 'zone') return (g.zones || []).map((z) => ({ key: z, name: z }));
+    const q = new URLSearchParams();
+    if (picked.state) q.set('state', picked.state);
+    if (step === 'ward' && picked.lga) q.set('lga', picked.lga);
+    const { body } = await api('/api/groups/' + S.gid + '/coverage' + (q.toString() ? '?' + q : ''));
+    return body.nodes || [];
   };
+
+  async function renderChain() {
+    const steps = STEPS[$('pr-kind').value] || [];
+    for (const k of Object.keys(picked)) if (!steps.includes(k)) delete picked[k];
+    $('pr-chain').innerHTML = '';
+    for (const step of steps) {
+      const rows = await optionsFor(step);
+      const sel = document.createElement('select');
+      sel.className = 'sr-sel';
+      sel.dataset.step = step;
+      sel.innerHTML = `<option value="">${LABEL_STEP[step]}</option>`
+        + rows.map((x) => `<option value="${esc(x.key)}"${picked[step] === x.key ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
+      $('pr-chain').appendChild(sel);
+      sel.addEventListener('change', () => {
+        picked[step] = sel.value;
+        // Anything below this step is now stale — a ward chosen under the old
+        // local government would quietly stay selected and be submitted.
+        for (const later of steps.slice(steps.indexOf(step) + 1)) delete picked[later];
+        renderChain();
+      });
+      // Stop at the first unanswered step: the next list has no basis yet.
+      if (!picked[step]) break;
+    }
+  }
 
   $('pr-role').addEventListener('change', () => {
     $('pr-where').hidden = $('pr-role').value !== 'coordinator';
-    if (!$('pr-where').hidden) fillValues();
+    if (!$('pr-where').hidden) renderChain();
   });
-  $('pr-kind').addEventListener('change', fillValues);
+  $('pr-kind').addEventListener('change', renderChain);
   $('pr-cancel').addEventListener('click', () => wrap.remove());
   $('pr-go').addEventListener('click', async () => {
     const role = $('pr-role').value;
     const payload = role === 'coordinator'
-      ? { role, scope_kind: $('pr-kind').value, scope_value: $('pr-value').value }
+      ? { role, scope_kind: $('pr-kind').value, scope_value: picked[(STEPS[$('pr-kind').value] || []).slice(-1)[0]] || '' }
       : { role };
     if (role === 'coordinator' && !payload.scope_value) return alert('Pick the area they will cover.');
     const { status, body } = await api('/api/groups/' + S.gid + '/managers/' + observerId, {

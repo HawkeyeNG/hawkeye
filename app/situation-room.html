@@ -235,7 +235,7 @@ async function api(path, opts = {}) {
 const S = {
   groups: [], gid: null, group: null, tab: 'overview',
   path: { state: '', lga: '', ward: '' },
-  filter: 'all', sort: 'status', coverage: null, team: null, invites: [],
+  filter: 'all', incFilter: 'all', sort: 'status', coverage: null, team: null, invites: [],
 };
 
 /* --- shell ------------------------------------------------------------- */
@@ -264,6 +264,7 @@ function render() {
       <button role="tab" aria-selected="${S.tab === 'overview'}" data-tab="overview">Overview</button>
       <button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage">Coverage</button>
       <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team">Team</button>
+      <button role="tab" aria-selected="${S.tab === 'incidents'}" data-tab="incidents">Incidents</button>
     </div>
     <div id="sr-body"><div class="sr-msg">Loading…</div></div>`;
 
@@ -422,6 +423,10 @@ async function loadTab(force) {
       S.activity = act.body;
     }
     return renderOverview();
+  }
+  if (S.tab === 'incidents') {
+    if (force || !S.incidents) S.incidents = (await api('/api/groups/' + S.gid + '/incidents')).body;
+    return renderIncidents();
   }
   if (S.tab === 'coverage') {
     if (force || !S.coverage) {
@@ -734,6 +739,69 @@ function exportCsv(level, rows) {
   URL.revokeObjectURL(a.href);
 }
 
+/* --- incidents ---------------------------------------------------------- */
+
+/**
+ * Published incidents inside this race.
+ *
+ * EVERY ONE OF THESE IS ALREADY PUBLIC. The tab adds one thing the public feed
+ * cannot: which of them a group's own observers filed. Said on the screen,
+ * because a campaign looking at an incident list needs to know — and needs its
+ * rivals to be able to know — that this is the same list anyone can read.
+ *
+ * NOT ranked, NOT scored, NOT adjudicated. An incident here is a report someone
+ * made, nothing more; the docket is where claims get weighed, and a situation
+ * room that quietly graded them would be doing that job without any of its
+ * safeguards.
+ */
+function renderIncidents() {
+  const list = (S.incidents && S.incidents.incidents) || [];
+  const ours = list.filter((x) => x.ours).length;
+  const mine = S.incFilter === 'ours';
+  const shown = mine ? list.filter((x) => x.ours) : list;
+
+  $('sr-body').innerHTML = `
+    <div class="sr-heads">
+      <div class="sr-head"><b class="num">${n(list.length)}</b><span>Published in this race</span></div>
+      <div class="sr-head ok"><b class="num">${n(ours)}</b><span>Filed by your observers</span></div>
+    </div>
+    <div class="sr-bar" style="border:0;padding:0 0 10px">
+      <select class="sr-sel" id="inc-filter">
+        <option value="all"${mine ? '' : ' selected'}>Everything published here</option>
+        <option value="ours"${mine ? ' selected' : ''}>Only what your observers filed</option>
+      </select>
+    </div>
+    ${shown.length ? `<div class="sr-card">${shown.map(incidentRow).join('')}</div>` : `
+    <div class="sr-empty"><h2>${list.length ? 'None from your observers yet' : 'No incidents published here'}</h2>
+      <p>${list.length ? 'Nothing your own people filed has been published in this race yet.'
+        : 'Nothing has been published for this race. Incidents appear once they clear review, at the same moment the public sees them.'}</p></div>`}
+    <div class="sr-note">
+      <strong>This is the public list.</strong> Every incident here is already on
+      Hawkeye for anyone to read &mdash; nothing is shown before it is published, and
+      no other group&rsquo;s observers are named. What this tab adds is which ones came
+      from your people. Weighing a claim happens in the
+      <a href="docket.html" style="color:var(--accent)">public docket</a>, not here.
+    </div>`;
+
+  $('inc-filter').addEventListener('change', (e) => { S.incFilter = e.target.value; renderIncidents(); });
+}
+
+function incidentRow(x) {
+  const place = x.name ? `${esc(x.name)}` : x.state ? `${esc(x.state)} — no unit given` : 'Location not given';
+  const sub = [x.lga, x.ward].filter(Boolean).map(esc).join(' &middot; ');
+  return `<div class="sr-act">
+    <span class="pill ${x.ours ? 'ok' : 'idle'}"><i>${x.ours ? '&#9679;' : '&#9633;'}</i>${esc(kindWord(x.kind))}</span>
+    <div class="sr-act-t">
+      <b>${place}</b>${x.pu_code ? ` <span class="num sr-sub" style="display:inline">${esc(x.pu_code)}</span>` : ''}
+      ${x.description ? `<span class="sr-sub">${esc(x.description)}</span>` : ''}
+      ${x.ours ? `<span class="sr-sub" style="color:var(--ok)">filed by ${esc(x.ours.label || 'Observer #' + x.ours.observer_id)}</span>` : ''}
+    </div>
+    <span class="sr-act-w">${timeAgo(x.at)}</span>
+  </div>`;
+}
+
+const kindWord = (k) => String(k || 'Incident').replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
 /* --- team -------------------------------------------------------------- */
 
 const STATUS = {
@@ -906,7 +974,7 @@ async function showInvite() {
 
 function pickGroup(id) {
   S.gid = id;
-  S.coverage = S.team = S.overview = S.activity = null;
+  S.coverage = S.team = S.overview = S.activity = S.incidents = null;
   S.path = { state: '', lga: '', ward: '' };
   loadGroup();
 }

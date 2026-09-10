@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appID": "G99KD9RW94.ng.com.hawkeye.observer",
+        "paths": [
+          "/open",
+          "/open/*",
+          "/join/*"
+        ]
+      }
+    ]
+  }
+}

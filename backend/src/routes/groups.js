@@ -801,32 +801,57 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
  */
 groupsRouter.get('/groups/:id/activity', requireObserver, requireManager, (req, res) => {
   const sc = scopeClause(req.manager);
+  /**
+   * EVERY report in this race, not only the group's own.
+   *
+   * A campaign watching one race needs to know a unit has been covered even
+   * when the person who covered it is nobody's agent — that unit is done, and
+   * sending somebody to it is effort spent where the count already exists. The
+   * old feed showed only members, so the room could not tell "nobody has been
+   * there" from "somebody has, just not one of ours" — the two calls a manager
+   * makes differently.
+   *
+   * The join is now the other way round: submissions first, members attached
+   * where they match. `s.created_at >= m.joined_at` still rides on that join,
+   * so a member's pre-join report attaches to nobody and appears as an ordinary
+   * public report — which is the privacy rule, not an accident of the query.
+   * Non-members are never named; a public report carries its unit and nothing
+   * about who filed it.
+   */
   const rows = db
     .prepare(
-      `SELECT s.pu_code, s.created_at, m.observer_id, m.label, m.assigned_pu,
+      `SELECT s.pu_code, s.created_at, s.observer_id,
+              m.observer_id AS member_id, m.label, m.assigned_pu,
               pu.name, pu.ward, pu.lga
-         FROM group_members m
-         JOIN submissions s ON s.observer_id = m.observer_id AND s.contest = ? AND s.created_at >= m.joined_at
+         FROM submissions s
          JOIN polling_units pu ON pu.pu_code = s.pu_code
-        WHERE m.group_id = ?${sc.sql}
-        ORDER BY s.created_at DESC LIMIT 25`,
+         LEFT JOIN group_members m
+           ON m.observer_id = s.observer_id AND m.group_id = ? AND s.created_at >= m.joined_at
+        WHERE s.contest = ?${sc.sql}
+        ORDER BY s.created_at DESC LIMIT 30`,
     )
-    .all(req.group.contest, req.group.id, ...sc.params);
+    .all(req.group.id, req.group.contest, ...sc.params);
   res.json({
-    reports: rows.map((r) => ({
-      observer_id: r.observer_id,
-      label: r.label || null,
-      role: r.role || null,
-      at: r.created_at,
-      pu_code: r.pu_code,
-      name: r.name,
-      ward: r.ward,
-      lga: r.lga,
-      // null when they had no assignment at all — which is not a mismatch, and
-      // must not be shown as one.
-      on_unit: r.assigned_pu ? r.pu_code === r.assigned_pu : null,
-      assigned_pu: r.assigned_pu || null,
-    })),
+    reports: rows.map((r) => {
+      const ours = !!r.member_id;
+      return {
+        // A PUBLIC report is not attributed. Its unit is already public; who
+        // filed it is not the campaign's business, and handing them an id would
+        // let a room build a picture of observers who never joined it.
+        observer_id: ours ? r.member_id : null,
+        label: ours ? r.label || null : null,
+        ours,
+        at: r.created_at,
+        pu_code: r.pu_code,
+        name: r.name,
+        ward: r.ward,
+        lga: r.lga,
+        // null when the filer is not ours, or is ours with no assignment —
+        // neither is a mismatch, and neither must be shown as one.
+        on_unit: ours && r.assigned_pu ? r.pu_code === r.assigned_pu : null,
+        assigned_pu: ours ? r.assigned_pu || null : null,
+      };
+    }),
   });
 });
 

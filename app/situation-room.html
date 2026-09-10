@@ -515,7 +515,6 @@ async function loadTab(force) {
       S.activity = act.body;
       S.tally = nat.status === 200 ? nat.body : null;
       S.tallyArea = crop || 'this race';
-      S.tallyIsMine = !!crop && crop === homeArea().name;
     }
     return renderOverview();
   }
@@ -631,7 +630,7 @@ function renderOverview() {
       </div>
     </div>
     ${partiesHtml()}
-    <h2 class="sr-h2">What your people just filed</h2>
+    <h2 class="sr-h2">Reports coming in</h2>
     <div class="sr-card${reports.length > 4 ? ' sr-panel' : ''}">${reports.length
           ? `<div class="sr-scroll">${reports.map(activityRow).join('')}</div>`
             + (reports.length > 4 ? `<div class="sr-count">${n(reports.length)} most recent</div>` : '')
@@ -670,8 +669,7 @@ function partiesHtml() {
   const mine = (S.group.party || '').toUpperCase();
   const minePos = rows.findIndex((x) => String(x.party).toUpperCase() === mine);
   const share = (v) => (cast ? ((v / cast) * 100).toFixed(1) : '0.0') + '%';
-  const areaNote = S.tallyIsMine ? esc(S.tallyArea)
-    : `${esc(S.tallyArea)} &mdash; wider than your own area`;
+  const areaNote = esc(S.tallyArea);
 
   if (!rows.length) {
     return `<h2 class="sr-h2">Party totals</h2>
@@ -705,13 +703,25 @@ function partiesHtml() {
     </div>`;
 }
 
+/**
+ * One filed report. TEAM AND PUBLIC BOTH APPEAR, and are told apart.
+ *
+ * A unit somebody else already covered is not a gap — sending an agent there
+ * spends effort where the count exists. But the two are different calls, so
+ * they cannot look the same: ours are named and carry the on-unit check, public
+ * ones say only that the unit was covered. A public report is never attributed;
+ * its unit is already public, who filed it is not the campaign's business.
+ */
 function activityRow(r) {
   const off = r.on_unit === false;
+  const cls = !r.ours ? 'idle' : off ? 'off' : 'ok';
+  const glyph = !r.ours ? '&#9633;' : off ? '&#9670;' : '&#9679;';
+  const word = !r.ours ? 'Public' : off ? 'Elsewhere' : 'Ours';
   return `<div class="sr-act">
-    <span class="pill ${off ? 'off' : 'ok'}"><i>${off ? '&#9670;' : '&#9679;'}</i>${off ? 'Elsewhere' : 'Filed'}</span>
+    <span class="pill ${cls}"><i>${glyph}</i>${word}</span>
     <div class="sr-act-t">
-      <b>${esc(r.label || 'Observer #' + r.observer_id)}</b> &mdash; ${esc(r.name)}
-      <span class="sr-sub">${esc(r.lga || '')}${r.ward ? ' &middot; ' + esc(r.ward) : ''}${off ? ' &middot; not the unit they were down for' : ''}</span>
+      ${r.ours ? `<b>${esc(r.label || 'Observer #' + r.observer_id)}</b> &mdash; ` : ''}${esc(r.name)}
+      <span class="sr-sub">${esc(r.lga || '')}${r.ward ? ' &middot; ' + esc(r.ward) : ''}${off ? ' &middot; not the unit they were down for' : ''}${!r.ours ? ' &middot; covered by someone outside your team' : ''}</span>
     </div>
     <span class="sr-act-w">${timeAgo(r.at)}</span>
   </div>`;
@@ -737,20 +747,22 @@ function activityRow(r) {
  * start there. The group's own scope is the fallback for everyone else.
  */
 /**
- * Which state the party tally can be cropped to, or '' for the whole race.
+ * The results table shows THE WHOLE RACE, exactly as the public board does.
  *
- * The public board crops by STATE and nothing finer, so a ward or LGA
- * coordinator inside a state-scoped room gets their state's totals — labelled
- * as their state, never as their area. Naming the area the numbers actually
- * cover is the whole job here: a total labelled with the wrong place is worse
- * than no total. Their own area's tally arrives when the tally is extracted
- * into a shared helper (see the plan).
+ * It used to crop to the viewer's own area, which made it a different table for
+ * every coordinator and forced a label explaining which slice you were looking
+ * at. But a result is a property of the RACE, not of who is reading: the
+ * presidency is one national count, a governorship is its state's count. So the
+ * crop is the group's own race scope and nothing else — a coordinator sees the
+ * same totals as their owner, which is also what makes the number comparable
+ * when two of them talk.
+ *
+ * Only a state crop exists on the public board, so a Senate or Reps room falls
+ * back to the national figure for that contest until the tally is extracted
+ * into a shared helper.
  */
 function tallyCrop() {
-  const me = (S.group && S.group.me) || {};
-  if (me.scope_kind === 'state') return me.scope_value;
-  if (S.group.scope && S.group.scope_kind === 'state') return S.group.scope;
-  return '';
+  return (S.group && S.group.scope_kind === 'state' && S.group.scope) || '';
 }
 
 function homeArea() {

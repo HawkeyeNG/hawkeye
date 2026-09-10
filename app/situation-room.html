@@ -3,6 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <!-- REQUIRED. This page is served at /room/<slug> as well as
+       /situation-room.html, and at the two-segment path every relative href
+       resolves under /room/ — styles.css, native.js, the crest and the logo
+       manifest all 404 silently, leaving an unstyled wall of text. -->
+  <base href="/" />
   <meta name="theme-color" content="#00482b" />
   <meta name="description" content="Situation room for campaigns and civil-society groups: coverage by LGA, ward and unit, and where your own observers have reported from." />
   <title>Hawkeye — Situation Room</title>
@@ -320,6 +325,8 @@ function render() {
     '<button id="invite-btn">Invite observers</button>'
     + '<button id="new-btn" title="Set up another situation room">New room</button>'
     + '<button id="refresh-btn" title="Reload from the live feed">Refresh</button>'
+    + '<button id="link-btn" title="Copy this room&rsquo;s address">Copy link</button>'
+    + (owner ? '<button id="del-btn" title="Delete this room">Delete</button>' : '')
     + '<button id="leave-btn"' + (owner ? ' disabled' : '') + ' title="'
     + (owner ? 'The owner cannot step back from their own room' : 'Stop managing this room')
     + '">Sign out</button>';
@@ -331,6 +338,14 @@ function render() {
      them. This just gets back to the setup form. */
   $('new-btn').addEventListener('click', () => { S.groups = []; renderWelcome(); });
   $('leave-btn').addEventListener('click', leaveRoom);
+  $('link-btn').addEventListener('click', () => {
+    // The room's address, not the current tab's URL — a manager who arrived at
+    // /situation-room.html would otherwise copy a link that opens whichever
+    // room the RECIPIENT happens to have first.
+    navigator.clipboard.writeText(location.origin + '/room/' + (g.slug || ''))
+      .then(() => { $('link-btn').textContent = 'Copied'; });
+  });
+  if ($('del-btn')) $('del-btn').addEventListener('click', deleteRoom);
   document.querySelectorAll('.sr-tabs button').forEach((b) =>
     b.addEventListener('click', () => { S.tab = b.dataset.tab; render(); loadTab(); }));
   loadTab();
@@ -1163,11 +1178,17 @@ async function promote(observerId, who) {
    * offered here is one the tree can actually count.
    */
   const picked = {};
+  /* ANCESTORS ONLY. Passing the step's own value narrows the list to the level
+     BELOW it — asking for states with ?state=Borno returns Borno's LGAs, so the
+     "Choose a state" select filled up with local governments and its stored
+     value matched nothing, falling back to the placeholder while the levels
+     underneath stayed answered. The list for a step is defined by what sits
+     above it, never by itself. */
+  const ABOVE = { zone: [], state: [], lga: ['state'], ward: ['state', 'lga'] };
   const optionsFor = async (step) => {
     if (step === 'zone') return (g.zones || []).map((z) => ({ key: z, name: z }));
     const q = new URLSearchParams();
-    if (picked.state) q.set('state', picked.state);
-    if (step === 'ward' && picked.lga) q.set('lga', picked.lga);
+    for (const a of ABOVE[step]) if (picked[a]) q.set(a, picked[a]);
     const { body } = await api('/api/groups/' + S.gid + '/coverage' + (q.toString() ? '?' + q : ''));
     return body.nodes || [];
   };
@@ -1243,6 +1264,38 @@ async function rename(observerId) {
  * a link, or answer for it. Handing them a "leave" that orphans the room would
  * be offering a door that locks behind everyone.
  */
+/**
+ * Delete the room. Owner only, and the confirmation is proportional.
+ *
+ * An empty room — no observers, nobody's work in it — is a mistake somebody
+ * made two minutes ago, and making them type its name to undo that would be
+ * ceremony for its own sake. A room with people in it asks for the name,
+ * because there is no undo and the manager needs a moment where the thing they
+ * are about to lose is written down in front of them.
+ *
+ * What deletion CANNOT touch is worth saying to them: every report those
+ * observers filed stays in the public record, still counted. Deleting a
+ * campaign cannot delete an election.
+ */
+async function deleteRoom() {
+  const g = S.group;
+  const n_ = g.members || 0;
+  if (n_ === 0) {
+    if (!confirm('Delete ' + g.name + '? It has no observers in it, so nothing is lost.')) return;
+  } else {
+    const typed = prompt('Deleting ' + g.name + ' removes its roster, assignments and invite links for '
+      + n_ + ' observer' + (n_ === 1 ? '' : 's') + '. Their reports stay in the public record and still count.\n\n'
+      + 'Type the room name to confirm:');
+    if (typed === null) return;
+    if (typed.trim() !== g.name) return alert('That did not match the name. Nothing was deleted.');
+  }
+  const { status, body } = await api('/api/groups/' + S.gid, { method: 'DELETE' });
+  if (status !== 200) return alert(body.error === 'owner_only' ? 'Only the owner can delete this room.' : 'Could not delete that room.');
+  history.replaceState(null, '', '/situation-room.html');
+  S.gid = null; S.group = null; S.groups = [];
+  boot();
+}
+
 async function leaveRoom() {
   if (!confirm('Stop managing ' + S.group.name + '? You will lose access to this room unless the owner adds you back.')) return;
   const { status } = await api('/api/groups/' + S.gid + '/managers/' + S.group.me_id, { method: 'DELETE' });
@@ -1311,6 +1364,7 @@ function pickGroup(id) {
 async function loadGroup() {
   const { body } = await api('/api/groups/' + S.gid);
   S.group = body;
+  syncUrl(body);
   render();
 }
 
@@ -1318,13 +1372,36 @@ async function loadGroup() {
    Fetched once; a failure just means no emblem, never a broken console. */
 let LOGOS = {};
 
+/* The slug in the address bar, if we arrived at /room/<slug>. */
+const URL_SLUG = (location.pathname.match(/^\/room\/([^/]+)/) || [])[1] || '';
+
+/**
+ * Keep the address bar pointing at the room being looked at.
+ *
+ * replaceState, not a navigation: switching rooms should leave a shareable URL
+ * behind without adding a history entry per switch, so Back still leaves the
+ * console rather than walking through every room visited.
+ */
+function syncUrl(g) {
+  if (!g || !g.slug) return;
+  const want = '/room/' + g.slug;
+  if (location.pathname !== want) history.replaceState(null, '', want);
+}
+
 async function boot(preferId) {
   LOGOS = await (window.fetchData ? window.fetchData('logos/manifest.json') : fetch('logos/manifest.json'))
     .then((r) => r.json()).catch(() => ({}));
   const { body } = await api('/api/groups');
   S.groups = (body && body.managing) || [];
   if (!S.groups.length) return renderWelcome();
-  S.gid = preferId || S.groups[0].id;
+  /* A slug in the address wins over "whatever was first": that link is how a
+     manager or coordinator who did not create the room reaches it at all. */
+  const bySlug = URL_SLUG && S.groups.find((x) => x.slug === URL_SLUG);
+  if (URL_SLUG && !bySlug) {
+    $('sr').innerHTML = '<div class="sr-msg">That room is not one you manage, or the link is wrong.</div>';
+    return;
+  }
+  S.gid = preferId || (bySlug && bySlug.id) || S.groups[0].id;
   await loadGroup();
 }
 

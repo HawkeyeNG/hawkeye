@@ -360,6 +360,17 @@ app.get('/download', (_req, res) => res.sendFile(path.join(config.appDir, 'downl
 app.get('/join/:token', (_req, res) => res.sendFile(path.join(config.appDir, 'join.html')));
 
 /**
+ * /room/<slug> — a situation room's own address.
+ *
+ * Managers and coordinators do not create the room they work in, so without an
+ * address there is no way to reach it: the console could only be opened by
+ * whoever happened to have it selected already. The slug names the ROOM and not
+ * the viewer, so one link works for everyone who belongs there — the page
+ * itself checks who they are. Serving it needs no auth; the API behind it does.
+ */
+app.get('/room/:slug', (_req, res) => res.sendFile(path.join(config.appDir, 'situation-room.html')));
+
+/**
  * Apple's association file, which has NO EXTENSION by Apple's own rule — so
  * express.static would serve it as application/octet-stream and iOS would
  * silently decline to verify the domain. Universal Links then fail in the one

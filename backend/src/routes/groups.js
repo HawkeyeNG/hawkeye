@@ -64,6 +64,40 @@ function requireManager(req, res, next) {
 const isOwner = (m) => m.role === 'owner';
 
 /**
+ * The room's address: a slug of its name, numbered when the name repeats.
+ *
+ * URLS NAME THE ROOM, NOT THE VIEWER. A room has several managers and a
+ * coordinator or two, and keying the address to whoever is looking would give
+ * each of them a different link to the same screen — so "open the room" could
+ * not be pasted into the group chat they already use. Who you are decides what
+ * you see; sign-in decides whether you see it at all.
+ *
+ * Numbered from 2, and the counter is per NAME, because two campaigns really
+ * can be called the same thing and the second one should not have to be told to
+ * rename itself.
+ */
+const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD')
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'room';
+
+function uniqueSlug(name, exceptId = 0) {
+  const base = slugify(name);
+  const taken = db.prepare('SELECT 1 FROM campaign_groups WHERE slug = ? AND id != ?');
+  if (!taken.get(base, exceptId)) return base;
+  for (let i = 2; i < 500; i += 1) {
+    const s = `${base}-${i}`;
+    if (!taken.get(s, exceptId)) return s;
+  }
+  return `${base}-${Date.now().toString(36)}`;
+}
+
+/* Rooms created before slugs existed have none, and a room without an address
+   cannot be reached by anyone who did not create it. Cheap: only touches NULLs,
+   so it is a no-op on every boot after the first. */
+for (const row of db.prepare('SELECT id, name FROM campaign_groups WHERE slug IS NULL').all()) {
+  db.prepare('UPDATE campaign_groups SET slug = ? WHERE id = ?').run(uniqueSlug(row.name, row.id), row.id);
+}
+
+/**
  * Which register column a group's scope names — DERIVED from the contest, never
  * stored.
  *
@@ -279,13 +313,14 @@ groupsRouter.post('/groups', requireObserver, (req, res) => {
 
   const t = now();
   const info = db
-    .prepare('INSERT INTO campaign_groups (name, kind, contest, scope, party, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .run(name, kind, contest, scope, party || null, req.observer.id, t);
+    .prepare('INSERT INTO campaign_groups (name, kind, contest, scope, party, slug, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(name, kind, contest, scope, party || null, uniqueSlug(name), req.observer.id, t);
   db.prepare('INSERT INTO group_managers (group_id, observer_id, role, created_at) VALUES (?, ?, ?, ?)')
     .run(info.lastInsertRowid, req.observer.id, 'owner', t);
 
   notifyMaster(`situation room · new ${kind} "${name}" (${contest}${scope ? ' · ' + scope : ''}) · observer #${req.observer.id}`);
-  res.status(201).json({ id: info.lastInsertRowid, name, kind, contest, scope, party: party || null });
+  res.status(201).json({ id: info.lastInsertRowid, name, kind, contest, scope, party: party || null,
+    slug: db.prepare('SELECT slug FROM campaign_groups WHERE id = ?').get(info.lastInsertRowid).slug });
 });
 
 /**
@@ -297,7 +332,7 @@ groupsRouter.post('/groups', requireObserver, (req, res) => {
 groupsRouter.get('/groups', requireObserver, (req, res) => {
   const managing = db
     .prepare(
-      `SELECT g.id, g.name, g.kind, g.contest, g.scope, g.party, gm.role, gm.scope_kind, gm.scope_value,
+      `SELECT g.id, g.name, g.kind, g.contest, g.scope, g.party, g.slug, gm.role, gm.scope_kind, gm.scope_value,
               (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS members
          FROM group_managers gm JOIN campaign_groups g ON g.id = gm.group_id
         WHERE gm.observer_id = ? ORDER BY g.created_at DESC`,
@@ -305,7 +340,9 @@ groupsRouter.get('/groups', requireObserver, (req, res) => {
     .all(req.observer.id);
   const member = db
     .prepare(
-      `SELECT g.id, g.name, g.kind, g.contest, g.scope, g.party, m.assigned_pu, m.assign_state, m.joined_at,
+      `SELECT g.id, g.name, g.kind, g.contest, g.scope, g.party, g.slug,
+              (SELECT role FROM group_managers WHERE group_id = g.id AND observer_id = m.observer_id) AS manages,
+              m.assigned_pu, m.assign_state, m.joined_at,
               pu.name AS assigned_name, pu.ward AS assigned_ward, pu.lga AS assigned_lga, pu.state AS assigned_state
          FROM group_members m JOIN campaign_groups g ON g.id = m.group_id
          LEFT JOIN polling_units pu ON pu.pu_code = m.assigned_pu
@@ -321,6 +358,7 @@ groupsRouter.get('/groups/:id', requireObserver, requireManager, (req, res) => {
   const assigned = db.prepare("SELECT COUNT(*) n FROM group_members WHERE group_id = ? AND assigned_pu IS NOT NULL AND assign_state != 'declined'").get(g.id).n;
   res.json({
     id: g.id, name: g.name, kind: g.kind, contest: g.contest, scope: g.scope, party: g.party || null,
+    slug: g.slug || null,
     scope_kind: g.scope ? scopeColumn(g.contest) : '',
     members, assigned,
     // Shipped with the detail rather than a second endpoint: the console
@@ -332,6 +370,35 @@ groupsRouter.get('/groups/:id', requireObserver, requireManager, (req, res) => {
       .prepare('SELECT observer_id, role, scope_kind, scope_value FROM group_managers WHERE group_id = ? ORDER BY created_at')
       .all(g.id),
   });
+});
+
+/**
+ * Delete a room. OWNER ONLY, and it takes the group layer with it — nothing
+ * else.
+ *
+ * WHAT THIS CANNOT DESTROY is the point. Members' reports live in the public
+ * submission stream and the ledger; this removes the roster, the assignments
+ * and the invites, and every report those observers filed stays exactly where
+ * it was, still counted, still public. A campaign folding cannot take the
+ * record of an election with it.
+ *
+ * The client asks harder when there is something to lose (see the member and
+ * report counts returned here), but the gate is the owner check: a manager who
+ * could delete the room could erase every other manager's work in one tap.
+ */
+groupsRouter.delete('/groups/:id', requireObserver, requireManager, (req, res) => {
+  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
+  const id = req.group.id;
+  const members = db.prepare('SELECT COUNT(*) n FROM group_members WHERE group_id = ?').get(id).n;
+  const wipe = db.transaction(() => {
+    for (const t of ['group_tokens', 'group_members', 'group_managers']) {
+      db.prepare('DELETE FROM ' + t + ' WHERE group_id = ?').run(id);
+    }
+    db.prepare('DELETE FROM campaign_groups WHERE id = ?').run(id);
+  });
+  wipe();
+  notifyMaster(`situation room · deleted "${req.group.name}" (${members} member(s)) · observer #${req.observer.id}`);
+  res.json({ ok: true, removed_members: members });
 });
 
 // --- invites ------------------------------------------------------------------

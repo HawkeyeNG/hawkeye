@@ -670,6 +670,14 @@ for (const ddl of [
   // readable by any other group. A campaign watching a race is not a claim
   // about the race.
   'ALTER TABLE campaign_groups ADD COLUMN party TEXT',
+  // The room's own address, so a manager or coordinator who did not create it
+  // can be sent straight to it. Filled by routes/groups.js (slugify + collision
+  // counter) rather than here, because deriving it in SQL would need a REPLACE
+  // chain per punctuation class. Deliberately NOT unique-indexed: uniqueness is
+  // enforced where the counter lives, and a unique index would turn a backfill
+  // collision into a boot failure.
+  'ALTER TABLE campaign_groups ADD COLUMN slug TEXT',
+  'CREATE INDEX IF NOT EXISTS idx_campaign_groups_slug ON campaign_groups(slug)',
   // A roster label the MANAGER writes, scoped to their own group.
   //
   // Hawkeye stores no names: an observer is a phone hash and an id, and that is

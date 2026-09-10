@@ -102,9 +102,16 @@ function render() {
 function card(g) {
   const kind = g.kind === 'cso' ? 'Observer group' : 'Campaign';
   const declined = g.assign_state === 'declined';
+  /* Linked ONLY when this observer also manages it. A link into a console you
+     cannot enter is a dead end dressed up as a feature — the console would just
+     tell them it is not their room. */
+  const title = g.manages
+    ? `<a href="/room/${esc(g.slug || '')}" style="color:var(--accent)">${esc(g.name)}</a>`
+    : esc(g.name);
   return `<div class="g">
-    <h2>${esc(g.name)}</h2>
+    <h2>${title}</h2>
     <div class="sub">${esc(kind)} &middot; ${esc(g.contest)}${g.scope ? ' &middot; ' + esc(g.scope) : ''}</div>
+    ${g.manages ? `<div class="sub" style="margin-top:3px">You ${esc(g.manages === 'owner' ? 'own' : g.manages === 'coordinator' ? 'coordinate an area of' : 'manage')} this group &mdash; open the situation room above.</div>` : ''}
     ${g.assigned_pu ? `<div class="unit">
       <div class="lab">${declined ? 'Unit you declined' : 'Unit they have you down for'}</div>
       <div class="nm">${esc(g.assigned_name || 'Polling unit')}</div>

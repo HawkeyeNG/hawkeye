@@ -51,6 +51,27 @@
   padding: 14px 0 12px; border-bottom: 1px solid var(--line);
 }
 .sr-bar h1 { font-size: 1.15rem; margin: 0; font-family: var(--display); letter-spacing: -0.01em; }
+
+/* The console actions live in the GREEN HEADER BAR, not in the page. They are
+   chrome — always the same four, never scrolled to — and putting them in the
+   viewport cost a row of vertical space on every tab for no gain. */
+.sr-hdr-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; align-items: center; }
+.sr-hdr-actions button {
+  display: inline-block; width: auto; margin: 0; box-shadow: none;
+  background: rgba(255, 255, 255, 0.10); color: #eaf5ee; border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px; padding: 6px 11px; font: inherit; font-size: 0.8rem; cursor: pointer;
+}
+.sr-hdr-actions button:hover { filter: none; border-color: var(--accent); color: #fff; }
+.sr-hdr-actions button:active { transform: none; }
+.sr-hdr-actions button[disabled] { opacity: 0.4; cursor: not-allowed; }
+@media (max-width: 700px) { .sr-hdr-actions { margin-left: 0; width: 100%; padding-top: 8px; } }
+
+/* Even spacing, one rule. The separators used to be their own flex children, so
+   a 10px gap landed on BOTH sides of every dot while "8" and "observers" got the
+   same 10px between them — three different-looking gaps in one line. The dot is
+   now part of the item that follows it, so every gap is the same gap. */
+.sr-bar .meta { gap: 0; }
+.sr-bar .meta > span + span::before { content: '·'; padding: 0 9px; opacity: 0.55; }
 /* The party emblem, on a white plate. Party logos are supplied as opaque JPEGs
    and PNGs designed for paper, and several are white-on-white or near it — a
    logo dropped straight onto the dark console loses its outline entirely. */
@@ -142,8 +163,17 @@
 .sr-h2 { font-family: var(--display); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.07em;
   color: var(--muted); margin: 4px 0 9px; font-weight: 600; }
 .sr-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 13px; margin-bottom: 20px; }
+/* One panel height for both columns, so the map and the gap list read as a pair
+   rather than two cards that happen to sit side by side. The lists scroll INSIDE
+   it: truncating to the worst six hid the rest of the election, and "most
+   missing" is exactly the list a manager needs to reach the bottom of. */
+.sr-panel { height: 340px; display: flex; flex-direction: column; }
+.sr-scroll { overflow-y: auto; flex: 1 1 auto; margin: -2px -4px 0; padding: 2px 4px 0; }
+.sr-scroll::-webkit-scrollbar { width: 8px; }
+.sr-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+.sr-count { color: var(--muted); font-size: 0.72rem; padding-top: 8px; border-top: 1px solid var(--line); margin-top: 8px; }
 .sr-card .sr-tbl td { padding: 7px 6px; }
-.sr-map { width: 100%; height: auto; max-height: 340px; display: block; color: var(--ink); }
+.sr-map { width: 100%; height: auto; flex: 1 1 auto; min-height: 0; display: block; color: var(--ink); }
 .sr-act { display: flex; align-items: center; gap: 10px; padding: 8px 2px; border-bottom: 1px solid var(--line); }
 .sr-act:last-child { border-bottom: 0; }
 .sr-act-t { flex: 1 1 auto; min-width: 0; font-size: 0.84rem; line-height: 1.35; }
@@ -186,6 +216,7 @@
           <span>Situation Room</span>
         </div>
       </a>
+      <div class="sr-hdr-actions" id="sr-actions"></div>
     </div>
   </header>
 
@@ -249,18 +280,17 @@ function render() {
       ${g.party && LOGOS[g.party] ? `<span class="sr-emblem"><img src="${esc(LOGOS[g.party])}" alt="${esc(g.party)}" /></span>` : ''}
       <h1>${esc(g.name || '')}</h1>
       <div class="meta">
-        <span>${esc(g.kind === 'cso' ? 'Civil society' : 'Campaign')}${g.party ? ' &middot; ' + esc(g.party) : ''}</span>
-        <span>&middot;</span><span>${esc(g.contest || '')}</span>
-        <span>&middot;</span><span>${esc(scope)}</span>
-        <span>&middot;</span><span class="num">${n(g.members)}</span><span>observers</span>
+        ${[
+          g.kind === 'cso' ? 'Civil society' : 'Campaign',
+          g.party || '',
+          g.contest || '',
+          scope,
+          `${n(g.members)} observer${g.members === 1 ? '' : 's'}`,
+        ].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join('')}
       </div>
       <div class="spacer"></div>
       ${S.groups.length > 1 ? `<select class="sr-sel" id="gpick">${S.groups.map((x) =>
         `<option value="${x.id}"${x.id === S.gid ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}
-      <button class="sr-btn" id="invite-btn">Invite observers</button>
-      <button class="sr-btn" id="new-btn" title="Set up another situation room">New room</button>
-      <button class="sr-btn" id="refresh-btn" title="Reload from the live feed">Refresh</button>
-      <button class="sr-btn" id="leave-btn" title="${g.me && g.me.role === 'owner' ? 'The owner cannot step back from their own room' : 'Stop managing this room'}"${g.me && g.me.role === 'owner' ? ' disabled style="opacity:.45"' : ''}>Sign out of this room</button>
     </div>
     <div class="sr-tabs" role="tablist">
       <button role="tab" aria-selected="${S.tab === 'overview'}" data-tab="overview">Overview</button>
@@ -270,6 +300,17 @@ function render() {
     </div>
     <div id="sr-body"><div class="sr-msg">Loading…</div></div>`;
 
+  /* The four console actions live in the green header bar. Painted here rather
+     than in the static markup because two of them depend on the group: only a
+     non-owner can sign out, and the tooltip has to say which case this is. */
+  const owner = g.me && g.me.role === 'owner';
+  $('sr-actions').innerHTML =
+    '<button id="invite-btn">Invite observers</button>'
+    + '<button id="new-btn" title="Set up another situation room">New room</button>'
+    + '<button id="refresh-btn" title="Reload from the live feed">Refresh</button>'
+    + '<button id="leave-btn"' + (owner ? ' disabled' : '') + ' title="'
+    + (owner ? 'The owner cannot step back from their own room' : 'Stop managing this room')
+    + '">Sign out</button>';
   $('gpick') && $('gpick').addEventListener('change', (e) => { pickGroup(Number(e.target.value)); });
   $('invite-btn').addEventListener('click', showInvite);
   $('refresh-btn').addEventListener('click', () => loadTab(true));
@@ -478,7 +519,13 @@ function renderOverview() {
     assigned: a.assigned + x.assigned, on_unit: a.on_unit + x.on_unit, mismatched: a.mismatched + x.mismatched,
   }), { units: 0, reported: 0, assigned: 0, on_unit: 0, mismatched: 0 });
   const silent = Math.max(0, tot.assigned - tot.on_unit - tot.mismatched);
-  const gaps = nodes.slice().sort((a, b) => (b.units - b.reported) - (a.units - a.reported)).slice(0, 6);
+  /* Worst first, and ALL of them. Truncating to six hid most of the election
+     behind a list that looked complete — and "most missing" is precisely the
+     list a manager needs to reach the bottom of. Ranked by unreported UNITS,
+     not percentage: a 60%-covered LGA with 700 units has more of the election
+     missing than a 0%-covered one with twelve. */
+  const gaps = nodes.slice()
+    .sort((a, b) => (b.units - b.reported) - (a.units - a.reported) || a.name.localeCompare(b.name));
   const reports = (S.activity && S.activity.reports) || [];
 
   $('sr-body').innerHTML = `
@@ -492,11 +539,12 @@ function renderOverview() {
     <div class="sr-two">
       <div>
         <h2 class="sr-h2">${esc(S.group.scope || 'Nigeria')} at a glance</h2>
-        <div class="sr-card" id="sr-map"><div class="sr-msg">Drawing the map…</div></div>
+        <div class="sr-card sr-panel" id="sr-map"><div class="sr-msg">Drawing the map…</div></div>
       </div>
       <div>
         <h2 class="sr-h2">Where the election is most missing</h2>
-        <div class="sr-card">${gaps.length ? `<table class="sr-tbl" style="min-width:0">
+        <div class="sr-card sr-panel">${gaps.length ? `<div class="sr-scroll">
+          <table class="sr-tbl" style="min-width:0">
           <tbody>${gaps.map((x) => `<tr>
             <td><button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>
               ${x.assigned ? `<span class="sr-sub">${n(x.assigned)} of ours here</span>`
@@ -504,14 +552,19 @@ function renderOverview() {
             <td class="num">${n(x.units - x.reported)}<span class="sr-sub">unreported</span></td>
             <td style="width:80px"><div class="sr-bar-cell"><span class="num">${pct(x.reported, x.units)}%</span>
               <span class="sr-track"><span class="sr-fill" style="width:${pct(x.reported, x.units)}%"></span></span></div></td>
-          </tr>`).join('')}</tbody></table>` : '<div class="sr-msg">Nothing to show yet.</div>'}</div>
+          </tr>`).join('')}</tbody></table></div>
+          <div class="sr-count">${n(gaps.length)} ${esc((LEVEL_WORD[c.level] || 'places').toLowerCase())}, worst first &mdash; scroll for the rest</div>`
+          : '<div class="sr-msg">Nothing to show yet.</div>'}</div>
 
-        <h2 class="sr-h2">What your people just filed</h2>
-        <div class="sr-card">${reports.length ? reports.slice(0, 8).map(activityRow).join('')
+      </div>
+    </div>
+    <h2 class="sr-h2">What your people just filed</h2>
+    <div class="sr-card${reports.length > 4 ? ' sr-panel' : ''}">${reports.length
+          ? `<div class="sr-scroll">${reports.map(activityRow).join('')}</div>`
+            + (reports.length > 4 ? `<div class="sr-count">${n(reports.length)} most recent</div>` : '')
           : `<div class="sr-msg">No reports from your observers yet.<br />
              They will appear here the moment one is published.</div>`}</div>
-      </div>
-    </div>`;
+`;
 
   document.querySelectorAll('#sr-body .drill').forEach((b) =>
     b.addEventListener('click', () => { S.tab = 'coverage'; S.filter = 'all'; render(); drill(c.level, b.dataset.key); }));

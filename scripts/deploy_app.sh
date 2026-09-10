@@ -45,6 +45,25 @@ SITE=https://hawkeye.com.ng
 # REPLACED the homepage in production, and verify() missed it because it fetched
 # /open/index.html, which was still the old (correct) file. Only an explicit
 # --path overrides this.
+# A file OUTSIDE app/ with no --path would land in the web root, which is both
+# the wrong place and a public one. On 2026-09-10 `backend/src/server.js` was
+# deployed without --path and became https://hawkeye.com.ng/server.js — 25 KB of
+# backend source readable by anyone, while the actual backend kept running the
+# old file, so the change appeared to deploy and did nothing. Refuse instead of
+# guessing: the same lesson as the app/open/index.html incident above, one
+# directory up.
+guard_path() {                                 # guard_path <localfile>
+  local f="$1"
+  [ "$PATH_EXPLICIT" = 1 ] && return 0
+  case "$f" in
+    app/*) return 0 ;;
+    *) echo "REFUSING $f — outside app/ and no --path given."
+       echo "  It would land in the web root and be served publicly."
+       echo "  Use: $0 --path /hawkeye/<dir> $f"
+       return 1 ;;
+  esac
+}
+
 remote_for() {                                 # remote_for <localfile>
   local f="$1" sub
   if [ "$PATH_EXPLICIT" = 1 ]; then echo "$REMOTE_PATH"; return; fi
@@ -111,6 +130,7 @@ public_url() {
 ok=0; failed=(); unverified=0; purge_urls=()
 for f in "${FILES[@]}"; do
   [ -f "$f" ] || { echo "  MISSING  $f"; failed+=("$f"); continue; }
+  if ! guard_path "$f"; then failed+=("$f"); continue; fi
   if ! upload "$f"; then echo "  UPLOAD   FAILED $f"; failed+=("$f"); continue; fi
   verify "$f"; rc=$?
   case $rc in

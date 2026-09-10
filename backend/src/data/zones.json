@@ -1,0 +1,9 @@
+{
+  "_note": "Nigeria's six geopolitical zones. NOT an INEC electoral level — no seat is contested at zone level and the register has no zone column — but it is how campaigns actually organise, so a coordinator can be scoped to one. Fixed 36-state + FCT mapping; it changes only if the constitution does.",
+  "North Central": ["Benue", "FCT", "Kogi", "Kwara", "Nasarawa", "Niger", "Plateau"],
+  "North East": ["Adamawa", "Bauchi", "Borno", "Gombe", "Taraba", "Yobe"],
+  "North West": ["Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Sokoto", "Zamfara"],
+  "South East": ["Abia", "Anambra", "Ebonyi", "Enugu", "Imo"],
+  "South South": ["Akwa Ibom", "Bayelsa", "Cross River", "Delta", "Edo", "Rivers"],
+  "South West": ["Ekiti", "Lagos", "Ogun", "Ondo", "Osun", "Oyo"]
+}

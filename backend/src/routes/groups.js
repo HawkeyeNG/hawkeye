@@ -24,7 +24,10 @@
  */
 import { Router } from 'express';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { db, contests, scopeIsState } from '../db.js';
+import { config } from '../config.js';
 import { notifyMaster, notifyObserverId } from '../services/notify.js';
 import { pushNote } from '../services/notifications.js';
 import { requireObserver } from './observers.js';
@@ -129,16 +132,82 @@ function seatsByState(col) {
 }
 
 /**
- * A coordinator's scope, as SQL against `polling_units pu`. Returns a clause and
- * its parameters, or an empty clause for an unscoped manager. Applied to BOTH
- * the coverage tree and the team list, because a scope that only narrows one of
- * the two screens is not a scope.
+ * Nigeria's six geopolitical zones. Not an INEC level — no seat is contested at
+ * zone level and the register has no zone column — but it is how a presidential
+ * campaign actually divides the country, so a coordinator can be scoped to one.
+ * Expands to the states it contains rather than comparing a column.
+ */
+const ZONES = JSON.parse(fs.readFileSync(path.join(config.dataDir, 'zones.json'), 'utf8'));
+const ZONE_NAMES = Object.keys(ZONES).filter((k) => !k.startsWith('_'));
+const zoneStates = (zone) => ZONES[zone] || [];
+
+/**
+ * A coordinator's scope, as SQL against `polling_units pu`.
+ *
+ * WHAT A SCOPE NARROWS: PEOPLE AND ACTIONS, NOT AGGREGATES. This clause is
+ * applied to the team list, the activity feed and the incident feed — every
+ * read that names a person — and to assignment writes. It is deliberately NOT
+ * applied to the coverage tree.
+ *
+ * That is a correction, not an omission. Scoping the aggregates too meant a
+ * coordinator saw "12% covered" with nothing to compare it against, and a
+ * number with no denominator a person recognises is not information. They now
+ * see every area's totals and the campaign's, and still see and act on only
+ * their own area's observers — which is the half that actually needed fencing,
+ * because one coordinator reading another state's silent-agent list is the
+ * discipline problem the mismatch rule exists to prevent.
  */
 function scopeClause(manager, alias = 'pu') {
   if (!manager.scope_kind || !manager.scope_value) return { sql: '', params: [] };
+  if (manager.scope_kind === 'zone') {
+    const states = zoneStates(manager.scope_value);
+    if (!states.length) return { sql: '', params: [] };
+    return { sql: ` AND ${alias}.state IN (${states.map(() => '?').join(',')})`, params: states };
+  }
   const col = { state: 'state', lga: 'lga', ward: 'ward' }[manager.scope_kind];
   if (!col) return { sql: '', params: [] };
   return { sql: ` AND ${alias}.${col} = ?`, params: [manager.scope_value] };
+}
+
+/**
+ * Coordinator name by area key, for the level being listed.
+ *
+ * A zone coordinator is credited against each of its states, because at state
+ * level that is the row a reader is looking at — the alternative is a standings
+ * table where the zone people appear nowhere and their states look unowned.
+ */
+function coordinatorsAt(groupId, level) {
+  const rows = db
+    .prepare(
+      `SELECT gm.observer_id, gm.role, gm.scope_kind, gm.scope_value, m.label
+         FROM group_managers gm
+         LEFT JOIN group_members m ON m.group_id = gm.group_id AND m.observer_id = gm.observer_id
+        WHERE gm.group_id = ? AND gm.scope_kind != '' AND gm.scope_value != ''`,
+    )
+    .all(groupId);
+  const out = {};
+  const put = (key, r) => {
+    if (!out[key]) out[key] = [];
+    out[key].push({ observer_id: r.observer_id, label: r.label || null, role: r.role });
+  };
+  for (const r of rows) {
+    if (r.scope_kind === level) put(r.scope_value, r);
+    else if (r.scope_kind === 'zone' && level === 'state') for (const st of zoneStates(r.scope_value)) put(st, r);
+  }
+  return out;
+}
+
+/**
+ * Which coverage node a coordinator's scope falls in, at the level being
+ * listed — so their own row can be marked without the client re-deriving it.
+ */
+function scopeKeyAt(manager, level) {
+  const kind = manager.scope_kind;
+  if (!kind || !manager.scope_value) return null;
+  if (kind === level) return manager.scope_value;
+  // A zone owns states, so at state level it marks each of its own.
+  if (kind === 'zone' && level === 'state') return zoneStates(manager.scope_value);
+  return null;
 }
 
 /**
@@ -254,6 +323,9 @@ groupsRouter.get('/groups/:id', requireObserver, requireManager, (req, res) => {
     id: g.id, name: g.name, kind: g.kind, contest: g.contest, scope: g.scope, party: g.party || null,
     scope_kind: g.scope ? scopeColumn(g.contest) : '',
     members, assigned,
+    // Shipped with the detail rather than a second endpoint: the console
+    // already fetches this, and the list changes only if the constitution does.
+    zones: ZONE_NAMES,
     me_id: req.observer.id,
     me: { role: req.manager.role, scope_kind: req.manager.scope_kind, scope_value: req.manager.scope_value },
     managers: db
@@ -355,7 +427,7 @@ groupsRouter.post('/groups/:id/managers/:observerId', requireObserver, requireMa
   const role = req.body?.role === 'coordinator' ? 'coordinator' : 'manager';
   const scopeKind = role === 'coordinator' ? String(req.body?.scope_kind || '') : '';
   const scopeValue = role === 'coordinator' ? String(req.body?.scope_value || '').trim() : '';
-  if (role === 'coordinator' && !['state', 'lga', 'ward'].includes(scopeKind)) {
+  if (role === 'coordinator' && !['zone', 'state', 'lga', 'ward'].includes(scopeKind)) {
     return res.status(400).json({ error: 'bad_scope' });
   }
   db.prepare(
@@ -406,9 +478,10 @@ groupsRouter.patch('/groups/:id/members/:observerId', requireObserver, requireMa
  * a clerical error that silenced a real observer at a real unit would be far
  * worse than an inaccurate coverage number.
  *
- * A coordinator cannot assign outside their own scope. Without this the scope
- * would narrow only what they can SEE, and a scope that does not narrow what
- * someone can DO is not a scope.
+ * A COORDINATOR CANNOT ASSIGN OUTSIDE THEIR OWN AREA. This is the half of a
+ * scope that has to hold: they may read every area's totals (see scopeClause),
+ * but the people they can move are their own. A scope that narrows nothing a
+ * person can DO is decoration.
  */
 groupsRouter.patch('/groups/:id/members/:observerId/assignment', requireObserver, requireManager, (req, res) => {
   const observerId = Number(req.params.observerId);
@@ -424,8 +497,13 @@ groupsRouter.patch('/groups/:id/members/:observerId/assignment', requireObserver
 
   const pu = db.prepare('SELECT pu_code, name, ward, lga, state FROM polling_units WHERE pu_code = ?').get(puCode);
   if (!pu) return res.status(404).json({ error: 'no_such_unit' });
-  const sc = req.manager.scope_kind && req.manager.scope_value;
-  if (sc && pu[req.manager.scope_kind] !== req.manager.scope_value) {
+  // A zone has no column on the unit — it is a set of states — so the check is
+  // membership, not equality. Comparing pu['zone'] would read undefined and let
+  // every assignment through.
+  const mk = req.manager.scope_kind;
+  const mv = req.manager.scope_value;
+  const outside = mk && mv && (mk === 'zone' ? !zoneStates(mv).includes(pu.state) : pu[mk] !== mv);
+  if (outside) {
     return res.status(403).json({ error: 'outside_your_scope' });
   }
 
@@ -520,9 +598,11 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
     const v = req.query[k] ? String(req.query[k]) : '';
     if (v) { where.push(`pu.${LEVELS[k]} = ?`); params.push(v); }
   }
-  const sc = scopeClause(req.manager);
-  const whereSql = (where.length ? 'WHERE ' + where.join(' AND ') : 'WHERE 1=1') + sc.sql;
-  const all = [...params, ...sc.params];
+  /* NO scopeClause HERE — see its docblock. A coordinator sees the whole race's
+     totals so their own area has something to be measured against; the team,
+     activity and incident feeds stay narrowed, because those name people. */
+  const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : 'WHERE 1=1';
+  const all = params;
 
   // Which level are we listing? The deepest filter present decides.
   const level = req.query.ward ? 'unit' : req.query.lga ? 'ward' : req.query.state || g.scope ? 'lga' : 'state';
@@ -592,6 +672,15 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
   res.json({
     level,
     contest: g.contest,
+    // Who covers each area, so the tree doubles as the standings table rather
+    // than a second screen holding the same numbers.
+    coordinators: coordinatorsAt(g.id, level),
+    // The reader's own patch, marked server-side so the client never has to
+    // re-derive which row is theirs.
+    mine: scopeKeyAt(req.manager, level),
+    my_scope: req.manager.scope_kind
+      ? { kind: req.manager.scope_kind, value: req.manager.scope_value }
+      : null,
     nodes: rows.map((r) => ({
       key: r.key,
       name: r.name,

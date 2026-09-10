@@ -590,7 +590,7 @@ function renderOverview() {
     </div>
     <div class="sr-two">
       <div>
-        <h2 class="sr-h2">${esc(S.group.scope || 'Nigeria')} at a glance</h2>
+        <h2 class="sr-h2">${esc(homeArea().name)} at a glance</h2>
         <div class="sr-card sr-panel" id="sr-map"><div class="sr-msg">Drawing the map…</div></div>
       </div>
       <div>
@@ -648,10 +648,43 @@ function activityRow(r) {
  * ("Somolu" / "Shomolu", "Danbata" / "Dambatta"). An unmatched shape is simply
  * not drawn — a map that quietly mislabels an LGA is worse than one with a gap.
  */
+/**
+ * The area this viewer's console is rooted at, and its name.
+ *
+ * A coordinator's room IS their area: the tree, the map and the gap list all
+ * start there. The group's own scope is the fallback for everyone else.
+ */
+function homeArea() {
+  const me = (S.group && S.group.me) || {};
+  if (me.scope_kind && me.scope_value) return { name: me.scope_value, kind: me.scope_kind, mine: true };
+  return { name: S.group.scope || 'Nigeria', kind: S.group.scope_kind || '', mine: false };
+}
+
 async function drawMap(nodes) {
   const host = $('sr-map');
   if (!host) return;
-  const scope = S.group.scope || '';
+
+  /**
+   * Draw at the level of the ROWS, not the level of the group.
+   *
+   * The shipped layers are pre-projected states and LGAs; wards exist only as
+   * raw lat/lng GeoJSON and polling units have no polygon at all. So a ward or
+   * LGA coordinator gets an honest note rather than a map of somewhere larger
+   * than their area — showing them the whole state with nothing highlighted
+   * would answer a question they did not ask, and the list below is the
+   * authoritative view either way.
+   */
+  const lvl = ((S.overview || S.coverage || {}).level) || 'state';
+  if (lvl === 'ward' || lvl === 'unit') {
+    host.innerHTML = `<div class="sr-msg">No map at ${lvl === 'unit' ? 'polling-unit' : 'ward'} level yet &mdash;
+      the shipped layers stop at local government.<br />The list beside this is the full picture for
+      ${esc(homeArea().name)}.</div>`;
+    return;
+  }
+  // At LGA level every row sits in one state, so the layer is keyed by it.
+  const scope = lvl === 'lga'
+    ? (S.path.state || (homeArea().kind === 'state' ? homeArea().name : '') || S.group.scope || '')
+    : '';
   const file = scope ? 'lga_geo.json' : 'states_geo.json';
   // fetchData, not fetch: Lite does not bundle the geo layers and native.js's
   // helper pulls them from the live site. A no-op on hawkeye.com.ng.
@@ -825,7 +858,7 @@ function rowHtml(x, cov) {
 
 function crumbsHtml() {
   const p = S.path;
-  const parts = [`<button data-lvl="root">${esc(S.group.scope || 'Nigeria')}</button>`];
+  const parts = [`<button data-lvl="root">${esc(homeArea().name)}</button>`];
   for (const k of ['state', 'lga', 'ward']) if (p[k]) parts.push(`<button data-lvl="${k}">${esc(p[k])}</button>`);
   const last = parts.pop().replace(/^<button[^>]*>/, '<span class="now">').replace('</button>', '</span>');
   return `<div class="sr-crumbs" id="crumbs">${parts.map((x) => x + '<span>&rsaquo;</span>').join('')}${last}</div>`;

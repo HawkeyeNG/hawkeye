@@ -569,6 +569,40 @@ for (const ddl of [
      dropped   INTEGER NOT NULL DEFAULT 0,   -- subscriptions deleted
      announced INTEGER NOT NULL DEFAULT 0    -- observers told
    )`,
+  /**
+   * NINE LGAs WERE IN THE WRONG SENATORIAL RACE. Not a typo — a different
+   * contest, for 1,764 polling units.
+   *
+   * `district_index.json` is hand-cleaned to fix the register's SPELLING
+   * ("Deltal North" to "Delta North"), and it is good at that. It is not an
+   * authority on WHICH district an LGA sits in, and for these nine it disagreed
+   * with a register that is unanimous on every one of them. Audited across all
+   * 701 LGAs the index covers; each of the nine was then checked against INEC's
+   * published district composition, which agrees with the register in all nine
+   * cases. The index files are corrected too — this repairs the databases that
+   * already loaded the wrong values.
+   *
+   * WHY HERE AND NOT BY BUMPING DISTRICT_NAMES_VERSION: that constant shares one
+   * `user_version` counter with GEOCODE_VERSION, so it cannot be raised without
+   * either skipping geocoding on fresh installs or re-running it everywhere
+   * (see the note in services/register.js).
+   *
+   * Only two of the nine were visible to a cross-state check — the other seven
+   * land in the right state, which is why the audit had to compare every LGA
+   * against the register rather than look for rows that stood out.
+   *
+   * Idempotent: each UPDATE matches only rows still carrying the wrong value.
+   */
+  "UPDATE polling_units SET senatorial = 'Kaduna South'     WHERE state = 'Kaduna'      AND lga = 'Zangon Kataf' AND senatorial != 'Kaduna South'",
+  "UPDATE polling_units SET senatorial = 'Kano South'       WHERE state = 'Kano'        AND lga = 'Karaye'       AND senatorial != 'Kano South'",
+  "UPDATE polling_units SET senatorial = 'Kwara South'      WHERE state = 'Kwara'       AND lga = 'Offa'         AND senatorial != 'Kwara South'",
+  "UPDATE polling_units SET senatorial = 'Yobe East'        WHERE state = 'Yobe'        AND lga = 'Damaturu'     AND senatorial != 'Yobe East'",
+  "UPDATE polling_units SET senatorial = 'Abia Central'     WHERE state = 'Abia'        AND lga = 'Osisioma'     AND senatorial != 'Abia Central'",
+  "UPDATE polling_units SET senatorial = 'Kebbi Central'    WHERE state = 'Kebbi'       AND lga = 'Jega'         AND senatorial != 'Kebbi Central'",
+  "UPDATE polling_units SET senatorial = 'Ebonyi South'     WHERE state = 'Ebonyi'      AND lga = 'Ohaozara'     AND senatorial != 'Ebonyi South'",
+  "UPDATE polling_units SET senatorial = 'Borno North'      WHERE state = 'Borno'       AND lga = 'Kaga'         AND senatorial != 'Borno North'",
+  "UPDATE polling_units SET senatorial = 'Cross River South' WHERE state = 'Cross River' AND lga = 'Biase'       AND senatorial != 'Cross River South'",
+
   // FCT is an acronym — repair rows title-cased to "Fct" before the loader fix.
   "UPDATE polling_units SET state = 'FCT' WHERE state = 'Fct'",
   "UPDATE polling_units SET senatorial = REPLACE(senatorial, 'Fct', 'FCT') WHERE senatorial LIKE '%Fct%'",

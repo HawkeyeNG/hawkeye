@@ -80,21 +80,16 @@ const scopeColumn = (contest) =>
 /**
  * A sub-state scope is pinned to the state it actually belongs to.
  *
- * A REGISTER DEFECT, guarded rather than rewritten. Two senatorial districts
- * carry units from the wrong state: 169 Kano units are labelled "Kaduna North"
- * and 337 Kaduna units are labelled "Kano South". Every other district of the
- * 109 is clean, and all 360 federal constituencies are clean, so this is a
- * handful of bad rows in the import rather than a modelling problem.
+ * THE DEFECT THIS WAS WRITTEN FOR IS FIXED — see the nine-LGA senatorial repair
+ * in db.js. Two of those nine put Kano units in a Kaduna district and vice
+ * versa, and this pinned a district to the state holding most of its units so
+ * the coverage denominator could not be quietly inflated.
  *
- * Left in place because I cannot tell which district those units SHOULD carry,
- * and guessing would put real polling units in the wrong race. What this does
- * instead is refuse to count them: a district is scoped to the state holding
- * the majority of its units, so a Kaduna North room covers Kaduna's 2,699 and
- * not Kano's stray 169. Silently inflating a denominator by 6% is the failure
- * mode that matters here — every coverage percentage in the room would be
- * quietly wrong, and nothing on screen would say so.
- *
- * Fix the register rows and this becomes a no-op rather than a lie.
+ * KEPT ANYWAY, and cheap: one indexed lookup per coverage request. The register
+ * is reloaded from an external CSV that has been wrong before, and the failure
+ * it prevents is the silent kind — every percentage in the room off by a few
+ * per cent with nothing on screen saying so. It should now be a no-op on every
+ * district; if it ever starts excluding rows again, the register has drifted.
  */
 const homeState = (col, value) => db
   .prepare(`SELECT state FROM polling_units WHERE ${col} = ? GROUP BY state ORDER BY COUNT(*) DESC LIMIT 1`)

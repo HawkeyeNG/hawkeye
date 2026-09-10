@@ -95,6 +95,19 @@ export function loadApproxCsv(db, file) {
 // authoritative names (data/district_index.json, keyed by LGA) so results bind to
 // the map and observer scope labels are correct — replaces the register's typo'd
 // fields (e.g. "Deltal North" -> "Delta North"). Idempotent; ~774 LGA updates.
+/**
+ * NOT A RE-RUN SWITCH, despite appearances. This constant and GEOCODE_VERSION
+ * below share ONE `user_version` counter, and geocoding runs second — so any
+ * database that has geocoded is already at GEOCODE_VERSION and this gate can
+ * never fire again at the same number. Raising it past geocoding's would either
+ * skip geocoding on a fresh install (its gate would then be behind) or force it
+ * to re-run everywhere, which is not a side effect a district repair should
+ * have.
+ *
+ * So a correction to district_index.json does NOT reach a deployed database
+ * through here. It goes in the additive migration array in db.js, next to the
+ * FCT repairs — see the nine-LGA senatorial fix there.
+ */
 const DISTRICT_NAMES_VERSION = 2;
 export function applyDistrictNames(db) {
   const file = path.join(config.dataDir, 'district_index.json');

@@ -436,6 +436,7 @@
   "map-unit.save-to-get-alerts-in-the": "Save to get alerts — in the app, and on Telegram or WhatsApp — for every result and approved incident at this unit.",
   "map-unit.search-a-ward-or-lga": "Search a ward or LGA…",
   "map-unit.stop-watching": "Stop Watching",
+  "map-unit.this-unit-already-has-a-confirmed-location": "This unit already has a confirmed location, so there is nothing to capture here — you can still save it as your polling unit.",
   "map-unit.to-map-a-polling-unit-register": "To map a polling unit, register your device first.",
   "meta.caption-message": "Caption / Message",
   "meta.https-hawkeye-com-ng": "https://hawkeye.com.ng/",

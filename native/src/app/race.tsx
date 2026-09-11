@@ -233,7 +233,7 @@ export default function RaceScreen() {
             </View>
             {pick.seats.length ? null : (
               <Text className="pt-3 text-sm text-muted">
-                Hawkeye has no constituencies recorded for this state yet.
+                {i18nT('n.app.race.hawkeye-has-no-constituencies-recorded-for')}
               </Text>
             )}
           </View>
@@ -270,8 +270,7 @@ export default function RaceScreen() {
           // A race we have nothing for. Say so, rather than render an empty
           // frame that looks like a page still loading.
           <Text className="pt-4 text-sm text-muted">
-            Hawkeye has no page for this race yet. Each race page is published as
-            its election nears — about 28 days out.
+            {i18nT('n.app.race.hawkeye-has-no-page-for-this')}
           </Text>
         )}
       </Animated.ScrollView>

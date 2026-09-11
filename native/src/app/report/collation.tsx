@@ -368,7 +368,7 @@ export default function ReportCollation() {
       <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
-          Sign in to report a collation
+          {i18nT('n.app.report.collation.sign-in-to-report-a-collation')}
         </Text>
         <Pressable
           className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
@@ -507,7 +507,7 @@ export default function ReportCollation() {
               {contests.length ? contests[0].election : 'Loading election…'}
             </Text>
             <Text className="pb-4 text-sm text-muted">
-              Which collation are you reporting?
+              {i18nT('n.app.report.collation.which-collation-are-you-reporting')}
             </Text>
 
             {/* PROGRESSIVE DISCLOSURE: exactly one stage is on screen at a
@@ -615,8 +615,7 @@ export default function ReportCollation() {
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
             <Crumb label={scopeLine} onPress={() => setStep('scope')} />
             <Text className="pb-3 text-sm text-muted">
-              A collation centre announces every race on the same day. Choose the one you are
-              reporting — only races open for reporting can be selected.
+              {i18nT('n.app.report.collation.a-collation-centre-announces-every-race')}
             </Text>
             {/* Informational opens-on line: shown only when nothing is open for
                 this scope yet, so the observer who cannot select anything is at
@@ -642,7 +641,7 @@ export default function ReportCollation() {
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-1 text-xl font-bold text-ink">{i18nT('n.app.report.collation.collated-totals')}</Text>
             <Text className="pb-3 text-sm text-muted">
-              Copy the figures exactly as announced. Leave blank for parties not listed.
+              {i18nT('n.app.report.collation.copy-the-figures-exactly-as-announced')}
             </Text>
             {/* Asked here rather than above the Send button, for the reason in
                 components/serial-field.tsx: as a last field before an
@@ -842,7 +841,7 @@ export default function ReportCollation() {
             {receipt.entryHash ? (
               <View className="mt-6 rounded-2xl bg-hawk-green px-4 py-4">
                 <Text className="text-[11px] font-bold uppercase tracking-wider text-hawk-gold">
-                  Ledger entry
+                  {i18nT('n.app.report.collation.ledger-entry')}
                 </Text>
                 {/* Fixed white scrim: the card underneath is the fixed brand
                     green, so bg-card/10 went dark-on-dark with the theme. */}
@@ -913,7 +912,7 @@ export default function ReportCollation() {
               ) : null}
               <View className="mt-1 border-t border-line pt-2">
                 <Text className="pb-1 text-[11px] font-bold uppercase tracking-wider text-faint">
-                  Totals you reported
+                  {i18nT('n.app.report.collation.totals-you-reported')}
                 </Text>
                 {rankedVotes.map((v) => (
                   <View key={v.party} className="flex-row items-center justify-between py-1">

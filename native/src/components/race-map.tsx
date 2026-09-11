@@ -304,7 +304,7 @@ export function RaceMap({
           ))
         ) : (
           <Text className="text-xs text-muted">
-            Tap an area of the map for what has been reported from it.
+            {i18nT('n.components.race-map.tap-an-area-of-the-map')}
           </Text>
         )}
       </View>

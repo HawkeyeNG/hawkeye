@@ -329,7 +329,7 @@ export default function Integrity() {
             is folded into the sentence below. */}
         <View className="flex-row items-center pb-3">
           <Text className="flex-1 text-sm text-muted">
-            Automated checks on every result. Anything that looks wrong is logged here.
+            {i18nT('n.app.integrity.automated-checks-on-every-result-anything')}
           </Text>
           <InfoDot
             title={i18nT('n.app.integrity.what-gets-checked')}
@@ -407,7 +407,7 @@ export default function Integrity() {
           <ActivityIndicator className="py-4" color={ui.tint.good.ink} />
         ) : rows.length === 0 ? (
           <Text className="py-3 text-sm text-muted">
-            No discrepancies match — nothing flagged yet.
+            {i18nT('n.app.integrity.no-discrepancies-match-nothing-flagged-yet')}
           </Text>
         ) : (
           rows.map((d) => {
@@ -499,7 +499,7 @@ export default function Integrity() {
 
           <Text className="pt-4 text-sm font-bold text-ink">{i18nT('integrity.last-digit-uniformity')}</Text>
           <Text className="pt-0.5 text-xs text-muted">
-            Last digit of winning-party counts. A healthy spread sits near the 10% line.
+            {i18nT('n.app.integrity.last-digit-of-winning-party-counts')}
           </Text>
           {benford?.lastDigit?.length ? (
             <DigitBars items={benford.lastDigit} n={benford.n} />
@@ -525,7 +525,7 @@ export default function Integrity() {
         <SectionLabel text="Collation Reconciliation (EC8B/C/D)" />
         <View className="flex-row items-center pb-2">
           <Text className="flex-1 text-sm text-muted">
-            Announced totals, checked against the units underneath them.
+            {i18nT('n.app.integrity.announced-totals-checked-against-the-units')}
           </Text>
           <InfoDot
             title={i18nT('n.app.integrity.collation-reconciliation')}
@@ -541,7 +541,7 @@ export default function Integrity() {
 
         <SectionLabel text="What We Check" />
         <Text className="pb-2 text-sm text-muted">
-          Every result is run through these automated checks. Tap a group to see each one.
+          {i18nT('n.app.integrity.every-result-is-run-through-these')}
         </Text>
         <View className="overflow-hidden rounded-2xl bg-card">
           {CHECKS.map((g, i) => (

@@ -443,7 +443,7 @@ export default function SignIn() {
             <>
               <Text className="text-2xl font-bold text-ink">{i18nT('n.app.sign-in.welcome-back')}</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">
-                Your phone number and password. Your number is never stored — only a one-way hash.
+                {i18nT('n.app.sign-in.your-phone-number-and-password-your')}
               </Text>
               <TextInput
                 className="rounded-2xl bg-card px-4 py-4 text-lg text-ink"
@@ -468,8 +468,7 @@ export default function SignIn() {
               {/* The discoverability half of the fix: enabling the button is no
                   use to someone who never thinks to tap it on an empty field. */}
               <Text className="pt-2 text-xs text-muted">
-                Joined before Hawkeye had passwords? Leave the password blank and tap Sign in — we
-                will send you a code and set one up.
+                {i18nT('n.app.sign-in.joined-before-hawkeye-had-passwords-leave')}
               </Text>
               <Pressable
                 disabled={loginDisabled}
@@ -652,7 +651,7 @@ export default function SignIn() {
                   }}
                 >
                   <Text className="text-sm font-semibold text-muted">
-                    Not your number? Sign out and start again
+                    {i18nT('n.app.sign-in.not-your-number-sign-out-and')}
                   </Text>
                 </Pressable>
               ) : (

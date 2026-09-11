@@ -90,7 +90,7 @@ export default function Welcome() {
         </View>
         <Text className="pt-5 text-3xl font-bold tracking-widest text-white">HAWKEYE</Text>
         <Text className="pt-1 text-sm font-semibold text-emerald-200">
-          Independent Election Results Monitor
+          {i18nT('n.app.welcome.independent-election-results-monitor')}
         </Text>
 
         <View className="w-full pt-8">

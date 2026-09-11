@@ -39,13 +39,14 @@
     <div class="wrap brand-row">
       <a class="brand" href="index.html">
         <span class="crest" aria-hidden="true"><img src="icon-192.png?v=hawk2" alt="" width="30" height="30" style="display:block;border-radius:7px" /></span>
-        <div class="brand-text"><strong>HAWKEYE</strong><span>Your groups</span></div>
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="my-groups.your-groups">Your groups</span></div>
       </a>
     </div>
   </header>
 
-  <main class="mg" id="mg"><p class="lede">Loading…</p></main>
+  <main class="mg" id="mg"><p class="lede" data-i18n="index.loading">Loading…</p></main>
 
+<script src="/i18n.js?v=5"></script>
 <script>
 /**
  * The observer's side of a group membership.
@@ -72,35 +73,45 @@ async function api(path, opts = {}) {
   return { status: res.status, body: await res.json().catch(() => ({})) };
 }
 
+/* Painted by script, so every string goes through T() and the page REPAINTS on
+   'hawkeye-lang' — i18n.js fires that after every bundle load, including the
+   one that lands after the first paint. */
+const T = (k, en, vars) => {
+  let s = window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en;
+  for (const [a, b] of Object.entries(vars || {})) s = s.split('{' + a + '}').join(b);
+  return s;
+};
+let repaint = () => {};
+window.addEventListener('hawkeye-lang', () => repaint());
+
 let GROUPS = [];
 
 async function load() {
   const { body } = await api('/api/groups');
   GROUPS = (body && body.member) || [];
+  repaint = render;
   render();
 }
 
 function render() {
   if (!GROUPS.length) {
-    $('mg').innerHTML = `<h1>Your groups</h1>
-      <p class="none">You have not joined any campaign or observer group.<br />
-      You do not need one — you can report on your own, exactly as you do now.</p>`;
+    $('mg').innerHTML = `<h1>${T('my-groups.your-groups', 'Your groups')}</h1>
+      <p class="none">${T('my-groups.none', 'You have not joined any campaign or observer group.<br />You do not need one — you can report on your own, exactly as you do now.')}</p>`;
     return;
   }
   $('mg').innerHTML = `
-    <h1>Your groups</h1>
-    <p class="lede">These groups can see the reports you have filed since you joined them.
-       They cannot see anything the public cannot, and they cannot change how your
-       reports are checked or counted.</p>
+    <h1>${T('my-groups.your-groups', 'Your groups')}</h1>
+    <p class="lede">${T('my-groups.lede', 'These groups can see the reports you have filed since you joined them. They cannot see anything the public cannot, and they cannot change how your reports are checked or counted.')}</p>
     ${GROUPS.map(card).join('')}
-    <p class="note">Being in a group never limits where you can report from. If you are
-       sent somewhere else on the day, report from where you actually are — that
-       report still counts, and your group will see where it came from.</p>`;
+    <p class="note">${T('my-groups.note', 'Being in a group never limits where you can report from. If you are sent somewhere else on the day, report from where you actually are — that report still counts, and your group will see where it came from.')}</p>`;
   document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => act(b)));
 }
 
 function card(g) {
-  const kind = g.kind === 'cso' ? 'Observer group' : 'Campaign';
+  const kind = g.kind === 'cso' ? T('my-groups.kind-cso', 'Observer group') : T('my-groups.kind-campaign', 'Campaign');
+  const role = g.manages === 'owner' ? T('my-groups.you-own', 'You own this group — open the situation room above.')
+    : g.manages === 'coordinator' ? T('my-groups.you-coordinate', 'You coordinate an area of this group — open the situation room above.')
+      : T('my-groups.you-manage', 'You manage this group — open the situation room above.');
   const declined = g.assign_state === 'declined';
   /* Linked ONLY when this observer also manages it. A link into a console you
      cannot enter is a dead end dressed up as a feature — the console would just
@@ -111,16 +122,16 @@ function card(g) {
   return `<div class="g">
     <h2>${title}</h2>
     <div class="sub">${esc(kind)} &middot; ${esc(g.contest)}${g.scope ? ' &middot; ' + esc(g.scope) : ''}</div>
-    ${g.manages ? `<div class="sub" style="margin-top:3px">You ${esc(g.manages === 'owner' ? 'own' : g.manages === 'coordinator' ? 'coordinate an area of' : 'manage')} this group &mdash; open the situation room above.</div>` : ''}
+    ${g.manages ? `<div class="sub" style="margin-top:3px">${role}</div>` : ''}
     ${g.assigned_pu ? `<div class="unit">
-      <div class="lab">${declined ? 'Unit you declined' : 'Unit they have you down for'}</div>
-      <div class="nm">${esc(g.assigned_name || 'Polling unit')}</div>
+      <div class="lab">${declined ? T('my-groups.unit-declined', 'Unit you declined') : T('my-groups.unit-assigned', 'Unit they have you down for')}</div>
+      <div class="nm">${esc(g.assigned_name || T('race.polling-unit', 'Polling unit'))}</div>
       <div class="cd">${esc(g.assigned_pu)}${g.assigned_ward ? ' &middot; ' + esc(g.assigned_ward) : ''}${g.assigned_lga ? ' &middot; ' + esc(g.assigned_lga) : ''}</div>
-    </div>` : '<div class="declined">They have not given you a polling unit.</div>'}
-    ${declined ? '<div class="declined">You told them this is not where you will be. They can suggest another one.</div>' : ''}
+    </div>` : `<div class="declined">${T('my-groups.no-unit', 'They have not given you a polling unit.')}</div>`}
+    ${declined ? `<div class="declined">${T('my-groups.declined-note', 'You told them this is not where you will be. They can suggest another one.')}</div>` : ''}
     <div class="acts">
-      ${g.assigned_pu && !declined ? `<button class="btn" data-act="decline" data-gid="${g.id}">That is not where I will be</button>` : ''}
-      <button class="btn warn" data-act="leave" data-gid="${g.id}" data-name="${esc(g.name)}">Leave this group</button>
+      ${g.assigned_pu && !declined ? `<button class="btn" data-act="decline" data-gid="${g.id}">${T('my-groups.not-where', 'That is not where I will be')}</button>` : ''}
+      <button class="btn warn" data-act="leave" data-gid="${g.id}" data-name="${esc(g.name)}">${T('my-groups.leave', 'Leave this group')}</button>
     </div>
   </div>`;
 }
@@ -129,18 +140,21 @@ async function act(b) {
   const gid = b.dataset.gid;
   if (b.dataset.act === 'decline') {
     const { status } = await api('/api/groups/' + gid + '/decline', { method: 'POST' });
-    if (status !== 200) return alert('Could not send that just now.');
+    if (status !== 200) return alert(T('my-groups.send-failed', 'Could not send that just now.'));
     return load();
   }
   /* Confirmed, because leaving is not reversible from here — the invite link
      may be spent, revoked, or simply not to hand any more. */
-  if (!confirm('Leave ' + b.dataset.name + '? They will stop seeing which reports are yours. You will need a fresh invite to rejoin.')) return;
+  if (!confirm(T('my-groups.leave-confirm', 'Leave {name}? They will stop seeing which reports are yours. You will need a fresh invite to rejoin.', { name: b.dataset.name }))) return;
   const { status } = await api('/api/groups/' + gid + '/membership', { method: 'DELETE' });
-  if (status !== 200) return alert('Could not leave just now.');
+  if (status !== 200) return alert(T('my-groups.leave-failed', 'Could not leave just now.'));
   load();
 }
 
-load().catch(() => { $('mg').innerHTML = '<p class="none">Could not load your groups. Check your connection and try again.</p>'; });
+load().catch(() => {
+  repaint = () => { $('mg').innerHTML = `<p class="none">${T('my-groups.load-failed', 'Could not load your groups. Check your connection and try again.')}</p>`; };
+  repaint();
+});
 </script>
 </body>
 </html>

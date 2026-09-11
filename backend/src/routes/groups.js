@@ -941,6 +941,15 @@ groupsRouter.get('/groups/:id/team', requireObserver, requireManager, (req, res)
   const rows = db
     .prepare(
       `SELECT m.observer_id, m.label, m.assigned_pu, m.assign_state, m.joined_at, gm.role,
+              /* Everyone in THIS group down for the same unit, this member
+                 included. Two agents saving the same unit is the commonest
+                 way it happens — both propose it on joining — and it is the
+                 exception a manager most needs surfaced: one unit covered
+                 twice is usually another unit not covered at all. Declined
+                 rows are left out; a decline means they are not going. */
+              (SELECT COUNT(*) FROM group_members m2
+                WHERE m2.group_id = m.group_id AND m2.assigned_pu = m.assigned_pu
+                  AND m2.assign_state != 'declined') AS shared,
               apu.name AS assigned_name, apu.ward AS assigned_ward, apu.lga AS assigned_lga, apu.state AS assigned_state,
               s.pu_code AS reported_pu, s.created_at AS reported_at,
               rpu.name AS reported_name, rpu.ward AS reported_ward, rpu.lga AS reported_lga
@@ -960,6 +969,8 @@ groupsRouter.get('/groups/:id/team', requireObserver, requireManager, (req, res)
       observer_id: r.observer_id,
       label: r.label || null,
       role: r.role || null,
+      // How many OTHER members are down for the same unit.
+      shared: r.shared > 1 ? r.shared - 1 : 0,
       joined_at: r.joined_at,
       assign_state: r.assign_state,
       assigned: r.assigned_pu ? { pu_code: r.assigned_pu, name: r.assigned_name, ward: r.assigned_ward, lga: r.assigned_lga, state: r.assigned_state } : null,

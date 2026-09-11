@@ -515,6 +515,13 @@ observersRouter.post('/my-unit', requireObserver, (req, res) => {
   if (!pu) return res.status(404).json({ error: 'unknown_unit' });
   db.prepare('INSERT OR REPLACE INTO saved_units (observer_id, pu_code, created_at) VALUES (?, ?, ?)')
     .run(req.observer.id, puCode, Date.now());
+  // A situation-room member with NO unit yet takes this one as a PROPOSAL —
+  // the same thing joining with a unit already saved does, just later. Only
+  // empty rows: a unit a manager assigned, or one the member declined (which
+  // keeps its assigned_pu), is never overwritten by a save. Silent, like
+  // confirm-proposed: it moves nobody, it only fills a blank.
+  db.prepare("UPDATE group_members SET assigned_pu = ?, assign_state = 'proposed' WHERE observer_id = ? AND assigned_pu IS NULL")
+    .run(puCode, req.observer.id);
   notifyObserver(req.observer, 'tg.savedUnit', {
     name: pu.name, code: pu.pu_code, ward: pu.ward, lga: pu.lga, state: pu.state,
   });

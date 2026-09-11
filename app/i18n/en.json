@@ -897,6 +897,7 @@
   "observe.signing-your-report": "Signing your report…",
   "observe.submitting": "Submitting…",
   "observe.you-appear-to-be-offline-check-your": "You appear to be offline — check your connection and try again.",
+  "observe.a-queued-report-was-dropped": "A queued report was dropped — {v0}.",
   "observe.refreshing-your-session": "Refreshing your session…",
   "observe.session-expired-verify-your-phone-again-to": "Session expired — verify your phone again to submit.",
   "observe.enter-at-least-one-party-count": "Enter at least one party count.",

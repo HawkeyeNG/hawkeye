@@ -1192,5 +1192,6 @@
   "situation-room.yet-to-report": "Ha akọbeghị akụkọ",
   "situation-room.you-manage-the-observers-in-your-area": "Ị na-elekọta ndị na-ekiri ihe na mpaghara gị; mkpokọta bụ nke mkpọsa ahụ.",
   "situation-room.your-area": "Mpaghara gị",
-  "situation-room.yours": "nke gị"
+  "situation-room.yours": "nke gị",
+  "map-unit.this-unit-already-has-a-confirmed-location": "Ngalaba ntuli aka a enweelarị ebe akwadoro, ya mere ọ dịghị ihe a ga-ewere ebe a — ị ka nwere ike ịchekwa ya dị ka ngalaba ntuli aka gị."
 }

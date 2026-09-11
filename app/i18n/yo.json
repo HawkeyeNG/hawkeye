@@ -1192,5 +1192,6 @@
   "situation-room.yet-to-report": "Wọn kò tíì ròyìn",
   "situation-room.you-manage-the-observers-in-your-area": "Ìwọ ni ó ń ṣàkóso àwọn olùwòran ní agbègbè rẹ; ti ìpolongo ni àpapọ̀ náà.",
   "situation-room.your-area": "Agbègbè rẹ",
-  "situation-room.yours": "tìrẹ"
+  "situation-room.yours": "tìrẹ",
+  "map-unit.this-unit-already-has-a-confirmed-location": "Ẹ̀ka ìdìbò yìí ti ní ibi tí a ti fìdí rẹ̀ múlẹ̀, nítorí náà kò sí ohun tí a lè gbà níbí — o ṣì lè fi pamọ́ gẹ́gẹ́ bí ẹ̀ka ìdìbò rẹ."
 }

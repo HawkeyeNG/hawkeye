@@ -109,6 +109,7 @@
       <h2 id="unit-name"></h2>
       <p data-i18n="map-unit.only-do-this-while-physically-standing" class="hint">Only do this while physically standing at the unit. Your GPS fix is
       recorded; nothing is published.</p>
+      <p id="cap-located" class="hint" hidden data-i18n="map-unit.this-unit-already-has-a-confirmed-location">This unit already has a confirmed location, so there is nothing to capture here — you can still save it as your polling unit.</p>
       <button data-i18n="map-unit.capture-gps-at-this-unit" id="btn-gps">📍 Capture GPS at this unit</button>
       <button data-i18n="map-unit.save-as-my-polling-unit" id="btn-save-unit" class="secondary">⭐ Save as my polling unit</button>
       <p data-i18n="map-unit.save-to-get-alerts-in-the" class="hint">Save to get alerts — in the app, and on Telegram — for every result and approved incident at this unit.</p>
@@ -204,6 +205,12 @@
     function pickUnit(u) {
       unit = u;
       $('unit-name').textContent = `${u.name} (${u.pu_code})`;
+      /* The SAME rule as the map, and it has to RESET: this section is shared,
+         so a unit picked here after tapping a located pin would otherwise
+         inherit that pin's disabled GPS button. */
+      const located = u.locationTier === 'verified';
+      $('btn-gps').disabled = located;
+      $('cap-located').hidden = !located;
       $('capture').hidden = false;
       $('cap-status').textContent = '';
       $('capture').scrollIntoView();
@@ -261,6 +268,14 @@
       if (!token) { $('need-auth').hidden = false; $('need-auth').scrollIntoView(); return; }
       unit = { pu_code: u.puCode, name: u.name };
       $('unit-name').textContent = `${u.name} (${u.puCode})`;
+      /* A LOCATED UNIT IS STILL SELECTABLE — it just has nothing to capture.
+         Tapping a pin and having nothing happen reads as a broken map, and
+         "save this as my unit" is a useful thing to do at any pin. Its position
+         is already fixed, so the GPS button is disabled and the line above it
+         says why, rather than accepting a fix that would change nothing. */
+      const located = u.status === 'verified';
+      $('btn-gps').disabled = located;
+      $('cap-located').hidden = !located;
       $('capture').hidden = false; $('cap-status').textContent = '';
       $('capture').scrollIntoView();
     }
@@ -381,7 +396,9 @@
                 radius: u.approxRadiusM, color: '#f9a825', weight: 1, dashArray: '6 6', fillOpacity: 0.05,
               }).addTo(lmap);
             }
-            if (u.status !== 'verified') selectFromMap(u);
+            // EVERY dot selects, not only the ones needing mapping. What that
+            // selection offers depends on the unit — see selectFromMap.
+            selectFromMap(u);
           });
         }
         $('near-status').textContent = (r.units || []).length

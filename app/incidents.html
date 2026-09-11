@@ -324,6 +324,7 @@
   </div></footer>
 
   <script src="device.js"></script>
+  <script src="outbox.js" defer></script>
   <script src="capture.js?v=2"></script>
   <!-- One wording for every "we could not get your position", shared with
        map-unit.html and the native screens. The strings that used to live
@@ -916,7 +917,24 @@
         }
         const headers = { authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() };
         const total = files.reduce((n, f) => n + (f.size || 0), 0);
-        const res = await postWithProgress('/api/incidents', fd, headers, total);
+        let res;
+        try {
+          res = await postWithProgress('/api/incidents', fd, headers, total);
+        } catch (netErr) {
+          // Offline: queue it — outbox.js sends it on reconnect — rather than
+          // lose what the observer just recorded.
+          if (!window.HawkeyeOutbox) throw netErr;
+          const fields = {};
+          for (const [k, v] of fd.entries()) if (typeof v === 'string') fields[k] = v;
+          await window.HawkeyeOutbox.queue({
+            kind: 'incident', url: '/api/incidents', label: `incident · ${kind}`, deviceId: headers['x-device-id'], fields,
+            files: files.map((f) => ['media', f, f.name || 'media']),
+          });
+          $('desc').value = ''; attachments.length = 0; renderPreview();
+          $('status').textContent = 'Saved offline — this report will send automatically when you are back online.';
+          $('btn-submit').disabled = false;
+          return;
+        }
         const body = await res.json().catch(() => ({}));
         if (res.status === 201) {
           $('desc').value = ''; attachments.length = 0; renderPreview();

@@ -225,6 +225,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
   </div></footer>
 
   <script src="device.js"></script>
+  <script src="outbox.js" defer></script>
   <script src="scan.js?v=8"></script>
   <script src="capture.js?v=2"></script>
   <script src="tg.js?v=95"></script>
@@ -534,11 +535,29 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         fd.set('signature', btoa(String.fromCharCode(...new Uint8Array(sig))));
         fd.set('photo', shots.sheet.blob, 'form.jpg');
         fd.set('venuePhoto', shots.venue.blob, 'venue.jpg');
-        const r = await fetch('/api/collations', {
-          method: 'POST',
-          headers: { authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() },
-          body: fd,
-        });
+        const deviceId = await getDeviceId();
+        let r;
+        try {
+          r = await fetch('/api/collations', {
+            method: 'POST',
+            headers: { authorization: `Bearer ${token}`, 'x-device-id': deviceId },
+            body: fd,
+          });
+        } catch (netErr) {
+          // Offline. The report is already signed over these exact bytes, so it is
+          // queued and outbox.js sends it on reconnect — as observe.html does.
+          if (!window.HawkeyeOutbox) throw netErr;
+          const fields = {};
+          for (const [k, v] of fd.entries()) if (typeof v === 'string') fields[k] = v;
+          await window.HawkeyeOutbox.queue({
+            kind: 'collation', url: '/api/collations', label: `${scope.level} · ${scope.contest}`, deviceId, fields,
+            files: [['photo', shots.sheet.blob, 'form.jpg'], ['venuePhoto', shots.venue.blob, 'venue.jpg']],
+          });
+          shots.sheet = shots.venue = null;
+          $('status').textContent = 'Saved offline — this signed report will send automatically when you are back online.';
+          $('btn-submit').disabled = false;
+          return;
+        }
         const b = await r.json().catch(() => ({}));
         if (r.status === 201) {
           $('status').textContent = `✅ ${b.form} report recorded and being checked against polling-unit evidence.`;

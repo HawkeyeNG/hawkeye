@@ -23,8 +23,7 @@ export function NoElection({ state, contest }: { state: string; contest: Contest
           : 'No election is currently open for reporting.'}
       </Text>
       <Text className="pt-2 text-sm text-muted">
-        You can still map polling units anywhere in Nigeria — that work counts before any
-        election is called.
+        {i18nT('n.components.no-election.you-can-still-map-polling-units')}
       </Text>
       <Pressable
         className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"

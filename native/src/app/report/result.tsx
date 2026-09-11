@@ -558,7 +558,7 @@ const NearbyRow = ({
           >
             <Feather name="map-pin" size={13} color={BRAND.leaf} />
             <Text className="pl-1.5 text-xs font-bold text-hawk-leaf">
-              Map this unit — one GPS fix ›
+              {i18nT('n.app.report.result.map-this-unit-one-gps-fix')}
             </Text>
           </Pressable>
         </View>
@@ -1662,7 +1662,7 @@ export default function ReportResult() {
       <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={BRAND.leaf} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
-          Sign in to report a result
+          {i18nT('n.app.report.result.sign-in-to-report-a-result')}
         </Text>
         <Pressable
           className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
@@ -1820,12 +1820,12 @@ export default function ReportResult() {
             {contestsFailed ? (
               <Pressable onPress={loadContests} className="mb-2 self-start active:opacity-70">
                 <Text className="text-sm font-bold text-hawk-gold">
-                  Couldn’t reach the server — tap to retry
+                  {i18nT('n.app.report.result.couldn-t-reach-the-server-tap')}
                 </Text>
               </Pressable>
             ) : null}
             <Text className="pb-3 text-sm text-muted">
-              Report from the unit you are standing at.
+              {i18nT('n.app.report.result.report-from-the-unit-you-are')}
             </Text>
 
             {/* GPS FIRST. An observer at their unit knows where they are, not
@@ -2087,7 +2087,7 @@ export default function ReportResult() {
                 here" would be the loading state talking. */}
             {contests.length > 0 && applicable.length === 0 ? (
               <Text className="pb-2 text-xs font-semibold text-warn-ink">
-                No election is running at this unit yet.
+                {i18nT('n.app.report.result.no-election-is-running-at-this')}
               </Text>
             ) : null}
             <Pressable
@@ -2112,7 +2112,7 @@ export default function ReportResult() {
                 }}
               >
                 <Text className="text-sm font-semibold text-hawk-leaf">
-                  Browse all races instead ›
+                  {i18nT('n.app.report.result.browse-all-races-instead')}
                 </Text>
               </Pressable>
             ) : null}
@@ -2162,7 +2162,7 @@ export default function ReportResult() {
           <ScrollView contentContainerClassName="px-4 pb-4 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-1 text-xl font-bold text-ink">{i18nT('n.app.report.result.votes-per-party')}</Text>
             <Text className="pb-3 text-sm text-muted">
-              Copy the figures exactly as written on the sheet. Leave blank for parties not listed.
+              {i18nT('n.app.report.result.copy-the-figures-exactly-as-written')}
             </Text>
             {/* THE SHEET COMES WITH THEM. Capture-first is deliberate — the EC8A
                 is the perishable thing and the tally can be typed later from
@@ -2374,7 +2374,7 @@ export default function ReportResult() {
             {receipt.entryHash ? (
               <View className="mt-6 rounded-2xl bg-hawk-green px-4 py-4">
                 <Text className="text-[11px] font-bold uppercase tracking-wider text-hawk-gold">
-                  Ledger entry
+                  {i18nT('n.app.report.result.ledger-entry')}
                 </Text>
                 <Pressable
                   // bg-white/10, not bg-card/10: this scrim sits on the fixed

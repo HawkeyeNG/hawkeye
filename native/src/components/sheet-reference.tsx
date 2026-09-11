@@ -170,7 +170,7 @@ function Zoomable({ uri, onClose }: { uri: string; onClose: () => void }) {
         pointerEvents="none"
       >
         <Text className="text-center text-xs text-white/70">
-          Pinch or double-tap to zoom · drag to move
+          {i18nT('n.components.sheet-reference.pinch-or-double-tap-to-zoom')}
         </Text>
       </View>
     </View>

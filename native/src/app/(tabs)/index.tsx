@@ -418,7 +418,7 @@ export default function Home() {
       </View>
 
       <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-        Live activity
+        {i18nT('n.app.tabs.index.live-activity')}
       </Text>
       <View className="flex-row flex-wrap">
         {FILTERS.map((f) => (

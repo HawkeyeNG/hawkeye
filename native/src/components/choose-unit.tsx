@@ -763,7 +763,7 @@ export function ChooseUnitModal({
               <ActivityIndicator color={ui.tint.good.ink} />
             ) : (
               <Text className={`text-sm font-bold ${chosen ? 'text-good-ink' : 'text-faint'}`}>
-                Save this unit
+                {i18nT('profile.save-this-unit')}
               </Text>
             )}
           </Pressable>
@@ -931,7 +931,7 @@ export function ChooseUnitModal({
           {regFailed ? (
             <Pressable onPress={loadStates} accessibilityRole="button" className="active:opacity-70">
               <Text className="text-sm font-bold text-hawk-gold">
-                Couldn’t load the register — tap to retry
+                {i18nT('n.components.choose-unit.couldn-t-load-the-register-tap')}
               </Text>
             </Pressable>
           ) : null}
@@ -995,7 +995,7 @@ export function ChooseUnitModal({
               })}
               {!units.length ? (
                 <Text className="text-sm text-muted">
-                  No units in the register for this ward yet.
+                  {i18nT('n.app.report.result.no-units-in-the-register-for')}
                 </Text>
               ) : null}
             </>

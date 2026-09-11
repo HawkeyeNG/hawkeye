@@ -186,7 +186,7 @@ export default function CaseScreen() {
       <View className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="file-text" size={26} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
-          Case Not Found
+          {i18nT('n.app.case.case-not-found')}
         </Text>
         <Text className="pt-1 text-center text-sm text-muted">
           This case doesn&apos;t exist, or the link is out of date. ({c?.error ?? err})
@@ -344,7 +344,7 @@ export default function CaseScreen() {
                 ledger entry {s.entryHash.slice(0, 32)}…
               </Text>
               <Text className="pt-0.5 text-xs font-bold text-good-ink">
-                Re-verify the whole chain →
+                {i18nT('n.app.case.re-verify-the-whole-chain')}
               </Text>
             </Pressable>
             {/* Published observer photos are user content: App Store 1.2 and
@@ -363,12 +363,12 @@ export default function CaseScreen() {
 
           {c.status !== 'open' ? (
             <Text className="pt-3 text-sm text-muted">
-              This case is closed. The record above is permanent.
+              {i18nT('n.app.case.this-case-is-closed-the-record')}
             </Text>
           ) : auth.status !== 'signedIn' ? (
             <>
               <Text className="pt-3 text-sm text-muted">
-                Only verified observers can judge — one verdict per person, on the public record.
+                {i18nT('n.app.case.only-verified-observers-can-judge-one')}
               </Text>
               <Pressable
                 className="mt-3 items-center rounded-2xl bg-hawk-green py-3 active:opacity-80"
@@ -464,8 +464,7 @@ export default function CaseScreen() {
             )}
           </Pressable>
           <Text className="pt-2 text-xs text-muted">
-            Your answers compute the verdict by a published rule — you never pick a side directly.
-            Notes are public but never counted.
+            {i18nT('n.app.case.your-answers-compute-the-verdict-by')}
           </Text>
         </View>
       ) : null}

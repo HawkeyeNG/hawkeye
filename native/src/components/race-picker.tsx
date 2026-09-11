@@ -324,7 +324,7 @@ function RacePickerFor({ code, states: given }: { code: string; states?: string[
                       {s.off ? (
                         // Says which of the two it is, not merely that it differs.
                         <Text className="pt-0.5 text-xs text-muted">
-                          Off-cycle — not in the 2027 election
+                          {i18nT('n.components.race-picker.off-cycle-not-in-the-2027')}
                         </Text>
                       ) : null}
                     </View>

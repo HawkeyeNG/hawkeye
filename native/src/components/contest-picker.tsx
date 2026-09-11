@@ -201,7 +201,7 @@ export function ContestPicker({
         color={onlyOpen ? ui.tint.good.ink : ui.faint}
       />
       <Text className={`pl-2 text-xs font-bold ${onlyOpen ? 'text-good-ink' : 'text-muted'}`}>
-        Open races only
+        {i18nT('n.components.contest-picker.open-races-only')}
       </Text>
     </Pressable>
   ) : null;
@@ -336,7 +336,7 @@ export function ContestPicker({
       <Prompt>{races.length > 1 ? i18nT('n.components.contest-picker.choose-the-race') : i18nT('n.components.contest-picker.confirm-the-race')}</Prompt>
       {shown.length === 0 ? (
         <Text className="px-1 py-2 text-sm text-muted">
-          No open race here yet. Turn off “Open races only” to see every race Hawkeye covers.
+          {i18nT('n.components.contest-picker.no-open-race-here-yet-turn')}
         </Text>
       ) : (
         shown.map((race) => {

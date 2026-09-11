@@ -345,7 +345,7 @@ export default function Ledger() {
           "How the chain is checked" fold that used to follow it. */}
       <View className="flex-row items-center pt-1">
         <Text className="flex-1 text-sm leading-5 text-muted">
-          Verified means your phone recomputed every hash itself and got the same head we publish.
+          {i18nT('n.app.ledger.verified-means-your-phone-recomputed-every')}
         </Text>
         <InfoDot
           title={i18nT('n.app.ledger.how-the-chain-is-checked')}
@@ -375,7 +375,7 @@ export default function Ledger() {
       {verify ? (
         <View className="mt-2 rounded-2xl bg-card px-4 py-3">
           <Text className="text-[10px] font-bold uppercase tracking-[1px] text-faint">
-            Server head
+            {i18nT('n.app.ledger.server-head')}
           </Text>
           <Text numberOfLines={1} className="pt-1 font-mono text-xs text-muted">
             {verify.head || GENESIS}
@@ -441,7 +441,7 @@ export default function Ledger() {
           </View>
         ) : !loading ? (
           <Text className={`${anchor ? 'pt-3 ' : ''}text-sm text-muted`}>
-            No race is anchored yet — race roots start on reporting day.
+            {i18nT('n.app.ledger.no-race-is-anchored-yet-race')}
           </Text>
         ) : null}
       </View>
@@ -476,7 +476,7 @@ export default function Ledger() {
         ListEmptyComponent={
           loading || loadErr ? null : (
             <Text className="px-4 pt-2 text-sm text-muted">
-              Nothing reported into the chain yet.
+              {i18nT('n.app.ledger.nothing-reported-into-the-chain-yet')}
             </Text>
           )
         }

@@ -112,7 +112,7 @@ export default function ReportsLog() {
     <View className="px-4 pb-3 pt-3">
       <View className="flex-row items-center pb-3">
         <Text className="flex-1 text-sm text-muted">
-          Confidence is the share of independent observers reporting the same numbers.
+          {i18nT('n.app.reports-log.confidence-is-the-share-of-independent')}
         </Text>
         <InfoDot
           title={i18nT('n.app.reports-log.how-these-reports-are-held')}
@@ -172,7 +172,7 @@ export default function ReportsLog() {
             <ActivityIndicator className="pt-6" color={ui.tint.good.ink} />
           ) : (
             <Text className="px-4 pt-2 text-sm text-muted">
-              No reports yet — this fills up as observers submit from polling units.
+              {i18nT('n.app.reports-log.no-reports-yet-this-fills-up')}
             </Text>
           )
         }

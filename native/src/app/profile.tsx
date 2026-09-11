@@ -440,7 +440,7 @@ export default function Profile() {
       <View className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="user" size={28} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
-          Sign in to see your profile
+          {i18nT('n.app.profile.sign-in-to-see-your-profile')}
         </Text>
         <Pressable
           className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
@@ -526,7 +526,7 @@ export default function Profile() {
                 <Feather name={copied ? 'check' : 'copy'} size={15} color={BRAND.gold} />
               </Pressable>
               <Text className="pt-2 text-[11px] text-emerald-200/80">
-                Your public identity on the ledger — your phone number is never stored.
+                {i18nT('n.app.profile.your-public-identity-on-the-ledger')}
               </Text>
             </View>
 
@@ -598,11 +598,11 @@ export default function Profile() {
             {me.subscriptions?.length ? (
               <>
                 <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
-                  Races you follow
+                  {i18nT('n.app.profile.races-you-follow')}
                 </Text>
                 <View className="rounded-2xl bg-card px-4 pb-1.5 pt-3.5">
                   <Text className="text-xs text-muted">
-                    You get an alert on every new report from these races.
+                    {i18nT('n.app.profile.you-get-an-alert-on-every')}
                   </Text>
                   <View className="flex-row flex-wrap pt-2.5">
                     {me.subscriptions.map((s, i) => (
@@ -620,7 +620,7 @@ export default function Profile() {
 
             {/* Activity */}
             <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
-              My activity
+              {i18nT('n.app.profile.my-activity')}
             </Text>
             <View className="overflow-hidden rounded-2xl bg-card">
               {acts.map((a, i) => (
@@ -738,7 +738,7 @@ export default function Profile() {
                 (components/social-row.tsx); this is the one entry that belongs
                 on a page about you. */}
             <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
-              Find Hawkeye
+              {i18nT('n.app.profile.find-hawkeye')}
             </Text>
             <View className="overflow-hidden rounded-2xl bg-card">
               <Row
@@ -766,8 +766,7 @@ export default function Profile() {
               <Text className="pl-2 text-base font-bold text-bad-ink">{i18nT('profile.delete-my-account')}</Text>
             </Pressable>
             <Text className="pt-2 text-center text-[11px] text-faint">
-              Deletes your observer identity — key and subscriptions are wiped. Ledger reports are
-              public and permanent.
+              {i18nT('n.app.profile.deletes-your-observer-identity-key-and')}
             </Text>
           </>
         )}
@@ -841,7 +840,7 @@ export default function Profile() {
             {pwMode === 'change' ? (
               <>
                 <Text className="pb-3 text-sm text-muted">
-                  A password lets you sign in on any device without waiting for a code.
+                  {i18nT('n.app.profile.a-password-lets-you-sign-in')}
                 </Text>
                 {me?.hasPassword ? (
                   <View className="mb-2">
@@ -893,7 +892,7 @@ export default function Profile() {
                     }}
                   >
                     <Text className="text-sm font-semibold text-good-ink">
-                      Forgot your current password?
+                      {i18nT('n.app.profile.forgot-your-current-password')}
                     </Text>
                   </Pressable>
                 ) : null}
@@ -903,9 +902,7 @@ export default function Profile() {
             {pwMode === 'reset-phone' ? (
               <>
                 <Text className="pb-3 text-sm text-muted">
-                  Enter the number registered to this observer ID. Requesting a code changes
-                  nothing on its own — your password only changes after you enter the code and
-                  choose a new one.
+                  {i18nT('n.app.profile.enter-the-number-registered-to-this')}
                 </Text>
                 <TextInput
                   value={resetPhone}
@@ -986,7 +983,7 @@ export default function Profile() {
             {pwMode === 'reset-new' ? (
               <>
                 <Text className="pb-3 text-sm text-muted">
-                  Verified — now choose your new password.
+                  {i18nT('n.app.profile.verified-now-choose-your-new-password')}
                 </Text>
                 <PasswordField
                   value={pwNew}

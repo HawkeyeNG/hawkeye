@@ -119,7 +119,7 @@ export function SocialRow() {
         <View className="flex-1 pl-3.5">
           <Text className="text-base font-bold text-ink">{i18nT('profile.share-hawkeye')}</Text>
           <Text className="pt-1 text-sm leading-5 text-muted">
-            Send the app to someone who votes.
+            {i18nT('n.components.social-row.send-the-app-to-someone-who')}
           </Text>
           <View className="flex-row items-center pt-2">
             <Text className="text-sm font-bold text-good-ink">{i18nT('n.components.social-row.share-the-download-link')}</Text>
@@ -145,7 +145,7 @@ export function SocialRow() {
         <View className="flex-1 pl-3.5">
           <Text className="text-base font-bold text-ink">{i18nT('n.components.social-row.hawkeye-on-telegram')}</Text>
           <Text className="pt-1 text-sm leading-5 text-muted">
-            Your OTP codes and result alerts arrive here.
+            {i18nT('n.components.social-row.your-otp-codes-and-result-alerts')}
           </Text>
           <View className="flex-row items-center pt-2">
             <Text className="text-sm font-bold text-good-ink">{i18nT('n.components.social-row.open-hawkeyengbot')}</Text>

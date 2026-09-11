@@ -10,6 +10,7 @@ import { ReportSheet } from '@/components/report-sheet';
 import { BRAND } from '@/lib/api';
 import { useUnread } from '@/lib/push';
 import { type TabRoute, useTourSpotlight } from '@/lib/tour';
+import { t as i18nT } from '@/lib/i18n';
 import { useUi } from '@/lib/theme';
 
 /**
@@ -205,21 +206,21 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: 'Home',
+            title: i18nT('nav.home'),
             tabBarIcon: ({ color }) => <Glyph route="index" name="home" color={color} />,
           }}
         />
         <Tabs.Screen
           name="results"
           options={{
-            title: 'Results',
+            title: i18nT('nav.results'),
             tabBarIcon: ({ color }) => <Glyph route="results" name="bar-chart-2" color={color} />,
           }}
         />
         <Tabs.Screen
           name="report"
           options={{
-            title: 'Report',
+            title: i18nT('nav.report'),
             tabBarLabelStyle: {
               fontSize: LABEL_FONT_SIZE,
               lineHeight: LABEL_LINE_HEIGHT,
@@ -272,14 +273,14 @@ export default function TabsLayout() {
           name="alerts"
           options={{
             tabBarBadge: unread || undefined,
-            title: 'Alerts',
+            title: i18nT('nav.alerts'),
             tabBarIcon: ({ color }) => <Glyph route="alerts" name="bell" color={color} />,
           }}
         />
         <Tabs.Screen
           name="more"
           options={{
-            title: 'More',
+            title: i18nT('nav.more'),
             tabBarIcon: ({ color }) => <Glyph route="more" name="menu" color={color} />,
           }}
         />

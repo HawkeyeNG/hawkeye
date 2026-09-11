@@ -766,6 +766,29 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
   const aMap = new Map(byAssigned.map((o) => [o.key, o]));
   const rMap = new Map(byReported.map((o) => [o.key, o.member_reported]));
 
+  /**
+   * Unreported units somebody OUTSIDE the group has saved — likely to be
+   * covered anyway, so "most missing" can rank the units nobody is standing at
+   * above them. Counted as UNITS, never people, and no saver is named: the
+   * group learns only that a unit is watched. Members are left out because a
+   * member's saved unit is already their proposed assignment, counted above;
+   * managers too — the owner's own saved unit is not "someone else" watching.
+   */
+  const byWatched = db
+    .prepare(
+      `SELECT ${col} AS key, COUNT(DISTINCT pu.pu_code) AS watched
+         FROM polling_units pu
+         JOIN saved_units su ON su.pu_code = pu.pu_code
+         JOIN observers o ON o.id = su.observer_id AND o.status = 'active'
+         ${whereSql}
+          AND NOT EXISTS (SELECT 1 FROM submissions s WHERE s.pu_code = pu.pu_code AND s.contest = ?)
+          AND su.observer_id NOT IN (SELECT observer_id FROM group_members WHERE group_id = ?
+                                     UNION SELECT observer_id FROM group_managers WHERE group_id = ?)
+        GROUP BY ${col}`,
+    )
+    .all(...all, g.contest, g.id, g.id);
+  const wMap = new Map(byWatched.map((o) => [o.key, o.watched]));
+
   res.json({
     level,
     contest: g.contest,
@@ -787,6 +810,7 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
       on_unit: aMap.get(r.key)?.on_unit || 0,            // green: assigned here AND filed here
       mismatched: aMap.get(r.key)?.mismatched || 0,      // assigned here, filed elsewhere
       member_reported: rMap.get(r.key) || 0,             // units here a member actually filed from
+      watched: wMap.get(r.key) || 0,                     // unreported, saved by a non-member
     })),
   });
 });

@@ -24,11 +24,17 @@ for (const g of db.prepare("SELECT id FROM campaign_groups WHERE name = 'Status 
 
 const now = Date.now();
 const mkObs = (t) => Number(db.prepare('INSERT INTO observers (phone_hash, public_key_jwk, created_at) VALUES (?, ?, ?)').run('st-' + t + '-' + now, '{}', now).lastInsertRowid);
-const mgr = mkObs('m'), onUnit = mkObs('on'), mism = mkObs('mm'), silent = mkObs('si'), past = mkObs('pa');
+const mgr = mkObs('m'), onUnit = mkObs('on'), mism = mkObs('mm'), silent = mkObs('si'), past = mkObs('pa'), outsider = mkObs('ou');
 const tok = (id) => jwt.sign({ sub: String(id) }, config.jwtSecret, { expiresIn: '1h' });
 
 const units = db.prepare("SELECT pu_code, state, lga, ward FROM polling_units WHERE lga = 'Lagos Island' AND ward IS NOT NULL LIMIT 3").all();
 const [U1, U2, U3] = units;
+// A fourth unit in the same ward, saved only by the MANAGER — must not read as
+// watched. It must start clean: the seed's demo observers save real units, and
+// one already watching U4 would fail this for the right reason.
+const U4 = db.prepare(`SELECT pu_code FROM polling_units WHERE lga = 'Lagos Island' AND ward = ? AND pu_code NOT IN (?, ?, ?)
+    AND pu_code NOT IN (SELECT pu_code FROM saved_units) AND pu_code NOT IN (SELECT pu_code FROM submissions WHERE contest = 'PRES') LIMIT 1`)
+  .get(U1.ward, U1.pu_code, U2.pu_code, U3.pu_code);
 console.log('units: ' + units.map(u => u.pu_code).join(' '));
 
 let n = 0;
@@ -55,6 +61,12 @@ for (const [obs, pu] of [[onUnit, U1.pu_code], [mism, U2.pu_code], [silent, U3.p
   db.prepare('INSERT OR REPLACE INTO saved_units (observer_id, pu_code, created_at) VALUES (?, ?, ?)').run(obs, pu, now);
   await call('POST', '/join/' + inv.token, obs);
 }
+// watched: a non-member saving unreported U2 counts; saving reported U1 does not;
+// the members' own saves (U1-U3) and the manager's (U4) never do.
+const save = (obs, pu) => db.prepare('INSERT OR REPLACE INTO saved_units (observer_id, pu_code, created_at) VALUES (?, ?, ?)').run(obs, pu, now);
+save(outsider, U2.pu_code);
+save(outsider, U1.pu_code);
+if (U4) save(mgr, U4.pu_code);
 const joinedAt = db.prepare('SELECT joined_at FROM group_members WHERE group_id = ? AND observer_id = ?').get(g.id, onUnit).joined_at;
 
 sub(onUnit, U1.pu_code, joinedAt + 1000);          // reported from assigned unit
@@ -78,12 +90,13 @@ const cov = (await call('GET', '/groups/' + g.id + '/coverage?state=Lagos&lga=La
 console.log('\nCOVERAGE overlay for ward ' + U1.ward);
 for (const node of cov.nodes.filter(x => units.some(u => u.pu_code === x.key))) {
   console.log('  ' + node.key + '  reported=' + node.reported + ' assigned=' + node.assigned +
-    ' on_unit=' + node.on_unit + ' mismatched=' + node.mismatched + ' member_reported=' + node.member_reported);
+    ' on_unit=' + node.on_unit + ' mismatched=' + node.mismatched + ' member_reported=' + node.member_reported + ' watched=' + node.watched);
 }
 const want = {
-  [U1.pu_code]: { assigned: 2, on_unit: 1, mismatched: 0, member_reported: 1 },
-  [U2.pu_code]: { assigned: 1, on_unit: 0, mismatched: 1, member_reported: 0 },
-  [U3.pu_code]: { assigned: 1, on_unit: 0, mismatched: 0, member_reported: 1 },
+  [U1.pu_code]: { assigned: 2, on_unit: 1, mismatched: 0, member_reported: 1, watched: 0 },
+  [U2.pu_code]: { assigned: 1, on_unit: 0, mismatched: 1, member_reported: 0, watched: 1 },
+  [U3.pu_code]: { assigned: 1, on_unit: 0, mismatched: 0, member_reported: 1, watched: 0 },
+  ...(U4 ? { [U4.pu_code]: { watched: 0 } } : {}),
 };
 for (const [code, w] of Object.entries(want)) {
   const node = cov.nodes.find(x => x.key === code);
@@ -95,7 +108,7 @@ for (const [code, w] of Object.entries(want)) {
 srv.close();
 for (const t of ['group_tokens', 'group_members', 'group_managers']) db.prepare('DELETE FROM ' + t + ' WHERE group_id = ?').run(g.id);
 db.prepare('DELETE FROM campaign_groups WHERE id = ?').run(g.id);
-for (const id of [mgr, onUnit, mism, silent, past]) {
+for (const id of [mgr, onUnit, mism, silent, past, outsider]) {
   db.prepare('DELETE FROM submissions WHERE observer_id = ?').run(id);
   db.prepare('DELETE FROM saved_units WHERE observer_id = ?').run(id);
   db.prepare('DELETE FROM observers WHERE id = ?').run(id);

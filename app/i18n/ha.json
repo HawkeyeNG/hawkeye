@@ -1066,5 +1066,8 @@
   "my-groups.send-failed": "Ba a iya aika wannan yanzu ba.",
   "my-groups.leave-confirm": "Fita daga {name}? Ba za su ƙara ganin waɗanne rahotanni ne naka ba. Za ka buƙaci sabuwar gayyata kafin ka sake shiga.",
   "my-groups.leave-failed": "Ba a iya fitar da kai yanzu ba.",
-  "my-groups.load-failed": "Ba a iya loda ƙungiyoyinka ba. Duba haɗin intanet ɗinka sannan ka sake gwadawa."
+  "my-groups.load-failed": "Ba a iya loda ƙungiyoyinka ba. Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
+  "join.title": "Hawkeye — Kasance cikin ƙungiya",
+  "my-groups.title": "Hawkeye — Ƙungiyoyinka",
+  "situation-room.title": "Hawkeye — Ɗakin Sa Ido"
 }

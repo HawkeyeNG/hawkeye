@@ -272,7 +272,7 @@ export default function Races() {
         {asmOpen ? (
           <View className="pt-2">
             <Text className="pt-1 text-[11px] text-muted">
-              Each opens that state&apos;s constituencies. The FCT has no state assembly.
+              {i18nT('n.app.races.each-opens-that-state-s-constituencies')}
             </Text>
             {stateChips(all, 'SHA')}
           </View>

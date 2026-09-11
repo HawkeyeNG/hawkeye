@@ -1065,5 +1065,8 @@
   "my-groups.send-failed": "Enweghị ike iziga nke ahụ ugbu a.",
   "my-groups.leave-confirm": "Hapụ {name}? Ha agaghịzi ahụ akụkọ ndị bụ nke gị. Ị ga-achọ òkù ọhụrụ iji sonyeghachi.",
   "my-groups.leave-failed": "Enweghị ike ịhapụ ugbu a.",
-  "my-groups.load-failed": "Enweghị ike ibugo otu gị. Lelee njikọ ịntanetị gị wee nwaa ọzọ."
+  "my-groups.load-failed": "Enweghị ike ibugo otu gị. Lelee njikọ ịntanetị gị wee nwaa ọzọ.",
+  "join.title": "Hawkeye — Sonye n'otu",
+  "my-groups.title": "Hawkeye — Otu gị",
+  "situation-room.title": "Hawkeye — Ọnụ Ụlọ Nlekọta"
 }

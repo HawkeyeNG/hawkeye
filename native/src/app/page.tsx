@@ -105,7 +105,7 @@ export default function StaticPage() {
   if (!page && !faq) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-surface px-8">
-        <Text className="text-sm text-muted">That page doesn&apos;t exist.</Text>
+        <Text className="text-sm text-muted">{i18nT('n.app.page.that-page-doesn-t-exist')}</Text>
       </SafeAreaView>
     );
   }

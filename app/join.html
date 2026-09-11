@@ -10,7 +10,7 @@
        impression of Hawkeye. Anchors everything at the root instead. -->
   <base href="/" />
   <meta name="theme-color" content="#00482b" />
-  <title>Hawkeye — Join a group</title>
+  <title data-i18n="join.title">Hawkeye — Join a group</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
@@ -87,7 +87,14 @@ const T = (k, en, vars) => {
   return s;
 };
 let repaint = () => {};
-window.addEventListener('hawkeye-lang', () => repaint());
+/* ON `document`, NOT `window`. i18n.js announces with
+   `document.dispatchEvent(new CustomEvent('hawkeye-lang'))`, and a CustomEvent
+   does not bubble unless it says so — so a window listener never hears it. This
+   page paints at script-execution time (an invalid link renders its error
+   before any dictionary is fetched), so without the repaint it stays English:
+   measured by rendered_gaps.mjs, which saw the error in English under Hausa.
+   my-groups.html only looked fine because its content waits on an API call. */
+document.addEventListener('hawkeye-lang', () => repaint());
 const paint = (fn) => { repaint = fn; fn(); };
 
 function bad(tk, title, mk, msg) {

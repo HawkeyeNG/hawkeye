@@ -1065,5 +1065,8 @@
   "my-groups.send-failed": "A kò lè fi ìyẹn ránṣẹ́ báyìí.",
   "my-groups.leave-confirm": "Kúrò nínú {name}? Wọn kò ní rí àwọn ìròyìn tí ó jẹ́ tìrẹ mọ́. Ìwọ yóò nílò ìpè tuntun láti darapọ̀ padà.",
   "my-groups.leave-failed": "A kò lè mú ọ kúrò báyìí.",
-  "my-groups.load-failed": "A kò lè gbé àwọn ẹgbẹ́ rẹ jáde. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  "my-groups.load-failed": "A kò lè gbé àwọn ẹgbẹ́ rẹ jáde. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú.",
+  "join.title": "Hawkeye — Darapọ̀ mọ́ ẹgbẹ́",
+  "my-groups.title": "Hawkeye — Àwọn ẹgbẹ́ rẹ",
+  "situation-room.title": "Hawkeye — Yàrá Ìṣàkóso"
 }

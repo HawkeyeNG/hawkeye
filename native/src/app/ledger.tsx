@@ -447,7 +447,7 @@ export default function Ledger() {
       </View>
 
       <View className="flex-row items-center pt-2">
-        <Text className="flex-1 text-sm text-muted">Check one race&apos;s paper trail on its own.</Text>
+        <Text className="flex-1 text-sm text-muted">{i18nT('n.app.ledger.check-one-race-s-paper-trail')}</Text>
         <InfoDot
           title={i18nT('n.app.ledger.what-a-single-race-proof-shows')}
           text="Each anchor folds every race into one Merkle root published to Sigstore's Rekor log, which we cannot rewrite. Your phone folds one race's proof up to that root, without replaying the others."
@@ -456,7 +456,7 @@ export default function Ledger() {
 
       <SectionLabel text="Ledger Entries" />
       <Text className="pb-2 text-sm text-muted">
-        Newest first. Each photo&apos;s filename is its own hash.
+        {i18nT('n.app.ledger.newest-first-each-photo-s-filename')}
       </Text>
     </View>
   );

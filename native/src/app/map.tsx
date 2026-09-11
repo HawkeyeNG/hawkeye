@@ -326,7 +326,7 @@ export default function MapScreen() {
         {mode === 'results' && !stateKeyed ? (
           <View className="mb-3 rounded-2xl bg-card px-4 py-3">
             <Text className="text-sm font-semibold text-warn-ink">
-              This race can&apos;t be drawn on a state map.
+              {i18nT('n.app.map.this-race-can-t-be-drawn')}
             </Text>
             <Text className="pt-1 text-xs text-muted">
               {contest?.name ?? tally?.contest} is counted by {tally?.level}, not by state. Open the

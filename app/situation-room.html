@@ -19,6 +19,7 @@
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=3"></script>
   <script src="ward-map.js?v=1"></script>
+  <script src="/i18n.js?v=5"></script>
 <style>
 /* Situation room — an operator console, not a reading page. Everything below is
    scoped to .sr so it cannot leak into the public pages that share styles.css.
@@ -240,7 +241,7 @@
         <span class="crest" aria-hidden="true"><img src="icon-192.png?v=hawk2" alt="" width="30" height="30" style="display:block;border-radius:7px" /></span>
         <div class="brand-text">
           <strong>HAWKEYE</strong>
-          <span>Situation Room</span>
+          <span data-i18n="nav.situation-room">Situation Room</span>
         </div>
       </a>
       <div class="sr-hdr-actions" id="sr-actions"></div>
@@ -248,7 +249,7 @@
   </header>
 
   <main class="sr" id="sr">
-    <div class="sr-msg">Loading…</div>
+    <div class="sr-msg" data-i18n="index.loading">Loading…</div>
   </main>
 
 <script>
@@ -267,6 +268,20 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const n = (v) => Number(v || 0).toLocaleString('en-NG');
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+
+/**
+ * Every screen here is painted by script, so translation runs through T() and
+ * the page REPAINTS on 'hawkeye-lang' — dispatched by i18n.js on `document`,
+ * not window, and as a NON-BUBBLING CustomEvent, so a window listener never
+ * hears it (that is exactly how join.html kept rendering English under Hausa).
+ * render() is the whole console's entry point, so one listener covers every tab.
+ */
+const T = (k, en, vars) => {
+  let s = window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en;
+  for (const [a, b] of Object.entries(vars || {})) s = s.split('{' + a + '}').join(b);
+  return s;
+};
+document.addEventListener('hawkeye-lang', () => { try { render(); } catch { /* nothing painted yet */ } });
 /* Rounding 4 units in 13,327 to "0%" tells a manager the night has not started
    when in fact it has. Below 1% the first significant digit is the whole
    message, so keep it. */
@@ -321,26 +336,26 @@ function render() {
         `<option value="${x.id}"${x.id === S.gid ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}
     </div>
     <div class="sr-tabs" role="tablist">
-      <button role="tab" aria-selected="${S.tab === 'overview'}" data-tab="overview">Overview</button>
-      <button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage">Coverage</button>
-      <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team">Team</button>
-      <button role="tab" aria-selected="${S.tab === 'incidents'}" data-tab="incidents">Incidents</button>
+      <button role="tab" aria-selected="${S.tab === 'overview'}" data-tab="overview">${T('situation-room.overview', 'Overview')}</button>
+      <button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage">${T('situation-room.coverage', 'Coverage')}</button>
+      <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team">${T('situation-room.team', 'Team')}</button>
+      <button role="tab" aria-selected="${S.tab === 'incidents'}" data-tab="incidents">${T('situation-room.incidents', 'Incidents')}</button>
     </div>
-    <div id="sr-body"><div class="sr-msg">Loading…</div></div>`;
+    <div id="sr-body"><div class="sr-msg">${T('index.loading', 'Loading…')}</div></div>`;
 
   /* The four console actions live in the green header bar. Painted here rather
      than in the static markup because two of them depend on the group: only a
      non-owner can sign out, and the tooltip has to say which case this is. */
   const owner = g.me && g.me.role === 'owner';
   $('sr-actions').innerHTML =
-    '<button id="invite-btn">Invite observers</button>'
-    + '<button id="new-btn" title="Set up another situation room">New room</button>'
-    + '<button id="refresh-btn" title="Reload from the live feed">Refresh</button>'
-    + '<button id="link-btn" title="Copy this room&rsquo;s address">Copy link</button>'
-    + (owner ? '<button id="del-btn" title="Delete this room">Delete</button>' : '')
-    + '<button id="leave-btn"' + (owner ? ' disabled' : '') + ' title="'
-    + (owner ? 'The owner cannot step back from their own room' : 'Stop managing this room')
-    + '">Sign out</button>';
+    `<button id="invite-btn">${T('situation-room.invite-observers', 'Invite observers')}</button>`
+    + `<button id="new-btn" title="${T('situation-room.title-set-up-another-room', 'Set up another situation room')}">${T('situation-room.new-room', 'New room')}</button>`
+    + `<button id="refresh-btn" title="${T('situation-room.title-reload-from-the-live-feed', 'Reload from the live feed')}">${T('situation-room.refresh', 'Refresh')}</button>`
+    + `<button id="link-btn" title="${T('situation-room.title-copy-this-rooms-address', 'Copy this room’s address')}">${T('situation-room.copy-link', 'Copy link')}</button>`
+    + (owner ? `<button id="del-btn" title="${T('situation-room.title-delete-this-room', 'Delete this room')}">${T('situation-room.delete', 'Delete')}</button>` : '')
+    + `<button id="leave-btn"${owner ? ' disabled' : ''} title="${owner
+      ? T('situation-room.title-owner-cannot-step-back', 'The owner cannot step back from their own room')
+      : T('situation-room.title-stop-managing-this-room', 'Stop managing this room')}">${T('situation-room.sign-out', 'Sign out')}</button>`;
   $('gpick') && $('gpick').addEventListener('change', (e) => { pickGroup(Number(e.target.value)); });
   $('invite-btn').addEventListener('click', showInvite);
   $('refresh-btn').addEventListener('click', () => loadTab(true));
@@ -354,7 +369,7 @@ function render() {
     // /situation-room.html would otherwise copy a link that opens whichever
     // room the RECIPIENT happens to have first.
     navigator.clipboard.writeText(location.origin + '/room/' + (g.slug || ''))
-      .then(() => { $('link-btn').textContent = 'Copied'; });
+      .then(() => { $('link-btn').textContent = T('support.copied', 'Copied'); });
   });
   if ($('del-btn')) $('del-btn').addEventListener('click', deleteRoom);
   document.querySelectorAll('.sr-tabs button').forEach((b) =>
@@ -368,25 +383,24 @@ function render() {
 function renderWelcome() {
   $('sr').innerHTML = `
     <div class="sr-empty">
-      <h2>Set up your situation room</h2>
-      <p>Watch a race and your own observers on one screen: which units have
-         reported, where your coverage is thin, and who has yet to file.</p>
-      <p><strong>Your observers report the way everyone else does</strong> — the group is
-         a roster, never a gate. Nothing here changes what they can send or when.</p>
+      <h2>${T('situation-room.set-up-your-situation-room', 'Set up your situation room')}</h2>
+      <p>${T('situation-room.setup-intro', 'Watch a race and your own observers on one screen: which units have reported, where your coverage is thin, and who has yet to file.')}</p>
+      <p>${T('situation-room.setup-roster',
+    '<strong>Your observers report the way everyone else does</strong> — the group is a roster, never a gate. Nothing here changes what they can send or when.')}</p>
       <form class="sr-form" id="mk">
-        <div><label for="mk-name">Campaign or organisation</label>
+        <div><label for="mk-name">${T('situation-room.campaign-or-organisation', 'Campaign or organisation')}</label>
           <input id="mk-name" maxlength="80" required placeholder="e.g. Adaeze 2027" /></div>
-        <div><label for="mk-kind">Type</label>
-          <select id="mk-kind"><option value="campaign">Campaign</option><option value="cso">Civil society / observer group</option></select></div>
-        <div id="mk-party-row"><label for="mk-party">Party</label>
-          <div class="sr-party-pick"><select id="mk-party"><option value="">Not saying</option></select>
+        <div><label for="mk-kind">${T('situation-room.type', 'Type')}</label>
+          <select id="mk-kind"><option value="campaign">${T('my-groups.kind-campaign', 'Campaign')}</option><option value="cso">${T('situation-room.civil-society-observer-group', 'Civil society / observer group')}</option></select></div>
+        <div id="mk-party-row"><label for="mk-party">${T('results.party', 'Party')}</label>
+          <div class="sr-party-pick"><select id="mk-party"><option value="">${T('situation-room.not-saying', 'Not saying')}</option></select>
             <span class="sr-party-mark" id="mk-party-mark"></span></div>
-          <p class="sr-fine">Only used to put your emblem on your own console.</p></div>
-        <div><label for="mk-contest">Which election</label><select id="mk-contest"></select></div>
-        <div id="mk-state-row" hidden><label for="mk-state">State</label><select id="mk-state"></select></div>
-        <div id="mk-race-row" hidden><label for="mk-race" id="mk-race-label">Seat</label><select id="mk-race"></select></div>
+          <p class="sr-fine">${T('situation-room.only-used-to-put-your-emblem-on', 'Only used to put your emblem on your own console.')}</p></div>
+        <div><label for="mk-contest">${T('situation-room.which-election', 'Which election')}</label><select id="mk-contest"></select></div>
+        <div id="mk-state-row" hidden><label for="mk-state">${T('common.state', 'State')}</label><select id="mk-state"></select></div>
+        <div id="mk-race-row" hidden><label for="mk-race" id="mk-race-label">${T('situation-room.seat', 'Seat')}</label><select id="mk-race"></select></div>
         <p class="sr-fine" id="mk-race-note"></p>
-        <button class="sr-btn primary" type="submit">Create situation room</button>
+        <button class="sr-btn primary" type="submit">${T('situation-room.create-situation-room', 'Create situation room')}</button>
       </form>
       ${disclosureHtml()}
     </div>`;
@@ -413,12 +427,12 @@ async function setupForm() {
   const list = Array.isArray(body) ? body : [];
   $('mk-contest').innerHTML = list.map((c) =>
     `<option value="${esc(c.code)}">${esc(c.name || c.label || c.code)}</option>`).join('')
-    || '<option value="PRES">Presidential</option>';
+    || `<option value="PRES">${T('situation-room.presidential', 'Presidential')}</option>`;
 
   // Party emblems, from the manifest the ballot boards already use.
   const logos = await (window.fetchData ? window.fetchData('logos/manifest.json') : fetch('logos/manifest.json'))
     .then((r) => r.json()).catch(() => ({}));
-  $('mk-party').innerHTML = '<option value="">Not saying</option>'
+  $('mk-party').innerHTML = `<option value="">${T('situation-room.not-saying', 'Not saying')}</option>`
     + Object.keys(logos).sort().map((k) => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
   const paintMark = () => {
     const p = $('mk-party').value;
@@ -430,7 +444,10 @@ async function setupForm() {
     if ($('mk-party-row').hidden) { $('mk-party').value = ''; paintMark(); }
   });
 
-  const LABEL = { senatorial: 'Senatorial district', federal_constituency: 'Federal constituency' };
+  const LABEL = {
+    senatorial: T('situation-room.senatorial-district', 'Senatorial district'),
+    federal_constituency: T('situation-room.federal-constituency', 'Federal constituency'),
+  };
   let shape = { kind: 'national' };
 
   async function loadRaces(state) {
@@ -440,14 +457,14 @@ async function setupForm() {
 
     $('mk-state-row').hidden = shape.kind === 'national';
     $('mk-race-row').hidden = !twoStep || !state;
-    $('mk-race-label').textContent = LABEL[shape.kind] || 'Seat';
+    $('mk-race-label').textContent = LABEL[shape.kind] || T('situation-room.seat', 'Seat');
 
     if (!state) {
-      $('mk-state').innerHTML = '<option value="">Choose a state…</option>'
+      $('mk-state').innerHTML = `<option value="">${T('situation-room.choose-a-state', 'Choose a state…')}</option>`
         + (shape.states || []).map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
     }
     if (twoStep && state) {
-      $('mk-race').innerHTML = '<option value="">Choose a seat…</option>'
+      $('mk-race').innerHTML = `<option value="">${T('situation-room.choose-a-seat', 'Choose a seat…')}</option>`
         + (shape.races || []).map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
     }
     $('mk-race-note').textContent = shape.kind === 'national'
@@ -467,7 +484,7 @@ async function setupForm() {
     e.preventDefault();
     const twoStep = shape.kind === 'senatorial' || shape.kind === 'federal_constituency';
     const scope = shape.kind === 'national' ? '' : twoStep ? $('mk-race').value : $('mk-state').value;
-    if (shape.kind !== 'national' && !scope) return alert('Pick the race this room is watching.');
+    if (shape.kind !== 'national' && !scope) return alert(T('situation-room.pick-the-race-this-room-is-watching', 'Pick the race this room is watching.'));
     const { status, body } = await api('/api/groups', {
       method: 'POST',
       body: JSON.stringify({
@@ -482,12 +499,13 @@ async function setupForm() {
 
 /** Printed on screen, not just in the source. See the header comment. */
 function disclosureHtml() {
+  /* ONE key for the whole disclosure, markup travelling inside it. Keying the
+     lead and leaving the rest gave a Hausa heading over an English paragraph,
+     and keying `already-public` alone would ask a translator for a fragment
+     whose place in the sentence is not an invariant across languages. */
   return `<div class="sr-note" style="max-width:560px;margin:24px auto 0;text-align:left">
-    <strong>What this can and cannot see.</strong> Every figure here comes from the
-    same public feed as the rest of Hawkeye — this room gets no early access, no
-    unpublished numbers, and no sight of any other group&rsquo;s observers. It shows
-    which of the <em>already-public</em> reports came from your people, and only from
-    the moment they joined: their earlier reports are not yours to see.
+    ${T('situation-room.disclosure',
+    '<strong>What this can and cannot see.</strong> Every figure here comes from the same public feed as the rest of Hawkeye — this room gets no early access, no unpublished numbers, and no sight of any other group’s observers. It shows which of the <em>already-public</em> reports came from your people, and only from the moment they joined: their earlier reports are not yours to see.')}
   </div>`;
 }
 
@@ -599,52 +617,64 @@ function renderOverview() {
 
   $('sr-body').innerHTML = `
     ${mineNodes.length ? `<div class="sr-note" style="border-left-color:var(--ok)">
-      <strong>${esc(c.my_scope ? c.my_scope.value : 'Your area')}</strong> &mdash;
-      <span class="num">${n(mineTot.reported)}</span> of <span class="num">${n(mineTot.units)}</span> units
-      (<span class="num">${finePct(mineTot.reported, mineTot.units)}</span>).
-      The whole ${esc(S.group.contest)} race is at <span class="num">${finePct(tot.reported, tot.units)}</span>, so you are
-      ${delta === 0 ? 'level with it' : delta > 0
-        ? `<b style="color:var(--ok)">${delta} point${delta === 1 ? '' : 's'} ahead</b>`
-        : `<b style="color:var(--wait)">${Math.abs(delta)} point${Math.abs(delta) === 1 ? '' : 's'} behind</b>`}.
-      You manage the observers in your area; the totals are the campaign&rsquo;s.
+      ${T('situation-room.my-area-line', '<strong>{area}</strong> — <span class="num">{rep}</span> of <span class="num">{units}</span> units (<span class="num">{pct}</span>).', {
+    area: esc(c.my_scope ? c.my_scope.value : T('situation-room.your-area', 'Your area')),
+    rep: n(mineTot.reported),
+    units: n(mineTot.units),
+    pct: finePct(mineTot.reported, mineTot.units),
+  })}
+      ${T('situation-room.my-area-vs-race', 'The whole {race} race is at <span class="num">{pct}</span>, so you are {delta}.', {
+    race: esc(S.group.contest),
+    pct: finePct(tot.reported, tot.units),
+    delta: delta === 0
+      ? T('situation-room.level-with-it', 'level with it')
+      : delta > 0
+        ? `<b style="color:var(--ok)">${delta === 1
+          ? T('situation-room.point-ahead', '{n} point ahead', { n: delta })
+          : T('situation-room.points-ahead', '{n} points ahead', { n: delta })}</b>`
+        : `<b style="color:var(--wait)">${Math.abs(delta) === 1
+          ? T('situation-room.point-behind', '{n} point behind', { n: Math.abs(delta) })
+          : T('situation-room.points-behind', '{n} points behind', { n: Math.abs(delta) })}</b>`,
+  })}
+      ${T('situation-room.you-manage-the-observers-in-your-area', 'You manage the observers in your area; the totals are the campaign’s.')}
     </div>` : ''}
     <div class="sr-heads">
-      <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>of ${n(tot.units)} units reported</span></div>
-      <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>Coverage</span></div>
-      <div class="sr-head ok"><b class="num">${n(tot.on_unit)}</b><span>On their unit</span></div>
-      <div class="sr-head off"><b class="num">${n(tot.mismatched)}</b><span>Filed elsewhere</span></div>
-      <div class="sr-head wait"><b class="num">${n(silent)}</b><span>Yet to report</span></div>
+      <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>${T('situation-room.of-units-reported', 'of {n} units reported', { n: n(tot.units) })}</span></div>
+      <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>${T('situation-room.coverage', 'Coverage')}</span></div>
+      <div class="sr-head ok"><b class="num">${n(tot.on_unit)}</b><span>${T('situation-room.on-their-unit', 'On their unit')}</span></div>
+      <div class="sr-head off"><b class="num">${n(tot.mismatched)}</b><span>${T('situation-room.filed-elsewhere', 'Filed elsewhere')}</span></div>
+      <div class="sr-head wait"><b class="num">${n(silent)}</b><span>${T('situation-room.yet-to-report', 'Yet to report')}</span></div>
     </div>
     <div class="sr-two">
       <div>
         <h2 class="sr-h2">${esc(homeArea().name)} at a glance</h2>
-        <div class="sr-card sr-panel" id="sr-map"><div class="sr-msg">Drawing the map…</div></div>
+        <div class="sr-card sr-panel" id="sr-map"><div class="sr-msg">${T('situation-room.drawing-the-map', 'Drawing the map…')}</div></div>
       </div>
       <div>
-        <h2 class="sr-h2">Where the election is most missing</h2>
+        <h2 class="sr-h2">${T('situation-room.where-the-election-is-most-missing', 'Where the election is most missing')}</h2>
         <div class="sr-card sr-panel">${gaps.length ? `<div class="sr-scroll">
           <table class="sr-tbl" style="min-width:0">
           <tbody>${gaps.map((x) => `<tr${isMine(c, x.key) ? ' class="mine"' : ''}>
             <td><button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>
               ${x.assigned ? `<span class="sr-sub">${n(x.assigned)} of ours here</span>`
-                : '<span class="sr-sub" style="color:var(--wait)">nobody assigned</span>'}</td>
-            <td class="num">${n(x.units - x.reported)}<span class="sr-sub">unreported</span>${x.watched
+                : `<span class="sr-sub" style="color:var(--wait)">${T('situation-room.nobody-assigned', 'nobody assigned')}</span>`}</td>
+            <td class="num">${n(x.units - x.reported)}<span class="sr-sub">${T('situation-room.unreported', 'unreported')}</span>${x.watched
               ? `<span class="sr-sub">${n(x.watched)} watched by others</span>` : ''}</td>
             <td style="width:80px"><div class="sr-bar-cell"><span class="num">${pct(x.reported, x.units)}%</span>
               <span class="sr-track"><span class="sr-fill" style="width:${pct(x.reported, x.units)}%"></span></span></div></td>
           </tr>`).join('')}</tbody></table></div>
           <div class="sr-count">${n(gaps.length)} ${esc((LEVEL_WORD[c.level] || 'places').toLowerCase())}, worst first &mdash; scroll for the rest</div>`
-          : '<div class="sr-msg">Nothing to show yet.</div>'}</div>
+          : `<div class="sr-msg">${T('situation-room.nothing-to-show-yet', 'Nothing to show yet.')}</div>`}</div>
 
       </div>
     </div>
     ${partiesHtml(S.tally, S.tallyArea)}
     ${S.areaTally ? partiesHtml(S.areaTally, S.group.me.scope_value + ' (your area)') : ''}
-    <h2 class="sr-h2">Reports coming in</h2>
+    <h2 class="sr-h2">${T('situation-room.reports-coming-in', 'Reports coming in')}</h2>
     <div class="sr-card${reports.length > 4 ? ' sr-panel' : ''}">${reports.length
           ? `<div class="sr-scroll">${reports.map(activityRow).join('')}</div>`
             + (reports.length > 4 ? `<div class="sr-count">${n(reports.length)} most recent</div>` : '')
-          : `<div class="sr-msg">No reports from your observers yet.<br />
+          : `<div class="sr-msg">${T('situation-room.no-reports-from-your-observers-yet', 'No reports from your observers yet.')}<br />
              They will appear here the moment one is published.</div>`}</div>
 `;
 
@@ -681,7 +711,7 @@ function partiesHtml(t, area) {
   const areaNote = esc(area);
 
   if (!rows.length) {
-    return `<h2 class="sr-h2">Party totals</h2>
+    return `<h2 class="sr-h2">${T('situation-room.party-totals', 'Party totals')}</h2>
       <div class="sr-card"><div class="sr-msg">No results published yet for ${areaNote}.<br />
         Totals appear here as units are counted, at the same moment the public board shows them.</div></div>`;
   }
@@ -803,7 +833,7 @@ async function drawMap(nodes) {
   // helper pulls them from the live site. A no-op on hawkeye.com.ng.
   const geo = await (window.fetchData ? window.fetchData(file) : fetch(file))
     .then((r) => r.json()).catch(() => null);
-  if (!geo) { host.innerHTML = '<div class="sr-msg">Map unavailable offline.</div>'; return; }
+  if (!geo) { host.innerHTML = `<div class="sr-msg">${T('situation-room.map-unavailable-offline', 'Map unavailable offline.')}</div>`; return; }
 
   const fold = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
   const shapes = scope ? geo.lgas : geo.states;
@@ -849,7 +879,7 @@ async function drawMap(nodes) {
     if (near.length === 1) drawn.push({ node: x, path: near[0][1] });
   }
 
-  if (!drawn.length) { host.innerHTML = '<div class="sr-msg">No map for this area.</div>'; return; }
+  if (!drawn.length) { host.innerHTML = `<div class="sr-msg">${T('situation-room.no-map-for-this-area', 'No map for this area.')}</div>`; return; }
 
   const nums = [];
   for (const d of drawn) for (const m of d.path.match(/-?\d+(?:\.\d+)?/g) || []) nums.push(+m);
@@ -874,7 +904,9 @@ async function drawMap(nodes) {
         stroke="${node.assigned ? 'var(--accent)' : 'currentColor'}"
         stroke-opacity="${node.assigned ? 0.95 : 0.35}" stroke-width="${node.assigned ? 1.6 : 0.9}"
         stroke-linejoin="round" vector-effect="non-scaling-stroke"
-        ><title>${esc(node.name)} — ${p}% reported (${n(node.reported)} of ${n(node.units)})${node.assigned ? ', ' + n(node.assigned) + ' of ours' : ', nobody assigned'}</title></path>`;
+        ><title>${T('situation-room.map-tooltip', '{place} — {pct}% reported ({rep} of {units})', { place: esc(node.name), pct: p, rep: n(node.reported), units: n(node.units) })}${node.assigned
+          ? T('situation-room.map-tooltip-ours', ', {n} of ours', { n: n(node.assigned) })
+          : T('situation-room.map-tooltip-nobody', ', nobody assigned')}</title></path>`;
     }).join('')}
   </svg>
   <div class="sr-legend" style="margin-top:10px">
@@ -898,7 +930,7 @@ async function drawWardMap(host, nodes, lvl) {
   const note = (html) => {
     host.innerHTML = `<div class="sr-msg">${html}<br />The list beside this is the full picture for ${esc(homeArea().name)}.</div>`;
   };
-  if (!WM || !a) return note('No map for this area.');
+  if (!WM || !a) return note(T('situation-room.no-map-for-this-area', 'No map for this area.'));
   const r = await api('/api/groups/' + S.gid + '/wards-geo?state=' + encodeURIComponent(a.state) + '&lga=' + encodeURIComponent(a.lga));
   const wards = (r.status === 200 && r.body && r.body.wards) || [];
   if (!wards.length) return note(`No ward map for ${esc(a.lga)} yet.`);
@@ -916,7 +948,9 @@ async function drawWardMap(host, nodes, lvl) {
         return `<path d="${d}" fill="var(--ok)" fill-opacity="${(0.05 + (p / 100) * 0.8).toFixed(3)}"
           stroke="${node.assigned ? 'var(--accent)' : 'currentColor'}" stroke-opacity="${node.assigned ? 0.95 : 0.35}"
           stroke-width="${node.assigned ? 1.6 : 0.9}" stroke-linejoin="round" vector-effect="non-scaling-stroke"
-          ><title>${esc(node.name)} — ${p}% reported (${n(node.reported)} of ${n(node.units)})${node.assigned ? ', ' + n(node.assigned) + ' of ours' : ', nobody assigned'}</title></path>`;
+          ><title>${T('situation-room.map-tooltip', '{place} — {pct}% reported ({rep} of {units})', { place: esc(node.name), pct: p, rep: n(node.reported), units: n(node.units) })}${node.assigned
+          ? T('situation-room.map-tooltip-ours', ', {n} of ours', { n: n(node.assigned) })
+          : T('situation-room.map-tooltip-nobody', ', nobody assigned')}</title></path>`;
       }).join('')}
     </svg>
     <div class="sr-legend" style="margin-top:10px">
@@ -968,37 +1002,37 @@ function renderCoverage() {
   $('sr-body').innerHTML = `
     <div class="sr-heads">
       <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>of ${n(tot.units)} units reported</span></div>
-      <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>Coverage</span></div>
-      <div class="sr-head ok"><b class="num">${n(tot.on_unit)}</b><span>On their unit</span></div>
-      <div class="sr-head off"><b class="num">${n(tot.mismatched)}</b><span>Filed elsewhere</span></div>
-      <div class="sr-head wait"><b class="num">${n(silent > 0 ? silent : 0)}</b><span>Yet to report</span></div>
+      <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>${T('situation-room.coverage', 'Coverage')}</span></div>
+      <div class="sr-head ok"><b class="num">${n(tot.on_unit)}</b><span>${T('situation-room.on-their-unit', 'On their unit')}</span></div>
+      <div class="sr-head off"><b class="num">${n(tot.mismatched)}</b><span>${T('situation-room.filed-elsewhere', 'Filed elsewhere')}</span></div>
+      <div class="sr-head wait"><b class="num">${n(silent > 0 ? silent : 0)}</b><span>${T('situation-room.yet-to-report', 'Yet to report')}</span></div>
     </div>
     ${crumbsHtml()}
     <div class="sr-bar" style="border:0;padding:0 0 10px">
       <select class="sr-sel" id="cov-filter">
-        <option value="all"${S.filter === 'all' ? ' selected' : ''}>Show everything</option>
-        <option value="gaps"${S.filter === 'gaps' ? ' selected' : ''}>Only where units are unreported</option>
-        <option value="silent"${S.filter === 'silent' ? ' selected' : ''}>Only where our observers are silent</option>
-        <option value="ours"${S.filter === 'ours' ? ' selected' : ''}>Only where we have people</option>
+        <option value="all"${S.filter === 'all' ? ' selected' : ''}>${T('situation-room.show-everything', 'Show everything')}</option>
+        <option value="gaps"${S.filter === 'gaps' ? ' selected' : ''}>${T('situation-room.only-where-units-are-unreported', 'Only where units are unreported')}</option>
+        <option value="silent"${S.filter === 'silent' ? ' selected' : ''}>${T('situation-room.only-where-our-observers-are-silent', 'Only where our observers are silent')}</option>
+        <option value="ours"${S.filter === 'ours' ? ' selected' : ''}>${T('situation-room.only-where-we-have-people', 'Only where we have people')}</option>
       </select>
       <div class="spacer"></div>
-      <button class="sr-btn" id="csv">Export CSV</button>
+      <button class="sr-btn" id="csv">${T('situation-room.export-csv', 'Export CSV')}</button>
     </div>
     <div class="sr-wrap"><table class="sr-tbl">
       <thead><tr>
         <th>${LEVEL_WORD[c.level] || 'Places'}</th>
-        <th>Units</th><th>Reported</th><th>Coverage</th>
-        <th>Ours</th><th>On unit</th><th>Elsewhere</th><th>Silent</th>
+        <th>${T('situation-room.units', 'Units')}</th><th>${T('situation-room.reported', 'Reported')}</th><th>${T('situation-room.coverage', 'Coverage')}</th>
+        <th>${T('situation-room.ours', 'Ours')}</th><th>${T('situation-room.on-unit', 'On unit')}</th><th>${T('situation-room.elsewhere', 'Elsewhere')}</th><th>${T('situation-room.silent', 'Silent')}</th>
       </tr></thead>
       <tbody>${shown.length ? shown.map((x) => rowHtml(x, c)).join('') :
-        `<tr><td colspan="8" class="sr-msg">Nothing matches that filter here.</td></tr>`}</tbody>
+        `<tr><td colspan="8" class="sr-msg">${T('situation-room.nothing-matches-that-filter-here', 'Nothing matches that filter here.')}</td></tr>`}</tbody>
     </table></div>
     <div class="sr-legend">
       <span><b style="color:var(--ok)">&#9679;</b> On unit &mdash; reported from the unit they were assigned</span>
       <span><b style="color:var(--off)">&#9670;</b> Elsewhere &mdash; reported, from a different unit</span>
       <span><b style="color:var(--wait)">&#9632;</b> Silent &mdash; assigned, nothing filed yet</span>
     </div>
-    ${c.level !== 'unit' ? '<div class="sr-note">Select a row to open the places inside it.</div>' : ''}`;
+    ${c.level !== 'unit' ? `<div class="sr-note">${T('situation-room.select-a-row-to-open-the-places', 'Select a row to open the places inside it.')}</div>` : ''}`;
 
   $('cov-filter').addEventListener('change', (e) => { S.filter = e.target.value; renderCoverage(); });
   $('csv').addEventListener('click', () => exportCsv(c.level, shown));
@@ -1020,7 +1054,7 @@ function rowHtml(x, cov) {
   return `<tr${isMine(cov, x.key) ? ' class="mine"' : ''}>
     <td>${x.key === x.name ? `<button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>`
       : `<button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button><span class="sr-sub num">${esc(x.key)}</span>`}
-      ${who.length ? `<span class="sr-who">${isMine(cov, x.key) ? '<b>yours</b>' : esc(who.join(', '))}</span>` : ''}</td>
+      ${who.length ? `<span class="sr-who">${isMine(cov, x.key) ? `<b>${T('situation-room.yours', 'yours')}</b>` : esc(who.join(', '))}</span>` : ''}</td>
     <td class="num">${n(x.units)}</td>
     <td class="num${x.reported ? '' : ' z'}">${n(x.reported)}</td>
     <td><div class="sr-bar-cell"><span class="num">${p}%</span>
@@ -1091,25 +1125,25 @@ function renderIncidents() {
 
   $('sr-body').innerHTML = `
     <div class="sr-heads">
-      <div class="sr-head"><b class="num">${n(list.length)}</b><span>Published in this race</span></div>
-      <div class="sr-head ok"><b class="num">${n(ours)}</b><span>Filed by your observers</span></div>
+      <div class="sr-head"><b class="num">${n(list.length)}</b><span>${T('situation-room.published-in-this-race', 'Published in this race')}</span></div>
+      <div class="sr-head ok"><b class="num">${n(ours)}</b><span>${T('situation-room.filed-by-your-observers', 'Filed by your observers')}</span></div>
     </div>
     <div class="sr-bar" style="border:0;padding:0 0 10px">
       <select class="sr-sel" id="inc-filter">
-        <option value="all"${mine ? '' : ' selected'}>Everything published here</option>
-        <option value="ours"${mine ? ' selected' : ''}>Only what your observers filed</option>
+        <option value="all"${mine ? '' : ' selected'}>${T('situation-room.everything-published-here', 'Everything published here')}</option>
+        <option value="ours"${mine ? ' selected' : ''}>${T('situation-room.only-what-your-observers-filed', 'Only what your observers filed')}</option>
       </select>
     </div>
     ${shown.length ? `<div class="sr-card">${shown.map(incidentRow).join('')}</div>` : `
-    <div class="sr-empty"><h2>${list.length ? 'None from your observers yet' : 'No incidents published here'}</h2>
-      <p>${list.length ? 'Nothing your own people filed has been published in this race yet.'
-        : 'Nothing has been published for this race. Incidents appear once they clear review, at the same moment the public sees them.'}</p></div>`}
+    <div class="sr-empty"><h2>${list.length
+      ? T('situation-room.none-from-your-observers-yet', 'None from your observers yet')
+      : T('situation-room.no-incidents-published-here', 'No incidents published here')}</h2>
+      <p>${list.length
+        ? T('situation-room.nothing-your-own-people-filed-has', 'Nothing your own people filed has been published in this race yet.')
+        : T('situation-room.nothing-has-been-published-for-this', 'Nothing has been published for this race. Incidents appear once they clear review, at the same moment the public sees them.')}</p></div>`}
     <div class="sr-note">
-      <strong>This is the public list.</strong> Every incident here is already on
-      Hawkeye for anyone to read &mdash; nothing is shown before it is published, and
-      no other group&rsquo;s observers are named. What this tab adds is which ones came
-      from your people. Weighing a claim happens in the
-      <a href="docket.html" style="color:var(--accent)">public docket</a>, not here.
+      ${T('situation-room.incidents-note',
+    '<strong>This is the public list.</strong> Every incident here is already on Hawkeye for anyone to read — nothing is shown before it is published, and no other group’s observers are named. What this tab adds is which ones came from your people. Weighing a claim happens in the <a href="docket.html" style="color:var(--accent)">public docket</a>, not here.')}
     </div>`;
 
   $('inc-filter').addEventListener('change', (e) => { S.incFilter = e.target.value; renderIncidents(); });
@@ -1134,12 +1168,18 @@ const kindWord = (k) => String(k || 'Incident').replace(/[_-]+/g, ' ').replace(/
 /* --- team -------------------------------------------------------------- */
 
 const STATUS = {
-  on_unit:             { cls: 'ok',   glyph: '&#9679;', word: 'On unit',  rank: 3 },
-  mismatch:            { cls: 'off',  glyph: '&#9670;', word: 'Elsewhere', rank: 1 },
-  reported_unassigned: { cls: 'off',  glyph: '&#9670;', word: 'Reported',  rank: 2 },
-  silent:              { cls: 'wait', glyph: '&#9632;', word: 'Silent',    rank: 0 },
-  declined:            { cls: 'idle', glyph: '&#9633;', word: 'Declined',  rank: 4 },
-  unassigned:          { cls: 'idle', glyph: '&#9633;', word: 'No unit',   rank: 5 },
+  /* The KEY travels beside the English, and the render site resolves it. This
+     object is built once at import — before the stored language is known — so
+     a T() call here would freeze in English however often the page repaints. */
+  /* Four of these reuse the column-header keys: the same word, translated once.
+     The render site resolves wordKey, so the extractor cannot see these pairs —
+     they are catalogued by hand (scripts/i18n/batches/room_status_catalogue.json). */
+  on_unit:             { cls: 'ok',   glyph: '&#9679;', word: 'On unit',   wordKey: 'situation-room.on-unit',          rank: 3 },
+  mismatch:            { cls: 'off',  glyph: '&#9670;', word: 'Elsewhere', wordKey: 'situation-room.elsewhere',        rank: 1 },
+  reported_unassigned: { cls: 'off',  glyph: '&#9670;', word: 'Reported',  wordKey: 'situation-room.reported',         rank: 2 },
+  silent:              { cls: 'wait', glyph: '&#9632;', word: 'Silent',    wordKey: 'situation-room.silent',           rank: 0 },
+  declined:            { cls: 'idle', glyph: '&#9633;', word: 'Declined',  wordKey: 'situation-room.status-declined',  rank: 4 },
+  unassigned:          { cls: 'idle', glyph: '&#9633;', word: 'No unit',   wordKey: 'situation-room.status-no-unit',   rank: 5 },
 };
 
 function renderTeam() {
@@ -1151,11 +1191,11 @@ function renderTeam() {
 
   $('sr-body').innerHTML = `
     <div class="sr-heads">
-      <div class="sr-head"><b class="num">${n(t.members.length)}</b><span>Observers</span></div>
-      <div class="sr-head ok"><b class="num">${n(count('on_unit'))}</b><span>On their unit</span></div>
-      <div class="sr-head off"><b class="num">${n(count('mismatch') + count('reported_unassigned'))}</b><span>Reported elsewhere</span></div>
-      <div class="sr-head wait"><b class="num">${n(count('silent'))}</b><span>Yet to report</span></div>
-      <div class="sr-head"><b class="num">${n(count('unassigned') + count('declined'))}</b><span>No unit set</span></div>
+      <div class="sr-head"><b class="num">${n(t.members.length)}</b><span>${T('situation-room.observers', 'Observers')}</span></div>
+      <div class="sr-head ok"><b class="num">${n(count('on_unit'))}</b><span>${T('situation-room.on-their-unit', 'On their unit')}</span></div>
+      <div class="sr-head off"><b class="num">${n(count('mismatch') + count('reported_unassigned'))}</b><span>${T('situation-room.reported-elsewhere', 'Reported elsewhere')}</span></div>
+      <div class="sr-head wait"><b class="num">${n(count('silent'))}</b><span>${T('situation-room.yet-to-report', 'Yet to report')}</span></div>
+      <div class="sr-head"><b class="num">${n(count('unassigned') + count('declined'))}</b><span>${T('situation-room.no-unit-set', 'No unit set')}</span></div>
     </div>
     ${managersHtml()}
     ${(() => {
@@ -1163,9 +1203,10 @@ function renderTeam() {
          marker on row 214 is not pointing anything out. */
       const doubled = new Set(t.members.filter((m) => m.shared && m.assigned).map((m) => m.assigned.pu_code));
       return doubled.size ? `<div class="sr-note" style="border-left-color:var(--wait)">
-        <strong>${n(doubled.size)} unit${doubled.size === 1 ? ' has' : 's have'} more than one observer down for it.</strong>
-        One unit covered twice usually means another unit is not covered at all. They are marked
-        &#9650; below &mdash; use <em>Change unit</em> to move someone, if you see fit.</div>` : '';
+        ${doubled.size === 1
+    ? T('situation-room.doubled-one', '<strong>{n} unit has more than one observer down for it.</strong>', { n: n(doubled.size) })
+    : T('situation-room.doubled-many', '<strong>{n} units have more than one observer down for it.</strong>', { n: n(doubled.size) })}
+        ${T('situation-room.doubled-note', 'One unit covered twice usually means another unit is not covered at all. They are marked &#9650; below — use <em>{change}</em> to move someone, if you see fit.', { change: T('situation-room.change-unit', 'Change unit') })}</div>` : '';
     })()}
     ${proposed ? `<div class="sr-bar" style="border:0;padding:0 0 10px">
       <span class="meta">${n(proposed)} observer${proposed === 1 ? '' : 's'} joined with a unit already saved.</span>
@@ -1174,11 +1215,11 @@ function renderTeam() {
     </div>` : ''}
     ${t.members.length ? `
     <div class="sr-wrap"><table class="sr-tbl text">
-      <thead><tr><th>Observer</th><th>Status</th><th>Assigned unit</th><th>Reported from</th><th></th></tr></thead>
+      <thead><tr><th>${T('profile.observer', 'Observer')}</th><th>${T('race.status', 'Status')}</th><th>${T('situation-room.assigned-unit', 'Assigned unit')}</th><th>${T('situation-room.reported-from', 'Reported from')}</th><th></th></tr></thead>
       <tbody>${ms.map(memberRow).join('')}</tbody>
     </table></div>
     <div class="sr-note">
-      <strong>A different unit is a discrepancy to explain, not a verdict.</strong>
+      <strong>${T('situation-room.a-different-unit-is-a-discrepancy-to', 'A different unit is a discrepancy to explain, not a verdict.')}</strong>
       Observers get moved by their own party, turned away at the gate, or sent to a
       unit that was merged or relocated &mdash; and an assignment can simply have been
       wrong. Ask before you conclude.
@@ -1193,7 +1234,7 @@ async function runAction(b) {
   if (b.dataset.act === 'rename') return rename(id);
   if (b.dataset.act === 'promote') return promote(id, b.dataset.name || ('Observer #' + id));
   if (b.dataset.act === 'demote') {
-    if (!confirm('Remove this manager? They keep their place on the roster as an observer.')) return;
+    if (!confirm(T('situation-room.remove-this-manager-they-keep-their-place', 'Remove this manager? They keep their place on the roster as an observer.'))) return;
     const { status, body } = await api('/api/groups/' + S.gid + '/managers/' + id, { method: 'DELETE' });
     if (status !== 200) return alert(body.error === 'owner_only' ? 'Only the owner can change who manages this room.' : 'Could not change that.');
     return afterRoleChange();
@@ -1234,7 +1275,7 @@ function managersHtml() {
     return (m && m.label) || 'Observer #' + o.observer_id;
   };
   return `<div class="sr-card" style="margin-bottom:16px">
-    <div class="sr-h2" style="margin:0 0 8px">Who manages this room</div>
+    <div class="sr-h2" style="margin:0 0 8px">${T('situation-room.who-manages-this-room', 'Who manages this room')}</div>
     ${list.map((o) => `<div class="sr-act">
       <span class="pill ${o.role === 'owner' ? 'ok' : 'idle'}"><i>&#9679;</i>${esc(o.role)}</span>
       <div class="sr-act-t"><b>${esc(label(o))}</b>${o.observer_id === S.group.me_id ? ' &mdash; you' : ''}
@@ -1251,9 +1292,9 @@ function memberRow(m) {
   const mismatched = m.status === 'mismatch';
   return `<tr>
     <td>${esc(m.label || 'Observer #' + m.observer_id)}${m.role ? ` <span class="pill idle" style="font-size:.68rem">${esc(m.role)}</span>` : ''}${m.label ? `<span class="sr-sub num">#${m.observer_id}</span>` : ''}</td>
-    <td><span class="pill ${s.cls}"><i>${s.glyph}</i>${s.word}</span></td>
+    <td><span class="pill ${s.cls}"><i>${s.glyph}</i>${T(s.wordKey, s.word)}</span></td>
     <td>${place(m.assigned)}${m.shared ? `<span class="sr-sub" style="color:var(--wait)">&#9650; ${m.shared} other${m.shared === 1 ? '' : 's'} down for this unit too</span>` : ''}</td>
-    <td>${place(m.reported)}${mismatched ? '<span class="sr-sub" style="color:var(--off)">not the assigned unit</span>' : ''}</td>
+    <td>${place(m.reported)}${mismatched ? `<span class="sr-sub" style="color:var(--off)">${T('situation-room.not-the-assigned-unit', 'not the assigned unit')}</span>` : ''}</td>
     <td>${actionsHtml(m)}</td>
   </tr>`;
 }
@@ -1310,12 +1351,11 @@ async function assign(observerId, puCode) {
 
 function emptyTeamHtml() {
   return `<div class="sr-empty">
-    <h2>No observers yet</h2>
-    <p>Share your invite link however you already talk to your people. Anyone who
-       taps it, signs in and joins appears here.</p>
-    <p><strong>Joining is always a deliberate tap</strong> &mdash; a link forwarded into a
-       group chat never enrols whoever opens it.</p>
-    <button class="sr-btn primary" onclick="showInvite()" style="margin-top:12px">Get the invite link</button>
+    <h2>${T('situation-room.no-observers-yet', 'No observers yet')}</h2>
+    <p>${T('situation-room.invite-share', 'Share your invite link however you already talk to your people. Anyone who taps it, signs in and joins appears here.')}</p>
+    <p>${T('situation-room.invite-deliberate',
+    '<strong>Joining is always a deliberate tap</strong> — a link forwarded into a group chat never enrols whoever opens it.')}</p>
+    <button class="sr-btn primary" onclick="showInvite()" style="margin-top:12px">${T('situation-room.get-the-invite-link', 'Get the invite link')}</button>
   </div>`;
 }
 
@@ -1340,7 +1380,14 @@ async function afterRoleChange() {
 /* The levels on offer, and the hierarchy each one has to walk to reach a value.
    A group already scoped to one area has no state step — the group IS that
    area, and a "state" coordinator inside it would just be a manager. */
-const LABEL_STEP = { zone: 'Choose a zone…', state: 'Choose a state…', lga: 'Choose a local government…', ward: 'Choose a ward…' };
+/* Resolved at CALL time, not here: a module-level constant is evaluated once at
+   import, before the stored language is known, and would freeze in English. */
+const LABEL_STEP = {
+  zone: () => T('situation-room.choose-a-zone', 'Choose a zone…'),
+  state: () => T('situation-room.choose-a-state', 'Choose a state…'),
+  lga: () => T('situation-room.choose-a-local-government', 'Choose a local government…'),
+  ward: () => T('situation-room.choose-a-ward', 'Choose a ward…'),
+};
 
 async function promote(observerId, who) {
   const g = S.group;
@@ -1360,13 +1407,13 @@ async function promote(observerId, who) {
   wrap.id = 'promote-panel';
   wrap.innerHTML = `<strong>Give ${esc(who)} more access</strong>
     <div class="sr-form" style="max-width:none;margin-top:10px">
-      <div><label for="pr-role">Role</label>
+      <div><label for="pr-role">${T('situation-room.role', 'Role')}</label>
         <select id="pr-role">
           <option value="manager">Manager &mdash; the whole race, and everyone in it</option>
           <option value="coordinator">Coordinator &mdash; one area&rsquo;s people</option>
         </select></div>
       <div id="pr-where" hidden>
-        <label for="pr-kind">Area</label>
+        <label for="pr-kind">${T('situation-room.area', 'Area')}</label>
         <select class="sr-sel" id="pr-kind" style="width:100%">
           ${KINDS.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}
         </select>
@@ -1375,8 +1422,8 @@ async function promote(observerId, who) {
           area means something &mdash; but manages only the observers inside it.</p>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="sr-btn primary" id="pr-go">Confirm</button>
-        <button class="sr-btn" id="pr-cancel">Cancel</button>
+        <button class="sr-btn primary" id="pr-go">${T('situation-room.confirm', 'Confirm')}</button>
+        <button class="sr-btn" id="pr-cancel">${T('common.cancel', 'Cancel')}</button>
       </div>
     </div>`;
   const old = $('promote-panel');
@@ -1423,7 +1470,7 @@ async function promote(observerId, who) {
       const sel = document.createElement('select');
       sel.className = 'sr-sel';
       sel.dataset.step = step;
-      sel.innerHTML = `<option value="">${LABEL_STEP[step]}</option>`
+      sel.innerHTML = `<option value="">${LABEL_STEP[step]()}</option>`
         + rows.map((x) => `<option value="${esc(x.key)}"${picked[step] === x.key ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
       $('pr-chain').appendChild(sel);
       sel.addEventListener('change', () => {
@@ -1449,7 +1496,7 @@ async function promote(observerId, who) {
     const payload = role === 'coordinator'
       ? { role, scope_kind: $('pr-kind').value, scope_value: picked[(STEPS[$('pr-kind').value] || []).slice(-1)[0]] || '' }
       : { role };
-    if (role === 'coordinator' && !payload.scope_value) return alert('Pick the area they will cover.');
+    if (role === 'coordinator' && !payload.scope_value) return alert(T('situation-room.pick-the-area-they-will-cover', 'Pick the area they will cover.'));
     const { status, body } = await api('/api/groups/' + S.gid + '/managers/' + observerId, {
       method: 'POST', body: JSON.stringify(payload),
     });
@@ -1470,7 +1517,7 @@ async function rename(observerId) {
   const { status } = await api('/api/groups/' + S.gid + '/members/' + observerId, {
     method: 'PATCH', body: JSON.stringify({ label: label.trim() }),
   });
-  if (status !== 200) return alert('Could not save that name.');
+  if (status !== 200) return alert(T('situation-room.could-not-save-that-name', 'Could not save that name.'));
   S.team = null;
   loadTab(true);
 }
@@ -1502,25 +1549,29 @@ async function deleteRoom() {
   const g = S.group;
   const n_ = g.members || 0;
   if (n_ === 0) {
-    if (!confirm('Delete ' + g.name + '? It has no observers in it, so nothing is lost.')) return;
+    if (!confirm(T('situation-room.confirm-delete-empty', 'Delete {name}? It has no observers in it, so nothing is lost.', { name: g.name }))) return;
   } else {
-    const typed = prompt('Deleting ' + g.name + ' removes its roster, assignments and invite links for '
-      + n_ + ' observer' + (n_ === 1 ? '' : 's') + '. Their reports stay in the public record and still count.\n\n'
-      + 'Type the room name to confirm:');
+    const typed = prompt(n_ === 1
+      ? T('situation-room.delete-prompt-one', 'Deleting {name} removes its roster, assignments and invite links for {n} observer. Their reports stay in the public record and still count.\n\nType the room name to confirm:', { name: g.name, n: n_ })
+      : T('situation-room.delete-prompt-many', 'Deleting {name} removes its roster, assignments and invite links for {n} observers. Their reports stay in the public record and still count.\n\nType the room name to confirm:', { name: g.name, n: n_ }));
     if (typed === null) return;
-    if (typed.trim() !== g.name) return alert('That did not match the name. Nothing was deleted.');
+    if (typed.trim() !== g.name) return alert(T('situation-room.that-did-not-match-the-name-nothing', 'That did not match the name. Nothing was deleted.'));
   }
   const { status, body } = await api('/api/groups/' + S.gid, { method: 'DELETE' });
-  if (status !== 200) return alert(body.error === 'owner_only' ? 'Only the owner can delete this room.' : 'Could not delete that room.');
+  if (status !== 200) {
+    return alert(body.error === 'owner_only'
+      ? T('situation-room.only-the-owner-can-delete', 'Only the owner can delete this room.')
+      : T('situation-room.could-not-delete-that-room', 'Could not delete that room.'));
+  }
   history.replaceState(null, '', '/situation-room.html');
   S.gid = null; S.group = null; S.groups = [];
   boot();
 }
 
 async function leaveRoom() {
-  if (!confirm('Stop managing ' + S.group.name + '? You will lose access to this room unless the owner adds you back.')) return;
+  if (!confirm(T('situation-room.confirm-stop-managing', 'Stop managing {name}? You will lose access to this room unless the owner adds you back.', { name: S.group.name }))) return;
   const { status } = await api('/api/groups/' + S.gid + '/managers/' + S.group.me_id, { method: 'DELETE' });
-  if (status !== 200) return alert('Could not step back from this room.');
+  if (status !== 200) return alert(T('situation-room.could-not-step-back-from-this-room', 'Could not step back from this room.'));
   S.gid = null; S.group = null;
   boot();
 }
@@ -1544,26 +1595,26 @@ async function showInvite() {
   const panel = document.createElement('div');
   panel.className = 'sr-note';
   panel.id = 'inv-panel';
-  panel.innerHTML = `<strong>Invite links</strong>
+  panel.innerHTML = `<strong>${T('situation-room.invite-links', 'Invite links')}</strong>
     ${live.map((t) => `<div class="sr-link">
       <code>${esc(location.origin + '/join/' + t.token)}</code>
       <span class="sr-sub num" style="white-space:nowrap">${n(t.uses)} used &middot; ${days(t)}d</span>
-      <button class="sr-btn mini" data-copy="${esc(t.token)}">Copy</button>
-      <button class="sr-btn mini" data-revoke="${esc(t.token)}">Revoke</button>
+      <button class="sr-btn mini" data-copy="${esc(t.token)}">${T('support.copy', 'Copy')}</button>
+      <button class="sr-btn mini" data-revoke="${esc(t.token)}">${T('situation-room.revoke', 'Revoke')}</button>
     </div>`).join('')}
     <div style="margin-top:8px">Anyone with a live link can join your roster after signing in.
       Revoking one stops it working immediately; observers who already joined stay.</div>
-    <button class="sr-btn mini" id="inv-new" style="margin-top:10px">Create another link</button>`;
+    <button class="sr-btn mini" id="inv-new" style="margin-top:10px">${T('situation-room.create-another-link', 'Create another link')}</button>`;
   const old = document.getElementById('inv-panel');
   if (old) old.remove();
   $('sr-body').prepend(panel);
 
   panel.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
     navigator.clipboard.writeText(location.origin + '/join/' + b.dataset.copy)
-      .then(() => { b.textContent = 'Copied'; });
+      .then(() => { b.textContent = T('support.copied', 'Copied'); });
   }));
   panel.querySelectorAll('[data-revoke]').forEach((b) => b.addEventListener('click', async () => {
-    if (!confirm('Revoke this link? Anyone who has not used it yet will not be able to join with it.')) return;
+    if (!confirm(T('situation-room.revoke-this-link-anyone-who-has-not', 'Revoke this link? Anyone who has not used it yet will not be able to join with it.'))) return;
     await api('/api/groups/' + S.gid + '/invites/' + b.dataset.revoke, { method: 'DELETE' });
     showInvite();
   }));
@@ -1623,7 +1674,7 @@ async function boot(preferId) {
      manager or coordinator who did not create the room reaches it at all. */
   const bySlug = URL_SLUG && S.groups.find((x) => x.slug === URL_SLUG);
   if (URL_SLUG && !bySlug) {
-    $('sr').innerHTML = '<div class="sr-msg">That room is not one you manage, or the link is wrong.</div>';
+    $('sr').innerHTML = `<div class="sr-msg">${T('situation-room.that-room-is-not-one-you-manage', 'That room is not one you manage, or the link is wrong.')}</div>`;
     return;
   }
   S.gid = preferId || (bySlug && bySlug.id) || S.groups[0].id;
@@ -1641,7 +1692,9 @@ document.addEventListener('click', (e) => {
   loadTab(true);
 });
 
-boot().catch((e) => { $('sr').innerHTML = '<div class="sr-msg">Could not load the situation room. ' + esc(e.message) + '</div>'; });
+boot().catch((e) => {
+  $('sr').innerHTML = `<div class="sr-msg">${T('situation-room.could-not-load-the-room', 'Could not load the situation room. {error}', { error: esc(e.message) })}</div>`;
+});
 </script>
 </body>
 </html>

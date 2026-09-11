@@ -23,16 +23,33 @@
     t.onerror = () => rej(t.error);
   }));
 
+  // Reports the server refused for good, with the reason it gave — native's
+  // K_DROPPED list, same shape and cap. Before this a refused report vanished
+  // from the queue without a word, so the observer believed it had been sent.
+  const K_DROPPED = 'hawkeye_outbox_dropped';
+  const dropped = () => { try { return JSON.parse(localStorage.getItem(K_DROPPED) || '[]'); } catch { return []; } };
+  const refusal = (status, body) =>
+    `${(body && (body.hint || body.error)) || 'refused'} (${(body && body.error) || 'no code'} / HTTP ${status})`;
+  const tell = async (fresh) => {
+    try { await window.i18nReady; } catch { /* English fallback below */ }
+    const I = window.HawkeyeI18n;
+    const line = I ? I.t('observe.a-queued-report-was-dropped', 'A queued report was dropped \u2014 {v0}.')
+      : 'A queued report was dropped \u2014 {v0}.';
+    alert(fresh.map((d) => line.replace('{v0}', `${d.label}: ${d.why}`)).join('\n\n'));
+  };
+
   const Outbox = {
     queue: (entry) => run('readwrite', (s) => s.add({ ...entry, queuedAt: Date.now() })),
     all: () => run('readonly', (s) => s.getAll()),
     remove: (id) => run('readwrite', (s) => s.delete(id)),
+    dropped,
     async count() { return (await Outbox.all() || []).length; },
     async flush() {
       const token = localStorage.getItem('hawkeye_token');
       if (!token || !navigator.onLine) return { sent: 0 };
       const base = (window.HAWKEYE && window.HAWKEYE.apiBase) || '';
       let sent = 0;
+      const fresh = [];
       for (const it of (await Outbox.all() || [])) {
         // The mode is decided HERE, not when the report was queued. A report
         // captured underground and flushed on the surface should use whatever
@@ -73,11 +90,25 @@
           && body && (body.error === 'photo_not_uploaded' || body.error === 'storage_unavailable');
         if (retryable409) { /* leave queued — the next flush re-presigns and re-PUTs */ }
         else if (resp.ok || resp.status === 409) { await Outbox.remove(it.id); sent++; }        // landed or already there
-        else if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) { await Outbox.remove(it.id); } // unfixable -> drop
+        // 401 is the SESSION, not the report: it used to fall into the drop below
+        // and delete a signed report because a token expired while it waited.
+        // Keep it; the next flush after sign-in sends it (native defers it too).
+        else if (resp.status === 401) break;
+        else if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) { // unfixable -> drop, and SAY so
+          await Outbox.remove(it.id);
+          const f = it.fields || {};
+          fresh.push({ label: [f.puCode, f.contest].filter(Boolean).join(' \u00b7 ') || 'report',
+            queuedAt: it.queuedAt, droppedAt: Date.now(), why: refusal(resp.status, body) });
+        }
         // 5xx / 429 -> leave queued, retry later
       }
+      if (fresh.length) {
+        try { localStorage.setItem(K_DROPPED, JSON.stringify([...fresh, ...dropped()].slice(0, 20))); } catch { /* the drop already happened */ }
+        window.dispatchEvent(new CustomEvent('hawkeye-outbox-dropped', { detail: { dropped: fresh } }));
+        tell(fresh);
+      }
       if (sent) window.dispatchEvent(new CustomEvent('hawkeye-outbox-sent', { detail: { sent } }));
-      return { sent };
+      return { sent, dropped: fresh.length };
     },
   };
   window.HawkeyeOutbox = Outbox;

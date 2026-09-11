@@ -44,13 +44,14 @@
     <div class="wrap brand-row">
       <a class="brand" href="index.html">
         <span class="crest" aria-hidden="true"><img src="icon-192.png?v=hawk2" alt="" width="30" height="30" style="display:block;border-radius:7px" /></span>
-        <div class="brand-text"><strong>HAWKEYE</strong><span>Independent Election Results Monitor</span></div>
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div>
       </a>
     </div>
   </header>
 
   <main class="jn" id="jn"><div class="card">Checking that invitation…</div></main>
 
+<script src="/i18n.js?v=5"></script>
 <script>
 /**
  * Join a campaign or CSO roster from an invite link.
@@ -77,28 +78,61 @@ function signedIn() {
   } catch (e) { return false; }
 }
 
-function bad(title, msg) {
-  $('jn').innerHTML = `<div class="card bad"><h1>${esc(title)}</h1><p>${msg}</p></div>`;
+/* Everything here is painted by script, so it goes through T() and REPAINTS on
+   'hawkeye-lang' — i18n.js fires that after every bundle load, including the
+   one that lands after this page's first paint. */
+const T = (k, en, vars) => {
+  let s = window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en;
+  for (const [a, b] of Object.entries(vars || {})) s = s.split('{' + a + '}').join(b);
+  return s;
+};
+let repaint = () => {};
+window.addEventListener('hawkeye-lang', () => repaint());
+const paint = (fn) => { repaint = fn; fn(); };
+
+function bad(tk, title, mk, msg) {
+  paint(() => { $('jn').innerHTML = `<div class="card bad"><h1>${esc(T(tk, title))}</h1><p>${esc(T(mk, msg))}</p></div>`; });
 }
 
 async function main() {
-  if (!token) return bad('That link is incomplete', 'Ask whoever sent it for the full link.');
+  if (!token) return bad('join.link-incomplete-title', 'That link is incomplete', 'join.link-incomplete-body', 'Ask whoever sent it for the full link.');
   const res = await fetch('/api/join/' + encodeURIComponent(token));
   const g = await res.json().catch(() => ({}));
-  if (res.status === 404) return bad('We do not recognise that invitation', 'The link may have been mistyped, or the group may have been deleted.');
+  if (res.status === 404) return bad('join.not-recognised-title', 'We do not recognise that invitation', 'join.not-recognised-body', 'The link may have been mistyped, or the group may have been deleted.');
   if (res.status === 410) {
-    return bad(g.error === 'invite_revoked' ? 'That invitation was withdrawn' : 'That invitation has expired',
-      'Ask whoever sent it for a fresh link — they can create one in seconds.');
+    return g.error === 'invite_revoked'
+      ? bad('join.withdrawn-title', 'That invitation was withdrawn', 'join.fresh-link-body', 'Ask whoever sent it for a fresh link — they can create one in seconds.')
+      : bad('join.expired-title', 'That invitation has expired', 'join.fresh-link-body', 'Ask whoever sent it for a fresh link — they can create one in seconds.');
   }
-  if (!res.ok) return bad('Something went wrong', 'Try the link again in a moment.');
+  if (!res.ok) return bad('join.went-wrong-title', 'Something went wrong', 'join.try-again-moment', 'Try the link again in a moment.');
+  paint(() => showCard(g));
+}
 
+/* One whole sentence per branch — kind x scope — never a translated noun
+   spliced into an English-ordered sentence. */
+function invitedLine(g) {
+  const v = { contest: esc(g.contest), scope: esc(g.scope || '') };
+  if (g.kind === 'cso') {
+    return g.scope
+      ? T('join.invited-cso-scope', 'You have been invited to observe with this observer group for the {contest} race in {scope}.', v)
+      : T('join.invited-cso', 'You have been invited to observe with this observer group for the {contest} race.', v);
+  }
+  return g.scope
+    ? T('join.invited-campaign-scope', 'You have been invited to observe with this campaign for the {contest} race in {scope}.', v)
+    : T('join.invited-campaign', 'You have been invited to observe with this campaign for the {contest} race.', v);
+}
+
+function showCard(g) {
   const kind = g.kind === 'cso' ? 'observer group' : 'campaign';
   $('jn').innerHTML = `
     <div class="card">
-      <h1>Join <span class="name">${esc(g.name)}</span></h1>
-      <p class="who">You have been invited to observe with this ${esc(kind)}
-         for the ${esc(g.contest)} race${g.scope ? ' in ' + esc(g.scope) : ''}.</p>
-      <ul>
+      <h1>${T('join.heading', 'Join <span class="name">{name}</span>', { name: esc(g.name) })}</h1>
+      <p class="who">${invitedLine(g)}</p>
+      <!-- The list and the fine print below are a CONSENT NOTICE and a
+           non-affiliation statement. They stay in English in every language
+           until a human translator signs for them — app/i18n/GLOSSARY.md:
+           consent wording is never machine-translated. -->
+      <ul lang="en">
         <li><i>&#9679;</i><span><b>They will see the reports you file from now on.</b>
           Which polling unit, and when. Your reports from before today stay yours.</span></li>
         <li><i>&#9679;</i><span><b>They cannot see anything the public cannot.</b>
@@ -114,14 +148,16 @@ async function main() {
         <li><i>&#9679;</i><span><b>You can leave whenever you want</b>, and every
           group you are in is listed under <a class="plain" href="my-groups.html">Your groups</a>.</span></li>
       </ul>
-      <button id="go">${signedIn() ? 'Join ' + esc(g.name) : 'Sign in to join'}</button>
-      <p class="fine">Hawkeye is not run by any party, candidate or campaign, and joining a
+      <button id="go">${signedIn() ? T('join.button-join', 'Join {name}', { name: esc(g.name) }) : T('join.button-sign-in', 'Sign in to join')}</button>
+      <p class="fine" lang="en">Hawkeye is not run by any party, candidate or campaign, and joining a
         group does not change how your reports are checked or counted.
         <a class="plain" href="privacy.html">Privacy</a> &middot;
         <a class="plain" href="terms.html">Terms</a></p>
     </div>`;
+  $('go').addEventListener('click', () => go(g));
+}
 
-  $('go').addEventListener('click', async () => {
+async function go(g) {
     if (!signedIn()) {
       /* The query form, NOT the /join/<token> path we arrived on. app.js only
          honours `next` matching `<page>.html[?query]` — a deliberate guard
@@ -133,7 +169,7 @@ async function main() {
       return location.assign('/observe.html?intent=signin&next=' + encodeURIComponent(back));
     }
     $('go').disabled = true;
-    $('go').textContent = 'Joining…';
+    $('go').textContent = T('join.joining', 'Joining…');
     const r = await fetch('/api/join/' + encodeURIComponent(token), {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') },
@@ -141,20 +177,24 @@ async function main() {
     const b = await r.json().catch(() => ({}));
     if (!r.ok) {
       $('go').disabled = false;
-      $('go').textContent = 'Try again';
-      return alert(b.error === 'invite_expired' ? 'That invitation has expired.' : 'Could not join just now.');
+      $('go').textContent = T('join.try-again', 'Try again');
+      return alert(b.error === 'invite_expired' ? T('join.alert-expired', 'That invitation has expired.') : T('join.alert-failed', 'Could not join just now.'));
     }
-    $('jn').innerHTML = `<div class="card bad">
-      <h1>${b.already ? 'You are already with ' + esc(g.name) : 'You are in'}</h1>
-      <p>${b.already ? '' : esc(g.name) + ' can now see the reports you file from here on.'}
-        ${b.proposed_pu ? 'They have your saved polling unit (<span class="num">' + esc(b.proposed_pu) + '</span>) as a starting point, and may confirm or change it.' : ''}</p>
-      <p style="margin-top:14px"><a class="plain" href="observe.html">Report a result</a> &middot;
-         <a class="plain" href="my-groups.html">Your groups</a></p>
-    </div>`;
-  });
+    paint(() => showJoined(g, b));
 }
 
-main().catch(() => bad('Something went wrong', 'Check your connection and try the link again.'));
+function showJoined(g, b) {
+  const name = esc(g.name);
+  $('jn').innerHTML = `<div class="card bad">
+    <h1>${b.already ? T('join.already-with', 'You are already with {name}', { name }) : T('join.you-are-in', 'You are in')}</h1>
+    <p>${b.already ? '' : T('join.can-now-see', '{name} can now see the reports you file from here on.', { name })}
+      ${b.proposed_pu ? T('join.saved-unit', 'They have your saved polling unit (<span class="num">{pu}</span>) as a starting point, and may confirm or change it.', { pu: esc(b.proposed_pu) }) : ''}</p>
+    <p style="margin-top:14px"><a class="plain" href="observe.html">${T('observe.report-a-result', 'Report a result')}</a> &middot;
+       <a class="plain" href="my-groups.html">${T('my-groups.your-groups', 'Your groups')}</a></p>
+  </div>`;
+}
+
+main().catch(() => bad('join.went-wrong-title', 'Something went wrong', 'join.check-connection', 'Check your connection and try the link again.'));
 </script>
 </body>
 </html>

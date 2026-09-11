@@ -56,7 +56,7 @@
         // the server offers now; and a queue written before direct upload
         // existed still flushes, because it carries the blobs either way.
         let directBody = null;
-        if (window.HawkeyeDirect && it.fields.imageSha256 && it.fields.venueImageSha256) {
+        if (!it.url && window.HawkeyeDirect && it.fields.imageSha256 && it.fields.venueImageSha256) {
           const ok = await window.HawkeyeDirect.upload({
             base,
             token,
@@ -67,15 +67,17 @@
         }
         const form = new FormData();
         for (const [k, v] of Object.entries(it.fields)) form.set(k, v);
-        form.set('photo', it.sheet, 'ec8a.jpg');
-        form.set('venuePhoto', it.venue, 'venue.jpg');
+        // Collation and incident entries carry their own endpoint and file list
+        // (incident media repeat under one name, so append); a unit report
+        // carries its two photos as sheet/venue.
+        if (it.files) for (const [name, blob, filename] of it.files) form.append(name, blob, filename);
+        else { form.set('photo', it.sheet, 'ec8a.jpg'); form.set('venuePhoto', it.venue, 'venue.jpg'); }
         let resp;
         try {
-          resp = await fetch(base + '/api/submissions', {
+          const auth = { authorization: 'Bearer ' + token, ...(it.deviceId ? { 'x-device-id': it.deviceId } : {}) };
+          resp = await fetch(base + (it.url || '/api/submissions'), {
             method: 'POST',
-            headers: directBody
-              ? { authorization: 'Bearer ' + token, 'content-type': 'application/json' }
-              : { authorization: 'Bearer ' + token },
+            headers: directBody ? { ...auth, 'content-type': 'application/json' } : auth,
             body: directBody || form,
           });
         } catch { break; } // still offline — stop and keep the rest for next time
@@ -97,7 +99,7 @@
         else if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) { // unfixable -> drop, and SAY so
           await Outbox.remove(it.id);
           const f = it.fields || {};
-          fresh.push({ label: [f.puCode, f.contest].filter(Boolean).join(' \u00b7 ') || 'report',
+          fresh.push({ label: it.label || [f.puCode, f.contest].filter(Boolean).join(' \u00b7 ') || 'report',
             queuedAt: it.queuedAt, droppedAt: Date.now(), why: refusal(resp.status, body) });
         }
         // 5xx / 429 -> leave queued, retry later

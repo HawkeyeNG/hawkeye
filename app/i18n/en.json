@@ -1040,5 +1040,8 @@
   "my-groups.send-failed": "Could not send that just now.",
   "my-groups.leave-confirm": "Leave {name}? They will stop seeing which reports are yours. You will need a fresh invite to rejoin.",
   "my-groups.leave-failed": "Could not leave just now.",
-  "my-groups.load-failed": "Could not load your groups. Check your connection and try again."
+  "my-groups.load-failed": "Could not load your groups. Check your connection and try again.",
+  "join.title": "Hawkeye — Join a group",
+  "my-groups.title": "Hawkeye — Your groups",
+  "situation-room.title": "Hawkeye — Situation Room"
 }

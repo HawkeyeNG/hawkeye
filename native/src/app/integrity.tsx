@@ -459,7 +459,7 @@ export default function Integrity() {
                     onPress={() => WebBrowser.openBrowserAsync(d.detail.docUrl!)}
                   >
                     <Text className="text-xs font-bold text-good-ink">
-                      View INEC&apos;s sheet ↗
+                      {i18nT('n.app.integrity.view-inec-s-sheet')}
                     </Text>
                   </Pressable>
                 ) : null}
@@ -489,7 +489,7 @@ export default function Integrity() {
             </Text>
           </Text>
           <Text className="pt-0.5 text-xs text-muted">
-            First digit of every party count vs Benford&apos;s expected curve (amber line).
+            {i18nT('n.app.integrity.first-digit-of-every-party-count')}
           </Text>
           {benford?.firstDigit ? (
             <DigitBars items={benford.firstDigit} n={benford.nFirst} />
@@ -511,7 +511,7 @@ export default function Integrity() {
         <SectionLabel text="INEC IReV Cross-Check" />
         <View className="flex-row items-center pb-2">
           <Text className="flex-1 text-sm text-muted">
-            The crowd&apos;s count, checked against INEC&apos;s own uploaded sheet.
+            {i18nT('n.app.integrity.the-crowd-s-count-checked-against')}
           </Text>
           <InfoDot
             title={i18nT('n.app.integrity.inec-irev-cross-check')}

@@ -538,9 +538,7 @@ const NearbyRow = ({
       {selected && tier === 'approx' ? (
         <View className="border-t border-emerald-100/30 px-4 pb-3 pt-2">
           <Text className="text-xs text-emerald-100">
-            Hawkeye knows this unit&apos;s approximate area, not where it stands. You can report
-            from here — the report just will not be location-verified until observers standing at
-            the unit map it.
+            {i18nT('n.app.report.result.hawkeye-knows-this-unit-s-approximate')}
           </Text>
           {/* Where the number goes when the row above could not carry it: the
               area exists, but its centre is not the dot, and only a sentence
@@ -2335,7 +2333,7 @@ export default function ReportResult() {
               className={`items-center rounded-2xl py-4 ${busy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
             >
               {busy ? <ActivityIndicator color={BRAND.gold} /> : (
-                <Text className="text-base font-bold text-hawk-gold">Sign &amp; submit</Text>
+                <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.report.result.sign-submit')}</Text>
               )}
             </Pressable>
             <Pressable className="mt-3 items-center" onPress={() => setStep('votes')} disabled={busy}>

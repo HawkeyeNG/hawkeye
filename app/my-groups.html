@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#00482b" />
-  <title>Hawkeye — Your groups</title>
+  <title data-i18n="my-groups.title">Hawkeye — Your groups</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
@@ -82,7 +82,9 @@ const T = (k, en, vars) => {
   return s;
 };
 let repaint = () => {};
-window.addEventListener('hawkeye-lang', () => repaint());
+/* ON `document`, NOT `window` — i18n.js dispatches a non-bubbling CustomEvent
+   there, so a window listener never hears it. See join.html. */
+document.addEventListener('hawkeye-lang', () => repaint());
 
 let GROUPS = [];
 

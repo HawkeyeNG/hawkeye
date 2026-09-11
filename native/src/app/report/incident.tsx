@@ -485,11 +485,11 @@ export default function ReportIncident() {
           const mb = (size / 1048576).toFixed(1);
           tooBig = m.type === 'video'
             ? {
-              title: 'That video is too large',
+              title: i18nT('n.app.report.incident.that-video-is-too-large'),
               body: i18nT('n.app.report.incident.it-is-mb-and-the-limit', { v0: mb, v1: Math.round(VIDEO_BYTES / 1048576), v2: MAX_VIDEO_SECONDS }),
             }
             : {
-              title: 'That photo is too large',
+              title: i18nT('n.app.report.incident.that-photo-is-too-large'),
               body: i18nT('n.app.report.incident.it-is-mb-and-the-limit-2', { v0: mb, v1: Math.round(PHOTO_BYTES / 1048576) }),
             };
           continue;
@@ -1097,15 +1097,15 @@ export default function ReportIncident() {
           });
         } catch (e) {
           setLine(
-            humanError(e, 'Upload failed and nothing was saved. Nothing was sent.'),
+            humanError(e, i18nT('n.app.report.incident.upload-failed-and-nothing-was-saved')),
           );
           return;
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
-          title: 'Saved to send later',
+          title: i18nT('n.app.report.incident.saved-to-send-later'),
           icon: 'clock',
-          line: 'Saved on this phone. It sends itself once you are back online.',
+          line: i18nT('n.app.report.incident.saved-on-this-phone-it-sends'),
         });
         return;
       }
@@ -1118,9 +1118,9 @@ export default function ReportIncident() {
       if (res.ok && body.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
-          title: 'Incident reported',
+          title: i18nT('n.app.report.incident.incident-reported'),
           icon: 'check',
-          line: 'Your report is under review. If accepted, it appears on the public incident log — your identity stays your observer ID only.',
+          line: i18nT('n.app.report.incident.your-report-is-under-review-if'),
         });
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -1506,8 +1506,7 @@ export default function ReportIncident() {
                   {i18nT('n.app.report.incident.this-is-not-tied-to-a')}
                 </Text>
                 <Text className="text-xs text-muted">
-                  Filed with no unit and no state. Reviewers still see it; unit watchers are not
-                  alerted, and it will not appear under any state on the public log.
+                  {i18nT('n.app.report.incident.filed-with-no-unit-and-no')}
                 </Text>
               </View>
             </Pressable>

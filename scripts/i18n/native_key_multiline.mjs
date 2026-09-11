@@ -65,8 +65,21 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g
 // Same question native_extract asks, minus the newline rule: this text is
 // multi-line by definition and is normalised before it is judged.
 const CODEY = /[;=(){}[\]`$<>]|&&|\|\||=>|\breturn\b|\bconst\b/;
-const prose = (t) => t.length >= 8 && /\s/.test(t) && /^[A-Za-z"'“‘]/.test(t) && !CODEY.test(t)
-  && !/^[A-Z0-9 _-]+$/.test(t) && !/https?:|\.(tsx?|png|jpg|mp4)\b/.test(t);
+/**
+ * JSX writes an apostrophe as `&apos;` and an ampersand as `&amp;`, and every
+ * entity ends in a SEMICOLON — which the code test above reads as a statement,
+ * so 16 plain sentences ("View INEC&apos;s sheet") were refused as code. Judge
+ * the DECODED sentence, and store the decoded form: that is what a reader sees
+ * and what a translator must be handed. The inverse check still puts the raw
+ * block back, entities and all, so the file must still restore byte-for-byte.
+ */
+const ENTITIES = { '&apos;': '’', '&amp;': '&', '&quot;': '"', '&nbsp;': ' ', '&mdash;': '—', '&ndash;': '–', '&hellip;': '…', '&lt;': '<', '&gt;': '>' };
+const decode = (t) => t.replace(/&(?:apos|amp|quot|nbsp|mdash|ndash|hellip|lt|gt);/g, (m) => ENTITIES[m]);
+const prose = (raw) => {
+  const t = decode(raw);
+  return t.length >= 8 && /\s/.test(t) && /^[A-Za-z"'“‘]/.test(t) && !CODEY.test(t)
+    && !/^[A-Z0-9 _-]+$/.test(t) && !/https?:|\.(tsx?|png|jpg|mp4)\b/.test(t);
+};
 
 const inComment = (src, i) => {
   const line = src.slice(src.lastIndexOf('\n', i) + 1, i);
@@ -93,7 +106,10 @@ function keyFile(file, src) {
   const used = new Set();
 
   const out = src.replace(/(>\n)([ \t]*)([^<>{}\n][^<>{}]*?)(\n[ \t]*<)/g, (m, gt, indent, body, tail, offset) => {
-    const text = body.replace(/\s+/g, ' ').trim();
+    // DECODED, because i18nT returns a plain string: a catalogue holding
+    // `&apos;` would render those six characters on screen, where JSX had been
+    // showing an apostrophe. The raw block is still what the inverse restores.
+    const text = decode(body.replace(/\s+/g, ' ').trim());
     if (!prose(text) || NEVER.includes(text) || inComment(src, offset)) return m;
     let key = byText.get(text);
     if (!key) {

@@ -1094,6 +1094,15 @@ function renderTeam() {
       <div class="sr-head"><b class="num">${n(count('unassigned') + count('declined'))}</b><span>No unit set</span></div>
     </div>
     ${managersHtml()}
+    ${(() => {
+      /* Pointed out ONCE at the top, not only per row: in a roster of hundreds a
+         marker on row 214 is not pointing anything out. */
+      const doubled = new Set(t.members.filter((m) => m.shared && m.assigned).map((m) => m.assigned.pu_code));
+      return doubled.size ? `<div class="sr-note" style="border-left-color:var(--wait)">
+        <strong>${n(doubled.size)} unit${doubled.size === 1 ? ' has' : 's have'} more than one observer down for it.</strong>
+        One unit covered twice usually means another unit is not covered at all. They are marked
+        &#9650; below &mdash; use <em>Change unit</em> to move someone, if you see fit.</div>` : '';
+    })()}
     ${proposed ? `<div class="sr-bar" style="border:0;padding:0 0 10px">
       <span class="meta">${n(proposed)} observer${proposed === 1 ? '' : 's'} joined with a unit already saved.</span>
       <div class="spacer"></div>
@@ -1179,7 +1188,7 @@ function memberRow(m) {
   return `<tr>
     <td>${esc(m.label || 'Observer #' + m.observer_id)}${m.role ? ` <span class="pill idle" style="font-size:.68rem">${esc(m.role)}</span>` : ''}${m.label ? `<span class="sr-sub num">#${m.observer_id}</span>` : ''}</td>
     <td><span class="pill ${s.cls}"><i>${s.glyph}</i>${s.word}</span></td>
-    <td>${place(m.assigned)}</td>
+    <td>${place(m.assigned)}${m.shared ? `<span class="sr-sub" style="color:var(--wait)">&#9650; ${m.shared} other${m.shared === 1 ? '' : 's'} down for this unit too</span>` : ''}</td>
     <td>${place(m.reported)}${mismatched ? '<span class="sr-sub" style="color:var(--off)">not the assigned unit</span>' : ''}</td>
     <td>${actionsHtml(m)}</td>
   </tr>`;
@@ -1203,6 +1212,9 @@ function actionsHtml(m) {
     `<button class="sr-btn mini" data-act="${act}" data-obs="${m.observer_id}" ${extra}>${label}</button>`;
   let main = '';
   if (m.status === 'mismatch' && m.reported) main = btn('move', 'Move here', `data-pu="${esc(m.reported.pu_code)}"`);
+  // A shared unit outranks Confirm: confirming one of two people down for the
+  // same unit would lock in the very collision the banner above points out.
+  else if (m.shared) main = btn('set', 'Change unit');
   else if (m.assign_state === 'proposed' && m.assigned) main = btn('confirm', 'Confirm', `data-pu="${esc(m.assigned.pu_code)}"`);
   else if (!m.assigned) main = btn('set', 'Set unit');
   else main = btn('clear', 'Clear');

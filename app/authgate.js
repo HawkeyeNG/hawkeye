@@ -43,5 +43,13 @@
 
   // Gated → sign-in, remembering the page they were headed for (app.js honours ?next).
   var here = location.pathname.replace(/^.*\//, '') + location.search;
+  // A situation room lives at /room/<slug>, whose last segment is the slug and
+  // not a page — and app.js only honours `next` shaped like `<page>.html`, a
+  // guard against sign-in becoming an open redirect. Passed through as-is, the
+  // slug fails that guard and the manager lands on the homepage instead of the
+  // room they were opening. Re-expressed in the shape the guard accepts, rather
+  // than loosening the guard for one route.
+  var room = location.pathname.match(/^\/room\/([a-z0-9-]+)\/?$/i);
+  if (room) here = 'situation-room.html?room=' + room[1];
   location.replace('observe.html?intent=signin&next=' + encodeURIComponent(here));
 })();

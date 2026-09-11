@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="styles.css?v=175" />
   <script src="native.js?v=116"></script>
   <meta name="robots" content="noindex" />
-  <script src="authgate.js?v=2"></script>
+  <script src="authgate.js?v=3"></script>
 <style>
 /* Situation room — an operator console, not a reading page. Everything below is
    scoped to .sr so it cannot leak into the public pages that share styles.css.
@@ -285,7 +285,8 @@ async function api(path, opts = {}) {
     },
   });
   const body = await res.json().catch(() => ({}));
-  if (res.status === 401) { location.replace('observe.html?intent=signin&next=situation-room.html'); throw new Error('signed out'); }
+  if (res.status === 401) { location.replace('observe.html?intent=signin&next=' + encodeURIComponent(
+    URL_SLUG ? 'situation-room.html?room=' + URL_SLUG : 'situation-room.html')); throw new Error('signed out'); }
   return { status: res.status, body };
 }
 
@@ -1517,7 +1518,11 @@ async function loadGroup() {
 let LOGOS = {};
 
 /* The slug in the address bar, if we arrived at /room/<slug>. */
-const URL_SLUG = (location.pathname.match(/^\/room\/([^/]+)/) || [])[1] || '';
+/* ?room= is how sign-in hands the room back: the /room/<slug> path cannot
+   survive app.js's `next` guard, so authgate re-expresses it this way and
+   syncUrl() below restores the pretty address once the room loads. */
+const URL_SLUG = (location.pathname.match(/^\/room\/([^/]+)/) || [])[1]
+  || new URLSearchParams(location.search).get('room') || '';
 
 /**
  * Keep the address bar pointing at the room being looked at.

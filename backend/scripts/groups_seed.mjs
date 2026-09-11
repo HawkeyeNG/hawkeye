@@ -65,8 +65,14 @@ if (process.argv.includes('--clean')) {
 purge();
 
 const mgr = mk('mgr');
-const gid = Number(db.prepare('INSERT INTO campaign_groups (name, kind, contest, scope, party, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-  .run(GROUP, 'campaign', 'PRES', 'Lagos', 'PDP', mgr, now).lastInsertRowid);
+// The slug is written HERE because this insert bypasses POST /groups, where
+// slugs are minted, and the backfill in routes/groups.js only runs at server
+// boot. A room seeded under a running server otherwise has no address until the
+// next restart — which reads as "that room is not one you manage", exactly the
+// error a broken sign-in return would give, and cost a debugging round to tell
+// apart.
+const gid = Number(db.prepare('INSERT INTO campaign_groups (name, kind, contest, scope, party, slug, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+  .run(GROUP, 'campaign', 'PRES', 'Lagos', 'PDP', 'demo-campaign-2027', mgr, now).lastInsertRowid);
 db.prepare('INSERT INTO group_managers (group_id, observer_id, role, created_at) VALUES (?, ?, ?, ?)').run(gid, mgr, 'owner', now);
 db.prepare('INSERT INTO group_tokens (token, group_id, created_by, expires_at, created_at) VALUES (?, ?, ?, ?, ?)')
   .run('demo-invite-token', gid, mgr, now + 2592000000, now);

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { db, contests, contestCodes } from '../db.js';
 import { publicDeclarations } from '../services/declarations.js';
 import { LEVEL_COLS, boardLevelFor, contestGate, reportingOpen, reportingOpensAt } from '../services/scope.js';
+import { tallyResults } from '../services/tally.js';
 
 export const nationalRouter = Router();
 
@@ -146,25 +147,8 @@ nationalRouter.get('/national/:contest', (req, res) => {
     : db.prepare(`SELECT DISTINCT ${col} AS r FROM polling_units WHERE ${col} IS NOT NULL AND ${col} != ''${gate.sqlBare} ORDER BY r`).all(...gate.params)
   ).map((x) => x.r);
 
-  const national = {};
-  const regions = {};
-  let inDispute = 0;
-  for (const row of rows) {
-    // Disputed results (open high-severity flag / open or upheld case) are
-    // excluded from the headline tally — shown separately and judged by the
-    // crowd on the public docket (docs/CROWD-ARBITRATION.md).
-    if (row.disputed) { inDispute++; continue; }
-    const key = row.region || 'Unknown';
-    regions[key] ??= { votes: {}, unitsReporting: 0, unitsVerified: 0 };
-    regions[key].unitsReporting++;
-    if (row.status === 'verified') regions[key].unitsVerified++;
-    for (const v of JSON.parse(row.votes_json)) {
-      if (!v.count) continue;
-      national[v.party] = (national[v.party] || 0) + v.count;
-      regions[key].votes[v.party] = (regions[key].votes[v.party] || 0) + v.count;
-    }
-  }
-
+  // Counted in services/tally.js, shared with the situation room so the two
+  // cannot disagree — the disputed-exclusion rule lives there.
   res.json({
     contest,
     level,
@@ -173,22 +157,6 @@ nationalRouter.get('/national/:contest', (req, res) => {
     scope: state ? { state } : null,
     subunits,
     updatedAt: Date.now(),
-    unitsReporting: rows.length - inDispute,
-    inDispute,
-    national: Object.entries(national).map(([party, votes]) => ({ party, votes })).sort((a, b) => b.votes - a.votes),
-    regions: Object.entries(regions).map(([region, s]) => {
-      const ranked = Object.entries(s.votes).sort((a, b) => b[1] - a[1]);
-      const top = ranked[0]?.[1];
-      // every party tied at the top (usually 1; >1 = exact tie — the map splits the shape)
-      const leaders = top === undefined ? [] : ranked.filter(([, v]) => v === top).map(([p]) => p);
-      return {
-        region,
-        leader: leaders[0] ?? null,
-        leaders,
-        votes: s.votes,
-        unitsReporting: s.unitsReporting,
-        unitsVerified: s.unitsVerified,
-      };
-    }),
+    ...tallyResults(rows), // unitsReporting, inDispute, national, regions — same keys, same order
   });
 });

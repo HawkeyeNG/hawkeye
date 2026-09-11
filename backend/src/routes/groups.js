@@ -31,6 +31,7 @@ import { config } from '../config.js';
 import { notifyMaster, notifyObserverId } from '../services/notify.js';
 import { pushNote } from '../services/notifications.js';
 import { requireObserver } from './observers.js';
+import { tallyResults } from '../services/tally.js';
 
 export const groupsRouter = Router();
 
@@ -813,6 +814,42 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
       watched: wMap.get(r.key) || 0,                     // unreported, saved by a non-member
     })),
   });
+});
+
+/**
+ * Party totals for this room's race — or, with ?mine=1, for the reader's own
+ * coordinator area.
+ *
+ * Counted by services/tally.js, the SAME function the public board uses, so
+ * the two cannot disagree, disputed-exclusion rule included. It exists because
+ * the public board can only crop to a state: a Senate or Reps room was shown
+ * its contest's figure across the whole country, and an LGA or ward
+ * coordinator had no number for their own patch. Public results only, totals
+ * only.
+ */
+groupsRouter.get('/groups/:id/tally', requireObserver, requireManager, (req, res) => {
+  const g = req.group;
+  const where = ['r.contest = ?'];
+  const params = [g.contest];
+  if (g.scope) {
+    const col = scopeColumn(g.contest);
+    where.push(`pu.${col} = ?`);
+    params.push(g.scope);
+    if (col !== 'state') {
+      const home = homeState(col, g.scope);
+      if (home) { where.push('pu.state = ?'); params.push(home); }
+    }
+  }
+  const sc = req.query.mine ? scopeClause(req.manager) : { sql: '', params: [] };
+  const rows = db
+    .prepare(
+      `SELECT r.votes_json, r.status, r.disputed
+         FROM results r JOIN polling_units pu ON pu.pu_code = r.pu_code
+        WHERE ${where.join(' AND ')}${sc.sql}`,
+    )
+    .all(...params, ...sc.params);
+  const { unitsReporting, inDispute, national } = tallyResults(rows);
+  res.json({ contest: g.contest, unitsReporting, inDispute, national });
 });
 
 /**

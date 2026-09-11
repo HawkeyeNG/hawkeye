@@ -122,7 +122,7 @@ export function ReportContent({
               </Pressable>
             </View>
             <Text className="pb-3 text-sm text-muted">
-              Tell us what is wrong with it. A moderator reviews every report.
+              {i18nT('n.components.report-content.tell-us-what-is-wrong-with')}
             </Text>
 
             <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">

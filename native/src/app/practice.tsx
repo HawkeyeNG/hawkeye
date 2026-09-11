@@ -1130,11 +1130,10 @@ export default function Practice() {
       <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="moon" size={28} color={ui.tint.good.ink} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
-          Practice Is Closed
+          {i18nT('n.app.practice.practice-is-closed')}
         </Text>
         <Text className="pt-1 text-center text-sm text-muted">
-          A fresh practice run reopens after the current election, so you can prepare for the next
-          one.
+          {i18nT('n.app.practice.a-fresh-practice-run-reopens-after')}
         </Text>
         <Pressable
           className="mt-5 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
@@ -1355,15 +1354,14 @@ export default function Practice() {
               </Pressable>
             </View>
             <Text className="pb-3 text-xs text-muted">
-              Kept per device — practice never asks you to sign in. These sit on the practice
-              chain, never the public ledger.
+              {i18nT('n.app.practice.kept-per-device-practice-never-asks')}
             </Text>
             <ScrollView>
               {history === null ? (
                 <ActivityIndicator color={ui.tint.good.ink} />
               ) : history.length === 0 ? (
                 <Text className="pb-4 text-sm text-muted">
-                  No practice runs yet on this phone.
+                  {i18nT('n.app.practice.no-practice-runs-yet-on-this')}
                 </Text>
               ) : (
                 history.map((r) => (
@@ -1401,7 +1399,7 @@ export default function Practice() {
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4">
             <Text className="pb-1 text-xl font-bold text-ink">{i18nT('n.app.practice.which-polling-unit')}</Text>
             <Text className="pb-3 text-sm text-muted">
-              Practise from the unit you would report at, or skip and use a sample.
+              {i18nT('n.app.practice.practise-from-the-unit-you-would')}
             </Text>
 
             <Pressable
@@ -1596,7 +1594,7 @@ export default function Practice() {
                     ))}
                     {units.length === 0 ? (
                       <Text className="pt-2 text-sm text-muted">
-                        No units in the register for this ward yet.
+                        {i18nT('n.app.report.result.no-units-in-the-register-for')}
                       </Text>
                     ) : null}
                   </>
@@ -1635,9 +1633,7 @@ export default function Practice() {
             ) : null}
             {!tooFar && !envelopeGate ? (
               <Text className="pb-2 text-xs text-muted">
-                A real report is only accepted at the polling unit itself. This step checks the
-                same way, so choosing a unit behaves as it will on the day — the practice run
-                itself always completes.
+                {i18nT('n.app.practice.a-real-report-is-only-accepted')}
               </Text>
             ) : null}
             <Pressable
@@ -1845,11 +1841,10 @@ export default function Practice() {
               <Feather name="check" size={28} color={BRAND.gold} />
             </View>
             <Text className="pt-4 text-center text-lg font-bold text-ink">
-              Practice Complete
+              {i18nT('n.app.practice.practice-complete')}
             </Text>
             <Text className="pt-2 text-center text-sm text-muted">
-              That is exactly how you report a result on election day — except then it is signed,
-              GPS-checked and chained into the public ledger.
+              {i18nT('n.app.practice.that-is-exactly-how-you-report')}
             </Text>
             <View className="mt-4 w-full rounded-xl bg-card px-4 py-2">
               <Text className="font-mono text-xs text-muted">{done.entryHash}</Text>

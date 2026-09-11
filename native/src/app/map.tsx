@@ -380,7 +380,7 @@ export default function MapScreen() {
         ) : null}
         {mode === 'results' ? (
           <Text className="pt-2 text-[11px] text-faint">
-            Crowd-reported totals, excluding disputed results.
+            {i18nT('n.app.map.crowd-reported-totals-excluding-disputed-results')}
           </Text>
         ) : (
           <Text className="pt-2 text-[11px] text-faint">
@@ -393,7 +393,7 @@ export default function MapScreen() {
         {names.length ? (
           <>
             <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-              Every state
+              {i18nT('n.app.map.every-state')}
             </Text>
             <View className="flex-row flex-wrap">
               {[...names].sort().map((name) => {

@@ -888,7 +888,7 @@ export default function MapUnit() {
       <View className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={BRAND.leaf} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
-          Sign in to map a polling unit
+          {i18nT('n.app.map-unit.sign-in-to-map-a-polling')}
         </Text>
         <Pressable
           className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
@@ -1004,7 +1004,7 @@ export default function MapUnit() {
         {/* The instruction stays visible — it is what to do, not why. */}
         <View className="flex-row items-center pb-3">
           <Text className="flex-1 text-sm text-muted">
-            Stand at the polling unit and record one GPS fix.
+            {i18nT('n.app.map-unit.stand-at-the-polling-unit-and')}
           </Text>
           <InfoDot
             title={i18nT('n.app.map-unit.why-mapping-units-matters')}
@@ -1015,7 +1015,7 @@ export default function MapUnit() {
         {stats ? (
           <View className="mb-3 rounded-2xl bg-card px-4 py-3">
             <Text className="pb-2 text-[11px] font-bold uppercase tracking-wider text-faint">
-              Nationwide mapping coverage
+              {i18nT('n.app.map-unit.nationwide-mapping-coverage')}
             </Text>
             <View className="flex-row">
               <StatCell
@@ -1058,7 +1058,7 @@ export default function MapUnit() {
                   unit?.pu_code === saved.pu_code ? 'text-emerald-100' : 'text-faint'
                 }`}
               >
-                Your polling unit
+                {i18nT('n.app.map-unit.your-polling-unit')}
               </Text>
               <Text
                 className={`text-base font-semibold ${
@@ -1257,7 +1257,7 @@ export default function MapUnit() {
                 ))}
                 {units.length === 0 ? (
                   <Text className="pt-2 text-sm text-muted">
-                    No units in the register for this ward yet.
+                    {i18nT('n.app.report.result.no-units-in-the-register-for')}
                   </Text>
                 ) : null}
               </>
@@ -1321,7 +1321,7 @@ export default function MapUnit() {
               <ActivityIndicator color={BRAND.gold} />
             ) : (
               <Text className="text-base font-bold text-hawk-gold">
-                I am standing here — record fix
+                {i18nT('n.app.map-unit.i-am-standing-here-record-fix')}
               </Text>
             )}
           </Pressable>

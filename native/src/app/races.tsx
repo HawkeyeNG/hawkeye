@@ -336,8 +336,7 @@ export default function Races() {
               {govStates.off.length ? (
                 <>
                   <Text className="pt-1 text-[11px] text-muted">
-                    Off-cycle — these states vote for governor separately, and Hawkeye has no date
-                    for them yet
+                    {i18nT('n.app.races.off-cycle-these-states-vote-for')}
                   </Text>
                   {stateChips(govStates.off)}
                 </>
@@ -384,7 +383,7 @@ export default function Races() {
             the two sat one line apart. The subtitle is what this space is for. */}
         <View className="flex-row items-center">
           <Text className="flex-1 text-sm text-muted">
-            Pick a race to follow, report on, or verify.
+            {i18nT('n.app.races.pick-a-race-to-follow-report')}
           </Text>
           <InfoDot
             title={i18nT('n.app.races.how-races-are-grouped')}

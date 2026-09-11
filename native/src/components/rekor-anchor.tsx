@@ -206,7 +206,7 @@ export function RekorAnchor({
       <View className="flex-row items-center">
         <Feather name={icon} size={13} color={tint} />
         <Text className="pl-2 text-[11px] font-bold uppercase tracking-wider text-faint">
-          Public anchor
+          {i18nT('n.components.rekor-anchor.public-anchor')}
         </Text>
       </View>
 

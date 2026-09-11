@@ -635,14 +635,13 @@ export function CaptureCamera({
                 <View className="mt-2 flex-row items-center rounded-xl bg-white/10 px-3 py-2">
                   <ActivityIndicator size="small" color="#fcd34d" />
                   <Text className="pl-2 text-xs font-semibold text-neutral-200">
-                    Reading the sheet…
+                    {i18nT('n.components.capture-camera.reading-the-sheet')}
                   </Text>
                 </View>
               ) : read === null ? (
                 <View className="mt-2 rounded-xl bg-amber-400/15 px-3 py-2">
                   <Text className="text-xs font-semibold text-amber-300">
-                    Could not read this sheet on this phone. Send it anyway if it looks clear —
-                    the server reads it too.
+                    {i18nT('n.components.capture-camera.could-not-read-this-sheet-on')}
                   </Text>
                 </View>
               ) : read.numericLines >= 3 ? (
@@ -662,14 +661,14 @@ export function CaptureCamera({
                     </Text>
                   ) : (
                     <Text className="pt-1 text-xs text-emerald-100/80">
-                      No party totals matched — you will enter them yourself.
+                      {i18nT('n.components.capture-camera.no-party-totals-matched-you-will')}
                     </Text>
                   )}
                 </View>
               ) : (
                 <View className="mt-2 rounded-xl bg-amber-400/15 px-3 py-2">
                   <Text className="text-xs font-semibold text-amber-300">
-                    Little text detected — check focus and glare, then retake.
+                    {i18nT('n.components.capture-camera.little-text-detected-check-focus-and')}
                   </Text>
                 </View>
               )
@@ -864,7 +863,7 @@ export function CaptureCamera({
               10.49 -> 10.81, so nothing is lost at the other end. */}
           <View className="absolute inset-x-0 top-2 items-center">
             <Text className="rounded-full bg-black/75 px-3 py-1 text-[11px] font-semibold text-hawk-gold">
-              Fill this frame top to bottom — closer reads sharper
+              {i18nT('n.components.capture-camera.fill-this-frame-top-to-bottom')}
             </Text>
           </View>
         </View>

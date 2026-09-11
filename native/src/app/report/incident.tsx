@@ -1149,7 +1149,7 @@ export default function ReportIncident() {
       <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="lock" size={28} color={BRAND.leaf} />
         <Text className="pt-3 text-center text-base font-semibold text-ink">
-          Sign in to report an incident
+          {i18nT('n.app.report.incident.sign-in-to-report-an-incident')}
         </Text>
         <Pressable
           className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
@@ -1463,16 +1463,14 @@ export default function ReportIncident() {
                 />
                 <View className="flex-1 pl-3">
                   <Text className="text-sm font-semibold text-ink">
-                    I am at my own polling unit
+                    {i18nT('n.app.report.incident.i-am-at-my-own-polling')}
                   </Text>
                   <Text className="text-xs text-muted">
                     {savedUnit.name ?? savedUnit.pu_code} ({savedUnit.pu_code})
                   </Text>
                   {savedUnit.name ? null : (
                     <Text className="pt-1 text-xs font-semibold text-warn-ink">
-                      This code is not in the register, so the report would carry the code but no
-                      state, and no unit watchers would be alerted. Use “Find units near me” or
-                      the register below if you can.
+                      {i18nT('n.app.report.incident.this-code-is-not-in-the')}
                     </Text>
                   )}
                 </View>
@@ -1505,7 +1503,7 @@ export default function ReportIncident() {
               />
               <View className="flex-1 pl-3">
                 <Text className="text-sm font-semibold text-ink">
-                  This is not tied to a polling unit
+                  {i18nT('n.app.report.incident.this-is-not-tied-to-a')}
                 </Text>
                 <Text className="text-xs text-muted">
                   Filed with no unit and no state. Reviewers still see it; unit watchers are not
@@ -1589,7 +1587,7 @@ export default function ReportIncident() {
                     ))}
                     {regUnits.length === 0 ? (
                       <Text className="pt-2 text-sm text-muted">
-                        No units in the register for this ward yet.
+                        {i18nT('n.app.report.result.no-units-in-the-register-for')}
                       </Text>
                     ) : null}
                   </>
@@ -1752,8 +1750,7 @@ export default function ReportIncident() {
               </Text>
             ) : (
               <Text className="pt-3 text-xs text-muted">
-                Filed without a polling unit, so it carries no state and no unit watchers are
-                alerted. Reviewers still see it.
+                {i18nT('n.app.report.incident.filed-without-a-polling-unit-so')}
               </Text>
             )}
 
@@ -1763,8 +1760,7 @@ export default function ReportIncident() {
                 moment of submitting — and the footer is fixed space it was
                 taking straight off the description box's scroll height. */}
             <Text className="pt-2 text-xs text-muted">
-              Reports are reviewed before publication, and your phone number is never attached —
-              a published report carries your observer ID only.
+              {i18nT('n.app.report.incident.reports-are-reviewed-before-publication-and')}
             </Text>
           </ScrollView>
         )}
@@ -1800,7 +1796,7 @@ export default function ReportIncident() {
           <View className="mb-3 flex-row items-center rounded-2xl border border-caution-ink/30 bg-caution px-3 py-2.5">
             <Feather name="alert-triangle" size={18} color={ui.tint.caution.ink} />
             <Text className="flex-1 pl-2.5 text-xs font-semibold text-caution-ink">
-              Your safety comes first — never confront anyone to get footage.
+              {i18nT('n.app.report.incident.your-safety-comes-first-never-confront')}
             </Text>
           </View>
 

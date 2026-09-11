@@ -36,11 +36,10 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Pro
         <StatusBar style="dark" />
         <ScrollView contentContainerStyle={{ padding: 24, flexGrow: 1, justifyContent: 'center' }}>
           <Text style={{ fontSize: 20, fontWeight: '700', color: '#10221a' }}>
-            This screen hit a problem
+            {i18nT('n.app._layout.this-screen-hit-a-problem')}
           </Text>
           <Text style={{ paddingTop: 8, fontSize: 14, color: '#4b5563', lineHeight: 20 }}>
-            Nothing you have already sent is affected, and anything saved offline is still
-            queued. Try again, or go back and take another route.
+            {i18nT('n.app._layout.nothing-you-have-already-sent-is')}
           </Text>
           <View
             style={{ marginTop: 16, borderRadius: 12, backgroundColor: '#fff', padding: 12 }}

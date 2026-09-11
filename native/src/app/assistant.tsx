@@ -180,7 +180,7 @@ export default function Assistant() {
           {turns.length === 0 && !off ? (
             <View className="pt-1">
               <Text className="pb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                Try asking
+                {i18nT('n.app.assistant.try-asking')}
               </Text>
               {SUGGESTIONS.map((s) => (
                 <Pressable

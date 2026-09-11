@@ -206,7 +206,7 @@ export default function Alerts() {
           <Feather name="bell" size={28} color={ui.tint.good.ink} />
           <Text className="pt-3 text-base font-semibold text-ink">{i18nT('n.app.tabs.alerts.sign-in-to-get-alerts')}</Text>
           <Text className="pt-1 text-center text-sm text-muted">
-            Race updates, docket cases and replies to your reports arrive here.
+            {i18nT('n.app.tabs.alerts.race-updates-docket-cases-and-replies')}
           </Text>
           <Pressable
             className="mt-4 rounded-2xl bg-hawk-green px-6 py-3 active:opacity-80"
@@ -244,7 +244,7 @@ export default function Alerts() {
                 <View className="mt-4 items-center rounded-2xl bg-card px-6 py-10">
                   <Feather name="wifi-off" size={26} color={ui.faint} />
                   <Text className="pt-3 text-base font-semibold text-ink">
-                    Could Not Load Your Alerts
+                    {i18nT('n.app.tabs.alerts.could-not-load-your-alerts')}
                   </Text>
                   <Text className="pt-1 text-center text-sm text-muted">
                     Pull down to try again. ({err})
@@ -254,7 +254,7 @@ export default function Alerts() {
                 <View className="mt-4 items-center rounded-2xl bg-card px-6 py-10">
                   <Text className="text-base font-semibold text-ink">{i18nT('n.app.tabs.alerts.nothing-yet')}</Text>
                   <Text className="pt-1 text-center text-sm text-muted">
-                    You are signed in. Updates on races you follow and reports you file land here.
+                    {i18nT('n.app.tabs.alerts.you-are-signed-in-updates-on')}
                   </Text>
                 </View>
               )

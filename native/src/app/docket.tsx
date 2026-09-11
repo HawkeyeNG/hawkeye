@@ -200,7 +200,7 @@ export default function Docket() {
         */}
       <View className="mb-3 flex-row items-center rounded-xl bg-warn px-3 py-2">
         <Text className="flex-1 text-xs font-semibold text-warn-ink">
-          Flagged results, judged by the crowd. Nobody at Hawkeye decides.
+          {i18nT('n.app.docket.flagged-results-judged-by-the-crowd')}
         </Text>
         <InfoDot
           title={i18nT('n.app.docket.how-the-docket-works')}
@@ -263,7 +263,7 @@ export default function Docket() {
 
       <SectionLabel text="Cases" />
       <Text className="pb-2 text-sm text-muted">
-        Newest first. Open one to see its evidence and judge it.
+        {i18nT('n.app.docket.newest-first-open-one-to-see')}
       </Text>
     </View>
   );
@@ -295,7 +295,7 @@ export default function Docket() {
                case is open for judging yet. Flagged results can already be
                held out of the tallies with no case on the list. */
             <Text className="px-4 pt-2 text-center text-sm text-muted">
-              No cases are open for judging yet.
+              {i18nT('n.app.docket.no-cases-are-open-for-judging')}
             </Text>
           )
         }

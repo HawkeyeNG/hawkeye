@@ -116,7 +116,7 @@ export default function Incidents() {
     <View className="px-4 pb-1 pt-3">
       <View className="flex-row items-center">
         <Text className="flex-1 text-sm text-muted">
-          Election-day incidents reported by observers, each reviewed before it appears.
+          {i18nT('n.app.incidents.election-day-incidents-reported-by-observers')}
         </Text>
         <InfoDot
           title={i18nT('n.app.incidents.what-appears-here')}
@@ -146,7 +146,7 @@ export default function Incidents() {
             <View className="mx-4 mt-3 items-center rounded-2xl bg-card px-6 py-10">
               <Feather name="wifi-off" size={26} color={ui.faint} />
               <Text className="pt-3 text-base font-semibold text-ink">
-                Could Not Load the Feed
+                {i18nT('n.app.incidents.could-not-load-the-feed')}
               </Text>
               <Text className="pt-1 text-center text-sm text-muted">
                 Pull down to try again. ({err})
@@ -156,10 +156,10 @@ export default function Incidents() {
             <View className="mx-4 mt-3 items-center rounded-2xl bg-card px-6 py-10">
               <Feather name="check-circle" size={26} color={ui.tint.good.ink} />
               <Text className="pt-3 text-base font-semibold text-ink">
-                No Incidents Published Yet
+                {i18nT('n.app.incidents.no-incidents-published-yet')}
               </Text>
               <Text className="pt-1 text-center text-sm text-muted">
-                Reports appear here once a moderator has reviewed them.
+                {i18nT('n.app.incidents.reports-appear-here-once-a-moderator')}
               </Text>
             </View>
           )

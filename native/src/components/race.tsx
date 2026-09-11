@@ -375,7 +375,7 @@ export function RaceView({
       {seatField && wholeField.length ? (
         <>
           <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-            Declared candidates
+            {i18nT('race.declared-candidates')}
           </Text>
           {/* WHAT THE NUMBERS BESIDE THE NAMES ARE. Said here rather than left
               to be inferred: on a completed race this list sits below the
@@ -429,7 +429,7 @@ export function RaceView({
             {race.others ? 'Front-runners' : 'Declared candidates'}
           </Text>
           <Text className="pb-2 text-xs text-muted">
-            Alphabetical by party. Not an endorsement or a prediction.
+            {i18nT('n.components.race.alphabetical-by-party')}
           </Text>
           {race.candidates.map((c) => (
             <CandidateCard key={`${c.party}-${c.name}`} c={c} logos={logos} />
@@ -465,7 +465,7 @@ export function RaceView({
       {!seatField && race.minors?.length ? (
         <>
           <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
-            Other declared candidates
+            {i18nT('race.other-declared-candidates')}
           </Text>
           <View className="overflow-hidden rounded-2xl bg-card">
             {race.minors.map((m, i) => (
@@ -497,7 +497,7 @@ export function RaceView({
       {hasField ? (
         <>
       <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-        Quick compare
+        {i18nT('race.quick-compare')}
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="overflow-hidden rounded-2xl bg-card">
@@ -694,7 +694,7 @@ export function RaceActions({
       >
         <Text className="text-sm leading-5 text-muted">{opensLine(contest)}</Text>
         <Text className="pt-2 text-sm leading-5 text-muted">
-          You can file from your polling unit as soon as polls open.
+          {i18nT('n.components.race.file-when-polls-open')}
         </Text>
       </ModalCard>
       {/* good-ink, not hawk-green: the fixed #004225 sat at 1.6:1 on the dark
@@ -755,7 +755,7 @@ function Declared({ d, logos }: { d: NonNullable<Race['declared']>; logos: Recor
         className="self-start rounded-full border border-good-ink px-2.5 py-1"
       >
         <Text className="text-[10px] font-bold uppercase tracking-widest text-good-ink">
-          Declared result
+          {i18nT('race.declared-result')}
         </Text>
       </View>
       <View className="flex-row items-center pt-2">

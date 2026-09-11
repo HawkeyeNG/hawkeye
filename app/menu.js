@@ -1,3 +1,14 @@
+// The offline outbox on EVERY page, so a queued report sends whenever any
+// Hawkeye page is open (on load, reconnect, return to the app) — not only on
+// the three report pages that load it directly. outbox.js ignores a second copy.
+(function () {
+  if (window.HawkeyeOutbox || document.querySelector('script[src$="outbox.js"]')) return;
+  const s = document.createElement('script');
+  s.src = '/outbox.js';
+  s.defer = true;
+  document.head.appendChild(s);
+})();
+
 // Resolve the effective theme before anything paints: a user-forced choice wins;
 // otherwise follow the system, DEFAULTING TO DARK when the system expresses no
 // (or a non-light) preference. A pre-paint inline copy of this lives in each

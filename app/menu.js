@@ -215,7 +215,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // completed / ongoing / upcoming and offers all 36 governorships. The
     // accordion could only ever be a stale subset of the page it sat above, and
     // "Osun 2026" was already a finished election pinned to the menu.
-    ['Live data', ['results.html', 'races.html', 'dashboard.html', 'political.html']],
+    ['Live data', ['results.html', 'races.html', 'dashboard.html', 'political.html', 'situation-room.html']],
     // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
     // aren't in the panel, the group finds no members and is skipped.
     // "Take the tour" LEADS this group, which is where native puts it
@@ -248,6 +248,26 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       ra.href = 'races.html';
       i18nSet(ra, 'races.races', 'Races');
       panel.appendChild(ra);
+    }
+    // The situation room, under Live data. Injected for the same reason as races
+    // and profile: the 'Live data' array above only REGROUPS anchors that already
+    // exist in a page's <nav>, and no page static-lists this one — so listing it
+    // there alone renders nothing. It is gated (authgate), and a signed-out
+    // reader who taps it is sent to sign in and returned to it.
+    //
+    // PARKED (2026-09-11): built and verified in English and Hausa, switched OFF
+    // until it is decided the room belongs in a public menu. To switch it on:
+    // set this true, AND bump CACHE in sw.js — menu.js is in the worker's
+    // precached shell, so without the bump installed clients keep serving the
+    // old menu no matter what the edge purge does. Then deploy menu.js + sw.js
+    // and purge /sw.js at the edge (Cloudflare holds .js for seven days). The
+    // label is already keyed in all four bundles; nothing else to translate.
+    const SHOW_SITUATION_ROOM = false;
+    if (SHOW_SITUATION_ROOM && !panel.querySelector('a[href="situation-room.html"]')) {
+      const sr = document.createElement('a');
+      sr.href = 'situation-room.html';
+      i18nSet(sr, 'nav.situation-room', 'Situation Room');
+      panel.appendChild(sr);
     }
     // My Profile leads Take part (mirrors native); injected so it appears on every
     // page, not only the signed-in "Your account" append it used to be.
@@ -1036,6 +1056,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
         'observe.html': ['Report a Result', 'common.report-a-result'],
         'practice.html': ['Practice', 'practice.practice'],
         'dashboard.html': ['Reports Log', 'nav.reports-log'],
+        'situation-room.html': ['Situation Room', 'nav.situation-room'],
         'collation.html': ['Report Collation Result', 'nav.report-collation-result'],
         'candidates.html': ['Presidency 2027', 'nav.presidency-2027'],
         'osun.html': ['Osun 2026', 'nav.osun-2026'],

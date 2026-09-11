@@ -923,6 +923,7 @@
   "observe.signing-your-report": "Ana sa hannu kan rahoton ka…",
   "observe.submitting": "Ana aikawa…",
   "observe.you-appear-to-be-offline-check-your": "Da alama ba ka kan layi ba — duba haduwarka sannan ka sake gwadawa.",
+  "observe.a-queued-report-was-dropped": "An zubar da rahoton da ke jira — {v0}.",
   "observe.refreshing-your-session": "Ana sabunta zaman ka…",
   "observe.session-expired-verify-your-phone-again-to": "Zaman ya kare — sake tabbatar da wayar ka domin aikawa.",
   "observe.enter-at-least-one-party-count": "Shigar da kirgen jam’iyya guda a kalla.",

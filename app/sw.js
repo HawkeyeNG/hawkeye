@@ -10,7 +10,7 @@
 // are network-first below, so they update on their own. Nothing else volatile
 // belongs in LAZY either — if a file can change between deploys, it goes in the
 // network-first branch, not here.
-const CACHE = 'hawkeye-v355';
+const CACHE = 'hawkeye-v356';
 // The offline outbox, so a Background Sync can send queued reports with every
 // tab closed (Chrome/Android) — see outbox.js. Optional: failing to load it
 // must never cost the service worker itself.

@@ -11,6 +11,13 @@ import fs from 'node:fs';
 const DIR = '/home/elrio/hawkeye/app';
 const B = Object.fromEntries(['en', 'ha', 'ig', 'yo'].map((l) => [l, JSON.parse(fs.readFileSync(`${DIR}/i18n/${l}.json`, 'utf8'))]));
 const eo = new Set((B.en._meta && B.en._meta.englishOnly) || []);
+/**
+ * Legitimately identical to English, because the GLOSSARY says so — Igbo for
+ * "Ward" is "Ward". Without this the untranslated-check fires on a correct
+ * answer, and a check that cries wolf stops being read. Same idea as
+ * merge_translations.mjs's own SAME_OK list.
+ */
+const SAME_OK = new Set(['common.ward']);
 const ph = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
 let bad = 0, n = 0;
 for (const f of process.argv.slice(2)) {
@@ -28,7 +35,7 @@ for (const f of process.argv.slice(2)) {
     for (const l of ['ha', 'ig', 'yo']) {
       const v = B[l][k];
       if (typeof v !== 'string' || !v.trim()) { console.log(`MISSING ${l}  ${k}`); bad++; }
-      else if (v === B.en[k]) { console.log(`UNTRANSLATED ${l}  ${k}`); bad++; }
+      else if (v === B.en[k] && !SAME_OK.has(k)) { console.log(`UNTRANSLATED ${l}  ${k}`); bad++; }
       else if (ph(v) !== ph(B.en[k])) { console.log(`PLACEHOLDERS ${l}  ${k}`); bad++; }
     }
   }

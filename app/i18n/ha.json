@@ -1193,5 +1193,6 @@
   "situation-room.yet-to-report": "Ba su bayar da rahoto ba tukuna",
   "situation-room.you-manage-the-observers-in-your-area": "Kai ne ke gudanar da masu lura a yankinka; jimillar ta kamfen ce.",
   "situation-room.your-area": "Yankinka",
-  "situation-room.yours": "naka"
+  "situation-room.yours": "naka",
+  "map-unit.this-unit-already-has-a-confirmed-location": "Wannan rukunin zaɓe yana da wurin da aka tabbatar, don haka babu abin da za a ɗauka a nan — har yanzu za ka iya adana shi a matsayin rukunin zaɓenka."
 }

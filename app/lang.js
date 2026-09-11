@@ -269,6 +269,36 @@
     })();
   });
 
+  /**
+   * THE HEADER BUTTON CYCLES; THE MODAL IS FOR THE FIRST TIME ONLY.
+   *
+   * Four languages and a button that already shows which one is active: the
+   * dialog was three taps to answer a question the reader can answer by looking
+   * at the button and tapping again. Switching is also reversible — the next tap
+   * carries on round — so it needs no confirmation step.
+   *
+   * The modal still earns its place where the choice is NEW: the one-time prompt
+   * after sign-up (which names each language in its own script, and carries the
+   * review badges) and the Profile row. Only PENDING-free LANGS are cycled, so a
+   * language that is still "coming soon" can never be selected by tapping.
+   *
+   * Cycling is an explicit choice, so it does what Save does: remembers, tells
+   * the server (push and SMS are resolved per recipient at write time), and
+   * settles the prompt handshake — otherwise a reader who picks a language from
+   * the header before the prompt fires would leave the tour waiting on it.
+   */
+  function cycle() {
+    var codes = I18N.LANGS.map(function (l) { return l.code; });
+    var next = codes[(codes.indexOf(I18N.current) + 1) % codes.length];
+    return I18N.set(next).then(function () {
+      remember();
+      settle();
+      refreshRow();
+      tellServer(next);
+      return next;
+    });
+  }
+
   document.addEventListener('hawkeye-lang', refreshRow);
-  window.HawkeyeLang = { open: open, willPrompt: willPrompt };
+  window.HawkeyeLang = { open: open, cycle: cycle, willPrompt: willPrompt };
 })();

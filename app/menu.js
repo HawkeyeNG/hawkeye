@@ -573,7 +573,13 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       lb.textContent = code;
       lb.setAttribute('aria-label', window.HawkeyeI18n.t('lang.current', 'Language') + ': ' + code);
     };
-    lb.addEventListener('click', () => window.HawkeyeLang.open());
+    /* ONE TAP, NEXT LANGUAGE. The header button used to open the picker, which
+       is three taps and a dialog to answer a question with four possible values
+       — and the answer is visible on the button itself, so the reader can see
+       what they got and tap again. The modal stays where it earns its place:
+       the one-time prompt after sign-up, where the choice is being made for the
+       first time and the languages need naming. Profile keeps its row too. */
+    lb.addEventListener('click', () => (window.HawkeyeLang.cycle || window.HawkeyeLang.open)());
     // i18n.js fires this after EVERY dictionary load, not only on an explicit
     // change — so the code is correct on first paint too, once the bundle lands.
     document.addEventListener('hawkeye-lang', paintLang);

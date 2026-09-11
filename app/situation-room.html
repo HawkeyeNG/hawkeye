@@ -20,6 +20,7 @@
   <script src="authgate.js?v=3"></script>
   <script src="ward-map.js?v=1"></script>
   <script src="/i18n.js?v=5"></script>
+  <script src="/lang.js?v=3"></script>
 <style>
 /* Situation room — an operator console, not a reading page. Everything below is
    scoped to .sr so it cannot leak into the public pages that share styles.css.
@@ -244,7 +245,16 @@
           <span data-i18n="nav.situation-room">Situation Room</span>
         </div>
       </a>
-      <div class="sr-hdr-actions" id="sr-actions"></div>
+      <!-- The language button is STATIC and the painted actions sit beside it in
+           a display:contents wrapper, so it survives every repaint of
+           #sr-actions. That block is filled only once a room has loaded, so a
+           button inside it would leave a manager with no room — the setup
+           screen — unable to change language at all. First in the group, so it
+           reads immediately before Invite observers. -->
+      <div class="sr-hdr-actions">
+        <button id="lang-btn" type="button" title="Language">EN</button>
+        <div id="sr-actions" style="display:contents"></div>
+      </div>
     </div>
   </header>
 
@@ -282,6 +292,24 @@ const T = (k, en, vars) => {
   return s;
 };
 document.addEventListener('hawkeye-lang', () => { try { render(); } catch { /* nothing painted yet */ } });
+
+/* The room has its own header, so menu.js never runs here — this is the same
+   one-tap-next-language button it injects everywhere else, wired by hand. It
+   lives in the static header, so it works on every state of the page including
+   the setup screen, and it repaints its own code on every language change. */
+(function langButton() {
+  const b = $('lang-btn');
+  if (!b) return;
+  const paint = () => {
+    b.textContent = (window.HawkeyeI18n ? window.HawkeyeI18n.current : 'en').toUpperCase();
+    b.title = T('lang.current', 'Language');
+  };
+  b.addEventListener('click', () => {
+    if (window.HawkeyeLang) (window.HawkeyeLang.cycle || window.HawkeyeLang.open)();
+  });
+  document.addEventListener('hawkeye-lang', paint);
+  paint();
+})();
 /* Rounding 4 units in 13,327 to "0%" tells a manager the night has not started
    when in fact it has. Below 1% the first significant digit is the whole
    message, so keep it. */

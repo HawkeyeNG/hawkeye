@@ -18,6 +18,7 @@
   <script src="native.js?v=116"></script>
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=3"></script>
+  <script src="ward-map.js?v=1"></script>
 <style>
 /* Situation room — an operator console, not a reading page. Everything below is
    scoped to .sr so it cannot leak into the public pages that share styles.css.
@@ -786,20 +787,13 @@ async function drawMap(nodes) {
   /**
    * Draw at the level of the ROWS, not the level of the group.
    *
-   * The shipped layers are pre-projected states and LGAs; wards exist only as
-   * raw lat/lng GeoJSON and polling units have no polygon at all. So a ward or
-   * LGA coordinator gets an honest note rather than a map of somewhere larger
-   * than their area — showing them the whole state with nothing highlighted
-   * would answer a question they did not ask, and the list below is the
-   * authoritative view either way.
+   * The shipped layers are pre-projected states and LGAs. Wards exist only as
+   * raw lat/lng GeoJSON and polling units have no polygon at all, so those two
+   * levels are drawn by drawWardMap — never as a map of somewhere larger than
+   * the viewer's area with nothing highlighted.
    */
   const lvl = ((S.overview || S.coverage || {}).level) || 'state';
-  if (lvl === 'ward' || lvl === 'unit') {
-    host.innerHTML = `<div class="sr-msg">No map at ${lvl === 'unit' ? 'polling-unit' : 'ward'} level yet &mdash;
-      the shipped layers stop at local government.<br />The list beside this is the full picture for
-      ${esc(homeArea().name)}.</div>`;
-    return;
-  }
+  if (lvl === 'ward' || lvl === 'unit') return drawWardMap(host, nodes, lvl);
   // At LGA level every row sits in one state, so the layer is keyed by it.
   const scope = lvl === 'lga'
     ? (S.path.state || (homeArea().kind === 'state' ? homeArea().name : '') || S.group.scope || '')
@@ -886,6 +880,69 @@ async function drawMap(nodes) {
   <div class="sr-legend" style="margin-top:10px">
     <span>Deeper green &mdash; more units reported</span>
     <span><b style="color:var(--accent)">&#9633;</b> outlined &mdash; we have observers there</span>
+  </div>`;
+}
+
+/**
+ * Ward-level maps, for LGA and ward coordinators (and anyone who drills there).
+ *
+ * LGA level: the LGA's wards, filled and outlined exactly as the maps above.
+ * Ward level: the ward outline and its polling units as POINTS, filled once
+ * reported. Most units have no trustworthy position, so ward-map.js scatters
+ * them inside the ward — deterministically — and flags them, and the tooltip
+ * says "position approximate" instead of asserting a location.
+ */
+async function drawWardMap(host, nodes, lvl) {
+  const WM = window.HawkeyeWardMap;
+  const a = (S.overview || S.coverage || {}).area;
+  const note = (html) => {
+    host.innerHTML = `<div class="sr-msg">${html}<br />The list beside this is the full picture for ${esc(homeArea().name)}.</div>`;
+  };
+  if (!WM || !a) return note('No map for this area.');
+  const r = await api('/api/groups/' + S.gid + '/wards-geo?state=' + encodeURIComponent(a.state) + '&lga=' + encodeURIComponent(a.lga));
+  const wards = (r.status === 200 && r.body && r.body.wards) || [];
+  if (!wards.length) return note(`No ward map for ${esc(a.lga)} yet.`);
+  const box = (m) => `viewBox="0 0 ${m.W} ${Math.ceil(m.H)}" role="img" class="sr-map"`;
+
+  if (lvl === 'ward') {
+    const m = WM.wardShapes(wards, nodes);
+    host.innerHTML = `<svg ${box(m)} aria-label="Coverage across ${esc(a.lga)}">
+      ${m.shapes.map(({ d, node, name }) => {
+        if (!node) {
+          return `<path d="${d}" fill="none" stroke="currentColor" stroke-opacity="0.25" stroke-width="0.8"
+            vector-effect="non-scaling-stroke"><title>${esc(name)}</title></path>`;
+        }
+        const p = pct(node.reported, node.units);
+        return `<path d="${d}" fill="var(--ok)" fill-opacity="${(0.05 + (p / 100) * 0.8).toFixed(3)}"
+          stroke="${node.assigned ? 'var(--accent)' : 'currentColor'}" stroke-opacity="${node.assigned ? 0.95 : 0.35}"
+          stroke-width="${node.assigned ? 1.6 : 0.9}" stroke-linejoin="round" vector-effect="non-scaling-stroke"
+          ><title>${esc(node.name)} — ${p}% reported (${n(node.reported)} of ${n(node.units)})${node.assigned ? ', ' + n(node.assigned) + ' of ours' : ', nobody assigned'}</title></path>`;
+      }).join('')}
+    </svg>
+    <div class="sr-legend" style="margin-top:10px">
+      <span>Deeper green &mdash; more units reported</span>
+      <span><b style="color:var(--accent)">&#9633;</b> outlined &mdash; we have observers there</span>
+    </div>`;
+    return;
+  }
+
+  const ward = WM.match(a.ward, wards);
+  if (!ward) return note(`The map layer has no boundary we can match to ${esc(a.ward)} ward.`);
+  const m = WM.unitPoints(ward.geometry, nodes);
+  const R = (m.W / 100).toFixed(1);
+  host.innerHTML = `<svg ${box(m)} aria-label="Polling units in ${esc(a.ward)}">
+    <path d="${m.outline}" fill="var(--ok)" fill-opacity="0.05" stroke="currentColor" stroke-opacity="0.45"
+      stroke-width="1" vector-effect="non-scaling-stroke" />
+    ${m.points.map(({ x, y, node, approx }) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"
+      fill="${node.reported ? 'var(--ok)' : 'none'}"
+      stroke="${node.assigned ? 'var(--accent)' : 'currentColor'}" stroke-opacity="${node.reported || node.assigned ? 0.95 : 0.5}"
+      stroke-width="${node.reported ? 2 : 1}" vector-effect="non-scaling-stroke"
+      ><title>${esc(node.name)} — ${node.reported ? 'reported' : 'no report yet'}${node.assigned ? ', ' + n(node.assigned) + ' of ours' : ''}${approx ? ' · position approximate' : ''}</title></circle>`).join('')}
+  </svg>
+  <div class="sr-legend" style="margin-top:10px">
+    <span>Filled &mdash; reported</span>
+    <span><b style="color:var(--accent)">&#9675;</b> ringed &mdash; one of ours is assigned</span>
+    <span>Most positions are approximate &mdash; placed inside the ward</span>
   </div>`;
 }
 

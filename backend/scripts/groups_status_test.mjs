@@ -105,6 +105,17 @@ for (const [code, w] of Object.entries(want)) {
   }
 }
 
+// Ward-level map inputs: the response names its one area, unit rows carry
+// lat/lng keys (null where the register has none), and the room serves the
+// LGA's ward shapes.
+if (!cov.area || cov.area.state !== U1.state || cov.area.lga !== U1.lga || cov.area.ward !== U1.ward) { console.log('  FAIL area ' + JSON.stringify(cov.area)); fail++; }
+if (!cov.nodes.every((x) => 'lat' in x && 'lng' in x)) { console.log('  FAIL unit rows carry lat/lng'); fail++; }
+const wg = await call('GET', '/groups/' + g.id + '/wards-geo?state=' + encodeURIComponent(U1.state) + '&lga=' + encodeURIComponent(U1.lga), mgr);
+const fold = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+if (wg.status !== 200 || !wg.j.wards.length) { console.log('  FAIL wards-geo ' + wg.status); fail++; }
+console.log('\nWARD MAP  area=' + JSON.stringify(cov.area) + ' wards=' + (wg.j.wards || []).length +
+  ' this ward in layer=' + (wg.j.wards || []).some((w) => fold(w.ward) === fold(U1.ward)));
+
 srv.close();
 for (const t of ['group_tokens', 'group_members', 'group_managers']) db.prepare('DELETE FROM ' + t + ' WHERE group_id = ?').run(g.id);
 db.prepare('DELETE FROM campaign_groups WHERE id = ?').run(g.id);

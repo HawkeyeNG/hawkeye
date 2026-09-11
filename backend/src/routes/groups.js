@@ -710,6 +710,7 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
     .prepare(
       `SELECT ${col} AS key, ${level === 'unit' ? 'pu.name' : col} AS name, COUNT(*) AS units,
               COUNT(DISTINCT s.pu_code) AS reported
+              ${level === 'unit' ? ', MAX(COALESCE(pu.lat, pu.crowd_lat)) AS lat, MAX(COALESCE(pu.lng, pu.crowd_lng)) AS lng' : ''}
          FROM polling_units pu
          LEFT JOIN submissions s ON s.pu_code = pu.pu_code AND s.contest = ?
          ${whereSql}
@@ -790,9 +791,21 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
     .all(...all, g.contest, g.id, g.id);
   const wMap = new Map(byWatched.map((o) => [o.key, o.watched]));
 
+  // At ward and unit level the rows sit in ONE place, and the ward map needs to
+  // know which — for a coordinator, whose tree roots at their area without any
+  // query naming it, the client cannot tell. Two rows back means no single area.
+  let area = null;
+  if (level === 'ward' || level === 'unit') {
+    const places = db
+      .prepare(`SELECT DISTINCT pu.state, pu.lga${level === 'unit' ? ', pu.ward' : ''} FROM polling_units pu ${whereSql} LIMIT 2`)
+      .all(...all);
+    if (places.length === 1) area = places[0];
+  }
+
   res.json({
     level,
     contest: g.contest,
+    area,
     // Who covers each area, so the tree doubles as the standings table rather
     // than a second screen holding the same numbers.
     coordinators: coordinatorsAt(g.id, level),
@@ -812,9 +825,61 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
       mismatched: aMap.get(r.key)?.mismatched || 0,      // assigned here, filed elsewhere
       member_reported: rMap.get(r.key) || 0,             // units here a member actually filed from
       watched: wMap.get(r.key) || 0,                     // unreported, saved by a non-member
+      // A unit's own position — verified, else crowd-located; never the approx
+      // envelope, which is often a ward centroid. Null for most units: the map
+      // scatters those inside their ward and says so.
+      ...(level === 'unit' ? { lat: r.lat ?? null, lng: r.lng ?? null } : {}),
     })),
   });
 });
+
+/**
+ * The ward shapes of ONE local government, for the ward-level room map.
+ *
+ * app/nga_wards.geojson is the whole country (5 MB) — too much to send a phone
+ * for one LGA's dozen wards, so it is read once here, indexed by state|LGA on a
+ * folded key, and served a slice at a time. Raw lat/lng; the client projects.
+ * Public geography, but kept behind the room's own auth like everything here.
+ */
+let wardsByLga = null;
+const foldName = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+groupsRouter.get('/groups/:id/wards-geo', requireObserver, requireManager, (req, res) => {
+  if (!wardsByLga) {
+    try {
+      const geo = JSON.parse(fs.readFileSync(path.join(config.appDir, 'nga_wards.geojson'), 'utf8'));
+      const idx = new Map();
+      for (const f of geo.features) {
+        const k = foldName(f.properties.s) + '|' + foldName(f.properties.l);
+        if (!idx.has(k)) idx.set(k, []);
+        idx.get(k).push({ ward: f.properties.w, geometry: f.geometry });
+      }
+      wardsByLga = idx;
+    } catch (e) {
+      return res.status(503).json({ error: 'ward_layer_unavailable' });
+    }
+  }
+  const st = foldName(req.query.state) + '|';
+  const want = foldName(req.query.lga);
+  let wards = wardsByLga.get(st + want);
+  if (!wards) {
+    // The register and the layer spell some LGAs a letter or two apart
+    // (Somolu/Shomolu): take the ONE same-state LGA within two edits, if exactly one.
+    const near = [...wardsByLga.keys()].filter((k) => k.startsWith(st) && editDistance(k.slice(st.length), want) <= 2);
+    if (near.length === 1) wards = wardsByLga.get(near[0]);
+  }
+  res.set('cache-control', 'private, max-age=86400');
+  res.json({ wards: wards || [] });
+});
+function editDistance(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return 99;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
 
 /**
  * Party totals for this room's race — or, with ?mine=1, for the reader's own

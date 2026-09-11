@@ -501,6 +501,10 @@ export function initOutbox(): void {
   started = true;
   void load();
 
+  // Background delivery (see BG_TASK below). Idempotent: registering an
+  // existing task keeps it. Android runs it at most every 15 minutes.
+  BackgroundTask?.registerTaskAsync(BG_TASK, { minimumInterval: 15 }).catch(() => {});
+
   try {
     NetInfo.addEventListener((state) => {
       const up = state.isConnected !== false && state.isInternetReachable !== false;
@@ -526,6 +530,38 @@ export function initOutbox(): void {
   setInterval(() => {
     if (AppState.currentState === 'active') void flushOutbox();
   }, 60_000);
+}
+
+/**
+ * BACKGROUND DELIVERY (expo-background-task). Android WorkManager and iOS
+ * BGTaskScheduler wake the app with network and run this, so a queued report
+ * leaves even if nobody reopens the app — the rural case: capture with no
+ * signal, pocket the phone, walk into coverage. Every trigger above needs the
+ * app in the foreground. Android: at most every 15 minutes. iOS: whenever the
+ * system chooses, and never after the user force-quits the app.
+ *
+ * Loaded with require, not import, and guarded like NetInfo: a dev client built
+ * before these modules were added has neither native side, and a throw while
+ * this file loads would take the whole outbox down with it. defineTask must
+ * run at module scope, before any screen mounts — this module is imported at
+ * startup.
+ */
+const BG_TASK = 'hawkeye-outbox-flush';
+let BackgroundTask: typeof import('expo-background-task') | null = null;
+try {
+  BackgroundTask = require('expo-background-task');
+  const TaskManager: typeof import('expo-task-manager') = require('expo-task-manager');
+  const BT = BackgroundTask!;
+  TaskManager.defineTask(BG_TASK, async () => {
+    try {
+      await flushOutbox({ ignoreBackoff: true });
+      return BT.BackgroundTaskResult.Success;
+    } catch {
+      return BT.BackgroundTaskResult.Failed;
+    }
+  });
+} catch {
+  BackgroundTask = null; // no native module in this build: foreground triggers only
 }
 
 initOutbox();

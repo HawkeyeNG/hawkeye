@@ -16,7 +16,9 @@ let bad = 0, n = 0;
 for (const f of process.argv.slice(2)) {
   const src = fs.readFileSync(`${DIR}/${f}`, 'utf8');
   const keys = new Set([
-    ...[...src.matchAll(/'([a-z0-9-]+\.[a-z0-9-]+(?:\.[a-z0-9-]+)*)'/g)].map((m) => m[1]).filter((k) => !/\.(html|js|json|png|svg|css)$/.test(k)),
+    // A key's first segment starts with a LETTER: without that, the literal
+    // '0.0' in a stylesheet value read as a key and was reported missing.
+    ...[...src.matchAll(/'([a-z][a-z0-9-]*\.[a-z0-9-]+(?:\.[a-z0-9-]+)*)'/g)].map((m) => m[1]).filter((k) => !/\.(html|js|json|png|svg|css)$/.test(k)),
     ...[...src.matchAll(/data-i18n(?:-html)?="([\w.-]+)"/g)].map((m) => m[1]),
   ]);
   for (const k of keys) {

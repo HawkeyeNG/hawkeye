@@ -570,9 +570,11 @@ function renderOverview() {
      behind a list that looked complete — and "most missing" is precisely the
      list a manager needs to reach the bottom of. Ranked by unreported UNITS,
      not percentage: a 60%-covered LGA with 700 units has more of the election
-     missing than a 0%-covered one with twelve. */
+     missing than a 0%-covered one with twelve. Units another observer has
+     saved (`watched`) rank below the ones nobody is standing at. */
+  const open = (x) => x.units - x.reported - (x.watched || 0);
   const gaps = nodes.slice()
-    .sort((a, b) => (b.units - b.reported) - (a.units - a.reported) || a.name.localeCompare(b.name));
+    .sort((a, b) => open(b) - open(a) || (b.units - b.reported) - (a.units - a.reported) || a.name.localeCompare(b.name));
   const reports = (S.activity && S.activity.reports) || [];
 
   /**
@@ -621,7 +623,8 @@ function renderOverview() {
             <td><button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>
               ${x.assigned ? `<span class="sr-sub">${n(x.assigned)} of ours here</span>`
                 : '<span class="sr-sub" style="color:var(--wait)">nobody assigned</span>'}</td>
-            <td class="num">${n(x.units - x.reported)}<span class="sr-sub">unreported</span></td>
+            <td class="num">${n(x.units - x.reported)}<span class="sr-sub">unreported</span>${x.watched
+              ? `<span class="sr-sub">${n(x.watched)} watched by others</span>` : ''}</td>
             <td style="width:80px"><div class="sr-bar-cell"><span class="num">${pct(x.reported, x.units)}%</span>
               <span class="sr-track"><span class="sr-fill" style="width:${pct(x.reported, x.units)}%"></span></span></div></td>
           </tr>`).join('')}</tbody></table></div>

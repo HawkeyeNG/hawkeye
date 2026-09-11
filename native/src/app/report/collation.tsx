@@ -332,8 +332,8 @@ export default function ReportCollation() {
         setQueued(false);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
-          title: 'Collation Filed',
-          line: 'It is on the public record and being checked against the polling-unit reports it should sum to.',
+          title: i18nT('n.app.report.collation.collation-filed'),
+          line: i18nT('n.app.report.collation.it-is-on-the-public-record'),
         });
         setStep('done');
       } else if (r.queued) {
@@ -345,8 +345,8 @@ export default function ReportCollation() {
         setQueued(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
-          title: 'Saved on This Phone',
-          line: 'Already signed. It sends itself once you have signal.',
+          title: i18nT('n.app.report.collation.saved-on-this-phone'),
+          line: i18nT('n.app.report.collation.already-signed-it-sends-itself'),
         });
         setStep('done');
       } else {
@@ -799,7 +799,7 @@ export default function ReportCollation() {
               {busy ? (
                 <ActivityIndicator color={BRAND.gold} />
               ) : (
-                <Text className="text-base font-bold text-hawk-gold">Sign &amp; submit</Text>
+                <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.report.collation.sign-submit')}</Text>
               )}
             </Pressable>
             <Pressable

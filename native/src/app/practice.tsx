@@ -1653,8 +1653,7 @@ export default function Practice() {
             <Crumb label={selectedName} onPress={() => setStep('unit')} />
             <Text className="pb-1 text-xl font-bold text-ink">{i18nT('n.app.practice.which-race')}</Text>
             <Text className="pb-3 text-sm text-muted">
-              Green races are live now; the rest are the full 2027 picture. Practice can rehearse any
-              of them — a dim one is just a rehearsal.
+              {i18nT('n.app.practice.green-races-are-live-now-the')}
             </Text>
             <ContestPicker
               contests={contests}
@@ -1706,7 +1705,7 @@ export default function Practice() {
               proposed={readSerial}
               editable={!busy}
             />
-            <Prompt>Enter the announced counts (practice parties)</Prompt>
+            <Prompt>{i18nT('n.app.practice.enter-the-announced-counts-practice')}</Prompt>
             {parties.map((p) => (
               <View
                 key={p.code}
@@ -1793,9 +1792,7 @@ export default function Practice() {
                 ))}
             </View>
             <Text className="pb-3 text-xs text-muted">
-              On election day this step takes a GPS fix, signs the report with this device&apos;s
-              key and files it on the public ledger. Here it just completes the practice — nothing
-              is published or counted.
+              {i18nT('n.app.practice.on-election-day-this-step-takes')}
             </Text>
           </ScrollView>
         ) : null}
@@ -1816,7 +1813,7 @@ export default function Practice() {
                 <ActivityIndicator color={BRAND.gold} />
               ) : (
                 <Text className="text-base font-bold text-hawk-gold">
-                  Sign &amp; submit (practice)
+                  {i18nT('n.app.practice.sign-submit-practice')}
                 </Text>
               )}
             </Pressable>

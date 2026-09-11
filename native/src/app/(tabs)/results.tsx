@@ -640,11 +640,11 @@ export default function Results() {
 
   /** Why the board is empty, said plainly. Each branch is a different fact. */
   const empty = useMemo(() => {
-    if (!contestsLoaded) return { title: 'Loading…', body: 'Fetching the races Hawkeye covers.' };
+    if (!contestsLoaded) return { title: i18nT('n.app.tabs.results.loading'), body: i18nT('n.app.tabs.results.fetching-the-races-hawkeye-covers') };
     if (!contests.length)
       return {
-        title: 'Could not load the races',
-        body: 'Pull down to try again — the list of elections did not reach this device.',
+        title: i18nT('n.app.tabs.results.could-not-load-the-races'),
+        body: i18nT('n.app.tabs.results.pull-down-to-try-again-the-list'),
       };
     // A WHOLE CONTEST IS A CHOICE. `race` is null on a whole-election board by
     // design — "Senate (2027)", all 109 districts at once — so testing it alone
@@ -653,10 +653,10 @@ export default function Results() {
     // reason that board is empty, which the branches below state properly: the
     // election has not been held yet.
     if (!race && !wholeContest)
-      return { title: 'Choose a race', body: 'Tap “Change” above to pick the race to rank.' };
+      return { title: i18nT('n.app.tabs.results.choose-a-race'), body: i18nT('n.app.tabs.results.tap-change-above-to-pick-the') };
     if (!contest)
       return {
-        title: 'Not covered yet',
+        title: i18nT('n.app.tabs.results.not-covered-yet'),
         // `race` can be null here only on a whole-contest view, and that view is
         // only ever set to a code /api/contests listed — so this branch is the
         // per-seat one in practice. The fallback keeps the sentence readable
@@ -668,7 +668,7 @@ export default function Results() {
     // the truth whether or not the tally request has come back.
     if (!contest.open)
       return {
-        title: 'Reporting has not opened',
+        title: i18nT('n.app.tabs.results.reporting-has-not-opened'),
         body: i18nT('n.app.tabs.results.is-set-for-nothing-can-be', { v0: contest.election, v1: whenLine(contest) }),
       };
     // An open race with no answer yet is not an open race with no votes. Saying
@@ -676,19 +676,19 @@ export default function Results() {
     // reports a fact about the election that we do not actually have.
     if (failed)
       return {
-        title: 'Could not load the results',
-        body: 'The tally did not reach this device. Pull down to try again.',
+        title: i18nT('n.app.tabs.results.could-not-load-the-results'),
+        body: i18nT('n.app.tabs.results.the-tally-did-not-reach-this'),
       };
     if (updatedAt === null)
-      return { title: 'Loading results…', body: i18nT('n.app.tabs.results.fetching-the-tally-for', { v0: contest.election }) };
+      return { title: i18nT('n.app.tabs.results.loading-results'), body: i18nT('n.app.tabs.results.fetching-the-tally-for', { v0: contest.election }) };
     if (scope && elsewhere > 0)
       return {
         title: i18nT('n.app.tabs.results.no-reports-from-yet', { v0: scope }),
         body: i18nT('n.app.tabs.results.unit-s-have-reported-elsewhere-in', { v0: elsewhere, v1: scope }),
       };
     return {
-      title: 'No results yet',
-      body: 'Accepted reports appear here live, ranked by verified votes.',
+      title: i18nT('n.app.tabs.results.no-results-yet'),
+      body: i18nT('n.app.tabs.results.accepted-reports-appear-here-live'),
     };
   }, [contestsLoaded, contests.length, race, wholeContest, contest, scope, elsewhere, failed, updatedAt]);
 

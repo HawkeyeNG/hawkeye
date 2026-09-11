@@ -171,8 +171,7 @@ export default function Assistant() {
           {off ? (
             <View className="mb-2 max-w-[88%] self-start rounded-2xl rounded-bl-md bg-warn px-4 py-3">
               <Text className="text-sm text-ink">
-                The assistant isn&apos;t switched on yet. The results, docket and coverage screens
-                carry the same figures it would read from.
+                {i18nT('n.app.assistant.the-assistant-isn-t-switched-on')}
               </Text>
             </View>
           ) : null}

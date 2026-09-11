@@ -44,6 +44,27 @@ const prose = (s) => {
   return t;
 };
 
+/**
+ * Not gaps, and saying so is the point: a scanner that keeps reporting the same
+ * nine non-issues trains everyone to ignore its output.
+ *  · the non-affiliation notice — englishOnly by policy (see the keyer);
+ *  · a `title:` that already has a `titleKey:` beside it — the key-beside-English
+ *    pattern module-level constants MUST use, because an i18nT() evaluated at
+ *    import freezes before the stored language is known;
+ *  · anything inside a comment — docblocks show JSX examples.
+ */
+const NEVER = ['Hawkeye is independent and nonpartisan. It is not affiliated with INEC or any government body, and it does not declare results — it records what observers report and lets anyone check the record.'];
+const inComment = (src, i) => {
+  const line = src.slice(src.lastIndexOf('\n', i) + 1, i);
+  if (/^\s*(\/\/|\*|\/\*)/.test(line)) return true;
+  const open = src.lastIndexOf('/*', i);
+  return open !== -1 && src.lastIndexOf('*/', i) < open;
+};
+const hasKeySibling = (src, i) => {
+  const from = src.lastIndexOf('\n', i) + 1;
+  return /\w+Key:\s*'/.test(src.slice(from, src.indexOf('\n', src.indexOf('\n', from) + 1) + 1));
+};
+
 const out = [];
 for (const f of files) {
   const src = fs.readFileSync(f, 'utf8');
@@ -52,7 +73,8 @@ for (const f of files) {
   const seen = new Set();
   const push = (kind, text, idx) => {
     const t = prose(text);
-    if (!t || seen.has(t)) return;
+    if (!t || seen.has(t) || NEVER.includes(t) || inComment(src, idx)) return;
+    if (kind === 'object-prop' && hasKeySibling(src, idx)) return;
     seen.add(t);
     out.push({ file: rel, line: lineOf(idx), kind, text: t });
   };

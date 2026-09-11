@@ -115,6 +115,12 @@ export function recomputeResult(db, puCode, contest = 'PRES') {
     status = 'disputed';
   }
   if (status === 'verified' && locationStatus === 'unverified') status = 'reported';
+  // Late reports (held offline past PHOTO_MAX_AGE_S) are evidence of the sheet,
+  // but their timing is not server-verified — so late reports ALONE cap at
+  // 'reported'. One on-time report among them lifts the cap.
+  const timing = db.prepare('SELECT COUNT(*) AS n, SUM(COALESCE(late, 0)) AS l FROM submissions WHERE pu_code = ? AND contest = ?')
+    .get(puCode, contest);
+  if (status === 'verified' && timing.n > 0 && timing.l === timing.n) status = 'reported';
 
   // --- crowd-arbitration dispute axis (docs/CROWD-ARBITRATION.md) ---
   // An open high-severity flag, an open case, or a crowd-UPHELD case marks the

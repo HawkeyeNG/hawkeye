@@ -37,6 +37,8 @@ const upload = multer({
 const photoFields = upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'venuePhoto', maxCount: 1 }]);
 
 const isFresh = (ts, now) => Number.isFinite(ts) && ts <= now + 120_000 && now - ts <= config.photoMaxAgeS * 1000;
+// Inside the late window: accepted, but marked late — see submissions.js.
+const isLate = (ts, now) => Number.isFinite(ts) && ts <= now + 120_000 && now - ts <= config.photoLateMaxS * 1000;
 
 collationRouter.post('/collations', requireObserver, photoFields, async (req, res) => {
   try {
@@ -77,8 +79,10 @@ collationRouter.post('/collations', requireObserver, photoFields, async (req, re
     if (!venue) return res.status(400).json({ error: 'venue_photo_required' });
     const capturedAt = Number(req.body.capturedAt);
     const venueCapturedAt = Number(req.body.venueCapturedAt);
-    if (!isFresh(capturedAt, now) || !isFresh(venueCapturedAt, now)) {
-      return res.status(400).json({ error: 'photo_not_fresh' });
+    // Late, not lost — as for unit reports (submissions.js).
+    const late = !isFresh(capturedAt, now) || !isFresh(venueCapturedAt, now);
+    if (late && (!isLate(capturedAt, now) || !isLate(venueCapturedAt, now))) {
+      return res.status(400).json({ error: 'photo_not_fresh', maxAgeS: config.photoLateMaxS });
     }
     const lat = Number(req.body.lat); const lng = Number(req.body.lng);
     if (![lat, lng].every(Number.isFinite)) return res.status(400).json({ error: 'gps_required' });
@@ -116,12 +120,12 @@ collationRouter.post('/collations', requireObserver, photoFields, async (req, re
             (observer_id, device_id, contest, level, state, lga, ward, votes_json, form_serial,
              image_sha256, image_path, venue_image_sha256, venue_image_path,
              lat, lng, accuracy, captured_at, venue_captured_at,
-             client_sig, ledger_payload, prev_hash, entry_hash, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+             client_sig, ledger_payload, prev_hash, entry_hash, created_at, late)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
           .run(req.observer.id, deviceId, contest, level, state, lga, ward, JSON.stringify(votes), formSerial,
             imageSha256, imagePath, venueImageSha256, venuePath,
             lat, lng, Number(req.body.accuracy) || null, capturedAt, venueCapturedAt,
-            String(req.body.signature), ledgerPayload, prevHash, entryHash, now);
+            String(req.body.signature), ledgerPayload, prevHash, entryHash, now, late ? 1 : 0);
         return { id: info.lastInsertRowid, entryHash };
       })();
     } catch (e) {
@@ -148,7 +152,7 @@ collationRouter.post('/collations', requireObserver, photoFields, async (req, re
     const scope = [state, lga, ward].filter(Boolean).join(' / ');
     notifyObserver(req.observer, 'tg.collationRecorded', { form: FORM[level], scope, contest });
     notifyMaster(`collation · observer #${req.observer.id} · ${FORM[level]} ${scope} (${contest})`);
-    res.status(201).json({ ok: true, entryHash: inserted.entryHash, form: FORM[level] });
+    res.status(201).json({ ok: true, entryHash: inserted.entryHash, form: FORM[level], late });
   } catch (err) {
     console.error('[collation]', err);
     res.status(500).json({ error: 'internal_error' });

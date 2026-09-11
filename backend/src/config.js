@@ -289,6 +289,12 @@ export const config = {
   // device fingerprint. Those all still hold at 60 minutes. This window's real job
   // is catching accidental staleness and casual replay, and it still does that.
   photoMaxAgeS: num('PHOTO_MAX_AGE_S', 3600),
+  // Past photoMaxAgeS a report is no longer refused but ACCEPTED AND MARKED LATE
+  // (submissions.late / collation_reports.late): timing not server-verified,
+  // lower confidence, still photographic evidence of the sheet. Refusing it lost
+  // the rural case outright — capture with no signal, reach network hours later —
+  // because both outboxes drop a 4xx. Beyond THIS window it is refused again.
+  photoLateMaxS: num('PHOTO_LATE_MAX_S', 86400),
   dhashHammingThreshold: num('DHASH_HAMMING_THRESHOLD', 4),
 
   /**

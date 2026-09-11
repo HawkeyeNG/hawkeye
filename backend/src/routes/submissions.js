@@ -56,6 +56,9 @@ const photoFields = upload.fields([
 
 const isFresh = (ts, now) =>
   Number.isFinite(ts) && ts <= now + 120_000 && now - ts <= config.photoMaxAgeS * 1000;
+// Inside the late window: accepted, but marked late (see the freshness check).
+const isLate = (ts, now) =>
+  Number.isFinite(ts) && ts <= now + 120_000 && now - ts <= config.photoLateMaxS * 1000;
 
 /**
  * Hand the phone a URL it can upload to directly.
@@ -364,8 +367,13 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
       }
     }
 
-    if (!isFresh(capturedAt, now) || !isFresh(venueCapturedAt, now)) {
-      return res.status(400).json({ error: 'photo_not_fresh', maxAgeS: config.photoMaxAgeS });
+    // LATE, NOT LOST. Held offline past photoMaxAgeS, a report used to be refused
+    // here — and both outboxes drop a 4xx, so it was gone. Now it lands, marked
+    // late (config.photoLateMaxS). A photo from the future, or older than the
+    // late window, is still refused.
+    const late = !isFresh(capturedAt, now) || !isFresh(venueCapturedAt, now);
+    if (late && (!isLate(capturedAt, now) || !isLate(venueCapturedAt, now))) {
+      return res.status(400).json({ error: 'photo_not_fresh', maxAgeS: config.photoLateMaxS });
     }
 
     // 3. Duplicate-image guards across BOTH photo columns — a sheet photo cannot be
@@ -520,14 +528,14 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
            venue_image_sha256, venue_image_dhash, venue_image_path, venue_features,
            lat, lng, sheet_lat, sheet_lng, venue_lat, venue_lng,
            accuracy, location_verified, location_plausible, captured_at, venue_captured_at,
-           location_proof, client_sig, ledger_payload, prev_hash, entry_hash, created_at, device_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+           location_proof, client_sig, ledger_payload, prev_hash, entry_hash, created_at, device_id, late)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .run(
           puCode, req.observer.id, contest, JSON.stringify(votes), imageSha256, imageDhash, imagePath,
           venueImageSha256, venueImageDhash, venueImagePath, venueFeatures,
           lat, lng, sheetLat, sheetLng, venueLat, venueLng,
           accuracy, locationVerified, locationPlausible, capturedAt, venueCapturedAt,
-          locationProof, signature, ledgerPayload, entry.prevHash, entry.entryHash, now, deviceId,
+          locationProof, signature, ledgerPayload, entry.prevHash, entry.entryHash, now, deviceId, late ? 1 : 0,
         );
       // The band index is written INSIDE this transaction, so it can never drift
       // from the row it describes: either both land or neither does. An index
@@ -641,7 +649,7 @@ submissionsRouter.post('/submissions', requireObserver, photoFields, async (req,
     // The key is kept rather than dropped because five clients read it — app.js,
     // case.html, and three native screens — all guarded on `.ocr && .ocr.total`,
     // so null simply renders nothing. Two of those clients are in a shipped app.
-    res.status(201).json({ ok: true, entryHash, locationVerified: Boolean(locationVerified), ocr: null, result });
+    res.status(201).json({ ok: true, entryHash, locationVerified: Boolean(locationVerified), late, ocr: null, result });
   } catch (err) {
     console.error('[submit]', err);
     res.status(500).json({ error: 'internal_error' });

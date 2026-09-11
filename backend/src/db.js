@@ -461,6 +461,10 @@ for (const ddl of [
   'ALTER TABLE incidents ADD COLUMN ai_json TEXT',
   // Vision read of the EC8A sheet: {authentic, reason, counts} — advisory audit.
   'ALTER TABLE submissions ADD COLUMN vision_json TEXT',
+  // 1 = photos older than PHOTO_MAX_AGE_S on receipt (held offline): accepted,
+  // timing not server-verified. See config.photoLateMaxS.
+  'ALTER TABLE submissions ADD COLUMN late INTEGER',
+  'ALTER TABLE collation_reports ADD COLUMN late INTEGER',
   // IReV cross-check: INEC's own uploaded EC8A per unit — doc URL found by walking
   // the IReV API, then OCR'd and compared against the crowd-reported counts.
   `CREATE TABLE IF NOT EXISTS irev_docs (

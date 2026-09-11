@@ -176,8 +176,7 @@ const infoOf = (code) => regUnits.find((u) => u.pu_code === code) || {};
 const sheets = [await randomPhoto(), await randomPhoto(), await randomPhoto()];
 
 console.log('-- tier 1: geofenced unit, honest + conflicting reports --');
-const r1 = await submit(observers[0], consensus, { sheet: sheets[0] });
-expect('observer 1 (honest) accepted, location verified, confidence 100%',
+const r1 = await submit(observers[0], consensus, { sheet: sheets[0] });expect('observer 1 (honest) accepted, location verified, confidence 100%',
   r1.status === 201 && r1.body.locationVerified === true && r1.body.result.confidence === 100
   && r1.body.result.locationStatus === 'verified');
 const r2 = await submit(observers[1], consensus, { sheet: sheets[1] });
@@ -303,12 +302,14 @@ const remote = await submit(observers[3], fabricated, { at: FAR_AWAY });
 expect(`reporting the geofenced Lagos PU from ${Math.round(3 * 157)} km away -> ${remote.body.error}`,
   remote.status === 403 && remote.body.error === 'outside_geofence');
 
-const staleSheet = await submit(observers[3], fabricated, { capturedAt: Date.now() - 3 * 3600_000 });
-expect(`3-hour-old sheet photo -> ${staleSheet.body.error}`,
+// Past PHOTO_MAX_AGE_S a report is accepted as LATE; only past PHOTO_LATE_MAX_S
+// (24 h) is it refused. These two probe the refusal edge.
+const staleSheet = await submit(observers[3], fabricated, { capturedAt: Date.now() - 25 * 3600_000 });
+expect(`25-hour-old sheet photo -> ${staleSheet.body.error}`,
   staleSheet.status === 400 && staleSheet.body.error === 'photo_not_fresh');
 
-const staleVenue = await submit(observers[3], fabricated, { venueCapturedAt: Date.now() - 3 * 3600_000 });
-expect(`3-hour-old venue photo -> ${staleVenue.body.error}`,
+const staleVenue = await submit(observers[3], fabricated, { venueCapturedAt: Date.now() - 25 * 3600_000 });
+expect(`25-hour-old venue photo -> ${staleVenue.body.error}`,
   staleVenue.status === 400 && staleVenue.body.error === 'photo_not_fresh');
 
 const tampered = await submit(observers[3], fabricated, { signVotes: consensus });
@@ -338,5 +339,13 @@ console.log('  ledger:', JSON.stringify(ledger.body));
 const expectedEntries = planted ? 13 : 10;
 expect(`ledger chain verifies with ${expectedEntries} entries`,
   ledger.body.ok === true && ledger.body.entries === expectedEntries);
+
+// LATE, NOT LOST: a report held offline for 3 hours lands, marked late — it
+// used to be refused photo_not_fresh and then dropped by the outbox. After the
+// ledger count above, so it does not move that figure.
+const lateObs = await registerObserver('+2348012345699');
+const lateRes = await submit(lateObs, fabricated, { capturedAt: Date.now() - 3 * 3600_000, venueCapturedAt: Date.now() - 3 * 3600_000 });
+expect(`3-hour-old report held offline -> ${lateRes.status} late=${lateRes.body.late}`,
+  lateRes.status === 201 && lateRes.body.late === true);
 
 console.log(process.exitCode ? '\nSMOKE TEST FAILED' : '\nAll smoke tests passed.');

@@ -500,22 +500,26 @@ async function loadTab(force) {
        manager who drilled into one ward an hour ago did not mean to make that
        the definition of standing. Cached apart from S.coverage for that reason. */
     if (force || !S.overview) {
-      /* The tally comes from the PUBLIC board endpoint, not from a query of our
-         own. The correct total already exists there and it carries a rule that
-         is easy to miss — disputed results are excluded from the headline and
-         judged separately on the docket. A second tally here would drift from
-         the public board the first time that rule changed, and a campaign would
-         believe its own screen. Same response, so they cannot disagree. */
-      const crop = tallyCrop();
-      const [cov, act, nat] = await Promise.all([
+      /* The tally is counted by services/tally.js — the SAME function the
+         public board uses — never by a second query of our own. It carries a
+         rule that is easy to miss: disputed results are excluded from the
+         headline and judged separately on the docket. A separate tally would
+         drift the first time that rule changed, and a campaign would believe
+         its own screen. The room endpoint only crops: to this race (the public
+         board can crop to a state, not a Senate district) and, with ?mine=1, to
+         a coordinator's own area. */
+      const me = S.group.me || {};
+      const [cov, act, nat, own] = await Promise.all([
         api('/api/groups/' + S.gid + '/coverage'),
         api('/api/groups/' + S.gid + '/activity'),
-        api('/api/national/' + encodeURIComponent(S.group.contest) + (crop ? '?state=' + encodeURIComponent(crop) : '')),
+        api('/api/groups/' + S.gid + '/tally'),
+        me.scope_kind && me.scope_value ? api('/api/groups/' + S.gid + '/tally?mine=1') : null,
       ]);
       S.overview = cov.body;
       S.activity = act.body;
       S.tally = nat.status === 200 ? nat.body : null;
-      S.tallyArea = crop || 'this race';
+      S.tallyArea = raceArea();
+      S.areaTally = own && own.status === 200 ? own.body : null;
     }
     return renderOverview();
   }
@@ -633,7 +637,8 @@ function renderOverview() {
 
       </div>
     </div>
-    ${partiesHtml()}
+    ${partiesHtml(S.tally, S.tallyArea)}
+    ${S.areaTally ? partiesHtml(S.areaTally, S.group.me.scope_value + ' (your area)') : ''}
     <h2 class="sr-h2">Reports coming in</h2>
     <div class="sr-card${reports.length > 4 ? ' sr-panel' : ''}">${reports.length
           ? `<div class="sr-scroll">${reports.map(activityRow).join('')}</div>`
@@ -665,19 +670,18 @@ function renderOverview() {
  * when the crop matches the area this console is about; otherwise the
  * denominator would come from a different scope than the votes.
  */
-function partiesHtml() {
-  const t = S.tally;
+function partiesHtml(t, area) {
   if (!t) return '';
   const rows = (t.national || []).filter((x) => x.votes > 0);
   const cast = rows.reduce((a, x) => a + x.votes, 0);
   const mine = (S.group.party || '').toUpperCase();
   const minePos = rows.findIndex((x) => String(x.party).toUpperCase() === mine);
   const share = (v) => (cast ? ((v / cast) * 100).toFixed(1) : '0.0') + '%';
-  const areaNote = esc(S.tallyArea);
+  const areaNote = esc(area);
 
   if (!rows.length) {
     return `<h2 class="sr-h2">Party totals</h2>
-      <div class="sr-card"><div class="sr-msg">No results published yet for ${esc(S.tallyArea)}.<br />
+      <div class="sr-card"><div class="sr-msg">No results published yet for ${areaNote}.<br />
         Totals appear here as units are counted, at the same moment the public board shows them.</div></div>`;
   }
 
@@ -761,12 +765,12 @@ function activityRow(r) {
  * same totals as their owner, which is also what makes the number comparable
  * when two of them talk.
  *
- * Only a state crop exists on the public board, so a Senate or Reps room falls
- * back to the national figure for that contest until the tally is extracted
- * into a shared helper.
+ * The crop itself is done server-side by /groups/:id/tally, so a Senate or Reps
+ * room gets its own district, not the contest's national figure. This only
+ * names it.
  */
-function tallyCrop() {
-  return (S.group && S.group.scope_kind === 'state' && S.group.scope) || '';
+function raceArea() {
+  return (S.group && S.group.scope) || 'Nigeria';
 }
 
 function homeArea() {

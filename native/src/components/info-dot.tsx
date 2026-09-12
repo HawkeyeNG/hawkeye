@@ -18,7 +18,7 @@ import { t as i18nT } from '@/lib/i18n';
  *
  *   <View className="flex-row items-center">
  *     <Text className="flex-1 …">Automated checks on every result.</Text>
- *     <InfoDot title="What gets checked" text="…" />
+ *     <InfoDot title={i18nT("n.components.info-dot.what-gets-checked")} text="…" />
  *   </View>
  *
  * This docblock used to show the dot nested inside the <Text>, and said it

@@ -386,11 +386,11 @@ export default function CaseScreen() {
             <>
               <Question
                 name="sheet"
-                text="1. Is the photographed sheet an official INEC EC8A result form?"
+                text={i18nT("n.app.case.1-is-the-photographed-sheet-an-official")}
               />
               <Question
                 name="counts"
-                text="2. Do the figures written on the sheet match the reported counts above?"
+                text={i18nT("n.app.case.2-do-the-figures-written-on-the")}
               />
               {/* One question PER flag — each can be wrong (or right) in its own way. */}
               {c.flags.map((f, i) => (
@@ -480,7 +480,7 @@ function TextInputBox({ value, onChange }: { value: string; onChange: (s: string
       onChangeText={onChange}
       multiline
       maxLength={280}
-      placeholder="e.g. the INEC stamp is missing; figures column reads 108 not 180"
+      placeholder={i18nT("n.app.case.e-g-the-inec-stamp-is-missing")}
       placeholderTextColor={ui.faint}
       className="min-h-[56px] text-sm text-ink"
     />

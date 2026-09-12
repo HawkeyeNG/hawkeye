@@ -1008,7 +1008,7 @@ export default function MapUnit() {
           </Text>
           <InfoDot
             title={i18nT('n.app.map-unit.why-mapping-units-matters')}
-            text="Most polling units have no confirmed location on record, so results reported from them cannot be location-checked. When enough independent observers agree on a unit's position it becomes location-verified, and every result filed there on election day can be matched against it."
+            text={i18nT("n.app.map-unit.most-polling-units-have-no-confirmed-location")}
           />
         </View>
 

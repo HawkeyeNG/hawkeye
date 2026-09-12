@@ -120,7 +120,7 @@ export default function Incidents() {
         </Text>
         <InfoDot
           title={i18nT('n.app.incidents.what-appears-here')}
-          text="Violence, vote-buying, BVAS failures, obstruction and more, filed by observers at the scene. Every report is reviewed by a person before it is published, and reporters are identified by observer ID only — never by name or phone number."
+          text={i18nT("n.app.incidents.violence-vote-buying-bvas-failures-obstruction-and")}
         />
       </View>
     </View>

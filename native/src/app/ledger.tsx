@@ -349,11 +349,11 @@ export default function Ledger() {
         </Text>
         <InfoDot
           title={i18nT('n.app.ledger.how-the-chain-is-checked')}
-          text="Each entry stores the hash of the one before it, so altering or removing any past report breaks every hash after it. This screen recomputes the whole chain on your own device and compares the head it gets to the one we publish — you don't have to trust us."
+          text={i18nT("n.app.ledger.each-entry-stores-the-hash-of-the")}
         />
       </View>
 
-      <SectionLabel text="Chain" />
+      <SectionLabel text={i18nT("n.app.ledger.chain")} />
       <Pressable
         disabled={loading || !!progress}
         onPress={verifyChain}
@@ -384,7 +384,7 @@ export default function Ledger() {
       ) : null}
 
       {/* Single-race proof: verify one contest without replaying the whole chain. */}
-      <SectionLabel text="Single-Race Proof" />
+      <SectionLabel text={i18nT("n.app.ledger.single-race-proof")} />
       <View className="rounded-2xl bg-card px-4 py-4">
         {anchor ? (
           (() => {
@@ -450,11 +450,11 @@ export default function Ledger() {
         <Text className="flex-1 text-sm text-muted">{i18nT('n.app.ledger.check-one-race-s-paper-trail')}</Text>
         <InfoDot
           title={i18nT('n.app.ledger.what-a-single-race-proof-shows')}
-          text="Each anchor folds every race into one Merkle root published to Sigstore's Rekor log, which we cannot rewrite. Your phone folds one race's proof up to that root, without replaying the others."
+          text={i18nT("n.app.ledger.each-anchor-folds-every-race-into-one")}
         />
       </View>
 
-      <SectionLabel text="Ledger Entries" />
+      <SectionLabel text={i18nT("n.app.ledger.ledger-entries")} />
       <Text className="pb-2 text-sm text-muted">
         {i18nT('n.app.ledger.newest-first-each-photo-s-filename')}
       </Text>

@@ -154,7 +154,7 @@ export function ReportContent({
               onChangeText={setDetail}
               multiline
               maxLength={500}
-              placeholder="Add any detail (optional)"
+              placeholder={i18nT("n.components.report-content.add-any-detail-optional")}
               placeholderTextColor={ui.faint}
               className="min-h-[64px] rounded-2xl bg-card px-4 py-3 text-sm text-ink"
             />

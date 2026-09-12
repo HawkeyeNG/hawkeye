@@ -387,7 +387,7 @@ export default function Races() {
           </Text>
           <InfoDot
             title={i18nT('n.app.races.how-races-are-grouped')}
-            text="Ongoing is an election being reported today. Upcoming is one whose polling day is still ahead. Completed is one whose polling day has passed — its page stays up, because the record is the point. Candidate lists appear on each race's page as INEC publishes them, roughly 28 days out."
+            text={i18nT("n.app.races.ongoing-is-an-election-being-reported-today")}
           />
         </View>
 

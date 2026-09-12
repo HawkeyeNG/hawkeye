@@ -18,7 +18,13 @@ import { ContentBlock, QuestionRow, SectionLabel } from '@/components/content-ki
 import { SocialRow } from '@/components/social-row';
 import { useUi } from '@/lib/theme';
 import { getPages } from '@/lib/content';
-import RAW from '@/lib/pages.json';
+import RAW_PAGES from '@/lib/pages.json';
+import { translateContent } from '@/lib/content';
+
+/* pages.json is prose, and it is translated the same way content.ts is:
+   keyed by the English string, walked at render. Without this the FAQ's
+   questions and answers stayed English while the screen around them did not. */
+const RAW = translateContent(RAW_PAGES);
 import { t as i18nT } from '@/lib/i18n';
 
 const WEB: Record<string, string> = {

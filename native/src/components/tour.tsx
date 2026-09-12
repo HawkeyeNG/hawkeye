@@ -183,9 +183,7 @@ export function Tour({
           it would be the one place Hawkeye introduced itself without it. */}
       {i === 0 ? (
         <Text className="pt-4 text-xs text-faint">
-          Hawkeye is independent and nonpartisan. It is not affiliated with INEC
-          or any government body, and it does not declare results — it records
-          what observers report and lets anyone check the record.
+          {i18nT("n.components.tour.hawkeye-is-independent-and-nonpartisan")}
         </Text>
       ) : null}
     </ModalCard>

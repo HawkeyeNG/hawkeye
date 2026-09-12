@@ -20,7 +20,7 @@ const EN = JSON.parse(fs.readFileSync(`${ROOT}/tmp/native_content_en.json`, 'utf
 // source rather than being merged into a or b: it came through a different
 // review — a literal back-translation of every promise — and a later
 // retranslation of either half should be isolatable from the other.
-const batches = ['tmp/content_tr_a.json', 'tmp/content_tr_b.json', 'tmp/content_tr_legal.json']
+const batches = ['tmp/content_tr_a.json', 'tmp/content_tr_b.json', 'tmp/content_tr_legal.json', 'tmp/content_tr_faq.json']
   .map((f) => JSON.parse(fs.readFileSync(`${ROOT}/${f}`, 'utf8')));
 
 const TR = {};

@@ -206,12 +206,12 @@ type Searched = {
 // state it can be in — collapsing the step would hide the picker precisely
 // where the observer came to learn it.
 const STEPS: { key: Step; label: string }[] = [
-  { key: 'sheet', label: 'Sheet' },
-  { key: 'venue', label: 'Venue' },
-  { key: 'unit', label: 'Unit' },
-  { key: 'contest', label: 'Race' },
-  { key: 'votes', label: 'Votes' },
-  { key: 'review', label: 'Send' },
+  { key: 'sheet', label: i18nT('n.step.sheet') },
+  { key: 'venue', label: i18nT('n.step.venue') },
+  { key: 'unit', label: i18nT('n.step.unit') },
+  { key: 'contest', label: i18nT('n.step.race') },
+  { key: 'votes', label: i18nT('n.step.votes') },
+  { key: 'review', label: i18nT('n.step.send') },
 ];
 
 /** Enough to find the unit you are standing at; short enough to still scan. */
@@ -1610,7 +1610,7 @@ export default function Practice() {
         {step === 'unit' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Text className="pb-1 text-xs text-muted" numberOfLines={1}>
-              {unit ? i18nT('n.app.practice.selected', { v0: unit.name }) : 'No unit chosen — you’ll practise against the sample.'}
+              {unit ? i18nT('n.app.practice.selected', { v0: unit.name }) : i18nT('n.app.practice.no-unit-chosen-you-ll-practise')}
             </Text>
             {/* THE REAL FLOW'S SENTENCE, WORD FOR WORD, AT THE REAL FLOW'S
                 DISTANCE (report/result.tsx, same `warnRadiusM` call). The point

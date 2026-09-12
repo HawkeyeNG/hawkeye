@@ -1456,7 +1456,7 @@ export default function Results() {
                 ? `${contest.name} (${Number(String(contest.date ?? '').slice(0, 4)) || 2027})`
                 : race
                   ? raceLabel(race, contests)
-                  : 'Choose an election type'}
+                  : i18nT('n.app.tabs.results.choose-an-election-type')}
           </Text>
           {nothingChosen ? null : (
             <Text className="text-xs font-bold text-hawk-leaf">{choosing ? 'Cancel' : 'Change'}</Text>

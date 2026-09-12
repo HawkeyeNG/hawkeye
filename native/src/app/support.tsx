@@ -80,17 +80,15 @@ export default function Support() {
           <View className="gap-2 rounded-2xl border border-line bg-card p-4">
             <Text className="text-lg font-bold text-ink">{i18nT('support.keep-hawkeye-independent')}</Text>
             <Text className="leading-6 text-muted">
-              Hawkeye is built and paid for by its founder — no political funding, no
-              advertisers, no strings attached. If the work is useful to you, a donation helps
-              cover the servers, phones and time that keep it running and independent.
+              {i18nT('n.app.support.hawkeye-is-built-and-paid-for')}
             </Text>
           </View>
 
           <Text className="mt-1 text-xs font-bold uppercase tracking-widest text-faint">
-            Crypto Wallets
+            {i18nT('n.app.support.crypto-wallets')}
           </Text>
           <Text className="-mt-2 text-xs leading-5 text-muted">
-            Tap Copy for wallet address, or QR to generate a scannable code.
+            {i18nT('n.app.support.tap-copy-for-wallet-address')}
           </Text>
 
           {WALLETS.map((w) => (
@@ -109,7 +107,7 @@ export default function Support() {
                 >
                   <Feather name={copied === w.address ? 'check' : 'copy'} size={13} color={ui.tint.good.ink} />
                   <Text className="text-xs font-bold text-good-ink">
-                    {copied === w.address ? 'Copied' : 'Copy'}
+                    {copied === w.address ? i18nT('n.app.support.copied') : i18nT('n.app.support.copy')}
                   </Text>
                 </Pressable>
                 <Pressable

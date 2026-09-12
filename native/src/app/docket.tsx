@@ -172,8 +172,8 @@ export default function Docket() {
    */
   const docketExplainer = [
     i18nT('n.app.docket.a-flag-never-decides-anything-it'),
-    'Why a disputed result is excluded — a unit is marked disputed while a serious flag on it is unresolved, or while its case is open, upheld, or timed out without quorum. Disputed means badged everywhere, barred from ever reading as verified, and left out of the headline tallies. That is why the count above can be higher than the number of cases below: a result is held back the moment it is flagged, and the case putting it to the crowd may only be opened once polls close. A result the crowd clears goes straight back into the count, and the flag stays on the public record either way.',
-    'Who judges, and how — verified observers worldwide answer factual questions about evidence they can see, one verdict per person, published with the answers behind it. Nobody at Hawkeye votes, and no juror picks a side: a published rule computes each verdict from the answers.',
+    i18nT("n.app.docket.why-a-disputed-result-is-excluded-a"),
+    i18nT("n.app.docket.who-judges-and-how-verified-observers-worldwide"),
     quorum && pct
       ? `How a case resolves — a case needs ${quorum} verdicts and a ${pct}% supermajority${
           windowDays ? ` inside a ${windowDays}-day window` : ''

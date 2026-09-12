@@ -269,7 +269,9 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
               here: the bell icon, the detail line's "Alerts on", and
               accessibilityState.selected for anyone not seeing either. */}
           <Text className={`text-sm font-bold ${following ? 'text-good-ink' : 'text-hawk-gold'}`}>
-            {following ? `Unfollow ${subject}` : `Follow ${subject}`}
+            {following
+              ? i18nT('n.components.follow-race.unfollow', { v0: subject })
+              : i18nT('n.components.follow-race.follow', { v0: subject })}
           </Text>
           <Text className={`pt-0.5 text-xs ${following ? 'text-faint' : 'text-emerald-200'}`}>
             {detail}

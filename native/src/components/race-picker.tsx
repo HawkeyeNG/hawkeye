@@ -268,13 +268,13 @@ function RacePickerFor({ code, states: given }: { code: string; states?: string[
         accessibilityLabel={i18nT('n.components.race-picker.find-your', { v0: meta.label })}
       >
         <View className="flex-1">
-          <Text className="text-base font-bold text-ink">Find your {meta.label}</Text>
+          <Text className="text-base font-bold text-ink">{i18nT('n.components.race-picker.find-your', { v0: meta.label })}</Text>
           <Text className="pt-0.5 text-xs text-muted">
             {/* One step means one sentence. For GOV meta.label is "state", so the
                 two-step template read "Pick a state, then your state" — naming a
                 second step that does not exist. */}
             {meta.statesAreRaces
-              ? 'Pick a state to open its race'
+              ? i18nT('n.components.race-picker.pick-a-state-to-open-its-race')
               : state
                 ? i18nT('n.components.race-picker.pick-a', { v0: state, v1: meta.label })
                 : i18nT('n.components.race-picker.pick-a-state-then-your', { v0: meta.label })}

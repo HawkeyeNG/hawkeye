@@ -1283,7 +1283,7 @@ export default function MapUnit() {
               ? i18nT('n.app.map-unit.its-position-is-known-only-to', { v0: envelopeM.toLocaleString() })
               : selUnlocated
                 ? ' — it has no recorded position at all, which is why it has no pin on the map. Your fix is what puts it there.'
-                : ' — record a fix here to confirm it.'}
+                : i18nT('n.app.map-unit.record-a-fix-here-to-confirm')}
           </Text>
 
           {/* The star commits server-side state of its own, so it belongs in the

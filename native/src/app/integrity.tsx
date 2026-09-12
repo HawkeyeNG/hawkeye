@@ -54,7 +54,7 @@ type Irev = { electionId?: string | null; counts?: Record<string, number> };
 type CollationStat = { byLevel?: Record<string, number>; flags?: Record<string, number> };
 
 const VERDICT_TEXT: Record<string, (mad: number) => string> = {
-  insufficient_data: () => 'needs ≥100 counts for a verdict',
+  insufficient_data: () => i18nT('n.app.integrity.needs-100-counts-for-a-verdict'),
   close_conformity: (m) => i18nT('n.app.integrity.close-conformity-mad', { v0: m }),
   acceptable_conformity: (m) => i18nT('n.app.integrity.acceptable-conformity-mad', { v0: m }),
   marginal_conformity: (m) => i18nT('n.app.integrity.marginal-conformity-mad', { v0: m }),
@@ -284,7 +284,7 @@ export default function Integrity() {
   const irevLine = !irev
     ? 'Loading…'
     : !irev.electionId
-      ? 'Waiting for INEC to open the election on IReV — the check activates automatically once configured.'
+      ? i18nT('n.app.integrity.waiting-for-inec-to-open-the')
       : (() => {
           const c = irev.counts ?? {};
           const total = Object.values(c).reduce((s, n) => s + n, 0);
@@ -471,7 +471,7 @@ export default function Integrity() {
         <SectionLabel text={i18nT("n.app.integrity.digit-distribution-screening")} />
         <View className="flex-row items-center pb-2">
           <Text className="flex-1 text-sm text-muted">
-            Screening signal, never proof on its own.
+            {i18nT('n.app.integrity.screening-signal-never-proof-on-its')}
             {benford ? i18nT('n.app.integrity.based-on-unit-result-s-party', { v0: benford.n, v1: benford.nFirst || 0 }) : ''}
           </Text>
           <InfoDot
@@ -481,7 +481,7 @@ export default function Integrity() {
         </View>
         <View className="rounded-2xl bg-card px-4 py-4">
           <Text className="text-sm font-bold text-ink">
-            First Digit — Benford&apos;s Law{' '}
+            {i18nT('n.app.integrity.first-digit-benford-s-law')}{' '}
             <Text className="text-xs font-semibold text-muted">
               {benford && VERDICT_TEXT[benford.verdict]
                 ? `— ${VERDICT_TEXT[benford.verdict](benford.mad)}`

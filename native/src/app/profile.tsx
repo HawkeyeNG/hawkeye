@@ -466,10 +466,10 @@ export default function Profile() {
   const raceName = (code: string) => races[code] ?? code;
 
   const acts: { key: string; icon: keyof typeof Feather.glyphMap; label: string; count: number }[] = [
-    { key: 'reports', icon: 'file-text', label: 'Result Reports', count: me?.reports?.length ?? 0 },
-    { key: 'collation', icon: 'layers', label: 'Collation Reports', count: me?.collation?.length ?? 0 },
+    { key: 'reports', icon: 'file-text', label: i18nT('n.app.profile.result-reports'), count: me?.reports?.length ?? 0 },
+    { key: 'collation', icon: 'layers', label: i18nT('n.app.profile.collation-reports'), count: me?.collation?.length ?? 0 },
     { key: 'incidents', icon: 'alert-triangle', label: i18nT('incident-reports.incident-reports'), count: me?.incidents?.length ?? 0 },
-    { key: 'mappings', icon: 'map-pin', label: 'Units Mapped', count: me?.mappings?.length ?? 0 },
+    { key: 'mappings', icon: 'map-pin', label: i18nT('n.app.profile.units-mapped'), count: me?.mappings?.length ?? 0 },
     { key: 'practice', icon: 'play-circle', label: i18nT('n.app.profile.practice-runs'), count: practice.length },
   ];
 
@@ -508,8 +508,8 @@ export default function Profile() {
                   <Feather name="user" size={24} color={BRAND.gold} />
                 </View>
                 <View className="pl-4">
-                  <Text className="text-xl font-bold text-white">Observer #{me.observerId}</Text>
-                  <Text className="text-xs text-emerald-200">since {dt(me.createdAt)}</Text>
+                  <Text className="text-xl font-bold text-white">{i18nT('n.app.profile.observer-number')}{me.observerId}</Text>
+                  <Text className="text-xs text-emerald-200">{i18nT('n.app.profile.since')} {dt(me.createdAt)}</Text>
                 </View>
               </View>
               <Pressable
@@ -539,7 +539,7 @@ export default function Profile() {
                 first
                 icon="key"
                 label={i18nT('common.password')}
-                value={me.hasPassword ? 'Change' : 'Not set'}
+                value={me.hasPassword ? i18nT('n.app.profile.change') : i18nT('n.app.profile.not-set')}
                 chevron
                 onPress={openPw}
               />
@@ -553,7 +553,7 @@ export default function Profile() {
                 sub={
                   <Text className="pt-0.5 text-xs text-muted">
                     {bioAvailable
-                      ? 'Asked once, just before a real result is signed. Rehearsals are never gated.'
+                      ? i18nT('n.app.profile.asked-once-just-before-a-real')
                       : 'This phone has no fingerprint or face unlock set up.'}
                   </Text>
                 }
@@ -745,7 +745,7 @@ export default function Profile() {
                 first
                 icon="share-2"
                 label={i18nT('profile.share-hawkeye')}
-                value="Send it on"
+                value={i18nT('n.app.profile.send-it-on')}
                 chevron
                 onPress={shareHawkeye}
               />

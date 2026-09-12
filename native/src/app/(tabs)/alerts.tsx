@@ -332,7 +332,7 @@ export default function Alerts() {
                   <>
                     <Feather name="check-circle" size={16} color={BRAND.gold} />
                     <Text className="pl-2 text-base font-bold text-hawk-gold">
-                      {unread > 0 ? i18nT('n.app.tabs.alerts.mark-all-read', { v0: unread }) : 'All read'}
+                      {unread > 0 ? i18nT('n.app.tabs.alerts.mark-all-read', { v0: unread }) : i18nT('n.app.tabs.alerts.all-read')}
                     </Text>
                   </>
                 )}

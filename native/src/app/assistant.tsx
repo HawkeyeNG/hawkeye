@@ -265,7 +265,7 @@ export default function Assistant() {
                 <ActivityIndicator color={BRAND.gold} />
               ) : (
                 <Text className="text-base font-bold text-hawk-gold">
-                  {!q.trim() && failed ? 'Retry' : 'Ask'}
+                  {!q.trim() && failed ? i18nT('n.app.assistant.retry') : i18nT('n.app.assistant.ask')}
                 </Text>
               )}
             </Pressable>

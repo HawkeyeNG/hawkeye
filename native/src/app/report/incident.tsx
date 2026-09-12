@@ -877,7 +877,7 @@ export default function ReportIncident() {
       setNearLine(
         all.length > found.length
           ? i18nT('n.app.report.incident.tap-the-unit-this-happened-at', { v0: found.length, v1: all.length })
-          : i18nT("n.app.report.incident.tap-the-unit-this-happened-at"),
+          : i18nT('n.app.report.incident.tap-the-unit-plain'),
       );
     } catch (e) {
       setNearLine(
@@ -1252,7 +1252,7 @@ export default function ReportIncident() {
               <Text
                 className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-hawk-leaf' : 'text-faint'}`}
               >
-                {i === 0 ? 'What happened' : 'Where'}
+                {i === 0 ? i18nT('n.step.what-happened') : i18nT('n.step.where')}
               </Text>
             </View>
           );

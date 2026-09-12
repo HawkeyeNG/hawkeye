@@ -625,6 +625,18 @@ input, select {
   background: var(--card);
   color: var(--ink);
 }
+/* THE ONE CONTROL WITH NO SURFACE OF ITS OWN. Every input and select above
+   carries the card fill; the textarea did not, so the WebView painted its
+   default grey box in the middle of a green card (report an incident, "What
+   happened?"). Same fill, border and ink as its neighbours. */
+textarea {
+  background: var(--card);
+  color: var(--ink);
+  border: 1.5px solid var(--input-border);
+  border-radius: 10px;
+  font-family: inherit;
+}
+
 /* A CHECKBOX IS NOT A TEXT FIELD.
    The `input, select` rule above sets display:block and width:100%, which is
    right for text and wrong for a checkbox: the control stretches across the

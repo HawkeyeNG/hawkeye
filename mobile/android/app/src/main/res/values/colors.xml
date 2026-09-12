@@ -6,4 +6,11 @@
          splash showed the hawk on BLACK. Same value as the native shell's
          expo-splash-screen backgroundColor and the web theme-color. -->
     <color name="splashBackground">#004225</color>
+
+    <!-- The select dialog's surface: the same card fill the dark theme uses in
+         styles.css (--card), so a picker opening over the page does not look
+         like it came from another app. -->
+    <color name="dialogBackground">#12241b</color>
+    <color name="dialogInk">#eef5f0</color>
+    <color name="dialogAccent">#3ddc97</color>
 </resources>

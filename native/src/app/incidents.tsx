@@ -15,7 +15,8 @@ import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND, type Incident } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
-import { t as i18nT, lazyT } from '@/lib/i18n';
+import { t as i18nT } from '@/lib/i18n';
+import { KIND_LABEL } from '@/lib/incident-kinds';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -28,16 +29,6 @@ const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
  * icon for the picker, which a text feed has no use for — so the labels are
  * restated rather than the picker's shape imported wholesale.
  */
-const KIND_LABEL: Record<string, string> = lazyT({
-  violence: 'Violence',
-  ballot_snatching: 'n.app.incidents.ballot-snatching',
-  vote_buying: 'n.app.incidents.vote-buying',
-  intimidation: 'Intimidation',
-  bvas_failure: 'n.app.incidents.bvas-failure',
-  late_materials: 'n.app.incidents.late-materials',
-  obstruction: 'Obstruction',
-  other: 'Other',
-});
 
 /**
  * lib/api.ts's Incident predates this screen: it names the body `text` and types

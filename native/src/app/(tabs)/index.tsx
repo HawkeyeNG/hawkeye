@@ -10,6 +10,8 @@ import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
 import { t as i18nT, lazyT } from '@/lib/i18n';
+import { flagLabel } from '@/lib/flags';
+import { KIND_LABEL } from '@/lib/incident-kinds';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -154,6 +156,14 @@ const TINT: Record<Tone, string> = {
   warn: 'bg-warn',
 };
 
+/* The docket's four statuses, as the resolved-case row reads them. */
+const CASE_STATUS: Record<string, string> = lazyT({
+  open: 'n.app.tabs.index.status-open',
+  upheld: 'n.app.tabs.index.status-upheld',
+  unresolved: 'n.app.tabs.index.status-unresolved',
+  cleared: 'n.app.tabs.index.status-cleared',
+});
+
 const FILTERS: { key: Kind | 'all'; label: string }[] = lazyT([
   { key: 'all', label: 'n.app.tabs.index.filter-everything' },
   { key: 'report', label: 'n.app.tabs.index.filter-reports' },
@@ -244,7 +254,7 @@ export default function Home() {
     // Every source failing at once means the network is gone, not that nothing
     // is happening — the two look identical otherwise.
     if (!c && !ledger && !incidents) {
-      setError('Could not reach hawkeye.com.ng — check your connection.');
+      setError(i18nT('n.app.tabs.index.could-not-reach'));
       return;
     }
     setError(null);
@@ -266,7 +276,7 @@ export default function Home() {
         id: `i${n.id}`,
         kind: 'incident',
         at: n.created_at,
-        title: n.kind.replace(/_/g, ' '),
+        title: KIND_LABEL[n.kind] ?? n.kind.replace(/_/g, ' '),
         detail: [n.lga, n.state].filter(Boolean).join(', ') || n.text?.slice(0, 60) || '',
         href: '/incidents',
       });
@@ -277,7 +287,7 @@ export default function Home() {
         id: `f${d.id}`,
         kind: 'flag',
         at: d.created_at,
-        title: d.type.replace(/_/g, ' '),
+        title: flagLabel(d.type),
         detail: d.detail?.summary?.slice(0, 90) || [d.pu_name, d.state].filter(Boolean).join(' · '),
         href: '/integrity',
       });
@@ -287,7 +297,9 @@ export default function Home() {
         id: `c${k.id}`,
         kind: 'case',
         at: k.resolvedAt ?? k.openedAt,
-        title: k.resolvedAt ? i18nT('n.app.tabs.index.case-resolved', { v0: k.status }) : 'Case opened',
+        title: k.resolvedAt
+          ? i18nT('n.app.tabs.index.case-resolved', { v0: CASE_STATUS[k.status] ?? k.status })
+          : i18nT('n.app.tabs.index.case-opened'),
         detail: `${k.name || k.puCode} · ${k.contest}`,
         href: `/case?id=${k.id}`,
       });

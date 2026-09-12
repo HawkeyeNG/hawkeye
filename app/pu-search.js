@@ -22,6 +22,9 @@
     u.coords_source === 'crowd_mapped'
       ? 'crowd'
       : u.locationTier || (u.lat != null ? 'verified' : u.crowd_lat != null ? 'crowd' : 'unmapped');
+  /* Same shape as race.js's helper: the English stays inline as the fallback,
+     so the widget still reads correctly with i18n.js absent or still loading. */
+  const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /**
@@ -55,8 +58,8 @@
     host.dataset.puSearchMounted = '1';
     const o = opts || {};
     host.innerHTML =
-      '<label for="pus-q">Search for your polling unit</label>'
-      + '<input id="pus-q" type="search" autocomplete="off" placeholder="Name, ward or unit number — e.g. Aso Drive" />'
+      '<label for="pus-q" data-i18n="pu.search-for-your-polling-unit">' + esc(T('pu.search-for-your-polling-unit', 'Search for your polling unit')) + '</label>'
+      + '<input id="pus-q" type="search" autocomplete="off" data-i18n-attr="placeholder:pu.name-ward-or-unit-number-placeholder" placeholder="' + esc(T('pu.name-ward-or-unit-number-placeholder', 'Name, ward or unit number — e.g. Aso Drive')) + '" />'
       + '<p class="hint" id="pus-status" role="status" aria-live="polite" style="margin:6px 0 0"></p>'
       + '<div id="pus-results" style="margin-top:8px"></div>';
     const q = host.querySelector('#pus-q');

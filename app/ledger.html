@@ -66,7 +66,7 @@
          same sentence. The "How the chain is checked" fold stays folded. -->
     <div class="stat-grid" id="tiles"></div>
 
-    <p class="lede"><span data-i18n="ledger.verified-means-your-phone-recomputed-every-hash">Verified means your phone recomputed every hash itself and got the same head we publish.</span><button class="info-i" data-info-title="How the chain is checked" data-info="Each entry stores the hash of the one before it, so altering or removing any past report breaks every hash after it. This page recomputes the whole chain in your own browser and compares the head it gets to the one we publish — you don't have to trust us."></button></p>
+    <p class="lede"><span data-i18n="ledger.verified-means-your-phone-recomputed-every-hash">Verified means your phone recomputed every hash itself and got the same head we publish.</span><button class="info-i" data-i18n-info-title="info.how-the-chain-is-checked.title" data-info-title="How the chain is checked" data-i18n-info="info.how-the-chain-is-checked.body" data-info="Each entry stores the hash of the one before it, so altering or removing any past report breaks every hash after it. This page recomputes the whole chain in your own browser and compares the head it gets to the one we publish — you don't have to trust us."></button></p>
 
     <button data-i18n="ledger.re-verify-the-entire-chain-in-my" id="btn-verify">🔒 Re-verify the entire chain in my browser</button>
     <p id="client-result" class="status" role="status"></p>
@@ -74,7 +74,7 @@
 
     <div class="card">
       <h2 data-i18n="ledger.verify-a-single-race">Verify a Single Race</h2>
-      <p class="hint"><span data-i18n="ledger.check-one-race-s-paper-trail-on">Check one race's paper trail on its own.</span><button class="info-i" data-info-title="Verifying a single race" data-info="Every anchor batches every race — Presidential, and each Senate, House, Governorship and State Assembly race — into one Merkle root published to Rekor. Verifying one race folds only that race's branch, in your own browser, without replaying every other race or trusting us."></button></p>
+      <p class="hint"><span data-i18n="ledger.check-one-race-s-paper-trail-on">Check one race's paper trail on its own.</span><button class="info-i" data-i18n-info-title="info.verifying-a-single-race.title" data-info-title="Verifying a single race" data-i18n-info="info.verifying-a-single-race.body" data-info="Every anchor batches every race — Presidential, and each Senate, House, Governorship and State Assembly race — into one Merkle root published to Rekor. Verifying one race folds only that race's branch, in your own browser, without replaying every other race or trusting us."></button></p>
       <div id="race-anchor-info" class="meta" data-i18n="ledger.loading-latest-anchor">Loading latest anchor…</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0">
         <select data-i18n-attr="aria-label:ledger.select-a-race-to-verify" id="race-select" aria-label="Select a race to verify"></select>

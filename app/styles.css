@@ -1794,9 +1794,24 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
    pinned. `min-height: 0` is what actually lets the middle shrink — without it
    a flex child refuses to go below its content height and nothing scrolls. */
 .gov-disc-modal {
-  border: 0; border-radius: 16px; padding: 22px; max-width: min(92vw, 440px);
+  /* An explicit surface, because a <dialog> with no background takes the UA's
+     -- which is white in light mode and a flat near-black in dark, so every
+     info and warning modal read as a grey system box dropped into a green app.
+     These are the same tokens the cards use, so the modals sit in the product's
+     palette in BOTH themes instead of being painted for one of them. */
+  background: var(--card);
+  border: 1px solid var(--line); border-radius: 16px; padding: 22px;
+  max-width: min(92vw, 440px);
   color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
 }
+
+/* Sign-in mode, set during parse by observe.html so the sign-up affordances
+   never paint for a returning observer. app.js applies the same state. */
+html.intent-signin #starter-card,
+html.intent-signin #signin-line,
+html.intent-signin #pw-opt,
+html.intent-signin #channel-pick { display: none !important; }
+html.intent-signin #pw-signin-wrap { display: block !important; }
 /* THE FLEX LAYOUT ONLY WHILE OPEN — and this is not a nicety.
    A <dialog> is display:none until showModal(); an unconditional `display: flex`
    here OVERRODE that, so the dialog rendered inline at the end of the page from

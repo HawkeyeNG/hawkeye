@@ -269,18 +269,18 @@
 
       <div class="pcard">
         <h2 data-i18n="profile.races-you-follow">Races you follow</h2>
-        <div id="p-subs" class="empty">None yet — follow a race from the <a data-i18n="profile.leaderboard" href="results.html">leaderboard</a>.</div>
+        <div id="p-subs" class="empty" data-i18n-html="profile.none-yet-follow-a-race">None yet — follow a race from the <a data-i18n="profile.leaderboard" href="results.html">leaderboard</a>.</div>
       </div>
 
       <h2 data-i18n="profile.my-activity" class="sec-label" style="margin-top:18px">My activity</h2>
-      <details class="fold"><summary>Result Reports <span class="cnt" id="cnt-reports">0</span></summary>
-        <div id="p-reports" class="empty">No result reports yet.</div></details>
-      <details class="fold"><summary>Collation Reports <span class="cnt" id="cnt-collation">0</span></summary>
-        <div id="p-collation" class="empty">No collation reports yet.</div></details>
-      <details class="fold"><summary>Incident Reports <span class="cnt" id="cnt-incidents">0</span></summary>
-        <div id="p-incidents" class="empty">No incident reports yet.</div></details>
-      <details class="fold"><summary>Units Mapped <span class="cnt" id="cnt-mappings">0</span></summary>
-        <div id="p-mappings" class="empty">No units mapped yet.</div></details>
+      <details class="fold"><summary><span data-i18n="profile.result-reports">Result Reports</span> <span class="cnt" id="cnt-reports">0</span></summary>
+        <div id="p-reports" class="empty" data-i18n="profile.no-result-reports-yet">No result reports yet.</div></details>
+      <details class="fold"><summary><span data-i18n="profile.collation-reports">Collation Reports</span> <span class="cnt" id="cnt-collation">0</span></summary>
+        <div id="p-collation" class="empty" data-i18n="profile.no-collation-reports-yet">No collation reports yet.</div></details>
+      <details class="fold"><summary><span data-i18n="incident-reports.incident-reports">Incident Reports</span> <span class="cnt" id="cnt-incidents">0</span></summary>
+        <div id="p-incidents" class="empty" data-i18n="profile.no-incident-reports-yet">No incident reports yet.</div></details>
+      <details class="fold"><summary><span data-i18n="profile.units-mapped">Units Mapped</span> <span class="cnt" id="cnt-mappings">0</span></summary>
+        <div id="p-mappings" class="empty" data-i18n="profile.no-units-mapped-yet">No units mapped yet.</div></details>
 
       <!-- SHARE HAWKEYE. Down here with the actions rather than up with the
            account rows: it is not a setting, and it is the one thing on this
@@ -324,7 +324,22 @@
   <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const dt = (t) => new Date(t).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' });
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    /* The locale followed the page, not the reader: 'en-NG' was hardcoded, so a
+       Hausa or Igbo reader still got an English month. It also returns '' for an
+       unparseable value rather than rendering the string "Invalid Date" at
+       someone -- a missing join date should show nothing, not a fault message. */
+    const dt = (t) => {
+      const d = new Date(t);
+      if (isNaN(d.getTime())) return '';
+      const cur = (window.HawkeyeI18n && window.HawkeyeI18n.current) || 'en';
+      const loc = { en: 'en-NG', ha: 'ha-NG', ig: 'ig-NG', yo: 'yo-NG' }[cur] || 'en-NG';
+      try {
+        return d.toLocaleDateString(loc, { year: 'numeric', month: 'short', day: 'numeric' });
+      } catch (e) {
+        return d.toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+    };
     const token = () => localStorage.getItem('hawkeye_token');
     let hasPassword = false;
 
@@ -369,8 +384,9 @@
       if (status !== 200) { localStorage.removeItem('hawkeye_token'); $('signed-out').hidden = false; return; }
       $('profile').hidden = false;
 
-      $('p-id').textContent = 'Observer #' + body.observerId;
-      $('p-since').textContent = 'since ' + dt(body.createdAt);
+      $('p-id').textContent = T('profile.observer-number', 'Observer #') + body.observerId;
+      const joined = dt(body.createdAt);
+      $('p-since').textContent = joined ? T('profile.since', 'since') + ' ' + joined : '';
       $('p-hash').textContent = body.identityHash;
       hasPassword = body.hasPassword;
       // The VALUE of the row, not a sentence about it. "Password · Change ›".

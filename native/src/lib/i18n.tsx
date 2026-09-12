@@ -133,6 +133,27 @@ export function t(key: string, params?: Record<string, string | number | null | 
  * importing the provider's context there would be a cycle. This is the same
  * module variable `t` reads.
  */
+/**
+ * A map whose values are translated WHEN READ, not when the module loads.
+ *
+ * `const ERRORS = { gps_required: t('n...') }` looks right and is not: module
+ * constants are evaluated at import, before AsyncStorage has returned the
+ * stored language, so every value froze as English and no remount could move
+ * it. Holding the key and translating in the proxy's getter keeps the call
+ * sites ("ERRORS[code]") exactly as they were.
+ *
+ * Values that are not keys (a plain English literal, a number) pass through, so
+ * a map can hold both.
+ */
+export function lazyT<T extends object>(entries: T): T {
+  return new Proxy(entries, {
+    get(target, prop) {
+      const v = (target as Record<string | symbol, unknown>)[prop];
+      return typeof v === 'string' && v.startsWith('n.') ? t(v) : v;
+    },
+  });
+}
+
 export function currentLangForOtp(): Lang {
   return currentLang;
 }

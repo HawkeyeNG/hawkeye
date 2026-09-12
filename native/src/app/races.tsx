@@ -10,7 +10,7 @@ import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api, bySeat, type Contest } from '@/lib/api';
 import { loadPolitical, type Political, type Race as RaceData } from '@/lib/political';
 import { useUi } from '@/lib/theme';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 /**
  * Races — the all-races selector, native twin of app/races.html. Reached from
@@ -48,13 +48,13 @@ type Item = {
 const GENERAL_ELECTION_YEAR = 2027;
 // Seat magnitude, by TIER — see (tabs)/results.tsx bySeat, which this imports
 // rather than keeping a fifth copy of.
-const DESC: Record<string, string> = {
-  PRES: i18nT('n.app.races.the-declared-presidential-field-quick-compare'),
-  GOV: i18nT('n.app.races.one-governorship-per-state-each-state'),
-  SEN: i18nT('n.app.races.109-seats-across-36-states'),
-  REP: i18nT('n.app.races.360-federal-constituencies'),
-  SHA: i18nT('n.app.races.the-36-state-legislatures'),
-};
+const DESC: Record<string, string> = lazyT({
+  PRES: 'n.app.races.the-declared-presidential-field-quick-compare',
+  GOV: 'n.app.races.one-governorship-per-state-each-state',
+  SEN: 'n.app.races.109-seats-across-36-states',
+  REP: 'n.app.races.360-federal-constituencies',
+  SHA: 'n.app.races.the-36-state-legislatures',
+});
 
 const SOON =
   i18nT('n.app.races.this-race-has-no-page-yet');

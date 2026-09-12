@@ -241,6 +241,10 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
        JS, and this page loads i18n.js AFTER this script, so the first paint
        can precede the bundle — hence the repaint bound at the end. */
     const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    /* t() does not interpolate, so the placeholders are filled after the
+       lookup -- one translated sentence per message, not glued fragments. */
+    const TV = (k, en, vars) => Object.keys(vars).reduce(
+      (out, v) => out.split('{' + v + '}').join(vars[v]), T(k, en));
 
     const PC = { APC:'#2e7d32', PDP:'#c62828', LP:'#8bc34a', NNPP:'#1565c0', APGA:'#f9a825', SDP:'#5e35b1', ADC:'#00897b', YPP:'#ef6c00', APM:'#283593', NDC:'#2e3192', A:'#00838f' };
     const color = (p) => PC[p] || '#9aa7a0';
@@ -360,7 +364,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           ><title>${esc(label)}</title></circle>`;
       }).join('');
       return `<svg class="arch" viewBox="0 0 220 124" role="img"
-        aria-label="${filled} of ${size} seats held, by party">
+        aria-label="${TV('political.n-of-m-seats-held-by-party', '{v0} of {v1} seats held, by party', { v0: filled, v1: size })}">
         ${dots}
         <text class="tot" x="110" y="98" font-size="19">${filled}</text>
         <text class="totsub" x="110" y="114" font-size="8.5">${esc(T('political.of-n-seats', 'of {n} seats').replace('{n}', size))}</text>
@@ -675,7 +679,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
   </script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=6"></script>
-  <script src="/lang.js?v=4"></script>
-  <script src="menu.js?v=170"></script>
+  <script src="/lang.js?v=5"></script>
+  <script src="menu.js?v=171"></script>
 </body>
 </html>

@@ -68,12 +68,19 @@ const isClosed = (list: Declaration[], contest: string, scope: string) =>
  * "House of Representatives" is the contest's formal name and makes a button
  * that wraps to three lines on a phone.
  */
-const CONTEST_PLURAL: Record<string, string> = {
-  GOV: 'governorship',
-  SEN: 'Senate',
-  REP: i18nT('n.components.follow-race.house-of-reps'),
-  SHA: i18nT('n.components.follow-race.state-assembly'),
-};
+function contestPlural(contest: string): string {
+  /* RESOLVED AT CALL TIME, NOT AT IMPORT. This was a module constant, and a
+     t() call in one runs before any language has been chosen -- the provider
+     remounts on a language change but cannot re-evaluate a constant that was
+     read once. Two of the four words froze in English. */
+  const words: Record<string, string> = {
+    GOV: i18nT('n.components.follow-race.governorship'),
+    SEN: i18nT('n.components.follow-race.senate'),
+    REP: i18nT('n.components.follow-race.house-of-reps'),
+    SHA: i18nT('n.components.follow-race.state-assembly'),
+  };
+  return words[contest] ?? contest;
+}
 
 /**
  * What is being followed, in words. MUST match app/follow.js:followSubject —
@@ -84,9 +91,9 @@ const CONTEST_PLURAL: Record<string, string> = {
  * empty region there IS the single race, not a shortcut for many.
  */
 export function followSubject(contest: string | null, scope: string): string {
-  if (scope) return 'this race';
-  if (!contest || contest === 'PRES') return 'this race';
-  return i18nT('n.components.follow-race.all-races', { v0: CONTEST_PLURAL[contest] ?? contest });
+  if (scope) return i18nT('n.components.follow-race.this-race');
+  if (!contest || contest === 'PRES') return i18nT('n.components.follow-race.this-race');
+  return i18nT('n.components.follow-race.all-races', { v0: contestPlural(contest) });
 }
 
 /**
@@ -192,7 +199,7 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
         return;
       }
       if (!res.ok) {
-        notice.show('Could not update', i18nT('n.components.follow-race.try-again-http', { v0: res.status }));
+        notice.show(i18nT('n.components.follow-race.could-not-update'), i18nT('n.components.follow-race.try-again-http', { v0: res.status }));
         return;
       }
       setSubs((s) =>
@@ -220,7 +227,7 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
    * region is named in the heading directly above, and how the subscription
    * came about is not something a reader is deciding between.
    */
-  const detail = following ? 'Alerts on' : i18nT('n.components.follow-race.get-alerts-on-every-report');
+  const detail = following ? i18nT('n.components.follow-race.alerts-on') : i18nT('n.components.follow-race.get-alerts-on-every-report');
 
   /**
    * SUBSCRIBED, AND IT HAS TO LOOK LIKE A CONTROL.
@@ -242,7 +249,7 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
         onPress={toggle}
         accessibilityRole="button"
         accessibilityState={{ selected: following, busy }}
-        accessibilityLabel={following ? i18nT('n.components.follow-race.unfollow-alerts-are-on', { v0: subject }) : `Follow ${subject}`}
+        accessibilityLabel={following ? i18nT('n.components.follow-race.unfollow-alerts-are-on', { v0: subject }) : i18nT('n.components.follow-race.follow', { v0: subject })}
         className={`mb-3 flex-row items-center rounded-2xl px-4 py-3 active:opacity-80 ${
           following ? 'border border-good-ink bg-card' : 'bg-hawk-green'
         }`}

@@ -472,7 +472,7 @@
   "integrity.vision-count-mismatch": "Rashin daidaito da ƙidayar gani",
   "integrity.vote-share-outlier": "Kason ƙuri'a mai ban mamaki",
   "integrity.what-we-check": "Abin da Muke Dubawa",
-  "lang.body": "Hawkeye yana aiki da harsuna fiye da ɗaya. Kana iya canza wannan a kowane lokaci a shafin bayananka.",
+  "lang.body": "Kana iya canza wannan a kowane lokaci a shafin bayananka.",
   "lang.coming": "Nan ba da jimawa ba",
   "lang.current": "Yare",
   "lang.draft": "Fassarar gwaji, ana bita",
@@ -1262,5 +1262,15 @@
   "results.nothing-has-come-in-from-show-them": "Babu abin da ya shigo daga {v0} {v1} — nuna su",
   "results.leading-party-by": "Jam'iyyar da ke kan gaba a kowace {v0}{v1}",
   "results.everywhere-in": "Ko'ina a {v0}",
-  "race.follow-this-race": "Bi wannan gasa"
+  "race.follow-this-race": "Bi wannan gasa",
+  "terms.what-hawkeye-is-body": "Hawkeye yana ba 'yan ƙasa damar ɗaukar hoto, sa hannu, da wallafa sakamakon da aka sanar a rumfar zaɓensu zuwa wani tarihi mai zaman kansa da ba a iya sauya shi. Hawkeye <strong>ba</strong> shi da wata alaƙa da INEC, wata hukumar gwamnati, ko wata jam'iyyar siyasa, kuma babu wanda ya amince da shi ko ya ba shi izini. <strong>Sakamakon zaɓe na hukuma su ne waɗanda INEC kaɗai ta sanar.</strong> Hawkeye yana samar da shaidun da jama'a suka bayar don a duba su a fili; ba ya sanar da wanda ya yi nasara, kuma ba zai iya ba.",
+  "terms.your-content-body": "Rahotannin da ka aika — ƙidaya, hotuna, da wuraren da suka fito — ana wallafa su a littafin jama'a da ba a iya sauya shi, kuma bisa ƙira <strong>ba a iya gyara su ko goge su</strong>; wannan dawwama ce ke sa a amince da su. Da aikawa, kana ba Hawkeye izinin ajiyewa, wallafawa, da nuna wannan abun don bayyana gaskiyar zaɓe, a ko'ina a duniya, ba tare da biya ba kuma ba tare da keɓancewa ba. Ka tabbatar kana da haƙƙin aika shi. Ba a taɓa wallafa lambar wayarka ba — duba <a href=\"privacy.html\">Manufar Sirri</a>.",
+  "terms.changes-contact-body": "Za mu iya sabunta waɗannan sharuɗɗa; ci gaba da amfani bayan canje-canje yana nufin ka yarda. Tambayoyi: <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>. Dokokin Jamhuriyar Tarayyar Najeriya ne ke tafiyar da su.",
+  "privacy.collect.number": "<strong>Lambarka — a matsayin hash</strong>. Hanya ɗaya ce, ba a iya mayar da ita. Ba za mu iya ganin ta, nuna ta, ko ba da ita ba; tana nan ne domin lamba ɗaya ta zama mai lura ɗaya.",
+  "privacy.collect.reports": "<strong>Rahotanninka</strong> — ƙidaya, hotuna biyu kai tsaye, da inda aka ɗauki kowanne.",
+  "privacy.collect.device": "<strong>Alamar na'urarka</strong> — an yi mata hash, don waya ɗaya kada ta kai rahoton gasa ɗaya sau biyu.",
+  "privacy.collect.telegram": "<strong>Haɗin Telegram ɗinka</strong> — ID na tattaunawa kaɗai, don bot ɗin ya iya isa gare ka. Ba mu taɓa karanta saƙonninka ko lambobin sadarwarka ba.",
+  "privacy.what-becomes-public-body": "Ƙidayarka, hotunanka da wuraren da suka fito suna shiga littafin jama'a kuma <strong>ba a iya gyara su ko goge su</strong> — wannan dawwama ce ke ba su daraja. An ɗaure su da ID na mai lura maras suna, ba da kai ba. Hotunan lamurra suna bayyana ne kawai bayan an duba su da hannu.",
+  "privacy.your-rights-body": "Kana iya goge asusunka da kanka a kowane lokaci: buɗe shafin bayananka sannan ka zaɓi <strong>Goge asusuna</strong>. Wannan yana cire makullin sa hannunka, haɗin na'urarka, haɗin Telegram da rajistar sanarwa. Abubuwa biyu za su rage, bisa ƙira: bayanan littafin jama'a (na dindindin kuma maras suna — wannan dawwama ce ke sa a amince da su) da hash ɗin lambarka mai hanya ɗaya, wanda ake ajiyewa don kada a sake amfani da alamar da aka goge wajen kai rahoto iri ɗaya sau biyu. Sake yin rajista da lamba ɗaya yana mayar maka da ID ɗinka na asali. Sauran buƙatu ƙarƙashin Dokar Kare Bayanai ta Najeriya: <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>.",
+  "political.n-of-m-seats-held-by-party": "Kujeru {v0} daga cikin {v1} da aka riƙe, bisa jam'iyya"
 }

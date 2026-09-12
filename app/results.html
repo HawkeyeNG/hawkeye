@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=176" />
+  <link rel="stylesheet" href="styles.css?v=177" />
   <script src="native.js?v=116"></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
@@ -77,7 +77,7 @@
   <!-- For window.followSubject — the Follow button here and the one on a race
        page describe their subscriptions with the same words, from one place. -->
   <script src="follow.js?v=4"></script>
-  <script src="race-picker.js?v=8"></script>
+  <script src="race-picker.js?v=9"></script>
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
@@ -542,7 +542,7 @@
           const L = leadersOf(info);
           const tip = info
             ? `${it.name}: ${leadText(L)} · ${info.unitsReporting} unit(s)`
-            : `${it.name}: no reports yet`;
+            : TV('results.place-no-reports-yet', '{v0}: no reports yet', { v0: it.name });
           shapes += `<path class="state-shape${L.length ? ' led' : ''}"${tieStyle(L)} data-leaders="${L.join(',')}" fill-rule="evenodd" d="${it.path}"><title>${tip}</title></path>`;
         }
         viewBox = bboxOf(items.map((i) => i.path));
@@ -554,7 +554,7 @@
           const L = leadersOf(info);
           const tip = info
             ? `${st.name}: ${leadText(L)} · ${info.unitsReporting} unit(s)`
-            : `${st.name}: no reports yet`;
+            : TV('results.place-no-reports-yet', '{v0}: no reports yet', { v0: st.name });
           shapes += `<path class="state-shape${info ? ' led' : ''}"${tieStyle(L)} data-leaders="${L.join(',')}" d="${st.path}"><title>${tip}</title></path>`;
         }
         aria = 'Map of Nigeria: leading party per state';
@@ -581,7 +581,7 @@
           const L = leadersOf(info);
           const tip = info
             ? `${rg.name}: ${leadText(L)} · ${info.unitsReporting} unit(s)`
-            : `${rg.name}: no reports yet`;
+            : TV('results.place-no-reports-yet', '{v0}: no reports yet', { v0: rg.name });
           shapes += `<path class="state-shape${L.length ? ' led' : ''}"${tieStyle(L)} data-leaders="${L.join(',')}" fill-rule="evenodd" d="${rg.path}"><title>${tip}</title></path>`;
         }
         aria = `Map of Nigeria: leading party per ${word}`;
@@ -810,8 +810,8 @@
       list.innerHTML = CONTESTS.map((c) => {
         const when = c.opensAt || c.date;
         const tag = c.open
-          ? '<span class="race-tag open">Open</span>'
-          : `<span class="race-tag">${when ? `Opens ${new Date(when).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Not open yet'}</span>`;
+          ? `<span class="race-tag open">${T('results.open-tag', 'Open')}</span>`
+          : `<span class="race-tag">${when ? TV('results.opens-on', 'Opens {v0}', { v0: new Date(when).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }) : T('results.not-open-yet', 'Not open yet')}</span>`;
         return `<button type="button" class="race-opt${c.code === current ? ' on' : ''}" data-code="${c.code}">`
           + `<b>${raceLabel(c)}</b>${tag}</button>`;
       }).join('');
@@ -1046,8 +1046,8 @@
       paintFollowBtn();
       renderMap(data);
       document.getElementById('updated').textContent = data.unitsReporting > 0
-        ? `${data.unitsReporting} unit(s) reporting · updated ${new Date(data.updatedAt).toLocaleTimeString()}`
-        : `No reports yet · updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
+        ? TV('results.n-units-reporting-updated', '{v0} unit(s) reporting · updated {v1}', { v0: data.unitsReporting, v1: new Date(data.updatedAt).toLocaleTimeString() })
+        : TV('results.no-reports-yet-updated', 'No reports yet · updated {v0}', { v0: new Date(data.updatedAt).toLocaleTimeString() });
     }
 
     (async () => {
@@ -1286,8 +1286,8 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="/i18n.js?v=6"></script>
-  <script src="/lang.js?v=5"></script>
+  <script src="/i18n.js?v=7"></script>
+  <script src="/lang.js?v=6"></script>
   <script src="menu.js?v=171"></script>
 </body>
 </html>

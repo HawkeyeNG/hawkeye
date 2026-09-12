@@ -1540,7 +1540,7 @@ function updateSubmitState() {
   }
   // Step 1's confirmer is the second photo landing.
   const both = Boolean(shots.sheet && shots.venue);
-  if (both !== stepDone[0]) setStepDone(0, both, '✔ Both captured');
+  if (both !== stepDone[0]) setStepDone(0, both, '✔ ' + T('report.both-captured', 'Both captured'));
   // Photos AND a unit gate the button. The unit is part of this now because it
   // is chosen on this screen rather than before reaching it — without it the
   // button would look ready while submit() silently returned on !selectedPu.

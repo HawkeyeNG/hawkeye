@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Hawkeye — Election-Day Map Preview (mock data)</title>
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=176" />
+  <link rel="stylesheet" href="styles.css?v=177" />
   <script src="native.js?v=116"></script>
   <style>
     /* Awaiting reports = neutral grey. A region that has reported takes its
@@ -81,7 +81,7 @@
     }
     (async()=>{[GEO,LOGOS]=await Promise.all([fetch('states_geo.json').then(r=>r.json()),fetch('logos/manifest.json').then(r=>r.json()).catch(()=>({}))]);draw();})();
   </script>
-<script src="/i18n.js?v=6"></script>
-<script src="/lang.js?v=5"></script>
+<script src="/i18n.js?v=7"></script>
+<script src="/lang.js?v=6"></script>
 </body>
 </html>

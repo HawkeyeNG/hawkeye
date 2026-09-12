@@ -202,7 +202,14 @@ main.wrap { max-width: 840px; }
    TOP of env(safe-area-inset-top), so a 12px here read as a 12px empty band ABOVE
    the status-bar band. 6px keeps the logo off the clock without adding a second
    gap; the bottom keeps its breathing room before the border. */
-.brand-row { display: flex; align-items: center; justify-content: space-between; padding-top: 6px; padding-bottom: 12px; position: relative; }
+/* NOT space-between. The row is [brand][nav][bell][lang][theme][menu], and
+   space-between spreads the free space between EVERY pair -- including pairs
+   whose members collapse to zero width in the app shell, which is how an 84px
+   hole opened between the language chip and the theme toggle. The push belongs
+   to exactly one item: the leftmost action carries margin-left:auto, and the
+   rules further down already neutralise it on the ones that follow. Starting
+   at flex-start leaves that auto margin as the only thing positioning them. */
+.brand-row { display: flex; align-items: center; justify-content: flex-start; padding-top: 6px; padding-bottom: 12px; position: relative; }
 .brand { display: flex; align-items: center; gap: 11px; }
 .crest { font-size: 1.8rem; line-height: 1; }
 /* menu.js swaps the 🦅 emoji for the real crest SVG. The light plate behind it
@@ -563,8 +570,12 @@ code { word-break: break-all; font-size: 0.72rem; background: var(--code-bg); bo
   content: '▸'; position: absolute; right: 0; top: 2px;
   color: var(--muted); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.01em;
 }
-.step-card.done:not([open]) > summary::after { content: 'Review ▸'; }
-.step-card[open]:not(.locked) > summary::after { content: 'Close ▾'; }
+/* Set by i18n.js on every language load: ::after content cannot carry a
+   data-i18n attribute, and these two were the last English left on the report
+   flow's step cards. The literals stay as the fallback for a page that somehow
+   loads without i18n.js. */
+.step-card.done:not([open]) > summary::after { content: var(--hk-review, 'Review ▸'); }
+.step-card[open]:not(.locked) > summary::after { content: var(--hk-close, 'Close ▾'); }
 .step-card.locked > summary::after {
   content: '🔒'; position: absolute; right: 0; top: 2px; font-size: 0.85rem;
 }

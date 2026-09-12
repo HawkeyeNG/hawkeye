@@ -51,8 +51,8 @@ const GENERAL_ELECTION_YEAR = 2027;
 const DESC: Record<string, string> = {
   PRES: i18nT('n.app.races.the-declared-presidential-field-quick-compare'),
   GOV: i18nT('n.app.races.one-governorship-per-state-each-state'),
-  SEN: '109 seats across 36 states and the FCT.',
-  REP: '360 federal constituencies.',
+  SEN: i18nT('n.app.races.109-seats-across-36-states'),
+  REP: i18nT('n.app.races.360-federal-constituencies'),
   SHA: i18nT('n.app.races.the-36-state-legislatures'),
 };
 
@@ -97,8 +97,8 @@ const GROUPS: [Status, string, string][] = [
     i18nT('n.app.races.being-reported-now'),
     i18nT('n.app.races.no-election-is-being-reported-today'),
   ],
-  ['upcoming', 'Upcoming', 'Nothing scheduled.'],
-  ['completed', 'Completed', 'No election has been reported through Hawkeye yet.'],
+  ['upcoming', i18nT('n.app.races.upcoming'), i18nT('n.app.races.nothing-scheduled')],
+  ['completed', i18nT('n.app.races.completed'), i18nT('n.app.races.no-election-has-been-reported-through')],
 ];
 
 export default function Races() {
@@ -286,7 +286,7 @@ export default function Races() {
     // "Open" read as "reporting is open" on a row whose own date says January
     // 2027 — on an election app that is the wrong thing to be ambiguous about.
     // It was only ever meant as "open this page", so it says what it does.
-    const pill = r.status === 'completed' ? 'Result' : r.status === 'ongoing' ? 'Live' : 'View';
+    const pill = r.status === 'completed' ? i18nT('n.app.races.result') : r.status === 'ongoing' ? i18nT('n.app.races.live') : i18nT('n.app.races.view');
     const body = (
       <View className="flex-1 pr-3">
         <Text className="text-base font-bold text-ink">{r.name}</Text>
@@ -400,7 +400,7 @@ export default function Races() {
               accessibilityRole="radiogroup"
               accessibilityLabel={i18nT('races.filter-races-by-status')}
             >
-              {chip('all', 'All')}
+              {chip('all', i18nT('n.app.races.all'))}
               {GROUPS.map(([k, title]) =>
                 chip(k, title === 'Being reported now' ? 'Ongoing' : title),
               )}

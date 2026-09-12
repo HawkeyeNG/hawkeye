@@ -368,10 +368,10 @@ export default function Integrity() {
         <SectionLabel text={i18nT("n.app.integrity.detected-discrepancies")} />
         <View className="flex-row flex-wrap">
           {[
-            ['', 'All'],
-            ['high', '🚩 High'],
-            ['medium', '⚠️ Medium'],
-            ['low', 'ℹ️ Low'],
+            ['', i18nT('n.app.integrity.severity-all')],
+            ['high', '🚩 ' + i18nT('n.app.integrity.severity-high')],
+            ['medium', '⚠️ ' + i18nT('n.app.integrity.severity-medium')],
+            ['low', 'ℹ️ ' + i18nT('n.app.integrity.severity-low')],
           ].map(([k, label]) => (
             <Chip key={k || 'all'} label={label} on={sev === k} onPress={() => setSev(k)} />
           ))}

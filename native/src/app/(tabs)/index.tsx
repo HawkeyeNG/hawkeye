@@ -155,11 +155,11 @@ const TINT: Record<Tone, string> = {
 };
 
 const FILTERS: { key: Kind | 'all'; label: string }[] = [
-  { key: 'all', label: 'Everything' },
-  { key: 'report', label: 'Reports' },
-  { key: 'incident', label: 'Incidents' },
-  { key: 'flag', label: 'Flags' },
-  { key: 'case', label: 'Cases' },
+  { key: 'all', label: i18nT('n.app.tabs.index.filter-everything') },
+  { key: 'report', label: i18nT('n.app.tabs.index.filter-reports') },
+  { key: 'incident', label: i18nT('n.app.tabs.index.filter-incidents') },
+  { key: 'flag', label: i18nT('n.app.tabs.index.filter-flags') },
+  { key: 'case', label: i18nT('n.app.tabs.index.filter-cases') },
 ];
 
 async function jget<T>(path: string): Promise<T | null> {
@@ -386,10 +386,8 @@ export default function Home() {
         >
           <Text className="text-sm font-bold text-good-ink">
             {allElections
-              ? 'Show fewer elections'
-              : `Show ${(contests?.length ?? 0) - CARDS_SHOWN} more election${
-                  (contests?.length ?? 0) - CARDS_SHOWN === 1 ? '' : 's'
-                }`}
+              ? i18nT('n.app.tabs.index.show-fewer-elections')
+              : i18nT('n.app.tabs.index.show-more-elections', { v0: (contests?.length ?? 0) - CARDS_SHOWN })}
           </Text>
           <Feather
             name={allElections ? 'chevron-up' : 'chevron-down'}
@@ -477,7 +475,7 @@ export default function Home() {
             <View className="px-4 pt-2">
               <Text className="text-sm text-muted">
                 {filter === 'all'
-                  ? 'Nothing has come in yet. Reports, incidents and flags appear here as they land.'
+                  ? i18nT('n.app.tabs.index.nothing-has-come-in-yet')
                   : 'Nothing of this kind yet.'}
               </Text>
             </View>

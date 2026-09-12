@@ -31,7 +31,7 @@ export function ModalCard({
   title,
   children,
   footer,
-  closeLabel = 'Close',
+  closeLabel = i18nT('n.common.close'),
   bottomGap = 0,
 }: {
   visible: boolean;

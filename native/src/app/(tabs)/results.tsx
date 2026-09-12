@@ -1104,14 +1104,14 @@ export default function Results() {
     if (!level || !word) return { lead: '', more: '' };
     const lead =
       level === 'lga'
-        ? 'Coloured by the party leading in each state.'
+        ? i18nT('n.app.tabs.results.coloured-by-the-party-leading')
         : i18nT('n.app.tabs.results.every-that-has-reported-filled-with', { v0: word.one });
     const parts: string[] = [];
     if (level === 'lga') {
       // One clause. The full explanation — that the tally groups by state
       // because state constituencies are not a register column — is the kind of
       // detail an InfoDot is for, not a caption under a map.
-      parts.push('Coloured by state, not by constituency.');
+      parts.push(i18nT('n.app.tabs.results.coloured-by-state-not-by-constituency'));
     }
     const total = REGIONS_EXPECTED[level];
     // ONLY ON AN UNCROPPED BOARD. This sentence compares the outline file's
@@ -1169,7 +1169,7 @@ export default function Results() {
     ) : (
       <View className="mt-4 rounded-2xl bg-card px-4 py-4">
         <Text className="text-sm font-bold text-ink">
-          Leading party by {word.one}
+          {i18nT('n.app.tabs.results.leading-party-by', { v0: word.one })}
           {mapScope ? ` in ${mapScope}` : ''}
         </Text>
         <View className="flex-row items-center pt-1">
@@ -1221,7 +1221,7 @@ export default function Results() {
           <View className="mb-1.5 mr-3 flex-row items-center">
             <View className="h-3 w-3 rounded-sm" style={{ backgroundColor: ui.noData }} />
             <Text className="pl-1.5 text-[11px] text-muted">
-              no votes counted yet{map.blank ? ` · ${map.blank}` : ''}
+              {i18nT('n.app.tabs.results.no-votes-counted-yet')}{map.blank ? ` · ${map.blank}` : ''}
             </Text>
           </View>
         </View>
@@ -1240,8 +1240,7 @@ export default function Results() {
             ))
           ) : (
             <Text className="pt-0.5 text-[11px] text-muted">
-              Colour is the leading party. Tap any {word.one} — or a chip below — to see its
-              running counts.
+              {i18nT('n.app.tabs.results.colour-is-the-leading-party-tap', { v0: word.one })}
             </Text>
           )}
           {/* Two different destinations, and the difference matters: `jump` keeps
@@ -1361,14 +1360,16 @@ export default function Results() {
     coverage && coverage.missing.length ? (
       <View className="mt-4 rounded-2xl bg-card px-4 py-4">
         <Text className="text-sm font-bold text-ink">
-          Help cover {coverage.where ? `${coverage.where}` : `these ${coverage.units}`}
+          {coverage.where
+            ? i18nT('n.app.tabs.results.help-cover-where', { v0: coverage.where })
+            : i18nT('n.app.tabs.results.help-cover-these', { v0: coverage.units })}
         </Text>
         <Text className="pt-1 text-xs text-muted">
-          {coverage.reported} of {coverage.total}{' '}
-          {coverage.total === 1 ? coverage.unit : coverage.units}
           {/* "in Jigawa in this election" read as a stutter once the card could
               actually be about one race. Narrowed, the place IS the subject. */}
-          {coverage.where ? ` in ${coverage.where}` : ' in this election'} have reports so far.
+          {coverage.where
+            ? i18nT('n.app.tabs.results.n-of-m-in-where-have-reports', { v0: coverage.reported, v1: coverage.total, v2: coverage.total === 1 ? coverage.unit : coverage.units, v3: coverage.where })
+            : i18nT('n.app.tabs.results.n-of-m-in-this-election-have-reports', { v0: coverage.reported, v1: coverage.total, v2: coverage.total === 1 ? coverage.unit : coverage.units })}
         </Text>
         {/**
           * THE COUNT IS THE POINT; THE LIST IS THE DETAIL.
@@ -1386,8 +1387,7 @@ export default function Results() {
           accessibilityState={{ expanded: gapsOpen }}
         >
           <Text className="flex-1 text-xs font-bold text-good-ink">
-            Nothing has come in from {coverage.missing.length}{' '}
-            {coverage.missing.length === 1 ? coverage.unit : coverage.units}
+            {i18nT('n.app.tabs.results.nothing-has-come-in-from', { v0: coverage.missing.length, v1: coverage.missing.length === 1 ? coverage.unit : coverage.units })}
           </Text>
           <Feather name={gapsOpen ? 'chevron-down' : 'chevron-right'} size={15} color={ui.tint.good.ink} />
         </Pressable>
@@ -1450,7 +1450,7 @@ export default function Results() {
             numberOfLines={1}
           >
             {choosing && !nothingChosen
-              ? 'Keep the current race'
+              ? i18nT('n.app.tabs.results.keep-the-current-race')
               : wholeContest && contest
                 // The whole election, named the way every other surface names it.
                 ? `${contest.name} (${Number(String(contest.date ?? '').slice(0, 4)) || 2027})`
@@ -1459,7 +1459,7 @@ export default function Results() {
                   : i18nT('n.app.tabs.results.choose-an-election-type')}
           </Text>
           {nothingChosen ? null : (
-            <Text className="text-xs font-bold text-hawk-leaf">{choosing ? 'Cancel' : 'Change'}</Text>
+            <Text className="text-xs font-bold text-hawk-leaf">{choosing ? i18nT('n.common.cancel') : i18nT('n.common.change')}</Text>
           )}
         </Pressable>
         {/* Deliberately no longer opens with `contest.election` ("Osun State

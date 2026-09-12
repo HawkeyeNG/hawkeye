@@ -77,6 +77,11 @@ echo "== gradle bundleRelease + assembleDebug =="
 ./gradlew --no-daemon --no-watch-fs --console=plain --max-workers=2 \
   bundleRelease assembleDebug 2>&1 \
   | grep -avE "Unzipping|Download.*%|EXCLUDE_TELEMETRY|^\s*$" | tail -18
+# A PIPE HIDES THE EXIT CODE, and this script ran for two passes reporting
+# success while gradle was failing: it found the previous run's APK still on
+# disk, hashed it, and shipped assets that were never packaged.
+GRADLE_RC=${PIPESTATUS[0]}
+[ "$GRADLE_RC" = 0 ] || { echo "FAIL: gradle exited $GRADLE_RC — see the output above"; exit 1; }
 
 AAB="$ROOT/mobile/android/app/build/outputs/bundle/release/app-release.aab"
 APK="$ROOT/mobile/android/app/build/outputs/apk/debug/app-debug.apk"

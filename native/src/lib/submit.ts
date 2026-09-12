@@ -20,7 +20,7 @@ import { getIdentity } from '@/lib/identity';
 // start ("Require cycles are allowed, but can result in uninitialized values").
 // The value import moved to the single call site below, as a dynamic import.
 import type { JobFile } from '@/lib/outbox';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -234,30 +234,30 @@ export type CollationInput = {
 };
 
 /** Human line per backend error code — same tone as the web flow's one-liners. */
-const ERRORS: Record<string, string> = {
-  internal_error: i18nT('n.lib.submit.the-server-rejected-the-report-while'),
-  invalid_level: i18nT('n.lib.submit.choose-whether-this-is-a-ward'),
-  scope_required: i18nT('n.lib.submit.select-the-full-scope-for-this'),
-  unknown_scope: i18nT('n.lib.submit.that-scope-is-not-in-the'),
-  reporting_not_open: i18nT('n.lib.submit.reporting-opens-on-election-day-this'),
-  outside_geofence: i18nT('n.lib.submit.you-are-too-far-from-this'),
-  too_far_from_unit: i18nT('n.lib.submit.you-are-too-far-from-this'),
-  gps_required: i18nT('n.lib.submit.gps-fix-missing-turn-location-on'),
-  gps_accuracy_too_low: i18nT('n.lib.submit.gps-accuracy-is-too-low-step'),
-  photo_required: i18nT('n.lib.submit.the-result-sheet-photo-is-missing'),
-  venue_photo_required: i18nT('n.lib.submit.the-venue-photo-is-missing-or'),
-  photo_not_fresh: i18nT('n.lib.submit.photos-are-too-old-capture-them'),
-  duplicate_image: i18nT('n.lib.submit.one-of-these-photos-was-already'),
-  near_duplicate_image: i18nT('n.lib.submit.one-of-these-photos-looks-identical'),
-  already_submitted: i18nT('n.lib.submit.you-already-reported-this-race-from'),
-  device_already_reported_race: i18nT('n.lib.submit.this-device-already-reported-this-race'),
-  device_too_fast: i18nT('n.lib.submit.too-soon-after-the-last-report-2'),
-  unknown_polling_unit: i18nT('n.lib.submit.that-polling-unit-is-not-in'),
-  contest_not_applicable: i18nT('n.lib.submit.this-election-does-not-run-at'),
-  invalid_votes: i18nT('n.lib.submit.check-the-vote-counts-whole-numbers'),
-  bad_signature: i18nT('n.lib.submit.could-not-sign-the-report-on'),
-  unknown_contest: i18nT('n.lib.submit.select-which-election-you-are-reporting'),
-};
+const ERRORS: Record<string, string> = lazyT({
+  internal_error: 'n.lib.submit.the-server-rejected-the-report-while',
+  invalid_level: 'n.lib.submit.choose-whether-this-is-a-ward',
+  scope_required: 'n.lib.submit.select-the-full-scope-for-this',
+  unknown_scope: 'n.lib.submit.that-scope-is-not-in-the',
+  reporting_not_open: 'n.lib.submit.reporting-opens-on-election-day-this',
+  outside_geofence: 'n.lib.submit.you-are-too-far-from-this',
+  too_far_from_unit: 'n.lib.submit.you-are-too-far-from-this',
+  gps_required: 'n.lib.submit.gps-fix-missing-turn-location-on',
+  gps_accuracy_too_low: 'n.lib.submit.gps-accuracy-is-too-low-step',
+  photo_required: 'n.lib.submit.the-result-sheet-photo-is-missing',
+  venue_photo_required: 'n.lib.submit.the-venue-photo-is-missing-or',
+  photo_not_fresh: 'n.lib.submit.photos-are-too-old-capture-them',
+  duplicate_image: 'n.lib.submit.one-of-these-photos-was-already',
+  near_duplicate_image: 'n.lib.submit.one-of-these-photos-looks-identical',
+  already_submitted: 'n.lib.submit.you-already-reported-this-race-from',
+  device_already_reported_race: 'n.lib.submit.this-device-already-reported-this-race',
+  device_too_fast: 'n.lib.submit.too-soon-after-the-last-report-2',
+  unknown_polling_unit: 'n.lib.submit.that-polling-unit-is-not-in',
+  contest_not_applicable: 'n.lib.submit.this-election-does-not-run-at',
+  invalid_votes: 'n.lib.submit.check-the-vote-counts-whole-numbers',
+  bad_signature: 'n.lib.submit.could-not-sign-the-report-on',
+  unknown_contest: 'n.lib.submit.select-which-election-you-are-reporting',
+});
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 

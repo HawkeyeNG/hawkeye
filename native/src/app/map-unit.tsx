@@ -47,7 +47,7 @@ import {
 } from '@/lib/location';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 type Unit = {
   pu_code: string;
@@ -236,10 +236,10 @@ type RowTier = UnitTier | 'unmapped';
  * both. (This screen used to caption a geocoded unit "located from map data"
  * one line below a legend calling it "Approximate area".)
  */
-const ROW_LABEL: Record<RowTier, string> = {
+const ROW_LABEL: Record<RowTier, string> = lazyT({
   ...TIER_LABEL,
-  unmapped: i18nT('n.app.map-unit.not-located-yet'),
-};
+  unmapped: 'n.app.map-unit.not-located-yet',
+});
 
 /**
  * Which tier a row is drawn as.

@@ -471,7 +471,7 @@
   "integrity.vision-count-mismatch": "Àìbámu pẹ̀lú ìkà ìríran",
   "integrity.vote-share-outlier": "Ìpín ìbò tí ó yàtọ̀",
   "integrity.what-we-check": "Ohun Tí A Ń Yẹ̀wò",
-  "lang.body": "Hawkeye ń ṣiṣẹ́ ní èdè tí ó ju ọ̀kan lọ. O lè yí èyí padà nígbàkúgbà nínú Àkọọ́lẹ̀ Mi.",
+  "lang.body": "O lè yí èyí padà nígbàkúgbà nínú Àkọọ́lẹ̀ Mi.",
   "lang.coming": "Ó ń bọ̀ láìpẹ́",
   "lang.current": "Èdè",
   "lang.draft": "Ìtumọ̀ àkọ́kọ́, à ń ṣàyẹ̀wò rẹ̀",
@@ -1261,5 +1261,15 @@
   "results.nothing-has-come-in-from-show-them": "Kò sí ohun tí ó ti dé láti {v0} {v1} — fi wọ́n hàn",
   "results.leading-party-by": "Ẹgbẹ́ tí ó ń ṣáájú ní {v0} kọ̀ọ̀kan{v1}",
   "results.everywhere-in": "Níbi gbogbo ní {v0}",
-  "race.follow-this-race": "Tẹ̀lé ìdíje yìí"
+  "race.follow-this-race": "Tẹ̀lé ìdíje yìí",
+  "terms.what-hawkeye-is-body": "Hawkeye ń jẹ́ kí àwọn aráàlú ya àwòrán, fọwọ́ sí, kí wọ́n sì tẹ àbájáde tí a kéde ní ilé ìdìbò wọn jáde sí ìwé ìkọsílẹ̀ gbogbo gbò tí ó dúró ṣinṣin, tí a kò lè yí padà. Hawkeye <strong>kò</strong> ní ìjọmọ pẹ̀lú INEC, ilé iṣẹ́ ìjọba kankan, tàbí ẹgbẹ́ òṣèlú kankan. <strong>Àbájáde ìdìbò gidi ni èyí tí INEC nìkan kéde.</strong> Hawkeye ń pèsè ẹ̀rí tí àwọn aráàlú jábọ̀ fún àyẹ̀wò gbogbo gbò; kò ní, kò sì lè kéde ẹni tí ó ṣẹ́gun.",
+  "terms.your-content-body": "Àwọn ìròyìn tí o bá fi ránṣẹ́ — ìkà, àwòrán, àti ibi tí wọ́n ti wá — ni a ń tẹ̀ jáde sínú ìwé ìkọsílẹ̀ gbogbo gbò tí a kò lè yí padà, àti pé nípa ìṣètò rẹ̀ <strong>a kò lè ṣàtúnṣe tàbí pa wọ́n rẹ́</strong>; ìdúróṣinṣin yẹn ni ó mú kí wọ́n ṣe é gbẹ́kẹ̀lé. Nípa fífi wọ́n ránṣẹ́, o fún Hawkeye ní ààyè láti tọ́jú, tẹ̀ jáde, àti fi ọ̀rọ̀ náà hàn fún ìdí ìtàn-gbangba ìdìbò, ní gbogbo àgbáyé, láìsí owó, àti láìṣe ti ẹnìkan ṣoṣo. O jẹ́rìí pé o ní ẹ̀tọ́ láti fi í ránṣẹ́. A kì í tẹ nọ́mbà fóònù rẹ jáde láé — wo <a href=\"privacy.html\">Ìlànà Àṣírí</a>.",
+  "terms.changes-contact-body": "A lè ṣe àtúnṣe sí àwọn òfin wọ̀nyí; bí o bá ń bá a lọ láti lò ó lẹ́yìn àyípadà, ìyẹn túmọ̀ sí pé o gbà wọ́n. Ìbéèrè: <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>. Àwọn òfin Orílẹ̀-èdè Olómìnira Àpapọ̀ Nàìjíríà ni ó ń ṣàkóso rẹ̀.",
+  "privacy.collect.number": "<strong>Nọ́mbà rẹ — gẹ́gẹ́ bí hash</strong>. Ọ̀nà kan ṣoṣo ni, a kò lè yí i padà. A kò lè rí i, fi í hàn, tàbí fi í lé ẹnikẹ́ni lọ́wọ́; ó wà kí nọ́mbà kan lè jẹ́ olùwòran kan.",
+  "privacy.collect.reports": "<strong>Àwọn ìròyìn rẹ</strong> — ìkà, àwòrán méjì tààrà, àti ibi tí a ti ya ọ̀kọ̀ọ̀kan.",
+  "privacy.collect.device": "<strong>Àmì ẹ̀rọ rẹ</strong> — a fi hash bò ó, kí fóònù kan má lè jábọ̀ ìdíje kan náà lẹ́ẹ̀mejì.",
+  "privacy.collect.telegram": "<strong>Ìjápọ̀ Telegram rẹ</strong> — ID ìfọ̀rọ̀wérọ̀ nìkan, kí bot náà lè bá ọ sọ̀rọ̀. A kì í ka àwọn ìfiránṣẹ́ tàbí àwọn olùbánisọ̀rọ̀ rẹ láé.",
+  "privacy.what-becomes-public-body": "Ìkà rẹ, àwọn àwòrán rẹ àti ibi tí wọ́n ti wá ni wọ́n ń lọ sínú ìwé ìkọsílẹ̀ gbogbo gbò, a kò sì lè <strong>ṣàtúnṣe tàbí pa wọ́n rẹ́</strong> — ìdúróṣinṣin yẹn ni ó fún wọn ní iyì. A so wọ́n mọ́ ID olùwòran tí kò ní orúkọ, kì í ṣe mọ́ ọ. Àwòrán ìṣẹ̀lẹ̀ máa ń farahàn lẹ́yìn tí ènìyàn bá ti yẹ̀ ẹ́ wò nìkan.",
+  "privacy.your-rights-body": "O lè pa àkántì rẹ rẹ́ fúnra rẹ nígbàkúgbà: ṣí àkọọ́lẹ̀ rẹ kí o sì yan <strong>Pa àkántì mi rẹ́</strong>. Èyí yóò mú kọ́kọ́rọ́ ìfọwọ́sí rẹ, ìjápọ̀ ẹ̀rọ rẹ, ìjápọ̀ Telegram àti ìforúkọsílẹ̀ ìkìlọ̀ kúrò. Ohun méjì yóò kù, nípa ìṣètò: àwọn àkọsílẹ̀ inú ìwé gbogbo gbò (tí ó dúró títí láé, tí kò sì ní orúkọ — ìdúróṣinṣin yẹn ni ó mú kí wọ́n ṣe é gbẹ́kẹ̀lé) àti hash ọ̀nà-kan ti nọ́mbà rẹ, tí a pamọ́ kí a má bàa tún lo ìdánimọ̀ tí a pa rẹ́ láti fi ìròyìn kan náà ránṣẹ́ lẹ́ẹ̀mejì. Ìforúkọsílẹ̀ nọ́mbà kan náà padà yóò dá ID olùwòran àkọ́kọ́ rẹ padà. Àwọn ìbéèrè mìíràn lábẹ́ Òfin Ààbò Ìwífún Nàìjíríà: <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>.",
+  "political.n-of-m-seats-held-by-party": "Ìjókòó {v0} nínú {v1} tí a gbà, ní ti ẹgbẹ́"
 }

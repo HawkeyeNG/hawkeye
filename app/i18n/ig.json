@@ -471,7 +471,7 @@
   "integrity.vision-count-mismatch": "Ekwekọghị na ọgụgụ ọhụụ",
   "integrity.vote-share-outlier": "Òkè votu pụrụ iche",
   "integrity.what-we-check": "Ihe Anyị Na-enyocha",
-  "lang.body": "Hawkeye na-arụ ọrụ n'ọtụtụ asụsụ. Ị nwere ike ịgbanwe nke a mgbe ọ bụla na profaịlụ gị.",
+  "lang.body": "Ị nwere ike ịgbanwe nke a mgbe ọ bụla na profaịlụ gị.",
   "lang.coming": "Na-abịa n'oge na-adịghị anya",
   "lang.current": "Asụsụ",
   "lang.draft": "Ntụgharị nnwale, a na-enyocha ya",
@@ -1261,5 +1261,15 @@
   "results.nothing-has-come-in-from-show-them": "Ọ dịghị ihe si na {v0} {v1} bata — gosi ha",
   "results.leading-party-by": "Pati na-edu na {v0} ọ bụla{v1}",
   "results.everywhere-in": "Ebe niile na {v0}",
-  "race.follow-this-race": "Soro asọmpi a"
+  "race.follow-this-race": "Soro asọmpi a",
+  "terms.what-hawkeye-is-body": "Hawkeye na-enye ụmụ amaala ohere ise foto, bịanye aka, na ibipụta nsonaazụ e kwupụtara n'ebe ntuli aka ha n'ime ndekọ ọha nwere onwe ya nke a na-apụghị imezi. Hawkeye <strong>enweghị</strong> njikọ ọ bụla ya na INEC, ụlọ ọrụ gọọmenti ọ bụla, ma ọ bụ pati ndọrọ ndọrọ ọchịchị ọ bụla. <strong>Nsonaazụ ntuli aka gọọmenti bụ naanị nke INEC kwupụtara.</strong> Hawkeye na-ewepụta ihe akaebe ndị mmadụ kọrọ ka ọha nyochaa; ọ naghị, ọ gaghịkwa enwe ike ikwupụta onye meriri.",
+  "terms.your-content-body": "Akụkọ ị na-eziga — ọnụọgụ, foto, na ebe ha si — ka a na-ebipụta n'akwụkwọ ndekọ ọha nke a na-apụghị imezi, na site n'atụmatụ ya <strong>a pụghị idezi ma ọ bụ ihichapụ ha</strong>; ọ bụ ịdịgide ahụ na-eme ka a tụkwasị ha obi. Site n'izipu ya, ị na-enye Hawkeye ikike ịchekwa, ibipụta, na igosipụta ọdịnaya ahụ maka ime ka ntuli aka pụta ìhè, n'ụwa niile, n'efu, na-abụghị naanị ya. Ị na-ekwenye na ị nwere ikike izipu ya. A naghị ebipụta nọmba ekwentị gị ma ọlị — lee <a href=\"privacy.html\">Amụma Nzuzo</a>.",
+  "terms.changes-contact-body": "Anyị nwere ike imelite usoro ndị a; ịnọgide na-eji ya mgbe mgbanwe gasịrị pụtara na ị nabatara ha. Ajụjụ: <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>. Iwu nke Federal Republic of Nigeria na-achị ha.",
+  "privacy.collect.number": "<strong>Nọmba gị — dị ka hash</strong>. Ọ bụ ụzọ otu, a pụghị ịtụgharị ya. Anyị apụghị ịhụ ya, igosi ya, ma ọ bụ inyefe ya; ọ dị ka otu nọmba wee bụrụ otu onye na-ekiri ihe.",
+  "privacy.collect.reports": "<strong>Akụkọ gị</strong> — ọnụọgụ, foto abụọ e sere ozugbo, na ebe e sere nke ọ bụla.",
+  "privacy.collect.device": "<strong>Akara ngwaọrụ</strong> — e mere ya hash, ka otu ekwentị ghara ịkọ otu asọmpi ugboro abụọ.",
+  "privacy.collect.telegram": "<strong>Njikọ Telegram gị</strong> — naanị ID nkata ahụ, ka bot ahụ wee ruo gị. Anyị anaghị agụ ozi gị ma ọ bụ ndị kọntaktị gị.",
+  "privacy.what-becomes-public-body": "Ọnụọgụ gị, foto gị na ebe ha si na-aba n'akwụkwọ ndekọ ọha, a <strong>pụghị idezi ma ọ bụ ihichapụ ha</strong> — ọ bụ ịdịgide ahụ na-eme ka ha baa uru. E jikọtara ha na ID onye na-ekiri ihe na-enweghị aha, ọ bụghị gị. Foto ihe merenụ na-apụta naanị mgbe mmadụ nyochachara ya.",
+  "privacy.your-rights-body": "Ị nwere ike ihichapụ akaụntụ gị n'onwe gị mgbe ọ bụla: mepee profaịlụ gị wee họrọ <strong>Hichapụ akaụntụ m</strong>. Nke a na-ewepụ igodo ịbịanye aka gị, njikọ ngwaọrụ gị, njikọ Telegram na ndenye aha maka ọkwa. Ihe abụọ ga-afọdụ, site n'atụmatụ: ndenye akwụkwọ ndekọ ọha (na-adịgide ma na-enweghị aha — ọ bụ ịdịgide ahụ na-eme ka a tụkwasị ha obi) na hash ụzọ otu nke nọmba gị, nke e debere ka a ghara iji njirimara e hichapụrụ ekwughachi otu akụkọ ugboro abụọ. Ịdebanye otu nọmba ahụ ọzọ na-eweghachi ID onye na-ekiri ihe mbụ gị. Arịrịọ ndị ọzọ nke Iwu Nchekwa Data Naịjirịa: <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>.",
+  "political.n-of-m-seats-held-by-party": "Oche {v0} n'ime {v1} ejidere, site na pati"
 }

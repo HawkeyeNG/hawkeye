@@ -10,7 +10,7 @@
 // are network-first below, so they update on their own. Nothing else volatile
 // belongs in LAZY either — if a file can change between deploys, it goes in the
 // network-first branch, not here.
-const CACHE = 'hawkeye-v358';
+const CACHE = 'hawkeye-v359';
 // The offline outbox, so a Background Sync can send queued reports with every
 // tab closed (Chrome/Android) — see outbox.js. Optional: failing to load it
 // must never cost the service worker itself.
@@ -24,7 +24,7 @@ try { importScripts('/outbox.js'); } catch { /* outbox unavailable in this worke
 // It was ~1.5 MB / 45 requests; the map data and Leaflet (~940 KB) are needed by
 // only 5 of ~25 pages, so they moved to LAZY below. Keep this lean: HTML +
 // core JS/CSS + fonts. Anything big and page-specific belongs in LAZY.
-const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/races.html', '/incident-reports.html', '/race.html', '/race.js?v=24', '/follow.js?v=4', '/race.css?v=5', '/app.js?v=161', '/scan.js?v=8', '/capture.js?v=2', '/direct-upload.js?v=1', '/geo-msg.js?v=1', '/scan-worker.js?v=3', '/device.js', '/outbox.js', '/share.js?v=2', '/menu.js?v=170', '/authgate.js?v=2', '/map-label.js?v=2', '/pu-code.js?v=3', '/pu-search.js?v=7', '/register-store.js?v=3', '/reg/manifest.json', '/reg/manifest.sig', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=176', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/logo.svg', '/i18n.js?v=6', '/lang.js?v=4', '/i18n/ha.json', '/i18n/ig.json', '/i18n/yo.json', '/fonts/inter-400.woff2?v=1', '/fonts/inter-500.woff2?v=1', '/fonts/inter-600.woff2?v=1', '/fonts/inter-700.woff2?v=1', '/fonts/spline-600.woff2?v=1', '/fonts/spline-700.woff2?v=1'];
+const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/how.html', '/faq.html', '/guide.html', '/collation.html', '/integrity.html', '/incidents.html', '/osun.html', '/races.html', '/incident-reports.html', '/race.html', '/race.js?v=25', '/follow.js?v=4', '/race.css?v=5', '/app.js?v=161', '/scan.js?v=8', '/capture.js?v=2', '/direct-upload.js?v=1', '/geo-msg.js?v=1', '/scan-worker.js?v=3', '/device.js', '/outbox.js', '/share.js?v=2', '/menu.js?v=170', '/authgate.js?v=2', '/map-label.js?v=2', '/pu-code.js?v=3', '/pu-search.js?v=7', '/register-store.js?v=3', '/reg/manifest.json', '/reg/manifest.sig', '/webpush.js?v=1', '/tg.js?v=95', '/styles.css?v=176', '/manifest.webmanifest', '/dashboard.html', '/results.html', '/logo.svg', '/i18n.js?v=6', '/lang.js?v=4', '/i18n/ha.json', '/i18n/ig.json', '/i18n/yo.json', '/fonts/inter-400.woff2?v=1', '/fonts/inter-500.woff2?v=1', '/fonts/inter-600.woff2?v=1', '/fonts/inter-700.woff2?v=1', '/fonts/spline-600.woff2?v=1', '/fonts/spline-700.woff2?v=1'];
 
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.

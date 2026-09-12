@@ -703,7 +703,7 @@
   "train2.ocr-training-set-2": "Ìdánilẹ́kọ̀ọ́ OCR — Ìpele 2",
   "traindavina.ocr-training-davina": "Ìdánilẹ́kọ̀ọ́ OCR — Davina",
   "trainderek.ocr-training-derek": "Ìdánilẹ́kọ̀ọ́ OCR — Derek",
-  "common.details": "Àlàyé kíkún ›",
+  "common.details": "Àlàyé ›",
   "time.just-now": "ìṣẹ́jú yìí",
   "time.min-ago": "ìṣẹ́jú {n} sẹ́yìn",
   "time.today": "òní {time}",
@@ -955,7 +955,7 @@
   "race.party": "Ẹgbẹ́",
   "race.incumbent": "Ẹni tí ó wà ní ipò",
   "race.listed-alphabetically-by-party": "A tò wọ́n ní ìlànà álífábẹ́ẹ̀tì ẹgbẹ́. Kì í ṣe ìfọwọ́sí tàbí àsọtẹ́lẹ̀ — Hawkeye kò ṣàtìlẹ́yìn fún ẹgbẹ́ kankan.",
-  "nav.not-government-or-inec-affiliated": "Kì í ṣe ti ìjọba, kò sì ní ìbáṣepọ̀ pẹ̀lú INEC.",
+  "nav.not-government-or-inec-affiliated": "A kò ní ìbáṣepọ̀ pẹ̀lú INEC tàbí ìjọba.",
   "ledger.verified": "A ti ṣàyẹ̀wò",
   "support.copied": "A ti ṣàdàkọ",
   "docket.could-not-load-the-docket-try-again": "A kò lè gbé ìwé ẹjọ́ náà jáde — gbiyanju lẹ́ẹ̀kan sí láìpẹ́.",
@@ -1245,5 +1245,7 @@
   "map.zoom-out": "Sún jìnnà",
   "profile.observer-number": "Olùwòran #",
   "profile.since": "láti",
-  "political.of-n-seats": "nínú ìjókòó {n}"
+  "political.of-n-seats": "nínú ìjókòó {n}",
+  "info.why-mapping-units-matters.title": "Ìdí tí yíyàwòrán àwọn ẹ̀ka fi ṣe pàtàkì",
+  "info.why-mapping-units-matters.body": "Ọ̀pọ̀ àwọn ẹ̀ka ìdìbò kò ní ibi tí a fọwọ́sí nínú àkọsílẹ̀, nítorí náà a kò lè yẹ ibi tí àwọn àbájáde tí a jábọ̀ láti ọ̀dọ̀ wọn wò. Nígbà tí àwọn ènìyàn òmìnira díẹ̀ bá yàwòrán ẹ̀ka kan náà, a fọwọ́sí ibi rẹ̀, a sì lè fi gbogbo àbájáde tí a kọ síbẹ̀ ní ọjọ́ ìdìbò wé e."
 }

@@ -703,7 +703,7 @@
   "train2.ocr-training-set-2": "Ọzụzụ OCR — Ntọala 2",
   "traindavina.ocr-training-davina": "Ọzụzụ OCR — Davina",
   "trainderek.ocr-training-derek": "Ọzụzụ OCR — Derek",
-  "common.details": "Nkọwa zuru ezu ›",
+  "common.details": "Nkọwa ›",
   "time.just-now": "ugbua",
   "time.min-ago": "nkeji {n} gara aga",
   "time.today": "taa {time}",
@@ -955,7 +955,7 @@
   "race.party": "Pati",
   "race.incumbent": "Onye nọ n’ọkwa",
   "race.listed-alphabetically-by-party": "E depụtara ha n’usoro mkpụrụedemede pati. Ọ bụghị nkwado ma ọ bụ amụma — Hawkeye anaghị akwado pati ọ bụla.",
-  "nav.not-government-or-inec-affiliated": "Ọ bụghị nke gọmenti, o nweghịkwa njikọ na INEC.",
+  "nav.not-government-or-inec-affiliated": "Anyị enweghị njikọ na INEC ma ọ bụ gọọmenti.",
   "ledger.verified": "E nyochara ya",
   "support.copied": "E detuola ya",
   "docket.could-not-load-the-docket-try-again": "Enweghị ike ibu ndekọ ahụ — nwaa ọzọ n’oge na-adịghị anya.",
@@ -1245,5 +1245,7 @@
   "map.zoom-out": "Mee ka o dị obere",
   "profile.observer-number": "Onye na-ekiri ihe #",
   "profile.since": "kemgbe",
-  "political.of-n-seats": "n'ime oche {n}"
+  "political.of-n-seats": "n'ime oche {n}",
+  "info.why-mapping-units-matters.title": "Ihe kpatara isetịpụ ngalaba ji dị mkpa",
+  "info.why-mapping-units-matters.body": "Ọtụtụ ngalaba ntuli aka enweghị ebe e kwadoro na ndekọ, ya mere enweghị ike ịlele ebe nsonaazụ e si na ha kọọ. Mgbe mmadụ ole na ole nọọrọ onwe ha setịpụrụ otu ngalaba, a na-akwado ebe ọ dị, a pụkwara ịtụnyere nsonaazụ ọ bụla e debere ebe ahụ n ụbọchị ntuli aka na ya."
 }

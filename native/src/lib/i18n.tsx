@@ -147,9 +147,15 @@ export function t(key: string, params?: Record<string, string | number | null | 
  */
 export function lazyT<T extends object>(entries: T): T {
   return new Proxy(entries, {
-    get(target, prop) {
-      const v = (target as Record<string | symbol, unknown>)[prop];
-      return typeof v === 'string' && v.startsWith('n.') ? t(v) : v;
+    get(target, prop, recv) {
+      const v = Reflect.get(target, prop, recv);
+      if (typeof v === 'string') return v.startsWith('n.') ? t(v) : v;
+      /* Arrays of objects and nested objects freeze exactly as flat maps do --
+         FILTERS on the home feed is a list of { key, label } -- so the getter
+         recurses rather than handing back a raw inner object. Functions
+         (.map, .find) are returned as they are and still see the proxy. */
+      if (v !== null && typeof v === 'object') return lazyT(v as object);
+      return v;
     },
   });
 }

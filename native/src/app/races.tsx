@@ -91,15 +91,15 @@ function label(c: Contest): string {
   return `${where}${c.name} (${year})`;
 }
 
-const GROUPS: [Status, string, string][] = [
+const GROUPS: [Status, string, string][] = lazyT([
   [
     'ongoing',
-    i18nT('n.app.races.being-reported-now'),
-    i18nT('n.app.races.no-election-is-being-reported-today'),
+    'n.app.races.being-reported-now',
+    'n.app.races.no-election-is-being-reported-today',
   ],
-  ['upcoming', i18nT('n.app.races.upcoming'), i18nT('n.app.races.nothing-scheduled')],
-  ['completed', i18nT('n.app.races.completed'), i18nT('n.app.races.no-election-has-been-reported-through')],
-];
+  ['upcoming', 'n.app.races.upcoming', 'n.app.races.nothing-scheduled'],
+  ['completed', 'n.app.races.completed', 'n.app.races.no-election-has-been-reported-through'],
+]);
 
 export default function Races() {
   const ui = useUi();

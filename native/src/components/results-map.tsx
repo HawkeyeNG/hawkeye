@@ -6,7 +6,7 @@ import { loadStatesGeo } from '@/components/nigeria-map';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
 import { useT } from '@/lib/i18n';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -48,13 +48,13 @@ export const geoLevelOf = (level: MapLevel): GeoLevel => level;
 /* Translated HERE rather than at each call site: these words are interpolated
    into most of the race copy, so one change reaches every sentence built from
    them, on every race page. */
-export const LEVEL_WORD: Record<MapLevel, { one: string; many: string }> = {
-  state: { one: i18nT('n.unit.state.one'), many: i18nT('n.unit.state.many') },
+export const LEVEL_WORD: Record<MapLevel, { one: string; many: string }> = lazyT({
+  state: { one: 'n.unit.state.one', many: 'n.unit.state.many' },
   // Was "state"/"states" back when the LGA view was really a state view.
-  lga: { one: i18nT('n.unit.lga.one'), many: i18nT('n.unit.lga.many') },
-  senatorial: { one: i18nT('n.unit.senatorial.one'), many: i18nT('n.unit.senatorial.many') },
-  federal: { one: i18nT('n.unit.federal.one'), many: i18nT('n.unit.federal.many') },
-};
+  lga: { one: 'n.unit.lga.one', many: 'n.unit.lga.many' },
+  senatorial: { one: 'n.unit.senatorial.one', many: 'n.unit.senatorial.many' },
+  federal: { one: 'n.unit.federal.one', many: 'n.unit.federal.many' },
+});
 
 /**
  * How a region name is shown to a reader. The outline files are title-cased

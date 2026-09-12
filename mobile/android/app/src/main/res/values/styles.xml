@@ -29,6 +29,22 @@
              match system dark, which overrode that toggle and made it look broken.
              Opt the view hierarchy out of force-dark so the toggle is authoritative. -->
         <item name="android:forceDarkAllowed">false</item>
+        <!-- THE SELECT PICKER IS A DIALOG, NOT PART OF THE PAGE. Every <select>
+             in the WebView opens an AlertDialog drawn by the platform, which
+             took the default grey — a grey list in the middle of a green app.
+             CSS cannot reach it; the app theme can. -->
+        <item name="android:alertDialogTheme">@style/HawkeyeDialog</item>
+        <item name="alertDialogTheme">@style/HawkeyeDialog</item>
+    </style>
+
+    <style name="HawkeyeDialog" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="android:background">@color/dialogBackground</item>
+        <item name="android:colorBackground">@color/dialogBackground</item>
+        <item name="android:windowBackground">@color/dialogBackground</item>
+        <item name="android:textColor">@color/dialogInk</item>
+        <item name="android:textColorPrimary">@color/dialogInk</item>
+        <item name="android:textColorSecondary">@color/dialogInk</item>
+        <item name="colorAccent">@color/dialogAccent</item>
     </style>
 
 

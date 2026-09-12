@@ -623,6 +623,7 @@ export default {
   "n.app.tabs.index.filter-reports": "Akụkọ",
   "n.app.tabs.index.live-activity": "Ọrụ na-eme ugbu a",
   "n.app.tabs.index.nothing-has-come-in-yet": "Ọ dịghị ihe batara ugbu a. Akụkọ, ihe merenụ na akara ga-apụta ebe a ka ha na-abata.",
+  "n.app.tabs.index.nothing-of-this-kind-yet": "Enweghị ihe ụdị a ugbu a.",
   "n.app.tabs.index.opens-in-days": "Ọ ga-emepe n'ime ụbọchị {v0}",
   "n.app.tabs.index.reporting-open": "Ịkọ akụkọ emepela",
   "n.app.tabs.index.result-reported": "E kọrọ nsonaazụ · {v0}",

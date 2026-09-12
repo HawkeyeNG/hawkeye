@@ -623,6 +623,7 @@ export default {
   "n.app.tabs.index.filter-reports": "Ìròyìn",
   "n.app.tabs.index.live-activity": "Ìgbòkègbodò tààrà",
   "n.app.tabs.index.nothing-has-come-in-yet": "Kò sí ohun tí ó ti dé síbẹ̀. Ìròyìn, ìṣẹ̀lẹ̀ àti àwọn àmì yóò farahàn níbí bí wọ́n ṣe ń dé.",
+  "n.app.tabs.index.nothing-of-this-kind-yet": "Kò sí irú èyí síbẹ̀.",
   "n.app.tabs.index.opens-in-days": "Yóò ṣí lẹ́yìn ọjọ́ {v0}",
   "n.app.tabs.index.reporting-open": "Ìjábọ̀ ti ṣí sílẹ̀",
   "n.app.tabs.index.result-reported": "A jábọ̀ àbájáde · {v0}",

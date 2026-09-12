@@ -624,6 +624,7 @@ export default {
     "n.app.tabs.index.filter-reports": "Rahotanni",
     "n.app.tabs.index.live-activity": "Ayyuka kai tsaye",
     "n.app.tabs.index.nothing-has-come-in-yet": "Babu abin da ya shigo tukuna. Rahotanni, lamurra da alamomi za su bayyana a nan yayin da suka shigo.",
+    "n.app.tabs.index.nothing-of-this-kind-yet": "Babu wani abu irin wannan tukuna.",
     "n.app.tabs.index.opens-in-days": "Zai buɗe cikin kwana {v0}",
     "n.app.tabs.index.reporting-open": "An buɗe kai rahoto",
     "n.app.tabs.index.result-reported": "An kai rahoton sakamako · {v0}",

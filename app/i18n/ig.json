@@ -1300,5 +1300,10 @@
   "race-picker.pick-a-state-to-open-its-race": "Họrọ steeti ka i mepee asọmpi ya",
   "race-picker.pick-a-state-then-your": "Họrọ steeti, wee họrọ {v0} gị",
   "race-picker.select-state-first": "— buru ụzọ họrọ steeti —",
-  "index.you-re-all-caught-up": "Ị hụla ihe niile. <a href=\"notifications.html\">Lee ọkwa niile →</a>"
+  "index.you-re-all-caught-up": "Ị hụla ihe niile. <a href=\"notifications.html\">Lee ọkwa niile →</a>",
+  "unit.state.many": "steeti",
+  "unit.lga.many": "ọchịchị ime obodo",
+  "unit.senatorial.many": "mpaghara ndị sineti",
+  "unit.federal.many": "mpaghara gọọmenti etiti",
+  "results.led-column": "e duru {v0}"
 }

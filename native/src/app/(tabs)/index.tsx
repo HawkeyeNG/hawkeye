@@ -488,7 +488,7 @@ export default function Home() {
               <Text className="text-sm text-muted">
                 {filter === 'all'
                   ? i18nT('n.app.tabs.index.nothing-has-come-in-yet')
-                  : 'Nothing of this kind yet.'}
+                  : i18nT('n.app.tabs.index.nothing-of-this-kind-yet')}
               </Text>
             </View>
           )

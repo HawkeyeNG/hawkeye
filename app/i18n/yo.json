@@ -1300,5 +1300,10 @@
   "race-picker.pick-a-state-to-open-its-race": "Yan ìpínlẹ̀ láti ṣí ìdíje rẹ̀",
   "race-picker.pick-a-state-then-your": "Yan ìpínlẹ̀, lẹ́yìn náà {v0} rẹ",
   "race-picker.select-state-first": "— kọ́kọ́ yan ìpínlẹ̀ —",
-  "index.you-re-all-caught-up": "O ti rí gbogbo rẹ̀. <a href=\"notifications.html\">Wo gbogbo ìkìlọ̀ →</a>"
+  "index.you-re-all-caught-up": "O ti rí gbogbo rẹ̀. <a href=\"notifications.html\">Wo gbogbo ìkìlọ̀ →</a>",
+  "unit.state.many": "àwọn ìpínlẹ̀",
+  "unit.lga.many": "àwọn agbègbè ìjọba àdúgbò",
+  "unit.senatorial.many": "àwọn ẹkùn ìgbìmọ̀ aṣòfin àgbà",
+  "unit.federal.many": "àwọn ẹkùn ìdìbò àpapọ̀",
+  "results.led-column": "àwọn {v0} tí a ṣáájú"
 }

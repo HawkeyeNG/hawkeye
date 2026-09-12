@@ -967,6 +967,16 @@ console.log('\n=== Lite: the language prompt precedes the tour ===');
   check('12. the language picker is up', !!picker, true);
   check('12. and the tour is NOT — one modal at a time', await card(p), null);
 
+  /* PAST THE BACKSTOP. menu.js also opens the tour on a timer, in case lang.js
+     is absent or broken, and that timer was 12 seconds flat: a reader taking
+     longer than that over four options with review badges got the tour dropped
+     on top of the question anyway. Reported twice from a real phone, and this
+     assertion is the reason it cannot come back — 1.5s of waiting never saw it.
+     The backstop now re-arms while the picker is on screen. */
+  await p.waitForTimeout(13000);
+  check('12. still no tour once the 12s backstop has passed', await card(p), null);
+  check('12. and the picker is still up', !!(await p.$('#lang-modal:not([hidden])')), true);
+
   await p.click('#lang-cancel');
   await p.waitForTimeout(900);
   check('12. dismissing the picker hands over to the tour', (await card(p)) !== null, true);

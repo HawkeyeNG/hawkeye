@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=176" />
+  <link rel="stylesheet" href="styles.css?v=177" />
   <script src="native.js?v=116"></script>
   <style>
     .n { display: flex; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 8px 0; color: inherit; text-decoration: none; }
@@ -126,7 +126,7 @@
              alert you were sent is briefly missing from the page it sent you to.
              Pull-to-refresh does not exist on the web, so this is the only way
              to ask again. -->
-        <button data-i18n-attr="aria-label:notifications.refresh-alerts" class="secondary" id="refresh" title="Refresh" aria-label="Refresh alerts">
+        <button data-i18n-attr="aria-label:notifications.refresh-alerts,title:situation-room.refresh" class="secondary" id="refresh" title="Refresh" aria-label="Refresh alerts">
           <span id="refresh-icon">&#8635;</span>
         </button>
       </div>
@@ -263,7 +263,8 @@
         // and this feed is the one part of Hawkeye that is deliberately NOT
         // permanent, so the distinction is worth one line.
         + '<p class="empty" style="padding:18px 8px 4px;font-size:0.8rem">'
-        + 'Alerts are kept for 90 days. Reports, incidents and the ledger are permanent.</p>';
+        + (window.HawkeyeI18n ? window.HawkeyeI18n.t('notifications.alerts-are-kept-for-90-days', '')
+        : 'Alerts are kept for 90 days. Reports, incidents and the ledger are permanent.') + '</p>';
       /**
        * ARRIVING IS NOT READING. This page used to mark EVERYTHING read on
        * load, which meant a glance at the list silently cleared alerts the
@@ -368,8 +369,8 @@
     });
     load();
   </script>
-  <script src="/i18n.js?v=6"></script>
-  <script src="/lang.js?v=5"></script>
+  <script src="/i18n.js?v=7"></script>
+  <script src="/lang.js?v=6"></script>
   <script src="menu.js?v=171"></script>
 </body>
 </html>

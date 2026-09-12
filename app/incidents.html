@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=176">
+  <link rel="stylesheet" href="styles.css?v=177">
   <script src="native.js?v=116"></script>
   <style>
     .feed-item { background: var(--card); border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
@@ -154,7 +154,7 @@
       </nav>
     </div>
   </header>
-  <div class="phase-banner"><div class="wrap"><strong data-i18n="incidents.your-safety-first">Your safety first</strong> — never risk yourself for evidence.</div></div>
+  <div class="phase-banner"><div class="wrap" data-i18n-html="incidents.safety-banner"><strong>Your safety first</strong> — never risk yourself for evidence.</div></div>
 
   <main class="wrap">
     <h1 data-i18n="common.report-an-incident">Report an Incident</h1>
@@ -332,8 +332,8 @@
        three sentences of. -->
   <script src="geo-msg.js?v=1"></script>
   <script src="tg.js?v=95"></script>
-  <script src="/i18n.js?v=6"></script>
-  <script src="/lang.js?v=5"></script>
+  <script src="/i18n.js?v=7"></script>
+  <script src="/lang.js?v=6"></script>
   <script src="menu.js?v=171"></script>
   <script>
     const $ = (id) => document.getElementById(id);
@@ -359,8 +359,8 @@
      * word — the client now catches this before the request, but a server that
      * rejects a kind for its own reasons must not say it differently.
      */
-    const KIND_PLACEHOLDER = 'Choose an incident type…';
-    const KIND_REQUIRED = 'Choose an incident type.';
+    const KIND_PLACEHOLDER = () => T('incidents.choose-an-incident-type', 'Choose an incident type…');
+    const KIND_REQUIRED = () => T('incidents.choose-an-incident-type-full', 'Choose an incident type.');
 
     /**
      * One short sentence for a failed position lookup, from the shared helper
@@ -382,11 +382,19 @@
       } catch { /* logging must never break a report */ }
     };
 
-    const KIND_LABEL = {
-      violence: 'Violence', ballot_snatching: 'Ballot snatching', vote_buying: 'Vote-buying',
-      intimidation: 'Voter intimidation', bvas_failure: 'BVAS failure', late_materials: 'Late materials',
-      obstruction: 'Obstruction of observers', other: 'Other irregularity',
-    };
+    /* A FUNCTION, NOT A CONSTANT. Built at module scope this froze whatever
+       language had loaded first, and the dropdown kept the first render's words
+       for the rest of the session. */
+    const kindLabels = () => ({
+      violence: T('incidents.kind-violence', "Violence"),
+      ballot_snatching: T('incidents.kind-ballot-snatching', "Ballot snatching"),
+      vote_buying: T('incidents.kind-vote-buying', "Vote-buying"),
+      intimidation: T('incidents.kind-intimidation', "Voter intimidation"),
+      bvas_failure: T('incidents.kind-bvas-failure', "BVAS failure"),
+      late_materials: T('incidents.kind-late-materials', "Late materials"),
+      obstruction: T('incidents.kind-obstruction', "Obstruction of observers"),
+      other: T('incidents.kind-other', "Other irregularity"),
+    });
 
     // Attachments accumulate in one in-memory list so photos taken with the
     // native camera (APK) and files picked from the gallery coexist. On mobile
@@ -892,7 +900,7 @@
           HAWKEYE_ALERT('Choose an incident type', 'Pick what happened from the list, then submit again.',
             () => { $('kind').focus(); $('kind').scrollIntoView({ block: 'center' }); });
         } else {
-          $('status').textContent = KIND_REQUIRED; $('kind').focus();
+          $('status').textContent = KIND_REQUIRED(); $('kind').focus();
           $('status').scrollIntoView({ block: 'nearest' });
         }
         return;
@@ -973,11 +981,11 @@
       // failure, a shape change — threw here and killed the feed silently.
       const body = await fetch('/api/incidents').then((r) => r.json()).catch(() => null);
       const incidents = Array.isArray(body?.incidents) ? body.incidents : [];
-      if (!incidents.length) { $('feed').innerHTML = '<p class="empty">No incidents have been published yet.</p>'; return; }
+      if (!incidents.length) { $('feed').innerHTML = '<p class="empty">' + T('incidents.no-incidents-have-been-published-yet', 'No incidents have been published yet.') + '</p>'; return; }
       const safeFile = (f) => encodeURI(String(f)).replace(/"/g, '%22');
       $('feed').innerHTML = incidents.map((i) => `
         <div class="feed-item">
-          <span class="k">${esc(KIND_LABEL[i.kind] || i.kind)}</span>${i.state ? ` · ${esc(i.state)}` : ''}
+          <span class="k">${esc(kindLabels()[i.kind] || i.kind)}</span>${i.state ? ` · ${esc(i.state)}` : ''}
           <small style="color:var(--muted)"> · ${esc(timeAgo(i.created_at))}</small>
           ${i.description ? `<p>${esc(i.description)}</p>` : ''}
           ${i.media.length ? `<div class="m">${i.media.map((m) => m.type === 'video'
@@ -1015,13 +1023,13 @@
     if (token) { $('form-card').hidden = false; } else { $('need-auth').hidden = false; }
     loadFeed();
     (async () => {
-      const kinds = await fetch('/api/incidents/kinds').then((r) => r.json()).catch(() => Object.keys(KIND_LABEL));
+      const kinds = await fetch('/api/incidents/kinds').then((r) => r.json()).catch(() => Object.keys(kindLabels()));
       // The placeholder is re-inserted FIRST and stays selected. Writing the
       // API's kinds straight into innerHTML is what pre-selected 'violence' in
       // the first place — the list arrives ordered, and option 0 of a <select>
       // is selected whether or not anyone chose it.
-      $('kind').innerHTML = `<option value="">${esc(KIND_PLACEHOLDER)}</option>`
-        + kinds.map((k) => `<option value="${esc(k)}">${esc(KIND_LABEL[k] || k)}</option>`).join('');
+      $('kind').innerHTML = `<option value="">${esc(KIND_PLACEHOLDER())}</option>`
+        + kinds.map((k) => `<option value="${esc(k)}">${esc(kindLabels()[k] || k)}</option>`).join('');
       $('kind').value = '';
     })();
   </script>

@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=176">
+  <link rel="stylesheet" href="styles.css?v=177">
   <script src="native.js?v=116"></script>
   <style>
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
@@ -196,8 +196,8 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
   </div></footer>
 
   <script src="tg.js?v=95"></script>
-  <script src="/i18n.js?v=6"></script>
-  <script src="/lang.js?v=5"></script>
+  <script src="/i18n.js?v=7"></script>
+  <script src="/lang.js?v=6"></script>
   <script src="menu.js?v=171"></script>
   <script>
     const $ = (id) => document.getElementById(id);
@@ -236,11 +236,11 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       const s = await fetch('/api/integrity/summary').then((r) => r.json());
       const bySev = Object.fromEntries(s.bySeverity.map((r) => [r.severity, r.c]));
       $('cards').innerHTML = `
-        <div class="stat high"><b>${bySev.high || 0}</b><span>High-severity flags</span></div>
-        <div class="stat med"><b>${bySev.medium || 0}</b><span>Medium flags</span></div>
-        <div class="stat"><b>${bySev.low || 0}</b><span>Low flags</span></div>
-        <div class="stat"><b>${s.unitsFlagged}</b><span>Units flagged</span></div>
-        <div class="stat"><b>${s.reports.toLocaleString()}</b><span>Reports screened</span></div>`;
+        <div class="stat high"><b>${bySev.high || 0}</b><span>${T('integrity.high-severity-flags', 'High-severity flags')}</span></div>
+        <div class="stat med"><b>${bySev.medium || 0}</b><span>${T('integrity.medium-flags', 'Medium flags')}</span></div>
+        <div class="stat"><b>${bySev.low || 0}</b><span>${T('integrity.low-flags', 'Low flags')}</span></div>
+        <div class="stat"><b>${s.unitsFlagged}</b><span>${T('integrity.units-flagged', 'Units flagged')}</span></div>
+        <div class="stat"><b>${s.reports.toLocaleString()}</b><span>${T('integrity.reports-screened', 'Reports screened')}</span></div>`;
       const types = [...new Set(s.byType.map((r) => r.type))];
       const tf = $('type-filter');
       if (tf.options.length === 1) for (const t of types) tf.add(new Option(TYPE_LABEL[t] || t, t));

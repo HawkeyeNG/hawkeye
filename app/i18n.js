@@ -31,13 +31,12 @@
     { code: 'yo', name: 'Yoruba', native: 'Èdè Yorùbá' },
   ];
 
-  /* Languages to show as coming-but-not-yet. EMPTY ON PURPOSE.
-     Nigerian Pidgin sat here as "coming" and did not move; a picker that offers
-     a language the product cannot speak reads as a promise. GLOSSARY.md still
-     has Pidgin as not started. The mechanism stays so re-adding it is one line:
-     Pidgin has no usable machine translation and must be written by a person,
-     and BBC News Pidgin's orthography is the one to follow when it is. */
-  var PENDING = [];
+  /* NO "COMING SOON" LIST. There was one, it held Nigerian Pidgin, and it sat
+     there for months advertising a language the product does not speak — a
+     picker that offers what it cannot deliver is a promise, not a roadmap. The
+     list, its rendering and its strings are removed rather than emptied: an
+     empty array is an invitation to refill it. A language appears here when its
+     bundle does, and not before. */
 
   var dict = {};
   var meta = {};
@@ -136,6 +135,15 @@
    */
   function apply(root) {
     var scope = root || document;
+    /* The step cards' "Review ▸" / "Close ▾" are CSS ::after content, out of
+       reach of every attribute sweep below, so they travel as custom properties
+       instead. JSON.stringify gives CSS a correctly quoted string. */
+    if (document.documentElement && document.documentElement.style) {
+      document.documentElement.style.setProperty('--hk-review',
+        JSON.stringify(t('report.tap-to-review', 'Review ▸')));
+      document.documentElement.style.setProperty('--hk-close',
+        JSON.stringify(t('report.tap-to-close', 'Close ▾')));
+    }
     scope.querySelectorAll('[data-i18n-html]').forEach(function (el) {
       var k = el.getAttribute('data-i18n-html');
       var english = remember(el, 'html', k, el.innerHTML);
@@ -288,7 +296,6 @@
 
   window.HawkeyeI18n = {
     LANGS: LANGS,
-    PENDING: PENDING,
     t: t,
     apply: apply,
     /* Translate a fetched political_data.json object. See the note above. */
@@ -300,8 +307,7 @@
     /** True once the user has made an explicit choice. */
     get chosen() { return !!stored(); },
     name: function (code) {
-      var all = LANGS.concat(PENDING);
-      for (var i = 0; i < all.length; i++) if (all[i].code === code) return all[i].name;
+      for (var i = 0; i < LANGS.length; i++) if (LANGS[i].code === code) return LANGS[i].name;
       return code;
     },
   };

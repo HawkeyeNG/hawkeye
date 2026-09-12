@@ -71,7 +71,7 @@
     return '<span class="lang-badge" data-i18n="' + b[0] + '">' + esc(I18N.t(b[0], b[1])) + '</span>';
   }
 
-  /** One row per language. Pending ones are listed but not selectable. */
+  /** One row per language. Every row here is a language the app can serve. */
   function options(selected, states) {
     var html = '';
     I18N.LANGS.forEach(function (l) {
@@ -81,14 +81,6 @@
         + '<span class="lang-native">' + esc(l.native) + '</span>'
         + '<span class="lang-en">' + esc(l.name) + '</span>'
         + badge((states || {})[l.code] || (l.code === 'en' ? 'source' : 'unknown'))
-        + '</label>';
-    });
-    I18N.PENDING.forEach(function (l) {
-      html += '<label class="lang-opt is-pending" aria-disabled="true">'
-        + '<input type="radio" name="hk-lang" value="' + l.code + '" disabled>'
-        + '<span class="lang-native">' + esc(l.native) + '</span>'
-        + '<span class="lang-en">' + esc(l.name) + '</span>'
-        + '<span class="lang-badge">' + esc(I18N.t('lang.coming', 'Coming soon')) + '</span>'
         + '</label>';
     });
     return html;

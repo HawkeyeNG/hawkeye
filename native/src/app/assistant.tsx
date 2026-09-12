@@ -18,7 +18,7 @@ import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -36,11 +36,11 @@ const GREETING =
  * on tap would put the screen's primary action back inside the scroll. It also
  * lets someone swap "presidential" for the race they actually care about.
  */
-const SUGGESTIONS = [
-  i18nT('n.app.assistant.what-is-the-presidential-tally-so'),
-  i18nT('n.app.assistant.how-much-of-nigeria-is-mapped'),
-  i18nT('n.app.assistant.which-states-still-have-no-reports'),
-];
+const SUGGESTIONS = lazyT([
+  'n.app.assistant.what-is-the-presidential-tally-so',
+  'n.app.assistant.how-much-of-nigeria-is-mapped',
+  'n.app.assistant.which-states-still-have-no-reports',
+]);
 
 type Turn = { id: number; q: string; a: string | null };
 

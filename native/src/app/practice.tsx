@@ -55,7 +55,7 @@ import { maybeAskForReview } from '@/lib/review';
 import { useUi } from '@/lib/theme';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -205,14 +205,14 @@ type Searched = {
 // with allowClosed, so every race is selectable and "exactly one open" is not a
 // state it can be in — collapsing the step would hide the picker precisely
 // where the observer came to learn it.
-const STEPS: { key: Step; label: string }[] = [
-  { key: 'sheet', label: i18nT('n.step.sheet') },
-  { key: 'venue', label: i18nT('n.step.venue') },
-  { key: 'unit', label: i18nT('n.step.unit') },
-  { key: 'contest', label: i18nT('n.step.race') },
-  { key: 'votes', label: i18nT('n.step.votes') },
-  { key: 'review', label: i18nT('n.step.send') },
-];
+const STEPS: { key: Step; label: string }[] = lazyT([
+  { key: 'sheet', label: 'n.step.sheet' },
+  { key: 'venue', label: 'n.step.venue' },
+  { key: 'unit', label: 'n.step.unit' },
+  { key: 'contest', label: 'n.step.race' },
+  { key: 'votes', label: 'n.step.votes' },
+  { key: 'review', label: 'n.step.send' },
+]);
 
 /** Enough to find the unit you are standing at; short enough to still scan. */
 const MAX_NEARBY = 12;

@@ -27,7 +27,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 const SEEN_KEY = 'hawkeye_tour_seen';
 
@@ -97,7 +97,7 @@ export type TourStep = {
  * and the site already say, never invented. Nothing here promises a feature or
  * an outcome, and nothing claims a relationship with INEC.
  */
-export const TOUR_STEPS: TourStep[] = [
+export const TOUR_STEPS: TourStep[] = lazyT([
   {
     icon: 'home',
     route: 'index',
@@ -105,7 +105,7 @@ export const TOUR_STEPS: TourStep[] = [
     titleKey: 'nav.home',
     bodyKey: 'tour.home.body',
     body:
-      i18nT('tour.home.body'),
+      'tour.home.body',
   },
   {
     icon: 'bar-chart-2',
@@ -114,17 +114,17 @@ export const TOUR_STEPS: TourStep[] = [
     titleKey: 'nav.results',
     bodyKey: 'tour.results.body',
     body:
-      i18nT('tour.results.body'),
+      'tour.results.body',
   },
   {
     icon: 'camera',
     route: 'report',
     cta: true,
-    title: i18nT('tour.report.title'),
+    title: 'tour.report.title',
     titleKey: 'tour.report.title',
     bodyKey: 'tour.report.body',
     body:
-      i18nT('tour.report.body'),
+      'tour.report.body',
   },
   {
     icon: 'bell',
@@ -133,7 +133,7 @@ export const TOUR_STEPS: TourStep[] = [
     titleKey: 'nav.alerts',
     bodyKey: 'tour.alerts.body',
     body:
-      i18nT('tour.alerts.body'),
+      'tour.alerts.body',
   },
   {
     icon: 'menu',
@@ -142,9 +142,9 @@ export const TOUR_STEPS: TourStep[] = [
     titleKey: 'nav.more',
     bodyKey: 'tour.more.body',
     body:
-      i18nT('tour.more.body'),
+      'tour.more.body',
   },
-];
+]);
 
 /**
  * Has this device seen the tour?

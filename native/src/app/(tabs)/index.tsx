@@ -9,7 +9,7 @@ import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -154,13 +154,13 @@ const TINT: Record<Tone, string> = {
   warn: 'bg-warn',
 };
 
-const FILTERS: { key: Kind | 'all'; label: string }[] = [
-  { key: 'all', label: i18nT('n.app.tabs.index.filter-everything') },
-  { key: 'report', label: i18nT('n.app.tabs.index.filter-reports') },
-  { key: 'incident', label: i18nT('n.app.tabs.index.filter-incidents') },
-  { key: 'flag', label: i18nT('n.app.tabs.index.filter-flags') },
-  { key: 'case', label: i18nT('n.app.tabs.index.filter-cases') },
-];
+const FILTERS: { key: Kind | 'all'; label: string }[] = lazyT([
+  { key: 'all', label: 'n.app.tabs.index.filter-everything' },
+  { key: 'report', label: 'n.app.tabs.index.filter-reports' },
+  { key: 'incident', label: 'n.app.tabs.index.filter-incidents' },
+  { key: 'flag', label: 'n.app.tabs.index.filter-flags' },
+  { key: 'case', label: 'n.app.tabs.index.filter-cases' },
+]);
 
 async function jget<T>(path: string): Promise<T | null> {
   try {

@@ -93,7 +93,7 @@ export function SocialRow() {
   const ui = useUi();
   return (
     <View>
-      <SectionLabel text="Find Hawkeye" />
+      <SectionLabel text={i18nT("n.components.social-row.find-hawkeye")} />
 
       {/* SHARE HAWKEYE, FIRST IN THE SECTION.
 

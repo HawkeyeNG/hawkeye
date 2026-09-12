@@ -725,7 +725,7 @@ export function UnitMap({
     return (
       <Placeholder
         height={h}
-        note="Maps need the full app — this build does not include the map engine. The list below works normally."
+        note={i18nT("n.components.unit-map.maps-need-the-full-app-this-build")}
       />
     );
   }
@@ -733,12 +733,12 @@ export function UnitMap({
     return (
       <Placeholder
         height={h}
-        note="This build has no Google Maps key, so the map would come up blank. The list below is unaffected."
+        note={i18nT("n.components.unit-map.this-build-has-no-google-maps-key")}
       />
     );
   }
   if (!valid || !region) {
-    return <Placeholder height={h} note="No location fix yet, so there is nothing to centre on." />;
+    return <Placeholder height={h} note={i18nT("n.components.unit-map.no-location-fix-yet-so-there-is")} />;
   }
   // One failure branch for both causes, and the LAST one offers no action.
   // Worded without naming Google Play services: this component also runs on
@@ -779,7 +779,7 @@ export function UnitMap({
       // this component into the failure branch above, which owns the copy and
       // the Retry decision. No action here — offering one for that one frame
       // would be a button that races its own replacement.
-      fallback={<Placeholder height={h} note="The map engine stopped. The list below still works." />}
+      fallback={<Placeholder height={h} note={i18nT("n.components.unit-map.the-map-engine-stopped-the-list-below")} />}
     >
       <View className="overflow-hidden rounded-2xl border border-line bg-card" style={{ height: h }}>
         <MapView

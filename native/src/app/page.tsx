@@ -68,7 +68,7 @@ export default function StaticPage() {
   const [anchors, setAnchors] = useState<Record<string, number>>({});
   const [active, setActive] = useState(0);
 
-  const title = page?.title ?? (faq ? 'FAQ' : 'Hawkeye');
+  const title = page?.title ?? (faq ? i18nT('nav.faq') : 'Hawkeye');
   const kicker = page?.kicker ?? i18nT('n.app.page.answers-to-the-common-questions');
   const sections = page?.sections ?? [];
 

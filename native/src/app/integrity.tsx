@@ -13,7 +13,7 @@ import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 import { InfoDot } from '@/components/info-dot';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -77,9 +77,9 @@ const VERDICT_TEXT: Record<string, (mad: number) => string> = {
  * tmp/patch_native_integrity.py, so the two clients cannot describe the same
  * check differently.
  */
-const CHECKS: { title: string; titleKey: string; items: [string, string, string, string][] }[] = [
+const CHECKS: { title: string; titleKey: string; items: [string, string, string, string][] }[] = lazyT([
   {
-    title: i18nT('integrity.against-inec-collation-records'),
+    title: 'integrity.against-inec-collation-records',
     titleKey: 'integrity.against-inec-collation-records',
     items: [
       ['INEC IReV mismatch', "the crowd's counts don't appear on INEC's own uploaded sheet for that unit.", 'integrity.inec-irev-mismatch', 'n.app.integrity.desc.inec-irev-mismatch'],
@@ -90,7 +90,7 @@ const CHECKS: { title: string; titleKey: string; items: [string, string, string,
     ],
   },
   {
-    title: i18nT('integrity.statistical-tripwires'),
+    title: 'integrity.statistical-tripwires',
     titleKey: 'integrity.statistical-tripwires',
     items: [
       ['Over-voting', 'more votes than registered voters at a unit (impossible).', 'integrity.over-voting', 'n.app.integrity.desc.over-voting'],
@@ -102,7 +102,7 @@ const CHECKS: { title: string; titleKey: string; items: [string, string, string,
     ],
   },
   {
-    title: i18nT('integrity.ai-vision-on-the-result-sheet'),
+    title: 'integrity.ai-vision-on-the-result-sheet',
     titleKey: 'integrity.ai-vision-on-the-result-sheet',
     items: [
       ['Sheet authenticity', 'the EC8A photo flagged as a likely screenshot, edited, AI-generated, or not an EC8A form; advisory, for human review.', 'integrity.sheet-authenticity', 'n.app.integrity.desc.sheet-authenticity'],
@@ -110,7 +110,7 @@ const CHECKS: { title: string; titleKey: string; items: [string, string, string,
     ],
   },
   {
-    title: i18nT('integrity.provenance-duplicates'),
+    title: 'integrity.provenance-duplicates',
     titleKey: 'integrity.provenance-duplicates',
     items: [
       ['Duplicate form serial', 'the same EC8A serial reported at two units.', 'integrity.duplicate-form-serial', 'n.app.integrity.desc.duplicate-form-serial'],
@@ -119,13 +119,13 @@ const CHECKS: { title: string; titleKey: string; items: [string, string, string,
     ],
   },
   {
-    title: i18nT('integrity.incident-patterns'),
+    title: 'integrity.incident-patterns',
     titleKey: 'integrity.incident-patterns',
     items: [
       ['Incident hotspot', 'several incident reports of the same kind in one state within a short window.', 'integrity.incident-hotspot', 'n.app.integrity.desc.incident-hotspot'],
     ],
   },
-];
+]);
 
 async function jget<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { headers: { accept: 'application/json' } });

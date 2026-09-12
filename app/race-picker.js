@@ -280,6 +280,26 @@
    * this contest is not one of the combined four — so a caller can fall back to
    * whatever it showed before without knowing the list.
    */
+  /* i18n without a shared helper on this page: race-picker.js is loaded on
+     pages that may not carry app.js, so it asks the dictionary directly and
+     falls back to the English it was written with. */
+  function RT(k, en) { return window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en; }
+  function RV(k, en, vars) {
+    return Object.keys(vars).reduce(function (s, v) {
+      return s.split('{' + v + '}').join(vars[v]);
+    }, RT(k, en));
+  }
+  /* meta.label is the unit word the seat is chosen by. It is interpolated into
+     both sentences above, so translating it here reaches all of them. */
+  function word(label) {
+    return RT({
+      state: 'unit.state.one',
+      LGA: 'unit.lga.one',
+      'senatorial district': 'unit.senatorial.one',
+      'federal constituency': 'unit.federal.one',
+    }[label] || 'x.' + label, label);
+  }
+
   function mount(host, code, opts) {
     if (!host || !isCombined(code)) return false;
     var given = (opts && opts.states) || null;
@@ -304,9 +324,10 @@
     host.innerHTML =
       '<div class="rp-card" data-open="0">'
       + '<button type="button" class="rp-head" aria-expanded="false">'
-      + '<span class="rp-title">Find your ' + meta.label + '</span>'
+      + '<span class="rp-title">' + RV('race-picker.find-your', 'Find your {v0}', { v0: word(meta.label) }) + '</span>'
       + '<span class="rp-hint">'
-      + (oneStep ? 'Pick a state to open its race' : 'Pick a state, then your ' + meta.label)
+      + (oneStep ? RT('race-picker.pick-a-state-to-open-its-race', 'Pick a state to open its race')
+        : RV('race-picker.pick-a-state-then-your', 'Pick a state, then your {v0}', { v0: word(meta.label) }))
       + '</span>'
       + '<span class="rp-chev" aria-hidden="true">›</span>'
       + '</button>'
@@ -318,13 +339,13 @@
       // twin drops the same heading (race-picker.tsx) — there it is decoration,
       // here it is a real <label for>, hence the two different removals.
       + (oneStep
-        ? '<select id="rp-state" aria-label="State"><option value="">— select state —</option></select>'
+        ? '<select id="rp-state" aria-label="State"><option value="">' + RT('common.select-state', '— select state —') + '</option></select>'
         : '<label class="rp-lab" for="rp-state">State</label>'
-          + '<select id="rp-state"><option value="">— select state —</option></select>')
+          + '<select id="rp-state"><option value="">' + RT('common.select-state', '— select state —') + '</option></select>')
       + (oneStep ? ''
         : '<label class="rp-lab" for="rp-seat">'
           + meta.label.replace(/^\w/, function (c) { return c.toUpperCase(); }) + '</label>'
-          + '<select id="rp-seat" disabled><option value="">— select state first —</option></select>')
+          + '<select id="rp-seat" disabled><option value="">' + RT('race-picker.select-state-first', '— select state first —') + '</option></select>')
       + '<p class="rp-msg" role="status" aria-live="polite"></p>'
       + '</div></div>';
 

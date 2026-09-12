@@ -171,7 +171,7 @@
   </header>
 <main class="wrap">
     <h1 data-i18n="common.political-data">Political Data</h1>
-    <p class="lede"><span data-i18n="political.the-parties-in-power-the-incumbents-this">The parties in power — the incumbents this election will confirm or unseat.</span><button class="info-i" data-info-title="Reading this page" data-info="Each state is coloured by its governing party. Tap or hover a state for its governor, party and the year of its next election. Figures are compiled from public records and updated as results are declared." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org
+    <p class="lede"><span data-i18n="political.the-parties-in-power-the-incumbents-this">The parties in power — the incumbents this election will confirm or unseat.</span><button class="info-i" data-i18n-info-title="info.reading-this-page.title" data-info-title="Reading this page" data-i18n-info="info.reading-this-page.body" data-info="Each state is coloured by its governing party. Tap or hover a state for its governor, party and the year of its next election. Figures are compiled from public records and updated as results are declared." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org
 INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
     <p class="unofficial" id="provisional" style="background:var(--tint-warn);border-left:6px solid #f9a825;padding:10px;font-size:0.85rem;color:var(--text-warn)"></p>
 
@@ -363,7 +363,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         aria-label="${filled} of ${size} seats held, by party">
         ${dots}
         <text class="tot" x="110" y="98" font-size="19">${filled}</text>
-        <text class="totsub" x="110" y="114" font-size="8.5">of ${size} seats</text>
+        <text class="totsub" x="110" y="114" font-size="8.5">${esc(T('political.of-n-seats', 'of {n} seats').replace('{n}', size))}</text>
       </svg>`;
     }
 
@@ -533,7 +533,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           .map((x) => `${x.name}|${x.url}`).join('\n');
         document.getElementById('comp-note').innerHTML =
           `${T('political.who-holds-the-469-federal-seats', 'Who holds the 469 federal seats today.')}<button class="info-i"
-             data-info-title="Where these numbers come from"
+             data-i18n-info-title="info.where-these-numbers-come-from.title" data-info-title="Where these numbers come from"
              data-info="${esc(info)}" data-info-links="${esc(srcLines)}"></button>`;
       }
       document.getElementById('provisional').textContent = data.note;

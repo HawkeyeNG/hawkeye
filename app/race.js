@@ -661,7 +661,7 @@
             // "not open" without a time comes back at random.
             if (window.HAWKEYE_MODAL) {
               window.HAWKEYE_MODAL(
-                'Reporting is not open yet',
+                T('common.reporting-not-open-yet', 'Reporting is not open yet'),
                 'Reporting opens ' + when + '. You can file from your polling unit as soon as polls open.',
                 ''
               );

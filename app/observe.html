@@ -184,6 +184,26 @@
       </div>
       <h1 data-i18n="observe.verify-your-phone" id="register-title">Verify Your Phone</h1>
       <p data-i18n="observe.one-number-one-observer-your-number" class="lede" id="register-lede">One number, one observer. Your number is never published.</p>
+      <script>
+        /* SIGN-IN MODE IS DECIDED HERE, DURING PARSE -- not when app.js runs.
+           This markup is authored as SIGN UP, and app.js swaps it over in
+           applySignInMode(). On a cold app launch that swap can land after the
+           markup has already reached the screen, so a returning observer saw
+           the sign-up screen flash before their sign-in screen. Running the
+           same swap inline, immediately after the elements exist, closes that
+           window. app.js still re-applies and re-translates it -- this is
+           idempotent, not a replacement. */
+        (function () {
+          try {
+            if (!/[?&]intent=signin(?:&|$)/.test(location.search)) return;
+            var t = document.getElementById('register-title');
+            var l = document.getElementById('register-lede');
+            if (t) t.textContent = 'Sign In';
+            if (l) l.textContent = 'Welcome back — sign in to your observer account.';
+            document.documentElement.classList.add('intent-signin');
+          } catch (e) {}
+        })();
+      </script>
       <!-- Practice: a proper card instead of a tinted sentence. Hidden in
            sign-in mode (returning observers don't need it). -->
       <a class="starter-card" id="starter-card" href="practice.html">
@@ -394,7 +414,7 @@
         <!-- ~20 parties, three-line names: the list is taller than the screen and
              finding one meant scrolling past all of it. Native has had this
              filter; web/Capacitor did not. -->
-        <input data-i18n-attr="placeholder:common.filter-parties-name-or-code" id="vote-filter" type="search" autocomplete="off" placeholder="Filter parties — name or code"
+        <input data-i18n-attr="placeholder:common.filter-parties-name-or-code,aria-label:common.filter-parties-by-name-or-code" id="vote-filter" type="search" autocomplete="off" placeholder="Filter parties — name or code"
                aria-label="Filter parties by name or code" style="margin-bottom:8px" />
         <div id="vote-inputs"></div>
         <label data-i18n-html="observe.ec8a-form-serial-number-optional-printed-on" for="sheet-serial">EC8A form serial number <small>(optional — printed on the sheet)</small></label>

@@ -1094,7 +1094,7 @@ async function refApi(path) {
 $('browse-block').addEventListener('toggle', async () => {
   if ($('browse-block').open && $('sel-state').options.length <= 1) {
     const { body } = await refApi('/api/register/states');
-    fillSelect($('sel-state'), body, '— select state —');
+    fillSelect($('sel-state'), body, T('common.select-state', '— select state —'));
   }
 });
 $('sel-state').onchange = async () => {
@@ -1917,7 +1917,7 @@ $('btn-submit').onclick = async () => {
     // fixes today, and the observer has just photographed a sheet and typed a
     // tally. A status line below the fold is missable enough that it reads as
     // the button doing nothing.
-    notifyBlocked('Reporting is not open yet', ERRORS.reporting_not_open);
+    notifyBlocked(T('common.reporting-not-open-yet', 'Reporting is not open yet'), ERRORS.reporting_not_open);
     return;
   }
   const auto = [...document.querySelectorAll('#vote-inputs input.ocr-filled')]

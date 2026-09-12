@@ -63,6 +63,18 @@ function i18nSet(el, key, english) {
   el.setAttribute('data-i18n', key);
   el.textContent = english;
 }
+/**
+ * For an ATTRIBUTE on a node menu.js creates: sets the English now and declares
+ * the key, so i18nSweep()'s apply() pass translates it when the bundle lands and
+ * again on every language change. Use this rather than i18nT() for anything
+ * that must survive a switch — i18nT() freezes at the language of the moment.
+ */
+function i18nAttr(el, attr, key, english) {
+  const prev = el.getAttribute('data-i18n-attr');
+  const pair = attr + ':' + key;
+  el.setAttribute('data-i18n-attr', prev && !prev.split(',').includes(pair) ? prev + ',' + pair : pair);
+  el.setAttribute(attr, i18nT(key, english));
+}
 function i18nLate(root) {
   if (window.HawkeyeI18n) window.HawkeyeI18n.apply(root || document);
 }
@@ -502,7 +514,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     const cb = document.createElement('button');
     cb.className = 'theme-btn close-btn';
     cb.type = 'button';
-    cb.setAttribute('aria-label', 'Close and go back');
+    i18nAttr(cb, 'aria-label', 'nav.close-and-go-back', 'Close and go back');
     cb.setAttribute('data-i18n-attr', 'aria-label:nav.close-and-go-back');
     cb.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     cb.addEventListener('click', () => {
@@ -527,7 +539,10 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // fontless systems; SVG is always crisp and inherits currentColor.
     const SUN = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
     const MOON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
-    const paint = () => { tb.innerHTML = effective() === 'dark' ? SUN : MOON; tb.setAttribute('aria-label', effective() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'); };
+    const paint = () => { tb.innerHTML = effective() === 'dark' ? SUN : MOON; tb.setAttribute('aria-label', effective() === 'dark' ? i18nT('nav.switch-to-light-mode', 'Switch to light mode') : i18nT('nav.switch-to-dark-mode', 'Switch to dark mode')); };
+    // Its wording flips with the theme, so no single key describes it; repaint
+    // on a language change the way every other i18nT() caller must.
+    document.addEventListener('hawkeye-lang', paint);
     tb.addEventListener('click', () => {
       const next = effective() === 'dark' ? 'light' : 'dark';
       document.documentElement.dataset.theme = next;
@@ -587,43 +602,11 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     themeToggle.parentNode.insertBefore(lb, themeToggle);
   }
 
-  /**
-   * ...AND THE TOGGLE GOES INTO THE MENU, so giving it up in the header costs
-   * nothing. Only in the app shell: on the website it is already on every page.
-   *
-   * The row copies an existing panel link's className rather than naming one,
-   * so it keeps matching whatever the panel is styled with instead of pinning a
-   * class this file does not own.
-   */
-  if (SHELL && panel && !panel.querySelector('.menu-theme')
-      && !document.querySelector('.theme-btn:not(.close-btn)')) {
-    /* Only where the header does NOT already carry the toggle — i.e. everywhere
-       but Home. Two controls for one setting would have to be kept in step, and
-       the first version of this tried to do that by poking the header button;
-       not having two is better than syncing two. */
-    const sample = panel.querySelector('a');
-    const row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'menu-theme' + (sample ? ' ' + sample.className : '');
-    row.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;font:inherit;color:inherit;';
-    const eff = () => document.documentElement.dataset.theme || 'dark';
-    const label = () => (eff() === 'dark'
-      ? i18nT('nav.switch-to-light-mode', 'Switch to light mode')
-      : i18nT('nav.switch-to-dark-mode', 'Switch to dark mode'));
-    row.textContent = label();
-    // The click handler repaints this row, so a data-i18n attribute would be
-    // wiped by the next toggle. It has to be repainted on a language change too.
-    document.addEventListener('hawkeye-lang', () => { row.textContent = label(); });
-    row.addEventListener('click', () => {
-      const next = eff() === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      localStorage.setItem('hawkeye_theme', next);
-      const m = document.querySelector('meta[name="theme-color"]');
-      if (m) m.content = next === 'dark' ? '#00251a' : '#ffffff';
-      row.textContent = label();
-    });
-    panel.appendChild(row);
-  }
+  /* THE THEME TOGGLE IS NOT IN THE MENU. It used to add a row here on shell
+     pages whose header has no toggle, but the row rendered as unstyled text
+     that was invisible against the dark panel, and a second control for a
+     setting the header already owns is one more thing to keep in step. The
+     header toggle on Home remains the single place to change theme. */
 
   // Header slot, one control, state-dependent (called by syncAuthMenu below):
   /**
@@ -700,7 +683,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       const a = document.createElement('a');
       a.className = 'bell-btn';
       a.href = 'notifications.html';
-      a.setAttribute('aria-label', 'Notifications');
+      i18nAttr(a, 'aria-label', 'profile.notifications', 'Notifications');
       a.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 4.5 2 5.5 2 5.5H4S6 13.5 6 9"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="bell-dot" hidden></span>';
       btn.parentNode.insertBefore(a, slot());
       fetch('/api/notifications', { headers: { authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') } })
@@ -986,6 +969,11 @@ document.addEventListener('hawkeye-lang', i18nSweep);
    * to take, what to type) stay visible; those are not explanations.
    */
   (function infoDots() {
+    /* Source-link names are keyed by a slug of their English, so the two links
+       that recur across these dialogs ("INEC ...", "INEC IReV ...") need one
+       translation each rather than one per dot. */
+    const linkKey = (s) => String(s).toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
     let dlg = null;
     const open = (title, body, links) => {
       if (!dlg) {
@@ -1022,7 +1010,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
         if (!name || !/^https?:\/\//.test(href || '')) continue;
         const a = document.createElement('a');
         a.href = href; a.target = '_blank'; a.rel = 'noopener';
-        a.textContent = name + ' \u2197';
+        a.textContent = i18nT('links.' + linkKey(name), name) + ' \u2197';
         box.appendChild(a);
       }
       dlg.showModal();
@@ -1037,16 +1025,27 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       if (!b) return;
       e.preventDefault();
       e.stopPropagation();
-      open(b.getAttribute('data-info-title') || '', b.getAttribute('data-info') || '',
+      /* The payload is TRANSLATED HERE. data-info-title / data-info are plain
+         attributes, so i18n.js's element pass never saw them and every info
+         modal stayed English while its Close button was translated. The key
+         attributes are optional: a dot without them still shows its literal
+         English rather than a key name. */
+      const tk = b.getAttribute('data-i18n-info-title');
+      const bk = b.getAttribute('data-i18n-info');
+      const rawTitle = b.getAttribute('data-info-title') || '';
+      const rawBody = b.getAttribute('data-info') || '';
+      open(tk ? i18nT(tk, rawTitle) : rawTitle,
+        bk ? i18nT(bk, rawBody) : rawBody,
         b.getAttribute('data-info-links') || '');
     });
     // Label every dot for screen readers without repeating it in the markup.
     const label = () => document.querySelectorAll('.info-i:not([aria-label])').forEach((b) => {
-      b.setAttribute('aria-label', 'More information');
+      i18nAttr(b, 'aria-label', 'common.more-information', 'More information');
       b.setAttribute('type', 'button');
     });
     label();
     new MutationObserver(label).observe(document.body, { childList: true, subtree: true });
+
   })();
 
   // APP SHELL HEADER: the crest already says whose app this is, so the row
@@ -1117,7 +1116,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     const isOn = (h) => h.replace(/#.*/, '') === page;
     const nav = document.createElement('nav');
     nav.className = 'tabbar';
-    nav.setAttribute('aria-label', 'Primary');
+    i18nAttr(nav, 'aria-label', 'nav.primary', 'Primary');
     nav.setAttribute('data-i18n-attr', 'aria-label:nav.primary');
     nav.innerHTML = TABS.map((t) => `<a class="tab${t.cta ? ' tab-cta' : ''}${isOn(t.href) ? ' on' : ''}" href="${t.href}"${t.more ? ' data-more="1"' : ''}${t.cta ? ' data-report="1"' : ''}>`
       + `<span class="ti">${t.bell ? '<span class="tab-dot" hidden></span>' : ''}${ic(t.icon)}</span><span class="tl" data-i18n="${t.key}">${t.label}</span></a>`).join('');
@@ -1513,14 +1512,17 @@ document.addEventListener('hawkeye-lang', i18nSweep);
        backstop for lang.js being absent, blocked or broken — a missing event
        must not cost every new observer the tour. */
     if (page === 'index.html' && tourGap() > 0 && !tourSeen()) {
-      if (window.HawkeyeLang && window.HawkeyeLang.willPrompt && window.HawkeyeLang.willPrompt()) {
-        let started = false;
-        const start = () => { if (!started && !tourSeen()) { started = true; openTour(); } };
-        document.addEventListener('hawkeye-lang-prompt-done', start, { once: true });
-        setTimeout(start, 12000);
-      } else {
-        openTour();
-      }
+      /* ALWAYS wait for the language question to resolve, even when the picker
+         is not on window yet. The old code read a missing window.HawkeyeLang as
+         "no prompt is coming" and opened the tour immediately -- but menu.js can
+         run before lang.js has parsed, so on a real first launch the tour opened
+         ON TOP of the language modal. lang.js settles in every path (asked,
+         already chosen, or declined) and dispatches this event each time, so
+         waiting costs a normally-open tour nothing. */
+      let started = false;
+      const start = () => { if (!started && !tourSeen()) { started = true; openTour(); } };
+      document.addEventListener('hawkeye-lang-prompt-done', start, { once: true });
+      setTimeout(start, 12000);
     }
   }
 
@@ -1808,14 +1810,14 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     b.type = 'button';                 // never submit the surrounding form
     b.className = 'pw-eye';
     b.tabIndex = 0;
-    b.setAttribute('aria-label', 'Show password');
+    i18nAttr(b, 'aria-label', 'common.show-password', 'Show password');
     b.setAttribute('aria-pressed', 'false');
     b.innerHTML = EYE;
     b.addEventListener('click', () => {
       const reveal = input.type === 'password';
       input.type = reveal ? 'text' : 'password';
       b.innerHTML = reveal ? EYE_OFF : EYE;
-      b.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+      b.setAttribute('aria-label', reveal ? i18nT('common.hide-password', 'Hide password') : i18nT('common.show-password', 'Show password'));
       b.setAttribute('aria-pressed', String(reveal));
       // Keep the caret where it was; don't yank the page around on mobile.
       try { input.focus({ preventScroll: true }); } catch { /* ignore */ }
@@ -1885,7 +1887,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     #hk-note{font-size:.72rem;color:var(--muted,#5b6b62);padding:0 14px 10px;background:var(--bg,#f7f8f6)}`;
     const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     const fab = document.createElement('button');
-    fab.id = 'hk-fab'; fab.setAttribute('aria-label', 'Ask Hawkeye about the results');
+    fab.id = 'hk-fab'; i18nAttr(fab, 'aria-label', 'ask.ask-hawkeye-about-the-results', 'Ask Hawkeye about the results');
     // SVG, not the 💬 emoji: the emoji rendered differently on every platform and
     // read like a sticky note next to otherwise line-art iconography.
     fab.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 9 9 0 0 1-3.8-.8L3 21l1.9-4.6A8.2 8.2 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg>';

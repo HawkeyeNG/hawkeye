@@ -704,7 +704,7 @@
   "train2.ocr-training-set-2": "Koyar da OCR — Rukuni na 2",
   "traindavina.ocr-training-davina": "Koyar da OCR — Davina",
   "trainderek.ocr-training-derek": "Koyar da OCR — Derek",
-  "common.details": "Cikakken bayani ›",
+  "common.details": "Bayani ›",
   "time.just-now": "yanzu-yanzu",
   "time.min-ago": "minti {n} da suka wuce",
   "time.today": "yau {time}",
@@ -956,7 +956,7 @@
   "race.party": "Jam’iyya",
   "race.incumbent": "Mai ci yanzu",
   "race.listed-alphabetically-by-party": "An jera su bisa haruffan jam’iyya. Ba amincewa ba ce ko hasashe — Hawkeye ba ta goyon bayan kowace jam’iyya.",
-  "nav.not-government-or-inec-affiliated": "Ba ta gwamnati ba ce, kuma ba ta da alaka da INEC.",
+  "nav.not-government-or-inec-affiliated": "Ba mu da wata alaƙa da INEC ko gwamnati.",
   "ledger.verified": "An tabbatar",
   "support.copied": "An kwafa",
   "docket.could-not-load-the-docket-try-again": "An kasa loda rijistar — sake gwadawa nan ba da jimawa ba.",
@@ -1246,5 +1246,7 @@
   "map.zoom-out": "Nisanta",
   "profile.observer-number": "Mai lura #",
   "profile.since": "tun",
-  "political.of-n-seats": "daga kujeru {n}"
+  "political.of-n-seats": "daga kujeru {n}",
+  "info.why-mapping-units-matters.title": "Me ya sa tsara rukunan ke da muhimmanci",
+  "info.why-mapping-units-matters.body": "Yawancin rumfunan zaɓe ba su da wurin da aka tabbatar a rikodi, don haka ba za a iya duba wurin sakamakon da aka kai rahoto daga gare su ba. Idan mutane masu zaman kansu kaɗan suka tsara rumfa ɗaya, sai a tabbatar da wurinta, kuma ana iya kwatanta kowane sakamako da aka shigar a can ranar zaɓe da ita."
 }

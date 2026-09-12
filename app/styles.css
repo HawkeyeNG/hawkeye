@@ -2311,3 +2311,20 @@ body.has-tabbar .lang-back {
 }
 body.has-tabbar .lang-card { max-height: 100%; }
 .lang-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+
+/* EVERY dialog takes the app surface, not the UA's. A <dialog> with no
+   background paints white in light mode and a flat near-black in dark, which is
+   why several modals still read as grey system boxes dropped into a green app
+   after .gov-disc-modal alone was fixed. Tokens, so both themes work. */
+dialog:not([open]) { display: none; }
+dialog.pwa-modal,
+dialog#lang-modal,
+dialog.hk-modal,
+dialog.sheet-modal,
+#lang-modal,
+.pwa-modal {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}

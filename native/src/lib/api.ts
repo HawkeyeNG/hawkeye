@@ -4,7 +4,7 @@
  * routes, everything here is the same public API the website consumes.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 /**
  * Production, unless a dev build points somewhere else.
@@ -130,10 +130,10 @@ const CARD_ELECTION: Record<string, string> = {
 };
 
 /** Shorter chamber labels; "House of Representatives" alone wraps a card. */
-const CARD_CHAMBER: Record<string, string> = {
+const CARD_CHAMBER: Record<string, string> = lazyT({
   SEN: 'Senate',
-  REP: i18nT('n.components.follow-race.house-of-reps'),
-};
+  REP: 'n.components.follow-race.house-of-reps',
+});
 
 /**
  * The card headline. Senate and Reps share one election, so the chamber is

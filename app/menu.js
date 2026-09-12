@@ -1522,7 +1522,18 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       let started = false;
       const start = () => { if (!started && !tourSeen()) { started = true; openTour(); } };
       document.addEventListener('hawkeye-lang-prompt-done', start, { once: true });
-      setTimeout(start, 12000);
+      /* THE BACKSTOP MUST NOT OUTRUN A READER. Twelve seconds is nothing when
+         the picker offers four languages with review badges, and the tour was
+         opening on top of the question it is waiting for. A modal that is on
+         screen will settle on its own -- lang.js dispatches on save, on "Not
+         now" and on dismiss -- so the backstop only covers lang.js never
+         getting that far. */
+      const backstop = () => {
+        const m = document.getElementById('lang-modal');
+        if (m && !m.hidden) { setTimeout(backstop, 2000); return; }
+        start();
+      };
+      setTimeout(backstop, 12000);
     }
   }
 

@@ -9,7 +9,7 @@
     "englishOnlyReason": "Legal and evidential wording: the INEC disclaimer and the non-affiliation notice. A mistranslated disclaimer is a legal exposure. These stay in English until a human translator signs for them."
   },
   "lang.title": "Choose your language",
-  "lang.body": "Hawkeye works in more than one language. You can change this any time in My Profile.",
+  "lang.body": "You can change this any time in My Profile.",
   "lang.save": "Save",
   "lang.later": "Not now",
   "lang.draft": "Draft translation, being reviewed",
@@ -1236,5 +1236,15 @@
   "results.nothing-has-come-in-from-show-them": "Nothing has come in from {v0} {v1} — show them",
   "results.leading-party-by": "Leading party by {v0}{v1}",
   "results.everywhere-in": "Everywhere in {v0}",
-  "race.follow-this-race": "Follow this race"
+  "race.follow-this-race": "Follow this race",
+  "terms.what-hawkeye-is-body": "Hawkeye lets citizens photograph, sign, and publish the results announced at their polling unit to an independent, tamper-evident public record. Hawkeye is <strong>not</strong> affiliated with, endorsed by, or acting on behalf of INEC, any government body, or any political party. <strong>Official election results are those declared by INEC alone.</strong> Hawkeye produces crowd-reported evidence for public scrutiny; it does not, and cannot, declare a winner.",
+  "terms.your-content-body": "Reports you submit — counts, photos, and their locations — are published on a public, tamper-evident ledger and, by design, <strong>cannot be edited or deleted</strong>; that permanence is what makes them trustworthy. By submitting, you grant Hawkeye a non-exclusive, worldwide, royalty-free licence to store, publish, and display that content for election-transparency purposes. You confirm you have the right to submit it. Your phone number is never published — see the <a href=\"privacy.html\">Privacy Policy</a>.",
+  "terms.changes-contact-body": "We may update these terms; continued use after changes constitutes acceptance. Questions: <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>. Governed by the laws of the Federal Republic of Nigeria.",
+  "privacy.collect.number": "<strong>Your number — as a hash</strong>. One-way, never reversible. We cannot see it, show it, or hand it over; it exists so one number equals one observer.",
+  "privacy.collect.reports": "<strong>Your reports</strong> — the counts, two live photos, and where each was taken.",
+  "privacy.collect.device": "<strong>A device fingerprint</strong> — hashed, so one phone cannot report the same race twice.",
+  "privacy.collect.telegram": "<strong>Your Telegram link</strong> — the chat ID only, so the bot can reach you. We never read your messages or contacts.",
+  "privacy.what-becomes-public-body": "Your counts, photos and their locations go on a public ledger and <strong>cannot be edited or deleted</strong> — that permanence is what makes them worth anything. They are tied to an anonymous observer ID, never to you. Incident media appears only after human review.",
+  "privacy.your-rights-body": "You can delete your account yourself at any time: open your profile and choose <strong>Delete my account</strong>. This removes your signing key, device link, Telegram link and alert subscriptions. Two things remain, by design: public ledger entries (permanent and anonymous — that permanence is what makes them trustworthy) and the one-way hash of your number, kept so a deleted identity can't be reused to file duplicate reports. Re-registering the same number restores your original observer ID. Other Nigeria Data Protection Act requests: <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>.",
+  "political.n-of-m-seats-held-by-party": "{v0} of {v1} seats held, by party"
 }

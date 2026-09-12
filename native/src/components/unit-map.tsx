@@ -9,7 +9,7 @@ import type { MapStyleElement, Region } from 'react-native-maps';
 import { BRAND } from '@/lib/api';
 import { DISCOVERY_RADIUS_M } from '@/lib/location';
 import { useUi } from '@/lib/theme';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, lazyT } from '@/lib/i18n';
 
 /**
  * Native module, so it exists in a dev/production build and NOT in Expo Go —
@@ -96,11 +96,11 @@ export type UnitTier = 'verified' | 'crowd' | 'approx';
  * under it is worse than no map. Worded to stand alone on a list row: callers
  * append their own detail (`— within ~400m`, `· 3 observer fix(es)`) after it.
  */
-export const TIER_LABEL: Record<UnitTier, string> = {
-  verified: i18nT('n.components.unit-map.verified-location'),
-  crowd: i18nT('n.components.unit-map.crowd-confirmed-location'),
-  approx: i18nT('n.components.unit-map.approximate-area-only'),
-};
+export const TIER_LABEL: Record<UnitTier, string> = lazyT({
+  verified: 'n.components.unit-map.verified-location',
+  crowd: 'n.components.unit-map.crowd-confirmed-location',
+  approx: 'n.components.unit-map.approximate-area-only',
+});
 
 /**
  * THE tier palette — one set of three colours across the app and the website,
@@ -149,10 +149,10 @@ export function toTier(status?: string | null): UnitTier {
  * any row holding `lat` 'verified', including a promoted crowd median.
  */
 export type RegisterTier = UnitTier | 'unmapped';
-export const REGISTER_TIER_LABEL: Record<RegisterTier, string> = {
+export const REGISTER_TIER_LABEL: Record<RegisterTier, string> = lazyT({
   ...TIER_LABEL,
-  unmapped: i18nT('n.app.map-unit.not-located-yet'),
-};
+  unmapped: 'n.app.map-unit.not-located-yet',
+});
 export function registerTier(u: {
   coords_source?: string | null;
   locationTier?: string;

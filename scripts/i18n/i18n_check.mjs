@@ -28,7 +28,7 @@ const isEnglishOnly = (k) => ENGLISH_ONLY_KEYS.includes(k)
 
 const UI = {
   'lang.title': 'Choose your language',
-  'lang.body': 'Hawkeye works in more than one language. You can change this any time in My Profile.',
+  'lang.body': 'You can change this any time in My Profile.',
   'lang.save': 'Save',
   'lang.later': 'Not now',
   'lang.draft': 'Draft translation, being reviewed',

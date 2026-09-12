@@ -1879,7 +1879,7 @@ export default function Practice() {
                 : router.replace('/sign-in?intent=signup'))}
             >
               <Text className="text-base font-bold text-hawk-gold">
-                {auth.status === 'signedIn' ? 'Report a real result' : 'Become an observer'}
+                {auth.status === 'signedIn' ? i18nT('n.app.practice.report-a-real-result') : i18nT('n.app.practice.become-an-observer')}
               </Text>
             </Pressable>
             <Pressable className="mt-3 w-full items-center py-2" onPress={restart}>

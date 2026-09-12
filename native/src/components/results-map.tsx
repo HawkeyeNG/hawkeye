@@ -45,12 +45,15 @@ export function asMapLevel(level: string | null | undefined): MapLevel | null {
 export const geoLevelOf = (level: MapLevel): GeoLevel => level;
 
 /** What one region of each level is called, for headings and sentences. */
+/* Translated HERE rather than at each call site: these words are interpolated
+   into most of the race copy, so one change reaches every sentence built from
+   them, on every race page. */
 export const LEVEL_WORD: Record<MapLevel, { one: string; many: string }> = {
-  state: { one: 'state', many: 'states' },
+  state: { one: i18nT('n.unit.state.one'), many: i18nT('n.unit.state.many') },
   // Was "state"/"states" back when the LGA view was really a state view.
-  lga: { one: 'LGA', many: 'LGAs' },
-  senatorial: { one: 'senatorial district', many: 'senatorial districts' },
-  federal: { one: 'federal constituency', many: 'federal constituencies' },
+  lga: { one: i18nT('n.unit.lga.one'), many: i18nT('n.unit.lga.many') },
+  senatorial: { one: i18nT('n.unit.senatorial.one'), many: i18nT('n.unit.senatorial.many') },
+  federal: { one: i18nT('n.unit.federal.one'), many: i18nT('n.unit.federal.many') },
 };
 
 /**

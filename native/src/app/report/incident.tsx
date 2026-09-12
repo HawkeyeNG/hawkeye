@@ -66,14 +66,14 @@ const REG = `${BASE}/api/register`;
 
 /** Kind codes from /api/incidents/kinds, with observer-facing labels. */
 const KINDS: { code: string; label: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { code: 'violence', label: 'Violence', icon: 'alert-octagon' },
-  { code: 'ballot_snatching', label: 'Ballot snatching', icon: 'box' },
-  { code: 'vote_buying', label: 'Vote buying', icon: 'dollar-sign' },
-  { code: 'intimidation', label: 'Intimidation', icon: 'user-x' },
-  { code: 'bvas_failure', label: 'BVAS failure', icon: 'cpu' },
-  { code: 'late_materials', label: 'Late materials', icon: 'clock' },
-  { code: 'obstruction', label: 'Obstruction', icon: 'slash' },
-  { code: 'other', label: 'Other', icon: 'more-horizontal' },
+  { code: 'violence', label: 'n.kind.violence', icon: 'alert-octagon' },
+  { code: 'ballot_snatching', label: 'n.kind.ballot-snatching', icon: 'box' },
+  { code: 'vote_buying', label: 'n.kind.vote-buying', icon: 'dollar-sign' },
+  { code: 'intimidation', label: 'n.kind.intimidation', icon: 'user-x' },
+  { code: 'bvas_failure', label: 'n.kind.bvas-failure', icon: 'cpu' },
+  { code: 'late_materials', label: 'n.kind.late-materials', icon: 'clock' },
+  { code: 'obstruction', label: 'n.kind.obstruction', icon: 'slash' },
+  { code: 'other', label: 'n.kind.other', icon: 'more-horizontal' },
 ];
 
 const MAX_MEDIA = 4;
@@ -261,7 +261,7 @@ type Searched = {
  * never written as literals.
  */
 const ringLine = (_s: Searched): string =>
-  'Units found within 800m. Unmapped units may not appear.';
+  i18nT("n.app.report.incident.units-found-within-800m-unmapped-units-may");
 
 /** The same honesty for an empty answer: name the circles that were searched,
  *  rather than the one that was drawn. */
@@ -877,7 +877,7 @@ export default function ReportIncident() {
       setNearLine(
         all.length > found.length
           ? i18nT('n.app.report.incident.tap-the-unit-this-happened-at', { v0: found.length, v1: all.length })
-          : 'Tap the unit this happened at:',
+          : i18nT("n.app.report.incident.tap-the-unit-this-happened-at"),
       );
     } catch (e) {
       setNearLine(
@@ -1093,7 +1093,7 @@ export default function ReportIncident() {
             kind: 'incident',
             body: fields,
             files,
-            label: i18nT('n.app.report.incident.incident', { v0: KINDS.find((k) => k.code === kind)?.label ?? kind }),
+            label: i18nT('n.app.report.incident.incident', { v0: (() => { const f = KINDS.find((k) => k.code === kind); return f ? i18nT(f.label) : kind; })() }),
           });
         } catch (e) {
           setLine(
@@ -1269,7 +1269,7 @@ export default function ReportIncident() {
                 evidence is safe by this point, so this crumb points BACKWARD at
                 an answered question — the direction a crumb can honestly go. */}
             <Crumb
-              label={KINDS.find((k) => k.code === kind)?.label ?? 'What happened'}
+              label={(() => { const f = KINDS.find((k) => k.code === kind); return f ? i18nT(f.label) : i18nT('n.kind.what-happened'); })()}
               onPress={() => setStep('report')}
             />
 
@@ -1700,7 +1700,7 @@ export default function ReportIncident() {
                       kind === k.code ? 'text-hawk-gold' : 'text-ink'
                     }`}
                   >
-                    {k.label}
+                    {i18nT(k.label)}
                   </Text>
                 </Pressable>
               ))}
@@ -1726,7 +1726,7 @@ export default function ReportIncident() {
                 <Text className="text-sm font-semibold text-ink">{i18nT('n.app.report.incident.attach-my-current-location')}</Text>
                 <Text className="text-xs text-muted">
                   {useGps
-                    ? 'Helps reviewers place the incident. Coordinates are never published.'
+                    ? i18nT("n.app.report.incident.helps-reviewers-place-the-incident-coordinates-are")
                     : 'No coordinates will be attached to this report.'}
                 </Text>
               </View>
@@ -1815,14 +1815,14 @@ export default function ReportIncident() {
                   label that can wrap rather than on the one that did. */}
               <Text className="text-center text-base font-bold text-hawk-gold">
                 {reportReady
-                  ? 'Continue — where did this happen'
+                  ? i18nT("n.app.report.incident.continue-where-did-this-happen")
                   : /* ONE LINE. This shares fixed footer space with the safety
                        card above it, and every line here comes off the
                        description box's scroll height — the same reason that
                        card is held to one sentence. The two clauses are the
                        two conditions in `reportReady`: a category, and either
                        a photo or a description. */
-                    'Pick what happened, and add detail'}
+                    i18nT("n.app.report.incident.pick-what-happened-and-add-detail")}
               </Text>
             </Pressable>
           ) : (
@@ -1868,8 +1868,8 @@ export default function ReportIncident() {
                   // name that, rather than leaving a dead grey button.
                   <Text className="text-center text-base font-bold text-hawk-gold">
                     {unitDecided
-                      ? 'Submit incident report'
-                      : 'Choose a unit, or tick an option above'}
+                      ? i18nT("n.app.report.incident.submit-incident-report")
+                      : i18nT("n.app.report.incident.choose-a-unit-or-tick-an-option")}
                   </Text>
                 )}
               </Pressable>

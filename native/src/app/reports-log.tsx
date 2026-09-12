@@ -116,7 +116,7 @@ export default function ReportsLog() {
         </Text>
         <InfoDot
           title={i18nT('n.app.reports-log.how-these-reports-are-held')}
-          text="Every report is digitally signed on the observer's own device and permanently recorded on a public, tamper-evident ledger, so it cannot be edited or removed after the fact. Confidence rises as independent observers at the same unit file matching numbers."
+          text={i18nT("n.app.reports-log.every-report-is-digitally-signed-on-the")}
         />
       </View>
 

@@ -333,7 +333,7 @@ export default function Integrity() {
           </Text>
           <InfoDot
             title={i18nT('n.app.integrity.what-gets-checked')}
-            text="Over-voting, impossible turnout, forged form serials, conflicting counts and statistical outliers. A flag is a signal for scrutiny, not a verdict — and never proof of fraud."
+            text={i18nT("n.app.integrity.over-voting-impossible-turnout-forged-form-serials")}
           />
         </View>
 
@@ -365,7 +365,7 @@ export default function Integrity() {
           <Stat value={(summary?.reports ?? 0).toLocaleString()} label={i18nT('n.app.integrity.reports-screened')} topBar="#004225" />
         </View>
 
-        <SectionLabel text="Detected Discrepancies" />
+        <SectionLabel text={i18nT("n.app.integrity.detected-discrepancies")} />
         <View className="flex-row flex-wrap">
           {[
             ['', 'All'],
@@ -468,7 +468,7 @@ export default function Integrity() {
           })
         )}
 
-        <SectionLabel text="Digit-Distribution Screening" />
+        <SectionLabel text={i18nT("n.app.integrity.digit-distribution-screening")} />
         <View className="flex-row items-center pb-2">
           <Text className="flex-1 text-sm text-muted">
             Screening signal, never proof on its own.
@@ -476,7 +476,7 @@ export default function Integrity() {
           </Text>
           <InfoDot
             title={i18nT('n.app.integrity.digit-distribution-screening')}
-            text="Fabricated figures cluster on favourite digits, while genuine counts follow known distributions — Benford's law for first digits, and a roughly even spread for last digits. A departure means these numbers are worth a closer look, nothing more. Real elections throw up odd-looking distributions for innocent reasons, so a flag here is a prompt to check the evidence, not a finding of fraud."
+            text={i18nT("n.app.integrity.fabricated-figures-cluster-on-favourite-digits-while")}
           />
         </View>
         <View className="rounded-2xl bg-card px-4 py-4">
@@ -508,28 +508,28 @@ export default function Integrity() {
           )}
         </View>
 
-        <SectionLabel text="INEC IReV Cross-Check" />
+        <SectionLabel text={i18nT("n.app.integrity.inec-irev-cross-check")} />
         <View className="flex-row items-center pb-2">
           <Text className="flex-1 text-sm text-muted">
             {i18nT('n.app.integrity.the-crowd-s-count-checked-against')}
           </Text>
           <InfoDot
             title={i18nT('n.app.integrity.inec-irev-cross-check')}
-            text="For each polling unit, the crowd's reported count is compared against the EC8A sheet INEC itself uploads to its Results Viewing portal (IReV) — INEC's own evidence checked against the crowd's, neither one trusted over the other. Any mismatch appears in the discrepancies above."
+            text={i18nT("n.app.integrity.for-each-polling-unit-the-crowd-s")}
           />
         </View>
         <View className="rounded-2xl bg-card px-4 py-3">
           <Text className="text-sm text-ink">{irevLine}</Text>
         </View>
 
-        <SectionLabel text="Collation Reconciliation (EC8B/C/D)" />
+        <SectionLabel text={i18nT("n.app.integrity.collation-reconciliation-ec8b-c-d")} />
         <View className="flex-row items-center pb-2">
           <Text className="flex-1 text-sm text-muted">
             {i18nT('n.app.integrity.announced-totals-checked-against-the-units')}
           </Text>
           <InfoDot
             title={i18nT('n.app.integrity.collation-reconciliation')}
-            text="Ward (EC8B), LGA (EC8C) and state (EC8D) collation totals are checked against the polling-unit sheets they are built from. A collated figure can never be LESS than the sum of the covered units alone — when it is, that is arithmetic proof of subtraction, not a matter of opinion. This is the step where a count is most often changed."
+            text={i18nT("n.app.integrity.ward-ec8b-lga-ec8c-and-state-ec8d")}
           />
         </View>
         <View className="rounded-2xl bg-card px-4 py-3">
@@ -539,7 +539,7 @@ export default function Integrity() {
           </Pressable>
         </View>
 
-        <SectionLabel text="What We Check" />
+        <SectionLabel text={i18nT("n.app.integrity.what-we-check")} />
         <Text className="pb-2 text-sm text-muted">
           {i18nT('n.app.integrity.every-result-is-run-through-these')}
         </Text>

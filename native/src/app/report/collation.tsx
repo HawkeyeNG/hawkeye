@@ -57,9 +57,9 @@ const STEPS: { key: Step; label: string }[] = [
 ];
 
 const LEVELS: { key: CollationLevel; label: string; form: string; sub: string }[] = [
-  { key: 'ward', label: 'Ward', form: 'EC8B', sub: 'Ward collation centre (EC8B)' },
-  { key: 'lga', label: 'LGA', form: 'EC8C', sub: 'Local government collation (EC8C)' },
-  { key: 'state', label: 'State', form: 'EC8D', sub: 'State collation (EC8D)' },
+  { key: 'ward', label: 'n.level.ward', form: 'EC8B', sub: 'n.level.ward-sub' },
+  { key: 'lga', label: 'n.level.lga', form: 'EC8C', sub: 'n.level.lga-sub' },
+  { key: 'state', label: 'n.level.state', form: 'EC8D', sub: 'n.level.state-sub' },
 ];
 
 /**
@@ -390,19 +390,19 @@ export default function ReportCollation() {
         key={step}
         title={isSheet ? i18nT('n.app.report.collation.photo-1-of-2-the-collation') : i18nT('n.app.report.collation.photo-2-of-2-the-centre')}
         frameGuide={isSheet}
-        venueGuide={isSheet ? undefined : '📸 VENUE PHOTO — aim at the collation centre itself: the building, the room or the officials. This is NOT the collation form.'}
+        venueGuide={isSheet ? undefined : i18nT("n.app.report.collation.venue-photo-aim-at-the-collation-centre")}
         hint={
           isSheet
             ? 'Fit the whole form in frame. Every figure must be readable.'
-            : 'Step back and capture the collation centre — building, banner, officials.'
+            : i18nT("n.app.report.collation.step-back-and-capture-the-collation-centre")
         }
         confirmTitle={isSheet ? i18nT('n.app.report.collation.check-the-form') : i18nT('n.app.report.collation.check-the-venue-photo')}
         readDocument={isSheet}
         partyCodes={parties.map((p) => p.code)}
         confirmHint={
           isSheet
-            ? 'Is every figure readable? Blurry photos cannot back a report.'
-            : 'Is the collation centre itself visible? This photo proves you were there.'
+            ? i18nT("n.app.report.collation.is-every-figure-readable-blurry-photos-cannot")
+            : i18nT("n.app.report.collation.is-the-collation-centre-itself-visible-this")
         }
         onCapture={(shot) => {
           if (isSheet) {
@@ -527,8 +527,8 @@ export default function ReportCollation() {
                     }}
                     className="mb-2 rounded-2xl bg-card px-4 py-3 active:opacity-80"
                   >
-                    <Text className="text-base font-semibold text-ink">{l.label}</Text>
-                    <Text className="text-xs text-muted">{l.sub}</Text>
+                    <Text className="text-base font-semibold text-ink">{i18nT(l.label)}</Text>
+                    <Text className="text-xs text-muted">{i18nT(l.sub)}</Text>
                   </Pressable>
                 ))}
               </>
@@ -656,7 +656,7 @@ export default function ReportCollation() {
             />
             <TextInput
               className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
-              placeholder="Search party (APC, PDP, LP…)"
+              placeholder={i18nT("n.app.report.collation.search-party-apc-pdp-lp")}
               placeholderTextColor={ui.faint}
               value={search}
               onChangeText={setSearch}

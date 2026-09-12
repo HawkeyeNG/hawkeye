@@ -261,7 +261,7 @@ export default function Docket() {
           for the crowd to judge until the post-election batch opens it — the
           dot's first paragraph states both conditions. */}
 
-      <SectionLabel text="Cases" />
+      <SectionLabel text={i18nT("n.app.docket.cases")} />
       <Text className="pb-2 text-sm text-muted">
         {i18nT('n.app.docket.newest-first-open-one-to-see')}
       </Text>

@@ -855,7 +855,7 @@ export default function Profile() {
                 <PasswordField
                   value={pwNew}
                   onChangeText={setPwNew}
-                  placeholder="New password (min 8 characters)"
+                  placeholder={i18nT("n.app.profile.new-password-min-8-characters")}
                   textContentType="newPassword"
                 />
                 <View className="pt-2">
@@ -988,7 +988,7 @@ export default function Profile() {
                 <PasswordField
                   value={pwNew}
                   onChangeText={setPwNew}
-                  placeholder="New password (min 8 characters)"
+                  placeholder={i18nT("n.app.profile.new-password-min-8-characters")}
                   textContentType="newPassword"
                 />
                 <View className="pt-2">

@@ -291,12 +291,12 @@ type Step = 'unit' | 'contest' | 'sheet' | 'venue' | 'votes' | 'review' | 'done'
 // sign over the whole canonical payload at submit, so nothing here touches the
 // ledger or any server-side gate. See docs/REPORT-FLOW-CAPTURE-FIRST.md.
 const STEPS: { key: Step; label: string }[] = [
-  { key: 'sheet', label: 'Sheet' },
-  { key: 'venue', label: 'Venue' },
-  { key: 'unit', label: 'Unit' },
-  { key: 'contest', label: 'Race' },
-  { key: 'votes', label: 'Votes' },
-  { key: 'review', label: 'Send' },
+  { key: 'sheet', label: 'n.step.sheet' },
+  { key: 'venue', label: 'n.step.venue' },
+  { key: 'unit', label: 'n.step.unit' },
+  { key: 'contest', label: 'n.step.race' },
+  { key: 'votes', label: 'n.step.votes' },
+  { key: 'review', label: 'n.step.send' },
 ];
 
 /**
@@ -1684,17 +1684,17 @@ export default function ReportResult() {
         key={step}
         title={isSheet ? i18nT('n.app.report.result.photo-1-of-2-the-result') : i18nT('n.app.report.result.photo-2-of-2-the-surroundings')}
         frameGuide={isSheet}
-        venueGuide={isSheet ? undefined : '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd. This is NOT the results sheet.'}
+        venueGuide={isSheet ? undefined : i18nT("n.app.report.result.venue-photo-aim-at-the-polling-unit")}
         hint={
           isSheet
             ? 'Fit the EC8A inside the frame. Every figure must be readable.'
-            : 'Step back and capture the polling unit itself — building, banner, crowd.'
+            : i18nT("n.app.report.result.step-back-and-capture-the-polling-unit")
         }
         confirmTitle={isSheet ? i18nT('n.app.report.result.check-the-result-sheet') : i18nT('n.app.report.collation.check-the-venue-photo')}
         confirmHint={
           isSheet
-            ? 'Is every figure readable? Blurry photos cannot back a report.'
-            : 'Is the polling unit itself visible — the building, banner or crowd? This photo proves you were there.'
+            ? i18nT("n.app.report.result.is-every-figure-readable-blurry-photos-cannot")
+            : i18nT("n.app.report.result.is-the-polling-unit-itself-visible-the")
         }
         readDocument={isSheet}
         partyCodes={parties.map((p) => p.code)}
@@ -1790,7 +1790,7 @@ export default function ReportResult() {
               <View key={s.key} className="mr-1 flex-1">
                 <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-card'}`} />
                 <Text className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-hawk-leaf' : 'text-faint'}`}>
-                  {s.label}
+                  {i18nT(s.label)}
                 </Text>
               </View>
             );
@@ -2144,7 +2144,7 @@ export default function ReportResult() {
         {step === 'contest' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Text className="pb-2 text-xs text-muted" numberOfLines={1}>
-              {race ? i18nT('n.app.report.result.selected', { v0: race.label }) : 'Choose an open race to continue.'}
+              {race ? i18nT('n.app.report.result.selected', { v0: race.label }) : i18nT("n.app.report.result.choose-an-open-race-to-continue")}
             </Text>
             <Pressable
               disabled={!race}
@@ -2180,7 +2180,7 @@ export default function ReportResult() {
             />
             <TextInput
               className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
-              placeholder="Search party (APC, PDP, LP…)"
+              placeholder={i18nT("n.app.report.result.search-party-apc-pdp-lp")}
               // ui.faint, not the hardcoded #9db5a7 it was: that string is
               // verbatim the LIGHT palette's faint token, on an input whose
               // background flips with the theme — so on a dark surface the

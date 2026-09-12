@@ -713,7 +713,7 @@ export default function SignIn() {
               <Text className="text-2xl font-bold text-ink">{setPwCopy.title}</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">{setPwCopy.body}</Text>
               <PasswordField
-                placeholder="New password (min 8 characters)"
+                placeholder={i18nT("n.app.sign-in.new-password-min-8-characters")}
                 autoFocus
                 value={newPw}
                 onChangeText={setNewPw}

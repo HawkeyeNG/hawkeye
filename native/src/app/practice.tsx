@@ -1165,19 +1165,19 @@ export default function Practice() {
             : 'Practice — photo 2 of 2, the venue'
         }
         frameGuide={isSheet}
-        venueGuide={isSheet ? undefined : '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd. This is NOT the results sheet.'}
+        venueGuide={isSheet ? undefined : i18nT("n.app.practice.venue-photo-aim-at-the-polling-unit")}
         hint={
           isSheet
             ? 'On election day every figure must be readable. Try it now, or use a sample.'
-            : 'Step back and capture the polling unit itself — building, banner, crowd.'
+            : i18nT("n.app.practice.step-back-and-capture-the-polling-unit")
         }
         confirmTitle={isSheet ? i18nT('n.app.report.result.check-the-result-sheet') : i18nT('n.app.report.collation.check-the-venue-photo')}
         readDocument={isSheet}
         partyCodes={parties.map((p) => p.code)}
         confirmHint={
           isSheet
-            ? 'Is every figure readable? On election day a blurry photo cannot back a report.'
-            : 'Is the polling unit itself visible? On election day this photo proves you were there.'
+            ? i18nT("n.app.practice.is-every-figure-readable-on-election-day")
+            : i18nT("n.app.practice.is-the-polling-unit-itself-visible-on")
         }
         extraAction={{ label: i18nT('n.app.practice.use-a-sample'), onPress: skip }}
         onCapture={(shot) => {

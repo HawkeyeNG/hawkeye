@@ -1301,5 +1301,10 @@
   "race-picker.pick-a-state-to-open-its-race": "Zaɓi jiha don buɗe gasarta",
   "race-picker.pick-a-state-then-your": "Zaɓi jiha, sannan {v0} naka",
   "race-picker.select-state-first": "— fara zaɓi jiha —",
-  "index.you-re-all-caught-up": "Ka riga ka ga komai. <a href=\"notifications.html\">Duba dukkan sanarwa →</a>"
+  "index.you-re-all-caught-up": "Ka riga ka ga komai. <a href=\"notifications.html\">Duba dukkan sanarwa →</a>",
+  "unit.state.many": "jihohi",
+  "unit.lga.many": "kananan hukumomi",
+  "unit.senatorial.many": "mazaɓun sanata",
+  "unit.federal.many": "mazaɓun tarayya",
+  "results.led-column": "{v0} da aka jagoranta"
 }

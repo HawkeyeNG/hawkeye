@@ -1275,5 +1275,10 @@
   "race-picker.pick-a-state-to-open-its-race": "Pick a state to open its race",
   "race-picker.pick-a-state-then-your": "Pick a state, then your {v0}",
   "race-picker.select-state-first": "— select state first —",
-  "index.you-re-all-caught-up": "You’re all caught up. <a href=\"notifications.html\">See all alerts →</a>"
+  "index.you-re-all-caught-up": "You’re all caught up. <a href=\"notifications.html\">See all alerts →</a>",
+  "unit.state.many": "states",
+  "unit.lga.many": "LGAs",
+  "unit.senatorial.many": "senatorial districts",
+  "unit.federal.many": "federal constituencies",
+  "results.led-column": "{v0} led"
 }

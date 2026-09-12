@@ -80,7 +80,6 @@
         + (l.code === selected ? ' checked' : '') + '>'
         + '<span class="lang-native">' + esc(l.native) + '</span>'
         + '<span class="lang-en">' + esc(l.name) + '</span>'
-        + badge((states || {})[l.code] || (l.code === 'en' ? 'source' : 'unknown'))
         + '</label>';
     });
     return html;
@@ -137,20 +136,11 @@
     var first = el.querySelector('input[name="hk-lang"]:not([disabled])');
     if (first) first.focus();
 
-    /* Badges start at the cautious default ("draft") and are corrected once
-       each bundle has answered for itself. Cautious-first matters: if the
-       fetch fails we must not have promised a review that nobody did. */
-    I18N.statuses().then(function (states) {
-      el.querySelectorAll('.lang-opt[data-lang]').forEach(function (row) {
-        var state = states[row.getAttribute('data-lang')];
-        if (!state) return;
-        var old = row.querySelector('.lang-badge');
-        var next = badge(state);
-        if (old && !next) old.remove();
-        else if (old) old.outerHTML = next;
-        else if (next) row.insertAdjacentHTML('beforeend', next);
-      });
-    });
+    /* NO REVIEW BADGES. Every row here is a language the app serves; telling a
+       reader their language is a "draft translation, being reviewed" as they
+       pick it is a disclaimer, not information, and it is the first thing a
+       Hausa speaker saw. Review state still lives in the bundle for the tools
+       that act on it. */
   }
 
   function close() {

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- NO INSET. Both layers were wrapped in a 16.7% inset, which threw away a
+     third of the artwork and left a small hawk in a large green field -- the
+     native app's icon (native/android/.../ic_launcher.xml) has never done that
+     and is the size this should be. The launcher applies its own mask and
+     safe zone; insetting again is doing that job twice. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background>
-        <inset android:drawable="@mipmap/ic_launcher_background" android:inset="16.7%" />
-    </background>
-    <foreground>
-        <inset android:drawable="@mipmap/ic_launcher_foreground" android:inset="16.7%" />
-    </foreground>
+    <background android:drawable="@mipmap/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
 </adaptive-icon>

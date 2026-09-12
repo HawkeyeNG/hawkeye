@@ -210,7 +210,14 @@ main.wrap { max-width: 840px; }
    rules further down already neutralise it on the ones that follow. Starting
    at flex-start leaves that auto margin as the only thing positioning them. */
 .brand-row { display: flex; align-items: center; justify-content: flex-start; padding-top: 6px; padding-bottom: 12px; position: relative; }
-.brand { display: flex; align-items: center; gap: 11px; }
+/* THE BRAND TAKES THE SPACE, so the actions do not have to be pushed.
+   Relying on "the leftmost action carries margin-left:auto" broke the moment a
+   layout rendered no bell at all (tablet, app shell): nothing carried the push
+   and the language and theme buttons sat against the wordmark. Flex-grow is
+   consumed before auto margins are resolved, so this also keeps the old 84px
+   hole from coming back. min-width:0 lets the wordmark ellipsize instead of
+   forcing the row wider than the screen. */
+.brand { display: flex; align-items: center; gap: 11px; flex: 1 1 auto; min-width: 0; }
 .crest { font-size: 1.8rem; line-height: 1; }
 /* menu.js swaps the 🦅 emoji for the real crest SVG. The light plate behind it
    is gone: native shows the mark straight on the header with no card behind it,

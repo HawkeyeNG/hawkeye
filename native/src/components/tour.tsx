@@ -146,7 +146,8 @@ export function Tour({
               className="flex-1 items-center rounded-full bg-good py-3 active:opacity-80"
             >
               <Text className="text-sm font-bold text-good-ink">
-                {last ? 'Start observing' : 'Next'}
+                {last ? i18nT('tour.start')
+                  : i18nT('tour.next')}
               </Text>
             </Pressable>
           </View>

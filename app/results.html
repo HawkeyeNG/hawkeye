@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=178" />
+  <link rel="stylesheet" href="styles.css?v=179" />
   <script src="native.js?v=116"></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
@@ -53,6 +53,9 @@
     /* at-a-glance charts (no chart lib — conic donut + div bars) */
     .glance { display: grid; grid-template-columns: 200px 1fr; gap: 26px; align-items: center; }
     @media (max-width: 620px) { .glance { grid-template-columns: 1fr; } }
+    /* The empty state is a sentence, not a chart: left in the 200px donut
+       column it wrapped into a narrow ribbon beside an empty half-card. */
+    .glance > p.meta { grid-column: 1 / -1; }
     .gdonut { width: 170px; height: 170px; border-radius: 50%; position: relative; margin: 0 auto; }
     .gdonut::after { content: attr(data-label); position: absolute; inset: 38px; background: var(--card); border-radius: 50%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.72rem; color: var(--muted); padding: 12px; }
     .gbar-row { display: grid; grid-template-columns: 110px 1fr 46px; gap: 8px; align-items: center; font-size: 0.82rem; margin: 5px 0; }
@@ -77,7 +80,7 @@
   <!-- For window.followSubject — the Follow button here and the one on a race
        page describe their subscriptions with the same words, from one place. -->
   <script src="follow.js?v=4"></script>
-  <script src="race-picker.js?v=10"></script>
+  <script src="race-picker.js?v=11"></script>
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
@@ -680,6 +683,17 @@
     // word has to be the truth.
     /* Translated at the source: these words are interpolated into most of the
        race copy, so one change reaches every sentence built from them. */
+    /* The English plural the API sends -> the key that holds every language's.
+       Anything unrecognised falls through to the English, which is what the
+       board printed before. */
+    const UNIT_PLURAL_KEY = {
+      states: 'unit.state.many',
+      LGAs: 'unit.lga.many',
+      'senatorial districts': 'unit.senatorial.many',
+      'federal constituencies': 'unit.federal.many',
+    };
+    const unitPlural = (en) => T(UNIT_PLURAL_KEY[en] || 'x', en);
+
     const REGION_WORD = {
       state: T('unit.state.one', "state"),
       lga: T('unit.lga.one', "LGA"),
@@ -734,7 +748,9 @@
         const unit = g.unit || 'state';
         // The PLURAL comes from the server too: `unit + 's'` printed "federal
         // constituencys" on the House board.
-        const units = g.unitPlural || `${unit}s`;
+        /* THE SERVER'S PLURAL IS ENGLISH, and no suffix rule makes a Hausa
+           one. The English is the lookup key; the bundle holds the word. */
+        const units = unitPlural(g.unitPlural || `${unit}s`);
         const place = (g.scope && (g.scope.region || g.scope.state)) || '';
         const where = place ? ` in ${place}` : '';
         document.getElementById('gaps-title').textContent =
@@ -1007,8 +1023,13 @@
       // half-minute blank page into an immediate answer.
       renderBoard(data);
       renderGlance(data, word);
-      const plural = word.endsWith('y') ? `${word.slice(0, -1)}ies` : `${word}s`;
-      document.getElementById('led-col').textContent = `${plural[0].toUpperCase()}${plural.slice(1)} led`;
+      /* Built from the LEVEL, not by suffixing the (already translated)
+         singular -- "jihas" is not a word. */
+      const plural = T(({ state: 'unit.state.many', lga: 'unit.lga.many',
+        senatorial: 'unit.senatorial.many', federal: 'unit.federal.many' })[data.level] || 'x',
+        word.endsWith('y') ? `${word.slice(0, -1)}ies` : `${word}s`);
+      document.getElementById('led-col').textContent =
+        TV('results.led-column', '{v0} led', { v0: plural });
       // Name the area the map actually shows, so a governorship board does not
       // claim to be "by state" while drawing one state's LGAs.
       const where = data.scope && data.scope.state ? ` in ${data.scope.state}` : '';
@@ -1286,8 +1307,8 @@
     };
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="/i18n.js?v=8"></script>
-  <script src="/lang.js?v=7"></script>
+  <script src="/i18n.js?v=9"></script>
+  <script src="/lang.js?v=8"></script>
   <script src="menu.js?v=171"></script>
 </body>
 </html>

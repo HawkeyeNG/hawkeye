@@ -1248,5 +1248,19 @@
   "profile.since": "tun",
   "political.of-n-seats": "daga kujeru {n}",
   "info.why-mapping-units-matters.title": "Me ya sa tsara rukunan ke da muhimmanci",
-  "info.why-mapping-units-matters.body": "Yawancin rumfunan zaɓe ba su da wurin da aka tabbatar a rikodi, don haka ba za a iya duba wurin sakamakon da aka kai rahoto daga gare su ba. Idan mutane masu zaman kansu kaɗan suka tsara rumfa ɗaya, sai a tabbatar da wurinta, kuma ana iya kwatanta kowane sakamako da aka shigar a can ranar zaɓe da ita."
+  "info.why-mapping-units-matters.body": "Yawancin rumfunan zaɓe ba su da wurin da aka tabbatar a rikodi, don haka ba za a iya duba wurin sakamakon da aka kai rahoto daga gare su ba. Idan mutane masu zaman kansu kaɗan suka tsara rumfa ɗaya, sai a tabbatar da wurinta, kuma ana iya kwatanta kowane sakamako da aka shigar a can ranar zaɓe da ita.",
+  "unit.state.one": "jiha",
+  "unit.lga.one": "karamar hukuma",
+  "unit.senatorial.one": "mazaɓar sanata",
+  "unit.federal.one": "mazaɓar tarayya",
+  "results.no-reports-yet-for-this-election": "Babu rahotanni tukuna ga wannan zaɓe.",
+  "results.help-cover-where": "Taimaka a rufe {v0}",
+  "results.help-cover-these": "Taimaka a rufe waɗannan {v0}",
+  "results.n-of-m-in-where-have-reports": "{v0} daga cikin {v1} {v2}{v3} sun kai rahoto zuwa yanzu. ",
+  "results.n-of-m-in-this-election-have-reports": "{v0} daga cikin {v1} {v2} a wannan zaɓe sun kai rahoto zuwa yanzu. ",
+  "results.voting-or-observing-become-an-observer": "Kana zaɓe ko lura a ɗaya daga cikinsu? <a href=\"observe.html?intent=observe\">Ka zama mai lura →</a>",
+  "results.nothing-has-come-in-from-show-them": "Babu abin da ya shigo daga {v0} {v1} — nuna su",
+  "results.leading-party-by": "Jam'iyyar da ke kan gaba a kowace {v0}{v1}",
+  "results.everywhere-in": "Ko'ina a {v0}",
+  "race.follow-this-race": "Bi wannan gasa"
 }

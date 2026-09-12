@@ -81,7 +81,7 @@
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
-  <script src="race.js?v=24"></script>
+  <script src="race.js?v=25"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -306,6 +306,12 @@
        so an attribute would be wiped on the next render; and this page loads
        i18n.js AFTER this script, so the first paint can precede the bundle. */
     const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+
+    /* t() has no interpolation, so placeholders are filled after the lookup.
+       Keeps one translated sentence per message instead of gluing fragments,
+       which no language other than English survives. */
+    const TV = (k, en, vars) => Object.keys(vars).reduce(
+      (s, v) => s.split('{' + v + '}').join(vars[v]), T(k, en));
 
     const PARTY_COLORS = {
       APC: '#2e7d32', PDP: '#c62828', LP: '#8bc34a', NNPP: '#1565c0', APGA: '#f9a825',
@@ -565,7 +571,7 @@
         // Senate / House of Reps: merged district (109) or constituency (358) shapes,
         // rendered exactly like the presidential map (same class, hover, badges).
         const GEO = data.level === 'senatorial' ? DGEO : CGEO;
-        const word = data.level === 'senatorial' ? 'senatorial district' : 'federal constituency';
+        const word = data.level === 'senatorial' ? T('unit.senatorial.one', "senatorial district") : T('unit.federal.one', "federal constituency");
         badgeR = 10;
         // Paint these last so neighbours don't wrongly cut into them (SVG z-order).
         const FRONT = ['Ogun West', 'Kaduna South', 'Kebbi Central', 'Ondo Central'];
@@ -652,7 +658,7 @@
       // the whole board until a race is chosen.
       const body = document.getElementById('board-rows');
       if (!data.national.length) {
-        body.innerHTML = '<tr><td colspan="5" class="meta">No reports yet for this election.</td></tr>';
+        body.innerHTML = '<tr><td colspan="5" class="meta">' + T('results.no-reports-yet-for-this-election', "No reports yet for this election.") + '</td></tr>';
         return;
       }
       body.innerHTML = data.national.map((r, i) => `
@@ -672,13 +678,20 @@
     // 'lga' used to say "state" because the LGA view only ever tinted LGAs by
     // their STATE's leader. Now that a state-scoped board really is per-LGA, the
     // word has to be the truth.
-    const REGION_WORD = { state: 'state', lga: 'LGA', senatorial: 'senatorial district', federal: 'federal constituency' };
+    /* Translated at the source: these words are interpolated into most of the
+       race copy, so one change reaches every sentence built from them. */
+    const REGION_WORD = {
+      state: T('unit.state.one', "state"),
+      lga: T('unit.lga.one', "LGA"),
+      senatorial: T('unit.senatorial.one', "senatorial district"),
+      federal: T('unit.federal.one', "federal constituency"),
+    };
 
     // "Data at a glance": vote-share donut + top regions by units reporting.
     function renderGlance(data, word) {
       const el = document.getElementById('glance');
       const total = data.national.reduce((s, r) => s + r.votes, 0);
-      if (!total) { el.innerHTML = '<p class="meta">Charts appear as soon as reports arrive.</p>'; return; }
+      if (!total) { el.innerHTML = '<p class="meta">' + T('results.charts-appear-as-soon-as-reports', "Charts appear as soon as reports arrive.") + '</p>'; return; }
       let acc = 0;
       const stops = data.national.map((r) => {
         const from = (acc / total) * 100; acc += r.votes;
@@ -725,7 +738,7 @@
         const place = (g.scope && (g.scope.region || g.scope.state)) || '';
         const where = place ? ` in ${place}` : '';
         document.getElementById('gaps-title').textContent =
-          place ? `Help cover ${place}` : `Help cover these ${units}`;
+          place ? TV('results.help-cover-where', "Help cover {v0}", { v0: place }) : TV('results.help-cover-these', "Help cover these {v0}", { v0: units });
         /**
          * ONE SENTENCE, THEN THE LIST BEHIND A DISCLOSURE.
          *
@@ -739,14 +752,16 @@
         const total = Number(g.statesTotal) || 0;
         const done = Number(g.statesReported) || 0;
         document.getElementById('gaps-hint').innerHTML =
-          `${done} of ${total} ${total === 1 ? unit : units}${where || ' in this election'} have reports so far. `
-          + `Voting or observing in one? <a href="observe.html?intent=observe">Become an observer →</a>`;
+          (where
+        ? TV('results.n-of-m-in-where-have-reports', "{v0} of {v1} {v2}{v3} have reports so far. ", { v0: done, v1: total, v2: total === 1 ? unit : units, v3: where })
+        : TV('results.n-of-m-in-this-election-have-reports', "{v0} of {v1} {v2} in this election have reports so far. ", { v0: done, v1: total, v2: total === 1 ? unit : units }))
+          + T('results.voting-or-observing-become-an-observer', "Voting or observing in one? <a href=\"observe.html?intent=observe\">Become an observer →</a>");
         document.getElementById('gaps').innerHTML = g.missing.map((s) =>
           `<span style="font-size:.85rem;padding:5px 11px;border-radius:999px;background:var(--tint);border:1px solid var(--border);color:var(--link)">${s}</span>`).join('');
         // Name what opening it reveals, and how many — "Show the list" alone
         // does not say whether that is three names or a hundred and nine.
         document.getElementById('gaps-more-label').textContent =
-          `Nothing has come in from ${g.missing.length} ${g.missing.length === 1 ? unit : units} — show them`;
+          TV('results.nothing-has-come-in-from-show-them', "Nothing has come in from {v0} {v1} — show them", { v0: g.missing.length, v1: g.missing.length === 1 ? unit : units });
         // Collapsed on every contest change, not just first paint: switching
         // from a 3-gap board to a 109-gap one must not leave it open.
         document.getElementById('gaps-more').open = false;
@@ -997,7 +1012,7 @@
       // Name the area the map actually shows, so a governorship board does not
       // claim to be "by state" while drawing one state's LGAs.
       const where = data.scope && data.scope.state ? ` in ${data.scope.state}` : '';
-      document.getElementById('map-title').textContent = `Leading party by ${word}${where}`;
+      document.getElementById('map-title').textContent = TV('results.leading-party-by', "Leading party by {v0}{v1}", { v0: word, v1: where });
 
       await ensureGeo(data.level);
       // Populate the follow-scope picker with the regions for this contest. When
@@ -1013,7 +1028,7 @@
         : data.level === 'senatorial' ? (DGEO?.regions ?? []).map((r) => r.name)
         : data.level === 'federal' ? (CGEO?.regions ?? []).map((r) => r.name)
         : (STATES?.states ?? []).map((s) => s.name);
-      const anywhere = data.scope && data.scope.state ? `Everywhere in ${data.scope.state}` : 'Everywhere';
+      const anywhere = data.scope && data.scope.state ? TV('results.everywhere-in', "Everywhere in {v0}", { v0: data.scope.state }) : T('results.everywhere', "Everywhere");
       // THE PICKER SAYS "filter the leaderboard", so it has to filter it. It only
       // ever set which region to FOLLOW: choosing Osun on the governorship board
       // left a map of all 37 states on screen, which is not what picking one

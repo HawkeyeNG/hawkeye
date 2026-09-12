@@ -1247,5 +1247,19 @@
   "profile.since": "láti",
   "political.of-n-seats": "nínú ìjókòó {n}",
   "info.why-mapping-units-matters.title": "Ìdí tí yíyàwòrán àwọn ẹ̀ka fi ṣe pàtàkì",
-  "info.why-mapping-units-matters.body": "Ọ̀pọ̀ àwọn ẹ̀ka ìdìbò kò ní ibi tí a fọwọ́sí nínú àkọsílẹ̀, nítorí náà a kò lè yẹ ibi tí àwọn àbájáde tí a jábọ̀ láti ọ̀dọ̀ wọn wò. Nígbà tí àwọn ènìyàn òmìnira díẹ̀ bá yàwòrán ẹ̀ka kan náà, a fọwọ́sí ibi rẹ̀, a sì lè fi gbogbo àbájáde tí a kọ síbẹ̀ ní ọjọ́ ìdìbò wé e."
+  "info.why-mapping-units-matters.body": "Ọ̀pọ̀ àwọn ẹ̀ka ìdìbò kò ní ibi tí a fọwọ́sí nínú àkọsílẹ̀, nítorí náà a kò lè yẹ ibi tí àwọn àbájáde tí a jábọ̀ láti ọ̀dọ̀ wọn wò. Nígbà tí àwọn ènìyàn òmìnira díẹ̀ bá yàwòrán ẹ̀ka kan náà, a fọwọ́sí ibi rẹ̀, a sì lè fi gbogbo àbájáde tí a kọ síbẹ̀ ní ọjọ́ ìdìbò wé e.",
+  "unit.state.one": "ìpínlẹ̀",
+  "unit.lga.one": "agbègbè ìjọba àdúgbò",
+  "unit.senatorial.one": "ẹkùn ìgbìmọ̀ aṣòfin àgbà",
+  "unit.federal.one": "ẹkùn ìdìbò àpapọ̀",
+  "results.no-reports-yet-for-this-election": "Kò sí ìròyìn kankan fún ìdìbò yìí síbẹ̀.",
+  "results.help-cover-where": "Ràn wá lọ́wọ́ láti bo {v0}",
+  "results.help-cover-these": "Ràn wá lọ́wọ́ láti bo àwọn {v0} wọ̀nyí",
+  "results.n-of-m-in-where-have-reports": "{v0} nínú {v1} {v2}{v3} ti ní ìròyìn títí di báyìí. ",
+  "results.n-of-m-in-this-election-have-reports": "{v0} nínú {v1} {v2} nínú ìdìbò yìí ti ní ìròyìn títí di báyìí. ",
+  "results.voting-or-observing-become-an-observer": "Ṣé o ń dìbò tàbí ń wòran ní ọ̀kan? <a href=\"observe.html?intent=observe\">Di olùwòran →</a>",
+  "results.nothing-has-come-in-from-show-them": "Kò sí ohun tí ó ti dé láti {v0} {v1} — fi wọ́n hàn",
+  "results.leading-party-by": "Ẹgbẹ́ tí ó ń ṣáájú ní {v0} kọ̀ọ̀kan{v1}",
+  "results.everywhere-in": "Níbi gbogbo ní {v0}",
+  "race.follow-this-race": "Tẹ̀lé ìdíje yìí"
 }

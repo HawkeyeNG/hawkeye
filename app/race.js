@@ -10,6 +10,12 @@
      resolved here, at render time, and the render is re-run on a language
      change. */
   const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+
+    /* t() has no interpolation, so placeholders are filled after the lookup.
+       Keeps one translated sentence per message instead of gluing fragments,
+       which no language other than English survives. */
+    const TV = (k, en, vars) => Object.keys(vars).reduce(
+      (s, v) => s.split('{' + v + '}').join(vars[v]), T(k, en));
   // Party colours — every code that can appear on a Nigerian ballot we render.
   const PC = {
     A: '#00838f', APC: '#2e7d32', ADC: '#00897b', AA: '#3e2723', AAC: '#6d4c41',
@@ -585,7 +591,7 @@
      */
     const boardOnly = isPresidency(race);
     parts.push(`<div class="race-cta${done ? '' : ' race-cta-pinned'}">
-      ${canFollow ? '<button type="button" class="btn-quiet" data-cta="follow" id="race-follow-btn">🔔 Follow this race</button>' : ''}
+      ${canFollow ? '<button type="button" class="btn-quiet" data-cta="follow" id="race-follow-btn">🔔 ' + T('race.follow-this-race', "Follow this race") + '</button>' : ''}
       ${done ? '' : `<a class="btn-accent" data-cta="observe" id="race-report-btn" href="observe.html?intent=observe${race.join && race.join.contest ? '&contest=' + encodeURIComponent(race.join.contest) : ''}">${T('race.report-from-your-unit', 'Report from your unit')}</a>`}
       ${boardOnly ? `<a class="${done ? 'btn-accent' : 'btn-quiet'}" data-cta="results" href="${esc(opts.resultsHref || resultsHrefFor(race))}">${
         done ? T('race.review-the-results', 'Review the results') : T('race.live-results', 'Live results')}</a>` : ''}

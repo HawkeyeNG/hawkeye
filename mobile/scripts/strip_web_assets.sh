@@ -44,24 +44,71 @@ rm -f  "$PUB/opencv.js" "$PUB/play-feature-graphic.png" "$PUB/nga_wards.geojson"
 #                           Capacitor WebView never consumes a web app manifest —
 #                           the launcher icon comes from res/mipmap. icon-192.png
 #                           is NOT in this list: menu.js and native.js use it.
-#   fonts/lora-*.woff2      0 references; styles.css names Lora in a COMMENT
-#                           only, there is no @font-face for it. Dead on the
-#                           website too, and the two files are identical.
-#   fonts/inter-{5,6,7}00   byte-identical to inter-400 (same md5); styles.css
-#                           now points all four weights at the 400 file.
+#   (no fonts)              THIS LIST USED TO STRIP FONTS. IT NO LONGER DOES.
+#                           inter-{5,6,7}00 were once byte-identical copies of
+#                           inter-400, so dropping them cost nothing. The web
+#                           font rebuild replaced them with REAL per-weight
+#                           instances — four md5s, four sizes — so stripping
+#                           them now would cost three genuine weights and leave
+#                           the WebView synthesising 500/600/700 from the 400
+#                           file. ~154 KB is the honest price of real type.
+#                           The Lora pair is gone from app/fonts/ altogether,
+#                           so there is nothing left of it to remove.
 #   logos/{AA,APGA,LP,ZLP}.png  the manifest names the .jpg for all four. The
 #                           three 65 KB PNGs are the same file three times.
 #   photos/candidates/…     adebayo/datti/jonathan are referenced only by their
 #                           own manifest.json, which nothing reads.
 #                           political_data.json names tinubu/atiku/obi only.
+#   install-card.png        200 KB of PNG telling a reader HOW TO INSTALL the
+#                           app — inside the app they have already installed.
+#                           It is for the website and the outreach deck. No
+#                           file in the bundle references it.
+#   admin.html              the admin console, shipped to every observer. Not
+#                           merely dead weight: it is the operator UI, and the
+#                           people who use it reach it on the website. Nothing
+#                           links to it from the app.
+#   post.html               the internal social-media poster.
+#   bench/meta/preview.html internal tools; two of them carry <meta noindex>,
+#                           which is the giveaway that they were never meant
+#                           to face users at all.
+#   qr/generate.py          the script that GENERATED the donation QR codes.
+#                           The codes themselves stay (support.html draws
+#                           them); the generator is a build-time tool.
 # ---------------------------------------------------------------------------
 rm -f "$PUB/senate_map.png" "$PUB/email-banner.png" "$PUB/logos/sources.json" \
       "$PUB/icon-512.png" "$PUB/icon-512-maskable.png" \
-      "$PUB/fonts/lora-600.woff2" "$PUB/fonts/lora-700.woff2" \
-      "$PUB/fonts/inter-500.woff2" "$PUB/fonts/inter-600.woff2" "$PUB/fonts/inter-700.woff2" \
+      "$PUB/install-card.png" "$PUB/admin.html" "$PUB/post.html" \
+      "$PUB/bench.html" "$PUB/meta.html" "$PUB/preview.html" "$PUB/qr/generate.py" \
       "$PUB/logos/AA.png" "$PUB/logos/APGA.png" "$PUB/logos/LP.png" "$PUB/logos/ZLP.png" \
       "$PUB/photos/candidates/adebayo.jpg" "$PUB/photos/candidates/datti.jpg" \
       "$PUB/photos/candidates/jonathan.jpg" "$PUB/photos/candidates/manifest.json"
+
+# Those pages were safe to drop because NOTHING in the bundle linked to them.
+# That is a fact about today's code, not a law, so it is asserted rather than
+# trusted: the day a page adds a link to the admin console, this fails here
+# instead of shipping a link that 404s on the observer's phone.
+# It looks for a LINK, not a mention. Bare-name matching was tried first and
+# failed honestly: authgate.js keeps a no-auth-required allowlist that names
+# meta.html and preview.html, and several files discuss preview.html in prose
+# comments. Naming a page that no longer ships breaks nothing; NAVIGATING to
+# one is what leaves an observer staring at a 404.
+for gone in install-card.png admin.html post.html bench.html meta.html preview.html; do
+  esc=$(echo "$gone" | sed 's/\./\\./g')
+  hit=$(grep -rnE "(href|src)=[\"'][^\"']*$esc|location([.]href)?[[:space:]]*=[[:space:]]*[\"'][^\"']*$esc" \
+        "$PUB" --include='*.js' --include='*.html' 2>/dev/null | head -3)
+  [ -z "$hit" ] || { echo "GATE_FAIL: $gone was stripped but is still LINKED from: $hit"; exit 1; }
+done
+echo "  ok: no shipped page links to a stripped tool page"
+
+# members.json — 100 KB, and political.html ALREADY reads it through
+# fetchData(), the same live-fetch path the big three geo layers go through,
+# with an explicit .catch(() => null). So the bundled copy is a fallback for
+# an offline reader of a browsing page, not the source of truth, and the page
+# is written to render without it. Same trade the geo layers already took.
+rm -f "$PUB/members.json"
+grep -q "fetchData('members.json')" "$PUB/political.html" \
+  || { echo "GATE_FAIL: political.html no longer fetches members.json live — stripping it would leave that page permanently empty"; exit 1; }
+echo "  ok: members.json fetched live, not bundled"
 
 # THE BIG THREE GEO LAYERS — 1.7 MB, fetched live instead of bundled.
 #
@@ -143,11 +190,22 @@ node -e '
   console.log("  ok: all " + Object.keys(m).length + " party emblems present");
 ' "$PUB" || exit 1
 
-# styles.css must not still ask for a font the strip deleted.
-for f in inter-500 inter-600 inter-700 lora-600 lora-700; do
-  grep -q "fonts/$f.woff2" "$PUB/styles.css" && { echo "GATE_FAIL: styles.css still references fonts/$f.woff2, which is stripped"; exit 1; }
+# EVERY FONT styles.css ASKS FOR MUST ACTUALLY SHIP.
+#
+# This replaces a hardcoded list of names that must NOT be referenced. That
+# list rotted silently: it named the three Inter weights as strippable because
+# they were once byte-identical to inter-400, and when the font rebuild made
+# them real, the gate was still asserting a fact that had stopped being true.
+# Reading the references out of the CSS instead of restating them means a new
+# @font-face, or a newly stripped file, is caught without editing this script.
+fonts_wanted=$(grep -o "fonts/[A-Za-z0-9_-]*\.woff2" "$PUB/styles.css" | sort -u)
+# Without this, a styles.css that stopped naming fonts — or a grep that silently
+# stopped matching — would make the loop below pass over nothing and report ok.
+[ -n "$fonts_wanted" ] || { echo "GATE_FAIL: no font references found in styles.css — the gate would have passed vacuously"; exit 1; }
+for f in $fonts_wanted; do
+  [ -f "$PUB/$f" ] || { echo "GATE_FAIL: styles.css references $f, which is not in the bundle"; exit 1; }
 done
-echo "  ok: styles.css references no stripped font"
+echo "  ok: all $(echo "$fonts_wanted" | wc -l) fonts styles.css references are present"
 
 # REGISTER PACKS (docs/PU-SEARCH-2027.md). Not bundled, deliberately.
 #

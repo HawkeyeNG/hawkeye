@@ -1222,5 +1222,19 @@
   "profile.since": "since",
   "political.of-n-seats": "of {n} seats",
   "info.why-mapping-units-matters.title": "Why mapping units matters",
-  "info.why-mapping-units-matters.body": "Most polling units have no confirmed location on record, so results reported from them cannot be location-checked. When a few independent people map the same unit, its location is confirmed and every result filed there on election day can be matched against it."
+  "info.why-mapping-units-matters.body": "Most polling units have no confirmed location on record, so results reported from them cannot be location-checked. When a few independent people map the same unit, its location is confirmed and every result filed there on election day can be matched against it.",
+  "unit.state.one": "state",
+  "unit.lga.one": "LGA",
+  "unit.senatorial.one": "senatorial district",
+  "unit.federal.one": "federal constituency",
+  "results.no-reports-yet-for-this-election": "No reports yet for this election.",
+  "results.help-cover-where": "Help cover {v0}",
+  "results.help-cover-these": "Help cover these {v0}",
+  "results.n-of-m-in-where-have-reports": "{v0} of {v1} {v2}{v3} have reports so far. ",
+  "results.n-of-m-in-this-election-have-reports": "{v0} of {v1} {v2} in this election have reports so far. ",
+  "results.voting-or-observing-become-an-observer": "Voting or observing in one? <a href=\"observe.html?intent=observe\">Become an observer →</a>",
+  "results.nothing-has-come-in-from-show-them": "Nothing has come in from {v0} {v1} — show them",
+  "results.leading-party-by": "Leading party by {v0}{v1}",
+  "results.everywhere-in": "Everywhere in {v0}",
+  "race.follow-this-race": "Follow this race"
 }

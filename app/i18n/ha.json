@@ -1351,5 +1351,11 @@
   "situation-room.party-totals-so-far": "Jimillar jam'iyyu zuwa yanzu — {v0}",
   "situation-room.download-party-totals": "Sauke jimillar jam'iyyu (CSV)",
   "situation-room.csv-disclaimer-coverage": "Waɗannan alkaluma rahotanni ne daga jama'a, daga rumfunan zaɓe da Hawkeye ya iya rufewa kawai — ba daga kowace rumfa a wannan yanki ba. Ka sauke CSV na rufewa don ganin ainihin rumfunan da aka haɗa da waɗanda ba a kai rahotonsu ba tukuna.",
-  "situation-room.csv-disclaimer-inec": "Sakamako da sanarwa na hukuma na INEC ne kaɗai. Hawkeye ba ya sanar da wanda ya yi nasara, kuma wannan fayil ba sanarwa ba ne."
+  "situation-room.csv-disclaimer-inec": "Sakamako da sanarwa na hukuma na INEC ne kaɗai. Hawkeye ba ya sanar da wanda ya yi nasara, kuma wannan fayil ba sanarwa ba ne.",
+  "situation-room.votes": "Ƙuri'u",
+  "situation-room.share": "Raba",
+  "situation-room.yet-to-be-counted": "Ba a ƙirga ba tukuna",
+  "situation-room.nth-of-m-so-far": "{v0} cikin {v1} da aka ƙirga zuwa yanzu",
+  "situation-room.no-votes-counted-yet": "ba a ƙirga ƙuri'u ba tukuna",
+  "situation-room.party-totals-area": "Jimillar jam'iyyu — {v0}"
 }

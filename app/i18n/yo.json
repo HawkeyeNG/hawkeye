@@ -1350,5 +1350,11 @@
   "situation-room.party-totals-so-far": "Àpapọ̀ ẹgbẹ́ títí di báyìí — {v0}",
   "situation-room.download-party-totals": "Gbà àpapọ̀ ẹgbẹ́ (CSV)",
   "situation-room.csv-disclaimer-coverage": "Àwọn nọ́mbà wọ̀nyí jẹ́ ìròyìn láti ọ̀dọ̀ àwọn aráàlú, láti àwọn ilé ìdìbò tí Hawkeye lè bò nìkan — kì í ṣe láti gbogbo ilé ìdìbò ní agbègbè yìí. Gba CSV ìbòmọ́lẹ̀ láti rí àwọn ilé tí ó wà nínú rẹ̀ àti àwọn tí a kò tíì jábọ̀.",
-  "situation-room.csv-disclaimer-inec": "Àbájáde àti ìkéde gidi jẹ́ ti INEC nìkan. Hawkeye kì í kéde ẹni tí ó ṣẹ́gun, fáìlì yìí kì í sì í ṣe ìkéde."
+  "situation-room.csv-disclaimer-inec": "Àbájáde àti ìkéde gidi jẹ́ ti INEC nìkan. Hawkeye kì í kéde ẹni tí ó ṣẹ́gun, fáìlì yìí kì í sì í ṣe ìkéde.",
+  "situation-room.votes": "Ìbò",
+  "situation-room.share": "Ìpín",
+  "situation-room.yet-to-be-counted": "A kò tíì kà wọ́n",
+  "situation-room.nth-of-m-so-far": "{v0} nínú {v1} tí a ti kà títí di báyìí",
+  "situation-room.no-votes-counted-yet": "a kò tíì ka ìbò kankan",
+  "situation-room.party-totals-area": "Àpapọ̀ ẹgbẹ́ — {v0}"
 }

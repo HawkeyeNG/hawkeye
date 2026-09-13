@@ -2477,6 +2477,31 @@ function syncUrl(g) {
   }, { passive: true, capture: true });
 })();
 
+/**
+ * ONE "Hawkeye" IN THE TITLEBAR, and the rest of it translated.
+ *
+ * An installed window's title is composed by the browser as
+ * "<manifest name> - <document.title>", so a manifest called "Hawkeye Situation
+ * Room" beside a title of "Hawkeye — Situation Room" read as both, twice.
+ *
+ * The manifest half is FIXED AT INSTALL and cannot follow the reader's
+ * language, so it is now just "Hawkeye" — a proper noun, the same in all four
+ * languages — and the descriptive half comes from here, where i18n does reach.
+ * In an ordinary browser tab there is no app name in front, so the tab keeps
+ * the full "Hawkeye — Situation Room".
+ *
+ * Runs now and again on 'hawkeye-lang'. i18n.js announces that event once a
+ * bundle is in place, which is the only moment a translation exists; English
+ * never fetches one (it IS the markup), so the immediate call is what covers
+ * it. There is no window.i18nReady on this site — the event is the signal.
+ */
+function syncTitle() {
+  if (!matchMedia('(display-mode: standalone)').matches) return;
+  document.title = T('nav.situation-room', 'Situation Room');
+}
+document.addEventListener('hawkeye-lang', syncTitle);
+syncTitle();
+
 function tabFromUrl() {
   const t = new URLSearchParams(location.search).get('tab');
   if (['overview', 'coverage', 'team', 'incidents'].includes(t)) S.tab = t;

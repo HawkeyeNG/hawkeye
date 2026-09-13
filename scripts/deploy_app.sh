@@ -73,9 +73,28 @@ remote_for() {                                 # remote_for <localfile>
   esac
 }
 
+ENSURED=" "
+ensure_dir() {                                 # ensure_dir <remotedir>
+  # A MISSING REMOTE DIRECTORY LOOKS LIKE A FAILED UPLOAD. DirectAdmin answers
+  # 200 and writes nothing when the target does not exist, so the retry loop
+  # below tries five times and the file is reported FAILED with no reason --
+  # which is exactly what app/maps/wards/ did on its first deploy. Create each
+  # segment; creating one that already exists is a no-op.
+  local dir="$1" cur="$REMOTE_PATH" seg
+  [ "$dir" = "$REMOTE_PATH" ] && return 0
+  case "$ENSURED" in *" $dir "*) return 0 ;; esac
+  for seg in $(echo "${dir#"$REMOTE_PATH"/}" | tr '/' ' '); do
+    curl -sk -m 60 -u "$U:$P" -o /dev/null \
+      -F 'action=folder' -F "path=$cur" -F "name=$seg" "$API"
+    cur="$cur/$seg"
+  done
+  ENSURED="$ENSURED$dir "
+}
+
 upload() {                                     # upload <localfile>
   local f="$1" try code dest bytes maxt
   dest=$(remote_for "$f")
+  ensure_dir "$dest"
   # TIMEOUT MUST SCALE WITH SIZE. A flat -m 180 silently truncates anything big:
   # curl aborts mid-transfer and DirectAdmin writes the bytes that arrived, so
   # the upload "succeeds" and the file is corrupt. That is how the 31.6 MB APK

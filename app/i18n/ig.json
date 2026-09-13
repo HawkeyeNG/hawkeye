@@ -1360,5 +1360,7 @@
   "situation-room.one-unit-counted": "a gụrụ otu ebe",
   "situation-room.n-units-counted": "a gụrụ ebe {v0}",
   "situation-room.n-disputed-left-out": "a rụrụ ụka na {v0} ma wepụ ha, dịka ọ dị na ndekọ ọha",
-  "situation-room.same-figures-public-board": "otu ọnụọgụ ahụ bọọdụ ọha na-egosi"
+  "situation-room.same-figures-public-board": "otu ọnụọgụ ahụ bọọdụ ọha na-egosi",
+  "situation-room.install": "Wụnye",
+  "situation-room.install-title": "Wụnye ụlọ nlekota ahụ dị ka ngwa kọmpụta"
 }

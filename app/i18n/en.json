@@ -1335,5 +1335,7 @@
   "situation-room.one-unit-counted": "1 unit counted",
   "situation-room.n-units-counted": "{v0} units counted",
   "situation-room.n-disputed-left-out": "{v0} disputed and left out, as on the public docket",
-  "situation-room.same-figures-public-board": "the same figures the public board shows"
+  "situation-room.same-figures-public-board": "the same figures the public board shows",
+  "situation-room.install": "Install",
+  "situation-room.install-title": "Install the situation room as a desktop app"
 }

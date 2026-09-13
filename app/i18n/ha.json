@@ -1361,5 +1361,7 @@
   "situation-room.one-unit-counted": "an ƙirga rumfa 1",
   "situation-room.n-units-counted": "an ƙirga rumfuna {v0}",
   "situation-room.n-disputed-left-out": "an yi jayayya kan {v0} kuma an cire su, kamar yadda yake a littafin jama'a",
-  "situation-room.same-figures-public-board": "alkalumma ɗaya da allon jama'a ke nunawa"
+  "situation-room.same-figures-public-board": "alkalumma ɗaya da allon jama'a ke nunawa",
+  "situation-room.install": "Sanya",
+  "situation-room.install-title": "Sanya ɗakin sa ido a matsayin manhaja ta kwamfuta"
 }

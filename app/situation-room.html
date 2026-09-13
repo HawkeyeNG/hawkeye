@@ -103,9 +103,49 @@
 /* The filter row under the coverage cards. Its own class rather than .sr-bar:
    that is the page header's spacing (12px) and its own justification, and this
    row wants the cards' 10px and no auto margin pushing anything. */
+/* THE PARTY BOARD. Its own table rather than .sr-tbl: that one is built for
+   coverage rows (dense, numeric, many columns), and this is four columns where
+   the middle one is an identity — emblem, name and code together, because a
+   manager knows their code, a reader knows the name, and the emblem is what
+   the ballot shows. */
+.sr-parties { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.sr-parties thead th {
+  position: sticky; top: 0; z-index: 1; background: var(--card);
+  text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line);
+}
+.sr-parties td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.sr-parties tr:last-child td { border-bottom: 0; }
+.sr-parties .rank { width: 34px; color: var(--muted); font-size: 0.8rem; }
+.sr-parties .num { text-align: right; font-family: var(--sr-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sr-parties th.num { text-align: right; }
+.sr-parties .num.z { color: var(--muted); }
+.sr-parties .party { display: flex; align-items: center; gap: 9px; }
+.sr-parties .sr-plogo { width: 22px; height: 22px; flex: none; display: inline-flex; }
+.sr-parties .sr-plogo img { width: 22px; height: 22px; object-fit: contain; border-radius: 4px; }
+.sr-parties .pname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The code is the short name a manager actually says out loud, so it stays
+   legible rather than becoming a footnote. */
+.sr-parties .pcode {
+  flex: none; font-size: 0.68rem; letter-spacing: 0.06em; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px;
+}
+.sr-parties .sr-own td { background: rgba(212, 175, 55, 0.10); }
+.sr-parties .sr-own .pname { font-weight: 600; }
+/* THE LINE BETWEEN COUNTED AND NOT. Without it the zeros read as last place
+   rather than as "no figure yet", which on a campaign console is the whole
+   difference. */
+.sr-parties .sr-divider td {
+  padding: 10px 10px 4px; font-size: 0.66rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted); border-bottom: 0;
+}
+
 .sr-tools { display: flex; align-items: center; gap: 10px; padding: 0 0 10px; }
 .sr-tools .sr-sel { flex: 1 1 auto; min-width: 0; text-overflow: ellipsis; }
 .sr-tools .sr-btn { flex: none; }
+/* The spacer rule below is scoped to .sr-bar, so inside .sr-tools it was an
+   inert div and the download button sat hard against the left edge. */
+.sr-tools .spacer { flex: 1 1 auto; }
 .sr-sel {
   background: var(--card); color: var(--ink); border: 1px solid var(--line);
   border-radius: 8px; padding: 7px 10px; font: inherit; font-size: 0.85rem;
@@ -812,13 +852,20 @@ function partiesHtml(t, area) {
      the catalogue names the field. Merged, so a campaign finds its own row on
      day one and watches it move, rather than waiting for it to appear. */
   const counted = new Map((t.national || []).map((x) => [String(x.party).toUpperCase(), x.votes || 0]));
-  const rows = (PARTIES.length
+  const all = (PARTIES.length
     ? PARTIES.map((p) => ({ party: p.code, name: p.name, votes: counted.get(String(p.code).toUpperCase()) || 0 }))
-    : (t.national || []).map((x) => ({ party: x.party, name: '', votes: x.votes || 0 })))
-    .sort((a, b) => b.votes - a.votes || String(a.party).localeCompare(String(b.party)));
-  const cast = rows.reduce((a, x) => a + x.votes, 0);
+    : (t.national || []).map((x) => ({ party: x.party, name: '', votes: x.votes || 0 })));
+  /* Counted parties are RANKED. The rest are the field, alphabetical and
+     unnumbered: a position among parties that all have nothing is alphabetical
+     luck, and on a campaign console it would be read as a standing. */
+  const scored = all.filter((x) => x.votes > 0).sort((a, b) => b.votes - a.votes
+    || String(a.party).localeCompare(String(b.party)));
+  const rest = all.filter((x) => !x.votes).sort((a, b) => String(a.party).localeCompare(String(b.party)));
+  const rows = scored.concat(rest);
+  const cast = scored.reduce((a, x) => a + x.votes, 0);
   const mine = (S.group.party || '').toUpperCase();
-  const minePos = rows.findIndex((x) => String(x.party).toUpperCase() === mine);
+  const minePos = scored.findIndex((x) => String(x.party).toUpperCase() === mine);
+  const mineRow = all.find((x) => String(x.party).toUpperCase() === mine);
   const share = (v) => (cast ? ((v / cast) * 100).toFixed(1) : '0.0') + '%';
   const areaNote = esc(area);
 
@@ -828,26 +875,49 @@ function partiesHtml(t, area) {
     'No results published yet for {v0}.', { v0: areaNote })}</div></div>`;
   }
 
-  return `<h2 class="sr-h2">${T('situation-room.party-totals-so-far', 'Party totals so far — {v0}', { v0: areaNote })}</h2>
+  /* "so far" is a claim about progress, and with nothing counted there is no so
+     far to speak of — the heading would be describing a table of zeroes. */
+  return `<h2 class="sr-h2">${cast
+    ? T('situation-room.party-totals-so-far', 'Party totals so far — {v0}', { v0: areaNote })
+    : T('situation-room.party-totals-area', 'Party totals — {v0}', { v0: areaNote })}</h2>
     <div class="sr-card">
-      ${mine && minePos >= 0 ? `<div class="sr-mine">
+      ${mine && mineRow ? `<div class="sr-mine">
         <span class="sr-emblem">${LOGOS[mine] ? `<img src="${esc(LOGOS[mine])}" alt="" />` : ''}</span>
-        <div><b class="num">${n(rows[minePos].votes)}</b> <span class="num">${share(rows[minePos].votes)}</span>
-          <span class="sr-sub">${esc(mine)} &middot; ${minePos + 1}${['st', 'nd', 'rd'][minePos] || 'th'} of ${n(rows.length)} so far</span></div>
+        <div><b class="num">${n(mineRow.votes)}</b> <span class="num">${share(mineRow.votes)}</span>
+          <span class="sr-sub">${esc(mineRow.name || mine)} &middot; ${minePos >= 0
+    ? esc(T('situation-room.nth-of-m-so-far', '{v0} of {v1} counted so far',
+      { v0: (minePos + 1) + (['st', 'nd', 'rd'][minePos] || 'th'), v1: n(scored.length) }))
+    : esc(T('situation-room.no-votes-counted-yet', 'no votes counted yet'))}</span></div>
       </div>` : ''}
-      <div class="sr-scroll" style="max-height:230px">
-      <table class="sr-tbl" style="min-width:0"><tbody>
+      <div class="sr-scroll" style="max-height:300px">
+      <table class="sr-parties">
+        <thead><tr>
+          <th class="rank">#</th>
+          <th>${T('results.party', 'Party')}</th>
+          <th class="num">${T('situation-room.votes', 'Votes')}</th>
+          <th class="num">${T('situation-room.share', 'Share')}</th>
+        </tr></thead>
+        <tbody>
         ${rows.map((x, i) => {
-          const own = String(x.party).toUpperCase() === mine;
-          return `<tr${own ? ' class="sr-own"' : ''}>
-            <td style="width:26px" class="num z">${i + 1}</td>
-            <td>${LOGOS[String(x.party).toUpperCase()]
-              ? `<img class="sr-plogo" src="${esc(LOGOS[String(x.party).toUpperCase()])}" alt="" />` : ''}${esc(x.party)}</td>
-            <td class="num">${n(x.votes)}</td>
-            <td class="num" style="width:64px">${share(x.votes)}</td>
+    const code = String(x.party).toUpperCase();
+    const own = code === mine;
+    const first = i === scored.length && rest.length;
+    return `${first ? `<tr class="sr-divider"><td colspan="4">${
+      T('situation-room.yet-to-be-counted', 'Yet to be counted')}</td></tr>` : ''}
+          <tr${own ? ' class="sr-own"' : ''}>
+            <td class="rank num">${x.votes > 0 ? i + 1 : '·'}</td>
+            <td class="party">
+              <span class="sr-plogo">${LOGOS[code]
+      ? `<img src="${esc(LOGOS[code])}" alt="" />` : ''}</span>
+              <span class="pname">${esc(x.name || code)}</span>
+              <span class="pcode">${esc(code)}</span>
+            </td>
+            <td class="num${x.votes ? '' : ' z'}">${n(x.votes)}</td>
+            <td class="num${x.votes ? '' : ' z'}">${share(x.votes)}</td>
           </tr>`;
-        }).join('')}
-      </tbody></table></div>
+  }).join('')}
+        </tbody>
+      </table></div>
       ${cast ? '' : `<div class="sr-msg">${T('situation-room.no-results-published-yet-for',
         'No results published yet for {v0}.', { v0: areaNote })}</div>`}
       <div class="sr-tools" style="padding-top:10px">

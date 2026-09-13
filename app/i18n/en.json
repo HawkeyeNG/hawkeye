@@ -1337,5 +1337,8 @@
   "situation-room.n-disputed-left-out": "{v0} disputed and left out, as on the public docket",
   "situation-room.same-figures-public-board": "the same figures the public board shows",
   "situation-room.install": "Install",
-  "situation-room.install-title": "Install the situation room as a desktop app"
+  "situation-room.install-title": "Install the situation room as a desktop app",
+  "situation-room.install-heading": "Install the Situation Room",
+  "situation-room.install-sub": "Hawkeye · for this computer",
+  "situation-room.install-body": "It opens in its own window instead of a tab, keeps its place in your task switcher, and stays signed in. Remove it later like any other app."
 }

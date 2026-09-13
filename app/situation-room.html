@@ -19,7 +19,7 @@
        manifest takes one scope, not two. -->
   <link rel="manifest" href="room.webmanifest?v=1" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=181" />
+  <link rel="stylesheet" href="styles.css?v=182" />
   <script src="native.js?v=116"></script>
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=3"></script>
@@ -359,6 +359,41 @@
 }
 .sr-link code { flex: 1 1 auto; font-family: var(--sr-mono); font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; }
 .sr-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0 0; font-size: 0.76rem; color: var(--muted); }
+/* SCROLLBARS THAT GET OUT OF THE WAY.
+   Installed as a desktop app this is a window of its own, and the platform's
+   grey trough down the right-hand side is the one part of it that still reads
+   as a browser. The thumb is transparent at rest and appears while the pane is
+   being scrolled or hovered.
+
+   IT IS HIDDEN, NOT REMOVED: the gutter stays reserved (the thumb is
+   transparent rather than zero-width), so nothing reflows as it fades in, and a
+   pane that can scroll still SAYS so the moment you touch it — a scrollbar that
+   never appeared at all would leave a long roster looking like a short one.
+   .scrolling is set on <html> for ~900ms after any scroll, capture-phase so
+   inner panes count too. */
+* { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+*:hover { scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent; }
+html.scrolling, html.scrolling * { scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent; }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: transparent; border-radius: 10px;
+  border: 3px solid transparent; background-clip: content-box;
+  transition: background-color 0.18s ease;
+}
+*:hover::-webkit-scrollbar-thumb,
+html.scrolling::-webkit-scrollbar-thumb,
+html.scrolling *::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 55%, transparent); background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: content-box; }
+/* Touch already hides its scrollbars and has no hover to bring them back, so
+   the reveal would never fire — leave those alone entirely. */
+@media (hover: none) {
+  * { scrollbar-color: auto; }
+  ::-webkit-scrollbar-thumb { background: initial; }
+}
+
 .sr-msg { padding: 26px; text-align: center; color: var(--muted); font-size: 0.88rem; }
 .sr-sub { color: var(--muted); font-size: 0.75rem; display: block; margin-top: 2px; }
 @media (max-width: 640px) { .sr-bar h1 { width: 100%; } }
@@ -2390,6 +2425,17 @@ function syncUrl(g) {
 /* The taskbar jump list (manifest "shortcuts") opens ?tab=team and the like.
    Read once, before the first render, so the room opens on the tab that was
    asked for rather than flashing Overview first. */
+/* See the scrollbar rules in the stylesheet above. Capture phase, because a
+   scroll inside .sr-wrap or the coverage pane does not bubble. */
+(() => {
+  let idle;
+  addEventListener('scroll', () => {
+    document.documentElement.classList.add('scrolling');
+    clearTimeout(idle);
+    idle = setTimeout(() => document.documentElement.classList.remove('scrolling'), 900);
+  }, { passive: true, capture: true });
+})();
+
 function tabFromUrl() {
   const t = new URLSearchParams(location.search).get('tab');
   if (['overview', 'coverage', 'team', 'incidents'].includes(t)) S.tab = t;

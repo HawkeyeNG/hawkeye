@@ -107,6 +107,15 @@ nationalRouter.get('/national/:contest', (req, res) => {
     level = req.query.level;
     col = LEVEL_COLS[level];
   }
+  /* WARD IS THE ONE LEVEL THAT NEEDS A FLOOR UNDER IT. The other four are
+     bounded by the country — 37 states, 774 LGAs — but a nationwide board
+     bucketed by ward is 8,793 rows, and nothing asks for that. It is offered
+     only where it means something: a board already cropped to one state, which
+     is how a state-assembly seat page arrives (765 of the 1,005 seats sit
+     inside a single LGA, so its own level draws one undivided block). */
+  if (level === 'ward' && !state) {
+    ({ level, col } = boardLevelFor(contestDef, contest, state));
+  }
 
   /**
    * A contest is narrowed to its own scope HERE as well as on the write path.

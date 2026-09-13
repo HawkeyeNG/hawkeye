@@ -1340,5 +1340,7 @@
   "contest.by-election": "Ntuli aka Nnọchi nke {v0}{v1}",
   "common.nigeria": "Naịjirịa",
   "race.map-of-seat-by-ward": "Maapụ nke {seat}, site na ward",
-  "race.seat-wards": "{seat} — ward {n}"
+  "race.seat-wards": "{seat} — ward {n}",
+  "unit.ward.one": "ward",
+  "results.ward-map-incomplete": "Enweghị maapụ ward maka steeti a ugbu a — ọnụọgụ ndị dị n'okpuru zuru oke."
 }

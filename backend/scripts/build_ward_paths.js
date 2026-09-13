@@ -95,6 +95,17 @@ for (const f of fc.features) {
   L.y0 = Math.min(L.y0, ...ys); L.y1 = Math.max(L.y1, ...ys);
 }
 
+/* Ward counts per state, straight from the register the board reports
+   against -- not from the polygon file, which is the thing being measured. */
+const registerTotals = {};
+{
+  const per = JSON.parse(fs.readFileSync(path.join(backend, '..', 'tmp', 'wards', 'register_truth.json'), 'utf8')).perLga;
+  for (const [k, n] of Object.entries(per)) {
+    const st = k.split('|')[0];
+    registerTotals[st] = (registerTotals[st] || 0) + n;
+  }
+}
+
 const dir = path.join(appDir, 'maps', 'wards');
 fs.mkdirSync(dir, { recursive: true });
 let files = 0, bytes = 0, lgaCount = 0;
@@ -108,6 +119,12 @@ for (const [st, s] of states) {
     delete L.x0; delete L.y0; delete L.x1; delete L.y1;
     lgaCount++;
   }
+  /* What this file covers, measured against the register it is keyed to. The
+     client refuses to draw a choropliced state below 80%: a map missing two
+     thirds of its wards reads as "nothing happened there". */
+  const have = Object.values(s.lgas).reduce((a, L) => a + L.wards.length, 0);
+  s.cov = registerTotals[st] ? +(have / registerTotals[st]).toFixed(3) : 0;
+  s.wards = have;
   const dest = path.join(dir, slug(st) + '.json');
   fs.writeFileSync(dest, JSON.stringify(s));
   bytes += fs.statSync(dest).size;

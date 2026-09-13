@@ -1340,5 +1340,7 @@
   "contest.by-election": "Ìdìbò Ìfẹ̀yìntì {v0}{v1}",
   "common.nigeria": "Nàìjíríà",
   "race.map-of-seat-by-ward": "Máàpù {seat}, ní ti ẹ̀ka",
-  "race.seat-wards": "{seat} — ẹ̀ka {n}"
+  "race.seat-wards": "{seat} — ẹ̀ka {n}",
+  "unit.ward.one": "ẹ̀ka",
+  "results.ward-map-incomplete": "Kò sí máàpù ẹ̀ka fún ìpínlẹ̀ yìí síbẹ̀ — àwọn nọ́mbà tí ó wà nísàlẹ̀ pé."
 }

@@ -141,6 +141,11 @@ export const LEVEL_COLS = {
   lga: 'lga',
   senatorial: 'senatorial',
   federal: 'federal_constituency',
+  // Only ever reached through ?level=ward, never as a contest's default: a
+  // nationwide board bucketed by ward is 8,793 rows nobody asked for. It exists
+  // so a board already cropped to one LGA can subdivide once more, which is the
+  // only cut a state-assembly seat has (765 of the 1,005 sit inside one LGA).
+  ward: 'ward',
 };
 
 /**
@@ -153,6 +158,7 @@ export const LEVEL_NOUN = {
   lga: 'LGA',
   senatorial: 'senatorial district',
   federal: 'federal constituency',
+  ward: 'ward',
 };
 
 export const LEVEL_NOUN_PLURAL = {
@@ -160,6 +166,7 @@ export const LEVEL_NOUN_PLURAL = {
   lga: 'LGAs',
   senatorial: 'senatorial districts',
   federal: 'federal constituencies',
+  ward: 'wards',
 };
 
 /** Nationwide shape — used when a contest is not confined to one state. */

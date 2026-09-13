@@ -809,6 +809,11 @@
     // to its first option. A senatorial seat is genuinely finer than its state
     // crop, and there it does the job it exists for.
     if (j.value !== state) q.set('scope', j.value);
+    /* A STATE CONSTITUENCY ASKS FOR ITS WARDS. Its own level is the LGA, and
+       765 of the 1,005 seats are a single one: the board would open on one
+       bucket and one undivided shape. Only for SHA -- a senatorial or federal
+       seat spans whole LGAs and its LGA cut already shows several. */
+    if (j.level === 'lga' && state) q.set('level', 'ward');
     return `results.html?${q}`;
   }
 

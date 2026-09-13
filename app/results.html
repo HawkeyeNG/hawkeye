@@ -84,7 +84,7 @@
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
        disagree about which races have pages. -->
-  <script src="race.js?v=26"></script>
+  <script src="race.js?v=27"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -402,6 +402,17 @@
      * needed — it carries the shared viewBox every other layer is projected into,
      * and at 23 KB it is not worth being clever about.
      */
+    /* The ward layer is per state, so it cannot sit in GEOFILE with the
+       others -- its filename depends on the crop, not only on the level. */
+    let WARDGEO = null, WARDGEO_FOR = null;
+    async function ensureWardGeo(state) {
+      const slug = String(state || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      if (!slug) { WARDGEO = null; return; }
+      if (WARDGEO_FOR === slug) return;
+      WARDGEO_FOR = slug;
+      WARDGEO = await loadGeo('maps/wards/' + slug + '.json');
+    }
+
     async function ensureGeo(level) {
       const want = new Set(['states_geo.json']);
       if (GEOFILE[level]) want.add(GEOFILE[level]);
@@ -463,7 +474,8 @@
       // level's own layer is required by the branch that draws it. Checked
       // together, because a null LGAS/DGEO/CGEO throws just as hard as a null
       // STATES and the level is the only thing that says which one matters.
-      const LAYER = { lga: () => LGAS, senatorial: () => DGEO, federal: () => CGEO };
+      const LAYER = { lga: () => LGAS, senatorial: () => DGEO, federal: () => CGEO,
+        ward: () => WARDGEO };
       const need = LAYER[data.level];
       if (!STATES?.states || (need && !need())) {
         const el = document.getElementById('map');
@@ -525,7 +537,34 @@
         const find = regionLookup(data.regions);
         const titleCase = (s) => s.replace(/\b[a-z]/g, (c) => c.toUpperCase());
         let items;
-        if (data.level === 'lga') {
+        if (data.level === 'ward') {
+          /* EVERY WARD IN THE CROPPED STATE, keyed by name.
+             A ward board only exists cropped to a state (the backend refuses
+             ?level=ward without one), and within a state a ward name is very
+             nearly unique: 8,793 wards collapse to 8,686 state+name pairs, so
+             107 of them -- 1.2% -- share a name with another ward in the same
+             state and will take the same colour. The BOARD merges those two the
+             same way, because ward-level tallies bucket on the ward column, so
+             the map is not saying anything the numbers beside it do not. */
+          const cov = (WARDGEO && WARDGEO.cov) || 0;
+          if (cov < 0.8) {
+            /* NOT A BLANK FRAME AND NOT A SIEVE. Below this line the ward
+               shapes we can name are a minority of the state's wards, and a
+               reader cannot tell a missing shape from a silent one. The figures
+               below the map are complete regardless. */
+            const el = document.getElementById('map');
+            if (el) {
+              el.innerHTML = '<p class="hint" style="padding:14px">'
+                + T('results.ward-map-incomplete',
+                  'No ward map for this state yet — the figures below are complete.')
+                + '</p>';
+            }
+            return;
+          }
+          items = Object.values((WARDGEO && WARDGEO.lgas) || {}).flatMap((L) => L.wards)
+            .map((w) => ({ name: titleCase(String(w.n).toLowerCase()), path: w.d }));
+          badgeR = 7;
+        } else if (data.level === 'lga') {
           const pre = norm(scopeState);
           items = LGAS.lgas
             .filter((l) => l.key.split('|')[0] === pre)
@@ -699,6 +738,7 @@
       lga: T('unit.lga.one', "LGA"),
       senatorial: T('unit.senatorial.one', "senatorial district"),
       federal: T('unit.federal.one', "federal constituency"),
+      ward: T('unit.ward.one', 'ward'),
     };
 
     // "Data at a glance": vote-share donut + top regions by units reporting.
@@ -1009,8 +1049,13 @@
       // in) must not take the board down with it: drop the crop and show the
       // whole contest, which is the answer the reader can still use.
       let data = null;
+      /* ?level= is forwarded, not invented here: a race page asks for the cut
+         it draws, and the backend takes the column from its own table, so the
+         only strings that reach the SQL are the five it knows. */
+      const LEVEL_ASK = new URLSearchParams(location.search).get('level') || '';
       if (STATE_CROP) {
-        data = await fetch(`/api/national/${contest}?state=${encodeURIComponent(STATE_CROP)}`)
+        data = await fetch(`/api/national/${contest}?state=${encodeURIComponent(STATE_CROP)}`
+          + (LEVEL_ASK ? `&level=${encodeURIComponent(LEVEL_ASK)}` : ''))
           .then((r) => (r.ok ? r.json() : null)).catch(() => null);
         if (!data) STATE_CROP = null;
       }
@@ -1036,6 +1081,10 @@
       document.getElementById('map-title').textContent = TV('results.leading-party-by', "Leading party by {v0}{v1}", { v0: word, v1: where });
 
       await ensureGeo(data.level);
+      // The ward layer is per state, so it is loaded from the crop rather than
+      // from the level. A board without a crop cannot be at ward level -- the
+      // backend refuses ?level=ward without a state -- so this is a no-op then.
+      if (data.level === 'ward') await ensureWardGeo(data.scope && data.scope.state);
       // Populate the follow-scope picker with the regions for this contest. When
       // the contest is confined to one state, its own sub-units ARE the choices —
       // offering all 36 states to follow on an Osun-only race was the clearest

@@ -9,7 +9,7 @@ import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
-import { t as i18nT, lazyT } from '@/lib/i18n';
+import { t as i18nT, lazyT, useT } from '@/lib/i18n';
 import { flagLabel } from '@/lib/flags';
 import { KIND_LABEL } from '@/lib/incident-kinds';
 
@@ -131,10 +131,25 @@ type Item = {
   id: string;
   kind: Kind;
   at: number;
+  /** The English fallback, and what a row shows when it has nothing keyed. */
   title: string;
+  /* WHAT THE TITLE MEANS, not what it said when it was fetched. A stored
+     translation is a stale translation the moment the reader switches
+     language; these are resolved in the row, on every paint. */
+  titleKey?: string;
+  titleVars?: Record<string, string | number>;
+  /** A server enum (incident kind, flag type) the row names for itself. */
+  titleEnum?: 'incident' | 'flag';
   detail: string;
   href?: string;
 };
+
+/** One row's heading, resolved at paint. See the note on Item.titleKey. */
+function itemTitle(it: Item): string {
+  if (it.titleEnum === 'incident') return KIND_LABEL[it.title] ?? it.title.replace(/_/g, ' ');
+  if (it.titleEnum === 'flag') return flagLabel(it.title);
+  return it.titleKey ? i18nT(it.titleKey, it.titleVars) : it.title;
+}
 
 /**
  * The disc behind each row's icon. `tone` names a semantic tint that darkens
@@ -195,6 +210,12 @@ async function jget<T>(path: string): Promise<T | null> {
  * is decoration.
  */
 export default function Home() {
+  /* SUBSCRIBE THIS SCREEN TO THE LANGUAGE. lazyT resolves a label when it is
+     READ, which only helps if this screen paints again — and a tab that is
+     already mounted does not always. useT() puts it on the context, so a
+     language change repaints the chips and the feed with everything else
+     instead of waiting for a cold start. */
+  useT();
   const ui = useUi();
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
   const [contests, setContests] = useState<Contest[] | null>(null);
@@ -266,7 +287,9 @@ export default function Home() {
         id: `r${e.id}`,
         kind: 'report',
         at: e.created_at,
-        title: i18nT('n.app.tabs.index.result-reported', { v0: e.contest }),
+        title: e.contest,
+        titleKey: 'n.app.tabs.index.result-reported',
+        titleVars: { v0: e.contest },
         detail: e.pu_code,
         href: '/reports-log',
       });
@@ -276,7 +299,8 @@ export default function Home() {
         id: `i${n.id}`,
         kind: 'incident',
         at: n.created_at,
-        title: KIND_LABEL[n.kind] ?? n.kind.replace(/_/g, ' '),
+        title: n.kind,
+        titleEnum: 'incident',
         detail: [n.lga, n.state].filter(Boolean).join(', ') || n.text?.slice(0, 60) || '',
         href: '/incidents',
       });
@@ -287,7 +311,8 @@ export default function Home() {
         id: `f${d.id}`,
         kind: 'flag',
         at: d.created_at,
-        title: flagLabel(d.type),
+        title: d.type,
+        titleEnum: 'flag',
         detail: d.detail?.summary?.slice(0, 90) || [d.pu_name, d.state].filter(Boolean).join(' · '),
         href: '/integrity',
       });
@@ -297,9 +322,9 @@ export default function Home() {
         id: `c${k.id}`,
         kind: 'case',
         at: k.resolvedAt ?? k.openedAt,
-        title: k.resolvedAt
-          ? i18nT('n.app.tabs.index.case-resolved', { v0: CASE_STATUS[k.status] ?? k.status })
-          : i18nT('n.app.tabs.index.case-opened'),
+        title: k.status,
+        titleKey: k.resolvedAt ? 'n.app.tabs.index.case-resolved' : 'n.app.tabs.index.case-opened',
+        titleVars: k.resolvedAt ? { v0: k.status } : undefined,
         detail: `${k.name || k.puCode} · ${k.contest}`,
         href: `/case?id=${k.id}`,
       });
@@ -504,7 +529,7 @@ export default function Home() {
                 <Feather name={k.icon} size={12} color={k.tone ? ui.tint[k.tone].ink : ui.muted} />
               </View>
               <View className="flex-1 pl-3">
-                <Text className="text-sm font-bold capitalize text-ink">{item.title}</Text>
+                <Text className="text-sm font-bold capitalize text-ink">{itemTitle(item)}</Text>
                 {item.detail ? (
                   <Text className="pt-0.5 text-xs text-muted" numberOfLines={2}>
                     {item.detail}

@@ -117,9 +117,14 @@
     el.querySelector('#lang-save').addEventListener('click', function () {
       var picked = el.querySelector('input[name="hk-lang"]:checked');
       var code = picked ? picked.value : 'en';
+      /* CLOSE ON THE TAP. Waiting for set() to resolve meant the button did
+         nothing visible while a bundle loaded, and a reader who then pressed
+         "Not now" saw the language change anyway as the promise landed — which
+         looks like the wrong button worked. The choice is made the moment it is
+         made; the dictionary catches up. */
+      remember();
+      close();
       I18N.set(code).then(function () {
-        remember();
-        close();
         refreshRow();
         tellServer(code);
       });

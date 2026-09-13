@@ -247,6 +247,88 @@ ME = { role: 'owner', scope_kind: '', scope_value: '' };
   await p.close();
 }
 
+/* --- one button per job, and a scrollbar that gets out of the way -------- */
+/* The roster file input is `hidden` and was drawn anyway: `input, select
+   { display: block; width: 100% }` in styles.css is an AUTHOR rule and beats
+   the user agent's `[hidden] { display: none }`, so the browser's own "Choose
+   File" control sat beside the styled button that exists to trigger it. Read
+   from the RENDERED box, not from the attribute — the attribute was correct the
+   whole time, which is exactly why reading the source would have passed. */
+MEMBER_ONLY = false;
+ME = { role: 'owner', scope_kind: '', scope_value: '' };
+{
+  const p = await b.newPage({ viewport: { width: 1200, height: 900 } });
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(String(e)));
+  await p.addInitScript(() => {
+    const enc = (o) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+    try {
+      localStorage.setItem('hawkeye_token', enc({ alg: 'none' }) + '.' + enc({ sub: 1, exp: 4102444800 }) + '.x');
+    } catch (e) { /* private mode */ }
+  });
+  await p.goto(`${base}/situation-room.html?tab=team`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.sr-tools', { timeout: 10000 }).catch(() => {});
+
+  const file = await p.evaluate(() => {
+    const el = document.getElementById('roster-file');
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { hiddenAttr: el.hidden, display: getComputedStyle(el).display, w: r.width, h: r.height };
+  });
+  check('the roster file input exists', file, (f) => f !== null);
+  check('CONTROL: it was always marked hidden — the attribute was never the bug', file.hiddenAttr, true);
+  check('and now it actually occupies no space', file, (f) => f.w === 0 && f.h === 0);
+  check('display:none, not merely clipped', file.display, 'none');
+  /* ONE visible way to import. Two was the defect, and the second one was the
+     browser's own file control, so this counts inputs separately from buttons
+     rather than totalling them — the total depends on what the stub returns. */
+  const tools = await p.evaluate(() => {
+    const shown = (el) => el.getBoundingClientRect().width > 0;
+    const all = [...document.querySelectorAll('.sr-tools button, .sr-tools input, .sr-tools select')];
+    return {
+      inputs: all.filter((el) => el.tagName === 'INPUT' && shown(el)).length,
+      importers: all.filter((el) => shown(el) && /import/i.test(el.textContent || '')).length,
+    };
+  });
+  check('no bare file control is drawn beside the button that opens it', tools.inputs, 0);
+  check('and exactly one visible way to import a roster', tools.importers, 1);
+
+  /* The scrollbar is transparent at rest. Chromium reports the used value of
+     scrollbar-color, so this reads the decision rather than a screenshot. */
+  const bar = await p.evaluate(() => ({
+    rest: getComputedStyle(document.documentElement).scrollbarColor,
+    width: getComputedStyle(document.documentElement).scrollbarWidth,
+  }));
+  /* WHAT "TRANSPARENT" LOOKS LIKE COMING BACK OUT, which is three things:
+     the keyword, `rgba(0, 0, 0, 0)` (how Chromium serialises it), and
+     `color(srgb r g b / a)` (how it serialises a color-mix result). Reading
+     alpha off each token is the only form of this check that survives all
+     three; two earlier versions matched on spelling and passed or failed for
+     reasons that had nothing to do with the colour. */
+  const alphaOf = (c) => {
+    if (c === 'transparent') return 0;
+    const slash = c.match(/\/\s*([\d.]+)\s*\)/);
+    if (slash) return parseFloat(slash[1]);
+    const rgba = c.match(/^rgba?\(([^)]*)\)$/);
+    if (rgba) {
+      const parts = rgba[1].split(',').map((x) => x.trim());
+      return parts.length > 3 ? parseFloat(parts[3]) : 1;
+    }
+    return 1;
+  };
+  const clear = (v) => (String(v).match(/color\([^)]*\)|rgba?\([^)]*\)|transparent/g) || [])
+    .every((c) => alphaOf(c) === 0);
+  check('scrollbar is transparent when nothing is happening', bar.rest, clear);
+  check('and thin rather than the platform default', bar.width, 'thin');
+  /* IT IS HIDDEN, NOT REMOVED: scrolling brings it back, so a long roster still
+     says it is long. A bar that never returned would be a different bug. */
+  await p.evaluate(() => { document.documentElement.classList.add('scrolling'); });
+  const scrolling = await p.evaluate(() => getComputedStyle(document.documentElement).scrollbarColor);
+  check('and it comes back while scrolling', scrolling, (v) => !clear(v));
+  check('scrollbar page rendered without throwing', errs, []);
+  await p.close();
+}
+
 /* --- and the way IN to the room ------------------------------------------ */
 /* A HIGHLIGHTED HEADING IS NOT A BUTTON. The room was reachable only by tapping
    the campaign's name, and a coloured heading reads as a heading — so people who

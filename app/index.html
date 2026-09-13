@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=179" />
+  <link rel="stylesheet" href="styles.css?v=180" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -148,9 +148,16 @@
        <head>, where document.body does not exist yet and it had to be appended
        to <html> — markup here paints with the page's first frame instead, with
        no dependency on script timing, external CSS or the network.
-       Removed immediately on the web; native.js fades it out on load. -->
+       Removed immediately on the web; native.js fades it out on load.
+
+       NO LOGO ON IT, DELIBERATELY. The platform has already shown one: Android
+       paints @drawable/splash_screen as the window background and iOS its
+       launch storyboard, both the bare hawk on this exact green. Drawing the
+       rounded app icon here as well produced a SECOND splash in quick
+       succession — same colour, different mark, and it read as a stutter. A
+       plain field hides the WebView's blank first paint just as well and has
+       nothing in it to recognise as another screen. -->
   <div id="hk-boot-splash" style="position:fixed;inset:0;z-index:2147483647;background:#004225;display:flex;align-items:center;justify-content:center;transition:opacity .25s">
-    <img src="icon-192.png?v=hawk2" alt="" width="128" height="128" style="border-radius:24px" />
   </div>
   <!-- SELF-DESTRUCTING, and it owns its own removal. A boot splash that can
        outlive the load is an app that never starts, and gating removal on
@@ -371,8 +378,8 @@
                  which is how a debug build that Play Protect blocks kept being
                  installed after it had already been replaced. A new name cannot
                  be served stale. Bump it whenever the APK is rebuilt. -->
-            <p><a data-i18n="index.download-the-android-app" class="btn-ghost apk-dl" href="download/hawkeye-1.3-5-643e6069.apk"
-                  download="hawkeye-1.3-5-643e6069.apk" rel="nofollow">⬇ Download the Android App</a></p>
+            <p><a data-i18n="index.download-the-android-app" class="btn-ghost apk-dl" href="download/hawkeye-1.3-6-efbb080c.apk"
+                  download="hawkeye-1.3-6-efbb080c.apk" rel="nofollow">⬇ Download the Android App</a></p>
             <!-- "not yet on Play" stopped being the reason for that prompt the day
                  the listing went live. Android shows it for anything installed
                  outside Play at all, which is what this route is. -->
@@ -609,6 +616,11 @@
           box.innerHTML = d.items.length
             ? '<p class="home-empty" data-i18n-html="index.you-re-all-caught-up">You’re all caught up. <a href="notifications.html">See all alerts →</a></p>'
             : '<p class="home-empty">Nothing yet — reports at your saved unit and status updates land here.</p>';
+          /* PAINTED AFTER THE SWEEP. i18n.js applies data-i18n on load and on
+             every language change; this panel is written later, from a fetch,
+             so nothing had ever applied it and the line stayed English on a
+             Hausa page. Sweeping the node we just wrote costs one call. */
+          if (window.HawkeyeI18n) window.HawkeyeI18n.apply(box);
           return;
         }
         box.innerHTML = fresh.map((n) => `
@@ -751,8 +763,8 @@
     })();
   </script>
   <script src="tg.js?v=95"></script>
-  <script src="/i18n.js?v=9"></script>
-  <script src="/lang.js?v=8"></script>
+  <script src="/i18n.js?v=10"></script>
+  <script src="/lang.js?v=9"></script>
   <script src="menu.js?v=171"></script>
 </body>
 </html>

@@ -100,6 +100,12 @@
 .sr-chain select { width: 100%; }
 .sr-bar .meta { color: var(--muted); font-size: 0.8rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .sr-bar .spacer { flex: 1 1 auto; }
+/* The filter row under the coverage cards. Its own class rather than .sr-bar:
+   that is the page header's spacing (12px) and its own justification, and this
+   row wants the cards' 10px and no auto margin pushing anything. */
+.sr-tools { display: flex; align-items: center; gap: 10px; padding: 0 0 10px; }
+.sr-tools .sr-sel { flex: 1 1 auto; min-width: 0; text-overflow: ellipsis; }
+.sr-tools .sr-btn { flex: none; }
 .sr-sel {
   background: var(--card); color: var(--ink); border: 1px solid var(--line);
   border-radius: 8px; padding: 7px 10px; font: inherit; font-size: 0.85rem;
@@ -1132,14 +1138,13 @@ function renderCoverage() {
       <div class="sr-head wait"><b class="num">${n(silent > 0 ? silent : 0)}</b><span>${T('situation-room.yet-to-report', 'Yet to report')}</span></div>
     </div>
     ${crumbsHtml()}
-    <div class="sr-bar" style="border:0;padding:0 0 10px">
+    <div class="sr-tools">
       <select class="sr-sel" id="cov-filter">
         <option value="all"${S.filter === 'all' ? ' selected' : ''}>${T('situation-room.show-everything', 'Show everything')}</option>
         <option value="gaps"${S.filter === 'gaps' ? ' selected' : ''}>${T('situation-room.only-where-units-are-unreported', 'Only where units are unreported')}</option>
         <option value="silent"${S.filter === 'silent' ? ' selected' : ''}>${T('situation-room.only-where-our-observers-are-silent', 'Only where our observers are silent')}</option>
         <option value="ours"${S.filter === 'ours' ? ' selected' : ''}>${T('situation-room.only-where-we-have-people', 'Only where we have people')}</option>
       </select>
-      <div class="spacer"></div>
       <button class="sr-btn" id="csv">${T('situation-room.export-csv', 'Export CSV')}</button>
     </div>
     <div class="sr-wrap"><table class="sr-tbl">

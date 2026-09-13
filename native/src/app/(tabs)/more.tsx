@@ -12,7 +12,6 @@ import { ScreenHeader } from '@/components/screen-header';
 import { SocialRow } from '@/components/social-row';
 import { Tour } from '@/components/tour';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
-import { GovDisclaimer } from '@/components/gov-disclaimer';
 import { LANGS, LANG_NAMES, t as i18nT, useI18n } from '@/lib/i18n';
 
 /**
@@ -410,13 +409,12 @@ export default function More() {
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 32 }}
       >
-        {/* GovDisclaimer STAYS AT THE TOP and does not travel with Preferences.
-            Its docblock records it as a Play "Misleading Claims" remedy that
-            has to be visible without interaction, and tests/gov_disclaimer_test
-            pins this screen as a required mount site — burying it below four
-            menu groups would be a store-compliance regression, not a layout
-            choice. Preferences moved; this did not. */}
-        <GovDisclaimer />
+        {/* PREFERENCES FIRST. Language and theme are the two things a reader
+            opens this screen to CHANGE; everything below it is somewhere to go.
+            The disclaimer that used to sit here is gone: this screen presents no
+            government-sourced figure of its own, and the seven that do still
+            carry it (tests/gov_disclaimer_test records the exemption). */}
+        <PreferencesGroup />
         {GROUPS.map((g) => (
           <View key={g.title} className="pb-2">
             <Text className="pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-muted">
@@ -449,7 +447,6 @@ export default function More() {
             </View>
           </View>
         ))}
-        <PreferencesGroup />
         {/* Heading included — SocialRow owns the whole "Find Hawkeye" section. */}
         <SocialRow />
         {/* The independence/INEC sentence lived here AND in the disclaimer bar at

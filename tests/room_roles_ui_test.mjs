@@ -42,6 +42,9 @@ const MEMBERS = [
 /* The reader is swapped between page loads; everything else is fixed. */
 let ME = { role: 'owner', scope_kind: '', scope_value: '' };
 let MEMBER_ONLY = false;
+/* Empty is the COMMON case and the one that was broken: an owner with a single
+   campaign has nothing to copy from. */
+let SOURCES = [];
 
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
@@ -55,6 +58,7 @@ const server = http.createServer((req, res) => {
   }
   if (url === '/api/groups/7') return json({ ...GROUP, me: ME, managers: MANAGERS });
   if (url === '/api/groups/7/team') return json({ contest: GROUP.contest, members: MEMBERS });
+  if (url === '/api/groups/7/sources') return json({ sources: SOURCES });
   if (url === '/api/parties') return json([]);
   const f = path.join(APP, decodeURIComponent(url));
   if (!f.startsWith(APP) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
@@ -412,6 +416,78 @@ ME = { role: 'owner', scope_kind: '', scope_value: '' };
   check('phone: the pane is not a scroller there', phone.paneOverflow, (v) => v !== 'auto' && v !== 'scroll');
   await p.close();
 }
+
+/* --- the Share observers card sits where it should ---------------------- */
+/* The spacer in .sr-tools exists to hold the copy controls apart from the CSV
+   pair. An owner with ONE campaign has no copy controls, so the spacer was the
+   first thing in the row and pushed both buttons to the far right of an empty
+   line — a heading, a paragraph, and two buttons belonging to nothing. */
+MEMBER_ONLY = false;
+ME = { role: 'owner', scope_kind: '', scope_value: '' };
+async function cardGeometry() {
+  const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(String(e)));
+  await p.addInitScript(() => {
+    const enc = (o) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+    try {
+      localStorage.setItem('hawkeye_token', enc({ alg: 'none' }) + '.' + enc({ sub: 1, exp: 4102444800 }) + '.x');
+    } catch (e) { /* private mode */ }
+  });
+  await p.goto(`${base}/situation-room.html?tab=team`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.sr-tools', { timeout: 10000 }).catch(() => {});
+  const g = await p.evaluate(() => {
+    const card = document.querySelector('.sr-tools').closest('.sr-card');
+    const cr = card.getBoundingClientRect();
+    const box = (sel) => {
+      const el = card.querySelector(sel);
+      return el ? el.getBoundingClientRect() : null;
+    };
+    const note = card.querySelector('p.sr-fine');
+    const pend = [...card.querySelectorAll('p.sr-fine')].pop();
+    const row = document.querySelector('.sr-tools').getBoundingClientRect();
+    return {
+      cardLeft: cr.left, cardRight: cr.right,
+      dl: box('#roster-dl'), up: box('#roster-up'),
+      sel: box('#copy-from'), go: box('#copy-go'),
+      noteLeft: note ? note.getBoundingClientRect().left : null,
+      pendTop: pend ? pend.getBoundingClientRect().top : null,
+      rowBottom: row.bottom,
+      wrap: getComputedStyle(document.querySelector('.sr-tools')).flexWrap,
+    };
+  });
+  g.errs = errs;
+  await p.close();
+  return g;
+}
+
+{
+  const g = await cardGeometry();
+  check('card: rendered without throwing', g.errs, []);
+  /* THE CLAIM: the buttons start where the text starts, not adrift on the right. */
+  check('one campaign: the CSV buttons start at the card\'s text edge', g,
+    (x) => Math.abs(x.dl.left - x.noteLeft) <= 2);
+  check('one campaign: and are nowhere near the far right', g,
+    (x) => x.up.right < x.cardRight - 100);
+  check('one campaign: the two buttons sit together on one line', g,
+    (x) => Math.abs(x.dl.top - x.up.top) <= 1);
+  check('the pending line follows the row without a doubled gap', g,
+    (x) => x.pendTop !== null && x.pendTop - x.rowBottom < 12);
+  check('the row wraps rather than overflowing a narrow card', g.wrap, 'wrap');
+}
+
+/* TWO campaigns: the spacer earns its keep again — copy controls left, CSV
+   pair right — so the fix must not have simply deleted the separation. */
+SOURCES = [{ id: 9, name: 'PresRoom', contest: 'PRES', scope: '', copyable: 4 }];
+{
+  const g = await cardGeometry();
+  check('two campaigns: the copy picker appears', g.sel, (v) => v !== null);
+  check('two campaigns: CSV buttons move to the right of it', g,
+    (x) => x.dl.left > x.go.right + 20);
+  check('two campaigns: and reach the right edge of the card', g,
+    (x) => x.up.right > x.cardRight - 40);
+}
+SOURCES = [];
 
 /* --- and the way IN to the room ------------------------------------------ */
 /* A HIGHLIGHTED HEADING IS NOT A BUTTON. The room was reachable only by tapping

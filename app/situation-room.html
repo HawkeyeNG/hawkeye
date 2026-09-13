@@ -10,7 +10,7 @@
   <base href="/" />
   <meta name="theme-color" content="#00482b" />
   <meta name="description" content="Situation room for campaigns and civil-society groups: coverage by LGA, ward and unit, and where your own observers have reported from." />
-  <title data-i18n="situation-room.title">Hawkeye — Situation Room</title>
+  <title>Hawkeye Election Monitor</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <!-- THE ROOM'S OWN MANIFEST. The site's manifest starts at /observe.html, so
@@ -2478,28 +2478,29 @@ function syncUrl(g) {
 })();
 
 /**
- * ONE "Hawkeye" IN THE TITLEBAR, and the rest of it translated.
+ * THE INSTALLED WINDOW IS NAMED ONCE.
  *
- * An installed window's title is composed by the browser as
- * "<manifest name> - <document.title>", so a manifest called "Hawkeye Situation
- * Room" beside a title of "Hawkeye — Situation Room" read as both, twice.
+ * A browser composes an installed window's title as
+ * "<manifest name> - <document.title>", so the two halves showed the product
+ * name twice: "Hawkeye Situation Room - Situation Room".
  *
- * The manifest half is FIXED AT INSTALL and cannot follow the reader's
- * language, so it is now just "Hawkeye" — a proper noun, the same in all four
- * languages — and the descriptive half comes from here, where i18n does reach.
- * In an ordinary browser tab there is no app name in front, so the tab keeps
- * the full "Hawkeye — Situation Room".
+ * The manifest supplies the name and this clears the other half, leaving the
+ * browser to show the app name alone. Clearing rather than repeating the name:
+ * the composition only runs when the document has a title, so an empty one
+ * cannot produce "X - X", whereas setting it to the same string relies on the
+ * browser noticing they match.
  *
- * Runs now and again on 'hawkeye-lang'. i18n.js announces that event once a
- * bundle is in place, which is the only moment a translation exists; English
- * never fetches one (it IS the markup), so the immediate call is what covers
- * it. There is no window.i18nReady on this site — the event is the signal.
+ * NOT TRANSLATED, deliberately. The name is the product's, identical in every
+ * language — see the <title> above, which carries no data-i18n for the same
+ * reason — so unlike the rest of this page there is nothing here to repaint on
+ * a language change.
+ *
+ * A browser TAB has no app name in front of it, so it keeps the full title and
+ * this does nothing.
  */
 function syncTitle() {
-  if (!matchMedia('(display-mode: standalone)').matches) return;
-  document.title = T('nav.situation-room', 'Situation Room');
+  if (matchMedia('(display-mode: standalone)').matches) document.title = '';
 }
-document.addEventListener('hawkeye-lang', syncTitle);
 syncTitle();
 
 function tabFromUrl() {

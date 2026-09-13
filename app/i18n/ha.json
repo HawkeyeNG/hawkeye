@@ -1343,5 +1343,9 @@
   "race.map-of-seat-by-ward": "Taswirar {seat}, bisa unguwa",
   "race.seat-wards": "{seat} — unguwanni {n}",
   "unit.ward.one": "unguwa",
-  "results.ward-map-incomplete": "Babu taswirar unguwanni ga wannan jiha tukuna — alkaluman da ke ƙasa cikakku ne."
+  "results.ward-map-incomplete": "Babu taswirar unguwanni ga wannan jiha tukuna — alkaluman da ke ƙasa cikakku ne.",
+  "race.loading-units": "Ana loda rumfunan zaɓe…",
+  "race.n-polling-units": "rumfunan zaɓe {n}",
+  "race.units-in-ward": "Rumfunan zaɓe a {ward}",
+  "race.n-placed-approximately": "an sanya {n} kusan wurin"
 }

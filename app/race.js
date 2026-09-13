@@ -10,7 +10,6 @@
      resolved here, at render time, and the render is re-run on a language
      change. */
   const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
-
     /* t() has no interpolation, so placeholders are filled after the lookup.
        Keeps one translated sentence per message instead of gluing fragments,
        which no language other than English survives. */
@@ -135,6 +134,7 @@
     const svg = `<svg class="race-map" viewBox="${vb}" role="img" aria-label="${esc(label)}"
       style="width:100%;height:auto;max-height:420px;display:block;margin:14px 0">
       ${shapes.map((s) => `<path d="${s.path}" data-region="${esc(s.name || '')}"
+        ${s.lga ? `data-lga="${esc(s.lga)}" data-state="${esc(s.state || '')}"` : ''}
         fill="currentColor" fill-opacity="0.10"
         stroke="currentColor" stroke-opacity="0.7" stroke-width="1.1"
         stroke-linejoin="round" vector-effect="non-scaling-stroke"
@@ -144,6 +144,61 @@
       ? `${svg}<p class="hint" style="margin:-6px 0 0;text-align:center">${esc(caption)}</p>`
       : svg;
   };
+
+  /* ONE LISTENER FOR THE WHOLE PAGE. The map is written into the page as a
+     string by whatever renders around it, so there is no element to bind to at
+     build time, and a ward map can be replaced when the reader changes race. */
+  let unitsBusy = false;
+  document.addEventListener('click', async (e) => {
+    const path = e.target && e.target.closest && e.target.closest('svg.race-map path[data-lga]');
+    if (!path || unitsBusy) return;
+    const ward = path.getAttribute('data-region');
+    const lga = path.getAttribute('data-lga');
+    const state = path.getAttribute('data-state');
+    if (!ward || !lga || !state) return;
+    const svg = path.closest('svg');
+    let host = svg.parentNode.querySelector('.race-ward-units');
+    if (!host) {
+      host = document.createElement('div');
+      host.className = 'race-ward-units';
+      svg.parentNode.insertBefore(host, svg.nextSibling);
+    }
+    unitsBusy = true;
+    host.innerHTML = '<p class="hint">' + T('race.loading-units', 'Loading polling units…') + '</p>';
+    try {
+      const q = (o) => Object.entries(o).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+      const [geo, reg] = await Promise.all([
+        fetch('/api/register/wards-geo?' + q({ state, lga })).then((r) => r.json()).catch(() => null),
+        fetch('/api/register/units?' + q({ state, lga, ward })).then((r) => r.json()).catch(() => null),
+      ]);
+      const units = (reg && reg.units) || [];
+      const WM = window.HawkeyeWardMap;
+      const shape = WM && geo && (geo.wards || []).find((w) => norm(w.ward) === norm(ward));
+      if (!WM || !shape || !units.length) {
+        host.innerHTML = '<p class="hint">' + esc(titleCase(ward.toLowerCase())) + ' — '
+          + TV('race.n-polling-units', '{n} polling units', { n: units.length }) + '</p>';
+        return;
+      }
+      const m = WM.unitPoints(shape.geometry, units.map((u) => ({
+        key: u.pu_code, name: u.name, lat: u.lat, lng: u.lng,
+      })));
+      const approx = m.points.filter((p) => p.approx).length;
+      host.innerHTML = `<svg viewBox="0 0 ${m.W} ${m.H}" class="race-ward-svg" role="img"
+          aria-label="${esc(TV('race.units-in-ward', 'Polling units in {ward}', { ward: titleCase(ward.toLowerCase()) }))}"
+          style="width:100%;height:auto;max-height:320px;display:block;margin:8px 0">
+          <path d="${m.outline}" fill="currentColor" fill-opacity="0.08" stroke="currentColor"
+            stroke-opacity="0.6" stroke-width="1.1" vector-effect="non-scaling-stroke" />
+          ${m.points.map((p) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3"
+            fill="${p.approx ? 'none' : 'currentColor'}" stroke="currentColor" stroke-width="1"
+            vector-effect="non-scaling-stroke"><title>${esc(p.node.name || p.node.key)}</title></circle>`).join('')}
+        </svg>
+        <p class="hint" style="margin:0;text-align:center">${esc(titleCase(ward.toLowerCase()))} — ${
+          esc(TV('race.n-polling-units', '{n} polling units', { n: units.length }))}${
+          approx ? ' · ' + esc(TV('race.n-placed-approximately', '{n} placed approximately', { n: approx })) : ''}</p>`;
+    } finally {
+      unitsBusy = false;
+    }
+  });
 
   async function raceMapHtml(race) {
     const j = race.join;
@@ -216,7 +271,9 @@
           // The stored names are the register's, upper-cased at build time by
           // the crosswalk's normalisation; a tooltip should not shout.
           for (const w of wgeo.lgas[k].wards) {
-            parts.push({ path: w.d, name: titleCase(String(w.n).toLowerCase()) });
+            // The register's own spelling of the LGA, not the file's key: it is
+            // what /api/register/units is keyed by.
+            parts.push({ path: w.d, name: titleCase(String(w.n).toLowerCase()), lga: l, state: j.state });
           }
         }
         if (parts.length > 1) {

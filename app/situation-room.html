@@ -192,7 +192,10 @@
 .sr-foot .sr-count { flex: 1 1 240px; border-top: 0; margin-top: 0; padding-top: 0; }
 .sr-foot .sr-btn { flex: none; }
 
-.sr-tools { display: flex; align-items: center; gap: 10px; padding: 0 0 10px; }
+/* WRAPS. Three of the four labels here are longer in Hausa, Igbo and Yoruba
+   than in English — "Import roster (CSV)" is "Shigo da jeri (CSV)" — and a
+   nowrap row squeezed them past the card edge on a narrow window. */
+.sr-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 0 0 10px; }
 .sr-tools .sr-sel { flex: 1 1 auto; min-width: 0; text-overflow: ellipsis; }
 .sr-tools .sr-btn { flex: none; }
 /* The spacer rule below is scoped to .sr-bar, so inside .sr-tools it was an
@@ -1956,13 +1959,13 @@ function rosterToolsHtml() {
         <option value="">${T('situation-room.copy-from-placeholder', "Copy observers from…")}</option>
         ${srcs.map((x) => `<option value="${x.id}">${esc(x.name)} &mdash; ${T('situation-room.n-available', "{v0} available", { v0: n(x.copyable) })}</option>`).join('')}
       </select>
-      <button class="sr-btn" id="copy-go">${T('situation-room.invite-them', "Invite them")}</button>` : ''}
-      <div class="spacer"></div>
+      <button class="sr-btn" id="copy-go">${T('situation-room.invite-them', "Invite them")}</button>
+      <div class="spacer"></div>` : ''}
       <button class="sr-btn" id="roster-dl">${T('situation-room.download-roster', "Download roster (CSV)")}</button>
       <button class="sr-btn" id="roster-up">${T('situation-room.import-roster', "Import roster (CSV)")}</button>
       <input type="file" id="roster-file" accept=".csv,text/csv" hidden />
     </div>
-    ${pend ? `<p class="sr-fine" style="margin:10px 0 0">${pend === 1
+    ${pend ? `<p class="sr-fine" style="margin:0">${pend === 1
     ? T('situation-room.pending-one', "{v0} person has been asked and has not answered yet.", { v0: n(pend) })
     : T('situation-room.pending-many', "{v0} people have been asked and have not answered yet.", { v0: n(pend) })}</p>` : ''}
   </div>`;

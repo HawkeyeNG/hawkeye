@@ -27,9 +27,17 @@ const splashKeyframe = new Keyframe({
   },
 });
 
+/* Once per launch. Module scope, so a remount cannot reset it — see the note
+   in the component. */
+let splashPlayed = false;
+
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
-  const [visible, setVisible] = useState(true);
+  /* THE LANGUAGE SWITCH REMOUNTS THE APP, and this overlay was inside it, so
+     every change replayed the splash — a blink, the hawk, and back. The
+     animation is about the launch; a second mount has nothing to cover. */
+  const [visible, setVisible] = useState(!splashPlayed);
+  useEffect(() => { splashPlayed = true; }, []);
 
   /**
    * Watchdog. The entering keyframe's withCallback reports finished=false when

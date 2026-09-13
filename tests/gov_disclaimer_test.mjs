@@ -25,7 +25,6 @@ const REQUIRED = {
   'integrity.tsx': 'verification figures about an INEC election',
   'osun.tsx': 'a record of an INEC election',
   'race.tsx': 'one seat, its holder and its INEC contest',
-  '(tabs)/more.tsx': 'the menu that leads to all of the above',
 };
 
 /**
@@ -34,6 +33,9 @@ const REQUIRED = {
  * broken and reported everything as mounted, these would fail.
  */
 const EXEMPT = {
+  '(tabs)/more.tsx':
+    'a list of links; it presents no government figure of its own, and every '
+    + 'screen it leads to carries the notice',
   'profile.tsx': 'the reader’s own account; no government data on screen',
   'sign-in.tsx': 'authentication only',
   'welcome.tsx': 'first-run explainer, no data',

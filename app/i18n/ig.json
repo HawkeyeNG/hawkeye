@@ -1362,5 +1362,8 @@
   "situation-room.n-disputed-left-out": "a rụrụ ụka na {v0} ma wepụ ha, dịka ọ dị na ndekọ ọha",
   "situation-room.same-figures-public-board": "otu ọnụọgụ ahụ bọọdụ ọha na-egosi",
   "situation-room.install": "Wụnye",
-  "situation-room.install-title": "Wụnye ụlọ nlekota ahụ dị ka ngwa kọmpụta"
+  "situation-room.install-title": "Wụnye ụlọ nlekota ahụ dị ka ngwa kọmpụta",
+  "situation-room.install-heading": "Wụnye Ụlọ Nlekota",
+  "situation-room.install-sub": "Hawkeye · maka kọmpụta a",
+  "situation-room.install-body": "Ọ na-emepe na windo nke ya kama taabụ, na-ejigide ọnọdụ ya na ngwa gị, ọ na-anọgidekwa na nbanye gị. Wepụ ya emesịa dị ka ngwa ọ bụla ọzọ."
 }

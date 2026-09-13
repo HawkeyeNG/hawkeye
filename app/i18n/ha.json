@@ -1363,5 +1363,8 @@
   "situation-room.n-disputed-left-out": "an yi jayayya kan {v0} kuma an cire su, kamar yadda yake a littafin jama'a",
   "situation-room.same-figures-public-board": "alkalumma ɗaya da allon jama'a ke nunawa",
   "situation-room.install": "Sanya",
-  "situation-room.install-title": "Sanya ɗakin sa ido a matsayin manhaja ta kwamfuta"
+  "situation-room.install-title": "Sanya ɗakin sa ido a matsayin manhaja ta kwamfuta",
+  "situation-room.install-heading": "Sanya Ɗakin Sa Ido",
+  "situation-room.install-sub": "Hawkeye · don wannan kwamfuta",
+  "situation-room.install-body": "Yana buɗewa a tagarsa maimakon shafi, yana riƙe wurinsa a jerin manhajojinka, kuma ba za ka sake shiga ba. Kana iya cire shi daga baya kamar kowace manhaja."
 }

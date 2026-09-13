@@ -194,7 +194,19 @@ echo "  size      : $(du -h "$AAB" | cut -f1)"
 # prevent, and it is invisible unless asked.
 SUBJECT=$(keytool -printcert -jarfile "$AAB" 2>/dev/null | sed -n 's/^Owner: //p' | head -1)
 SHA=$(keytool -printcert -jarfile "$AAB" 2>/dev/null | sed -n 's/^[[:space:]]*SHA256: //p' | head -1)
+# SHA1 TOO, because that is the fingerprint Play quotes back at you.
+#
+# On 2026-09-13 this bundle was uploaded to the Hawkeye LITE listing by mistake.
+# Play answered "expected ...E1:11:30:51... but got ...AA:C3:36:54..." — both of
+# which are OURS: E1 is hawkeye-lite-release.keystore, AA is this one. The error
+# reads as a signing failure and is nothing of the kind; the build was correct
+# and went to the wrong listing. Two AABs sit side by side in Downloads and the
+# Console offers two apps with nearly the same name, so this is easy to repeat.
+# Printing SHA1 makes the Console's message directly comparable to this output,
+# and naming the listing says which app the file is even for.
+SHA1=$(keytool -printcert -jarfile "$AAB" 2>/dev/null | sed -n 's/^[[:space:]]*SHA1: //p' | head -1)
 echo "  signed by : ${SUBJECT:-unknown}"
+echo "  cert SHA1 : ${SHA1:-unknown}"
 echo "  cert SHA256: ${SHA:-unknown}"
 case "$SUBJECT" in
   *Android\ Debug*) die "SIGNED WITH THE DEBUG KEY — do not upload this" ;;
@@ -204,6 +216,12 @@ esac
 # Copy where Windows can reach it for the Console upload.
 DEST="/mnt/c/Users/HP/Downloads/$(basename "$AAB" .aab)-v$VN-$VC.aab"
 if cp "$AAB" "$DEST" 2>/dev/null; then echo "  copied to : $DEST"; fi
+echo ""
+echo "  UPLOAD THIS TO:  $PKG"
+echo "                   (Play Console -> Hawkeye, NOT Hawkeye Lite)"
+echo "  If the Console says the key is wrong, compare its 'expected' SHA1 with"
+echo "  the cert SHA1 above BEFORE rebuilding anything — a mismatch there almost"
+echo "  always means the file went to the other listing, not that it is missigned."
 
 cat <<DONE
 

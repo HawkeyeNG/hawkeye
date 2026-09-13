@@ -26,6 +26,8 @@
 .mg .unit .nm { font-weight: 600; font-size: 0.92rem; margin-top: 2px; }
 .mg .unit .cd { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.76rem; color: var(--muted); }
 .mg .acts { display: flex; gap: 8px; margin-top: 13px; flex-wrap: wrap; }
+.mg .g.ask { border-left: 3px solid var(--accent); }
+.mg .g.ask .fine { font-size: 0.82rem; color: var(--muted); line-height: 1.45; margin: 8px 0 0; }
 .mg .btn.go { background: var(--accent); color: #fff; border-color: var(--accent); text-decoration: none; display: inline-block; font-weight: 600; }
 .mg .btn { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 0.82rem; cursor: pointer; }
 .mg .btn:hover { border-color: var(--accent); }
@@ -112,6 +114,12 @@ function render() {
 
 function card(g) {
   const kind = g.kind === 'cso' ? T('my-groups.kind-cso', 'Observer group') : T('my-groups.kind-campaign', 'Campaign');
+  /* ASKED, NOT JOINED. A campaign copied this person over from another roster
+     of theirs, or imported a shared one. Nothing about them has reached that
+     campaign yet and nothing will until they answer here — so this card is a
+     question, not a membership, and it does not offer the things a membership
+     offers (the room, leaving, declining a unit they have not been given). */
+  if (g.member_state === 'invited') return inviteCard(g, kind);
   const role = g.manages === 'owner' ? T('my-groups.you-own', 'You own this group — open the situation room above.')
     : g.manages === 'coordinator' ? T('my-groups.you-coordinate', 'You coordinate an area of this group — open the situation room above.')
       : T('my-groups.you-manage', 'You manage this group — open the situation room above.');
@@ -142,8 +150,37 @@ function card(g) {
   </div>`;
 }
 
+function inviteCard(g, kind) {
+  return `<div class="g ask">
+    <h2>${esc(g.name)}</h2>
+    <div class="sub">${esc(kind)} &middot; ${esc(g.contest)}${g.scope ? ' &middot; ' + esc(g.scope) : ''}</div>
+    <div class="sub" style="margin-top:6px">${T('my-groups.invited-lede',
+    'They have asked you to observe with them.')}</div>
+    <p class="fine">${T('my-groups.invited-body',
+    'They cannot see you or your reports unless you accept. Accepting tells them which of your published reports are yours, from now on — nothing before today, and nothing the public cannot already see.')}</p>
+    <div class="acts">
+      <button class="btn go" data-act="accept" data-gid="${g.id}">${T('my-groups.accept', 'Accept')}</button>
+      <button class="btn" data-act="refuse" data-gid="${g.id}" data-name="${esc(g.name)}">${T('my-groups.no-thanks', 'No thanks')}</button>
+    </div>
+  </div>`;
+}
+
 async function act(b) {
   const gid = b.dataset.gid;
+  if (b.dataset.act === 'accept') {
+    const { status } = await api('/api/groups/' + gid + '/accept', { method: 'POST' });
+    if (status !== 200) return alert(T('my-groups.accept-failed', 'Could not accept just now.'));
+    return load();
+  }
+  /* Refusing REMOVES the row rather than marking it refused: a campaign that
+     could keep a list of the people who said no would have been handed exactly
+     the fact the person withheld. Same endpoint as leaving, for that reason. */
+  if (b.dataset.act === 'refuse') {
+    if (!confirm(T('my-groups.refuse-confirm', 'Tell {name} no? They will not be told who declined, and they can ask again later.', { name: b.dataset.name }))) return;
+    const { status } = await api('/api/groups/' + gid + '/membership', { method: 'DELETE' });
+    if (status !== 200) return alert(T('my-groups.refuse-failed', 'Could not do that just now.'));
+    return load();
+  }
   if (b.dataset.act === 'decline') {
     const { status } = await api('/api/groups/' + gid + '/decline', { method: 'POST' });
     if (status !== 200) return alert(T('my-groups.send-failed', 'Could not send that just now.'));

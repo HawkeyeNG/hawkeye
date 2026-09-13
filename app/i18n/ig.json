@@ -1350,5 +1350,11 @@
   "situation-room.party-totals-so-far": "Ngụkọta pati ruo ugbu a — {v0}",
   "situation-room.download-party-totals": "Budata ngụkọta pati (CSV)",
   "situation-room.csv-disclaimer-coverage": "Ọnụọgụ ndị a bụ akụkọ ndị mmadụ kọrọ site n'ebe ntuli aka Hawkeye nwere ike ikpuchi — ọ bụghị site n'ebe ọ bụla dị na mpaghara a. Budata CSV mkpuchi ka ị hụ ebe ndị e tinyere na ndị a ka kọbeghị.",
-  "situation-room.csv-disclaimer-inec": "Nsonaazụ na ọkwa gọọmenti bụ nke INEC naanị. Hawkeye anaghị ekwupụta onye meriri, faịlụ a abụghịkwa nkwupụta."
+  "situation-room.csv-disclaimer-inec": "Nsonaazụ na ọkwa gọọmenti bụ nke INEC naanị. Hawkeye anaghị ekwupụta onye meriri, faịlụ a abụghịkwa nkwupụta.",
+  "situation-room.votes": "Vootu",
+  "situation-room.share": "Oke",
+  "situation-room.yet-to-be-counted": "A gụbeghị ha",
+  "situation-room.nth-of-m-so-far": "{v0} n'ime {v1} a gụrụ ruo ugbu a",
+  "situation-room.no-votes-counted-yet": "a gụbeghị vootu ọ bụla",
+  "situation-room.party-totals-area": "Ngụkọta pati — {v0}"
 }

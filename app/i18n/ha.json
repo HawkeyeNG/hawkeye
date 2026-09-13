@@ -1436,5 +1436,7 @@
   "my-groups.accept-failed": "An kasa karɓa a yanzu.",
   "my-groups.refuse-confirm": "A gaya wa {name} a'a? Ba za a gaya musu wanda ya ƙi ba, kuma suna iya sake tambaya nan gaba.",
   "my-groups.refuse-failed": "An kasa yin hakan a yanzu.",
-  "join.open-in-app": "Buɗe wannan gayyatar a cikin manhajar Ɗakin Sa Ido"
+  "join.open-in-app": "Buɗe wannan gayyatar a cikin manhajar Ɗakin Sa Ido",
+  "situation-room.nothing-to-copy-one": "Kowa da ke cikin ɗayan kamfen ɗinka ({v0}) yana cikin wannan jerin tuni.",
+  "situation-room.nothing-to-copy-many": "Kowa da ke cikin sauran kamfen ɗinka ({v0}) yana cikin wannan jerin tuni."
 }

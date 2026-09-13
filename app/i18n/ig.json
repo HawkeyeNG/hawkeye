@@ -1435,5 +1435,7 @@
   "my-groups.accept-failed": "Enweghị ike ịnabata ugbu a.",
   "my-groups.refuse-confirm": "Gwa {name} mba? A gaghị agwa ha onye jụrụ, ha nwekwara ike ịjụ ọzọ ma emesịa.",
   "my-groups.refuse-failed": "Enweghị ike ime nke ahụ ugbu a.",
-  "join.open-in-app": "Mepee òkù a n'ime ngwa Ọnụ Ụlọ Nlekọta"
+  "join.open-in-app": "Mepee òkù a n'ime ngwa Ọnụ Ụlọ Nlekọta",
+  "situation-room.nothing-to-copy-one": "Onye ọ bụla nọ na mkpọsa gị nke ọzọ ({v0}) anọlarị na ndepụta a.",
+  "situation-room.nothing-to-copy-many": "Onye ọ bụla nọ na mkpọsa gị ndị ọzọ ({v0}) anọlarị na ndepụta a."
 }

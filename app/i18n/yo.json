@@ -1435,5 +1435,7 @@
   "my-groups.accept-failed": "A kò lè gbà nísinsìnyí.",
   "my-groups.refuse-confirm": "Sọ fún {name} pé rárá? A kò ní sọ fún wọn ẹni tí ó kọ̀, wọ́n sì lè tún béèrè lẹ́yìn-ọ̀-rẹyìn.",
   "my-groups.refuse-failed": "A kò lè ṣe ìyẹn nísinsìnyí.",
-  "join.open-in-app": "Ṣí ìpè yìí nínú ohun-èlò Yàrá Ìṣàkóso"
+  "join.open-in-app": "Ṣí ìpè yìí nínú ohun-èlò Yàrá Ìṣàkóso",
+  "situation-room.nothing-to-copy-one": "Gbogbo ẹni tí ó wà nínú ìpolongo rẹ mìíràn ({v0}) ti wà nínú àkọsílẹ̀ yìí.",
+  "situation-room.nothing-to-copy-many": "Gbogbo ẹni tí ó wà nínú àwọn ìpolongo rẹ mìíràn ({v0}) ti wà nínú àkọsílẹ̀ yìí."
 }

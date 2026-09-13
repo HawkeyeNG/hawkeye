@@ -1321,5 +1321,9 @@
   "race.loading-units": "Loading polling units…",
   "race.n-polling-units": "{n} polling units",
   "race.units-in-ward": "Polling units in {ward}",
-  "race.n-placed-approximately": "{n} placed approximately"
+  "race.n-placed-approximately": "{n} placed approximately",
+  "situation-room.party-totals-so-far": "Party totals so far — {v0}",
+  "situation-room.download-party-totals": "Download party totals (CSV)",
+  "situation-room.csv-disclaimer-coverage": "These figures are crowd-reported from the polling units Hawkeye could cover — not from every unit in this area. Export the coverage CSV to see exactly which units are included and which are still unreported.",
+  "situation-room.csv-disclaimer-inec": "Official results and announcements are INEC's alone. Hawkeye does not declare winners and this file is not a declaration."
 }

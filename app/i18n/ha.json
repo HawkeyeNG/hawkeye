@@ -1347,5 +1347,9 @@
   "race.loading-units": "Ana loda rumfunan zaɓe…",
   "race.n-polling-units": "rumfunan zaɓe {n}",
   "race.units-in-ward": "Rumfunan zaɓe a {ward}",
-  "race.n-placed-approximately": "an sanya {n} kusan wurin"
+  "race.n-placed-approximately": "an sanya {n} kusan wurin",
+  "situation-room.party-totals-so-far": "Jimillar jam'iyyu zuwa yanzu — {v0}",
+  "situation-room.download-party-totals": "Sauke jimillar jam'iyyu (CSV)",
+  "situation-room.csv-disclaimer-coverage": "Waɗannan alkaluma rahotanni ne daga jama'a, daga rumfunan zaɓe da Hawkeye ya iya rufewa kawai — ba daga kowace rumfa a wannan yanki ba. Ka sauke CSV na rufewa don ganin ainihin rumfunan da aka haɗa da waɗanda ba a kai rahotonsu ba tukuna.",
+  "situation-room.csv-disclaimer-inec": "Sakamako da sanarwa na hukuma na INEC ne kaɗai. Hawkeye ba ya sanar da wanda ya yi nasara, kuma wannan fayil ba sanarwa ba ne."
 }

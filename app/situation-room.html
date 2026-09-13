@@ -314,6 +314,17 @@ const T = (k, en, vars) => {
    are painted by render(), so a throw in here leaves them in the old language
    while the rest of the page changes under them. Swallowed, that looked like
    "the buttons need a reload" for as long as it went unnoticed. */
+/* The party card is rewritten on every render, so the button is bound by
+   delegation rather than by id -- and there are two cards on screen when a
+   manager has an area of their own. */
+document.addEventListener('click', (e) => {
+  const b = e.target && e.target.closest && e.target.closest('[data-party-csv]');
+  if (!b) return;
+  const area = b.getAttribute('data-party-csv');
+  const t = (S.areaTally && area && area.indexOf('(') > 0) ? S.areaTally : S.tally;
+  if (t) exportPartyCsv(t, area);
+});
+
 document.addEventListener('hawkeye-lang', () => {
   try { render(); } catch (e) { console.error('[room] repaint after a language change failed', e); }
 });
@@ -797,7 +808,14 @@ function renderOverview() {
  */
 function partiesHtml(t, area) {
   if (!t) return '';
-  const rows = (t.national || []).filter((x) => x.votes > 0);
+  /* EVERY PARTY, NOT ONLY THE SCORING ONES. The tally names whoever has votes;
+     the catalogue names the field. Merged, so a campaign finds its own row on
+     day one and watches it move, rather than waiting for it to appear. */
+  const counted = new Map((t.national || []).map((x) => [String(x.party).toUpperCase(), x.votes || 0]));
+  const rows = (PARTIES.length
+    ? PARTIES.map((p) => ({ party: p.code, name: p.name, votes: counted.get(String(p.code).toUpperCase()) || 0 }))
+    : (t.national || []).map((x) => ({ party: x.party, name: '', votes: x.votes || 0 })))
+    .sort((a, b) => b.votes - a.votes || String(a.party).localeCompare(String(b.party)));
   const cast = rows.reduce((a, x) => a + x.votes, 0);
   const mine = (S.group.party || '').toUpperCase();
   const minePos = rows.findIndex((x) => String(x.party).toUpperCase() === mine);
@@ -810,7 +828,7 @@ function partiesHtml(t, area) {
     'No results published yet for {v0}.', { v0: areaNote })}</div></div>`;
   }
 
-  return `<h2 class="sr-h2">Party totals so far &mdash; ${areaNote}</h2>
+  return `<h2 class="sr-h2">${T('situation-room.party-totals-so-far', 'Party totals so far — {v0}', { v0: areaNote })}</h2>
     <div class="sr-card">
       ${mine && minePos >= 0 ? `<div class="sr-mine">
         <span class="sr-emblem">${LOGOS[mine] ? `<img src="${esc(LOGOS[mine])}" alt="" />` : ''}</span>
@@ -830,6 +848,13 @@ function partiesHtml(t, area) {
           </tr>`;
         }).join('')}
       </tbody></table></div>
+      ${cast ? '' : `<div class="sr-msg">${T('situation-room.no-results-published-yet-for',
+        'No results published yet for {v0}.', { v0: areaNote })}</div>`}
+      <div class="sr-tools" style="padding-top:10px">
+        <div class="spacer"></div>
+        <button class="sr-btn" data-party-csv="${esc(area)}">${
+          T('situation-room.download-party-totals', 'Download party totals (CSV)')}</button>
+      </div>
       <div class="sr-count">${n(t.unitsReporting || 0)} unit${t.unitsReporting === 1 ? '' : 's'} counted
         ${t.inDispute ? `&middot; ${n(t.inDispute)} disputed and left out, as on the public docket` : ''}
         &middot; the same figures the public board shows</div>
@@ -1216,6 +1241,43 @@ function drill(level, key) {
   S.coverage = null;
   toTop();
   loadTab(true);
+}
+
+/* THE DISCLAIMER TRAVELS WITH THE FILE. A spreadsheet mailed to a party
+   office arrives without the console around it, and these two sentences are
+   the ones that stop a crowd-reported subtotal being read as a result. They
+   are rows, not a comment prefix: a "#" line is a row to a spreadsheet anyway,
+   and one that looks like an accident. */
+function exportPartyCsv(t, area) {
+  const counted = new Map((t.national || []).map((x) => [String(x.party).toUpperCase(), x.votes || 0]));
+  const rows = (PARTIES.length
+    ? PARTIES.map((p) => ({ code: p.code, name: p.name, votes: counted.get(String(p.code).toUpperCase()) || 0 }))
+    : (t.national || []).map((x) => ({ code: x.party, name: '', votes: x.votes || 0 })))
+    .sort((a, b) => b.votes - a.votes || String(a.code).localeCompare(String(b.code)));
+  const cast = rows.reduce((a, x) => a + x.votes, 0);
+  const q = (v) => JSON.stringify(String(v == null ? '' : v));
+  const lines = [
+    [q('Hawkeye — party totals'), q(area || '')].join(','),
+    [q('Generated'), q(new Date().toISOString())].join(','),
+    [q(T('situation-room.csv-disclaimer-coverage',
+      'These figures are crowd-reported from the polling units Hawkeye could cover — not from every unit in this area. Export the coverage CSV to see exactly which units are included and which are still unreported.'))].join(','),
+    [q(T('situation-room.csv-disclaimer-inec',
+      'Official results and announcements are INEC\'s alone. Hawkeye does not declare winners and this file is not a declaration.'))].join(','),
+    '',
+    ['party_code', 'party_name', 'votes', 'share_pct'].join(','),
+    ...rows.map((x) => [q(x.code), q(x.name), x.votes,
+      cast ? ((x.votes / cast) * 100).toFixed(1) : '0.0'].join(',')),
+    '',
+    [q('units_counted'), t.unitsReporting || 0].join(','),
+    [q('disputed_and_excluded'), t.inDispute || 0].join(','),
+    [q('total_votes'), cast].join(','),
+  ];
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+  a.download = 'hawkeye-party-totals-'
+    + String(area || 'area').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 function exportCsv(level, rows) {
@@ -1771,6 +1833,10 @@ async function loadGroup() {
 /* Party code -> emblem path, from the manifest the ballot boards already use.
    Fetched once; a failure just means no emblem, never a broken console. */
 let LOGOS = {};
+/* Every registered party, so the table can list them all before a single
+   result exists. Failure is not fatal: the table falls back to whoever has
+   votes, which is what it did before. */
+let PARTIES = [];
 
 /* The slug in the address bar, if we arrived at /room/<slug>. */
 /* ?room= is how sign-in hands the room back: the /room/<slug> path cannot
@@ -1795,6 +1861,7 @@ function syncUrl(g) {
 async function boot(preferId) {
   LOGOS = await (window.fetchData ? window.fetchData('logos/manifest.json') : fetch('logos/manifest.json'))
     .then((r) => r.json()).catch(() => ({}));
+  PARTIES = await api('/api/parties').then((r) => (Array.isArray(r.body) ? r.body : [])).catch(() => []);
   const { body } = await api('/api/groups');
   S.groups = (body && body.managing) || [];
   if (!S.groups.length) return renderWelcome();

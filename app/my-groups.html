@@ -26,6 +26,7 @@
 .mg .unit .nm { font-weight: 600; font-size: 0.92rem; margin-top: 2px; }
 .mg .unit .cd { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.76rem; color: var(--muted); }
 .mg .acts { display: flex; gap: 8px; margin-top: 13px; flex-wrap: wrap; }
+.mg .btn.go { background: var(--accent); color: #fff; border-color: var(--accent); text-decoration: none; display: inline-block; font-weight: 600; }
 .mg .btn { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 0.82rem; cursor: pointer; }
 .mg .btn:hover { border-color: var(--accent); }
 .mg .btn.warn:hover { border-color: #c4463a; color: #c4463a; }
@@ -115,12 +116,12 @@ function card(g) {
     : g.manages === 'coordinator' ? T('my-groups.you-coordinate', 'You coordinate an area of this group — open the situation room above.')
       : T('my-groups.you-manage', 'You manage this group — open the situation room above.');
   const declined = g.assign_state === 'declined';
-  /* Linked ONLY when this observer also manages it. A link into a console you
-     cannot enter is a dead end dressed up as a feature — the console would just
-     tell them it is not their room. */
-  const title = g.manages
-    ? `<a href="/room/${esc(g.slug || '')}" style="color:var(--accent)">${esc(g.name)}</a>`
-    : esc(g.name);
+  /* Linked for EVERY member now, not only managers. The room used to refuse
+     anyone without a role, so a link would have been a dead end; it now opens
+     read-only for the people on the roster, which is the screen they most need
+     — it is where they can see whether the campaign they joined is actually
+     covering the race. */
+  const title = `<a href="/room/${esc(g.slug || '')}" style="color:var(--accent)">${esc(g.name)}</a>`;
   return `<div class="g">
     <h2>${title}</h2>
     <div class="sub">${esc(kind)} &middot; ${esc(g.contest)}${g.scope ? ' &middot; ' + esc(g.scope) : ''}</div>
@@ -132,6 +133,9 @@ function card(g) {
     </div>` : `<div class="declined">${T('my-groups.no-unit', 'They have not given you a polling unit.')}</div>`}
     ${declined ? `<div class="declined">${T('my-groups.declined-note', 'You told them this is not where you will be. They can suggest another one.')}</div>` : ''}
     <div class="acts">
+      ${/* A HIGHLIGHTED HEADING IS NOT A BUTTON: the room was reachable only by
+           tapping the campaign name, and a coloured heading reads as a heading,
+           so people who had access never found the room they had access to. */''}<a class="btn go" href="/room/${esc(g.slug || '')}">${T('my-groups.open-room', 'Open situation room')}</a>
       ${g.assigned_pu && !declined ? `<button class="btn" data-act="decline" data-gid="${g.id}">${T('my-groups.not-where', 'That is not where I will be')}</button>` : ''}
       <button class="btn warn" data-act="leave" data-gid="${g.id}" data-name="${esc(g.name)}">${T('my-groups.leave', 'Leave this group')}</button>
     </div>

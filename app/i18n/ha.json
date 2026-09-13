@@ -1190,7 +1190,7 @@
   "situation-room.who-manages-this-room": "Wa ke gudanar da wannan ɗakin",
   "situation-room.yet-to-report": "Ba su bayar da rahoto ba tukuna",
   "situation-room.you-manage-the-observers-in-your-area": "Kai ne ke gudanar da masu lura a yankinka; jimillar ta kamfen ce.",
-  "situation-room.your-area": "Yankinka",
+  "situation-room.your-area": "{v0} (yankinka)",
   "situation-room.yours": "naka",
   "map-unit.this-unit-already-has-a-confirmed-location": "Wannan rukunin zaɓe yana da wurin da aka tabbatar, don haka babu abin da za a ɗauka a nan — har yanzu za ka iya adana shi a matsayin rukunin zaɓenka.",
   "info.why-collation-forms-matter.title": "Dalilin da ya sa fom ɗin tattarawa ke da muhimmanci",
@@ -1357,5 +1357,9 @@
   "situation-room.yet-to-be-counted": "Ba a ƙirga ba tukuna",
   "situation-room.nth-of-m-so-far": "{v0} cikin {v1} da aka ƙirga zuwa yanzu",
   "situation-room.no-votes-counted-yet": "ba a ƙirga ƙuri'u ba tukuna",
-  "situation-room.party-totals-area": "Jimillar jam'iyyu — {v0}"
+  "situation-room.party-totals-area": "Jimillar jam'iyyu — {v0}",
+  "situation-room.one-unit-counted": "an ƙirga rumfa 1",
+  "situation-room.n-units-counted": "an ƙirga rumfuna {v0}",
+  "situation-room.n-disputed-left-out": "an yi jayayya kan {v0} kuma an cire su, kamar yadda yake a littafin jama'a",
+  "situation-room.same-figures-public-board": "alkalumma ɗaya da allon jama'a ke nunawa"
 }

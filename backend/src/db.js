@@ -694,6 +694,31 @@ for (const ddl of [
   // index every coverage query full-scans 176,846 rows.
   'CREATE INDEX IF NOT EXISTS idx_pu_senatorial ON polling_units(senatorial)',
   'CREATE INDEX IF NOT EXISTS idx_pu_fedcon ON polling_units(federal_constituency)',
+  /**
+   * MEMBERSHIP THAT HAS NOT BEEN AGREED TO YET.
+   *
+   * '' is an ordinary member, who tapped an invite and consented. 'invited'
+   * is somebody a manager COPIED in — from another campaign they own, or from
+   * a shared roster CSV — and who has not answered yet.
+   *
+   * The distinction is a privacy boundary, not a label. Joining is what tells
+   * a campaign which published reports are yours; a person copied across
+   * without being asked must therefore be invisible to that campaign until
+   * they say yes. Every roster, feed and coverage query filters on it.
+   */
+  "ALTER TABLE group_members ADD COLUMN member_state TEXT NOT NULL DEFAULT ''",
+  /**
+   * The observer's identifier on a SHARED roster.
+   *
+   * Campaigns in the same party swap observers as a CSV, so the file has to
+   * name a person in a way the next campaign's server can resolve — and the
+   * raw observer id would do that far too well: a file of ids 1..5000 would
+   * let anyone push a pending invitation at every observer in the country.
+   * This is an HMAC of the id under a server secret, so a code can only come
+   * from a roster we exported, and it carries nothing about the person.
+   */
+  'ALTER TABLE observers ADD COLUMN share_code TEXT',
+  'CREATE UNIQUE INDEX IF NOT EXISTS idx_observers_share ON observers(share_code)',
   'CREATE INDEX IF NOT EXISTS idx_group_members_obs ON group_members(observer_id)',
   'CREATE INDEX IF NOT EXISTS idx_group_members_pu ON group_members(assigned_pu)',
 ]) {

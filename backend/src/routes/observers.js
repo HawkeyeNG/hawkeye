@@ -520,7 +520,7 @@ observersRouter.post('/my-unit', requireObserver, (req, res) => {
   // empty rows: a unit a manager assigned, or one the member declined (which
   // keeps its assigned_pu), is never overwritten by a save. Silent, like
   // confirm-proposed: it moves nobody, it only fills a blank.
-  db.prepare("UPDATE group_members SET assigned_pu = ?, assign_state = 'proposed' WHERE observer_id = ? AND assigned_pu IS NULL")
+  db.prepare("UPDATE group_members SET assigned_pu = ?, assign_state = 'proposed' WHERE observer_id = ? AND assigned_pu IS NULL AND member_state = ''")
     .run(puCode, req.observer.id);
   notifyObserver(req.observer, 'tg.savedUnit', {
     name: pu.name, code: pu.pu_code, ward: pu.ward, lga: pu.lga, state: pu.state,

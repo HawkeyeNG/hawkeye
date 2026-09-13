@@ -40,6 +40,79 @@ const INVITE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const MAX_NAME = 80;
 
 const now = () => Date.now();
+
+/**
+ * The observer's name on a roster that leaves this campaign.
+ *
+ * An HMAC of their id under the server's secret, truncated to 12 base32
+ * characters — Crockford's alphabet, so a code read aloud down a phone line
+ * cannot be an I for a 1 or an O for a 0, which is how these will actually
+ * travel between two party offices.
+ *
+ * IT IS NOT THE ID, deliberately. A CSV of observer ids would let anyone
+ * generate a file of 1..5000 and push a pending invitation at every observer
+ * in the country; a code can only have come from a roster we exported. It also
+ * carries nothing about the person — no phone, no name, no unit — so a roster
+ * that leaks discloses only that some set of accounts exists.
+ *
+ * Stable and stored, because it has to resolve in the OTHER direction when the
+ * receiving campaign uploads the file, and re-deriving it for 176k observers
+ * on every import is not a lookup.
+ */
+const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+function shareCode(observerId) {
+  const row = db.prepare('SELECT share_code FROM observers WHERE id = ?').get(observerId);
+  if (!row) return null;
+  if (row.share_code) return row.share_code;
+  const mac = crypto.createHmac('sha256', config.jwtSecret).update('roster:' + observerId).digest();
+  let code = '';
+  for (let i = 0; i < 12; i += 1) code += B32[mac[i] & 31];
+  db.prepare('UPDATE observers SET share_code = ? WHERE id = ?').run(code, observerId);
+  return code;
+}
+const observerByShareCode = (code) =>
+  db.prepare('SELECT id FROM observers WHERE share_code = ?').get(String(code || '').trim().toUpperCase())?.id || null;
+
+/**
+ * Put people on a roster they have NOT agreed to be on — pending their answer.
+ *
+ * The one rule this has to hold: a copied observer is invisible to the
+ * receiving campaign until they accept. Joining a group is what tells it which
+ * published reports are yours, and a manager must not be able to acquire that
+ * by pasting a file. So the row lands as member_state='invited', every roster
+ * and feed query filters those out, and the only thing the campaign learns
+ * before an answer is a count of invitations outstanding.
+ *
+ * Skips anyone already on the target roster — invited or joined — so running
+ * it twice, or importing a file that overlaps the last one, is harmless.
+ */
+function inviteObservers(group, observerIds, actorId) {
+  const t = now();
+  const add = db.prepare(
+    `INSERT OR IGNORE INTO group_members (group_id, observer_id, assigned_pu, assign_state, member_state, joined_at)
+     VALUES (?, ?, NULL, '', 'invited', ?)`,
+  );
+  const added = [];
+  const run = db.transaction(() => {
+    for (const id of observerIds) {
+      if (id === actorId) continue;
+      if (add.run(group.id, id, t).changes) added.push(id);
+    }
+  });
+  run();
+  // Outside the transaction: a push that fails must not roll back a roster.
+  for (const id of added) {
+    notifyObserverId(id, 'tg.group-invited', { group: group.name });
+    pushNote(id, {
+      kind: 'group_invite',
+      titleKey: 'note.group-invited.title',
+      bodyKey: 'note.group-invited.body',
+      params: { group: group.name },
+      url: 'https://hawkeye.com.ng/my-groups.html',
+    });
+  }
+  return added.length;
+}
 const newToken = () => crypto.randomBytes(16).toString('base64url');
 
 // --- membership helpers -------------------------------------------------------
@@ -503,7 +576,7 @@ groupsRouter.get('/groups', requireObserver, (req, res) => {
     .prepare(
       `SELECT g.id, g.name, g.kind, g.contest, g.scope, g.party, g.slug,
               (SELECT role FROM group_managers WHERE group_id = g.id AND observer_id = m.observer_id) AS manages,
-              m.assigned_pu, m.assign_state, m.joined_at,
+              m.assigned_pu, m.assign_state, m.joined_at, m.member_state,
               pu.name AS assigned_name, pu.ward AS assigned_ward, pu.lga AS assigned_lga, pu.state AS assigned_state
          FROM group_members m JOIN campaign_groups g ON g.id = m.group_id
          LEFT JOIN polling_units pu ON pu.pu_code = m.assigned_pu
@@ -515,13 +588,16 @@ groupsRouter.get('/groups', requireObserver, (req, res) => {
 
 groupsRouter.get('/groups/:id', requireObserver, requireViewer, (req, res) => {
   const g = req.group;
-  const members = db.prepare('SELECT COUNT(*) n FROM group_members WHERE group_id = ?').get(g.id).n;
+  const members = db.prepare("SELECT COUNT(*) n FROM group_members WHERE group_id = ? AND member_state = ''").get(g.id).n;
+  // Shown as a number and nothing else: who has been invited and not answered
+  // is not the campaign's business until they answer.
+  const pending = db.prepare("SELECT COUNT(*) n FROM group_members WHERE group_id = ? AND member_state = 'invited'").get(g.id).n;
   const assigned = db.prepare("SELECT COUNT(*) n FROM group_members WHERE group_id = ? AND assigned_pu IS NOT NULL AND assign_state != 'declined'").get(g.id).n;
   res.json({
     id: g.id, name: g.name, kind: g.kind, contest: g.contest, scope: g.scope, party: g.party || null,
     slug: g.slug || null,
     scope_kind: g.scope ? scopeColumn(g.contest) : '',
-    members, assigned,
+    members, assigned, pending,
     // Shipped with the detail rather than a second endpoint: the console
     // already fetches this, and the list changes only if the constitution does.
     zones: ZONE_NAMES,
@@ -609,6 +685,138 @@ groupsRouter.delete('/groups/:id/members/:observerId', requireObserver, requireM
       .run(req.group.id, observerId).changes;
   });
   if (!drop()) return res.status(404).json({ error: 'not_a_member' });
+  res.json({ ok: true });
+});
+
+/**
+ * Campaigns this owner could copy observers FROM.
+ *
+ * A single person runs the presidential room in January and a governorship
+ * room for the same party a month later, and rebuilding a roster of several
+ * hundred people by re-sending invites to all of them is not a task anyone
+ * completes. Only rooms they OWN — a manager's access to one campaign is not a
+ * licence to lift its people into another — and only rooms with somebody in
+ * them to lift.
+ */
+groupsRouter.get('/groups/:id/sources', requireObserver, requireManager, (req, res) => {
+  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
+  const rows = db
+    .prepare(
+      `SELECT g.id, g.name, g.contest, g.scope,
+              (SELECT COUNT(*) FROM group_members m
+                WHERE m.group_id = g.id AND m.member_state = ''
+                  AND m.observer_id NOT IN (SELECT observer_id FROM group_members WHERE group_id = ?)) AS copyable
+         FROM campaign_groups g
+         JOIN group_managers gm ON gm.group_id = g.id AND gm.observer_id = ? AND gm.role = 'owner'
+        WHERE g.id != ?
+        ORDER BY g.created_at DESC`,
+    )
+    .all(req.group.id, req.observer.id, req.group.id);
+  res.json({ sources: rows });
+});
+
+/**
+ * Copy a roster across. OWNER OF BOTH ROOMS, and copied people are PENDING.
+ *
+ * Nobody arrives as a member. They arrive as an invitation they have to answer,
+ * because a campaign learning which published reports belong to which observer
+ * is precisely what joining consents to — and the person who consented to it
+ * for the presidential race did not consent to it for the governorship one.
+ * The alert is the point of the feature, not a courtesy on top of it.
+ *
+ * Anyone already on this roster is skipped, invited or joined, so a second run
+ * changes nothing.
+ */
+groupsRouter.post('/groups/:id/copy-members', requireObserver, requireManager, (req, res) => {
+  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
+  const fromId = Number(req.body?.from_group_id);
+  const src = db.prepare('SELECT * FROM campaign_groups WHERE id = ?').get(fromId);
+  if (!src || src.id === req.group.id) return res.status(404).json({ error: 'no_such_group' });
+  const mine = managerRow(fromId, req.observer.id);
+  if (!mine || !isOwner(mine)) return res.status(403).json({ error: 'not_your_group' });
+
+  const ids = db
+    .prepare("SELECT observer_id FROM group_members WHERE group_id = ? AND member_state = ''")
+    .all(fromId)
+    .map((r) => r.observer_id);
+  const invited = inviteObservers(req.group, ids, req.observer.id);
+  notifyMaster(`situation room · copied ${invited} observer(s) from "${src.name}" into "${req.group.name}"`);
+  res.json({ ok: true, invited, considered: ids.length });
+});
+
+/**
+ * The roster as a file, so two campaigns in one party can share observers.
+ *
+ * WHAT IS IN IT is the whole design. A share code (see shareCode) names the
+ * person to the next campaign's server and to nobody else; the label is the
+ * exporting campaign's own note-to-self and travels only because a roster of
+ * bare codes is unreadable by the human who has to check it before importing.
+ * NO PHONE NUMBERS, no unit, no assignment: an observer's unit is where they
+ * will be standing on election day, and that is not a fact one campaign may
+ * hand to another about a person who has not agreed to it.
+ */
+groupsRouter.get('/groups/:id/roster.csv', requireObserver, requireManager, (req, res) => {
+  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
+  const rows = db
+    .prepare("SELECT observer_id, label FROM group_members WHERE group_id = ? AND member_state = '' ORDER BY joined_at")
+    .all(req.group.id);
+  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const out = [
+    '# Hawkeye shared roster',
+    `# campaign,${esc(req.group.name)}`,
+    `# exported,${new Date().toISOString()}`,
+    '# A share code names an observer to Hawkeye and to nobody else. Importing this',
+    '# file INVITES each of them to your campaign — it does not add them. Every one',
+    '# of them chooses whether to accept, and until they do you cannot see them.',
+    '# Their phone number, polling unit and assignment are deliberately not here.',
+    'share_code,label',
+    ...rows.map((r) => `${shareCode(r.observer_id)},${esc(r.label || '')}`),
+  ].join('\n');
+  res.set('content-type', 'text/csv; charset=utf-8');
+  res.set('content-disposition', `attachment; filename="hawkeye-roster-${(req.group.slug || 'campaign')}.csv"`);
+  res.send(out);
+});
+
+/**
+ * The other half: a roster file becomes a list of invitations.
+ *
+ * Unknown codes are COUNTED AND RETURNED, never silently dropped — a manager
+ * who pasted the wrong column, or a file from a different Hawkeye instance,
+ * otherwise sees "0 invited" and no reason for it.
+ */
+groupsRouter.post('/groups/:id/import-roster', requireObserver, requireManager, (req, res) => {
+  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
+  const codes = Array.isArray(req.body?.codes) ? req.body.codes.slice(0, 5000) : null;
+  if (!codes) return res.status(400).json({ error: 'no_codes' });
+  const ids = [];
+  let unknown = 0;
+  for (const c of codes) {
+    const id = observerByShareCode(c);
+    if (id) ids.push(id); else unknown += 1;
+  }
+  const invited = inviteObservers(req.group, [...new Set(ids)], req.observer.id);
+  notifyMaster(`situation room · imported roster into "${req.group.name}": ${invited} invited, ${unknown} unknown`);
+  res.json({ ok: true, invited, unknown, matched: ids.length });
+});
+
+/**
+ * The observer's answer. Accepting is what makes them visible to the campaign;
+ * declining takes the row away entirely, so a campaign cannot keep a standing
+ * list of people who said no.
+ */
+groupsRouter.post('/groups/:id/accept', requireObserver, (req, res) => {
+  const r = db.prepare("UPDATE group_members SET member_state = '', joined_at = ? WHERE group_id = ? AND observer_id = ? AND member_state = 'invited'")
+    .run(now(), Number(req.params.id), req.observer.id);
+  if (!r.changes) return res.status(404).json({ error: 'nothing_to_accept' });
+  /* joined_at moves to the moment of consent, NOT the moment they were copied.
+     The feed shows a member's reports from joined_at forward, so leaving it at
+     the copy date would hand the new campaign reports filed before anyone
+     agreed to anything. */
+  const saved = db.prepare('SELECT pu_code FROM saved_units WHERE observer_id = ?').get(req.observer.id);
+  if (saved?.pu_code) {
+    db.prepare("UPDATE group_members SET assigned_pu = ?, assign_state = 'proposed' WHERE group_id = ? AND observer_id = ? AND assigned_pu IS NULL")
+      .run(saved.pu_code, Number(req.params.id), req.observer.id);
+  }
   res.json({ ok: true });
 });
 
@@ -1187,7 +1395,8 @@ groupsRouter.get('/groups/:id/activity', requireObserver, requireViewer, (req, r
          FROM submissions s
          JOIN polling_units pu ON pu.pu_code = s.pu_code
          LEFT JOIN group_members m
-           ON m.observer_id = s.observer_id AND m.group_id = ? AND s.created_at >= m.joined_at
+           ON m.observer_id = s.observer_id AND m.group_id = ? AND m.member_state = ''
+              AND s.created_at >= m.joined_at
         WHERE s.contest = ?${sc.sql}
         ORDER BY s.created_at DESC LIMIT 30`,
     )
@@ -1323,7 +1532,7 @@ groupsRouter.get('/groups/:id/team', requireObserver, requireViewer, (req, res) 
          LEFT JOIN polling_units apu ON apu.pu_code = m.assigned_pu
          LEFT JOIN submissions s ON s.observer_id = m.observer_id AND s.contest = ? AND s.created_at >= m.joined_at
          LEFT JOIN polling_units rpu ON rpu.pu_code = s.pu_code
-        WHERE m.group_id = ?${sc.sql}
+        WHERE m.group_id = ? AND m.member_state = ''${sc.sql}
         ORDER BY m.joined_at`,
     )
     .all(req.group.contest, req.group.id, ...sc.params);

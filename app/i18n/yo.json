@@ -1338,5 +1338,7 @@
   "contest.governorship": "Gómìnà",
   "contest.state-house-of-assembly": "Ilé Ìgbìmọ̀ Aṣòfin Ìpínlẹ̀",
   "contest.by-election": "Ìdìbò Ìfẹ̀yìntì {v0}{v1}",
-  "common.nigeria": "Nàìjíríà"
+  "common.nigeria": "Nàìjíríà",
+  "race.map-of-seat-by-ward": "Máàpù {seat}, ní ti ẹ̀ka",
+  "race.seat-wards": "{seat} — ẹ̀ka {n}"
 }

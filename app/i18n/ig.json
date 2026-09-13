@@ -1346,5 +1346,9 @@
   "race.loading-units": "Na-ebu ebe ntuli aka…",
   "race.n-polling-units": "ebe ntuli aka {n}",
   "race.units-in-ward": "Ebe ntuli aka na {ward}",
-  "race.n-placed-approximately": "edobere {n} nso nso"
+  "race.n-placed-approximately": "edobere {n} nso nso",
+  "situation-room.party-totals-so-far": "Ngụkọta pati ruo ugbu a — {v0}",
+  "situation-room.download-party-totals": "Budata ngụkọta pati (CSV)",
+  "situation-room.csv-disclaimer-coverage": "Ọnụọgụ ndị a bụ akụkọ ndị mmadụ kọrọ site n'ebe ntuli aka Hawkeye nwere ike ikpuchi — ọ bụghị site n'ebe ọ bụla dị na mpaghara a. Budata CSV mkpuchi ka ị hụ ebe ndị e tinyere na ndị a ka kọbeghị.",
+  "situation-room.csv-disclaimer-inec": "Nsonaazụ na ọkwa gọọmenti bụ nke INEC naanị. Hawkeye anaghị ekwupụta onye meriri, faịlụ a abụghịkwa nkwupụta."
 }

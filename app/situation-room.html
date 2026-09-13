@@ -140,6 +140,17 @@
   letter-spacing: 0.08em; color: var(--muted); border-bottom: 0;
 }
 
+/* The party card's last row: the footnote on the left, the download on the
+   right, the card's closing rule under both. .sr-count keeps its own rule, so
+   it is lifted onto the row instead of drawn twice. */
+.sr-foot {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; padding-top: 8px; margin-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.sr-foot .sr-count { flex: 1 1 240px; border-top: 0; margin-top: 0; padding-top: 0; }
+.sr-foot .sr-btn { flex: none; }
+
 .sr-tools { display: flex; align-items: center; gap: 10px; padding: 0 0 10px; }
 .sr-tools .sr-sel { flex: 1 1 auto; min-width: 0; text-overflow: ellipsis; }
 .sr-tools .sr-btn { flex: none; }
@@ -920,17 +931,16 @@ function partiesHtml(t, area) {
       </table></div>
       ${cast ? '' : `<div class="sr-msg">${T('situation-room.no-results-published-yet-for',
         'No results published yet for {v0}.', { v0: areaNote })}</div>`}
-      <div class="sr-tools" style="padding-top:10px">
-        <div class="spacer"></div>
-        <button class="sr-btn" data-party-csv="${esc(area)}">${
-          T('situation-room.download-party-totals', 'Download party totals (CSV)')}</button>
-      </div>
-      <div class="sr-count">${t.unitsReporting === 1
+      <div class="sr-foot">
+        <div class="sr-count">${t.unitsReporting === 1
     ? T('situation-room.one-unit-counted', '1 unit counted')
     : T('situation-room.n-units-counted', '{v0} units counted', { v0: n(t.unitsReporting || 0) })}
         ${t.inDispute ? '&middot; ' + T('situation-room.n-disputed-left-out',
     '{v0} disputed and left out, as on the public docket', { v0: n(t.inDispute) }) : ''}
         &middot; ${T('situation-room.same-figures-public-board', 'the same figures the public board shows')}</div>
+        <button class="sr-btn" data-party-csv="${esc(area)}">${
+    T('situation-room.download-party-totals', 'Download party totals (CSV)')}</button>
+      </div>
     </div>`;
 }
 

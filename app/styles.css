@@ -674,6 +674,15 @@ input[type="checkbox"], input[type="radio"] {
    as a checkbox caption it should read as a sentence and sit on one line. */
 label > input[type="checkbox"], label > input[type="radio"] { flex: none; }
 
+/* THE SAME TRAP, A SECOND TIME. `input, select { display: block }` above is an
+   AUTHOR rule and beats the user agent's `[hidden] { display: none }`, so every
+   `<input type="file" hidden>` used as the target of a styled button drew its
+   own full-width "Choose File" control next to it — two buttons doing one job.
+   The install button in the situation-room header needed exactly this fix; a
+   rule here means the next one does not.
+   No !important needed: `input[hidden]` is one attribute more specific. */
+input[hidden], select[hidden], textarea[hidden] { display: none; }
+
 input:hover, select:hover { border-color: var(--green-700); }
 input:focus, select:focus, button:focus, summary:focus, a:focus {
   outline: 3px solid var(--focus);

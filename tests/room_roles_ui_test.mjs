@@ -489,6 +489,72 @@ SOURCES = [{ id: 9, name: 'PresRoom', contest: 'PRES', scope: '', copyable: 4 }]
 }
 SOURCES = [];
 
+/* --- the installed window's titlebar says it once ----------------------- */
+/* An installed window's title is composed by the browser as
+   "<manifest name> - <document.title>", and both halves said the same thing:
+   "Hawkeye Situation Room - Hawkeye — Situation Room". The manifest half is
+   fixed at install and cannot follow the reader's language, so it shrank to the
+   one word that needs no translation and the title carries the meaning.
+   display-mode is EMULATED here, because an installed window is the only place
+   the defect exists and a browser tab would never have shown it. */
+MEMBER_ONLY = false;
+ME = { role: 'owner', scope_kind: '', scope_value: '' };
+{
+  const manifest = JSON.parse(
+    (await import('node:fs')).readFileSync('/home/elrio/hawkeye/app/room.webmanifest', 'utf8'));
+  check('the manifest name is the one word that needs no translating', manifest.name, 'Hawkeye');
+  check('CONTROL: and it is not the phrase that was being doubled', manifest.name,
+    (v) => !/situation/i.test(v));
+
+  const titleIn = async (lang, standalone) => {
+    const p = await b.newPage({ viewport: { width: 1100, height: 800 } });
+    /* Playwright's emulateMedia covers colour-scheme and friends but NOT
+       display-mode — it ignored the override silently and the standalone branch
+       simply never ran, so the first version of this check failed against
+       correct code. Stubbing the one query instead, narrowly: the real
+       matchMedia still answers everything else, because the scrollbar rules
+       ask it about hover and would otherwise be answered by a stub.
+       WHAT THIS DOES AND DOES NOT PROVE: that the title narrows and translates
+       WHEN the page believes it is installed. Whether Chrome reports
+       display-mode: standalone in a real installed window is the browser's
+       contract, not ours, and is not exercised here. */
+    if (standalone) {
+      await p.addInitScript(() => {
+        const real = window.matchMedia.bind(window);
+        window.matchMedia = (q) => (/display-mode:\s*standalone/.test(q)
+          ? { matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }
+          : real(q));
+      });
+    }
+    await p.addInitScript((l) => {
+      const enc = (o) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+      try {
+        localStorage.setItem('hawkeye_lang', l);
+        localStorage.setItem('hawkeye_token', enc({ alg: 'none' }) + '.' + enc({ sub: 1, exp: 4102444800 }) + '.x');
+      } catch (e) { /* private mode */ }
+    }, lang);
+    await p.goto(`${base}/situation-room.html`, { waitUntil: 'networkidle' });
+    const t = await p.title();
+    await p.close();
+    return t;
+  };
+
+  /* Installed: one "Hawkeye" comes from the manifest, so the title must not
+     repeat it — but it must still name the room, in the reader's language. */
+  const appEn = await titleIn('en', true);
+  check('installed: the title does not repeat the brand', appEn, (t) => !/Hawkeye/i.test(t));
+  check('installed: and still names the room', appEn, 'Situation Room');
+  const appHa = await titleIn('ha', true);
+  check('installed: translated for a Hausa reader', appHa, 'Ɗakin Sa Ido');
+  check('CONTROL: which is not the English string', appHa, (t) => t !== appEn);
+
+  /* A browser tab has no app name in front of it, so it keeps the brand. */
+  const tabEn = await titleIn('en', false);
+  check('a tab keeps the full name', tabEn, 'Hawkeye — Situation Room');
+  const tabHa = await titleIn('ha', false);
+  check('and translates it too', tabHa, 'Hawkeye — Ɗakin Sa Ido');
+}
+
 /* --- and the way IN to the room ------------------------------------------ */
 /* A HIGHLIGHTED HEADING IS NOT A BUTTON. The room was reachable only by tapping
    the campaign's name, and a coloured heading reads as a heading — so people who

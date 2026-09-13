@@ -88,7 +88,10 @@ rm -f "$PUB/senate_map.png" "$PUB/email-banner.png" "$PUB/logos/sources.json" \
 # That is a fact about today's code, not a law, so it is asserted rather than
 # trusted: the day a page adds a link to the admin console, this fails here
 # instead of shipping a link that 404s on the observer's phone.
-# It looks for a LINK, not a mention. Bare-name matching was tried first and
+# It looks for a LINK, not a mention — and a SELECTOR is neither. menu.js asks
+# querySelector('a[href="situation-room.html"]') before adding that link, which
+# is a lookup for an anchor rather than an anchor, and matching it failed an
+# iOS build on the one line whose job is to check whether the link exists. Bare-name matching was tried first and
 # failed honestly: authgate.js keeps a no-auth-required allowlist that names
 # meta.html and preview.html, and several files discuss preview.html in prose
 # comments. Naming a page that no longer ships breaks nothing; NAVIGATING to
@@ -96,7 +99,8 @@ rm -f "$PUB/senate_map.png" "$PUB/email-banner.png" "$PUB/logos/sources.json" \
 for gone in install-card.png admin.html post.html bench.html meta.html preview.html situation-room.html; do
   esc=$(echo "$gone" | sed 's/\./\\./g')
   hit=$(grep -rnE "(href|src)=[\"'][^\"']*$esc|location([.]href)?[[:space:]]*=[[:space:]]*[\"'][^\"']*$esc" \
-        "$PUB" --include='*.js' --include='*.html' 2>/dev/null | head -3)
+        "$PUB" --include='*.js' --include='*.html' 2>/dev/null \
+        | grep -vE "querySelector(All)?\(|[.]closest\(|[.]matches\(" | head -3)
   [ -z "$hit" ] || { echo "GATE_FAIL: $gone was stripped but is still LINKED from: $hit"; exit 1; }
 done
 echo "  ok: no shipped page links to a stripped tool page"

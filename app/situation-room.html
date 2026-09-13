@@ -13,6 +13,11 @@
   <title data-i18n="situation-room.title">Hawkeye — Situation Room</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <!-- THE ROOM'S OWN MANIFEST. The site's manifest starts at /observe.html, so
+       "Install" from this page would have installed the observer app. Scope
+       stays "/" because a room lives at /room/<slug> as well as here, and a
+       manifest takes one scope, not two. -->
+  <link rel="manifest" href="room.webmanifest?v=1" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=179" />
   <script src="native.js?v=116"></script>
@@ -42,6 +47,18 @@
 :root[data-theme="dark"] .sr { --ok: #3ecf80; --off: #6fa4ff; --wait: #e0a341; }
 
 .sr { max-width: 1180px; margin: 0 auto; padding: 0 16px 64px; }
+/* A DASHBOARD SHOULD USE THE MONITOR IT IS GIVEN. 1180px is right for an
+   article and wrong for a wall display: on a 27" screen the coverage table was
+   a narrow column with two feet of empty green beside it. The cap lifts with
+   the viewport rather than disappearing, so line lengths stay readable. */
+@media (min-width: 1400px) { .sr { max-width: 1340px; } }
+@media (min-width: 1700px) { .sr { max-width: 1560px; } }
+/* Installed, there is no browser chrome above the header — so the header is
+   the window's top edge and should not also carry a gap for one. */
+@media (display-mode: standalone) {
+  .gov-header .brand-row { padding-top: 10px; }
+  .sr { padding-bottom: 32px; }
+}
 
 /* styles.css sets a GLOBAL button rule — display:block, width:100%, a green
    block with a 16px top margin. That is right for the public pages, where a
@@ -323,6 +340,10 @@
            reads immediately before Invite observers. -->
       <div class="sr-hdr-actions">
         <button id="lang-btn" type="button" title="Language">EN</button>
+        <!-- Hidden until the browser says the app is installable: a button that
+             does nothing when pressed is worse than no button, and Firefox and
+             most in-app browsers never fire the event. -->
+        <button id="install-btn" type="button" hidden></button>
         <div id="sr-actions" style="display:contents"></div>
       </div>
     </div>
@@ -374,6 +395,52 @@ document.addEventListener('click', (e) => {
   const area = b.getAttribute('data-party-csv');
   const t = (S.areaTally && area && area.indexOf('(') > 0) ? S.areaTally : S.tally;
   if (t) exportPartyCsv(t, area);
+});
+
+/* INSTALL, WHEN THE BROWSER OFFERS IT. Chrome and Edge fire this instead of
+   showing their own prompt; we keep the event and spend it on a real button.
+   Nothing here runs on a browser that does not fire it, which is the point of
+   binding the button's visibility to the event rather than to a user agent. */
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  const b = $('install-btn');
+  if (!b) return;
+  b.textContent = T('situation-room.install', 'Install');
+  b.title = T('situation-room.install-title', 'Install the situation room as a desktop app');
+  b.hidden = false;
+});
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  const b = $('install-btn');
+  if (b) b.hidden = true;
+});
+document.addEventListener('click', async (e) => {
+  if (!e.target || !e.target.closest || !e.target.closest('#install-btn') || !installPrompt) return;
+  const p = installPrompt;
+  installPrompt = null;
+  $('install-btn').hidden = true;
+  p.prompt();
+});
+
+/* B. KEYBOARD, BECAUSE THIS IS A DESK. A dashboard watched for twelve hours is
+   worked with both hands; these are the four things a manager does over and
+   over. Ignored while typing, so a search box never eats a shortcut — and no
+   modifier keys, which belong to the browser and the OS. */
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const el = document.activeElement;
+  const tag = el && el.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el && el.isContentEditable)) return;
+  const tabs = [...document.querySelectorAll('.sr-tabs [role="tab"]')];
+  if (e.key >= '1' && e.key <= String(Math.min(9, tabs.length)) && tabs.length) {
+    tabs[Number(e.key) - 1].click();
+    return;
+  }
+  if (e.key === 'r' || e.key === 'R') { const b = $('refresh-btn'); if (b) b.click(); }
+  else if (e.key === 'i' || e.key === 'I') { const b = $('invite-btn'); if (b) b.click(); }
+  else if (e.key === 'Escape') { const d = document.querySelector('.sr-ask [data-no]'); if (d) d.click(); }
 });
 
 document.addEventListener('hawkeye-lang', () => {
@@ -454,10 +521,10 @@ function render() {
         `<option value="${x.id}"${x.id === S.gid ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}
     </div>
     <div class="sr-tabs" role="tablist">
-      <button role="tab" aria-selected="${S.tab === 'overview'}" data-tab="overview">${T('situation-room.overview', 'Overview')}</button>
-      <button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage">${T('situation-room.coverage', 'Coverage')}</button>
-      <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team">${T('situation-room.team', 'Team')}</button>
-      <button role="tab" aria-selected="${S.tab === 'incidents'}" data-tab="incidents">${T('situation-room.incidents', 'Incidents')}</button>
+      <button role="tab" aria-selected="${S.tab === 'overview'}" data-tab="overview" title="1">${T('situation-room.overview', 'Overview')}</button>
+      <button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage" title="2">${T('situation-room.coverage', 'Coverage')}</button>
+      <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team" title="3">${T('situation-room.team', 'Team')}</button>
+      <button role="tab" aria-selected="${S.tab === 'incidents'}" data-tab="incidents" title="4">${T('situation-room.incidents', 'Incidents')}</button>
     </div>
     <div id="sr-body"><div class="sr-msg">${T('index.loading', 'Loading…')}</div></div>`;
 
@@ -1941,7 +2008,16 @@ function syncUrl(g) {
   if (location.pathname !== want) history.replaceState(null, '', want);
 }
 
+/* The taskbar jump list (manifest "shortcuts") opens ?tab=team and the like.
+   Read once, before the first render, so the room opens on the tab that was
+   asked for rather than flashing Overview first. */
+function tabFromUrl() {
+  const t = new URLSearchParams(location.search).get('tab');
+  if (['overview', 'coverage', 'team', 'incidents'].includes(t)) S.tab = t;
+}
+
 async function boot(preferId) {
+  tabFromUrl();
   LOGOS = await (window.fetchData ? window.fetchData('logos/manifest.json') : fetch('logos/manifest.json'))
     .then((r) => r.json()).catch(() => ({}));
   PARTIES = await api('/api/parties').then((r) => (Array.isArray(r.body) ? r.body : [])).catch(() => []);

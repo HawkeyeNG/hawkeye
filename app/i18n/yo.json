@@ -1360,5 +1360,7 @@
   "situation-room.one-unit-counted": "a ka ilé ìdìbò 1",
   "situation-room.n-units-counted": "a ka ilé ìdìbò {v0}",
   "situation-room.n-disputed-left-out": "a ṣe àríyànjiyàn lórí {v0} tí a sì yọ wọ́n kúrò, gẹ́gẹ́ bí ó ṣe wà nínú ìwé gbogbo gbò",
-  "situation-room.same-figures-public-board": "àwọn nọ́mbà kan náà tí pátákó gbogbo gbò fi hàn"
+  "situation-room.same-figures-public-board": "àwọn nọ́mbà kan náà tí pátákó gbogbo gbò fi hàn",
+  "situation-room.install": "Fi sórí ẹ̀rọ",
+  "situation-room.install-title": "Fi yàrá ìṣọ́ náà sórí kọ̀ǹpútà gẹ́gẹ́ bí ohun èlò"
 }

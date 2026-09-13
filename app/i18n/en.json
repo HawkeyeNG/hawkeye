@@ -1410,5 +1410,7 @@
   "my-groups.accept-failed": "Could not accept just now.",
   "my-groups.refuse-confirm": "Tell {name} no? They will not be told who declined, and they can ask again later.",
   "my-groups.refuse-failed": "Could not do that just now.",
-  "join.open-in-app": "Open this invitation in the Situation Room app"
+  "join.open-in-app": "Open this invitation in the Situation Room app",
+  "situation-room.nothing-to-copy-one": "Everyone in your other campaign ({v0}) is already on this roster.",
+  "situation-room.nothing-to-copy-many": "Everyone in your other campaigns ({v0}) is already on this roster."
 }

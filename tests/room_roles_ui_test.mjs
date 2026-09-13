@@ -45,6 +45,8 @@ let MEMBER_ONLY = false;
 /* Empty is the COMMON case and the one that was broken: an owner with a single
    campaign has nothing to copy from. */
 let SOURCES = [];
+let TWO_ROOMS = false;
+let SOURCES_8 = [];
 
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
@@ -54,12 +56,24 @@ const server = http.createServer((req, res) => {
   };
   if (url === '/api/groups') {
     const row = { id: GROUP.id, name: GROUP.name, kind: GROUP.kind, contest: GROUP.contest, scope: GROUP.scope, slug: GROUP.slug };
-    return json(MEMBER_ONLY ? { managing: [], member: [row] } : { managing: [row], member: [] });
+    const second = { id: 8, name: 'Second Room', kind: 'campaign', contest: GROUP.contest, scope: GROUP.scope, slug: 'second-room' };
+    return json(MEMBER_ONLY ? { managing: [], member: [row] } : { managing: TWO_ROOMS ? [row, second] : [row], member: [] });
   }
   if (url === '/api/groups/7') return json({ ...GROUP, me: ME, managers: MANAGERS });
+  if (url === '/api/groups/8') return json({ ...GROUP, id: 8, name: 'Second Room', slug: 'second-room', me: ME, managers: MANAGERS });
+  if (url === '/api/groups/8/team') return json({ contest: GROUP.contest, members: MEMBERS });
+  /* Deliberately different from room 7's, so a stale S.sources is visible. */
+  if (url === '/api/groups/8/sources') return json({ sources: SOURCES_8 });
   if (url === '/api/groups/7/team') return json({ contest: GROUP.contest, members: MEMBERS });
   if (url === '/api/groups/7/sources') return json({ sources: SOURCES });
   if (url === '/api/parties') return json([]);
+  /* The live server rewrites /room/<slug> to this page — that is how a room
+     has an address at all. Without the same rewrite here the campaign picker
+     navigates into a 404 and the switch cannot be observed. */
+  if (url.startsWith('/room/')) {
+    res.writeHead(200, { "content-type": "text/html" });
+    return fs.createReadStream(path.join(APP, "situation-room.html")).pipe(res);
+  }
   const f = path.join(APP, decodeURIComponent(url));
   if (!f.startsWith(APP) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' });
@@ -550,6 +564,96 @@ ME = { role: 'owner', scope_kind: '', scope_value: '' };
   check('and does NOT translate it', tabHa, 'Hawkeye Election Monitor');
   check('CONTROL: the Hausa bundle really did load on that page', ha.teamText,
     (t) => /mamallaki/.test(t));
+}
+
+/* --- switching campaigns actually switches ------------------------------ */
+/* The picker used to swap an id and clear the caches BY HAND, and the list went
+   stale — S.sources was added later and never added to it, so picking another
+   campaign kept the previous one's copy-from list on screen, measured against a
+   target that was no longer the target. It reloads to the room's own address
+   now, which cannot miss a cache. */
+MEMBER_ONLY = false;
+TWO_ROOMS = true;
+ME = { role: 'owner', scope_kind: '', scope_value: '' };
+SOURCES = [{ id: 91, name: 'Only In Seven', contest: 'PRES', scope: '', copyable: 3 }];
+SOURCES_8 = [{ id: 92, name: 'Only In Eight', contest: 'PRES', scope: '', copyable: 4 }];
+{
+  const p = await b.newPage({ viewport: { width: 1200, height: 900 } });
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(String(e)));
+  await p.addInitScript(() => {
+    const enc = (o) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+    try {
+      localStorage.setItem('hawkeye_token', enc({ alg: 'none' }) + '.' + enc({ sub: 1, exp: 4102444800 }) + '.x');
+    } catch (e) { /* private mode */ }
+  });
+  await p.goto(`${base}/situation-room.html?tab=team`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#gpick', { timeout: 10000 }).catch(() => {});
+  check('two campaigns give the manager a picker', await p.locator('#gpick').count(), 1);
+
+  await p.selectOption('#gpick', '8');
+  /* The navigation is started by the change handler, so it has not begun when
+     selectOption resolves — waitForLoadState answered about the page still on
+     screen and this read the OLD url, failing against correct code. Wait for
+     the address itself, and let it time out loudly if it never moves. */
+  await p.waitForURL((u) => String(u).includes('/room/second-room'), { timeout: 10000 })
+    .catch(() => { /* leave the assertions below to report what it did instead */ });
+  const url = new URL(p.url());
+  check('picking a campaign lands on that room\'s address', url.pathname, '/room/second-room');
+  check('and carries the tab across, not back to Overview', url.searchParams.get('tab'), 'team');
+
+  /* THE DEFECT ITSELF. The address changed even under the old code, because
+     syncUrl rewrote it — so a URL check alone cannot tell a real switch from a
+     repaint over the previous campaign's caches. This reads data that is
+     CACHED PER ROOM: room 8's copy-from list names a different campaign, and a
+     stale S.sources would still be showing room 7's. */
+  await p.waitForSelector('.sr-tools', { timeout: 10000 }).catch(() => {});
+  const listed = await p.evaluate(() =>
+    [...document.querySelectorAll('#copy-from option')].map((o) => o.textContent).join(' | '));
+  check('the copy-from list belongs to the room just switched TO', listed,
+    (t) => /Only In Eight/.test(t));
+  check('CONTROL: and no longer to the one switched FROM', listed,
+    (t) => !/Only In Seven/.test(t));
+  check('switching rendered without throwing', errs, []);
+  await p.close();
+}
+TWO_ROOMS = false;
+SOURCES = [];
+SOURCES_8 = [];
+
+/* --- "nothing to copy" is a sentence, not an absence -------------------- */
+/* An owner whose newest campaign already contains everyone from their other
+   ones saw no picker and no reason — the same screen a broken feature makes. */
+{
+  const shown = async () => {
+    const p = await b.newPage({ viewport: { width: 1200, height: 900 } });
+    await p.addInitScript(() => {
+      const enc = (o) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+      try {
+        localStorage.setItem('hawkeye_token', enc({ alg: 'none' }) + '.' + enc({ sub: 1, exp: 4102444800 }) + '.x');
+      } catch (e) { /* private mode */ }
+    });
+    await p.goto(`${base}/situation-room.html?tab=team`, { waitUntil: 'networkidle' });
+    await p.waitForSelector('.sr-tools', { timeout: 10000 }).catch(() => {});
+    const out = await p.evaluate(() => {
+      const card = document.querySelector('.sr-tools').closest('.sr-card');
+      return { text: card.textContent, picker: !!card.querySelector('#copy-from') };
+    });
+    await p.close();
+    return out;
+  };
+
+  SOURCES = [{ id: 9, name: 'Atiku 2027', contest: 'PRES', scope: '', copyable: 0 }];
+  const none = await shown();
+  check('all-already-here: no picker is offered', none.picker, false);
+  check('all-already-here: and the card says why, naming the campaign', none.text,
+    (t) => /already on this roster/.test(t) && /Atiku 2027/.test(t));
+
+  SOURCES = [{ id: 9, name: 'Atiku 2027', contest: 'PRES', scope: '', copyable: 2 }];
+  const some = await shown();
+  check('CONTROL: with someone to copy, the picker is back', some.picker, true);
+  check('CONTROL: and the explanation is gone', some.text, (t) => !/already on this roster/.test(t));
+  SOURCES = [];
 }
 
 /* --- and the way IN to the room ------------------------------------------ */

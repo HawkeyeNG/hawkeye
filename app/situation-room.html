@@ -1950,7 +1950,13 @@ function managersHtml() {
 function rosterToolsHtml() {
   if (!iAmOwner()) return '';
   const pend = (S.group && S.group.pending) || 0;
-  const srcs = (S.sources || []).filter((x) => x.copyable > 0);
+  /* HIDING THE PICKER WHEN IT WOULD BE EMPTY LOOKED LIKE A MISSING FEATURE.
+     An owner whose newest campaign already contains everyone from their other
+     ones got no control and no reason — the same screen a bug would produce.
+     The rooms are still listed, with the count that makes the case. */
+  const all = S.sources || [];
+  const srcs = all.filter((x) => x.copyable > 0);
+  const nothingToCopy = !srcs.length && all.length;
   return `<div class="sr-card" style="margin-bottom:16px">
     <div class="sr-h2" style="margin:0 0 4px">${T('situation-room.share-observers', "Share observers")}</div>
     <p class="sr-fine" style="margin:0 0 12px">${T('situation-room.share-observers-note', "Everyone you bring over is asked first. Until they accept, they are not on this roster and you cannot see them or their reports.")}</p>
@@ -1965,6 +1971,9 @@ function rosterToolsHtml() {
       <button class="sr-btn" id="roster-up">${T('situation-room.import-roster', "Import roster (CSV)")}</button>
       <input type="file" id="roster-file" accept=".csv,text/csv" hidden />
     </div>
+    ${nothingToCopy ? `<p class="sr-fine" style="margin:0 0 10px">${all.length === 1
+    ? T('situation-room.nothing-to-copy-one', "Everyone in your other campaign ({v0}) is already on this roster.", { v0: esc(all[0].name) })
+    : T('situation-room.nothing-to-copy-many', "Everyone in your other campaigns ({v0}) is already on this roster.", { v0: all.map((x) => esc(x.name)).join(', ') })}</p>` : ''}
     ${pend ? `<p class="sr-fine" style="margin:0">${pend === 1
     ? T('situation-room.pending-one', "{v0} person has been asked and has not answered yet.", { v0: n(pend) })
     : T('situation-room.pending-many', "{v0} people have been asked and have not answered yet.", { v0: n(pend) })}</p>` : ''}
@@ -2421,9 +2430,37 @@ async function showInvite() {
 
 /* --- boot -------------------------------------------------------------- */
 
+/**
+ * SWITCHING CAMPAIGNS RELOADS THE ROOM.
+ *
+ * This used to swap S.gid and clear the caches by hand, and the hand-written
+ * list went stale: S.sources was added later and never added here, so picking
+ * another campaign left the previous one's "Copy observers from…" list on
+ * screen — offering rooms measured against a target that was no longer the
+ * target. Every cache this console keeps is another chance to miss one, and the
+ * miss is silent: the page looks switched and is showing the old campaign's
+ * numbers.
+ *
+ * A reload cannot miss one. The room already lives at its own address, so this
+ * is a navigation rather than a cache-invalidation problem, and the address is
+ * the thing that should change anyway — a manager who switches campaigns and
+ * then copies the link should be sending the campaign they are looking at.
+ *
+ * The tab rides along, so switching from one campaign's Team tab lands on the
+ * other's rather than dropping back to Overview.
+ */
 function pickGroup(id) {
+  const g = (S.groups || []).find((x) => x.id === id);
+  if (g && g.slug) {
+    location.assign('/room/' + encodeURIComponent(g.slug)
+      + (S.tab && S.tab !== 'overview' ? '?tab=' + encodeURIComponent(S.tab) : ''));
+    return;
+  }
+  /* A room with no slug cannot be addressed, so it still switches in place —
+     and this list must name EVERY cache, which is the fragility above. */
   S.gid = id;
   S.coverage = S.team = S.overview = S.activity = S.incidents = null;
+  S.sources = S.tally = S.areaTally = null;
   S.path = { state: '', lga: '', ward: '' };
   loadGroup();
 }

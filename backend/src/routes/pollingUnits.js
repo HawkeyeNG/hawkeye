@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 // app/ sits beside backend/ in the repo and is what the site serves.
 const APP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'app');
 import { haversineM } from '../services/geo.js';
+import { wardsForLga } from '../services/wardGeo.js';
 import {
   LEVEL_COLS,
   LEVEL_NOUN,
@@ -146,6 +147,20 @@ pollingUnitsRouter.get('/register/wards', (req, res) => {
       .all(String(req.query.state || ''), String(req.query.lga || ''))
       .map((r) => r.ward),
   );
+});
+
+/**
+ * The ward boundaries of one LGA, for drawing a ward and the units inside it.
+ *
+ * PUBLIC, like every other /register route: app/nga_wards.geojson is a static
+ * file the site already serves, and the situation room's own wards-geo is gated
+ * on the GROUP, not on the geometry. A race page has no group.
+ */
+pollingUnitsRouter.get('/register/wards-geo', (req, res) => {
+  const wards = wardsForLga(req.query.state, req.query.lga);
+  if (wards === null) return res.status(503).json({ error: 'ward_layer_unavailable' });
+  res.set('cache-control', 'public, max-age=86400');
+  return res.json({ wards });
 });
 
 pollingUnitsRouter.get('/register/units', (req, res) => {

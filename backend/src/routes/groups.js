@@ -23,6 +23,7 @@
  *      worse than an inaccurate coverage number.
  */
 import { Router } from 'express';
+import { wardsForLga } from '../services/wardGeo.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -841,34 +842,14 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
  * folded key, and served a slice at a time. Raw lat/lng; the client projects.
  * Public geography, but kept behind the room's own auth like everything here.
  */
-let wardsByLga = null;
 const foldName = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 groupsRouter.get('/groups/:id/wards-geo', requireObserver, requireManager, (req, res) => {
-  if (!wardsByLga) {
-    try {
-      const geo = JSON.parse(fs.readFileSync(path.join(config.appDir, 'nga_wards.geojson'), 'utf8'));
-      const idx = new Map();
-      for (const f of geo.features) {
-        const k = foldName(f.properties.s) + '|' + foldName(f.properties.l);
-        if (!idx.has(k)) idx.set(k, []);
-        idx.get(k).push({ ward: f.properties.w, geometry: f.geometry });
-      }
-      wardsByLga = idx;
-    } catch (e) {
-      return res.status(503).json({ error: 'ward_layer_unavailable' });
-    }
-  }
-  const st = foldName(req.query.state) + '|';
-  const want = foldName(req.query.lga);
-  let wards = wardsByLga.get(st + want);
-  if (!wards) {
-    // The register and the layer spell some LGAs a letter or two apart
-    // (Somolu/Shomolu): take the ONE same-state LGA within two edits, if exactly one.
-    const near = [...wardsByLga.keys()].filter((k) => k.startsWith(st) && editDistance(k.slice(st.length), want) <= 2);
-    if (near.length === 1) wards = wardsByLga.get(near[0]);
-  }
+  // The index lives in services/wardGeo.js: this route and the public
+  // /register/wards-geo were folding the same 5.4 MB file into two maps.
+  const wards = wardsForLga(req.query.state, req.query.lga);
+  if (wards === null) return res.status(503).json({ error: 'ward_layer_unavailable' });
   res.set('cache-control', 'private, max-age=86400');
-  res.json({ wards: wards || [] });
+  return res.json({ wards });
 });
 function editDistance(a, b) {
   if (Math.abs(a.length - b.length) > 2) return 99;

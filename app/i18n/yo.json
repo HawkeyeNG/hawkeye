@@ -1342,5 +1342,9 @@
   "race.map-of-seat-by-ward": "Máàpù {seat}, ní ti ẹ̀ka",
   "race.seat-wards": "{seat} — ẹ̀ka {n}",
   "unit.ward.one": "ẹ̀ka",
-  "results.ward-map-incomplete": "Kò sí máàpù ẹ̀ka fún ìpínlẹ̀ yìí síbẹ̀ — àwọn nọ́mbà tí ó wà nísàlẹ̀ pé."
+  "results.ward-map-incomplete": "Kò sí máàpù ẹ̀ka fún ìpínlẹ̀ yìí síbẹ̀ — àwọn nọ́mbà tí ó wà nísàlẹ̀ pé.",
+  "race.loading-units": "Ń gbé àwọn ilé ìdìbò wọlé…",
+  "race.n-polling-units": "ilé ìdìbò {n}",
+  "race.units-in-ward": "Àwọn ilé ìdìbò ní {ward}",
+  "race.n-placed-approximately": "a gbé {n} sí ibi tí ó fẹ́rẹ̀ tọ́"
 }

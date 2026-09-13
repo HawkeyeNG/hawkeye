@@ -1342,5 +1342,9 @@
   "race.map-of-seat-by-ward": "Maapụ nke {seat}, site na ward",
   "race.seat-wards": "{seat} — ward {n}",
   "unit.ward.one": "ward",
-  "results.ward-map-incomplete": "Enweghị maapụ ward maka steeti a ugbu a — ọnụọgụ ndị dị n'okpuru zuru oke."
+  "results.ward-map-incomplete": "Enweghị maapụ ward maka steeti a ugbu a — ọnụọgụ ndị dị n'okpuru zuru oke.",
+  "race.loading-units": "Na-ebu ebe ntuli aka…",
+  "race.n-polling-units": "ebe ntuli aka {n}",
+  "race.units-in-ward": "Ebe ntuli aka na {ward}",
+  "race.n-placed-approximately": "edobere {n} nso nso"
 }

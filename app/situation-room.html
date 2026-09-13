@@ -205,6 +205,20 @@
   padding: 18px 18px 14px; max-width: 420px; width: 100%; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); }
 .sr-ask-card p { margin: 0 0 14px; line-height: 1.45; }
 .sr-ask-btns { display: flex; gap: 10px; justify-content: flex-end; }
+/* The install dialog is the same card wearing the crest: it is the first thing
+   a manager sees before the browser's own prompt, and an unbranded box asking
+   to install software is what people are taught to refuse. */
+.sr-install { padding: 0; overflow: hidden; }
+.sr-install-head {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--header-bg); color: var(--header-ink);
+  padding: 14px 18px; margin: 0 0 14px;
+}
+.sr-install-head img { border-radius: 10px; flex: none; }
+.sr-install-head h3 { margin: 0; font-family: var(--display); font-size: 1.02rem; letter-spacing: -0.01em; }
+.sr-install-head .sr-sub { margin: 2px 0 0; color: var(--header-sub); }
+.sr-install > p { margin: 0 18px 14px; }
+.sr-install .sr-ask-btns { padding: 0 18px 16px; }
 
 .sr-heads { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 10px; margin: 16px 0; }
 .sr-head { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; }
@@ -418,11 +432,47 @@ window.addEventListener('appinstalled', () => {
 });
 document.addEventListener('click', async (e) => {
   if (!e.target || !e.target.closest || !e.target.closest('#install-btn') || !installPrompt) return;
+  const yes = await askInstall();
+  if (!yes || !installPrompt) return;   // "not now" keeps the prompt for later
   const p = installPrompt;
   installPrompt = null;
   $('install-btn').hidden = true;
   p.prompt();
 });
+
+/* The branded half of the install. The browser's dialog follows this one and
+   is not ours to style; this is where the room gets to say what the thing is. */
+function askInstall() {
+  return new Promise((resolve) => {
+    const box = document.createElement('div');
+    box.className = 'sr-ask';
+    box.innerHTML = `<div class="sr-ask-card sr-install" role="alertdialog" aria-modal="true"
+        aria-labelledby="sr-install-title">
+      <div class="sr-install-head">
+        <img src="icon-192.png?v=hawk3" alt="" width="44" height="44" />
+        <div>
+          <h3 id="sr-install-title">${esc(T('situation-room.install-heading', 'Install the Situation Room'))}</h3>
+          <p class="sr-sub">${esc(T('situation-room.install-sub', 'Hawkeye · for this computer'))}</p>
+        </div>
+      </div>
+      <p>${esc(T('situation-room.install-body',
+      'It opens in its own window instead of a tab, keeps its place in your task switcher, and stays signed in. Remove it later like any other app.'))}</p>
+      <div class="sr-ask-btns">
+        <button type="button" class="sr-btn" data-no>${esc(T('lang.later', 'Not now'))}</button>
+        <button type="button" class="sr-btn primary" data-yes>${esc(T('situation-room.install', 'Install'))}</button>
+      </div></div>`;
+    const done = (v) => { box.remove(); document.body.style.overflow = ''; resolve(v); };
+    box.addEventListener('click', (ev) => { if (ev.target === box) done(false); });
+    box.querySelector('[data-no]').addEventListener('click', () => done(false));
+    box.querySelector('[data-yes]').addEventListener('click', () => done(true));
+    document.addEventListener('keydown', function esc2(ev) {
+      if (ev.key === 'Escape') { document.removeEventListener('keydown', esc2); done(false); }
+    });
+    document.body.appendChild(box);
+    document.body.style.overflow = 'hidden';
+    box.querySelector('[data-yes]').focus();
+  });
+}
 
 /* B. KEYBOARD, BECAUSE THIS IS A DESK. A dashboard watched for twelve hours is
    worked with both hands; these are the four things a manager does over and

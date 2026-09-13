@@ -187,6 +187,46 @@
     // The members are RESOLVED through matchOne rather than compared raw. The
     // old `.toLowerCase()` comparison missed every LGA the two sources spell
     // differently, and a seat containing one silently lost its cut.
+    /* A STATE CONSTITUENCY, CUT INTO ITS WARDS.
+     *
+     * 765 of the 1,005 state seats sit inside a single LGA, so the LGA cut
+     * below draws ONE shape — a silhouette that says nothing the title did not.
+     * Wards are the grain the seat is actually built from, 8 to 20 of them, and
+     * the only cut that shows the reader anything.
+     *
+     * The names come from the register, not from the polygon file: every ward
+     * in maps/wards/<state>.json was relabelled through ward_crosswalk.json at
+     * build time, so a shape here carries the same name the board buckets
+     * reports under. Wards the crosswalk could not resolve were dropped rather
+     * than shipped under a name nothing matches.
+     *
+     * Falls through to the LGA cut and then the outline: 37 LGAs resolved no
+     * wards at all, and a partial cut would draw a seat missing pieces of
+     * itself. All or nothing, the same rule the LGA cut already applies.
+     */
+    if (j.level === 'lga' && j.state && j.lgas && j.lgas.length) {
+      const wgeo = await getGeo('maps/wards/'
+        + String(j.state).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.json');
+      if (wgeo && wgeo.lgas) {
+        const keys = Object.keys(wgeo.lgas);
+        const parts = [];
+        for (const l of j.lgas) {
+          const k = matchOne(l, keys, (x) => x);
+          if (!k) { parts.length = 0; break; }
+          // The stored names are the register's, upper-cased at build time by
+          // the crosswalk's normalisation; a tooltip should not shout.
+          for (const w of wgeo.lgas[k].wards) {
+            parts.push({ path: w.d, name: titleCase(String(w.n).toLowerCase()) });
+          }
+        }
+        if (parts.length > 1) {
+          return svgFor(parts,
+            T('race.map-of-seat-by-ward', 'Map of {seat}, by ward').replace('{seat}', j.value),
+            T('race.seat-wards', '{seat} — {n} wards').replace('{seat}', j.value).replace('{n}', parts.length));
+        }
+      }
+    }
+
     const minParts = j.level === 'lga' ? 1 : 2;
     if (j.lgas && j.lgas.length >= minParts && j.state) {
       const geo = await getGeo('lga_geo.json');

@@ -89,6 +89,18 @@
 .sr-hdr-actions button:hover { filter: none; border-color: var(--accent); color: #fff; }
 .sr-hdr-actions button:active { transform: none; }
 .sr-hdr-actions button[disabled] { opacity: 0.4; cursor: not-allowed; }
+/* `display: inline-block` above is an AUTHOR rule and beats the user agent's
+   [hidden] { display: none }, so a hidden button still drew its box: in the
+   installed app — where beforeinstallprompt never fires — the Install button
+   sat in the header as an empty pill, pushing the language button off the
+   group it belongs to. */
+.sr-hdr-actions button[hidden] { display: none; }
+/* Installed, there is nothing to install. appinstalled fires for the session
+   that did it; a later launch of the installed app never sees that event, so
+   the display mode is what answers the question. */
+@media (display-mode: standalone), (display-mode: window-controls-overlay) {
+  #install-btn { display: none !important; }
+}
 @media (max-width: 700px) { .sr-hdr-actions { margin-left: 0; width: 100%; padding-top: 8px; } }
 
 /* Even spacing, one rule. The separators used to be their own flex children, so

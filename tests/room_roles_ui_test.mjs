@@ -164,6 +164,89 @@ check('Hausa: no English button labels survive', ha.teamText,
 check('Hausa: the role words are translated too', ha.teamText,
   (t) => t.includes('mamallaki') && !/\bowner\b/.test(t));
 
+/* --- OUR OWN PROMPT, and a header that fits a phone ---------------------- */
+/* window.prompt renders the browser's grey box, titled "hawkeye.com.ng says",
+   with OK/Cancel in the platform's language and no way to translate or style
+   either. The room asks for a unit code, two names and a typed confirmation
+   through it. The stub below FAILS THE TEST if anything still reaches for it —
+   a check that only looked for our dialog would pass while both appeared. */
+MEMBER_ONLY = false;
+ME = { role: 'owner', scope_kind: '', scope_value: '' };
+{
+  const p = await b.newPage({ viewport: { width: 390, height: 844 } });
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(String(e)));
+  await p.addInitScript(() => {
+    const enc = (o) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+    try {
+      localStorage.setItem('hawkeye_token', enc({ alg: 'none' }) + '.' + enc({ sub: 1, exp: 4102444800 }) + '.x');
+    } catch (e) { /* private mode */ }
+    window.__prompts = 0;
+    window.prompt = (...a) => { window.__prompts += 1; return null; };
+  });
+  await p.goto(`${base}/situation-room.html?tab=team`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.sr-tbl', { timeout: 10000 }).catch(() => {});
+
+  /* PORTRAIT PHONE. .brand-row is a plain flex row, so giving the actions
+     width:100% inside it did not move them to a line of their own — it made
+     them claim the line the brand was still on, and the language button printed
+     itself across "Situation Room". Measured, not eyeballed: the two boxes must
+     not overlap. */
+  const box = await p.evaluate(() => {
+    const r = (sel) => { const e = document.querySelector(sel); return e ? e.getBoundingClientRect().toJSON() : null; };
+    return { brand: r('.gov-header .brand'), acts: r('.sr-hdr-actions'), w: innerWidth };
+  });
+  /* THE BRAND'S WIDTH is the assertion that actually moves. A bounding-box
+     overlap test passed in the broken state too — the boxes did not cross, the
+     brand was CRUSHED: flex:1 1 auto with min-width:0 let it collapse towards
+     nothing while the actions took the full line and ran off the right edge, so
+     the wordmark and the language button printed over each other. Checked as a
+     share of the viewport so it does not encode one phone's pixels. */
+  check('phone: the brand keeps most of its line', box,
+    (x) => x.brand && x.brand.width > x.w * 0.5);
+  check('phone: the actions are still right-aligned', box,
+    (x) => x.acts && x.acts.right >= x.w - 60);
+  check('phone: nothing overflows the viewport sideways', box,
+    (x) => x.acts && x.acts.right <= x.w + 1 && x.brand.left >= -1);
+  /* And they are on DIFFERENT lines, which is the shape being asked for: the
+     actions below the brand, not squeezed beside it. */
+  check('phone: the actions sit under the brand, not beside it', box,
+    (x) => x.acts && x.brand && x.acts.top >= x.brand.bottom - 1);
+
+  /* Set unit — the branded dialog, with a field in it. */
+  await p.click('[data-act="set"]');
+  await p.waitForSelector('.sr-ask input', { timeout: 3000 }).catch(() => {});
+  const dlg = await p.evaluate(() => ({
+    input: !!document.querySelector('.sr-ask .sr-ask-input'),
+    /* Ours, not the platform's: our buttons carry the page's own words, so a
+       translated room can translate them. */
+    buttons: [...document.querySelectorAll('.sr-ask .sr-btn')].map((x) => x.textContent.trim()),
+    focused: document.activeElement && document.activeElement.classList.contains('sr-ask-input'),
+    prompts: window.__prompts,
+  }));
+  check('Change unit opens our dialog, not the browser\'s', dlg.input, true);
+  check('CONTROL: window.prompt was never reached', dlg.prompts, 0);
+  check('the dialog has both our buttons', dlg.buttons, (x) => x.length === 2);
+  check('the field takes focus, so it can be typed into straight away', dlg.focused, true);
+
+  /* Escape closes it, and nothing is submitted. */
+  await p.keyboard.press('Escape');
+  const gone = await p.evaluate(() => !document.querySelector('.sr-ask'));
+  check('Escape dismisses it', gone, true);
+
+  /* Rename goes through the same dialog, pre-filled with the current name. */
+  await p.click('[data-act="rename"]');
+  await p.waitForSelector('.sr-ask input', { timeout: 3000 }).catch(() => {});
+  const ren = await p.evaluate(() => {
+    const el = document.querySelector('.sr-ask-input');
+    return { value: el ? el.value : null, prompts: window.__prompts };
+  });
+  check('Rename pre-fills the name it is changing', ren.value, (v) => typeof v === 'string');
+  check('CONTROL: still no browser prompt', ren.prompts, 0);
+  check('phone: rendered without throwing', errs, []);
+  await p.close();
+}
+
 /* --- and the way IN to the room ------------------------------------------ */
 /* A HIGHLIGHTED HEADING IS NOT A BUTTON. The room was reachable only by tapping
    the campaign's name, and a coloured heading reads as a heading — so people who

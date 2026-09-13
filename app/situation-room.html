@@ -19,7 +19,7 @@
        manifest takes one scope, not two. -->
   <link rel="manifest" href="room.webmanifest?v=1" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=180" />
+  <link rel="stylesheet" href="styles.css?v=181" />
   <script src="native.js?v=116"></script>
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=3"></script>
@@ -101,7 +101,19 @@
 @media (display-mode: standalone), (display-mode: window-controls-overlay) {
   #install-btn { display: none !important; }
 }
-@media (max-width: 700px) { .sr-hdr-actions { margin-left: 0; width: 100%; padding-top: 8px; } }
+/* THE HEADER ROW DOES NOT WRAP by default (.brand-row is a plain flex row), so
+   giving the actions width:100% inside it did not move them to a line of their
+   own — it made them claim the whole line while the brand was still on it, and
+   the language button printed itself across "Situation Room". Let the row wrap
+   first; then full width genuinely means a second line, right-aligned, which is
+   where these belong. */
+@media (max-width: 700px) {
+  .gov-header .brand-row { flex-wrap: wrap; row-gap: 8px; }
+  .sr-hdr-actions { margin-left: 0; width: 100%; justify-content: flex-end; padding-top: 0; }
+  /* The brand keeps the first line to itself rather than being squeezed to an
+     ellipsis by a group of buttons it is no longer sharing the line with. */
+  .gov-header .brand-row .brand { flex: 1 0 100%; }
+}
 
 /* Even spacing, one rule. The separators used to be their own flex children, so
    a 10px gap landed on BOTH sides of every dot while "8" and "observers" got the
@@ -217,6 +229,13 @@
   padding: 18px 18px 14px; max-width: 420px; width: 100%; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); }
 .sr-ask-card p { margin: 0 0 14px; line-height: 1.45; }
 .sr-ask-btns { display: flex; gap: 10px; justify-content: flex-end; }
+.sr-ask-input {
+  width: 100%; box-sizing: border-box; margin: 0 0 16px; padding: 10px 12px;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 9px; font: inherit; font-size: 0.95rem;
+}
+.sr-ask-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(11, 107, 58, 0.25); }
+.sr-ask-input.num { font-family: var(--sr-mono); letter-spacing: 0.04em; }
 /* The install dialog is the same card wearing the crest: it is the first thing
    a manager sees before the browser's own prompt, and an unbranded box asking
    to install software is what people are taught to refuse. */
@@ -1380,6 +1399,45 @@ function ask(message) {
   });
 }
 
+/* The same dialog with a field in it. window.prompt is the other grey box —
+   "hawkeye.com.ng says", an unstyleable input, OK/Cancel in the platform's
+   language — and this page asks for a unit code, two names and a typed
+   confirmation through it. Resolves to the string, or null if they backed out,
+   so every call site reads exactly like the prompt() it replaced. */
+function askText(message, value = '', opts = {}) {
+  return new Promise((resolve) => {
+    const box = document.createElement('div');
+    box.className = 'sr-ask';
+    box.innerHTML = `<div class="sr-ask-card" role="dialog" aria-modal="true">
+      <p id="sr-ask-label"></p>
+      <input class="sr-ask-input" id="sr-ask-input" type="text" aria-labelledby="sr-ask-label"
+        autocomplete="off" autocapitalize="${opts.code ? 'off' : 'sentences'}" ${opts.code ? 'spellcheck="false"' : ''} />
+      <div class="sr-ask-btns">
+        <button type="button" class="sr-btn" data-no>${T('common.cancel', 'Cancel')}</button>
+        <button type="button" class="sr-btn primary" data-yes>${T('common.ok', 'OK')}</button>
+      </div></div>`;
+    box.querySelector('p').textContent = message;
+    const field = box.querySelector('input');
+    field.value = value;
+    if (opts.placeholder) field.placeholder = opts.placeholder;
+    if (opts.code) field.classList.add('num');
+    const done = (v) => { box.remove(); document.body.style.overflow = ''; resolve(v); };
+    box.addEventListener('click', (e) => { if (e.target === box) done(null); });
+    box.querySelector('[data-no]').addEventListener('click', () => done(null));
+    box.querySelector('[data-yes]').addEventListener('click', () => done(field.value));
+    /* Enter submits. A one-field dialog that needs a mouse to accept it is a
+       form pretending to be a prompt. */
+    field.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); done(field.value); } });
+    document.addEventListener('keydown', function esc(e) {
+      if (e.key === 'Escape') { document.removeEventListener('keydown', esc); done(null); }
+    });
+    document.body.appendChild(box);
+    document.body.style.overflow = 'hidden';
+    field.focus();
+    field.select();
+  });
+}
+
 function renderCoverage() {
   const c = S.coverage || { nodes: [] };
   const nodes = c.nodes || [];
@@ -1681,7 +1739,8 @@ async function runAction(b) {
   if (b.dataset.act === 'clear') return assign(id, null);
   if (b.dataset.act === 'move' || b.dataset.act === 'confirm') return assign(id, b.dataset.pu);
   if (b.dataset.act === 'set') {
-    const code = prompt(T('situation-room.pu-code-prompt', "Polling unit code for this observer (for example 24-14-01-020):"), '');
+    const code = await askText(T('situation-room.pu-code-prompt', "Polling unit code for this observer (for example 24-14-01-020):"),
+      '', { code: true, placeholder: '24-14-01-020' });
     if (code && code.trim()) assign(id, code.trim());
   }
 }
@@ -1724,7 +1783,7 @@ async function removeObserver(observerId, who) {
  */
 async function renameRoom() {
   const g = S.group;
-  const name = prompt(T('situation-room.rename-room-prompt', "What should this campaign be called? The room’s address does not change, so links you have already shared keep working."), g.name || '');
+  const name = await askText(T('situation-room.rename-room-prompt', "What should this campaign be called? The room’s address does not change, so links you have already shared keep working."), g.name || '');
   if (name === null) return;
   if (!name.trim()) return;
   const { status, body } = await api('/api/groups/' + S.gid, {
@@ -2033,7 +2092,7 @@ async function promote(observerId, who) {
 
 async function rename(observerId) {
   const cur = (S.team.members.find((m) => String(m.observer_id) === String(observerId)) || {}).label || '';
-  const label = prompt(T('situation-room.rename-observer-prompt', "Name for this observer on your roster (only your group sees it):"), cur);
+  const label = await askText(T('situation-room.rename-observer-prompt', "Name for this observer on your roster (only your group sees it):"), cur);
   if (label === null) return;
   const { status } = await api('/api/groups/' + S.gid + '/members/' + observerId, {
     method: 'PATCH', body: JSON.stringify({ label: label.trim() }),
@@ -2072,7 +2131,7 @@ async function deleteRoom() {
   if (n_ === 0) {
     if (!await ask(T('situation-room.confirm-delete-empty', 'Delete {name}? It has no observers in it, so nothing is lost.', { name: g.name }))) return;
   } else {
-    const typed = prompt(n_ === 1
+    const typed = await askText(n_ === 1
       ? T('situation-room.delete-prompt-one', 'Deleting {name} removes its roster, assignments and invite links for {n} observer. Their reports stay in the public record and still count.\n\nType the room name to confirm:', { name: g.name, n: n_ })
       : T('situation-room.delete-prompt-many', 'Deleting {name} removes its roster, assignments and invite links for {n} observers. Their reports stay in the public record and still count.\n\nType the room name to confirm:', { name: g.name, n: n_ }));
     if (typed === null) return;

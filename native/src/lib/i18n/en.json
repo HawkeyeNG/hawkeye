@@ -193,6 +193,8 @@
   "n.app.join.point-forward": "They will see the reports you file from now on — which polling unit, and when. Your earlier reports stay yours.",
   "n.app.join.point-leave": "You can leave whenever you want, and you can be in more than one group.",
   "n.app.join.point-public": "They cannot see anything the public cannot. Joining only tells them which published reports are yours.",
+  "n.app.join.not-now": "Not now",
+  "n.app.join.back-home": "Back to Hawkeye",
   "n.app.join.sign-in": "Sign in to join",
   "n.app.ledger.broken-at": "Broken at #{v0}",
   "n.app.ledger.chain": "Chain",

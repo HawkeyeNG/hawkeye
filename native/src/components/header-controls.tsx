@@ -33,20 +33,24 @@ export function HeaderControls() {
         hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel={`${t('n.components.header.language')}: ${lang.toUpperCase()}`}
-        className="rounded-lg border border-line px-2 py-1"
+        /* 36px tall, which is what .lang-btn / .theme-btn measure on the web.
+           Lite and native sit side by side on the same phone and this pair was
+           visibly the smaller one. It is also the floor for a comfortable tap
+           target, which px-2 py-1 was under even with hitSlop covering it. */
+        className="h-9 min-w-9 items-center justify-center rounded-lg border border-line px-2.5"
       >
         {/* The code, not a flag: a language is not a country, and three of these
             four are spoken across several. */}
-        <Text className="text-xs font-bold tracking-wider text-ink">{lang.toUpperCase()}</Text>
+        <Text className="text-sm font-bold tracking-wider text-ink">{lang.toUpperCase()}</Text>
       </Pressable>
       <Pressable
         onPress={() => setPref(dark ? 'light' : 'dark')}
         hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel={t(dark ? 'n.components.header.to-light' : 'n.components.header.to-dark')}
-        className="rounded-lg border border-line p-1.5"
+        className="h-9 w-9 items-center justify-center rounded-lg border border-line"
       >
-        <Feather name={dark ? 'sun' : 'moon'} size={16} color={ui.ink} />
+        <Feather name={dark ? 'sun' : 'moon'} size={18} color={ui.ink} />
       </Pressable>
     </View>
   );

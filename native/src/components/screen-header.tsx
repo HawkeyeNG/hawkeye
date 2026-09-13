@@ -90,9 +90,15 @@ export function ScreenHeader({
             accessibilityRole="button"
             accessibilityLabel={i18nT('nav.home')}
           >
+            {/* THE TRANSPARENT MARK, not the launcher icon. icon.png is the
+                store icon — the hawk on its own green tile — so the header drew
+                a tile inside a bar that is already that colour, and the app
+                looked unlike Lite for no reason anyone chose. Lite swaps in
+                logo-crest.svg for exactly this; crest.png is that same artwork.
+                No borderRadius: there is no plate left to round. */}
             <Image
-              source={require('@/assets/images/icon.png')}
-              style={{ width: 30, height: 30, borderRadius: 8 }}
+              source={require('@/assets/images/crest.png')}
+              style={{ width: 32, height: 32 }}
             />
           </Pressable>
           <Text className="flex-1 text-xl font-bold text-ink" numberOfLines={1}>

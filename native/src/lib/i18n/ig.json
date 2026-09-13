@@ -193,6 +193,8 @@
   "n.app.join.point-forward": "Ha ga-ahụ akụkọ ị ga-akọ site ugbu a — ebe ntuli aka ole, na mgbe ole. Akụkọ ị kọburu bụ nke gị.",
   "n.app.join.point-leave": "Ị nwere ike ịpụ mgbe ọ bụla ị chọrọ, ị nwekwara ike ịnọ n’òtù karịrị otu.",
   "n.app.join.point-public": "Ha apụghị ịhụ ihe ọ bụla ọha apụghị ịhụ. Isonye na-agwa ha naanị akụkọ ndị e bipụtara bụ nke gị.",
+  "n.app.join.not-now": "Ọ bụghị ugbu a",
+  "n.app.join.back-home": "Laghachi na Hawkeye",
   "n.app.join.sign-in": "Banye iji sonye",
   "n.app.ledger.broken-at": "Ọ gbajiri na #{v0}",
   "n.app.ledger.chain": "Agbụ",

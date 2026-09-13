@@ -152,6 +152,12 @@ function unitInside(me, pu) {
 /** Is this member one of the reader's own — i.e. assigned inside their area? */
 function memberInScope(me, groupId, observerId) {
   if (!me.scope_kind || !me.scope_value) return true;
+  const row = db.prepare('SELECT assigned_pu FROM group_members WHERE group_id = ? AND observer_id = ?')
+    .get(groupId, observerId);
+  // Nobody's yet, so anybody's to place. The DESTINATION is still checked
+  // against the scope, so this widens who a coordinator can pick up, never
+  // where they can put them.
+  if (row && !row.assigned_pu) return true;
   const pu = db
     .prepare(`SELECT pu.state, pu.lga, pu.ward FROM group_members m
                 JOIN polling_units pu ON pu.pu_code = m.assigned_pu
@@ -316,16 +322,29 @@ const zoneStates = (zone) => ZONES[zone] || [];
  * because one coordinator reading another state's silent-agent list is the
  * discipline problem the mismatch rule exists to prevent.
  */
-function scopeClause(manager, alias = 'pu') {
+/**
+ * @param orNullCol when given, a row whose value in THIS column is NULL passes
+ *   the scope as well. Only the roster uses it, and only for assigned_pu: an
+ *   observer nobody has placed yet belongs to no area, so a scope test on their
+ *   (absent) unit hid them from every coordinator at once. They were visible to
+ *   nobody and were exactly the people who most needed placing.
+ */
+export function scopeClause(manager, alias = 'pu', orNullCol = '') {
   if (!manager.scope_kind || !manager.scope_value) return { sql: '', params: [] };
+  let cond = '';
+  let params = [];
   if (manager.scope_kind === 'zone') {
     const states = zoneStates(manager.scope_value);
     if (!states.length) return { sql: '', params: [] };
-    return { sql: ` AND ${alias}.state IN (${states.map(() => '?').join(',')})`, params: states };
+    cond = `${alias}.state IN (${states.map(() => '?').join(',')})`;
+    params = states;
+  } else {
+    const col = { state: 'state', lga: 'lga', ward: 'ward' }[manager.scope_kind];
+    if (!col) return { sql: '', params: [] };
+    cond = `${alias}.${col} = ?`;
+    params = [manager.scope_value];
   }
-  const col = { state: 'state', lga: 'lga', ward: 'ward' }[manager.scope_kind];
-  if (!col) return { sql: '', params: [] };
-  return { sql: ` AND ${alias}.${col} = ?`, params: [manager.scope_value] };
+  return { sql: orNullCol ? ` AND (${orNullCol} IS NULL OR ${cond})` : ` AND ${cond}`, params };
 }
 
 /**
@@ -442,6 +461,23 @@ groupsRouter.post('/groups', requireObserver, (req, res) => {
     .run(name, kind, contest, scope, party || null, uniqueSlug(name), req.observer.id, t);
   db.prepare('INSERT INTO group_managers (group_id, observer_id, role, created_at) VALUES (?, ?, ?, ?)')
     .run(info.lastInsertRowid, req.observer.id, 'owner', t);
+  /**
+   * THE OWNER JOINS THEIR OWN ROSTER.
+   *
+   * They did not before — creating a room made you a manager and nothing else,
+   * so the person who set the campaign up was absent from its own Team tab and
+   * uncounted in its observer total. The only way onto the list was to send
+   * yourself an invite link and tap it, which is what people were doing.
+   *
+   * Their saved unit is PROPOSED, exactly as it is for anyone joining by link:
+   * a proposal, never a confirmation, because it is a record of where they
+   * expect to be and not a decision anyone has made about them.
+   */
+  const mine = db.prepare('SELECT pu_code FROM saved_units WHERE observer_id = ?').get(req.observer.id);
+  db.prepare(
+    `INSERT INTO group_members (group_id, observer_id, assigned_pu, assign_state, joined_at)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).run(info.lastInsertRowid, req.observer.id, mine?.pu_code || null, mine?.pu_code ? 'proposed' : '', t);
 
   notifyMaster(`situation room · new ${kind} "${name}" (${contest}${scope ? ' · ' + scope : ''}) · observer #${req.observer.id}`);
   res.status(201).json({ id: info.lastInsertRowid, name, kind, contest, scope, party: party || null,
@@ -632,8 +668,24 @@ groupsRouter.post('/join/:token', requireObserver, (req, res) => {
   if (row.revoked) return res.status(410).json({ error: 'invite_revoked' });
   if (row.expires_at < now()) return res.status(410).json({ error: 'invite_expired' });
 
-  const existing = db.prepare('SELECT 1 FROM group_members WHERE group_id = ? AND observer_id = ?').get(row.group_id, req.observer.id);
-  if (existing) return res.json({ ok: true, already: true, group_id: row.group_id, name: row.name });
+  const existing = db.prepare('SELECT assigned_pu FROM group_members WHERE group_id = ? AND observer_id = ?')
+    .get(row.group_id, req.observer.id);
+  if (existing) {
+    /* ALREADY IN, AND STILL UNPLACED. Saving a unit back-fills empty rows and
+       so does joining, but someone who joined with nothing saved and then
+       tapped the link again — the ordinary way a forwarded invite is
+       re-opened — fell between the two and stayed blank on the roster. */
+    const has = existing.assigned_pu
+      || (() => {
+        const u = db.prepare('SELECT pu_code FROM saved_units WHERE observer_id = ?').get(req.observer.id);
+        if (u?.pu_code) {
+          db.prepare("UPDATE group_members SET assigned_pu = ?, assign_state = 'proposed' WHERE group_id = ? AND observer_id = ? AND assigned_pu IS NULL")
+            .run(u.pu_code, row.group_id, req.observer.id);
+        }
+        return u?.pu_code || null;
+      })();
+    return res.json({ ok: true, already: true, group_id: row.group_id, name: row.name, proposed_pu: has });
+  }
 
   const t = now();
   // The saved unit auto-PROPOSES the assignment. 176,846 units means manual
@@ -1246,7 +1298,11 @@ groupsRouter.get('/groups/:id/incidents', requireObserver, requireViewer, (req, 
  * the fact, never for the accusation.
  */
 groupsRouter.get('/groups/:id/team', requireObserver, requireViewer, (req, res) => {
-  const sc = scopeClause(req.manager, 'apu');
+  /* Unplaced observers appear for EVERY coordinator, not for none of them —
+     see scopeClause. Two coordinators may both reach for the same unplaced
+     person; that is a conversation they can have, and it is a far smaller
+     problem than an observer no coordinator could see. */
+  const sc = scopeClause(req.manager, 'apu', 'm.assigned_pu');
   const rows = db
     .prepare(
       `SELECT m.observer_id, m.label, m.assigned_pu, m.assign_state, m.joined_at, gm.role,

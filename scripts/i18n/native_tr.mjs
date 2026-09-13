@@ -139,6 +139,8 @@ export default {
     "n.app.join.point-forward": "Za su ga rahotannin da za ka bayar daga yanzu — wace rumfa, da wane lokaci. Rahotannin da ka bayar a baya naka ne.",
     "n.app.join.point-leave": "Za ka iya fita duk lokacin da kake so, kuma za ka iya kasancewa a ƙungiya fiye da ɗaya.",
     "n.app.join.point-public": "Ba za su ga abin da jama’a ba za su gani ba. Shiga yana gaya musu waɗanne rahotanni ne naka kaɗai.",
+    "n.app.join.not-now": "Ba yanzu ba",
+    "n.app.join.back-home": "Koma Hawkeye",
     "n.app.join.sign-in": "Shiga asusu don haɗuwa",
     "n.app.ledger.broken-at": "Ta karye a #{v0}",
     "n.app.ledger.chain": "Sarka",

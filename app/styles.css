@@ -597,6 +597,14 @@ code { word-break: break-all; font-size: 0.72rem; background: var(--code-bg); bo
   box-shadow: 0 1px 3px rgba(20, 32, 26, 0.05);
 }
 main { padding-bottom: 32px; }
+/* A PAGE WHOSE FIRST BLOCK IS A CARD has nothing to hold it off the header: an
+   <h1> brings its own top margin, a .card brings none, so Report a Result and
+   Report Collation Result opened with step 1 welded to the green bar. Only the
+   app had the gap — html.native-app main.wrap sets the same 14px further down —
+   which is why it read as an app-versus-web difference rather than a bug.
+   Opt-in by class, not by `main.wrap`: every other page starts with a heading
+   and already has its space. */
+main.wrap.wrap-pad { padding-top: 14px; }
 
 .notice {
   background: var(--amber);

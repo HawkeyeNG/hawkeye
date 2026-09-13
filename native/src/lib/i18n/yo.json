@@ -193,6 +193,8 @@
   "n.app.join.point-forward": "Wọn yóò rí àwọn ìròyìn tí o bá fi ránṣẹ́ láti ìsinsìnyí — ibùdó ìdìbò wo, àti ìgbà wo. Àwọn ìròyìn rẹ àtẹ̀yìnwá jẹ́ tìrẹ.",
   "n.app.join.point-leave": "O lè kúrò nígbà yòówù tí o bá fẹ́, o sì lè wà nínú ẹgbẹ́ tí ó ju ọ̀kan lọ.",
   "n.app.join.point-public": "Wọn kò lè rí ohun tí gbogbo ènìyàn kò lè rí. Kíkópa sọ fún wọn èwo nínú àwọn ìròyìn tí a ti tẹ̀ jáde ni tìrẹ.",
+  "n.app.join.not-now": "Kì í ṣe nísinsìnyí",
+  "n.app.join.back-home": "Padà sí Hawkeye",
   "n.app.join.sign-in": "Wọlé láti dárapọ̀",
   "n.app.ledger.broken-at": "Ó ya ní #{v0}",
   "n.app.ledger.chain": "Ẹ̀wọ̀n",

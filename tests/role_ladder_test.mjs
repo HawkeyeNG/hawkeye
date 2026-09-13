@@ -17,7 +17,7 @@
  *   node tests/role_ladder_test.mjs
  */
 import { db } from '../backend/src/db.js';
-import { rankOf, scopeInside, canGrant, canActOn } from '../backend/src/routes/groups.js';
+import { rankOf, scopeInside, canGrant, canActOn, scopeClause } from '../backend/src/routes/groups.js';
 
 let fail = 0;
 const ok = (cond, what) => {
@@ -84,6 +84,26 @@ ok(canActOn(ST, co('ward', seed.ward)) === true, 'a state coordinator may demote
 ok(canActOn(co('state', other.state), co('lga', seed.lga)) === false,
   'a coordinator may not demote one in another state');
 ok(canActOn(ST, null) === true, 'anyone with a role may act on a plain member (canGrant decides the rest)');
+
+/* --- the unplaced belong to everyone ------------------------------------- */
+/* An observer nobody has assigned yet has no area, so a scope test on their
+   (absent) unit excluded them from EVERY coordinator's roster at once. They
+   were invisible to all of them and were precisely the people who needed
+   placing. The roster passes orNullCol for that reason; nothing else does,
+   because a NULL unit on a SUBMISSION is not the same claim. */
+{
+  const roster = scopeClause(ST, 'apu', 'm.assigned_pu');
+  const plain = scopeClause(ST, 'apu');
+  ok(/m\.assigned_pu IS NULL OR/.test(roster.sql), 'the roster lets an unassigned member through');
+  ok(!/IS NULL/.test(plain.sql), 'CONTROL: nothing else does — the default clause is unchanged');
+  ok(JSON.stringify(roster.params) === JSON.stringify(plain.params),
+    'and the widening adds no parameters, so the bound values still line up');
+  const zone = scopeClause(co('zone', 'South South'), 'apu', 'm.assigned_pu');
+  ok(zone.params.length > 1 && /IN \(/.test(zone.sql) && /IS NULL OR/.test(zone.sql),
+    'a zone scope keeps its IN-list when widened');
+  ok(scopeClause(OWNER, 'apu', 'm.assigned_pu').sql === '',
+    'an unscoped reader still gets no clause at all, widened or not');
+}
 
 console.log(fail ? '\n' + fail + ' FAILED' : '\nall role-ladder checks passed');
 process.exit(fail ? 1 : 0);

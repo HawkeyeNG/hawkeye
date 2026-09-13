@@ -63,7 +63,130 @@ function requireManager(req, res, next) {
   next();
 }
 
+/**
+ * READ gate. Every member of a room may look at it.
+ *
+ * The room was manager-only, and that was wrong in a way observers felt: they
+ * are told which unit they are down for by a notification, and had nowhere to
+ * see the campaign they had joined, whether anyone else had reported, or what
+ * the race looked like. A roster is not a secret from the people on it.
+ *
+ * They arrive unscoped and read-only. Unscoped because an observer has no area
+ * to be fenced into and cropping the room to their own unit would show them a
+ * one-row election; read-only because every write route still runs
+ * requireManager, so there is no path from this gate to a mutation.
+ */
+function requireViewer(req, res, next) {
+  const id = Number(req.params.id);
+  const group = db.prepare('SELECT * FROM campaign_groups WHERE id = ?').get(id);
+  if (!group) return res.status(404).json({ error: 'no_such_group' });
+  const m = managerRow(id, req.observer.id);
+  if (m) { req.group = group; req.manager = m; return next(); }
+  const mem = db.prepare('SELECT 1 FROM group_members WHERE group_id = ? AND observer_id = ?').get(id, req.observer.id);
+  if (!mem) return res.status(403).json({ error: 'not_a_manager' });
+  req.group = group;
+  req.manager = { role: 'observer', scope_kind: '', scope_value: '' };
+  next();
+}
+
 const isOwner = (m) => m.role === 'owner';
+
+/**
+ * WHO MAY APPOINT WHOM, as one number per person.
+ *
+ * Delegation is downward and only downward. The owner appoints managers; a
+ * manager appoints coordinators of any level but never another manager, because
+ * a manager who could appoint peers could appoint their way around the owner.
+ * Below that each coordinator appoints the levels beneath their own, and a ward
+ * coordinator appoints nobody — there is nothing beneath a ward.
+ *
+ * Expressed as a rank so every rule is one comparison. Anyone who is not on
+ * group_managers at all sits above the scale, which is how a plain observer
+ * reading the room can hold a manager-shaped object without gaining anything
+ * from it.
+ */
+const RANK = { zone: 2, state: 3, lga: 4, ward: 5 };
+export const rankOf = (m) => (m.role === 'owner' ? 0 : m.role === 'manager' ? 1 : (RANK[m.scope_kind] ?? 99));
+
+/**
+ * Is an area inside this manager's own area?
+ *
+ * Asked of the REGISTER, not of string equality, because the containment is a
+ * fact about polling units: a ward called Agbani is inside Enugu only if a unit
+ * exists that is in both. Names repeat nationally (1.2% of wards collide inside
+ * a single state alone), and a rule that compared names would let a coordinator
+ * in one state scope a subordinate to the identically-named ward in another.
+ *
+ * Unscoped means the whole race, so everything is inside it.
+ */
+export function scopeInside(me, kind, value) {
+  if (!me.scope_kind || !me.scope_value) return true;
+  if (!kind || !value) return false;
+  const col = { state: 'state', lga: 'lga', ward: 'ward' }[kind];
+  if (!col) return false;
+  const where = [col + ' = ?'];
+  const params = [value];
+  if (me.scope_kind === 'zone') {
+    const sts = zoneStates(me.scope_value);
+    if (!sts.length) return false;
+    where.push('state IN (' + sts.map(() => '?').join(',') + ')');
+    params.push(...sts);
+  } else {
+    const mine = { state: 'state', lga: 'lga', ward: 'ward' }[me.scope_kind];
+    if (!mine) return false;
+    where.push(mine + ' = ?');
+    params.push(me.scope_value);
+  }
+  return !!db.prepare('SELECT 1 FROM polling_units WHERE ' + where.join(' AND ') + ' LIMIT 1').get(...params);
+}
+
+/** A polling unit the reader may act on — the other half of scopeClause. */
+function unitInside(me, pu) {
+  if (!me.scope_kind || !me.scope_value) return true;
+  if (!pu) return false;
+  return me.scope_kind === 'zone'
+    ? zoneStates(me.scope_value).includes(pu.state)
+    : pu[me.scope_kind] === me.scope_value;
+}
+
+/** Is this member one of the reader's own — i.e. assigned inside their area? */
+function memberInScope(me, groupId, observerId) {
+  if (!me.scope_kind || !me.scope_value) return true;
+  const pu = db
+    .prepare(`SELECT pu.state, pu.lga, pu.ward FROM group_members m
+                JOIN polling_units pu ON pu.pu_code = m.assigned_pu
+               WHERE m.group_id = ? AND m.observer_id = ?`)
+    .get(groupId, observerId);
+  return unitInside(me, pu);
+}
+
+/** May `me` create a role at this level, over this area? */
+export function canGrant(me, role, kind, value) {
+  const mine = rankOf(me);
+  if (role === 'manager') return mine === 0;
+  const target = RANK[kind];
+  if (target == null) return false;
+  // STRICTLY below. A coordinator who could appoint their own level could
+  // appoint a second coordinator over their own area and be overruled in it.
+  if (target <= mine) return false;
+  return scopeInside(me, kind, value);
+}
+
+/**
+ * May `me` change or remove this person's existing role?
+ *
+ * The owner's row is untouchable — a room with no owner has nobody who can
+ * repair it. Otherwise the same downward rule, plus containment: a state
+ * coordinator may demote an LGA coordinator in their state and not one next
+ * door. `target` is null when the person holds no role at all, which every
+ * caller then puts through canGrant.
+ */
+export function canActOn(me, target) {
+  if (!target) return true;
+  if (target.role === 'owner') return false;
+  if (rankOf(target) <= rankOf(me)) return false;
+  return !target.scope_kind || scopeInside(me, target.scope_kind, target.scope_value);
+}
 
 /**
  * The room's address: a slug of its name, numbered when the name repeats.
@@ -354,7 +477,7 @@ groupsRouter.get('/groups', requireObserver, (req, res) => {
   res.json({ managing, member });
 });
 
-groupsRouter.get('/groups/:id', requireObserver, requireManager, (req, res) => {
+groupsRouter.get('/groups/:id', requireObserver, requireViewer, (req, res) => {
   const g = req.group;
   const members = db.prepare('SELECT COUNT(*) n FROM group_members WHERE group_id = ?').get(g.id).n;
   const assigned = db.prepare("SELECT COUNT(*) n FROM group_members WHERE group_id = ? AND assigned_pu IS NOT NULL AND assign_state != 'declined'").get(g.id).n;
@@ -401,6 +524,56 @@ groupsRouter.delete('/groups/:id', requireObserver, requireManager, (req, res) =
   wipe();
   notifyMaster(`situation room · deleted "${req.group.name}" (${members} member(s)) · observer #${req.observer.id}`);
   res.json({ ok: true, removed_members: members });
+});
+
+/**
+ * Rename the room. OWNER ONLY.
+ *
+ * The alternative was deleting and starting over, which costs the roster, every
+ * assignment on it and every invite link already in circulation — a punishing
+ * price for a typo in a campaign name.
+ *
+ * THE SLUG DOES NOT FOLLOW THE NAME. /room/<slug> is pasted into the group chat
+ * the campaign already uses, printed on a briefing sheet, saved by managers who
+ * installed the room as an app; re-slugging on a rename would break every one
+ * of those the moment somebody fixed a spelling. The address names the room,
+ * and the room outlives what it is currently called.
+ */
+groupsRouter.patch('/groups/:id', requireObserver, requireManager, (req, res) => {
+  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
+  const name = String(req.body?.name ?? '').trim().slice(0, MAX_NAME);
+  if (!name) return res.status(400).json({ error: 'bad_name' });
+  db.prepare('UPDATE campaign_groups SET name = ? WHERE id = ?').run(name, req.group.id);
+  res.json({ ok: true, name, slug: req.group.slug || null });
+});
+
+/**
+ * Remove an observer from the roster. OWNER ONLY, deliberately.
+ *
+ * Every other roster power is delegated down the hierarchy; this one is not,
+ * because it is the only one that cannot be corrected from the screen it
+ * happened on — the person is simply gone from the list, and whoever removed
+ * them by mistake has no row left to undo. A coordinator moving somebody to the
+ * wrong unit is visible and reversible; a coordinator removing them is not.
+ *
+ * It removes them from THIS campaign and nothing else. Their account, their
+ * saved unit and every report they have filed are untouched and still counted —
+ * the reports are in the public stream and the ledger, where no campaign can
+ * reach them. They may rejoin with a fresh invite.
+ */
+groupsRouter.delete('/groups/:id/members/:observerId', requireObserver, requireManager, (req, res) => {
+  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
+  const observerId = Number(req.params.observerId);
+  if (observerId === req.observer.id) return res.status(400).json({ error: 'not_yourself' });
+  const target = managerRow(req.group.id, observerId);
+  if (target && target.role === 'owner') return res.status(400).json({ error: 'not_the_owner' });
+  const drop = db.transaction(() => {
+    db.prepare('DELETE FROM group_managers WHERE group_id = ? AND observer_id = ?').run(req.group.id, observerId);
+    return db.prepare('DELETE FROM group_members WHERE group_id = ? AND observer_id = ?')
+      .run(req.group.id, observerId).changes;
+  });
+  if (!drop()) return res.status(404).json({ error: 'not_a_member' });
+  res.json({ ok: true });
 });
 
 // --- invites ------------------------------------------------------------------
@@ -488,7 +661,6 @@ groupsRouter.post('/join/:token', requireObserver, (req, res) => {
  * either — a group with no owner has no one who can fix it.
  */
 groupsRouter.post('/groups/:id/managers/:observerId', requireObserver, requireManager, (req, res) => {
-  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
   const observerId = Number(req.params.observerId);
   const member = db.prepare('SELECT 1 FROM group_members WHERE group_id = ? AND observer_id = ?').get(req.group.id, observerId);
   if (!member) return res.status(404).json({ error: 'not_a_member' });
@@ -498,6 +670,17 @@ groupsRouter.post('/groups/:id/managers/:observerId', requireObserver, requireMa
   const scopeValue = role === 'coordinator' ? String(req.body?.scope_value || '').trim() : '';
   if (role === 'coordinator' && !['zone', 'state', 'lga', 'ward'].includes(scopeKind)) {
     return res.status(400).json({ error: 'bad_scope' });
+  }
+  // Nobody edits their own row. Without this a coordinator could widen their
+  // own scope in one request, and the whole hierarchy below is decoration.
+  if (observerId === req.observer.id) return res.status(400).json({ error: 'not_yourself' });
+  // TWO gates, because a change is a removal and an appointment at once: you
+  // must outrank what they ARE, and be allowed to grant what they are becoming.
+  if (!canActOn(req.manager, managerRow(req.group.id, observerId))) {
+    return res.status(403).json({ error: 'above_your_level' });
+  }
+  if (!canGrant(req.manager, role, scopeKind, scopeValue)) {
+    return res.status(403).json({ error: 'above_your_level' });
   }
   db.prepare(
     `INSERT INTO group_managers (group_id, observer_id, role, scope_kind, scope_value, created_at)
@@ -518,9 +701,11 @@ groupsRouter.post('/groups/:id/managers/:observerId', requireObserver, requireMa
 });
 
 groupsRouter.delete('/groups/:id/managers/:observerId', requireObserver, requireManager, (req, res) => {
-  if (!isOwner(req.manager)) return res.status(403).json({ error: 'owner_only' });
   const observerId = Number(req.params.observerId);
   if (observerId === req.observer.id) return res.status(400).json({ error: 'cannot_demote_owner' });
+  if (!canActOn(req.manager, managerRow(req.group.id, observerId))) {
+    return res.status(403).json({ error: 'above_your_level' });
+  }
   db.prepare("DELETE FROM group_managers WHERE group_id = ? AND observer_id = ? AND role != 'owner'")
     .run(req.group.id, observerId);
   res.json({ ok: true });
@@ -532,8 +717,16 @@ groupsRouter.delete('/groups/:id/managers/:observerId', requireObserver, require
  */
 groupsRouter.patch('/groups/:id/members/:observerId', requireObserver, requireManager, (req, res) => {
   const label = String(req.body?.label ?? '').trim().slice(0, MAX_NAME);
+  const observerId = Number(req.params.observerId);
+  // Renaming somebody is the lightest thing on this screen and still theirs to
+  // do only inside their own area — the roster a coordinator can READ is
+  // already cropped that way (scopeClause on the assigned unit), so a rename
+  // that reached further would be reaching past what they can see.
+  if (!memberInScope(req.manager, req.group.id, observerId)) {
+    return res.status(403).json({ error: 'outside_your_scope' });
+  }
   const r = db.prepare('UPDATE group_members SET label = ? WHERE group_id = ? AND observer_id = ?')
-    .run(label || null, req.group.id, Number(req.params.observerId));
+    .run(label || null, req.group.id, observerId);
   if (!r.changes) return res.status(404).json({ error: 'not_a_member' });
   res.json({ ok: true, label: label || null });
 });
@@ -556,6 +749,15 @@ groupsRouter.patch('/groups/:id/members/:observerId/assignment', requireObserver
   const observerId = Number(req.params.observerId);
   const member = db.prepare('SELECT * FROM group_members WHERE group_id = ? AND observer_id = ?').get(req.group.id, observerId);
   if (!member) return res.status(404).json({ error: 'not_a_member' });
+
+  // Reassignment, not recruitment: the person being moved has to be inside the
+  // reader's area before the move as well as after it. Checking only the
+  // destination let a ward coordinator pull any observer in the country onto
+  // their own ward, which is a transfer out of somebody else's area made by
+  // somebody who cannot see that area.
+  if (!memberInScope(req.manager, req.group.id, observerId)) {
+    return res.status(403).json({ error: 'outside_your_scope' });
+  }
 
   const puCode = req.body?.pu_code ? String(req.body.pu_code).trim() : null;
   if (!puCode) {
@@ -646,7 +848,7 @@ const LEVELS = { state: 'state', lga: 'lga', ward: 'ward' };
  * difference between 8/10 and 8,000/10,000 — and the second is the one that
  * needs people moved.
  */
-groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, res) => {
+groupsRouter.get('/groups/:id/coverage', requireObserver, requireViewer, (req, res) => {
   const g = req.group;
   const where = [];
   const params = [];
@@ -843,7 +1045,7 @@ groupsRouter.get('/groups/:id/coverage', requireObserver, requireManager, (req, 
  * Public geography, but kept behind the room's own auth like everything here.
  */
 const foldName = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-groupsRouter.get('/groups/:id/wards-geo', requireObserver, requireManager, (req, res) => {
+groupsRouter.get('/groups/:id/wards-geo', requireObserver, requireViewer, (req, res) => {
   // The index lives in services/wardGeo.js: this route and the public
   // /register/wards-geo were folding the same 5.4 MB file into two maps.
   const wards = wardsForLga(req.query.state, req.query.lga);
@@ -873,7 +1075,7 @@ function editDistance(a, b) {
  * coordinator had no number for their own patch. Public results only, totals
  * only.
  */
-groupsRouter.get('/groups/:id/tally', requireObserver, requireManager, (req, res) => {
+groupsRouter.get('/groups/:id/tally', requireObserver, requireViewer, (req, res) => {
   const g = req.group;
   const where = ['r.contest = ?'];
   const params = [g.contest];
@@ -906,7 +1108,7 @@ groupsRouter.get('/groups/:id/tally', requireObserver, requireManager, (req, res
  * report came from the unit that member was down for — the mismatch is most
  * legible at the moment it happens, while the manager can still ring someone.
  */
-groupsRouter.get('/groups/:id/activity', requireObserver, requireManager, (req, res) => {
+groupsRouter.get('/groups/:id/activity', requireObserver, requireViewer, (req, res) => {
   const sc = scopeClause(req.manager);
   /**
    * EVERY report in this race, not only the group's own.
@@ -975,7 +1177,7 @@ groupsRouter.get('/groups/:id/activity', requireObserver, requireManager, (req, 
  * joined_at forward like everything else. That is the only thing the group
  * layer adds: the same public incident, with "this was one of ours" attached.
  */
-groupsRouter.get('/groups/:id/incidents', requireObserver, requireManager, (req, res) => {
+groupsRouter.get('/groups/:id/incidents', requireObserver, requireViewer, (req, res) => {
   const g = req.group;
   const where = ["i.status = 'published'"];
   const params = [];
@@ -1043,7 +1245,7 @@ groupsRouter.get('/groups/:id/incidents', requireObserver, requireManager, (req,
  * their own party, turned away, or sent to a merged unit. The field is named for
  * the fact, never for the accusation.
  */
-groupsRouter.get('/groups/:id/team', requireObserver, requireManager, (req, res) => {
+groupsRouter.get('/groups/:id/team', requireObserver, requireViewer, (req, res) => {
   const sc = scopeClause(req.manager, 'apu');
   const rows = db
     .prepare(

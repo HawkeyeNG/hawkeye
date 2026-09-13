@@ -1,6 +1,6 @@
 {
   "id": "/situation-room.html",
-  "name": "Hawkeye Situation Room",
+  "name": "Hawkeye",
   "short_name": "Situation Room",
   "description": "Watch a race and your own observers on one screen: which units have reported, where coverage is thin, and who has yet to file.",
   "start_url": "/situation-room.html",

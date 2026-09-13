@@ -30,7 +30,8 @@
       "credentialsSource": "local",
       "env": {
         "APP_VARIANT": "production"
-      }
+      },
+      "autoIncrement": true
     }
   },
   "submit": {

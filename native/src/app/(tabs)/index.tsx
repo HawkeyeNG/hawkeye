@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 
+import { HeaderControls } from '@/components/header-controls';
 import { ScreenHeader } from '@/components/screen-header';
 import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
@@ -486,7 +487,7 @@ export default function Home() {
           the screen every one of those paths lands on. It opens itself only if
           this device has never seen it, and fails closed. */}
       <Tour auto />
-      <ScreenHeader title="Hawkeye" translateY={translateY} right="none" />
+      <ScreenHeader title="Hawkeye" translateY={translateY} right="none" rightSlot={<HeaderControls />} />
       <FlashList
         data={shown ?? []}
         keyExtractor={(x) => x.id}

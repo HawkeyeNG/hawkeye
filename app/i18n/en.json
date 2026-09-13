@@ -1162,7 +1162,7 @@
   "situation-room.who-manages-this-room": "Who manages this room",
   "situation-room.yet-to-report": "Yet to report",
   "situation-room.you-manage-the-observers-in-your-area": "You manage the observers in your area; the totals are the campaign’s.",
-  "situation-room.your-area": "Your area",
+  "situation-room.your-area": "{v0} (your area)",
   "situation-room.yours": "yours",
   "situation-room.status-declined": "Declined",
   "situation-room.status-no-unit": "No unit",
@@ -1331,5 +1331,9 @@
   "situation-room.yet-to-be-counted": "Yet to be counted",
   "situation-room.nth-of-m-so-far": "{v0} of {v1} counted so far",
   "situation-room.no-votes-counted-yet": "no votes counted yet",
-  "situation-room.party-totals-area": "Party totals — {v0}"
+  "situation-room.party-totals-area": "Party totals — {v0}",
+  "situation-room.one-unit-counted": "1 unit counted",
+  "situation-room.n-units-counted": "{v0} units counted",
+  "situation-room.n-disputed-left-out": "{v0} disputed and left out, as on the public docket",
+  "situation-room.same-figures-public-board": "the same figures the public board shows"
 }

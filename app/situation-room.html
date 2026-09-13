@@ -681,7 +681,6 @@ async function loadTab(force) {
       S.overview = cov.body;
       S.activity = act.body;
       S.tally = nat.status === 200 ? nat.body : null;
-      S.tallyArea = raceArea();
       S.areaTally = own && own.status === 200 ? own.body : null;
     }
     return renderOverview();
@@ -813,8 +812,9 @@ function renderOverview() {
 
       </div>
     </div>
-    ${partiesHtml(S.tally, S.tallyArea)}
-    ${S.areaTally ? partiesHtml(S.areaTally, S.group.me.scope_value + ' (your area)') : ''}
+    ${partiesHtml(S.tally, raceArea())}
+    ${S.areaTally ? partiesHtml(S.areaTally, T('situation-room.your-area',
+    '{v0} (your area)', { v0: S.group.me.scope_value })) : ''}
     <h2 class="sr-h2">${T('situation-room.reports-coming-in', 'Reports coming in')}</h2>
     <div class="sr-card${reports.length > 4 ? ' sr-panel' : ''}">${reports.length
           ? `<div class="sr-scroll">${reports.map(activityRow).join('')}</div>`
@@ -886,7 +886,7 @@ function partiesHtml(t, area) {
         <div><b class="num">${n(mineRow.votes)}</b> <span class="num">${share(mineRow.votes)}</span>
           <span class="sr-sub">${esc(mineRow.name || mine)} &middot; ${minePos >= 0
     ? esc(T('situation-room.nth-of-m-so-far', '{v0} of {v1} counted so far',
-      { v0: (minePos + 1) + (['st', 'nd', 'rd'][minePos] || 'th'), v1: n(scored.length) }))
+      { v0: minePos + 1, v1: n(scored.length) }))
     : esc(T('situation-room.no-votes-counted-yet', 'no votes counted yet'))}</span></div>
       </div>` : ''}
       <div class="sr-scroll" style="max-height:300px">
@@ -925,9 +925,12 @@ function partiesHtml(t, area) {
         <button class="sr-btn" data-party-csv="${esc(area)}">${
           T('situation-room.download-party-totals', 'Download party totals (CSV)')}</button>
       </div>
-      <div class="sr-count">${n(t.unitsReporting || 0)} unit${t.unitsReporting === 1 ? '' : 's'} counted
-        ${t.inDispute ? `&middot; ${n(t.inDispute)} disputed and left out, as on the public docket` : ''}
-        &middot; the same figures the public board shows</div>
+      <div class="sr-count">${t.unitsReporting === 1
+    ? T('situation-room.one-unit-counted', '1 unit counted')
+    : T('situation-room.n-units-counted', '{v0} units counted', { v0: n(t.unitsReporting || 0) })}
+        ${t.inDispute ? '&middot; ' + T('situation-room.n-disputed-left-out',
+    '{v0} disputed and left out, as on the public docket', { v0: n(t.inDispute) }) : ''}
+        &middot; ${T('situation-room.same-figures-public-board', 'the same figures the public board shows')}</div>
     </div>`;
 }
 

@@ -1189,7 +1189,7 @@
   "situation-room.who-manages-this-room": "Onye na-elekọta ọnụ ụlọ a",
   "situation-room.yet-to-report": "Ha akọbeghị akụkọ",
   "situation-room.you-manage-the-observers-in-your-area": "Ị na-elekọta ndị na-ekiri ihe na mpaghara gị; mkpokọta bụ nke mkpọsa ahụ.",
-  "situation-room.your-area": "Mpaghara gị",
+  "situation-room.your-area": "{v0} (mpaghara gị)",
   "situation-room.yours": "nke gị",
   "map-unit.this-unit-already-has-a-confirmed-location": "Ngalaba ntuli aka a enweelarị ebe akwadoro, ya mere ọ dịghị ihe a ga-ewere ebe a — ị ka nwere ike ịchekwa ya dị ka ngalaba ntuli aka gị.",
   "info.why-collation-forms-matter.title": "Ihe kpatara fọm nchịkọta ji dị mkpa",
@@ -1356,5 +1356,9 @@
   "situation-room.yet-to-be-counted": "A gụbeghị ha",
   "situation-room.nth-of-m-so-far": "{v0} n'ime {v1} a gụrụ ruo ugbu a",
   "situation-room.no-votes-counted-yet": "a gụbeghị vootu ọ bụla",
-  "situation-room.party-totals-area": "Ngụkọta pati — {v0}"
+  "situation-room.party-totals-area": "Ngụkọta pati — {v0}",
+  "situation-room.one-unit-counted": "a gụrụ otu ebe",
+  "situation-room.n-units-counted": "a gụrụ ebe {v0}",
+  "situation-room.n-disputed-left-out": "a rụrụ ụka na {v0} ma wepụ ha, dịka ọ dị na ndekọ ọha",
+  "situation-room.same-figures-public-board": "otu ọnụọgụ ahụ bọọdụ ọha na-egosi"
 }

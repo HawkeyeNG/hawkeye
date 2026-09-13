@@ -65,6 +65,15 @@ rm -rf android/app/src/main/assets/public/download
 rm -rf android/app/src/main/assets/public/play-shots
 rm -rf android/app/src/main/assets/public/ios-shots
 rm -f  android/app/src/main/assets/public/play-feature-graphic.png
+# The situation room is a website and desktop surface, not a Lite page: nothing
+# in the app opens it (menu.js keeps SHOW_SITUATION_ROOM false), and
+# my-groups.html links /room/<slug> with a LEADING SLASH, which native.js
+# rewrites to the live host. Bundled, it was 100 KB that went stale the moment
+# the room changed — which is what made a room fix force a mobile rebuild.
+# The iOS side gets this from mobile/scripts/strip_web_assets.sh, which this
+# script does not run.
+rm -f  android/app/src/main/assets/public/situation-room.html
+rm -f  android/app/src/main/assets/public/room.webmanifest
 
 cd android || exit 1
 echo "sdk.dir=$ANDROID_HOME" > local.properties

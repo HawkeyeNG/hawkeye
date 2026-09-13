@@ -162,6 +162,44 @@ function showCard(g) {
         <a class="plain" href="terms.html">Terms</a></p>
     </div>`;
   $('go').addEventListener('click', () => go(g));
+  offerApp();
+}
+
+/**
+ * OPEN THIS IN THE INSTALLED SITUATION ROOM — and only this.
+ *
+ * The first attempt was `handle_links: "preferred"` on room.webmanifest, which
+ * works and is far too broad: the room's scope is the whole site, link capture
+ * is scope-granular and has no per-path dial, so every hawkeye.com.ng link on
+ * that computer — a race page mailed to a colleague, a ledger link — would have
+ * opened in the room's window instead of the browser.
+ *
+ * A PROTOCOL HANDLER is the narrow instrument. The installed app registers
+ * web+hawkeye: and nothing else; this page, which is the only page that ever
+ * mints one, hands it the token. Nothing else on the site is affected, and a
+ * computer with no app installed never sees this button.
+ *
+ * getInstalledRelatedApps() answers only for apps related to THIS origin, which
+ * is exactly the question being asked, and it is Chromium-only — everywhere
+ * else the button simply never appears and the page behaves as it always did.
+ */
+async function offerApp() {
+  if (!navigator.getInstalledRelatedApps) return;
+  /* Already inside the app: the button would relaunch what you are looking at. */
+  if (matchMedia('(display-mode: standalone)').matches) return;
+  const apps = await navigator.getInstalledRelatedApps().catch(() => []);
+  if (!apps.some((a) => a.platform === 'webapp' && /room\.webmanifest/.test(a.url || ''))) return;
+  const row = document.createElement('p');
+  row.className = 'fine';
+  row.style.marginTop = '10px';
+  row.innerHTML = '<a class="plain" id="open-app" href="#"></a>';
+  $('go').insertAdjacentElement('afterend', row);
+  const link = $('open-app');
+  link.textContent = T('join.open-in-app', 'Open this invitation in the Situation Room app');
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    location.href = 'web+hawkeye:' + encodeURIComponent(token);
+  });
 }
 
 async function go(g) {

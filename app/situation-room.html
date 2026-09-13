@@ -888,6 +888,14 @@ async function loadTab(force) {
     renderCoverage();
   } else {
     if (force || !S.team) S.team = (await api('/api/groups/' + S.gid + '/team')).body;
+    /* The rooms this owner could lift a roster FROM, fetched beside the team
+       because that is the only tab that offers it. Owner-only on the server
+       too; a non-owner asking gets a 403 and an empty list here, which is
+       exactly what the block wants. */
+    if (iAmOwner() && (force || !S.sources)) {
+      const r = await api('/api/groups/' + S.gid + '/sources');
+      S.sources = r.status === 200 ? (r.body.sources || []) : [];
+    }
     renderTeam();
   }
 }
@@ -1688,6 +1696,7 @@ function renderTeam() {
       <div class="sr-head wait"><b class="num">${n(count('silent'))}</b><span>${T('situation-room.yet-to-report', 'Yet to report')}</span></div>
       <div class="sr-head"><b class="num">${n(count('unassigned') + count('declined'))}</b><span>${T('situation-room.no-unit-set', 'No unit set')}</span></div>
     </div>
+    ${rosterToolsHtml()}
     ${iManage() ? '' : `<div class="sr-note">
       <strong>${T('situation-room.read-only-title', "You are on this campaign’s roster.")}</strong>
       ${T('situation-room.read-only-body', "This is the campaign’s own view of the race. You can read everything here; only its managers can change anything in it.")}
@@ -1723,6 +1732,7 @@ function renderTeam() {
 
   document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => runAction(b)));
   if ($('confirm-proposed')) $('confirm-proposed').addEventListener('click', confirmProposed);
+  bindRosterTools();
 }
 
 async function runAction(b) {
@@ -1842,6 +1852,135 @@ function managersHtml() {
           : T('situation-room.manages-everything', "the whole race, and everyone in it")}</span></div>
     </div>`).join('')}
   </div>`;
+}
+
+/**
+ * MOVING PEOPLE BETWEEN CAMPAIGNS, and the consent that governs it.
+ *
+ * The same person runs the presidential room in January and a governorship room
+ * for the same party a month later, and party offices share observers between
+ * campaigns as a matter of course. Rebuilding a roster of several hundred by
+ * re-sending invites one at a time is not a task anyone finishes, so the roster
+ * moves — but the PEOPLE decide.
+ *
+ * Nobody is ever added. They are INVITED, and until each of them accepts, this
+ * campaign cannot see them at all: not their name, not their unit, not which
+ * published reports are theirs. That is not a nicety bolted on the side — it is
+ * the thing joining a group consents to, and consent given to one campaign is
+ * not consent given to the next one. The wording below says so plainly, because
+ * a manager who expects several hundred new rows and gets a pending count needs
+ * to know that is the feature working.
+ */
+function rosterToolsHtml() {
+  if (!iAmOwner()) return '';
+  const pend = (S.group && S.group.pending) || 0;
+  const srcs = (S.sources || []).filter((x) => x.copyable > 0);
+  return `<div class="sr-card" style="margin-bottom:16px">
+    <div class="sr-h2" style="margin:0 0 4px">${T('situation-room.share-observers', "Share observers")}</div>
+    <p class="sr-fine" style="margin:0 0 12px">${T('situation-room.share-observers-note', "Everyone you bring over is asked first. Until they accept, they are not on this roster and you cannot see them or their reports.")}</p>
+    <div class="sr-tools">
+      ${srcs.length ? `<select class="sr-sel" id="copy-from">
+        <option value="">${T('situation-room.copy-from-placeholder', "Copy observers from…")}</option>
+        ${srcs.map((x) => `<option value="${x.id}">${esc(x.name)} &mdash; ${T('situation-room.n-available', "{v0} available", { v0: n(x.copyable) })}</option>`).join('')}
+      </select>
+      <button class="sr-btn" id="copy-go">${T('situation-room.invite-them', "Invite them")}</button>` : ''}
+      <div class="spacer"></div>
+      <button class="sr-btn" id="roster-dl">${T('situation-room.download-roster', "Download roster (CSV)")}</button>
+      <button class="sr-btn" id="roster-up">${T('situation-room.import-roster', "Import roster (CSV)")}</button>
+      <input type="file" id="roster-file" accept=".csv,text/csv" hidden />
+    </div>
+    ${pend ? `<p class="sr-fine" style="margin:10px 0 0">${pend === 1
+    ? T('situation-room.pending-one', "{v0} person has been asked and has not answered yet.", { v0: n(pend) })
+    : T('situation-room.pending-many', "{v0} people have been asked and have not answered yet.", { v0: n(pend) })}</p>` : ''}
+  </div>`;
+}
+
+/* Bound after every Team repaint, like every other control on this tab. */
+function bindRosterTools() {
+  if ($('copy-go')) $('copy-go').addEventListener('click', copyMembers);
+  if ($('roster-dl')) $('roster-dl').addEventListener('click', downloadRoster);
+  if ($('roster-up')) $('roster-up').addEventListener('click', () => $('roster-file').click());
+  if ($('roster-file')) $('roster-file').addEventListener('change', importRoster);
+}
+
+async function copyMembers() {
+  const from = $('copy-from') && $('copy-from').value;
+  if (!from) return alert(T('situation-room.pick-a-campaign', "Pick the campaign to bring observers from."));
+  const src = (S.sources || []).find((x) => String(x.id) === String(from));
+  if (!await ask(T('situation-room.copy-confirm', "Ask everyone on {name} to observe with {target} as well? Each of them decides. Nobody who is already here is asked twice.", { name: (src && src.name) || '', target: S.group.name }))) return;
+  const { status, body } = await api('/api/groups/' + S.gid + '/copy-members', {
+    method: 'POST', body: JSON.stringify({ from_group_id: Number(from) }),
+  });
+  if (status !== 200) return alert(roleError(body.error));
+  await afterInvite(body.invited);
+}
+
+/* The file is built by the SERVER — it is the only side that can mint a share
+   code — so this is a plain authenticated fetch turned into a download rather
+   than a CSV assembled here from what the page happens to be holding. */
+async function downloadRoster() {
+  const res = await fetch('/api/groups/' + S.gid + '/roster.csv', {
+    headers: { authorization: 'Bearer ' + (localStorage.getItem('hawkeye_token') || '') },
+  });
+  if (!res.ok) return alert(T('situation-room.could-not-build-roster', "Could not build that roster file."));
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'hawkeye-roster-' + (S.group.slug || 'campaign') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Read a roster file and turn it into invitations.
+ *
+ * Parsed HERE rather than uploaded: all the server needs is the share codes,
+ * and posting the whole file would send it the labels one campaign privately
+ * wrote about its own people. The column is found by NAME, so a file someone
+ * opened in Excel and re-saved with the columns reordered still works.
+ */
+async function importRoster(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const text = await file.text();
+  const rows = text.split(/\r?\n/).filter((l) => l.trim() && !l.startsWith('#'));
+  const head = (rows.shift() || '').split(',').map((h) => h.trim().replace(/^"|"$/g, '').toLowerCase());
+  let col = head.indexOf('share_code');
+  /* A file with no header at all is a column of codes somebody pasted. Treat
+     the first line as data rather than refusing — but only if it looks like a
+     code, so a mis-picked file does not silently import its first row. */
+  if (col < 0) {
+    if (/^[0-9A-HJKMNP-TV-Z]{12}$/i.test(head[0] || '')) { rows.unshift(head.join(',')); col = 0; } else {
+      return alert(T('situation-room.no-share-code-column', "That file has no share_code column. Use a roster downloaded from Hawkeye."));
+    }
+  }
+  const codes = rows.map((l) => (l.split(',')[col] || '').trim().replace(/^"|"$/g, '')).filter(Boolean);
+  if (!codes.length) return alert(T('situation-room.roster-empty', "There are no observers in that file."));
+  if (!await ask(codes.length === 1
+    ? T('situation-room.import-confirm-one', "Ask {v0} observer from that file to join {target}? They decide.", { v0: n(codes.length), target: S.group.name })
+    : T('situation-room.import-confirm-many', "Ask {v0} observers from that file to join {target}? Each of them decides.", { v0: n(codes.length), target: S.group.name }))) return;
+  const { status, body } = await api('/api/groups/' + S.gid + '/import-roster', {
+    method: 'POST', body: JSON.stringify({ codes }),
+  });
+  if (status !== 200) return alert(roleError(body.error));
+  await afterInvite(body.invited, body.unknown);
+}
+
+/* Says what happened, including the nothing-happened cases — "0 invited" with
+   no reason is how a manager concludes the feature is broken. */
+async function afterInvite(invited, unknown) {
+  const bits = [invited === 1
+    ? T('situation-room.invited-one', "{v0} person has been asked.", { v0: n(invited) })
+    : T('situation-room.invited-many', "{v0} people have been asked.", { v0: n(invited) })];
+  if (!invited) bits.push(T('situation-room.nobody-new', "Everyone in that list is already on this roster."));
+  if (unknown) bits.push(T('situation-room.unknown-codes', "{v0} row(s) were not recognised and were skipped.", { v0: n(unknown) }));
+  bits.push(T('situation-room.asked-note', "They appear here once they accept."));
+  alert(bits.join(' '));
+  S.team = S.sources = null;
+  await loadGroup();
 }
 
 function memberRow(m) {

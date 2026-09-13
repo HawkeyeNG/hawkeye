@@ -6,7 +6,9 @@
   "start_url": "/situation-room.html",
   "scope": "/",
   "display": "standalone",
-  "handle_links": "preferred",
+  "protocol_handlers": [
+    { "protocol": "web+hawkeye", "url": "/join.html?t=%s" }
+  ],
   "launch_handler": { "client_mode": "navigate-existing" },
   "background_color": "#00251a",
   "theme_color": "#00251a",

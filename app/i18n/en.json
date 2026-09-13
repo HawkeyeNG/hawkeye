@@ -1315,5 +1315,7 @@
   "contest.by-election": "{v0} By-Election{v1}",
   "common.nigeria": "Nigeria",
   "race.map-of-seat-by-ward": "Map of {seat}, by ward",
-  "race.seat-wards": "{seat} — {n} wards"
+  "race.seat-wards": "{seat} — {n} wards",
+  "unit.ward.one": "ward",
+  "results.ward-map-incomplete": "No ward map for this state yet — the figures below are complete."
 }

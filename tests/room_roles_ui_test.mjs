@@ -502,22 +502,18 @@ ME = { role: 'owner', scope_kind: '', scope_value: '' };
 {
   const manifest = JSON.parse(
     (await import('node:fs')).readFileSync('/home/elrio/hawkeye/app/room.webmanifest', 'utf8'));
-  check('the manifest name is the one word that needs no translating', manifest.name, 'Hawkeye');
-  check('CONTROL: and it is not the phrase that was being doubled', manifest.name,
-    (v) => !/situation/i.test(v));
+  check('the manifest carries the product name', manifest.name, 'Hawkeye Election Monitor');
 
   const titleIn = async (lang, standalone) => {
     const p = await b.newPage({ viewport: { width: 1100, height: 800 } });
     /* Playwright's emulateMedia covers colour-scheme and friends but NOT
        display-mode — it ignored the override silently and the standalone branch
-       simply never ran, so the first version of this check failed against
-       correct code. Stubbing the one query instead, narrowly: the real
-       matchMedia still answers everything else, because the scrollbar rules
-       ask it about hover and would otherwise be answered by a stub.
-       WHAT THIS DOES AND DOES NOT PROVE: that the title narrows and translates
-       WHEN the page believes it is installed. Whether Chrome reports
-       display-mode: standalone in a real installed window is the browser's
-       contract, not ours, and is not exercised here. */
+       simply never ran, so an earlier version of this failed against correct
+       code. Stubbing the one query instead, narrowly: the real matchMedia still
+       answers everything else, because the scrollbar rules ask it about hover.
+       WHAT THIS PROVES: that the page clears its title WHEN it believes it is
+       installed. Whether the browser then renders the app name alone is the
+       browser's contract, not ours. */
     if (standalone) {
       await p.addInitScript(() => {
         const real = window.matchMedia.bind(window);
@@ -539,20 +535,21 @@ ME = { role: 'owner', scope_kind: '', scope_value: '' };
     return t;
   };
 
-  /* Installed: one "Hawkeye" comes from the manifest, so the title must not
-     repeat it — but it must still name the room, in the reader's language. */
-  const appEn = await titleIn('en', true);
-  check('installed: the title does not repeat the brand', appEn, (t) => !/Hawkeye/i.test(t));
-  check('installed: and still names the room', appEn, 'Situation Room');
-  const appHa = await titleIn('ha', true);
-  check('installed: translated for a Hausa reader', appHa, 'Ɗakin Sa Ido');
-  check('CONTROL: which is not the English string', appHa, (t) => t !== appEn);
+  /* Installed: the manifest names the window, so the document must add nothing
+     — the composition only runs on a non-empty title. */
+  check('installed: the document adds no second name', await titleIn('en', true), '');
+  check('installed: and still adds none in Hausa', await titleIn('ha', true), '');
 
-  /* A browser tab has no app name in front of it, so it keeps the brand. */
+  /* A tab has no app name in front of it, so it carries the name itself. */
   const tabEn = await titleIn('en', false);
-  check('a tab keeps the full name', tabEn, 'Hawkeye — Situation Room');
+  check('a tab carries the product name', tabEn, 'Hawkeye Election Monitor');
+  /* THE NAME IS THE PRODUCT'S, in every language. A control, because "it did
+     not translate" is indistinguishable from "translation is broken" unless
+     something else on the page is known to have translated. */
   const tabHa = await titleIn('ha', false);
-  check('and translates it too', tabHa, 'Hawkeye — Ɗakin Sa Ido');
+  check('and does NOT translate it', tabHa, 'Hawkeye Election Monitor');
+  check('CONTROL: the Hausa bundle really did load on that page', ha.teamText,
+    (t) => /mamallaki/.test(t));
 }
 
 /* --- and the way IN to the room ------------------------------------------ */

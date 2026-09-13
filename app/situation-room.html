@@ -359,6 +359,26 @@
 }
 .sr-link code { flex: 1 1 auto; font-family: var(--sr-mono); font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; }
 .sr-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0 0; font-size: 0.76rem; color: var(--muted); }
+/* Full-height column: header, then everything else scrolling under it.
+   POINTER-COARSE SCREENS ARE LEFT ALONE. On a phone the header hides itself on
+   scroll-down (menu.js toggles .hdr-hidden from the window's scroll), and that
+   listener never fires once the document stops scrolling — so a phone would
+   trade a vanishing header for a permanent one and lose a header's worth of
+   vertical space on the smallest screens. The gain here is a desktop window's
+   chrome; the cost lands somewhere else entirely. */
+@media (min-width: 701px) {
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; overflow: hidden; }
+  /* Sticky was doing the work the flex column now does, and a sticky element
+     inside a flex column still reserves its own space — it has to go static or
+     the header would scroll away under itself. */
+  .gov-header { position: static; flex: 0 0 auto; }
+  #sr-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+  /* A dialog locks the PANE now. body already has overflow:hidden here, so the
+     inline style the dialogs used to set had nothing left to do. */
+  html.modal-open #sr-scroll { overflow: hidden; }
+}
+
 /* SCROLLBARS THAT GET OUT OF THE WAY.
    Installed as a desktop app this is a window of its own, and the platform's
    grey trough down the right-hand side is the one part of it that still reads
@@ -429,9 +449,19 @@ html.scrolling *::-webkit-scrollbar-thumb {
     </div>
   </header>
 
-  <main class="sr" id="sr">
-    <div class="sr-msg" data-i18n="index.loading">Loading…</div>
-  </main>
+  <!-- THE PAGE SCROLLS BELOW THE HEADER, NOT BESIDE IT. The scrollbar used to
+       belong to the document, so it ran the full height of the window and cut
+       the green bar short — the one element that should read as edge-to-edge
+       chrome had a grey strip beside it. This pane owns the scrolling instead;
+       the header is a flex sibling above it and spans the whole width.
+       A wrapper rather than scrolling .sr itself, because .sr is centred at a
+       max-width and its scrollbar would have appeared in the middle of the
+       page rather than at the edge of the window. -->
+  <div id="sr-scroll">
+    <main class="sr" id="sr">
+      <div class="sr-msg" data-i18n="index.loading">Loading…</div>
+    </main>
+  </div>
 
 <script>
 /**
@@ -527,7 +557,7 @@ function askInstall() {
         <button type="button" class="sr-btn" data-no>${esc(T('lang.later', 'Not now'))}</button>
         <button type="button" class="sr-btn primary" data-yes>${esc(T('situation-room.install', 'Install'))}</button>
       </div></div>`;
-    const done = (v) => { box.remove(); document.body.style.overflow = ''; resolve(v); };
+    const done = (v) => { box.remove(); document.documentElement.classList.remove('modal-open'); resolve(v); };
     box.addEventListener('click', (ev) => { if (ev.target === box) done(false); });
     box.querySelector('[data-no]').addEventListener('click', () => done(false));
     box.querySelector('[data-yes]').addEventListener('click', () => done(true));
@@ -535,7 +565,7 @@ function askInstall() {
       if (ev.key === 'Escape') { document.removeEventListener('keydown', esc2); done(false); }
     });
     document.body.appendChild(box);
-    document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add('modal-open');
     box.querySelector('[data-yes]').focus();
   });
 }
@@ -1429,7 +1459,7 @@ function ask(message) {
         <button type="button" class="sr-btn primary" data-yes>${T('common.ok', 'OK')}</button>
       </div></div>`;
     box.querySelector('p').textContent = message;
-    const done = (v) => { box.remove(); document.body.style.overflow = ''; resolve(v); };
+    const done = (v) => { box.remove(); document.documentElement.classList.remove('modal-open'); resolve(v); };
     box.addEventListener('click', (e) => { if (e.target === box) done(false); });
     box.querySelector('[data-no]').addEventListener('click', () => done(false));
     box.querySelector('[data-yes]').addEventListener('click', () => done(true));
@@ -1437,7 +1467,7 @@ function ask(message) {
       if (e.key === 'Escape') { document.removeEventListener('keydown', esc); done(false); }
     });
     document.body.appendChild(box);
-    document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add('modal-open');
     box.querySelector('[data-yes]').focus();
   });
 }
@@ -1464,7 +1494,7 @@ function askText(message, value = '', opts = {}) {
     field.value = value;
     if (opts.placeholder) field.placeholder = opts.placeholder;
     if (opts.code) field.classList.add('num');
-    const done = (v) => { box.remove(); document.body.style.overflow = ''; resolve(v); };
+    const done = (v) => { box.remove(); document.documentElement.classList.remove('modal-open'); resolve(v); };
     box.addEventListener('click', (e) => { if (e.target === box) done(null); });
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
     box.querySelector('[data-yes]').addEventListener('click', () => done(field.value));
@@ -1475,7 +1505,7 @@ function askText(message, value = '', opts = {}) {
       if (e.key === 'Escape') { document.removeEventListener('keydown', esc); done(null); }
     });
     document.body.appendChild(box);
-    document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add('modal-open');
     field.focus();
     field.select();
   });
@@ -1574,7 +1604,15 @@ function crumbsHtml() {
 /* Drilling replaces the table under a scroll position set by the PREVIOUS,
    longer list — go down two levels and the new list can be entirely above the
    viewport, which reads as a blank screen. */
-function toTop() { window.scrollTo({ top: 0, behavior: 'instant' }); }
+/* The window no longer scrolls on a desktop width — the pane does — and a
+   crumb click that silently failed to scroll leaves the reader at the bottom of
+   the previous level wondering where the new one went. Both are called because
+   which one is the scroller depends on the viewport. */
+function toTop() {
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  const pane = $('sr-scroll');
+  if (pane) pane.scrollTo({ top: 0, behavior: 'instant' });
+}
 
 function drill(level, key) {
   if (level === 'unit') return;

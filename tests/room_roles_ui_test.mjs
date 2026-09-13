@@ -329,6 +329,90 @@ ME = { role: 'owner', scope_kind: '', scope_value: '' };
   await p.close();
 }
 
+/* --- the header runs edge to edge, the page scrolls under it ------------- */
+/* The scrollbar belonged to the DOCUMENT, so it ran the full height of the
+   window and left a grey strip beside the green bar — the one element that
+   should read as edge-to-edge chrome stopped short of the edge. Measured from
+   the rendered boxes: geometry is the claim, so geometry is what is checked. */
+MEMBER_ONLY = false;
+ME = { role: 'owner', scope_kind: '', scope_value: '' };
+{
+  const p = await b.newPage({ viewport: { width: 1280, height: 720 } });
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(String(e)));
+  await p.addInitScript(() => {
+    const enc = (o) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+    try {
+      localStorage.setItem('hawkeye_token', enc({ alg: 'none' }) + '.' + enc({ sub: 1, exp: 4102444800 }) + '.x');
+    } catch (e) { /* private mode */ }
+  });
+  await p.goto(`${base}/situation-room.html?tab=team`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.sr-tbl', { timeout: 10000 }).catch(() => {});
+
+  const geo = await p.evaluate(() => {
+    const hdr = document.querySelector('.gov-header').getBoundingClientRect();
+    const pane = document.getElementById('sr-scroll');
+    const pr = pane.getBoundingClientRect();
+    return {
+      hdrWidth: hdr.width, hdrTop: hdr.top,
+      docWidth: document.documentElement.clientWidth,
+      winWidth: window.innerWidth,
+      paneTop: pr.top, paneBottom: pr.bottom,
+      winHeight: window.innerHeight,
+      paneScrolls: pane.scrollHeight > pane.clientHeight,
+      bodyOverflow: getComputedStyle(document.body).overflow,
+    };
+  });
+  check('the page has something to scroll', geo.paneScrolls, true);
+  check('the document is sealed, so its scrollbar cannot appear', geo.bodyOverflow,
+    (v) => /hidden/.test(v));
+  check('so the header spans the full window width', geo,
+    (g) => Math.abs(g.hdrWidth - g.winWidth) <= 1);
+  check('the pane starts at the bottom of the header, not at the top of the window', geo,
+    (g) => g.paneTop > 0 && Math.abs(g.paneTop - (g.hdrTop + g.hdrWidth * 0)) >= 0
+      && g.paneTop >= 40);
+  check('and runs to the bottom of the window', geo,
+    (g) => Math.abs(g.paneBottom - g.winHeight) <= 1);
+
+  /* Scrolling the pane must still drive the fade-in and must not move the
+     header, which is the whole point of taking it out of the scroller. */
+  await p.evaluate(() => document.getElementById('sr-scroll').scrollBy(0, 200));
+  const after = await p.evaluate(() => ({
+    hdrTop: document.querySelector('.gov-header').getBoundingClientRect().top,
+    scrolled: document.getElementById('sr-scroll').scrollTop,
+    docScrolled: (document.scrollingElement || document.documentElement).scrollTop,
+  }));
+  check('the pane actually scrolled', after.scrolled, (v) => v > 0);
+  /* THE CLAIM, and the one that goes red on a revert: the document stayed put,
+     so the bar the reader sees is the pane's and starts below the header. */
+  check('and the document did NOT — the pane is the scroller', after.docScrolled, 0);
+  check('so the header did not move with it', after.hdrTop, geo.hdrTop);
+  check('header/scroll page rendered without throwing', errs, []);
+  await p.close();
+}
+
+/* A phone keeps the document scrolling, because menu.js hides the header from
+   the WINDOW's scroll event and that listener goes silent the moment the
+   document stops being the scroller. */
+{
+  const p = await b.newPage({ viewport: { width: 390, height: 844 } });
+  await p.addInitScript(() => {
+    const enc = (o) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+    try {
+      localStorage.setItem('hawkeye_token', enc({ alg: 'none' }) + '.' + enc({ sub: 1, exp: 4102444800 }) + '.x');
+    } catch (e) { /* private mode */ }
+  });
+  await p.goto(`${base}/situation-room.html?tab=team`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.sr-tbl', { timeout: 10000 }).catch(() => {});
+  const phone = await p.evaluate(() => ({
+    bodyOverflow: getComputedStyle(document.body).overflow,
+    paneOverflow: getComputedStyle(document.getElementById('sr-scroll')).overflowY,
+  }));
+  check('phone: the document still scrolls', phone.bodyOverflow, (v) => !/hidden/.test(v));
+  check('phone: the pane is not a scroller there', phone.paneOverflow, (v) => v !== 'auto' && v !== 'scroll');
+  await p.close();
+}
+
 /* --- and the way IN to the room ------------------------------------------ */
 /* A HIGHLIGHTED HEADING IS NOT A BUTTON. The room was reachable only by tapping
    the campaign's name, and a coloured heading reads as a heading — so people who

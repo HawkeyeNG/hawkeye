@@ -1317,5 +1317,9 @@
   "race.map-of-seat-by-ward": "Map of {seat}, by ward",
   "race.seat-wards": "{seat} — {n} wards",
   "unit.ward.one": "ward",
-  "results.ward-map-incomplete": "No ward map for this state yet — the figures below are complete."
+  "results.ward-map-incomplete": "No ward map for this state yet — the figures below are complete.",
+  "race.loading-units": "Loading polling units…",
+  "race.n-polling-units": "{n} polling units",
+  "race.units-in-ward": "Polling units in {ward}",
+  "race.n-placed-approximately": "{n} placed approximately"
 }

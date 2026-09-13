@@ -38,6 +38,12 @@
      empty array is an invitation to refill it. A language appears here when its
      bundle does, and not before. */
 
+  /* RELATIVE, NOT ROOT-ABSOLUTE. In the app shell native.js rewrites a
+     leading-slash URL to the live host, so every language change fetched a
+     bundle the APK already contains — slow on a good connection and broken on
+     no connection. Every page that loads this sits at the web root, and the one
+     that does not (the situation room, served at /room/<slug>) carries
+     <base href="/">, so relative resolves to the same place on the web. */
   var dict = {};
   var meta = {};
   var current = 'en';
@@ -195,7 +201,7 @@
       announce();
       return Promise.resolve();
     }
-    return fetch('/i18n/' + current + '.json', { cache: 'no-cache' })
+    return fetch('i18n/' + current + '.json', { cache: 'no-cache' })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error(r.status)); })
       .then(function (json) {
         meta = json._meta || {};
@@ -239,7 +245,7 @@
   var overlays = {};
   function overlay(code) {
     if (overlays[code]) return overlays[code];
-    overlays[code] = fetch('/i18n/political.json', { cache: 'no-cache' })
+    overlays[code] = fetch('i18n/political.json', { cache: 'no-cache' })
       .then(function (r) { return r.ok ? r.json() : {}; })
       .then(function (j) { return (j && j[code]) || {}; })
       .catch(function () { return {}; });   // no overlay -> English, which is correct data
@@ -277,7 +283,7 @@
     if (statusCache) return statusCache;
     statusCache = Promise.all(LANGS.filter(function (l) { return l.code !== 'en'; })
       .map(function (l) {
-        return fetch('/i18n/' + l.code + '.json', { cache: 'no-cache' })
+        return fetch('i18n/' + l.code + '.json', { cache: 'no-cache' })
           .then(function (r) { return r.ok ? r.json() : {}; })
           .then(function (j) { return [l.code, (j._meta || {}).review || 'unknown']; })
           .catch(function () { return [l.code, 'unknown']; });

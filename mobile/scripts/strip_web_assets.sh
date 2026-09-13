@@ -79,6 +79,7 @@ rm -f "$PUB/senate_map.png" "$PUB/email-banner.png" "$PUB/logos/sources.json" \
       "$PUB/icon-512.png" "$PUB/icon-512-maskable.png" \
       "$PUB/install-card.png" "$PUB/admin.html" "$PUB/post.html" \
       "$PUB/bench.html" "$PUB/meta.html" "$PUB/preview.html" "$PUB/qr/generate.py" \
+      "$PUB/situation-room.html" "$PUB/room.webmanifest" \
       "$PUB/logos/AA.png" "$PUB/logos/APGA.png" "$PUB/logos/LP.png" "$PUB/logos/ZLP.png" \
       "$PUB/photos/candidates/adebayo.jpg" "$PUB/photos/candidates/datti.jpg" \
       "$PUB/photos/candidates/jonathan.jpg" "$PUB/photos/candidates/manifest.json"
@@ -92,13 +93,24 @@ rm -f "$PUB/senate_map.png" "$PUB/email-banner.png" "$PUB/logos/sources.json" \
 # meta.html and preview.html, and several files discuss preview.html in prose
 # comments. Naming a page that no longer ships breaks nothing; NAVIGATING to
 # one is what leaves an observer staring at a 404.
-for gone in install-card.png admin.html post.html bench.html meta.html preview.html; do
+for gone in install-card.png admin.html post.html bench.html meta.html preview.html situation-room.html; do
   esc=$(echo "$gone" | sed 's/\./\\./g')
   hit=$(grep -rnE "(href|src)=[\"'][^\"']*$esc|location([.]href)?[[:space:]]*=[[:space:]]*[\"'][^\"']*$esc" \
         "$PUB" --include='*.js' --include='*.html' 2>/dev/null | head -3)
   [ -z "$hit" ] || { echo "GATE_FAIL: $gone was stripped but is still LINKED from: $hit"; exit 1; }
 done
 echo "  ok: no shipped page links to a stripped tool page"
+
+# THE ONE ROUTE INTO THE ROOM MUST SURVIVE STRIPPING IT. my-groups.html links
+# /room/<slug> with a LEADING SLASH, which native.js rewrites to the live host;
+# a relative link would resolve inside the shell and 404 now that the page is
+# gone. This is the difference between "a manager opens their room on the live
+# site" and "a manager taps their own room and gets nothing".
+grep -q 'href="/room/' "$PUB/my-groups.html" \
+  || { echo "GATE_FAIL: my-groups.html no longer links /room/ with a leading slash — stripping situation-room.html would strand it"; exit 1; }
+grep -q "SHOW_SITUATION_ROOM = false" "$PUB/menu.js" \
+  || { echo "GATE_FAIL: menu.js now offers the situation room in the app, but the page is stripped from the bundle"; exit 1; }
+echo "  ok: the room is reachable off-origin, and the menu does not link the stripped page"
 
 # members.json — 100 KB, and political.html ALREADY reads it through
 # fetchData(), the same live-fetch path the big three geo layers go through,

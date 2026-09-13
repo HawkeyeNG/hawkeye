@@ -1341,5 +1341,7 @@
   "contest.by-election": "Zaɓen Cike Gurbi na {v0}{v1}",
   "common.nigeria": "Najeriya",
   "race.map-of-seat-by-ward": "Taswirar {seat}, bisa unguwa",
-  "race.seat-wards": "{seat} — unguwanni {n}"
+  "race.seat-wards": "{seat} — unguwanni {n}",
+  "unit.ward.one": "unguwa",
+  "results.ward-map-incomplete": "Babu taswirar unguwanni ga wannan jiha tukuna — alkaluman da ke ƙasa cikakku ne."
 }

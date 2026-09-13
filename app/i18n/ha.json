@@ -1339,5 +1339,7 @@
   "contest.governorship": "Gwamna",
   "contest.state-house-of-assembly": "Majalisar Dokokin Jiha",
   "contest.by-election": "Zaɓen Cike Gurbi na {v0}{v1}",
-  "common.nigeria": "Najeriya"
+  "common.nigeria": "Najeriya",
+  "race.map-of-seat-by-ward": "Taswirar {seat}, bisa unguwa",
+  "race.seat-wards": "{seat} — unguwanni {n}"
 }

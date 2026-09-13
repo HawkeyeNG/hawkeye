@@ -127,6 +127,10 @@ echo "  ok: members.json fetched live, not bundled"
 # layer is projected into, so without it there is no map at any level, online or
 # off. Not worth 23 KB to lose the state-level map offline.
 rm -f "$PUB/lga_geo.json" "$PUB/constituency_geo.json" "$PUB/district_geo.json"
+# The per-state ward paths go the same way and for the same reason: 1.7 MB of
+# geometry that race.js fetches off-origin through native.js, one state at a
+# time, only on a state-constituency seat page.
+rm -rf "$PUB/maps/wards"
 [ -f "$PUB/states_geo.json" ] || { echo "GATE_FAIL: states_geo.json was stripped — it is the shared viewBox, every map needs it"; exit 1; }
 grep -q "window.fetchData" "$PUB/results.html" || { echo "GATE_FAIL: results.html does not route geo through fetchData — the stripped layers would never load"; exit 1; }
 grep -q "window.fetchData" "$PUB/race.js" || { echo "GATE_FAIL: race.js does not route geo through fetchData — the stripped layers would never load"; exit 1; }

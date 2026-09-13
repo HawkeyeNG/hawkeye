@@ -715,6 +715,8 @@
   "situation-room.not-your-room": "That room is not one you are part of, or the link is wrong.",
   "situation-room.nothing-has-been-published-for-this": "Nothing has been published for this race. Incidents appear once they clear review, at the same moment the public sees them.",
   "situation-room.nothing-matches-that-filter-here": "Nothing matches that filter here.",
+  "situation-room.nothing-to-copy-many": "Everyone in your other campaigns ({v0}) is already on this roster.",
+  "situation-room.nothing-to-copy-one": "Everyone in your other campaign ({v0}) is already on this roster.",
   "situation-room.nothing-to-show-yet": "Nothing to show yet.",
   "situation-room.nothing-your-own-people-filed-has": "Nothing your own people filed has been published in this race yet.",
   "situation-room.observers": "Observers",

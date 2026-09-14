@@ -5,6 +5,8 @@
 // opinion out of the neutral verdict without discarding it.
 import { db } from '../db.js';
 import { decide, cfgFor } from './consensus.js';
+import { VOCAB, isValid, isAdverse, SEVERITY } from './verdicts.js';
+import { logDiscrepancy } from './integrity.js';
 
 /** The three questions asked about every pair. */
 export const KINDS = ['tally_match', 'sheet_integrity', 'report_credibility'];
@@ -28,6 +30,9 @@ export const NEUTRAL = (r) => r.reviewer_type !== 'campaign';
  */
 export function submitReview({ pairId, kind, reviewerType, reviewerId, verdict, note = null }) {
   if (!KINDS.includes(kind)) throw new Error(`unknown kind: ${kind}`);
+  /* One vocabulary for every rater. Free text would make agreement
+     unmeasurable — "looks fine" and "seems ok" agree, and no panel could tell. */
+  if (!isValid(kind, verdict)) return { ok: false, error: 'bad_verdict', allowed: VOCAB[kind] };
   try {
     db.prepare(`INSERT INTO pair_reviews
       (pair_id, kind, reviewer_type, reviewer_id, verdict_json, note, created_at)
@@ -71,7 +76,43 @@ export function refreshPanel(pairId, kind) {
   const stuck = panels.some((p) => p.state === 'unresolved');
   db.prepare('UPDATE result_pairs SET state = ?, updated_at = ? WHERE id = ?')
     .run(stuck ? 'unresolved' : settled ? 'agreed' : 'open', Date.now(), pairId);
+  if (d.state === 'agreed') flagIfAdverse(pairId, kind, d);
   return { ...d, campaign };
+}
+
+/**
+ * AN AGREED PANEL REACHES THE DOCKET. Only an agreed one, and only an adverse
+ * answer.
+ *
+ * This is what irev.js used to do off a single OCR read — a high-severity flag
+ * that disputes the result from that moment. The flag is the same; what changed
+ * is that a panel of independent readers now has to agree on it first, and a
+ * campaign's opinion is not among them.
+ *
+ * logDiscrepancy is INSERT OR IGNORE on its own key and only notifies when it
+ * actually inserted, so re-deciding a settled panel cannot flag twice.
+ * 'unreadable' is never adverse: a sheet nobody can read is a fact about the
+ * photograph, and letting image quality masquerade as irregularity is the one
+ * conflation this whole pipeline exists to prevent.
+ */
+function flagIfAdverse(pairId, kind, d) {
+  const outcome = d.outcome;
+  if (!isAdverse(kind, outcome)) return;
+  const p = db.prepare('SELECT * FROM result_pairs WHERE id = ?').get(pairId);
+  if (!p) return;
+  const pu = db.prepare('SELECT state FROM polling_units WHERE pu_code = ?').get(p.pu_code);
+  logDiscrepancy({
+    type: `pair_${kind}`,
+    severity: SEVERITY[kind] || 'medium',
+    puCode: p.pu_code,
+    contest: p.contest,
+    state: pu?.state || null,
+    detail: {
+      pairId, kind, outcome, decidedBy: d.by, readers: d.n,
+      docUrl: p.doc_url || null, docSha256: p.doc_sha256 || null,
+      summary: `panel of ${d.n} agreed: ${kind} = ${outcome}`,
+    },
+  });
 }
 
 /**

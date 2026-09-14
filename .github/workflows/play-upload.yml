@@ -43,11 +43,15 @@ on:
         type: choice
         options: [native, lite]
       track:
-        description: 'Testing track (production is deliberately absent)'
+        description: 'Track. production requires rollout below.'
         required: true
         default: internal
         type: choice
-        options: [internal, alpha, beta]
+        options: [internal, alpha, beta, production]
+      rollout:
+        description: 'production ONLY: "full", or a fraction like 0.1 for a staged release'
+        required: false
+        type: string
       notes:
         description: 'Release notes. Leave blank to publish without any.'
         required: false
@@ -249,9 +253,18 @@ jobs:
             printf '%s' "${{ inputs.notes }}" > "$RUNNER_TEMP/notes.txt"
             NOTES_ARG="--notes-file $RUNNER_TEMP/notes.txt"
           fi
+          # production is allowed here, but only with the rollout stated — the
+          # percentage is the one thing the Console shows and the API does not,
+          # and it cannot be taken back from people who already have the build.
+          # play_upload.mjs refuses production without it; this just passes it.
+          ROLLOUT_ARG=""
+          if [ -n "${{ inputs.rollout }}" ]; then
+            ROLLOUT_ARG="--rollout ${{ inputs.rollout }}"
+          fi
           node scripts/play_upload.mjs \
             --app "${{ inputs.app }}" \
             --track "${{ inputs.track }}" \
+            $ROLLOUT_ARG \
             $NOTES_ARG
 
       - name: Keep the bundle as an artifact

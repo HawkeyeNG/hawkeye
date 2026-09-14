@@ -3,6 +3,7 @@
  *
  *   node scripts/play_upload.mjs --app native --track internal --notes-file tmp/notes.txt
  *   node scripts/play_upload.mjs --app lite   --track internal --dry-run
+ *   node scripts/play_upload.mjs --app lite   --track production --rollout full
  *
  * WHY THIS EXISTS. The browser upload path caps at 10 MB and the native bundle
  * is 113 MB, so every release until now has been a hand upload. This is the
@@ -18,10 +19,10 @@
  * outside the working tree exactly like the upload keystores — see
  * scripts/deploy_app.sh for the same rule applied to hosting credentials.
  *
- * WHAT IT WILL NOT DO. It only ever writes to the track you name, and it
- * refuses `production` outright. Promoting a build to production stays a human
- * decision made in the Console, where the rollout percentage and the staged
- * store-listing changes are visible.
+ * WHAT IT WILL NOT DO. It only ever writes to the track you name, and it will
+ * not touch production unless the rollout is stated explicitly — see the guard
+ * below. The percentage is the one thing the Console shows and the API does
+ * not, and it is not recoverable once people have the build.
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -41,7 +42,7 @@ const APPS = {
     lang: 'en-US',            // Lite's differs — it is en-US, not en-GB.
   },                          // Getting this wrong applies the notes to nothing.
 };
-const ALLOWED_TRACKS = ['internal', 'alpha', 'beta'];
+const ALLOWED_TRACKS = ['internal', 'alpha', 'beta', 'production'];
 
 // ── args ────────────────────────────────────────────────────────────────────
 const args = Object.fromEntries(
@@ -57,9 +58,34 @@ const dryRun = !!args['dry-run'];
 const die = (m) => { console.error(`\x1b[31mFAIL: ${m}\x1b[0m`); process.exit(1); };
 
 if (!APPS[appKey]) die(`--app must be one of: ${Object.keys(APPS).join(', ')}`);
+/**
+ * PRODUCTION NEEDS THE ROLLOUT SAID OUT LOUD.
+ *
+ * This used to refuse production outright, and the reason was sound: the two
+ * things the Console shows and the API does not are the rollout percentage and
+ * any staged store-listing edits, and a release that silently went to 100% when
+ * a staged rollout was intended cannot be taken back from the people who
+ * already have it.
+ *
+ * Refusing did not answer that, it only moved it. So production is allowed when
+ * the rollout is STATED — `--rollout full` or a fraction like `--rollout 0.1`
+ * — which is the decision the guard existed to force somebody to make. There is
+ * no default: omitting it still fails.
+ *
+ * The staged-listing half is a warning rather than a gate, because a listing
+ * edit staged in the Console goes out with the next release whoever makes it,
+ * from here or from the Console.
+ */
+const rollout = args.rollout;
 if (track === 'production') {
-  die('this tool refuses production. Promote in the Console, where the rollout '
-    + 'percentage and any staged listing changes are visible.');
+  if (!rollout) {
+    die('production needs --rollout: "full", or a fraction such as 0.1 for a staged '
+      + 'release. The Console shows this and the API does not, so it has to be said here.');
+  }
+  if (rollout !== 'full' && !(Number(rollout) > 0 && Number(rollout) < 1)) {
+    die(`--rollout must be "full" or a fraction between 0 and 1, not "${rollout}"`);
+  }
+  console.log('  NOTE    : any store-listing edit staged in the Console ships with this release.');
 }
 if (!ALLOWED_TRACKS.includes(track)) die(`--track must be one of: ${ALLOWED_TRACKS.join(', ')}`);
 
@@ -174,7 +200,11 @@ await api(
     track,
     releases: [{
       versionCodes: [String(up.versionCode)],
-      status: 'completed',
+      /* inProgress + userFraction is how Play models a staged rollout;
+         completed means everyone. */
+      ...(rollout && rollout !== 'full'
+        ? { status: 'inProgress', userFraction: Number(rollout) }
+        : { status: 'completed' }),
       ...(notes ? { releaseNotes: [{ language: app.lang, text: notes }] } : {}),
     }],
   }),
@@ -184,4 +214,6 @@ console.log(`  track   : ${track} set to versionCode ${up.versionCode}`);
 
 const done = await api(token, 'POST', `${API}/${app.pkg}/edits/${edit.id}:commit`);
 console.log(`\n\x1b[32m  committed. edit ${done.id} is live on ${track}.\x1b[0m`);
-console.log('  Nothing was promoted beyond that track.');
+console.log(track === 'production'
+  ? `  Rollout: ${rollout === 'full' ? 'everyone' : Number(rollout) * 100 + '% of users'}. Google reviews it from here.`
+  : '  Nothing was promoted beyond that track.');

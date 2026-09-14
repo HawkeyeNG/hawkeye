@@ -719,6 +719,36 @@ for (const ddl of [
    */
   'ALTER TABLE observers ADD COLUMN share_code TEXT',
   'CREATE UNIQUE INDEX IF NOT EXISTS idx_observers_share ON observers(share_code)',
+  /**
+   * WHICH IReV ELECTION IS WHICH — see services/irevResolve.js.
+   *
+   * INEC mints one election per (type x domain) per date: the presidency is one
+   * row, every senatorial district its own. The id cannot be hardcoded because
+   * it does not exist until they deploy the cycle, and the BASE URL cannot be
+   * hardcoded either — their front-end bundle carries three of them.
+   *
+   * status is the safety rail. A resolved row lands 'unconfirmed' and nothing
+   * reads it until something independent agrees it is the right election; the
+   * failure that matters is not a missing id but a WRONG one, which would
+   * compare our counts against a different election and look authoritative.
+   */
+  `CREATE TABLE IF NOT EXISTS irev_elections (
+     irev_id       TEXT PRIMARY KEY,
+     election_id   INTEGER,
+     code          TEXT,
+     full_name     TEXT,
+     election_date TEXT,
+     domain_type   TEXT,
+     domain_name   TEXT,
+     state_id      INTEGER,
+     base_url      TEXT,
+     status        TEXT NOT NULL DEFAULT 'unconfirmed',
+     note          TEXT,
+     first_seen    INTEGER NOT NULL,
+     confirmed_at  INTEGER,
+     updated_at    INTEGER NOT NULL
+   )`,
+  'CREATE INDEX IF NOT EXISTS idx_irev_elections_date ON irev_elections(election_date, code)',
   'CREATE INDEX IF NOT EXISTS idx_group_members_obs ON group_members(observer_id)',
   'CREATE INDEX IF NOT EXISTS idx_group_members_pu ON group_members(assigned_pu)',
 ]) {

@@ -443,8 +443,19 @@ app.listen(config.port, () => {
   const backup = () => runBackup().catch((e) => console.error('[backup]', e.message));
   setTimeout(backup, 120_000);
   setInterval(backup, 24 * 3_600_000);
-  // IReV cross-check: idle until IREV_ELECTION_ID is set; then every 2h on
-  // election week the crowd results get compared against INEC's own sheets.
+  // IReV election-id resolver: INEC mints an id per election and it does not
+  // exist until they deploy the cycle — five days before the 19 Sep 2026
+  // by-elections their catalogue still had nothing for that date. So look daily
+  // rather than expecting an operator to notice the morning it appears.
+  // It only ever WRITES unconfirmed rows; irevScan reads confirmed ones.
+  const irevResolve = () => import('./services/irevResolve.js')
+    .then((m) => m.resolveDue(14))
+    .catch((e) => console.error('[irev-resolve]', e.message));
+  setTimeout(irevResolve, 300_000);
+  setInterval(irevResolve, 24 * 3_600_000);
+  // IReV cross-check: idle until an election id is CONFIRMED (env var or the
+  // resolver's table); then every 2h the crowd results get compared against
+  // INEC's own sheets.
   const irev = () => irevScan().catch((e) => console.error('[irev]', e.message));
   setTimeout(irev, 180_000);
   setInterval(irev, 2 * 3_600_000);

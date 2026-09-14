@@ -72,12 +72,34 @@ async function checkUnit(row, electionId) {
 
 // One scan pass: find unchecked crowd results, walk any states we haven't
 // indexed yet, then OCR-compare each unit. Serialized; safe to call repeatedly.
+/**
+ * WHICH ELECTION TO SCAN, and why it is no longer only an env var.
+ *
+ * This whole service has never run: IREV_ELECTION_ID was never set, and could
+ * not have been — INEC mints the id per election and it does not exist until
+ * they deploy the cycle. scripts/irev_resolve.mjs discovers it from their own
+ * catalogue and writes it here.
+ *
+ * CONFIRMED ROWS ONLY. Resolution lands 'unconfirmed' on purpose: the damaging
+ * failure is not a missing id but a plausible wrong one, which would compare our
+ * counts against a different election and publicly dispute results on the
+ * strength of it. The env var still wins when set, so an operator can always
+ * override the table.
+ */
+export function activeElectionId() {
+  if (config.irevElectionId) return config.irevElectionId;
+  const row = db.prepare(
+    "SELECT irev_id FROM irev_elections WHERE status = 'confirmed' ORDER BY election_date DESC, updated_at DESC",
+  ).get();
+  return row?.irev_id || '';
+}
+
 export async function irevScan(maxChecks = 40) {
-  if (!config.irevElectionId) return { skipped: 'no_election_id' };
+  const eid = activeElectionId();
+  if (!eid) return { skipped: 'no_election_id' };
   if (running) return { skipped: 'already_running' };
   running = true;
   try {
-    const eid = config.irevElectionId;
     const rows = db.prepare(`
       SELECT r.pu_code, r.contest, r.votes_json FROM results r
       LEFT JOIN irev_docs d ON d.pu_code = r.pu_code AND d.election_id = ?

@@ -200,10 +200,26 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ inputs.app }}" != native ]; then
-            npx --prefix mobile cap sync android || { echo "::error::cap sync failed"; exit 1; }
-            bash mobile/scripts/strip_web_assets.sh mobile/android/app/src/main/assets/public mobile/Podfile || true
-            cd mobile/android
-            ./gradlew --no-daemon --console=plain bundleRelease
+            # FROM mobile/, not from the repo root with --prefix. npm's --prefix
+            # moves where packages are INSTALLED, not the working directory, so
+            # Capacitor looked for capacitor.config.json in the root, did not
+            # find it, and reported "android platform has not been added yet" —
+            # which reads as a missing platform and is a missing config.
+            cd mobile
+            npx cap sync android || { echo "::error::cap sync failed"; exit 1; }
+
+            # NOT `|| true`. This script is the only thing that keeps the web
+            # assets out of the bundle, and swallowing its exit code is exactly
+            # how the APK once shipped 18 MB of them. It also has to run from
+            # mobile/, because two of its gates read capacitor.config.json.
+            bash scripts/strip_web_assets.sh android/app/src/main/assets/public \
+              android/app/src/main/assets/capacitor.plugins.json \
+              || { echo "::error::strip_web_assets failed — refusing to ship the web tree"; exit 1; }
+
+            cd android
+            chmod +x ./gradlew
+            # --max-workers=2: the bundle task OOMs a 2-core runner otherwise.
+            ./gradlew --no-daemon --no-watch-fs --console=plain --max-workers=2 bundleRelease
             exit 0
           fi
 

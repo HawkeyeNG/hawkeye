@@ -808,6 +808,11 @@ for (const ddl of [
      created_at    INTEGER NOT NULL,
      UNIQUE (pair_id, kind, reviewer_type, reviewer_id)
    )`,
+  /* Recorded so a panel decided entirely from one address is FINDABLE. The
+     console is a shared passphrase, so reviewer ids distinguish people
+     without authenticating them; this is the only trace that would show one
+     person answering twice under two names. */
+  'ALTER TABLE pair_reviews ADD COLUMN ip TEXT',
   'CREATE INDEX IF NOT EXISTS idx_pair_reviews_lookup ON pair_reviews(pair_id, kind)',
   /** Where a panel landed, so the queue does not recompute it on every read. */
   `CREATE TABLE IF NOT EXISTS pair_panels (

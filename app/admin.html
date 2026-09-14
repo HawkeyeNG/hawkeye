@@ -210,7 +210,7 @@
 
     <section id="console" hidden>
       <div class="panelbar" id="panelbar">
-        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="push">Push</span><span class="tab" data-p="races">Races</span><span class="tab" data-p="social">Social</span><span class="tab" data-p="register">Register</span>
+        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="pairs">Pairs</span><span class="tab" data-p="push">Push</span><span class="tab" data-p="races">Races</span><span class="tab" data-p="social">Social</span><span class="tab" data-p="register">Register</span>
         <span class="tab" data-p="_logout" style="margin-left:auto">Lock 🔒</span>
       </div>
       <div class="panel" data-p="reach">
@@ -285,6 +285,22 @@
       </details>
 
       <div id="lab-list"><p data-i18n="index.loading" class="empty">Loading…</p></div>
+      </div><div class="panel" data-p="pairs" hidden>
+        <h1 style="margin-top:34px">IReV Pairs</h1>
+        <!-- ONE UNIT, BOTH ACCOUNTS OF IT. Our observers' tally beside INEC's
+             own uploaded sheet, with three questions to answer about the pair.
+             Nothing here shows another reviewer's verdict: a reviewer who can
+             see the machine's answer, or a colleague's, is not an independent
+             reading, and the panel would be one opinion wearing three hats. -->
+        <p class="hint" id="pairs-who"></p>
+        <div class="tabs" id="pair-kinds"></div>
+        <div class="row">
+          <select id="pair-contest"><option value="">All contests</option></select>
+          <button id="pair-refresh">Refresh</button>
+          <span class="hint" id="pair-count"></span>
+        </div>
+        <div id="pair-summary" class="hint" style="margin:8px 0"></div>
+        <div id="pair-work"></div>
     </div><div class="panel" data-p="push" hidden>
     <h1 data-i18n="admin.send-a-push">Send a Push</h1>
     <p class="hint">Goes to <strong data-i18n="admin.every-registered-device-on-the-platforms">every registered device on the platforms you tick</strong> —
@@ -1270,6 +1286,137 @@
     $('rv-admin').addEventListener('toggle', () => { if ($('rv-admin').open) rvLoadReviewers(); });
 
     function logout() { sessionStorage.removeItem('hawkeye_admin'); location.reload(); }
+    /* ============================ PAIRS ============================ */
+    /* WHO IS REVIEWING. The console is one shared passphrase, so it cannot tell
+       staff apart, and a panel that cannot tell readers apart can never reach
+       two readings. Each reviewer names themselves once; the server records the
+       client IP beside every verdict so a panel answered entirely from one
+       address is findable afterwards. Distinguishing, not authenticating — and
+       the summary line says so rather than implying more than it is. */
+    const REVIEWER_KEY = 'hawkeye_reviewer_id';
+    const reviewerId = () => {
+      let v = '';
+      try { v = localStorage.getItem(REVIEWER_KEY) || ''; } catch (e) { v = ''; }
+      if (!v) {
+        v = (prompt('Your reviewer name or initials — this distinguishes your readings from a colleague\'s. It is not a login.') || '').trim();
+        if (v) { try { localStorage.setItem(REVIEWER_KEY, v); } catch (e) { /* private mode */ } }
+      }
+      return v;
+    };
+    /* This script block has hdr() and $ but no api() or esc() — those live in
+       LATER blocks and are not in scope here. Calling them looked right and
+       would have thrown on the first click. */
+    const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const pairApi = async (path, opts = {}) => {
+      const r = await fetch('/api/pairs' + path, {
+        ...opts,
+        headers: { ...hdr(), 'content-type': 'application/json', 'x-reviewer-id': reviewerId(), ...(opts.headers || {}) },
+      });
+      return r.json().catch(() => ({}));
+    };
+
+    let PAIR_KIND = 'tally_match';
+    let PAIR_VOCAB = {};
+    const KIND_LABEL = {
+      tally_match: 'Counts match the sheet?',
+      sheet_integrity: 'Sheet adds up?',
+      report_credibility: 'Report credible?',
+    };
+    const VERDICT_LABEL = {
+      match: 'Match', mismatch: 'Mismatch', unreadable: 'Cannot read',
+      sound: 'Sound', unsound: 'Does not add up',
+      credible: 'Credible', not_credible: 'Not credible', cannot_say: 'Cannot say',
+    };
+
+    /* Opened on demand rather than at load: it costs two API calls and the
+       console has seven tabs, six of which are not this one. Guarded so
+       re-opening the tab does not rebind the listeners. */
+    let pairsReady = false;
+    window.__pairsInit = () => {
+      if (pairsReady) { loadPairs(); return; }
+      pairsReady = true;
+      pairsInit().catch((e) => { $('pair-work').innerHTML = '<p class="hint">Could not load pairs: ' + esc(e.message) + '</p>'; });
+    };
+
+    async function pairsInit() {
+      const who = reviewerId();
+      $('pairs-who').textContent = who
+        ? 'Reviewing as ' + who + ' — your readings are kept apart from other reviewers\'.'
+        : 'No reviewer name set; the queue needs one.';
+      const meta = await pairApi('/meta');
+      PAIR_VOCAB = meta.vocab || {};
+      $('pair-kinds').innerHTML = (meta.kinds || []).map((k, i) =>
+        '<span class="tab' + (i === 0 ? ' on' : '') + '" data-k="' + k + '">' + (KIND_LABEL[k] || k) + '</span>').join('');
+      $('pair-contest').innerHTML = '<option value="">All contests</option>'
+        + (meta.contests || []).map((c) => '<option>' + esc(c) + '</option>').join('');
+      $('pair-kinds').addEventListener('click', (e) => {
+        const t = e.target.closest('.tab');
+        if (!t) return;
+        PAIR_KIND = t.dataset.k;
+        document.querySelectorAll('#pair-kinds .tab').forEach((x) => x.classList.toggle('on', x === t));
+        loadPairs();
+      });
+      $('pair-refresh').addEventListener('click', loadPairs);
+      $('pair-contest').addEventListener('change', loadPairs);
+      loadPairs();
+    }
+
+    async function loadPairs() {
+      const sum = await pairApi('/summary');
+      const pres = (sum.byPresence || []).map((r) => r.presence + ' ' + r.n).join(' · ');
+      /* Surfaced, not buried: a panel decided from a single address is the shape
+         self-dealing makes. A small team may share an office, so it is reported
+         rather than blocked. */
+      $('pair-summary').textContent = sum.total + ' pairs · ' + pres
+        + (sum.singleAddressPanels ? ' · ⚠ ' + sum.singleAddressPanels + ' panel(s) answered from one address' : '');
+      const q = await pairApi('/queue?kind=' + encodeURIComponent(PAIR_KIND)
+        + (($('pair-contest').value) ? '&contest=' + encodeURIComponent($('pair-contest').value) : ''));
+      const items = q.items || [];
+      $('pair-count').textContent = items.length + ' awaiting your reading';
+      if (!items.length) { $('pair-work').innerHTML = '<p class="hint">Nothing in your queue for this question.</p>'; return; }
+      showPair(items[0].id, items.length);
+    }
+
+    async function showPair(id, remaining) {
+      const p = await pairApi('/' + id);
+      const ours = (p.ours || []).map((v) => esc(v.party) + ' <b>' + v.count + '</b>').join(' · ') || '—';
+      const theirs = p.theirs
+        ? Object.entries(p.theirs).map(([k, v]) => esc(k) + ' <b>' + esc(String(v)) + '</b>').join(' · ')
+        : '<span class="hint">not read yet — that is not the same as INEC publishing nothing</span>';
+      const opts = (PAIR_VOCAB[PAIR_KIND] || []).map((v) =>
+        '<button class="v" data-v="' + v + '">' + (VERDICT_LABEL[v] || v) + '</button>').join(' ');
+      $('pair-work').innerHTML =
+        '<div class="card"><h2>' + esc(p.pu_code) + '</h2>'
+        + '<p class="hint">' + esc([p.unit && p.unit.name, p.unit && p.unit.ward, p.unit && p.unit.lga, p.unit && p.unit.state].filter(Boolean).join(' · ')) + ' · ' + esc(p.contest) + '</p>'
+        + '<p><b>Ours:</b> ' + ours + '</p>'
+        + '<p><b>INEC:</b> ' + theirs + '</p>'
+        + (p.doc_url
+          ? '<p><a href="' + esc(p.doc_url) + '" target="_blank" rel="noopener">Open INEC\'s sheet</a>'
+            + (p.doc_sha256 ? ' <span class="hint">sha256 ' + esc(p.doc_sha256.slice(0, 16)) + '…</span>' : '') + '</p>'
+            + '<img src="' + esc(p.doc_url) + '" alt="INEC sheet" style="max-width:100%;border:1px solid var(--line);border-radius:8px" />'
+          : '<p class="hint">No sheet from INEC for this unit yet.</p>')
+        + '<p style="margin-top:12px"><b>' + (KIND_LABEL[PAIR_KIND] || PAIR_KIND) + '</b></p>'
+        + '<div class="row" id="pair-verdicts">' + opts + '</div>'
+        + '<input id="pair-note" placeholder="Note (optional)" style="margin-top:8px;width:100%" />'
+        + '<p class="hint" id="pair-left">' + remaining + ' left in your queue</p></div>';
+      $('pair-verdicts').addEventListener('click', async (e) => {
+        const b = e.target.closest('button.v');
+        if (!b) return;
+        document.querySelectorAll('#pair-verdicts button').forEach((x) => { x.disabled = true; });
+        const r = await pairApi('/' + id + '/review', {
+          method: 'POST',
+          body: JSON.stringify({ kind: PAIR_KIND, verdict: b.dataset.v, note: $('pair-note').value || null }),
+        });
+        /* Says how the PANEL stands, never what anyone else said. */
+        $('pair-left').textContent = r && r.panel
+          ? (r.panel.state === 'agreed' ? 'Settled by the panel.'
+            : r.panel.state === 'unresolved' ? 'Panel could not agree — escalated.'
+              : 'Recorded. ' + r.panel.need + ' more reading(s) needed.')
+          : 'Recorded.';
+        setTimeout(loadPairs, 700);
+      });
+    }
+
     $('tabs').addEventListener('click', (e) => {
       const t = e.target.closest('.tab'); if (!t) return;
       if (t.dataset.s === '_logout') return logout();
@@ -1301,6 +1448,9 @@
       if (key === '_logout') return;            // review.html's own handler covers it
       bar.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t));
       panels.forEach((p) => { p.hidden = p.dataset.p !== key; });
+      if (key === 'pairs' && window.__pairsInit) {
+        try { window.__pairsInit(); } catch (e) { console.error('[pairs]', e); }
+      }
       if (key === 'social') {
         const s = sessionStorage.getItem('hawkeye_admin');
         if (s) localStorage.setItem('hawkeye_admin', s);

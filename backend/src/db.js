@@ -749,6 +749,78 @@ for (const ddl of [
      updated_at    INTEGER NOT NULL
    )`,
   'CREATE INDEX IF NOT EXISTS idx_irev_elections_date ON irev_elections(election_date, code)',
+  /**
+   * ONE POLLING UNIT, BOTH ACCOUNTS OF IT — the thing reviewers actually rate.
+   *
+   * services/irev.js used to collapse the comparison straight into
+   * consistent/mismatch/inconclusive and write a docket flag. That threw away
+   * the evidence and let one OCR read publicly dispute a result. The pair keeps
+   * both sides addressable instead, and a rating decides what it means.
+   *
+   * ours_json / theirs_json are tallies; theirs_json stays NULL until a sheet is
+   * read, which is NOT the same as INEC publishing zero — the unread bucket has
+   * to stay visible or every accuracy number quietly absorbs it.
+   *
+   * doc_sha256 is of the bytes INEC served, taken BEFORE any resize. That hash
+   * is what makes an archived sheet evidence rather than a claim.
+   */
+  `CREATE TABLE IF NOT EXISTS result_pairs (
+     id            INTEGER PRIMARY KEY,
+     irev_id       TEXT NOT NULL,
+     contest       TEXT NOT NULL,
+     pu_code       TEXT NOT NULL,
+     submission_id INTEGER,
+     ours_json     TEXT,
+     theirs_json   TEXT,
+     doc_url       TEXT,
+     doc_sha256    TEXT,
+     doc_seen_at   INTEGER,
+     presence      TEXT NOT NULL DEFAULT 'ours_only',
+     state         TEXT NOT NULL DEFAULT 'open',
+     created_at    INTEGER NOT NULL,
+     updated_at    INTEGER NOT NULL,
+     UNIQUE (irev_id, pu_code, contest)
+   )`,
+  'CREATE INDEX IF NOT EXISTS idx_pairs_state ON result_pairs(state, contest)',
+  /**
+   * ONE REVIEWER'S ANSWER TO ONE QUESTION ABOUT ONE PAIR.
+   *
+   * UNIQUE(subject, kind, reviewer) is the blindness gate expressed in the
+   * schema: a reviewer answers each question once and cannot revise after
+   * seeing where the panel landed. The blind-review pipeline learned this the
+   * hard way — its first gate asked "does a reading exist for this sheet",
+   * which let a second reviewer read the first one's answer and agree with it.
+   *
+   * reviewer_type is 'model' | 'staff' | 'campaign'. A CAMPAIGN RATING NEVER
+   * COUNTS TOWARD THE NEUTRAL VERDICT: a campaign rating results in its own
+   * race has an obvious reason to call an unfavourable unit disputed. Theirs
+   * are stored, shown and attributed — see services/review.js, which filters
+   * them out of the panel and reports them alongside it.
+   */
+  `CREATE TABLE IF NOT EXISTS pair_reviews (
+     id            INTEGER PRIMARY KEY,
+     pair_id       INTEGER NOT NULL REFERENCES result_pairs(id),
+     kind          TEXT NOT NULL,
+     reviewer_type TEXT NOT NULL,
+     reviewer_id   TEXT NOT NULL,
+     verdict_json  TEXT NOT NULL,
+     note          TEXT,
+     created_at    INTEGER NOT NULL,
+     UNIQUE (pair_id, kind, reviewer_type, reviewer_id)
+   )`,
+  'CREATE INDEX IF NOT EXISTS idx_pair_reviews_lookup ON pair_reviews(pair_id, kind)',
+  /** Where a panel landed, so the queue does not recompute it on every read. */
+  `CREATE TABLE IF NOT EXISTS pair_panels (
+     pair_id    INTEGER NOT NULL REFERENCES result_pairs(id),
+     kind       TEXT NOT NULL,
+     state      TEXT NOT NULL,
+     outcome    TEXT,
+     decided_by TEXT,
+     n          INTEGER NOT NULL DEFAULT 0,
+     need       INTEGER NOT NULL DEFAULT 0,
+     updated_at INTEGER NOT NULL,
+     PRIMARY KEY (pair_id, kind)
+   )`,
   'CREATE INDEX IF NOT EXISTS idx_group_members_obs ON group_members(observer_id)',
   'CREATE INDEX IF NOT EXISTS idx_group_members_pu ON group_members(assigned_pu)',
 ]) {

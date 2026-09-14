@@ -151,10 +151,18 @@ async function accessToken() {
 const API = 'https://androidpublisher.googleapis.com/androidpublisher/v3/applications';
 
 async function api(token, method, url, body, extraHeaders = {}) {
+  /* A Node stream body needs duplex:'half'. Undici refuses it outright without
+     one, and the message — "duplex option is required when sending a body" —
+     names neither the stream nor the call that carried it. The .aab is streamed
+     rather than buffered because the native bundle is 113 MB. Added only when
+     the body IS a stream; the JSON calls pass strings.
+     This is why no release ever went out through this path: it fails on the
+     bundle upload, the one call that cannot be tested without a real edit. */
   const res = await fetch(url, {
     method,
     headers: { Authorization: `Bearer ${token}`, ...extraHeaders },
     body,
+    ...(body && typeof body.pipe === 'function' ? { duplex: 'half' } : {}),
   });
   const text = await res.text();
   let json = null;

@@ -257,6 +257,10 @@ if (!inReview) {
   console.log('\x1b[33m  NOT IN REVIEW YET. Open Play Console -> Publishing overview'
     + ' and press "Send for review"; the release is staged and waiting.\x1b[0m');
 }
+/* WHO ACTS NEXT, not just what happened. When Play refuses the automatic
+   submission the release is staged and nothing is in review, so saying
+   'Google reviews it from here' would be the one sentence that stops anyone
+   pressing the button. */
 console.log(track === 'production'
-  ? `  Rollout: ${rollout === 'full' ? 'everyone' : Number(rollout) * 100 + '% of users'}. Google reviews it from here.`
+  ? `  Rollout: ${rollout === 'full' ? 'everyone' : Number(rollout) * 100 + '% of users'}${inReview ? '. Google reviews it from here.' : ', once you send it for review.'}`
   : '  Nothing was promoted beyond that track.');

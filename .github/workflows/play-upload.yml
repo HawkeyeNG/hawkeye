@@ -208,6 +208,51 @@ jobs:
             cd mobile
             npx cap sync android || { echo "::error::cap sync failed"; exit 1; }
 
+            # @capacitor-firebase/messaging IS FOR iOS ONLY - CUT IT HERE TOO.
+            #
+            # This is why versionCode 8 was rejected for broken functionality.
+            # The cut lived ONLY in scripts/build_aab_lite.sh, so every bundle
+            # built by this workflow shipped the plugin: it and
+            # @capacitor/push-notifications both register a service for
+            # com.google.firebase.MESSAGING_EVENT, Firebase delivers to one,
+            # and app/native.js listens to the other. Silent push loss on a
+            # shipping app, invisible in a green run and invisible in the .aab.
+            #
+            # The native branch below calls its build script rather than
+            # reimplementing it, for exactly this reason. Until the Lite script
+            # can run on a runner this stays a faithful copy, and the
+            # assertions after it are what stop the copy drifting again.
+            node -e '
+              const fs = require("fs");
+              const p = "android/app/src/main/assets/capacitor.plugins.json";
+              const before = JSON.parse(fs.readFileSync(p, "utf8"));
+              const keep = (x) => !String(x.pkg).startsWith("@capacitor-firebase/");
+              const after = before.filter(keep);
+              const NL = String.fromCharCode(10);
+              fs.writeFileSync(p, JSON.stringify(after, null, 2) + NL);
+              console.log("  android plugins: " + before.length + " -> " + after.length);
+            ' || { echo "::error::could not rewrite capacitor.plugins.json"; exit 1; }
+            sed -i "/^include ':capacitor-firebase-messaging'/,+2d" android/capacitor.settings.gradle
+            sed -i "/capacitor-firebase-messaging/d" android/app/capacitor.build.gradle
+
+            # Written as `if`, not `grep && { exit 1; }`: under `set -e` a
+            # short-circuited && list returns non-zero and would abort the
+            # step on the PASSING path.
+            for f in android/capacitor.settings.gradle android/app/capacitor.build.gradle android/app/src/main/assets/capacitor.plugins.json; do
+              if grep -qi "capacitor-firebase" "$f"; then
+                echo "::error::@capacitor-firebase survived in $f - Android push would break silently"
+                exit 1
+              fi
+            done
+            # ...and the one that must still be there, so the cut above cannot
+            # take the wrong plugin and pass by removing everything.
+            if ! grep -q "pushnotifications.PushNotificationsPlugin" android/app/src/main/assets/capacitor.plugins.json; then
+              echo "::error::@capacitor/push-notifications is gone - Android would have no push at all"
+              exit 1
+            fi
+            echo "  ok: firebase messaging excluded from android, push-notifications intact"
+
+
             # NOT `|| true`. This script is the only thing that keeps the web
             # assets out of the bundle, and swallowing its exit code is exactly
             # how the APK once shipped 18 MB of them. It also has to run from

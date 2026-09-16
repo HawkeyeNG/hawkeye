@@ -220,6 +220,40 @@ check('map: before any tap, it says the map can be tapped', tap.before, (t) => /
 check('map: tapping a shape writes out that shape’s own numbers', tap.afterB, { text: 'Ebu — 60% reported', picked: true });
 check('map: tapping another moves the highlight, never leaves two', tap.afterA, { text: 'Akwukwu — 10% reported', onlyA: true });
 
+/* --- Map zoom --------------------------------------------------------------
+   Units bunch where people live, and on a phone card a bunch is one smudge no
+   finger can tap apart. B sits at (60,60) so zooming onto it needs no clamping
+   and the centre can be asserted exactly. */
+const zoom = await p.evaluate(() => {
+  const host = document.createElement('div');
+  host.innerHTML = `<svg class="sr-map" viewBox="0 0 100 100" style="width:300px;height:300px">
+    <circle cx="20" cy="20" r="2"><title>A</title></circle>
+    <circle cx="60" cy="60" r="2"><title>B</title></circle></svg>`;
+  document.body.appendChild(host);
+  wireMapTaps(host);
+  wireMapZoom(host);
+  const svg = host.querySelector('svg');
+  const vb = () => svg.getAttribute('viewBox').split(' ').map(Number);
+  const btn = (z) => host.querySelector(`[data-z="${z}"]`);
+  const start = { out: btn('out').disabled, all: btn('all').disabled };
+  btn('in').click();
+  const once = { vb: vb(), r: +svg.querySelector('circle').getAttribute('r'), out: btn('out').disabled };
+  btn('all').click();
+  svg.querySelectorAll('circle')[1].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  btn('in').click();
+  const v = vb();
+  const centre = [+(v[0] + v[2] / 2).toFixed(2), +(v[1] + v[3] / 2).toFixed(2)];
+  btn('all').click();
+  const reset = vb();
+  host.remove();
+  return { start, once, centre, reset };
+});
+check('zoom: − and reset are disabled while the whole map shows', [zoom.start.out, zoom.start.all], [true, true]);
+check('zoom: + shows half the width, and − becomes available', [zoom.once.vb[2], zoom.once.out], [50, false]);
+check('zoom: dots keep their size on SCREEN (radius halves as the map doubles)', zoom.once.r, 1);
+check('zoom: + after tapping a unit zooms onto that unit', zoom.centre, [60, 60]);
+check('zoom: reset returns to the whole map', zoom.reset, [0, 0, 100, 100]);
+
 check('no page errors across the whole run', errs, []);
 
 await b.close();

@@ -2713,12 +2713,12 @@ async function showInvite(sheet) {
   panel.innerHTML = `${live.map((t) => `<div class="sr-link">
       <code>${esc(location.origin + '/join/' + t.token)}</code>
       <span class="sr-sub num" style="white-space:nowrap">${T('situation-room.n-used', '{v0} used', { v0: n(t.uses) })} &middot; ${days(t)}d</span>
-      <button class="sr-btn mini" data-copy="${esc(t.token)}">${T('support.copy', 'Copy')}</button>
+      <button class="sr-btn mini primary" data-copy="${esc(t.token)}">${T('support.copy', 'Copy')}</button>
       <button class="sr-btn mini" data-revoke="${esc(t.token)}">${T('situation-room.revoke', 'Revoke')}</button>
     </div>`).join('')}
     <div class="sr-inv-note">${T('situation-room.anyone-with-a-live-link',
     'Anyone with a live link can join your roster after signing in.')}</div>
-    <button class="sr-btn" id="inv-new">${T('situation-room.create-another-link', 'Create another link')}</button>`;
+    <button class="sr-btn primary" id="inv-new">${T('situation-room.create-another-link', 'Create another link')}</button>`;
 
   panel.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
     navigator.clipboard.writeText(location.origin + '/join/' + b.dataset.copy)

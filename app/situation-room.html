@@ -247,9 +247,18 @@
 .sr-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 12px 12px 12px 18px; border-bottom: 1px solid var(--line); }
 .sr-sheet-head h2 { margin: 0; font-size: 1.02rem; line-height: 1.3; }
-.sr-sheet-x { background: none; border: 0; color: inherit; font-size: 1.5rem; line-height: 1;
-  cursor: pointer; width: 40px; height: 40px; border-radius: 8px; flex: none; }
-.sr-sheet-x:hover, .sr-sheet-x:focus-visible { background: var(--surface); }
+/* The close button is a DEFINED control, drawn like the dialog's own fields.
+   Measured before: the global `button` rule gave it a soft box-shadow over a
+   transparent background — a box you could almost see — and 13px/16px of
+   padding that pushed the glyph 4px right and 4px down. Every property it
+   inherits that matters is set here, and the x is an SVG drawn about its own
+   centre: a text x sits wherever the font's baseline puts it. */
+.sr-sheet-x { flex: none; width: 36px; height: 36px; margin: 0; padding: 0;
+  display: grid; place-items: center; cursor: pointer; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: none; }
+.sr-sheet-x svg { display: block; width: 16px; height: 16px; }
+.sr-sheet-x:hover { border-color: var(--accent); }
+.sr-sheet-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sr-sheet-body { padding: 16px 18px 18px; overflow-y: auto; overscroll-behavior: contain; }
 /* INSIDE A DIALOG, THE DIALOG DOES THE SPACING. Measured, not guessed: the
    global button margin (16px) sat the close x below the title and opened a gap
@@ -1590,7 +1599,7 @@ function openSheet(title) {
   box.className = 'sr-ask';
   box.innerHTML = `<div class="sr-ask-card sr-sheet" role="dialog" aria-modal="true" aria-labelledby="sr-sheet-title" tabindex="-1">
       <div class="sr-sheet-head"><h2 id="sr-sheet-title"></h2>
-        <button type="button" class="sr-sheet-x" aria-label="${T('common.close', 'Close')}">&times;</button></div>
+        <button type="button" class="sr-sheet-x" aria-label="${T('common.close', 'Close')}"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
       <div class="sr-sheet-body"></div>
     </div>`;
   box.querySelector('#sr-sheet-title').textContent = title;

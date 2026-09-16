@@ -164,6 +164,19 @@ APK="app/build/outputs/apk/release/app-release.apk"
 BT="$ANDROID_HOME/build-tools/35.0.0"
 DL="/mnt/c/Users/HP/Downloads"
 
+# GATE ON THE ARTIFACT, NOT THE INPUT: the json gate above passed on every
+# local build while the CI bundles Play rejected had no Firebase config at all.
+# No google_app_id in the built output = a crash when a signed-in user answers
+# the notification prompt. grep -c, not -q: -q closes the pipe early.
+for pair in "$AAB:base/resources.pb" "$APK:resources.arsc"; do
+  f="${pair%%:*}"; entry="${pair#*:}"
+  [ -f "$f" ] || continue
+  if [ "$(unzip -p "$f" "$entry" | grep -ac google_app_id)" = 0 ]; then
+    echo "GATE_FAIL: $f has no google_app_id — Firebase would never initialise"; exit 1
+  fi
+  echo "  ok: google_app_id in $(basename "$f")"
+done
+
 if [ -f "$AAB" ]; then
   cp "$AAB" "$DL/hawkeye-lite-release.aab"; ls -la "$DL/hawkeye-lite-release.aab"
   echo "--- ABIs (armeabi-v7a must be present) ---"; unzip -l "$AAB" | grep -oE 'lib/[a-z0-9_-]+/' | sort -u

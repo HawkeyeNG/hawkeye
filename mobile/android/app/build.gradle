@@ -107,11 +107,27 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
+// FIREBASE CONFIG IS REQUIRED TO BUILD AN ARTIFACT, NOT OPTIONAL.
+//
+// This was Capacitor's template: a missing google-services.json was logged at
+// INFO (invisible at the default log level) and the build carried on. The
+// bundle then had no google_app_id, FirebaseApp never initialised, and the
+// moment a SIGNED-IN user answered the notification prompt,
+// PushNotifications.register() threw "Default FirebaseApp is not initialized"
+// on the plugin thread and killed the process — then again on every launch,
+// because the session persists. The file is gitignored, CI never had it, and
+// that is what got Play versionCodes 8, 9 and 10 rejected as "crashes after
+// opening". So: no file, or no client for this applicationId, and assembling
+// or bundling fails. An IDE sync with no tasks still only warns.
+def servicesJSON = file('google-services.json')
+def appId = android.defaultConfig.applicationId
+if (servicesJSON.exists() && servicesJSON.text.contains("\"${appId}\"")) {
+    apply plugin: 'com.google.gms.google-services'
+} else {
+    def why = servicesJSON.exists() ? "has no client for ${appId}" : "is missing"
+    def msg = "app/google-services.json ${why}: the app would crash on PushNotifications.register()"
+    if (gradle.startParameter.taskNames.any { it =~ /(?i)(assemble|bundle|install)/ }) {
+        throw new GradleException(msg)
     }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    logger.warn(msg)
 }

@@ -303,6 +303,24 @@ jobs:
             && { echo "::error::this bundle is signed with the DEBUG key"; exit 1; }
           echo "size: $(( $(stat -c%s "$AAB") / 1048576 )) MB"
 
+      # LITE VERSIONCODES 8, 9 AND 10 WERE ALL REJECTED FOR THIS, and every one
+      # was a green run. The Lite google-services.json was gitignored, so this
+      # runner never had it; the bundle carried no google_app_id, FirebaseApp
+      # never initialised, and PushNotifications.register() killed the app as
+      # soon as a signed-in user answered the notification prompt. Checked on
+      # the bundle itself because the input can look fine while the output is
+      # not. grep -c, not -q: under pipefail -q's early exit fails the pipeline.
+      - name: The bundle must carry its Firebase config
+        run: |
+          set -euo pipefail
+          AAB="${{ steps.cfg.outputs.aab }}"
+          N=$(unzip -p "$AAB" base/resources.pb | grep -ac google_app_id || true)
+          if [ "$N" = 0 ]; then
+            echo "::error::$AAB has no google_app_id - Firebase will not initialise and the app crashes on push registration"
+            exit 1
+          fi
+          echo "ok: google_app_id present"
+
       - name: Publish to ${{ inputs.track }}
         if: ${{ !inputs.dry_run }}
         env:

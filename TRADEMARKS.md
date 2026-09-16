@@ -1,6 +1,6 @@
 # Hawkeye Trademark Policy
 
-The Hawkeye **source code** is free and open source under the [MIT License](LICENSE).
+The Hawkeye **source code in this repository** is free and open source under the [MIT License](LICENSE).
 The Hawkeye **identity** is not. The following are trademarks of the **IniXien
 Foundation** (Nigeria) and are *not* covered by the MIT License:
 

@@ -945,6 +945,8 @@
   "nav.race": "Race",
   "dashboard.ledger-tampered-inspect-the-chain": "LEDGER TAMPERED (entry {id}) · inspect the chain",
   "dashboard.no-reports-yet": "No reports yet.",
+  "dashboard.result-sheets-tap": "Result sheets — tap to open full size",
+  "dashboard.result-sheet-photo": "Result sheet photo",
   "incident-reports.no-published-incidents-yet": "No published incidents yet.",
   "practice.nothing-here-is-published-or-counted": "— nothing here is published or counted.",
   "incident-reports.could-not-load-incidents-try-again-shortly": "Could not load incidents — try again shortly.",

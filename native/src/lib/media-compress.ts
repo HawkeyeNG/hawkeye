@@ -105,7 +105,7 @@ export type CompressOutcome = {
   /** false when the original came back untouched. */
   compressed: boolean;
   /** why not, when it did not. */
-  reason?: 'unavailable' | 'failed' | 'no_smaller';
+  reason?: 'unavailable' | 'failed' | 'no_smaller' | 'not_private';
 };
 
 /**
@@ -147,24 +147,46 @@ export async function compressVideo(uri: string): Promise<CompressOutcome> {
  * NOT for EC8A result sheets. Those are hashed and signed on the client, so
  * they are compressed before hashing on their own path; re-encoding one here
  * would break content-addressing.
+ *
+ * NEVER RETURNS THE ORIGINAL. A photo out of the gallery carries the phone
+ * camera's EXIF, GPS included, and what is uploaded is served publicly. The
+ * re-save below writes a fresh JPEG with none of that. This used to hand back
+ * the untouched original whenever the module was missing, the re-encode threw,
+ * or it came back empty — three quiet ways to publish where an observer stood.
+ * Now a plain re-save is tried second, and then it THROWS. Unlike a video
+ * (compressVideo keeps the recording on purpose), a photo is cheap to pick
+ * again; a published location cannot be taken back.
  */
-export async function compressImage(uri: string, maxDim = 1280, quality = 0.72): Promise<string> {
-  if (!ImageManipulator) return uri;
-  try {
-    const out = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: maxDim } }],
-      { compress: quality, format: ImageManipulator.SaveFormat.JPEG },
-    );
-    return out.uri || uri;
-  } catch {
-    return uri;
+export class PhotoNotPrivateError extends Error {
+  constructor() {
+    super('photo_not_private');
+    this.name = 'PhotoNotPrivateError';
   }
+}
+
+export async function compressImage(uri: string, maxDim = 1280, quality = 0.72): Promise<string> {
+  if (!ImageManipulator) throw new PhotoNotPrivateError();
+  const jpeg = { compress: quality, format: ImageManipulator.SaveFormat.JPEG };
+  // A re-save that returned the same URI did not write a new file.
+  const fresh = (out: { uri?: string } | null | undefined) => (out && out.uri && out.uri !== uri ? out.uri : null);
+  try {
+    const out = fresh(await ImageManipulator.manipulateAsync(uri, [{ resize: { width: maxDim } }], jpeg));
+    if (out) return out;
+  } catch { /* try the plain re-save */ }
+  try {
+    const out = fresh(await ImageManipulator.manipulateAsync(uri, [], jpeg));
+    if (out) return out;
+  } catch { /* nothing left to try */ }
+  throw new PhotoNotPrivateError();
 }
 
 /** Compress whichever kind this is, reporting whether it actually happened. */
 export async function compressMedia(uri: string, type: 'image' | 'video'): Promise<CompressOutcome> {
   if (type === 'video') return compressVideo(uri);
-  const out = await compressImage(uri);
-  return { uri: out, compressed: out !== uri, reason: out === uri ? 'failed' : undefined };
+  try {
+    return { uri: await compressImage(uri), compressed: true };
+  } catch {
+    // Not attachable — see compressImage. The caller drops it and says so.
+    return { uri: '', compressed: false, reason: 'not_private' };
+  }
 }

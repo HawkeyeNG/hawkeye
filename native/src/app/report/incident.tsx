@@ -955,17 +955,23 @@ export default function ReportIncident() {
      */
     setLine(res.assets.some((a) => a.type === 'video') ? 'Compressing…' : '');
     let uncompressed = 0;
-    const picked: Media[] = await Promise.all(res.assets.map(async (a) => {
+    let notPrivate = 0;
+    const picked: Media[] = (await Promise.all(res.assets.map(async (a) => {
       const type: 'image' | 'video' = a.type === 'video' ? 'video' : 'image';
       const out = await compressMedia(a.uri, type);
       if (type === 'video' && !out.compressed) uncompressed += 1;
+      // A gallery photo that could not be re-saved still carries its EXIF,
+      // GPS included. It is dropped rather than published — see compressImage.
+      if (out.reason === 'not_private') { notPrivate += 1; return null; }
       return { uri: out.uri, capturedAt: Date.now(), lat: 0, lng: 0, type };
-    }));
+    }))).filter((m): m is Media => m !== null);
     // Not silent. An uncompressed clip is bigger AND, on this codebase, stays
     // in the phone's own codec — which the server cannot convert while ffmpeg
     // is missing, so a reviewer may not be able to play it at all.
-    setLine(uncompressed ? 'Could not compress that video — it will upload at full size.' : '');
-    addMedia(picked, 'library');
+    setLine(notPrivate
+      ? `Could not prepare ${notPrivate === 1 ? 'a photo' : `${notPrivate} photos`} safely — please attach again.`
+      : uncompressed ? 'Could not compress that video — it will upload at full size.' : '');
+    if (picked.length) addMedia(picked, 'library');
   };
 
   const onSubmit = async () => {

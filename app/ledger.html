@@ -223,7 +223,7 @@
           <div class="ec-top"><strong>#${e.id}</strong><span class="ec-time">${timeAgo(e.created_at)}</span></div>
           <div class="ec-line">${e.pu_code} · ${e.contest}</div>
           <div class="ec-sub"><code>${e.entry_hash.slice(0, 24)}…</code></div>
-          <div class="ec-ev"><a href="/uploads/${e.image_sha256}.jpg" target="_blank">sheet ↗</a> · <a href="/uploads/${e.venue_image_sha256}.jpg" target="_blank">venue ↗</a></div>
+          <div class="ec-ev"><a href="/uploads/${e.image_sha256}.jpg" target="_blank">sheet ↗</a></div>
         </div>`).join('') || `<div class="meta">${T('ledger.no-entries-yet', 'No entries yet.')}</div>`;
       };
       paintChain();

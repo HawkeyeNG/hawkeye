@@ -1,0 +1,33 @@
+name: Public boundary
+
+# The server, its fraud detection and the election audits are private
+# (HawkeyeNG/hawkeye-backend). This fails any push that tracks them in this public
+# repository again, or adds a public file that loads server code.
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: No private paths are tracked
+        run: |
+          bad=$(git ls-files | grep -E '^(backend|audits)/' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::Private paths are tracked in this public repository:"
+            echo "$bad" | head -20
+            exit 1
+          fi
+      - name: No public file loads server code
+        run: |
+          bad=$(git grep -nE "(import|require|readFileSync).*backend/src/((services|routes)/|(server|db|config)\.js)" -- ':!*.md' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::Server code belongs in the private repository:"
+            echo "$bad" | head -20
+            exit 1
+          fi

@@ -239,6 +239,30 @@
 }
 .sr-ask-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(11, 107, 58, 0.25); }
 .sr-ask-input.num { font-family: var(--sr-mono); letter-spacing: 0.04em; }
+/* A real dialog, for flows too big for a one-line prompt. The same ground and
+   card as .sr-ask so it reads as the same family; the BODY scrolls, never the
+   page behind it. */
+.sr-sheet { max-width: 520px; padding: 0; display: flex; flex-direction: column;
+  max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); }
+.sr-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 12px 12px 18px; border-bottom: 1px solid var(--line); }
+.sr-sheet-head h2 { margin: 0; font-size: 1.02rem; line-height: 1.3; }
+.sr-sheet-x { background: none; border: 0; color: inherit; font-size: 1.5rem; line-height: 1;
+  cursor: pointer; width: 40px; height: 40px; border-radius: 8px; flex: none; }
+.sr-sheet-x:hover, .sr-sheet-x:focus-visible { background: var(--surface); }
+.sr-sheet-body { padding: 16px 18px 18px; overflow-y: auto; overscroll-behavior: contain; }
+/* A new step in the area picker arrives rather than blinks in. Only the NEW
+   select animates; the ones already answered never move. */
+.sr-chain-in { animation: sr-chain-in 0.16s ease-out; }
+@keyframes sr-chain-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sr-chain-in { animation: none; } }
+/* Tap, not just hover: a phone has no pointer to hover with, so a <title>
+   tooltip is invisible there. The picked shape is outlined and its numbers are
+   written out under the map. */
+.sr-map path, .sr-map circle { cursor: pointer; }
+.sr-map .is-picked { stroke: var(--accent); stroke-width: 2.6; stroke-opacity: 1; }
+.sr-map-info { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px;
+  background: var(--surface); font-size: 0.88rem; line-height: 1.4; flex: none; }
 /* The install dialog is the same card wearing the crest: it is the first thing
    a manager sees before the browser's own prompt, and an unbranded box asking
    to install software is what people are taught to refuse. */
@@ -720,7 +744,7 @@ function render() {
       ? T('situation-room.title-owner-cannot-step-back', 'The owner cannot step back from their own room')
       : T('situation-room.title-stop-managing-this-room', 'Stop managing this room')}">${T('situation-room.sign-out', 'Sign out')}</button>` : '');
   $('gpick') && $('gpick').addEventListener('change', (e) => { pickGroup(Number(e.target.value)); });
-  if ($('invite-btn')) $('invite-btn').addEventListener('click', showInvite);
+  if ($('invite-btn')) $('invite-btn').addEventListener('click', () => showInvite());
   if ($('rename-btn')) $('rename-btn').addEventListener('click', renameRoom);
   /* The actions are painted once per render, so a language change left them in
      the old language until the next reload -- the one part of the page that
@@ -1369,6 +1393,7 @@ async function drawMap(nodes) {
     <span>${T('situation-room.legend-deeper-green', 'Deeper green — more units reported')}</span>
     <span><b style="color:var(--accent)">&#9633;</b> ${T('situation-room.legend-outlined', 'outlined — we have observers there')}</span>
   </div>`;
+  wireMapTaps(host);
 }
 
 /**
@@ -1413,6 +1438,7 @@ async function drawWardMap(host, nodes, lvl) {
       <span>${T('situation-room.legend-deeper-green', 'Deeper green — more units reported')}</span>
       <span><b style="color:var(--accent)">&#9633;</b> ${T('situation-room.legend-outlined', 'outlined — we have observers there')}</span>
     </div>`;
+    wireMapTaps(host);
     return;
   }
 
@@ -1434,6 +1460,7 @@ async function drawWardMap(host, nodes, lvl) {
     <span><b style="color:var(--accent)">&#9675;</b> ringed &mdash; one of ours is assigned</span>
     <span>Most positions are approximate &mdash; placed inside the ward</span>
   </div>`;
+  wireMapTaps(host);
 }
 
 // Uppercased by the stylesheet, so no mixed-case acronym would survive here.
@@ -1511,6 +1538,71 @@ function askText(message, value = '', opts = {}) {
     document.documentElement.classList.add('modal-open');
     field.focus();
     field.select();
+  });
+}
+
+/**
+ * A dialog with a title, a close button and a scrolling body.
+ *
+ * For the flows askText is too small for — Give access, Invite links. Both used
+ * to be panels PREPENDED to the top of the page, and both buttons live where a
+ * manager has often scrolled well down, so the tap opened something off-screen
+ * and looked like it had done nothing at all.
+ *
+ * Only the topmost dialog answers Escape: a confirmation opened over this one
+ * (revoking a link asks first) must close alone, not take its parent with it.
+ */
+function openSheet(title) {
+  const box = document.createElement('div');
+  box.className = 'sr-ask';
+  box.innerHTML = `<div class="sr-ask-card sr-sheet" role="dialog" aria-modal="true" aria-labelledby="sr-sheet-title">
+      <div class="sr-sheet-head"><h2 id="sr-sheet-title"></h2>
+        <button type="button" class="sr-sheet-x" aria-label="${T('common.close', 'Close')}">&times;</button></div>
+      <div class="sr-sheet-body"></div>
+    </div>`;
+  box.querySelector('#sr-sheet-title').textContent = title;
+  const before = document.activeElement;
+  const onKey = (e) => {
+    if (e.key === 'Escape' && document.body.lastElementChild === box) close();
+  };
+  function close() {
+    document.removeEventListener('keydown', onKey);
+    box.remove();
+    if (!document.querySelector('.sr-ask')) document.documentElement.classList.remove('modal-open');
+    // Back to the button that opened it, so a keyboard user is not dropped at the top.
+    if (before && before.isConnected && before.focus) before.focus();
+  }
+  box.addEventListener('click', (e) => { if (e.target === box) close(); });
+  box.querySelector('.sr-sheet-x').addEventListener('click', close);
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(box);
+  document.documentElement.classList.add('modal-open');
+  box.querySelector('.sr-sheet-x').focus();
+  return { box, body: box.querySelector('.sr-sheet-body'), close };
+}
+
+/**
+ * Make a drawn map answer a TAP.
+ *
+ * Every shape already carries its numbers in a <title>, which a mouse shows on
+ * hover and a phone never shows at all. Read the same <title> back rather than
+ * restating the numbers, so the tapped text can never drift from the hovered.
+ */
+function wireMapTaps(host) {
+  const svg = host.querySelector('svg');
+  if (!svg) return;
+  const info = document.createElement('div');
+  info.className = 'sr-map-info';
+  info.setAttribute('aria-live', 'polite');
+  info.textContent = T('situation-room.map-tap-hint', 'Tap an area to see its numbers.');
+  svg.after(info);
+  svg.addEventListener('click', (e) => {
+    const shape = e.target.closest('path, circle');
+    const title = shape && shape.querySelector('title');
+    if (!title) return;
+    svg.querySelectorAll('.is-picked').forEach((el) => el.classList.remove('is-picked'));
+    shape.classList.add('is-picked');
+    info.textContent = title.textContent;
   });
 }
 
@@ -1841,7 +1933,11 @@ const roleError = (e) => e === 'owner_only'
       ? T('situation-room.outside-your-area', "That is outside the area you cover.")
       : e === 'bad_scope'
         ? T('situation-room.bad-area-for-coordinator', "That is not an area a coordinator can be given.")
-        : T('situation-room.could-not-change-that', "Could not change that.");
+        : e === 'ambiguous_area'
+          ? T('situation-room.ambiguous-area', 'More than one place has that name. Choose its state and local government.')
+          : e === 'unknown_area'
+            ? T('situation-room.unknown-area', 'That area is not in the register.')
+            : T('situation-room.could-not-change-that', "Could not change that.");
 
 /**
  * Take an observer off the roster. Owner only, and it says what survives.
@@ -2206,15 +2302,13 @@ async function promote(observerId, who) {
     ward: NAT ? ['state', 'lga', 'ward'] : ['lga', 'ward'],
   };
   const level = S.coverage && S.coverage.level === 'unit' ? 'ward' : (S.overview || S.coverage || {}).level || 'state';
-  const wrap = document.createElement('div');
-  wrap.className = 'sr-note';
-  wrap.id = 'promote-panel';
+  const sheet = openSheet(T('situation-room.give-more-access', "Give {who} more access", { who }));
+  const wrap = sheet.body;
   /* Only the owner appoints managers — everyone else delegates coordinators
      alone, so the Role select collapses to one option for them and the area
      picker is open from the start. */
   const CAN_MANAGER = iAmOwner();
-  wrap.innerHTML = `<strong>${T('situation-room.give-more-access', "Give {who} more access", { who: esc(who) })}</strong>
-    <div class="sr-form" style="max-width:none;margin-top:10px">
+  wrap.innerHTML = `<div class="sr-form" style="max-width:none">
       <div><label for="pr-role">${T('situation-room.role', 'Role')}</label>
         <select id="pr-role">
           ${CAN_MANAGER ? `<option value="manager">${T('situation-room.role-opt-manager', "Manager — the whole race, and everyone in it")}</option>` : ''}
@@ -2233,9 +2327,6 @@ async function promote(observerId, who) {
         <button class="sr-btn" id="pr-cancel">${T('common.cancel', 'Cancel')}</button>
       </div>
     </div>`;
-  const old = $('promote-panel');
-  if (old) old.remove();
-  $('sr-body').prepend(wrap);
 
   /**
    * The area picker, as a CASCADE.
@@ -2260,35 +2351,65 @@ async function promote(observerId, who) {
      underneath stayed answered. The list for a step is defined by what sits
      above it, never by itself. */
   const ABOVE = { zone: [], state: [], lga: ['state'], ward: ['state', 'lga'] };
-  const optionsFor = async (step) => {
-    if (step === 'zone') return (g.zones || []).map((z) => ({ key: z, name: z }));
+  /* Fetched once per question. Every list is keyed by the choices above it, so
+     going back to a state already visited costs nothing. The PROMISE is cached,
+     not the result, so a second ask while the first is in flight waits for it
+     instead of firing another request. */
+  const lists = new Map();
+  const optionsFor = (step) => {
+    if (step === 'zone') return Promise.resolve((g.zones || []).map((z) => ({ key: z, name: z })));
     const q = new URLSearchParams();
     for (const a of ABOVE[step]) if (picked[a]) q.set(a, picked[a]);
-    const { body } = await api('/api/groups/' + S.gid + '/coverage' + (q.toString() ? '?' + q : ''));
-    return body.nodes || [];
+    const key = step + '?' + q;
+    if (!lists.has(key)) {
+      lists.set(key, api('/api/groups/' + S.gid + '/coverage' + (q.toString() ? '?' + q : ''))
+        .then(({ body }) => (body && body.nodes) || []));
+    }
+    return lists.get(key);
   };
 
-  async function renderChain() {
+  /**
+   * Redraw the chain FROM the step that changed, never from the top.
+   *
+   * This used to clear every select and re-fetch each list in turn on every
+   * choice, so the answers already given vanished and came back one network
+   * round-trip at a time — the flicker between one dropdown and the next. Now
+   * the selects above the change stay exactly where they are, and only the
+   * steps below it are replaced, each appearing first as a disabled "Loading…"
+   * that fills in place.
+   *
+   * `drawn` guards the race: pick a state, then change it before its LGAs land,
+   * and the slower answer must not draw a list under the wrong state.
+   */
+  let drawn = 0;
+  async function renderChain(from = 0) {
+    const mine = ++drawn;
     const steps = STEPS[$('pr-kind').value] || [];
     for (const k of Object.keys(picked)) if (!steps.includes(k)) delete picked[k];
-    $('pr-chain').innerHTML = '';
-    for (const step of steps) {
-      const rows = await optionsFor(step);
+    const chain = $('pr-chain');
+    [...chain.children].slice(from).forEach((el) => el.remove());
+    for (let i = from; i < steps.length; i++) {
+      const step = steps[i];
+      // Stop at the first unanswered step: the next list has no basis yet.
+      if (i > 0 && !picked[steps[i - 1]]) break;
       const sel = document.createElement('select');
-      sel.className = 'sr-sel';
+      sel.className = 'sr-sel sr-chain-in';
       sel.dataset.step = step;
+      sel.disabled = true;
+      sel.innerHTML = `<option>${T('index.loading', 'Loading…')}</option>`;
+      chain.appendChild(sel);
+      const rows = await optionsFor(step);
+      if (mine !== drawn) return;
       sel.innerHTML = `<option value="">${LABEL_STEP[step]()}</option>`
         + rows.map((x) => `<option value="${esc(x.key)}"${picked[step] === x.key ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
-      $('pr-chain').appendChild(sel);
+      sel.disabled = false;
       sel.addEventListener('change', () => {
         picked[step] = sel.value;
         // Anything below this step is now stale — a ward chosen under the old
         // local government would quietly stay selected and be submitted.
-        for (const later of steps.slice(steps.indexOf(step) + 1)) delete picked[later];
-        renderChain();
+        for (const later of steps.slice(i + 1)) delete picked[later];
+        renderChain(i + 1);
       });
-      // Stop at the first unanswered step: the next list has no basis yet.
-      if (!picked[step]) break;
     }
   }
 
@@ -2297,19 +2418,28 @@ async function promote(observerId, who) {
     if (!$('pr-where').hidden) renderChain();
   });
   if (!CAN_MANAGER) renderChain();
-  $('pr-kind').addEventListener('change', renderChain);
-  $('pr-cancel').addEventListener('click', () => wrap.remove());
+  $('pr-kind').addEventListener('change', () => renderChain(0));
+  $('pr-cancel').addEventListener('click', sheet.close);
   $('pr-go').addEventListener('click', async () => {
     const role = $('pr-role').value;
     const payload = role === 'coordinator'
-      ? { role, scope_kind: $('pr-kind').value, scope_value: picked[(STEPS[$('pr-kind').value] || []).slice(-1)[0]] || '' }
+      ? {
+        role,
+        scope_kind: $('pr-kind').value,
+        scope_value: picked[(STEPS[$('pr-kind').value] || []).slice(-1)[0]] || '',
+        /* The parents the picker walked through. Hints only — the server
+           settles them against the register — but without them a ward name
+           shared by several states (Garki, Sabon Gari) cannot be settled. */
+        scope_state: picked.state || '',
+        scope_lga: picked.lga || '',
+      }
       : { role };
     if (role === 'coordinator' && !payload.scope_value) return alert(T('situation-room.pick-the-area-they-will-cover', 'Pick the area they will cover.'));
     const { status, body } = await api('/api/groups/' + S.gid + '/managers/' + observerId, {
       method: 'POST', body: JSON.stringify(payload),
     });
     if (status !== 200) return alert(roleError(body.error));
-    wrap.remove();
+    sheet.close();
     afterRoleChange();
   });
 }
@@ -2387,20 +2517,20 @@ async function leaveRoom() {
  * A promise with no control behind it is the same failure as a consent notice
  * describing a screen that does not exist: it reads as handled.
  */
-async function showInvite() {
+async function showInvite(sheet) {
   const { body } = await api('/api/groups/' + S.gid + '/invites');
   const all = Array.isArray(body) ? body : [];
   const live = all.filter((t) => !t.revoked && t.expires_at > Date.now());
   if (!live.length) {
     await api('/api/groups/' + S.gid + '/invites', { method: 'POST' });
-    return showInvite();
+    return showInvite(sheet);
   }
   const days = (t) => Math.max(1, Math.round((t.expires_at - Date.now()) / 86400000));
-  const panel = document.createElement('div');
-  panel.className = 'sr-note';
-  panel.id = 'inv-panel';
-  panel.innerHTML = `<strong>${T('situation-room.invite-links', 'Invite links')}</strong>
-    ${live.map((t) => `<div class="sr-link">
+  /* A dialog, redrawn in place after a revoke or a new link rather than opened
+     again — reopening would stack a second one over the first. */
+  const s = sheet || openSheet(T('situation-room.invite-links', 'Invite links'));
+  const panel = s.body;
+  panel.innerHTML = `${live.map((t) => `<div class="sr-link">
       <code>${esc(location.origin + '/join/' + t.token)}</code>
       <span class="sr-sub num" style="white-space:nowrap">${T('situation-room.n-used', '{v0} used', { v0: n(t.uses) })} &middot; ${days(t)}d</span>
       <button class="sr-btn mini" data-copy="${esc(t.token)}">${T('support.copy', 'Copy')}</button>
@@ -2409,9 +2539,6 @@ async function showInvite() {
     <div style="margin-top:8px">${T('situation-room.anyone-with-a-live-link',
     'Anyone with a live link can join your roster after signing in.')}</div>
     <button class="sr-btn mini" id="inv-new" style="margin-top:10px">${T('situation-room.create-another-link', 'Create another link')}</button>`;
-  const old = document.getElementById('inv-panel');
-  if (old) old.remove();
-  $('sr-body').prepend(panel);
 
   panel.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
     navigator.clipboard.writeText(location.origin + '/join/' + b.dataset.copy)
@@ -2420,11 +2547,11 @@ async function showInvite() {
   panel.querySelectorAll('[data-revoke]').forEach((b) => b.addEventListener('click', async () => {
     if (!await ask(T('situation-room.revoke-this-link-anyone-who-has-not', 'Revoke this link? Anyone who has not used it yet will not be able to join with it.'))) return;
     await api('/api/groups/' + S.gid + '/invites/' + b.dataset.revoke, { method: 'DELETE' });
-    showInvite();
+    showInvite(s);
   }));
   $('inv-new').addEventListener('click', async () => {
     await api('/api/groups/' + S.gid + '/invites', { method: 'POST' });
-    showInvite();
+    showInvite(s);
   });
 }
 

@@ -37,6 +37,16 @@ work without trusting our server.
 
 ## Verify it yourself
 
+**[hawkeye-verify](https://github.com/hawkeye-ng/hawkeye-verify)** runs all of these checks in one command:
+
+```bash
+git clone https://github.com/hawkeye-ng/hawkeye-verify && node hawkeye-verify/bin/hawkeye-verify.mjs
+```
+
+It is MIT-licensed and has no dependencies. It checks Rekor's own proofs and signatures as
+well, and it re-runs the checks against hawkeye.com.ng every day in public. You can also run
+each check by hand:
+
 - **The ledger.** Every accepted report is chained:
   `entry_hash = SHA-256(prev_hash + payload)`. `GET /api/ledger/verify` re-checks the
   whole chain, and [the ledger page](https://hawkeye.com.ng/ledger.html) re-verifies it

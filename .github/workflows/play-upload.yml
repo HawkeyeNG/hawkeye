@@ -15,10 +15,13 @@ name: Play upload (build + publish to a testing track)
 # the build in the same place as the upload removes the file from the loop
 # entirely — and these runners are free on a public repo.
 #
-# IT WILL NOT TOUCH PRODUCTION. The track input offers testing tracks only.
-# Promotion stays a human decision in the Console, where the rollout percentage
-# and any staged store-listing changes are visible. This workflow can see
-# neither.
+# IT NEVER SENDS ANYTHING FOR REVIEW. play_upload.mjs commits with
+# changesNotSentForReview=true, so the release is staged and a human sends it
+# from Publishing overview. A plain commit submits EVERY pending change on the
+# app, and on 2026-09-16 an internal upload sent Production's held, known-bad
+# releases for review that way. Promotion, the rollout percentage and any staged
+# store-listing changes stay a Console decision; this workflow can see none of
+# them.
 #
 # REQUIRED SECRETS
 #   GCP_WIF_PROVIDER            printed by scripts/setup_wif.sh

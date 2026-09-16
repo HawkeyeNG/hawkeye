@@ -539,6 +539,12 @@ export default function Practice() {
   const [showHistory, setShowHistory] = useState(false);
 
   const parties = cfg?.parties?.length ? cfg.parties : PRACTICE_PARTIES;
+  /** The public card's vote line, as app/dashboard.html writes it. */
+  const previewVotes = parties
+    .map((p) => [p.code, Number(counts[p.code] || 0)] as const)
+    .filter(([, n]) => n > 0)
+    .map(([code, n]) => `${code} ${n}`)
+    .join(' · ') || 'all zero';
 
   /** The state to scope the race picker to, when the chosen unit sits in a real
    *  register state. The sample unit ("Practice") and "no unit" both fall
@@ -1845,6 +1851,43 @@ export default function Practice() {
             </Text>
             <View className="mt-4 w-full rounded-xl bg-card px-4 py-2">
               <Text className="font-mono text-xs text-muted">{done.entryHash}</Text>
+            </View>
+            {/* WHAT THE PUBLIC REPORTS LOG WOULD SHOW, built from the photo still
+                in this phone's memory. Practice sends counts only — the photo
+                never leaves the device — so nothing is hosted and nothing has to
+                expire. Mirrors a card on app/dashboard.html, and says PRACTICE
+                for the screenshot someone will take of it. Classes are ones this
+                file already uses: NativeWind drops unknown ones silently. */}
+            <Text className="w-full pt-6 text-sm font-bold text-ink">
+              {i18nT('n.app.practice.preview-heading')}
+            </Text>
+            <View className="mt-2 w-full rounded-xl border border-line bg-card px-4 py-3">
+              <Text className="text-[11px] font-bold text-good-ink">{i18nT('n.app.practice.preview-chip')}</Text>
+              <Text className="pt-2 text-sm font-bold text-ink">{unit?.name || 'Practice Polling Unit'}</Text>
+              <Text className="text-xs text-muted">
+                {/* Exactly the real card's shape: "[CONTEST] code · ward, lga, state". */}
+                {`[PRACTICE]${unit?.pu_code ? ` ${unit.pu_code}` : ''}${
+                  [unit?.ward, unit?.lga, unit?.state].filter(Boolean).length
+                    ? ` · ${[unit?.ward, unit?.lga, unit?.state].filter(Boolean).join(', ')}`
+                    : ''}`}
+              </Text>
+              <Text className="pt-2 text-sm text-ink">
+                <Text className="font-bold text-muted">REPORTED</Text> · 1/1 matching reports
+              </Text>
+              <Text className="pt-1 text-xs text-muted">{previewVotes}</Text>
+              {sheet?.uri ? (
+                <View className="pt-3">
+                  <Text className="text-xs text-muted">{i18nT('n.app.practice.preview-sheet-photo')}</Text>
+                  <Image
+                    source={{ uri: sheet.uri }}
+                    style={{ width: 96, height: 128, borderRadius: 8, marginTop: 6 }}
+                    contentFit="cover"
+                  />
+                </View>
+              ) : (
+                <Text className="pt-3 text-xs text-muted">{i18nT('n.app.practice.preview-no-photo')}</Text>
+              )}
+              <Text className="pt-3 text-xs text-muted">{i18nT('n.app.practice.preview-reported-explain')}</Text>
             </View>
             {/* Practice is its own chain — and its head is published in the SAME
                 daily Sigstore Rekor artifact as the real ledger (practiceHead in

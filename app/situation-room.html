@@ -251,6 +251,24 @@
   cursor: pointer; width: 40px; height: 40px; border-radius: 8px; flex: none; }
 .sr-sheet-x:hover, .sr-sheet-x:focus-visible { background: var(--surface); }
 .sr-sheet-body { padding: 16px 18px 18px; overflow-y: auto; overscroll-behavior: contain; }
+/* INSIDE A DIALOG, THE DIALOG DOES THE SPACING. Measured, not guessed: the
+   global button margin (16px) sat the close x below the title and opened a gap
+   above every button row; the form's own 20px plus the first label's 14px left
+   50px between the title rule and "Role"; and the coordinator fine print sat
+   flush on the last dropdown with 40px under it. Scoped to .sr-sheet so the
+   same classes elsewhere in the room do not move. */
+.sr-sheet-x, .sr-sheet-body button { margin-top: 0; }
+.sr-sheet:focus { outline: none; }
+.sr-sheet-body .sr-form { margin-top: 0; }
+.sr-sheet-body .sr-form > div:first-child > label:first-child { margin-top: 0; }
+.sr-sheet-body .sr-form > div:last-child { margin-top: 6px; }
+.sr-sheet-body .sr-fine { margin: 10px 0 2px; }
+/* Invite link: the URL gets its own line, the count and the actions the next.
+   One flex row squeezed a 94px column and wrapped the URL onto four lines. */
+.sr-sheet-body .sr-link { display: grid; grid-template-columns: 1fr auto auto; gap: 8px 10px; align-items: center; }
+.sr-sheet-body .sr-link code { grid-column: 1 / -1; word-break: break-all; }
+.sr-inv-note { margin-top: 12px; font-size: 0.86rem; line-height: 1.45; opacity: 0.8; }
+.sr-sheet-body #inv-new { margin-top: 12px; width: 100%; }
 /* A new step in the area picker arrives rather than blinks in. Only the NEW
    select animates; the ones already answered never move. */
 .sr-chain-in { animation: sr-chain-in 0.16s ease-out; }
@@ -1570,7 +1588,7 @@ function askText(message, value = '', opts = {}) {
 function openSheet(title) {
   const box = document.createElement('div');
   box.className = 'sr-ask';
-  box.innerHTML = `<div class="sr-ask-card sr-sheet" role="dialog" aria-modal="true" aria-labelledby="sr-sheet-title">
+  box.innerHTML = `<div class="sr-ask-card sr-sheet" role="dialog" aria-modal="true" aria-labelledby="sr-sheet-title" tabindex="-1">
       <div class="sr-sheet-head"><h2 id="sr-sheet-title"></h2>
         <button type="button" class="sr-sheet-x" aria-label="${T('common.close', 'Close')}">&times;</button></div>
       <div class="sr-sheet-body"></div>
@@ -1592,7 +1610,9 @@ function openSheet(title) {
   document.addEventListener('keydown', onKey);
   document.body.appendChild(box);
   document.documentElement.classList.add('modal-open');
-  box.querySelector('.sr-sheet-x').focus();
+  // The DIALOG takes focus, not the close button: focusing the x lit its ring
+  // the moment the dialog opened, so it looked pre-selected. Tab still walks in.
+  box.querySelector('.sr-sheet').focus();
   return { box, body: box.querySelector('.sr-sheet-body'), close };
 }
 
@@ -2687,9 +2707,9 @@ async function showInvite(sheet) {
       <button class="sr-btn mini" data-copy="${esc(t.token)}">${T('support.copy', 'Copy')}</button>
       <button class="sr-btn mini" data-revoke="${esc(t.token)}">${T('situation-room.revoke', 'Revoke')}</button>
     </div>`).join('')}
-    <div style="margin-top:8px">${T('situation-room.anyone-with-a-live-link',
+    <div class="sr-inv-note">${T('situation-room.anyone-with-a-live-link',
     'Anyone with a live link can join your roster after signing in.')}</div>
-    <button class="sr-btn mini" id="inv-new" style="margin-top:10px">${T('situation-room.create-another-link', 'Create another link')}</button>`;
+    <button class="sr-btn" id="inv-new">${T('situation-room.create-another-link', 'Create another link')}</button>`;
 
   panel.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
     navigator.clipboard.writeText(location.origin + '/join/' + b.dataset.copy)

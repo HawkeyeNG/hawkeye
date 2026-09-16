@@ -10,6 +10,16 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=182" />
+  <style>
+    /* The result sheets behind a card. Inline, not styles.css: that file is
+       versioned on every page, and only this one needs these rules. */
+    .sheet-cap { margin: 10px 0 6px; font-size: 0.82rem; opacity: 0.75; }
+    .sheet-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .sheet-strip a { flex: none; display: block; border-radius: 8px; overflow: hidden;
+      border: 1px solid var(--line, rgba(255, 255, 255, 0.14)); }
+    .sheet-strip img { display: block; width: 96px; height: 128px; object-fit: cover;
+      background: rgba(127, 127, 127, 0.12); }
+  </style>
   <script src="native.js?v=116"></script>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -121,6 +131,8 @@
             r.locationPlausibility === 'inconsistent' ? ' · ⚠ GPS reports contradict this unit’s expected area' : ''
           }${r.locationScore != null ? ` · location evidence ${r.locationScore}/100` : ''}</p>
           <p class="meta">${r.votes.filter((v) => v.count > 0).map((v) => `${v.party} ${v.count}`).join(' · ') || 'all zero'}</p>
+          ${Array.isArray(r.sheets) && r.sheets.length ? `<p class="sheet-cap">${T('dashboard.result-sheets-tap', 'Result sheets — tap to open full size')}</p>
+          <div class="sheet-strip">${r.sheets.filter((u) => /^\/uploads\/[0-9a-f]{64}\.jpg$/.test(u)).map((u, i) => `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" loading="lazy" decoding="async" alt="${T('dashboard.result-sheet-photo', 'Result sheet photo')} ${i + 1}"></a>`).join('')}</div>` : ''}
         </section>`).join('');
     }
     refresh();

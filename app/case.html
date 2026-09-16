@@ -113,7 +113,6 @@
         <h3>Report #${s.id} · ${new Date(s.capturedAt).toLocaleString()} · location ${s.locationVerified ? 'verified ✅' : 'unverified'}</h3>
         <div class="ev">
           <div><a href="${s.sheetUrl}" target="_blank" rel="noopener"><img loading="lazy" src="${s.sheetUrl}" alt="result sheet photo"></a><div class="cap">Result sheet (tap to open full size)</div></div>
-          <div><a href="${s.venueUrl}" target="_blank" rel="noopener"><img loading="lazy" src="${s.venueUrl}" alt="venue photo"></a><div class="cap">Polling-unit surroundings</div></div>
         </div>
         <table><thead><tr><th>Party</th><th>Reported Count</th></tr></thead><tbody>
           ${s.votes.filter((v) => v.count > 0).map((v) => `<tr><td>${esc(v.party)}</td><td>${v.count.toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="2">all zeros</td></tr>'}

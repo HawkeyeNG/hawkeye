@@ -53,9 +53,9 @@ export type Media = Shot & { type: 'image' | 'video'; read?: SheetRead | null };
 // Optional image downscaler (parity with the web/Capacitor compressCapture step):
 // shrink a freshly captured photo to the same targets before it is hashed/signed,
 // so a sheet is ~1500 px / q0.76 and a venue ~1280 px / q0.72 across every
-// platform instead of a full-sensor multi-MB JPEG. Probed like VideoCompressor —
-// no-op until `npx expo install expo-image-manipulator` adds it and the app is
-// rebuilt. Add it before the next release build to activate.
+// platform instead of a full-sensor multi-MB JPEG. Probed like VideoCompressor.
+// Installed (package.json) since the first release build; the probe stays so a
+// build without it fails loudly at capture instead of crashing at import.
 let ImageManipulator: {
   manipulateAsync: (uri: string, actions: object[], opts?: object) => Promise<{ uri: string; width: number; height: number }>;
   SaveFormat: { JPEG: string };
@@ -68,27 +68,33 @@ try {
   ImageManipulator = null;
 }
 
-// Downscale to the shared upload target. Optional + fully guarded: if the module
-// is absent or the resize throws, the ORIGINAL photo is returned unchanged —
-// compression must never block or corrupt a capture (same contract as web).
+// Re-save before upload: downscaled to the shared target, and ALWAYS as a fresh
+// JPEG. The second half is the privacy half. The re-save drops the camera's
+// EXIF, GPS included, and a sheet is content-addressed and served publicly, so
+// the camera original must never be what leaves the phone. This used to return
+// the original when the module was missing, the resize threw, or it came back
+// empty. Now a plain re-save is tried second, then it THROWS and the caller asks
+// for the shot again: a retake costs seconds, a published location is permanent.
 async function downscaleForUpload(uri: string, isDocument: boolean): Promise<string> {
-  if (!ImageManipulator?.manipulateAsync) return uri;
+  if (!ImageManipulator?.manipulateAsync) throw new Error('photo_not_private');
   const maxDim = isDocument ? 1500 : 1280;
   const quality = isDocument ? 0.76 : 0.72;
+  const jpeg = { compress: quality, format: ImageManipulator.SaveFormat.JPEG };
+  const fresh = (out: { uri?: string } | null | undefined) => (out && out.uri && out.uri !== uri ? out.uri : null);
   try {
     const probe = await ImageManipulator.manipulateAsync(uri, []);
     const longer = Math.max(probe.width, probe.height);
-    const jpeg = { compress: quality, format: ImageManipulator.SaveFormat.JPEG };
-    if (longer <= maxDim) {
-      const out = await ImageManipulator.manipulateAsync(uri, [], jpeg);
-      return out.uri || uri;
-    }
-    const resize = probe.width >= probe.height ? { width: maxDim } : { height: maxDim };
-    const out = await ImageManipulator.manipulateAsync(uri, [{ resize }], jpeg);
-    return out.uri || uri;
-  } catch {
-    return uri;
-  }
+    const actions = longer <= maxDim
+      ? []
+      : [{ resize: probe.width >= probe.height ? { width: maxDim } : { height: maxDim } }];
+    const out = fresh(await ImageManipulator.manipulateAsync(uri, actions, jpeg));
+    if (out) return out;
+  } catch { /* try the plain re-save */ }
+  try {
+    const out = fresh(await ImageManipulator.manipulateAsync(uri, [], jpeg));
+    if (out) return out;
+  } catch { /* nothing left to try */ }
+  throw new Error('photo_not_private');
 }
 
 /**
@@ -523,11 +529,21 @@ export function CaptureCamera({
       setFixState('failed');
       return;
     }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    // Downscale to the shared upload target before the bytes are hashed/signed, so
-    // storage + bandwidth match web/Capacitor (no-op until the module is built in).
-    const finalUri = await downscaleForUpload(preview.uri, isDocument);
+    // Re-save to the shared upload target before the bytes are hashed/signed, so
+    // storage + bandwidth match web/Capacitor AND the camera's EXIF never leaves.
+    let finalUri: string;
+    try {
+      finalUri = await downscaleForUpload(preview.uri, isDocument);
+    } catch {
+      if (cancelled.current || g !== gen.current) return;
+      // The preview stays, so they can confirm again or retake.
+      setBusy(false);
+      setLine(i18nT('n.components.capture-camera.capture-failed-try-again'));
+      return;
+    }
     if (cancelled.current || g !== gen.current) return; // retaken/cancelled mid-downscale
+    // Only now: a success buzz before the photo was ready would lie on failure.
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setPreview(null);
     setBusy(false);
     onCapture({

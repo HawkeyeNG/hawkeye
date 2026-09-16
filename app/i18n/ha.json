@@ -971,6 +971,8 @@
   "nav.race": "Gasa",
   "dashboard.ledger-tampered-inspect-the-chain": "AN TABA LITTAFIN RIKODI (rikodi {id}) · duba sarkar",
   "dashboard.no-reports-yet": "Babu rahotanni tukuna.",
+  "dashboard.result-sheets-tap": "Takardun sakamako — taɓa don buɗe cikakken girma",
+  "dashboard.result-sheet-photo": "Hoton takardar sakamako",
   "incident-reports.no-published-incidents-yet": "Babu lamurran da aka buga tukuna.",
   "practice.nothing-here-is-published-or-counted": "— ba a buga ko kirga komai a nan.",
   "incident-reports.could-not-load-incidents-try-again-shortly": "An kasa loda lamurra — sake gwadawa nan ba da jimawa ba.",

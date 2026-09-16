@@ -102,6 +102,7 @@
         return;
       }
       $('entry-hash').textContent = d.entryHash || '';
+      renderPreview(votes);
       $('flow').hidden = true;
       $('done').hidden = false;
       window.scrollTo(0, 0);
@@ -111,6 +112,33 @@
     }
   };
   $('btn-again').onclick = () => location.reload();
+
+  /**
+   * Fill the public-card preview from what is already on this page. The sheet
+   * image is the one in #preview-sheet — an object URL from the app's scanner
+   * or a data URL from the in-page camera — so nothing is fetched and nothing
+   * is sent. No link to open it full size: a new tab refuses a data: URL, and a
+   * Capacitor WebView has no tab to open, so a link would work nowhere.
+   */
+  function renderPreview(votes) {
+    const img = $('preview-sheet');
+    const src = img && !img.hidden ? (img.getAttribute('src') || '') : '';
+    $('pv-name').textContent = $('prac-unit-name').textContent;
+    // Exactly the real card's shape: "[CONTEST] code · ward, lga, state".
+    const scope = $('prac-unit-scope').textContent;
+    $('pv-meta').textContent = `[PRACTICE]${UNIT_CODE ? ` ${UNIT_CODE}` : ''}${scope ? ` · ${scope}` : ''}`;
+    $('pv-votes').textContent = votes.filter((v) => v.count > 0).map((v) => `${v.party} ${v.count}`).join(' · ') || 'all zero';
+    const strip = $('pv-sheets');
+    strip.textContent = '';
+    if (src) {
+      const thumb = document.createElement('img');
+      thumb.src = src;
+      thumb.alt = $('pv-sheets-wrap').querySelector('.sheet-cap').textContent;
+      strip.appendChild(thumb);
+    }
+    $('pv-sheets-wrap').hidden = !src;
+    $('pv-no-photo').hidden = Boolean(src);
+  }
 
   // ---- boot ----
   (async () => {

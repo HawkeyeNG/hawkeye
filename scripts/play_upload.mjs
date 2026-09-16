@@ -150,7 +150,7 @@ async function accessToken() {
 
 const API = 'https://androidpublisher.googleapis.com/androidpublisher/v3/applications';
 
-async function api(token, method, url, body, extraHeaders = {}, opts = {}) {
+async function api(token, method, url, body, extraHeaders = {}) {
   /* A Node stream body needs duplex:'half'. Undici refuses it outright without
      one, and the message — "duplex option is required when sending a body" —
      names neither the stream nor the call that carried it. The .aab is streamed
@@ -168,10 +168,6 @@ async function api(token, method, url, body, extraHeaders = {}, opts = {}) {
   let json = null;
   try { json = text ? JSON.parse(text) : null; } catch { /* upload returns no body sometimes */ }
   if (!res.ok) {
-    /* SOFT MODE: hand the failure back instead of dying, so a caller can
-       branch on it. Used by the commit, where one specific 400 is not an
-       error but an instruction. Everything else still dies here. */
-    if (opts.soft) return { __failed: true, status: res.status, text, json };
     // The commonest failure by far is the service account not yet invited in
     // Play Console, and Google's message for it is unhelpfully generic.
     const hint = res.status === 401 || res.status === 403
@@ -224,43 +220,29 @@ await api(
 );
 console.log(`  track   : ${track} set to versionCode ${up.versionCode}`);
 
-/* PLAY DOES NOT ALWAYS ACCEPT A REVIEW SUBMISSION FROM THE API.
+/* NEVER LET THE API PRESS "SEND FOR REVIEW". ALWAYS changesNotSentForReview=true.
 
-   A plain :commit can come back 400 INVALID_ARGUMENT with "Changes cannot
-   be sent for review automatically. Please set the query parameter
-   changesNotSentForReview to true." Play returns this when it will not let
-   the API press Send for review for this app - after a policy rejection, for
-   one. Lite versionCode 9 hit it on 2026-09-15: the bundle uploaded and the
-   track was set, then the commit failed and took the whole edit with it, so
-   nothing reached the Console at all.
+   A plain :commit does not submit THIS edit. It submits EVERY change pending on
+   the app, including ones a human deferred with "Save for later". On
+   2026-09-16 a Lite upload to INTERNAL did exactly that: it sent Production's
+   deliberately held "Start staged rollout at 20%" (v9) and "Start full rollout"
+   (v8) for review, both known to crash, plus Alpha's v10. It took a manual
+   "Remove changes" in the Console to pull them back.
 
-   Retried WITH the parameter, the edit commits and the release is staged -
-   but it is NOT in review until a human presses Send for review. That
-   distinction is the whole point, so it is printed rather than glossed.
+   Nothing the API can read shows those held changes, so this script cannot
+   check first. It stages the release instead, and a person sends it from
+   Play Console -> Publishing overview, where the full pending list is on screen
+   and anything unwanted can be saved for later first.
 
-   Only this one message is retried. Any other failure still dies, or a real
-   permission problem would be retried into a silent half-success. */
-const COMMIT = `${API}/${app.pkg}/edits/${edit.id}:commit`;
-let done = await api(token, 'POST', COMMIT, null, {}, { soft: true });
-let inReview = true;
-if (done && done.__failed) {
-  const body = done.text || '';
-  if (!body.includes('changesNotSentForReview')) {
-    die(`POST edits:commit -> ${done.status} ${body.slice(0, 400)}`);
-  }
-  console.log('  commit  : Play refused to send for review automatically; staging instead');
-  done = await api(token, 'POST', `${COMMIT}?changesNotSentForReview=true`);
-  inReview = false;
-}
-console.log(`\n\x1b[32m  committed. edit ${done.id} is on ${track}.\x1b[0m`);
-if (!inReview) {
-  console.log('\x1b[33m  NOT IN REVIEW YET. Open Play Console -> Publishing overview'
-    + ' and press "Send for review"; the release is staged and waiting.\x1b[0m');
-}
-/* WHO ACTS NEXT, not just what happened. When Play refuses the automatic
-   submission the release is staged and nothing is in review, so saying
-   'Google reviews it from here' would be the one sentence that stops anyone
-   pressing the button. */
+   (Play also sometimes refuses the plain commit outright with 400 "Please set
+   the query parameter changesNotSentForReview to true" - Lite v9, 2026-09-15.
+   Always passing it makes that path the only path.) */
+const done = await api(token, 'POST', `${API}/${app.pkg}/edits/${edit.id}:commit?changesNotSentForReview=true`);
+console.log(`\n\x1b[32m  committed. edit ${done.id} is staged on ${track}.\x1b[0m`);
+/* WHO ACTS NEXT, not just what happened: 'Google reviews it from here' would
+   be the one sentence that stops anyone pressing the button. */
+console.log('\x1b[33m  NOT SENT FOR REVIEW. Open Play Console -> Publishing overview, check'
+  + ' EVERY pending change listed (save anything unintended for later), then send.\x1b[0m');
 console.log(track === 'production'
-  ? `  Rollout: ${rollout === 'full' ? 'everyone' : Number(rollout) * 100 + '% of users'}${inReview ? '. Google reviews it from here.' : ', once you send it for review.'}`
+  ? `  Rollout: ${rollout === 'full' ? 'everyone' : Number(rollout) * 100 + '% of users'}, once it is sent for review.`
   : '  Nothing was promoted beyond that track.');

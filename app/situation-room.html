@@ -1111,9 +1111,12 @@ function renderOverview() {
 
       </div>
     </div>
-    ${partiesHtml(S.tally, raceArea())}
+    ${/* The reader's OWN area first: it is the one they can act on, and the race-wide
+         figure is the context for it, not the headline. The CSV buttons pick
+         their card by label (data-party-csv), not position, so order is free. */ ''}
     ${S.areaTally ? partiesHtml(S.areaTally, T('situation-room.your-area',
     '{v0} (your area)', { v0: S.group.me.scope_value })) : ''}
+    ${partiesHtml(S.tally, raceArea())}
     <h2 class="sr-h2">${T('situation-room.reports-coming-in', 'Reports coming in')}</h2>
     <div class="sr-card${reports.length > 4 ? ' sr-panel' : ''}">${reports.length
           ? `<div class="sr-scroll">${reports.map(activityRow).join('')}</div>`

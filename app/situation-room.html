@@ -261,6 +261,16 @@
    written out under the map. */
 .sr-map path, .sr-map circle { cursor: pointer; }
 .sr-map .is-picked { stroke: var(--accent); stroke-width: 2.6; stroke-opacity: 1; }
+/* Zoom controls, over the map's top-right corner. 40px so a thumb can hit
+   them on the phone this exists for. */
+.sr-zoomable { position: relative; }
+.sr-zoom { position: absolute; top: 10px; right: 10px; z-index: 2; display: flex; flex-direction: column; gap: 6px; }
+.sr-zoom button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--card); color: var(--ink); font-size: 1.25rem; line-height: 1; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
+.sr-zoom button:disabled { opacity: 0.4; cursor: default; }
+.sr-zoom button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr-map.is-zoomed { cursor: grab; }
 .sr-map-info { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px;
   background: var(--surface); font-size: 0.88rem; line-height: 1.4; flex: none; }
 /* The install dialog is the same card wearing the crest: it is the first thing
@@ -1079,7 +1089,7 @@ function renderOverview() {
     </div>
     <div class="sr-two">
       <div>
-        <h2 class="sr-h2">${esc(homeArea().name)} at a glance</h2>
+        <h2 class="sr-h2">${T('situation-room.place-at-a-glance', '{place} at a glance', { place: esc(homeArea().name) })}</h2>
         <div class="sr-card sr-panel" id="sr-map"><div class="sr-msg">${T('situation-room.drawing-the-map', 'Drawing the map…')}</div></div>
       </div>
       <div>
@@ -1373,7 +1383,7 @@ async function drawMap(nodes) {
   const pad = Math.max(x1 - x0, y1 - y0) * 0.05 || 1;
 
   host.innerHTML = `<svg viewBox="${(x0 - pad).toFixed(1)} ${(y0 - pad).toFixed(1)} ${(x1 - x0 + pad * 2).toFixed(1)} ${(y1 - y0 + pad * 2).toFixed(1)}"
-      role="img" aria-label="Coverage across ${esc(scope || T('common.nigeria', 'Nigeria'))}" class="sr-map">
+      role="img" aria-label="${T('situation-room.map-aria-coverage', 'Coverage across {place}', { place: esc(scope || T('common.nigeria', 'Nigeria')) })}" class="sr-map">
     ${drawn.map(({ node, path }) => {
       const p = pct(node.reported, node.units);
       /* Coverage is the FILL and our people are the STROKE, so the two facts do
@@ -1409,17 +1419,17 @@ async function drawWardMap(host, nodes, lvl) {
   const WM = window.HawkeyeWardMap;
   const a = (S.overview || S.coverage || {}).area;
   const note = (html) => {
-    host.innerHTML = `<div class="sr-msg">${html}<br />The list beside this is the full picture for ${esc(homeArea().name)}.</div>`;
+    host.innerHTML = `<div class="sr-msg">${html}<br />${T('situation-room.list-is-full-picture', 'The list beside this is the full picture for {place}.', { place: esc(homeArea().name) })}</div>`;
   };
   if (!WM || !a) return note(T('situation-room.no-map-for-this-area', 'No map for this area.'));
   const r = await api('/api/groups/' + S.gid + '/wards-geo?state=' + encodeURIComponent(a.state) + '&lga=' + encodeURIComponent(a.lga));
   const wards = (r.status === 200 && r.body && r.body.wards) || [];
-  if (!wards.length) return note(`No ward map for ${esc(a.lga)} yet.`);
+  if (!wards.length) return note(T('situation-room.no-ward-map-for-lga', 'No ward map for {lga} yet.', { lga: esc(a.lga) }));
   const box = (m) => `viewBox="0 0 ${m.W} ${Math.ceil(m.H)}" role="img" class="sr-map"`;
 
   if (lvl === 'ward') {
     const m = WM.wardShapes(wards, nodes);
-    host.innerHTML = `<svg ${box(m)} aria-label="Coverage across ${esc(a.lga)}">
+    host.innerHTML = `<svg ${box(m)} aria-label="${T('situation-room.map-aria-coverage', 'Coverage across {place}', { place: esc(a.lga) })}">
       ${m.shapes.map(({ d, node, name }) => {
         if (!node) {
           return `<path d="${d}" fill="none" stroke="currentColor" stroke-opacity="0.25" stroke-width="0.8"
@@ -1439,28 +1449,30 @@ async function drawWardMap(host, nodes, lvl) {
       <span><b style="color:var(--accent)">&#9633;</b> ${T('situation-room.legend-outlined', 'outlined — we have observers there')}</span>
     </div>`;
     wireMapTaps(host);
+    wireMapZoom(host);
     return;
   }
 
   const ward = WM.match(a.ward, wards);
-  if (!ward) return note(`The map layer has no boundary we can match to ${esc(a.ward)} ward.`);
+  if (!ward) return note(T('situation-room.no-boundary-for-ward', 'The map layer has no boundary we can match to {ward} ward.', { ward: esc(a.ward) }));
   const m = WM.unitPoints(ward.geometry, nodes);
   const R = (m.W / 100).toFixed(1);
-  host.innerHTML = `<svg ${box(m)} aria-label="Polling units in ${esc(a.ward)}">
+  host.innerHTML = `<svg ${box(m)} aria-label="${T('situation-room.map-aria-units', 'Polling units in {ward}', { ward: esc(a.ward) })}">
     <path d="${m.outline}" fill="var(--ok)" fill-opacity="0.05" stroke="currentColor" stroke-opacity="0.45"
       stroke-width="1" vector-effect="non-scaling-stroke" />
     ${m.points.map(({ x, y, node, approx }) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"
       fill="${node.reported ? 'var(--ok)' : 'none'}"
       stroke="${node.assigned ? 'var(--accent)' : 'currentColor'}" stroke-opacity="${node.reported || node.assigned ? 0.95 : 0.5}"
       stroke-width="${node.reported ? 2 : 1}" vector-effect="non-scaling-stroke"
-      ><title>${esc(node.name)} — ${node.reported ? 'reported' : 'no report yet'}${node.assigned ? ', ' + n(node.assigned) + ' of ours' : ''}${approx ? ' · position approximate' : ''}</title></circle>`).join('')}
+      ><title>${esc(node.name)} — ${node.reported ? T('situation-room.unit-reported', 'reported') : T('situation-room.unit-no-report-yet', 'no report yet')}${node.assigned ? T('situation-room.map-tooltip-ours', ', {n} of ours', { n: n(node.assigned) }) : ''}${approx ? ' · ' + T('situation-room.position-approximate', 'position approximate') : ''}</title></circle>`).join('')}
   </svg>
   <div class="sr-legend" style="margin-top:10px">
-    <span>Filled &mdash; reported</span>
-    <span><b style="color:var(--accent)">&#9675;</b> ringed &mdash; one of ours is assigned</span>
-    <span>Most positions are approximate &mdash; placed inside the ward</span>
+    <span>${T('situation-room.legend-filled-reported', 'Filled — reported')}</span>
+    <span><b style="color:var(--accent)">&#9675;</b> ${T('situation-room.legend-ringed-ours', 'ringed — one of ours is assigned')}</span>
+    <span>${T('situation-room.legend-positions-approximate', 'Most positions are approximate — placed inside the ward')}</span>
   </div>`;
   wireMapTaps(host);
+  wireMapZoom(host);
 }
 
 // Uppercased by the stylesheet, so no mixed-case acronym would survive here.
@@ -1604,6 +1616,142 @@ function wireMapTaps(host) {
     shape.classList.add('is-picked');
     info.textContent = title.textContent;
   });
+}
+
+/**
+ * Zoom and pan a ward map.
+ *
+ * A ward's polling units bunch where people live — Garki's 171 sit in a few
+ * streets — and on a phone card they draw as one grey smudge no finger can tap
+ * apart. Three ways in, because a phone and a laptop want different ones: the
+ * buttons (always there, and "+" zooms onto whatever unit was last tapped, so
+ * tap a bunch and press +), a pinch or drag once zoomed, and the wheel or a
+ * trackpad pinch on a desktop.
+ *
+ * Dots keep their size on SCREEN as the map grows — that is what pulls a bunch
+ * apart. And the page scrolls normally until the map is zoomed: a map that
+ * swallows every swipe traps the thumb of someone only scrolling past it.
+ */
+function wireMapZoom(host) {
+  const svg = host.querySelector('svg');
+  const vb = svg && svg.viewBox && svg.viewBox.baseVal;
+  if (!vb || !vb.width || !vb.height) return;
+  const base = { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
+  const MAX = 16;
+  const dots = [...svg.querySelectorAll('circle')].map((c) => [c, +c.getAttribute('r') || 0]);
+  const v = { s: 1, cx: base.x + base.w / 2, cy: base.y + base.h / 2 };
+  host.classList.add('sr-zoomable');
+  const bar = document.createElement('div');
+  bar.className = 'sr-zoom';
+  bar.innerHTML = `<button type="button" data-z="in" aria-label="${T('situation-room.zoom-in', 'Zoom in')}">+</button>`
+    + `<button type="button" data-z="out" aria-label="${T('situation-room.zoom-out', 'Zoom out')}">&minus;</button>`
+    + `<button type="button" data-z="all" aria-label="${T('situation-room.zoom-reset', 'Show the whole map')}">&#8634;</button>`;
+  host.appendChild(bar);
+
+  const apply = () => {
+    const w = base.w / v.s;
+    const h = base.h / v.s;
+    v.cx = Math.min(base.x + base.w - w / 2, Math.max(base.x + w / 2, v.cx));
+    v.cy = Math.min(base.y + base.h - h / 2, Math.max(base.y + h / 2, v.cy));
+    svg.setAttribute('viewBox', `${(v.cx - w / 2).toFixed(2)} ${(v.cy - h / 2).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}`);
+    for (const [c, r] of dots) c.setAttribute('r', (r / v.s).toFixed(2));
+    svg.classList.toggle('is-zoomed', v.s > 1);
+    svg.style.touchAction = v.s > 1 ? 'none' : 'pan-y';
+    bar.querySelector('[data-z="in"]').disabled = v.s >= MAX;
+    bar.querySelector('[data-z="out"]').disabled = v.s <= 1;
+    bar.querySelector('[data-z="all"]').disabled = v.s <= 1;
+  };
+  const toMap = (x, y) => {
+    const m = svg.getScreenCTM();
+    return m ? new DOMPoint(x, y).matrixTransform(m.inverse()) : null;
+  };
+  // Change scale while keeping the map point under (x, y) exactly where it is.
+  const zoomAt = (scale, x, y) => {
+    const before = x == null ? null : toMap(x, y);
+    v.s = Math.min(MAX, Math.max(1, scale));
+    apply();
+    const after = before && toMap(x, y);
+    if (after) { v.cx += before.x - after.x; v.cy += before.y - after.y; apply(); }
+  };
+
+  bar.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-z]');
+    if (!b) return;
+    if (b.dataset.z === 'all') { v.s = 1; apply(); return; }
+    if (b.dataset.z === 'in') {
+      const picked = svg.querySelector('.is-picked');
+      if (picked) { const bb = picked.getBBox(); v.cx = bb.x + bb.width / 2; v.cy = bb.y + bb.height / 2; }
+    }
+    zoomAt(v.s * (b.dataset.z === 'in' ? 2 : 0.5));
+  });
+
+  svg.addEventListener('wheel', (e) => {
+    // A plain wheel over an unzoomed map scrolls the page; ctrl+wheel is also
+    // what a trackpad pinch sends.
+    if (!e.ctrlKey && v.s <= 1) return;
+    e.preventDefault();
+    zoomAt(v.s * Math.exp(-e.deltaY * 0.0025), e.clientX, e.clientY);
+  }, { passive: false });
+
+  /* No pointer capture: it would retarget the closing click to the <svg>, and
+     tapping a unit would stop selecting it. Move and up are watched on window
+     for the life of one gesture instead. */
+  const down = new Map();
+  let g = null;
+  let moved = false;
+  const onMove = (e) => {
+    if (!down.has(e.pointerId)) return;
+    down.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const pts = [...down.values()];
+    if (pts.length >= 2 && g && g.pinch) {
+      const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      zoomAt(g.s * (d / g.d), (pts[0].x + pts[1].x) / 2, (pts[0].y + pts[1].y) / 2);
+      moved = true;
+    } else if (pts.length === 1 && g && !g.pinch && v.s > 1) {
+      const dx = e.clientX - g.x;
+      const dy = e.clientY - g.y;
+      if (!moved && Math.hypot(dx, dy) < 6) return;
+      moved = true;
+      const m = svg.getScreenCTM();
+      if (!m) return;
+      v.cx = g.cx - dx / m.a;
+      v.cy = g.cy - dy / m.d;
+      apply();
+    }
+  };
+  const onUp = (e) => {
+    down.delete(e.pointerId);
+    if (down.size) {
+      const [p] = [...down.values()];
+      g = { pinch: false, x: p.x, y: p.y, cx: v.cx, cy: v.cy };
+      return;
+    }
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
+    g = null;
+    if (moved) {
+      // A drag ends in a click on whatever was under the finger. Swallow it, or
+      // panning the map would also pick the unit you let go over.
+      const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      svg.addEventListener('click', swallow, { capture: true, once: true });
+      setTimeout(() => svg.removeEventListener('click', swallow, { capture: true }), 0);
+    }
+  };
+  svg.addEventListener('pointerdown', (e) => {
+    down.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (down.size === 1) {
+      moved = false;
+      g = { pinch: false, x: e.clientX, y: e.clientY, cx: v.cx, cy: v.cy };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+    } else if (down.size === 2) {
+      const pts = [...down.values()];
+      g = { pinch: true, s: v.s, d: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1 };
+    }
+  });
+  apply();
 }
 
 function renderCoverage() {

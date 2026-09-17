@@ -1,0 +1,20 @@
+{
+  "situation-room.pres-heading": "Path to the presidency — on results counted so far",
+  "situation-room.pres-nothing-counted": "Nothing counted yet. Each candidate’s two tests will fill in as results are published.",
+  "situation-room.pres-lede": "The Constitution (s.134) elects the candidate who meets both tests. A test met now can be lost as more units report.",
+  "situation-room.pres-majority": "Majority of votes cast",
+  "situation-room.pres-most-votes": "Most votes nationally",
+  "situation-room.pres-spread": "25% in two-thirds of the states + FCT",
+  "situation-room.pres-met": "Met",
+  "situation-room.pres-not-yet": "Not yet",
+  "situation-room.pres-n-of-m": "{v0} of {v1}",
+  "situation-room.pres-states-at-25": "25% or more in: {v0}",
+  "situation-room.pres-borderline-count": "{v0} — borderline",
+  "situation-room.pres-states-counted": "{v0} of the 36 states and FCT have results counted",
+  "situation-room.pres-notes": "How the tests are read",
+  "situation-room.pres-note-clear": "The 36 states and the FCT make 37 units. 25 of them is a clear pass, since two-thirds of 37 is 24⅔. Exactly 24 is borderline: it is often called “24 states”, but no court has settled it.",
+  "situation-room.pres-note-fct": "25% in the FCT is not a separate test. The FCT counts as one of the 37 (Supreme Court, October 2023).",
+  "situation-room.pres-note-base": "Shares are of valid votes. A state with nothing counted yet does not count towards the 25% test.",
+  "situation-room.pres-note-runoff": "If no candidate meets both, INEC arranges a run-off within 21 days between the candidate with the most votes and the one with a majority in the most states.",
+  "situation-room.pres-note-inec": "These are crowd-reported results. Only INEC’s declaration elects a President."
+}

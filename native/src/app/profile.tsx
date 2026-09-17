@@ -26,6 +26,7 @@ import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND } from '@/lib/api';
 import { isBiometricAvailable, isSigningGateEnabled, setSigningGateEnabled } from '@/lib/biometric';
 import { pick } from '@/lib/haptics';
+import { isSaveToDeviceEnabled, setSaveToDeviceEnabled } from '@/lib/save-to-device';
 import { shareHawkeye } from '@/lib/share';
 import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
@@ -201,6 +202,9 @@ export default function Profile() {
    */
   const [bioAvailable, setBioAvailable] = useState(false);
   const [bioOn, setBioOn] = useState(false);
+  /** Copy report photos and videos to this phone's library. Default on; see
+   *  lib/save-to-device.ts. */
+  const [saveOn, setSaveOn] = useState(true);
   const notice = useNotice();
   /** Practice runs are per-device, not per-observer — practice never asks
    *  anyone to sign in, so they arrive from their own endpoint. */
@@ -219,13 +223,15 @@ export default function Profile() {
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const [available, enabled] = await Promise.all([
+      const [available, enabled, saving] = await Promise.all([
         isBiometricAvailable(),
         isSigningGateEnabled(),
+        isSaveToDeviceEnabled(),
       ]);
       if (!alive) return;
       setBioAvailable(available);
       setBioOn(enabled);
+      setSaveOn(saving);
     })();
     return () => {
       alive = false;
@@ -238,6 +244,13 @@ export default function Profile() {
     const next = !bioOn;
     setBioOn(next);
     void setSigningGateEnabled(next);
+  };
+
+  const toggleSave = () => {
+    pick();
+    const next = !saveOn;
+    setSaveOn(next);
+    void setSaveToDeviceEnabled(next);
   };
 
   // --- password modal ------------------------------------------------------
@@ -555,6 +568,17 @@ export default function Profile() {
                     {bioAvailable
                       ? i18nT('n.app.profile.asked-once-just-before-a-real')
                       : 'This phone has no fingerprint or face unlock set up.'}
+                  </Text>
+                }
+              />
+              <Row
+                icon="download"
+                label={i18nT('n.app.profile.save-report-photos-and-videos-to')}
+                value={saveOn ? 'On' : 'Off'}
+                onPress={toggleSave}
+                sub={
+                  <Text className="pt-0.5 text-xs text-muted">
+                    {i18nT('n.app.profile.turn-off-if-your-phone-may')}
                   </Text>
                 }
               />

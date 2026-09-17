@@ -17,6 +17,7 @@
         "NSMicrophoneUsageDescription": "Hawkeye uses the microphone only when you record a video of an incident, so the recording has sound.",
         "NSLocationWhenInUseUsageDescription": "Hawkeye records a GPS fix when you capture evidence or map a polling unit, to prove reports come from where they claim.",
         "NSPhotoLibraryUsageDescription": "Hawkeye lets you attach existing photos or videos from your library to an incident report.",
+        "NSPhotoLibraryAddUsageDescription": "Hawkeye saves a copy of the photos and videos you report to your library.",
         "NSFaceIDUsageDescription": "Hawkeye can ask for Face ID before it signs a result, so that only you can file a report with this device's signing key.",
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -91,6 +92,13 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION"
       ]
     },
     "web": {
@@ -122,6 +130,14 @@
           "cameraPermission": "Hawkeye uses the camera to photograph the official result sheet and the polling unit itself — the evidence behind every report.",
           "microphonePermission": "Hawkeye uses the microphone only when you record a video of an incident, so the recording has sound.",
           "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Hawkeye saves a copy of the photos and videos you report to your library.",
+          "isAccessMediaLocationEnabled": false,
+          "granularPermissions": []
         }
       ],
       [

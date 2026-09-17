@@ -172,6 +172,23 @@
   border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px;
 }
 .sr-parties .sr-own td { background: rgba(212, 175, 55, 0.10); }
+/* THE s.134 TESTS. Shape AND word for each state; no green, which the coverage
+   map reserves for "reported from the assigned unit". Met is solid ink, borderline
+   borrows the amber "needs attention", not yet is muted. */
+.sr-tests-tbl th:not(:first-child), .sr-tests-tbl td:not(.party) { white-space: nowrap; }
+.sr-test { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; }
+.sr-test-mark {
+  width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 0.72rem; line-height: 1; border: 1.5px solid currentColor;
+}
+.sr-test-met { color: var(--ink); font-weight: 600; }
+.sr-test-met .sr-test-mark { background: var(--ink); color: var(--card); border-color: var(--ink); }
+.sr-test-edge { color: var(--wait); font-weight: 600; }
+.sr-test-edge .sr-test-mark { border: 0; font-size: 1rem; }
+.sr-test-no { color: var(--muted); }
+.sr-tests-notes { margin-top: 10px; }
+.sr-tests-notes summary { cursor: pointer; }
+.sr-tests-notes ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
 .sr-parties .sr-own .pname { font-weight: 600; }
 /* THE LINE BETWEEN COUNTED AND NOT. Without it the zeros read as last place
    rather than as "no figure yet", which on a campaign console is the whole
@@ -1144,6 +1161,7 @@ function renderOverview() {
     ${S.areaTally ? partiesHtml(S.areaTally, T('situation-room.your-area',
     '{v0} (your area)', { v0: S.group.me.scope_value })) : ''}
     ${partiesHtml(S.tally, raceArea())}
+    ${presidentialHtml(S.tally)}
     <h2 class="sr-h2">${T('situation-room.reports-coming-in', 'Reports coming in')}</h2>
     <div class="sr-card${reports.length > 4 ? ' sr-panel' : ''}">${reports.length
           ? `<div class="sr-scroll">${reports.map(activityRow).join('')}</div>`
@@ -1259,6 +1277,90 @@ function partiesHtml(t, area) {
         <button class="sr-btn" data-party-csv="${esc(area)}">${
     T('situation-room.download-party-totals', 'Download party totals (CSV)')}</button>
       </div>
+    </div>`;
+}
+
+/**
+ * THE CONSTITUTION'S TWO TESTS, ticked per party as the count comes in.
+ *
+ * Computed server-side (services/presidential.js, s.134(2)) on the same rows as
+ * the party totals, and sent only for a whole presidential room — a state room
+ * or a coordinator's area cannot meet a nationwide spread.
+ *
+ * NOTHING HERE SAYS WINNING. A tick is arithmetic on the units counted so far:
+ * a state with nothing in it fails the spread until it reports, and a tick can
+ * come off again. The heading says "so far" and the notes say only INEC's
+ * declaration elects anyone, because this card, like the totals, WILL be
+ * screenshotted. Same order as the totals (votes, never own party first), and
+ * shape plus word for every state, never colour alone; green stays reserved
+ * for the coverage map's meaning.
+ *
+ * 25 of 37 is ticked; exactly 24 is shown BORDERLINE, not met — "24 states" is
+ * the common phrase, but 24 of 37 is under two-thirds and no court has settled
+ * it. The FCT is one of the 37, not a third test (Supreme Court, Oct 2023).
+ */
+function presidentialHtml(t) {
+  const p = t && t.presidential;
+  if (!p) return '';
+  const twoWay = PARTIES.length === 2; // s.134(1): with two candidates, a MAJORITY, not the most votes
+  const names = new Map(PARTIES.map((x) => [String(x.code).toUpperCase(), x.name]));
+  const mine = (S.group.party || '').toUpperCase();
+  const mark = (state, word) => `<span class="sr-test sr-test-${state}"><span class="sr-test-mark" aria-hidden="true">${
+    state === 'met' ? '✓' : state === 'edge' ? '◐' : '' /* the ring itself is the empty box */}</span>${word}</span>`;
+  const met = T('situation-room.pres-met', 'Met');
+  const notYet = T('situation-room.pres-not-yet', 'Not yet');
+  const head = `<h2 class="sr-h2">${T('situation-room.pres-heading', 'Path to the presidency — on results counted so far')}</h2>`;
+  if (!p.parties.length) {
+    return `${head}<div class="sr-card"><div class="sr-msg">${
+      T('situation-room.pres-nothing-counted', 'Nothing counted yet. Each candidate’s two tests will fill in as results are published.')}</div></div>`;
+  }
+  return `${head}
+    <div class="sr-card">
+      <p class="sr-fine" style="margin:0 0 8px">${T('situation-room.pres-lede',
+    'The Constitution (s.134) elects the candidate who meets both tests. A test met now can be lost as more units report.')}</p>
+      <div class="sr-scroll" style="max-height:300px">
+      <table class="sr-parties sr-tests-tbl">
+        <thead><tr>
+          <th>${T('results.party', 'Party')}</th>
+          <th>${twoWay ? T('situation-room.pres-majority', 'Majority of votes cast')
+    : T('situation-room.pres-most-votes', 'Most votes nationally')}</th>
+          <th>${T('situation-room.pres-spread', '25% in two-thirds of the states + FCT')}</th>
+        </tr></thead>
+        <tbody>
+        ${p.parties.map((x) => {
+    const code = String(x.party).toUpperCase();
+    const first = twoWay ? x.majority : x.highest;
+    const spread = x.spread >= p.clear ? 'met' : x.spread === p.borderline ? 'edge' : 'no';
+    const count = T('situation-room.pres-n-of-m', '{v0} of {v1}', { v0: n(x.spread), v1: n(p.units) });
+    const where = x.spreadStates.length
+      ? T('situation-room.pres-states-at-25', '25% or more in: {v0}', { v0: x.spreadStates.join(', ') }) : '';
+    return `<tr${code === mine ? ' class="sr-own"' : ''}>
+            <td class="party">
+              <span class="sr-plogo">${LOGOS[code] ? `<img src="${esc(LOGOS[code])}" alt="" />` : ''}</span>
+              <span class="pname">${esc(names.get(code) || code)}</span>
+              <span class="pcode">${esc(code)}</span>
+            </td>
+            <td>${mark(first ? 'met' : 'no', first ? met : notYet)}</td>
+            <td title="${esc(where)}">${mark(spread, spread === 'edge'
+      ? T('situation-room.pres-borderline-count', '{v0} — borderline', { v0: count }) : count)}</td>
+          </tr>`;
+  }).join('')}
+        </tbody>
+      </table></div>
+      <div class="sr-foot">
+        <div class="sr-count">${T('situation-room.pres-states-counted', '{v0} of the 36 states and FCT have results counted',
+    { v0: n(p.statesCounted) })}</div>
+      </div>
+      <details class="sr-fine sr-tests-notes">
+        <summary>${T('situation-room.pres-notes', 'How the tests are read')}</summary>
+        <ul>
+          <li>${T('situation-room.pres-note-clear', 'The 36 states and the FCT make 37 units. 25 of them is a clear pass, since two-thirds of 37 is 24⅔. Exactly 24 is borderline: it is often called “24 states”, but no court has settled it.')}</li>
+          <li>${T('situation-room.pres-note-fct', '25% in the FCT is not a separate test. The FCT counts as one of the 37 (Supreme Court, October 2023).')}</li>
+          <li>${T('situation-room.pres-note-base', 'Shares are of valid votes. A state with nothing counted yet does not count towards the 25% test.')}</li>
+          <li>${T('situation-room.pres-note-runoff', 'If no candidate meets both, INEC arranges a run-off within 21 days between the candidate with the most votes and the one with a majority in the most states.')}</li>
+          <li>${T('situation-room.pres-note-inec', 'These are crowd-reported results. Only INEC’s declaration elects a President.')}</li>
+        </ul>
+      </details>
     </div>`;
 }
 

@@ -105,9 +105,11 @@ console.log('\n=== My Profile mirrors the app ===');
   })));
   check('there are card headings to check', h.length, (n) => n >= 2);
   check('each is a small uppercase label, not a 16px title', h.every((x) => px(x.px) <= 12 && x.up === 'uppercase'), true);
-  // The app writes them in sentence case: "Account", "Races you follow".
-  check('sentence case, like the app', h.map((x) => x.t), (t) =>
-    t.includes('Races you follow') && t.includes('Delete my identity'));
+  // Title Case since 2026-09-17, the user's call ("They look weird in sentence
+  // case"): major words capitalised, minor ones lower unless first.
+  const MINOR = new Set(['a', 'an', 'the', 'and', 'or', 'but', 'to', 'of', 'in', 'on', 'at', 'for', 'by', 'with']);
+  check('Title Case, like the app', h.map((x) => x.t), (t) => t.includes('Races You Follow')
+    && t.every((s) => s.split(/\s+/).every((w, i) => /^[^a-z]/.test(w) || (i > 0 && MINOR.has(w)))));
 
   /**
    * PASSWORD AND MY POLLING UNIT ARE ROWS NOW, not cards.

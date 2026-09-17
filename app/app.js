@@ -2012,6 +2012,11 @@ $('btn-submit').onclick = async () => {
     }
   }
 
+  // A copy of the two photos on the device (save-media.js), once, at hand-off —
+  // accepted or queued. These are the compressed bytes that were signed.
+  const keepCopies = () => window.HAWKEYE_SAVE_MEDIA && window.HAWKEYE_SAVE_MEDIA(
+    [shots.sheet, shots.venue].filter(Boolean).map((s) => ({ blob: s.blob, kind: 'photo' })), 'result');
+
   const post = () => api('/api/submissions', {
     method: 'POST',
     headers: directBody
@@ -2035,7 +2040,10 @@ $('btn-submit').onclick = async () => {
       // nothing evidentiary.
       fields.imageSha256 = imageSha256;
       fields.venueImageSha256 = venueImageSha256;
-      try { await window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob }); } catch { /* ignore */ }
+      try {
+        await window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob });
+        keepCopies(); // here, not when the outbox flushes it later
+      } catch { /* ignore */ }
       shots.sheet = null; shots.venue = null;
       alert('Saved offline — your signed report will send automatically when you are back online.');
       enterReportFlow(); // that report is queued; this is a fresh one
@@ -2066,6 +2074,7 @@ $('btn-submit').onclick = async () => {
     return;
   }
 
+  keepCopies();
   const r = body.result;
   const locLabel =
     r.locationStatus === 'verified'

@@ -12,6 +12,7 @@
     "open:ios": "cap open ios"
   },
   "dependencies": {
+    "@capacitor-community/media": "^9.1.0",
     "@capacitor-firebase/messaging": "^8.4.0",
     "@capacitor-mlkit/document-scanner": "^8.1.0",
     "@capacitor-mlkit/text-recognition": "^8.1.0",

@@ -228,6 +228,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
   <script src="outbox.js" defer></script>
   <script src="scan.js?v=8"></script>
   <script src="capture.js?v=2"></script>
+  <script src="save-media.js?v=1"></script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
@@ -536,6 +537,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         fd.set('photo', shots.sheet.blob, 'form.jpg');
         fd.set('venuePhoto', shots.venue.blob, 'venue.jpg');
         const deviceId = await getDeviceId();
+        // A device copy of the two photos exactly as signed and sent, at hand-off.
+        const keepCopies = () => window.HAWKEYE_SAVE_MEDIA && window.HAWKEYE_SAVE_MEDIA(
+          [shots.sheet, shots.venue].filter(Boolean).map((s) => ({ blob: s.blob, kind: 'photo' })), 'collation');
         let r;
         try {
           r = await fetch('/api/collations', {
@@ -553,6 +557,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
             kind: 'collation', url: '/api/collations', label: `${scope.level} · ${scope.contest}`, deviceId, fields,
             files: [['photo', shots.sheet.blob, 'form.jpg'], ['venuePhoto', shots.venue.blob, 'venue.jpg']],
           });
+          keepCopies(); // save-media.js — once, here, never again when the outbox flushes
           shots.sheet = shots.venue = null;
           $('status').textContent = 'Saved offline — this signed report will send automatically when you are back online.';
           $('btn-submit').disabled = false;
@@ -561,6 +566,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         const b = await r.json().catch(() => ({}));
         if (r.status === 201) {
           $('status').textContent = `✅ ${b.form} report recorded and being checked against polling-unit evidence.`;
+          keepCopies();
           shots.sheet = shots.venue = null;
         } else if (r.status === 401) {
           localStorage.removeItem('hawkeye_token');

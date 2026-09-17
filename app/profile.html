@@ -98,6 +98,7 @@
     .prow:has(.prow-stack) .prow-k { grid-column: 1; grid-row: 1; }
     .prow:has(.prow-stack) .prow-v { grid-column: 1; grid-row: 2; text-align: left; }
     .prow:has(.prow-stack) .prow-c { grid-column: 2; grid-row: 1 / span 2; }
+    .prow input.prow-c { margin: 0; width: 20px; height: 20px; }
     /* Push diagnostics: the detail is a diagnostic string, so let it wrap over
        several lines rather than truncating — a half-shown error is no use. */
     #push-detail { display: block; margin-top: 3px; font-size: 0.72rem; line-height: 1.45;
@@ -195,6 +196,15 @@
           <span class="prow-v" id="p-lang">English</span>
           <span class="prow-c" aria-hidden="true">›</span>
         </button>
+        <!-- COPIES ON THIS PHONE. A device setting, so it lives in localStorage
+             (hawkeye_save_media = '0' when off), and save-media.js reads it
+             before any gallery write or download. Same row shape; the switch
+             sits where the chevron does. -->
+        <label class="prow" for="save-media">
+          <span class="prow-k prow-stack" data-i18n="profile.save-report-photos-and-videos-to">Save report photos and videos to this phone</span>
+          <span class="prow-v" data-i18n="profile.turn-off-if-your-phone-may">Turn off if your phone may be inspected.</span>
+          <input type="checkbox" class="prow-c" id="save-media" checked />
+        </label>
         <!-- PUSH STATUS, in the app only.
              Lite received no push for six builds and the app could not say why:
              every failure path returned silently, so the only way to tell a
@@ -342,6 +352,13 @@
     };
     const token = () => localStorage.getItem('hawkeye_token');
     let hasPassword = false;
+
+    // Save report photos and videos to this phone — ON unless switched off here.
+    // save-media.js reads the same key; storage that throws leaves it ON.
+    try { $('save-media').checked = localStorage.getItem('hawkeye_save_media') !== '0'; } catch { /* default on */ }
+    $('save-media').onchange = () => {
+      try { localStorage.setItem('hawkeye_save_media', $('save-media').checked ? '1' : '0'); } catch { /* not kept */ }
+    };
 
     async function api(path, opts = {}) {
       opts.headers = { ...(opts.headers || {}), authorization: 'Bearer ' + token() };

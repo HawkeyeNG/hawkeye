@@ -326,6 +326,7 @@
   <script src="device.js"></script>
   <script src="outbox.js" defer></script>
   <script src="capture.js?v=2"></script>
+  <script src="save-media.js?v=1"></script>
   <!-- One wording for every "we could not get your position", shared with
        map-unit.html and the native screens. The strings that used to live
        inline here were three sentences long on a status line nobody reads
@@ -415,6 +416,10 @@
     const MAX_FILES = 4, MAX_VIDEOS = 2, MAX_VIDEO_SECONDS = 45;
     const VIDEO_BYTES = 25 * 1024 * 1024, PHOTO_BYTES = 8 * 1024 * 1024;
     const attachments = [];
+    // The attachments this page CAPTURED (camera or recorder), as opposed to
+    // files picked off the device. Only these get a device copy on submit —
+    // save-media.js; a picked file is already on the phone.
+    const captured = new WeakSet();
 
     function syncCap() {
       const full = attachments.length >= MAX_FILES;
@@ -678,6 +683,9 @@
           continue;
         }
         attachments.push(use);
+        // A desktop browser ignores `capture` and shows a plain file picker, so a
+        // "recording" older than a few minutes was picked, not recorded.
+        if (source === 'camera' && Date.now() - (f.lastModified || 0) < 5 * 60000) captured.add(use);
       }
       renderPreview();
     }
@@ -925,6 +933,9 @@
         }
         const headers = { authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() };
         const total = files.reduce((n, f) => n + (f.size || 0), 0);
+        // Built now: `files` IS `attachments`, which both outcomes below empty.
+        const copies = files.map((f) => ({ blob: f, kind: /^video\//.test(f.type) ? 'video' : 'photo', picked: !captured.has(f) }));
+        const keepCopies = () => window.HAWKEYE_SAVE_MEDIA && window.HAWKEYE_SAVE_MEDIA(copies, 'incident');
         let res;
         try {
           res = await postWithProgress('/api/incidents', fd, headers, total);
@@ -938,6 +949,7 @@
             kind: 'incident', url: '/api/incidents', label: `incident · ${kind}`, deviceId: headers['x-device-id'], fields,
             files: files.map((f) => ['media', f, f.name || 'media']),
           });
+          keepCopies(); // once, at queueing — never again when the outbox sends it
           $('desc').value = ''; attachments.length = 0; renderPreview();
           $('status').textContent = 'Saved offline — this report will send automatically when you are back online.';
           $('btn-submit').disabled = false;
@@ -945,6 +957,7 @@
         }
         const body = await res.json().catch(() => ({}));
         if (res.status === 201) {
+          keepCopies();
           $('desc').value = ''; attachments.length = 0; renderPreview();
           $('status').textContent = '';
           // One whole sentence per branch, not fragments concatenated: clause

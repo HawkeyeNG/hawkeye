@@ -6,6 +6,9 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const shots = { sheet: false, venue: false };
+  // The photo behind each slot — a Blob from the app's scanner/camera or the
+  // in-page camera's data URL. A skipped slot has none, and saves nothing.
+  const photos = { sheet: null, venue: null };
   let PARTIES = [];
   let UNIT_CODE = null;
 
@@ -35,6 +38,7 @@
         const img = $(`preview-${which}`);
         img.src = URL.createObjectURL(blob);
         img.hidden = false;
+        photos[which] = blob;
         markSlot(which);
       } catch (e) {
         /* user backed out of the scanner/camera — leave the slot unchanged */
@@ -71,6 +75,7 @@
     c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
     const img = $(`preview-${target}`);
     img.src = c.toDataURL('image/jpeg', 0.6); img.hidden = false;
+    photos[target] = img.src;
     markSlot(target);
     closeCamera();
   }
@@ -102,6 +107,10 @@
         return;
       }
       $('entry-hash').textContent = d.entryHash || '';
+      // Device copies of the practice photos (save-media.js), once the run is recorded.
+      if (window.HAWKEYE_SAVE_MEDIA) {
+        window.HAWKEYE_SAVE_MEDIA(['sheet', 'venue'].filter((s) => photos[s]).map((s) => ({ blob: photos[s], kind: 'photo' })), 'practice');
+      }
       renderPreview(votes);
       $('flow').hidden = true;
       $('done').hidden = false;

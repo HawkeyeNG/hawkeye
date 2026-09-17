@@ -330,7 +330,7 @@ jobs:
           set_str NSPhotoLibraryUsageDescription \
             "Hawkeye lets you attach a photo or video you already have as evidence for an incident or result report."
           set_str NSPhotoLibraryAddUsageDescription \
-            "Hawkeye can save a copy of a result sheet you photograph to your own photo library."
+            "Hawkeye saves a copy of the photos and videos you report to your photo library. You can turn this off in My Profile."
           set_str NSLocationWhenInUseUsageDescription \
             "Hawkeye attaches your location to a report so it can be cross-checked against the polling unit you selected. This is optional and is only read when you submit a report."
           # ITMS-90683 on every Lite delivery so far. @capacitor/geolocation LINKS

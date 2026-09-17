@@ -72,6 +72,7 @@ import { submitResult, type Receipt, type Shot, type Vote } from '@/lib/submit';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { t as i18nT } from '@/lib/i18n';
+import { saveReportMedia } from '@/lib/save-to-device';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -1621,6 +1622,9 @@ export default function ReportResult() {
         // here is a real report. Rehearsal now lives entirely in the practice
         // section (submit.ts still carries the dryRun field for it).
       });
+      // Handed off — accepted, or safe in the outbox. The photos are the ones
+      // just signed; the outbox flush never saves them again.
+      if (r.ok || r.queued) saveReportMedia([sheet.uri, venue.uri]);
       if (r.ok) {
         setReceipt(r);
         setQueued(false);

@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import * as SecureStore from '@/lib/secure-store';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -58,6 +58,7 @@ import { InfoDot } from '@/components/info-dot';
 import { ModalCard } from '@/components/modal-card';
 import { humanBytes, uploadWithProgress, xhrFilePart, type UploadProgress } from '@/lib/upload';
 import { t as i18nT } from '@/lib/i18n';
+import { saveReportMedia } from '@/lib/save-to-device';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -429,6 +430,9 @@ export default function ReportIncident() {
   const [kind, setKind] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [media, setMedia] = useState<Media[]>([]);
+  /** URIs shot in THIS app's camera. Only these are copied to the phone's
+   *  library on hand-off — a library pick is already on the phone. */
+  const shotHere = useRef(new Set<string>());
   /** A refusal the observer must acknowledge, because it discarded something. */
   const [blocked, setBlocked] = useState<{ title: string; body: string } | null>(null);
   /** Derived, never stored: a second copy of this count would be one more thing
@@ -1031,6 +1035,9 @@ export default function ReportIncident() {
         name: m.type === 'video' ? `clip${i}.mp4` : `photo${i}.jpg`,
         type: m.type === 'video' ? 'video/mp4' : 'image/jpeg',
       }));
+      // Copied to the phone's library once this report is handed off (sent or
+      // queued, below) — camera captures only, the same files as `files`.
+      const ownShots = media.filter((m) => shotHere.current.has(m.uri)).map((m) => m.uri);
 
       // Fresh FormData PER ATTEMPT: on Android a body whose file parts were
       // already streamed by a failed attempt cannot be replayed — reusing it
@@ -1107,6 +1114,7 @@ export default function ReportIncident() {
           );
           return;
         }
+        saveReportMedia(ownShots);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
           title: i18nT('n.app.report.incident.saved-to-send-later'),
@@ -1122,6 +1130,7 @@ export default function ReportIncident() {
         hint?: string;
       };
       if (res.ok && body.ok) {
+        saveReportMedia(ownShots);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
           title: i18nT('n.app.report.incident.incident-reported'),
@@ -1179,6 +1188,7 @@ export default function ReportIncident() {
         onCapture={(m) => {
           // 'camera': the recorder already stopped this at MAX_VIDEO_SECONDS,
           // so the duration cap is the gate and no size check applies.
+          shotHere.current.add(m.uri);
           addMedia([m], 'camera');
           setCamera(false);
         }}

@@ -34,6 +34,7 @@ import { submitCollation, type CollationLevel, type Receipt, type Shot, type Vot
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { t as i18nT } from '@/lib/i18n';
+import { saveReportMedia } from '@/lib/save-to-device';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -327,6 +328,9 @@ export default function ReportCollation() {
         fix,
         formSerial: formSerial.trim() || undefined,
       });
+      // Handed off — accepted, or safe in the outbox. Saved here, once; the
+      // outbox flush never saves again.
+      if (r.ok || r.queued) saveReportMedia([sheet.uri, venue.uri]);
       if (r.ok) {
         setReceipt(r);
         setQueued(false);

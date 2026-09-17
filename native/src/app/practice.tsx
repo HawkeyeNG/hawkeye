@@ -56,6 +56,7 @@ import { useUi } from '@/lib/theme';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { t as i18nT, lazyT } from '@/lib/i18n';
+import { saveReportMedia } from '@/lib/save-to-device';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -1063,6 +1064,10 @@ export default function Practice() {
         error?: string;
       };
       if (res.ok && body.ok && body.entryHash) {
+        // The run is recorded. Its photos never leave the phone (practice sends
+        // counts only), so this copy is the one place they are kept. A sample
+        // slot is null and is skipped.
+        saveReportMedia([sheet?.uri, venue?.uri]);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({ entryHash: body.entryHash, recordedAt: body.recordedAt });
         setStep('done');

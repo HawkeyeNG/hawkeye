@@ -166,10 +166,16 @@ touch "$STAMP"
 # settings only because it does none of this work. Capping workers trades wall
 # clock for a build that finishes; the cap cannot live in gradle.properties
 # because expo prebuild regenerates android/ on every run.
+#
+# -Xmx4096m: R8 runs inside this JVM. At 2048m, 1.0.3 (versionCode 15, the build
+# that added expo-media-library) died in :app:minifyReleaseWithR8 with
+# "java.lang.OutOfMemoryError: Java heap space" on the GitHub runner (2026-09-17).
+# One 4 GB JVM fits both the 16 GB runner and the 12 GB WSL VM; the worker cap
+# above is what keeps the rest of the build inside the VM.
 ./gradlew --no-daemon --no-watch-fs --console=plain --max-workers=2 \
   -Pandroid.enableMinifyInReleaseBuilds=true \
   -Pandroid.enableShrinkResourcesInReleaseBuilds=true \
-  -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" \
+  -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m -Xshare:off" \
   -PHAWKEYE_UPLOAD_STORE_FILE="$KS_FILE" \
   -PHAWKEYE_UPLOAD_STORE_PASSWORD="$KS_PASS" \
   -PHAWKEYE_UPLOAD_KEY_ALIAS="$KS_ALIAS" \

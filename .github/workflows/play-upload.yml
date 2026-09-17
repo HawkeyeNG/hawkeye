@@ -63,6 +63,10 @@ on:
         description: 'Build and verify only — do not publish'
         type: boolean
         default: false
+      send_for_review:
+        description: 'ONLY if the run said Play will not stage it, and Publishing overview shows NOTHING else pending'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -343,11 +347,18 @@ jobs:
           if [ -n "${{ inputs.rollout }}" ]; then
             ROLLOUT_ARG="--rollout ${{ inputs.rollout }}"
           fi
+          # A plain commit sends EVERY pending change for review, so this is never
+          # the default; see the commit block in play_upload.mjs.
+          REVIEW_ARG=""
+          if [ "${{ inputs.send_for_review }}" = "true" ]; then
+            REVIEW_ARG="--send-for-review"
+          fi
           node scripts/play_upload.mjs \
             --app "${{ inputs.app }}" \
             --track "${{ inputs.track }}" \
             $ROLLOUT_ARG \
-            $NOTES_ARG
+            $NOTES_ARG \
+            $REVIEW_ARG
 
       - name: Keep the bundle as an artifact
         uses: actions/upload-artifact@v4

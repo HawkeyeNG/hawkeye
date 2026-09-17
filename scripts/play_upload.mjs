@@ -54,6 +54,9 @@ const args = Object.fromEntries(
 const appKey = args.app;
 const track = args.track || 'internal';
 const dryRun = !!args['dry-run'];
+// Only for an app Play will not let us stage (see the commit below). A human
+// must have checked Publishing overview has nothing else pending first.
+const sendForReview = !!args['send-for-review'];
 
 const die = (m) => { console.error(`\x1b[31mFAIL: ${m}\x1b[0m`); process.exit(1); };
 
@@ -236,8 +239,33 @@ console.log(`  track   : ${track} set to versionCode ${up.versionCode}`);
 
    (Play also sometimes refuses the plain commit outright with 400 "Please set
    the query parameter changesNotSentForReview to true" - Lite v9, 2026-09-15.
-   Always passing it makes that path the only path.) */
-const done = await api(token, 'POST', `${API}/${app.pkg}/edits/${edit.id}:commit?changesNotSentForReview=true`);
+   Always passing it makes that path the only path.)
+
+   THE OPPOSITE REFUSAL. With managed publishing off and nothing else pending,
+   Play rejects the parameter: 400 "Changes are sent for review automatically.
+   The query parameter changesNotSentForReview must not be set." (Lite 1.4 to
+   alpha, 2026-09-17). Then there is no staging, only sending. That is never
+   done on this script's own judgement: it stops, the uncommitted edit expires
+   (the versionCode is not consumed), and a person checks Publishing overview
+   and re-runs with --send-for-review. */
+const commitUrl = `${API}/${app.pkg}/edits/${edit.id}:commit`;
+const staged = await fetch(`${commitUrl}?changesNotSentForReview=true`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+const stagedText = await staged.text();
+const autoReview = !staged.ok && staged.status === 400 && /sent for review automatically/i.test(stagedText);
+if (!staged.ok && !autoReview) die(`POST ${commitUrl.replace(API, '')}?changesNotSentForReview=true -> ${staged.status}\n       ${stagedText.slice(0, 400)}`);
+if (autoReview && !sendForReview) {
+  die('Play will not stage this edit: this app sends changes for review automatically.\n'
+    + '       Nothing was committed and the versionCode is not used. Check Play Console ->\n'
+    + '       Publishing overview lists NO other pending change, then re-run with\n'
+    + '       --send-for-review (workflow input send_for_review).');
+}
+if (autoReview) {
+  const sent = await api(token, 'POST', commitUrl);
+  console.log(`\n\x1b[32m  committed. edit ${sent.id} on ${track} is SENT FOR REVIEW (--send-for-review).\x1b[0m`);
+  console.log('  Play publishes it to the track when review passes.');
+  process.exit(0);
+}
+const done = JSON.parse(stagedText);
 console.log(`\n\x1b[32m  committed. edit ${done.id} is staged on ${track}.\x1b[0m`);
 /* WHO ACTS NEXT, not just what happened: 'Google reviews it from here' would
    be the one sentence that stops anyone pressing the button. */

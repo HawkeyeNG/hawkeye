@@ -561,7 +561,7 @@ export default function Profile() {
               <Row
                 icon="shield"
                 label={i18nT('n.app.profile.face-id-or-fingerprint-to-sign')}
-                value={bioAvailable ? (bioOn ? 'On' : 'Off') : 'Not available'}
+                value={bioAvailable ? (bioOn ? 'On' : 'Off') : 'Not Available'}
                 onPress={bioAvailable ? toggleBio : undefined}
                 sub={
                   <Text className="pt-0.5 text-xs text-muted">
@@ -587,7 +587,7 @@ export default function Profile() {
                 label={i18nT('index.my-polling-unit')}
                 // Right-hand column only carries the empty state; a saved unit
                 // needs its whole identification, which lives in `sub`.
-                value={savedUnit ? undefined : 'None saved'}
+                value={savedUnit ? undefined : 'None Saved'}
                 sub={
                   savedUnit ? (
                     <>

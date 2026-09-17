@@ -179,7 +179,7 @@ GRADLE=$?
 cd ..
 if [ $GRADLE -ne 0 ]; then
   echo "--- the part of $LOG that says why ---"
-  grep -E -A6 'FAILURE|What went wrong|error:|Caused by' "$LOG" | head -40
+  grep -E -A6 'ERROR|FAILURE|What went wrong|error:|Caused by|OutOfMemoryError|Missing class' "$LOG" | head -60
   die "gradle exited $GRADLE (full log: $LOG)"
 fi
 tail -3 "$LOG"

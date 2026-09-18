@@ -1483,5 +1483,12 @@
   "situation-room.pres-note-runoff": "Bí kò bá sí olùdíje tó yege nínú méjèèjì, INEC yóò ṣètò ìdìbò ẹlẹ́ẹ̀kejì láàárín ọjọ́ 21 láàárín olùdíje tó ní ìbò tó pọ̀ jù lọ àti ẹni tó ní ìbò tó pọ̀ jù ní ìpínlẹ̀ tó pọ̀ jù lọ.",
   "situation-room.pres-note-inec": "Àwọn èsì tí àwọn ènìyàn fi ránṣẹ́ ni wọ̀nyí. Ìkéde INEC nìkan ló ń yan Ààrẹ.",
   "race.parties-on-the-ballot": "Àwọn ẹgbẹ́ tó wà lórí ìwé ìdìbò",
-  "race.parties-hint": "INEC tẹ àwọn ẹgbẹ́ jáde ṣùgbọ́n kì í ṣe orúkọ àwọn olùdíje. A tò wọ́n ní ìlànà álífábẹ́ẹ̀tì — kì í ṣe ìfọwọ́sí tàbí àsọtẹ́lẹ̀."
+  "race.parties-hint": "INEC tẹ àwọn ẹgbẹ́ jáde ṣùgbọ́n kì í ṣe orúkọ àwọn olùdíje. A tò wọ́n ní ìlànà álífábẹ́ẹ̀tì — kì í ṣe ìfọwọ́sí tàbí àsọtẹ́lẹ̀.",
+  "profile.invite": "Pè",
+  "profile.your-invite-link": "Ọ̀nà Ìpè Rẹ",
+  "profile.people-you-invited": "Àwọn Tí O Pè",
+  "profile.signed-up": "forúkọsílẹ̀",
+  "profile.observed": "ṣe àkíyèsí",
+  "profile.none-yet": "Kò sí síbẹ̀",
+  "profile.copied": "A ti ṣẹ̀dà"
 }

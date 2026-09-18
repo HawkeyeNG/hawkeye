@@ -1458,5 +1458,12 @@
   "situation-room.pres-note-runoff": "If no candidate meets both, INEC arranges a run-off within 21 days between the candidate with the most votes and the one with a majority in the most states.",
   "situation-room.pres-note-inec": "These are crowd-reported results. Only INEC’s declaration elects a President.",
   "race.parties-on-the-ballot": "Parties on the ballot",
-  "race.parties-hint": "INEC published the parties but not the candidates’ names. Listed alphabetically — not an endorsement or a prediction."
+  "race.parties-hint": "INEC published the parties but not the candidates’ names. Listed alphabetically — not an endorsement or a prediction.",
+  "profile.invite": "Invite",
+  "profile.your-invite-link": "Your Invite Link",
+  "profile.people-you-invited": "People You Invited",
+  "profile.signed-up": "signed up",
+  "profile.observed": "observed",
+  "profile.none-yet": "None yet",
+  "profile.copied": "Copied"
 }

@@ -1,0 +1,102 @@
+<!doctype html>
+<!--
+  /get — where an invite link lands.
+
+  THERE IS NO UNIVERSAL STORE LINK. The one thing that used to route a single
+  URL to the right store, Firebase Dynamic Links, shut down on 25 Aug 2025 and
+  now returns 404. The alternatives are all third parties who would sit between
+  an observer and this app and keep their install data. So this page is the
+  router: it reads the User-Agent and sends the phone to its own store.
+
+  THE CODE IS SHOWN, NOT JUST STORED. Android can carry it through the Play
+  Store via the Install Referrer; iOS cannot, and never could. So the code is
+  printed on this page in characters a person can read and retype, and the
+  signup screen accepts it. That is the only path that works on every phone
+  without clipboard sniffing or fingerprinting.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hawkeye — You have been invited to observe</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/styles.css?v=1">
+<style>
+  .g-wrap { max-width: 34rem; margin: 0 auto; padding: 2rem 1rem 3rem; }
+  .g-code { font: 700 1.6rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing: .18em; padding: .6rem 1rem; border-radius: .6rem;
+            display: inline-block; }
+  .g-btns { display: flex; flex-direction: column; gap: .75rem; margin: 1.5rem 0; }
+  .g-btn { display: block; text-align: center; padding: .9rem 1rem; border-radius: .6rem;
+           font-weight: 600; text-decoration: none; }
+  .g-note { font-size: .9rem; opacity: .8; }
+</style>
+</head>
+<body>
+<div class="g-wrap">
+  <h1 id="g-title">You have been invited to observe</h1>
+  <p>Hawkeye keeps a public copy of the result announced at your polling unit.
+     It is independent and non-partisan.</p>
+
+  <p id="g-codewrap" hidden>Your invite code<br><span class="g-code" id="g-code"></span></p>
+
+  <div class="g-btns">
+    <a class="g-btn" id="g-store" href="/download">Get the app</a>
+    <a class="g-btn" id="g-web" href="/">Continue in this browser</a>
+  </div>
+
+  <p class="g-note" id="g-ios-note" hidden>
+    After installing, enter the code above when you create your account.
+  </p>
+  <p class="g-note">
+    Hawkeye does not declare results — all official results are announced by INEC.
+  </p>
+</div>
+
+<script src="/referral.js?v=1"></script>
+<script>
+(function () {
+  'use strict';
+  var STORES = {
+    android: 'https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer',
+    ios: 'https://apps.apple.com/app/id6804218478'
+  };
+
+  var code = (window.HAWKEYE_REFERRAL && window.HAWKEYE_REFERRAL.pending()) || '';
+  if (code) {
+    document.getElementById('g-code').textContent = code;
+    document.getElementById('g-codewrap').hidden = false;
+  }
+
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/.test(ua);
+  var store = document.getElementById('g-store');
+
+  if (isAndroid) {
+    /* THE ONE PLATFORM WHERE THE CODE SURVIVES THE STORE. Play passes `referrer`
+       through to the installed app via the Install Referrer API, so an Android
+       user never has to retype anything. */
+    store.href = STORES.android + (code ? '&referrer=' + encodeURIComponent(code) : '');
+    store.textContent = 'Get Hawkeye on Google Play';
+  } else if (isIOS) {
+    /* Apple has no install referrer, so the code has to travel by eye. Say so
+       rather than pretending it carried. */
+    store.href = STORES.ios;
+    store.textContent = 'Get Hawkeye on the App Store';
+    if (code) document.getElementById('g-ios-note').hidden = false;
+  } else {
+    /* A laptop, or a phone with neither store. /download carries both badges
+       and the direct APK. */
+    store.href = '/download';
+    store.textContent = 'Download Hawkeye';
+  }
+
+  /* The web client is a full client, so "continue here" is a real answer and
+     not a consolation — and it is the one route where the code needs no
+     retyping on any platform, because referral.js already has it. */
+  document.getElementById('g-web').href = '/' + (code ? '?r=' + encodeURIComponent(code) : '');
+})();
+</script>
+</body>
+</html>

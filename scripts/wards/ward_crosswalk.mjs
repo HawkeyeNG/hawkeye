@@ -173,6 +173,63 @@ for (const [k, wardsRaw] of Object.entries(reg)) {
   map[k] = pairs;
 }
 
+/* ------------------------------------------------------------------ MANUAL
+ * A FOURTH PASS THE OTHER THREE CANNOT DO: pairings settled from evidence that
+ * is not spelling.
+ *
+ * The three passes above are right to refuse what they refuse - a wrong pairing
+ * draws one ward's reports inside another ward's boundary, and that is worse
+ * than a gap. But some wards share no letters at all with their polygon: the
+ * register calls one Udu ward "UDU III" and the polygon file calls the same
+ * place "OGBE UDU". No edit distance will ever bridge that, and no loosening of
+ * a threshold should be allowed to try - doing so would buy these two pairings
+ * at the price of wrong ones elsewhere.
+ *
+ * The answer is in the register itself, one level down: the polling units in a
+ * ward name their settlement, and their coordinates fall inside the polygon.
+ * That is evidence of a different KIND, so it lives in a file that records it,
+ * with its control, rather than in a tuned constant.
+ *
+ * GUARDED FOUR WAYS, because a hand-written pairing is exactly the thing that
+ * should not be trusted quietly:
+ *   - it may not overwrite a pairing the automatic passes made;
+ *   - the polygon must exist in that LGA;
+ *   - the polygon must not already be spoken for;
+ *   - it must carry its evidence.
+ * Each is a hard failure, not a skip. A manual entry that has silently stopped
+ * applying is worse than none, because the file still claims it.
+ */
+const MANUAL = JSON.parse(readFileSync(
+  '/home/elrio/hawkeye/backend/src/data/ward_crosswalk_manual.json', 'utf8',
+));
+let manual = 0;
+for (const [lgaKey, entries] of Object.entries(MANUAL)) {
+  if (lgaKey.startsWith('_')) continue;
+  const pairs = map[lgaKey];
+  if (!pairs) throw new Error(`manual crosswalk: "${lgaKey}" is not an LGA in the register`);
+  const src = poly[lgaKey] || poly[lgaAlias[lgaKey]];
+  if (!src) throw new Error(`manual crosswalk: "${lgaKey}" has no polygons at all`);
+  const originals = new Set([...src.values()].map(norm));
+  for (const [regWard, def] of Object.entries(entries)) {
+    const target = norm(def.polygon);
+    if (pairs[regWard]) {
+      throw new Error(`manual crosswalk: ${lgaKey} "${regWard}" was already paired automatically to "${pairs[regWard]}" - drop the manual entry`);
+    }
+    if (!originals.has(target)) {
+      throw new Error(`manual crosswalk: ${lgaKey} has no polygon named "${target}"`);
+    }
+    if (Object.values(pairs).some((v) => norm(v) === target)) {
+      throw new Error(`manual crosswalk: ${lgaKey} polygon "${target}" is already paired to another ward`);
+    }
+    if (!def.evidence) throw new Error(`manual crosswalk: ${lgaKey} "${regWard}" has no evidence`);
+    pairs[regWard] = target;
+    manual++;
+    paired++;
+    unpaired--;
+  }
+}
+console.log('  paired by hand (manual) : ' + manual);
+
 const total = Object.values(reg).reduce((a, w) => a + new Set(w.map(norm)).size, 0);
 console.log('register wards: ' + total);
 console.log('  LGAs rescued by name    : ' + rescued);

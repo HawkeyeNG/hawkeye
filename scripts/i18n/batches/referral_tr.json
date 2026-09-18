@@ -1,0 +1,37 @@
+{
+  "profile.invite": {
+    "ha": "Gayyata",
+    "ig": "Kpọọ",
+    "yo": "Pè"
+  },
+  "profile.your-invite-link": {
+    "ha": "Hanyar Gayyatarka",
+    "ig": "Njikọ Ọkpụkpọ Gị",
+    "yo": "Ọ̀nà Ìpè Rẹ"
+  },
+  "profile.people-you-invited": {
+    "ha": "Mutanen Da Ka Gayyata",
+    "ig": "Ndị Ị Kpọrọ",
+    "yo": "Àwọn Tí O Pè"
+  },
+  "profile.signed-up": {
+    "ha": "sun yi rajista",
+    "ig": "debanyere aha",
+    "yo": "forúkọsílẹ̀"
+  },
+  "profile.observed": {
+    "ha": "sun sa ido",
+    "ig": "lere anya",
+    "yo": "ṣe àkíyèsí"
+  },
+  "profile.none-yet": {
+    "ha": "Babu tukuna",
+    "ig": "Ọ dịbeghị",
+    "yo": "Kò sí síbẹ̀"
+  },
+  "profile.copied": {
+    "ha": "An kwafa",
+    "ig": "Edepụtala",
+    "yo": "A ti ṣẹ̀dà"
+  }
+}

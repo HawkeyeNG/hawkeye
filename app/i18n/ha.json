@@ -1484,5 +1484,12 @@
   "situation-room.pres-note-runoff": "Idan babu ɗan takarar da ya cika duka biyun, INEC za ta shirya zagaye na biyu cikin kwanaki 21 tsakanin ɗan takarar da ya fi yawan ƙuri'u da wanda ya fi rinjaye a mafi yawan jihohi.",
   "situation-room.pres-note-inec": "Waɗannan sakamako ne da jama'a suka bayar. Sanarwar INEC kaɗai ce ke zaɓar Shugaban Ƙasa.",
   "race.parties-on-the-ballot": "Jam’iyyun da ke kan takardar zaɓe",
-  "race.parties-hint": "INEC ta wallafa jam’iyyun amma ba sunayen ’yan takara ba. An jera su bisa haruffa — ba amincewa ba ce ko hasashe."
+  "race.parties-hint": "INEC ta wallafa jam’iyyun amma ba sunayen ’yan takara ba. An jera su bisa haruffa — ba amincewa ba ce ko hasashe.",
+  "profile.invite": "Gayyata",
+  "profile.your-invite-link": "Hanyar Gayyatarka",
+  "profile.people-you-invited": "Mutanen Da Ka Gayyata",
+  "profile.signed-up": "sun yi rajista",
+  "profile.observed": "sun sa ido",
+  "profile.none-yet": "Babu tukuna",
+  "profile.copied": "An kwafa"
 }

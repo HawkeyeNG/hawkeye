@@ -805,9 +805,14 @@ $('btn-auth').onclick = async () => {
   const pair = await ensureKeys();
   const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
   const endpoint = authMode === 'password' ? '/api/observers/login' : '/api/observers/verify';
+  /* WHO BROUGHT THEM. Sent on every sign-in attempt and used by the server only
+     when the account is genuinely NEW — attribution on a returning sign-in would
+     let anyone claim an existing observer by routing them through a link. Absent
+     is fine and never blocks the request. */
+  const referralCode = (window.HAWKEYE_REFERRAL && window.HAWKEYE_REFERRAL.pending()) || undefined;
   const payload = authMode === 'password'
-    ? { phone: input.value.trim(), password: $('pw-signin-input').value, publicKeyJwk }
-    : { phone: pendingPhone, otp: input.value.trim(), publicKeyJwk };
+    ? { phone: input.value.trim(), password: $('pw-signin-input').value, publicKeyJwk, referralCode }
+    : { phone: pendingPhone, otp: input.value.trim(), publicKeyJwk, referralCode };
   const { status, body } = await api(endpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

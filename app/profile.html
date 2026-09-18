@@ -219,6 +219,30 @@
         </button>
       </div>
 
+      <!-- INVITE OTHERS.
+           Hawkeye's binding constraint is not capability, it is how few people
+           are at a unit with it: Osun drew twelve organic observers against
+           3,763 polling units. The only channel that reaches 176k units is an
+           observer handing it to the next person, so the invite lives on the
+           profile they already visit rather than behind a menu.
+
+           TWO COUNTS, and the second is the honest one. "Signed up" is who made
+           an account; "observed" is who went on to file an accepted result
+           report. Only the second would ever be paid on, so it is shown from
+           the start rather than introduced with a payout. -->
+      <h2 data-i18n="profile.invite" class="sec-label">Invite</h2>
+      <div class="pcard prows">
+        <button type="button" class="prow" id="btn-ref-copy">
+          <span data-i18n="profile.your-invite-link" class="prow-k prow-stack">Your Invite Link</span>
+          <span class="prow-v" id="p-ref-code">…</span>
+          <span class="prow-c" aria-hidden="true">›</span>
+        </button>
+        <div class="prow" id="p-ref-counts">
+          <span data-i18n="profile.people-you-invited" class="prow-k prow-stack">People You Invited</span>
+          <span class="prow-v" id="p-ref-stat">—</span>
+        </div>
+      </div>
+
       <!-- CHOOSE YOUR POLLING UNIT. Same back/card shell as the password modal
            below, so there is one modal treatment on this page rather than two.
            pu-search.js is the picker every other web PU flow already uses; it is
@@ -395,6 +419,56 @@
       el.innerHTML = rows.map(fn).join('');
     }
 
+    /**
+     * THE INVITE CARD.
+     *
+     * Its own request, not a field on /me: minting a code writes to the
+     * observers row, and /me is read on every visit to this page by everyone,
+     * including people who will never open an invite link. A column that stays
+     * null until somebody actually asks for it is one less thing to backfill.
+     *
+     * FAILS QUIET. An invite is the least important thing on this page; if the
+     * request dies the rest of the profile must still render, so the row simply
+     * stays as it was rather than throwing out of load().
+     */
+    let referralUrl = '';
+    async function loadReferral() {
+      const { status, body } = await api('/api/observers/referral').catch(() => ({ status: 0 }));
+      if (status !== 200 || !body || !body.code) return;
+      referralUrl = location.origin + '/invite.html?r=' + encodeURIComponent(body.code);
+      $('p-ref-code').textContent = body.code;
+      /* TWO NUMBERS, because they mean different things and only the second one
+         would ever be paid on. Saying "3 signed up · 1 observed" from the start
+         is what stops a future payout reading as a bait-and-switch. */
+      $('p-ref-stat').textContent = body.signedUp
+        ? body.signedUp + ' ' + T('profile.signed-up', 'signed up') + ' · '
+          + body.qualified + ' ' + T('profile.observed', 'observed')
+        : T('profile.none-yet', 'None yet');
+    }
+
+    $('btn-ref-copy').addEventListener('click', async () => {
+      if (!referralUrl) return;
+      /* The OS share sheet where there is one — this link's destination is
+         WhatsApp, and share.js already solved the three-surface problem. Copy
+         is the fallback, and on a laptop it is the right answer anyway. */
+      try {
+        /* share.js owns the "share Hawkeye" link and takes no argument, so it
+           cannot carry a personal invite — this needs navigator.share directly.
+           Capacitor's Share plugin covers the Lite WebView, where
+           navigator.share does not exist; absent both, copy is the answer and
+           on a laptop it is the better one anyway. */
+        if (navigator.share) { await navigator.share({ url: referralUrl }); return; }
+        const cap = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+        if (cap) { await cap.share({ url: referralUrl }); return; }
+      } catch (e) { /* dismissed the sheet: fall through to copy */ }
+      try {
+        await navigator.clipboard.writeText(referralUrl);
+        const el = $('p-ref-code'); const was = el.textContent;
+        el.textContent = T('profile.copied', 'Copied');
+        setTimeout(() => { el.textContent = was; }, 1200);
+      } catch (e) { prompt(T('profile.your-invite-link', 'Your Invite Link'), referralUrl); }
+    });
+
     async function load() {
       if (!token()) { $('signed-out').hidden = false; return; }
       const { status, body } = await api('/api/observers/me');
@@ -406,6 +480,7 @@
       $('p-since').textContent = joined ? T('profile.since', 'since') + ' ' + joined : '';
       $('p-hash').textContent = body.identityHash;
       hasPassword = body.hasPassword;
+      loadReferral();
       // The VALUE of the row, not a sentence about it. "Password · Change ›".
       $('pw-state').textContent = hasPassword ? 'Change' : 'Set';
       $('pw-current-wrap').hidden = !hasPassword;
@@ -677,6 +752,7 @@
   <script src="pu-search.js?v=7"></script>
   <script src="device.js"></script>
   <script src="share.js?v=3"></script>
+  <script src="referral.js?v=1"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
   <script src="menu.js?v=171"></script>

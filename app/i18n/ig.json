@@ -1483,5 +1483,12 @@
   "situation-room.pres-note-runoff": "Ọ bụrụ na onweghị onye ndoro-ndoro mezuru ha abụọ, INEC ga-ahazi ntuli aka nke abụọ n'ime ụbọchị 21 n'etiti onye nwere vootu kacha ọtụtụ na onye nwere ọtụtụ vootu na steeti kacha ọtụtụ.",
   "situation-room.pres-note-inec": "Ndị a bụ nsonaazụ ọha mmadụ kọrọ. Ọ bụ naanị nkwupụta INEC na-ahọpụta Onye Isi Ala.",
   "race.parties-on-the-ballot": "Ndị pati nọ n’akwụkwọ ntuli aka",
-  "race.parties-hint": "INEC bipụtara ndị pati mana ọ bipụtaghị aha ndị ndoro-ndoro. E depụtara ha n’usoro mkpụrụedemede — ọ bụghị nkwado maọbụ amụma."
+  "race.parties-hint": "INEC bipụtara ndị pati mana ọ bipụtaghị aha ndị ndoro-ndoro. E depụtara ha n’usoro mkpụrụedemede — ọ bụghị nkwado maọbụ amụma.",
+  "profile.invite": "Kpọọ",
+  "profile.your-invite-link": "Njikọ Ọkpụkpọ Gị",
+  "profile.people-you-invited": "Ndị Ị Kpọrọ",
+  "profile.signed-up": "debanyere aha",
+  "profile.observed": "lere anya",
+  "profile.none-yet": "Ọ dịbeghị",
+  "profile.copied": "Edepụtala"
 }

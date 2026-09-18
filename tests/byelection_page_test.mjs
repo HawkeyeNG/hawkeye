@@ -124,6 +124,39 @@ check('draws all fifteen wards', r.shapes, 15);
  * A rule that builds the right object and a renderer that drops it look
  * identical from the builder's side.
  */
+/**
+ * BAUCHI'S TWO SEATS ARE NARROWED TO THEIR OWN WARDS.
+ *
+ * Both sit in an LGA that elects a second member who is NOT voting, and the page
+ * used to describe the LGA: 11 wards, ~261 units, and a map painting the sibling
+ * seat's wards as though a reader's unit in them were in this race. The contest
+ * now names the seat's five wards, so the figures are the seat's.
+ *
+ * The map draws FOUR of the five in both cases - "Alangawari / Kafin / Larabawa"
+ * and "Disina" have no polygon in the ward file - and says four in its own
+ * label. That gap is asserted rather than tolerated silently: if a polygon ever
+ * arrives this test should be the thing that notices.
+ */
+console.log('\n=== Bauchi: the seat, not the LGA it sits in ===');
+for (const [code, seat, lga, wards, units, drawn] of [
+  ['SHA_BYE_BAUCHI_SAKWA_2026', 'Sakwa (Zaki I)', 'Zaki', 5, 100, 4],
+  ['SHA_BYE_BAUCHI_DISINA_2026', 'Shira I (Disina)', 'Shira', 5, 95, 4],
+]) {
+  r = await open(`contest=${code}`);
+  check(`${seat} counts its own ${wards} wards`, r.body, (t) => new RegExp(`${wards}\\s*WARDS`, 'i').test(t));
+  check(`${seat} counts its own ${units} units`, r.body, (t) => t.includes(`~${units}`));
+  check(`${seat} says only it is voting`, r.body,
+    (t) => new RegExp(`one of the state constituencies in ${lga} LGA`, 'i').test(t));
+  check(`${seat} no longer apologises for a shared register`, r.body,
+    (t) => !/cover every seat in the LGA/i.test(t));
+  // The map is labelled for the SEAT, not for the LGA its polygons came from.
+  check(`${seat} labels its map for the seat`, r.body, (t) => t.includes(`${seat} — ${drawn} wards`));
+  check(`${seat} draws ${drawn} regions`, r.shapes, drawn);
+  // AND THE POINT OF ALL OF IT: the sibling seat's wards are gone.
+  check(`${seat} draws no ward outside the constituency`, [...r.titles], (t) =>
+    t.length === drawn && !t.some((w) => /Katagum|Makawa|Bursali|Maiwa|Mainako|Tashena|Shira|Tumfafi|Tsafi|Faggo|Kilbori|Bukul/i.test(w)));
+}
+
 console.log('\n=== the ballot reaches the page ===');
 r = await open('contest=REP_BYE_GOMBE_2026');
 for (const name of ['Yaya Alfa Muhammad', "Kallamu Usman Maijama'a", 'Gaddafi Haruna', 'Abdulkarim Abdulmajib']) {

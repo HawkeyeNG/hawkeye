@@ -374,8 +374,15 @@ export function RaceView({
           `seatField` note above for why a seat is not given cards. */}
       {seatField && wholeField.length ? (
         <>
+          {/* A PARTY-ONLY BALLOT SAYS SO. When INEC has published the parties
+              contesting a by-election but not the names, the rows ARE the whole
+              published ballot — calling them "Declared candidates" would tell
+              the reader that names are missing from a list that is complete.
+              Web twin: app/race.js, same condition on race.fieldLabel. */}
           <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-            {i18nT('race.declared-candidates')}
+            {race.fieldLabel === 'parties'
+              ? i18nT('race.parties-on-the-ballot')
+              : i18nT('race.declared-candidates')}
           </Text>
           {/* WHAT THE NUMBERS BESIDE THE NAMES ARE. Said here rather than left
               to be inferred: on a completed race this list sits below the
@@ -384,7 +391,9 @@ export function RaceView({
               of the claim — a total without a denominator invites being read as
               final. */}
           <Text className="pb-2 text-xs text-muted">
-            Alphabetical by party. Not an endorsement or a prediction.
+            {race.fieldLabel === 'parties'
+              ? 'INEC published the parties but not the candidates\u2019 names. Alphabetical \u2014 not an endorsement or a prediction.'
+              : 'Alphabetical by party. Not an endorsement or a prediction.'}
             {reported
               ? ` Totals are what observers have reported so far — from ${reported.units.toLocaleString()} polling unit${
                   reported.units === 1 ? '' : 's'

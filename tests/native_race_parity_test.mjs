@@ -33,9 +33,31 @@ const check = (label, got, want) => {
 };
 
 // ---- the WEB implementation, loaded the way race.html loads it ----------
+/**
+ * ENOUGH DOM FOR race.js TO FINISH LOADING, and no more.
+ *
+ * This test went red the day race.js grew a page-level click listener for the
+ * ward maps: the stub `document` had no addEventListener, the whole file threw
+ * on load, and the ONE test that holds web and native in step reported a
+ * TypeError instead of a comparison. A parity test that cannot load one of the
+ * two implementations is not testing parity - so the stub grows with the file.
+ *
+ * Deliberately inert rather than a real DOM: nothing here is under test, the
+ * race BUILDERS are, and they touch none of it.
+ */
 const sandbox = {
   window: {},
-  document: { title: '' },
+  document: {
+    title: '',
+    addEventListener() {},
+    removeEventListener() {},
+    createElement: () => ({
+      style: {}, classList: { add() {}, remove() {} }, setAttribute() {},
+      appendChild() {}, querySelector: () => null, querySelectorAll: () => [],
+    }),
+    querySelector: () => null,
+    querySelectorAll: () => [],
+  },
   fetch: async () => ({}),
   console: { log() {}, warn() {}, error() {} },
 };
@@ -49,9 +71,29 @@ const code = transform(fs.readFileSync(SRC, 'utf8'), {
   transforms: ['typescript', 'imports'],
   filePath: SRC,
 }).code;
+/**
+ * THE i18n STUB HAS TO BE REAL, because `note` is what this test compares.
+ *
+ * `require` used to return `{}` for everything, which was fine while political.ts
+ * imported nothing. It imports `t` now, so every builder threw the moment it
+ * reached its first translated string and this file died before its first
+ * comparison. Returning an EMPTY `t` would be worse than throwing: every note
+ * would collapse to '' on the native side and to the English sentence on the
+ * web side, and the test would report a parity failure that is really a stub
+ * failure.
+ *
+ * So `t` reads native's own en.json - the strings the app actually ships in
+ * English - and interpolates {v0}, {v1} the way lib/i18n does.
+ */
+const nativeEn = JSON.parse(fs.readFileSync(`${ROOT}/native/src/lib/i18n/en.json`, 'utf8'));
+const stubT = (key, vars) => {
+  const raw = nativeEn[key];
+  if (raw === undefined) throw new Error(`native en.json has no key ${key} - add it, do not fall back`);
+  return String(raw).replace(/\{(v\d+)\}/g, (_, v) => String((vars || {})[v] ?? ''));
+};
 const module_ = { exports: {} };
 new Function('require', 'module', 'exports', 'process', code)(
-  () => ({}), module_, module_.exports, { env: {} },
+  () => ({ t: stubT, currentLang_: () => 'en' }), module_, module_.exports, { env: {} },
 );
 const rn = module_.exports;
 
@@ -75,6 +117,16 @@ const shape = (r) =>
     stats: r.stats ?? null,
     note: r.note ?? null,
     join: r.join ?? null,
+    /**
+     * THE BALLOT IS COMPARED TOO. It is the newest thing both clients build and
+     * the only one read off the contest catalogue rather than the register, so
+     * it is exactly where they can drift: a client that dropped `fieldLabel`
+     * would print six parties under the heading "Declared candidates", and one
+     * that dropped the field would show an empty ballot on a race that has one.
+     */
+    fieldLabel: r.fieldLabel ?? null,
+    field: (r.candidates ?? []).map((c) => [c.name, c.party, c.meta ?? null]),
+    asOf: r.asOf ?? null,
   };
 const same = (a, b) => JSON.stringify(shape(a)) === JSON.stringify(shape(b));
 
@@ -140,6 +192,58 @@ for (const def of contests.filter((c) => c.tier)) {
    */
   check(`${def.code} carries a real ward count`, b?.stats?.wards > 0, true);
   check(`${def.code} carries a real unit count`, b?.stats?.pollingUnits > 0, true);
+}
+
+/**
+ * THE BALLOT, ASSERTED - not merely agreed on.
+ *
+ * Parity says the two clients build the same thing; it cannot say the thing is
+ * right. These check the three states a by-election ballot can be in, each with
+ * the others as its control: published names, published parties without names,
+ * and nothing published at all. Without the third, a bug that showed every seat
+ * a ballot would pass the first two.
+ */
+console.log('\n=== the by-election ballot: names, parties, or neither ===');
+{
+  const of = (code) => contests.find((c) => c.code === code);
+  const race = (code) => rn.byElectionRace(of(code), seats, political);
+
+  const gombe = race('REP_BYE_GOMBE_2026');
+  check('Gombe lists four candidates', (gombe?.candidates ?? []).length, 4);
+  check('Gombe is labelled candidates', gombe?.fieldLabel, 'candidates');
+  check('Gombe carries every party', (gombe?.candidates ?? []).map((c) => c.party).sort(),
+    ['APC', 'APM', 'APP', 'NNPP']);
+  check('Gombe names no candidate twice',
+    new Set((gombe?.candidates ?? []).map((c) => c.name)).size, 4);
+  check('Gombe says where the list came from', /Secretary to the Commission/.test(gombe?.note ?? ''), true);
+  check('Gombe does NOT say the list is missing',
+    /has not published the candidate list/.test(gombe?.note ?? ''), false);
+
+  const kano = race('SHA_BYE_KANO_DAWAKINKUDU_2026');
+  check('Dawakin Kudu lists six parties', (kano?.candidates ?? []).length, 6);
+  check('Dawakin Kudu is labelled parties', kano?.fieldLabel, 'parties');
+  check('Dawakin Kudu says the names are not published',
+    (kano?.candidates ?? []).every((c) => c.meta === 'Candidate name not published'), true);
+  check('Dawakin Kudu keeps the party CODE as the join key, not the long name',
+    (kano?.candidates ?? []).map((c) => c.party).sort(), ['ADP', 'APC', 'APP', 'LP', 'PDP', 'PRP']);
+  check('Dawakin Kudu points the reader at the notice',
+    /notice posted at your polling/.test(kano?.note ?? ''), true);
+
+  // THE CONTROL. Three of the five seats have no published ballot at all, and
+  // their pages must still say so in the old words.
+  for (const code of ['SHA_BYE_DELTA_UDU_2026', 'SHA_BYE_BAUCHI_SAKWA_2026', 'SHA_BYE_BAUCHI_DISINA_2026']) {
+    const r = race(code);
+    check(`${code} shows no ballot`, (r?.candidates ?? []).length, 0);
+    check(`${code} still says the list is missing`,
+      /INEC has not published the candidate list for this by-election yet/.test(r?.note ?? ''), true);
+  }
+
+  // A GENERAL contest must never take a by-election's ballot: it covers 360
+  // seats and the ballot belongs to one.
+  const general = contests.find((c) => c.code === 'REP');
+  check('the general REP contest carries no ballot', rn.contestBallot(general, 'race').field.length, 0);
+  check('a by-election ballot needs constituencies to apply',
+    rn.contestBallot({ ...of('REP_BYE_GOMBE_2026'), constituencies: [] }, 'race').field.length, 0);
 }
 
 console.log('\n=== the LGA a board hands over resolves to seats, not a guess ===');

@@ -607,6 +607,8 @@
   "profile.your-identity-hash": "Your Identity Hash",
   "profile.your-public-identity-on-the-ledger": "Your public identity on the ledger — your phone number is never stored.",
   "race.candidate-information-is-compiled-from-public": "Candidate information is compiled from public declarations and INEC's published lists, and may lag announcements. Hawkeye is nonpartisan and does not endorse any candidate. Official candidate lists and results are INEC's.",
+  "race.parties-hint": "INEC published the parties but not the candidates’ names. Listed alphabetically — not an endorsement or a prediction.",
+  "race.parties-on-the-ballot": "Parties on the ballot",
   "race.status": "Status",
   "races.filter-races-by-status": "Filter races by status",
   "races.loading-races": "Loading races…",

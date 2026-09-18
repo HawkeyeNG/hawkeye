@@ -87,16 +87,67 @@ console.log('\n=== the Delta state-assembly by-election ===');
 r = await open('contest=SHA_BYE_DELTA_UDU_2026');
 check('has its own page, not Osun', r.body, (t) => !/Osun/i.test(t));
 check('titled for the seat', r.title, (t) => /Udu/.test(String(t)));
-check('draws the one LGA it is held in', r.shapes, 1);
-check('named Udu', r.titles, ['Udu']);
+/**
+ * THE MAP IS DRAWN IN WARDS NOW, not as one LGA blob - the ward maps landed
+ * after this test was written and it went on asserting the old picture. A
+ * by-election is fought ward by ward and an observer picks a unit inside one,
+ * so the ward cut is the useful one.
+ *
+ * ASSERTED AS A SUBSET OF THE REGISTER'S OWN WARDS, not as a fixed count: the
+ * boundary file and the register do not spell every ward the same, and where a
+ * name cannot be matched the region is DROPPED rather than guessed at. Pinning
+ * an exact number would turn an honest gap into a red test, and pinning nothing
+ * would let the map silently empty out. Udu is the live example - the register
+ * has ten wards, two of them ("Udu Iii", "Udu Iv") have no matchable boundary,
+ * and the page draws the eight it can stand behind.
+ */
+check('drawn in wards, not one LGA blob', r.shapes, (n) => n >= 8);
+check('every drawn region is a real Udu ward', [...r.titles].sort(), (t) =>
+  t.length === r.shapes && t.every((w) => /^(Aladja|Ekete|Opete|Orhuwhurun|Ovwian|Udu)/i.test(w)));
+check('no region is drawn twice', new Set(r.titles).size, r.titles.length);
 
 console.log('\n=== the Kano state-assembly by-election ===');
 r = await open('contest=SHA_BYE_KANO_DAWAKINKUDU_2026');
 check('has its own page, not Osun', r.body, (t) => !/Osun/i.test(t));
 // The register spells it "Dawaki Kudu"; lga_geo.json spells it "Dawakin Kudu".
 // Without the stem match this page draws no map at all.
-check('resolves the register spelling to the map spelling', r.titles, ['Dawakin Kudu']);
-check('one shape, not the state', r.shapes, 1);
+check('resolves the register spelling to the map spelling', r.titles, (t) => t.length > 0);
+// All fifteen of the register's wards resolve here, which is what makes Udu's
+// eight a gap in the DATA rather than in the matching rule.
+check('draws all fifteen wards', r.shapes, 15);
+
+/**
+ * THE BALLOT, ON THE RENDERED PAGE.
+ *
+ * political.ts and race.js agree on what the ballot IS - the parity test holds
+ * that. This asks the different question: does it reach the reader's screen.
+ * A rule that builds the right object and a renderer that drops it look
+ * identical from the builder's side.
+ */
+console.log('\n=== the ballot reaches the page ===');
+r = await open('contest=REP_BYE_GOMBE_2026');
+for (const name of ['Yaya Alfa Muhammad', "Kallamu Usman Maijama'a", 'Gaddafi Haruna', 'Abdulkarim Abdulmajib']) {
+  check(`Gombe shows ${name}`, r.body, (t) => t.includes(name));
+}
+check('Gombe calls them candidates', r.body, (t) => /Declared candidates/i.test(t));
+check('Gombe no longer says the list is missing', r.body,
+  (t) => !/has not published the candidate list/i.test(t));
+
+r = await open('contest=SHA_BYE_KANO_DAWAKINKUDU_2026');
+check('Dawakin Kudu heads the list "Parties on the ballot"', r.body,
+  (t) => /Parties on the ballot/i.test(t));
+check('Dawakin Kudu shows all six parties', r.body,
+  (t) => ['Action Democratic Party', 'All Progressives Congress', 'Action Peoples Party',
+    'Labour Party', 'Peoples Democratic Party', 'Peoples Redemption Party'].every((x) => t.includes(x)));
+check('Dawakin Kudu says the names are not published', r.body,
+  (t) => /Candidate name not published/i.test(t));
+// CONTROL: a seat with no published ballot must still say so, or the two states
+// above prove nothing.
+r = await open('contest=SHA_BYE_DELTA_UDU_2026');
+check('CONTROL Udu still says the list is missing', r.body,
+  (t) => /has not published the candidate list/i.test(t));
+check('CONTROL Udu heads no candidate list', r.body,
+  (t) => !/Parties on the ballot/i.test(t));
 
 console.log('\n=== an unknown contest builds NO page ===');
 r = await open('contest=NOT_A_REAL_CONTEST', { expectMap: false });

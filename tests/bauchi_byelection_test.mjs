@@ -95,6 +95,52 @@ const disina = bauchi.find((c) => c.constituencies[0] === 'Shira');
 check('titled Shira I (Disina), not "Shira"', disina.seat, 'Shira I (Disina)');
 check('which is NOT the sibling seat', disina.seat !== 'Shira II (Shira)', true);
 
+/**
+ * AND THEN IT IS SEPARATED ANYWAY, BY WARD.
+ *
+ * The seat catalogue's `sharedRegister` flag stays true and stays right: the
+ * register cannot tell these two seats apart BY NAME, because state
+ * constituencies are not a column in it. But a WARD is a column, and INEC
+ * publishes each seat's ward list — so once the contest names them the LGA
+ * stops being the best available answer. Sakwa is 5 wards and 100 units inside
+ * Zaki's 261; Disina is 5 and 95 inside Shira's 249, and both totals are INEC's
+ * own published figures.
+ *
+ * Asserted HERE as well as in the gate test because this file is where the
+ * Bauchi story lives, and a reader who finds only the caveat below would
+ * conclude the caveat is still the best we can do.
+ */
+console.log('\n=== and the seat is separated anyway, by ward ===');
+for (const [seat, wards, units] of [['Sakwa (Zaki I)', 5, 100], ['Shira I (Disina)', 5, 95]]) {
+  const c = bauchi.find((x) => x.seat === seat);
+  check(`${seat} names its ${wards} wards`, (c.wards || []).length, wards);
+  check(`${seat} holds ${units} units`, c.pollingUnits, units);
+  check(`${seat} is narrower than its LGA`, c.pollingUnits < (seat.startsWith('Sakwa') ? 261 : 249), true);
+}
+
+/**
+ * AND THEN IT IS SEPARATED ANYWAY, BY WARD.
+ *
+ * The seat catalogue's `sharedRegister` flag stays true and stays right: the
+ * register cannot tell these two seats apart BY NAME, because state
+ * constituencies are not a column in it. But a WARD is a column, and INEC
+ * publishes each seat's ward list — so once the contest names them the LGA
+ * stops being the best available answer. Sakwa is 5 wards and 100 units inside
+ * Zaki's 261; Disina is 5 and 95 inside Shira's 249, and both totals are INEC's
+ * own published figures.
+ *
+ * Asserted HERE as well as in the gate test because this file is where the
+ * Bauchi story lives, and a reader who finds only the caveat below would
+ * conclude the caveat is still the best we can do.
+ */
+console.log('\n=== and the seat is separated anyway, by ward ===');
+for (const [seat, wards, units] of [['Sakwa (Zaki I)', 5, 100], ['Shira I (Disina)', 5, 95]]) {
+  const c = bauchi.find((x) => x.seat === seat);
+  check(`${seat} names its ${wards} wards`, (c.wards || []).length, wards);
+  check(`${seat} holds ${units} units`, c.pollingUnits, units);
+  check(`${seat} is narrower than its LGA`, c.pollingUnits < (seat.startsWith('Sakwa') ? 261 : 249), true);
+}
+
 console.log('\n=== a shared LGA is disclosed, not presented as the seat\'s own ===');
 for (const c of bauchi) {
   const info = SEATS.SHA[`${c.states[0]}|${c.seat}`];

@@ -44,6 +44,10 @@ export type RaceJoin = {
   value: string;
   state?: string;
   lgas?: string[];
+  /** A state seat's own wards, where its LGA holds more than one seat. */
+  wards?: string[];
+  /** The seat's display name, when the map is cut from its LGA's polygons. */
+  seatLabel?: string;
 };
 
 export type Race = {
@@ -547,6 +551,13 @@ export type ContestLite = {
   /** The seats a by-election is confined to. Its presence IS what makes one. */
   constituencies?: string[];
   /**
+   * The seat's OWN wards, when its LGA elects more than one member and the LGA
+   * gate is therefore wider than the race. See contestApplies in the backend
+   * and byElectionRace below. `pollingUnits` is what those wards hold.
+   */
+  wards?: string[];
+  pollingUnits?: number;
+  /**
    * The seat's own name, when it differs from the register value in
    * `constituencies`. A state-assembly gate is an LGA, and an LGA that elects
    * two members cannot name either of them — see byElectionRace.
@@ -782,20 +793,35 @@ export function byElectionRace(
    * Falls back to the gate value, so the three contests written before this
    * field existed are unchanged.
    */
-  const stats = shaStats(seats, state, seat);
+  const base = shaStats(seats, state, seat);
   const seatName = contest.seat || seat;
   const ballot = contestBallot(contest, 'by-election');
+  /**
+   * THE SEAT'S OWN WARDS, when the LGA is not the seat. shaStats describes the
+   * LGA, and for a by-election in an LGA that elects two members half of what it
+   * describes belongs to a seat that is not voting - Zaki's screen said 11 wards
+   * and 261 units for a race of 5 and 100. A ward IS a register column, so when
+   * the contest names them the figures become exact and the shared-register
+   * caveat must not be printed. Twin: app/race.js:byElectionRace.
+   */
+  const narrowed = Array.isArray(contest.wards) && contest.wards.length ? contest.wards : null;
+  const stats = narrowed
+    ? { ...base, wards: narrowed.length, pollingUnits: contest.pollingUnits, sharedRegister: false }
+    : base;
   return {
     office: i18nT('n.lib.political.state-constituency-state', { v0: seatName, v1: state }),
     election: i18nT('n.lib.political.state-3', { v0: state, v1: contest.name }),
     date: contest.date || undefined,
     stats,
     note:
-      (stats.sharedRegister
-        ? "This LGA elects more than one state member, and INEC's register does " +
-          'not separate them, so the ward and polling-unit figures on this page ' +
-          'cover every seat in the LGA rather than this one alone. '
-        : '') + ballot.note,
+      (narrowed
+        ? 'This is one of the state constituencies in ' + seat + ' LGA, and only this ' +
+          'one is voting. The figures below are its own ' + narrowed.length + ' wards, not the LGA\u2019s. '
+        : base.sharedRegister
+          ? "This LGA elects more than one state member, and INEC's register does " +
+            'not separate them, so the ward and polling-unit figures on this page ' +
+            'cover every seat in the LGA rather than this one alone. '
+          : '') + ballot.note,
     asOf: ballot.asOf,
     candidates: ballot.field,
     fieldLabel: ballot.fieldLabel,
@@ -808,6 +834,9 @@ export function byElectionRace(
       value: seat,
       state,
       lgas: contest.constituencies ?? [],
+      // The map and the board both narrow on this; absent, they keep the LGA.
+      wards: narrowed || undefined,
+      seatLabel: narrowed ? seatName : undefined,
     },
   };
 }

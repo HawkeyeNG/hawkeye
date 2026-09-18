@@ -271,15 +271,28 @@
           // The stored names are the register's, upper-cased at build time by
           // the crosswalk's normalisation; a tooltip should not shout.
           for (const w of wgeo.lgas[k].wards) {
+            /**
+             * A SEAT INSIDE AN LGA DRAWS ONLY ITS OWN WARDS. Where the join
+             * names them, a ward the seat does not hold is another seat's, and
+             * painting it here says the reader's unit is in this race when it
+             * is not. Matched with the same tiering as every other name here,
+             * because the polygon file and the register disagree on spelling.
+             */
+            const nm = titleCase(String(w.n).toLowerCase());
+            if (j.wards && j.wards.length && !matchOne(nm, j.wards, (x) => x)) continue;
             // The register's own spelling of the LGA, not the file's key: it is
             // what /api/register/units is keyed by.
-            parts.push({ path: w.d, name: titleCase(String(w.n).toLowerCase()), lga: l, state: j.state });
+            parts.push({ path: w.d, name: nm, lga: l, state: j.state });
           }
         }
         if (parts.length > 1) {
+          // The label is the SEAT when the join names one, not the LGA the
+          // polygons came out of: "Zaki - 4 wards" on a page titled Sakwa reads
+          // as a different place.
+          const label = j.wards && j.wards.length ? (j.seatLabel || j.value) : j.value;
           return svgFor(parts,
-            T('race.map-of-seat-by-ward', 'Map of {seat}, by ward').replace('{seat}', j.value),
-            T('race.seat-wards', '{seat} — {n} wards').replace('{seat}', j.value).replace('{n}', parts.length));
+            T('race.map-of-seat-by-ward', 'Map of {seat}, by ward').replace('{seat}', label),
+            T('race.seat-wards', '{seat} — {n} wards').replace('{seat}', label).replace('{n}', parts.length));
         }
       }
     }
@@ -1448,6 +1461,29 @@
      */
     const seatName = contest.seat || seat;
     const ballot = contestBallot(contest, 'by-election');
+    /**
+     * THE SEAT'S OWN WARDS, when the LGA is not the seat.
+     *
+     * shaStats describes the LGA, because state constituencies are not in the
+     * register - and for a by-election in an LGA that elects TWO members, half
+     * of what it describes belongs to a seat that is not voting. Zaki's page
+     * said 11 wards and 261 units for a race of 5 wards and 100, and painted the
+     * sibling seat's wards on the map as though they were in it.
+     *
+     * A ward IS a register column, so when the contest names the seat's wards
+     * the figures stop being an approximation: `wards` and `pollingUnits` come
+     * from the contest, reconciled against the register and against INEC's own
+     * published totals by backend/scripts/check_byelection_gates.mjs. The
+     * shared-register caveat then does not apply and must not be printed - it
+     * would be apologising for a number that is now exact.
+     *
+     * Twin: political.ts:byElectionRace.
+     */
+    const narrowed = Array.isArray(contest.wards) && contest.wards.length ? contest.wards : null;
+    const base = shaStats(seats, state, seat);
+    const stats = narrowed
+      ? { ...base, wards: narrowed.length, pollingUnits: contest.pollingUnits, sharedRegister: false }
+      : base;
 
     return {
       office: `${seatName} State Constituency — ${state} State`,
@@ -1462,12 +1498,15 @@
        * names repeat across states), so the same wards/units the other tiers
        * show are available here too.
        */
-      stats: shaStats(seats, state, seat),
-      note: (shaStats(seats, state, seat).sharedRegister
-        ? "This LGA elects more than one state member, and INEC's register does "
-          + 'not separate them, so the ward and polling-unit figures on this page '
-          + 'cover every seat in the LGA rather than this one alone. '
-        : '')
+      stats,
+      note: (narrowed
+        ? 'This is one of the state constituencies in ' + seat + ' LGA, and only this '
+          + 'one is voting. The figures below are its own ' + narrowed.length + ' wards, not the LGA\u2019s. '
+        : base.sharedRegister
+          ? "This LGA elects more than one state member, and INEC's register does "
+            + 'not separate them, so the ward and polling-unit figures on this page '
+            + 'cover every seat in the LGA rather than this one alone. '
+          : '')
         + ballot.note,
       asOf: ballot.asOf,
       candidates: ballot.field,
@@ -1481,6 +1520,11 @@
         value: seat,
         state,
         lgas: contest.constituencies || [],
+        // The map and the board both narrow on this; absent, they keep the LGA.
+        wards: narrowed || undefined,
+        // The map is cut from LGA polygons but the page is about the SEAT, and
+        // labelling a Sakwa map "Zaki" names a different place.
+        seatLabel: narrowed ? seatName : undefined,
       },
     };
   }

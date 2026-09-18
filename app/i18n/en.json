@@ -1456,5 +1456,7 @@
   "situation-room.pres-note-fct": "25% in the FCT is not a separate test. The FCT counts as one of the 37 (Supreme Court, October 2023).",
   "situation-room.pres-note-base": "Shares are of valid votes. A state with nothing counted yet does not count towards the 25% test.",
   "situation-room.pres-note-runoff": "If no candidate meets both, INEC arranges a run-off within 21 days between the candidate with the most votes and the one with a majority in the most states.",
-  "situation-room.pres-note-inec": "These are crowd-reported results. Only INEC’s declaration elects a President."
+  "situation-room.pres-note-inec": "These are crowd-reported results. Only INEC’s declaration elects a President.",
+  "race.parties-on-the-ballot": "Parties on the ballot",
+  "race.parties-hint": "INEC published the parties but not the candidates’ names. Listed alphabetically — not an endorsement or a prediction."
 }

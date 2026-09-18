@@ -370,6 +370,79 @@
     ...((race && race.minors) || []),
   ].sort((a, b) => String(a.party).localeCompare(String(b.party)));
 
+  /**
+   * WHAT A CONTEST KNOWS ABOUT ITS OWN BALLOT.
+   *
+   * A generated seat page states that the candidate list is missing, because for
+   * 1,480 seats it is. A BY-ELECTION is the case where it need not be: one seat,
+   * one published list, a fact small enough to live in the contest catalogue
+   * beside the date and the gate. So `contests.json` may carry either shape:
+   *
+   *   candidates: [{ name, party }]   INEC published the names
+   *   parties:    [{ code, name }]    INEC published the ballot, not the names
+   *
+   * The second is not a lesser version of the first, it is a DIFFERENT FACT, and
+   * flattening it into the first would invent the names. It renders as the
+   * parties, each row saying the name is not published - which is honest, and is
+   * also the row the running totals join on, so a party-only page still fills
+   * with votes on the day.
+   *
+   * GATED ON `constituencies`, whose presence is what makes a contest a
+   * by-election. A ballot belongs to ONE seat; the same field on the general REP
+   * contest would print four Gombe names on all 360 federal constituency pages.
+   *
+   * Returns the default note when the contest carries neither, so every existing
+   * page is unchanged. Twin: political.ts:contestBallot - keep them identical,
+   * tests/native_race_parity_test.mjs compares the note they produce.
+   */
+  /**
+   * The two wordings that predate this function, kept VERBATIM: they are already
+   * translated into ha/ig/yo, and the parity test compares them string for
+   * string against native's i18n catalogue. The trailing clause genuinely
+   * differs between them - do not "tidy" them into one.
+   */
+  const NO_LIST_NOTE = {
+    race: 'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.',
+    'by-election': 'INEC has not published the candidate list for this by-election yet. Candidates appear here as soon as the official list is out. The seat and map on this page come from the electoral register and are current.',
+  };
+
+  function contestBallot(contest, what) {
+    const none = { field: [], fieldLabel: 'candidates', note: NO_LIST_NOTE[what || 'race'], asOf: undefined };
+    if (!contest || !((contest.constituencies || []).length)) return none;
+    const asOf = contest.ballotAsOf || undefined;
+    const src = contest.ballotSource ? ' ' + contest.ballotSource : '';
+
+    const named = contest.candidates || [];
+    if (named.length) {
+      return {
+        field: named.map((c) => ({ name: c.name, party: c.party })),
+        fieldLabel: 'candidates',
+        note: 'Every candidate on the ballot for this by-election — ' + named.length
+          + ' of them.' + src + ' The map and seat facts on this page come from the electoral register.',
+        asOf,
+      };
+    }
+
+    const parties = contest.parties || [];
+    if (parties.length) {
+      return {
+        // The PARTY is the name, because the party is what is known. `party`
+        // stays the code so the flag, the colour and the vote join all work.
+        field: parties.map((p) => ({
+          name: p.name || p.code,
+          party: p.code || p.name,
+          meta: 'Candidate name not published',
+        })),
+        fieldLabel: 'parties',
+        note: 'INEC has published the ' + parties.length + ' parties contesting this by-election '
+          + 'but not the candidates’ names. The names are on the notice posted at your polling '
+          + 'unit — photograph it and Hawkeye will have them.' + src,
+        asOf,
+      };
+    }
+    return none;
+  }
+
   function mountRace(main, race, LOGOS, opts) {
     opts = opts || {};
     LOGOS = LOGOS || {};
@@ -551,8 +624,18 @@
     // rule behind it are derived up with the stat bar, so the count in the card
     // and the list beneath it come from the same array.
     if (seatField && wholeField.length) {
-      parts.push('<h2 style="margin-top:26px">' + T('race.declared-candidates', 'Declared candidates') + '</h2>');
-      parts.push('<p class="hint" id="field-hint">' + T('race.listed-alphabetically-by-party', 'Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.') + '</p>');
+      /**
+       * A PARTY-ONLY BALLOT SAYS SO IN THE HEADING. Calling six parties
+       * "Declared candidates" would tell the reader the names are missing from
+       * a list that is complete - what is missing is the names, not the rows.
+       */
+      const partyOnly = race.fieldLabel === 'parties';
+      parts.push('<h2 style="margin-top:26px">' + (partyOnly
+        ? T('race.parties-on-the-ballot', 'Parties on the ballot')
+        : T('race.declared-candidates', 'Declared candidates')) + '</h2>');
+      parts.push('<p class="hint" id="field-hint">' + (partyOnly
+        ? T('race.parties-hint', 'INEC published the parties but not the candidates’ names. Listed alphabetically — not an endorsement or a prediction.')
+        : T('race.listed-alphabetically-by-party', 'Listed alphabetically by party. Not an endorsement or a prediction — Hawkeye is nonpartisan.')) + '</p>');
       /**
        * `data-party` is the join key for the running totals filled in later —
        * see fillFieldTotals. The slot is rendered EMPTY rather than omitted, so
@@ -1240,6 +1323,7 @@
     if (!canon) return null;
     const s = table[canon];
     const senate = (tier || code) === 'SEN';
+    const ballot = contestBallot(contest, 'race');
     return {
       office: `${senate ? 'Senator' : 'House of Representatives'} — ${canon}`,
       election: `${s.state} State · ${senate ? 'Senate' : 'House of Representatives'}`,
@@ -1250,8 +1334,10 @@
       // each and polling_units records only the LGA.
       note: (s.sharedRegister
         ? "INEC's register does not separate this seat from the other constituency in the same LGA, so the LGA and polling-unit figures on this page cover both. "
-        : '') + 'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.',
-      candidates: [],
+        : '') + ballot.note,
+      asOf: ballot.asOf,
+      candidates: ballot.field,
+      fieldLabel: ballot.fieldLabel,
       others: [],
       join: {
         contest: code,
@@ -1361,6 +1447,7 @@
      * existed are unchanged. Twin: political.ts:byElectionRace.
      */
     const seatName = contest.seat || seat;
+    const ballot = contestBallot(contest, 'by-election');
 
     return {
       office: `${seatName} State Constituency — ${state} State`,
@@ -1381,10 +1468,10 @@
           + 'not separate them, so the ward and polling-unit figures on this page '
           + 'cover every seat in the LGA rather than this one alone. '
         : '')
-        + 'INEC has not published the candidate list for this by-election yet. '
-        + 'Candidates appear here as soon as the official list is out. The seat '
-        + 'and map on this page come from the electoral register and are current.',
-      candidates: [],
+        + ballot.note,
+      asOf: ballot.asOf,
+      candidates: ballot.field,
+      fieldLabel: ballot.fieldLabel,
       others: [],
       join: {
         contest: contest.code,
@@ -1482,6 +1569,7 @@
   // native twin. The renderers are not comparable; these two functions are.
   window.seatFieldOf = seatFieldOf;
   window.wholeFieldOf = wholeFieldOf;
+  window.contestBallot = contestBallot;
   window.isPresidency = isPresidency;
   window.resultsHrefFor = resultsHrefFor;
 })();

@@ -1482,5 +1482,7 @@
   "situation-room.pres-note-fct": "Samun 25% a FCT ba gwaji ne na daban ba. Ana ƙirga FCT a matsayin ɗaya daga cikin 37 (Kotun Ƙoli, Oktoba 2023).",
   "situation-room.pres-note-base": "Kaso daga ƙuri'u masu inganci ne. Jihar da ba a ƙirga komai a cikinta ba tukuna ba ta shiga lissafin gwajin 25%.",
   "situation-room.pres-note-runoff": "Idan babu ɗan takarar da ya cika duka biyun, INEC za ta shirya zagaye na biyu cikin kwanaki 21 tsakanin ɗan takarar da ya fi yawan ƙuri'u da wanda ya fi rinjaye a mafi yawan jihohi.",
-  "situation-room.pres-note-inec": "Waɗannan sakamako ne da jama'a suka bayar. Sanarwar INEC kaɗai ce ke zaɓar Shugaban Ƙasa."
+  "situation-room.pres-note-inec": "Waɗannan sakamako ne da jama'a suka bayar. Sanarwar INEC kaɗai ce ke zaɓar Shugaban Ƙasa.",
+  "race.parties-on-the-ballot": "Jam’iyyun da ke kan takardar zaɓe",
+  "race.parties-hint": "INEC ta wallafa jam’iyyun amma ba sunayen ’yan takara ba. An jera su bisa haruffa — ba amincewa ba ce ko hasashe."
 }

@@ -56,7 +56,10 @@ for (const x of c) {
 }
 
 for (const x of c) {
-  const days = Math.round((new Date(`${x.date}T00:00:00`) - new Date('2026-08-15')) / 86400000);
+  // FROM TODAY, not from the day this script was written. This was pinned to
+  // '2026-08-15' and so reported an election happening TOMORROW as 35 days out.
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = Math.round((new Date(`${x.date}T00:00:00`) - today) / 86400000);
   console.log(`  ${x.code.padEnd(30)} ${x.date}  (${days} days out)  ${x.states ? x.states.length + ' states' : 'nationwide'}  ${x.election}`);
 }
 console.log(bad ? `\n${bad} PROBLEM(S)` : '\nvalid');

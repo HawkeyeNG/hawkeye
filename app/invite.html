@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  /get — where an invite link lands.
+  /invite.html — where an invite link lands.
 
   THERE IS NO UNIVERSAL STORE LINK. The one thing that used to route a single
   URL to the right store, Firebase Dynamic Links, shut down on 25 Aug 2025 and
@@ -10,48 +10,126 @@
 
   THE CODE IS SHOWN, NOT JUST STORED. Android can carry it through the Play
   Store via the Install Referrer; iOS cannot, and never could. So the code is
-  printed on this page in characters a person can read and retype, and the
-  signup screen accepts it. That is the only path that works on every phone
-  without clipboard sniffing or fingerprinting.
+  printed here in characters a person can read and retype, and the signup screen
+  accepts it. That is the only path that works on every phone without clipboard
+  sniffing or fingerprinting.
+
+  DELIBERATELY SINGLE-THEME. Every other page follows the reader's light/dark
+  choice; this one is always the brand green, because it is the first thing
+  someone sees of Hawkeye — arriving from a stranger's WhatsApp message — and a
+  first impression should not be a system setting. Nothing here is read for long
+  enough to need a light mode.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hawkeye — You have been invited to observe</title>
+<meta name="description" content="Someone has invited you to observe an election with Hawkeye — a public copy of the result announced at your polling unit.">
+<meta name="theme-color" content="#00251a">
 <link rel="icon" href="/favicon.ico">
-<link rel="stylesheet" href="/styles.css?v=1">
+<link rel="stylesheet" href="/styles.css?v=182">
 <style>
-  .g-wrap { max-width: 34rem; margin: 0 auto; padding: 2rem 1rem 3rem; }
-  .g-code { font: 700 1.6rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
-            letter-spacing: .18em; padding: .6rem 1rem; border-radius: .6rem;
-            display: inline-block; }
-  .g-btns { display: flex; flex-direction: column; gap: .75rem; margin: 1.5rem 0; }
-  .g-btn { display: block; text-align: center; padding: .9rem 1rem; border-radius: .6rem;
-           font-weight: 600; text-decoration: none; }
-  .g-note { font-size: .9rem; opacity: .8; }
+  /* The landing hero's own recipe, from styles.css, applied to the whole page
+     rather than a band at the top: this page IS the hero. */
+  html, body { background: var(--green-950); }
+  body {
+    min-height: 100dvh;
+    margin: 0;
+    color: #fff;
+    background:
+      radial-gradient(1100px 480px at 78% -10%, rgba(245, 179, 1, 0.16), transparent 60%),
+      radial-gradient(700px 420px at 8% 110%, rgba(245, 197, 24, 0.10), transparent 55%),
+      linear-gradient(165deg, var(--green-950) 0%, var(--green-darker) 55%, var(--green-dark) 100%);
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Centred, and narrow enough that the headline breaks where it should. */
+  .iv {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    gap: 0;
+    max-width: 30rem;
+    margin: 0 auto;
+    padding: clamp(28px, 7vh, 64px) 20px clamp(24px, 5vh, 48px);
+  }
+
+  .iv-brand { display: flex; align-items: center; gap: 11px; margin-bottom: clamp(20px, 5vh, 38px); }
+  .iv-brand img { width: 44px; height: 44px; border-radius: 11px; display: block; }
+  .iv-brand span {
+    font-family: var(--font-display, inherit);
+    font-weight: 700; font-size: 1.32rem; letter-spacing: .015em;
+  }
+
+  .iv h1 {
+    font-size: clamp(1.6rem, 6vw, 2.15rem);
+    line-height: 1.15; margin: 0 0 14px; text-wrap: balance;
+  }
+  .iv-sub { color: #c4d8cc; font-size: 1.02rem; line-height: 1.5; margin: 0; max-width: 26rem; }
+
+  /* THE CODE. Set apart because on iOS it is not decoration — it is the thing
+     the reader has to carry into the app by hand. */
+  .iv-code {
+    margin: clamp(22px, 5vh, 34px) 0 0;
+    padding: 14px 18px 13px;
+    border: 1px solid rgba(245, 179, 1, .42);
+    background: rgba(245, 179, 1, .08);
+    border-radius: 12px;
+  }
+  .iv-code b {
+    display: block;
+    font: 700 1.5rem/1.1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: .22em; text-indent: .22em; color: var(--gold);
+  }
+  .iv-code small { display: block; margin-bottom: 7px; font-size: .76rem;
+                   letter-spacing: .09em; text-transform: uppercase; color: #a9c2b4; }
+
+  .iv-btns { display: flex; flex-direction: column; gap: 11px; width: 100%;
+             max-width: 20rem; margin: clamp(26px, 6vh, 38px) 0 0; }
+  .iv-btns a { width: 100%; box-sizing: border-box; text-align: center; }
+
+  .iv-note { color: #a9c2b4; font-size: .88rem; line-height: 1.5; margin: 18px 0 0; max-width: 25rem; }
+
+  .iv-foot {
+    text-align: center; color: #8ba99a; font-size: .79rem; line-height: 1.5;
+    padding: 0 20px clamp(22px, 5vh, 34px); margin: 0 auto; max-width: 28rem;
+  }
+  .iv-foot a { color: #a9c2b4; }
 </style>
 </head>
 <body>
-<div class="g-wrap">
-  <h1 id="g-title">You have been invited to observe</h1>
-  <p>Hawkeye keeps a public copy of the result announced at your polling unit.
-     It is independent and non-partisan.</p>
+  <main class="iv">
+    <div class="iv-brand">
+      <img src="/logo.svg" alt="" width="44" height="44">
+      <span>Hawkeye</span>
+    </div>
 
-  <p id="g-codewrap" hidden>Your invite code<br><span class="g-code" id="g-code"></span></p>
+    <h1 id="g-title">You have been invited to observe</h1>
+    <p class="iv-sub">Hawkeye keeps a public copy of the result announced at your
+       polling unit. It is independent and non-partisan.</p>
 
-  <div class="g-btns">
-    <a class="g-btn" id="g-store" href="/download">Get the app</a>
-    <a class="g-btn" id="g-web" href="/">Continue in this browser</a>
-  </div>
+    <p class="iv-code" id="g-codewrap" hidden>
+      <small>Your invite code</small>
+      <b id="g-code"></b>
+    </p>
 
-  <p class="g-note" id="g-ios-note" hidden>
-    After installing, enter the code above when you create your account.
+    <div class="iv-btns">
+      <a class="btn-accent" id="g-store" href="/download">Get the app</a>
+      <a class="btn-ghost" id="g-web" href="/">Continue in this browser</a>
+    </div>
+
+    <p class="iv-note" id="g-ios-note" hidden>
+      After installing, enter the code above when you create your account.
+    </p>
+  </main>
+
+  <p class="iv-foot">
+    Hawkeye does not declare results — all official results are announced by
+    <a href="https://inecnigeria.org" rel="noopener">INEC</a>.
   </p>
-  <p class="g-note">
-    Hawkeye does not declare results — all official results are announced by INEC.
-  </p>
-</div>
 
 <script src="/referral.js?v=1"></script>
 <script>

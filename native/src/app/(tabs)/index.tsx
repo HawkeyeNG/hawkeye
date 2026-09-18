@@ -118,6 +118,26 @@ function daysUntil(iso: string) {
   return Math.max(0, Math.ceil(ms / 86_400_000));
 }
 
+/**
+ * "Opens in 1 days" is what a single plural string gets you, and it was on the
+ * home screen the day before a by-election.
+ *
+ * THREE CASES, not two. daysUntil clamps at 0, so on polling morning - before
+ * 08:30, when the contest is still closed - the same string read "Opens in 0
+ * days", which is worse than the plural slip and was on the same expression.
+ *
+ * ENGLISH IS THE ONLY LANGUAGE THAT NEEDS THE SPLIT here: Hausa "kwana {v0}",
+ * Igbo "ubochi {v0}" and Yoruba "ojo {v0}" do not inflect the noun for number,
+ * so their singular and plural values are deliberately the same sentence. The
+ * split lives in the KEY rather than in a count rule, because a count rule that
+ * is right for English is wrong for languages with more than two forms.
+ */
+function opensIn(days: number) {
+  if (days <= 0) return i18nT('n.app.tabs.index.opens-today');
+  if (days === 1) return i18nT('n.app.tabs.index.opens-in-day', { v0: days });
+  return i18nT('n.app.tabs.index.opens-in-days', { v0: days });
+}
+
 function ago(ts: number) {
   const m = Math.max(1, Math.round((Date.now() - ts) / 60000));
   if (m < 60) return `${m}m ago`;
@@ -406,7 +426,7 @@ export default function Home() {
           </View>
           <View className="flex-row items-center justify-between bg-[#00351e] px-5 py-3">
             <Text className="text-sm font-semibold text-hawk-gold">
-              {c.open ? 'Report from your polling unit now' : i18nT('n.app.tabs.index.opens-in-days', { v0: daysUntil(c.date) })}
+              {c.open ? 'Report from your polling unit now' : opensIn(daysUntil(c.date))}
             </Text>
             <Feather name="chevron-right" size={16} color={BRAND.gold} />
           </View>

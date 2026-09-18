@@ -112,7 +112,7 @@ console.log('\n=== the profile shows the link and both counts ===');
    * against markup that was perfectly correct.
    */
   const exp = Math.floor(Date.now() / 1000) + 3600;
-  const jwt = 'x.' + Buffer.from(JSON.stringify({ exp })).toString('base64url') + '.x';
+  const jwt = globalThis.jwt = 'x.' + Buffer.from(JSON.stringify({ exp })).toString('base64url') + '.x';
   const ctx = await b.newContext();
   await ctx.addInitScript((t) => {
     try { localStorage.setItem('hawkeye_token', t); } catch (e) { /* about:blank */ }
@@ -134,6 +134,70 @@ console.log('\n=== the profile shows the link and both counts ===');
   check('and observed is shown separately', out.stat, (t) => /1/.test(t) && /observed/i.test(t));
   check('no page errors', errs, []);
   await ctx.close();
+}
+
+/**
+ * CLICKING THE ROW DOES SOMETHING. ALWAYS.
+ *
+ * The first version of this test checked that the code RENDERED and never
+ * clicked it — and the row shipped doing nothing at all. navigator.share exists
+ * on desktop Chrome, so it ran first and returned without changing the screen;
+ * in a WebView or iframe it throws, the clipboard can be blocked the same way,
+ * and Chrome suppresses prompt() in exactly those contexts, so the last resort
+ * was silent too.
+ *
+ * Both environments are exercised, because "works when the clipboard works" is
+ * the half that was never the problem.
+ */
+async function clickInvite({ clipboard }) {
+  const ctx = await b.newContext(clipboard ? { permissions: ['clipboard-read', 'clipboard-write'] } : {});
+  await ctx.addInitScript((t) => {
+    try { localStorage.setItem('hawkeye_token', t); } catch (e) { /* about:blank */ }
+  }, jwt);
+  if (!clipboard) {
+    // Every way the write can be refused, in one stub: no API at all is the
+    // WebView case, a rejecting one is the blocked-permission case.
+    await ctx.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        get: () => ({ writeText: () => Promise.reject(new Error('blocked')) }),
+      });
+    });
+  }
+  const p2 = await ctx.newPage();
+  const dialogs = [];
+  p2.on('dialog', (d) => { dialogs.push(d.type()); d.dismiss(); });
+  await p2.goto(`${base}/profile.html`, { waitUntil: 'networkidle' });
+  await p2.waitForFunction(() => document.getElementById('p-ref-code')?.textContent !== '\u2026', null, { timeout: 8000 });
+  await p2.click('#btn-ref-copy');
+  await p2.waitForTimeout(400);
+  const out = await p2.evaluate(() => {
+    const box = document.getElementById('ref-reveal');
+    return {
+      label: document.getElementById('p-ref-code').textContent,
+      revealed: !!box && !box.hidden,
+      revealedValue: box ? box.value : null,
+    };
+  });
+  out.dialogs = dialogs;
+  await ctx.close();
+  return out;
+}
+
+console.log('\n=== clicking the invite row ===');
+{
+  const ok = await clickInvite({ clipboard: true });
+  check('with a clipboard, it says Copied', ok.label, (t) => /copied/i.test(t));
+  check('and does not need the fallback', ok.revealed, false);
+
+  const blocked = await clickInvite({ clipboard: false });
+  // THE CASE THAT SHIPPED BROKEN. Something must appear on the page.
+  check('with the clipboard blocked, the link is revealed', blocked.revealed, true);
+  check('and it is the real invite link', blocked.revealedValue, (v) => /\/invite\.html\?r=H7KMN3$/.test(v || ''));
+  check('and the row says where to look', blocked.label, (t) => /copy it below/i.test(t));
+  // A dialog is NOT an acceptable answer here: the browsers that block the
+  // clipboard are the same ones that suppress prompt().
+  check('no dialog is relied on', blocked.dialogs, []);
 }
 
 await b.close();

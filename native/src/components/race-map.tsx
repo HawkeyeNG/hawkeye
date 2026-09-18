@@ -27,6 +27,39 @@ type Shape = { key: string; name: string; path: string };
 
 const norm = (s: string) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 
+const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
+const titleCase = (s: string) => s.replace(/\b[a-z]/g, (c) => c.toUpperCase());
+
+/**
+ * WARD POLYGONS, one file per state.
+ *
+ * Not part of loadMapGeo, which caches ONE file per level: these are 37 files
+ * and a screen only ever needs the state it is looking at. Cached per state for
+ * the run, and a failure clears its slot so the next mount retries — the same
+ * contract loadMapGeo gives.
+ *
+ * Fetched rather than bundled, for the reason results-map states: these are the
+ * website's own shapes and a copy in the binary is one more thing to drift.
+ */
+type RawWards = { lgas: Record<string, { wards: { n: string; d: string }[] }> };
+const wardCache: Record<string, Promise<RawWards>> = {};
+
+function loadWardGeo(state: string): Promise<RawWards> {
+  const slug = String(state).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const hit = wardCache[slug];
+  if (hit) return hit;
+  const load = fetch(`${BASE}/maps/wards/${slug}.json`, { headers: { accept: 'application/json' } })
+    .then(async (r) => {
+      if (!r.ok) throw new Error(`maps/wards/${slug}.json -> HTTP ${r.status}`);
+      const raw = (await r.json()) as RawWards;
+      if (!raw?.lgas) throw new Error(`maps/wards/${slug}.json has no lgas`);
+      return raw;
+    })
+    .catch((e) => { delete wardCache[slug]; throw e; });
+  wardCache[slug] = load;
+  return load;
+}
+
 async function shapesFor(join: RaceJoin): Promise<{ shapes: Shape[]; caption: string } | null> {
   if (!join?.value) return null;
 
@@ -49,6 +82,59 @@ async function shapesFor(join: RaceJoin): Promise<{ shapes: Shape[]; caption: st
     return hit
       ? { shapes: [{ key: hit.key, name: hit.name, path: hit.path }], caption: `${join.value} State` }
       : null;
+  }
+
+  /**
+   * A STATE-ASSEMBLY SEAT, CUT INTO WARDS — the finest cut there is, and the
+   * one that tells an observer something. Native twin of the ward block in
+   * app/race.js:raceMapHtml, and it exists here because the app should never be
+   * the poorer client: the site drew wards while this drew one flat LGA blob.
+   *
+   * Tried BEFORE the LGA cut and falls through to it on any miss, so a state
+   * whose ward file is absent or unmatched keeps exactly the map it had.
+   *
+   * The names come from the register, not from the polygon file: every ward was
+   * relabelled through ward_crosswalk.json at build time, so a shape here
+   * carries the name the board buckets reports under. Wards the crosswalk could
+   * not resolve are absent from the file entirely rather than shipped under a
+   * name nothing matches.
+   *
+   * A SEAT INSIDE AN LGA DRAWS ONLY ITS OWN WARDS. Where the join names them
+   * (Bauchi's Sakwa and Disina each share an LGA with a seat that is not
+   * voting), a ward the seat does not hold belongs to the other one, and
+   * painting it here tells a reader their unit is in this race when it is not.
+   */
+  if (join.level === 'lga' && join.state && join.lgas && join.lgas.length) {
+    try {
+      const raw = await loadWardGeo(join.state);
+      const keys = Object.keys(raw.lgas);
+      const pool = keys.map((k) => ({ key: k }));
+      const want = join.wards && join.wards.length ? join.wards : null;
+      const parts: Shape[] = [];
+      let missed = false;
+      for (const l of join.lgas) {
+        const hit = matchRegion('lga', l, pool, (x) => x.key);
+        if (!hit) { missed = true; break; }
+        for (const w of raw.lgas[hit.key].wards) {
+          const name = titleCase(String(w.n).toLowerCase());
+          if (want && !matchRegion('lga', name, want.map((x) => ({ key: x })), (x) => x.key)) continue;
+          parts.push({ key: `${hit.key}|${w.n}`, name, path: w.d });
+        }
+      }
+      if (!missed && parts.length > 1) {
+        // The label is the SEAT when the join names one, not the LGA the
+        // polygons came out of: "Zaki - 4 wards" on a screen titled Sakwa names
+        // a different place.
+        const label = want ? join.seatLabel || join.value : join.value;
+        return {
+          shapes: parts,
+          caption: i18nT('n.components.race-map.seat-wards', { v0: label, v1: parts.length }),
+        };
+      }
+    } catch {
+      // No ward file for this state, or it would not parse. The LGA cut below
+      // is a real map, so this is a downgrade and not a failure.
+    }
   }
 
   // A SEAT, cut into its member LGAs.

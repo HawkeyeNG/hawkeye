@@ -93,17 +93,24 @@ check('titled for the seat', r.title, (t) => /Udu/.test(String(t)));
  * by-election is fought ward by ward and an observer picks a unit inside one,
  * so the ward cut is the useful one.
  *
- * ASSERTED AS A SUBSET OF THE REGISTER'S OWN WARDS, not as a fixed count: the
- * boundary file and the register do not spell every ward the same, and where a
- * name cannot be matched the region is DROPPED rather than guessed at. Pinning
- * an exact number would turn an honest gap into a red test, and pinning nothing
- * would let the map silently empty out. Udu is the live example - the register
- * has ten wards, two of them ("Udu Iii", "Udu Iv") have no matchable boundary,
- * and the page draws the eight it can stand behind.
+ * ALL TEN OF THEM, pinned by name.
+ *
+ * This asserted ">= 8" while two wards were unmapped: the register calls them
+ * "Udu Iii" and "Udu Iv", the boundary file calls the same two places
+ * "Ogbe Udu" and "Emadadja", and no spelling rule can bridge that - so the
+ * automatic crosswalk refused them and the page drew eight, 34 of 265 units
+ * invisible. They are paired by hand now, from the polling units' own names and
+ * from where those units sit (see backend/src/data/ward_crosswalk_manual.json).
+ *
+ * The gap is closed, so the test stops tolerating it and pins the complete set.
+ * A count alone would not: "10 shapes" stays true if the crosswalk ever pairs a
+ * ward to the WRONG polygon, which is the failure that actually matters here.
  */
-check('drawn in wards, not one LGA blob', r.shapes, (n) => n >= 8);
-check('every drawn region is a real Udu ward', [...r.titles].sort(), (t) =>
-  t.length === r.shapes && t.every((w) => /^(Aladja|Ekete|Opete|Orhuwhurun|Ovwian|Udu)/i.test(w)));
+check('drawn in wards, not one LGA blob', r.shapes, 10);
+check('all ten of Udu\'s wards are on the map', [...r.titles].sort(), [
+  'Aladja', 'Ekete', 'Opete Assagba Edjophe', 'Orhuwhurun', 'Ovwian I', 'Ovwian Ii',
+  'Udu I', 'Udu Ii', 'Udu Iii', 'Udu Iv',
+]);
 check('no region is drawn twice', new Set(r.titles).size, r.titles.length);
 
 console.log('\n=== the Kano state-assembly by-election ===');

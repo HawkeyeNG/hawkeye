@@ -114,7 +114,16 @@
     .phero-copy:hover { background: rgba(255, 255, 255, 0.2); }
     /* Count chip in an accordion summary. */
     .cnt { display: inline-block; min-width: 20px; text-align: center; background: var(--tint); color: var(--muted); border-radius: 999px; padding: 1px 8px; font-size: 0.74rem; font-weight: 700; margin-left: 7px; }
-  </style>
+  
+    /* THE FALLBACK LINK, revealed when the clipboard is unavailable. Full width
+       and selectable, because its whole job is to be copied by hand. */
+    .ref-reveal {
+      width: 100%; margin: 0 0 .25rem; padding: .6rem .75rem;
+      font: 500 .85rem/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+      border: 1px solid var(--line, #2a4a3a); border-radius: .5rem;
+      background: var(--bg, #0d1f17); color: inherit;
+    }
+</style>
   <script src="authgate.js?v=2"></script>
 </head>
 <body>
@@ -446,27 +455,63 @@
         : T('profile.none-yet', 'None yet');
     }
 
+    /**
+     * COPY FIRST, AND ALWAYS SAY SOMETHING.
+     *
+     * This row did nothing when clicked, and every branch of the first version
+     * could end in silence:
+     *
+     *   - navigator.share EXISTS on desktop Chrome, so it ran first and, on
+     *     success, returned without changing anything on screen. An OS sheet
+     *     that opens behind the window is indistinguishable from a dead button.
+     *   - inside a WebView or an iframe without allow="web-share" it throws,
+     *     clipboard writes can be blocked the same way, and Chrome suppresses
+     *     prompt() in exactly those contexts — so the last resort was silent too.
+     *
+     * The ask was "copy my link from my profile", so copying is the primary
+     * action, not a fallback behind a share sheet. Feedback is unconditional:
+     * whichever path runs, the row says what happened.
+     *
+     * The final fallback is a REVEALED, PRE-SELECTED input rather than a modal
+     * the browser is allowed to suppress. It cannot fail quietly — the link is
+     * simply on the page, selected, ready for ctrl-C.
+     */
+    function flashRef(msg) {
+      const el = $('p-ref-code');
+      if (el.dataset.flashing) return;
+      const was = el.textContent;
+      el.dataset.flashing = '1';
+      el.textContent = msg;
+      setTimeout(() => { el.textContent = was; delete el.dataset.flashing; }, 1400);
+    }
+
+    function revealRef() {
+      let box = $('ref-reveal');
+      if (!box) {
+        box = document.createElement('input');
+        box.id = 'ref-reveal';
+        box.readOnly = true;
+        box.className = 'ref-reveal';
+        box.setAttribute('aria-label', T('profile.your-invite-link', 'Your Invite Link'));
+        $('btn-ref-copy').insertAdjacentElement('afterend', box);
+      }
+      box.value = referralUrl;
+      box.hidden = false;
+      box.focus();
+      box.select();
+    }
+
     $('btn-ref-copy').addEventListener('click', async () => {
       if (!referralUrl) return;
-      /* The OS share sheet where there is one — this link's destination is
-         WhatsApp, and share.js already solved the three-surface problem. Copy
-         is the fallback, and on a laptop it is the right answer anyway. */
-      try {
-        /* share.js owns the "share Hawkeye" link and takes no argument, so it
-           cannot carry a personal invite — this needs navigator.share directly.
-           Capacitor's Share plugin covers the Lite WebView, where
-           navigator.share does not exist; absent both, copy is the answer and
-           on a laptop it is the better one anyway. */
-        if (navigator.share) { await navigator.share({ url: referralUrl }); return; }
-        const cap = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
-        if (cap) { await cap.share({ url: referralUrl }); return; }
-      } catch (e) { /* dismissed the sheet: fall through to copy */ }
       try {
         await navigator.clipboard.writeText(referralUrl);
-        const el = $('p-ref-code'); const was = el.textContent;
-        el.textContent = T('profile.copied', 'Copied');
-        setTimeout(() => { el.textContent = was; }, 1200);
-      } catch (e) { prompt(T('profile.your-invite-link', 'Your Invite Link'), referralUrl); }
+        flashRef(T('profile.copied', 'Copied'));
+      } catch (e) {
+        // Blocked, unfocused, or no clipboard API at all. Put the link on the
+        // page instead of into a dialog the browser may never show.
+        revealRef();
+        flashRef(T('profile.copy-it-here', 'Copy it below'));
+      }
     });
 
     async function load() {

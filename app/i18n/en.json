@@ -1465,5 +1465,6 @@
   "profile.signed-up": "signed up",
   "profile.observed": "observed",
   "profile.none-yet": "None yet",
-  "profile.copied": "Copied"
+  "profile.copied": "Copied",
+  "profile.copy-it-here": "Copy it below"
 }

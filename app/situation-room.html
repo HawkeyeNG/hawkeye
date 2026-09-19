@@ -440,6 +440,9 @@
 }
 .sr-link code { flex: 1 1 auto; font-family: var(--sr-mono); font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; }
 .sr-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0 0; font-size: 0.76rem; color: var(--muted); }
+    /* AN AUTHOR `display` BEATS the UA's [hidden] rule — every element in
+       this file given a display needs the guard beside it. */
+    .sr-legend[hidden] { display: none !important; }
 /* Full-height column: header, then everything else scrolling under it.
    POINTER-COARSE SCREENS ARE LEFT ALONE. On a phone the header hides itself on
    scroll-down (menu.js toggles .hdr-hidden from the window's scroll), and that
@@ -2000,22 +2003,45 @@ function renderCoverage() {
     assigned: a.assigned + x.assigned, on_unit: a.on_unit + x.on_unit, mismatched: a.mismatched + x.mismatched,
   }), { units: 0, reported: 0, assigned: 0, on_unit: 0, mismatched: 0 });
   const silent = tot.assigned - tot.on_unit - tot.mismatched;
+  /* DEPLOYMENT TOTALS. Separate from the reporting totals above because they
+     answer a different question at a different time: where have we put people,
+     weeks before anybody files anything. */
+  const dep = nodes.reduce((a, x) => ({
+    units: a.units + x.units,
+    assigned_units: a.assigned_units + (x.assigned_units || 0),
+    voters: a.voters + (x.voters || 0),
+    assigned_voters: a.assigned_voters + (x.assigned_voters || 0),
+    unknown: a.unknown + (x.voters_unknown || 0),
+  }), { units: 0, assigned_units: 0, voters: 0, assigned_voters: 0, unknown: 0 });
 
   const shown = nodes.filter((x) => {
     if (S.filter === 'gaps') return x.reported < x.units;
     if (S.filter === 'silent') return x.assigned - x.on_unit - x.mismatched > 0;
     if (S.filter === 'ours') return x.assigned > 0 || x.member_reported > 0;
+    if (S.filter === 'undeployed') return (x.units - (x.assigned_units || 0)) > 0;
     return true;
   });
+  /* Biggest hole first, measured in VOTERS. Alphabetical order is right for
+     browsing a tree and useless for deciding where the next twenty agents go. */
+  if (S.filter === 'undeployed') {
+    shown.sort((a, b) => ((b.voters - (b.assigned_voters || 0)) - (a.voters - (a.assigned_voters || 0)))
+      || ((b.units - (b.assigned_units || 0)) - (a.units - (a.assigned_units || 0))));
+  }
 
   $('sr-body').innerHTML = `
-    <div class="sr-heads">
+    ${S.filter === 'undeployed' ? `<div class="sr-heads">
+      <div class="sr-head ok"><b class="num">${n(dep.assigned_units)}</b><span>${T('situation-room.units-covered-by-us', 'Units we have someone for')}</span></div>
+      <div class="sr-head wait"><b class="num">${n(dep.units - dep.assigned_units)}</b><span>${T('situation-room.units-with-nobody', 'Units with nobody')}</span></div>
+      <div class="sr-head wait"><b class="num">${n(dep.voters - dep.assigned_voters)}</b><span>${T('situation-room.registered-voters-uncovered', 'Registered voters uncovered')}</span></div>
+      <div class="sr-head"><b class="num">${finePct(dep.assigned_units, dep.units)}</b><span>${T('situation-room.deployed', 'Deployed')}</span></div>
+    </div>
+    ${dep.unknown ? `<div class="sr-note">${T('situation-room.voters-partial', 'The voter figures are a floor: {n} units here carry no registered-voter count in the register.', { n: n(dep.unknown) })}</div>` : ''}` : `<div class="sr-heads">
       <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>of ${n(tot.units)} units reported</span></div>
       <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>${T('situation-room.coverage', 'Coverage')}</span></div>
       <div class="sr-head ok"><b class="num">${n(tot.on_unit)}</b><span>${T('situation-room.on-their-unit', 'On their unit')}</span></div>
       <div class="sr-head off"><b class="num">${n(tot.mismatched)}</b><span>${T('situation-room.filed-elsewhere', 'Filed elsewhere')}</span></div>
       <div class="sr-head wait"><b class="num">${n(silent > 0 ? silent : 0)}</b><span>${T('situation-room.yet-to-report', 'Yet to report')}</span></div>
-    </div>
+    </div>`}
     ${crumbsHtml()}
     <div class="sr-tools">
       <select class="sr-sel" id="cov-filter">
@@ -2023,19 +2049,33 @@ function renderCoverage() {
         <option value="gaps"${S.filter === 'gaps' ? ' selected' : ''}>${T('situation-room.only-where-units-are-unreported', 'Only where units are unreported')}</option>
         <option value="silent"${S.filter === 'silent' ? ' selected' : ''}>${T('situation-room.only-where-our-observers-are-silent', 'Only where our observers are silent')}</option>
         <option value="ours"${S.filter === 'ours' ? ' selected' : ''}>${T('situation-room.only-where-we-have-people', 'Only where we have people')}</option>
+        <!-- DEPLOYMENT, the one view that means something before the day: rank
+             by the voters nobody is down for, biggest hole first. -->
+        <option value="undeployed"${S.filter === 'undeployed' ? ' selected' : ''}>${T('situation-room.biggest-gaps-in-deployment', 'Biggest gaps in deployment')}</option>
       </select>
       <button class="sr-btn" id="csv">${T('situation-room.export-csv', 'Export CSV')}</button>
     </div>
     <div class="sr-wrap"><table class="sr-tbl">
       <thead><tr>
         <th>${LEVEL_WORD[c.level] || 'Places'}</th>
+        ${S.filter === 'undeployed' ? `
+        <th>${T('situation-room.units', 'Units')}</th>
+        <th>${T('situation-room.covered', 'Covered')}</th>
+        <th>${T('situation-room.nobody', 'Nobody')}</th>
+        <th>${T('situation-room.voters-uncovered', 'Voters uncovered')}</th>
+        <th>${T('situation-room.deployed', 'Deployed')}</th>` : `
         <th>${T('situation-room.units', 'Units')}</th><th>${T('situation-room.reported', 'Reported')}</th><th>${T('situation-room.coverage', 'Coverage')}</th>
-        <th>${T('situation-room.ours', 'Ours')}</th><th>${T('situation-room.on-unit', 'On unit')}</th><th>${T('situation-room.elsewhere', 'Elsewhere')}</th><th>${T('situation-room.silent', 'Silent')}</th>
+        <th>${T('situation-room.ours', 'Ours')}</th><th>${T('situation-room.on-unit', 'On unit')}</th><th>${T('situation-room.elsewhere', 'Elsewhere')}</th><th>${T('situation-room.silent', 'Silent')}</th>`}
       </tr></thead>
-      <tbody>${shown.length ? shown.map((x) => rowHtml(x, c)).join('') :
-        `<tr><td colspan="8" class="sr-msg">${T('situation-room.nothing-matches-that-filter-here', 'Nothing matches that filter here.')}</td></tr>`}</tbody>
+      <tbody>${shown.length
+    ? shown.map((x) => (S.filter === 'undeployed' ? deployRowHtml(x, c) : rowHtml(x, c))).join('')
+    : `<tr><td colspan="8" class="sr-msg">${S.filter === 'undeployed'
+      ? T('situation-room.everywhere-covered', 'Somebody is down for every unit here.')
+      : T('situation-room.nothing-matches-that-filter-here', 'Nothing matches that filter here.')}</td></tr>`}</tbody>
     </table></div>
-    <div class="sr-legend">
+    <!-- The legend names the REPORTING colours, which are not on screen in the
+         deployment view. A key to marks that are not there is worse than none. -->
+    <div class="sr-legend"${S.filter === 'undeployed' ? ' hidden' : ''}>
       <span><b style="color:var(--ok)">&#9679;</b> ${T('situation-room.legend-on-unit', 'On unit')}</span>
       <span><b style="color:var(--off)">&#9670;</b> ${T('situation-room.legend-elsewhere', 'Elsewhere')}</span>
       <span><b style="color:var(--wait)">&#9632;</b> ${T('situation-room.legend-silent', 'Silent')}</span>
@@ -2053,6 +2093,36 @@ function renderCoverage() {
 const isMine = (cov, key) => (Array.isArray(cov.mine) ? cov.mine.includes(key) : cov.mine === key);
 const ownerOf = (cov, key) => ((cov.coordinators || {})[key] || [])
   .map((c) => c.label || 'Observer #' + c.observer_id);
+
+/**
+ * The deployment row: where have we put somebody, and what is still open.
+ *
+ * A DIFFERENT TABLE, not extra columns on the reporting one. The reporting row
+ * answers "what came in", which before election day is nought everywhere; this
+ * answers "where are we standing", which is the only question that has an
+ * answer in the weeks when a campaign is actually spending money. Bolting both
+ * onto one row would have made a table nobody could read for either purpose.
+ *
+ * The bar measures UNITS and the headline number measures VOTERS, because a
+ * ward of 12 small units and a ward of 12 large ones are the same row by unit
+ * count and nothing alike by the thing at stake.
+ */
+function deployRowHtml(x, cov) {
+  const open = Math.max(0, x.units - (x.assigned_units || 0));
+  const openVoters = Math.max(0, (x.voters || 0) - (x.assigned_voters || 0));
+  const p = pct(x.assigned_units || 0, x.units);
+  const who = ownerOf(cov, x.key);
+  return `<tr${isMine(cov, x.key) ? ' class="mine"' : ''}>
+    <td><button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>
+      ${who.length ? `<span class="sr-who">${isMine(cov, x.key) ? `<b>${T('situation-room.yours', 'yours')}</b>` : esc(who.join(', '))}</span>` : ''}</td>
+    <td class="num">${n(x.units)}</td>
+    <td class="num${x.assigned_units ? ' ok-t' : ' z'}">${n(x.assigned_units || 0)}</td>
+    <td class="num${open ? ' wait-t' : ' z'}">${n(open)}</td>
+    <td class="num${openVoters ? ' wait-t' : ' z'}">${openVoters ? n(openVoters) : '\u2014'}</td>
+    <td><div class="sr-bar-cell"><span class="num">${p}%</span>
+      <span class="sr-track"><span class="sr-fill" style="width:${p}%"></span></span></div></td>
+  </tr>`;
+}
 
 function rowHtml(x, cov) {
   const silent = Math.max(0, x.assigned - x.on_unit - x.mismatched);

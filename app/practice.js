@@ -111,6 +111,27 @@
       if (window.HAWKEYE_SAVE_MEDIA) {
         window.HAWKEYE_SAVE_MEDIA(['sheet', 'venue'].filter((s) => photos[s]).map((s) => ({ blob: photos[s], kind: 'photo' })), 'practice');
       }
+      /* THE CARD, in its practice state. Same renderer as the real flow — a
+         separate "practice-looking" card would teach the wrong picture. */
+      (async () => {
+        try {
+          const R = window.HAWKEYE_RECEIPT;
+          if (!R) return;
+          const canvas = R.render({
+            puName: $('prac-unit-name').textContent,
+            puCode: UNIT_CODE,
+            contest: 'Practice run',
+            votes: votes,
+            entryHash: d.entryHash || '',
+            practice: true,
+            at: Date.now(),
+          }, await R.loadLogo());
+          $('receipt-img').src = canvas.toDataURL('image/png');
+          $('receipt-wrap').hidden = false;
+          $('receipt-note').textContent =
+            'On a real report this is yours to keep and send on. Nothing here is counted.';
+        } catch { /* the practice run is not worth failing over a picture */ }
+      })();
       renderPreview(votes);
       $('flow').hidden = true;
       $('done').hidden = false;

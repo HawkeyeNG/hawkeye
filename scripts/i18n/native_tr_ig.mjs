@@ -256,6 +256,7 @@ export default {
   "n.app.political.reading-this-page": "Ịgụ peeji a",
   "n.app.political.reading-this-page-body": "E depụtara steeti ọ bụla na pati na-achị ya, gọvanọ ya na afọ ntuli aka ya na-esote. E chịkọtara ọnụọgụ ndị a site na ndekọ ọha, a na-emelitekwa ha ka a na-ekwuputa nsonaazụ.",
   "n.app.political.who-holds-power-now": "Onye ji ọchịchị ugbu a",
+    "n.app.practice.what-you-would-keep": "Ihe Ị Ga-edobe",
   "n.app.practice.a-fresh-practice-run-reopens-after": "Nnwale ọhụrụ ga-emeghe ọzọ mgbe ntuli aka a gasịrị, ka ị kwadebe maka nke ọzọ.",
   "n.app.practice.a-real-report-is-only-accepted": "A na-anabata ezigbo akụkọ naanị na ngalaba ntuli aka n'onwe ya. Nzọụkwụ a na-enyocha otu ahụ, ya mere ịhọrọ ngalaba na-eme ka ọ ga-adị n'ụbọchị ahụ — nnwale n'onwe ya na-emecha mgbe niile.",
   "n.app.practice.back-to-the-race": "‹ Laghachi n'asọmpi",

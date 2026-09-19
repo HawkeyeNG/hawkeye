@@ -24,6 +24,7 @@ import { SerialField } from '@/components/serial-field';
 import { ContestPicker } from '@/components/contest-picker';
 import { NoticeSheet, useNotice } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
+import { ReceiptCard } from '@/components/receipt-card';
 import {
   envelopeText,
   mapAvailable,
@@ -1856,6 +1857,30 @@ export default function Practice() {
             </Text>
             <View className="mt-4 w-full rounded-xl bg-card px-4 py-2">
               <Text className="font-mono text-xs text-muted">{done.entryHash}</Text>
+            </View>
+
+            {/* THE CARD A REAL REPORT PRODUCES.
+                The point of practice is that nothing on election day is a
+                surprise, and the receipt is the part an observer keeps — so
+                they should have seen one before it matters. Same renderer the
+                real flow uses, in its practice state: marked in the title AND
+                in a band, carrying the practice chain's own hash and NO verify
+                link, because ledger.html cannot show a rehearsal. */}
+            <Text className="w-full pt-6 text-sm font-bold text-ink">
+              {i18nT('n.app.practice.what-you-would-keep')}
+            </Text>
+            <View className="w-full items-center pt-2">
+              <ReceiptCard
+                data={{
+                  puName: i18nT('practice.practice-polling-unit'),
+                  contest: 'Practice run',
+                  votes,
+                  entryHash: done.entryHash,
+                  practice: true,
+                  at: done.recordedAt || Date.now(),
+                }}
+                width={300}
+              />
             </View>
             {/* WHAT THE PUBLIC REPORTS LOG WOULD SHOW, built from the photo still
                 in this phone's memory. Practice sends counts only — the photo

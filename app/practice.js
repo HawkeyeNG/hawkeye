@@ -133,8 +133,24 @@
           }, await R.loadLogo(), T);
           $('receipt-img').src = canvas.toDataURL('image/png');
           $('receipt-wrap').hidden = false;
-          $('receipt-note').textContent = T('practice.card-note',
-            'On a real report this is yours to keep and send on. Nothing here is counted.');
+          /* IT SAVES WITH THE PHOTOS, like a real report's card and under the
+             same switch. The practice photos above already copy themselves, so
+             leaving the card out made it the one artefact that behaved
+             differently on the run whose whole job is to behave the same.
+             The card says PRACTICE twice, so the copy cannot pass for a
+             result. */
+          const on = (() => {
+            try { return localStorage.getItem('hawkeye_save_media') !== '0'; } catch { return true; }
+          }());
+          if (on && window.HAWKEYE_SAVE_MEDIA) {
+            const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+            if (blob) window.HAWKEYE_SAVE_MEDIA([{ blob: blob, kind: 'photo' }], 'practice-card');
+          }
+          $('receipt-note').textContent = on
+            ? T('practice.card-note-saved',
+                'Saved to your phone with your practice photos. On a real report this is yours to keep and send on \u2014 nothing here is counted.')
+            : T('practice.card-note',
+                'On a real report this is yours to keep and send on. Nothing here is counted.');
         } catch { /* the practice run is not worth failing over a picture */ }
       })();
       renderPreview(votes);

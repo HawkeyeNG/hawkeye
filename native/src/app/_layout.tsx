@@ -261,7 +261,12 @@ function RootShell() {
               <Stack.Screen name="political" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="profile" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="page" options={{ presentation: 'fullScreenModal' }} />
-              <Stack.Screen name="practice" options={{ presentation: 'modal' }} />
+              {/* fullScreenModal, NOT modal. A modal is an iOS sheet, inset from
+                  the top with the screen behind it showing through — and
+                  SafeScreen then adds the status-bar inset inside that. The
+                  point of practice is that nothing on the day is a surprise,
+                  so it has to be framed exactly like report/result. */}
+              <Stack.Screen name="practice" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="incidents" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="terms" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="assistant" options={{ presentation: 'fullScreenModal' }} />

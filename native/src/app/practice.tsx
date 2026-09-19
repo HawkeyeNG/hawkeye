@@ -25,6 +25,7 @@ import { ContestPicker } from '@/components/contest-picker';
 import { NoticeSheet, useNotice } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import { ReceiptCard } from '@/components/receipt-card';
+import { saveReceiptPng } from '@/lib/receipt-file';
 import {
   envelopeText,
   mapAvailable,
@@ -451,6 +452,9 @@ const Chip = ({ label, onPress }: { label: string; onPress: () => void }) => (
  * the backend keeps practice in its own disposable table on its own chain.
  */
 export default function Practice() {
+  /* The card's own copy, once per run — see the ReceiptCard below. */
+  const cardRef = useRef<{ toPng: () => Promise<string | null> } | null>(null);
+  const [cardSaved, setCardSaved] = useState<boolean | null>(null);
   const ui = useUi();
   /** Only to decide where the ending sends them — practice itself asks for no
    *  account, and must keep working for a signed-out visitor. */
@@ -1871,6 +1875,17 @@ export default function Practice() {
             </Text>
             <View className="w-full items-center pt-2">
               <ReceiptCard
+                ref={cardRef}
+                /* IT SAVES WITH THE PHOTOS, exactly as a real report's does.
+                   The practice photos already copy themselves; leaving the card
+                   out made it the one artefact that behaved differently on the
+                   run whose whole job is to behave the same. The card says
+                   PRACTICE in its title and again in a band, so what lands in
+                   the gallery cannot be mistaken for a result. */
+                onReady={async () => {
+                  if (cardSaved !== null) return;      // once per run
+                  setCardSaved(await saveReceiptPng(cardRef.current));
+                }}
                 data={{
                   puName: i18nT('practice.practice-polling-unit'),
                   contest: 'Practice run',
@@ -1881,6 +1896,15 @@ export default function Practice() {
                 }}
                 width={300}
               />
+              {/* A save that silently does nothing looks exactly like a broken
+                  feature, so the row says which happened either way. */}
+              <Text className="pt-2 text-xs text-muted">
+                {cardSaved === null
+                  ? ''
+                  : cardSaved
+                    ? i18nT('observe.card-saved-with-photos')
+                    : i18nT('observe.copies-off-note')}
+              </Text>
             </View>
             {/* WHAT THE PUBLIC REPORTS LOG WOULD SHOW, built from the photo still
                 in this phone's memory. Practice sends counts only — the photo

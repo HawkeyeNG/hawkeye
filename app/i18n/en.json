@@ -1546,5 +1546,15 @@
   "observe.check-in-failed": "Could not read your location. Move into the open and try again.",
   "observe.check-in-not-member": "You are not on anybody’s roster.",
   "observe.check-in-no-such-unit": "That polling unit is not in the register.",
-  "observe.check-in-no-fix": "Your device did not return a usable location."
+  "observe.check-in-no-fix": "Your device did not return a usable location.",
+  "situation-room.biggest-gaps-in-deployment": "Biggest gaps in deployment",
+  "situation-room.units-covered-by-us": "Units we have someone for",
+  "situation-room.units-with-nobody": "Units with nobody",
+  "situation-room.registered-voters-uncovered": "Registered voters uncovered",
+  "situation-room.deployed": "Deployed",
+  "situation-room.covered": "Covered",
+  "situation-room.nobody": "Nobody",
+  "situation-room.voters-uncovered": "Voters uncovered",
+  "situation-room.everywhere-covered": "Somebody is down for every unit here.",
+  "situation-room.voters-partial": "The voter figures are a floor: {n} units here carry no registered-voter count in the register."
 }

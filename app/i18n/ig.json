@@ -1571,5 +1571,15 @@
   "observe.check-in-failed": "Enweghị ike ịgụ ebe ị nọ. Pụta n’èzí ma nwaa ọzọ.",
   "observe.check-in-not-member": "Ị nọghị na ndepụta onye ọ bụla.",
   "observe.check-in-no-such-unit": "Ebe ntuli aka ahụ adịghị na ndekọ.",
-  "observe.check-in-no-fix": "Ngwaọrụ gị enyeghị ebe a ga-eji mee ihe."
+  "observe.check-in-no-fix": "Ngwaọrụ gị enyeghị ebe a ga-eji mee ihe.",
+  "situation-room.biggest-gaps-in-deployment": "Oghere kachasị ukwuu n’ịnyefe ndị mmadụ",
+  "situation-room.units-covered-by-us": "Ebe ntuli aka anyị nwere onye maka ya",
+  "situation-room.units-with-nobody": "Ebe ntuli aka na-enweghị onye ọ bụla",
+  "situation-room.registered-voters-uncovered": "Ndị edebanyere aha ntuli aka na-ekpuchighị",
+  "situation-room.deployed": "E nyefere",
+  "situation-room.covered": "Ekpuchiri",
+  "situation-room.nobody": "Ọ dịghị onye",
+  "situation-room.voters-uncovered": "Ndị ntuli aka na-ekpuchighị",
+  "situation-room.everywhere-covered": "E dekọrọ mmadụ maka ebe ntuli aka ọ bụla ebe a.",
+  "situation-room.voters-partial": "Ọnụọgụ ndị ntuli aka bụ ala ya: ebe ntuli aka {n} ebe a enweghị ọnụọgụ ndị edebanyere aha na ndekọ."
 }

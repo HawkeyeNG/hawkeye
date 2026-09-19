@@ -1571,5 +1571,15 @@
   "observe.check-in-failed": "A kò lè ka ibi tí o wà. Jáde sí ìta kí o sì tún gbìyànjú.",
   "observe.check-in-not-member": "O kò sí nínú àkọsílẹ̀ ẹnikẹ́ni.",
   "observe.check-in-no-such-unit": "Ibùdó ìdìbò yẹn kò sí nínú ìwé ìforúkọsílẹ̀.",
-  "observe.check-in-no-fix": "Ẹ̀rọ rẹ kò fúnni ní ibi tí a lè lò."
+  "observe.check-in-no-fix": "Ẹ̀rọ rẹ kò fúnni ní ibi tí a lè lò.",
+  "situation-room.biggest-gaps-in-deployment": "Àlàfo tó tóbi jùlọ nínú ìfisípò",
+  "situation-room.units-covered-by-us": "Àwọn ibùdó tí a ní ẹnìkan fún",
+  "situation-room.units-with-nobody": "Àwọn ibùdó tí kò ní ẹnìkankan",
+  "situation-room.registered-voters-uncovered": "Àwọn adìbò tí a kò bò",
+  "situation-room.deployed": "A ti fisípò",
+  "situation-room.covered": "A ti bò",
+  "situation-room.nobody": "Kò sí ẹnìkan",
+  "situation-room.voters-uncovered": "Àwọn adìbò tí a kò bò",
+  "situation-room.everywhere-covered": "A ti yan ẹnìkan fún gbogbo ibùdó níbí.",
+  "situation-room.voters-partial": "Iye àwọn adìbò jẹ́ ìpìlẹ̀: ibùdó {n} níbí kò ní iye àwọn adìbò tí a forúkọsílẹ̀ nínú ìwé."
 }

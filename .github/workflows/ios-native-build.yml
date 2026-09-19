@@ -275,6 +275,25 @@ jobs:
             || { echo "::error::CFBundleIconName missing — App Store Connect shows no icon"; exit 1; }
           echo "  ok: Firebase config and icon name present"
 
+      # THE GATE THAT WOULD HAVE CAUGHT 1.0.3 (36).
+      #
+      # That build reached TestFlight and died at launch on every device:
+      # dyld could not find ExpoModulesCore.BaseModule.willDestroy(), because a
+      # precompiled expo-media-library framework had been compiled against a
+      # different core. Nothing in the build fails on that — the archive, the
+      # export and the upload all succeed, and the crash is the first sign.
+      #
+      # check_ipa_symbols.py walks every import bound to an embedded framework
+      # and asserts the framework exports it. On build 36 it flagged exactly the
+      # 8 offending symbols out of 2,377. It runs BEFORE the upload, so a bundle
+      # that cannot launch never reaches a tester.
+      - name: Every imported symbol must exist in the framework that exports it
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check lief
+          IPA=$(find "$RUNNER_TEMP/export" -name '*.ipa' | head -1)
+          python3 native/scripts/check_ipa_symbols.py "$IPA"
+
       - uses: actions/upload-artifact@v4
         with:
           name: hawkeye-native-ios-ipa

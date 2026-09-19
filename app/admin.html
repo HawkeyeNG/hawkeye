@@ -61,7 +61,14 @@
     .social { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
     #login { max-width: 380px; }
     .empty { color: var(--muted); padding: 20px; text-align: center; }
+    /* FIVE ACROSS, because there are fifteen of them.
+       auto-fit picks the column count from the space it is given, which is
+       right when the number of cards is unknown and wrong here: 15 divides
+       into three clean rows of five, and letting the browser choose gave four
+       across with three orphans on the last row — or one per row whenever the
+       container came up narrow. The auto-fit stays as the small-screen rule. */
     .statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+    @media (min-width: 720px) { .statgrid { grid-template-columns: repeat(5, 1fr); } }
     .statgrid .s { border: 1px solid var(--line, #e3e8e4); border-radius: 12px; padding: 12px 14px; background: var(--card, #fff); }
     .statgrid .s b { display: block; font-size: 1.5rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
     .statgrid .s span { font-size: 0.78rem; color: var(--muted); }

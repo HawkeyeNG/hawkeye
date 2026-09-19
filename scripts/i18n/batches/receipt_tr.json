@@ -1,0 +1,27 @@
+{
+  "observe.your-copy": {
+    "ha": "Kwafinka",
+    "ig": "Nnomi Gị",
+    "yo": "Ẹ̀dà Rẹ"
+  },
+  "observe.save-this-card": {
+    "ha": "Ajiye Wannan Katin",
+    "ig": "Chekwaa Kaadị A",
+    "yo": "Fi Káàdì Yìí Pamọ́"
+  },
+  "observe.saved-to-your-phone": {
+    "ha": "An ajiye a wayarka.",
+    "ig": "Echekwara ya na ekwentị gị.",
+    "yo": "A ti fi pamọ́ sínú fóònù rẹ."
+  },
+  "observe.copies-off-note": {
+    "ha": "An kashe ajiye kwafi a wannan wayar a cikin Bayanaina. Ɗauki hoton allo na wannan katin idan kana son ajiye shi.",
+    "ig": "A gbanyụrụ ichekwa nnomi na ekwentị a na Profaịlụ M. See foto ihuenyo nke kaadị a ma ọ bụrụ na ịchọrọ idobe ya.",
+    "yo": "A ti pa fífi ẹ̀dà pamọ́ sí fóònù yìí nínú Profáìlì Mi. Ya àwòrán ojú-ìṣàfihàn káàdì yìí tí o bá fẹ́ tọ́jú rẹ̀."
+  },
+  "observe.saved-offline": {
+    "ha": "An ajiye ba tare da yanar gizo ba — rahotonka mai sa hannu zai tafi ta atomatik idan ka dawo kan layi.",
+    "ig": "Echekwara ya na-enweghị ịntanetị — akụkọ gị e binyere aka ga-eziga onwe ya ozugbo ị laghachiri n'ịntanetị.",
+    "yo": "A ti fi pamọ́ láìsí íńtánẹ́ẹ̀tì — ìròyìn rẹ tí o fọwọ́sí yóò ránṣẹ́ fúnra rẹ̀ nígbà tí o bá padà sórí ẹ̀rọ ayélujára."
+  }
+}

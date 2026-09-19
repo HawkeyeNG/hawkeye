@@ -1466,5 +1466,10 @@
   "profile.observed": "observed",
   "profile.none-yet": "None yet",
   "profile.copied": "Copied",
-  "profile.copy-it-here": "Copy it below"
+  "profile.copy-it-here": "Copy it below",
+  "observe.your-copy": "Your Copy",
+  "observe.save-this-card": "Save This Card",
+  "observe.saved-to-your-phone": "Saved to your phone.",
+  "observe.copies-off-note": "Copies to this phone are turned off in My Profile. Screenshot this card if you want to keep it.",
+  "observe.saved-offline": "Saved offline — your signed report sends automatically when you are back online."
 }

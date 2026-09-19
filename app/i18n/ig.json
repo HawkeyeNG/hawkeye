@@ -1491,5 +1491,10 @@
   "profile.observed": "lere anya",
   "profile.none-yet": "Ọ dịbeghị",
   "profile.copied": "Edepụtala",
-  "profile.copy-it-here": "Depụta ya n’okpuru"
+  "profile.copy-it-here": "Depụta ya n’okpuru",
+  "observe.your-copy": "Nnomi Gị",
+  "observe.save-this-card": "Chekwaa Kaadị A",
+  "observe.saved-to-your-phone": "Echekwara ya na ekwentị gị.",
+  "observe.copies-off-note": "A gbanyụrụ ichekwa nnomi na ekwentị a na Profaịlụ M. See foto ihuenyo nke kaadị a ma ọ bụrụ na ịchọrọ idobe ya.",
+  "observe.saved-offline": "Echekwara ya na-enweghị ịntanetị — akụkọ gị e binyere aka ga-eziga onwe ya ozugbo ị laghachiri n'ịntanetị."
 }

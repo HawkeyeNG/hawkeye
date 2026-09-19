@@ -791,13 +791,12 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   // so all pages get it without touching 25 files.
   document.querySelectorAll('.crest').forEach((c) => {
     if (!/[\u{1F300}-\u{1FAFF}]/u.test(c.textContent)) return;
-    // APP-ONLY divergence: inside the native shell the header follows the theme
-    // (white bar in light mode - styles.css html.native-app), so the app uses the
-    // TRANSPARENT crest (logo-crest.svg). The public website keeps its green bar
-    // and its green badge (icon-192.png), which reads on green.
-    c.innerHTML = document.documentElement.classList.contains('native-app')
-      ? '<img src="logo-crest.svg?v=hdr1" alt="" width="30" height="30" style="display:block" />'
-      : '<img src="icon-192.png?v=hawk2" alt="" width="30" height="30" style="display:block;border-radius:7px" />';
+    // ONE CREST EVERYWHERE. The website used to get the green BADGE
+    // (icon-192.png) and only the native shell the transparent mark, so the
+    // site, the app and the two consoles showed three different logos. The
+    // transparent mark reads on the green bar as well as on the console's own,
+    // which is what made the divergence unnecessary rather than merely untidy.
+    c.innerHTML = '<img src="logo.svg?v=101" alt="" width="30" height="30" style="display:block" />';
   });
 
   // Bottom tab bar (mobile app pattern) — one raised center action, 5 slots,
@@ -1541,12 +1540,10 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   // Mascot trial: swap the emoji crest for the hawk mark on every page from
   // one place (pages keep the emoji as a no-JS fallback).
   for (const c of document.querySelectorAll('.crest')) {
-    // APP-SHELL header (the Capacitor/tab-bar chrome) — same swap as the website
-    // header above, and it must use the same artwork or the two disagree. This is
-    // the one the phone actually shows.
-    c.innerHTML = document.documentElement.classList.contains('native-app')
-      ? '<img src="logo-crest.svg?v=hdr1" alt="" style="width:36px;height:36px;display:block" />'
-      : '<img src="icon-192.png?v=hawk2" alt="" style="width:36px;height:36px;display:block;border-radius:8px" />';
+    // APP-SHELL header (the Capacitor/tab-bar chrome) — same artwork as the
+    // website header above, or the two disagree. This is the one the phone
+    // actually shows.
+    c.innerHTML = '<img src="logo.svg?v=101" alt="" style="width:36px;height:36px;display:block" />';
   }
 
   // Accessibility: skip-to-content link, first in the tab order.

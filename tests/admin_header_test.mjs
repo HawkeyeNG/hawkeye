@@ -76,9 +76,21 @@ await p.waitForTimeout(700);
 const shown = await p.evaluate(() => !document.getElementById('panelbar').hidden);
 check('unlocked: the tab strip appears', shown, true);
 if (shown) {
-  check('all nine buttons are there', await p.evaluate(() =>
+  check('all ten buttons are there, Install between Register and Lock', await p.evaluate(() =>
     [...document.querySelectorAll('#panelbar .tab')].map((t) => t.textContent.trim())),
-    (v) => v.length === 9 && v[0] === 'Reach' && /Lock/.test(v[8]));
+    (v) => v.length === 10 && v[0] === 'Reach'
+        && v[7] === 'Register' && v[8] === 'Install' && /Lock/.test(v[9]));
+  // Install is a .tab with NO data-p, and the strip's click handler matches any
+  // .tab. Without a guard, `key` is undefined, `p.dataset.p !== key` holds for
+  // every panel, and one click blanks the console.
+  check('clicking Install does not blank the console', await p.evaluate(async () => {
+    document.getElementById('btn-install').hidden = false;
+    document.getElementById('btn-install').click();
+    await new Promise((r) => setTimeout(r, 120));
+    const open = [...document.querySelectorAll('.panel')].filter((x) => !x.hidden);
+    const lit = document.querySelector('#panelbar .tab.on');
+    return { open: open.length, lit: lit && lit.dataset.p };
+  }), (v) => v.open === 1 && v.lit === 'reach');
   check('they sit inside the header', await p.evaluate(() =>
     !!document.querySelector('header #panelbar')), true);
   // The header must not scroll away from a long panel: that was the point.

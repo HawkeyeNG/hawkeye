@@ -722,6 +722,7 @@ const S = {
   groups: [], gid: null, group: null, tab: 'overview',
   path: { state: '', lga: '', ward: '' },
   filter: 'all', incFilter: 'all', sort: 'status', coverage: null, team: null, invites: [],
+  discrepancies: null,
 };
 
 /* --- shell ------------------------------------------------------------- */
@@ -1000,6 +1001,14 @@ async function loadTab(force) {
     /* The ROOT level, always — Overview answers "where do I stand", and a
        manager who drilled into one ward an hour ago did not mean to make that
        the definition of standing. Cached apart from S.coverage for that reason. */
+    if (force || !S.discrepancies) {
+      /* Fetched beside the overview because that is where it is shown, and
+         tolerated failing: a room must still open when the comparison chain
+         has nothing to say yet. */
+      api('/api/groups/' + S.gid + '/discrepancies')
+        .then((r) => { S.discrepancies = r.status === 200 ? r.body : { items: [], compared: 0 }; })
+        .catch(() => { S.discrepancies = { items: [], compared: 0 }; });
+    }
     if (force || !S.overview) {
       /* The tally is counted by services/tally.js — the SAME function the
          public board uses — never by a second query of our own. It carries a
@@ -1084,6 +1093,45 @@ const timeAgo = (ms) => {
  * every day of the year would train everyone to scroll past the one screen
  * that matters on the day it does.
  */
+/**
+ * WHERE OUR FIGURES AND THE OFFICIAL UPLOAD DISAGREE.
+ *
+ * On results night this is the most valuable thing in the room, and it is the
+ * item that sells to a party that is WINNING: errors and theft run in every
+ * direction, and an incumbent has more results to protect than a challenger.
+ *
+ * IT NAMES NO CULPRIT. A transposed digit, a re-uploaded sheet and a stolen
+ * result are indistinguishable from here. The screen says what two sources
+ * say, links to the upload, and stops. The moment a campaign's dashboard
+ * asserts fraud on its own authority it is a partisan instrument and the
+ * ledger under it is worth nothing.
+ *
+ * Silent until there is something to say, and silent when there is nothing to
+ * compare: a card reading "0 disagreements" over 0 comparisons is a
+ * reassurance nobody checked.
+ */
+function discrepancyHtml() {
+  const d = S.discrepancies;
+  if (!d || !d.compared || !d.items || !d.items.length) return '';
+  const top = d.items.slice(0, 8);
+  const side = (v) => (v === null ? T('situation-room.not-listed', 'not listed') : n(v));
+  const row = (x) => `<tr>
+    <td>${esc(x.unit.name)}<span class="sr-sub num">${esc(x.pu_code)}</span></td>
+    <td>${x.diffs.slice(0, 3).map((f) => `<span class="sr-sub"><b>${esc(f.party)}</b> ${side(f.ours)} &rarr; ${side(f.theirs)}</span>`).join('<br>')}</td>
+    <td class="num wait-t">${n(x.worst)}</td>
+    <td>${x.doc_url ? `<a class="sr-btn" href="${esc(x.doc_url)}" target="_blank" rel="noopener">${T('situation-room.the-upload', 'The upload')}</a>` : ''}</td>
+  </tr>`;
+  return `<div class="sr-card sr-panel" style="margin-bottom:14px">
+    <h2 class="sr-h2" style="margin-top:0">${T('situation-room.disagreements-heading', 'Where our figures and the official upload disagree')}</h2>
+    <p class="sr-sub">${T('situation-room.disagreements-sub', '{n} of your units have been compared with the official upload. A difference is something to explain, not a verdict \u2014 a transposed digit and a stolen result look the same from here.', { n: n(d.compared) })}</p>
+    <div class="sr-wrap"><table class="sr-tbl text">
+      <thead><tr><th>${T('situation-room.unit', 'Unit')}</th><th>${T('situation-room.ours-vs-theirs', 'Ours &rarr; theirs')}</th><th>${T('situation-room.largest-gap', 'Largest gap')}</th><th></th></tr></thead>
+      <tbody>${top.map(row).join('')}</tbody>
+    </table></div>
+    ${d.items.length > top.length ? `<p class="sr-sub">${T('situation-room.and-more-units', 'and {n} more units with a difference', { n: n(d.items.length - top.length) })}</p>` : ''}
+  </div>`;
+}
+
 function attendanceStripHtml() {
   const a = (S.group && S.group.attendance) || null;
   if (!a || !a.checkedIn) return '';
@@ -1231,6 +1279,7 @@ function renderOverview() {
       ${T('situation-room.you-manage-the-observers-in-your-area', 'You manage the observers in your area; the totals are the campaign’s.')}
     </div>` : ''}
     ${attendanceStripHtml()}
+    ${discrepancyHtml()}
     <div class="sr-heads">
       <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>${T('situation-room.of-units-reported', 'of {n} units reported', { n: n(tot.units) })}</span></div>
       <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>${T('situation-room.coverage', 'Coverage')}</span></div>
@@ -2422,7 +2471,7 @@ async function removeObserver(observerId, who) {
   if (!await ask(T('situation-room.remove-observer-confirm', "Remove {who} from this campaign? Every report they have filed stays in the public record and still counts. They can rejoin with a new invite.", { who }))) return;
   const { status, body } = await api('/api/groups/' + S.gid + '/members/' + observerId, { method: 'DELETE' });
   if (status !== 200) return alert(roleError(body.error));
-  S.team = S.coverage = null;
+  S.team = S.coverage = S.discrepancies = null;
   await loadGroup();
 }
 
@@ -2458,7 +2507,7 @@ async function renameRoom() {
    teaches them to ignore the next one, which will be the one that moved them. */
 async function confirmProposed() {
   const { body } = await api('/api/groups/' + S.gid + '/assignments/confirm-proposed', { method: 'POST' });
-  S.team = S.coverage = null;
+  S.team = S.coverage = S.discrepancies = null;
   loadTab(true);
   return body;
 }
@@ -2742,7 +2791,7 @@ async function assign(observerId, puCode) {
       : T('situation-room.could-not-save-assignment', "Could not save that assignment."));
     return false;
   }
-  S.team = S.coverage = null;
+  S.team = S.coverage = S.discrepancies = null;
   loadTab(true);
   return true;
 }

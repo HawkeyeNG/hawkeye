@@ -1582,5 +1582,13 @@
   "situation-room.nobody": "Babu kowa",
   "situation-room.voters-uncovered": "Masu zaɓe da ba a rufe ba",
   "situation-room.everywhere-covered": "An saka wani don kowace rumfa a nan.",
-  "situation-room.voters-partial": "Adadin masu zaɓe ƙasa-ƙasa ne: rumfuna {n} a nan ba su da adadin masu zaɓe a rajista."
+  "situation-room.voters-partial": "Adadin masu zaɓe ƙasa-ƙasa ne: rumfuna {n} a nan ba su da adadin masu zaɓe a rajista.",
+  "situation-room.disagreements-heading": "Inda alkaluman mu suka saɓa da wanda aka ɗora a hukumance",
+  "situation-room.disagreements-sub": "An kwatanta rumfunanku {n} da wanda aka ɗora a hukumance. Bambanci abu ne da ake bukatar bayani, ba hukunci ba — kuskuren rubutun lamba da sata suna kama da juna daga nan.",
+  "situation-room.ours-vs-theirs": "Namu &rarr; nasu",
+  "situation-room.largest-gap": "Babban bambanci",
+  "situation-room.not-listed": "ba a jera ba",
+  "situation-room.the-upload": "Abin da aka ɗora",
+  "situation-room.and-more-units": "da ƙarin rumfuna {n} masu bambanci",
+  "situation-room.unit": "Rumfa"
 }

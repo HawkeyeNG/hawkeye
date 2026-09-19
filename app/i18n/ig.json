@@ -1581,5 +1581,13 @@
   "situation-room.nobody": "Ọ dịghị onye",
   "situation-room.voters-uncovered": "Ndị ntuli aka na-ekpuchighị",
   "situation-room.everywhere-covered": "E dekọrọ mmadụ maka ebe ntuli aka ọ bụla ebe a.",
-  "situation-room.voters-partial": "Ọnụọgụ ndị ntuli aka bụ ala ya: ebe ntuli aka {n} ebe a enweghị ọnụọgụ ndị edebanyere aha na ndekọ."
+  "situation-room.voters-partial": "Ọnụọgụ ndị ntuli aka bụ ala ya: ebe ntuli aka {n} ebe a enweghị ọnụọgụ ndị edebanyere aha na ndekọ.",
+  "situation-room.disagreements-heading": "Ebe ọnụọgụ anyị na nke gọọmentị bunyere na-ekwekọghị",
+  "situation-room.disagreements-sub": "E jirila ebe ntuli aka gị {n} tụnyere nke gọọmentị bunyere. Ọdịiche bụ ihe a ga-akọwa, ọ bụghị ikpe — nọmba e depụtara n’ụzọ na-ezighị ezi na nsonaazụ e zuru ohi yiri otu ebe a.",
+  "situation-room.ours-vs-theirs": "Nke anyị &rarr; nke ha",
+  "situation-room.largest-gap": "Oghere kachasị ukwuu",
+  "situation-room.not-listed": "edepụtaghị ya",
+  "situation-room.the-upload": "Ihe e bunyere",
+  "situation-room.and-more-units": "na ebe ntuli aka {n} ọzọ nwere ọdịiche",
+  "situation-room.unit": "Ebe ntuli aka"
 }

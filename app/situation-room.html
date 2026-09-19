@@ -1067,6 +1067,109 @@ const timeAgo = (ms) => {
  * missing than a 0%-covered one with 12, and sorting by percentage puts the
  * small one on top every time.
  */
+/**
+ * ATTENDANCE — the only number on this page that is worth anything BEFORE
+ * polls close.
+ *
+ * Everything else here counts reports, and there are none at 08:00. This
+ * counts PRESENCE: who is standing at a unit while there is still time to send
+ * somebody to the wards that are dark. It is also the first number on this
+ * page measured against a denominator the room OWNS — its own roster — rather
+ * than 176,846 units, which to a campaign with 3,100 agents reads as noise.
+ *
+ * Hidden entirely until somebody checks in. A strip of noughts above the map
+ * every day of the year would train everyone to scroll past the one screen
+ * that matters on the day it does.
+ */
+function attendanceStripHtml() {
+  const a = (S.group && S.group.attendance) || null;
+  if (!a || !a.checkedIn) return '';
+  const dark = Math.max(0, (a.expected || 0) - (a.checkedIn || 0));
+  return `<div class="sr-heads">
+    <div class="sr-head ok"><b class="num">${n(a.atUnit)}</b><span>${T('situation-room.at-their-unit-now', 'At their unit now')}</span></div>
+    <div class="sr-head"><b class="num">${n(a.checkedIn)}</b><span>${T('situation-room.checked-in-today', 'Checked in today')}</span></div>
+    ${a.elsewhere ? `<div class="sr-head off"><b class="num">${n(a.elsewhere)}</b><span>${T('situation-room.at-a-different-unit', 'At a different unit')}</span></div>` : ''}
+    <div class="sr-head wait"><b class="num">${n(dark)}</b><span>${T('situation-room.not-heard-from', 'Not heard from')}</span></div>
+  </div>`;
+}
+
+/**
+ * "I am at my unit" — the member's own button, and only their own.
+ *
+ * THERE IS NO MANAGER PATH TO MARKING SOMEBODY PRESENT. Attendance a
+ * coordinator can type in is a number about the coordinator, not about the
+ * day, and a roster that can be filled in from a desk is worth less than no
+ * roster at all.
+ *
+ * Shown to anyone on the roster, whether or not they have an assignment: an
+ * agent sent somewhere at the last minute still has somewhere to stand, and
+ * their check-in names the unit they are actually at.
+ */
+function checkInCardHtml() {
+  if (!S.group || !S.group.me_id) return '';
+  const me = (S.team && S.team.members || []).find((m) => m.observer_id === S.group.me_id);
+  if (!me) return '';
+  if (me.attendance && me.attendance.standing === 'verified') {
+    return `<div class="sr-note" style="border-left-color:var(--ok)">
+      <strong>${T('situation-room.you-are-checked-in', 'You are checked in.')}</strong>
+      ${T('situation-room.checked-in-body', 'Your coordinator can see that you are at your unit. File your result from here when counting ends.')}</div>`;
+  }
+  return `<div class="sr-bar" id="sr-checkin-bar">
+    <span class="meta">${T('situation-room.check-in-prompt', 'Let your coordinator know you have arrived.')}</span>
+    <div class="spacer"></div>
+    <button class="sr-btn" id="sr-checkin">${T('situation-room.check-in', "I'm at my unit")}</button>
+  </div>`;
+}
+
+/**
+ * The fix is taken HERE and sent HERE; the server judges it with the same
+ * function that decides `location_verified` on a result report. A check-in
+ * from a bedroom is not a check-in, and a looser standard would make the
+ * coordinator's headline number a lie on the one morning it matters.
+ */
+async function doCheckIn(btn) {
+  const say = (msg) => { const b = $('sr-checkin-bar'); if (b) b.querySelector('.meta').textContent = msg; };
+  if (!navigator.geolocation) return say(T('situation-room.check-in-no-gps', 'This device cannot give a location, so a check-in cannot be recorded.'));
+  btn.disabled = true;
+  say(T('situation-room.check-in-locating', 'Finding your location…'));
+  try {
+    const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, {
+      enableHighAccuracy: true, timeout: 20000, maximumAge: 0,
+    }));
+    const me = (S.team && S.team.members || []).find((m) => m.observer_id === S.group.me_id);
+    const r = await api('/api/groups/' + S.gid + '/check-in', {
+      method: 'POST',
+      /* api() hands opts straight to fetch, so the body is a STRING here and
+         the result is { status, body } — there is no r.ok to read. */
+      body: JSON.stringify({
+        pu_code: me && me.assigned ? me.assigned.pu_code : '',
+        lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy,
+      }),
+    });
+    if (r.status !== 200) {
+      /* EVERY FAILURE SAYS SOMETHING. A button that goes quiet is
+         indistinguishable from a broken one, and this one is pressed once, in
+         a hurry, by somebody who cannot try again later. */
+      const why = {
+        not_a_member: T('situation-room.check-in-not-member', 'You are not on this room’s roster.'),
+        no_unit: T('situation-room.check-in-no-unit', 'No unit set for you yet — ask your coordinator to assign one.'),
+        no_such_unit: T('situation-room.check-in-no-such-unit', 'That polling unit is not in the register.'),
+        no_fix: T('situation-room.check-in-no-fix', 'Your device did not return a usable location.'),
+      }[r.body && r.body.error] || T('common.something-went-wrong', 'Something went wrong. Try again.');
+      btn.disabled = false;
+      return say(why);
+    }
+    S.team = null;
+    await load(true);
+    render();
+  } catch (e) {
+    btn.disabled = false;
+    say(e && e.code === 1
+      ? T('situation-room.check-in-denied', 'Location permission was refused, so a check-in cannot be recorded.')
+      : T('situation-room.check-in-failed', 'Could not read your location. Move into the open and try again.'));
+  }
+}
+
 function renderOverview() {
   const c = S.overview || { nodes: [] };
   const nodes = c.nodes || [];
@@ -1124,6 +1227,7 @@ function renderOverview() {
   })}
       ${T('situation-room.you-manage-the-observers-in-your-area', 'You manage the observers in your area; the totals are the campaign’s.')}
     </div>` : ''}
+    ${attendanceStripHtml()}
     <div class="sr-heads">
       <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>${T('situation-room.of-units-reported', 'of {n} units reported', { n: n(tot.units) })}</span></div>
       <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>${T('situation-room.coverage', 'Coverage')}</span></div>
@@ -2131,6 +2235,14 @@ const STATUS = {
   unassigned:          { cls: 'idle', glyph: '&#9633;', word: 'No unit',   wordKey: 'situation-room.status-no-unit',   rank: 5 },
 };
 
+/* The check-in button lives inside #sr-body, which is repainted wholesale, so
+   the listener is delegated from the container rather than bound to a node
+   that will not exist after the next render. */
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('#sr-checkin');
+  if (b) doCheckIn(b);
+});
+
 function renderTeam() {
   const t = S.team || { members: [] };
   const ms = t.members.slice().sort((a, b) =>
@@ -2141,11 +2253,18 @@ function renderTeam() {
   $('sr-body').innerHTML = `
     <div class="sr-heads">
       <div class="sr-head"><b class="num">${n(t.members.length)}</b><span>${T('situation-room.observers', 'Observers')}</span></div>
+      ${(() => {
+    /* PRESENCE BEFORE REPORTING, because on the morning of the day it is the
+       only one of the two that exists yet. */
+    const inToday = t.members.filter((m) => m.attendance).length;
+    return inToday ? `<div class="sr-head ok"><b class="num">${n(t.members.filter((m) => m.attendance && m.attendance.standing === 'verified').length)}</b><span>${T('situation-room.at-their-unit-now', 'At their unit now')}</span></div>` : '';
+  })()}
       <div class="sr-head ok"><b class="num">${n(count('on_unit'))}</b><span>${T('situation-room.on-their-unit', 'On their unit')}</span></div>
       <div class="sr-head off"><b class="num">${n(count('mismatch') + count('reported_unassigned'))}</b><span>${T('situation-room.reported-elsewhere', 'Reported elsewhere')}</span></div>
       <div class="sr-head wait"><b class="num">${n(count('silent'))}</b><span>${T('situation-room.yet-to-report', 'Yet to report')}</span></div>
       <div class="sr-head"><b class="num">${n(count('unassigned') + count('declined'))}</b><span>${T('situation-room.no-unit-set', 'No unit set')}</span></div>
     </div>
+    ${checkInCardHtml()}
     ${rosterToolsHtml()}
     ${iManage() ? '' : `<div class="sr-note">
       <strong>${T('situation-room.read-only-title', "You are on this campaign’s roster.")}</strong>
@@ -2171,7 +2290,7 @@ function renderTeam() {
     </div>` : ''}
     ${t.members.length ? `
     <div class="sr-wrap"><table class="sr-tbl text">
-      <thead><tr><th>${T('profile.observer', 'Observer')}</th><th>${T('race.status', 'Status')}</th><th>${T('situation-room.assigned-unit', 'Assigned unit')}</th><th>${T('situation-room.reported-from', 'Reported from')}</th><th></th></tr></thead>
+      <thead><tr><th>${T('profile.observer', 'Observer')}</th><th>${T('race.status', 'Status')}</th><th>${T('situation-room.checked-in', 'Checked in')}</th><th>${T('situation-room.assigned-unit', 'Assigned unit')}</th><th>${T('situation-room.reported-from', 'Reported from')}</th><th></th></tr></thead>
       <tbody>${ms.map(memberRow).join('')}</tbody>
     </table></div>
     <div class="sr-note">
@@ -2446,6 +2565,39 @@ async function afterInvite(invited, unknown) {
   await loadGroup();
 }
 
+/**
+ * PRESENCE, IN ITS OWN COLUMN.
+ *
+ * Deliberately not folded into the Status pill. On the morning of the day
+ * every row reads "Yet to report", and the difference between an agent who is
+ * standing at their unit and one nobody has heard from is the entire question
+ * a coordinator is trying to answer. One column of nine identical pills
+ * answers nothing.
+ *
+ * Three states, and the middle one is the reason this exists:
+ *   verified   at the unit, judged as strictly as a result report
+ *   elsewhere  checked in somewhere OTHER than their assignment — actionable,
+ *              and invisible if presence were a boolean
+ *   weak       a check-in the location could not stand behind: shown as what
+ *              it is, never dressed up as arrival
+ */
+function attendanceCell(m) {
+  const a = m.attendance;
+  if (!a) return '<span class="z">&mdash;</span>';
+  const when = new Date(a.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (a.atAssigned === false) {
+    return `<span class="pill off"><i>&#9679;</i>${T('situation-room.checked-in-elsewhere', 'Elsewhere')}</span>`
+      + `<span class="sr-sub">${when} · ${a.unit ? esc(a.unit.name) : ''}</span>`;
+  }
+  if (a.standing === 'verified') {
+    return `<span class="pill ok"><i>&#9679;</i>${T('situation-room.at-unit', 'At unit')}</span><span class="sr-sub num">${when}</span>`;
+  }
+  /* NOT "arrived". The fix did not place them, and a roster that rounds that
+     up to presence is exactly the lie this column exists to prevent. */
+  return `<span class="pill idle"><i>&#9679;</i>${T('situation-room.checked-in-unconfirmed', 'Unconfirmed')}</span>`
+    + `<span class="sr-sub num">${when}</span>`;
+}
+
 function memberRow(m) {
   const s = STATUS[m.status];
   const place = (u) => u ? `${esc(u.name)}<span class="sr-sub num">${esc(u.pu_code)}</span>` : '<span class="z">&mdash;</span>';
@@ -2453,6 +2605,7 @@ function memberRow(m) {
   return `<tr>
     <td>${esc(m.label || 'Observer #' + m.observer_id)}${m.role ? ` <span class="pill idle" style="font-size:.68rem">${roleWord(m.role)}</span>` : ''}${m.label ? `<span class="sr-sub num">#${m.observer_id}</span>` : ''}</td>
     <td><span class="pill ${s.cls}"><i>${s.glyph}</i>${T(s.wordKey, s.word)}</span></td>
+    <td>${attendanceCell(m)}</td>
     <td>${place(m.assigned)}${m.shared ? `<span class="sr-sub" style="color:var(--wait)">&#9650; ${m.shared === 1
       ? T('situation-room.shared-one', "{v0} other is down for this unit too", { v0: n(m.shared) })
       : T('situation-room.shared-many', "{v0} others are down for this unit too", { v0: n(m.shared) })}</span>` : ''}</td>

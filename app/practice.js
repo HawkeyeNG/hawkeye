@@ -139,9 +139,13 @@
              differently on the run whose whole job is to behave the same.
              The card says PRACTICE twice, so the copy cannot pass for a
              result. */
+          /* })(), not }()). An arrow function cannot be invoked from inside
+             its own wrapping parens the way a function expression can, and the
+             SyntaxError kills the entire file — the practice screen rendered
+             blank on the website and in Lite until this was spotted. */
           const on = (() => {
             try { return localStorage.getItem('hawkeye_save_media') !== '0'; } catch { return true; }
-          }());
+          })();
           if (on && window.HAWKEYE_SAVE_MEDIA) {
             const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
             if (blob) window.HAWKEYE_SAVE_MEDIA([{ blob: blob, kind: 'photo' }], 'practice-card');

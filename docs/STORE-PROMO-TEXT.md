@@ -23,3 +23,22 @@ What the build carries: the practice run is framed like the real report screen
 (it was presented as a sheet and sat under a gap), and a practice run now saves
 its card to the phone the way a real one does — labelled PRACTICE four times
 over so the copy cannot pass for a result.
+
+## 1.0.4 (40) — 2026-09-19, native, TestFlight
+
+**App Store — promotional text**
+
+> Report the result at your polling unit and keep your own signed copy — a card with the hawk on it, yours to send on. Practise any time.
+
+**Play — short description**
+
+> Report your polling unit's result and keep your own signed copy.
+
+Play's line is unchanged from (39) and deliberately so: the build is visual
+polish, and rewriting a short description that is already right costs the
+listing its consistency for nothing.
+
+What the build carries: the receipt card draws the hawk before the wordmark
+(inlined, so it survives the capture), and six screens that hand-roll their own
+header stopped drawing the opaque badge — practice, result, incident,
+collation, page, terms.

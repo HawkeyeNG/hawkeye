@@ -2140,19 +2140,25 @@ async function showReceipt(data) {
        switch is off, HAWKEYE_SAVE_MEDIA deliberately does nothing — so a button
        that looked ready and then silently did nothing would read as broken,
        when it is actually the observer's own safety setting working. */
+    /**
+     * IT SAVES WITH THE PHOTOS, at the same hand-off and under the same switch.
+     *
+     * The two sheet photos already copy themselves to the phone the moment a
+     * report is accepted; making the CARD the one artefact that needs a button
+     * is an inconsistency the observer has to discover, and it is the item most
+     * likely to be forwarded — friction there defeats the point of having it.
+     *
+     * When copies are off nothing is written and the card stays on screen to be
+     * screenshotted. Either way the row says which happened, because a save
+     * that silently does nothing looks exactly like a broken feature.
+     */
     const on = (() => { try { return localStorage.getItem('hawkeye_save_media') !== '0'; } catch { return true; } })();
-    $('btn-receipt-save').hidden = !on;
+    if (on) window.HAWKEYE_SAVE_MEDIA && window.HAWKEYE_SAVE_MEDIA([{ blob: receiptBlob, kind: 'photo' }], 'receipt');
     $('receipt-note').textContent = on
-      ? ''
+      ? T('observe.card-saved-with-photos', 'Saved to your phone with your report photos.')
       : T('observe.copies-off-note', 'Copies to this phone are turned off in My Profile. Screenshot this card if you want to keep it.');
   } catch { /* a report is not worth failing over a picture of itself */ }
 }
-
-$('btn-receipt-save').onclick = () => {
-  if (!receiptBlob) return;
-  window.HAWKEYE_SAVE_MEDIA && window.HAWKEYE_SAVE_MEDIA([{ blob: receiptBlob, kind: 'photo' }], 'receipt');
-  $('receipt-note').textContent = T('observe.saved-to-your-phone', 'Saved to your phone.');
-};
 
 /** The report data a receipt is drawn from, from whichever hand-off has it. */
 function receiptData(contestName, votes, entryHash) {

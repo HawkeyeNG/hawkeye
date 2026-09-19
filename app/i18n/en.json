@@ -1506,5 +1506,6 @@
   "invite.get-on-play": "Get Hawkeye on Google Play",
   "invite.get-on-app-store": "Get Hawkeye on the App Store",
   "invite.download-hawkeye": "Download Hawkeye",
-  "invite.foot": "Hawkeye does not declare results — all official results are announced by <a href=\"https://inecnigeria.org\" rel=\"noopener\">INEC</a>."
+  "invite.foot": "Hawkeye does not declare results — all official results are announced by <a href=\"https://inecnigeria.org\" rel=\"noopener\">INEC</a>.",
+  "observe.card-saved-with-photos": "Saved to your phone with your report photos."
 }

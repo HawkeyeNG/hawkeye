@@ -12,7 +12,7 @@
  * two renderers are not compared to each other and cannot be; what is compared
  * is receiptLines(), which decides every string on it.
  */
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import Svg, { Defs, G, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
 import { t as i18nT } from '@/lib/i18n';
@@ -60,9 +60,17 @@ function chunk(s: string, size: number, maxPx: number): string[] {
 
 export type ReceiptCardHandle = { toPng: () => Promise<string | null> };
 
-export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; width?: number }>(
-  function ReceiptCard({ data, width = 340 }, ref) {
+export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; width?: number; onReady?: () => void }>(
+  function ReceiptCard({ data, width = 340, onReady }, ref) {
     const svgRef = useRef<Svg>(null);
+    const readyFired = useRef(false);
+    useEffect(() => {
+      if (readyFired.current || !onReady) return;
+      readyFired.current = true;
+      // A frame's grace so the native view is laid out before it is read.
+      const id = setTimeout(onReady, 120);
+      return () => clearTimeout(id);
+    }, [onReady]);
     /* i18nT returns the KEY when a string is missing, which on a card would
        print "receipt.foot" to an observer. Falling back to the English keeps
        the card readable in the one case native_keys_resolve did not catch. */

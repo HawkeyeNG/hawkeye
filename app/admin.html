@@ -186,6 +186,18 @@
        pill background is var(--card), which is near-black in dark mode, so the
        labels went dark-on-dark instead. --ink flips with --card, so one rule is
        right in both themes. Never answer a theme bug with a literal. */
+    /* A <button> IS NOT A <span>, AND styles.css KNOWS IT.
+       The global `button` rule is display:block / width:100% / margin:16px 0 0
+       — a full-width primary action, which is right everywhere else on the
+       site. `.tab` beats it on padding and shape (a class outranks a type
+       selector) but sets no display, width or margin, so Install alone stretched
+       the full row and pushed itself onto a line of its own. The nine spans
+       beside it were never affected, which is why it read as a layout bug
+       rather than a cascade one. */
+    .brand-row button.tab {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: auto; margin: 0; box-shadow: none;
+    }
     .brand-row .tab { color: var(--ink); }
     .brand-row .tab.on { color: #fff; }
 

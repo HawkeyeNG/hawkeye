@@ -91,6 +91,52 @@ if (shown) {
     const lit = document.querySelector('#panelbar .tab.on');
     return { open: open.length, lit: lit && lit.dataset.p };
   }), (v) => v.open === 1 && v.lit === 'reach');
+  /* ONE LINE, AND INSTALL IS A PILL LIKE THE REST.
+     styles.css styles every <button> as a full-width primary action
+     (display:block; width:100%; margin:16px 0 0). `.tab` outranks it on shape
+     but sets no display, width or margin — so Install, the only BUTTON in a
+     strip of nine spans, stretched the whole row and pushed itself onto a line
+     of its own. Everything here passed while it did: it was in the header, it
+     was legible, it was clickable, and the header still respected its cap.
+     Nothing measured the SHAPE of the row. */
+  const rowOf = () => p.evaluate(() => {
+    const tabs = [...document.querySelectorAll('#panelbar .tab')];
+    const tops = tabs.map((t) => t.getBoundingClientRect().top);
+    const w = tabs.map((t) => t.getBoundingClientRect().width);
+    const install = document.getElementById('btn-install').getBoundingClientRect().width;
+    return {
+      spread: Math.round(Math.max(...tops) - Math.min(...tops)),
+      install: Math.round(install),
+      widest: Math.round(Math.max(...w.filter((x, i) => tabs[i].id !== 'btn-install'))),
+      header: Math.round(document.querySelector('header').getBoundingClientRect().height),
+    };
+  });
+  const row = await rowOf();
+  // A wrapped strip puts a whole pill height between the two rows; the 2px
+  // here is the emoji in "Lock" sitting a hair taller than its neighbours.
+  check(`every tab is on one line (spread ${row.spread}px)`, row.spread, (v) => v < 12);
+  check(`Install is a pill, not a bar (${row.install}px vs ${row.widest}px widest)`,
+    row.install, (v) => v <= row.widest * 1.6);
+  check(`the header is one row tall (${row.header}px)`, row.header, (v) => v < 90);
+
+  // CONTROL: restore the full-width button and the three assertions above must
+  // reject it. Without this they are three numbers agreeing with the layout
+  // that happens to exist.
+  await p.evaluate(() => {
+    const b = document.getElementById('btn-install');
+    b.style.width = '100%';
+    b.style.display = 'block';
+  });
+  await p.waitForTimeout(120);
+  const broken = await rowOf();
+  check(`CONTROL a full-width Install breaks the row (spread ${broken.spread}px)`,
+    broken.spread >= 12 || broken.install > broken.widest * 1.6, true);
+  await p.evaluate(() => {
+    const b = document.getElementById('btn-install');
+    b.style.width = '';
+    b.style.display = '';
+  });
+
   check('they sit inside the header', await p.evaluate(() =>
     !!document.querySelector('header #panelbar')), true);
   // The header must not scroll away from a long panel: that was the point.

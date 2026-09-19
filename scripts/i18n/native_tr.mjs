@@ -257,6 +257,7 @@ export default {
     "n.app.political.reading-this-page": "Karanta wannan shafin",
     "n.app.political.reading-this-page-body": "An jera kowace jiha da jam’iyyar da ke mulkinta, gwamnanta da shekarar zabenta na gaba. An tattara alkaluman daga bayanan jama’a kuma ana sabunta su yayin da ake sanar da sakamako.",
     "n.app.political.who-holds-power-now": "Wanda ke kan mulki yanzu",
+    "n.app.practice.what-you-would-keep": "Abin Da Za Ka Ajiye",
     "n.app.practice.a-fresh-practice-run-reopens-after": "Sabon atisaye zai sake buɗewa bayan zaɓen da ake ciki, domin ka shirya na gaba.",
     "n.app.practice.a-real-report-is-only-accepted": "Ana karɓar rahoto na gaske ne kawai a rukunin zaɓen da kansa. Wannan matakin yana dubawa haka nan, don haka zaɓar rukuni yana aiki kamar yadda zai kasance a ranar — atisayen kansa kuwa yana kammaluwa koyaushe.",
     "n.app.practice.back-to-the-race": "‹ Koma gasar",

@@ -4,17 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { InfoDot } from '@/components/info-dot';
 import { ButtonText } from '@/components/button-text';
@@ -73,6 +63,8 @@ import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { t as i18nT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
+import { ReceiptCard, type ReceiptCardHandle } from '@/components/receipt-card';
+import { saveReceiptPng } from '@/lib/receipt-file';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -1584,6 +1576,11 @@ export default function ReportResult() {
   const [line, setLine] = useState<string | null>(null);
   const [done, setDone] = useState<{ title: string; line: string }>({ title: '', line: '' });
   const [receipt, setReceipt] = useState<Receipt>({});
+  /* The observer's own copy of what they just reported. The ref is how the
+     drawn card becomes a PNG — react-native-svg's toDataURL, so no capture
+     library and no new native module. */
+  const cardRef = useRef<ReceiptCardHandle>(null);
+  const [cardSaved, setCardSaved] = useState(false);
   /** Held in the offline outbox rather than delivered — a different ending. */
   const [queued, setQueued] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -2411,6 +2408,50 @@ export default function ReportResult() {
             {receipt.entryHash ? (
               <RekorAnchor entryHash={receipt.entryHash} chain="ledger" />
             ) : null}
+
+            {/* YOUR OWN COPY.
+                Filing a report is a favour someone does for the public record;
+                this is what they get back for it. Shown unconditionally rather
+                than behind a button — a card nobody can see until they tap
+                something is a card most people never see — and it decides for
+                itself what it may claim: with no entry hash it prints none and
+                says it is not on the ledger yet (see lib/receipt.ts). */}
+            <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
+              {i18nT('observe.your-copy')}
+            </Text>
+            <View className="items-start">
+              <ReceiptCard
+                ref={cardRef}
+                data={{
+                  puName: unit?.name,
+                  puCode: unit?.pu_code,
+                  ward: unit?.ward,
+                  lga: unit?.lga,
+                  state: unit?.state,
+                  contest: contest?.name,
+                  votes,
+                  entryHash: receipt.entryHash,
+                  at: Date.now(),
+                }}
+              />
+              <Pressable
+                className="mt-2 rounded-xl bg-card px-4 py-2.5"
+                onPress={async () => {
+                  const ok = await saveReceiptPng(cardRef.current);
+                  setCardSaved(true);
+                  if (!ok) {
+                    /* NEVER A SILENT NO-OP. Either the copies switch is off, or
+                       the draw failed; both leave the card on screen to be
+                       screenshotted, and both say which. */
+                    Alert.alert(i18nT('observe.your-copy'), i18nT('observe.copies-off-note'));
+                  }
+                }}
+              >
+                <Text className="text-sm font-semibold text-ink">
+                  {cardSaved ? i18nT('observe.saved-to-your-phone') : i18nT('observe.save-this-card')}
+                </Text>
+              </Pressable>
+            </View>
 
             {receipt.result || receipt.locationVerified != null || receipt.ocr ? (
               <View className="mt-3 rounded-2xl bg-card px-4 py-2">

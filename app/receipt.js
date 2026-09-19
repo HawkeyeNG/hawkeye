@@ -49,6 +49,20 @@
    */
   function lines(d) {
     d = d || {};
+    /**
+     * THREE STATES, NOT TWO.
+     *
+     * Practice is the reason someone knows what this card is before they ever
+     * stand at a unit — so a practice run gets one too, and it has to be
+     * unmistakable. It carries the practice chain's own hash (a separate chain
+     * with its own genesis, never anchored, never counted) and says so in the
+     * words the rest of the product uses: a rehearsal, not a result.
+     *
+     * Checked FIRST, before the pending branch, because a practice run has an
+     * entry hash and would otherwise render as a recorded public result — which
+     * is the one thing this card must never do.
+     */
+    var practice = !!d.practice;
     var votes = (d.votes || []).filter(function (v) { return Number(v.count) > 0; })
       .slice()
       .sort(function (a, b) { return String(a.party).localeCompare(String(b.party)); });
@@ -56,8 +70,10 @@
     var pending = !d.entryHash;
     var where = [d.ward, d.lga, d.state].filter(Boolean).join(' \u00b7 ');
     return {
+      practice: practice,
       pending: pending,
-      title: pending ? 'Saved on your phone' : 'Your copy of this result',
+      title: practice ? 'Practice run \u2014 not a real result'
+        : pending ? 'Saved on your phone' : 'Your copy of this result',
       unit: d.puName || '',
       code: d.puCode || '',
       where: where,
@@ -69,10 +85,15 @@
          it is printed underneath so a photograph of this card is enough. */
       hashShort: pending ? '' : String(d.entryHash).slice(0, 16),
       hash: pending ? '' : String(d.entryHash),
-      verify: pending ? '' : 'hawkeye.com.ng/ledger.html#' + String(d.entryHash),
-      status: pending
-        ? 'Not yet on the public ledger \u2014 it sends when you are back online.'
-        : 'Recorded on the public ledger.',
+      /* NO VERIFY LINK ON A PRACTICE CARD. The practice chain is not the public
+         ledger and ledger.html cannot show it; a link there would 404 and, far
+         worse, imply the rehearsal was published. */
+      verify: (pending || practice) ? '' : 'hawkeye.com.ng/ledger.html#' + String(d.entryHash),
+      status: practice
+        ? 'Practice chain only \u2014 this is a rehearsal and is never counted.'
+        : pending
+          ? 'Not yet on the public ledger \u2014 it sends when you are back online.'
+          : 'Recorded on the public ledger.',
       foot: 'Hawkeye does not declare results \u2014 official results are announced by INEC.',
     };
   }
@@ -183,7 +204,25 @@
     y = boxTop + boxH + 52;
 
     /* THE LEDGER LINE — or its absence, said out loud. */
-    if (L.pending) {
+    if (L.practice) {
+      /* SAID TWICE, because this is the card most likely to be forwarded out of
+         context: once in the title at the top, once in a band of its own. */
+      x.fillStyle = 'rgba(245,179,1,0.14)';
+      x.roundRect2(PAD - 24, y - 40, W - (PAD - 24) * 2, 96, 16); x.fill();
+      x.fillStyle = GOLD;
+      x.font = '600 28px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+      wrap(x, L.status, W - PAD * 2 - 8).forEach(function (ln) { x.fillText(ln, PAD, y); y += 38; });
+      y += 34;
+      if (L.hash) {
+        x.fillStyle = MUTED;
+        x.font = '600 24px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+        x.fillText('PRACTICE CHAIN ENTRY', PAD, y); y += 36;
+        x.fillStyle = FAINT;
+        x.font = '400 26px ui-monospace, SFMono-Regular, Menlo, monospace';
+        chunk(x, L.hash, W - PAD * 2).forEach(function (ln) { x.fillText(ln, PAD, y); y += 32; });
+        y += 10;
+      }
+    } else if (L.pending) {
       x.fillStyle = 'rgba(245,179,1,0.14)';
       x.roundRect2(PAD - 24, y - 40, W - (PAD - 24) * 2, 96, 16); x.fill();
       x.fillStyle = GOLD;

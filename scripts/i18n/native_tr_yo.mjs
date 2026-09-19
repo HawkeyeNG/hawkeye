@@ -256,6 +256,7 @@ export default {
   "n.app.political.reading-this-page": "Kíka ojú ìwé yìí",
   "n.app.political.reading-this-page-body": "A tò ìpínlẹ̀ kọ̀ọ̀kan pẹ̀lú ẹgbẹ́ tí ń ṣàkóso rẹ̀, gómìnà rẹ̀ àti ọdún ìdìbò rẹ̀ tí ó ń bọ̀. A kójọ àwọn nọ́mbà láti inú àkọsílẹ̀ gbogbo ènìyàn, a sì ń sọ wọ́n di tuntun bí a ṣe ń kéde àbájáde.",
   "n.app.political.who-holds-power-now": "Ẹni tí ó ní agbára lọ́wọ́lọ́wọ́",
+    "n.app.practice.what-you-would-keep": "Ohun Tí O Máa Tọ́jú",
   "n.app.practice.a-fresh-practice-run-reopens-after": "Ìdánrawò tuntun yóò tún ṣí lẹ́yìn ìdìbò tí ó ń lọ lọ́wọ́, kí o lè múra fún èyí tí ó ń bọ̀.",
   "n.app.practice.a-real-report-is-only-accepted": "Ìròyìn gidi ni a ń gbà nìkan ní ẹ̀ka ìdìbò fúnra rẹ̀. Ìgbésẹ̀ yìí ń ṣàyẹ̀wò lọ́nà kan náà, nítorí náà yíyan ẹ̀ka máa ń ṣiṣẹ́ bí yóò ṣe rí ní ọjọ́ náà — ìdánrawò fúnra rẹ̀ sì máa ń parí nígbà gbogbo.",
   "n.app.practice.back-to-the-race": "‹ Padà sí ìdíje náà",

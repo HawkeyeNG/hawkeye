@@ -24,7 +24,11 @@
     #camera-overlay video { max-width: 100%; max-height: 70vh; }
     .camera-frame { text-align: center; color: #fff; padding: 12px; width: 100%; max-width: 520px; }
     .camera-actions { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
-  </style>
+  
+    #receipt-wrap { margin: 16px 0 6px; }
+    #receipt-img { display: block; width: 100%; max-width: 320px; height: auto;
+                   border-radius: 14px; border: 1px solid var(--line); }
+</style>
   <script src="authgate.js?v=2"></script>
   <style>
     /* The practice preview mirrors the reports-log card (dashboard.html),
@@ -126,6 +130,19 @@
       <div class="card">
         <p data-i18n-html="practice.nothing-was-published-a-real-report-is"><strong>Nothing was published.</strong> A real report is signed on your phone and recorded on Hawkeye’s public, tamper-evident ledger.</p>
         <p class="hint">Practice ledger entry: <code id="entry-hash"></code></p>
+
+        <!-- THE CARD A REAL REPORT PRODUCES, on a practice run.
+             The whole point of practice is that nothing on election day is a
+             surprise, and the receipt is the part an observer keeps — so they
+             should have seen one before it matters. It is the same renderer
+             the real flow uses (receipt.js), in its practice state: marked in
+             the title AND in a band, carrying the practice chain's own hash
+             and NO verify link, because ledger.html cannot show a rehearsal. -->
+        <div id="receipt-wrap" hidden>
+          <h2 class="sec-label">What You Would Keep</h2>
+          <img id="receipt-img" alt="" />
+          <p class="hint" id="receipt-note"></p>
+        </div>
       </div>
       <!-- WHAT THE PUBLIC REPORTS LOG WOULD SHOW, built on this phone from the
            photo that never left it. Practice uploads counts only — no photo is
@@ -179,5 +196,6 @@
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
   <script src="menu.js?v=171"></script>
+  <script src="receipt.js?v=1" defer></script>
 </body>
 </html>

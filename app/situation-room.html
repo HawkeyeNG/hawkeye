@@ -19,7 +19,7 @@
        manifest takes one scope, not two. -->
   <link rel="manifest" href="room.webmanifest?v=1" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=182" />
+  <link rel="stylesheet" href="styles.css?v=183" />
   <script src="native.js?v=116"></script>
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=3"></script>
@@ -3002,5 +3002,6 @@ boot().catch((e) => {
   $('sr').innerHTML = `<div class="sr-msg">${T('situation-room.could-not-load-the-room', 'Could not load the situation room. {error}', { error: esc(e.message) })}</div>`;
 });
 </script>
+  <script src="shell.js?v=1" defer></script>
 </body>
 </html>

@@ -1508,5 +1508,8 @@
   "invite.download-hawkeye": "Download Hawkeye",
   "invite.foot": "Hawkeye does not declare results — all official results are announced by <a href=\"https://inecnigeria.org\" rel=\"noopener\">INEC</a>.",
   "observe.card-saved-with-photos": "Saved to your phone with your report photos.",
-  "admin.install": "Install"
+  "admin.install": "Install",
+  "admin.install-console": "Install the console",
+  "admin.install-blurb": "Opens in its own window, with the panels on the jump list. It stays signed in the way this browser is.",
+  "common.not-now": "Not now"
 }

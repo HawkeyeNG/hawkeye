@@ -783,6 +783,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     if (panel) new MutationObserver(() => { if (!panel.hidden) show(); })
       .observe(panel, { attributes: true, attributeFilter: ['hidden'] });
   })();
+
   addEventListener('orientationchange', () => setTimeout(publishChromeVars, 150));
 
   // The 🦅 emoji crest renders as a different glyph on every platform (and reads

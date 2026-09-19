@@ -2375,3 +2375,72 @@ dialog.sheet-modal,
   color: var(--ink);
   border: 1px solid var(--line);
 }
+
+
+/* ===================================================================
+   THE DESKTOP SHELL — header fixed, everything else scrolling under it.
+   Lifted from the situation room, which is where it was worked out.
+
+   WHY. On a desktop window the platform's scrollbar runs the full height of
+   the viewport, straight past the header, and that trough is the one part of
+   an installed app that still reads as a browser. Making the header a flex
+   row of its own and giving the rest its own scroll container puts the bar
+   where the content is, starting below the header.
+
+   AT 900px, NOT the room's 701. menu.js hides the header on scroll below
+   900px, and in a shell the document never scrolls — so that listener would
+   never fire again and a phone-width window would be left with whatever state
+   the header was last in. Above 900px menu.js already keeps it shown, so the
+   two rules cannot disagree.
+
+   #page-scroll is created by menu.js around main+footer; a page without it is
+   simply unaffected. */
+@media (min-width: 900px) {
+  html.has-shell, html.has-shell body { height: 100%; }
+  html.has-shell body { display: flex; flex-direction: column; overflow: hidden; }
+  /* Sticky has to go static: a sticky element inside a flex column still
+     reserves its own space, so the header would scroll away under itself. */
+  html.has-shell .gov-header { position: static; flex: 0 0 auto; }
+  html.has-shell #page-scroll {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+    display: flex; flex-direction: column;
+  }
+  /* The footer still sits at the bottom of a short page rather than halfway up. */
+  html.has-shell #page-scroll > main { flex: 1 0 auto; }
+  html.has-shell #page-scroll > footer { flex: 0 0 auto; }
+  /* A modal locks the pane; body already has overflow:hidden here. */
+  html.has-shell.modal-open #page-scroll { overflow: hidden; }
+}
+
+/* SCROLLBARS THAT GET OUT OF THE WAY.
+   The thumb is transparent at rest and appears while a pane is scrolled or
+   hovered.
+
+   IT IS HIDDEN, NOT REMOVED: the gutter stays reserved — the thumb is
+   transparent rather than zero-width — so nothing reflows as it fades in, and
+   a pane that can scroll still SAYS so the moment you touch it. A scrollbar
+   that never appeared at all would leave a long list looking like a short one.
+   .scrolling is set on <html> for ~900ms after any scroll, capture-phase so
+   inner panes count too (menu.js). */
+* { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+*:hover { scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent; }
+html.scrolling, html.scrolling * { scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent; }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: transparent; border-radius: 10px;
+  border: 3px solid transparent; background-clip: content-box;
+  transition: background-color 0.18s ease;
+}
+*:hover::-webkit-scrollbar-thumb,
+html.scrolling::-webkit-scrollbar-thumb,
+html.scrolling *::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 55%, transparent); background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: content-box; }
+/* Touch already hides its scrollbars and has no hover to bring them back, so
+   the reveal would never fire — leave those alone entirely. */
+@media (hover: none) {
+  * { scrollbar-color: auto; }
+  ::-webkit-scrollbar-thumb { background: initial; }
+}

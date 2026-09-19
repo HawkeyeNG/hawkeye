@@ -28,6 +28,7 @@
   "admin.flagged-sheet-reviewers": "Flagged-sheet reviewers",
   "admin.https-play-google-com-store-apps": "https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer",
   "admin.idempotent": "idempotent",
+  "admin.install": "Install",
   "admin.message": "Message",
   "admin.must-be-a-hawkeye-com-ng": "Must be a hawkeye.com.ng or play.google.com link. A push that opens anywhere else is a phishing vector pointed at the people who trust this app most, so the server refuses it.",
   "admin.observer-id": "observer id",

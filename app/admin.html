@@ -7,6 +7,16 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>Hawkeye — Admin Console</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
+  <!-- ITS OWN MANIFEST, not the site's.
+       The site manifest starts at /observe.html, so "Install" from here would
+       have installed the observer app under a console icon. Same reason the
+       situation room has one (app/room.webmanifest) — a manifest carries one
+       start_url, and these are three different tools.
+
+       `scope` stays "/" because the console fetches from /api/* and a narrow
+       scope would push those out of the installed window. -->
+  <link rel="manifest" href="admin.webmanifest?v=1" />
+  <meta name="apple-mobile-web-app-title" content="Hawkeye Admin" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=182" />
   <script src="native.js?v=116"></script>
@@ -155,7 +165,31 @@
     .muted { color: var(--muted); font-size: 0.85rem; }
   
 /* ---- unified console ---- */
-    .panelbar { display: flex; gap: 8px; margin: 4px 0 18px; flex-wrap: wrap; border-bottom: 1px solid var(--line, #e3e8e4); padding-bottom: 10px; }
+    /* IN THE HEADER NOW. No bottom border and no margin — the header draws its
+       own edge, and a second rule under it read as a broken double line. */
+    .panelbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    /* WITHOUT THIS THE HIDDEN STRIP STILL DRAWS. An author `display` beats
+       the user agent's `[hidden] { display: none }`, so every element given
+       a display in this file needs the guard beside it. */
+    .panelbar[hidden], #btn-install[hidden] { display: none !important; }
+    /* WHITE PILLS ON A DARK HEADER INHERIT WHITE TEXT.
+       `.tab` sets a light background and no colour, which was fine in the body
+       and is invisible here — the header's own colour is #fff, so every label
+       but the active one vanished into its own pill. Scoped to the header so
+       the settings and pair-kind tabs elsewhere keep their own treatment. */
+    .brand-row .tab { color: #10221a; }
+    .brand-row .tab.on { color: #fff; }
+    /* The tabs sit to the RIGHT of the brand, and wrap under it on a narrow
+       screen rather than squeezing the wordmark. */
+    .brand-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .brand-row .panelbar { margin-left: auto; }
+    #btn-install { order: 99; }
+    /* The crest was an emoji; it is the app's own hawk now. Sized explicitly so
+       the header does not jump while the SVG loads. */
+    .crest { width: 34px; height: 34px; display: block; border-radius: 8px; }
+    @media (max-width: 760px) {
+      .brand-row .panelbar { margin-left: 0; width: 100%; }
+    }
     .panel > h1:first-child { margin-top: 0; }
     /* One passphrase for the whole console, so post.html's own passphrase row
        is redundant here — hidden rather than deleted, to keep this file a
@@ -193,8 +227,28 @@
 <body>
   <header class="gov-header">
     <div class="wrap brand-row">
-      <span class="brand"><span class="crest" aria-hidden="true">🦅</span>
+      <span class="brand"><img class="crest" src="logo.svg?v=101" alt="" width="34" height="34" />
         <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="admin.admin-console-private">Admin Console — private</span></div></span>
+
+      <!-- INSTALL. Hidden until the browser says it is installable, and the
+           Hawkeye dialog asks FIRST: beforeinstallprompt can be spent exactly
+           once, so a "Not now" against the browser's own unstyleable prompt
+           would burn it. Mirrors the situation room, which is where this
+           pattern and its trap were worked out. -->
+      <button id="btn-install" class="tab" type="button" hidden
+              data-i18n="admin.install">Install</button>
+
+      <!-- THE PANEL TABS LIVE IN THE HEADER, not above the first panel. They
+           are console-wide navigation, so they belong where the console's
+           identity is; below the brand they scrolled away with the content and
+           a long Reach table left the reader with no way back.
+
+           Hidden until unlocked, because the login screen has nothing to
+           navigate. Unhidden at both places #console is (see `showConsole`). -->
+      <div class="panelbar" id="panelbar" hidden>
+        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="pairs">Pairs</span><span class="tab" data-p="push">Push</span><span class="tab" data-p="races">Races</span><span class="tab" data-p="social">Social</span><span class="tab" data-p="register">Register</span>
+        <span class="tab" data-p="_logout">Lock 🔒</span>
+      </div>
     </div>
   </header>
 
@@ -209,10 +263,6 @@
     </section>
 
     <section id="console" hidden>
-      <div class="panelbar" id="panelbar">
-        <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="pairs">Pairs</span><span class="tab" data-p="push">Push</span><span class="tab" data-p="races">Races</span><span class="tab" data-p="social">Social</span><span class="tab" data-p="register">Register</span>
-        <span class="tab" data-p="_logout" style="margin-left:auto">Lock 🔒</span>
-      </div>
       <div class="panel" data-p="reach">
       <!-- Growth first: it is the number asked for most often, including by
            funders, and it was previously only reachable by hand-rolling a curl
@@ -1437,6 +1487,66 @@
   // Panel switching + the one thing the two originals disagreed on: review.html
   // keeps the passphrase in sessionStorage, post.html reads it from
   // localStorage. Mirror it on the way into the Social panel so a single unlock
+  /**
+   * INSTALL, and the chrome that only exists once unlocked.
+   *
+   * The tabs live in the header now, which means they are outside #console and
+   * no longer hidden by it — so they are hidden in the markup and revealed
+   * here, at both of the places the console opens.
+   *
+   * THE DIALOG ASKS FIRST. `beforeinstallprompt` can be spent exactly once, and
+   * the browser's own prompt cannot be styled; answering "Not now" to THAT
+   * burns the only chance. So the event is captured, the button appears, and
+   * the real prompt is only fired on a deliberate click.
+   *
+   * `appinstalled` reaches only the session that installed, so a later launch
+   * is detected with display-mode instead.
+   */
+  let deferredInstall = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstall = e;
+    const b = document.getElementById('btn-install');
+    if (b && !matchMedia('(display-mode: standalone)').matches) b.hidden = false;
+  });
+  window.addEventListener('appinstalled', () => {
+    const b = document.getElementById('btn-install');
+    if (b) b.hidden = true;
+    deferredInstall = null;
+  });
+  document.getElementById('btn-install').addEventListener('click', async () => {
+    if (!deferredInstall) return;
+    const b = document.getElementById('btn-install');
+    b.hidden = true;                       // one prompt, and it is being spent now
+    try { await deferredInstall.prompt(); } catch (e) { /* dismissed */ }
+    deferredInstall = null;
+  });
+
+  /**
+   * The tab strip follows #console rather than being told to.
+   *
+   * It used to be revealed by a call at each unlock site, and those live in an
+   * EARLIER <script> than this one — so they reached a function that did not
+   * exist yet and threw. Watching the element removes the ordering question
+   * altogether, and covers any future unlock path for free.
+   */
+  (function () {
+    const consoleEl = document.getElementById('console');
+    const bar = document.getElementById('panelbar');
+    const sync = () => {
+      if (consoleEl.hidden) { bar.hidden = true; return; }
+      if (!bar.hidden) return;
+      bar.hidden = false;
+      /* A panel named in the URL opens straight away — that is what the
+         manifest's jump-list shortcuts point at. */
+      const want = new URLSearchParams(location.search).get('p');
+      const t = want && document.querySelector(`#panelbar .tab[data-p="${want}"]`);
+      if (t) t.click();
+    };
+    new MutationObserver(sync).observe(consoleEl, { attributes: true, attributeFilter: ['hidden'] });
+    sync();
+  })();
+
   // serves both, instead of editing either script's auth.
   (function () {
     const bar = document.getElementById('panelbar');

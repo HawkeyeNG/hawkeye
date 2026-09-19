@@ -1581,5 +1581,13 @@
   "situation-room.nobody": "Kò sí ẹnìkan",
   "situation-room.voters-uncovered": "Àwọn adìbò tí a kò bò",
   "situation-room.everywhere-covered": "A ti yan ẹnìkan fún gbogbo ibùdó níbí.",
-  "situation-room.voters-partial": "Iye àwọn adìbò jẹ́ ìpìlẹ̀: ibùdó {n} níbí kò ní iye àwọn adìbò tí a forúkọsílẹ̀ nínú ìwé."
+  "situation-room.voters-partial": "Iye àwọn adìbò jẹ́ ìpìlẹ̀: ibùdó {n} níbí kò ní iye àwọn adìbò tí a forúkọsílẹ̀ nínú ìwé.",
+  "situation-room.disagreements-heading": "Ibi tí àwọn nọ́mbà wa àti èyí tí wọ́n gbé jáde ní ìjọba kò bá ara wọn mu",
+  "situation-room.disagreements-sub": "A ti fi àwọn ibùdó rẹ {n} wé èyí tí wọ́n gbé jáde ní ìjọba. Ìyàtọ̀ jẹ́ ohun tí a gbọ́dọ̀ ṣàlàyé, kì í ṣe ìdájọ́ — nọ́mbà tí a kọ ní àṣìṣe àti ìyọrísí tí a jí gbé rí bákan náà láti ibí.",
+  "situation-room.ours-vs-theirs": "Tiwa &rarr; tiwọn",
+  "situation-room.largest-gap": "Àlàfo tó tóbi jùlọ",
+  "situation-room.not-listed": "a kò kọ ọ́ sílẹ̀",
+  "situation-room.the-upload": "Ohun tí wọ́n gbé jáde",
+  "situation-room.and-more-units": "àti ibùdó {n} mìíràn tí ó ní ìyàtọ̀",
+  "situation-room.unit": "Ibùdó"
 }

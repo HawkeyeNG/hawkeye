@@ -1556,5 +1556,13 @@
   "situation-room.nobody": "Nobody",
   "situation-room.voters-uncovered": "Voters uncovered",
   "situation-room.everywhere-covered": "Somebody is down for every unit here.",
-  "situation-room.voters-partial": "The voter figures are a floor: {n} units here carry no registered-voter count in the register."
+  "situation-room.voters-partial": "The voter figures are a floor: {n} units here carry no registered-voter count in the register.",
+  "situation-room.disagreements-heading": "Where our figures and the official upload disagree",
+  "situation-room.disagreements-sub": "{n} of your units have been compared with the official upload. A difference is something to explain, not a verdict — a transposed digit and a stolen result look the same from here.",
+  "situation-room.ours-vs-theirs": "Ours &rarr; theirs",
+  "situation-room.largest-gap": "Largest gap",
+  "situation-room.not-listed": "not listed",
+  "situation-room.the-upload": "The upload",
+  "situation-room.and-more-units": "and {n} more units with a difference",
+  "situation-room.unit": "Unit"
 }

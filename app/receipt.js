@@ -89,7 +89,9 @@
     var practice = !!d.practice;
     var votes = (d.votes || []).filter(function (v) { return Number(v.count) > 0; })
       .slice()
-      .sort(function (a, b) { return String(a.party).localeCompare(String(b.party)); });
+      .sort(function (a, b) {
+        return (b.count - a.count) || String(a.party).localeCompare(String(b.party));
+      });
     var total = votes.reduce(function (n, v) { return n + Number(v.count); }, 0);
     var pending = !d.entryHash;
     var where = [d.ward, d.lga, d.state].filter(Boolean).join(' \u00b7 ');

@@ -1769,8 +1769,8 @@ export default function ReportResult() {
           accessibilityLabel={i18nT('nav.home')}
         >
           <Image
-            source={require('@/assets/images/icon.png')}
-            style={{ width: 30, height: 30, borderRadius: 8 }}
+            source={require('@/assets/images/crest.png')}
+            style={{ width: 30, height: 30 }}
           />
         </Pressable>
         <Pressable

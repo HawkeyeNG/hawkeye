@@ -13,9 +13,10 @@
  * is receiptLines(), which decides every string on it.
  */
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import Svg, { Defs, G, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Defs, G, Image as SvgImage, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
 import { t as i18nT } from '@/lib/i18n';
+import { RECEIPT_CREST } from '@/lib/receipt-crest';
 import { receiptLines, type ReceiptData } from '@/lib/receipt';
 
 const W = 1080;
@@ -68,7 +69,9 @@ export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; wi
       if (readyFired.current || !onReady) return;
       readyFired.current = true;
       // A frame's grace so the native view is laid out before it is read.
-      const id = setTimeout(onReady, 120);
+      // 320ms, not 120: the crest is decoded and painted before the capture
+      // runs, or the saved copy has a hole where the hawk is.
+      const id = setTimeout(onReady, 320);
       return () => clearTimeout(id);
     }, [onReady]);
     /* i18nT returns the KEY when a string is missing, which on a card would
@@ -101,8 +104,13 @@ export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; wi
       push(<SvgText key={`t${rows.length}`} x={PAD} y={y} fontSize={size} fill={fill} fontWeight={weight} fontFamily={font}>{t}</SvgText>);
     };
 
-    line('Hawkeye', 46, INK, '700');
-    y += 100;
+    /* THE MARK, THEN THE NAME — the same geometry the canvas twin uses
+       (app/receipt.js): 84x84 at the left margin, the word 104 to its right on
+       a baseline 56 below the top. The card went out as a wordmark alone while
+       every other Hawkeye header carries the hawk. */
+    push(<SvgImage key="crest" href={RECEIPT_CREST} x={PAD} y={y} width={84} height={84} preserveAspectRatio="xMidYMid meet" />);
+    push(<SvgText key="mark" x={PAD + 104} y={y + 56} fontSize={46} fill={INK} fontWeight="700" fontFamily={SANS}>Hawkeye</SvgText>);
+    y += 84 + 64;
 
     line(L.title.toUpperCase(), 30, GOLD, '700');
     y += 62;

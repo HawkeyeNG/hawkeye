@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { InfoDot } from '@/components/info-dot';
 import { ButtonText } from '@/components/button-text';
@@ -1580,7 +1580,8 @@ export default function ReportResult() {
      drawn card becomes a PNG — react-native-svg's toDataURL, so no capture
      library and no new native module. */
   const cardRef = useRef<ReceiptCardHandle>(null);
-  const [cardSaved, setCardSaved] = useState(false);
+  /** null until the save has been tried, so the row says nothing prematurely. */
+  const [cardSaved, setCardSaved] = useState<boolean | null>(null);
   /** Held in the offline outbox rather than delivered — a different ending. */
   const [queued, setQueued] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -2422,6 +2423,10 @@ export default function ReportResult() {
             <View className="items-start">
               <ReceiptCard
                 ref={cardRef}
+                onReady={async () => {
+                  if (cardSaved !== null) return;      // once per report
+                  setCardSaved(await saveReceiptPng(cardRef.current));
+                }}
                 data={{
                   puName: unit?.name,
                   puCode: unit?.pu_code,
@@ -2434,23 +2439,16 @@ export default function ReportResult() {
                   at: Date.now(),
                 }}
               />
-              <Pressable
-                className="mt-2 rounded-xl bg-card px-4 py-2.5"
-                onPress={async () => {
-                  const ok = await saveReceiptPng(cardRef.current);
-                  setCardSaved(true);
-                  if (!ok) {
-                    /* NEVER A SILENT NO-OP. Either the copies switch is off, or
-                       the draw failed; both leave the card on screen to be
-                       screenshotted, and both say which. */
-                    Alert.alert(i18nT('observe.your-copy'), i18nT('observe.copies-off-note'));
-                  }
-                }}
-              >
-                <Text className="text-sm font-semibold text-ink">
-                  {cardSaved ? i18nT('observe.saved-to-your-phone') : i18nT('observe.save-this-card')}
-                </Text>
-              </Pressable>
+              {/* IT SAVES WITH THE PHOTOS, under the same switch — see the web
+                  twin. The row below says which happened, because a save that
+                  silently does nothing looks exactly like a broken feature. */}
+              <Text className="pt-2 text-xs text-muted">
+                {cardSaved === null
+                  ? ''
+                  : cardSaved
+                    ? i18nT('observe.card-saved-with-photos')
+                    : i18nT('observe.copies-off-note')}
+              </Text>
             </View>
 
             {receipt.result || receipt.locationVerified != null || receipt.ocr ? (

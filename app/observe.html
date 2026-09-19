@@ -133,7 +133,6 @@
       display: block; width: 100%; max-width: 340px; height: auto;
       border-radius: 14px; border: 1px solid var(--line);
     }
-    .receipt-acts { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
 </style>
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
   <script src="native.js?v=116"></script>
@@ -475,10 +474,7 @@
       <div id="receipt-wrap" hidden>
         <h2 data-i18n="observe.your-copy" class="sec-label">Your Copy</h2>
         <img id="receipt-img" alt="" />
-        <div class="receipt-acts">
-          <button data-i18n="observe.save-this-card" type="button" id="btn-receipt-save" class="secondary">Save This Card</button>
-          <span class="hint" id="receipt-note"></span>
-        </div>
+        <p class="hint" id="receipt-note"></p>
       </div>
 
       <p class="hint">Ledger entry: <code id="entry-hash"></code></p>

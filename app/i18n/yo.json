@@ -1533,5 +1533,8 @@
   "invite.download-hawkeye": "Ṣe àgbàsílẹ̀ Hawkeye",
   "invite.foot": "Hawkeye kì í kéde àbájáde — <a href=\"https://inecnigeria.org\" rel=\"noopener\">INEC</a> ni ó ń kéde gbogbo àbájáde ìjọba.",
   "observe.card-saved-with-photos": "A ti fi pamọ́ sínú fóònù rẹ pẹ̀lú àwọn àwòrán ìròyìn rẹ.",
-  "admin.install": "Fi sọ́nà"
+  "admin.install": "Fi sọ́nà",
+  "admin.install-console": "Fi ẹ̀rọ ìṣàkóso sọ́nà",
+  "admin.install-blurb": "Ó ṣí sínú fèrèsé tirẹ̀, pẹ̀lú àwọn apá lórí àtòjọ ìfò. Ó máa wà ní ṣíṣí bí ẹ̀rọ aṣàwákiri yìí ṣe wà.",
+  "common.not-now": "Kì í ṣe nísinsìnyí"
 }

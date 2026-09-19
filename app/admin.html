@@ -18,7 +18,7 @@
   <link rel="manifest" href="admin.webmanifest?v=1" />
   <meta name="apple-mobile-web-app-title" content="Hawkeye Admin" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=182" />
+  <link rel="stylesheet" href="styles.css?v=183" />
   <script src="native.js?v=116"></script>
   <style>
 /* ---- from review.html ---- */
@@ -1532,12 +1532,49 @@
     if (b) b.hidden = true;
     deferredInstall = null;
   });
+  /**
+   * THE BRANDED HALF OF THE INSTALL, the way the situation room does it.
+   *
+   * The browser's own dialog follows this one and is not ours to style; this is
+   * where the console gets to say what the thing is. It matters because
+   * beforeinstallprompt can be spent EXACTLY ONCE — so "Not now" must answer
+   * THIS dialog and leave the real prompt unspent, with the button still there
+   * for later. Answering "not now" to the browser's prompt burns it for good.
+   */
+  function askInstall() {
+    return new Promise((resolve) => {
+      const back = document.createElement('div');
+      back.className = 'pw-modal-back';
+      back.innerHTML = `
+        <div class="card" style="max-width:26rem">
+          <h2 style="margin-top:0">${window.HawkeyeI18n ? window.HawkeyeI18n.t('admin.install-console', 'Install the console') : 'Install the console'}</h2>
+          <p class="lede">${window.HawkeyeI18n ? window.HawkeyeI18n.t('admin.install-blurb', 'Opens in its own window, with the panels on the jump list. It stays signed in the way this browser is.') : 'Opens in its own window, with the panels on the jump list. It stays signed in the way this browser is.'}</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+            <button type="button" data-yes>${window.HawkeyeI18n ? window.HawkeyeI18n.t('admin.install', 'Install') : 'Install'}</button>
+            <button type="button" class="secondary" data-no>${window.HawkeyeI18n ? window.HawkeyeI18n.t('common.not-now', 'Not now') : 'Not now'}</button>
+          </div>
+        </div>`;
+      const done = (v) => { back.remove(); resolve(v); };
+      back.addEventListener('click', (e) => {
+        if (e.target === back || e.target.closest('[data-no]')) return done(false);
+        if (e.target.closest('[data-yes]')) return done(true);
+      });
+      addEventListener('keydown', function esc(e) {
+        if (e.key === 'Escape') { removeEventListener('keydown', esc); done(false); }
+      });
+      document.body.appendChild(back);
+      back.querySelector('[data-yes]').focus();
+    });
+  }
+
   document.getElementById('btn-install').addEventListener('click', async () => {
     if (!deferredInstall) return;
-    const b = document.getElementById('btn-install');
-    b.hidden = true;                       // one prompt, and it is being spent now
-    try { await deferredInstall.prompt(); } catch (e) { /* dismissed */ }
+    const yes = await askInstall();
+    if (!yes || !deferredInstall) return;   // "Not now" keeps the prompt for later
+    const pending = deferredInstall;
     deferredInstall = null;
+    document.getElementById('btn-install').hidden = true;
+    try { await pending.prompt(); } catch (e) { /* dismissed */ }
   });
 
   /**
@@ -1764,5 +1801,6 @@
   </script>
 <script src="/i18n.js?v=10"></script>
 <script src="/lang.js?v=9"></script>
+  <script src="shell.js?v=1" defer></script>
 </body>
 </html>

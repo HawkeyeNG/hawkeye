@@ -1534,5 +1534,8 @@
   "invite.download-hawkeye": "Sauke Hawkeye",
   "invite.foot": "Hawkeye ba ta sanar da sakamako — <a href=\"https://inecnigeria.org\" rel=\"noopener\">INEC</a> ce ke sanar da dukkan sakamako na hukuma.",
   "observe.card-saved-with-photos": "An ajiye a wayarka tare da hotunan rahotonka.",
-  "admin.install": "Girka"
+  "admin.install": "Girka",
+  "admin.install-console": "Girka na'urar sarrafawa",
+  "admin.install-blurb": "Yana buɗewa a tagarsa, tare da bangarorin a jerin tsalle. Yana ci gaba da kasancewa a shiga kamar yadda wannan burauzar take.",
+  "common.not-now": "Ba yanzu ba"
 }

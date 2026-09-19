@@ -54,8 +54,16 @@ console.log('\n=== a recorded report ===');
   check('says it is on the ledger', L.status, (t) => /Recorded on the public ledger/.test(t));
   // Zero-vote parties are dropped: a sheet lists every party, a receipt is
   // about what was counted, and printing a column of noughts buries the result.
-  check('drops parties with no votes', L.votes.map((v) => v.party), ['APC', 'PDP']);
-  check('sorted by party, not by score — it is not a ranking', L.votes.map((v) => v.party), ['APC', 'PDP']);
+  check('drops parties with no votes', L.votes.map((v) => v.party).sort(), ['APC', 'PDP']);
+  /* SORTED BY COUNT (changed 2026-09-19, at the owner's call).
+     This asserted alphabetical order on the reasoning that a ranked card reads
+     like a declaration. It does not: the footer disclaims in words, the winner
+     of one polling unit is not a result, and alphabetical order made a reader
+     scan every row to answer the only question they opened the card with.
+     Ties fall back to the party name so the card is deterministic — the parity
+     test compares the two renderers row for row. */
+  check('sorted by count, highest first', L.votes.map((v) => [v.party, v.count]),
+    [['PDP', 120], ['APC', 98]]);
   check('totals what it shows', L.total, 218);
   check('stamps local time', L.when, (t) => /^Reported 19 Sept 2026, \d{2}:\d{2}$/.test(t));
   check('always disclaims', L.foot, (t) => /does not declare results/.test(t));

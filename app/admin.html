@@ -179,6 +179,12 @@
        the user agent's `[hidden] { display: none }`, so every element given
        a display in this file needs the guard beside it. */
     .panelbar[hidden], #btn-install[hidden] { display: none !important; }
+    /* THE STRIP DOES NOT DEPEND ON JAVASCRIPT RUNNING. The console being open
+       is a fact about the DOM, so CSS can read it directly: if #console is not
+       hidden, the navigation shows, whatever happened to any script. The
+       observer below still runs and still clears `hidden`; these two agree
+       rather than compete. */
+    body:has(#console:not([hidden])) #panelbar[hidden] { display: flex !important; }
     /* THE PILLS NEED A COLOUR, AND IT HAS TO BE A TOKEN.
        `.tab` sets a background and no colour, so in the header it inherited the
        bar's #fff and every inactive label went white-on-white. The first fix
@@ -1556,10 +1562,16 @@
      session that did it; a later launch of the installed console never sees
      that event, so the display mode is what answers the question. Same rule
      the situation room uses. */
-  if (matchMedia('(display-mode: standalone)').matches
-      || matchMedia('(display-mode: window-controls-overlay)').matches) {
+  /* HIDDEN, NEVER REMOVED. Removing it made every later lookup return null,
+     and the click listener below did not check — so the installed window threw
+     a TypeError that took out the REST of this script, including the observer
+     that reveals the tab strip. A console with no navigation, and no test saw
+     it because a browser tab keeps the button. */
+  const INSTALLED = matchMedia('(display-mode: standalone)').matches
+    || matchMedia('(display-mode: window-controls-overlay)').matches;
+  if (INSTALLED) {
     const b = document.getElementById('btn-install');
-    if (b) b.remove();
+    if (b) b.hidden = true;
   }
 
   let deferredInstall = null;
@@ -1609,7 +1621,8 @@
     });
   }
 
-  document.getElementById('btn-install').addEventListener('click', async () => {
+  const installBtn = document.getElementById('btn-install');
+  if (installBtn) installBtn.addEventListener('click', async () => {
     if (!deferredInstall) return;
     const yes = await askInstall();
     if (!yes || !deferredInstall) return;   // "Not now" keeps the prompt for later
@@ -1619,7 +1632,15 @@
     try { await pending.prompt(); } catch (e) { /* dismissed */ }
   });
 
+</script>
+
+<script>
   /**
+   * ITS OWN <script>, DELIBERATELY. A thrown error kills the rest of the block
+   * it is in and nothing else, and this block is the only thing standing
+   * between an unlocked console and no way to navigate it. That is exactly how
+   * it was lost: an unrelated TypeError three functions above.
+   *
    * The tab strip follows #console rather than being told to.
    *
    * It used to be revealed by a call at each unlock site, and those live in an

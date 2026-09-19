@@ -110,7 +110,7 @@ export function receiptLines(
   const votes = (data.votes || [])
     .filter((v) => Number(v.count) > 0)
     .slice()
-    .sort((a, b) => String(a.party).localeCompare(String(b.party)));
+    .sort((a, b) => (b.count - a.count) || String(a.party).localeCompare(String(b.party)));
   const total = votes.reduce((n, v) => n + Number(v.count), 0);
   const pending = !data.entryHash;
   const where = [data.ward, data.lga, data.state].filter(Boolean).join(' · ');

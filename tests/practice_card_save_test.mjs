@@ -71,6 +71,37 @@ for (const [what, src] of [['web', read(A + 'receipt.js')], ['native', read(N + 
     /\(pending \|\| practice\)/.test(src), true);
 }
 
+// ==================== the capture must not cancel itself
+/*
+ * THE BUG THIS PINS. Both callers pass an INLINE ARROW as onReady, so the prop
+ * is a new function identity on every render. The effect listed it as a
+ * dependency, so it re-ran on EVERY render: the cleanup fired clearTimeout,
+ * killing the pending 320ms timer, and the re-run returned early on
+ * `readyFired` — scheduling nothing.
+ *
+ * A re-render inside that window therefore cancelled the capture for good. The
+ * card drew perfectly and no file was ever written, with no error anywhere,
+ * because nothing failed: it simply never ran. Reported from a real device on
+ * build 41.
+ *
+ * HONEST LIMIT: this reads the source. React 19 ships no UMD build and there is
+ * no jsdom here, so the component cannot be rendered outside a device. It pins
+ * the two properties that make the effect correct; it cannot prove the timer
+ * fires. A practice run on a phone proves that.
+ */
+{
+  const card = read(N + 'components/receipt-card.tsx');
+  const start = card.indexOf('readyFired');
+  // lastIndexOf, not indexOf: useImperativeHandle appears in the IMPORT
+  // line first, which sliced a window that ended before it began.
+  const eff = card.slice(start, card.lastIndexOf('useImperativeHandle'));
+  check('the ready effect runs once, not per render', /\},\s*\[\]\);/.test(eff), true);
+  check('CONTROL it does not depend on the callback identity', /\[onReady\]\)/.test(eff), false);
+  check('and reads the callback through a ref at fire time',
+    /onReadyRef\.current\?\.\(\)/.test(eff), true);
+  check('the ref is kept current on every render', /onReadyRef\.current = onReady/.test(card), true);
+}
+
 // --------------------------------------------------------------- the string
 const langs = ['en', 'ha', 'ig', 'yo'];
 const missing = langs.filter((l) => {

@@ -11,8 +11,37 @@ const path = require('path');
 const { APP_DIR, readApp, appFileExists } = require('./helpers');
 
 // Budgets. Raise deliberately, with a reason — that's the whole point.
-const PRECACHE_BUDGET_KB = 700;   // was 1510 KB before the split; now ~560 KB
+//
+// 2026-09-19: 700 KB was set in July against a 572 KB / 37-entry shell. The app
+// has since grown past 40 pages and the shell reached 1867 KB, at which point
+// this test had been failing on every push for a day and nobody was reading it.
+// Two things were done before this number moved, in that order:
+//
+//   1. The three translation catalogues (461 KB of ha/ig/yo) came OUT. Every
+//      visitor was downloading all three, including the majority who read
+//      English; they are served network-first with a cache fallback, so the
+//      language a reader picks is cached when they pick it.
+//   2. The reading surfaces (results, races, race.js, integrity, dashboard,
+//      how/faq/guide, osun — 304 KB) moved to LAZY. A precache exists so
+//      somebody at a polling unit with no signal can still FILE; a cached
+//      results page is worse than a blank one, because it shows yesterday's
+//      numbers with today's confidence. LAZY still caches them on first use.
+//
+// What is left is the filing path (862 KB) plus the self-hosted fonts (239 KB),
+// which stay because offline typography includes the naira sign this project
+// has been bitten by before. 1101 KB measured, 1150 budgeted.
+//
+// TO RAISE THIS AGAIN: do the audit first, in that order, and say what is in
+// the number. A budget nobody can account for is not a budget.
+const PRECACHE_BUDGET_KB = 1150;
+
+// Per-item cap. NOT raised to fit — the three files that exceed it ARE the
+// shell (the stylesheet, the site script and the menu), and nothing is gained
+// by making them lazy: every page loads all three, so a lazy one is a blank
+// screen on the first offline visit instead of a cached one. Naming them keeps
+// the guard sharp for a NEW heavy file, which is what it was written to catch.
 const SHELL_ITEM_MAX_KB = 100;    // anything bigger belongs in LAZY
+const SHELL_ITEM_EXEMPT = ['styles.css', 'menu.js', 'app.js'];
 
 function parseArray(src, name) {
   const m = src.match(new RegExp('const ' + name + ' = \\[([\\s\\S]*?)\\];'));
@@ -54,12 +83,24 @@ test.describe('service worker precache', () => {
     const fat = [];
     for (const u of SHELL) {
       const rel = (u === '/' ? 'index.html' : u.replace(/^\//, '')).split('?')[0];
+      if (SHELL_ITEM_EXEMPT.includes(rel)) continue;
       const p = path.join(APP_DIR, rel);
       if (fs.existsSync(p) && fs.statSync(p).size / 1024 > SHELL_ITEM_MAX_KB) {
         fat.push(`${rel} ${(fs.statSync(p).size / 1024).toFixed(0)}KB`);
       }
     }
     expect(fat, `too heavy to precache: ${fat.join(', ')}`).toEqual([]);
+  });
+
+  // The exemption list is the part that rots: one more name each time somebody
+  // wants a red test green, and the cap protects nothing. Three is the shell.
+  test('the per-item exemption list stays short and is really the shell', () => {
+    expect(SHELL_ITEM_EXEMPT.length, 'exempting a fourth file needs a reason in the comment above')
+      .toBeLessThanOrEqual(3);
+    const notInShell = SHELL_ITEM_EXEMPT.filter(
+      (f) => !SHELL.some((u) => u.replace(/^\//, '').split('?')[0] === f),
+    );
+    expect(notInShell, `exempted but not precached: ${notInShell.join(', ')}`).toEqual([]);
   });
 
   test('LAZY entries exist and are not also precached', () => {

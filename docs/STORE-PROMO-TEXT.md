@@ -70,3 +70,16 @@ framing, the hawk on the receipt card, and cards sorted by count.
 Lite bundles the website's app directory, so this build picks up the invite
 card, the styled check-in aside and the whole session's web work without a port.
 Android versionCode 11.
+
+## 1.0.4 (42) — 2026-09-19, native, TestFlight
+
+**App Store — promotional text**
+
+> Report the result at your polling unit and keep your own signed copy — a card with the hawk on it, saved to your phone with the photos.
+
+**Play — short description** (unchanged)
+
+> Report your polling unit's result and keep your own signed copy.
+
+Fixes the receipt card never being written to the phone: the capture callback
+cancelled itself on any re-render inside its own 320ms window.

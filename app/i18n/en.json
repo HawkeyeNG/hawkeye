@@ -1564,5 +1564,6 @@
   "situation-room.not-listed": "not listed",
   "situation-room.the-upload": "The upload",
   "situation-room.and-more-units": "and {n} more units with a difference",
-  "situation-room.unit": "Unit"
+  "situation-room.unit": "Unit",
+  "common.something-went-wrong": "Something went wrong. Try again."
 }

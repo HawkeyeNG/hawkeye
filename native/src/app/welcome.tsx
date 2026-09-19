@@ -86,7 +86,7 @@ export default function Welcome() {
           into a dark plate on dark green. */}
       <View className="flex-1 items-center justify-center px-8">
         <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-white/10">
-          <Image source={require('../../assets/images/icon.png')} style={{ width: 96, height: 96 }} />
+          <Image source={require('../../assets/images/crest.png')} style={{ width: 96, height: 96 }} />
         </View>
         <Text className="pt-5 text-3xl font-bold tracking-widest text-white">HAWKEYE</Text>
         <Text className="pt-1 text-sm font-semibold text-emerald-200">

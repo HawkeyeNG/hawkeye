@@ -608,6 +608,7 @@ export default {
     "n.app.tabs.alerts.sign-in-to-get-alerts": "Shiga don samun sanarwa",
     "n.app.tabs.alerts.you-are-signed-in-updates-on": "Ka shiga. Sabuntawa kan takarun da kake bi da rahotannin da kake aikawa suna sauka nan.",
     "n.app.tabs.alerts.your-alerts-did-not-load": "An kasa loda sanarwarka. ({v0})",
+    "n.app.tabs.index.report-from-your-unit-now": "Ba da rahoto daga rumfar zaɓenka yanzu",
     "n.app.tabs.index.accepted-reports": "Rahotannin da Aka Karɓa",
     "n.app.tabs.index.case-resolved": "An warware shari'a — {v0}",
     "n.app.tabs.index.filter-cases": "Ƙarace-ƙarace",

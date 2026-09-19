@@ -607,6 +607,7 @@ export default {
   "n.app.tabs.alerts.sign-in-to-get-alerts": "Banye ka ị nweta ọkwa",
   "n.app.tabs.alerts.you-are-signed-in-updates-on": "Ị banyela. Mmelite gbasara asọmpi ị na-eso na akụkọ ị na-eziga na-adaba ebe a.",
   "n.app.tabs.alerts.your-alerts-did-not-load": "Ọkwa gị adọnyeghị. ({v0})",
+    "n.app.tabs.index.report-from-your-unit-now": "Nye akụkọ site n’ebe ịtụ vootu gị ugbu a",
   "n.app.tabs.index.accepted-reports": "Akụkọ Anabatara",
   "n.app.tabs.index.case-resolved": "E doziri ikpe — {v0}",
   "n.app.tabs.index.filter-cases": "Ikpe",

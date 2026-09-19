@@ -30,13 +30,36 @@
   var GREEN_950 = '#00251a', GREEN_DARK = '#00482b', GOLD = '#f5b301';
   var INK = '#ffffff', MUTED = '#a9c2b4', FAINT = '#8ba99a';
 
+  /**
+   * THE TRANSLATOR IS INJECTED, not imported.
+   *
+   * lines() is the twin of native's receiptLines(), and the two clients do not
+   * share a translate function - the web has HawkeyeI18n, the app has lib/i18n.
+   * Taking `t` as an argument is what lets the rule stay one comparable rule
+   * while still speaking Hausa: the parity test hands BOTH sides the same `t`,
+   * so a divergence is a real divergence and not a locale artefact.
+   *
+   * Defaults to the English argument, so a card still renders with no bundle
+   * loaded at all - the same contract as T() in app.js.
+   */
+  function defaultT(key, english) {
+    return window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english;
+  }
+
   function two(n) { return String(n).padStart(2, '0'); }
 
   /** "19 Sept 2026, 14:32" — local time, because that is when the reader was there. */
-  function stamp(ms) {
+  /**
+   * The month names are TRANSLATED TOO - one comma-separated key rather than
+   * twelve, split here. Intl.DateTimeFormat would be the obvious answer and is
+   * the wrong one: the app runs on Hermes, whose ICU data is not the browser's,
+   * so the same date would render differently on the two clients and the parity
+   * test could not tell that apart from a bug.
+   */
+  function stamp(ms, t) {
     var d = new Date(ms);
-    var M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-    return d.getDate() + ' ' + M[d.getMonth()] + ' ' + d.getFullYear()
+    var M = String(t('receipt.months', 'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sept,Oct,Nov,Dec')).split(',');
+    return d.getDate() + ' ' + (M[d.getMonth()] || '') + ' ' + d.getFullYear()
       + ', ' + two(d.getHours()) + ':' + two(d.getMinutes());
   }
 
@@ -47,8 +70,9 @@
    * as a flag: the hash is the thing that makes a report verifiable, so it is
    * the only honest source for whether this copy can claim to be on the ledger.
    */
-  function lines(d) {
+  function lines(d, t) {
     d = d || {};
+    t = t || defaultT;
     /**
      * THREE STATES, NOT TWO.
      *
@@ -72,13 +96,14 @@
     return {
       practice: practice,
       pending: pending,
-      title: practice ? 'Practice run \u2014 not a real result'
-        : pending ? 'Saved on your phone' : 'Your copy of this result',
+      title: practice ? t('receipt.title-practice', 'Practice run \u2014 not a real result')
+        : pending ? t('receipt.title-pending', 'Saved on your phone')
+          : t('receipt.title-recorded', 'Your copy of this result'),
       unit: d.puName || '',
       code: d.puCode || '',
       where: where,
       contest: d.contest || '',
-      when: 'Reported ' + stamp(d.at || Date.now()),
+      when: t('receipt.reported', 'Reported {v0}').replace('{v0}', stamp(d.at || Date.now(), t)),
       votes: votes,
       total: total,
       /* Short form for the face of the card; the full hash is what verifies, and
@@ -90,11 +115,20 @@
          worse, imply the rehearsal was published. */
       verify: (pending || practice) ? '' : 'hawkeye.com.ng/ledger.html#' + String(d.entryHash),
       status: practice
-        ? 'Practice chain only \u2014 this is a rehearsal and is never counted.'
+        ? t('receipt.status-practice', 'Practice chain only \u2014 this is a rehearsal and is never counted.')
         : pending
-          ? 'Not yet on the public ledger \u2014 it sends when you are back online.'
-          : 'Recorded on the public ledger.',
-      foot: 'Hawkeye does not declare results \u2014 official results are announced by INEC.',
+          ? t('receipt.status-pending', 'Not yet on the public ledger \u2014 it sends when you are back online.')
+          : t('receipt.status-recorded', 'Recorded on the public ledger.'),
+      foot: t('receipt.foot', 'Hawkeye does not declare results \u2014 official results are announced by INEC.'),
+      /* THE RENDERER'S OWN LABELS LIVE HERE TOO. They used to be typed
+         straight into the paint calls, which put them outside everything
+         that compares or translates the card - the one place a string is
+         guaranteed to be forgotten. */
+      totalLabel: t('receipt.total-on-this-sheet', 'Total on this sheet'),
+      hashLabel: practice
+        ? t('receipt.practice-chain-entry', 'PRACTICE CHAIN ENTRY')
+        : t('receipt.ledger-entry', 'LEDGER ENTRY'),
+      verifyLabel: t('receipt.verify-at', 'Verify at hawkeye.com.ng/ledger.html'),
     };
   }
 
@@ -194,7 +228,7 @@
       x.beginPath(); x.moveTo(PAD, y - 34); x.lineTo(W - PAD, y - 34); x.stroke();
       x.fillStyle = MUTED;
       x.font = '600 30px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-      x.fillText('Total on this sheet', PAD, y + 8);
+      x.fillText(L.totalLabel, PAD, y + 8);
       x.textAlign = 'right';
       x.font = '700 32px ui-monospace, SFMono-Regular, Menlo, monospace';
       x.fillStyle = INK; x.fillText(String(L.total), W - PAD, y + 8);
@@ -216,7 +250,7 @@
       if (L.hash) {
         x.fillStyle = MUTED;
         x.font = '600 24px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-        x.fillText('PRACTICE CHAIN ENTRY', PAD, y); y += 36;
+        x.fillText(L.hashLabel, PAD, y); y += 36;
         x.fillStyle = FAINT;
         x.font = '400 26px ui-monospace, SFMono-Regular, Menlo, monospace';
         chunk(x, L.hash, W - PAD * 2).forEach(function (ln) { x.fillText(ln, PAD, y); y += 32; });
@@ -232,14 +266,14 @@
     } else {
       x.fillStyle = MUTED;
       x.font = '600 26px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-      x.fillText('LEDGER ENTRY', PAD, y); y += 42;
+      x.fillText(L.hashLabel, PAD, y); y += 42;
       x.fillStyle = GOLD;
       x.font = '700 30px ui-monospace, SFMono-Regular, Menlo, monospace';
       chunk(x, L.hash, W - PAD * 2).forEach(function (ln) { x.fillText(ln, PAD, y); y += 38; });
       y += 14;
       x.fillStyle = FAINT;
       x.font = '400 26px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-      x.fillText('Verify at hawkeye.com.ng/ledger.html', PAD, y);
+      x.fillText(L.verifyLabel, PAD, y);
       y += 44;
     }
 
@@ -260,8 +294,8 @@
    * height can be guessed from. The paint runs once on a scratch surface to
    * find where it ends, then again on a canvas cut to that.
    */
-  function render(data, logo) {
-    var L = lines(data);
+  function render(data, logo, t) {
+    var L = lines(data, t);
     var scratch = document.createElement('canvas');
     scratch.width = W; scratch.height = H_MAX;
     var end = paint(scratch.getContext('2d'), L, logo, H_MAX);

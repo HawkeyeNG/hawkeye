@@ -47,6 +47,15 @@ check('native exports receiptLines()', typeof rn?.receiptLines, 'function');
  * field — a rule that agreed on the happy path and diverged on an empty vote
  * list would ship a blank card on one client only.
  */
+/**
+ * ONE TRANSLATOR, HANDED TO BOTH. lines() takes `t` as an argument precisely so
+ * this test can pin it: with the same translator on both sides a difference is
+ * a difference in the RULE, not in which bundle happened to load. Identity on
+ * the English argument keeps the expected strings readable here; that the
+ * translations exist at all is what the catalogues and keys_resolve prove.
+ */
+const T = (_k, english) => english;
+
 const AT = Date.UTC(2026, 8, 19, 13, 32);
 const CASES = {
   recorded: { puName: 'Ogbe-Udu Primary School', puCode: '10-18-03-001', ward: 'Udu III', lga: 'Udu', state: 'Delta', contest: 'SHA By-Election (Udu)', votes: [{ party: 'PDP', count: 120 }, { party: 'APC', count: 98 }], entryHash: 'a'.repeat(64), at: AT },
@@ -60,8 +69,8 @@ const CASES = {
 
 console.log('\n=== both clients build the same card, case for case ===');
 for (const [name, data] of Object.entries(CASES)) {
-  const a = web.lines(data);
-  const b = rn.receiptLines(data);
+  const a = web.lines(data, T);
+  const b = rn.receiptLines(data, T);
   check(`${name} agrees field for field`, JSON.stringify(a) === JSON.stringify(b), true);
   if (JSON.stringify(a) !== JSON.stringify(b)) {
     for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
@@ -73,7 +82,7 @@ for (const [name, data] of Object.entries(CASES)) {
 }
 
 console.log('\n=== the practice card cannot pass for a real one ===');
-for (const [who, L] of [['web', web.lines(CASES.practice)], ['native', rn.receiptLines(CASES.practice)]]) {
+for (const [who, L] of [['web', web.lines(CASES.practice, T)], ['native', rn.receiptLines(CASES.practice, T)]]) {
   check(`${who}: flagged practice`, L.practice, true);
   check(`${who}: says so in the title`, L.title, (t) => /not a real result/i.test(t));
   check(`${who}: says so in the status`, L.status, (t) => /rehearsal|never counted/i.test(t));
@@ -87,8 +96,8 @@ for (const [who, L] of [['web', web.lines(CASES.practice)], ['native', rn.receip
 }
 
 console.log('\n=== controls: the comparator can see a difference ===');
-check('a changed hash changes the card', web.lines(CASES.recorded).verify === web.lines(CASES.queued).verify, false);
-check('practice differs from recorded', web.lines(CASES.practice).title === web.lines(CASES.recorded).title, false);
+check('a changed hash changes the card', web.lines(CASES.recorded, T).verify === web.lines(CASES.queued, T).verify, false);
+check('practice differs from recorded', web.lines(CASES.practice, T).title === web.lines(CASES.recorded, T).title, false);
 
 console.log(fail ? `\n${fail} FAILED` : '\nAll passed');
 process.exit(fail ? 1 : 0);

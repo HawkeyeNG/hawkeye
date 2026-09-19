@@ -392,8 +392,8 @@ export function RaceView({
               final. */}
           <Text className="pb-2 text-xs text-muted">
             {race.fieldLabel === 'parties'
-              ? 'INEC published the parties but not the candidates\u2019 names. Alphabetical \u2014 not an endorsement or a prediction.'
-              : 'Alphabetical by party. Not an endorsement or a prediction.'}
+              ? i18nT('race.parties-hint')
+              : i18nT('race.alphabetical-by-party')}
             {reported
               ? ` Totals are what observers have reported so far — from ${reported.units.toLocaleString()} polling unit${
                   reported.units === 1 ? '' : 's'

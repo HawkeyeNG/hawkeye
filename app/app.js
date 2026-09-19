@@ -2130,7 +2130,7 @@ async function showReceipt(data) {
   try {
     const R = window.HAWKEYE_RECEIPT;
     if (!R) return;
-    const canvas = R.render(data, await R.loadLogo());
+    const canvas = R.render(data, await R.loadLogo(), T);
     receiptBlob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
     if (!receiptBlob) return;
     $('receipt-img').src = URL.createObjectURL(receiptBlob);

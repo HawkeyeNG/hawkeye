@@ -3,6 +3,11 @@
 // only network calls are GET /api/practice (config) and POST /api/practice/submit
 // (writes to the disposable practice_submissions table). No sign-in required.
 (function () {
+  /* Same helper as app.js: the English literal stays in the source, so this
+     file still reads as English and still renders with no bundle loaded. */
+  function T(key, english) {
+    return window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english;
+  }
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const shots = { sheet: false, venue: false };
@@ -125,11 +130,11 @@
             entryHash: d.entryHash || '',
             practice: true,
             at: Date.now(),
-          }, await R.loadLogo());
+          }, await R.loadLogo(), T);
           $('receipt-img').src = canvas.toDataURL('image/png');
           $('receipt-wrap').hidden = false;
-          $('receipt-note').textContent =
-            'On a real report this is yours to keep and send on. Nothing here is counted.';
+          $('receipt-note').textContent = T('practice.card-note',
+            'On a real report this is yours to keep and send on. Nothing here is counted.');
         } catch { /* the practice run is not worth failing over a picture */ }
       })();
       renderPreview(votes);

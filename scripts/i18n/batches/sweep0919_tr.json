@@ -1,0 +1,172 @@
+{
+  "receipt.title-practice": {
+    "ha": "Gwaji ne — ba sakamako na gaske ba",
+    "ig": "Omume ka ọ bụ — ọ bụghị ezigbo nsonaazụ",
+    "yo": "Ìdánrawò ni — kì í ṣe àbájáde gidi"
+  },
+  "receipt.title-pending": {
+    "ha": "An ajiye a wayarka",
+    "ig": "Echekwara ya na ekwentị gị",
+    "yo": "A ti fi pamọ́ sínú fóònù rẹ"
+  },
+  "receipt.title-recorded": {
+    "ha": "Kwafinka na wannan sakamako",
+    "ig": "Nnomi gị nke nsonaazụ a",
+    "yo": "Ẹ̀dà rẹ ti àbájáde yìí"
+  },
+  "receipt.status-practice": {
+    "ha": "Sarkar gwaji kaɗai — gwaji ne kuma ba a ƙidaya shi.",
+    "ig": "Naanị yinyin omume — ọ bụ mmemme ule, a naghị agụ ya.",
+    "yo": "Ẹ̀wọ̀n ìdánrawò nìkan — ìdánrawò ni, a kì í kà á."
+  },
+  "receipt.status-pending": {
+    "ha": "Bai riga ya shiga littafin jama'a ba — zai tafi idan ka dawo kan layi.",
+    "ig": "Ọ banyebeghị n'akwụkwọ ọha — ọ ga-eziga ozugbo ị laghachiri n'ịntanetị.",
+    "yo": "Kò tíì wà nínú ìwé àkọsílẹ̀ gbogbogbò — yóò ránṣẹ́ nígbà tí o bá padà sórí ẹ̀rọ ayélujára."
+  },
+  "receipt.status-recorded": {
+    "ha": "An rubuta shi a littafin jama'a.",
+    "ig": "Edekọtara ya n'akwụkwọ ọha.",
+    "yo": "A ti kọ ọ́ sínú ìwé àkọsílẹ̀ gbogbogbò."
+  },
+  "receipt.foot": {
+    "ha": "Hawkeye ba ta sanar da sakamako — INEC ce ke sanar da sakamako na hukuma.",
+    "ig": "Hawkeye anaghị ekwupụta nsonaazụ — INEC na-ekwupụta nsonaazụ gọọmentị.",
+    "yo": "Hawkeye kì í kéde àbájáde — INEC ni ó ń kéde àbájáde ìjọba."
+  },
+  "receipt.reported": {
+    "ha": "An bayar da rahoto {v0}",
+    "ig": "Akụkọ e nyere {v0}",
+    "yo": "A ròyìn ní {v0}"
+  },
+  "receipt.months": {
+    "ha": "Jan,Fab,Mar,Afr,May,Yun,Yul,Agu,Sat,Okt,Nuw,Dis",
+    "ig": "Jan,Feb,Maa,Epr,Mee,Jun,Jul,Ọgọ,Sep,Ọkt,Nov,Dis",
+    "yo": "Ṣẹr,Èrè,Ẹrẹ,Ìgb,Ẹbi,Òkú,Agẹ,Ògú,Owe,Ọwà,Bél,Ọpẹ"
+  },
+  "receipt.total-on-this-sheet": {
+    "ha": "Jimillar da ke wannan takardar",
+    "ig": "Ngụkọta dị na mpempe akwụkwọ a",
+    "yo": "Àpapọ̀ lórí ìwé yìí"
+  },
+  "receipt.ledger-entry": {
+    "ha": "SHIGARWAR LITTAFI",
+    "ig": "NDEBANYE AKWỤKWỌ",
+    "yo": "ÀKỌSÍLẸ̀ ÌWÉ"
+  },
+  "receipt.practice-chain-entry": {
+    "ha": "SHIGARWAR SARKAR GWAJI",
+    "ig": "NDEBANYE YINYIN OMUME",
+    "yo": "ÀKỌSÍLẸ̀ ẸWỌ̀N ÌDÁNRAWÒ"
+  },
+  "receipt.verify-at": {
+    "ha": "Tabbatar a hawkeye.com.ng/ledger.html",
+    "ig": "Nyochaa na hawkeye.com.ng/ledger.html",
+    "yo": "Ṣàyẹ̀wò ní hawkeye.com.ng/ledger.html"
+  },
+  "race.ballot-full-note": {
+    "ha": "Dukkan 'yan takarar da ke kan katin zaɓe na wannan ƙarin zaɓe — {v0} ne.",
+    "ig": "Ndị ndoro-ndoro niile nọ na ballot nke ntuli aka a — {v0} ha.",
+    "yo": "Gbogbo àwọn olùdíje tó wà lórí ìwé ìdìbò ìdìbò àfikún yìí — {v0} ni wọ́n."
+  },
+  "race.map-facts-from-register": {
+    "ha": "Taswira da bayanan kujera da ke wannan shafin sun fito ne daga rijistar zaɓe.",
+    "ig": "Maapụ na ihe banyere oche dị na peeji a sitere na ndekọ ntuli aka.",
+    "yo": "Àwòrán àti òtítọ́ nípa ìjókòó lórí ojú-ìwé yìí wá láti inú ìwé ìforúkọsílẹ̀ ìdìbò."
+  },
+  "race.candidate-name-not-published": {
+    "ha": "Ba a wallafa sunan ɗan takara ba",
+    "ig": "E bipụtabeghị aha onye ndoro-ndoro",
+    "yo": "A kò tẹ orúkọ olùdíje jáde"
+  },
+  "race.ballot-parties-note": {
+    "ha": "INEC ta wallafa jam'iyyu {v0} da ke fafatawa a wannan ƙarin zaɓe amma ba sunayen 'yan takara ba. Sunayen suna kan sanarwar da aka manna a rumfar zaɓenka — ɗauki hotonta, Hawkeye kuwa za ta samu su.",
+    "ig": "INEC ebipụtala ndị pati {v0} na-asọ mpi na ntuli aka a mana ọ bipụtaghị aha ndị ndoro-ndoro. Aha ndị ahụ dị na ọkwa e kwadoro n'ebe ịtụ vootu gị — see foto ya, Hawkeye ga-enwe ha.",
+    "yo": "INEC ti tẹ àwọn ẹgbẹ́ {v0} tó ń díje nínú ìdìbò àfikún yìí jáde ṣùgbọ́n kì í ṣe orúkọ àwọn olùdíje. Àwọn orúkọ náà wà lórí ìwé ìkéde tí a lẹ̀ mọ́ ilé ìdìbò rẹ — ya àwòrán rẹ̀, Hawkeye yóò sì ní wọn."
+  },
+  "race.seat-narrowed-note": {
+    "ha": "Wannan ɗaya ne daga cikin mazaɓun jiha da ke ƙaramar hukumar {v0}, kuma wannan kaɗai ke zaɓe. Alkaluman da ke ƙasa na unguwanninsa {v1} ne, ba na ƙaramar hukumar ba.",
+    "ig": "Nke a bụ otu n'ime ndị ntuli aka steeti dị na LGA {v0}, naanị nke a na-eme ntuli aka. Ọnụọgụgụ ndị dị n'okpuru bụ nke ward {v1} nke ya, ọ bụghị nke LGA.",
+    "yo": "Èyí jẹ́ ọ̀kan nínú àwọn agbègbè ìdìbò ìpínlẹ̀ tó wà ní ìjọba ìbílẹ̀ {v0}, èyí nìkan ló sì ń dìbò. Àwọn nọ́mbà tó wà nísàlẹ̀ jẹ́ ti agbègbè {v1} tirẹ̀, kì í ṣe ti ìjọba ìbílẹ̀."
+  },
+  "race.shared-lga-note": {
+    "ha": "Wannan ƙaramar hukuma tana zaɓen fiye da ɗan majalisar jiha guda ɗaya, kuma rijistar INEC ba ta raba su, don haka alkaluman unguwanni da rumfunan zaɓe da ke wannan shafin sun shafi dukkan kujerun ƙaramar hukumar ba wannan kaɗai ba.",
+    "ig": "LGA a na-ahọpụta ihe karịrị otu onye otu steeti, ndekọ INEC anaghịkwa ekewa ha, ya mere ọnụọgụgụ ward na ebe ịtụ vootu dị na peeji a kpuchiri oche niile dị na LGA kama naanị nke a.",
+    "yo": "Ìjọba ìbílẹ̀ yìí ń yan ju ọmọ ilé ìgbìmọ̀ ìpínlẹ̀ kan lọ, ìwé ìforúkọsílẹ̀ INEC kò sì yà wọ́n sọ́tọ̀, nítorí náà àwọn nọ́mbà agbègbè àti ilé ìdìbò lórí ojú-ìwé yìí bo gbogbo ìjókòó nínú ìjọba ìbílẹ̀ dípò èyí nìkan."
+  },
+  "race.no-list-by-election": {
+    "ha": "INEC ba ta wallafa jerin 'yan takara na wannan ƙarin zaɓe ba tukuna. 'Yan takara za su bayyana a nan da zarar an fitar da jerin na hukuma. Kujera da taswirar da ke wannan shafin sun fito ne daga rijistar zaɓe kuma na yanzu ne.",
+    "ig": "INEC ebipụtabeghị ndepụta ndị ndoro-ndoro maka ntuli aka a. Ndị ndoro-ndoro ga-apụta ebe a ozugbo ndepụta gọọmentị wepụtara. Oche na maapụ dị na peeji a sitere na ndekọ ntuli aka, ha dịkwa ka ọ dị ugbu a.",
+    "yo": "INEC kò tíì tẹ àtòjọ olùdíje fún ìdìbò àfikún yìí jáde. Àwọn olùdíje yóò farahàn níbí ní kété tí àtòjọ ìjọba bá jáde. Ìjókòó àti àwòrán lórí ojú-ìwé yìí wá láti inú ìwé ìforúkọsílẹ̀ ìdìbò, ó sì jẹ́ tuntun."
+  },
+  "race.alphabetical-by-party": {
+    "ha": "An jera su bisa haruffan jam'iyya. Ba amincewa ba ce ko hasashe.",
+    "ig": "E depụtara ha n'usoro mkpụrụedemede pati. Ọ bụghị nkwado maọbụ amụma.",
+    "yo": "A tò wọ́n ní ìlànà álífábẹ́ẹ̀tì ẹgbẹ́. Kì í ṣe ìfọwọ́sí tàbí àsọtẹ́lẹ̀."
+  },
+  "practice.card-note": {
+    "ha": "A rahoto na gaske wannan naka ne ka ajiye ka kuma aika. Ba a ƙidaya kome a nan.",
+    "ig": "N'akụkọ ezigbo, nke a bụ nke gị idobe na izipu. A naghị agụ ihe ọ bụla ebe a.",
+    "yo": "Nínú ìròyìn gidi, tìrẹ ni èyí láti tọ́jú àti láti fi ránṣẹ́. A kì í kà nǹkan kan níbí."
+  },
+  "practice.what-you-would-keep": {
+    "ha": "Abin Da Za Ka Ajiye",
+    "ig": "Ihe Ị Ga-edobe",
+    "yo": "Ohun Tí O Máa Tọ́jú"
+  },
+  "invite.page-title": {
+    "ha": "Hawkeye — An gayyace ka ka zama mai sa ido",
+    "ig": "Hawkeye — A kpọrọ gị ka ị bụrụ onye nlereanya",
+    "yo": "Hawkeye — A ti pè ọ́ láti ṣe àkíyèsí"
+  },
+  "invite.meta-description": {
+    "ha": "Wani ya gayyace ka ka sa ido a zaɓe tare da Hawkeye — kwafin jama'a na sakamakon da aka sanar a rumfar zaɓenka.",
+    "ig": "Otu onye akpọọla gị ka i lere ntuli aka anya site na Hawkeye — nnomi ọha nke nsonaazụ e kwupụtara n'ebe ịtụ vootu gị.",
+    "yo": "Ẹnìkan ti pè ọ́ láti ṣe àkíyèsí ìdìbò pẹ̀lú Hawkeye — ẹ̀dà gbogbogbò ti àbájáde tí a kéde ní ilé ìdìbò rẹ."
+  },
+  "invite.title": {
+    "ha": "An gayyace ka ka zama mai sa ido",
+    "ig": "A kpọrọ gị ka ị bụrụ onye nlereanya",
+    "yo": "A ti pè ọ́ láti ṣe àkíyèsí"
+  },
+  "invite.sub": {
+    "ha": "Hawkeye tana ajiye kwafin jama'a na sakamakon da aka sanar a rumfar zaɓenka. Tana da 'yancin kai kuma ba ta goyon bayan kowace jam'iyya.",
+    "ig": "Hawkeye na-edobe nnomi ọha nke nsonaazụ e kwupụtara n'ebe ịtụ vootu gị. Ọ nweere onwe ya, ọ naghịkwa akwado pati ọ bụla.",
+    "yo": "Hawkeye ń tọ́jú ẹ̀dà gbogbogbò ti àbájáde tí a kéde ní ilé ìdìbò rẹ. Ó dúró fún ara rẹ̀, kò sì ṣàtìlẹ́yìn fún ẹgbẹ́ kankan."
+  },
+  "invite.your-invite-code": {
+    "ha": "Lambar gayyatarka",
+    "ig": "Koodu ọkpụkpọ gị",
+    "yo": "Kóòdù ìpè rẹ"
+  },
+  "invite.get-the-app": {
+    "ha": "Sami manhajar",
+    "ig": "Nweta ngwa ahụ",
+    "yo": "Gba ohun-èlò náà"
+  },
+  "invite.continue-in-this-browser": {
+    "ha": "Ci gaba a wannan burauzar",
+    "ig": "Gaa n'ihu na ihe nchọgharị a",
+    "yo": "Tẹ̀síwájú nínú ẹ̀rọ aṣàwákiri yìí"
+  },
+  "invite.ios-note": {
+    "ha": "Bayan ka girka, shigar da lambar da ke sama lokacin da kake buɗe asusunka.",
+    "ig": "Mgbe ị wụsịrị ya, tinye koodu dị n'elu mgbe ị na-emepụta akaụntụ gị.",
+    "yo": "Lẹ́yìn tí o bá fi sọ́nà, tẹ kóòdù tó wà lókè nígbà tí o bá ń ṣẹ̀dá àkáǹtì rẹ."
+  },
+  "invite.get-on-play": {
+    "ha": "Sami Hawkeye a Google Play",
+    "ig": "Nweta Hawkeye na Google Play",
+    "yo": "Gba Hawkeye ní Google Play"
+  },
+  "invite.get-on-app-store": {
+    "ha": "Sami Hawkeye a App Store",
+    "ig": "Nweta Hawkeye na App Store",
+    "yo": "Gba Hawkeye ní App Store"
+  },
+  "invite.download-hawkeye": {
+    "ha": "Sauke Hawkeye",
+    "ig": "Budata Hawkeye",
+    "yo": "Ṣe àgbàsílẹ̀ Hawkeye"
+  }
+}

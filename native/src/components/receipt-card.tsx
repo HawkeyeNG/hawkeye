@@ -15,6 +15,7 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import Svg, { Defs, G, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
+import { t as i18nT } from '@/lib/i18n';
 import { receiptLines, type ReceiptData } from '@/lib/receipt';
 
 const W = 1080;
@@ -62,7 +63,13 @@ export type ReceiptCardHandle = { toPng: () => Promise<string | null> };
 export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; width?: number }>(
   function ReceiptCard({ data, width = 340 }, ref) {
     const svgRef = useRef<Svg>(null);
-    const L = receiptLines(data);
+    /* i18nT returns the KEY when a string is missing, which on a card would
+       print "receipt.foot" to an observer. Falling back to the English keeps
+       the card readable in the one case native_keys_resolve did not catch. */
+    const L = receiptLines(data, (k, en) => {
+      const v = i18nT(k);
+      return !v || v === k ? en : v;
+    });
 
     useImperativeHandle(ref, () => ({
       toPng: () =>
@@ -115,7 +122,7 @@ export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; wi
     }
     if (L.votes.length) {
       push(<Rect key="rule" x={PAD} y={y - 36} width={W - PAD * 2} height={2} fill="rgba(255,255,255,0.16)" />);
-      push(<SvgText key="totl" x={PAD} y={y + 8} fontSize={30} fill={MUTED} fontWeight="600" fontFamily={SANS}>Total on this sheet</SvgText>);
+      push(<SvgText key="totl" x={PAD} y={y + 8} fontSize={30} fill={MUTED} fontWeight="600" fontFamily={SANS}>{L.totalLabel}</SvgText>);
       push(<SvgText key="totn" x={W - PAD} y={y + 8} fontSize={32} fill={INK} fontWeight="700" fontFamily={MONO} textAnchor="end">{String(L.total)}</SvgText>);
       y += 60;
     }
@@ -128,7 +135,7 @@ export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; wi
       for (const ln of wrap(L.status, 28, W - PAD * 2 - 8)) { line(ln, 28, GOLD, '600'); y += 38; }
       y += 34;
       if (L.hash) {
-        line('PRACTICE CHAIN ENTRY', 24, MUTED, '600'); y += 36;
+        line(L.hashLabel, 24, MUTED, '600'); y += 36;
         for (const ln of chunk(L.hash, 26, W - PAD * 2)) { line(ln, 26, FAINT, '400', MONO); y += 32; }
         y += 10;
       }
@@ -137,10 +144,10 @@ export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; wi
       for (const ln of wrap(L.status, 28, W - PAD * 2 - 8)) { line(ln, 28, GOLD, '600'); y += 38; }
       y += 34;
     } else {
-      line('LEDGER ENTRY', 26, MUTED, '600'); y += 42;
+      line(L.hashLabel, 26, MUTED, '600'); y += 42;
       for (const ln of chunk(L.hash, 30, W - PAD * 2)) { line(ln, 30, GOLD, '700', MONO); y += 38; }
       y += 14;
-      line('Verify at hawkeye.com.ng/ledger.html', 26, FAINT, '400');
+      line(L.verifyLabel, 26, FAINT, '400');
       y += 44;
     }
 

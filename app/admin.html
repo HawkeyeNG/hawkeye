@@ -172,13 +172,24 @@
        the user agent's `[hidden] { display: none }`, so every element given
        a display in this file needs the guard beside it. */
     .panelbar[hidden], #btn-install[hidden] { display: none !important; }
-    /* WHITE PILLS ON A DARK HEADER INHERIT WHITE TEXT.
-       `.tab` sets a light background and no colour, which was fine in the body
-       and is invisible here — the header's own colour is #fff, so every label
-       but the active one vanished into its own pill. Scoped to the header so
-       the settings and pair-kind tabs elsewhere keep their own treatment. */
-    .brand-row .tab { color: #10221a; }
+    /* THE PILLS NEED A COLOUR, AND IT HAS TO BE A TOKEN.
+       `.tab` sets a background and no colour, so in the header it inherited the
+       bar's #fff and every inactive label went white-on-white. The first fix
+       hardcoded #10221a, which is the same mistake pointing the other way: the
+       pill background is var(--card), which is near-black in dark mode, so the
+       labels went dark-on-dark instead. --ink flips with --card, so one rule is
+       right in both themes. Never answer a theme bug with a literal. */
+    .brand-row .tab { color: var(--ink); }
     .brand-row .tab.on { color: #fff; }
+
+    /* THE HEADER STAYS INSIDE THE CONTENT COLUMN.
+       .brand-row is also .wrap, so it carries the page's max-width — but a flex
+       item does not shrink below its own min-content, and nine tabs plus the
+       brand are wider than that. The row overflowed the column and the header
+       stretched to the window while the content below stayed centred, which is
+       what made the page look broken. min-width:0 lets the strip shrink so its
+       own flex-wrap can do the wrapping. */
+    .brand-row .panelbar { min-width: 0; }
     /* The tabs sit to the RIGHT of the brand, and wrap under it on a narrow
        screen rather than squeezing the wordmark. */
     .brand-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }

@@ -38,7 +38,9 @@ const b = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwri
  */
 const exp = Math.floor(Date.now() / 1000) + 3600;
 const jwt = 'x.' + Buffer.from(JSON.stringify({ exp })).toString('base64url') + '.x';
-const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2 });
+const SCHEME = process.argv[2] === 'dark' ? 'dark' : 'light';
+console.log(`(colour scheme: ${SCHEME})`);
+const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2, colorScheme: SCHEME });
 await ctx.addInitScript((t) => {
   try { localStorage.setItem('hawkeye_token', t); } catch (e) { /* about:blank */ }
 }, jwt);
@@ -62,7 +64,7 @@ check('its own manifest is linked', await p.evaluate(() =>
   document.querySelector('link[rel=manifest]')?.getAttribute('href')), (h) => /admin\.webmanifest/.test(h || ''));
 check('install is hidden until the browser offers it', await p.evaluate(() =>
   document.getElementById('btn-install').hidden), true);
-await p.screenshot({ path: `${OUT}/locked.png` });
+await p.screenshot({ path: `${OUT}/locked-${SCHEME}.png` });
 
 // ---- UNLOCKED ----------------------------------------------------------
 await p.evaluate(() => {
@@ -91,6 +93,38 @@ if (shown) {
    * header's #fff and eight of the nine labels were white on white — laid out
    * perfectly, and invisible. A layout assertion cannot see that.
    */
+  /**
+   * THE HEADER RESPECTS ITS OWN MAX-WIDTH.
+   *
+   * .wrap is 1120px site-wide and main.wrap is 840 — the header IS meant to be
+   * wider than the content, on every page. What broke was different: a flex
+   * item does not shrink below its min-content, so nine tabs plus the brand
+   * blew past the 1120 cap and the header ran to the window edge. On a wide
+   * monitor that put the brand hard left while the content stayed centred,
+   * which reads as a broken page without a single element being missing.
+   *
+   * Asserted at a WIDE viewport as well, because at 1280 the row happens to
+   * land on its cap and the overflow does not show.
+   */
+  check('the header respects its 1120px cap', await p.evaluate(() => {
+    const row = document.querySelector('.brand-row').getBoundingClientRect();
+    const bar = document.getElementById('panelbar').getBoundingClientRect();
+    return { rowW: Math.round(row.width), barR: Math.round(bar.right), rowR: Math.round(row.right) };
+  }), (v) => v.rowW <= 1121 && v.barR <= v.rowR + 2);
+
+  {
+    const wide = await ctx.newPage();
+    await wide.setViewportSize({ width: 1900, height: 840 });
+    await wide.goto(`${base}/admin.html`, { waitUntil: 'networkidle' });
+    await wide.waitForTimeout(500);
+    check('and still caps on a wide monitor', await wide.evaluate(() => {
+      const row = document.querySelector('.brand-row').getBoundingClientRect();
+      const bar = document.getElementById('panelbar').getBoundingClientRect();
+      return { rowW: Math.round(row.width), barR: Math.round(bar.right), rowR: Math.round(row.right) };
+    }), (v) => v.rowW <= 1121 && v.barR <= v.rowR + 2);
+    await wide.close();
+  }
+
   check('every tab label contrasts with its own pill', await p.evaluate(() => {
     const lum = (c) => {
       const [r, g, b] = (c.match(/\d+/g) || [0, 0, 0]).map(Number);
@@ -110,7 +144,7 @@ if (shown) {
     const vis = [...document.querySelectorAll('.panel')].filter((x) => !x.hidden).map((x) => x.dataset.p);
     return { on, vis };
   }), (r) => r.on === 'push' && r.vis.length === 1 && r.vis[0] === 'push');
-  await p.screenshot({ path: `${OUT}/unlocked.png` });
+  await p.screenshot({ path: `${OUT}/unlocked-${SCHEME}.png` });
 }
 check('no page errors', errs, []);
 

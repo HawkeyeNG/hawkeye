@@ -44,7 +44,7 @@ android {
         // recordings (size limits apply to gallery files only), client-side
         // compression before upload, real video thumbnails, and upload
         // feedback that reports only what it actually knows.
-        versionCode 10
+        versionCode 11
         versionName "1.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

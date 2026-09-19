@@ -65,15 +65,33 @@ export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; wi
   function ReceiptCard({ data, width = 340, onReady }, ref) {
     const svgRef = useRef<Svg>(null);
     const readyFired = useRef(false);
+    /**
+     * THE CALLBACK IS HELD IN A REF, AND THE EFFECT RUNS ONCE.
+     *
+     * Both callers pass an inline arrow, so `onReady` is a NEW FUNCTION on every
+     * render. With `[onReady]` as the dependency the effect re-ran on each one:
+     * cleanup fired `clearTimeout`, killing the pending 320ms timer, and the
+     * re-run hit `readyFired.current === true` and returned WITHOUT scheduling
+     * another. Any re-render inside that 320ms window — and the practice screen
+     * has several landing right after a run completes — silently cancelled the
+     * capture for good.
+     *
+     * The card still drew, which is what made it so hard to see: the observer
+     * watched a perfectly good card appear and no file was ever written, with
+     * no error anywhere because nothing had failed. It simply never ran.
+     */
+    const onReadyRef = useRef(onReady);
+    onReadyRef.current = onReady;
     useEffect(() => {
-      if (readyFired.current || !onReady) return;
+      if (readyFired.current) return;
       readyFired.current = true;
       // A frame's grace so the native view is laid out before it is read.
       // 320ms, not 120: the crest is decoded and painted before the capture
       // runs, or the saved copy has a hole where the hawk is.
-      const id = setTimeout(onReady, 320);
+      const id = setTimeout(() => onReadyRef.current?.(), 320);
       return () => clearTimeout(id);
-    }, [onReady]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
     /* i18nT returns the KEY when a string is missing, which on a card would
        print "receipt.foot" to an observer. Falling back to the English keeps
        the card readable in the one case native_keys_resolve did not catch. */

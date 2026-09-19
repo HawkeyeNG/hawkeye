@@ -501,6 +501,20 @@ html.scrolling *::-webkit-scrollbar-thumb {
 .sr-msg { padding: 26px; text-align: center; color: var(--muted); font-size: 0.88rem; }
 .sr-sub { color: var(--muted); font-size: 0.75rem; display: block; margin-top: 2px; }
 @media (max-width: 640px) { .sr-bar h1 { width: 100%; } }
+
+    /* THE FOOTER, COPIED FROM admin.html.
+       styles.css sizes this footer for three blocks — nav, disclaimer,
+       copyright — and gives .copyright a hairline rule to set it off from the
+       prose above. With only the copyright left, that rule separates a line
+       from nothing, which reads as a mistake rather than as structure. Padding
+       halves with the content it was spacing.
+
+       Scoped here rather than in styles.css: that file is in the service-worker
+       SHELL, so touching it means bumping ?v= across 40 pages for a layout only
+       the two consoles need. */
+    footer.gov-footer { flex-shrink: 0; }
+    footer.gov-footer .wrap { padding-top: 13px; padding-bottom: 15px; }
+    footer.gov-footer .copyright { margin: 0; padding-top: 0; border-top: 0; }
 </style>
 </head>
 <body>
@@ -545,6 +559,13 @@ html.scrolling *::-webkit-scrollbar-thumb {
     <main class="sr" id="sr">
       <div class="sr-msg" data-i18n="index.loading">Loading…</div>
     </main>
+
+  <!-- The site footer's nav and disclaimer are furniture with no business in a
+       campaign's own room; the copyright is the line that belongs, worded as
+       every other page words it. -->
+  <footer class="gov-footer"><div class="wrap">
+    <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+  </div></footer>
   </div>
 
 <script>

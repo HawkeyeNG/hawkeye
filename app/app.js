@@ -1455,7 +1455,8 @@ async function renderCheckIn() {
   const done = rooms.every((r) => r.checkedIn && r.checkedIn.standing === 'verified');
   if (done) {
     host.hidden = false;
-    host.innerHTML = `<p class="hint">\u2714 ${T('observe.checked-in-already', 'Your coordinator knows you are here.')}</p>`;
+    host.innerHTML = `<div class="card" style="border-left:4px solid var(--ok, #1f7a4d);padding:14px 18px">`
+      + `<p class="hint" style="margin:0">\u2714 ${T('observe.checked-in-already', 'Your coordinator knows you are here.')}</p></div>`;
     return;
   }
 
@@ -1466,12 +1467,12 @@ async function renderCheckIn() {
   const elsewhere = rooms.filter((r) => r.assigned && r.assigned.pu_code !== selectedPu.pu_code);
   host.hidden = false;
   host.innerHTML = `
-    <div class="plat" id="checkin-card">
-      <b>${T('observe.check-in-title', 'Tell your coordinator you are here')}</b>
-      <p class="muted" id="checkin-note">${elsewhere.length
+    <div class="card" id="checkin-card" style="border-left:4px solid var(--accent);padding:16px 18px">
+      <b style="display:block;margin-bottom:4px">${T('observe.check-in-title', 'Tell your coordinator you are here')}</b>
+      <p class="hint" style="margin:0" id="checkin-note">${elsewhere.length
     ? T('observe.check-in-different-unit', 'You are down for {unit}. Checking in here records where you actually are.', { unit: elsewhere[0].assigned.name })
     : T('observe.check-in-sub', 'They will see that you have arrived, before any result is filed.')}</p>
-      <button type="button" id="btn-checkin" style="width:auto;margin:6px 0 0">${T('observe.check-in', "I'm at my unit")}</button>
+      <button type="button" class="secondary" id="btn-checkin" style="width:auto;margin:12px 0 0">${T('observe.check-in', "I'm at my unit")}</button>
     </div>`;
 }
 

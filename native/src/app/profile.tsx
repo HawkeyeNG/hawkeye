@@ -28,6 +28,7 @@ import { isBiometricAvailable, isSigningGateEnabled, setSigningGateEnabled } fro
 import { pick } from '@/lib/haptics';
 import { isSaveToDeviceEnabled, setSaveToDeviceEnabled } from '@/lib/save-to-device';
 import { shareHawkeye } from '@/lib/share';
+import { myReferral, type Referral } from '@/lib/referral';
 import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -193,6 +194,12 @@ export default function Profile() {
   const [refreshing, setRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
+  /* The invite link. null until it arrives, and it may never arrive — the row
+     simply stays quiet rather than the screen failing over it. */
+  const [referral, setReferral] = useState<Referral | null>(null);
+  /* Its OWN flag. `copied` above belongs to the identity-hash row, and one
+     boolean between the two would make both say "Copied" on either tap. */
+  const [refCopied, setRefCopied] = useState(false);
   const [confirm, setConfirm] = useState<'signout' | 'delete' | null>(null);
   /**
    * Face ID / fingerprint before signing. Two pieces of state, not one: a phone
@@ -298,6 +305,11 @@ export default function Profile() {
   useEffect(() => {
     load();
   }, [load]);
+
+  /* Asked once, and never awaited by anything the screen is waiting for. */
+  useEffect(() => {
+    myReferral().then(setReferral);
+  }, []);
 
   useEffect(() => {
     getIdentity()
@@ -761,6 +773,55 @@ export default function Profile() {
                 with the Telegram bot and the accounts, is on More
                 (components/social-row.tsx); this is the one entry that belongs
                 on a page about you. */}
+            {/* INVITE OTHERS.
+                The binding constraint is not capability, it is how few people
+                are standing at a unit with this: Osun drew twelve organic
+                observers against 3,763 polling units. The only channel that
+                reaches 176,846 is one observer handing it to the next, so the
+                invite sits on a screen they already visit.
+
+                TWO COUNTS, AND THE SECOND IS THE HONEST ONE. "signed up" is who
+                made an account; "observed" is who went on to file an accepted
+                result. Only the second would ever be paid on, so both are shown
+                from the start — introducing the second one alongside a payout
+                is what would read as a bait-and-switch.
+
+                The whole section is absent until the code arrives: a row
+                reading "…" forever is worse than no row. */}
+            {referral ? (
+              <>
+                <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
+                  {i18nT('profile.invite')}
+                </Text>
+                <View className="overflow-hidden rounded-2xl bg-card">
+                  <Row
+                    first
+                    icon="link"
+                    label={i18nT('profile.your-invite-link')}
+                    value={refCopied ? i18nT('n.app.profile.copied') : referral.code}
+                    chevron
+                    onPress={async () => {
+                      /* COPY FIRST, AND ALWAYS SAY SOMETHING. The web twin
+                         reached for navigator.share, which on some surfaces
+                         succeeds invisibly or throws silently — the row read as
+                         a dead button. Copying is the one action that works
+                         everywhere and can be confirmed on screen. */
+                      await Clipboard.setStringAsync(referral.url);
+                      setRefCopied(true);
+                      setTimeout(() => setRefCopied(false), 2000);
+                    }}
+                  />
+                  <Row
+                    icon="users"
+                    label={i18nT('profile.people-you-invited')}
+                    value={referral.signedUp
+                      ? `${referral.signedUp} ${i18nT('profile.signed-up')} \u00b7 ${referral.qualified} ${i18nT('profile.observed')}`
+                      : i18nT('profile.none-yet')}
+                  />
+                </View>
+              </>
+            ) : null}
+
             <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
               {i18nT('n.app.profile.find-hawkeye')}
             </Text>

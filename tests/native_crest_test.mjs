@@ -54,7 +54,10 @@ check('with the wordmark 104 to its right',
   /x=\{PAD \+ 104\} y=\{y \+ 56\}/.test(card), true);
 // The capture rasterises what has PAINTED, so the delay has to outlast the
 // decode or the saved copy is the one thing missing the mark.
-check('and the capture waits for it', /setTimeout\(onReady, 320\)/.test(card), true);
+// The DELAY is the property, not how the callback is spelled: it is now read
+// through a ref so a re-render cannot cancel the timer (see
+// practice_card_save_test.mjs for the bug that caused).
+check('and the capture waits for it', /setTimeout\([^,]+, 320\)/.test(card), true);
 
 // ------------------------------------------------ the inlined artwork itself
 // INLINE, NOT require(). A bundler asset resolves through the image loader at

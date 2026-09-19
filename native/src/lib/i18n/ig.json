@@ -1169,5 +1169,12 @@
   "tour.report.title": "Kọọ — bọtịnụ akwụkwọ ndụ",
   "tour.results.body": "Họrọ asọmpi ka ị hụ maapụ ya na mgbakọta ya na-aga n'ihu. Soro otu ka ị nweta ọkwa.",
   "tour.start": "Malite ikiri",
-  "tour.welcome": "Nnọọ na Hawkeye"
+  "tour.welcome": "Nnọọ na Hawkeye",
+  "n.app.report.result.check-in": "A nọ m n’ebe ntuli aka m",
+  "n.app.report.result.check-in-sub": "Gwa onye nhazi gị na ị bịarala, tupu e zipu nsonaazụ ọ bụla.",
+  "n.app.report.result.check-in-different-unit": "E dekọrọ gị maka {unit}. Ịkwu na ị nọ ebe a na-edekọ ebe ị nọ n’ezie.",
+  "n.app.report.result.check-in-locating": "Na-achọ ebe ị nọ…",
+  "n.app.report.result.checked-in-ok": "✔ E dekọọla na ị bịara. Onye nhazi gị na-ahụ na ị nọ n’ebe a.",
+  "n.app.report.result.checked-in-weak": "E dekọrọ ya, mana enweghị ike ikwenye ebe ị nọ. Onye nhazi gị na-ahụ ya dị ka nke ekwenyeghị.",
+  "n.app.report.result.check-in-failed": "Enweghị ike ịgụ ebe ị nọ. Pụta n’èzí ma nwaa ọzọ."
 }

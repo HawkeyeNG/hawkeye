@@ -1532,5 +1532,19 @@
   "situation-room.check-in-not-member": "You are not on this room’s roster.",
   "situation-room.check-in-no-unit": "No unit set for you yet — ask your coordinator to assign one.",
   "situation-room.check-in-no-such-unit": "That polling unit is not in the register.",
-  "situation-room.check-in-no-fix": "Your device did not return a usable location."
+  "situation-room.check-in-no-fix": "Your device did not return a usable location.",
+  "observe.check-in": "I'm at my unit",
+  "observe.check-in-title": "Tell your coordinator you are here",
+  "observe.check-in-sub": "They will see that you have arrived, before any result is filed.",
+  "observe.check-in-different-unit": "You are down for {unit}. Checking in here records where you actually are.",
+  "observe.check-in-locating": "Finding your location…",
+  "observe.checked-in-ok": "Checked in. Your coordinator can see you are at this unit.",
+  "observe.checked-in-weak": "Recorded, but your location could not be confirmed. Your coordinator sees it as unconfirmed.",
+  "observe.checked-in-already": "Your coordinator knows you are here.",
+  "observe.check-in-no-gps": "This device cannot give a location, so a check-in cannot be recorded.",
+  "observe.check-in-denied": "Location permission was refused, so a check-in cannot be recorded.",
+  "observe.check-in-failed": "Could not read your location. Move into the open and try again.",
+  "observe.check-in-not-member": "You are not on anybody’s roster.",
+  "observe.check-in-no-such-unit": "That polling unit is not in the register.",
+  "observe.check-in-no-fix": "Your device did not return a usable location."
 }

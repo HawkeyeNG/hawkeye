@@ -65,6 +65,7 @@ import { t as i18nT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
 import { ReceiptCard, type ReceiptCardHandle } from '@/components/receipt-card';
 import { saveReceiptPng } from '@/lib/receipt-file';
+import { checkIn, myRooms, type MyRoom } from '@/lib/check-in';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -598,8 +599,21 @@ export default function ReportResult() {
   const [lgaSel, setLgaSel] = useState<string | null>(null);
   const [wards, setWards] = useState<string[]>([]);
   const [wardSel, setWardSel] = useState<string | null>(null);
+  /* ATTENDANCE. Empty for everyone not on a roster, which is almost everyone —
+     see lib/check-in.ts for why that decision is the server's and not this
+     screen's. `null` means "not asked yet" and draws nothing. */
+  const [rooms, setRooms] = useState<MyRoom[] | null>(null);
+  const [checkInState, setCheckInState] = useState<'idle' | 'working' | 'verified' | 'weak' | 'failed'>('idle');
   const [units, setUnits] = useState<Unit[]>([]);
   const [unit, setUnit] = useState<Unit | null>(null);
+
+  /* Asked ONCE per screen, never awaited by anything the observer is waiting
+     for: a roster lookup must not be able to delay a report. */
+  useEffect(() => {
+    let live = true;
+    myRooms().then((r) => { if (live) setRooms(r); });
+    return () => { live = false; };
+  }, []);
 
   // GPS discovery — the way an observer standing at their unit should find it.
   const [nearby, setNearby] = useState<NearRow[]>([]);
@@ -2089,6 +2103,68 @@ export default function ReportResult() {
               <Text className="pb-2 text-xs font-semibold text-warn-ink">
                 {i18nT('n.app.report.result.no-election-is-running-at-this')}
               </Text>
+            ) : null}
+            {/* CHECK IN FROM WHERE YOU ARE STANDING.
+                Shown only to observers the server says are on a roster, and
+                offered at the moment the unit is chosen — the one point in the
+                flow where the app knows both who they are and where they are.
+                The unit sent is the one they are REPORTING FROM, not the one
+                they were assigned: the coordinator needs to know where they
+                actually are, and the server compares the two. */}
+            {rooms && rooms.length > 0 ? (
+              <View className="mb-3 rounded-2xl border border-line bg-card p-3">
+                {checkInState === 'verified'
+                  || rooms.every((r) => r.checkedIn && r.checkedIn.standing === 'verified') ? (
+                    <Text className="text-xs font-semibold text-good-ink">
+                      {i18nT('n.app.report.result.checked-in-ok')}
+                    </Text>
+                  ) : checkInState === 'weak' ? (
+                    <Text className="text-xs font-semibold text-warn-ink">
+                      {i18nT('n.app.report.result.checked-in-weak')}
+                    </Text>
+                  ) : (
+                    <>
+                      <Text className="pb-2 text-xs text-muted">
+                        {(() => {
+                          const away = rooms.find((r) => r.assigned && r.assigned.pu_code !== unit.pu_code);
+                          /* Being sent somewhere else is ORDINARY — agents get
+                             moved, gates get closed — so this states what will
+                             be recorded instead of warning them off it. */
+                          return away
+                            ? i18nT('n.app.report.result.check-in-different-unit').replace('{unit}', away.assigned!.name)
+                            : i18nT('n.app.report.result.check-in-sub');
+                        })()}
+                      </Text>
+                      <Pressable
+                        disabled={checkInState === 'working'}
+                        onPress={async () => {
+                          setCheckInState('working');
+                          const fix = await trySubmitFix();
+                          if (!fix.ok) return setCheckInState('failed');
+                          const r = await checkIn(unit.pu_code, fix.fix);
+                          /* SAY WHAT WAS RECORDED, not "done": a check-in the
+                             location could not stand behind is worth less to
+                             the coordinator, and the agent is the only person
+                             who can still do something about it. */
+                          setCheckInState(!r.ok ? 'failed' : r.standing === 'verified' ? 'verified' : 'weak');
+                          if (r.ok) setRooms(await myRooms());
+                        }}
+                        className="items-center rounded-xl border border-hawk-leaf py-2.5 active:opacity-70"
+                      >
+                        <Text className="text-sm font-bold text-hawk-leaf">
+                          {checkInState === 'working'
+                            ? i18nT('n.app.report.result.check-in-locating')
+                            : i18nT('n.app.report.result.check-in')}
+                        </Text>
+                      </Pressable>
+                      {checkInState === 'failed' ? (
+                        <Text className="pt-2 text-xs text-warn-ink">
+                          {i18nT('n.app.report.result.check-in-failed')}
+                        </Text>
+                      ) : null}
+                    </>
+                  )}
+              </View>
             ) : null}
             <Pressable
               onPress={continueFromUnit}

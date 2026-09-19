@@ -1169,5 +1169,12 @@
   "tour.report.title": "Jábọ̀ — bọ́tìnì aláwọ̀ ewé",
   "tour.results.body": "Yan ìdíje kan fún àwòrán rẹ̀ àti ìkà tí ń lọ lọ́wọ́. Tẹ̀lé ọ̀kan láti gba ìkìlọ̀.",
   "tour.start": "Bẹ̀rẹ̀ sí wò",
-  "tour.welcome": "Káàbọ̀ sí Hawkeye"
+  "tour.welcome": "Káàbọ̀ sí Hawkeye",
+  "n.app.report.result.check-in": "Mo wà ní ibùdó mi",
+  "n.app.report.result.check-in-sub": "Sọ fún alákòóso rẹ pé o ti dé, kí o tó fi ìyọrísí kankan ránṣẹ́.",
+  "n.app.report.result.check-in-different-unit": "A yàn ọ́ fún {unit}. Fífi ìdé hàn níbí yìí kọ ibi tí o wà ní tòótọ́ sílẹ̀.",
+  "n.app.report.result.check-in-locating": "À ń wá ibi tí o wà…",
+  "n.app.report.result.checked-in-ok": "✔ A ti kọ ìdé rẹ sílẹ̀. Alákòóso rẹ lè rí i pé o wà ní ibùdó yìí.",
+  "n.app.report.result.checked-in-weak": "A kọ ọ sílẹ̀, ṣùgbọ́n a kò lè jẹ́rìí sí ibi tí o wà. Alákòóso rẹ rí i bí èyí tí a kò jẹ́rìí sí.",
+  "n.app.report.result.check-in-failed": "A kò lè ka ibi tí o wà. Jáde sí ìta kí o sì tún gbìyànjú."
 }

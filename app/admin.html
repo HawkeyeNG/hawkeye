@@ -1520,6 +1520,35 @@
    * `appinstalled` reaches only the session that installed, so a later launch
    * is detected with display-mode instead.
    */
+  /**
+   * THE CONSOLE REGISTERS THE SERVICE WORKER ITSELF.
+   *
+   * This is why the Install button never appeared. Chrome will not fire
+   * beforeinstallprompt for a page with no service worker controlling it, and
+   * the ONLY file that registers one is app.js — which the console does not
+   * load, because it has no site menu, no auth pane and none of the rest of
+   * what app.js is. So the button was correct, the manifest was correct, and
+   * the event could never fire. Shipped twice that way.
+   *
+   * Scope is "/" (sw.js sits at the root), so registering here also means the
+   * console keeps working offline like every other page.
+   */
+  if ('serviceWorker' in navigator) {
+    addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => { /* not fatal */ });
+    });
+  }
+
+  /* INSTALLED, THERE IS NOTHING TO INSTALL. appinstalled only reaches the
+     session that did it; a later launch of the installed console never sees
+     that event, so the display mode is what answers the question. Same rule
+     the situation room uses. */
+  if (matchMedia('(display-mode: standalone)').matches
+      || matchMedia('(display-mode: window-controls-overlay)').matches) {
+    const b = document.getElementById('btn-install');
+    if (b) b.remove();
+  }
+
   let deferredInstall = null;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();

@@ -201,7 +201,6 @@
        screen rather than squeezing the wordmark. */
     .brand-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .brand-row .panelbar { margin-left: auto; }
-    #btn-install { order: 99; }
     /* The crest was an emoji; it is the app's own hawk now. Sized explicitly so
        the header does not jump while the SVG loads. */
     .crest { width: 34px; height: 34px; display: block; border-radius: 8px; }
@@ -248,14 +247,6 @@
       <span class="brand"><img class="crest" src="logo.svg?v=101" alt="" width="34" height="34" />
         <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="admin.admin-console-private">Admin Console — private</span></div></span>
 
-      <!-- INSTALL. Hidden until the browser says it is installable, and the
-           Hawkeye dialog asks FIRST: beforeinstallprompt can be spent exactly
-           once, so a "Not now" against the browser's own unstyleable prompt
-           would burn it. Mirrors the situation room, which is where this
-           pattern and its trap were worked out. -->
-      <button id="btn-install" class="tab" type="button" hidden
-              data-i18n="admin.install">Install</button>
-
       <!-- THE PANEL TABS LIVE IN THE HEADER, not above the first panel. They
            are console-wide navigation, so they belong where the console's
            identity is; below the brand they scrolled away with the content and
@@ -265,6 +256,16 @@
            navigate. Unhidden at both places #console is (see `showConsole`). -->
       <div class="panelbar" id="panelbar" hidden>
         <span class="tab on" data-p="reach">Reach</span><span class="tab" data-p="incidents">Incidents</span><span class="tab" data-p="labels">Labels</span><span class="tab" data-p="pairs">Pairs</span><span class="tab" data-p="push">Push</span><span class="tab" data-p="races">Races</span><span class="tab" data-p="social">Social</span><span class="tab" data-p="register">Register</span>
+        <!-- INSTALL sits in the strip, not beside it. As a sibling of the
+             strip it wrapped onto a row of its own and drew as a full-width
+             bar. It is one more item of header navigation, so it belongs in
+             the same flex line as the rest. It carries NO data-p, which the
+             strip's click handler now guards for.
+             It asks FIRST with the Hawkeye dialog: beforeinstallprompt can
+             be spent exactly once, so a "Not now" against the browser's own
+             unstyleable prompt would burn it. -->
+        <button id="btn-install" class="tab" type="button" hidden
+                data-i18n="admin.install">Install</button>
         <span class="tab" data-p="_logout">Lock 🔒</span>
       </div>
     </div>
@@ -1639,6 +1640,7 @@
       const t = e.target.closest('.tab');
       if (!t) return;
       const key = t.dataset.p;
+      if (!key) return;                         // Install is a .tab with no panel
       if (key === '_logout') return;            // review.html's own handler covers it
       bar.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t));
       panels.forEach((p) => { p.hidden = p.dataset.p !== key; });

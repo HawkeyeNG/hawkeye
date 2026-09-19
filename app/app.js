@@ -2050,8 +2050,16 @@ $('btn-submit').onclick = async () => {
         keepCopies(); // here, not when the outbox flushes it later
       } catch { /* ignore */ }
       shots.sheet = null; shots.venue = null;
-      alert('Saved offline — your signed report will send automatically when you are back online.');
-      enterReportFlow(); // that report is queued; this is a fresh one
+      const offlineContest = (contests.find((c) => c.code === fields.contest) || {}).name || fields.contest || '';
+      let offlineVotes = [];
+      try { offlineVotes = JSON.parse(fields.votes); } catch { /* card just omits them */ }
+      $('result-summary').innerHTML = `
+        <p><strong>${selectedPu ? selectedPu.name : ''}</strong> — ${offlineContest}</p>
+        <p>${T('observe.saved-offline', 'Saved offline — your signed report sends automatically when you are back online.')}</p>`;
+      $('entry-hash').textContent = '';
+      $('receipt-wrap').hidden = true;
+      showReceipt(receiptData(offlineContest, offlineVotes, ''));
+      show('screen-result');
       $('btn-submit').disabled = false;
       return;
     }
@@ -2099,8 +2107,67 @@ $('btn-submit').onclick = async () => {
     <p>${locLabel}${venueLabel}</p>
     ${body.ocr && body.ocr.total ? `<p class="hint">🔎 OCR cross-check: ${body.ocr.matched}/${body.ocr.total} of your counts were read on the sheet photo.</p>` : ''}
     <ul>${r.votes.filter((v) => v.count > 0).map((v) => `<li>${v.party}: ${v.count}</li>`).join('')}</ul>`;
+  $('receipt-wrap').hidden = true;
+  showReceipt(receiptData(contestName, r.votes, body.entryHash));
   show('screen-result');
 };
+
+/**
+ * THE OBSERVER'S OWN COPY, drawn and shown.
+ *
+ * Called from BOTH hand-off points — the 201 and the offline queue — because a
+ * report that is waiting to send is still a report the person filed, and the
+ * one moment they will look at a receipt is right after doing the work. The
+ * card itself decides what it can claim: with no entry hash it prints no hash
+ * and no verify link and says it is not on the ledger yet (see receipt.js).
+ *
+ * NEVER THROWS INTO THE SUBMIT PATH. A receipt is the nicest thing on this
+ * screen and the least important; a canvas that fails must not turn an accepted
+ * report into an error.
+ */
+let receiptBlob = null;
+async function showReceipt(data) {
+  try {
+    const R = window.HAWKEYE_RECEIPT;
+    if (!R) return;
+    const canvas = R.render(data, await R.loadLogo());
+    receiptBlob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+    if (!receiptBlob) return;
+    $('receipt-img').src = URL.createObjectURL(receiptBlob);
+    $('receipt-img').alt = R.lines(data).title;
+    $('receipt-wrap').hidden = false;
+    /* SAY WHAT THE SAVE BUTTON WILL DO BEFORE IT IS PRESSED. When the profile
+       switch is off, HAWKEYE_SAVE_MEDIA deliberately does nothing — so a button
+       that looked ready and then silently did nothing would read as broken,
+       when it is actually the observer's own safety setting working. */
+    const on = (() => { try { return localStorage.getItem('hawkeye_save_media') !== '0'; } catch { return true; } })();
+    $('btn-receipt-save').hidden = !on;
+    $('receipt-note').textContent = on
+      ? ''
+      : T('observe.copies-off-note', 'Copies to this phone are turned off in My Profile. Screenshot this card if you want to keep it.');
+  } catch { /* a report is not worth failing over a picture of itself */ }
+}
+
+$('btn-receipt-save').onclick = () => {
+  if (!receiptBlob) return;
+  window.HAWKEYE_SAVE_MEDIA && window.HAWKEYE_SAVE_MEDIA([{ blob: receiptBlob, kind: 'photo' }], 'receipt');
+  $('receipt-note').textContent = T('observe.saved-to-your-phone', 'Saved to your phone.');
+};
+
+/** The report data a receipt is drawn from, from whichever hand-off has it. */
+function receiptData(contestName, votes, entryHash) {
+  return {
+    puName: selectedPu && selectedPu.name,
+    puCode: selectedPu && selectedPu.pu_code,
+    ward: selectedPu && selectedPu.ward,
+    lga: selectedPu && selectedPu.lga,
+    state: selectedPu && selectedPu.state,
+    contest: contestName,
+    votes: votes,
+    entryHash: entryHash,
+    at: Date.now(),
+  };
+}
 
 $('btn-another').onclick = () => {
   // "Report another" IS a new report, so it goes through the same entry point —

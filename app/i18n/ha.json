@@ -1492,5 +1492,10 @@
   "profile.observed": "sun sa ido",
   "profile.none-yet": "Babu tukuna",
   "profile.copied": "An kwafa",
-  "profile.copy-it-here": "Kwafa shi a ƙasa"
+  "profile.copy-it-here": "Kwafa shi a ƙasa",
+  "observe.your-copy": "Kwafinka",
+  "observe.save-this-card": "Ajiye Wannan Katin",
+  "observe.saved-to-your-phone": "An ajiye a wayarka.",
+  "observe.copies-off-note": "An kashe ajiye kwafi a wannan wayar a cikin Bayanaina. Ɗauki hoton allo na wannan katin idan kana son ajiye shi.",
+  "observe.saved-offline": "An ajiye ba tare da yanar gizo ba — rahotonka mai sa hannu zai tafi ta atomatik idan ka dawo kan layi."
 }

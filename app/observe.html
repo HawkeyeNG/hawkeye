@@ -125,7 +125,16 @@
     }
 
     /* Camera overlay sizing lives in styles.css now — sitewide, one copy. */
-  </style>
+  
+    /* THE RECEIPT. Width-capped so a 1080x1500 card does not dominate a laptop
+       screen, and full width on a phone where it is the point of the screen. */
+    #receipt-wrap { margin: 18px 0 8px; }
+    #receipt-img {
+      display: block; width: 100%; max-width: 340px; height: auto;
+      border-radius: 14px; border: 1px solid var(--line);
+    }
+    .receipt-acts { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+</style>
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
   <script src="native.js?v=116"></script>
   <meta property="og:type" content="website" />
@@ -450,6 +459,28 @@
         <p data-i18n="observe.your-report-is-on-the-public">Your report is on the public tamper-evident ledger now — it cannot be edited or withdrawn. Its fingerprint is published to the public Rekor transparency log in the next daily anchor.</p>
       </div>
       <div class="card" id="result-summary"></div>
+
+      <!-- YOUR OWN COPY.
+           Filing a report is a favour someone does for the public record; this
+           is the thing they get back for it — the result at their unit, the
+           time, the tallies as they entered them, and the ledger entry that
+           proves when it was recorded. An IMAGE rather than a link, because it
+           gets forwarded into WhatsApp, where a link needs a network and a
+           login and a picture needs neither.
+
+           Rendered on screen unconditionally, never only behind a button: a
+           card nobody can see until they tap something is a card most people
+           never see, and a save that silently no-ops (the profile switch is
+           off) would look like a dead button. -->
+      <div id="receipt-wrap" hidden>
+        <h2 data-i18n="observe.your-copy" class="sec-label">Your Copy</h2>
+        <img id="receipt-img" alt="" />
+        <div class="receipt-acts">
+          <button data-i18n="observe.save-this-card" type="button" id="btn-receipt-save" class="secondary">Save This Card</button>
+          <span class="hint" id="receipt-note"></span>
+        </div>
+      </div>
+
       <p class="hint">Ledger entry: <code id="entry-hash"></code></p>
       <a data-i18n="observe.view-the-public-dashboard" class="link" href="dashboard.html">View the Public Dashboard →</a><br /><br />
       <button data-i18n="observe.report-another-unit" id="btn-another" class="secondary">Report another unit</button>
@@ -502,6 +533,7 @@
   <script src="direct-upload.js?v=1" defer></script>
   <script src="outbox.js" defer></script>
   <script src="save-media.js?v=1" defer></script>
+  <script src="receipt.js?v=1" defer></script>
   <!-- Before app.js (which mounts it) and not deferred, so window.puSearch
        exists by the time the deferred app.js runs. -->
   <script src="register-store.js?v=3"></script>

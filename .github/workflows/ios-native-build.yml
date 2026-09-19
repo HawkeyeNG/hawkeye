@@ -290,9 +290,14 @@ jobs:
       - name: Every imported symbol must exist in the framework that exports it
         run: |
           set -euo pipefail
-          python3 -m pip install --quiet --disable-pip-version-check lief
+          # A VENV, because the runner's python is externally managed (PEP 668)
+          # and a plain pip install exits 1 with an "externally-managed-
+          # environment" error — failing this gate for a reason that has nothing
+          # to do with the symbols it is here to check.
+          python3 -m venv "$RUNNER_TEMP/symvenv"
+          "$RUNNER_TEMP/symvenv/bin/pip" install --quiet --disable-pip-version-check lief
           IPA=$(find "$RUNNER_TEMP/export" -name '*.ipa' | head -1)
-          python3 native/scripts/check_ipa_symbols.py "$IPA"
+          "$RUNNER_TEMP/symvenv/bin/python" native/scripts/check_ipa_symbols.py "$IPA"
 
       - uses: actions/upload-artifact@v4
         with:

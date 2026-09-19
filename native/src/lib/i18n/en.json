@@ -1169,5 +1169,12 @@
   "tour.report.title": "Report — the green button",
   "tour.results.body": "Pick a race for its map and running tally. Follow one to get alerts.",
   "tour.start": "Start observing",
-  "tour.welcome": "Welcome to Hawkeye"
+  "tour.welcome": "Welcome to Hawkeye",
+  "n.app.report.result.check-in": "I'm at my unit",
+  "n.app.report.result.check-in-sub": "Tell your coordinator you have arrived, before any result is filed.",
+  "n.app.report.result.check-in-different-unit": "You are down for {unit}. Checking in here records where you actually are.",
+  "n.app.report.result.check-in-locating": "Finding your location…",
+  "n.app.report.result.checked-in-ok": "✔ Checked in. Your coordinator can see you are at this unit.",
+  "n.app.report.result.checked-in-weak": "Recorded, but your location could not be confirmed. Your coordinator sees it as unconfirmed.",
+  "n.app.report.result.check-in-failed": "Could not read your location. Move into the open and try again."
 }

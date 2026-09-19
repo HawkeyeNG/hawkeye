@@ -1557,5 +1557,19 @@
   "situation-room.check-in-not-member": "O kò sí nínú àkọsílẹ̀ yàrá yìí.",
   "situation-room.check-in-no-unit": "A kò tí ì yan ibùdó fún ọ — bi alákòóso rẹ pé kí ó yan ọ̀kan.",
   "situation-room.check-in-no-such-unit": "Ibùdó ìdìbò yẹn kò sí nínú ìwé ìforúkọsílẹ̀.",
-  "situation-room.check-in-no-fix": "Ẹ̀rọ rẹ kò fúnni ní ibi tí a lè lò."
+  "situation-room.check-in-no-fix": "Ẹ̀rọ rẹ kò fúnni ní ibi tí a lè lò.",
+  "observe.check-in": "Mo wà ní ibùdó mi",
+  "observe.check-in-title": "Sọ fún alákòóso rẹ pé o wà níbí",
+  "observe.check-in-sub": "Wọn yóò rí i pé o ti dé, kí a tó fi ìyọrísí kankan ránṣẹ́.",
+  "observe.check-in-different-unit": "A yàn ọ́ fún {unit}. Fífi ìdé hàn níbí yìí kọ ibi tí o wà ní tòótọ́ sílẹ̀.",
+  "observe.check-in-locating": "À ń wá ibi tí o wà…",
+  "observe.checked-in-ok": "A ti kọ ìdé rẹ sílẹ̀. Alákòóso rẹ lè rí i pé o wà ní ibùdó yìí.",
+  "observe.checked-in-weak": "A kọ ọ sílẹ̀, ṣùgbọ́n a kò lè jẹ́rìí sí ibi tí o wà. Alákòóso rẹ rí i bí èyí tí a kò jẹ́rìí sí.",
+  "observe.checked-in-already": "Alákòóso rẹ mọ̀ pé o wà níbí.",
+  "observe.check-in-no-gps": "Ẹ̀rọ yìí kò lè fúnni ní ibi, nítorí náà a kò lè kọ ìdé sílẹ̀.",
+  "observe.check-in-denied": "A kọ̀ àṣẹ ibi, nítorí náà a kò lè kọ ìdé sílẹ̀.",
+  "observe.check-in-failed": "A kò lè ka ibi tí o wà. Jáde sí ìta kí o sì tún gbìyànjú.",
+  "observe.check-in-not-member": "O kò sí nínú àkọsílẹ̀ ẹnikẹ́ni.",
+  "observe.check-in-no-such-unit": "Ibùdó ìdìbò yẹn kò sí nínú ìwé ìforúkọsílẹ̀.",
+  "observe.check-in-no-fix": "Ẹ̀rọ rẹ kò fúnni ní ibi tí a lè lò."
 }

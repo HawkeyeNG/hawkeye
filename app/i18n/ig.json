@@ -1557,5 +1557,19 @@
   "situation-room.check-in-not-member": "Ị nọghị na ndepụta ụlọ a.",
   "situation-room.check-in-no-unit": "Edobeghị ebe ntuli aka maka gị — gwa onye nhazi gị ka o kenye gị otu.",
   "situation-room.check-in-no-such-unit": "Ebe ntuli aka ahụ adịghị na ndekọ.",
-  "situation-room.check-in-no-fix": "Ngwaọrụ gị enyeghị ebe a ga-eji mee ihe."
+  "situation-room.check-in-no-fix": "Ngwaọrụ gị enyeghị ebe a ga-eji mee ihe.",
+  "observe.check-in": "A nọ m n’ebe ntuli aka m",
+  "observe.check-in-title": "Gwa onye nhazi gị na ị nọ ebe a",
+  "observe.check-in-sub": "Ha ga-ahụ na ị bịarala, tupu e zipu nsonaazụ ọ bụla.",
+  "observe.check-in-different-unit": "E dekọrọ gị maka {unit}. Ịkwu na ị nọ ebe a na-edekọ ebe ị nọ n’ezie.",
+  "observe.check-in-locating": "Na-achọ ebe ị nọ…",
+  "observe.checked-in-ok": "E dekọọla na ị bịara. Onye nhazi gị na-ahụ na ị nọ n’ebe a.",
+  "observe.checked-in-weak": "E dekọrọ ya, mana enweghị ike ikwenye ebe ị nọ. Onye nhazi gị na-ahụ ya dị ka nke ekwenyeghị.",
+  "observe.checked-in-already": "Onye nhazi gị maara na ị nọ ebe a.",
+  "observe.check-in-no-gps": "Ngwaọrụ a enweghị ike inye ebe, ya mere enweghị ike ide na ị bịara.",
+  "observe.check-in-denied": "A jụrụ ikike ebe, ya mere enweghị ike ide na ị bịara.",
+  "observe.check-in-failed": "Enweghị ike ịgụ ebe ị nọ. Pụta n’èzí ma nwaa ọzọ.",
+  "observe.check-in-not-member": "Ị nọghị na ndepụta onye ọ bụla.",
+  "observe.check-in-no-such-unit": "Ebe ntuli aka ahụ adịghị na ndekọ.",
+  "observe.check-in-no-fix": "Ngwaọrụ gị enyeghị ebe a ga-eji mee ihe."
 }

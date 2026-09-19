@@ -1558,5 +1558,19 @@
   "situation-room.check-in-not-member": "Ba ku cikin jerin wannan ɗakin ba.",
   "situation-room.check-in-no-unit": "Ba a saka muku rumfa ba tukuna — ku tambayi mai kula da ku ya saka muku.",
   "situation-room.check-in-no-such-unit": "Wannan rumfar zaɓe ba ta cikin rajista.",
-  "situation-room.check-in-no-fix": "Na’urar ku ba ta bayar da wurin da za a iya amfani da shi ba."
+  "situation-room.check-in-no-fix": "Na’urar ku ba ta bayar da wurin da za a iya amfani da shi ba.",
+  "observe.check-in": "Ina wurin rumfata",
+  "observe.check-in-title": "Ku sanar da mai kula da ku cewa kuna nan",
+  "observe.check-in-sub": "Za su ga cewa kun iso, kafin a tura wani sakamako.",
+  "observe.check-in-different-unit": "An saka ku don {unit}. Sanar da zuwa nan zai nuna inda kuke a zahiri.",
+  "observe.check-in-locating": "Ana neman inda kuke…",
+  "observe.checked-in-ok": "An sanar da zuwan ku. Mai kula da ku na iya ganin kuna wannan rumfar.",
+  "observe.checked-in-weak": "An rubuta, amma ba a tabbatar da inda kuke ba. Mai kula da ku zai gan shi a matsayin wanda ba a tabbatar ba.",
+  "observe.checked-in-already": "Mai kula da ku ya san kuna nan.",
+  "observe.check-in-no-gps": "Wannan na’urar ba ta iya bayar da wuri, don haka ba za a iya yin rajistar zuwa ba.",
+  "observe.check-in-denied": "An ƙi izinin wuri, don haka ba za a iya yin rajistar zuwa ba.",
+  "observe.check-in-failed": "An kasa karanta inda kuke. Ku fita wuri a fili ku sake gwadawa.",
+  "observe.check-in-not-member": "Ba ku cikin jerin kowa ba.",
+  "observe.check-in-no-such-unit": "Wannan rumfar zaɓe ba ta cikin rajista.",
+  "observe.check-in-no-fix": "Na’urar ku ba ta bayar da wurin da za a iya amfani da shi ba."
 }

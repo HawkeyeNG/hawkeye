@@ -16,9 +16,18 @@
  * The English literal stays as the second argument, so this file still reads as
  * English source and still renders correctly with no bundle loaded at all.
  */
-function T(key, english) {
-  return window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english;
+function T(key, english, params) {
+  /* PLACEHOLDERS ARE INTERPOLATED HERE, not by i18n.js — its t() takes a key
+     and a fallback and nothing else. situation-room.html has always done this
+     substitution in its own wrapper; this file had no string that needed one
+     until check-in, and would have rendered a literal "{unit}" to the reader.
+     Done AFTER the lookup so it works on the translation, not only on the
+     English. */
+  let out = window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english;
+  for (const [k, v] of Object.entries(params || {})) out = String(out).split('{' + k + '}').join(v);
+  return out;
 }
+
 
 const $ = (id) => document.getElementById(id);
 const API = ''; // same origin
@@ -1398,6 +1407,133 @@ function enterReportFlow() {
  * If this ever calls prepareReportUI() again it will WIPE THE PHOTOS — that was
  * the coupling step 1 existed to remove. Bind only.
  */
+/**
+ * ATTENDANCE, INSIDE THE REPORT FLOW.
+ *
+ * WHY HERE. On election day an agent is in this flow, not in the situation
+ * room — the room is where their coordinator sits. Presence typed into a
+ * separate page is presence most agents will never record.
+ *
+ * WHY ONLY SOME PEOPLE SEE IT. /api/my/rooms is empty for anyone not on a
+ * roster, so the control renders for nobody else. That is a server decision,
+ * not a client guess: Hawkeye's whole premise is that every citizen is an
+ * observer, and showing a lone voter a button that says "let your coordinator
+ * know" would invent an authority over them that does not exist.
+ *
+ * Fetched ONCE per flow and cached, including the empty answer — this runs on
+ * a phone on a rural connection on the busiest day of the year, and the
+ * majority case must cost exactly one request.
+ */
+let myRooms = null;
+
+async function loadMyRooms() {
+  if (myRooms !== null) return myRooms;
+  try {
+    const { status, body } = await api('/api/my/rooms', {
+      headers: { authorization: `Bearer ${localStorage.getItem('hawkeye_token') || ''}` },
+    });
+    myRooms = status === 200 && Array.isArray(body?.rooms) ? body.rooms : [];
+  } catch {
+    /* A roster lookup that fails must never block a report. The control simply
+       does not appear, which is the same as it is for most people. */
+    myRooms = [];
+  }
+  return myRooms;
+}
+
+/**
+ * The card, rebuilt whenever the chosen unit changes: it names the unit they
+ * are actually standing at, which is the whole point — it is checking them in
+ * HERE, not wherever a coordinator expected.
+ */
+async function renderCheckIn() {
+  const host = $('checkin-host');
+  if (!host) return;
+  const rooms = await loadMyRooms();
+  if (!rooms.length || !selectedPu) { host.hidden = true; host.innerHTML = ''; return; }
+
+  const done = rooms.every((r) => r.checkedIn && r.checkedIn.standing === 'verified');
+  if (done) {
+    host.hidden = false;
+    host.innerHTML = `<p class="hint">\u2714 ${T('observe.checked-in-already', 'Your coordinator knows you are here.')}</p>`;
+    return;
+  }
+
+  /* An assignment somewhere ELSE is said plainly before they tap. Being sent
+     to another unit is ordinary — agents get moved, gates get closed — and the
+     coordinator needs to see it, so the copy tells them what will be recorded
+     rather than warning them off. */
+  const elsewhere = rooms.filter((r) => r.assigned && r.assigned.pu_code !== selectedPu.pu_code);
+  host.hidden = false;
+  host.innerHTML = `
+    <div class="plat" id="checkin-card">
+      <b>${T('observe.check-in-title', 'Tell your coordinator you are here')}</b>
+      <p class="muted" id="checkin-note">${elsewhere.length
+    ? T('observe.check-in-different-unit', 'You are down for {unit}. Checking in here records where you actually are.', { unit: elsewhere[0].assigned.name })
+    : T('observe.check-in-sub', 'They will see that you have arrived, before any result is filed.')}</p>
+      <button type="button" id="btn-checkin" style="width:auto;margin:6px 0 0">${T('observe.check-in', "I'm at my unit")}</button>
+    </div>`;
+}
+
+async function doFlowCheckIn(btn) {
+  const note = $('checkin-note');
+  const say = (m) => { if (note) note.textContent = m; };
+  if (!navigator.geolocation) return say(T('observe.check-in-no-gps', 'This device cannot give a location, so a check-in cannot be recorded.'));
+  btn.disabled = true;
+  say(T('observe.check-in-locating', 'Finding your location\u2026'));
+  try {
+    /* THE FLOW'S OWN FIX, not a second one. getPosition() is what the near-me
+       search and the submission already use: it accepts a 30s-old reading and
+       falls back to the keeper's lastFix, because demanding a brand-new
+       high-accuracy lock races a cold GPS start and loses — indoors it burns
+       the whole timeout and then returns the same value anyway. A check-in
+       that fails on a warm phone would be worse than none. */
+    const pos = await getPosition();
+    const { status, body } = await api('/api/my/check-in', {
+      method: 'POST',
+      /* BOTH headers matter. Without the Bearer this is a 401; without the
+         content-type express.json() never parses the body and the server
+         answers "no fix" to a perfectly good one. api() adds only
+         x-device-id. */
+      headers: {
+        authorization: `Bearer ${localStorage.getItem('hawkeye_token') || ''}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        pu_code: selectedPu.pu_code,
+        lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy,
+      }),
+    });
+    if (status !== 200) {
+      btn.disabled = false;
+      return say({
+        no_rooms: T('observe.check-in-not-member', 'You are not on anybody\u2019s roster.'),
+        no_such_unit: T('observe.check-in-no-such-unit', 'That polling unit is not in the register.'),
+        no_fix: T('observe.check-in-no-fix', 'Your device did not return a usable location.'),
+      }[body?.error] || T('common.something-went-wrong', 'Something went wrong. Try again.'));
+    }
+    /* SAY WHAT WAS RECORDED, not "done". A check-in the location could not
+       stand behind is worth less to the coordinator than one it could, and the
+       agent is the only person who can still do something about it. */
+    myRooms = null;
+    if (body.standing === 'verified') {
+      $('checkin-card').innerHTML = `<p class="hint">\u2714 ${T('observe.checked-in-ok', 'Checked in. Your coordinator can see you are at this unit.')}</p>`;
+    } else {
+      $('checkin-card').innerHTML = `<p class="hint">${T('observe.checked-in-weak', 'Recorded, but your location could not be confirmed. Your coordinator sees it as unconfirmed.')}</p>`;
+    }
+  } catch (e) {
+    btn.disabled = false;
+    say(e && e.code === 1
+      ? T('observe.check-in-denied', 'Location permission was refused, so a check-in cannot be recorded.')
+      : T('observe.check-in-failed', 'Could not read your location. Move into the open and try again.'));
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('#btn-checkin');
+  if (b) doFlowCheckIn(b);
+});
+
 function selectUnit(u) {
   // A DIFFERENT unit invalidates what follows: which elections run there can
   // change, and counts belong to a race at a place. Re-picking the SAME unit is
@@ -1409,6 +1545,9 @@ function selectUnit(u) {
   // Choosing a unit IS step 2's confirmer: it folds and step 3 opens.
   stepDone[1] = false; // force the transition so the fold/advance fires again
   setStepDone(1, true, `✔ ${u.name}`);
+  // Named after the unit is bound, so the card can say where it will check
+  // them in. Never awaited: a roster lookup must not delay the flow.
+  renderCheckIn();
   $('race-fold').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 

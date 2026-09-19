@@ -155,15 +155,29 @@ const man = (f) => JSON.parse(fs.readFileSync(path.join(APP, f), 'utf8'));
 const admin = man('admin.webmanifest');
 const room = man('room.webmanifest');
 
-// THIS IS WHY ONLY ONE WOULD INSTALL. Both declared scope "/", so each app's
-// scope contained the other's start_url and Chrome treated the second page as
-// already living inside an installed app.
+/* SCOPE IS NOT THE IDENTITY. `id` is what Chrome keys an installed app on, and
+   these two have always had different ones. Narrowing scope to separate them
+   was a guess, and it cost the room its window chrome: an installed PWA shows
+   a URL bar across the top the moment it navigates outside its scope, and
+   situation-room.html goes to /room/<slug>.
+
+   So the requirement is the opposite of what this once asserted — each app's
+   scope must CONTAIN every page it navigates to. */
 const covers = (m, url) => url.startsWith(m.scope);
-check('admin scope does not swallow the room', covers(admin, room.start_url), false);
-check('room scope does not swallow the admin console', covers(room, admin.start_url), false);
-check('each app is still inside its OWN scope',
+check('their ids differ, which is what Chrome installs by', admin.id !== room.id, true);
+check('each app is inside its own scope',
   covers(admin, admin.start_url) && covers(room, room.start_url), true);
-check('and their ids differ', admin.id !== room.id, true);
+
+// Read the room's real navigations out of the page rather than listing them
+// here, or this passes the day someone adds a new destination.
+const roomHtml = fs.readFileSync(path.join(APP, 'situation-room.html'), 'utf8');
+const dests = [...new Set([
+  ...[...roomHtml.matchAll(/location\.href\s*=\s*['"](\/[^'"]*)/g)].map((m) => m[1]),
+  ...[...roomHtml.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]),
+])];
+check('CONTROL the room does navigate somewhere', dests.length > 0, true);
+check('and every destination is inside the room app\'s scope',
+  dests.filter((d) => !covers(room, d)), []);
 
 // Distinct identity is not only the id: two identical pictures in a taskbar are
 // two apps the reader cannot tell apart.

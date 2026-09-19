@@ -4,7 +4,7 @@
   "short_name": "Hawkeye Admin",
   "description": "Reach, incidents, labels, pairs, push, races, social and register maintenance for Hawkeye — owner access only.",
   "start_url": "/admin.html",
-  "scope": "/admin",
+  "scope": "/",
   "display": "standalone",
   "launch_handler": {
     "client_mode": "navigate-existing"

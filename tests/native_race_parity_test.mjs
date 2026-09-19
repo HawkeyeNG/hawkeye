@@ -89,7 +89,20 @@ const nativeEn = JSON.parse(fs.readFileSync(`${ROOT}/native/src/lib/i18n/en.json
 const stubT = (key, vars) => {
   const raw = nativeEn[key];
   if (raw === undefined) throw new Error(`native en.json has no key ${key} - add it, do not fall back`);
-  return String(raw).replace(/\{(v\d+)\}/g, (_, v) => String((vars || {})[v] ?? ''));
+  /**
+   * AN UNSUPPLIED PLACEHOLDER IS LEFT ALONE, exactly as lib/i18n.tsx:translate
+   * does — it returns the match when `params` has no such name.
+   *
+   * This stub used to blank them, and that is a stub lying about the function
+   * it stands in for: political.ts deliberately calls i18nT(key) with no params
+   * and interpolates afterwards, so a blanking stub made the native side lose
+   * "{v0}" and the parity test reported four by-elections as disagreeing when
+   * both clients were correct. A harness that is wrong in the same place the
+   * code is right will send you to fix the code.
+   */
+  return String(raw).replace(/\{(\w+)\}/g, (m, name) => (
+    vars && Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : m
+  ));
 };
 const module_ = { exports: {} };
 new Function('require', 'module', 'exports', 'process', code)(

@@ -36,6 +36,9 @@ export type ReceiptData = {
   at?: number;
 };
 
+/** (key, english) -> string. See the injected-translator note on receiptLines. */
+export type Translate = (key: string, english: string) => string;
+
 export type ReceiptLines = {
   practice: boolean;
   pending: boolean;
@@ -52,18 +55,44 @@ export type ReceiptLines = {
   verify: string;
   status: string;
   foot: string;
+  totalLabel: string;
+  hashLabel: string;
+  verifyLabel: string;
 };
 
 const two = (n: number) => String(n).padStart(2, '0');
 
-/** "19 Sept 2026, 14:32" — local time, because that is when the reader was there. */
-function stamp(ms: number): string {
+/** English is what a card falls back to, never a key or a blank. */
+const defaultT: Translate = (_k, english) => english;
+
+/**
+ * "19 Sept 2026, 14:32" - local time, because that is when the reader was there.
+ *
+ * The month names are TRANSLATED TOO, as one comma-separated key rather than
+ * twelve. Intl.DateTimeFormat would be the obvious answer and is the wrong one:
+ * this runs on Hermes, whose ICU data is not the browser's, so the same date
+ * would render differently on the two clients and the parity test could not
+ * tell that apart from a bug.
+ */
+function stamp(ms: number, t: Translate): string {
   const d = new Date(ms);
-  const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-  return `${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()}, ${two(d.getHours())}:${two(d.getMinutes())}`;
+  const M = String(t('receipt.months', 'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sept,Oct,Nov,Dec')).split(',');
+  return `${d.getDate()} ${M[d.getMonth()] || ''} ${d.getFullYear()}, ${two(d.getHours())}:${two(d.getMinutes())}`;
 }
 
-export function receiptLines(d: ReceiptData | null | undefined): ReceiptLines {
+/**
+ * THE TRANSLATOR IS INJECTED, not imported.
+ *
+ * This is the twin of app/receipt.js:lines, and the two clients do not share a
+ * translate function - the web has HawkeyeI18n, this has lib/i18n. Taking `t`
+ * as an argument is what lets the rule stay one comparable rule while still
+ * speaking Hausa: the parity test hands BOTH sides the same `t`, so a
+ * divergence is a real divergence and not a locale artefact.
+ */
+export function receiptLines(
+  d: ReceiptData | null | undefined,
+  t: Translate = defaultT,
+): ReceiptLines {
   const data = d || {};
   /**
    * THREE STATES, NOT TWO.
@@ -89,13 +118,15 @@ export function receiptLines(d: ReceiptData | null | undefined): ReceiptLines {
     practice,
     pending,
     title: practice
-      ? 'Practice run — not a real result'
-      : pending ? 'Saved on your phone' : 'Your copy of this result',
+      ? t('receipt.title-practice', 'Practice run — not a real result')
+      : pending
+        ? t('receipt.title-pending', 'Saved on your phone')
+        : t('receipt.title-recorded', 'Your copy of this result'),
     unit: data.puName || '',
     code: data.puCode || '',
     where,
     contest: data.contest || '',
-    when: 'Reported ' + stamp(data.at || Date.now()),
+    when: t('receipt.reported', 'Reported {v0}').replace('{v0}', stamp(data.at || Date.now(), t)),
     votes,
     total,
     /* Short form for the face of the card; the full hash is what verifies, and
@@ -107,10 +138,19 @@ export function receiptLines(d: ReceiptData | null | undefined): ReceiptLines {
        imply the rehearsal was published. */
     verify: (pending || practice) ? '' : 'hawkeye.com.ng/ledger.html#' + String(data.entryHash),
     status: practice
-      ? 'Practice chain only — this is a rehearsal and is never counted.'
+      ? t('receipt.status-practice', 'Practice chain only — this is a rehearsal and is never counted.')
       : pending
-        ? 'Not yet on the public ledger — it sends when you are back online.'
-        : 'Recorded on the public ledger.',
-    foot: 'Hawkeye does not declare results — official results are announced by INEC.',
+        ? t('receipt.status-pending', 'Not yet on the public ledger — it sends when you are back online.')
+        : t('receipt.status-recorded', 'Recorded on the public ledger.'),
+    foot: t('receipt.foot', 'Hawkeye does not declare results — official results are announced by INEC.'),
+    /* THE RENDERER'S OWN LABELS LIVE HERE TOO. They used to be typed
+       straight into the drawing, which put them outside everything that
+       compares or translates the card - the one place a string is
+       guaranteed to be forgotten. */
+    totalLabel: t('receipt.total-on-this-sheet', 'Total on this sheet'),
+    hashLabel: practice
+      ? t('receipt.practice-chain-entry', 'PRACTICE CHAIN ENTRY')
+      : t('receipt.ledger-entry', 'LEDGER ENTRY'),
+    verifyLabel: t('receipt.verify-at', 'Verify at hawkeye.com.ng/ledger.html'),
   };
 }

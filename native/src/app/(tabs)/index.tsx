@@ -426,7 +426,7 @@ export default function Home() {
           </View>
           <View className="flex-row items-center justify-between bg-[#00351e] px-5 py-3">
             <Text className="text-sm font-semibold text-hawk-gold">
-              {c.open ? 'Report from your polling unit now' : opensIn(daysUntil(c.date))}
+              {c.open ? i18nT('n.app.tabs.index.report-from-your-unit-now') : opensIn(daysUntil(c.date))}
             </Text>
             <Feather name="chevron-right" size={16} color={BRAND.gold} />
           </View>

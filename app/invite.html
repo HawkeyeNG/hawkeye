@@ -24,8 +24,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hawkeye — You have been invited to observe</title>
-<meta name="description" content="Someone has invited you to observe an election with Hawkeye — a public copy of the result announced at your polling unit.">
+<title data-i18n="invite.page-title">Hawkeye — You have been invited to observe</title>
+<meta name="description" data-i18n-attr="content:invite.meta-description" content="Someone has invited you to observe an election with Hawkeye — a public copy of the result announced at your polling unit.">
 <meta name="theme-color" content="#00251a">
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/styles.css?v=182">
@@ -107,34 +107,41 @@
       <span>Hawkeye</span>
     </div>
 
-    <h1 id="g-title">You have been invited to observe</h1>
-    <p class="iv-sub">Hawkeye keeps a public copy of the result announced at your
+    <h1 data-i18n="invite.title" id="g-title">You have been invited to observe</h1>
+    <p data-i18n="invite.sub" class="iv-sub">Hawkeye keeps a public copy of the result announced at your
        polling unit. It is independent and non-partisan.</p>
 
     <p class="iv-code" id="g-codewrap" hidden>
-      <small>Your invite code</small>
+      <small data-i18n="invite.your-invite-code">Your invite code</small>
       <b id="g-code"></b>
     </p>
 
     <div class="iv-btns">
-      <a class="btn-accent" id="g-store" href="/download">Get the app</a>
-      <a class="btn-ghost" id="g-web" href="/">Continue in this browser</a>
+      <a data-i18n="invite.get-the-app" class="btn-accent" id="g-store" href="/download">Get the app</a>
+      <a data-i18n="invite.continue-in-this-browser" class="btn-ghost" id="g-web" href="/">Continue in this browser</a>
     </div>
 
-    <p class="iv-note" id="g-ios-note" hidden>
+    <p data-i18n="invite.ios-note" class="iv-note" id="g-ios-note" hidden>
       After installing, enter the code above when you create your account.
     </p>
   </main>
 
-  <p class="iv-foot">
+  <p data-i18n-html="invite.foot" class="iv-foot">
     Hawkeye does not declare results — all official results are announced by
     <a href="https://inecnigeria.org" rel="noopener">INEC</a>.
   </p>
 
+<script src="/i18n.js?v=10"></script>
+<script src="/lang.js?v=9"></script>
 <script src="/referral.js?v=1"></script>
 <script>
 (function () {
   'use strict';
+  /* Same helper as app.js. The English literal stays in the source, so the
+     page still reads as English and still renders with no bundle loaded. */
+  function T(key, english) {
+    return window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english;
+  }
   var STORES = {
     android: 'https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer',
     ios: 'https://apps.apple.com/app/id6804218478'
@@ -156,18 +163,18 @@
        through to the installed app via the Install Referrer API, so an Android
        user never has to retype anything. */
     store.href = STORES.android + (code ? '&referrer=' + encodeURIComponent(code) : '');
-    store.textContent = 'Get Hawkeye on Google Play';
+    store.textContent = T('invite.get-on-play', 'Get Hawkeye on Google Play');
   } else if (isIOS) {
     /* Apple has no install referrer, so the code has to travel by eye. Say so
        rather than pretending it carried. */
     store.href = STORES.ios;
-    store.textContent = 'Get Hawkeye on the App Store';
+    store.textContent = T('invite.get-on-app-store', 'Get Hawkeye on the App Store');
     if (code) document.getElementById('g-ios-note').hidden = false;
   } else {
     /* A laptop, or a phone with neither store. /download carries both badges
        and the direct APK. */
     store.href = '/download';
-    store.textContent = 'Download Hawkeye';
+    store.textContent = T('invite.download-hawkeye', 'Download Hawkeye');
   }
 
   /* The web client is a full client, so "continue here" is a real answer and

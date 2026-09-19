@@ -655,7 +655,9 @@ export function contestBallot(
   const none: Ballot = {
     field: [],
     fieldLabel: 'candidates',
-    note: what === 'race' ? i18nT('n.lib.political.inec-has-not-published-the-candidate-2') : seatNote(what),
+    note: what === 'race'
+      ? i18nT('n.lib.political.inec-has-not-published-the-candidate-2')
+      : i18nT('race.no-list-by-election'),
     asOf: undefined,
   };
   if (!contest || !(contest.constituencies ?? []).length) return none;
@@ -668,8 +670,8 @@ export function contestBallot(
       field: named.map((c) => ({ name: c.name, party: c.party })),
       fieldLabel: 'candidates',
       note:
-        'Every candidate on the ballot for this by-election \u2014 ' + named.length +
-        ' of them.' + src + ' The map and seat facts on this page come from the electoral register.',
+        i18nT('race.ballot-full-note').replace('{v0}', String(named.length)) + src + ' ' +
+        i18nT('race.map-facts-from-register'),
       asOf,
     };
   }
@@ -682,13 +684,11 @@ export function contestBallot(
       field: parties.map((p) => ({
         name: p.name || p.code,
         party: p.code || p.name || '',
-        meta: 'Candidate name not published',
+        meta: i18nT('race.candidate-name-not-published'),
       })),
       fieldLabel: 'parties',
       note:
-        'INEC has published the ' + parties.length + ' parties contesting this by-election ' +
-        'but not the candidates\u2019 names. The names are on the notice posted at your polling ' +
-        'unit \u2014 photograph it and Hawkeye will have them.' + src,
+        i18nT('race.ballot-parties-note').replace('{v0}', String(parties.length)) + src,
       asOf,
     };
   }
@@ -815,12 +815,10 @@ export function byElectionRace(
     stats,
     note:
       (narrowed
-        ? 'This is one of the state constituencies in ' + seat + ' LGA, and only this ' +
-          'one is voting. The figures below are its own ' + narrowed.length + ' wards, not the LGA\u2019s. '
+        ? i18nT('race.seat-narrowed-note')
+          .replace('{v0}', seat).replace('{v1}', String(narrowed.length)) + ' '
         : base.sharedRegister
-          ? "This LGA elects more than one state member, and INEC's register does " +
-            'not separate them, so the ward and polling-unit figures on this page ' +
-            'cover every seat in the LGA rather than this one alone. '
+          ? i18nT('race.shared-lga-note') + ' '
           : '') + ballot.note,
     asOf: ballot.asOf,
     candidates: ballot.field,

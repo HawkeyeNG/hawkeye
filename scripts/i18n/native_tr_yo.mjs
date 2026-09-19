@@ -607,6 +607,7 @@ export default {
   "n.app.tabs.alerts.sign-in-to-get-alerts": "Wọlé láti gba ìkìlọ̀",
   "n.app.tabs.alerts.you-are-signed-in-updates-on": "O ti wọlé. Àwọn ìmúdójúìwọ̀n lórí ìdíje tí o ń tọ̀ àti ìròyìn tí o fi ránṣẹ́ máa ń dé síbí.",
   "n.app.tabs.alerts.your-alerts-did-not-load": "A kò lè gbé àwọn ìkìlọ̀ rẹ jáde. ({v0})",
+    "n.app.tabs.index.report-from-your-unit-now": "Ròyìn láti ilé ìdìbò rẹ nísinsìnyí",
   "n.app.tabs.index.accepted-reports": "Ìròyìn Tí A Gbà",
   "n.app.tabs.index.case-resolved": "A yanjú ẹjọ́ — {v0}",
   "n.app.tabs.index.filter-cases": "Àwọn ẹjọ́",

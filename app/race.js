@@ -415,8 +415,10 @@
    * differs between them - do not "tidy" them into one.
    */
   const NO_LIST_NOTE = {
-    race: 'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.',
-    'by-election': 'INEC has not published the candidate list for this by-election yet. Candidates appear here as soon as the official list is out. The seat and map on this page come from the electoral register and are current.',
+    race: T('n.lib.political.inec-has-not-published-the-candidate-2',
+      'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.'),
+    'by-election': T('race.no-list-by-election',
+      'INEC has not published the candidate list for this by-election yet. Candidates appear here as soon as the official list is out. The seat and map on this page come from the electoral register and are current.'),
   };
 
   function contestBallot(contest, what) {
@@ -430,8 +432,9 @@
       return {
         field: named.map((c) => ({ name: c.name, party: c.party })),
         fieldLabel: 'candidates',
-        note: 'Every candidate on the ballot for this by-election — ' + named.length
-          + ' of them.' + src + ' The map and seat facts on this page come from the electoral register.',
+        note: T('race.ballot-full-note', 'Every candidate on the ballot for this by-election — {v0} of them.')
+          .replace('{v0}', named.length) + src + ' '
+          + T('race.map-facts-from-register', 'The map and seat facts on this page come from the electoral register.'),
         asOf,
       };
     }
@@ -444,12 +447,13 @@
         field: parties.map((p) => ({
           name: p.name || p.code,
           party: p.code || p.name,
-          meta: 'Candidate name not published',
+          meta: T('race.candidate-name-not-published', 'Candidate name not published'),
         })),
         fieldLabel: 'parties',
-        note: 'INEC has published the ' + parties.length + ' parties contesting this by-election '
-          + 'but not the candidates’ names. The names are on the notice posted at your polling '
-          + 'unit — photograph it and Hawkeye will have them.' + src,
+        note: T('race.ballot-parties-note',
+          'INEC has published the {v0} parties contesting this by-election but not the '
+          + 'candidates’ names. The names are on the notice posted at your polling unit — '
+          + 'photograph it and Hawkeye will have them.').replace('{v0}', parties.length) + src,
         asOf,
       };
     }
@@ -1500,12 +1504,14 @@
        */
       stats,
       note: (narrowed
-        ? 'This is one of the state constituencies in ' + seat + ' LGA, and only this '
-          + 'one is voting. The figures below are its own ' + narrowed.length + ' wards, not the LGA\u2019s. '
+        ? T('race.seat-narrowed-note',
+            'This is one of the state constituencies in {v0} LGA, and only this one is '
+            + 'voting. The figures below are its own {v1} wards, not the LGA’s.')
+            .replace('{v0}', seat).replace('{v1}', narrowed.length) + ' '
         : base.sharedRegister
-          ? "This LGA elects more than one state member, and INEC's register does "
-            + 'not separate them, so the ward and polling-unit figures on this page '
-            + 'cover every seat in the LGA rather than this one alone. '
+          ? T('race.shared-lga-note', 'This LGA elects more than one state member, and '
+            + "INEC's register does not separate them, so the ward and polling-unit "
+            + 'figures on this page cover every seat in the LGA rather than this one alone.') + ' '
           : '')
         + ballot.note,
       asOf: ballot.asOf,

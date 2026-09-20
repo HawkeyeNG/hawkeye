@@ -1565,5 +1565,7 @@
   "situation-room.the-upload": "The upload",
   "situation-room.and-more-units": "and {n} more units with a difference",
   "situation-room.unit": "Unit",
-  "common.something-went-wrong": "Something went wrong. Try again."
+  "common.something-went-wrong": "Something went wrong. Try again.",
+  "profile.invite-retry": "Tap to retry",
+  "profile.invite-failed": "Could not load"
 }

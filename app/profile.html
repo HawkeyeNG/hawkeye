@@ -436,14 +436,37 @@
      * including people who will never open an invite link. A column that stays
      * null until somebody actually asks for it is one less thing to backfill.
      *
-     * FAILS QUIET. An invite is the least important thing on this page; if the
-     * request dies the rest of the profile must still render, so the row simply
-     * stays as it was rather than throwing out of load().
+     * IT USED TO FAIL SILENT, AND THAT COST A DAY. The row was left showing its
+     * "…" placeholder whenever the request did not return a code, so an Android
+     * user reporting "no link code, clicking does nothing" gave us a symptom
+     * with no cause attached and nothing to reproduce: an unfinished load and a
+     * dead endpoint looked identical, on a screen with no console.
+     *
+     * It still must not throw out of load() — an invite is the least important
+     * thing here. But a request that failed now SAYS so, carries the status
+     * code, and the row becomes the retry. That turns the next report into a
+     * diagnosis, and turns a one-off network blip into a tap instead of a
+     * permanently empty card.
      */
     let referralUrl = '';
+    /* Set when the row is standing in for a failed load, so the same button is
+       a retry rather than a no-op. */
+    let refFailed = false;
     async function loadReferral() {
+      refFailed = false;
+      $('p-ref-code').textContent = '…';
       const { status, body } = await api('/api/observers/referral').catch(() => ({ status: 0 }));
-      if (status !== 200 || !body || !body.code) return;
+      if (status !== 200 || !body || !body.code) {
+        refFailed = true;
+        referralUrl = '';
+        $('p-ref-code').textContent = T('profile.invite-retry', 'Tap to retry');
+        /* The number is not translated because it is a number, and it is the
+           whole point: 401 is a dead session, 0 is the request never landing,
+           500 is ours. */
+        $('p-ref-stat').textContent =
+          T('profile.invite-failed', 'Could not load') + (status ? ' · ' + status : '');
+        return;
+      }
       referralUrl = hkShareOrigin() + '/invite.html?r=' + encodeURIComponent(body.code);
       $('p-ref-code').textContent = body.code;
       /* TWO NUMBERS, because they mean different things and only the second one
@@ -502,6 +525,7 @@
     }
 
     $('btn-ref-copy').addEventListener('click', async () => {
+      if (refFailed) { loadReferral(); return; }
       if (!referralUrl) return;
       try {
         await navigator.clipboard.writeText(referralUrl);

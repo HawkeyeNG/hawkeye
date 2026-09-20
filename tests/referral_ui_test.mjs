@@ -17,10 +17,19 @@ const APP = '/home/elrio/hawkeye/app';
 const TYPES = { '.json': 'application/json', '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml' };
 
 const REFERRAL = { code: 'H7KMN3', signedUp: 3, qualified: 1 };
+/* Flipped by the failure test: the invite row has to SAY a load failed,
+   rather than sitting on its placeholder forever. */
+let referralStatus = 200;
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   const json = (o) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
-  if (url === '/api/observers/referral') return json(REFERRAL);
+  if (url === '/api/observers/referral') {
+    if (referralStatus !== 200) {
+      res.writeHead(referralStatus, { 'content-type': 'application/json' });
+      return res.end('{}');
+    }
+    return json(REFERRAL);
+  }
   if (url === '/api/observers/me') {
     return json({ observerId: 42, createdAt: Date.now(), identityHash: 'abc', hasPassword: true, reports: [], subscriptions: [], incidents: [], collation: [] });
   }
@@ -218,6 +227,41 @@ console.log('\n=== the copied link leaves the device ===');
     (v) => /^https:\/\/hawkeye\.com\.ng\/invite\.html\?r=/.test(v || ''));
   check('nothing device-local survives in the link', local.revealedValue,
     (v) => !/localhost|127\.0\.0\.1|capacitor:/i.test(v || ''));
+}
+
+
+/**
+ * THE CARD THAT COULD NOT BE DIAGNOSED.
+ *
+ * Reported from an Android build: "no link code, and does nothing when
+ * clicked". Both halves were the silent bail — the row kept its "…" and the
+ * button returned early on an empty referralUrl — so an expired session, a
+ * dead network and a 500 all looked the same on a screen with no console.
+ */
+console.log('\n=== a failed load says so, and the row becomes the retry ===');
+{
+  referralStatus = 500;
+  const ctx = await b.newContext();
+  await ctx.addInitScript((t) => { try { localStorage.setItem('hawkeye_token', t); } catch (e) {} }, jwt);
+  const pg = await ctx.newPage();
+  await pg.goto(`${base}/profile.html`, { waitUntil: 'networkidle' });
+  await pg.waitForFunction(() => document.getElementById('p-ref-code')?.textContent !== '…',
+    null, { timeout: 8000 }).catch(() => {});
+  const failed = await pg.evaluate(() => ({
+    code: document.getElementById('p-ref-code').textContent,
+    stat: document.getElementById('p-ref-stat').textContent,
+  }));
+  check('the row says it could not load', failed.code, (t) => /retry/i.test(t));
+  check('and carries the status, which is the whole diagnosis', failed.stat, (t) => /500/.test(t));
+
+  // The point of saying it: the same button now fixes it.
+  referralStatus = 200;
+  await pg.click('#btn-ref-copy');
+  await pg.waitForFunction(() => document.getElementById('p-ref-code')?.textContent === 'H7KMN3',
+    null, { timeout: 8000 }).catch(() => {});
+  const retried = await pg.evaluate(() => document.getElementById('p-ref-code').textContent);
+  check('tapping it retries and the code arrives', retried, 'H7KMN3');
+  await ctx.close();
 }
 
 

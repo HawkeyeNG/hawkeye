@@ -1592,5 +1592,7 @@
   "situation-room.unit": "Ebe ntuli aka",
   "common.something-went-wrong": "Ihe adịghị mma mere. Nwaa ọzọ.",
   "profile.invite-retry": "Pịa ka ị nwaa ọzọ",
-  "profile.invite-failed": "Enweghị ike ibugo"
+  "profile.invite-failed": "Enweghị ike ibugo",
+  "race.no-list-declared": "INEC ebipụtabeghị ndepụta ndị na-azọ ọkwa maka ntuliaka mmejuputa a. Nsonaazụ ekwuputara dị n’elu. Oche na maapụ dị na peeji a sitere na ndebanye aha ndị ntuliaka.",
+  "race.ballot-parties-note-declared": "INEC bipụtara pati {v0} na-azọ ntuliaka mmejuputa a mana ọ bipụtaghị aha ndị na-azọ ya. Nsonaazụ ekwuputara dị n’elu."
 }

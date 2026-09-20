@@ -1592,5 +1592,7 @@
   "situation-room.unit": "Ibùdó",
   "common.something-went-wrong": "Nǹkan kan bàjẹ́. Tún gbìyànjú.",
   "profile.invite-retry": "Tẹ̀ láti tún gbìyànjú",
-  "profile.invite-failed": "A kò lè gbé e jáde"
+  "profile.invite-failed": "A kò lè gbé e jáde",
+  "race.no-list-declared": "INEC kò tẹ àkọsílẹ̀ àwọn olùdíje jáde fún ìdìbò àfikún yìí rárá. Àbájáde tí a kéde wà lókè. Ìjókòó àti máàpù tó wà ní ojú-ìwé yìí wá láti inú ìwé ìforúkọsílẹ̀ àwọn olùdìbò.",
+  "race.ballot-parties-note-declared": "INEC tẹ àwọn ẹgbẹ́ òṣèlú {v0} tó díje nínú ìdìbò àfikún yìí jáde ṣùgbọ́n kì í ṣe orúkọ àwọn olùdíje. Àbájáde tí a kéde wà lókè."
 }

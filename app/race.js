@@ -421,8 +421,23 @@
       'INEC has not published the candidate list for this by-election yet. Candidates appear here as soon as the official list is out. The seat and map on this page come from the electoral register and are current.'),
   };
 
+  /**
+   * ONCE A RACE IS DECLARED, "yet" IS A LIE.
+   *
+   * Both notes above promise the list will appear when INEC publishes it —
+   * true while a race is open, false under a declared result: the election is
+   * over and no list is coming. Three of the five by-elections of September
+   * 2026 never had one published, and their pages read "not published yet"
+   * directly beneath the declaration.
+   */
+  const NO_LIST_DECLARED = T('race.no-list-declared',
+    'INEC never published a candidate list for this by-election. The declared result is '
+    + 'above. The seat and map on this page come from the electoral register.');
+
   function contestBallot(contest, what) {
-    const none = { field: [], fieldLabel: 'candidates', note: NO_LIST_NOTE[what || 'race'], asOf: undefined };
+    const declared = !!(contest && contest.declared && contest.declared.winner);
+    const none = { field: [], fieldLabel: 'candidates',
+      note: declared ? NO_LIST_DECLARED : NO_LIST_NOTE[what || 'race'], asOf: undefined };
     if (!contest || !((contest.constituencies || []).length)) return none;
     const asOf = contest.ballotAsOf || undefined;
     const src = contest.ballotSource ? ' ' + contest.ballotSource : '';
@@ -450,10 +465,15 @@
           meta: T('race.candidate-name-not-published', 'Candidate name not published'),
         })),
         fieldLabel: 'parties',
-        note: T('race.ballot-parties-note',
-          'INEC has published the {v0} parties contesting this by-election but not the '
-          + 'candidates’ names. The names are on the notice posted at your polling unit — '
-          + 'photograph it and Hawkeye will have them.').replace('{v0}', parties.length) + src,
+        note: (declared
+          ? T('race.ballot-parties-note-declared',
+              'INEC published the {v0} parties contesting this by-election but not the '
+              + 'candidates’ names. The declared result is above.')
+          : T('race.ballot-parties-note',
+              'INEC has published the {v0} parties contesting this by-election but not the '
+              + 'candidates’ names. The names are on the notice posted at your polling unit — '
+              + 'photograph it and Hawkeye will have them.')
+        ).replace('{v0}', parties.length) + src,
         asOf,
       };
     }

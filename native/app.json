@@ -2,7 +2,7 @@
   "expo": {
     "name": "Hawkeye",
     "slug": "hawkeye",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "hawkeye",
@@ -21,7 +21,7 @@
         "NSFaceIDUsageDescription": "Hawkeye can ask for Face ID before it signs a result, so that only you can file a report with this device's signing key.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "42",
+      "buildNumber": "43",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
           {

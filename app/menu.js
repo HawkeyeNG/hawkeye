@@ -1567,7 +1567,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     if (diff < 172800) return i18nT('time.yesterday', 'yesterday {time}').replace('{time}', hm);
     return `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })}, ${hm}`;
   };
-  const foot = document.querySelector('.gov-footer nav');
+  const foot = document.querySelector('.gov-footer:not(.console-foot) nav');
   if (foot) {
     foot.innerHTML = '<a href="about.html" data-i18n="nav.about">About</a>'
       + '<a href="how.html" data-i18n="common.how-hawkeye-works">How Hawkeye Works</a>'
@@ -1591,7 +1591,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     { name: 'Facebook',  url: 'https://www.facebook.com/people/Hawkeye/61591831703798/', svg: '<path d="M13.8 21v-8h2.2l.33-2.6H13.8V8.7c0-.75.23-1.26 1.3-1.26h1.4V5.1c-.24-.03-1.07-.1-2.03-.1-2.02 0-3.4 1.23-3.4 3.5v1.9H8.9V13h2.17v8z" fill="currentColor" stroke="none"/>' },
   ];
   const shownSocial = SOCIAL.filter((s) => s.url);
-  const footWrap = document.querySelector('.gov-footer .wrap');
+  const footWrap = document.querySelector('.gov-footer:not(.console-foot) .wrap');
   if (shownSocial.length && footWrap && !footWrap.querySelector('.social-row')) {
     const row = document.createElement('div');
     row.className = 'social-row';
@@ -1655,7 +1655,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       n.parentNode.replaceChild(frag, n);
     }
   }
-  const linkInecFooters = () => document.querySelectorAll('.gov-footer').forEach((f) => linkInec(f));
+  const linkInecFooters = () => document.querySelectorAll('.gov-footer:not(.console-foot)').forEach((f) => linkInec(f));
   linkInecFooters();
   setTimeout(linkInecFooters, 2500);
 
@@ -1708,7 +1708,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       }
     }
     // Footer "My Profile" follows the same state.
-    const fnav = document.querySelector('.gov-footer nav');
+    const fnav = document.querySelector('.gov-footer:not(.console-foot) nav');
     if (fnav) {
       const link = fnav.querySelector('a[href="profile.html"]');
       if (signedIn && !link) {

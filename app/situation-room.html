@@ -512,9 +512,25 @@ html.scrolling *::-webkit-scrollbar-thumb {
        Scoped here rather than in styles.css: that file is in the service-worker
        SHELL, so touching it means bumping ?v= across 40 pages for a layout only
        the two consoles need. */
-    footer.gov-footer { flex-shrink: 0; }
-    footer.gov-footer .wrap { padding-top: 13px; padding-bottom: 15px; }
+    /* PINNED TO THE BOTTOM OF THE SCREEN. #sr-scroll is the only thing that
+       scrolls, so a sibling after it needs no position:fixed — the flex column
+       holds it against the viewport floor, and nothing can pass underneath it.
+       The 24px styles.css puts above it is for a footer that ends a document,
+       not one that bounds a pane. */
+    footer.gov-footer { flex: 0 0 auto; margin-top: 0; }
+    footer.gov-footer .wrap {
+      padding-top: 13px;
+      /* The home indicator sits in this strip on an installed iOS console. */
+      padding-bottom: calc(15px + env(safe-area-inset-bottom));
+    }
     footer.gov-footer .copyright { margin: 0; padding-top: 0; border-top: 0; }
+
+    /* styles.css hides every .gov-footer once the tab bar is up
+       (body.has-tabbar .gov-footer) because the site footer's LINKS moved into
+       the "More" tab. This footer has no links — it is one line of copyright —
+       so that rule was hiding it in exactly the installed window it was asked
+       for. */
+    body.has-tabbar footer.console-foot { display: block; }
 </style>
 </head>
 <body>
@@ -559,14 +575,18 @@ html.scrolling *::-webkit-scrollbar-thumb {
     <main class="sr" id="sr">
       <div class="sr-msg" data-i18n="index.loading">Loading…</div>
     </main>
+  </div>
 
   <!-- The site footer's nav and disclaimer are furniture with no business in a
        campaign's own room; the copyright is the line that belongs, worded as
-       every other page words it. -->
-  <footer class="gov-footer"><div class="wrap">
+       every other page words it.
+
+       OUTSIDE #sr-scroll, deliberately. Inside it the line sat after every
+       board, table and roster — present in the HTML and unreachable on screen,
+       which is exactly how it was reported: "never got a footer". -->
+  <footer class="gov-footer console-foot"><div class="wrap">
     <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
   </div></footer>
-  </div>
 
 <script>
 /**

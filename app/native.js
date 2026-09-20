@@ -612,6 +612,31 @@ window.i18nData = function (obj) {
 };
 
 window.HAWKEYE_LIVE_ORIGIN = 'https://hawkeye.com.ng';
+
+/**
+ * WHERE A COPIED LINK POINTS.
+ *
+ * `location.origin` is correct on the website and WRONG everywhere else the
+ * same files run. Capacitor serves Hawkeye Lite from https://localhost on
+ * Android and capacitor://localhost on iOS, so "copy my invite link" handed
+ * people a localhost URL — a link to their own phone, which resolves to
+ * nothing on anybody else's. A dev server has the same problem.
+ *
+ * A COPIED LINK HAS, BY DEFINITION, LEFT THIS DEVICE, so an origin that only
+ * exists on this device can never be the right answer. Any such origin is
+ * replaced with the live site; a real public origin is kept as-is, which is
+ * what keeps this a no-op on hawkeye.com.ng.
+ *
+ * Use this for every link the user is meant to SEND. Keep location.origin for
+ * links this page follows itself.
+ */
+window.hkShareOrigin = function () {
+  var h = location.hostname;
+  var private_ = !h
+    || h === 'localhost' || h === '::1' || /^127\./.test(h)
+    || location.protocol === 'file:' || location.protocol === 'capacitor:';
+  return private_ ? window.HAWKEYE_LIVE_ORIGIN : location.origin;
+};
 window.fetchData = function (name) {
   var onLive = /(^|\.)hawkeye\.com\.ng$/i.test(location.hostname);
   /**

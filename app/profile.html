@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=183" />
-  <script src="native.js?v=116"></script>
+  <script src="native.js?v=117"></script>
   <style>
     .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
     .pcard h2 { margin: 0 0 10px; font-size: 1.02rem; }
@@ -444,7 +444,7 @@
     async function loadReferral() {
       const { status, body } = await api('/api/observers/referral').catch(() => ({ status: 0 }));
       if (status !== 200 || !body || !body.code) return;
-      referralUrl = location.origin + '/invite.html?r=' + encodeURIComponent(body.code);
+      referralUrl = hkShareOrigin() + '/invite.html?r=' + encodeURIComponent(body.code);
       $('p-ref-code').textContent = body.code;
       /* TWO NUMBERS, because they mean different things and only the second one
          would ever be paid on. Saying "3 signed up · 1 observed" from the start

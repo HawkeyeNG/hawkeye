@@ -200,6 +200,27 @@ console.log('\n=== clicking the invite row ===');
   check('no dialog is relied on', blocked.dialogs, []);
 }
 
+/**
+ * THE BUG HAWKEYE LITE SHIPPED WITH.
+ *
+ * Capacitor serves the app from https://localhost, so `location.origin` built
+ * an invite link pointing at the sender's OWN phone — it copied and pasted
+ * fine and resolved to nothing on anybody else's device, which is why it read
+ * as "the link doesn't work" rather than as a broken button.
+ *
+ * This page is served from 127.0.0.1, the same kind of device-local origin, so
+ * the old code fails these two checks.
+ */
+console.log('\n=== the copied link leaves the device ===');
+{
+  const local = await clickInvite({ clipboard: false });
+  check('a device-local origin is replaced with the live site', local.revealedValue,
+    (v) => /^https:\/\/hawkeye\.com\.ng\/invite\.html\?r=/.test(v || ''));
+  check('nothing device-local survives in the link', local.revealedValue,
+    (v) => !/localhost|127\.0\.0\.1|capacitor:/i.test(v || ''));
+}
+
+
 await b.close();
 server.close();
 console.log(fail ? `\n${fail} FAILED` : '\nAll passed');

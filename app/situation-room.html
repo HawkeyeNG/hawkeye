@@ -20,7 +20,7 @@
   <link rel="manifest" href="room.webmanifest?v=3" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=183" />
-  <script src="native.js?v=116"></script>
+  <script src="native.js?v=117"></script>
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=3"></script>
   <script src="ward-map.js?v=1"></script>
@@ -841,7 +841,7 @@ function render() {
     // The room's address, not the current tab's URL — a manager who arrived at
     // /situation-room.html would otherwise copy a link that opens whichever
     // room the RECIPIENT happens to have first.
-    navigator.clipboard.writeText(location.origin + '/room/' + (g.slug || ''))
+    navigator.clipboard.writeText(hkShareOrigin() + '/room/' + (g.slug || ''))
       .then(() => { $('link-btn').textContent = T('support.copied', 'Copied'); });
   });
   if ($('del-btn')) $('del-btn').addEventListener('click', deleteRoom);
@@ -3106,7 +3106,7 @@ async function showInvite(sheet) {
   const s = sheet || openSheet(T('situation-room.invite-links', 'Invite links'));
   const panel = s.body;
   panel.innerHTML = `${live.map((t) => `<div class="sr-link">
-      <code>${esc(location.origin + '/join/' + t.token)}</code>
+      <code>${esc(hkShareOrigin() + '/join/' + t.token)}</code>
       <span class="sr-sub num" style="white-space:nowrap">${T('situation-room.n-used', '{v0} used', { v0: n(t.uses) })} &middot; ${days(t)}d</span>
       <button class="sr-btn mini primary" data-copy="${esc(t.token)}">${T('support.copy', 'Copy')}</button>
       <button class="sr-btn mini" data-revoke="${esc(t.token)}">${T('situation-room.revoke', 'Revoke')}</button>
@@ -3116,7 +3116,7 @@ async function showInvite(sheet) {
     <button class="sr-btn primary" id="inv-new">${T('situation-room.create-another-link', 'Create another link')}</button>`;
 
   panel.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
-    navigator.clipboard.writeText(location.origin + '/join/' + b.dataset.copy)
+    navigator.clipboard.writeText(hkShareOrigin() + '/join/' + b.dataset.copy)
       .then(() => { b.textContent = T('support.copied', 'Copied'); });
   }));
   panel.querySelectorAll('[data-revoke]').forEach((b) => b.addEventListener('click', async () => {

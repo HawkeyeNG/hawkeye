@@ -1352,6 +1352,13 @@
       note: (s.sharedRegister
         ? "INEC's register does not separate this seat from the other constituency in the same LGA, so the LGA and polling-unit figures on this page cover both. "
         : '') + ballot.note,
+      /* THE CATALOGUE CAN DECLARE A RACE. Both of these build a race object from
+         scratch, so anything not named here is dropped — which is why the five
+         by-elections of 19 Sept 2026 sat closed, with the result in
+         /api/declarations and nothing on the page. mountRace renders the block
+         only when `declared.winner` is set, so an undeclared contest is
+         unchanged. */
+      declared: contest && contest.declared,
       asOf: ballot.asOf,
       candidates: ballot.field,
       fieldLabel: ballot.fieldLabel,
@@ -1514,6 +1521,13 @@
             + 'figures on this page cover every seat in the LGA rather than this one alone.') + ' '
           : '')
         + ballot.note,
+      /* THE CATALOGUE CAN DECLARE A RACE. Both of these build a race object from
+         scratch, so anything not named here is dropped — which is why the five
+         by-elections of 19 Sept 2026 sat closed, with the result in
+         /api/declarations and nothing on the page. mountRace renders the block
+         only when `declared.winner` is set, so an undeclared contest is
+         unchanged. */
+      declared: contest && contest.declared,
       asOf: ballot.asOf,
       candidates: ballot.field,
       fieldLabel: ballot.fieldLabel,

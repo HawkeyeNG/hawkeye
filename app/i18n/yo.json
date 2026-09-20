@@ -1590,5 +1590,7 @@
   "situation-room.the-upload": "Ohun tí wọ́n gbé jáde",
   "situation-room.and-more-units": "àti ibùdó {n} mìíràn tí ó ní ìyàtọ̀",
   "situation-room.unit": "Ibùdó",
-  "common.something-went-wrong": "Nǹkan kan bàjẹ́. Tún gbìyànjú."
+  "common.something-went-wrong": "Nǹkan kan bàjẹ́. Tún gbìyànjú.",
+  "profile.invite-retry": "Tẹ̀ láti tún gbìyànjú",
+  "profile.invite-failed": "A kò lè gbé e jáde"
 }

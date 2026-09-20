@@ -1590,5 +1590,7 @@
   "situation-room.the-upload": "Ihe e bunyere",
   "situation-room.and-more-units": "na ebe ntuli aka {n} ọzọ nwere ọdịiche",
   "situation-room.unit": "Ebe ntuli aka",
-  "common.something-went-wrong": "Ihe adịghị mma mere. Nwaa ọzọ."
+  "common.something-went-wrong": "Ihe adịghị mma mere. Nwaa ọzọ.",
+  "profile.invite-retry": "Pịa ka ị nwaa ọzọ",
+  "profile.invite-failed": "Enweghị ike ibugo"
 }

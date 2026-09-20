@@ -247,15 +247,32 @@
        means bumping ?v= across 40 pages for a layout only this one needs. */
     body { min-height: 100vh; display: flex; flex-direction: column; }
     main.wrap { flex: 1 0 auto; }
-    footer.gov-footer { flex-shrink: 0; }
+    /* PINNED TO THE BOTTOM OF THE SCREEN, which is a reversal: the note above
+       kept it off long pages so it would not cover content. Asked for pinned on
+       both consoles, so pinned it is. The document scrolls here (body is
+       min-height, not height), which is why this is sticky rather than the
+       room's flex sibling — and sticky still reserves its own space at the end,
+       so the last card is never stranded underneath it. */
+    footer.gov-footer { flex-shrink: 0; position: sticky; bottom: 0; z-index: 5; }
 
     /* ONE LINE, HALF THE HEIGHT. styles.css sizes this footer for three blocks
        — nav, disclaimer, copyright — and gives .copyright a hairline rule to set
        it off from the prose above. With only the copyright left that rule
        separates a line from nothing, which reads as a mistake rather than as
        structure. Padding halves with the content it was spacing. */
-    footer.gov-footer .wrap { padding-top: 13px; padding-bottom: 15px; }
+    footer.gov-footer .wrap {
+      padding-top: 13px;
+      /* The home indicator sits in this strip on an installed iOS console. */
+      padding-bottom: calc(15px + env(safe-area-inset-bottom));
+    }
     footer.gov-footer .copyright { margin: 0; padding-top: 0; border-top: 0; }
+
+    /* styles.css hides every .gov-footer once the tab bar is up
+       (body.has-tabbar .gov-footer) because the site footer's LINKS moved into
+       the "More" tab. This footer has no links — it is one line of copyright —
+       so that rule was hiding it in exactly the installed window it was asked
+       for. */
+    body.has-tabbar footer.console-foot { display: block; }
   </style>
   <script src="authgate.js?v=3"></script>
 </head>
@@ -554,7 +571,7 @@
        Works / FAQ, which is site furniture with no business on an owner-only
        page. The copyright is the only line that belongs, worded as every other
        page words it — the header already says this console is private. -->
-  <footer class="gov-footer"><div class="wrap">
+  <footer class="gov-footer console-foot"><div class="wrap">
     <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
   </div></footer>
 

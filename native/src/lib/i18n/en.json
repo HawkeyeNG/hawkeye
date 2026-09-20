@@ -1183,5 +1183,8 @@
   "tour.report.title": "Report — the green button",
   "tour.results.body": "Pick a race for its map and running tally. Follow one to get alerts.",
   "tour.start": "Start observing",
-  "tour.welcome": "Welcome to Hawkeye"
+  "tour.welcome": "Welcome to Hawkeye",
+  "race.no-list-declared": "INEC never published a candidate list for this by-election. The declared result is above. The seat and map on this page come from the electoral register.",
+  "race.ballot-parties-note-declared": "INEC published the {v0} parties contesting this by-election but not the candidates’ names. The declared result is above.",
+  "race.none-published": "None published"
 }

@@ -91,9 +91,22 @@ const magnitude = (code: string) => {
  * a plain ascending sort would have led with the oldest one.
  */
 const CARDS_SHOWN = 2;
+/**
+ * AND PAST ELECTIONS LEAVE IT ENTIRELY.
+ *
+ * Sorting them to the end was not enough: after the five by-elections of 19
+ * September the home screen still offered "Report from your polling unit now"
+ * on four seats that had been decided, under a heading that says upcoming.
+ * Sorting fixed the order of a list that should not have contained them.
+ *
+ * Reporting genuinely does stay open after polling day — a sheet photographed
+ * on Saturday is still worth having — so this hides the card, not the route:
+ * Results and Races still reach every past contest, and a deep link still
+ * opens it.
+ */
 const orderedContests = (cs: Contest[] | null) => {
   const today = new Date().toISOString().slice(0, 10);
-  return [...(cs ?? [])].sort((a, b) => {
+  return [...(cs ?? [])].filter((c) => !(c.date && c.date < today)).sort((a, b) => {
     const ad = a.date ?? '';
     const bd = b.date ?? '';
     const apast = ad !== '' && ad < today;

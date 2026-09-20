@@ -1183,5 +1183,8 @@
   "tour.report.title": "Kọọ — bọtịnụ akwụkwọ ndụ",
   "tour.results.body": "Họrọ asọmpi ka ị hụ maapụ ya na mgbakọta ya na-aga n'ihu. Soro otu ka ị nweta ọkwa.",
   "tour.start": "Malite ikiri",
-  "tour.welcome": "Nnọọ na Hawkeye"
+  "tour.welcome": "Nnọọ na Hawkeye",
+  "race.no-list-declared": "INEC ebipụtabeghị ndepụta ndị na-azọ ọkwa maka ntuliaka mmejuputa a. Nsonaazụ ekwuputara dị n’elu. Oche na maapụ dị na peeji a sitere na ndebanye aha ndị ntuliaka.",
+  "race.ballot-parties-note-declared": "INEC bipụtara pati {v0} na-azọ ntuliaka mmejuputa a mana ọ bipụtaghị aha ndị na-azọ ya. Nsonaazụ ekwuputara dị n’elu.",
+  "race.none-published": "Ebipụtaghị"
 }

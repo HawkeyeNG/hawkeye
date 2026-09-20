@@ -1183,5 +1183,8 @@
   "tour.report.title": "Rahoto — maɓallin kore",
   "tour.results.body": "Zaɓi gasa don ganin taswirarta da ƙidayarta mai gudana. Bi ɗaya don samun sanarwa.",
   "tour.start": "Fara lura",
-  "tour.welcome": "Barka da zuwa Hawkeye"
+  "tour.welcome": "Barka da zuwa Hawkeye",
+  "race.no-list-declared": "INEC ba ta taɓa wallafa jerin ’yan takara na wannan zaɓen cike gurbi ba. Sakamakon da aka sanar yana sama. Mazaɓar da taswirar da ke wannan shafi sun fito daga rajistar masu zaɓe.",
+  "race.ballot-parties-note-declared": "INEC ta wallafa jam’iyyu {v0} da suka fafata a wannan zaɓen cike gurbi amma ba sunayen ’yan takara ba. Sakamakon da aka sanar yana sama.",
+  "race.none-published": "Ba a wallafa ba"
 }

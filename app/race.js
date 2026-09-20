@@ -556,7 +556,16 @@
      * Hawkeye, not from the election. Every race now carries the same four
      * facts, and three of them are known for every seat in the country.
      */
-    cells.push([candTotal || T('race.tbd', 'TBD'), T('race.candidates', 'Candidates')]);
+    /* ...but TBD is a promise, and a declared race has nothing left to
+       determine. Three of the September 2026 by-elections finished without a
+       list ever being published, and their cards said the count was still
+       coming while the winner stood above it. */
+    cells.push([
+      candTotal
+        || (race.declared && race.declared.winner
+          ? T('race.none-published', 'None published')
+          : T('race.tbd', 'TBD')),
+      T('race.candidates', 'Candidates')]);
     if (st.heldBy) cells.push([st.heldBy, T('race.currently-held-by', 'Currently held by')]);
     /**
      * THE COUNT SHOULD DESCRIBE WHAT THE MAP DRAWS — except where it cannot.

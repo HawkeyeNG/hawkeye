@@ -264,7 +264,11 @@ export function RaceView({
          * `TBD` says what the zero could not — the number is missing from
          * Hawkeye, not from the election.
          */
-        cells.push([candTotal || i18nT('race.tbd'), i18nT('race.candidates')]);
+        /* TBD is a promise the number is coming; a declared race has nothing
+           left to determine. Web twin: app/race.js. */
+        cells.push([
+          candTotal || (race.declared?.winner ? i18nT('race.none-published') : i18nT('race.tbd')),
+          i18nT('race.candidates')]);
         if (st?.heldBy) cells.push([st.heldBy, i18nT('n.components.race.held-by')]);
         /**
          * THE COUNT SHOULD DESCRIBE WHAT THE MAP DRAWS — except where it cannot.

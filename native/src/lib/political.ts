@@ -526,6 +526,11 @@ export function seatRace(
       (s.sharedRegister
         ? "INEC's register does not separate this seat from the other constituency in the same LGA, so the LGA and polling-unit figures on this page cover both. "
         : '') + ballot.note,
+    /* THE CATALOGUE CAN DECLARE A RACE. Web twin: app/race.js. Both builders
+       construct their race from scratch, so anything not named here is lost —
+       which is why <Declared/> below has never rendered for a by-election even
+       though the block was in /api/contests. */
+    declared: contest?.declared,
     asOf: ballot.asOf,
     candidates: ballot.field,
     fieldLabel: ballot.fieldLabel,
@@ -572,6 +577,12 @@ export type ContestLite = {
   parties?: { code: string; name?: string }[];
   ballotAsOf?: string;
   ballotSource?: string;
+  /**
+   * THE DECLARED RESULT, once a returning officer has announced one. Same
+   * block the backend serves on /api/contests and the same shape Race carries,
+   * so the builders below can hand it straight to <Declared/>.
+   */
+  declared?: Race['declared'];
 };
 
 /**
@@ -652,12 +663,18 @@ export function contestBallot(
   contest: ContestLite | null | undefined,
   what: 'race' | 'by-election',
 ): Ballot {
+  /* ONCE A RACE IS DECLARED, "yet" IS A LIE — the election is over and no list
+     is coming. Three of the September 2026 by-elections finished without one.
+     Web twin: app/race.js's NO_LIST_DECLARED. */
+  const isDeclared = !!contest?.declared?.winner;
   const none: Ballot = {
     field: [],
     fieldLabel: 'candidates',
-    note: what === 'race'
-      ? i18nT('n.lib.political.inec-has-not-published-the-candidate-2')
-      : i18nT('race.no-list-by-election'),
+    note: isDeclared
+      ? i18nT('race.no-list-declared')
+      : what === 'race'
+        ? i18nT('n.lib.political.inec-has-not-published-the-candidate-2')
+        : i18nT('race.no-list-by-election'),
     asOf: undefined,
   };
   if (!contest || !(contest.constituencies ?? []).length) return none;
@@ -688,7 +705,10 @@ export function contestBallot(
       })),
       fieldLabel: 'parties',
       note:
-        i18nT('race.ballot-parties-note').replace('{v0}', String(parties.length)) + src,
+        (isDeclared
+          ? i18nT('race.ballot-parties-note-declared')
+          : i18nT('race.ballot-parties-note')
+        ).replace('{v0}', String(parties.length)) + src,
       asOf,
     };
   }
@@ -820,6 +840,11 @@ export function byElectionRace(
         : base.sharedRegister
           ? i18nT('race.shared-lga-note') + ' '
           : '') + ballot.note,
+    /* THE CATALOGUE CAN DECLARE A RACE. Web twin: app/race.js. Both builders
+       construct their race from scratch, so anything not named here is lost —
+       which is why <Declared/> below has never rendered for a by-election even
+       though the block was in /api/contests. */
+    declared: contest?.declared,
     asOf: ballot.asOf,
     candidates: ballot.field,
     fieldLabel: ballot.fieldLabel,

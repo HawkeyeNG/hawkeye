@@ -373,7 +373,14 @@ jobs:
             $NOTES_ARG \
             $REVIEW_ARG
 
+      # always(): the bundle is finished and signed BEFORE the publish step
+      # runs, so a publish that refuses — Play declining to stage the edit, a
+      # duplicate versionCode — is exactly when the .aab is most wanted, for a
+      # hand upload. Without this the step is skipped on failure and a 105 MB
+      # build that took eighteen minutes is discarded, which is what happened on
+      # 2026-09-21 and cost a whole second run to get back.
       - name: Keep the bundle as an artifact
+        if: always() && steps.cfg.outputs.aab != ''
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.app }}-aab

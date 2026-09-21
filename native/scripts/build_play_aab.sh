@@ -163,9 +163,13 @@ fi
 # upright, which is the behaviour we actually want. The layouts therefore still
 # have to survive any width; they are flex-based with max-w caps rather than
 # fixed widths, which is what makes that safe.
-grep -q 'ng.com.hawkeye.observer.MainActivity' "$MANIFEST" \
+# The manifest declares it RELATIVE to the package — android:name=".MainActivity".
+# Play's report shows the resolved ng.com.hawkeye.observer.MainActivity, and
+# matching that spelling is what made this guard kill its first build.
+grep -q 'android:name="\.MainActivity"' "$MANIFEST" \
   || die "MainActivity missing from the manifest — prebuild wrote something unexpected"
-grep -A6 'MainActivity' "$MANIFEST" | grep -q 'android:screenOrientation="portrait"' \
+grep -A6 'android:name="\.MainActivity"' "$MANIFEST" \
+  | grep -q 'android:screenOrientation="portrait"' \
   || die "MainActivity lost its portrait lock — app.json 'orientation' must be \"portrait\""
 echo "  manifest  : MainActivity portrait lock present"
 

@@ -154,6 +154,20 @@ fi
 [ -f android/app/src/main/res/drawable-hdpi/splashscreen_logo.png ] \
   || die "splashscreen_logo missing after prebuild — re-run, the mod did not apply"
 
+# Guard: OUR activity must not be orientation-locked. From Android 16 large
+# screens ignore the restriction anyway, and on a fold it is the difference
+# between a layout that reflows and one that letterboxes. app.json's
+# `orientation` drives this, so a revert there is silent until Play complains
+# weeks later — assert on the manifest prebuild actually wrote.
+# The ML Kit scanner activities carry their own PORTRAIT and are Google's to
+# fix; only MainActivity is ours, so only MainActivity is checked.
+grep -q 'ng.com.hawkeye.observer.MainActivity' "$MANIFEST" \
+  || die "MainActivity missing from the manifest — prebuild wrote something unexpected"
+if grep -A6 'MainActivity' "$MANIFEST" | grep -q 'android:screenOrientation'; then
+  die "MainActivity is orientation-locked — app.json 'orientation' must be \"default\""
+fi
+echo "  manifest  : MainActivity is not orientation-locked"
+
 fi   # end of the prebuild-or-skip branch
 
 step "Bundle (this takes a while)"
@@ -188,6 +202,21 @@ touch "$STAMP"
 ./gradlew --no-daemon --no-watch-fs --console=plain --max-workers=2 \
   -Pandroid.enableMinifyInReleaseBuilds=true \
   -Pandroid.enableShrinkResourcesInReleaseBuilds=true \
+  `# Play's pre-launch report reads these two, and BOTH were absent — which is
+   # what "Optimization isn't enabled / Optimized resource shrinking isn't
+   # enabled" means. minifyEnabled alone runs R8 in COMPAT mode, which keeps a
+   # large set of members for reflection that full mode drops.
+   #
+   # Passed as -P, like the two above, because prebuild --clean rewrites
+   # android/gradle.properties from Expo's template on every build: anything
+   # committed to that file is gone before gradle reads it.
+   #
+   # FULL MODE IS THE RISKY ONE. It removes implicit keeps, so anything resolved
+   # by reflection — a native module, a Hermes intrinsic — can vanish and fail
+   # only at RUNTIME, in a build that compiles clean. Smoke-test a device before
+   # this goes past internal testing.` \
+  -Pandroid.enableR8.fullMode=true \
+  -Pandroid.r8.optimizedResourceShrinking=true \
   -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m -Xshare:off" \
   -PHAWKEYE_UPLOAD_STORE_FILE="$KS_FILE" \
   -PHAWKEYE_UPLOAD_STORE_PASSWORD="$KS_PASS" \

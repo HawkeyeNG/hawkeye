@@ -336,11 +336,20 @@ jobs:
         if: ${{ !inputs.dry_run }}
         env:
           PLAY_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          # Through the ENVIRONMENT, never `${{ inputs.notes }}` inline. An
+          # expression is substituted into the script text before bash parses
+          # it, so real release notes — which have newlines and apostrophes —
+          # turned `[ -n "..." ]` into `[: too many arguments` on 2026-09-21.
+          # The test failed, NOTES_ARG stayed empty, and the run reported
+          # "notes : none" while looking like it had worked. The same
+          # substitution is a shell-injection hole: notes are free text typed
+          # into a workflow form.
+          NOTES: ${{ inputs.notes }}
         run: |
           set -euo pipefail
           NOTES_ARG=""
-          if [ -n "${{ inputs.notes }}" ]; then
-            printf '%s' "${{ inputs.notes }}" > "$RUNNER_TEMP/notes.txt"
+          if [ -n "$NOTES" ]; then
+            printf '%s' "$NOTES" > "$RUNNER_TEMP/notes.txt"
             NOTES_ARG="--notes-file $RUNNER_TEMP/notes.txt"
           fi
           # production is allowed here, but only with the rollout stated — the

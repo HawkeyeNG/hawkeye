@@ -170,9 +170,14 @@ jobs:
       # only says otherwise by rejecting the upload — after the build has run.
       # This runs before the build so a duplicate costs seconds, not 40 minutes,
       # and it leaves the file alone if it is already ahead.
+      # NOT GATED ON dry_run, deliberately. Both of these only READ from Play,
+      # and a dry run that skips them builds with whatever versionCode happens to
+      # be committed — 16, while Play was already at 19. That bundle cannot be
+      # uploaded by hand: Play rejects a code it has already seen. The whole
+      # point of dry_run is to get a bundle a human can upload, so it has to
+      # carry a usable number.
       - name: Authenticate to Google — no key, short-lived credentials
         id: auth
-        if: ${{ !inputs.dry_run }}
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
@@ -181,7 +186,6 @@ jobs:
           access_token_scopes: https://www.googleapis.com/auth/androidpublisher
 
       - name: Set the next versionCode from Play
-        if: ${{ !inputs.dry_run }}
         env:
           PLAY_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: node scripts/play_next_version.mjs --app "${{ inputs.app }}" --write

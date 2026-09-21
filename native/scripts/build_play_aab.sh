@@ -206,6 +206,34 @@ tail -3 "$LOG"
 step "Verify the artefact"
 AAB=$(find "$OUT_DIR" -name '*.aab' -newer "$STAMP" 2>/dev/null | head -1)
 [ -n "${AAB:-}" ] || die "no .aab newer than this run — gradle reported success but produced nothing"
+
+# THE CONFIG THE APP WILL ACTUALLY READ, out of the bundle that was just built.
+#
+# vc17, vc18 and vc19 all shipped with base/assets/app.config carrying
+# extra.mapsKeyPresent:false AND android.package ng.com.hawkeye.observer.dev —
+# the DEV variant — while build.gradle and AndroidManifest were correct, because
+# gradle re-evaluates app.config.js and APP_VARIANT was set for prebuild alone.
+# Every gate above passed on all three. They were checking the inputs; this one
+# checks the output.
+CFGJSON=$(mktemp -d)
+unzip -q -o "$AAB" -d "$CFGJSON" 'base/assets/app.config' 2>/dev/null   || die "the bundle carries no base/assets/app.config to check"
+node -e "
+  // JSON.parse, NOT require: the file is named app.config with no extension,
+  // so require() treats it as JavaScript and throws — which made the first
+  // version of this gate fail on every bundle, good or bad.
+  const cfg = JSON.parse(require('fs').readFileSync('$CFGJSON/base/assets/app.config', 'utf8'));
+  const pkg = (cfg.android || {}).package;
+  const flag = (cfg.extra || {}).mapsKeyPresent;
+  let bad = [];
+  if (pkg !== 'ng.com.hawkeye.observer') bad.push('android.package is ' + pkg);
+  if (flag !== true) bad.push('extra.mapsKeyPresent is ' + flag);
+  if (bad.length) {
+    console.error('::error::the EMBEDDED config is the wrong variant — ' + bad.join('; ')
+      + '. APP_VARIANT must be exported for the whole build, not prefixed on prebuild.');
+    process.exit(1);
+  }
+  console.log('  embedded  : ' + pkg + ', mapsKeyPresent=true');
+" || die "the bundle would run with the dev config"
 echo "  file      : $AAB"
 echo "  size      : $(du -h "$AAB" | cut -f1)"
 

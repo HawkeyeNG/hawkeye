@@ -41,7 +41,7 @@ function XMark({ color, size }: { color: string; size: number }) {
  * Where to find Hawkeye off-app.
  *
  * This shares its ACCOUNTS with the social row menu.js builds into every page
- * footer — the same four links in the same order, and the X path below is
+ * footer — the same five links in the same order, and the X path below is
  * copied from that footer's — but it is deliberately no longer the same
  * component. The website footer is a bare strip of four outlined icon circles:
  * no heading, no Telegram entry, no text labels. This one has all three,
@@ -56,7 +56,7 @@ function XMark({ color, size }: { color: string; size: number }) {
  *    alerts, so it is the one link here an observer may actually need, and it
  *    gets the app's standard action-card shape — icon tile, what it does, a
  *    real call to action — rather than a glyph in a row of logos.
- *  - The four social accounts are secondary: one card, four equal cells,
+ *  - The five social accounts are secondary: one card, five equal cells,
  *    every mark at the same optical size and every cell the same weight.
  *
  * The section heading lives here too, so all three screens that show this
@@ -72,6 +72,11 @@ const SOCIAL: { name: string; icon: keyof typeof Feather.glyphMap | 'x'; url: st
     name: 'Facebook',
     icon: 'facebook',
     url: 'https://www.facebook.com/people/Hawkeye/61591831703798/',
+  },
+  {
+    name: 'LinkedIn',
+    icon: 'linkedin',
+    url: 'https://www.linkedin.com/company/hawkeye-election-monitor',
   },
 ];
 
@@ -160,8 +165,10 @@ export function SocialRow() {
       </Pressable>
 
       {/* The accounts, deliberately quieter than the card above: muted marks on
-          one card, split into four equal cells by the same hairline the rest of
-          the app divides list rows with. */}
+          one card, split into five equal cells by the same hairline the rest of
+          the app divides list rows with. At five cells a 360px screen gives each
+          about 64px, so the labels stay on one line — 'Instagram' at 11px is the
+          longest and measures ~55px. */}
       <View className="mt-2 flex-row overflow-hidden rounded-2xl bg-card">
         {SOCIAL.map((s, i) => (
           <Pressable

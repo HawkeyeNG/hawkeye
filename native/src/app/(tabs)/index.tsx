@@ -379,6 +379,14 @@ export default function Home() {
     [items, filter],
   );
 
+  /* ONE ordered list, used by the cards AND the show-more control. They used to
+     be computed apart — the cards from orderedContests(), the count from the raw
+     `contests` — so every past election stayed in the count after it stopped
+     rendering. With the five by-elections of 19 September decided, the bar
+     offered four more elections than existed, and had they all been past it
+     would have offered to expand nothing. */
+  const ordered = useMemo(() => orderedContests(contests), [contests]);
+
   const header = (
     <View className="px-4">
 
@@ -393,10 +401,7 @@ export default function Home() {
         </View>
       ) : null}
 
-      {(allElections
-        ? orderedContests(contests)
-        : orderedContests(contests).slice(0, CARDS_SHOWN)
-      ).map((c) => (
+      {(allElections ? ordered : ordered.slice(0, CARDS_SHOWN)).map((c) => (
         <Pressable
           key={c.code}
           className="mb-3 overflow-hidden rounded-3xl bg-hawk-green active:opacity-90"
@@ -449,7 +454,7 @@ export default function Home() {
       {/* Directly under the second card, so it reads as the end of the list
           rather than a control belonging to whatever follows. Named counts, not
           "More": how many are hidden is the thing worth knowing before tapping. */}
-      {(contests?.length ?? 0) > CARDS_SHOWN ? (
+      {ordered.length > CARDS_SHOWN ? (
         <Pressable
           onPress={() => setAllElections((v) => !v)}
           className="mb-3 -mt-1 flex-row items-center justify-center rounded-2xl bg-card py-3 active:opacity-80"
@@ -458,7 +463,7 @@ export default function Home() {
           <Text className="text-sm font-bold text-good-ink">
             {allElections
               ? i18nT('n.app.tabs.index.show-fewer-elections')
-              : i18nT('n.app.tabs.index.show-more-elections', { v0: (contests?.length ?? 0) - CARDS_SHOWN })}
+              : i18nT('n.app.tabs.index.show-more-elections', { v0: ordered.length - CARDS_SHOWN })}
           </Text>
           <Feather
             name={allElections ? 'chevron-up' : 'chevron-down'}

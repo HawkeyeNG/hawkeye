@@ -1583,12 +1583,15 @@ document.addEventListener('hawkeye-lang', i18nSweep);
 
   // Social bar in the footer — one source of truth, every page. Each icon renders
   // only when its `url` is a real link, so no dead/placeholder links ever ship.
-  // Fill the four URLs below with the official Hawkeye account links.
+  // Fill the URLs below with the official Hawkeye account links. Keep this list
+  // in step with native/src/components/social-row.tsx and the signature block in
+  // docs/EMAIL-TEMPLATE.html — three copies, no shared source.
   const SOCIAL = [
     { name: 'TikTok',    url: 'https://www.tiktok.com/@hawkeyengbot', svg: '<path d="M15.5 3c.3 2.3 1.9 3.9 4.5 4.1v2.7c-1.6.1-3.1-.4-4.5-1.3v6.1a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v2.8a2.8 2.8 0 1 0 2 2.7V3z" fill="currentColor" stroke="none"/>' },
     { name: 'Instagram', url: 'https://www.instagram.com/hawkeyengbot/', svg: '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.7"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>' },
     { name: 'X',         url: 'https://x.com/HawkEyeNGBot', svg: '<path d="M4 4l6.9 8.4L4.3 20H7l5.1-5.7L16.6 20H20l-7.2-8.8L19.4 4H16.8l-4.6 5.2L8.2 4z" fill="currentColor" stroke="none"/>' },
     { name: 'Facebook',  url: 'https://www.facebook.com/people/Hawkeye/61591831703798/', svg: '<path d="M13.8 21v-8h2.2l.33-2.6H13.8V8.7c0-.75.23-1.26 1.3-1.26h1.4V5.1c-.24-.03-1.07-.1-2.03-.1-2.02 0-3.4 1.23-3.4 3.5v1.9H8.9V13h2.17v8z" fill="currentColor" stroke="none"/>' },
+    { name: 'LinkedIn',  url: 'https://www.linkedin.com/company/hawkeye-election-monitor', svg: '<path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.86-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zm1.78 13.02H3.56V9h3.56v11.45z" fill="currentColor" stroke="none"/>' },
   ];
   const shownSocial = SOCIAL.filter((s) => s.url);
   const footWrap = document.querySelector('.gov-footer:not(.console-foot) .wrap');

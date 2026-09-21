@@ -1448,16 +1448,16 @@ async function loadMyRooms() {
  */
 async function renderCheckIn() {
   const host = $('checkin-host');
-  if (!host) return;
+  if (!host) return false;
   const rooms = await loadMyRooms();
-  if (!rooms.length || !selectedPu) { host.hidden = true; host.innerHTML = ''; return; }
+  if (!rooms.length || !selectedPu) { host.hidden = true; host.innerHTML = ''; return false; }
 
   const done = rooms.every((r) => r.checkedIn && r.checkedIn.standing === 'verified');
   if (done) {
     host.hidden = false;
     host.innerHTML = `<div class="card" style="border-left:4px solid var(--ok, #1f7a4d);padding:14px 18px">`
       + `<p class="hint" style="margin:0">\u2714 ${T('observe.checked-in-already', 'Your coordinator knows you are here.')}</p></div>`;
-    return;
+    return false;
   }
 
   /* An assignment somewhere ELSE is said plainly before they tap. Being sent
@@ -1472,8 +1472,9 @@ async function renderCheckIn() {
       <p class="hint" style="margin:0" id="checkin-note">${elsewhere.length
     ? T('observe.check-in-different-unit', 'You are down for {unit}. Checking in here records where you actually are.', { unit: elsewhere[0].assigned.name })
     : T('observe.check-in-sub', 'They will see that you have arrived, before any result is filed.')}</p>
-      <button type="button" class="secondary" id="btn-checkin" style="width:auto;margin:12px 0 0">${T('observe.check-in', "I'm at my unit")}</button>
+      <button type="button" id="btn-checkin" style="width:auto;margin:12px 0 0;background:var(--accent);color:var(--green-950);border-color:transparent;box-shadow:none">${T('observe.check-in', "I'm at my unit")}</button>
     </div>`;
+  return true;
 }
 
 async function doFlowCheckIn(btn) {
@@ -1522,6 +1523,10 @@ async function doFlowCheckIn(btn) {
     } else {
       $('checkin-card').innerHTML = `<p class="hint">${T('observe.checked-in-weak', 'Recorded, but your location could not be confirmed. Your coordinator sees it as unconfirmed.')}</p>`;
     }
+    /* The card has just become a receipt with nothing left to do on it, so this
+       is the moment to hand them on — the same move every other step makes. */
+    const race = $('race-fold');
+    if (race) requestAnimationFrame(() => race.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   } catch (e) {
     btn.disabled = false;
     say(e && e.code === 1
@@ -1546,10 +1551,20 @@ function selectUnit(u) {
   // Choosing a unit IS step 2's confirmer: it folds and step 3 opens.
   stepDone[1] = false; // force the transition so the fold/advance fires again
   setStepDone(1, true, `✔ ${u.name}`);
-  // Named after the unit is bound, so the card can say where it will check
-  // them in. Never awaited: a roster lookup must not delay the flow.
-  renderCheckIn();
-  $('race-fold').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  /* Named after the unit is bound, so the card can say where it will check
+     them in. Still never AWAITED — a roster lookup must not delay the flow —
+     but it now owns where the page lands.
+
+     THE CARD WAS BEING SCROLLED PAST. setStepDone(1) advances to step 3 and
+     scrolls there, and this line scrolled there again; the check-in card sits
+     between the two and renders a moment later, when the roster call returns.
+     So the one card asking the observer to do something appeared above the
+     viewport and was never seen. Now: if there is something to check into, the
+     page goes to THAT, and checking in is what sends them on to step 3. */
+  renderCheckIn().then((actionable) => {
+    const target = actionable ? $('checkin-card') : $('race-fold');
+    if (target) requestAnimationFrame(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  });
 }
 
 // Prefill the submit screen from a Telegram chat handoff, then let the observer

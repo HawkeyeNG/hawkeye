@@ -2149,9 +2149,14 @@ export default function ReportResult() {
                           setCheckInState(!r.ok ? 'failed' : r.standing === 'verified' ? 'verified' : 'weak');
                           if (r.ok) setRooms(await myRooms());
                         }}
-                        className="items-center rounded-xl border border-hawk-leaf py-2.5 active:opacity-70"
+                        /* The only thing on this card there is to DO, so it
+                           carries the brand CTA surface rather than reading as
+                           the outlined chrome it sat in before. bg-hawk-gold is
+                           a fixed surface: its label must be the fixed hawk ink,
+                           because text-ink flips near-white and dies in gold. */
+                        className="items-center rounded-xl bg-hawk-gold py-2.5 active:opacity-80"
                       >
-                        <Text className="text-sm font-bold text-hawk-leaf">
+                        <Text className="text-sm font-bold text-hawk-ink">
                           {checkInState === 'working'
                             ? i18nT('n.app.report.result.check-in-locating')
                             : i18nT('n.app.report.result.check-in')}

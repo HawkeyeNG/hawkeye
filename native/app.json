@@ -3,7 +3,7 @@
     "name": "Hawkeye",
     "slug": "hawkeye",
     "version": "1.0.5",
-    "orientation": "default",
+    "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "hawkeye",
     "userInterfaceStyle": "automatic",

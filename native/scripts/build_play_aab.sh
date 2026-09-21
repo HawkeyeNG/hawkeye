@@ -154,19 +154,20 @@ fi
 [ -f android/app/src/main/res/drawable-hdpi/splashscreen_logo.png ] \
   || die "splashscreen_logo missing after prebuild — re-run, the mod did not apply"
 
-# Guard: OUR activity must not be orientation-locked. From Android 16 large
-# screens ignore the restriction anyway, and on a fold it is the difference
-# between a layout that reflows and one that letterboxes. app.json's
-# `orientation` drives this, so a revert there is silent until Play complains
-# weeks later — assert on the manifest prebuild actually wrote.
-# The ML Kit scanner activities carry their own PORTRAIT and are Google's to
-# fix; only MainActivity is ours, so only MainActivity is checked.
+# Guard: the portrait lock is DELIBERATE and must survive prebuild.
+#
+# It is a phone-only guarantee, and worth being clear about: from Android 16 a
+# large screen IGNORES screenOrientation outright, so a tablet or an unfolded
+# fold will run this app in landscape whatever this says. Play's warning is
+# about that, and keeping the lock does not prevent it — it keeps handsets
+# upright, which is the behaviour we actually want. The layouts therefore still
+# have to survive any width; they are flex-based with max-w caps rather than
+# fixed widths, which is what makes that safe.
 grep -q 'ng.com.hawkeye.observer.MainActivity' "$MANIFEST" \
   || die "MainActivity missing from the manifest — prebuild wrote something unexpected"
-if grep -A6 'MainActivity' "$MANIFEST" | grep -q 'android:screenOrientation'; then
-  die "MainActivity is orientation-locked — app.json 'orientation' must be \"default\""
-fi
-echo "  manifest  : MainActivity is not orientation-locked"
+grep -A6 'MainActivity' "$MANIFEST" | grep -q 'android:screenOrientation="portrait"' \
+  || die "MainActivity lost its portrait lock — app.json 'orientation' must be \"portrait\""
+echo "  manifest  : MainActivity portrait lock present"
 
 fi   # end of the prebuild-or-skip branch
 

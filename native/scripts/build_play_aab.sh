@@ -34,6 +34,12 @@ export PATH="$JAVA_HOME/bin:$PATH"
 # to every JVM. Its -Xshare warning lands on the stderr of AGP's CMake configure
 # task, and AGP fails any task that writes to stderr.
 export DD_TRACE_ENABLED=false DD_PROFILING_ENABLED=false DD_INJECTION_ENABLED=false
+# EXPORTED, not prefixed on prebuild. app.config.js is evaluated TWICE — once
+# by prebuild for the manifest, once by gradle to embed the JS bundle — and it
+# only reads the production Maps key when this is set. Setting it for prebuild
+# alone produced a manifest with the key and a bundle carrying
+# extra.mapsKeyPresent:false, which is what unit-map.tsx hides the map on.
+export APP_VARIANT=production
 
 step() { printf '\n\033[1;36m==> %s\033[0m\n' "$1"; }
 die()  { printf '\033[1;31mFAIL: %s\033[0m\n' "$1" >&2; exit 1; }
@@ -98,7 +104,7 @@ step "Prebuild (production variant)"
 # --clean because the tree normally holds a .dev build: a stale android/ would
 # keep the old applicationId and the dev Maps key. It is also what regenerates
 # the launcher icons from assets/images/android-icon-foreground.png.
-APP_VARIANT=production npx expo prebuild --platform android --no-install --clean 2>&1 | tail -4
+npx expo prebuild --platform android --no-install --clean 2>&1 | tail -4
 
 PKG=$(grep -m1 'applicationId' android/app/build.gradle | sed "s/.*'\(.*\)'.*/\1/")
 [ "$PKG" = "ng.com.hawkeye.observer" ] || die "applicationId is $PKG, expected ng.com.hawkeye.observer"
@@ -109,6 +115,13 @@ grep -q "versionCode $VC" android/app/build.gradle \
 echo "  package   : $PKG"
 echo "  signing   : upload config injected"
 echo "  maps key  : $(grep -c 'com.google.android.geo.API_KEY' android/app/src/main/AndroidManifest.xml) manifest entry"
+grep -q 'com.google.android.geo.API_KEY' android/app/src/main/AndroidManifest.xml \
+  || die "no Maps key in the manifest — the map would be a grey void"
+# AND THE FLAG THE APP ACTUALLY READS. The manifest entry above was true on
+# every build that shipped a hidden map: unit-map.tsx keys off
+# extra.mapsKeyPresent, which comes from a SECOND evaluation of app.config.js.
+# Checking the manifest alone is checking the wrong artifact.
+node scripts/check_maps_flag.mjs || die "the app would hide its own map"
 
 # Guard: THE SCANNER PRE-WARM ACTUALLY APPLIED.
 #

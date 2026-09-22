@@ -64,23 +64,80 @@ function XMark({ color, size }: { color: string; size: number }) {
  */
 export const TELEGRAM_BOT = 'https://t.me/HawkEyeNGBot';
 
-const SOCIAL: { name: string; icon: keyof typeof Feather.glyphMap | 'x'; url: string }[] = [
+/**
+ * `app` is the platform's OWN url scheme, tried before the https link.
+ *
+ * Handing the OS an https url only reaches the installed app when that app has
+ * VERIFIED App Links (Android) / Universal Links (iOS) for the exact path —
+ * which is the app publisher's decision, not ours. TikTok and X have done it,
+ * so those already open natively. Instagram and LinkedIn have not, so the OS
+ * hands the url to a browser; their own "open in app" banner then offers the
+ * store rather than the page, because the website cannot pass the deep link
+ * across. Facebook sits in between, which is where its popup comes from.
+ *
+ * A scheme url is not subject to any of that: it addresses the app directly.
+ * TikTok keeps the https url because its scheme needs a numeric user id that a
+ * @handle does not give us, and its App Links already work.
+ */
+const SOCIAL: {
+  name: string;
+  icon: keyof typeof Feather.glyphMap | 'x';
+  url: string;
+  app?: string;
+}[] = [
   { name: 'TikTok', icon: 'music', url: 'https://www.tiktok.com/@hawkeyengbot' },
-  { name: 'Instagram', icon: 'instagram', url: 'https://www.instagram.com/hawkeyengbot/' },
-  { name: 'X', icon: 'x', url: 'https://x.com/HawkEyeNGBot' },
+  {
+    name: 'Instagram',
+    icon: 'instagram',
+    url: 'https://www.instagram.com/hawkeyengbot/',
+    app: 'instagram://user?username=hawkeyengbot',
+  },
+  {
+    name: 'X',
+    icon: 'x',
+    url: 'https://x.com/HawkEyeNGBot',
+    app: 'twitter://user?screen_name=HawkEyeNGBot',
+  },
   {
     name: 'Facebook',
     icon: 'facebook',
     url: 'https://www.facebook.com/people/Hawkeye/61591831703798/',
+    // The page id out of the https url above; fb://page/<id> lands on the page
+    // itself, which is what the "open in the app?" prompt was asking to do.
+    app: 'fb://page/61591831703798',
   },
   {
     name: 'LinkedIn',
     icon: 'linkedin',
     url: 'https://www.linkedin.com/company/hawkeye-election-monitor',
+    // LEAST CERTAIN of the four. LinkedIn's scheme is documented for numeric
+    // company ids and the vanity name may not resolve; if it does not, the app
+    // either refuses the url (we fall through to the website, i.e. today's
+    // behaviour) or opens on its home feed. Worth confirming on a device — and
+    // if it lands on the feed, drop this line rather than leave it.
+    app: 'linkedin://company/hawkeye-election-monitor',
   },
 ];
 
-async function open(url: string) {
+async function open(url: string, app?: string) {
+  // THE APP'S OWN SCHEME FIRST, when there is one.
+  //
+  // openURL, not canOpenURL: on iOS canOpenURL answers false for any scheme
+  // not listed in LSApplicationQueriesSchemes even when the app IS installed,
+  // and on Android 11+ it needs a <queries> entry — both of which would make
+  // this silently fall through to the website on a phone that has the app.
+  // openURL is subject to neither; it simply rejects when nothing handles the
+  // url, which is the signal we want.
+  if (app) {
+    try {
+      await Linking.openURL(app);
+      return;
+    } catch {
+      // Not installed, or the scheme was refused. The website below is a
+      // strictly better outcome than an error, and is what happened before.
+    }
+  }
+
   // Deep-link into the installed app when there is one; otherwise the in-app
   // browser, which keeps the observer inside Hawkeye.
   try {
@@ -175,7 +232,7 @@ export function SocialRow() {
             key={s.name}
             accessibilityRole="button"
             accessibilityLabel={i18nT('n.components.social-row.hawkeye-on', { v0: s.name })}
-            onPress={() => open(s.url)}
+            onPress={() => open(s.url, s.app)}
             className={`flex-1 items-center py-3.5 active:bg-surface ${
               i > 0 ? 'border-l border-line' : ''
             }`}

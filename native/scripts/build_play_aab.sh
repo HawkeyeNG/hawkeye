@@ -268,6 +268,24 @@ node -e "
   }
   console.log('  embedded  : ' + pkg + ', mapsKeyPresent=true');
 " || die "the bundle would run with the dev config"
+# THE BARCODE SCANNER MUST NOT BE IN HERE. Nothing in src/ scans a barcode —
+# the only occurrences of the word are comments in lib/scan.ts — but expo-camera
+# links ML Kit's scanner by DEFAULT, and libbarhopper_v3.so is 4.9 MB of the
+# arm64 download. app.json sets barcodeScannerEnabled:false; this proves the
+# flag survived prebuild, because the failure mode is silent weight.
+#
+# grep -c, NOT grep -q, and the count in a variable. This script runs under
+# `set -o pipefail`: `unzip -l | grep -q` makes grep exit the moment it matches,
+# unzip then dies of SIGPIPE, the pipeline reports 141, and the `if` reads
+# FALSE — so the guard would stay silent in exactly the case it exists to
+# catch, and fire only when the library was already absent. Written that way
+# first; caught by running it against a bundle known to contain the library.
+BARHOPPER=$(unzip -l "$AAB" 2>/dev/null | grep -c 'libbarhopper' || true)
+if [ "${BARHOPPER:-0}" -gt 0 ]; then
+  die "libbarhopper is back ($BARHOPPER entries) — expo-camera's barcodeScannerEnabled:false did not apply"
+fi
+echo "  barcode   : not linked (libbarhopper absent)"
+
 echo "  file      : $AAB"
 echo "  size      : $(du -h "$AAB" | cut -f1)"
 

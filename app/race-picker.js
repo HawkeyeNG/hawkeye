@@ -358,7 +358,13 @@
     var data = null;
 
     function fill(sel, rows, placeholder) {
-      sel.innerHTML = '<option value="">' + placeholder + '</option>'
+      // THE PLACEHOLDER IS NOT ALWAYS A LITERAL. The seat select below is
+      // filled with '— none listed for ' + s + ' —', where s is the state name
+      // the reader picked — which came out of the register file fetched from
+      // the server, exactly like the rows two lines down that this function
+      // already escapes. Same origin, same treatment: a '<' arriving in a
+      // string nobody thinks of as data is still markup to innerHTML.
+      sel.innerHTML = '<option value="">' + String(placeholder || '').replace(/</g, '&lt;') + '</option>'
         + rows.map(function (r) {
           var label = typeof r === 'string' ? r : r.name + (r.sub ? '  —  ' + r.sub : '');
           var val = typeof r === 'string' ? r : r.name;

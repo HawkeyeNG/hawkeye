@@ -485,13 +485,31 @@
     LOGOS = LOGOS || {};
     if (!race) { main.innerHTML = '<p class="race-absence">' + T('race.race-data-unavailable', 'Race data unavailable.') + '</p>'; return; }
 
+    /**
+     * NOTHING FROM THE DATA GOES INSIDE AN INLINE HANDLER.
+     *
+     * An onerror="…" attribute is a DOUBLE-DECODING context, and esc() is the
+     * wrong tool inside one. The browser HTML-decodes the attribute BEFORE the
+     * JS is parsed, so every entity esc() wrote is undone on the way in: a
+     * party name or a set of initials carrying an apostrophe closed the string
+     * literal these handlers were built around and the rest of the name was
+     * executed, and `this.outerHTML = '<span>…'` then parsed the decoded value
+     * as markup a SECOND time, which esc() cannot survive at all. Party and
+     * candidate names arrive from the contest data over the network, so that is
+     * a real path, not a hypothetical one.
+     *
+     * The value therefore travels as an ordinary escaped data-* attribute —
+     * one decode, no script — and the handler reads it back and writes it with
+     * textContent, which parses nothing. The handlers now contain only literal
+     * code, so there is nothing in them left to escape.
+     */
     const flagIcon = (p) => LOGOS[p]
-      ? `<img class="flag" src="${LOGOS[p]}" alt="${esc(p)} logo" loading="lazy" onerror="this.outerHTML='<span class=&quot;fallback&quot;>${esc(p)}</span>'">`
+      ? `<img class="flag" src="${LOGOS[p]}" alt="${esc(p)} logo" loading="lazy" data-fallback="${esc(p)}" onerror="this.replaceWith(Object.assign(document.createElement('span'), { className: 'fallback', textContent: this.dataset.fallback }))">`
       : `<span class="fallback">${esc(p)}</span>`;
     const flagInline = (p, sz = 14) => LOGOS[p]
       ? `<img src="${LOGOS[p]}" alt="" style="width:${sz}px;height:${sz}px;border-radius:50%;object-fit:contain;background:#fff;vertical-align:-2px;margin-right:4px">` : '';
     const avatar = (c) => c.photo
-      ? `<span class="av"><img src="${esc(c.photo)}" alt="${esc(c.name)}" loading="lazy" onerror="this.parentNode.textContent='${esc(c.initials || '')}'"></span>`
+      ? `<span class="av" data-initials="${esc(c.initials || '')}"><img src="${esc(c.photo)}" alt="${esc(c.name)}" loading="lazy" onerror="this.parentNode.textContent = this.parentNode.dataset.initials"></span>`
       : `<span class="av">${esc(c.initials || '')}</span>`;
 
     // THE YEAR COMES FROM THE DATA. It was the literal "2026", which was true

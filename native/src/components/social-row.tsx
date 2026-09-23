@@ -1,6 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import * as WebBrowser from 'expo-web-browser';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { SectionLabel } from '@/components/content-kit';
@@ -110,12 +110,18 @@ const SOCIAL: {
     name: 'LinkedIn',
     icon: 'linkedin',
     url: 'https://www.linkedin.com/company/hawkeye-election-monitor',
-    // LEAST CERTAIN of the four. LinkedIn's scheme is documented for numeric
-    // company ids and the vanity name may not resolve; if it does not, the app
-    // either refuses the url (we fall through to the website, i.e. today's
-    // behaviour) or opens on its home feed. Worth confirming on a device — and
-    // if it lands on the feed, drop this line rather than leave it.
-    app: 'linkedin://company/hawkeye-election-monitor',
+    // iOS ONLY, and the asymmetry is measured, not assumed: tested on devices,
+    // linkedin://company/<vanity-name> opens the Hawkeye page on iOS and dumps
+    // the user on LinkedIn's HOME FEED on Android. The scheme is documented for
+    // numeric company ids; iOS evidently resolves the vanity name and Android
+    // does not, and a feed is worse than the website — it looks like the link
+    // went to the wrong place.
+    //
+    // undefined on Android means open() skips straight to the https url, which
+    // is the behaviour it had before schemes existed.
+    app: Platform.OS === 'ios'
+      ? 'linkedin://company/hawkeye-election-monitor'
+      : undefined,
   },
 ];
 

@@ -88,6 +88,28 @@
     const qid = encodeURIComponent(new URLSearchParams(location.search).get('id'));
     const token = localStorage.getItem('hawkeye_token');
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    /**
+     * A URL on its way into href or src needs more than esc().
+     *
+     * esc() stops a value closing the attribute it sits in, which is the whole
+     * job for text. A URL has a second way to be dangerous that needs no quotes
+     * at all: `javascript:...` in an href runs on click. So the scheme is
+     * checked first and only then is the value attribute-escaped.
+     *
+     * Relative paths pass — they cannot carry a scheme. An absolute URL must be
+     * http or https; anything else returns empty, which renders a dead link
+     * rather than a live one.
+     *
+     * sheetUrl is backend-supplied today, so this is not a live hole. It was
+     * the one field in this template not going through esc(), and a photo URL
+     * is exactly the kind of value that later grows a user-influenced path.
+     */
+    const safeUrl = (u) => {
+      const s = String(u ?? '').trim();
+      if (/^[a-z][a-z0-9+.-]*:/i.test(s) && !/^https?:/i.test(s)) return '';
+      return esc(s);
+    };
     let CASE = null;
 
     function tally(t) {
@@ -119,7 +141,7 @@
       $('evidence').innerHTML = c.submissions.map((s) => `
         <h3>Report #${s.id} · ${new Date(s.capturedAt).toLocaleString()} · location ${s.locationVerified ? 'verified ✅' : 'unverified'}</h3>
         <div class="ev">
-          <div><a href="${s.sheetUrl}" target="_blank" rel="noopener"><img loading="lazy" src="${s.sheetUrl}" alt="result sheet photo"></a><div class="cap">Result sheet (tap to open full size)</div></div>
+          <div><a href="${safeUrl(s.sheetUrl)}" target="_blank" rel="noopener"><img loading="lazy" src="${safeUrl(s.sheetUrl)}" alt="result sheet photo"></a><div class="cap">Result sheet (tap to open full size)</div></div>
         </div>
         <table><thead><tr><th>Party</th><th>Reported Count</th></tr></thead><tbody>
           ${s.votes.filter((v) => v.count > 0).map((v) => `<tr><td>${esc(v.party)}</td><td>${v.count.toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="2">all zeros</td></tr>'}

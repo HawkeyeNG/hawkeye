@@ -63,6 +63,31 @@ jobs:
         # differently dependency tree is the last thing to debug from a CI log.
         run: npm ci
 
+      - name: Leave the dev client out of a release build
+        working-directory: native
+        # EXDevLauncher and EXDevMenu are compiled into the shipped app: they
+        # appear in build 48's compile lines. expo-dev-client exists for
+        # development builds and does nothing for a TestFlight or App Store
+        # user, so it is excluded HERE rather than in package.json — a
+        # package.json exclusion would also strip it from local dev builds,
+        # where it is the whole point.
+        #
+        # Measured, not assumed: build 48's ipa was 26M with it in. If this
+        # does not move that number, put the step back to nothing.
+        run: |
+          node -e '
+            const fs = require("fs");
+            const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            p.expo = p.expo || {};
+            p.expo.autolinking = p.expo.autolinking || {};
+            const ex = new Set(p.expo.autolinking.exclude || []);
+            ["expo-dev-client", "expo-dev-launcher", "expo-dev-menu",
+             "expo-dev-menu-interface"].forEach((m) => ex.add(m));
+            p.expo.autolinking.exclude = [...ex];
+            fs.writeFileSync("package.json", JSON.stringify(p, null, 2));
+            console.log("excluded:", p.expo.autolinking.exclude.join(", "));
+          '
+
       - name: Prebuild the iOS project
         working-directory: native
         env:

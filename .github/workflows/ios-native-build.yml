@@ -43,13 +43,20 @@ env:
   NATIVE_BUNDLE_ID: ng.com.hawkeye.observer
   SCHEME: Hawkeye
 
+# The GITHUB_TOKEN can do nothing but read this repository. Nothing here
+# writes to it: the build is handed to an external service using
+# credentials from secrets, not the token. Without this block the workflow
+# inherits the repository default, which is broader than it needs.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
-      - uses: maxim-lobanov/setup-xcode@v1
+      - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90  # v1
         with:
           xcode-version: latest-stable
 

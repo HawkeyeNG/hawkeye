@@ -78,7 +78,14 @@
   <script src="device.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
-    const qid = new URLSearchParams(location.search).get('id');
+    // ENCODED ONCE, HERE. Every /api/docket/… call below drops this straight into
+    // the path, so a raw value would not stay a case id: `../` or a bare `#` in
+    // ?id= escapes the segment and re-aims those requests at any other path on
+    // this origin — including the POST that carries the observer's bearer token.
+    // The URLs stay relative either way, so nothing can be pointed off-origin;
+    // this pins them to the one endpoint they are meant to hit. Real case ids are
+    // numeric, so encoding changes nothing for a genuine link.
+    const qid = encodeURIComponent(new URLSearchParams(location.search).get('id'));
     const token = localStorage.getItem('hawkeye_token');
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     let CASE = null;

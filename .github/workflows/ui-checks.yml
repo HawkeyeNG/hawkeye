@@ -25,6 +25,13 @@ on:
         type: boolean
         default: false
 
+# The GITHUB_TOKEN can do nothing but read this repository. Nothing here
+# writes to it: the build is handed to an external service using
+# credentials from secrets, not the token. Without this block the workflow
+# inherits the repository default, which is broader than it needs.
+permissions:
+  contents: read
+
 jobs:
   ui:
     runs-on: ubuntu-latest

@@ -427,7 +427,6 @@
   "index.ward-lga-or-state-collation-ec8b": "Ward, LGA or state collation (EC8B/C/D)",
   "index.why-trust-it": "Why trust it",
   "index.witness-the-count": "Witness the Count",
-  "index.witnessed-and-unchangeable": "witnessed and unchangeable.",
   "index.your-report-is-signed-on-your": "Your report is signed on your own phone with GPS and time — proof it came from that place, at that moment.",
   "integrity.against-inec-collation-records": "Against INEC & Collation Records",
   "integrity.ai-vision-on-the-result-sheet": "AI Vision on the Result Sheet",
@@ -707,7 +706,6 @@
   "index.the-count-at-your-polling-unit": "The count at your polling unit,",
   "index.already-an-observer": "Already an observer?",
   "index.how-it-works-kicker": "How it works",
-  "index.three-steps-to-a-rig-proof-record": "Three Steps to a Rig-proof Record",
   "index.no-training-required": "No training required. If you can take a photo, you can defend the vote at your polling unit.",
   "index.every-report-is-chained": "Every report is chained to the one before it on a public ledger. Change anything and the chain breaks visibly. Anyone can verify it — no permission needed.",
   "index.2027-is-decided-at-the-polling-unit": "2027 is decided at the polling unit.",
@@ -1570,5 +1568,7 @@
   "profile.invite-failed": "Could not load",
   "race.no-list-declared": "INEC never published a candidate list for this by-election. The declared result is above. The seat and map on this page come from the electoral register.",
   "race.ballot-parties-note-declared": "INEC published the {v0} parties contesting this by-election but not the candidates’ names. The declared result is above.",
-  "race.none-published": "None published"
+  "race.none-published": "None published",
+  "index.three-steps-to-your-own-record": "Three Steps to Your Own Record",
+  "index.recorded-and-collated-automatically": "recorded and collated automatically."
 }

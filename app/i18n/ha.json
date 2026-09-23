@@ -433,7 +433,6 @@
   "index.ward-lga-or-state-collation-ec8b": "Tattarawar unguwa, karamar hukuma ko jiha (EC8B/C/D)",
   "index.why-trust-it": "Me ya sa za a amince da ita",
   "index.witness-the-count": "Shaida Ƙidayar",
-  "index.witnessed-and-unchangeable": "an shaida shi kuma ba ya canzawa.",
   "index.your-report-is-signed-on-your": "An sanya hannu kan rahotonka a wayarka da GPS da lokaci — shaida cewa ya fito daga wannan wuri, a wannan lokaci.",
   "integrity.against-inec-collation-records": "Bisa Bayanan INEC & Tattarawa",
   "integrity.ai-vision-on-the-result-sheet": "Gani na AI a Takardar Sakamako",
@@ -733,7 +732,6 @@
   "index.the-count-at-your-polling-unit": "Kidayar da aka yi a rumfar zaben ku,",
   "index.already-an-observer": "Kai mai lura ne tuni?",
   "index.how-it-works-kicker": "Yadda yake aiki",
-  "index.three-steps-to-a-rig-proof-record": "Matakai Uku Zuwa Rikodin da Ba Za a Iya Magudi Ba",
   "index.no-training-required": "Ba a bukatar horo. Idan za ka iya daukar hoto, za ka iya kare kuri’a a rumfar zaben ka.",
   "index.every-report-is-chained": "Kowane rahoto yana hade da wanda ya gabace shi a littafin rikodi na jama’a. Ka canza komai sai sarkar ta karye a fili. Kowa na iya tabbatar da shi — ba a bukatar izini.",
   "index.2027-is-decided-at-the-polling-unit": "Za a yanke shawarar 2027 a rumfar zabe.",
@@ -1596,5 +1594,7 @@
   "profile.invite-failed": "An kasa lodawa",
   "race.no-list-declared": "INEC ba ta taɓa wallafa jerin ’yan takara na wannan zaɓen cike gurbi ba. Sakamakon da aka sanar yana sama. Mazaɓar da taswirar da ke wannan shafi sun fito daga rajistar masu zaɓe.",
   "race.ballot-parties-note-declared": "INEC ta wallafa jam’iyyu {v0} da suka fafata a wannan zaɓen cike gurbi amma ba sunayen ’yan takara ba. Sakamakon da aka sanar yana sama.",
-  "race.none-published": "Ba a wallafa ba"
+  "race.none-published": "Ba a wallafa ba",
+  "index.three-steps-to-your-own-record": "Matakai Uku Zuwa Rikodin Naka",
+  "index.recorded-and-collated-automatically": "an adana shi, an kuma tattara shi kai tsaye."
 }

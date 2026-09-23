@@ -1373,7 +1373,12 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 
 /* ---------- footer (dark) ---------- */
 .gov-footer {
-  margin-top: 24px;
+  /* No margin-top. It used to be 24px, and in dark mode that gap showed the
+     html background (a near-black #08140e) as a black band across the full
+     width between the last section and the footer. The footer already has its
+     own background and a hairline top border, so it reads as separate without
+     a gap — and a gap that only looks like a bug in one theme is not earning
+     its keep. */
   background: var(--green-950);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: #8fae9d;
@@ -2408,6 +2413,20 @@ dialog.sheet-modal,
   /* The footer still sits at the bottom of a short page rather than halfway up. */
   html.has-shell #page-scroll > main { flex: 1 0 auto; }
   html.has-shell #page-scroll > footer { flex: 0 0 auto; }
+
+  /* FULL-BLEED FOOTER, to match the header.
+     The header lives OUTSIDE #page-scroll and spans the whole viewport. The
+     footer lives INSIDE it, so it stops at the scroll container's edge — short
+     by the scrollbar gutter. Two visible consequences: its background left a
+     strip of page colour down the right, and its centred .wrap sat ~5px left
+     of the header's, so the two never lined up.
+     100vw is the true viewport width including the gutter, and the negative
+     margin re-centres it; #page-scroll already sets overflow-x: hidden, so the
+     overhang is clipped rather than scrollable. */
+  html.has-shell #page-scroll > footer.gov-footer {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+  }
   /* A modal locks the pane; body already has overflow:hidden here. */
   html.has-shell.modal-open #page-scroll { overflow: hidden; }
 }

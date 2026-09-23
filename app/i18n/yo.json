@@ -432,7 +432,6 @@
   "index.ward-lga-or-state-collation-ec8b": "Àkójọpọ̀ àgọ́, agbègbè ìjọba àdúgbò tàbí ìpínlẹ̀ (EC8B/C/D)",
   "index.why-trust-it": "Ìdí tí o fi lè gbẹ́kẹ̀lé e",
   "index.witness-the-count": "Jẹ́rìí Ìkà Náà",
-  "index.witnessed-and-unchangeable": "a jẹ́rìí sí i, kò sì lè yípadà.",
   "index.your-report-is-signed-on-your": "A fọwọ́sí ìròyìn rẹ lórí fóònù tìrẹ pẹ̀lú GPS àti àkókò — ẹ̀rí pé ó wá láti ibẹ̀, ní àkókò náà.",
   "integrity.against-inec-collation-records": "Lórí Àkọsílẹ̀ INEC & Àkójọpọ̀",
   "integrity.ai-vision-on-the-result-sheet": "Ìríran AI lórí Ìwé Àbájáde",
@@ -732,7 +731,6 @@
   "index.the-count-at-your-polling-unit": "Ìkà ìbò ní ibùdò ìdìbò rẹ,",
   "index.already-an-observer": "Ṣé o ti jẹ́ olùwòran?",
   "index.how-it-works-kicker": "Bí ó ṣe ń ṣiṣẹ́",
-  "index.three-steps-to-a-rig-proof-record": "Ìgbésẹ̀ Mẹ́ta sí Àkọsílẹ̀ Tí Kò Ṣeé Rẹ́",
   "index.no-training-required": "Kò sí ìkẹ́kọ̀ọ́ tí a nílò. Bí o bá lè ya fọ́tò, o lè dáàbò bo ìbò ní ibùdò ìdìbò rẹ.",
   "index.every-report-is-chained": "Gbogbo ìròyìn ni a so mọ́ èyí tí ó ṣáájú rẹ̀ lórí ìwé àkọsílẹ̀ gbogbo ènìyàn. Yí ohunkóhun padà, ẹ̀wọ̀n náà yóò ya ní gbangba. Ẹnikẹ́ni lè ṣàyẹ̀wò rẹ̀ — kò sí àṣẹ tí a nílò.",
   "index.2027-is-decided-at-the-polling-unit": "A ó pinnu 2027 ní ibùdò ìdìbò.",
@@ -1595,5 +1593,7 @@
   "profile.invite-failed": "A kò lè gbé e jáde",
   "race.no-list-declared": "INEC kò tẹ àkọsílẹ̀ àwọn olùdíje jáde fún ìdìbò àfikún yìí rárá. Àbájáde tí a kéde wà lókè. Ìjókòó àti máàpù tó wà ní ojú-ìwé yìí wá láti inú ìwé ìforúkọsílẹ̀ àwọn olùdìbò.",
   "race.ballot-parties-note-declared": "INEC tẹ àwọn ẹgbẹ́ òṣèlú {v0} tó díje nínú ìdìbò àfikún yìí jáde ṣùgbọ́n kì í ṣe orúkọ àwọn olùdíje. Àbájáde tí a kéde wà lókè.",
-  "race.none-published": "Kò tẹ̀ jáde"
+  "race.none-published": "Kò tẹ̀ jáde",
+  "index.three-steps-to-your-own-record": "Ìgbésẹ̀ Mẹ́ta sí Àkọsílẹ̀ Tìrẹ",
+  "index.recorded-and-collated-automatically": "a kọ ọ́ sílẹ̀, a sì ṣàkójọ rẹ̀ fúnra rẹ̀."
 }

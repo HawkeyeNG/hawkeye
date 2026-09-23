@@ -432,7 +432,6 @@
   "index.ward-lga-or-state-collation-ec8b": "Nchịkọta ward, LGA ma ọ bụ steeti (EC8B/C/D)",
   "index.why-trust-it": "Ihe kpatara ị ga-eji tụkwasị ya obi",
   "index.witness-the-count": "Gbaa Àmà Ọgụgụ Ahụ",
-  "index.witnessed-and-unchangeable": "a gbara àmà ya, ọ gaghịkwa agbanwe.",
   "index.your-report-is-signed-on-your": "A na-abịanye aka n'akụkọ gị na ekwentị nke gị site na GPS na oge — ihe akaebe na o si n'ebe ahụ, n'oge ahụ.",
   "integrity.against-inec-collation-records": "Megide Ndekọ INEC & Nchịkọta",
   "integrity.ai-vision-on-the-result-sheet": "Ọhụụ AI na Mpempe Akwụkwọ Nsonaazụ",
@@ -732,7 +731,6 @@
   "index.the-count-at-your-polling-unit": "Ọnụọgụgụ n’ebe ntuli aka gị,",
   "index.already-an-observer": "Ị bụzị onye na-ekiri ihe?",
   "index.how-it-works-kicker": "Otú ọ si arụ ọrụ",
-  "index.three-steps-to-a-rig-proof-record": "Nzọụkwụ Atọ Ruo Ndekọ A Na-apụghị Ime Aghụghọ",
   "index.no-training-required": "Ọ dịghị ọzụzụ achọrọ. Ọ bụrụ na ị nwere ike ise foto, ị nwere ike ichebe vootu na ebe ntuli aka gị.",
   "index.every-report-is-chained": "Akụkọ ọ bụla jikọtara na nke bu ya ụzọ na ndekọ ọha. Gbanwee ihe ọ bụla, yabụ agbụ ahụ agbajie n’ihu ọha. Onye ọ bụla nwere ike inyocha ya — ikike adịghị mkpa.",
   "index.2027-is-decided-at-the-polling-unit": "A na-ekpebi 2027 n’ebe ntuli aka.",
@@ -1595,5 +1593,7 @@
   "profile.invite-failed": "Enweghị ike ibugo",
   "race.no-list-declared": "INEC ebipụtabeghị ndepụta ndị na-azọ ọkwa maka ntuliaka mmejuputa a. Nsonaazụ ekwuputara dị n’elu. Oche na maapụ dị na peeji a sitere na ndebanye aha ndị ntuliaka.",
   "race.ballot-parties-note-declared": "INEC bipụtara pati {v0} na-azọ ntuliaka mmejuputa a mana ọ bipụtaghị aha ndị na-azọ ya. Nsonaazụ ekwuputara dị n’elu.",
-  "race.none-published": "Ebipụtaghị"
+  "race.none-published": "Ebipụtaghị",
+  "index.three-steps-to-your-own-record": "Nzọụkwụ Atọ Ruo Ndekọ Nke Gị",
+  "index.recorded-and-collated-automatically": "e dekọrọ ya, a chịkọtakwara ya na-akpaghị aka."
 }

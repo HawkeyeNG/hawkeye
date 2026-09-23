@@ -220,7 +220,16 @@ touch "$STAMP"
    # by reflection — a native module, a Hermes intrinsic — can vanish and fail
    # only at RUNTIME, in a build that compiles clean. Smoke-test a device before
    # this goes past internal testing.` \
-  -Pandroid.enableR8.fullMode=true \
+  `# fullMode is OFF, deliberately. Play asks for it, and it was on for vc22-24
+   # — the first builds ever installed with the Maps config fixed, which is why
+   # "the map is still blank" and "R8 full mode went in" have never been
+   # separable. Maps Platform metrics settle what kind of failure it is: the
+   # project logs 51 Maps-SDK-for-Android requests over 30 days and ZERO while
+   # the blank map was being reproduced. A rejected key still logs a request.
+   # No request at all means the SDK never got as far as asking — which is what
+   # dropping an implicit keep does, and the watermark still draws because that
+   # is rendered locally.
+   # Turn it back on only after a device shows the map working without it.` \
   -Pandroid.r8.optimizedResourceShrinking=true \
   -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m -Xshare:off" \
   -PHAWKEYE_UPLOAD_STORE_FILE="$KS_FILE" \

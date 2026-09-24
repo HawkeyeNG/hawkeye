@@ -1596,5 +1596,9 @@
   "race.ballot-parties-note-declared": "INEC ta wallafa jam’iyyu {v0} da suka fafata a wannan zaɓen cike gurbi amma ba sunayen ’yan takara ba. Sakamakon da aka sanar yana sama.",
   "race.none-published": "Ba a wallafa ba",
   "index.three-steps-to-your-own-record": "Matakai Uku Zuwa Rikodin Naka",
-  "index.recorded-and-collated-automatically": "an adana shi, an kuma tattara shi kai tsaye."
+  "index.recorded-and-collated-automatically": "an adana shi, an kuma tattara shi kai tsaye.",
+  "common.chat-with-us": "Yi hira da mu",
+  "common.chat-could-not-load": "Hirar ba ta buɗe ba. Aika imel zuwa info@hawkeye.com.ng maimakon haka.",
+  "faq.still-have-a-question": "Har yanzu kana da tambaya?",
+  "privacy.support-chat-intercom": "Banda ɗaya kawai ita ce hirar taimako a shafukan Tambayoyin da Ake Yawan Yi da Game da Mu. Intercom ne ke gudanar da ita, kuma tana buɗewa ne kawai idan ka danna “Yi hira da mu”; daga nan Intercom za ta karɓi abin da ka rubuta, ta kuma ajiye kukis don ci gaba da tattaunawar."
 }

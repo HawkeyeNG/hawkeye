@@ -10,7 +10,7 @@
 // are network-first below, so they update on their own. Nothing else volatile
 // belongs in LAZY either — if a file can change between deploys, it goes in the
 // network-first branch, not here.
-const CACHE = 'hawkeye-v442';
+const CACHE = 'hawkeye-v444';
 // The offline outbox, so a Background Sync can send queued reports with every
 // tab closed (Chrome/Android) — see outbox.js. Optional: failing to load it
 // must never cost the service worker itself.
@@ -68,6 +68,12 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/uploads/')) {
     return; // network only
+  }
+  // SUPPORT CHAT (app/chat.js): Intercom's requests go straight to the network.
+  // A fetch made HERE is governed by this worker's own CSP (connect-src 'self'),
+  // so routing them through the worker would block every one of them.
+  if (/(^|\.)intercom(cdn|assets|usercontent|-messenger|-attachments-\d)?\.(io|com)$/.test(url.hostname)) {
+    return;
   }
   /**
    * The register packs (docs/PU-SEARCH-2027.md).

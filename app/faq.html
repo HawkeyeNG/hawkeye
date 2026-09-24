@@ -109,6 +109,9 @@
       <p data-i18n-html="faq.verify-your-phone-once-then-on-the">Verify your phone once, then on the <a href="results.html#follow">results page</a> choose an election and a state, district or constituency and press Follow. You'll get an alert — in the app, and on Telegram — whenever new reports land.</p>
     </details>
     </div>
+    <!-- Support chat: hidden until chat.js shows it (not in the app shell). -->
+    <h2 data-chat-wrap hidden data-i18n="faq.still-have-a-question">Still have a question?</h2>
+    <p data-chat-wrap hidden><button type="button" class="btn-link" style="width:100%;border:0;cursor:pointer;font:inherit;font-weight:700" data-chat-open data-i18n="common.chat-with-us">Chat with us</button><span class="hint" data-chat-status role="status"></span></p>
   </main>
 
   <footer class="gov-footer">
@@ -128,5 +131,6 @@
   <script src="/lang.js?v=9"></script>
   <script src="menu.js?v=175"></script>
   <script src="shell.js?v=1" defer></script>
+  <script src="chat.js?v=2" defer></script>
 </body>
 </html>

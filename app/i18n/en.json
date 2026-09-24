@@ -1570,5 +1570,9 @@
   "race.ballot-parties-note-declared": "INEC published the {v0} parties contesting this by-election but not the candidates’ names. The declared result is above.",
   "race.none-published": "None published",
   "index.three-steps-to-your-own-record": "Three Steps to Your Own Record",
-  "index.recorded-and-collated-automatically": "recorded and collated automatically."
+  "index.recorded-and-collated-automatically": "recorded and collated automatically.",
+  "common.chat-with-us": "Chat with us",
+  "common.chat-could-not-load": "The chat could not load. Email info@hawkeye.com.ng instead.",
+  "faq.still-have-a-question": "Still have a question?",
+  "privacy.support-chat-intercom": "The one exception is the support chat on the FAQ and About pages. It is run by Intercom and loads only if you press “Chat with us”; Intercom then receives what you type and sets cookies to keep the conversation going."
 }

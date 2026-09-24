@@ -83,6 +83,8 @@
       <li data-i18n-html="about.phone-234-907-872-7777">Phone: <a href="tel:+2349078727777">+234 907 872 7777</a></li>
       <li data-i18n-html="about.telegram-hawkeyengbot">Telegram: <a href="https://t.me/HawkEyeNGBot" target="_blank" rel="noopener">@HawkEyeNGBot</a></li>
     </ul>
+    <!-- Support chat: hidden until chat.js shows it (not in the app shell). -->
+    <p data-chat-wrap hidden><button type="button" class="btn-link" style="width:100%;border:0;cursor:pointer;font:inherit;font-weight:700" data-chat-open data-i18n="common.chat-with-us">Chat with us</button><span class="hint" data-chat-status role="status"></span></p>
     <p data-i18n-html="about.for-data-access-or-deletion-requests-see" class="hint">For data access or deletion requests, see our <a href="privacy.html">Privacy &amp; Data</a> page.</p>
   </main>
 
@@ -96,5 +98,6 @@
   <script src="/lang.js?v=9"></script>
   <script src="menu.js?v=175"></script>
   <script src="shell.js?v=1" defer></script>
+  <script src="chat.js?v=2" defer></script>
 </body>
 </html>

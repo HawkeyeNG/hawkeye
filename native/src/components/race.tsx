@@ -17,6 +17,7 @@ import {
   type Candidate,
   type Race,
 } from '@/lib/political';
+import { dayMonthYear } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
 
 /**
@@ -161,13 +162,7 @@ export function RaceView({
       live = false;
     };
   }, [race.join]);
-  const dateStr = race.date
-    ? new Date(`${race.date}T00:00:00`).toLocaleDateString('en-NG', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    : '';
+  const dateStr = race.date ? dayMonthYear(race.date) : '';
   // THE PRESIDENCY PROFILES ITS FIELD; EVERY OTHER RACE LISTS IT — the rule and
   // its reasoning live in lib/political.ts, next to the web twin's, so the two
   // can be compared by a test rather than by reading two renderers side by side.
@@ -235,14 +230,7 @@ export function RaceView({
           : race.candidates.length + (race.others?.length ?? race.minors?.length ?? 0);
         const cells: Array<[string | number, string]> = [];
         if (race.date) {
-          cells.push([
-            new Date(`${race.date}T00:00:00`).toLocaleDateString('en-NG', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            }),
-            i18nT('race.election-day'),
-          ]);
+          cells.push([dayMonthYear(race.date, true), i18nT('race.election-day')]);
         } else if (race.dateText) {
           cells.push([race.dateText, race.dateLabel ?? i18nT('race.date')]);
         } else if (yr) {
@@ -750,13 +738,7 @@ export function hasRaceActions(race: Race | null | undefined): boolean {
 function Declared({ d, logos }: { d: NonNullable<Race['declared']>; logos: Record<string, string> }) {
   const rows = d.results ?? [];
   const top = rows.reduce((m, r) => Math.max(m, r.votes || 0), 0);
-  const when = d.date
-    ? new Date(`${d.date}T00:00:00`).toLocaleDateString('en-NG', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    : '';
+  const when = d.date ? dayMonthYear(d.date) : '';
   return (
     <View className="mt-4 rounded-2xl bg-card px-4 py-4" style={{ borderLeftWidth: 4, borderLeftColor: BRAND.leaf }}>
       {/* The SECTION is what gets the heading role, not the person: a screen

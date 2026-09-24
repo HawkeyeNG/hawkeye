@@ -1195,5 +1195,10 @@
   "n.lib.api.state-assembly-elections-2027": "Àwọn Ìdìbò Ilé Aṣòfin Ìpínlẹ̀ 2027",
   "n.lib.dates.weekdays": "Ọjọ́ Àìkú,Ọjọ́ Ajé,Ọjọ́ Ìsẹ́gun,Ọjọ́rú,Ọjọ́bọ,Ọjọ́ Ẹtì,Ọjọ́ Àbámẹ́ta",
   "n.lib.dates.months": "Ṣẹ́rẹ́,Èrèlè,Ẹrẹ̀nà,Ìgbé,Ẹ̀bibi,Òkúdu,Agẹmọ,Ògún,Owewe,Ọ̀wàrà,Bélú,Ọ̀pẹ̀",
-  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}"
+  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}",
+  "n.lib.dates.day-month": "{v0} {v1}",
+  "n.lib.dates.day-month-year": "{v0} {v1} {v2}",
+  "n.lib.dates.weekday-day-month-time": "{v0}, {v1} {v2}, {v3}",
+  "n.components.contest-picker.opens-date": "Yóò ṣí ní {v0}",
+  "n.app.tabs.results.a-date-not-yet-announced": "ọjọ́ tí a kò tíì kéde"
 }

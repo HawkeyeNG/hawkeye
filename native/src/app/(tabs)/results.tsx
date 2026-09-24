@@ -49,6 +49,7 @@ import {
 } from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
+import { dayMonthYear } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -203,19 +204,19 @@ const orderedContests = (cs: Contest[]) => [...cs].sort(bySeat);
 /** "Opens 16 Jan 2027" for a race that has not started, from the contest itself. */
 function opensTag(c: Contest): string {
   const raw = c.opensAt || c.date;
-  if (!raw) return 'Not open yet';
+  if (!raw) return i18nT('n.components.contest-picker.not-yet-open');
   const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return 'Not open yet';
-  return `Opens ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+  if (Number.isNaN(d.getTime())) return i18nT('n.components.contest-picker.not-yet-open');
+  return i18nT('n.components.contest-picker.opens-date', { v0: dayMonthYear(d, true) });
 }
 
 /** "15 Aug" from an ISO date / opensAt, or the raw string if it will not parse. */
 function whenLine(c: Contest): string {
   const raw = c.opensAt || c.date;
-  if (!raw) return 'a date that has not been announced';
+  if (!raw) return i18nT('n.app.tabs.results.a-date-not-yet-announced');
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  return dayMonthYear(d);
 }
 
 /**

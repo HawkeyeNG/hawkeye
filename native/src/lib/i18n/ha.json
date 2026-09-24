@@ -1195,5 +1195,10 @@
   "n.lib.api.state-assembly-elections-2027": "Zaɓukan Majalisun Jihohi 2027",
   "n.lib.dates.weekdays": "Lahadi,Litinin,Talata,Laraba,Alhamis,Jummaʼa,Asabar",
   "n.lib.dates.months": "Janairu,Faburairu,Maris,Afirilu,Mayu,Yuni,Yuli,Agusta,Satumba,Oktoba,Nuwamba,Disamba",
-  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}"
+  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}",
+  "n.lib.dates.day-month": "{v0} {v1}",
+  "n.lib.dates.day-month-year": "{v0} {v1} {v2}",
+  "n.lib.dates.weekday-day-month-time": "{v0}, {v1} {v2}, {v3}",
+  "n.components.contest-picker.opens-date": "Zai buɗe {v0}",
+  "n.app.tabs.results.a-date-not-yet-announced": "ranar da ba a sanar ba tukuna"
 }

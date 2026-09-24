@@ -4,6 +4,7 @@
  * routes, everything here is the same public API the website consumes.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { dayTime } from '@/lib/dates';
 import { t as i18nT, lazyT } from '@/lib/i18n';
 
 /**
@@ -60,13 +61,7 @@ export function opensLine(c: Contest | null | undefined): string {
   if (!c || !c.opensAt) return i18nT('n.lib.api.reporting-has-not-opened-for-this');
   const d = new Date(c.opensAt);
   if (Number.isNaN(d.getTime())) return i18nT('n.lib.api.reporting-opens', { v0: c.opensAt });
-  return `Reporting opens ${d.toLocaleString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    hour: 'numeric',
-    minute: '2-digit',
-  })}.`;
+  return i18nT('n.lib.api.reporting-opens', { v0: dayTime(d) });
 }
 
 /**

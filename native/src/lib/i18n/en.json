@@ -1195,5 +1195,10 @@
   "n.lib.api.state-assembly-elections-2027": "2027 State Assembly Elections",
   "n.lib.dates.weekdays": "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday",
   "n.lib.dates.months": "January,February,March,April,May,June,July,August,September,October,November,December",
-  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}"
+  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}",
+  "n.lib.dates.day-month": "{v0} {v1}",
+  "n.lib.dates.day-month-year": "{v0} {v1} {v2}",
+  "n.lib.dates.weekday-day-month-time": "{v0}, {v1} {v2}, {v3}",
+  "n.components.contest-picker.opens-date": "Opens {v0}",
+  "n.app.tabs.results.a-date-not-yet-announced": "a date that has not been announced"
 }

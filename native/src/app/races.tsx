@@ -10,6 +10,7 @@ import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { api, bySeat, type Contest } from '@/lib/api';
 import { loadPolitical, type Political, type Race as RaceData } from '@/lib/political';
 import { useUi } from '@/lib/theme';
+import { dayMonthYear } from '@/lib/dates';
 import { t as i18nT, lazyT } from '@/lib/i18n';
 
 /**
@@ -59,12 +60,7 @@ const DESC: Record<string, string> = lazyT({
 const SOON =
   i18nT('n.app.races.this-race-has-no-page-yet');
 
-const fmt = (d: string) =>
-  new Date(`${d}T00:00:00`).toLocaleDateString('en-NG', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+const fmt = (d: string) => dayMonthYear(d);
 
 /**
  * Where a race sits in time.

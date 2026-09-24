@@ -1195,5 +1195,10 @@
   "n.lib.api.state-assembly-elections-2027": "Ntuli Aka Ụlọ Omebe Iwu Steeti 2027",
   "n.lib.dates.weekdays": "Sọndee,Mọnde,Tiuzdee,Wenezdee,Tọsdee,Fraịdee,Satọdee",
   "n.lib.dates.months": "Jenụwarị,Febrụwarị,Maachị,Epreel,Mee,Jun,Julaị,Ọgọọst,Septemba,Ọktoba,Novemba,Disemba",
-  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}"
+  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}",
+  "n.lib.dates.day-month": "{v0} {v1}",
+  "n.lib.dates.day-month-year": "{v0} {v1} {v2}",
+  "n.lib.dates.weekday-day-month-time": "{v0}, {v1} {v2}, {v3}",
+  "n.components.contest-picker.opens-date": "Ọ ga-emepe {v0}",
+  "n.app.tabs.results.a-date-not-yet-announced": "ụbọchị a na-ekwupụtabeghị"
 }

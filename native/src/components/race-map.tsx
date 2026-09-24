@@ -6,6 +6,7 @@ import { bboxViewBox, loadMapGeo, matchRegion } from '@/components/results-map';
 import { api, type National, type NationalRegion } from '@/lib/api';
 import { partyColor, type RaceJoin } from '@/lib/political';
 import { useUi } from '@/lib/theme';
+import { dayMonthYear } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
 
 /**
@@ -202,8 +203,7 @@ function regionLookup(regions: NationalRegion[] | undefined) {
   return (name: string) => exact.get(norm(name)) ?? stem.get(stemOf(name)) ?? null;
 }
 
-const fmtDay = (d: string) =>
-  new Date(`${d}T00:00:00`).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' });
+const fmtDay = (d: string) => dayMonthYear(d);
 
 /**
  * Why an area has no numbers. Three genuinely different states — an election

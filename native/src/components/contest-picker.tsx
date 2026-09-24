@@ -20,6 +20,7 @@ import {
   type Race,
   type StateName,
 } from '@/lib/races';
+import { dayMonth } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
 
 /**
@@ -86,8 +87,8 @@ function opensTag(c: Contest | undefined): string {
   if (!c) return i18nT('n.components.contest-picker.not-yet-scheduled');
   if (!c.opensAt) return i18nT('n.components.contest-picker.not-yet-open');
   const d = new Date(c.opensAt);
-  if (Number.isNaN(d.getTime())) return `Opens ${c.opensAt}`;
-  return `Opens ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+  if (Number.isNaN(d.getTime())) return i18nT('n.components.contest-picker.opens-date', { v0: c.opensAt });
+  return i18nT('n.components.contest-picker.opens-date', { v0: dayMonth(d) });
 }
 
 export function ContestPicker({
@@ -259,7 +260,7 @@ export function ContestPicker({
               ) : next ? (
                 <View className="mr-1.5 rounded-full border border-good-ink px-2.5 py-1">
                   <Text className="text-[11px] font-bold text-good-ink">
-                    Opens {new Date(next).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    {i18nT('n.components.contest-picker.opens-date', { v0: dayMonth(new Date(next)) })}
                   </Text>
                 </View>
               ) : (

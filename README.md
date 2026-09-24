@@ -28,9 +28,9 @@ Live at [hawkeye.com.ng](https://hawkeye.com.ng).
 
 ## What is private, and why
 
-The server, its fraud-detection rules and our election audits live in a private
-repository. Detection only works if the people it is aimed at cannot read the rules
-and tune a forged report to pass just under them.
+The server, its automated report checks and our internal reviews live in a private
+repository. The checks only work if someone submitting a false report cannot read
+them and tune it to pass just under them.
 
 Nothing you need in order to *trust* Hawkeye depends on that code. The checks below
 work without trusting our server.
@@ -66,7 +66,7 @@ How each of these holds up against a dishonest operator is set out in
 ## Honest limitations
 
 No app can make phone GPS impossible to fake, and no single check stops a determined
-forger. Hawkeye's strength is redundancy: rigging a unit means faking a location,
+forger. Hawkeye's strength is redundancy: falsifying one unit's result means faking a location,
 capturing a fresh forged photo *and* out-numbering the honest observers there — per
 polling unit, at scale, on election day.
 

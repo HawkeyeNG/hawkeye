@@ -49,7 +49,7 @@ import {
 } from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
-import { dayMonthYear } from '@/lib/dates';
+import { clock, dayMonthYear } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -1479,13 +1479,13 @@ export default function Results() {
             expected content; here they have not chosen any yet. */}
         {nothingChosen ? null : (
         <Text className="pl-3.5 pt-1.5 text-sm text-muted" numberOfLines={1}>
-          {contest ? i18nT('n.app.tabs.results.unit-s-reporting', { v0: unitsReporting }) : race ? 'Not covered yet' : 'Loading…'}
+          {contest
+            ? i18nT('n.app.tabs.results.unit-s-reporting', { v0: unitsReporting })
+            : race
+              ? i18nT('n.app.tabs.results.not-covered-yet')
+              : i18nT('n.app.tabs.results.loading')}
           {contest && updatedAt
-            ? ` · updated ${new Date(updatedAt).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              })}`
+            ? ` · ${i18nT('n.lib.dates.updated-at', { v0: clock(updatedAt, true) })}`
             : ''}
         </Text>
         )}

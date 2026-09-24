@@ -8,6 +8,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { loadPolitical, partyColor, partyName, type Political } from '@/lib/political';
 import { humanError } from '@/lib/errors';
+import { clock } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -370,12 +371,9 @@ export default function MapScreen() {
 
         {mode === 'results' && tally ? (
           <Text className="pt-1 text-[11px] text-faint">
-            {tally.regions.length} state(s) reporting · {tally.unitsReporting} unit(s) counted
-            {tally.inDispute ? i18nT('n.app.map.excluded-pending-arbitration', { v0: tally.inDispute }) : ''} · updated{' '}
-            {new Date(tally.updatedAt).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
+            {i18nT('n.app.map.states-units-reporting', { v0: tally.regions.length, v1: tally.unitsReporting })}
+            {tally.inDispute ? i18nT('n.app.map.excluded-pending-arbitration', { v0: tally.inDispute }) : ''} ·{' '}
+            {i18nT('n.lib.dates.updated-at', { v0: clock(tally.updatedAt) })}
           </Text>
         ) : null}
         {mode === 'results' ? (

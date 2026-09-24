@@ -1200,5 +1200,12 @@
   "n.lib.dates.day-month-year": "{v0} {v1} {v2}",
   "n.lib.dates.weekday-day-month-time": "{v0}, {v1} {v2}, {v3}",
   "n.components.contest-picker.opens-date": "Opens {v0}",
-  "n.app.tabs.results.a-date-not-yet-announced": "a date that has not been announced"
+  "n.app.tabs.results.a-date-not-yet-announced": "a date that has not been announced",
+  "n.lib.dates.just-now": "just now",
+  "n.lib.dates.hours-ago": "{v0}h ago",
+  "n.lib.dates.today-at": "today {v0}",
+  "n.lib.dates.yesterday-at": "yesterday {v0}",
+  "n.lib.dates.day-month-time": "{v0}, {v1}",
+  "n.lib.dates.updated-at": "updated {v0}",
+  "n.app.map.states-units-reporting": "{v0} state(s) reporting · {v1} unit(s) counted"
 }

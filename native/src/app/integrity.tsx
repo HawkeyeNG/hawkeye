@@ -13,6 +13,7 @@ import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
 import { InfoDot } from '@/components/info-dot';
+import { dayMonth } from '@/lib/dates';
 import { t as i18nT, lazyT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -150,10 +151,10 @@ const SEV_COLOR: Record<string, { bg: string; text: string }> = {
 function timeAgo(ts: number) {
   const d = new Date(ts);
   const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60) return 'just now';
+  if (diff < 60) return i18nT('n.lib.dates.just-now');
   if (diff < 3600) return i18nT('n.app.integrity.min-ago', { v0: Math.floor(diff / 60) });
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+  if (diff < 86400) return i18nT('n.lib.dates.hours-ago', { v0: Math.floor(diff / 3600) });
+  return dayMonth(d);
 }
 
 /** One digit column: observed bar, with the expected level drawn across it. */

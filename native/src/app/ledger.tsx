@@ -16,6 +16,7 @@ import { Prompt } from '@/components/wizard';
 import { BRAND } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
+import { clock, dayMonth } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -103,18 +104,18 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
 function shortDay(iso: string) {
   const [y, m, d] = iso.split('-').map(Number);
   if (!y || !m || !d) return iso;
-  return new Date(y, m - 1, d).toLocaleDateString([], { day: 'numeric', month: 'short' });
+  return dayMonth(new Date(y, m - 1, d));
 }
 
 function timeAgo(ts: number) {
   const d = new Date(ts);
   const diff = (Date.now() - d.getTime()) / 1000;
-  const hm = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  if (diff < 60) return 'just now';
+  const hm = clock(d);
+  if (diff < 60) return i18nT('n.lib.dates.just-now');
   if (diff < 3600) return i18nT('n.app.ledger.min-ago', { v0: Math.floor(diff / 60) });
-  if (d.toDateString() === new Date().toDateString()) return `today ${hm}`;
-  if (diff < 172800) return `yesterday ${hm}`;
-  return `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })}, ${hm}`;
+  if (d.toDateString() === new Date().toDateString()) return i18nT('n.lib.dates.today-at', { v0: hm });
+  if (diff < 172800) return i18nT('n.lib.dates.yesterday-at', { v0: hm });
+  return i18nT('n.lib.dates.day-month-time', { v0: dayMonth(d), v1: hm });
 }
 
 async function jget<T>(path: string): Promise<T> {

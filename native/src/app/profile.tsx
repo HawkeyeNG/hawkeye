@@ -33,6 +33,7 @@ import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
 import { humanError } from '@/lib/errors';
+import { dayMonthYear } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -96,8 +97,7 @@ type PracticeRun = {
   votes: { party: string; count: number }[];
 };
 
-const dt = (t: number) =>
-  new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+const dt = (t: number) => dayMonthYear(new Date(t), true);
 
 /**
  * The saved unit's full identification, as the web profile prints it:

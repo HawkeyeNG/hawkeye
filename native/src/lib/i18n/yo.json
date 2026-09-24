@@ -1200,5 +1200,12 @@
   "n.lib.dates.day-month-year": "{v0} {v1} {v2}",
   "n.lib.dates.weekday-day-month-time": "{v0}, {v1} {v2}, {v3}",
   "n.components.contest-picker.opens-date": "Yóò ṣí ní {v0}",
-  "n.app.tabs.results.a-date-not-yet-announced": "ọjọ́ tí a kò tíì kéde"
+  "n.app.tabs.results.a-date-not-yet-announced": "ọjọ́ tí a kò tíì kéde",
+  "n.lib.dates.just-now": "ní báyìí",
+  "n.lib.dates.hours-ago": "wákàtí {v0} sẹ́yìn",
+  "n.lib.dates.today-at": "lónìí {v0}",
+  "n.lib.dates.yesterday-at": "àná {v0}",
+  "n.lib.dates.day-month-time": "{v0}, {v1}",
+  "n.lib.dates.updated-at": "a ṣàtúnṣe {v0}",
+  "n.app.map.states-units-reporting": "ìpínlẹ̀ {v0} ń jábọ̀ · ibùdó ìdìbò {v1} tí a kà"
 }

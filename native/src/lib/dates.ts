@@ -28,6 +28,13 @@ export function dayMonthYear(x: string | Date, short = false): string {
   return t('n.lib.dates.day-month-year', { v0: d.getDate(), v1: monthName(d, short), v2: d.getFullYear() });
 }
 
+/** "08:30" (or "08:30:05"), 24-hour: the same in every language, unlike the phone's AM/PM. */
+export function clock(x: string | number | Date, seconds = false): string {
+  const d = x instanceof Date ? x : new Date(x);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getHours())}:${p(d.getMinutes())}${seconds ? `:${p(d.getSeconds())}` : ''}`;
+}
+
 /** "Saturday, 16 January, 08:30" — a reporting window's opening moment. */
 export function dayTime(x: string | Date): string {
   const d = at(x);

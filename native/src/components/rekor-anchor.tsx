@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { useUi } from '@/lib/theme';
+import { clock, dayMonth } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -80,12 +81,8 @@ type State =
   | { kind: 'unknown' };
 
 function stamp(ms: number) {
-  return new Date(ms).toLocaleString([], {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const d = new Date(ms);
+  return i18nT('n.lib.dates.day-month-time', { v0: dayMonth(d), v1: clock(d) });
 }
 
 export function RekorAnchor({

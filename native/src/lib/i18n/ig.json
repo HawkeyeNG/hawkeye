@@ -1200,5 +1200,12 @@
   "n.lib.dates.day-month-year": "{v0} {v1} {v2}",
   "n.lib.dates.weekday-day-month-time": "{v0}, {v1} {v2}, {v3}",
   "n.components.contest-picker.opens-date": "Ọ ga-emepe {v0}",
-  "n.app.tabs.results.a-date-not-yet-announced": "ụbọchị a na-ekwupụtabeghị"
+  "n.app.tabs.results.a-date-not-yet-announced": "ụbọchị a na-ekwupụtabeghị",
+  "n.lib.dates.just-now": "ugbu a",
+  "n.lib.dates.hours-ago": "awa {v0} gara aga",
+  "n.lib.dates.today-at": "taa {v0}",
+  "n.lib.dates.yesterday-at": "ụnyaahụ {v0}",
+  "n.lib.dates.day-month-time": "{v0}, {v1}",
+  "n.lib.dates.updated-at": "emelitere {v0}",
+  "n.app.map.states-units-reporting": "steeti {v0} na-akọ akụkọ · ebe ntuli aka {v1} agụrụ"
 }

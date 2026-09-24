@@ -10,7 +10,7 @@ import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
-import { longDate } from '@/lib/dates';
+import { dayMonth, longDate } from '@/lib/dates';
 import { t as i18nT, lazyT, useT } from '@/lib/i18n';
 import { flagLabel } from '@/lib/flags';
 import { KIND_LABEL } from '@/lib/incident-kinds';
@@ -154,10 +154,10 @@ function opensIn(days: number) {
 
 function ago(ts: number) {
   const m = Math.max(1, Math.round((Date.now() - ts) / 60000));
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return i18nT('n.app.ledger.min-ago', { v0: m });
   const h = Math.round(m / 60);
-  if (h < 48) return `${h}h ago`;
-  return new Date(ts).toLocaleDateString([], { day: 'numeric', month: 'short' });
+  if (h < 48) return i18nT('n.lib.dates.hours-ago', { v0: h });
+  return dayMonth(new Date(ts));
 }
 
 type Kind = 'report' | 'incident' | 'flag' | 'case';

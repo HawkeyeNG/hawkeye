@@ -7,17 +7,18 @@
  * backend/src/services/security.js), and sw.js lets Intercom's requests bypass
  * the service worker, whose own CSP would block them.
  *
- * Hidden in the app shell (window.Capacitor): the store builds have not been
- * tested with it, and the apps are not served by the backend that sets the CSP.
+ * IN THE APPS the chat opens on the website, in the in-app browser, at
+ * WEB_CHAT — which opens the messenger at once (?chat=1). Intercom never loads
+ * inside the app itself: the app shell is not served by the backend that sets
+ * the CSP, and a webview on capacitor:// cannot keep Intercom's cookies. The
+ * native app's FAQ/About screens and More menu open the same URL.
  */
 (function () {
   const APP_ID = 'nibzdah2';
+  const WEB_CHAT = 'https://hawkeye.com.ng/about.html?chat=1';
+  const inApp = !!window.Capacitor;
   const buttons = document.querySelectorAll('[data-chat-open]');
   if (!buttons.length) return;
-  if (window.Capacitor) {
-    document.querySelectorAll('[data-chat-wrap]').forEach((el) => el.remove());
-    return;
-  }
   document.querySelectorAll('[data-chat-wrap]').forEach((el) => { el.hidden = false; });
 
   // Translated at the moment of use, never at load: the language can change
@@ -32,7 +33,9 @@
   const st = document.createElement('style');
   st.textContent = '#hk-fab,#hk-panel{display:none!important}'
     + '#hk-chat-fab{position:fixed;right:18px;bottom:18px;z-index:98;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}'
-    + '#hk-chat-fab:hover{filter:brightness(1.08)}#hk-chat-fab:focus-visible{outline:3px solid var(--gold,#f5b301);outline-offset:2px}';
+    + '#hk-chat-fab:hover{filter:brightness(1.08)}#hk-chat-fab:focus-visible{outline:3px solid var(--gold,#f5b301);outline-offset:2px}'
+    // Above the app's tab bar, exactly where #hk-fab sits (styles.css).
+    + 'body.has-tabbar #hk-chat-fab{bottom:calc(78px + env(safe-area-inset-bottom))}';
   document.head.appendChild(st);
   const fab = document.createElement('button');
   fab.type = 'button';
@@ -80,6 +83,7 @@
 
   [...buttons, fab].forEach((btn) => {
     btn.addEventListener('click', async () => {
+      if (inApp) { window.open(WEB_CHAT, '_blank'); return; }
       // The corner button toggles; the in-page buttons only open.
       if (btn === fab && open) { window.Intercom('hide'); return; }
       const status = btn.parentElement.querySelector('[data-chat-status]');
@@ -103,4 +107,8 @@
       }
     });
   });
+
+  // Arriving from an app's "Chat with us" (WEB_CHAT): that tap was the request,
+  // so open the messenger now rather than asking for a second one.
+  if (!inApp && new URLSearchParams(location.search).get('chat') === '1') fab.click();
 })();

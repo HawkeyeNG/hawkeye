@@ -1,7 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { router, usePathname } from 'expo-router';
+import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -100,6 +100,10 @@ function useBounds(): Bounds {
  */
 export function AskFab() {
   const pathname = usePathname();
+  // The FAQ and About screens carry "Chat with us" (app/page.tsx): a person, not
+  // the bot. Two chat bubbles on one screen is a guessing game, as on the web.
+  const { slug } = useGlobalSearchParams<{ slug?: string }>();
+  const onChatPage = pathname === '/page' && (slug === 'faq' || slug === 'about');
   const bounds = useBounds();
   const [pos, setPos] = useState<Pos | null>(null);
   const [hint, setHint] = useState(false);
@@ -143,7 +147,7 @@ export function AskFab() {
     AsyncStorage.setItem(K_POS, JSON.stringify(next)).catch(() => {});
   }, []);
 
-  if (!pos || HIDDEN.has(pathname) || pathname.startsWith('/report')) return null;
+  if (!pos || HIDDEN.has(pathname) || onChatPage || pathname.startsWith('/report')) return null;
 
   return (
     // NO full-screen wrapper. There was one, with pointerEvents="box-none", and it

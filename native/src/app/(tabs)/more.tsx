@@ -113,6 +113,8 @@ const GROUPS: { title: string; titleKey: string; items: MenuItem[] }[] = [
       // this row opens a modal on THIS screen instead of navigating.
       { label: 'Take the tour', labelKey: 'nav.take-the-tour', href: 'action:tour', icon: 'compass' },
       { label: 'Ask Hawkeye', labelKey: 'nav.ask-hawkeye', href: 'native:/assistant', icon: 'message-square' },
+      // A person, via the web chat (app/chat.js); ?chat=1 opens the messenger at once.
+      { label: 'Chat with us', labelKey: 'common.chat-with-us', href: 'about.html?chat=1', icon: 'headphones' },
       { label: 'How Hawkeye Works', labelKey: 'common.how-hawkeye-works', href: 'native:/page?slug=how', icon: 'help-circle' },
       { label: 'Observer Guide', labelKey: 'common.observer-guide', href: 'native:/page?slug=guide', icon: 'book-open' },
       { label: 'FAQ', labelKey: 'nav.faq', href: 'native:/page?slug=faq', icon: 'message-circle' },

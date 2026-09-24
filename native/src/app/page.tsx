@@ -1,5 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useRef, useState } from 'react';
 import {
   Image,
@@ -26,6 +27,10 @@ import { translateContent } from '@/lib/content';
    questions and answers stayed English while the screen around them did not. */
 const RAW = translateContent(RAW_PAGES);
 import { t as i18nT } from '@/lib/i18n';
+
+/** Screens that carry "Chat with us" — the same two pages as the website. */
+const CHAT_SLUGS = new Set(['faq', 'about']);
+const WEB_CHAT = 'https://hawkeye.com.ng/about.html?chat=1';
 
 const WEB: Record<string, string> = {
   how: 'how.html',
@@ -228,6 +233,27 @@ export default function StaticPage() {
               <QuestionRow key={q.q} q={q.q} a={q.a} />
             ))}
           </>
+        ) : null}
+
+        {/* Support chat, as on the website's FAQ and About pages. It opens the
+            web chat in the in-app browser (app/chat.js, ?chat=1 opens the
+            messenger at once): Intercom's SDK is not in the app. AskFab hides
+            itself on these two screens so one bubble means one thing. */}
+        {CHAT_SLUGS.has(key) ? (
+          <View className="pt-4">
+            {key === 'faq' ? (
+              <Text className="pb-2 text-lg font-bold text-ink">
+                {i18nT('faq.still-have-a-question')}
+              </Text>
+            ) : null}
+            <Pressable
+              onPress={() => WebBrowser.openBrowserAsync(WEB_CHAT)}
+              accessibilityRole="button"
+              className="items-center rounded-xl bg-hawk-green py-3.5"
+            >
+              <Text className="text-base font-bold text-white">{i18nT('common.chat-with-us')}</Text>
+            </Pressable>
+          </View>
         ) : null}
 
         {/* Every explainer page ends the same way: where to find Hawkeye.

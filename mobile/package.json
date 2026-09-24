@@ -33,5 +33,14 @@
     "@capacitor/cli": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
     "patch-package": "^8.0.1"
+  },
+  "overrides": {
+    "@capacitor/assets": {
+      "@capacitor/cli": "$@capacitor/cli",
+      "sharp": "^0.35.4"
+    },
+    "xcode": {
+      "uuid": "^11.1.1"
+    }
   }
 }

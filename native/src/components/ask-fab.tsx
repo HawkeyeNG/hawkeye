@@ -2,6 +2,7 @@ import Feather from '@expo/vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -100,8 +101,9 @@ function useBounds(): Bounds {
  */
 export function AskFab() {
   const pathname = usePathname();
-  // The FAQ and About screens carry "Chat with us" (app/page.tsx): a person, not
-  // the bot. Two chat bubbles on one screen is a guessing game, as on the web.
+  // On the FAQ and About screens the bubble IS "Chat with us" — a person (the
+  // web chat), not the bot — as the web's corner button is on those pages. One
+  // bubble per screen, one meaning per bubble.
   const { slug } = useGlobalSearchParams<{ slug?: string }>();
   const onChatPage = pathname === '/page' && (slug === 'faq' || slug === 'about');
   const bounds = useBounds();
@@ -147,7 +149,7 @@ export function AskFab() {
     AsyncStorage.setItem(K_POS, JSON.stringify(next)).catch(() => {});
   }, []);
 
-  if (!pos || HIDDEN.has(pathname) || onChatPage || pathname.startsWith('/report')) return null;
+  if (!pos || HIDDEN.has(pathname) || pathname.startsWith('/report')) return null;
 
   return (
     // NO full-screen wrapper. There was one, with pointerEvents="box-none", and it
@@ -175,13 +177,18 @@ export function AskFab() {
           style={[styles.hint, { right: EDGE + SIZE + 8, top: bounds.restY + 13 }]}
           className="rounded-full border border-line bg-card px-2.5 py-1"
         >
-          <Text className="text-xs font-semibold text-ink">{i18nT('nav.ask-hawkeye')}</Text>
+          <Text className="text-xs font-semibold text-ink">
+            {i18nT(onChatPage ? 'common.chat-with-us' : 'nav.ask-hawkeye')}
+          </Text>
         </Animated.View>
       ) : null}
-      <Bubble start={pos} bounds={bounds} onSettle={settle} />
+      <Bubble start={pos} bounds={bounds} onSettle={settle} chat={onChatPage} />
     </>
   );
 }
+
+/** The web chat (app/chat.js); ?chat=1 opens the messenger on arrival. */
+export const WEB_CHAT = 'https://hawkeye.com.ng/about.html?chat=1';
 
 /**
  * Pan and tap RACE rather than nest: a pan only claims the touch after 6px of
@@ -192,10 +199,12 @@ function Bubble({
   start,
   bounds,
   onSettle,
+  chat,
 }: {
   start: Pos;
   bounds: Bounds;
   onSettle: (p: Pos) => void;
+  chat: boolean;
 }) {
   const { width, minX, maxX, minY, maxY } = bounds;
 
@@ -207,7 +216,8 @@ function Bubble({
 
   const open = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/assistant');
+    if (chat) WebBrowser.openBrowserAsync(WEB_CHAT);
+    else router.push('/assistant');
   };
 
   const pan = Gesture.Pan()
@@ -257,8 +267,12 @@ function Bubble({
     <GestureDetector gesture={Gesture.Race(pan, tap)}>
       <Animated.View
         accessibilityRole="button"
-        accessibilityLabel={i18nT('n.components.ask-fab.ask-hawkeye-about-the-results')}
-        accessibilityHint={i18nT('n.components.ask-fab.opens-the-assistant-drag-to-move')}
+        accessibilityLabel={
+          chat
+            ? i18nT('common.chat-with-us')
+            : i18nT('n.components.ask-fab.ask-hawkeye-about-the-results')
+        }
+        accessibilityHint={chat ? undefined : i18nT('n.components.ask-fab.opens-the-assistant-drag-to-move')}
         style={[fab, styles.fab]}
         className="items-center justify-center rounded-full border border-line bg-hawk-green"
       >

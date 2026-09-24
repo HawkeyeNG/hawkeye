@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { WEB_CHAT } from '@/components/ask-fab';
 import { ContentBlock, QuestionRow, SectionLabel } from '@/components/content-kit';
 import { SocialRow } from '@/components/social-row';
 import { useUi } from '@/lib/theme';
@@ -30,7 +31,6 @@ import { t as i18nT } from '@/lib/i18n';
 
 /** Screens that carry "Chat with us" — the same two pages as the website. */
 const CHAT_SLUGS = new Set(['faq', 'about']);
-const WEB_CHAT = 'https://hawkeye.com.ng/about.html?chat=1';
 
 const WEB: Record<string, string> = {
   how: 'how.html',
@@ -237,8 +237,8 @@ export default function StaticPage() {
 
         {/* Support chat, as on the website's FAQ and About pages. It opens the
             web chat in the in-app browser (app/chat.js, ?chat=1 opens the
-            messenger at once): Intercom's SDK is not in the app. AskFab hides
-            itself on these two screens so one bubble means one thing. */}
+            messenger at once): Intercom's SDK is not in the app. On these two
+            screens the floating bubble (AskFab) is the chat bubble too. */}
         {CHAT_SLUGS.has(key) ? (
           <View className="pt-4">
             {key === 'faq' ? (

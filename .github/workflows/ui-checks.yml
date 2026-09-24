@@ -64,7 +64,12 @@ jobs:
       - name: Regenerate visual baselines
         if: ${{ inputs.update_snapshots == true }}
         working-directory: tests/ui
-        run: npx playwright test layout.spec.js --update-snapshots
+        # =all, not the bare flag: since Playwright 1.50 a bare --update-snapshots
+        # means "changed" — it rewrites only baselines that FAIL, and one inside
+        # the tolerance survives. The laptop baseline kept the old headline
+        # through a "regenerate" that way, because a whole headline rewrite fits
+        # under maxDiffPixelRatio 0.012 at 1366x768.
+        run: npx playwright test layout.spec.js --update-snapshots=all
 
       - name: Upload regenerated baselines
         if: ${{ inputs.update_snapshots == true }}

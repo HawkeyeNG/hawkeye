@@ -121,17 +121,19 @@ export const bySeat = (x: Contest, y: Contest) =>
  * Keyed by CODE, not by munging the server's text: a wording change upstream
  * would silently stop matching a string rule and quietly restore the singular.
  */
-const CARD_ELECTION: Record<string, string> = {
-  PRES: '2027 Presidential Election',      // one race, nationwide — singular is right
-  GOV: '2027 Governorship Elections',
-  SEN: '2027 NASS Elections',
-  REP: '2027 NASS Elections',
-  SHA: '2027 State Assembly Elections',
-};
+// Keys, translated when read (lazyT): these were English literals, so the home
+// cards said "2027 Presidential Election" in every language.
+const CARD_ELECTION: Record<string, string> = lazyT({
+  PRES: 'n.lib.api.presidential-election-2027', // one race, nationwide — singular is right
+  GOV: 'n.lib.api.governorship-elections-2027',
+  SEN: 'n.lib.api.nass-elections-2027',
+  REP: 'n.lib.api.nass-elections-2027',
+  SHA: 'n.lib.api.state-assembly-elections-2027',
+});
 
 /** Shorter chamber labels; "House of Representatives" alone wraps a card. */
 const CARD_CHAMBER: Record<string, string> = lazyT({
-  SEN: 'Senate',
+  SEN: 'n.components.follow-race.senate', // was the bare word 'Senate' — never translated
   REP: 'n.components.follow-race.house-of-reps',
 });
 

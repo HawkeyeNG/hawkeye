@@ -1188,5 +1188,12 @@
   "race.ballot-parties-note-declared": "INEC published the {v0} parties contesting this by-election but not the candidates’ names. The declared result is above.",
   "race.none-published": "None published",
   "common.chat-with-us": "Chat with us",
-  "faq.still-have-a-question": "Still have a question?"
+  "faq.still-have-a-question": "Still have a question?",
+  "n.lib.api.presidential-election-2027": "2027 Presidential Election",
+  "n.lib.api.governorship-elections-2027": "2027 Governorship Elections",
+  "n.lib.api.nass-elections-2027": "2027 NASS Elections",
+  "n.lib.api.state-assembly-elections-2027": "2027 State Assembly Elections",
+  "n.lib.dates.weekdays": "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday",
+  "n.lib.dates.months": "January,February,March,April,May,June,July,August,September,October,November,December",
+  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}"
 }

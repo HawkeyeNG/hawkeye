@@ -1188,5 +1188,12 @@
   "race.ballot-parties-note-declared": "INEC bipụtara pati {v0} na-azọ ntuliaka mmejuputa a mana ọ bipụtaghị aha ndị na-azọ ya. Nsonaazụ ekwuputara dị n’elu.",
   "race.none-published": "Ebipụtaghị",
   "common.chat-with-us": "Soro anyị kparịta ụka",
-  "faq.still-have-a-question": "Ị ka nwere ajụjụ?"
+  "faq.still-have-a-question": "Ị ka nwere ajụjụ?",
+  "n.lib.api.presidential-election-2027": "Ntuli Aka Onye Isi Ala 2027",
+  "n.lib.api.governorship-elections-2027": "Ntuli Aka Gọvanọ 2027",
+  "n.lib.api.nass-elections-2027": "Ntuli Aka Ọgbakọ Omebe Iwu Mba 2027",
+  "n.lib.api.state-assembly-elections-2027": "Ntuli Aka Ụlọ Omebe Iwu Steeti 2027",
+  "n.lib.dates.weekdays": "Sọndee,Mọnde,Tiuzdee,Wenezdee,Tọsdee,Fraịdee,Satọdee",
+  "n.lib.dates.months": "Jenụwarị,Febrụwarị,Maachị,Epreel,Mee,Jun,Julaị,Ọgọọst,Septemba,Ọktoba,Novemba,Disemba",
+  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}"
 }

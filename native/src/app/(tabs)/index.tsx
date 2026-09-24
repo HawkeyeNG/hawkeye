@@ -10,6 +10,7 @@ import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
 import { useUi, type Tone } from '@/lib/theme';
+import { longDate } from '@/lib/dates';
 import { t as i18nT, lazyT, useT } from '@/lib/i18n';
 import { flagLabel } from '@/lib/flags';
 import { KIND_LABEL } from '@/lib/incident-kinds';
@@ -434,12 +435,7 @@ export default function Home() {
             </Text>
             <Text className="pt-1 text-xl font-bold text-white">{cardTitle(c, contests)}</Text>
             <Text className="pt-1 text-sm text-emerald-100">
-              {new Date(`${c.date}T12:00:00`).toLocaleDateString('en-GB', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
+              {longDate(c.date)}
             </Text>
           </View>
           <View className="flex-row items-center justify-between bg-[#00351e] px-5 py-3">

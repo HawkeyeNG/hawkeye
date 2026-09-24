@@ -1188,5 +1188,12 @@
   "race.ballot-parties-note-declared": "INEC ta wallafa jam’iyyu {v0} da suka fafata a wannan zaɓen cike gurbi amma ba sunayen ’yan takara ba. Sakamakon da aka sanar yana sama.",
   "race.none-published": "Ba a wallafa ba",
   "common.chat-with-us": "Yi hira da mu",
-  "faq.still-have-a-question": "Har yanzu kana da tambaya?"
+  "faq.still-have-a-question": "Har yanzu kana da tambaya?",
+  "n.lib.api.presidential-election-2027": "Zaɓen Shugaban Ƙasa 2027",
+  "n.lib.api.governorship-elections-2027": "Zaɓukan Gwamna 2027",
+  "n.lib.api.nass-elections-2027": "Zaɓukan Majalisar Tarayya 2027",
+  "n.lib.api.state-assembly-elections-2027": "Zaɓukan Majalisun Jihohi 2027",
+  "n.lib.dates.weekdays": "Lahadi,Litinin,Talata,Laraba,Alhamis,Jummaʼa,Asabar",
+  "n.lib.dates.months": "Janairu,Faburairu,Maris,Afirilu,Mayu,Yuni,Yuli,Agusta,Satumba,Oktoba,Nuwamba,Disamba",
+  "n.lib.dates.long": "{v0}, {v1} {v2} {v3}"
 }

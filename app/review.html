@@ -125,6 +125,33 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
+
+    /**
+     * NOTHING IS INTERPOLATED INTO AN on*= ATTRIBUTE ON THIS PAGE.
+     *
+     * A browser HTML-DECODES an inline handler's attribute before the
+     * JavaScript inside it is parsed, so escaping is undone on the way in and a
+     * single quote closes the JS string. That is the bug that was confirmed
+     * exploitable in app/race.js on 2026-09-23 — proved by executing, not
+     * argued. The buttons below used to carry onclick="act(${i.id},…)" and
+     * onclick="qa('${key}',…)"; `i.id` is numeric today and `key` is a training
+     * filename, so neither was live, but they are the same shape.
+     *
+     * The values now travel as data-* attributes and the click is delegated.
+     * escAttr covers the attribute itself: " closes it, & starts an entity, and
+     * < > are cheap insurance.
+     */
+    const escAttr = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    // One delegated listener for both lists. window.act and window.qa are
+    // looked up at click time, so this can sit above their definitions.
+    document.addEventListener('click', (ev) => {
+      const b = ev.target.closest('button[data-act], button[data-qa]');
+      if (!b) return;
+      if (b.dataset.act) window.act(Number(b.dataset.id), b.dataset.act);
+      else window.qa(b.dataset.key, b.dataset.qa);
+    });
     const KIND = {
       violence: 'Violence', ballot_snatching: 'Ballot snatching', vote_buying: 'Vote-buying',
       intimidation: 'Voter intimidation', bvas_failure: 'BVAS failure', late_materials: 'Late materials',
@@ -243,8 +270,8 @@
         const gps = (i.lat != null && i.lng != null)
           ? ` · <a href="https://maps.google.com/?q=${i.lat},${i.lng}" target="_blank" rel="noopener">📍 map</a>` : '';
         const acts = tab === 'pending'
-          ? `<div class="acts"><button onclick="act(${i.id},'publish')">Publish</button>
-             <button class="btn-reject" onclick="act(${i.id},'reject')">Reject</button></div>` : '';
+          ? `<div class="acts"><button data-act="publish" data-id="${i.id}">Publish</button>
+             <button class="btn-reject" data-act="reject" data-id="${i.id}">Reject</button></div>` : '';
         return `<div class="inc ${i.status}">
           <h3>${KIND[i.kind] || i.kind}</h3>
           <div class="meta">#${i.id} · observer ${i.observer_id ?? '—'}${i.state ? ' · ' + i.state : ''}${i.pu_code ? ' · ' + i.pu_code : ''}${gps} · ${new Date(i.created_at).toLocaleString()}</div>
@@ -295,9 +322,9 @@
         const counts = Object.entries(t).map(([p, n]) => `${p} ${n}`).join(', ') || '<em>all zero</em>';
         const qa = isOk
           ? `<div class="qa"><span class="okchip">✓ Approved for ML</span>
-             <button class="btn-reject" onclick="qa('${key}','deny')">Deny</button></div>`
-          : `<div class="qa"><button onclick="qa('${key}','approve')">Approve</button>
-             <button class="btn-reject" onclick="qa('${key}','deny')">Deny</button></div>`;
+             <button class="btn-reject" data-qa="deny" data-key="${escAttr(key)}">Deny</button></div>`
+          : `<div class="qa"><button data-qa="approve" data-key="${escAttr(key)}">Approve</button>
+             <button class="btn-reject" data-qa="deny" data-key="${escAttr(key)}">Deny</button></div>`;
         (isOk ? doneRows : rows).push(`<div class="lab${isOk ? ' ok' : ''}"><a href="/training/${f}" target="_blank" rel="noopener">
           <img loading="lazy" src="/training/${f}" alt="sheet ${key}"></a>
           <div class="key">${key}</div><div class="counts">${counts}</div>${qa}</div>`);

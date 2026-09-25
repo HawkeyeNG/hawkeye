@@ -193,6 +193,17 @@
         "projectId": "51397c6b-30ae-4bfb-8c34-589e5ff3a76d"
       }
     },
-    "owner": "elrio91"
+    "owner": "elrio91",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/51397c6b-30ae-4bfb-8c34-589e5ff3a76d",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
+    }
   }
 }

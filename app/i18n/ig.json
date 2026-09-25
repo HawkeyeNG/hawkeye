@@ -1600,6 +1600,7 @@
   "common.chat-could-not-load": "Mkparịta ụka ahụ enweghị ike imepe. Zipu email na info@hawkeye.com.ng kama.",
   "faq.still-have-a-question": "Ị ka nwere ajụjụ?",
   "privacy.support-chat-intercom": "Naanị ihe dị iche bụ mkparịta ụka enyemaka dị na peeji Ajụjụ A Na-ajụkarị na Gbasara Anyị. Ọ bụ Intercom na-arụ ya, ọ na-emepe naanị ma ị pịa “Soro anyị kparịta ụka”; mgbe ahụ Intercom ga-anata ihe ị dere ma debe kuki iji mee ka mkparịta ụka ahụ gaa n’ihu.",
+  "privacy.error-reports-sentry": "Akụkọ njehie bụ ihe ọzọ dị iche, nke dị warara karịa. Mgbe ihe mebiri, a na-eziga akụkọ teknụzụ (ihe dara, na ụdị ngwaọrụ na ihe nchọgharị gị) na Sentry, ọrụ anyị na-enyocha njehie, na Europe. A na-ewepụ nọmba ekwentị, adreesị email na koodu na ngwaọrụ gị tupu e ziga ya, Sentry anaghịkwa edebe adreesị IP gị.",
   "results.in-place": " na {v0}",
   "results.follow-subject": "Soro {v0}"
 }

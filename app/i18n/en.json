@@ -1575,6 +1575,7 @@
   "common.chat-could-not-load": "The chat could not load. Email info@hawkeye.com.ng instead.",
   "faq.still-have-a-question": "Still have a question?",
   "privacy.support-chat-intercom": "The one exception is the support chat on the FAQ and About pages. It is run by Intercom and loads only if you press “Chat with us”; Intercom then receives what you type and sets cookies to keep the conversation going.",
+  "privacy.error-reports-sentry": "Error reports are a second, narrower exception. When something breaks, a technical report (what failed, and your device and browser type) goes to Sentry, our error-monitoring service, in the EU. Phone numbers, e-mail addresses and codes are removed on your device before it is sent, and Sentry does not keep your IP address.",
   "results.in-place": " in {v0}",
   "results.follow-subject": "Follow {v0}"
 }

@@ -1601,6 +1601,7 @@
   "common.chat-could-not-load": "Hirar ba ta buɗe ba. Aika imel zuwa info@hawkeye.com.ng maimakon haka.",
   "faq.still-have-a-question": "Har yanzu kana da tambaya?",
   "privacy.support-chat-intercom": "Banda ɗaya kawai ita ce hirar taimako a shafukan Tambayoyin da Ake Yawan Yi da Game da Mu. Intercom ne ke gudanar da ita, kuma tana buɗewa ne kawai idan ka danna “Yi hira da mu”; daga nan Intercom za ta karɓi abin da ka rubuta, ta kuma ajiye kukis don ci gaba da tattaunawar.",
+  "privacy.error-reports-sentry": "Rahoton kurakurai wata banda ce ta biyu, mafi ƙanƙanta. Idan wani abu ya lalace, ana aika rahoton fasaha (abin da ya kasa aiki, da nau'in na'urarka da burauzarka) zuwa Sentry, sabis ɗinmu na sa ido kan kurakurai, a Tarayyar Turai. Ana cire lambobin waya, adireshin imel da lambobin tabbatarwa a kan na'urarka kafin a aika shi, kuma Sentry ba ta ajiye adireshin IP ɗinka.",
   "results.in-place": " a {v0}",
   "results.follow-subject": "Bi {v0}"
 }

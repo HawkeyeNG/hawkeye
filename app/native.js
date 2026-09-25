@@ -13,6 +13,42 @@
   // CTA) with no race against page scripts.
   document.documentElement.classList.add('native-app');
 
+  // LIVE WEB UPDATES — Lite's twin of the native app's EAS Update. The Capgo
+  // updater plugin (self-hosted, autoUpdate off) lets a web deploy reach Lite
+  // without a store build: scripts/publish_lite_bundle.sh zips the stripped app/
+  // to https://hawkeye.com.ng/lite/ with a bundle.json {version, url, checksum,
+  // minBuild:{ios,android}}. Here: confirm this bundle started (otherwise the
+  // plugin rolls back to the last good one after 10 s), then fetch bundle.json;
+  // if it is newer than what is running AND this binary is new enough for it,
+  // download + verify it and apply it on the NEXT launch. Versions are the SW
+  // cache number (hawkeye-vNNN). resetWhenUpdate drops downloaded bundles when
+  // a new store build is installed, so a binary always starts on its own files.
+  (function liveUpdates() {
+    const U = Cap.Plugins && Cap.Plugins.CapacitorUpdater;
+    if (!U) return; // Lite builds before 1.6 (33) have no updater
+    U.notifyAppReady().catch(() => {});
+    (async () => {
+      try {
+        const App = Cap.Plugins.App;
+        const info = App ? await App.getInfo() : null;
+        const build = Number(info && info.build) || 0;
+        const cur = await U.current();
+        let mine = cur && cur.bundle && cur.bundle.version;
+        if (!mine || mine === 'builtin') {
+          const sw = await (await fetch('/sw.js', { cache: 'no-store' })).text();
+          mine = (sw.match(/hawkeye-v(\d+)/) || [])[1] || '0';
+        }
+        const r = await fetch(`${BASE}/lite/bundle.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (!r.ok) return;
+        const b = await r.json();
+        const need = Number((b.minBuild || {})[Cap.getPlatform()] || 0);
+        if (!b.version || Number(b.version) <= Number(mine) || !need || build < need) return;
+        const dl = await U.download({ url: b.url, version: String(b.version), checksum: b.checksum });
+        await U.next({ id: dl.id });
+      } catch (_) { /* offline or no bundle: keep running what we have */ }
+    })();
+  })();
+
   // DEEP LINKS, as in the native app (native/src/app/open.tsx): an App Link /
   // Universal Link to https://hawkeye.com.ng/open?to=… or /join/<token> opens
   // Lite, and lands on the BUNDLED page the website would have shown —

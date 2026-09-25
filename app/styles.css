@@ -994,11 +994,16 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
     padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
   }
   .menu-panel a { padding-top: 14px; padding-bottom: 14px; }
+  /* While the menu is open the header is PINNED to the top of the screen: after
+     a scroll it had slid away (or scrolled out with the page), leaving the page
+     showing between the status bar and the menu. Fixed + no transform puts it
+     back wherever the page is. (No overflow:hidden on body — that made body a
+     scroll container and broke the header's sticky positioning.) */
   body:has(.menu-panel:not([hidden])) .gov-header {
+    position: fixed; top: 0; left: 0; right: 0;
     -webkit-backdrop-filter: none; backdrop-filter: none; transform: none !important;
     will-change: auto; /* will-change: transform ALSO makes a containing block */
   }
-  body:has(.menu-panel:not([hidden])) { overflow: hidden; }
   body:has(.menu-panel:not([hidden])) :is(#hk-fab, #hk-chat-fab) { display: none; }
 }
 .menu-panel .sign-out { color: var(--danger) !important; font-weight: 700; }

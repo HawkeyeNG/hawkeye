@@ -986,7 +986,11 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 @media (max-width: 640px) {
   .menu-panel {
     position: fixed; top: var(--hdr-h, 64px); bottom: var(--bar-h, 0px); left: 0; right: 0;
-    max-height: none; min-width: 0; border: 0; border-radius: 0; box-shadow: none;
+    /* !important: menu.js sets an inline max-height on open (room for the Ask
+       bubble + 16px), which left a gap above the tab bar. Here the panel ends
+       exactly at the bar's top edge; the bar (z 95, outside the header's
+       stacking context) paints over it, so the camera button's arch overlaps. */
+    max-height: none !important; min-width: 0; border: 0; border-radius: 0; box-shadow: none;
     padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
   }
   .menu-panel a { padding-top: 14px; padding-bottom: 14px; }

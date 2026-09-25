@@ -26,7 +26,10 @@ export default function ChatScreen() {
   // The page is in the APP's language, and never shows the web's first-visit
   // language prompt: set before any of its scripts run.
   const lang = currentLang_();
-  const boot = `try{localStorage.setItem('hawkeye_lang','${lang}');localStorage.setItem('hawkeye_lang_prompted','1');}catch(e){}true;`;
+  // Also hide the page itself BEFORE it paints — chat.js hides it too, but only
+  // once it runs, so the web contact page flashed for half a second first.
+  const boot = `try{localStorage.setItem('hawkeye_lang','${lang}');localStorage.setItem('hawkeye_lang_prompted','1');}catch(e){}`
+    + `try{var s=document.createElement('style');s.textContent='body>:not([id^="intercom"]):not([class*="intercom"]){display:none!important}html,body{background:transparent!important}';document.documentElement.appendChild(s);}catch(e){}true;`;
   return (
     <View className="flex-1 bg-surface">
       <ScreenHeader title={i18nT('common.chat-with-us')} onClose={() => router.back()} />
@@ -39,8 +42,11 @@ export default function ChatScreen() {
           sharedCookiesEnabled
           thirdPartyCookiesEnabled
           setSupportMultipleWindows={false}
-          onLoadEnd={() => setLoading(false)}
+          // The spinner stays until the messenger is actually on screen
+          // ('chat-shown' from chat.js), not merely until the page loaded.
+          onLoadEnd={() => setTimeout(() => setLoading(false), 15000)}
           onMessage={(e) => {
+            if (e.nativeEvent.data === 'chat-shown') setLoading(false);
             if (e.nativeEvent.data === 'chat-closed') router.back();
           }}
           onShouldStartLoadWithRequest={(req) => {

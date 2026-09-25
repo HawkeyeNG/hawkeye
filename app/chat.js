@@ -111,7 +111,10 @@
         const first = !window.Intercom || window.Intercom.q;
         await load();
         if (first) {
-          window.Intercom('onShow', () => { open = true; });
+          window.Intercom('onShow', () => {
+            open = true;
+            if (embed && window.ReactNativeWebView) window.ReactNativeWebView.postMessage('chat-shown');
+          });
           window.Intercom('onHide', () => {
             open = false;
             if (embed && window.ReactNativeWebView) window.ReactNativeWebView.postMessage('chat-closed');

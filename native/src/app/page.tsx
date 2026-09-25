@@ -12,7 +12,9 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { BRAND } from '@/lib/api';
 
 import { ContentBlock, QuestionRow, SectionLabel } from '@/components/content-kit';
 import { SocialRow } from '@/components/social-row';
@@ -65,6 +67,7 @@ function faqPairs() {
  */
 export default function StaticPage() {
   const ui = useUi();
+  const insets = useSafeAreaInsets();
   const { slug } = useLocalSearchParams<{ slug?: string }>();
   const key = slug ?? '';
   /* getPages(), not PAGES: the content is translated at read time and this call
@@ -120,7 +123,9 @@ export default function StaticPage() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
+    // Explicit top inset, as ledger/profile do. SafeAreaView inside this native
+    // fullScreenModal left the header under the status bar on iOS.
+    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top }}>
       {/* The hawkeye mark (tap → Home) leads, matching the shared ScreenHeader
           convention; the persistent title, share, close and jump chips are this
           screen's own richer variant of it. */}
@@ -198,7 +203,9 @@ export default function StaticPage() {
         ref={scroll}
         scrollEventThrottle={16}
         onScroll={onScroll}
-        contentContainerClassName="px-4 pb-12 pt-3"
+        contentContainerClassName="px-4 pt-3"
+        // Bottom inset now that SafeAreaView is gone, plus room for the chat bubble.
+        contentContainerStyle={{ paddingBottom: insets.bottom + (CHAT_SLUGS.has(key) ? 96 : 48) }}
       >
         {/* pb-4 replaces the space the deleted hero title used to provide.
             Without it the kicker sits 4dp off the lede and reads as a section
@@ -257,6 +264,24 @@ export default function StaticPage() {
             SocialRow renders its own section label. */}
         <SocialRow />
       </ScrollView>
-    </SafeAreaView>
+
+      {/* THE CHAT BUBBLE LIVES HERE, not in AskFab: this screen is a native
+          fullScreenModal, and AskFab is mounted in the root layout UNDER every
+          modal, so on FAQ/About it could never be seen. Same look as AskFab. */}
+      {CHAT_SLUGS.has(key) ? (
+        <Pressable
+          onPress={() => router.push('/chat' as never)}
+          accessibilityRole="button"
+          accessibilityLabel={i18nT('common.chat-with-us')}
+          className="absolute items-center justify-center rounded-full border border-line bg-hawk-green"
+          style={{
+            right: 16, bottom: insets.bottom + 20, width: 52, height: 52,
+            shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 8,
+          }}
+        >
+          <Feather name="message-circle" size={22} color={BRAND.gold} />
+        </Pressable>
+      ) : null}
+    </View>
   );
 }

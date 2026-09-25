@@ -270,6 +270,7 @@ function RootShell() {
               <Stack.Screen name="incidents" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="terms" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="assistant" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="chat" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="map" options={{ presentation: 'fullScreenModal' }} />
             </Stack>
             {/* After the Stack, so it draws over every screen and the tab bar. One

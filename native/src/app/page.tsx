@@ -1,6 +1,5 @@
 import Feather from '@expo/vector-icons/Feather';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { useRef, useState } from 'react';
 import {
   Image,
@@ -15,7 +14,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { WEB_CHAT } from '@/components/ask-fab';
 import { ContentBlock, QuestionRow, SectionLabel } from '@/components/content-kit';
 import { SocialRow } from '@/components/social-row';
 import { useUi } from '@/lib/theme';
@@ -235,10 +233,9 @@ export default function StaticPage() {
           </>
         ) : null}
 
-        {/* Support chat, as on the website's FAQ and About pages. It opens the
-            web chat in the in-app browser (app/chat.js, ?chat=1 opens the
-            messenger at once): Intercom's SDK is not in the app. On these two
-            screens the floating bubble (AskFab) is the chat bubble too. */}
+        {/* Support chat, as on the website's FAQ and About pages: opens the
+            full-screen chat modal (app/chat.tsx). On these two screens the
+            floating bubble (AskFab) is the chat bubble too. */}
         {CHAT_SLUGS.has(key) ? (
           <View className="pt-4">
             {key === 'faq' ? (
@@ -247,7 +244,7 @@ export default function StaticPage() {
               </Text>
             ) : null}
             <Pressable
-              onPress={() => WebBrowser.openBrowserAsync(WEB_CHAT)}
+              onPress={() => router.push('/chat' as never)}
               accessibilityRole="button"
               className="items-center rounded-xl bg-hawk-green py-3.5"
             >

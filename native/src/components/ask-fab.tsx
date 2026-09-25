@@ -2,7 +2,6 @@ import Feather from '@expo/vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -53,7 +52,7 @@ type Pos = { side: 'left' | 'right'; y: number };
  * full-screen camera whose own controls must not compete with anything. Mirrors
  * the web's placement rule in app/menu.js.
  */
-const HIDDEN = new Set(['/assistant', '/welcome', '/sign-in', '/practice']);
+const HIDDEN = new Set(['/assistant', '/chat', '/welcome', '/sign-in', '/practice']);
 
 const clampUi = (v: number, lo: number, hi: number) => {
   'worklet';
@@ -186,10 +185,6 @@ export function AskFab() {
     </>
   );
 }
-
-/** The web chat (app/chat.js); ?chat=1 opens the messenger on arrival. */
-export const WEB_CHAT = 'https://hawkeye.com.ng/about.html?chat=1';
-
 /**
  * Pan and tap RACE rather than nest: a pan only claims the touch after 6px of
  * travel, so the hand-wobble of a real tap still opens the chat instead of
@@ -216,8 +211,8 @@ function Bubble({
 
   const open = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (chat) WebBrowser.openBrowserAsync(WEB_CHAT);
-    else router.push('/assistant');
+    // Cast: the typed-routes list regenerates on `expo start` and may not know /chat yet.
+    router.push((chat ? '/chat' : '/assistant') as never);
   };
 
   const pan = Gesture.Pan()

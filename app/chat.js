@@ -22,6 +22,16 @@
   const inApp = !!window.Capacitor;
   const buttons = document.querySelectorAll('[data-chat-open]');
   if (!buttons.length) return;
+  // EMBEDDED in the native app's "Chat with us" modal (native/src/app/chat.tsx,
+  // ?chat=1&embed=1): the page itself is hidden — the screen is only the chat —
+  // and closing the messenger tells the app to close the modal.
+  const embed = new URLSearchParams(location.search).get('embed') === '1';
+  if (embed) {
+    const es = document.createElement('style');
+    es.textContent = 'body>:not([id^="intercom"]):not([class*="intercom"]):not(script):not(style){display:none!important}'
+      + 'html,body{background:var(--bg,#0b1a12)!important}';
+    document.head.appendChild(es);
+  }
   document.querySelectorAll('[data-chat-wrap]').forEach((el) => { el.hidden = false; });
 
   // Translated at the moment of use, never at load: the language can change
@@ -96,7 +106,10 @@
         await load();
         if (first) {
           window.Intercom('onShow', () => { open = true; });
-          window.Intercom('onHide', () => { open = false; });
+          window.Intercom('onHide', () => {
+            open = false;
+            if (embed && window.ReactNativeWebView) window.ReactNativeWebView.postMessage('chat-closed');
+          });
         }
         window.Intercom('show');
       } catch (_) {

@@ -74,13 +74,19 @@ chmod +x ./gradlew
 # arrive empty — a build died once with no recoverable reason at all, and the
 # only way to find out was to run gradle again by hand. Log to a file, print the
 # tail from it, and on failure print the part that actually says why.
-./gradlew --no-daemon --no-watch-fs --console=plain \
+# Metaspace 1024m: since expo-updates (build 52) its KSP step and the lintVital
+# workers died with "OutOfMemoryError: Metaspace" at 512m. --max-workers caps
+# the parallel workers, each with its own heap (see the Play AAB script).
+# `|| GRADLE=$?`, not a bare `GRADLE=$?` after it: under `set -e` a failing
+# gradle exits the script before the lines below can say why.
+GRADLE=0
+./gradlew --no-daemon --no-watch-fs --console=plain --max-workers=4 \
   -PreactNativeArchitectures=arm64-v8a \
   -Pandroid.enableMinifyInReleaseBuilds=true \
   -Pandroid.enableShrinkResourcesInReleaseBuilds=true \
-  -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -Xshare:off" \
-  assembleRelease > /tmp/gradle_team.log 2>&1
-GRADLE=$?
+  -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=1024m -Xshare:off" \
+  -Pkotlin.daemon.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=1024m" \
+  assembleRelease > /tmp/gradle_team.log 2>&1 || GRADLE=$?
 tail -20 /tmp/gradle_team.log
 if [ "$GRADLE" -ne 0 ]; then
   echo "GRADLE FAILED (exit $GRADLE) — full log: /tmp/gradle_team.log"

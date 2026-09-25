@@ -985,7 +985,8 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
    header". --hdr-h / --bar-h are measured by menu.js. */
 @media (max-width: 640px) {
   .menu-panel {
-    position: fixed; top: var(--hdr-h, 64px); bottom: var(--bar-h, 0px); left: 0; right: 0;
+    /* max(): never under the status bar, even if a measurement comes back short. */
+    position: fixed; top: max(var(--hdr-h, 64px), env(safe-area-inset-top, 0px)); bottom: var(--bar-h, 0px); left: 0; right: 0;
     /* !important: menu.js sets an inline max-height on open (room for the Ask
        bubble + 16px), which left a gap above the tab bar. Here the panel ends
        exactly at the bar's top edge; the bar (z 95, outside the header's
@@ -1003,6 +1004,9 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
     position: fixed; top: 0; left: 0; right: 0;
     -webkit-backdrop-filter: none; backdrop-filter: none; transform: none !important;
     will-change: auto; /* will-change: transform ALSO makes a containing block */
+    /* No slide-in: menu.js measures the header's bottom right after open, and
+       mid-slide that read ~0, so the menu started under the status bar. */
+    transition: none;
   }
   body:has(.menu-panel:not([hidden])) :is(#hk-fab, #hk-chat-fab) { display: none; }
 }

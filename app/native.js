@@ -13,6 +13,40 @@
   // CTA) with no race against page scripts.
   document.documentElement.classList.add('native-app');
 
+  // DEEP LINKS, as in the native app (native/src/app/open.tsx): an App Link /
+  // Universal Link to https://hawkeye.com.ng/open?to=… or /join/<token> opens
+  // Lite, and lands on the BUNDLED page the website would have shown —
+  // open/index.html does the ?to= routing, join.html reads ?t=. Checked on
+  // every page because the link can arrive while any page is showing, and on
+  // launch (getLaunchUrl) for a cold start; the same URL within 10 s is one
+  // link, so the page it lands on does not route it again.
+  (function deepLinks() {
+    const App = Cap.Plugins && Cap.Plugins.App;
+    if (!App) return;
+    const route = (url) => {
+      let u;
+      try { u = new URL(url); } catch (_) { return; }
+      if (!/(^|\.)hawkeye\.com\.ng$/.test(u.hostname)) return;
+      const j = u.pathname.match(/^\/join\/([^/?#]+)/);
+      const dest = j ? `/join.html?t=${encodeURIComponent(decodeURIComponent(j[1]))}`
+        : /^\/open(\/|\/index\.html)?$/.test(u.pathname) ? `/open/index.html${u.search}` : null;
+      if (!dest) return;
+      try {
+        const last = JSON.parse(sessionStorage.getItem('hk_last_link') || 'null');
+        if (last && last.url === url && Date.now() - last.at < 10000) return;
+        sessionStorage.setItem('hk_last_link', JSON.stringify({ url, at: Date.now() }));
+      } catch (_) { /* storage off: route anyway */ }
+      location.href = dest;
+    };
+    App.addListener('appUrlOpen', (e) => route(e && e.url));
+    // ONCE PER LAUNCH: getLaunchUrl keeps returning the launching URL for the
+    // app's whole life, so reading it on every page would drag the user back to
+    // that link on each navigation. sessionStorage ends with the app process.
+    let launchDone = true;
+    try { launchDone = !!sessionStorage.getItem('hk_launch_done'); sessionStorage.setItem('hk_launch_done', '1'); } catch (_) { /* no storage */ }
+    if (!launchDone && App.getLaunchUrl) App.getLaunchUrl().then((r) => r && r.url && route(r.url)).catch(() => {});
+  })();
+
   // Status-bar icons must contrast the themed header: it is a WHITE bar in light
   // mode (needs DARK icons) and a dark-green bar in dark mode (needs light icons).
   // Follow html[data-theme]. Capacitor names the style by BACKGROUND: Style.Light

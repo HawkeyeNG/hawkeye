@@ -453,11 +453,24 @@ jobs:
           # token while the server sends to production APNs: the send reports
           # success and the phone never rings — indistinguishable from a bad
           # APNs key. This already cost a debugging cycle on the native app.
-          cat > ios/App/App/App.entitlements <<'PLIST'
+          # Universal Links (/open, /join/*) like the native app. Needs the
+          # Associated Domains capability on the ng.com.hawkeye.lite App ID and a
+          # profile regenerated after enabling it; a profile without it makes the
+          # archive fail ("Provisioning profile doesn't include the Associated
+          # Domains capability"), so the entitlement is added only when the
+          # profile carries it. Lite's appID is in app/.well-known/apple-app-site-association.
+          AD=''
+          if security cms -D -i "$RUNNER_TEMP/build_pp.mobileprovision" 2>/dev/null | grep -q 'com.apple.developer.associated-domains'; then
+            AD='<key>com.apple.developer.associated-domains</key><array><string>applinks:hawkeye.com.ng</string></array>'
+          else
+            echo "::warning::the Lite profile lacks Associated Domains — building WITHOUT universal links"
+          fi
+          cat > ios/App/App/App.entitlements <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict>
             <key>aps-environment</key><string>production</string>
+            ${AD}
           </dict></plist>
           PLIST
           plutil -p ios/App/App/App.entitlements
@@ -631,6 +644,8 @@ jobs:
           echo "  entitlements actually signed into the binary:"
           codesign -d --entitlements - --xml "$APP" 2>/dev/null | plutil -p - | grep -i 'aps-environment' \
             || echo "    WARNING: no aps-environment in the signed entitlements — push will not work"
+          codesign -d --entitlements - --xml "$APP" 2>/dev/null | plutil -p - | grep -i 'applinks:hawkeye.com.ng' \
+            || echo "    WARNING: no applinks:hawkeye.com.ng in the signed entitlements — universal links will not open Lite"
 
       - name: Upload .ipa as an artifact
         uses: actions/upload-artifact@v4

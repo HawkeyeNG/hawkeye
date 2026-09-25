@@ -8,6 +8,14 @@
           "/open/*",
           "/join/*"
         ]
+      },
+      {
+        "appID": "G99KD9RW94.ng.com.hawkeye.lite",
+        "paths": [
+          "/open",
+          "/open/*",
+          "/join/*"
+        ]
       }
     ]
   }

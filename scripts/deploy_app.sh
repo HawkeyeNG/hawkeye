@@ -81,8 +81,14 @@ ensure_dir() {                                 # ensure_dir <remotedir>
   # which is exactly what app/maps/wards/ did on its first deploy. Create each
   # segment; creating one that already exists is a no-op.
   local dir="$1" cur="$REMOTE_PATH" seg
-  [ "$dir" = "$REMOTE_PATH" ] && return 0
   case "$ENSURED" in *" $dir "*) return 0 ;; esac
+  # An explicit --path can name a folder that does not exist yet (app/lite/
+  # did, on the first Lite bundle): create its last segment under its parent.
+  if [ "$dir" = "$REMOTE_PATH" ]; then
+    [ "$PATH_EXPLICIT" = 1 ] && curl -sk -m 60 -u "$U:$P" -o /dev/null \
+      -F 'action=folder' -F "path=${dir%/*}" -F "name=${dir##*/}" "$API"
+    ENSURED="$ENSURED$dir "; return 0
+  fi
   for seg in $(echo "${dir#"$REMOTE_PATH"/}" | tr '/' ' '); do
     curl -sk -m 60 -u "$U:$P" -o /dev/null \
       -F 'action=folder' -F "path=$cur" -F "name=$seg" "$API"

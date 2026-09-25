@@ -1,9 +1,10 @@
+import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Linking, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, View } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ScreenHeader } from '@/components/screen-header';
 import { BRAND } from '@/lib/api';
 import { currentLang_, t as i18nT } from '@/lib/i18n';
 
@@ -30,10 +31,14 @@ export default function ChatScreen() {
   // once it runs, so the web contact page flashed for half a second first.
   const boot = `try{localStorage.setItem('hawkeye_lang','${lang}');localStorage.setItem('hawkeye_lang_prompted','1');}catch(e){}`
     + `try{var s=document.createElement('style');s.textContent='body>:not([id^="intercom"]):not([class*="intercom"]){display:none!important}html,body{background:transparent!important}';document.documentElement.appendChild(s);}catch(e){}true;`;
+  // NO header of ours: Intercom's messenger already carries the Hawkeye logo and
+  // a close (×) that closes this screen ('chat-closed'); a second bar on top of
+  // it was redundant and clipped the messenger's own header. The status-bar strip
+  // is Hawkeye green so it runs into the messenger's green header.
+  const insets = useSafeAreaInsets();
   return (
-    <View className="flex-1 bg-surface">
-      <ScreenHeader title={i18nT('common.chat-with-us')} onClose={() => router.back()} />
-      <View className="flex-1">
+    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top, backgroundColor: '#004225' }}>
+      <View className="flex-1 bg-surface">
         <WebView
           source={{ uri: CHAT_URL }}
           injectedJavaScriptBeforeContentLoaded={boot}
@@ -42,6 +47,11 @@ export default function ChatScreen() {
           sharedCookiesEnabled
           thirdPartyCookiesEnabled
           setSupportMultipleWindows={false}
+          // iOS must not add its own safe-area inset to the page: the frame is
+          // already below the status bar, and the extra inset shifted the
+          // messenger so its header was clipped.
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
           // The spinner stays until the messenger is actually on screen
           // ('chat-shown' from chat.js), not merely until the page loaded.
           onLoadEnd={() => setTimeout(() => setLoading(false), 15000)}
@@ -59,6 +69,16 @@ export default function ChatScreen() {
         {loading ? (
           <View className="absolute inset-0 items-center justify-center">
             <ActivityIndicator color={BRAND.gold} />
+            {/* The messenger's own × is not there yet — never leave the user stuck. */}
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={i18nT('common.close')}
+              className="absolute right-4 top-3 h-9 w-9 items-center justify-center rounded-full bg-card"
+            >
+              <Feather name="x" size={18} color={BRAND.gold} />
+            </Pressable>
           </View>
         ) : null}
       </View>

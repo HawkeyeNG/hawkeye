@@ -1318,7 +1318,7 @@
   "contest.house-of-representatives": "House of Representatives",
   "contest.governorship": "Governorship",
   "contest.state-house-of-assembly": "State House of Assembly",
-  "contest.by-election": "{v0} By-Election{v1}",
+  "contest.by-election": "{v0} By-Election",
   "common.nigeria": "Nigeria",
   "race.map-of-seat-by-ward": "Map of {seat}, by ward",
   "race.seat-wards": "{seat} — {n} wards",
@@ -1574,5 +1574,7 @@
   "common.chat-with-us": "Chat with us",
   "common.chat-could-not-load": "The chat could not load. Email info@hawkeye.com.ng instead.",
   "faq.still-have-a-question": "Still have a question?",
-  "privacy.support-chat-intercom": "The one exception is the support chat on the FAQ and About pages. It is run by Intercom and loads only if you press “Chat with us”; Intercom then receives what you type and sets cookies to keep the conversation going."
+  "privacy.support-chat-intercom": "The one exception is the support chat on the FAQ and About pages. It is run by Intercom and loads only if you press “Chat with us”; Intercom then receives what you type and sets cookies to keep the conversation going.",
+  "results.in-place": " in {v0}",
+  "results.follow-subject": "Follow {v0}"
 }

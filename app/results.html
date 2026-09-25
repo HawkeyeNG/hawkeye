@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=184" />
+  <link rel="stylesheet" href="styles.css?v=186" />
   <script src="native.js?v=117"></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
@@ -588,7 +588,7 @@
           shapes += `<path class="state-shape${L.length ? ' led' : ''}"${tieStyle(L)} data-leaders="${L.join(',')}" fill-rule="evenodd" d="${it.path}"><title>${tip}</title></path>`;
         }
         viewBox = bboxOf(items.map((i) => i.path));
-        aria = `Map of ${scopeState}: leading party per ${REGION_WORD[data.level] || 'area'}`;
+        aria = `Map of ${scopeState}: leading party per ${regionWord(data.level) || 'area'}`;
       } else if (data.level === 'state') {
         const byKey = Object.fromEntries(data.regions.map((r) => [norm(r.region), r]));
         for (const st of STATES.states) {
@@ -733,13 +733,16 @@
     };
     const unitPlural = (en) => T(UNIT_PLURAL_KEY[en] || 'x', en);
 
-    const REGION_WORD = {
+    /* A GETTER, not a map built at load: this script runs before the language
+       file arrives, so a map of T() calls froze "state" in English inside the
+       Hausa map title ("Jam'iyyar da ke kan gaba a kowace state"). */
+    const regionWord = (level) => ({
       state: T('unit.state.one', "state"),
       lga: T('unit.lga.one', "LGA"),
       senatorial: T('unit.senatorial.one', "senatorial district"),
       federal: T('unit.federal.one', "federal constituency"),
       ward: T('unit.ward.one', 'ward'),
-    };
+    })[level];
 
     // "Data at a glance": vote-share donut + top regions by units reporting.
     function renderGlance(data, word) {
@@ -851,7 +854,7 @@
       // A contest on exactly one state's ballot reads as that state's own race
       // ("Osun Governorship"); a nationwide one keeps the bare name.
       const where = Array.isArray(c.states) && c.states.length === 1 ? `${c.states[0]} ` : '';
-      return `${where}${c.name} (${year})`;
+      return `${where}${contestName(c.name)} (${year})`;
     };
 
     /**
@@ -860,6 +863,28 @@
      * ContestPicker reads them. A closed race is still selectable: viewing a
      * board is not reporting to it.
      */
+    /* The contest name arrives from the server in English; contest.* keys hold
+       its translation ("Presidential" -> contest.presidential). A by-election
+       is "<office> By-Election (<place>)": the office and the pattern are
+       translated, the place name is not. */
+    function contestKey(s) {
+      return `contest.${String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+    }
+    function contestName(n) {
+      const m = String(n || '').match(/^(.*?) By-Election(?: \((.+)\))?$/i);
+      if (!m) return T(contestKey(n), n);
+      const base = TV('contest.by-election', '{v0} By-Election', { v0: T(contestKey(m[1]), m[1]) });
+      return m[2] ? `${base} (${m[2]})` : base;
+    }
+    /* "16 Jan 2027" with the app language's month names — toLocaleDateString
+       follows the PHONE's locale, so a Hausa reader got "Jan 16, 2027". */
+    function shortDate(when) {
+      const d = new Date(when);
+      if (Number.isNaN(d.getTime())) return String(when);
+      const months = T('receipt.months', 'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sept,Oct,Nov,Dec').split(',');
+      return `${d.getDate()} ${months[d.getMonth()] || ''} ${d.getFullYear()}`;
+    }
+
     function renderRaceList(current) {
       const list = document.getElementById('race-list');
       if (!list) return;
@@ -867,7 +892,7 @@
         const when = c.opensAt || c.date;
         const tag = c.open
           ? `<span class="race-tag open">${T('results.open-tag', 'Open')}</span>`
-          : `<span class="race-tag">${when ? TV('results.opens-on', 'Opens {v0}', { v0: new Date(when).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }) : T('results.not-open-yet', 'Not open yet')}</span>`;
+          : `<span class="race-tag">${when ? TV('results.opens-on', 'Opens {v0}', { v0: shortDate(when) }) : T('results.not-open-yet', 'Not open yet')}</span>`;
         return `<button type="button" class="race-opt${c.code === current ? ' on' : ''}" data-code="${c.code}">`
           + `<b>${raceLabel(c)}</b>${tag}</button>`;
       }).join('');
@@ -978,16 +1003,38 @@
       return combined;
     }
 
+    /* The board's headings, repainted on 'hawkeye-lang' too: the tally usually
+       arrives before the language file, and a heading painted then stays English. */
+    let LAST_BOARD = null;
+    function paintBoardLabels(data) {
+      if (!data) return;
+      LAST_BOARD = data;
+      const word = regionWord(data.level) || 'region';
+      /* Built from the LEVEL, not by suffixing the (already translated)
+         singular -- "jihas" is not a word. */
+      const plural = T(({ state: 'unit.state.many', lga: 'unit.lga.many',
+        senatorial: 'unit.senatorial.many', federal: 'unit.federal.many' })[data.level] || 'x',
+        word.endsWith('y') ? `${word.slice(0, -1)}ies` : `${word}s`);
+      document.getElementById('led-col').textContent =
+        TV('results.led-column', '{v0} led', { v0: plural });
+      // Name the area the map actually shows, so a governorship board does not
+      // claim to be "by state" while drawing one state's LGAs.
+      const where = data.scope && data.scope.state
+        ? TV('results.in-place', ' in {v0}', { v0: data.scope.state }) : '';
+      document.getElementById('map-title').textContent = TV('results.leading-party-by', "Leading party by {v0}{v1}", { v0: word, v1: where });
+    }
+
     function paintFollowBtn() {
       const contest = document.getElementById('sel-contest').value;
       const scope = document.getElementById('sel-scope').value;
       // A combined contest shows the picker instead; nothing below applies.
       if (paintRacePicker(contest)) return;
-      const subject = scope && scope !== '__all'
-        ? scope
-        : (window.followSubject ? window.followSubject(contest, '') : 'this race');
+      // "Follow Kano" names the place; with no place it is the translated
+      // "Follow this race" (the English literal here was never translated).
       const btn = document.getElementById('btn-follow');
-      btn.textContent = `🔔 Follow ${subject}`;
+      btn.textContent = '🔔 ' + (scope && scope !== '__all'
+        ? TV('results.follow-subject', 'Follow {v0}', { v0: scope })
+        : T('race.follow-this-race', 'Follow this race'));
       /**
        * A DECLARED RACE IS NOT SOMETHING TO FOLLOW.
        *
@@ -1037,6 +1084,11 @@
       const pick = document.getElementById('race-picker');
       if (n && sel) n.textContent = raceLabel(CONTESTS.find((x) => x.code === sel.value));
       if (c && pick) c.textContent = pick.hidden ? T('profile.change', 'Change') : T('common.cancel', 'Cancel');
+      // Before any tally has arrived the heading still shows its static English
+      // default; paint the state-level wording until the real board replaces it.
+      paintBoardLabels(LAST_BOARD || { level: 'state' });
+      if (sel) renderRaceList(sel.value);
+      if (sel && sel.value) paintFollowBtn();
     });
 
     async function refresh() {
@@ -1060,7 +1112,7 @@
         if (!data) STATE_CROP = null;
       }
       if (!data) data = await fetch(`/api/national/${contest}`).then((r) => r.json());
-      const word = REGION_WORD[data.level] || 'region';
+      const word = regionWord(data.level) || 'region';
 
       // THE NUMBERS FIRST, THE MAP WHEN ITS GEOMETRY ARRIVES. The tally is a few
       // KB and is the thing a reader came for; the outlines are hundreds of KB of
@@ -1068,17 +1120,7 @@
       // half-minute blank page into an immediate answer.
       renderBoard(data);
       renderGlance(data, word);
-      /* Built from the LEVEL, not by suffixing the (already translated)
-         singular -- "jihas" is not a word. */
-      const plural = T(({ state: 'unit.state.many', lga: 'unit.lga.many',
-        senatorial: 'unit.senatorial.many', federal: 'unit.federal.many' })[data.level] || 'x',
-        word.endsWith('y') ? `${word.slice(0, -1)}ies` : `${word}s`);
-      document.getElementById('led-col').textContent =
-        TV('results.led-column', '{v0} led', { v0: plural });
-      // Name the area the map actually shows, so a governorship board does not
-      // claim to be "by state" while drawing one state's LGAs.
-      const where = data.scope && data.scope.state ? ` in ${data.scope.state}` : '';
-      document.getElementById('map-title').textContent = TV('results.leading-party-by', "Leading party by {v0}{v1}", { v0: word, v1: where });
+      paintBoardLabels(data);
 
       await ensureGeo(data.level);
       // The ward layer is per state, so it is loaded from the crop rather than
@@ -1358,7 +1400,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=175"></script>
+  <script src="menu.js?v=176"></script>
   <script src="shell.js?v=1" defer></script>
 </body>
 </html>

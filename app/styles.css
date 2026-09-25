@@ -978,6 +978,25 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
   overflow-x: hidden;
 }
 .menu-panel[hidden] { display: none; }
+/* PHONES: the ☰ menu is a full-screen page between the header (☰ still closes
+   it) and the tab bar, not a floating card. The header's backdrop-filter and
+   slide transform make IT the containing block for a position:fixed child, so
+   both are dropped while the menu is open — otherwise "fixed" means "inside the
+   header". --hdr-h / --bar-h are measured by menu.js. */
+@media (max-width: 640px) {
+  .menu-panel {
+    position: fixed; top: var(--hdr-h, 64px); bottom: var(--bar-h, 0px); left: 0; right: 0;
+    max-height: none; min-width: 0; border: 0; border-radius: 0; box-shadow: none;
+    padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  }
+  .menu-panel a { padding-top: 14px; padding-bottom: 14px; }
+  body:has(.menu-panel:not([hidden])) .gov-header {
+    -webkit-backdrop-filter: none; backdrop-filter: none; transform: none !important;
+    will-change: auto; /* will-change: transform ALSO makes a containing block */
+  }
+  body:has(.menu-panel:not([hidden])) { overflow: hidden; }
+  body:has(.menu-panel:not([hidden])) :is(#hk-fab, #hk-chat-fab) { display: none; }
+}
 .menu-panel .sign-out { color: var(--danger) !important; font-weight: 700; }
 /* Keep the scrollbar VISIBLE rather than overlay-hidden, so a cut-off list is
    obvious at a glance (the menu holds up to ~19 items). */

@@ -1896,7 +1896,17 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     #hk-form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line,#e3e8e4);background:var(--card,#fff)}
     #hk-in{flex:1;min-width:0;width:auto;display:block;margin:0;border:1px solid var(--border,#dde4de);border-radius:10px;padding:9px 11px;font:inherit;font-size:16px;background:var(--card,#fff);color:var(--ink,#14201a)}
     #hk-form button{display:inline-block;width:auto;margin:0;flex:none;background:var(--green,#004225);color:#fff;border:none;border-radius:10px;padding:0 16px;font-weight:700;cursor:pointer}
-    #hk-note{font-size:.72rem;color:var(--muted,#5b6b62);padding:0 14px 10px;background:var(--bg,#f7f8f6)}`;
+    #hk-note{font-size:.72rem;color:var(--muted,#5b6b62);padding:0 14px 10px;background:var(--bg,#f7f8f6)}
+    /* PHONES: a full-screen modal, not a floating card — the card left a strip of
+       page around a chat that needs the whole screen and the keyboard. 110 sits
+       above the tab bar (95) and below the blocking modals (report sheet 120+). */
+    @media (max-width:640px){
+      #hk-panel{inset:0;width:100%;max-height:none;border:0;border-radius:0;box-shadow:none;z-index:110}
+      #hk-head{padding-top:calc(11px + env(safe-area-inset-top));font-size:1.05rem}
+      #hk-form{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+      body.hk-ask-open{overflow:hidden}
+      body.hk-ask-open #hk-fab{display:none}
+    }`;
     const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     const fab = document.createElement('button');
     fab.id = 'hk-fab'; i18nAttr(fab, 'aria-label', 'ask.ask-hawkeye-about-the-results', 'Ask Hawkeye about the results');
@@ -1911,10 +1921,16 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       + '<form id="hk-form"><input id="hk-in" autocomplete="off" placeholder="e.g. presidential tally so far"'
       + ' data-i18n-attr="placeholder:assistant.placeholder" /><button data-i18n="assistant.ask">Ask</button></form>';
     document.body.append(fab, panel);
+    // Mounted AFTER the page was translated (it waits on /api/assistant/health),
+    // so its data-i18n labels — title, note, placeholder, Ask — stayed English
+    // in Hausa until a language change. Translate them now.
+    if (window.HawkeyeI18n) window.HawkeyeI18n.apply(panel);
     const msgs = panel.querySelector('#hk-msgs');
     const add = (who, text) => { const d = document.createElement('div'); d.className = 'hk-b ' + (who === 'u' ? 'hk-u' : 'hk-a'); d.textContent = text; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d; };
     let greeted = false;
-    const close = () => panel.classList.remove('open');
+    // hk-ask-open on <body> drives the phone full-screen layout (hides the
+    // bubble, stops the page behind from scrolling).
+    const close = () => { panel.classList.remove('open'); document.body.classList.remove('hk-ask-open'); };
     // Ask Hawkeye and the ☰ dropdown are mutually exclusive. Both open at once
     // is two overlapping panels over the page — unreadable, and neither reads as
     // the thing you just tapped.
@@ -1928,6 +1944,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     fab.onclick = (e) => {
       e.stopPropagation();
       const open = panel.classList.toggle('open');
+      document.body.classList.toggle('hk-ask-open', open);
       if (open) closeMenu();
       if (open && !greeted) { greeted = true; add('a', i18nT('assistant.greeting', 'Hi! Ask me about the crowd-reported results — a national tally, a polling unit, or how much of the country is mapped.')); }
     };

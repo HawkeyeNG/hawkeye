@@ -1343,7 +1343,7 @@
   "contest.house-of-representatives": "Ụlọ Nnọchiteanya",
   "contest.governorship": "Ọchịchị gọvanọ",
   "contest.state-house-of-assembly": "Ụlọ Omebe Iwu Steeti",
-  "contest.by-election": "Ntuli aka Nnọchi nke {v0}{v1}",
+  "contest.by-election": "Ntuli Aka Ndochi {v0}",
   "common.nigeria": "Naịjirịa",
   "race.map-of-seat-by-ward": "Maapụ nke {seat}, site na ward",
   "race.seat-wards": "{seat} — ward {n}",
@@ -1599,5 +1599,7 @@
   "common.chat-with-us": "Soro anyị kparịta ụka",
   "common.chat-could-not-load": "Mkparịta ụka ahụ enweghị ike imepe. Zipu email na info@hawkeye.com.ng kama.",
   "faq.still-have-a-question": "Ị ka nwere ajụjụ?",
-  "privacy.support-chat-intercom": "Naanị ihe dị iche bụ mkparịta ụka enyemaka dị na peeji Ajụjụ A Na-ajụkarị na Gbasara Anyị. Ọ bụ Intercom na-arụ ya, ọ na-emepe naanị ma ị pịa “Soro anyị kparịta ụka”; mgbe ahụ Intercom ga-anata ihe ị dere ma debe kuki iji mee ka mkparịta ụka ahụ gaa n’ihu."
+  "privacy.support-chat-intercom": "Naanị ihe dị iche bụ mkparịta ụka enyemaka dị na peeji Ajụjụ A Na-ajụkarị na Gbasara Anyị. Ọ bụ Intercom na-arụ ya, ọ na-emepe naanị ma ị pịa “Soro anyị kparịta ụka”; mgbe ahụ Intercom ga-anata ihe ị dere ma debe kuki iji mee ka mkparịta ụka ahụ gaa n’ihu.",
+  "results.in-place": " na {v0}",
+  "results.follow-subject": "Soro {v0}"
 }

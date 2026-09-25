@@ -7,11 +7,14 @@
  * backend/src/services/security.js), and sw.js lets Intercom's requests bypass
  * the service worker, whose own CSP would block them.
  *
- * IN THE APPS the chat opens on the website, in the in-app browser, at
- * WEB_CHAT — which opens the messenger at once (?chat=1). Intercom never loads
- * inside the app itself: the app shell is not served by the backend that sets
- * the CSP, and a webview on capacitor:// cannot keep Intercom's cookies. The
- * native app's FAQ/About screens and More menu open the same URL.
+ * IN LITE (window.Capacitor) the messenger loads inside the app too — the owner
+ * wants the chat window in-app, not a trip to the browser. The app shell has no
+ * CSP (that header comes from the backend) and no service worker on iOS, so
+ * nothing blocks it. If it cannot load there (20 s timeout or a script error),
+ * it falls back to WEB_CHAT in the browser, which opens the messenger at once
+ * (?chat=1). UNVERIFIED ON A DEVICE: iOS serves the shell from capacitor://,
+ * where a returning visitor's Intercom cookie may not persist between pages.
+ * The native app's FAQ/About screens and More menu open WEB_CHAT.
  */
 (function () {
   const APP_ID = 'nibzdah2';
@@ -83,7 +86,6 @@
 
   [...buttons, fab].forEach((btn) => {
     btn.addEventListener('click', async () => {
-      if (inApp) { window.open(WEB_CHAT, '_blank'); return; }
       // The corner button toggles; the in-page buttons only open.
       if (btn === fab && open) { window.Intercom('hide'); return; }
       const status = btn.parentElement.querySelector('[data-chat-status]');
@@ -98,6 +100,7 @@
         }
         window.Intercom('show');
       } catch (_) {
+        if (inApp) { window.open(WEB_CHAT, '_blank'); return; }
         if (status) {
           status.textContent = tr('common.chat-could-not-load',
             'The chat could not load. Email info@hawkeye.com.ng instead.');

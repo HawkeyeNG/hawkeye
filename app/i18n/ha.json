@@ -1344,7 +1344,7 @@
   "contest.house-of-representatives": "Majalisar Wakilai",
   "contest.governorship": "Gwamna",
   "contest.state-house-of-assembly": "Majalisar Dokokin Jiha",
-  "contest.by-election": "Zaɓen Cike Gurbi na {v0}{v1}",
+  "contest.by-election": "Zaɓen Cike Gurbi na {v0}",
   "common.nigeria": "Najeriya",
   "race.map-of-seat-by-ward": "Taswirar {seat}, bisa unguwa",
   "race.seat-wards": "{seat} — unguwanni {n}",
@@ -1600,5 +1600,7 @@
   "common.chat-with-us": "Yi hira da mu",
   "common.chat-could-not-load": "Hirar ba ta buɗe ba. Aika imel zuwa info@hawkeye.com.ng maimakon haka.",
   "faq.still-have-a-question": "Har yanzu kana da tambaya?",
-  "privacy.support-chat-intercom": "Banda ɗaya kawai ita ce hirar taimako a shafukan Tambayoyin da Ake Yawan Yi da Game da Mu. Intercom ne ke gudanar da ita, kuma tana buɗewa ne kawai idan ka danna “Yi hira da mu”; daga nan Intercom za ta karɓi abin da ka rubuta, ta kuma ajiye kukis don ci gaba da tattaunawar."
+  "privacy.support-chat-intercom": "Banda ɗaya kawai ita ce hirar taimako a shafukan Tambayoyin da Ake Yawan Yi da Game da Mu. Intercom ne ke gudanar da ita, kuma tana buɗewa ne kawai idan ka danna “Yi hira da mu”; daga nan Intercom za ta karɓi abin da ka rubuta, ta kuma ajiye kukis don ci gaba da tattaunawar.",
+  "results.in-place": " a {v0}",
+  "results.follow-subject": "Bi {v0}"
 }

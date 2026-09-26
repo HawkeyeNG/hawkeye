@@ -1209,5 +1209,7 @@
   "n.lib.dates.updated-at": "a ṣàtúnṣe {v0}",
   "n.app.map.states-units-reporting": "ìpínlẹ̀ {v0} ń jábọ̀ · ibùdó ìdìbò {v1} tí a kà",
   "n.app.tabs.index.chat-card-title": "Ṣé o ní ìbéèrè? Bá wa sọ̀rọ̀",
-  "n.app.tabs.index.chat-card-sub": "Ẹnìkan nínú ẹgbẹ́ Hawkeye yóò dá ọ lóhùn — nípa ìjábọ̀, eré àdánwò tàbí àbájáde."
+  "n.app.tabs.index.chat-card-sub": "Ẹnìkan nínú ẹgbẹ́ Hawkeye yóò dá ọ lóhùn — nípa ìjábọ̀, eré àdánwò tàbí àbájáde.",
+  "map-unit.save-your-polling-unit-you-ll-get": "Fi ẹ̀ka ìdìbò rẹ pamọ́ — wàá máa gba ìkìlọ̀ nípa rẹ̀ àti ìránnilétí ní ọjọ́ ìdìbò.",
+  "map-unit.skip-for-now": "Fò ó fún báyìí"
 }

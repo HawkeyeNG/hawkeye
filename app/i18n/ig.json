@@ -1604,5 +1604,11 @@
   "results.in-place": " na {v0}",
   "results.follow-subject": "Soro {v0}",
   "index.chat-card-title": "Ị nwere ajụjụ? Soro anyị kparịta ụka",
-  "index.chat-card-sub": "Onye otu Hawkeye ga-aza gị — gbasara ịkọ akụkọ, ọsọ omume ma ọ bụ nsonaazụ."
+  "index.chat-card-sub": "Onye otu Hawkeye ga-aza gị — gbasara ịkọ akụkọ, ọsọ omume ma ọ bụ nsonaazụ.",
+  "map-unit.save-your-polling-unit-you-ll-get": "Chekwaa ngalaba ntuli aka gị — ị ga-enweta ọkwa gbasara ya na ihe ncheta n'ụbọchị ntuli aka.",
+  "map-unit.skip-for-now": "Wụfee ka ọ dị ugbu a",
+  "map-unit.saving": "Na-echekwa…",
+  "map-unit.saved-alerts-for-unit": "Echekwara ya — ị ga-enweta ọkwa maka ihe niile na {v0}.",
+  "map-unit.unit-not-on-register": "Ngalaba a anọghị na ndepụta.",
+  "map-unit.could-not-save-try-again": "Enweghị ike ịchekwa — nwaa ọzọ."
 }

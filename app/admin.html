@@ -92,6 +92,15 @@
     .pill { font-style: normal; font-size: 0.72rem; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: var(--tint, #e8f5ee); color: var(--ink); }
     .pill.dim { background: var(--code-bg, #eef1ee); color: var(--muted); font-weight: 600; }
     .pill.warn { background: #fdecea; color: #b3261e; }
+    /* Team-account toggle in the roll. Sized as a pill, not a form button: it
+       sits in the summary line beside the activity pills. */
+    .staff-btn { display: inline-block; width: auto; margin: 0; padding: 2px 10px; line-height: 1.4;
+                 font-size: 0.72rem; font-weight: 700;
+                 border-radius: 999px; background: transparent; color: var(--link);
+                 border: 1px solid var(--line, #d7ded9); box-shadow: none; }
+    .staff-btn.on { background: var(--green); color: #fff; border-color: var(--green); }
+    /* The global button:disabled fill left "Saving…" unreadable on the pill. */
+    .staff-btn:disabled { background: transparent; color: var(--muted); }
     .lab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
     .lab { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
     .lab img { width: 100%; height: 170px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); display: block; }
@@ -323,6 +332,8 @@
            funders, and it was previously only reachable by hand-rolling a curl
            with the console secret. -->
       <h1 data-i18n="common.reach">Reach</h1>
+      <!-- Filled from /api/admin/stats: which accounts the figures leave out. -->
+      <p id="stats-scope" class="meta" hidden></p>
       <div id="stats" class="statgrid"><p data-i18n="index.loading" class="empty">Loading…</p></div>
       <!-- Which device is which. The counts above say a bad row exists; this
            says whose, on what platform, and how old — the three things that
@@ -749,6 +760,35 @@
     $('btn-login').onclick = login;
     $('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
 
+    // "Mark as team" / "Team ✓" in the observer roll. The button sits INSIDE
+    // <summary>, where a click would also open or close the row, so that
+    // default is cancelled. On success the whole panel reloads: the flag moves
+    // the Reach figures as well as the button.
+    document.addEventListener('click', async (ev) => {
+      const b = ev.target.closest('button[data-staff]');
+      if (!b) return;
+      ev.preventDefault();
+      if (b.disabled) return;
+      const want = b.dataset.staff === '1';
+      b.disabled = true;
+      b.textContent = 'Saving…';
+      try {
+        const r = await fetch(`/api/admin/observers/${Number(b.dataset.id)}/staff`, {
+          method: 'POST',
+          headers: { ...hdr(), 'content-type': 'application/json' },
+          body: JSON.stringify({ staff: want }),
+        });
+        const j = await r.json().catch(() => ({}));
+        // Trust the value the server says it stored, not the one we sent.
+        if (!r.ok || j.staff !== want) throw new Error(j.error || 'HTTP ' + r.status);
+        loadStats();
+      } catch (e) {
+        b.disabled = false;
+        b.textContent = 'Failed — retry';
+        b.title = String(e.message || e);
+      }
+    });
+
     // Reach panel. Counts only — the endpoint returns no phone numbers or keys.
     async function loadStats() {
       try {
@@ -759,6 +799,19 @@
         const since = o.firstRegisteredAt ? new Date(o.firstRegisteredAt).toISOString().slice(0, 10) : '—';
         const cell = (n, label, warn, cls) =>
           `<div class="s${warn ? ' warn' : ''}${cls ? ' ' + cls : ''}"><b>${n == null ? '—' : n}</b><span>${label}</span></div>`;
+        // Team accounts (our own test/demo phones) are left out server-side;
+        // this says so, and how many, so nobody reads the figures as raw totals.
+        // Absent on a server older than the flag: then say nothing rather than
+        // claim a filter that is not running.
+        const scopeEl = $('stats-scope');
+        if (typeof d.staffAccounts === 'number') {
+          const k = d.staffAccounts;
+          scopeEl.textContent = `Organic figures — excludes ${k} team account${k === 1 ? '' : 's'}. `
+            + 'Cells marked "all accounts" cannot be split.';
+          scopeEl.hidden = false;
+        } else {
+          scopeEl.hidden = true;
+        }
         $('stats').innerHTML =
           cell(o.total, 'observers registered')
           + cell(o.newLast24h, 'new in 24h', o.newLast24h === 0)
@@ -772,13 +825,17 @@
           // Raw APNs tokens: registered, counted as subscribed, and skipped
           // silently by the sender. Warns when non-zero because a device in this
           // state looks subscribed and receives nothing.
-          + cell(o.pushIosDead, 'iOS undeliverable', o.pushIosDead > 0)
+          // All accounts on purpose: the team's own test phone is the likeliest
+          // to be broken, and a warning that skips it could not fire for it.
+          + cell(o.pushIosDead, 'iOS undeliverable (all accounts)', o.pushIosDead > 0)
           + cell(o.withSavedUnit, 'saved a unit')
           + cell(a.submissions, 'result submissions')
           + cell(a.collationReports, 'collation reports')
           + cell(a.incidents, 'incidents filed')
-          + cell(a.practiceRuns, 'practice runs')
-          + cell(a.unitsCrowdMapped, 'units crowd-mapped')
+          // Practice runs carry no observer id, and a crowd-mapped unit comes
+          // from a cluster of fixes — neither can have team accounts removed.
+          + cell(a.practiceRuns, 'practice runs (all accounts)')
+          + cell(a.unitsCrowdMapped, 'units crowd-mapped (all accounts)')
           + cell(since, 'first signup', false, 'date');
 
         // The rows behind the counts, and the DATE is the load-bearing column:
@@ -797,7 +854,7 @@
                <tr style="text-align:left;color:var(--muted)">
                  <th>observer</th><th>platform</th><th>deliverable</th><th>len</th><th>registered</th></tr>
                ${dev.map((r) => `<tr>
-                 <td>#${r.observer_id ?? '—'}</td>
+                 <td>#${r.observer_id ?? '—'}${r.staff ? ' <i class="pill dim">team</i>' : ''}</td>
                  <td>${e2(r.platform)}</td>
                  <td style="color:${r.deliverable ? 'var(--green)' : '#b3261e'};font-weight:700">
                    ${r.deliverable ? 'yes' : 'NO — raw APNs'}</td>
@@ -837,6 +894,11 @@
                 ${o.telegramLinked ? '<i class="pill dim">TG</i>' : ''}
                 ${o.pushTokens ? `<i class="pill dim">${o.pushTokens} push</i>` : ''}
                 ${o.status !== 'active' ? `<i class="pill warn">${o.status}</i>` : ''}
+                <button type="button" class="staff-btn${o.isStaff ? ' on' : ''}"
+                        data-staff="${o.isStaff ? '0' : '1'}" data-id="${Number(o.id)}"
+                        title="${o.isStaff ? 'Team account — left out of the Reach figures. Click to count it again.'
+                                           : 'Our own test or demo phone? Leave it out of the Reach figures.'}"
+                >${o.isStaff ? 'Team ✓' : 'Mark as team'}</button>
               </span>
             </summary>
             <table class="roll"><tbody>

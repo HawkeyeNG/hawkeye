@@ -1605,5 +1605,11 @@
   "results.in-place": " a {v0}",
   "results.follow-subject": "Bi {v0}",
   "index.chat-card-title": "Kuna da tambaya? Yi hira da mu",
-  "index.chat-card-sub": "Wani daga ƙungiyar Hawkeye zai amsa maka — game da bayar da rahoto, gwajin atisaye ko sakamako."
+  "index.chat-card-sub": "Wani daga ƙungiyar Hawkeye zai amsa maka — game da bayar da rahoto, gwajin atisaye ko sakamako.",
+  "map-unit.save-your-polling-unit-you-ll-get": "Ajiye rukunin zaɓenka — za ka samu sanarwa game da shi da kuma tunatarwa a ranar zaɓe.",
+  "map-unit.skip-for-now": "Tsallake a yanzu",
+  "map-unit.saving": "Ana ajiyewa…",
+  "map-unit.saved-alerts-for-unit": "An ajiye — za ka samu sanarwa game da komai a {v0}.",
+  "map-unit.unit-not-on-register": "Rukunin ba ya cikin rajista.",
+  "map-unit.could-not-save-try-again": "An kasa ajiyewa — sake gwadawa."
 }

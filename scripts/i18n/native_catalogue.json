@@ -54,6 +54,8 @@
   "integrity.vision-count-mismatch": "Vision count mismatch",
   "integrity.vote-share-outlier": "Vote-share outlier",
   "lang.later": "Not now",
+  "map-unit.save-your-polling-unit-you-ll-get": "Save your polling unit — you'll get alerts for it and a reminder on election day.",
+  "map-unit.skip-for-now": "Skip for now",
   "n.app._layout.nothing-you-have-already-sent-is": "Nothing you have already sent is affected, and anything saved offline is still queued. Try again, or go back and take another route.",
   "n.app._layout.this-screen-hit-a-problem": "This screen hit a problem",
   "n.app._layout.try-again": "Try again",

@@ -1579,5 +1579,11 @@
   "results.in-place": " in {v0}",
   "results.follow-subject": "Follow {v0}",
   "index.chat-card-title": "Questions? Chat with us",
-  "index.chat-card-sub": "Someone on the Hawkeye team answers — about reporting, practice runs or results."
+  "index.chat-card-sub": "Someone on the Hawkeye team answers — about reporting, practice runs or results.",
+  "map-unit.save-your-polling-unit-you-ll-get": "Save your polling unit — you'll get alerts for it and a reminder on election day.",
+  "map-unit.skip-for-now": "Skip for now",
+  "map-unit.saving": "Saving…",
+  "map-unit.saved-alerts-for-unit": "Saved — you'll get alerts for everything at {v0}.",
+  "map-unit.unit-not-on-register": "Unit not on the register.",
+  "map-unit.could-not-save-try-again": "Could not save — try again."
 }

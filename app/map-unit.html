@@ -29,6 +29,12 @@
     .map-key span { display: inline-flex; align-items: center; gap: 5px; }
     .map-key i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
     .leaflet-control-attribution a { text-decoration: underline; }
+    /* The sign-up welcome (?onboard=1). A green wash, not .notice: .notice is
+       amber, the colour of a warning, and this is an invitation. Its own top
+       margin because it can be the first block under the header, where nothing
+       else holds it off the bar. */
+    .onboard-banner { margin: 16px 0 0; padding: 12px 14px; background: var(--tint-ok); border-left: 5px solid var(--green); border-radius: 0 10px 10px 0; color: var(--ink); }
+    .onboard-banner p { margin: 0 0 6px; }
   </style>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Hawkeye">
@@ -68,6 +74,13 @@
     </div>
   </header>
 <main class="wrap">
+    <!-- Only for a brand-new observer, sent here once by app.js afterVerified()
+         with ?onboard=1. Skip is a plain link to where they were going anyway
+         (the report flow), so it works even if the script below never runs. -->
+    <section id="onboard-banner" class="onboard-banner" hidden>
+      <p data-i18n="map-unit.save-your-polling-unit-you-ll-get">Save your polling unit — you'll get alerts for it and a reminder on election day.</p>
+      <a data-i18n="map-unit.skip-for-now" id="onboard-skip" class="link" href="observe.html">Skip for now</a>
+    </section>
     <h1 data-i18n="common.map-a-polling-unit">Map a Polling Unit</h1>
     <!-- The lede said what the h1 says. Its ⓘ carried the only new information,
          so it moves onto the stats line — which is a sentence worth reading and
@@ -143,6 +156,11 @@
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
     let unit = null;
+    // First stop after sign-up (see the banner). Revealed here, synchronously,
+    // not in the init chain at the bottom: that chain awaits /api/mapping/stats
+    // first, and a slow or failed stats call must not hide the way out.
+    const ONBOARD = new URLSearchParams(location.search).get('onboard') === '1';
+    if (ONBOARD && token) $('onboard-banner').hidden = false;
 
     /**
      * One short sentence for a failed position lookup, from the shared helper
@@ -456,16 +474,20 @@
 
     $('btn-save-unit').onclick = async () => {
       if (!unit) return;
-      $('cap-status').textContent = 'Saving…';
+      $('cap-status').textContent = T('map-unit.saving', 'Saving…');
       const { status, b } = await api('/api/observers/my-unit', {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
         body: JSON.stringify({ puCode: unit.pu_code }),
       });
       $('cap-status').textContent = status === 200
-        ? `⭐ Saved — you'll get alerts for everything at ${unit.pu_code}.`
-        : (b.error === 'unknown_unit' ? 'Unit not on the register.' : 'Could not save — try again.');
+        ? '⭐ ' + T('map-unit.saved-alerts-for-unit', "Saved — you'll get alerts for everything at {v0}.").replace('{v0}', unit.pu_code)
+        : (b.error === 'unknown_unit' ? T('map-unit.unit-not-on-register', 'Unit not on the register.') : T('map-unit.could-not-save-try-again', 'Could not save — try again.'));
       showMyUnit();
+      // Onboarding: saved is done. On to the report flow, as a sign-up always
+      // went — after a beat, so the "Saved" line is actually seen. A failed
+      // save stays here, with the skip link still on screen.
+      if (ONBOARD && status === 200) setTimeout(() => { location.href = 'observe.html'; }, 1200);
     };
 
     $('btn-unsave').onclick = async (e) => {

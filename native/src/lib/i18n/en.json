@@ -1209,5 +1209,7 @@
   "n.lib.dates.updated-at": "updated {v0}",
   "n.app.map.states-units-reporting": "{v0} state(s) reporting · {v1} unit(s) counted",
   "n.app.tabs.index.chat-card-title": "Questions? Chat with us",
-  "n.app.tabs.index.chat-card-sub": "Someone on the Hawkeye team answers — about reporting, practice runs or results."
+  "n.app.tabs.index.chat-card-sub": "Someone on the Hawkeye team answers — about reporting, practice runs or results.",
+  "map-unit.save-your-polling-unit-you-ll-get": "Save your polling unit — you'll get alerts for it and a reminder on election day.",
+  "map-unit.skip-for-now": "Skip for now"
 }

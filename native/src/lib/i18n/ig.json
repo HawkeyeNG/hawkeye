@@ -1209,5 +1209,7 @@
   "n.lib.dates.updated-at": "emelitere {v0}",
   "n.app.map.states-units-reporting": "steeti {v0} na-akọ akụkọ · ebe ntuli aka {v1} agụrụ",
   "n.app.tabs.index.chat-card-title": "Ị nwere ajụjụ? Soro anyị kparịta ụka",
-  "n.app.tabs.index.chat-card-sub": "Onye otu Hawkeye ga-aza gị — gbasara ịkọ akụkọ, ọsọ omume ma ọ bụ nsonaazụ."
+  "n.app.tabs.index.chat-card-sub": "Onye otu Hawkeye ga-aza gị — gbasara ịkọ akụkọ, ọsọ omume ma ọ bụ nsonaazụ.",
+  "map-unit.save-your-polling-unit-you-ll-get": "Chekwaa ngalaba ntuli aka gị — ị ga-enweta ọkwa gbasara ya na ihe ncheta n'ụbọchị ntuli aka.",
+  "map-unit.skip-for-now": "Wụfee ka ọ dị ugbu a"
 }

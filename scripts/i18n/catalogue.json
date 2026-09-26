@@ -451,7 +451,9 @@
   "map-unit.polling-unit-map-locator": "Polling Unit Map & Locator",
   "map-unit.save-as-my-polling-unit": "⭐ Save as my polling unit",
   "map-unit.save-to-get-alerts-in-the": "Save to get alerts — in the app, and on Telegram or WhatsApp — for every result and approved incident at this unit.",
+  "map-unit.save-your-polling-unit-you-ll-get": "Save your polling unit — you'll get alerts for it and a reminder on election day.",
   "map-unit.search-a-ward-or-lga": "Search a ward or LGA…",
+  "map-unit.skip-for-now": "Skip for now",
   "map-unit.stop-watching": "Stop Watching",
   "map-unit.this-unit-already-has-a-confirmed-location": "This unit already has a confirmed location, so there is nothing to capture here — you can still save it as your polling unit.",
   "map-unit.to-map-a-polling-unit-register": "To map a polling unit, register your device first.",
@@ -925,5 +927,9 @@
   "train.ocr-training": "OCR Training",
   "train2.ocr-training-set-2": "OCR Training — Set 2",
   "traindavina.ocr-training-davina": "OCR Training — Davina",
-  "trainderek.ocr-training-derek": "OCR Training — Derek"
+  "trainderek.ocr-training-derek": "OCR Training — Derek",
+  "map-unit.saving": "Saving…",
+  "map-unit.saved-alerts-for-unit": "Saved — you'll get alerts for everything at {v0}.",
+  "map-unit.unit-not-on-register": "Unit not on the register.",
+  "map-unit.could-not-save-try-again": "Could not save — try again."
 }

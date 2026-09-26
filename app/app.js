@@ -540,9 +540,23 @@ function applySignUpMode() {
   if ($('pw-opt')) $('pw-opt').hidden = false;
 }
 
-function afterVerified() {
+/**
+ * `isNew` is the server's word that this verification CREATED the observer
+ * (/api/observers/verify). Only `true` counts: password login never sends it and
+ * /telegram-verify does not yet, so anything else keeps the old routing.
+ */
+function afterVerified(isNew) {
   if (NEXT_DEST) { location.href = NEXT_DEST; return; }
   if (INTENT_DEST[AUTH_INTENT]) { location.href = INTENT_DEST[AUTH_INTENT]; return; }
+  // A BRAND-NEW observer is asked for their polling unit once, before anything
+  // else. It is what their alerts and the election-day reminder hang off, and
+  // the moment they have just signed up is the one time the ask is expected;
+  // afterwards it is a Profile setting nobody goes looking for. Skippable, and
+  // map-unit.html hands them on to the report flow either way. Not when a
+  // Telegram /report handoff already carries a unit — that report comes first.
+  // (NEXT_DEST and the map/incident intents returned above: those observers
+  // came for something specific.)
+  if (isNew === true && !PREFILL) { location.href = 'map-unit.html?onboard=1'; return; }
   // Default intent is 'observe' (AUTH_INTENT), so a fresh verification on this
   // page continues into the report flow even when a shared/og link dropped the
   // ?intent=observe param — matching the signed-in boot path below.
@@ -842,7 +856,8 @@ $('btn-auth').onclick = async () => {
     if (r.status !== 200) alert('Signed in, but saving your password failed (' + explain(r.body) + '). Set one on My Profile so you can sign in with it next time.');
   }
   resetAuthPane();
-  afterVerified();
+  // /login has no isNew, so a password sign-in can never be taken for a sign-up.
+  afterVerified(body.isNew);
 
   } catch {
     alert('Network problem — check your connection and try again.');
@@ -2517,7 +2532,9 @@ function armTelegramLogin() {
   // so signing in afterwards left this install permanently unregistered —
   // no token, no server row, and nothing anywhere said so.
   try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
-      afterVerified();
+      // Passed through for when /telegram-verify reports isNew; today it does
+      // not, so a Telegram sign-up keeps the old routing.
+      afterVerified(body.isNew);
     } catch (e) {
       btn.disabled = false;
       btn.textContent = T('observe.continue-with-telegram-no-code-needed', '✈️ Continue with Telegram — no code needed');

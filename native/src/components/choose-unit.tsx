@@ -285,11 +285,21 @@ export function ChooseUnitModal({
   onClose,
   onSaved,
   current,
+  onboard = false,
 }: {
   visible: boolean;
   onClose: () => void;
   /** Fires with the saved unit so the host can update without a refetch. */
   onSaved?: (unit: Row) => void;
+  /**
+   * Opened straight after a NEW sign-up (sign-in.tsx) rather than from Profile.
+   * Adds the one-line why at the top and turns Cancel into "Skip for now" — the
+   * same banner and skip the web shows on map-unit.html?onboard=1, on the same
+   * keys, so the two clients cannot word the ask differently. The backdrop stops
+   * dismissing: here a close LEAVES the screen, and an outside tap is the
+   * easiest gesture to make by accident.
+   */
+  onboard?: boolean;
   /**
    * The unit already saved, so the list can mark it. Looser than `Row` on
    * purpose: this comes from /api/observers/me, where a register row with no
@@ -737,16 +747,19 @@ export function ChooseUnitModal({
     <ModalCard
       visible={visible}
       onClose={close}
+      dismissOnBackdrop={!onboard}
       title={i18nT('profile.choose-your-polling-unit')}
       footer={
         <View className="flex-row">
           <Pressable
             onPress={close}
             accessibilityRole="button"
-            accessibilityLabel={i18nT('common.cancel')}
+            accessibilityLabel={onboard ? i18nT('map-unit.skip-for-now') : i18nT('common.cancel')}
             className="mr-2 flex-1 items-center rounded-full border border-line py-3 active:opacity-70"
           >
-            <Text className="text-sm font-bold text-muted">{i18nT('common.cancel')}</Text>
+            <Text className="text-sm font-bold text-muted">
+              {onboard ? i18nT('map-unit.skip-for-now') : i18nT('common.cancel')}
+            </Text>
           </Pressable>
           {/* The commit is disabled until something is chosen, rather than
               hidden: a footer that appears and disappears moves the Cancel
@@ -770,6 +783,16 @@ export function ChooseUnitModal({
         </View>
       }
     >
+      {/* The sign-up welcome: one sentence saying what saving a unit gets them,
+          in the success wash rather than a warning colour — it is an invitation. */}
+      {onboard ? (
+        <View className="mb-3 rounded-2xl bg-good px-3 py-2.5">
+          <Text className="text-sm font-semibold text-good-ink">
+            {i18nT('map-unit.save-your-polling-unit-you-ll-get')}
+          </Text>
+        </View>
+      ) : null}
+
       {/* Two phrases. The difference between choosing and mapping is an
           explanation, so it goes behind the dot rather than on the screen. */}
       <View className="flex-row items-center">

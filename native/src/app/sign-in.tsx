@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ChooseUnitModal } from '@/components/choose-unit';
 import { PasswordField } from '@/components/password-field';
 import {
   accountHasPassword,
@@ -101,6 +102,15 @@ export default function SignIn() {
   const [tgLink, setTgLink] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const otpRef = useRef<TextInput>(null);
+  /**
+   * The server CREATED this observer on the verify just made (/verify's isNew).
+   * Only an explicit `true`: an older server sends nothing, and an existing
+   * account signing up again is not a new observer.
+   */
+  const [isNewAccount, setIsNewAccount] = useState(false);
+  /** The polling-unit ask that follows a new sign-up — see finishOnboarding. */
+  const [pickUnit, setPickUnit] = useState(false);
+  const leaving = useRef(false);
 
   // Resend cooldown — protects the backend's OTP rate limit from tap-spam and
   // gives the first send a fair chance to arrive (NG SMS can take ~30s).
@@ -236,6 +246,7 @@ export default function SignIn() {
           setStep('exists');
           return;
         }
+        setIsNewAccount(r.isNew === true);
         setHasPw(false);
         setNewPw('');
         setNewPw2('');
@@ -342,6 +353,15 @@ export default function SignIn() {
       const r = await savePassword(newPw);
       if (r.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // A BRAND-NEW observer is asked for their polling unit once, before the
+        // app opens: it is what their alerts and the election-day reminder hang
+        // off, and this is the one moment the ask is expected — afterwards it is
+        // a Profile row nobody goes looking for. Same step as the web
+        // (map-unit.html?onboard=1). Resets and rescues are not sign-ups.
+        if (purpose === 'signup' && isNewAccount) {
+          setPickUnit(true);
+          return;
+        }
         router.replace('/(tabs)');
         return;
       }
@@ -358,6 +378,21 @@ export default function SignIn() {
     } finally {
       setBusy(false);
     }
+  };
+
+  /**
+   * Out of the polling-unit ask — saved or skipped, the chooser's close() lands
+   * here either way — and into the app, as a sign-up always went.
+   *
+   * CLOSE, THEN NAVIGATE. Replacing the stack while the modal is still fading
+   * out is the mid-dismiss navigation alerts.tsx guards against; the fade is
+   * 300ms. `leaving` stops a double tap on Skip queueing two replaces.
+   */
+  const finishOnboarding = () => {
+    if (leaving.current) return;
+    leaving.current = true;
+    setPickUnit(false);
+    setTimeout(() => router.replace('/(tabs)'), 350);
   };
 
   /** Only an account we KNOW has no password is forced through this step. */
@@ -764,6 +799,10 @@ export default function SignIn() {
           ) : null}
         </View>
       </KeyboardAvoidingView>
+
+      {/* The Profile chooser, not /map-unit: saving is a preference about
+          alerts, not a survey that needs them standing at the unit. */}
+      <ChooseUnitModal visible={pickUnit} onboard onClose={finishOnboarding} />
     </SafeAreaView>
   );
 }

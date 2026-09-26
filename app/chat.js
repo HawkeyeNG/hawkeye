@@ -20,6 +20,7 @@
   const APP_ID = 'nibzdah2';
   const WEB_CHAT = 'https://hawkeye.com.ng/about.html?chat=1';
   const inApp = !!window.Capacitor;
+  const arrivedForChat = new URLSearchParams(location.search).get('chat') === '1';
   const buttons = document.querySelectorAll('[data-chat-open]');
   if (!buttons.length) return;
   // EMBEDDED in the native app's "Chat with us" modal (native/src/app/chat.tsx,
@@ -127,6 +128,9 @@
           window.Intercom('onHide', () => {
             open = false;
             if (embed && window.ReactNativeWebView) window.ReactNativeWebView.postMessage('chat-closed');
+            // Lite came here only for the chat (the home card's ?chat=1): closing
+            // it goes back to where the tap was, not to this FAQ page.
+            if (arrivedForChat && inApp && !embed) history.length > 1 ? history.back() : location.replace('index.html');
           });
         }
         window.Intercom('show');
@@ -142,7 +146,8 @@
     });
   });
 
-  // Arriving from an app's "Chat with us" (WEB_CHAT): that tap was the request,
-  // so open the messenger now rather than asking for a second one.
-  if (!inApp && new URLSearchParams(location.search).get('chat') === '1') fab.click();
+  // Arriving from a "Chat with us" (the apps' WEB_CHAT, or the home card's
+  // faq.html?chat=1 — in Lite too): that tap was the request, so open the
+  // messenger now rather than asking for a second one.
+  if (arrivedForChat) fab.click();
 })();

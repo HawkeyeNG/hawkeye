@@ -29,7 +29,16 @@
   if (embed) {
     const es = document.createElement('style');
     es.textContent = 'body>:not([id^="intercom"]):not([class*="intercom"]):not(script):not(style){display:none!important}'
-      + 'html,body{background:var(--bg,#0b1a12)!important}';
+      + 'html,body{background:var(--bg,#0b1a12)!important}'
+      // The app already puts this screen below the status bar, but Android
+      // WebViews still report the status bar's height as safe-area-inset-top,
+      // and Intercom's phone rule offsets the messenger by it: a dark band above
+      // it (Galaxy Fold split screen). `html` outranks Intercom's !important.
+      + 'html .intercom-messenger-frame{top:0!important}'
+      // Wider than 450px (a Fold opened out, a tablet) Intercom switches to its
+      // desktop popover in a corner; the screen is only the chat, so fill it.
+      + '@media (min-width:451px){html .intercom-messenger-frame{top:0!important;bottom:0!important;left:0!important;right:0!important;'
+      + 'width:auto!important;height:auto!important;max-height:none!important;border-radius:0!important;box-shadow:none!important}}';
     document.head.appendChild(es);
   }
   document.querySelectorAll('[data-chat-wrap]').forEach((el) => { el.hidden = false; });

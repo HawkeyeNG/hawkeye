@@ -277,7 +277,7 @@ export const PAGES: Record<string, Page> = {
   },
 
   about: {
-    title: 'About Hawkeye',
+    title: 'About & Contact',
     kicker: 'Independent. Nonpartisan.',
     sections: ['Why It Exists', 'What We Are Not', 'Who Runs It', 'Contact'],
     blocks: [

@@ -113,10 +113,9 @@ const GROUPS: { title: string; titleKey: string; items: MenuItem[] }[] = [
       // this row opens a modal on THIS screen instead of navigating.
       { label: 'Take the tour', labelKey: 'nav.take-the-tour', href: 'action:tour', icon: 'compass' },
       { label: 'Ask Hawkeye', labelKey: 'nav.ask-hawkeye', href: 'native:/assistant', icon: 'message-square' },
-      // A person: opens About & Contact, where the floating bubble is the chat
-      // (AskFab on FAQ/About) and opens it on tap — the owner's choice over
-      // jumping straight into the messenger.
-      { label: 'Chat with us', labelKey: 'common.chat-with-us', href: 'native:/page?slug=about', icon: 'headphones' },
+      // A person: opens the support chat (Intercom) straight away, full screen
+      // (app/chat.tsx); closing the messenger lands back on this menu.
+      { label: 'Chat with us', labelKey: 'common.chat-with-us', href: 'native:/chat', icon: 'headphones' },
       { label: 'How Hawkeye Works', labelKey: 'common.how-hawkeye-works', href: 'native:/page?slug=how', icon: 'help-circle' },
       { label: 'Observer Guide', labelKey: 'common.observer-guide', href: 'native:/page?slug=guide', icon: 'book-open' },
       { label: 'FAQ', labelKey: 'nav.faq', href: 'native:/page?slug=faq', icon: 'message-circle' },

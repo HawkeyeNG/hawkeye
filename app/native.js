@@ -104,9 +104,12 @@
     const applyBar = () => {
       const SB = Cap.Plugins && Cap.Plugins.StatusBar;
       if (!SB) return false;
-      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-      SB.setStyle({ style: dark ? 'DARK' : 'LIGHT' }).catch(() => {});
-      if (SB.setBackgroundColor) SB.setBackgroundColor({ color: dark ? '#00251a' : '#ffffff' }).catch(() => {});
+      // While the phone menu is open the status bar is green in both themes
+      // (styles.css paints the band), so it takes light icons.
+      const green = document.documentElement.getAttribute('data-theme') === 'dark'
+        || !!document.querySelector('.menu-panel:not([hidden])');
+      SB.setStyle({ style: green ? 'DARK' : 'LIGHT' }).catch(() => {});
+      if (SB.setBackgroundColor) SB.setBackgroundColor({ color: green ? '#00251a' : '#ffffff' }).catch(() => {});
       return true;
     };
     if (!applyBar()) {
@@ -118,6 +121,13 @@
       }, 100);
     }
     new MutationObserver(applyBar).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    // ...and when the phone menu opens or closes (its `hidden` attribute).
+    const watchMenu = () => {
+      const p = document.querySelector('.menu-panel');
+      if (p) new MutationObserver(applyBar).observe(p, { attributes: true, attributeFilter: ['hidden'] });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchMenu);
+    else watchMenu();
   })();
 
   /**

@@ -985,8 +985,9 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
    header". --hdr-h / --bar-h are measured by menu.js. */
 @media (max-width: 640px) {
   .menu-panel {
-    /* max(): never under the status bar, even if a measurement comes back short. */
-    position: fixed; top: max(var(--hdr-h, 64px), env(safe-area-inset-top, 0px)); bottom: var(--bar-h, 0px); left: 0; right: 0;
+    /* Starts right under the status bar and covers the header; the status-bar
+       band stays green (the ::before below). */
+    position: fixed; top: env(safe-area-inset-top, 0px); bottom: var(--bar-h, 0px); left: 0; right: 0;
     /* !important: menu.js sets an inline max-height on open (room for the Ask
        bubble + 16px), which left a gap above the tab bar. Here the panel ends
        exactly at the bar's top edge; the bar (z 95, outside the header's
@@ -1009,6 +1010,12 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
     transition: none;
   }
   body:has(.menu-panel:not([hidden])) :is(#hk-fab, #hk-chat-fab) { display: none; }
+  /* The status-bar band stays brand green while the menu is open, in both
+     themes (native.js turns the icons light to match). 0 tall in a browser. */
+  body:has(.menu-panel:not([hidden]))::before {
+    content: ''; position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    height: env(safe-area-inset-top, 0px); background: #00251a;
+  }
 }
 .menu-panel .sign-out { color: var(--danger) !important; font-weight: 700; }
 /* Keep the scrollbar VISIBLE rather than overlay-hidden, so a cut-off list is

@@ -780,19 +780,10 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       if (!ticking) { requestAnimationFrame(() => { onScroll(); ticking = false; }); ticking = true; }
     }, { passive: true });
     mobile.addEventListener('change', show);
-    // On open the header is pinned (styles.css) and may be a different height
-    // than when --hdr-h was measured, so re-measure: the full-screen phone menu
-    // starts exactly at the header's bottom edge.
-    // Measured twice: a header still sliding back in reads short on the first
-    // frame (styles.css also drops the slide while open, and floors the menu's
-    // top at the status bar).
-    const pinTop = () => { if (!panel.hidden) document.documentElement.style.setProperty(
-      '--hdr-h', Math.round(hdr.getBoundingClientRect().bottom) + 'px'); };
+    // The full-screen phone menu starts right under the status bar (styles.css),
+    // so nothing here measures the header; opening it just un-hides the header.
     if (panel) new MutationObserver(() => {
-      if (panel.hidden) return;
-      show();
-      requestAnimationFrame(pinTop);
-      setTimeout(pinTop, 300);
+      if (!panel.hidden) show();
     }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
   })();
 

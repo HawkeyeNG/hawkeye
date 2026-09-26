@@ -25,7 +25,8 @@
   addEventListener('unhandledrejection', onErr);
 
   var PHONE = /(?:\+?234|\b0)\s?[789][01]\d(?:[\s-]?\d){7}\b/g;
-  var EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
+  // Bounded parts (RFC 5321 limits): unbounded ones went quadratic on long text with no '@'.
+  var EMAIL = /[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,8}/g;
   var LONG = /\b[A-Za-z0-9_-]{24,}\b/g;                 // tokens, keys, hashes
   var QUERY = /(https?:\/\/[^\s?#"']*|\.html|\/)[?#][^\s"')]*/g;
   function clean(s) {

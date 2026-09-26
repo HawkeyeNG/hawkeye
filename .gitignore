@@ -93,3 +93,16 @@ native/credentials.json
 # private working documents — budgets, donor material, anything not for a public repo.
 # ONE rule: a new file here is ignored without touching .gitignore again.
 docs/private/
+
+# Internal docs, removed from history 2026-09-26
+docs/PARTY-AGENT-PITCH.md
+docs/GSOC-2027.md
+docs/OSUN-ORGANIC-CAPTIONS.md
+docs/X-ADS-CERTIFICATION-AND-COPY.md
+docs/POSTMORTEM-OSUN-2026.md
+docs/APP-STORE-LISTING-LITE.md
+docs/APP-STORE-LISTING.md
+docs/APP-STORE-SUBMISSION.md
+docs/PLAY-STORE-LISTING.md
+docs/PLAY-GROWTH.md
+docs/STORE-PROMO-TEXT.md

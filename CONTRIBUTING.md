@@ -51,4 +51,3 @@ a public issue.
 
 ## Google Summer of Code
 
-Project ideas for GSoC 2027 are in [docs/GSOC-2027.md](docs/GSOC-2027.md).

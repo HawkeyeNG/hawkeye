@@ -1211,5 +1211,10 @@
   "n.app.tabs.index.chat-card-title": "Questions? Chat with us",
   "n.app.tabs.index.chat-card-sub": "Someone on the Hawkeye team answers — about reporting, practice runs or results.",
   "map-unit.save-your-polling-unit-you-ll-get": "Save your polling unit — you'll get alerts for it and a reminder on election day.",
-  "map-unit.skip-for-now": "Skip for now"
+  "map-unit.skip-for-now": "Skip for now",
+  "n.app.choose-unit.last-step": "Last step",
+  "n.components.choose-unit.units-found-within-m": "Units found within {v0}m. Unmapped units may not appear.",
+  "n.components.choose-unit.choosing-a-unit-is-a-preference": "Choosing a unit is a preference — it decides which unit you get alerts about, and you do not need to be there to set it.",
+  "n.components.choose-unit.mapping-is-a-different-job": "Mapping is a different job: it records a unit's GPS position into the register, and it does require you to be standing at the unit. Use “{v0}” under {v1} for that.",
+  "n.components.unit-search.keep-typing-at-least-3": "Keep typing — at least 3 characters."
 }

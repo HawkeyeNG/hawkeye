@@ -1001,5 +1001,10 @@ export default {
     "n.app.practice.preview-sheet-photo": "Hoton takardar sakamako",
     "n.app.profile.save-report-photos-and-videos-to": "Ajiye hotuna da bidiyon rahoto a waya",
     "n.app.profile.turn-off-if-your-phone-may": "Kashe idan ana iya bincika wayarka.",
+    "n.app.choose-unit.last-step": "Mataki na ƙarshe",
+    "n.components.choose-unit.units-found-within-m": "An samu rukunan cikin {v0}m. Rukunan da ba a tsara ba ƙila ba za su bayyana ba.",
+    "n.components.choose-unit.choosing-a-unit-is-a-preference": "Zaɓen rukuni zaɓin ra'ayi ne — shi ke tantance rukunin da kake samun sanarwa a kansa, kuma ba sai ka kasance a can ba kafin ka saita shi.",
+    "n.components.choose-unit.mapping-is-a-different-job": "Tsarawa aiki ne daban: yana rubuta matsayin GPS na rukuni a cikin rijistar, kuma yana buƙatar ka tsaya a rukunin. Yi amfani da “{v0}” a ƙarƙashin {v1} don hakan.",
+    "n.components.unit-search.keep-typing-at-least-3": "Ci gaba da rubutawa — aƙalla haruffa 3.",
   },
 };

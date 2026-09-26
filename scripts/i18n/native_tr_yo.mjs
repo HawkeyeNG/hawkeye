@@ -1000,4 +1000,9 @@ export default {
   "n.app.practice.preview-sheet-photo": "Fọ́tò ìwé àbájáde",
   "n.app.profile.save-report-photos-and-videos-to": "Fi fọ́tò àti fídíò ìròyìn pamọ́ sórí fóònù",
   "n.app.profile.turn-off-if-your-phone-may": "Pa á tí wọ́n bá lè yẹ fóònù rẹ wò.",
+  "n.app.choose-unit.last-step": "Ìgbésẹ̀ ìkẹyìn",
+  "n.components.choose-unit.units-found-within-m": "Àwọn ẹ̀ka tí a rí láàrín {v0}m. Àwọn ẹ̀ka tí a kò tíì ṣàwòrán lè má fara hàn.",
+  "n.components.choose-unit.choosing-a-unit-is-a-preference": "Yíyan ẹ̀ka jẹ́ ohun tí o fẹ́ràn — ó ń pinnu ẹ̀ka tí ìwọ yóò máa gba ìkìlọ̀ nípa rẹ̀, o kò sì nílò láti wà níbẹ̀ láti yàn án.",
+  "n.components.choose-unit.mapping-is-a-different-job": "Ṣíṣàwòrán jẹ́ iṣẹ́ mìíràn: ó ń kọ ààyè GPS ẹ̀ka kan sínú ìwé ìforúkọsílẹ̀, ó sì nílò kí o dúró ní ẹ̀ka náà. Lo “{v0}” lábẹ́ {v1} fún ìyẹn.",
+  "n.components.unit-search.keep-typing-at-least-3": "Máa tẹ̀ sí i — ó kéré tán lẹ́tà 3.",
 };

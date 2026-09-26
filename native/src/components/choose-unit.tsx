@@ -1,11 +1,20 @@
 import Feather from '@expo/vector-icons/Feather';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Animated,
+  KeyboardAvoidingView,
+  Linking,
+  Pressable,
+  Text,
+  View,
+} from 'react-native';
 
 import { InfoDot } from '@/components/info-dot';
-import { ModalCard } from '@/components/modal-card';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
+import { PinnedFooter } from '@/components/pinned-footer';
+import { ScreenHeader } from '@/components/screen-header';
 import { UnitSearch } from '@/components/unit-search';
 import {
   mapAvailable,
@@ -18,6 +27,7 @@ import {
   type UnitTier,
 } from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
+import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { getIdentity } from '@/lib/identity';
 import { describeFixFailure, DISCOVERY_RADIUS_M, tryQuickFix, type Fix } from '@/lib/location';
@@ -50,26 +60,38 @@ const REG = `${BASE}/api/register`;
  * helpers. `POST /api/observers/my-unit` is the one writer. The only new thing
  * here is the arrangement.
  *
- * THREE ROUTES TO A UNIT, and the modal is laid out so none of them hides the
+ * A PAGE, NOT A SHEET. This was a ModalCard over Profile and over the last
+ * sign-up step. It is now the body of the /choose-unit route (app/choose-unit.tsx)
+ * with the app's own ScreenHeader, a scrolling body and a PinnedFooter holding
+ * Save — a map, a ward list and a search result list do not fit in a card
+ * capped at 85% of the screen, and on sign-up this IS the step, not an
+ * interruption of one. The route decides where Save and Skip lead; this
+ * component only reports them.
+ *
+ * THREE ROUTES TO A UNIT, and the page is laid out so none of them hides the
  * others:
  *
- *  - TWO TABS, NEITHER ACTIVE ON OPEN. This modal opens from a profile row that
+ *  - TWO TABS, NEITHER ACTIVE ON OPEN. This page opens from a profile row that
  *    an observer may have tapped while merely reading their profile, so nothing
  *    fires until a tab is tapped: no GPS lookup, no register fetch. That is the
  *    same restraint the report screens adopted deliberately. Tapping the open
- *    tab folds it away again, which is the only way to get a long ward list off
- *    a phone screen without leaving the modal.
+ *    tab folds it away again, which is the quickest way to get a long ward list
+ *    off a phone screen.
  *  - SEARCH IS ALWAYS VISIBLE, pinned directly under the tab strip so switching
  *    or folding a tab never moves it. It is also the only route that works with
  *    no signal at all (UnitSearch answers from the register packs), which is why
  *    every failure message here points at it.
  *
- * THE SEARCH PANE HAS TO LOOK LIKE A FIELD. ModalCard's own surface is `bg-card`
- * and so is UnitSearch's input — white on white, so the box read as background
- * and observers did not see there was anywhere to type. Every panel below is an
- * inset `bg-surface` pane with a real border, and the raised `bg-card` controls
- * inside them (the input, the rows, the chips) separate from it in both themes.
- * That is the app's existing raised-on-inset relationship, not a new treatment.
+ * THE SEARCH PANE HAS TO LOOK LIKE A FIELD. The input is `bg-card`, and on the
+ * old white card it read as background — observers did not see there was
+ * anywhere to type. Every route sits in an inset `bg-surface` pane with a real
+ * border, and the raised `bg-card` controls inside them separate from it in both
+ * themes; the search box also takes a gold ring while focused.
+ *
+ * GOLD MARKS WHAT TO DO NEXT, and only that: the step chip, the active tab, the
+ * focused search and the enabled Save. Brand gold with brand ink on it is a
+ * fixed pair that does not flip with the theme, so it reads the same in light
+ * and dark — gold TEXT on the light surface would not.
  */
 
 /** A register row. The tier fields ride along (the register endpoints `SELECT *`)
@@ -130,17 +152,17 @@ type NearRow = {
  *  area really searched rather than the one drawn. */
 type Searched = { registerM: number | null; envelopeM: number | null };
 
-/** Enough to find your own unit; short enough to still scan inside a modal. */
+/** Enough to find your own unit; short enough to still scan on a phone. */
 const MAX_NEAR = 8;
 
 /** config.discoveryRadiusM as of writing — a mirror, used only against a server
  *  too old to report its own `radiusM`. */
 const REGISTER_RADIUS_M = 500;
 
-/** Bounded hard: this map lives inside a modal whose card is capped at 85% of
- *  the screen, and UnitMap's own floor is 240. Anything taller pushes the rows
- *  it exists to help pick out of reach on a small phone. */
-const MAP_H = 240;
+/** Bounded: UnitMap's own floor is 240, and the rows the map exists to help
+ *  pick sit under it. A page has more room than the old modal card did, but
+ *  not so much that a taller map should push the first row off a small phone. */
+const MAP_H = 260;
 
 type Tab = 'near' | 'register';
 
@@ -153,7 +175,7 @@ type Tab = 'near' | 'register';
  */
 
 /** One choosable unit. `bg-hawk-green` when selected, exactly as UnitSearch's
- *  own rows in the pane above — the same modal must not grade a selection two
+ *  own rows in the pane above — the same page must not grade a selection two
  *  ways. */
 const PickRow = ({
   name,
@@ -176,7 +198,7 @@ const PickRow = ({
     onPress={onPress}
     accessibilityRole="button"
     accessibilityState={{ selected }}
-    accessibilityLabel={`${name}${sub ? `, ${sub}` : ''}${saved ? ', currently saved' : ''}`}
+    accessibilityLabel={`${name}${sub ? `, ${sub}` : ''}${saved ? `, ${i18nT('n.components.choose-unit.saved')}` : ''}`}
     className={`mb-2 flex-row items-center rounded-2xl px-3 py-2.5 active:opacity-70 ${
       selected ? 'bg-hawk-green' : 'bg-card'
     }`}
@@ -221,12 +243,15 @@ const Chip = ({ label, onPress }: { label: string; onPress: () => void }) => (
 );
 
 /**
- * One tab. Selected is `bg-hawk-green` + `text-hawk-gold`, the same active
- * treatment the cascade chips below it use — bg-good was the other candidate
- * and in light mode it is two pale mints against `bg-surface`.
+ * One segment of the Near me / Browse register control. Selected is solid
+ * brand gold with brand ink on it — a fixed pair, so it reads identically in
+ * both themes — against the strip's `bg-card`. It used to be green-on-green
+ * (`bg-hawk-green` + `text-hawk-gold`), which in dark mode sat one step off the
+ * surface and was easy to miss; the page's other greens (the Prompt bars, the
+ * picked rows) now stay distinct from the control that opened them.
  *
  * Both tabs start UNSELECTED, which the strip has to be able to show: an
- * unselected strip is the honest picture of a modal where nothing has run yet.
+ * unselected strip is the honest picture of a page where nothing has run yet.
  */
 const TabButton = ({
   icon,
@@ -246,13 +271,13 @@ const TabButton = ({
     accessibilityRole="tab"
     accessibilityState={{ selected: on }}
     accessibilityLabel={label}
-    className={`flex-1 flex-row items-center justify-center rounded-full py-2.5 active:opacity-70 ${
-      on ? 'bg-hawk-green' : ''
+    className={`flex-1 flex-row items-center justify-center rounded-full py-3 active:opacity-70 ${
+      on ? 'bg-hawk-gold' : ''
     }`}
   >
-    <Feather name={icon} size={14} color={on ? BRAND.gold : mutedInk} />
+    <Feather name={icon} size={15} color={on ? BRAND.ink : mutedInk} />
     <Text
-      className={`pl-1.5 text-sm font-bold ${on ? 'text-hawk-gold' : 'text-muted'}`}
+      className={`pl-1.5 text-sm font-bold ${on ? 'text-hawk-ink' : 'text-muted'}`}
       numberOfLines={1}
     >
       {label}
@@ -280,35 +305,33 @@ const Pane = ({ children, flush }: { children: ReactNode; flush?: boolean }) => 
   </View>
 );
 
-export function ChooseUnitModal({
-  visible,
-  onClose,
-  onSaved,
-  current,
+export function ChooseUnitScreen({
   onboard = false,
+  currentCode,
+  onSaved,
+  onSkip,
+  onClose,
 }: {
-  visible: boolean;
-  onClose: () => void;
-  /** Fires with the saved unit so the host can update without a refetch. */
-  onSaved?: (unit: Row) => void;
   /**
-   * Opened straight after a NEW sign-up (sign-in.tsx) rather than from Profile.
-   * Adds the one-line why at the top and turns Cancel into "Skip for now" — the
+   * Reached straight after a NEW sign-up (sign-in.tsx) rather than from
+   * Profile. Adds the one-line why and a quiet "Skip for now" under Save — the
    * same banner and skip the web shows on map-unit.html?onboard=1, on the same
-   * keys, so the two clients cannot word the ask differently. The backdrop stops
-   * dismissing: here a close LEAVES the screen, and an outside tap is the
-   * easiest gesture to make by accident.
+   * keys, so the two clients cannot word the ask differently. There is no close
+   * cross: here leaving IS skipping, and it is said in words.
    */
   onboard?: boolean;
-  /**
-   * The unit already saved, so the list can mark it. Looser than `Row` on
-   * purpose: this comes from /api/observers/me, where a register row with no
-   * name is possible, whereas everything UnitSearch hands back is named.
-   */
-  current?: { pu_code: string; name?: string | null } | null;
+  /** The unit already saved, so the lists can mark it "Saved". */
+  currentCode?: string | null;
+  /** Fires once the server has accepted the unit. The route navigates. */
+  onSaved: (unit: Row) => void;
+  /** Onboarding only: the reader chose not to pick a unit now. */
+  onSkip?: () => void;
+  /** From Profile: the header's close cross. */
+  onClose?: () => void;
 }) {
   const ui = useUi();
   const notice = useNotice();
+  const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const [tab, setTab] = useState<Tab | null>(null);
   const [picked, setPicked] = useState<Row | null>(null);
   const [saving, setSaving] = useState(false);
@@ -317,6 +340,17 @@ export function ChooseUnitModal({
   const [near, setNear] = useState<NearRow[]>([]);
   const [nearBusy, setNearBusy] = useState(false);
   const [nearLine, setNearLine] = useState<string | null>(null);
+  /**
+   * Whether nearLine is a failure. Carried beside the line rather than read
+   * back out of it: this used to regex the TEXT for "could not|denied|…", which
+   * only ever matched English — in Hausa, Igbo or Yorùbá every GPS failure was
+   * drawn in the calm muted ink of a success.
+   */
+  const [nearBad, setNearBad] = useState(false);
+  const say = (line: string, bad: boolean) => {
+    setNearLine(line);
+    setNearBad(bad);
+  };
   const [gpsSettings, setGpsSettings] = useState(false);
   const [fix, setFix] = useState<Fix | null>(null);
   const [searched, setSearched] = useState<Searched | null>(null);
@@ -427,7 +461,7 @@ export function ChooseUnitModal({
    *    GRID3 envelope — where an observer at an unmapped unit is standing — but
    *    it never reads crowd_lat, so those 7,652 units are invisible to it.
    *
-   * This modal asked only the first, at its own narrower radius, which is why an
+   * This chooser asked only the first, at its own narrower radius, which is why an
    * observer could stand at a real unit and be told there was nothing near them.
    *
    * Either lookup may fail alone; only losing both is fatal.
@@ -438,7 +472,7 @@ export function ChooseUnitModal({
     setFix(null);
     setSearched(null);
     setGpsSettings(false);
-    setNearLine(i18nT('n.app.report.result.getting-your-location'));
+    say(i18nT('n.app.report.result.getting-your-location'), false);
     try {
       const r = await tryQuickFix();
       if (!r.ok) {
@@ -446,13 +480,13 @@ export function ChooseUnitModal({
         // with working permission that they have none is how this screen loses
         // the people it is for — the same discrimination map-unit makes.
         const d = describeFixFailure(r);
-        setNearLine(i18nT('n.components.choose-unit.or-search-for-it-above', { v0: d.lead, v1: d.code }));
+        say(i18nT('n.components.choose-unit.or-search-for-it-above', { v0: d.lead, v1: d.code }), true);
         setGpsSettings(d.settings);
         return;
       }
       const f = r.fix;
       setFix(f);
-      setNearLine(i18nT('n.components.choose-unit.looking-up-nearby-units'));
+      say(i18nT('n.components.choose-unit.looking-up-nearby-units'), false);
 
       /** A real deadline. React Native's fetch has none, so on a stalled link
        *  the lookup would hang with no error and no way out. */
@@ -480,7 +514,7 @@ export function ChooseUnitModal({
         // POINT AT SEARCH, NOT THE REGISTER DRILL. This is the network-failure
         // case, and browsing is itself network-backed once the packs run out;
         // search answers from the register bundled into the app.
-        setNearLine(i18nT('n.components.choose-unit.could-not-check-nearby-units-search'));
+        say(i18nT('n.components.choose-unit.could-not-check-nearby-units-search'), true);
         return;
       }
 
@@ -529,7 +563,7 @@ export function ChooseUnitModal({
        * the same coalesce map-unit.tsx makes, so a pin does not move between
        * screens — but takes its TIER from /api/mapping/nearby, which derives it
        * from coords_source rather than from which column is filled. No envelope
-       * circle is built here at all: this modal chooses a unit for alerts, it
+       * circle is built here at all: this page chooses a unit for alerts, it
        * files nothing, so there is no geofence to describe and nothing to gain
        * from a radius whose centre is a median 2.5km from the pin.
        */
@@ -613,20 +647,22 @@ export function ChooseUnitModal({
         // radius here would be a positive claim about an area the lookup that
         // sees crowd-only units never looked in.
         const m = scope.registerM ?? scope.envelopeM;
-        setNearLine(
+        say(
           m != null
             ? i18nT('n.components.choose-unit.no-unit-found-within-m-search', { v0: m })
             : i18nT('n.components.choose-unit.could-not-check-nearby-units-search'),
+          true,
         );
         return;
       }
-      setNearLine(
+      say(
         all.length > list.length
           ? i18nT('n.components.choose-unit.the-closest-of-found-tap-yours', { v0: list.length, v1: all.length })
           : i18nT('n.components.choose-unit.tap-your-polling-unit'),
+        false,
       );
     } catch {
-      setNearLine(i18nT('n.components.choose-unit.could-not-check-nearby-units-search'));
+      say(i18nT('n.components.choose-unit.could-not-check-nearby-units-search'), true);
     } finally {
       setNearBusy(false);
     }
@@ -657,8 +693,7 @@ export function ChooseUnitModal({
 
   /**
    * Tapping a tab is what starts its work — and tapping the open one folds it
-   * away, which is the only way to get a long ward list off a small screen
-   * without leaving the modal.
+   * away, which is the quickest way to get a long ward list off a small screen.
    */
   const openTab = (t: Tab) => {
     Haptics.selectionAsync();
@@ -676,6 +711,10 @@ export function ChooseUnitModal({
 
   const save = async (unit: Row) => {
     setSaving(true);
+    // Stays true on success: the route leaves this screen next, and a Save
+    // that re-enabled for the few frames before it did could be tapped again —
+    // a second save, and a second router.back() that would pop Profile too.
+    let saved = false;
     try {
       const token = await SecureStore.getItemAsync('hawkeye.auth.token');
       const id = await getIdentity();
@@ -702,29 +741,17 @@ export function ChooseUnitModal({
         return;
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      onSaved?.(unit);
-      close();
+      saved = true;
+      onSaved(unit);
     } catch {
       notice.show(i18nT('n.app.map-unit.could-not-save-your-polling-unit'), i18nT('n.components.choose-unit.please-check-your-connection-and-try-2'));
     } finally {
-      setSaving(false);
+      if (!saved) setSaving(false);
     }
   };
 
-  const close = () => {
-    setPicked(null);
-    setTab(null);
-    setNear([]);
-    setNearLine(null);
-    setGpsSettings(false);
-    setFix(null);
-    setSearched(null);
-    nearRan.current = false;
-    pickState(null);
-    onClose();
-  };
-
   const chosen = picked ?? null;
+  const saveOff = !chosen || saving;
 
   /** The ring is drawn at the WIDER of the two circles actually searched, and
    *  named underneath — an unlabelled ring reads as "everything in here was
@@ -744,301 +771,342 @@ export function ChooseUnitModal({
   );
 
   return (
-    <ModalCard
-      visible={visible}
-      onClose={close}
-      dismissOnBackdrop={!onboard}
-      title={i18nT('profile.choose-your-polling-unit')}
-      footer={
-        <View className="flex-row">
-          <Pressable
-            onPress={close}
-            accessibilityRole="button"
-            accessibilityLabel={onboard ? i18nT('map-unit.skip-for-now') : i18nT('common.cancel')}
-            className="mr-2 flex-1 items-center rounded-full border border-line py-3 active:opacity-70"
-          >
-            <Text className="text-sm font-bold text-muted">
-              {onboard ? i18nT('map-unit.skip-for-now') : i18nT('common.cancel')}
+    <View className="flex-1 bg-surface">
+      {/* The header names WHERE the reader is — creating an account, or their
+          profile — so it never repeats the page's own title below it. In
+          onboarding there is no close cross (Skip for now says it in words) and
+          the mark skips rather than stacking the tabs over this page. */}
+      <ScreenHeader
+        title={onboard ? i18nT('n.app.sign-in.create-your-account') : i18nT('profile.my-profile')}
+        translateY={translateY}
+        right={onboard ? 'none' : 'close'}
+        onClose={onClose}
+        onHome={onboard ? onSkip : undefined}
+      />
+
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
+        <Animated.ScrollView
+          onScroll={onScroll}
+          scrollEventThrottle={scrollEventThrottle}
+          contentContainerStyle={{ paddingTop: headerH + 16, paddingHorizontal: 16, paddingBottom: 24 }}
+          // The search field is on this page: without this, the first tap on a
+          // state chip or a result row with the keyboard up only dismissed the
+          // keyboard. The same fix the report screens carry.
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* The eyebrow. "Last step" only where it is true — after this page a
+              new observer is in the app — otherwise it names the subject. A gold
+              chip with ink on it rather than gold text, which on the light
+              surface would be the least legible thing on the page. */}
+          <View className="self-start rounded-full bg-hawk-gold px-3 py-1">
+            <Text className="text-[11px] font-bold uppercase tracking-wider text-hawk-ink">
+              {onboard ? i18nT('n.app.choose-unit.last-step') : i18nT('n.app.map-unit.your-polling-unit')}
             </Text>
-          </Pressable>
-          {/* The commit is disabled until something is chosen, rather than
-              hidden: a footer that appears and disappears moves the Cancel
-              button under the reader's thumb between taps. */}
+          </View>
+          <Text className="pt-2.5 text-2xl font-bold text-ink">{i18nT('profile.choose-your-polling-unit')}</Text>
+
+          {/* Two phrases. The difference between choosing and mapping is an
+              explanation, so it goes behind the dot rather than on the screen. */}
+          <View className="flex-row items-center pt-1">
+            <Text className="text-sm font-semibold text-ink">{i18nT('n.components.choose-unit.the-unit-you-get-alerts-about')}</Text>
+            <InfoDot
+              title={i18nT('n.components.choose-unit.choosing-vs-mapping')}
+              text={`${i18nT('n.components.choose-unit.choosing-a-unit-is-a-preference')}\n\n${i18nT(
+                'n.components.choose-unit.mapping-is-a-different-job',
+                { v0: i18nT('common.map-a-polling-unit'), v1: i18nT('nav.more') },
+              )}`}
+            />
+          </View>
+          <Text className="text-sm text-muted">{i18nT('n.components.choose-unit.you-do-not-need-to-be')}</Text>
+
+          {/* The sign-up welcome: one sentence saying what saving a unit gets
+              them, in the success wash rather than a warning colour — it is an
+              invitation. */}
+          {onboard ? (
+            <View className="mt-3 flex-row items-start rounded-2xl bg-good px-3.5 py-3">
+              <Feather name="bell" size={16} color={ui.tint.good.ink} style={{ marginTop: 2 }} />
+              <Text className="flex-1 pl-2.5 text-sm font-semibold text-good-ink">
+                {i18nT('map-unit.save-your-polling-unit-you-ll-get')}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* NOTHING RUNS UNTIL A TAB IS TAPPED — no GPS fix, no register fetch.
+              This page opens from a profile row someone may have tapped while
+              just reading their profile. */}
+          <View
+            className="mt-4 flex-row rounded-full border border-line bg-card p-1"
+            accessibilityRole="tablist"
+          >
+            <TabButton
+              icon="crosshair"
+              label={i18nT('n.components.choose-unit.near-me')}
+              on={tab === 'near'}
+              mutedInk={ui.muted}
+              onPress={() => openTab('near')}
+            />
+            <TabButton
+              icon="list"
+              label={i18nT('n.components.choose-unit.browse-register')}
+              on={tab === 'register'}
+              mutedInk={ui.muted}
+              onPress={() => openTab('register')}
+            />
+          </View>
+
+          {/* ALWAYS VISIBLE, pinned directly under the tabs so opening, switching
+              or folding a tab never moves it. It is also the only route that
+              works with no signal at all — UnitSearch answers from the register
+              packs on the device — which is why every failure message here
+              points back at it.
+
+              NOT narrowed by the drill's current state/LGA, deliberately: search
+              is the escape hatch from the cascade ("I know the name, not the
+              ward"), and it outlives the folded tab, so inheriting a stale drill
+              selection would silently hide the very match being typed for. */}
+          <Pane flush>
+            <UnitSearch<Row> onSelect={(u) => setPicked(u)} selectedCode={chosen?.pu_code} accent />
+          </Pane>
+
+          {tab === 'near' ? (
+            <Pane>
+              <Pressable
+                disabled={nearBusy}
+                onPress={findNearby}
+                accessibilityRole="button"
+                accessibilityLabel={near.length || nearLine ? i18nT('n.app.report.incident.search-near-me-again') : i18nT('incidents.find-units-near-me')}
+                accessibilityState={{ disabled: nearBusy, busy: nearBusy }}
+                className={`flex-row items-center justify-center rounded-2xl py-3 ${nearBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
+              >
+                {nearBusy ? (
+                  <ActivityIndicator color={BRAND.gold} />
+                ) : (
+                  <>
+                    <Feather name="crosshair" size={15} color={BRAND.gold} />
+                    {/* The lookup runs when the tab opens, so this is the RETRY
+                        once it has. Keyed on a FINISHED search — rows, or a
+                        message saying why there are none — rather than on the
+                        tab, which would offer to search "again" before it ever
+                        succeeded. */}
+                    <Text className="pl-2 text-sm font-bold text-hawk-gold">
+                      {near.length || nearLine ? i18nT('n.app.report.incident.search-near-me-again') : i18nT('incidents.find-units-near-me')}
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+
+              {/* nearLine carries BOTH outcomes — "N found, tap yours" and every
+                  GPS failure — so its ink comes from nearBad, set where the line
+                  is written, never from the words (which are translated). */}
+              {nearLine ? (
+                <Text className={`pt-2.5 text-sm font-semibold ${gpsSettings || nearBad ? 'text-warn-ink' : 'text-muted'}`}>
+                  {nearLine}
+                </Text>
+              ) : null}
+
+              {/* Only for the failures the settings app actually cures. The
+                  button above is already the retry, so a weak signal gets the
+                  sentence and another tap, not a detour into system settings. */}
+              {gpsSettings ? (
+                <Pressable
+                  onPress={() => Linking.openSettings()}
+                  accessibilityRole="button"
+                  accessibilityLabel={i18nT('n.app.map-unit.open-phone-settings')}
+                  className="mt-2 flex-row items-center self-start rounded-xl border border-line bg-card px-3 py-2 active:opacity-70"
+                >
+                  <Feather name="settings" size={14} color={ui.muted} />
+                  <Text className="pl-2 text-sm font-semibold text-ink">{i18nT('n.app.map-unit.open-phone-settings')}</Text>
+                </Pressable>
+              ) : null}
+
+              {/* The map answers what a list cannot: which of these is the
+                  building in front of you. Selection is shared both ways. Height
+                  is clamped — see MAP_H. */}
+              {fix && searched && near.length && mapAvailable() ? (
+                <View className="pt-2.5">
+                  <UnitMap
+                    center={{ lat: fix.lat, lng: fix.lng }}
+                    accuracyM={fix.accuracy}
+                    units={mapUnits}
+                    selected={chosen?.pu_code}
+                    onSelect={(code) => {
+                      const row = near.find((n) => n.puCode === code);
+                      if (row) chooseNear(row);
+                    }}
+                    radiusM={ringM}
+                    height={MAP_H}
+                  />
+                  <Text className="pt-1.5 text-[11px] text-muted">
+                    {i18nT('n.components.choose-unit.units-found-within-m', { v0: ringM })}
+                  </Text>
+                </View>
+              ) : null}
+
+              {near.length ? (
+                <View className="pt-2.5">
+                  {near.map((n) => {
+                    const on = chosen?.pu_code === n.puCode;
+                    const where = `${n.puCode}${n.ward ? ` · ${n.ward}` : ''}`;
+                    return (
+                      <PickRow
+                        key={n.puCode}
+                        name={n.name}
+                        // The distance is only stated when a lookup actually
+                        // measured one — "0m away" on a row that arrived
+                        // without `distanceM` would read as standing on top of it.
+                        sub={
+                          n.distanceM
+                            ? i18nT('n.app.map-unit.m-away', { v0: where, v1: Math.round(n.distanceM) })
+                            : where
+                        }
+                        badge={<NearBadge tier={n.tier} selected={on} />}
+                        selected={on}
+                        saved={currentCode === n.puCode}
+                        onPress={() => chooseNear(n)}
+                      />
+                    );
+                  })}
+                </View>
+              ) : null}
+            </Pane>
+          ) : null}
+
+          {tab === 'register' ? (
+            <Pane>
+              {regBusy && !states.length ? (
+                <Text className="text-sm text-muted">{i18nT('n.components.choose-unit.loading-the-register')}</Text>
+              ) : null}
+              {/* A dead end needs a way out, not a spinner to be waited on. */}
+              {regFailed ? (
+                <Pressable onPress={loadStates} accessibilityRole="button" className="active:opacity-70">
+                  <Text className="text-sm font-bold text-warn-ink">
+                    {i18nT('n.components.choose-unit.couldn-t-load-the-register-tap')}
+                  </Text>
+                </Pressable>
+              ) : null}
+
+              {!stateSel && states.length ? (
+                <>
+                  <Prompt>{i18nT('n.app.report.result.select-your-state')}</Prompt>
+                  <View className="flex-row flex-wrap">
+                    {states.map((s) => (
+                      <Chip key={s} label={s} onPress={() => pickState(s)} />
+                    ))}
+                  </View>
+                </>
+              ) : null}
+
+              {stateSel && !lgaSel ? (
+                <>
+                  <Crumb label={stateSel} onPress={() => pickState(null)} />
+                  <Prompt>{i18nT('n.app.report.result.select-your-lga')}</Prompt>
+                  <View className="flex-row flex-wrap">
+                    {lgas.map((l) => (
+                      <Chip key={l} label={l} onPress={() => pickLga(l)} />
+                    ))}
+                  </View>
+                  {!lgas.length ? <Text className="text-sm text-muted">{i18nT('n.components.choose-unit.loading-lgas')}</Text> : null}
+                </>
+              ) : null}
+
+              {stateSel && lgaSel && !wardSel ? (
+                <>
+                  <Crumb label={lgaSel} onPress={() => pickLga(null)} />
+                  <Prompt>{i18nT('n.app.report.result.select-your-ward')}</Prompt>
+                  <View className="flex-row flex-wrap">
+                    {wards.map((w) => (
+                      <Chip key={w} label={w} onPress={() => pickWard(w)} />
+                    ))}
+                  </View>
+                  {!wards.length ? <Text className="text-sm text-muted">{i18nT('n.components.choose-unit.loading-wards')}</Text> : null}
+                </>
+              ) : null}
+
+              {stateSel && lgaSel && wardSel ? (
+                <>
+                  <Crumb label={`${lgaSel} · ${wardSel}`} onPress={() => pickWard(null)} />
+                  <Prompt>{i18nT('n.app.report.result.select-your-polling-unit')}</Prompt>
+                  {units.map((u) => {
+                    const on = chosen?.pu_code === u.pu_code;
+                    return (
+                      <PickRow
+                        key={u.pu_code}
+                        name={u.name}
+                        sub={`${u.pu_code} · ${u.ward ?? wardSel}`}
+                        // The same badge every other browse list carries, so the
+                        // same unit does not read one way here and another there.
+                        badge={<RegisterTierBadge u={u} selected={on} />}
+                        selected={on}
+                        saved={currentCode === u.pu_code}
+                        onPress={() => setPicked(u)}
+                      />
+                    );
+                  })}
+                  {!units.length ? (
+                    <Text className="text-sm text-muted">
+                      {i18nT('n.app.report.result.no-units-in-the-register-for')}
+                    </Text>
+                  ) : null}
+                </>
+              ) : null}
+            </Pane>
+          ) : null}
+        </Animated.ScrollView>
+
+        {/* A SIBLING of the scroller, so Save is never reachable only by
+            scrolling. The choice is named right above the button that commits
+            it — in a dense ward the row just tapped can be far up the page.
+            Growing the footer for it moves only the footer's top edge: Save and
+            Skip stay where the thumb already is. */}
+        <PinnedFooter>
+          {chosen ? (
+            <View className="pb-2.5">
+              <Text className="text-[11px] font-bold uppercase tracking-wider text-faint">{i18nT('n.components.choose-unit.selected')}</Text>
+              <Text className="pt-0.5 text-sm font-bold text-ink" numberOfLines={1}>{chosen.name}</Text>
+              {[chosen.ward, chosen.lga, chosen.state].some(Boolean) ? (
+                <Text className="text-[11px] text-muted" numberOfLines={1}>
+                  {[chosen.ward, chosen.lga, chosen.state].filter(Boolean).join(' · ')}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+          {/* Disabled until something is chosen, rather than hidden: a button
+              that appears and disappears moves Skip under the reader's thumb
+              between taps. Gold with brand ink when live; the muted disabled
+              wash when not, so "not yet" never reads as "press me". */}
           <Pressable
-            disabled={!chosen || saving}
+            disabled={saveOff}
             onPress={() => chosen && save(chosen)}
             accessibilityRole="button"
             accessibilityLabel={i18nT('profile.save-this-unit')}
-            accessibilityState={{ disabled: !chosen || saving, busy: saving }}
-            className={`flex-1 items-center rounded-full py-3 ${!chosen || saving ? 'bg-disabled' : 'bg-good active:opacity-80'}`}
+            accessibilityState={{ disabled: saveOff, busy: saving }}
+            className={`items-center rounded-2xl py-4 ${saveOff ? 'bg-disabled' : 'bg-hawk-gold active:opacity-80'}`}
           >
             {saving ? (
-              <ActivityIndicator color={ui.tint.good.ink} />
+              <ActivityIndicator color={BRAND.ink} />
             ) : (
-              <Text className={`text-sm font-bold ${chosen ? 'text-good-ink' : 'text-faint'}`}>
+              <Text className={`text-base font-bold ${saveOff ? 'text-faint' : 'text-hawk-ink'}`}>
                 {i18nT('profile.save-this-unit')}
               </Text>
             )}
           </Pressable>
-        </View>
-      }
-    >
-      {/* The sign-up welcome: one sentence saying what saving a unit gets them,
-          in the success wash rather than a warning colour — it is an invitation. */}
-      {onboard ? (
-        <View className="mb-3 rounded-2xl bg-good px-3 py-2.5">
-          <Text className="text-sm font-semibold text-good-ink">
-            {i18nT('map-unit.save-your-polling-unit-you-ll-get')}
-          </Text>
-        </View>
-      ) : null}
-
-      {/* Two phrases. The difference between choosing and mapping is an
-          explanation, so it goes behind the dot rather than on the screen. */}
-      <View className="flex-row items-center">
-        <Text className="text-sm font-semibold text-ink">{i18nT('n.components.choose-unit.the-unit-you-get-alerts-about')}</Text>
-        <InfoDot
-          title={i18nT('n.components.choose-unit.choosing-vs-mapping')}
-          text={
-            'Choosing a unit is a preference — it decides which unit you get alerts about, and you do not need to be there to set it.\n\n' +
-            "Mapping is a different job: it records a unit's GPS position into the register, and it does require you to be standing at the unit. Use “Map a Polling Unit” under More for that."
-          }
-        />
-      </View>
-      <Text className="pb-1 text-sm text-muted">{i18nT('n.components.choose-unit.you-do-not-need-to-be')}</Text>
-
-      {/* NOTHING RUNS UNTIL A TAB IS TAPPED — no GPS fix, no register fetch.
-          This modal opens from a profile row someone may have tapped while just
-          reading their profile. */}
-      <View className="mt-3 flex-row rounded-full bg-surface p-1" accessibilityRole="tablist">
-        <TabButton
-          icon="crosshair"
-          label={i18nT('n.components.choose-unit.near-me')}
-          on={tab === 'near'}
-          mutedInk={ui.muted}
-          onPress={() => openTab('near')}
-        />
-        <TabButton
-          icon="list"
-          label={i18nT('n.components.choose-unit.browse-register')}
-          on={tab === 'register'}
-          mutedInk={ui.muted}
-          onPress={() => openTab('register')}
-        />
-      </View>
-
-      {/* ALWAYS VISIBLE, pinned directly under the tabs so opening, switching or
-          folding a tab never moves it. It is also the only route that works with
-          no signal at all — UnitSearch answers from the register packs on the
-          device — which is why every failure message here points back at it.
-
-          NOT narrowed by the drill's current state/LGA, deliberately: search is
-          the escape hatch from the cascade ("I know the name, not the ward"),
-          and it outlives the folded tab, so inheriting a stale drill selection
-          would silently hide the very match being typed for. */}
-      <Pane flush>
-        <UnitSearch<Row> onSelect={(u) => setPicked(u)} selectedCode={chosen?.pu_code} />
-      </Pane>
-
-      {tab === 'near' ? (
-        <Pane>
-          <Pressable
-            disabled={nearBusy}
-            onPress={findNearby}
-            accessibilityRole="button"
-            accessibilityLabel={near.length || nearLine ? i18nT('n.app.report.incident.search-near-me-again') : i18nT('incidents.find-units-near-me')}
-            accessibilityState={{ disabled: nearBusy, busy: nearBusy }}
-            className={`flex-row items-center justify-center rounded-2xl py-3 ${nearBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
-          >
-            {nearBusy ? (
-              <ActivityIndicator color={BRAND.gold} />
-            ) : (
-              <>
-                <Feather name="crosshair" size={15} color={BRAND.gold} />
-                {/* The lookup runs when the tab opens, so this is the RETRY once
-                    it has. Keyed on a FINISHED search — rows, or a message
-                    saying why there are none — rather than on the tab, which
-                    would offer to search "again" before it ever succeeded. */}
-                <Text className="pl-2 text-sm font-bold text-hawk-gold">
-                  {near.length || nearLine ? i18nT('n.app.report.incident.search-near-me-again') : i18nT('incidents.find-units-near-me')}
-                </Text>
-              </>
-            )}
-          </Pressable>
-
-          {/* nearLine carries BOTH outcomes — "N found, tap yours" and every GPS
-              failure — so it cannot be warning-inked unconditionally, or a
-              successful search reads as a problem. */}
-          {nearLine ? (
-            <Text
-              className={`pt-2.5 text-sm font-semibold ${
-                gpsSettings || /could not|couldn|no unit|not found|denied|turned off|blocked/i.test(nearLine)
-                  ? 'text-warn-ink'
-                  : 'text-muted'
-              }`}
-            >
-              {nearLine}
-            </Text>
-          ) : null}
-
-          {/* Only for the failures the settings app actually cures. The button
-              above is already the retry, so a weak signal gets the sentence and
-              another tap, not a detour into system settings. */}
-          {gpsSettings ? (
+          {onboard ? (
             <Pressable
-              onPress={() => Linking.openSettings()}
+              onPress={onSkip}
+              disabled={saving}
+              hitSlop={6}
               accessibilityRole="button"
-              accessibilityLabel={i18nT('n.app.map-unit.open-phone-settings')}
-              className="mt-2 flex-row items-center self-start rounded-xl border border-line bg-card px-3 py-2 active:opacity-70"
+              accessibilityLabel={i18nT('map-unit.skip-for-now')}
+              className="mt-1 items-center py-2.5 active:opacity-60"
             >
-              <Feather name="settings" size={14} color={ui.muted} />
-              <Text className="pl-2 text-sm font-semibold text-ink">{i18nT('n.app.map-unit.open-phone-settings')}</Text>
+              <Text className="text-sm font-semibold text-muted">{i18nT('map-unit.skip-for-now')}</Text>
             </Pressable>
           ) : null}
+        </PinnedFooter>
+      </KeyboardAvoidingView>
 
-          {/* The map answers what a list cannot: which of these is the building
-              in front of you. Selection is shared both ways. Height is clamped
-              hard — see MAP_H. */}
-          {fix && searched && near.length && mapAvailable() ? (
-            <View className="pt-2.5">
-              <UnitMap
-                center={{ lat: fix.lat, lng: fix.lng }}
-                accuracyM={fix.accuracy}
-                units={mapUnits}
-                selected={chosen?.pu_code}
-                onSelect={(code) => {
-                  const row = near.find((n) => n.puCode === code);
-                  if (row) chooseNear(row);
-                }}
-                radiusM={ringM}
-                height={MAP_H}
-              />
-              <Text className="pt-1.5 text-[11px] text-muted">
-                Units found within {ringM}m. Unmapped units may not appear.
-              </Text>
-            </View>
-          ) : null}
-
-          {near.length ? (
-            <View className="pt-2.5">
-              {near.map((n) => {
-                const on = chosen?.pu_code === n.puCode;
-                return (
-                  <PickRow
-                    key={n.puCode}
-                    name={n.name}
-                    // The distance is only stated when a lookup actually
-                    // measured one — "0m away" on a row that arrived without
-                    // `distanceM` would read as standing on top of it.
-                    sub={`${n.puCode}${n.ward ? ` · ${n.ward}` : ''}${
-                      n.distanceM ? ` · ${Math.round(n.distanceM)}m away` : ''
-                    }`}
-                    badge={<NearBadge tier={n.tier} selected={on} />}
-                    selected={on}
-                    saved={current?.pu_code === n.puCode}
-                    onPress={() => chooseNear(n)}
-                  />
-                );
-              })}
-            </View>
-          ) : null}
-        </Pane>
-      ) : null}
-
-      {tab === 'register' ? (
-        <Pane>
-          {regBusy && !states.length ? (
-            <Text className="text-sm text-muted">{i18nT('n.components.choose-unit.loading-the-register')}</Text>
-          ) : null}
-          {/* A dead end needs a way out, not a spinner to be waited on. */}
-          {regFailed ? (
-            <Pressable onPress={loadStates} accessibilityRole="button" className="active:opacity-70">
-              <Text className="text-sm font-bold text-hawk-gold">
-                {i18nT('n.components.choose-unit.couldn-t-load-the-register-tap')}
-              </Text>
-            </Pressable>
-          ) : null}
-
-          {!stateSel && states.length ? (
-            <>
-              <Prompt>{i18nT('n.app.report.result.select-your-state')}</Prompt>
-              <View className="flex-row flex-wrap">
-                {states.map((s) => (
-                  <Chip key={s} label={s} onPress={() => pickState(s)} />
-                ))}
-              </View>
-            </>
-          ) : null}
-
-          {stateSel && !lgaSel ? (
-            <>
-              <Crumb label={stateSel} onPress={() => pickState(null)} />
-              <Prompt>{i18nT('n.app.report.result.select-your-lga')}</Prompt>
-              <View className="flex-row flex-wrap">
-                {lgas.map((l) => (
-                  <Chip key={l} label={l} onPress={() => pickLga(l)} />
-                ))}
-              </View>
-              {!lgas.length ? <Text className="text-sm text-muted">{i18nT('n.components.choose-unit.loading-lgas')}</Text> : null}
-            </>
-          ) : null}
-
-          {stateSel && lgaSel && !wardSel ? (
-            <>
-              <Crumb label={lgaSel} onPress={() => pickLga(null)} />
-              <Prompt>{i18nT('n.app.report.result.select-your-ward')}</Prompt>
-              <View className="flex-row flex-wrap">
-                {wards.map((w) => (
-                  <Chip key={w} label={w} onPress={() => pickWard(w)} />
-                ))}
-              </View>
-              {!wards.length ? <Text className="text-sm text-muted">{i18nT('n.components.choose-unit.loading-wards')}</Text> : null}
-            </>
-          ) : null}
-
-          {stateSel && lgaSel && wardSel ? (
-            <>
-              <Crumb label={`${lgaSel} · ${wardSel}`} onPress={() => pickWard(null)} />
-              <Prompt>{i18nT('n.app.report.result.select-your-polling-unit')}</Prompt>
-              {units.map((u) => {
-                const on = chosen?.pu_code === u.pu_code;
-                return (
-                  <PickRow
-                    key={u.pu_code}
-                    name={u.name}
-                    sub={`${u.pu_code} · ${u.ward ?? wardSel}`}
-                    // The same badge every other browse list carries, so the
-                    // same unit does not read one way here and another there.
-                    badge={<RegisterTierBadge u={u} selected={on} />}
-                    selected={on}
-                    saved={current?.pu_code === u.pu_code}
-                    onPress={() => setPicked(u)}
-                  />
-                );
-              })}
-              {!units.length ? (
-                <Text className="text-sm text-muted">
-                  {i18nT('n.app.report.result.no-units-in-the-register-for')}
-                </Text>
-              ) : null}
-            </>
-          ) : null}
-        </Pane>
-      ) : null}
-
-      {chosen ? (
-        <View className="mt-3 rounded-2xl border border-line bg-surface px-3 py-2.5">
-          <Text className="text-[11px] font-bold uppercase tracking-wider text-faint">{i18nT('n.components.choose-unit.selected')}</Text>
-          <Text className="pt-1 text-sm font-bold text-ink">{chosen.name}</Text>
-          <Text className="text-[11px] text-muted">
-            {[chosen.ward, chosen.lga, chosen.state].filter(Boolean).join(' · ')}
-          </Text>
-        </View>
-      ) : null}
-
-      {/* Inside the card, not beside it: this notice belongs to the modal that
-          raised it, and the ModalCard is what is on screen when a save fails. */}
+      {/* A save failure is told here, on the page that raised it. */}
       <NoticeSheet {...notice.props} />
-    </ModalCard>
+    </View>
   );
 }

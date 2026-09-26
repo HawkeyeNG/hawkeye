@@ -47,6 +47,7 @@ export function UnitSearch<T extends Row>({
   onEngaged,
   selectedCode,
   onContinue,
+  accent = false,
 }: {
   onSelect: (unit: T) => void;
   /** Optional narrowing when the caller already knows where it is. */
@@ -68,9 +69,14 @@ export function UnitSearch<T extends Row>({
   /** Omit and the row still highlights — it just carries no inline button,
    *  which is right on screens whose next step is not "continue". */
   onContinue?: () => void;
+  /** A brand-gold ring while the field has focus, so on a screen whose one job
+   *  is this search the box is unmistakably where to type. The unfocused ring
+   *  is transparent, not absent, so focusing does not shift the layout by 2px. */
+  accent?: boolean;
 }) {
   const ui = useUi();
   const [q, setQ] = useState('');
+  const [focused, setFocused] = useState(false);
   useEffect(() => { onEngaged?.(q.trim().length > 0); }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
   const [rows, setRows] = useState<T[] | null>(null);
   const [note, setNote] = useState('');
@@ -88,7 +94,7 @@ export function UnitSearch<T extends Row>({
     const term = q.trim();
     if (term.length < 3) {
       setRows(null);
-      setNote(term ? 'Keep typing — at least 3 characters.' : '');
+      setNote(term ? i18nT('n.components.unit-search.keep-typing-at-least-3') : '');
       return;
     }
     // OFFLINE FIRST. If this state's pack is decoded, answer from it and do not
@@ -137,10 +143,16 @@ export function UnitSearch<T extends Row>({
   return (
     <View className="mt-4">
       <Text className="pb-1.5 text-sm font-bold text-ink">{i18nT('n.components.unit-search.search-for-your-polling-unit')}</Text>
-      <View className="flex-row items-center rounded-2xl bg-card px-3.5">
+      <View
+        className={`flex-row items-center rounded-2xl bg-card px-3.5 ${
+          accent ? `border-2 ${focused ? 'border-hawk-gold' : 'border-transparent'}` : ''
+        }`}
+      >
         <TextInput
           value={q}
           onChangeText={setQ}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholder={placeholder}
           placeholderTextColor={ui.faint}
           autoCapitalize="none"

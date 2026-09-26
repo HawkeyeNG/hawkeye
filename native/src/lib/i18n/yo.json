@@ -1211,5 +1211,10 @@
   "n.app.tabs.index.chat-card-title": "Ṣé o ní ìbéèrè? Bá wa sọ̀rọ̀",
   "n.app.tabs.index.chat-card-sub": "Ẹnìkan nínú ẹgbẹ́ Hawkeye yóò dá ọ lóhùn — nípa ìjábọ̀, eré àdánwò tàbí àbájáde.",
   "map-unit.save-your-polling-unit-you-ll-get": "Fi ẹ̀ka ìdìbò rẹ pamọ́ — wàá máa gba ìkìlọ̀ nípa rẹ̀ àti ìránnilétí ní ọjọ́ ìdìbò.",
-  "map-unit.skip-for-now": "Fò ó fún báyìí"
+  "map-unit.skip-for-now": "Fò ó fún báyìí",
+  "n.app.choose-unit.last-step": "Ìgbésẹ̀ ìkẹyìn",
+  "n.components.choose-unit.units-found-within-m": "Àwọn ẹ̀ka tí a rí láàrín {v0}m. Àwọn ẹ̀ka tí a kò tíì ṣàwòrán lè má fara hàn.",
+  "n.components.choose-unit.choosing-a-unit-is-a-preference": "Yíyan ẹ̀ka jẹ́ ohun tí o fẹ́ràn — ó ń pinnu ẹ̀ka tí ìwọ yóò máa gba ìkìlọ̀ nípa rẹ̀, o kò sì nílò láti wà níbẹ̀ láti yàn án.",
+  "n.components.choose-unit.mapping-is-a-different-job": "Ṣíṣàwòrán jẹ́ iṣẹ́ mìíràn: ó ń kọ ààyè GPS ẹ̀ka kan sínú ìwé ìforúkọsílẹ̀, ó sì nílò kí o dúró ní ẹ̀ka náà. Lo “{v0}” lábẹ́ {v1} fún ìyẹn.",
+  "n.components.unit-search.keep-typing-at-least-3": "Máa tẹ̀ sí i — ó kéré tán lẹ́tà 3."
 }

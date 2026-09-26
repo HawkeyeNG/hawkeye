@@ -255,6 +255,10 @@ function RootShell() {
               <Stack.Screen name="report/incident" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="report/collation" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="map-unit" options={{ presentation: 'fullScreenModal' }} />
+              {/* Choosing "my" unit — from Profile, and as the last sign-up
+                  step. Framed like its siblings; no swipe-to-dismiss, so the
+                  sign-up step is left only by Save or Skip. */}
+              <Stack.Screen name="choose-unit" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="ledger" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="reports-log" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="integrity" options={{ presentation: 'fullScreenModal' }} />

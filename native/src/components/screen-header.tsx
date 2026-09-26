@@ -35,8 +35,13 @@ export function ScreenHeader({
   onClose,
   right,
   rightSlot,
+  onHome,
 }: {
   title: string;
+  /** Replaces the mark's default "navigate to the tabs". For a screen that must
+   *  LEAVE rather than stack the tabs on top of itself — the sign-up chooser,
+   *  where going home means skipping and must not leave the chooser behind. */
+  onHome?: () => void;
   /** Omit for a static (non-hiding) header — e.g. a chat screen, where a header
    *  that slid away mid-read would be wrong. When set, drive it from
    *  useHideOnScroll's translateY so the pane hides on scroll-down. */
@@ -84,7 +89,7 @@ export function ScreenHeader({
           style={{ height: HEADER_CONTENT_H }}
         >
           <Pressable
-            onPress={() => router.navigate('/(tabs)' as never)}
+            onPress={onHome ?? (() => router.navigate('/(tabs)' as never))}
             hitSlop={8}
             className="mr-3"
             accessibilityRole="button"

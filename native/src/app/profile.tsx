@@ -17,7 +17,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ChooseUnitModal } from '@/components/choose-unit';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { PasswordField } from '@/components/password-field';
@@ -28,6 +27,7 @@ import { isBiometricAvailable, isSigningGateEnabled, setSigningGateEnabled } fro
 import { pick } from '@/lib/haptics';
 import { isSaveToDeviceEnabled, setSaveToDeviceEnabled } from '@/lib/save-to-device';
 import { shareHawkeye } from '@/lib/share';
+import { onMyUnitSaved } from '@/lib/my-unit';
 import { myReferral, type Referral } from '@/lib/referral';
 import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
@@ -189,7 +189,6 @@ export default function Profile() {
   const insets = useSafeAreaInsets();
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const [me, setMe] = useState<Me | null>(null);
-  const [pickUnit, setPickUnit] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -305,6 +304,13 @@ export default function Profile() {
   useEffect(() => {
     load();
   }, [load]);
+
+  /* The chooser is its own page now (/choose-unit), so its save cannot reach
+     this screen's state through a prop. It announces the unit instead, and the
+     row updates in place rather than refetching: a round-trip to
+     /api/observers/me would leave the old unit on screen for as long as the
+     network takes, right after the reader watched it save. */
+  useEffect(() => onMyUnitSaved((u) => setMe((m) => (m ? ({ ...m, unit: u } as Me) : m))), []);
 
   /* Asked once, and never awaited by anything the screen is waiting for. */
   useEffect(() => {
@@ -624,8 +630,16 @@ export default function Profile() {
                    was a secondary row on it, so someone who only wanted to say
                    which unit is theirs was handed a surveying tool and told to
                    be standing in the right place. /map-unit is unchanged and
-                   still right for contributing a coordinate. */
-                onPress={() => setPickUnit(true)}
+                   still right for contributing a coordinate.
+                   A full page, not a sheet: `current` lets it mark the saved
+                   row, and its close returns here. Cast: typed routes
+                   regenerate on the next `expo start`. */
+                onPress={() =>
+                  router.push({
+                    pathname: '/choose-unit',
+                    params: savedUnit ? { current: savedUnit.pu_code } : {},
+                  } as never)
+                }
               />
             </View>
             {/* Headed, not bare: these chips used to float under the account
@@ -1045,7 +1059,10 @@ export default function Profile() {
                   maxLength={6}
                   placeholder="······"
                   placeholderTextColor={ui.faint}
-                  className="rounded-2xl bg-card px-4 py-3.5 text-center text-2xl font-bold tracking-[8px] text-ink"
+                  // No letter spacing: iOS recycles TextInput views and the
+                  // kerning outlives this field, spacing out the next
+                  // placeholder that lands on it. See the OTP box in sign-in.tsx.
+                  className="rounded-2xl bg-card px-4 py-3.5 text-center text-2xl font-bold text-ink"
                 />
                 <Pressable
                   disabled={pwBusy || resetOtp.trim().length < 6}
@@ -1106,16 +1123,6 @@ export default function Profile() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-
-      {/* Updates `me` in place rather than refetching: the row that opened this
-          is the row that has to change, and a round-trip to /api/observers/me
-          would leave "None saved" on screen for as long as the network takes. */}
-      <ChooseUnitModal
-        visible={pickUnit}
-        onClose={() => setPickUnit(false)}
-        current={savedUnit}
-        onSaved={(u) => setMe((m) => (m ? ({ ...m, unit: u } as Me) : m))}
-      />
 
       <NoticeSheet {...notice.props} />
     </View>

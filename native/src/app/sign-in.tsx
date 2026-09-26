@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ChooseUnitModal } from '@/components/choose-unit';
 import { PasswordField } from '@/components/password-field';
 import {
   accountHasPassword,
@@ -108,9 +107,6 @@ export default function SignIn() {
    * account signing up again is not a new observer.
    */
   const [isNewAccount, setIsNewAccount] = useState(false);
-  /** The polling-unit ask that follows a new sign-up — see finishOnboarding. */
-  const [pickUnit, setPickUnit] = useState(false);
-  const leaving = useRef(false);
 
   // Resend cooldown — protects the backend's OTP rate limit from tap-spam and
   // gives the first send a fair chance to arrive (NG SMS can take ~30s).
@@ -359,8 +355,14 @@ export default function SignIn() {
         // off, and this is the one moment the ask is expected — afterwards it is
         // a Profile row nobody goes looking for. Same step as the web
         // (map-unit.html?onboard=1). Resets and rescues are not sign-ups.
+        //
+        // A PAGE, not a sheet over this screen: /choose-unit?onboard=1 owns
+        // the rest of the sign-up (Save or Skip both land on the tabs). REPLACE
+        // so Back can never return to a password step that is already done.
+        // There is no modal to fade out any more, so nothing to wait for.
+        // Cast: typed routes regenerate on the next `expo start`.
         if (purpose === 'signup' && isNewAccount) {
-          setPickUnit(true);
+          router.replace('/choose-unit?onboard=1' as never);
           return;
         }
         router.replace('/(tabs)');
@@ -379,21 +381,6 @@ export default function SignIn() {
     } finally {
       setBusy(false);
     }
-  };
-
-  /**
-   * Out of the polling-unit ask — saved or skipped, the chooser's close() lands
-   * here either way — and into the app, as a sign-up always went.
-   *
-   * CLOSE, THEN NAVIGATE. Replacing the stack while the modal is still fading
-   * out is the mid-dismiss navigation alerts.tsx guards against; the fade is
-   * 300ms. `leaving` stops a double tap on Skip queueing two replaces.
-   */
-  const finishOnboarding = () => {
-    if (leaving.current) return;
-    leaving.current = true;
-    setPickUnit(false);
-    setTimeout(() => router.replace('/(tabs)'), 350);
   };
 
   /** Only an account we KNOW has no password is forced through this step. */
@@ -707,9 +694,17 @@ export default function SignIn() {
             <>
               <Text className="text-2xl font-bold text-ink">{i18nT('n.app.sign-in.enter-the-code')}</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">{line}</Text>
+              {/* NO letterSpacing (tracking-*) ON ANY TextInput. On iOS a
+                  TextInput's native view is recycled once it unmounts, and the
+                  kerning this code box used to carry stayed on the view: the
+                  NEXT field to get it — "New password" on the step right after
+                  this one, later the unit search — drew its placeholder spaced
+                  out ("N e w  p a s s w o r d"). Removing the attribute from
+                  props does not clear it, so the only safe amount is none.
+                  tests/choose_unit_test.mjs guards every TextInput in src. */}
               <TextInput
                 ref={otpRef}
-                className="rounded-2xl bg-card px-4 py-4 text-center text-2xl font-bold tracking-[8px] text-ink"
+                className="rounded-2xl bg-card px-4 py-4 text-center text-2xl font-bold text-ink"
                 placeholder="······"
                 placeholderTextColor={ui.faint}
                 keyboardType="number-pad"
@@ -800,10 +795,6 @@ export default function SignIn() {
           ) : null}
         </View>
       </KeyboardAvoidingView>
-
-      {/* The Profile chooser, not /map-unit: saving is a preference about
-          alerts, not a survey that needs them standing at the unit. */}
-      <ChooseUnitModal visible={pickUnit} onboard onClose={finishOnboarding} />
     </SafeAreaView>
   );
 }

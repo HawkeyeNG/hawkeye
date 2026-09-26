@@ -40,8 +40,9 @@ console.log('=== native: the profile row opens the picker, not /map-unit ===');
   // an absence check over the whole file is the stronger claim anyway — there
   // must be no route to the surveying screen from this screen at all.
   check('nothing on this screen pushes /map-unit', /router\.push\('\/map-unit'\)/.test(profile), false);
-  check('the row opens the picker instead', /setPickUnit\(true\)/.test(profile), true);
-  check('the picker is mounted on the screen', /<ChooseUnitModal/.test(profile), true);
+  // The chooser is a PAGE now (/choose-unit), not a modal mounted on Profile.
+  check('the row opens the chooser page instead', /router\.push\(\{\s*pathname:\s*'\/choose-unit'/.test(profile), true);
+  check('and Profile hears the save without a refetch', /onMyUnitSaved\(/.test(profile), true);
 
   check('the picker reuses UnitSearch rather than a new one', /<UnitSearch/.test(modal), true);
   check('and the shared location helpers', /tryQuickFix|describeFixFailure/.test(modal), true);
@@ -53,6 +54,55 @@ console.log('=== native: the profile row opens the picker, not /map-unit ===');
   const mapUnit = readNative(`${ROOT}/native/src/app/map-unit.tsx`);
   check('map-unit is still the surveying screen', /Map a polling unit/.test(mapUnit), true);
   check('and still asks for a GPS fix', /record fix|record one GPS fix/i.test(mapUnit), true);
+}
+
+console.log('\n=== native: the chooser is its own route, and sign-up lands on it ===');
+{
+  const route = `${ROOT}/native/src/app/choose-unit.tsx`;
+  const exists = fs.existsSync(route);
+  check('the /choose-unit route exists', exists, true);
+  const page = exists ? fs.readFileSync(route, 'utf8') : '';
+  check('it renders the shared chooser', /<ChooseUnitScreen/.test(page), true);
+  check('onboarding leaves by REPLACE to the tabs', /router\.replace\('\/\(tabs\)'\)/.test(page), true);
+  check('and it tells Profile what was saved', /emitMyUnitSaved\(/.test(page), true);
+  const layout = fs.readFileSync(`${ROOT}/native/src/app/_layout.tsx`, 'utf8');
+  check('the stack registers it', /name="choose-unit"/.test(layout), true);
+  const signIn = fs.readFileSync(`${ROOT}/native/src/app/sign-in.tsx`, 'utf8');
+  check('a new sign-up goes to the page with onboard=1', /router\.replace\('\/choose-unit\?onboard=1'/.test(signIn), true);
+  // No modal left anywhere: a second chooser would drift from this one.
+  const tsx = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
+    d.isDirectory() ? tsx(path.join(dir, d.name)) : /\.tsx?$/.test(d.name) ? [path.join(dir, d.name)] : []);
+  const users = tsx(`${ROOT}/native/src`).filter((f) => /ChooseUnitModal/.test(fs.readFileSync(f, 'utf8')));
+  check('nothing still mounts the old ChooseUnitModal', users, []);
+}
+
+/**
+ * NO letterSpacing ON A NATIVE TextInput — EVER.
+ *
+ * iOS recycles a TextInput's native view once it unmounts, and kerning set on
+ * it survives the recycle: the OTP box's `tracking-[8px]` came back as a spaced
+ * "N e w  p a s s w o r d" placeholder on the very next screen, and later as
+ * "N a m e ,  w a r d  o r  u n i t" in this chooser's search box. Neither of
+ * those fields had any letterSpacing of its own, so a check on the field that
+ * LOOKS wrong finds nothing; the only reliable rule is that no TextInput in the
+ * app carries any.
+ */
+console.log('\n=== native: no TextInput carries letterSpacing (it leaks into the next field on iOS) ===');
+{
+  const tsx = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
+    d.isDirectory() ? tsx(path.join(dir, d.name)) : d.name.endsWith('.tsx') ? [path.join(dir, d.name)] : []);
+  /** Every `<TextInput …/>` opening tag whose props space the letters. */
+  const spaced = (src, file) => [...src.matchAll(/<TextInput\b[\s\S]*?\/>/g)]
+    .filter((m) => /\btracking-|letterSpacing/.test(m[0]))
+    .map((m) => `${file}:${src.slice(0, m.index).split('\n').length}`);
+  const files = tsx(`${ROOT}/native/src`);
+  const inputs = files.reduce((n, f) => n + (fs.readFileSync(f, 'utf8').match(/<TextInput\b/g) || []).length, 0);
+  check('the scan actually sees the app\'s TextInputs', inputs, (n) => n >= 10);
+  const bad = files.flatMap((f) => spaced(fs.readFileSync(f, 'utf8'), path.relative(`${ROOT}/native/src`, f)));
+  check('no TextInput has tracking-* or letterSpacing', bad, []);
+  // CONTROL: the old OTP box must be caught, or the pass above means nothing.
+  const planted = '<TextInput\n  ref={otpRef}\n  className="text-2xl font-bold tracking-[8px] text-ink"\n  onChangeText={(s) => setOtp(s)}\n/>';
+  check('CONTROL the scan flags the old tracking-[8px] OTP box', spaced(planted, 'planted').length, 1);
 }
 
 console.log('\n=== web: same rule, driven in a browser ===');

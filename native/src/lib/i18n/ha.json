@@ -1211,5 +1211,10 @@
   "n.app.tabs.index.chat-card-title": "Kuna da tambaya? Yi hira da mu",
   "n.app.tabs.index.chat-card-sub": "Wani daga ƙungiyar Hawkeye zai amsa maka — game da bayar da rahoto, gwajin atisaye ko sakamako.",
   "map-unit.save-your-polling-unit-you-ll-get": "Ajiye rukunin zaɓenka — za ka samu sanarwa game da shi da kuma tunatarwa a ranar zaɓe.",
-  "map-unit.skip-for-now": "Tsallake a yanzu"
+  "map-unit.skip-for-now": "Tsallake a yanzu",
+  "n.app.choose-unit.last-step": "Mataki na ƙarshe",
+  "n.components.choose-unit.units-found-within-m": "An samu rukunan cikin {v0}m. Rukunan da ba a tsara ba ƙila ba za su bayyana ba.",
+  "n.components.choose-unit.choosing-a-unit-is-a-preference": "Zaɓen rukuni zaɓin ra'ayi ne — shi ke tantance rukunin da kake samun sanarwa a kansa, kuma ba sai ka kasance a can ba kafin ka saita shi.",
+  "n.components.choose-unit.mapping-is-a-different-job": "Tsarawa aiki ne daban: yana rubuta matsayin GPS na rukuni a cikin rijistar, kuma yana buƙatar ka tsaya a rukunin. Yi amfani da “{v0}” a ƙarƙashin {v1} don hakan.",
+  "n.components.unit-search.keep-typing-at-least-3": "Ci gaba da rubutawa — aƙalla haruffa 3."
 }

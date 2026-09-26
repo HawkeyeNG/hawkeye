@@ -257,6 +257,9 @@
 }
 .sr-ask-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(11, 107, 58, 0.25); }
 .sr-ask-input.num { font-family: var(--sr-mono); letter-spacing: 0.04em; }
+/* The spacing is for the typed code, not the hint: a placeholder inherits
+   letter-spacing and read spaced out. Same rule as the native code boxes. */
+.sr-ask-input.num::placeholder { letter-spacing: normal; }
 /* A real dialog, for flows too big for a one-line prompt. The same ground and
    card as .sr-ask so it reads as the same family; the BODY scrolls, never the
    page behind it. */

@@ -1000,4 +1000,9 @@ export default {
   "n.app.practice.preview-sheet-photo": "Foto mpempe akwụkwọ nsonaazụ",
   "n.app.profile.save-report-photos-and-videos-to": "Chekwaa foto na vidiyo akụkọ n'ekwentị",
   "n.app.profile.turn-off-if-your-phone-may": "Gbanyụọ ya ma ọ bụrụ na a nwere ike inyocha ekwentị gị.",
+  "n.app.choose-unit.last-step": "Nzọụkwụ ikpeazụ",
+  "n.components.choose-unit.units-found-within-m": "Ngalaba ndị dị n'ime {v0}m. Ngalaba ndị e sepụtabeghị nwere ike ghara ịpụta.",
+  "n.components.choose-unit.choosing-a-unit-is-a-preference": "Ịhọrọ ngalaba bụ mmasị gị — ọ na-ekpebi ngalaba ị na-anata ọkwa gbasara ya, ọ dịghịkwa mkpa ka ị nọrọ ebe ahụ iji họrọ ya.",
+  "n.components.choose-unit.mapping-is-a-different-job": "Isepụta bụ ọrụ dị iche: ọ na-edekọ ọnọdụ GPS nke ngalaba n'ime ndekọ ahụ, ọ chọkwara ka ị guzoro na ngalaba ahụ. Jiri “{v0}” n'okpuru {v1} maka nke ahụ.",
+  "n.components.unit-search.keep-typing-at-least-3": "Gaa n'ihu na-apịnye — opekempe mkpụrụedemede 3.",
 };

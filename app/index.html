@@ -9,6 +9,15 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <script>/*hk-boot-bg*/(function(){try{
+    // App cold start only: the page itself is green + hawk from its very first
+    // frame. The #hk-boot-splash cover below only exists once <body> is parsed;
+    // until then (every head script) the WebView showed a blank green page
+    // between Android's launch hawk and the cover's hawk. Cleared with the cover.
+    var C=window.Capacitor;
+    if(C&&C.isNativePlatform&&C.isNativePlatform()&&!sessionStorage.getItem("hk_booted"))
+      document.documentElement.style.background="#004225 url(splash-icon.png?v=1) center/180px 180px no-repeat";
+  }catch(e){}})();</script>
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=191" />
   <script>
@@ -170,7 +179,10 @@
   <script>/*hk-boot*/(function(){
     var el = document.getElementById("hk-boot-splash");
     if (!el) return;
-    var kill = function () { if (el && el.parentNode) el.remove(); el = null; };
+    var kill = function () {
+      document.documentElement.style.removeProperty("background");   // hk-boot-bg
+      if (el && el.parentNode) el.remove(); el = null;
+    };
     var app = false;
     try {
       var C = window.Capacitor;
@@ -183,7 +195,7 @@
     // launch image carries straight on. A plain field here painted OVER that
     // hawk and left a blank green screen until the page loaded (2026-09-26).
     // App only: a browser never requests the image.
-    var i = new Image(); i.src = "splash-icon.png?v=1"; i.alt = "";
+    var i = new Image(); i.src = "splash-icon.png?v=1"; i.alt = ""; i.decoding = "sync";
     i.style.cssText = "width:180px;height:180px";
     el.appendChild(i);
     window.addEventListener("load", function () { setTimeout(kill, 150); }, { once: true });

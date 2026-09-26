@@ -65,13 +65,4 @@ Sentry.init({
   beforeBreadcrumb: scrubCrumb,
 });
 
-// TEMPORARY (OTA 2026-09-26): one test event per launch to prove native reports
-// arrive, and arrive scrubbed. The values are fake. Remove in the next OTA.
-if (!__DEV__) {
-  setTimeout(() => {
-    Sentry.captureMessage('hawkeye native monitor test +2348000000000 nobody@example.com '
-      + 'tok_abcdefghijklmnopqrstuvwxyz0123 https://hawkeye.com.ng/observe.html?phone=1');
-  }, 5000);
-}
-
 export { Sentry };

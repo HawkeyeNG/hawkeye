@@ -71,9 +71,13 @@
         // No release-health sessions: they would add a request per page view
         // and tell us nothing we act on.
         integrations: function (d) { return d.filter(function (i) { return i.name !== 'BrowserSession'; }); },
-        ignoreErrors: ['ResizeObserver loop', 'Non-Error promise rejection captured'],
+        // + the browser's own cross-page transition being skipped (Safari, not our
+        // code: we never call startViewTransition).
+        ignoreErrors: ['ResizeObserver loop', 'Non-Error promise rejection captured', 'Skipping view transition'],
         denyUrls: [/extensions\//i, /^chrome:\/\//i, /^moz-extension:/i, /^safari-(web-)?extension:/i],
-        beforeSend: scrubEvent,
+        // Google's renderer (Googlebot's WRS) refuses service workers from its own
+        // injected wrsParams shim: a crawler, not a user.
+        beforeSend: function (ev) { return /wrsParams/.test(JSON.stringify(ev.exception || '')) ? null : scrubEvent(ev); },
         beforeBreadcrumb: scrubCrumb,
       });
       var q = early; early = null;

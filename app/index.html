@@ -178,6 +178,14 @@
       if (app) sessionStorage.setItem("hk_booted", "1");
     } catch (x) { app = false; }
     if (!app) return kill();
+    // The SAME hawk, size and place as the Android window background
+    // (res/drawable/splash_screen.xml: splash_icon.png, 180dp, centred), so the
+    // launch image carries straight on. A plain field here painted OVER that
+    // hawk and left a blank green screen until the page loaded (2026-09-26).
+    // App only: a browser never requests the image.
+    var i = new Image(); i.src = "splash-icon.png?v=1"; i.alt = "";
+    i.style.cssText = "width:180px;height:180px";
+    el.appendChild(i);
     window.addEventListener("load", function () { setTimeout(kill, 150); }, { once: true });
     setTimeout(kill, 2500);
   })();</script>

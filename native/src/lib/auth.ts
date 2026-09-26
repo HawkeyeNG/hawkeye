@@ -108,7 +108,7 @@ export function requestOtp(
 export async function verifyOtp(
   phone: string,
   otp: string,
-): Promise<{ ok: boolean; error?: string; hint?: string; isNew?: boolean; hadPassword?: boolean }> {
+): Promise<{ ok: boolean; error?: string; hint?: string; isNew?: boolean; needsUnit?: boolean; hadPassword?: boolean }> {
   const id = await getIdentity();
   const r = await post<{
     ok?: boolean;
@@ -117,6 +117,7 @@ export async function verifyOtp(
     error?: string;
     hint?: string;
     isNew?: boolean;
+    needsUnit?: boolean;
     hasPassword?: boolean;
   }>(
     '/api/observers/verify',
@@ -131,7 +132,7 @@ export async function verifyOtp(
     // An older server sends neither field. `undefined` then means "not stated",
     // and the caller falls back to the ordinary sign-up path rather than
     // claiming an account is new when it does not know.
-    return { ok: true, isNew: r.isNew, hadPassword: r.hasPassword };
+    return { ok: true, isNew: r.isNew, needsUnit: r.needsUnit, hadPassword: r.hasPassword };
   }
   return { ok: false, error: r.error, hint: r.hint };
 }

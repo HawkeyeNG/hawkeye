@@ -246,7 +246,8 @@ export default function SignIn() {
           setStep('exists');
           return;
         }
-        setIsNewAccount(r.isNew === true);
+        // Also a revived deleted account, or any account with no saved unit (/verify needsUnit).
+        setIsNewAccount(r.isNew === true || r.needsUnit === true);
         setHasPw(false);
         setNewPw('');
         setNewPw2('');

@@ -857,7 +857,7 @@ $('btn-auth').onclick = async () => {
   }
   resetAuthPane();
   // /login has no isNew, so a password sign-in can never be taken for a sign-up.
-  afterVerified(body.isNew);
+  afterVerified(body.isNew === true || body.needsUnit === true);
 
   } catch {
     alert('Network problem — check your connection and try again.');
@@ -2534,7 +2534,7 @@ function armTelegramLogin() {
   try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
       // Passed through for when /telegram-verify reports isNew; today it does
       // not, so a Telegram sign-up keeps the old routing.
-      afterVerified(body.isNew);
+      afterVerified(body.isNew === true || body.needsUnit === true);
     } catch (e) {
       btn.disabled = false;
       btn.textContent = T('observe.continue-with-telegram-no-code-needed', '✈️ Continue with Telegram — no code needed');

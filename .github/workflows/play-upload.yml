@@ -68,6 +68,12 @@ on:
         type: boolean
         default: false
 
+# Sentry (native 1.0.7+): the Gradle build uploads source maps and native symbols
+# with this token. Without the secret, upload is skipped rather than failing the build.
+env:
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  SENTRY_DISABLE_AUTO_UPLOAD: ${{ secrets.SENTRY_AUTH_TOKEN == '' && 'true' || 'false' }}
+
 permissions:
   contents: read
   id-token: write        # REQUIRED: this is what mints the OIDC token. Without

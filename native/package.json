@@ -12,6 +12,7 @@
     "@react-native-firebase/app": "^26.3.2",
     "@react-native-firebase/messaging": "^26.3.2",
     "@react-native-ml-kit/text-recognition": "^2.0.0",
+    "@sentry/react-native": "~7.11.0",
     "@shopify/flash-list": "2.0.2",
     "expo": "~57.0.8",
     "expo-background-task": "~57.0.6",

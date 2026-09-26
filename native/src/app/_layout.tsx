@@ -1,4 +1,6 @@
 import 'react-native-gesture-handler';
+// First, so a crash anywhere below is reported (scrubbed on the phone; see lib/monitor.ts).
+import { Sentry } from '@/lib/monitor';
 import '../global.css';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -30,6 +32,8 @@ SplashScreen.preventAutoHideAsync();
  * has out in the field.
  */
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Promise<void> }) {
+  // A render error caught here never reaches the global handler, so report it explicitly.
+  useEffect(() => { Sentry.captureException(error); }, [error]);
   return (
     <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#e8f2ec' }}>

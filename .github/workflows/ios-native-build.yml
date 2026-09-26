@@ -42,6 +42,10 @@ on:
 env:
   NATIVE_BUNDLE_ID: ng.com.hawkeye.observer
   SCHEME: Hawkeye
+  # Sentry (1.0.7+): the build uploads debug symbols and source maps with this
+  # token. Without the secret, upload is skipped rather than failing the build.
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  SENTRY_DISABLE_AUTO_UPLOAD: ${{ secrets.SENTRY_AUTH_TOKEN == '' && 'true' || 'false' }}
 
 # The GITHUB_TOKEN can do nothing but read this repository. Nothing here
 # writes to it: the build is handed to an external service using

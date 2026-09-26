@@ -1207,5 +1207,7 @@
   "n.lib.dates.yesterday-at": "àná {v0}",
   "n.lib.dates.day-month-time": "{v0}, {v1}",
   "n.lib.dates.updated-at": "a ṣàtúnṣe {v0}",
-  "n.app.map.states-units-reporting": "ìpínlẹ̀ {v0} ń jábọ̀ · ibùdó ìdìbò {v1} tí a kà"
+  "n.app.map.states-units-reporting": "ìpínlẹ̀ {v0} ń jábọ̀ · ibùdó ìdìbò {v1} tí a kà",
+  "n.app.tabs.index.chat-card-title": "Ṣé o ní ìbéèrè? Bá wa sọ̀rọ̀",
+  "n.app.tabs.index.chat-card-sub": "Ẹnìkan nínú ẹgbẹ́ Hawkeye yóò dá ọ lóhùn — nípa ìjábọ̀, eré àdánwò tàbí àbájáde."
 }

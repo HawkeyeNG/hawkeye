@@ -1207,5 +1207,7 @@
   "n.lib.dates.yesterday-at": "ụnyaahụ {v0}",
   "n.lib.dates.day-month-time": "{v0}, {v1}",
   "n.lib.dates.updated-at": "emelitere {v0}",
-  "n.app.map.states-units-reporting": "steeti {v0} na-akọ akụkọ · ebe ntuli aka {v1} agụrụ"
+  "n.app.map.states-units-reporting": "steeti {v0} na-akọ akụkọ · ebe ntuli aka {v1} agụrụ",
+  "n.app.tabs.index.chat-card-title": "Ị nwere ajụjụ? Soro anyị kparịta ụka",
+  "n.app.tabs.index.chat-card-sub": "Onye otu Hawkeye ga-aza gị — gbasara ịkọ akụkọ, ọsọ omume ma ọ bụ nsonaazụ."
 }

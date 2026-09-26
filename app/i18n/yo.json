@@ -1602,5 +1602,7 @@
   "privacy.support-chat-intercom": "Àyàfi kan ṣoṣo ni ìjíròrò ìrànlọ́wọ́ lórí ojú-ìwé Àwọn Ìbéèrè Tí A Ń Béèrè Nígbà Gbogbo àti Nípa Wa. Intercom ló ń ṣiṣẹ́ rẹ̀, ó sì máa ń ṣí kìkì tí o bá tẹ “Bá wa sọ̀rọ̀”; lẹ́yìn náà Intercom yóò gba ohun tí o kọ, yóò sì fi kúkì pamọ́ láti jẹ́ kí ìjíròrò náà máa bá a lọ.",
   "privacy.error-reports-sentry": "Ìròyìn àṣìṣe ni àyàfi kejì, tí ó kéré jù. Nígbà tí nǹkan bá bàjẹ́, a máa ń fi ìròyìn ìmọ̀-ẹ̀rọ (ohun tí ó kùnà, àti irú ẹ̀rọ àti ẹ̀rọ-aṣàwákiri rẹ) ránṣẹ́ sí Sentry, iṣẹ́ wa tí ń ṣàbójútó àṣìṣe, ní ilẹ̀ Yúróòpù. A máa ń yọ nọ́mbà fóònù, àdírẹ́sì ímeèlì àti kóòdù kúrò lórí ẹ̀rọ rẹ kí a tó fi ránṣẹ́, Sentry kò sì ní tọ́jú àdírẹ́sì IP rẹ.",
   "results.in-place": " ní {v0}",
-  "results.follow-subject": "Tẹ̀lé {v0}"
+  "results.follow-subject": "Tẹ̀lé {v0}",
+  "index.chat-card-title": "Ṣé o ní ìbéèrè? Bá wa sọ̀rọ̀",
+  "index.chat-card-sub": "Ẹnìkan nínú ẹgbẹ́ Hawkeye yóò dá ọ lóhùn — nípa ìjábọ̀, eré àdánwò tàbí àbájáde."
 }

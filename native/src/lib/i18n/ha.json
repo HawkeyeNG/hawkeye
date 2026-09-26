@@ -1207,5 +1207,7 @@
   "n.lib.dates.yesterday-at": "jiya {v0}",
   "n.lib.dates.day-month-time": "{v0}, {v1}",
   "n.lib.dates.updated-at": "an sabunta {v0}",
-  "n.app.map.states-units-reporting": "jihohi {v0} na kai rahoto · rumfuna {v1} an ƙirga"
+  "n.app.map.states-units-reporting": "jihohi {v0} na kai rahoto · rumfuna {v1} an ƙirga",
+  "n.app.tabs.index.chat-card-title": "Kuna da tambaya? Yi hira da mu",
+  "n.app.tabs.index.chat-card-sub": "Wani daga ƙungiyar Hawkeye zai amsa maka — game da bayar da rahoto, gwajin atisaye ko sakamako."
 }

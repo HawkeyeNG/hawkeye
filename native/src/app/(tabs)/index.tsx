@@ -487,6 +487,22 @@ export default function Home() {
         </Pressable>
       </View>
 
+      {/* A person, one tap away: the full-screen support chat (app/chat.tsx). */}
+      <Pressable
+        className="mt-3 flex-row items-center rounded-2xl bg-card px-4 py-3.5 active:opacity-80"
+        onPress={() => router.push('/chat' as never)}
+        accessibilityRole="button"
+      >
+        <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-hawk-green">
+          <Feather name="message-square" size={20} color={BRAND.gold} />
+        </View>
+        <View className="flex-1">
+          <Text className="text-[15px] font-bold text-ink">{i18nT('n.app.tabs.index.chat-card-title')}</Text>
+          <Text className="pt-0.5 text-[13px] leading-[18px] text-muted">{i18nT('n.app.tabs.index.chat-card-sub')}</Text>
+        </View>
+        <Feather name="chevron-right" size={18} color={ui.faint} />
+      </Pressable>
+
       <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
         {i18nT('n.app.tabs.index.live-activity')}
       </Text>

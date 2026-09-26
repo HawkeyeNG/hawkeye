@@ -107,6 +107,13 @@
     .home-cols > .home-stack { display: grid; gap: var(--home-gap); align-content: start; }
     @media (min-width: 900px) { .home-cols { grid-template-columns: 1.2fr 1fr; align-items: start; } }
     .home-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    /* "Questions? Chat with us": opens the support chat (faq.html?chat=1 opens the messenger). */
+    .home-chat { display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit; }
+    .home-chat-ic { flex: 0 0 44px; height: 44px; border-radius: 50%; background: #004225; display: grid; place-items: center; }
+    .home-chat-tx { flex: 1; min-width: 0; }
+    .home-chat-tx strong { display: block; font-family: var(--display); font-size: 1rem; }
+    .home-chat-tx small { display: block; margin-top: 2px; color: var(--muted); font-size: .875rem; line-height: 1.35; }
+    .home-chat-go { font-size: 1.4rem; color: var(--muted); }
     .home-card h2 { margin: 0 0 10px; font-size: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     /* A BUTTON, NOT A LINK. These were bare anchors, so they took the
        browser's underlined link colour — visited ones went purple — and read
@@ -272,6 +279,11 @@
               <div><strong id="ms-races">0</strong><span data-i18n="index.races-followed">races followed</span></div>
             </div>
           </div>
+          <a class="home-card home-chat" href="faq.html?chat=1">
+            <span class="home-chat-ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5b301" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            <span class="home-chat-tx"><strong data-i18n="index.chat-card-title">Questions? Chat with us</strong><small data-i18n="index.chat-card-sub">Someone on the Hawkeye team answers — about reporting, practice runs or results.</small></span>
+            <span class="home-chat-go" aria-hidden="true">›</span>
+          </a>
         </div>
         <div class="home-card">
           <h2><span data-i18n="index.live-on-the-ledger">Live on the Ledger</span> <a data-i18n="index.all-reports" href="dashboard.html">All Reports →</a></h2>

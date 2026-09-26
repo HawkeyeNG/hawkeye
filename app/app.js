@@ -551,12 +551,16 @@ function afterVerified(isNew) {
   // A BRAND-NEW observer is asked for their polling unit once, before anything
   // else. It is what their alerts and the election-day reminder hang off, and
   // the moment they have just signed up is the one time the ask is expected;
-  // afterwards it is a Profile setting nobody goes looking for. Skippable, and
-  // map-unit.html hands them on to the report flow either way. Not when a
-  // Telegram /report handoff already carries a unit — that report comes first.
-  // (NEXT_DEST and the map/incident intents returned above: those observers
-  // came for something specific.)
-  if (isNew === true && !PREFILL) { location.href = 'map-unit.html?onboard=1'; return; }
+  // afterwards it is a Profile setting nobody goes looking for. Skippable; Save
+  // and Skip both land on Home. Not when a Telegram /report handoff already
+  // carries a unit — that report comes first. (NEXT_DEST and the map/incident
+  // intents returned above: those observers came for something specific.)
+  //
+  // CHOOSE, NOT MAP. This used to be map-unit.html?onboard=1 — a surveying page
+  // whose primary action is a GPS capture. choose-unit.html is the chooser, the
+  // twin of native's /choose-unit. REPLACE, as native's sign-in does, so Back
+  // from it never returns to a finished sign-up form.
+  if (isNew === true && !PREFILL) { location.replace('choose-unit.html?onboard=1'); return; }
   // Default intent is 'observe' (AUTH_INTENT), so a fresh verification on this
   // page continues into the report flow even when a shared/og link dropped the
   // ?intent=observe param — matching the signed-in boot path below.

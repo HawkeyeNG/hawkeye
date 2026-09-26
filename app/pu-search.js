@@ -91,7 +91,7 @@
       const term = q.value.trim();
       list.innerHTML = '';
       if (term.length < 3) {
-        status.textContent = term ? 'Keep typing — at least 3 characters.' : '';
+        status.textContent = term ? T('pu.keep-typing-at-least-3', 'Keep typing — at least 3 characters.') : '';
         return;
       }
       const mine = ++seq;
@@ -137,7 +137,7 @@
         }
 
         if (!r) {
-          status.textContent = navigator.onLine ? 'Searching…' : 'Looking on this device…';
+          status.textContent = navigator.onLine ? T('pu.searching', 'Searching…') : T('pu.looking-on-this-device', 'Looking on this device…');
           r = await fetch(`/api/register/search?${p}`).then((x) => x.json());
           if (r && !r.error) cache.set(key, { units: r.units || [], truncated: !!r.truncated });
         }
@@ -145,12 +145,12 @@
         if (mine !== seq) return;
         const units = r.units || [];
         if (!units.length) {
-          status.textContent = `No polling unit matches “${term}”. Try fewer letters, or browse by state below.`;
+          status.textContent = T('pu.no-unit-matches', 'No unit matches “{v0}”. Try fewer letters, or browse the register below.').replace('{v0}', term);
           return;
         }
         status.textContent = r.truncated
-          ? `Showing the first ${units.length} matches — keep typing to narrow it.`
-          : `${units.length} match${units.length === 1 ? '' : 'es'}.`;
+          ? T('pu.first-matches-keep-typing', 'First {v0} matches — keep typing to narrow it.').replace('{v0}', units.length)
+          : (units.length === 1 ? T('pu.one-match', '1 match.') : T('pu.n-matches', '{v0} matches.').replace('{v0}', units.length));
         list.innerHTML = units.map((u, i) =>
           `<button type="button" class="pu-option" data-i="${i}"><strong>${esc(u.name)}</strong><br />`
           + `<small>${esc(u.pu_code)} · ${esc(u.ward)}, ${esc(u.lga)}, ${esc(u.state)} · ${TIER_LABEL[tierOf(u)]}</small></button>`).join('');
@@ -168,11 +168,11 @@
           sx.stateStatus(code).then((info) => {
             if (mine !== seq) return;
             status.textContent = info.state === 'absent'
-              ? `The unit list for ${info.name} is not on this device yet (${Math.round(info.bytes / 1024)} KB). Connect once to download it, then search works offline.`
-              : 'Could not search just now — browse by state below.';
+              ? T('pu.unit-list-not-on-device', 'The unit list for {v0} is not on this device yet ({v1} KB). Connect once to download it, then search works offline.').replace('{v0}', info.name).replace('{v1}', Math.round(info.bytes / 1024))
+              : T('pu.could-not-search', 'Could not search just now — check your connection.');
           });
         } else {
-          status.textContent = 'Could not search just now — browse by state below.';
+          status.textContent = T('pu.could-not-search', 'Could not search just now — check your connection.');
         }
       }
     }

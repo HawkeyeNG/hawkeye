@@ -105,16 +105,48 @@ console.log('\n=== native: no TextInput carries letterSpacing (it leaks into the
   check('CONTROL the scan flags the old tracking-[8px] OTP box', spaced(planted, 'planted').length, 1);
 }
 
+console.log('\n=== web: the chooser is a page, and sign-up lands on it ===');
+{
+  const app = fs.readFileSync(`${APP}/app.js`, 'utf8');
+  // Scoped to afterVerified so an unrelated link elsewhere in app.js cannot
+  // satisfy or mask it.
+  const fn = app.slice(app.indexOf('function afterVerified('), app.indexOf('function resetAuthPane('));
+  check('afterVerified is where the sweep looks', fn.length > 100, true);
+  check('a new sign-up goes to the chooser with onboard=1, by replace',
+    /location\.replace\('choose-unit\.html\?onboard=1'\)/.test(fn), true);
+  // A navigation, not the word: the comment above the line names the old page.
+  check('and no longer to the surveying page', /(location\.href\s*=|location\.replace\()\s*'map-unit\.html/.test(fn), false);
+  check('CONTROL the pattern sees the old navigation',
+    /(location\.href\s*=|location\.replace\()\s*'map-unit\.html/.test("location.href = 'map-unit.html?onboard=1';"), true);
+  const sw = fs.readFileSync(`${APP}/sw.js`, 'utf8');
+  check('the service worker precaches the page', /'\/choose-unit\.html'/.test(sw), true);
+  const profile = fs.readFileSync(`${APP}/profile.html`, 'utf8');
+  // One chooser. A second one on Profile would drift from this page.
+  check('Profile no longer carries its own chooser modal', /id="unit-modal"/.test(profile), false);
+}
+
 console.log('\n=== web: same rule, driven in a browser ===');
 const TYPES = { '.json': 'application/json', '.js': 'text/javascript', '.html': 'text/html',
   '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2' };
+const posts = [];
+let meHits = 0;
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
+  const json = (v, code = 200) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(v)); };
   if (url.startsWith('/api/observers/me')) {
-    res.writeHead(200, { 'content-type': 'application/json' });
-    return res.end(JSON.stringify({ observerId: 1, createdAt: Date.now(), identityHash: 'abc', hasPassword: true }));
+    meHits++;
+    return json({ observerId: 1, createdAt: Date.now(), identityHash: 'abc', hasPassword: true,
+      unit: { pu_code: '37-06-02-141', name: 'Wonderland Estate', ward: 'Garki', lga: 'Municipal', state: 'FCT' } });
   }
-  if (url.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{}'); }
+  if (url === '/api/observers/my-unit' && req.method === 'POST') {
+    let b = '';
+    req.on('data', (c) => { b += c; });
+    return req.on('end', () => { posts.push(b); json({ ok: true }); });
+  }
+  if (url === '/api/register/search') {
+    return json({ truncated: false, units: [{ pu_code: '37-06-01-105', name: 'No 20 Ogbomosho Street', ward: 'City Centre', lga: 'Municipal', state: 'FCT' }] });
+  }
+  if (url.startsWith('/api/')) return json({});
   const f = path.join(APP, decodeURIComponent(url));
   if (!f.startsWith(APP) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' });
@@ -124,18 +156,24 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}`;
 
 const b = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome' });
+// authgate.js is a real JWT check: it base64-decodes the payload and reads
+// exp, so a placeholder string fails and the page REDIRECTS to sign-in — the
+// page would be absent for a reason unrelated to what is tested here.
+// REDUCED MOTION, for the harness: these checks cross real page navigations,
+// and headless Chromium stops producing frames after a cross-document view
+// transition (styles.css @view-transition), so every click after the first
+// navigation waits forever for a "stable" element. Measured on incidents.html
+// too — it is the harness, not this page. The site skips the transition for
+// reduced-motion readers, so this is a real configuration, not a stub.
+const ctxOpts = { viewport: { width: 390, height: 780 }, reducedMotion: 'reduce' };
+const signedIn = async (ctx) => ctx.addInitScript(() => {
+  const body = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 86400 }));
+  localStorage.setItem('hawkeye_token', 'hdr.' + body + '.sig');
+  localStorage.setItem('hawkeye_lang_prompted', '1');
+});
 {
-  const ctx = await b.newContext({ viewport: { width: 390, height: 780 } });
-  // authgate.js hides the whole page without a token, so the card would be
-  // absent for a reason that has nothing to do with what is being tested.
-  // authgate.js is a real JWT check: it base64-decodes the payload and reads
-  // , so a placeholder string fails and the page REDIRECTS to sign-in —
-  // the card was absent for a reason unrelated to what is tested here. Only
-  // the shape matters client-side; the server is stubbed below regardless.
-  await ctx.addInitScript(() => {
-    const body = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 86400 }));
-    localStorage.setItem('hawkeye_token', 'hdr.' + body + '.sig');
-  });
+  const ctx = await b.newContext(ctxOpts);
+  await signedIn(ctx);
   const p = await ctx.newPage();
   const errs = [];
   p.on('pageerror', (e) => errs.push(String(e)));
@@ -144,74 +182,93 @@ const b = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwri
 
   const before = await p.evaluate(() => {
     const card = [...document.querySelectorAll('.pcard')].find((c) => /My polling unit/i.test(c.textContent));
-    return {
-      hasCard: !!card,
-      // The card may still LINK to map-unit — that is fine and deliberate, it is
-      // the other job. What it must not do is make that the way to save.
-      primaryIsPicker: !!card?.querySelector('#btn-pick-unit'),
-      modalOpen: !document.getElementById('unit-modal')?.hidden,
-    };
+    return { hasCard: !!card, primaryIsPicker: !!card?.querySelector('#btn-pick-unit') };
   });
   check('the card is there', before.hasCard, true);
   check('its primary control is the picker', before.primaryIsPicker, true);
-  check('and the picker starts closed', before.modalOpen, false);
 
-  await p.click('#btn-pick-unit');
-  await p.waitForTimeout(600);
-  const after = await p.evaluate(() => {
-    const m = document.getElementById('unit-modal');
-    const shown = m ? m.getClientRects().length > 0 : false;
-    return {
-      shown,
-      hasNearMe: !!document.getElementById('btn-unit-near'),
-      // pu-search.js mounts its own input; if it is absent the picker offers
-      // only GPS, which is useless to anyone not standing at their unit.
-      hasSearchInput: !!document.getElementById('pus-q'),
-      saveDisabled: document.getElementById('btn-unit-save')?.disabled ?? null,
-      navigatedAway: location.pathname.includes('map-unit'),
-    };
-  });
-  check('tapping it opens the picker', after.shown, true);
-  check('with a near-me control', after.hasNearMe, true);
-  check('and the shared search input mounted', after.hasSearchInput, true);
+  await Promise.all([p.waitForURL(/choose-unit\.html/), p.click('#btn-pick-unit')]);
+  await p.waitForTimeout(900);
+  const after = await p.evaluate(() => ({
+    path: location.pathname,
+    current: new URLSearchParams(location.search).get('current'),
+    // pu-search.js mounts its own input; if it is absent the page offers only
+    // GPS, which is useless to anyone not standing at their unit.
+    hasSearchInput: !!document.getElementById('pus-q'),
+    hasNearTab: !!document.getElementById('tab-near'),
+    hasRegTab: !!document.getElementById('tab-reg'),
+    saveDisabled: document.getElementById('btn-unit-save')?.disabled ?? null,
+    closeShown: document.getElementById('cu-close').getClientRects().length > 0,
+    skipShown: document.getElementById('cu-skip').getClientRects().length > 0,
+    bannerShown: document.getElementById('cu-banner').getClientRects().length > 0,
+    eyebrow: document.getElementById('cu-eyebrow').textContent.trim(),
+    header: document.querySelector('.gov-header .brand-text strong')?.textContent.trim(),
+  }));
+  check('tapping it opens the chooser page', after.path, '/choose-unit.html');
+  check('carrying the saved unit', after.current, '37-06-02-141');
+  check('and not the surveying page', /map-unit/.test(after.path), false);
+  check('with the shared search input mounted', after.hasSearchInput, true);
+  check('and both tabs', after.hasNearTab && after.hasRegTab, true);
   check('save is disabled until something is chosen', after.saveDisabled, true);
-  check('and nothing navigated to map-unit', after.navigatedAway, false);
+  check('from Profile it offers Close, not Skip', [after.closeShown, after.skipShown], [true, false]);
+  check('and no sign-up banner', after.bannerShown, false);
+  check('the eyebrow names the subject', after.eyebrow, 'Your polling unit');
+  check('the header names where the reader is', after.header, 'My Profile');
+
+  // Choose through search, the one route that works with no signal.
+  await p.fill('#pus-q', 'ogbomosho');
+  await p.waitForSelector('#unit-search-host .pu-option', { timeout: 5000 }).catch(() => {});
+  await p.click('#unit-search-host .pu-option', { timeout: 5000 }).catch(() => {});
+  await p.waitForTimeout(200);
+  const chosen = await p.evaluate(() => ({
+    save: document.getElementById('btn-unit-save').disabled,
+    named: document.getElementById('unit-picked-name').textContent,
+    painted: document.getElementById('unit-picked').getClientRects().length > 0,
+  }));
+  check('choosing a unit enables Save', chosen.save, false);
+  check('and names it above Save', [chosen.painted, chosen.named], [true, 'No 20 Ogbomosho Street']);
+
+  const meBefore = meHits;
+  await Promise.all([p.waitForURL(/profile\.html/, { timeout: 5000 }).catch(() => {}), p.click('#btn-unit-save')]);
+  await p.waitForTimeout(600);
+  check('Save posts the chosen unit', posts.map((x) => JSON.parse(x).puCode), ['37-06-01-105']);
+  check('and returns to Profile', await p.evaluate(() => location.pathname), '/profile.html');
+  // Back may restore Profile from the bfcache, which skips its load(); the row
+  // would then show the unit just replaced. It must ask the server again.
+  check('which re-reads the saved unit', meHits > meBefore, true);
   check('no page error', errs.slice(0, 2), []);
-
-  // Choosing enables the commit — the modal is useless if it never does.
-  const enabled = await p.evaluate(() => {
-    selectUnit({ pu_code: '01-01-01-001', name: 'Test Unit', ward: 'W', lga: 'L', state: 'S' });
-    return document.getElementById('btn-unit-save')?.disabled;
-  });
-  check('choosing a unit enables Save', enabled, false);
-
-  // Escape must close it, like the other dialog on this page.
-  await p.keyboard.press('Escape');
-  await p.waitForTimeout(300);
-  check('Escape closes it', await p.evaluate(() => document.getElementById('unit-modal').hidden), true);
   await ctx.close();
 }
 
-console.log('\n=== control: the probe can see a closed dialog as closed ===');
+console.log('\n=== web: the sign-up step ===');
 {
-  // Every "opens" assertion above would be vacuous if `shown` were always true.
-  const ctx = await b.newContext({ viewport: { width: 390, height: 780 } });
-  // authgate.js is a real JWT check: it base64-decodes the payload and reads
-  // , so a placeholder string fails and the page REDIRECTS to sign-in —
-  // the card was absent for a reason unrelated to what is tested here. Only
-  // the shape matters client-side; the server is stubbed below regardless.
-  await ctx.addInitScript(() => {
-    const body = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 86400 }));
-    localStorage.setItem('hawkeye_token', 'hdr.' + body + '.sig');
-  });
+  const ctx = await b.newContext(ctxOpts);
+  await signedIn(ctx);
   const p = await ctx.newPage();
-  await p.goto(`${base}/profile.html`, { waitUntil: 'domcontentloaded' });
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(String(e)));
+  // A page before it in history, so "replace" is observable as history not growing.
+  await p.goto(`${base}/observe.html`, { waitUntil: 'domcontentloaded' });
+  await p.goto(`${base}/choose-unit.html?onboard=1`, { waitUntil: 'domcontentloaded' });
   await p.waitForTimeout(900);
-  const shut = await p.evaluate(() => {
-    const m = document.getElementById('unit-modal');
-    return m ? m.getClientRects().length > 0 : null;
-  });
-  check('unopened, it reports NOT shown', shut, false);
+  const s = await p.evaluate(() => ({
+    bannerShown: document.getElementById('cu-banner').getClientRects().length > 0,
+    skipShown: document.getElementById('cu-skip').getClientRects().length > 0,
+    closeShown: document.getElementById('cu-close').getClientRects().length > 0,
+    eyebrow: document.getElementById('cu-eyebrow').textContent.trim(),
+    header: document.querySelector('.gov-header .brand-text strong')?.textContent.trim(),
+    len: history.length,
+  }));
+  check('the welcome banner shows', s.bannerShown, true);
+  check('with Skip for now, and no Close', [s.skipShown, s.closeShown], [true, false]);
+  check('the eyebrow says it is the last step', s.eyebrow, 'Last step');
+  check('the header says the reader is creating an account', s.header, 'Create Your Account');
+  await Promise.all([p.waitForURL(/index\.html/, { timeout: 5000 }).catch(() => {}), p.click('#cu-skip')]);
+  await p.waitForTimeout(300);
+  const out = await p.evaluate(() => ({ path: location.pathname, len: history.length }));
+  check('Skip goes Home', out.path, '/index.html');
+  check('by replace — history did not grow', out.len, s.len);
+  check('no page error', errs.slice(0, 2), []);
   await ctx.close();
 }
 

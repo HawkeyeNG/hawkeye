@@ -60,6 +60,15 @@
     };
     addEventListener('hashchange', jump);
     if (location.hash) setTimeout(jump, 60);
+
+    /* WINDOW SCROLLING, FORWARDED. Where the pane scrolls instead of the
+       document (desktop, and Lite on a phone), window.scrollTo(0, 0) would move
+       nothing — and app.js, practice.js and incidents.html use it to start a
+       screen at the top. */
+    const paneScrolls = () => getComputedStyle(wrap).overflowY === 'auto';
+    const to = window.scrollTo, by = window.scrollBy;
+    window.scrollTo = function () { return (paneScrolls() ? wrap.scrollTo : to).apply(paneScrolls() ? wrap : window, arguments); };
+    window.scrollBy = function () { return (paneScrolls() ? wrap.scrollBy : by).apply(paneScrolls() ? wrap : window, arguments); };
   }
 
   /* .scrolling for ~900ms after any scroll. CAPTURE phase, because scroll does

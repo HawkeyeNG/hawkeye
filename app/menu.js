@@ -760,13 +760,19 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // the "choppy". Instead accumulate distance in the current direction and only
     // flip past a threshold; a direction change resets the accumulator, so the next
     // flip needs a fresh, deliberate gesture rather than scroll noise.
-    let lastY = Math.max(0, window.scrollY), accum = 0, ticking = false;
+    // Lite on a phone scrolls #page-scroll (shell.js + styles.css), not the document.
+    const pageY = () => {
+      const p = document.getElementById('page-scroll');
+      return Math.max(0, p && getComputedStyle(p).overflowY === 'auto' ? p.scrollTop : window.scrollY);
+    };
+    let lastY = pageY(), accum = 0, ticking = false;
     const HIDE_AT = 48;   // sustained downward px before it hides
     const SHOW_AT = 24;   // upward px before it returns — smaller, so it comes back eagerly
     function onScroll() {
       if (!mobile.matches) { show(); return; }
-      const y = Math.max(0, window.scrollY);
+      const y = pageY();
       const dy = y - lastY;
+      if (!dy) return;   // another scroller moved (the ☰ list, a carousel)
       lastY = y;
       // Always shown near the top, and whenever the ☰ panel is open (its anchor
       // must stay on screen).
@@ -778,7 +784,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     }
     addEventListener('scroll', () => {
       if (!ticking) { requestAnimationFrame(() => { onScroll(); ticking = false; }); ticking = true; }
-    }, { passive: true });
+    }, { passive: true, capture: true });   // capture: the pane's scroll does not bubble
     mobile.addEventListener('change', show);
     // The full-screen phone menu starts right under the status bar (styles.css),
     // so nothing here measures the header; opening it just un-hides the header.

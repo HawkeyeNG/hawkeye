@@ -2469,6 +2469,24 @@ dialog.sheet-modal,
   /* A modal locks the pane; body already has overflow:hidden here. */
   html.has-shell.modal-open #page-scroll { overflow: hidden; }
 }
+/* LITE ON A PHONE: the same pane, fixed between the header and the tab bar, so
+   the scroll indicator runs only there, as in the native app. The header still
+   hides on scroll (menu.js reads the pane) and the pane grows up into its place.
+   The website on a phone is untouched: this keys on html.native-app. */
+@media (max-width: 899px) {
+  html.native-app.has-shell, html.native-app.has-shell body { height: 100%; overflow: hidden; }
+  html.native-app.has-shell #page-scroll {
+    position: fixed; left: 0; right: 0; top: var(--hdr-h, 64px); bottom: var(--bar-h, 0px);
+    overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain;
+    display: flex; flex-direction: column;
+    transition: top .24s cubic-bezier(.4, 0, .2, 1);
+  }
+  html.native-app.has-shell .gov-header.hdr-hidden ~ #page-scroll { top: env(safe-area-inset-top, 0px); }
+  html.native-app.has-shell #page-scroll > main { flex: 1 0 auto; }
+  html.native-app.has-shell.modal-open #page-scroll { overflow: hidden; }
+  /* Android draws this bar: keep it clear of both ends. (iOS draws its own.) */
+  html.native-app.has-shell #page-scroll::-webkit-scrollbar-track { margin-block: 10px; }
+}
 
 /* SCROLLBARS THAT GET OUT OF THE WAY.
    The thumb is transparent at rest and appears while a pane is scrolled or

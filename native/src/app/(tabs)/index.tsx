@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 
 import { HeaderControls } from '@/components/header-controls';
+import { PracticeDayCard } from '@/components/practice-day-card';
 import { ScreenHeader } from '@/components/screen-header';
 import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
@@ -469,6 +470,9 @@ export default function Home() {
           />
         </Pressable>
       ) : null}
+
+      {/* National Practice Day: renders nothing when there is no day to show. */}
+      <PracticeDayCard />
 
       <View className="flex-row gap-3">
         <Pressable

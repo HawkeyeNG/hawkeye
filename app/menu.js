@@ -238,7 +238,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // completed / ongoing / upcoming and offers all 36 governorships. The
     // accordion could only ever be a stale subset of the page it sat above, and
     // "Osun 2026" was already a finished election pinned to the menu.
-    ['Live data', ['results.html', 'races.html', 'dashboard.html', 'political.html', 'situation-room.html']],
+    ['Live data', ['results.html', 'races.html', 'coverage.html', 'dashboard.html', 'political.html', 'situation-room.html']],
     // Only populates in the app (see FOOTER_ONLY above); on the web these hrefs
     // aren't in the panel, the group finds no members and is skipped.
     // "Take the tour" LEADS this group, which is where native puts it
@@ -271,6 +271,16 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       ra.href = 'races.html';
       i18nSet(ra, 'races.races', 'Races');
       panel.appendChild(ra);
+    }
+    // Observer coverage (coverage.html), under Live data. Injected like races: no
+    // page static-lists it, and the GROUPS arrays only regroup anchors that are
+    // already in the panel. Public, and not in authgate's lists — the page does
+    // not load authgate.js.
+    if (!panel.querySelector('a[href="coverage.html"]')) {
+      const cv = document.createElement('a');
+      cv.href = 'coverage.html';
+      i18nSet(cv, 'coverage.observer-coverage', 'Observer Coverage');
+      panel.appendChild(cv);
     }
     // The situation room, under Live data. Injected for the same reason as races
     // and profile: the 'Live data' array above only REGROUPS anchors that already

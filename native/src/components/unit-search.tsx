@@ -108,7 +108,9 @@ export function UnitSearch<T extends Row>({
       setRows(local.units as T[]);
       setNote(local.truncated
         ? i18nT('n.components.unit-search.first-matches-keep-typing-to-narrow', { v0: local.units.length })
-        : i18nT('n.components.unit-search.match', { v0: local.units.length, v1: local.units.length === 1 ? '' : 'es' }));
+        : local.units.length === 1
+          ? i18nT('n.components.unit-search.one-match')
+          : i18nT('n.components.unit-search.n-matches', { v0: local.units.length }));
       return;
     }
 
@@ -129,7 +131,9 @@ export function UnitSearch<T extends Row>({
             ? i18nT('n.components.unit-search.no-unit-matches-try-fewer-letters', { v0: term })
             : r.truncated
               ? i18nT('n.components.unit-search.first-matches-keep-typing-to-narrow-2', { v0: units.length })
-              : i18nT('n.components.unit-search.match-2', { v0: units.length, v1: units.length === 1 ? '' : 'es' }),
+              : units.length === 1
+                ? i18nT('n.components.unit-search.one-match')
+                : i18nT('n.components.unit-search.n-matches', { v0: units.length }),
         );
       } catch {
         if (mine === seq.current) { setRows(null); setNote(i18nT('n.components.unit-search.could-not-search-just-now-check')); }

@@ -117,7 +117,10 @@ async function gaps(width, { lite = true, sabotage = '' } = {}) {
       document.querySelector('.home-hero'),
       ...document.querySelectorAll('.qa'),
       ...document.querySelectorAll('.home-card'),
-    ].filter(Boolean);
+      // A card that is not rendered (the Practice Day card hides itself when
+      // there is no day to show) has no border anyone sees; its 0x0 rect at the
+      // top of the page would otherwise read as a gap of hundreds of pixels.
+    ].filter((el) => el && el.getClientRects().length > 0);
     const rects = blocks.map((el) => {
       const r = el.getBoundingClientRect();
       return { label: el.className, top: r.top, bottom: r.bottom };

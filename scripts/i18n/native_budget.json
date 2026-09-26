@@ -3144,15 +3144,15 @@
   "en": 46,
   "max": 86
  },
- "n.components.unit-search.match": {
+ "n.components.unit-search.n-matches": {
   "kind": "body",
-  "en": 15,
-  "max": 55
+  "en": 13,
+  "max": 53
  },
- "n.components.unit-search.match-2": {
+ "n.components.unit-search.one-match": {
   "kind": "body",
-  "en": 15,
-  "max": 55
+  "en": 8,
+  "max": 48
  },
  "n.components.unit-search.name-ward-or-unit-number": {
   "kind": "body",

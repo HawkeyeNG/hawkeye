@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#00482b">
+  <meta name="description" content="How many Nigerian polling units have an observer ready to photograph the result, state by state. Save your polling unit and stay for the count.">
+  <title data-i18n="coverage.page-title">Hawkeye — Observer Coverage</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=191">
+  <script src="native.js?v=120"></script>
+  <script src="/monitor.js?v=3" defer></script>
+  <style>
+    /* Page-scoped, like results.html's table rules, so styles.css (in the
+       service worker's shell) does not move for one page. Tokens only: every
+       colour flips with the theme. */
+    /* menu.js hides the H1 (the header names the page), which leaves the lede
+       as the first block and nothing holding it off the header. */
+    main.cov-main { padding-top: 16px; }
+    .cov-kicker { margin: 0 0 4px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .cov-big { font-family: var(--display); font-size: 2.6rem; font-weight: 800; line-height: 1.1; color: var(--ink); margin: 0; font-variant-numeric: tabular-nums; }
+    .cov-bar { height: 10px; border-radius: 999px; background: var(--code-bg); overflow: hidden; margin: 10px 0 8px; }
+    .cov-bar > i { display: block; height: 100%; width: 0; background: var(--link); border-radius: 999px; }
+    .cov-bar.sm { height: 6px; width: 72px; margin: 5px 0 0 auto; }
+    .cov-national p { margin: 6px 0; }
+    .cov-cta h2 { margin-top: 0; }
+    .cov-secondary { display: block; text-align: center; padding: 11px 12px; margin: 8px 0; border: 1px solid var(--line); border-radius: 10px; font-weight: 700; color: var(--link); text-decoration: none; }
+    .cov-secondary:hover { background: var(--tint); }
+    .cov-safety { border-left: 4px solid var(--gold); padding-left: 10px; margin: 14px 0 0; }
+    .table-wrap { overflow-x: auto; }
+    table.cov { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    table.cov th, table.cov td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    table.cov th { border-bottom: 2px solid var(--ink); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+    table.cov .num { text-align: right; }
+    table.cov td.rank { width: 2.4em; color: var(--muted); font-variant-numeric: tabular-nums; }
+    table.cov td.pct { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .cov-name { display: block; font-weight: 700; overflow-wrap: anywhere; }
+    .cov-sub { display: block; color: var(--muted); font-size: 0.82rem; font-weight: 400; }
+    /* A state row is a button inside the cell: a real control for keyboard and
+       screen reader, and a 44px target on a phone. */
+    .cov-row-btn { all: unset; box-sizing: border-box; display: block; width: 100%; min-height: 44px; padding: 2px 0; cursor: pointer; }
+    .cov-row-btn .cov-name { color: var(--link); }
+    .cov-row-btn .cov-name::after { content: ' \203A'; }
+    .cov-row-btn:hover .cov-name { text-decoration: underline; }
+    .cov-row-btn:focus-visible, .cov-crumb:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+    .cov-crumbs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 0.92rem; margin: 0 0 4px; }
+    .cov-crumbs[hidden] { display: none; }
+    .cov-crumb { all: unset; cursor: pointer; color: var(--link); font-weight: 700; min-height: 44px; display: inline-flex; align-items: center; }
+    .cov-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .cov-status .cov-retry { width: auto; margin: 8px 0 0; }
+  </style>
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Hawkeye">
+  <meta property="og:title" content="Hawkeye — Observer Coverage">
+  <meta property="og:description" content="How many Nigerian polling units have an observer ready to photograph the result, state by state. Save your polling unit and stay for the count.">
+  <meta property="og:url" content="https://hawkeye.com.ng/coverage.html">
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- No authgate.js on purpose: this page is public on the web AND in the app
+       shell (it is a recruitment page, its call to action is sign-up), and
+       adding it to authgate's WEB_PUBLIC list would need a ?v= bump on every
+       page that loads that file. -->
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true"><img src="logo.svg?v=101" alt="" width="30" height="30" style="display:block" /></span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false" onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">☰</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a data-i18n="common.about-contact" href="about.html">About &amp; Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy &amp; Data</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap cov-main">
+    <h1 data-i18n="coverage.observer-coverage">Observer Coverage</h1>
+    <p data-i18n="coverage.lede" class="lede">How many polling units have at least one observer ready to photograph the result. We count units, never people.</p>
+
+    <!-- Everything with an id below is painted by the script (and repainted on
+         a language change), so it carries no data-i18n: apply() would revert a
+         painted value to the markup's English. -->
+    <section class="card cov-national">
+      <p data-i18n="coverage.nationwide" class="cov-kicker">Nationwide</p>
+      <p class="cov-big" id="nat-pct">—</p>
+      <div class="cov-bar" id="nat-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
+      <p class="meta" id="nat-line"></p>
+      <p class="meta" id="nat-goal"></p>
+      <p data-i18n="coverage.goal-note" class="hint">First goal: 1% of polling units in every state by 9 January — enough for a fair national sample. 10% makes a real independent record.</p>
+    </section>
+
+    <section class="card cov-cta">
+      <h2 data-i18n="coverage.stay-for-the-count">Stay for the count</h2>
+      <p data-i18n="coverage.cta-body">Save your polling unit and do the free practice run. On 16 January, vote, then stay to photograph the result when it is posted.</p>
+      <a class="btn-link" id="cta-unit" href="observe.html?intent=observe">Save your polling unit</a>
+      <a data-i18n="coverage.try-practice" class="cov-secondary" href="practice.html">Try the practice run</a>
+      <p data-i18n="coverage.safety" class="hint cov-safety">No result is worth your life. Follow officials' instructions, never interfere, and photograph only what is posted or handed out.</p>
+    </section>
+
+    <section class="card">
+      <nav class="cov-crumbs" id="crumbs" hidden>
+        <button type="button" class="cov-crumb" id="crumb-all">All states</button>
+        <span aria-hidden="true">›</span>
+        <span id="crumb-here" aria-current="page"></span>
+      </nav>
+      <h2 id="tbl-title">States by coverage</h2>
+      <p class="meta" id="tbl-hint"></p>
+      <div class="cov-status" id="tbl-status" role="status"></div>
+      <div class="table-wrap">
+        <table class="cov" id="tbl">
+          <thead>
+            <tr>
+              <th class="num" scope="col"><span aria-hidden="true">#</span><span class="cov-sr" id="th-rank">Rank</span></th>
+              <th scope="col" id="th-name">State</th>
+              <th class="num" scope="col" id="th-pct">Coverage</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="meta" id="updated"></p>
+    </section>
+
+    <p data-i18n="coverage.privacy-note" class="hint">Figures stop at local government level. Which polling units are covered, and by whom, is never published.</p>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a data-i18n="common.privacy-data" href="privacy.html">Privacy &amp; Data</a><a data-i18n="index.how-it-works" href="how.html">How It Works</a><a href="faq.html">FAQ</a></nav>
+    <p data-i18n="common.hawkeye-is-an-independent-transparency-initiative-2">Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+    <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">© 2026 IniXien, LLC. All rights reserved.</p>
+  </div></footer>
+
+  <script>
+  /**
+   * OBSERVER COVERAGE — GET /api/coverage (states) and ?state= (its LGAs).
+   * The API stops at LGA level on purpose; this page never asks for more.
+   *
+   * Every string is resolved at PAINT time through T(), and the whole view is
+   * repainted on `hawkeye-lang` (dispatched on document), so nothing freezes in
+   * the language that happened to be loaded when the data arrived.
+   */
+  (function () {
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    const fill = (s, vars) => String(s).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const num = (n) => Number(n || 0).toLocaleString();
+    // Coverage is small — Osun was 0.3% — so two places below 1%, and a unit
+    // that rounds to zero still says it exists.
+    const fmtPct = (p, covered) => {
+      if (!p) return covered ? '<0.01%' : '0%';
+      return (p < 1 ? p.toFixed(2) : p < 10 ? p.toFixed(1) : String(Math.round(p))) + '%';
+    };
+    const barWidth = (p, covered) => (covered ? 'max(3px, ' + Math.min(100, p) + '%)' : '0');
+
+    let view = { state: new URLSearchParams(location.search).get('state') || '' };
+    let data = null;       // the last good response, repainted on a language change
+    let failed = null;     // 'network' | 'unknown_state' | null
+    let lastStates = null; // the national list, so a state view can still count states at 1%
+    let seq = 0;           // a slow response must not paint over a newer drill-down
+
+    function signedIn() {
+      try {
+        const t = localStorage.getItem('hawkeye_token');
+        if (!t) return false;
+        return JSON.parse(atob(t.split('.')[1])).exp * 1000 > Date.now();
+      } catch (e) { return false; }
+    }
+
+    function paintStatic() {
+      // Signed in: the unit chooser. Signed out: sign-up, which asks for the
+      // unit as its last step.
+      const cta = $('cta-unit');
+      if (signedIn()) { cta.href = 'choose-unit.html'; cta.textContent = T('coverage.change-your-unit', 'Save or change your polling unit'); }
+      else { cta.href = 'observe.html?intent=observe'; cta.textContent = T('coverage.save-your-unit', 'Save your polling unit'); }
+      $('th-rank').textContent = T('coverage.rank', 'Rank');
+      $('th-pct').textContent = T('coverage.coverage', 'Coverage');
+      $('crumb-all').textContent = T('coverage.all-states', 'All states');
+      $('crumbs').setAttribute('aria-label', T('coverage.breadcrumb-aria', 'Where you are'));
+    }
+
+    function paintNational(n, states) {
+      $('nat-pct').textContent = n ? fmtPct(n.pct, n.covered) : '—';
+      const bar = $('nat-bar');
+      bar.firstElementChild.style.width = n ? barWidth(n.pct, n.covered) : '0';
+      bar.setAttribute('aria-valuenow', String(n ? n.pct : 0));
+      bar.setAttribute('aria-label', fill(T('coverage.progress-aria', '{pct} of polling units covered'), { pct: n ? fmtPct(n.pct, n.covered) : '0%' }));
+      $('nat-line').textContent = n
+        ? fill(T('coverage.n-of-m-units-covered', '{covered} of {units} polling units covered'), { covered: num(n.covered), units: num(n.units) })
+        : '';
+      $('nat-goal').textContent = states
+        ? fill(T('coverage.states-at-goal', '{n} of {m} states have reached 1%'), { n: num(states.filter((s) => s.pct >= 1).length), m: num(states.length) })
+        : '';
+    }
+
+    function rankOf(rows) {
+      // Ties share a rank (1, 2, 2, 4): ranking 36 states at 0% as 2…37 would
+      // invent an order that is not there.
+      let prev = null, rank = 0;
+      return rows.map((r, i) => { if (r.pct !== prev) { rank = i + 1; prev = r.pct; } return rank; });
+    }
+
+    function paintTable() {
+      const inState = !!view.state;
+      const rowsEl = $('rows');
+      const status = $('tbl-status');
+      $('crumbs').hidden = !inState;
+      $('th-name').textContent = inState ? T('coverage.col-lga', 'Local government') : T('common.state', 'State');
+      status.innerHTML = '';
+
+      if (failed) {
+        rowsEl.innerHTML = '';
+        $('tbl-title').textContent = inState ? view.state : T('coverage.states-by-coverage', 'States by coverage');
+        $('crumb-here').textContent = view.state;
+        $('tbl-hint').textContent = '';
+        $('updated').textContent = '';
+        const msg = failed === 'unknown_state'
+          ? T('coverage.unknown-state', 'That state is not in the register.')
+          : T('coverage.load-failed', 'Could not load coverage. Check your connection and try again.');
+        status.innerHTML = '<p class="status">' + esc(msg) + '</p>'
+          + (failed === 'unknown_state' ? '' : '<button type="button" class="secondary cov-retry" id="retry">' + esc(T('coverage.try-again', 'Try again')) + '</button>');
+        const retry = $('retry');
+        if (retry) retry.onclick = () => load();
+        return;
+      }
+      if (!data) {
+        rowsEl.innerHTML = '<tr><td colspan="3" class="meta">' + esc(T('index.loading', 'Loading…')) + '</td></tr>';
+        return;
+      }
+
+      const list = inState ? data.lgas : data.states;
+      const label = inState ? 'lga' : 'state';
+      $('tbl-title').textContent = inState
+        ? fill(T('coverage.lgas-in-state', '{state}: local governments'), { state: data.state })
+        : T('coverage.states-by-coverage', 'States by coverage');
+      $('crumb-here').textContent = inState ? data.state : '';
+      $('tbl').setAttribute('aria-label', inState
+        ? fill(T('coverage.table-lgas-aria', 'Polling-unit coverage by local government in {state}'), { state: data.state })
+        : T('coverage.table-states-aria', 'Polling-unit coverage by state'));
+      $('tbl-hint').textContent = inState
+        ? (data.covered ? '' : T('coverage.none-yet', 'No polling units are covered here yet. Yours could be the first.'))
+        : T('coverage.tap-a-state', 'Tap a state to see its local governments.');
+
+      const ranks = rankOf(list);
+      rowsEl.innerHTML = list.map((r, i) => {
+        const name = r[label] || '—';
+        const sub = fill(T('coverage.units-covered-short', '{covered} of {units} units'), { covered: num(r.covered), units: num(r.units) });
+        const inner = '<span class="cov-name">' + esc(name) + '</span><span class="cov-sub">' + esc(sub) + '</span>';
+        // States drill down; LGAs are the public floor, so they do not.
+        const cell = inState ? inner
+          : '<button type="button" class="cov-row-btn" data-state="' + esc(name) + '" aria-label="'
+            + esc(fill(T('coverage.open-state-aria', 'Show local governments in {state}'), { state: name })) + '">' + inner + '</button>';
+        return '<tr><td class="num rank">' + ranks[i] + '</td><td>' + cell + '</td>'
+          + '<td class="num pct"><b>' + esc(fmtPct(r.pct, r.covered)) + '</b>'
+          + '<span class="cov-bar sm" aria-hidden="true"><i style="width:' + barWidth(r.pct, r.covered) + '"></i></span></td></tr>';
+      }).join('');
+
+      const time = new Date(data.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      $('updated').textContent = fill(T('coverage.updated-at', 'Updated {time}. Figures refresh every 10 minutes.'), { time });
+    }
+
+    function paint() {
+      paintStatic();
+      if (data) paintNational(data.national, view.state ? null : data.states);
+      else if (failed) paintNational(null, null);
+      // In a state, the goal line counts states — keep the last national list.
+      if (view.state && lastStates) $('nat-goal').textContent = fill(T('coverage.states-at-goal', '{n} of {m} states have reached 1%'),
+        { n: num(lastStates.filter((s) => s.pct >= 1).length), m: num(lastStates.length) });
+      paintTable();
+    }
+
+    async function load() {
+      const mine = ++seq;
+      data = null; failed = null;
+      paint();
+      try {
+        const qs = view.state ? '?state=' + encodeURIComponent(view.state) : '';
+        const r = await fetch('/api/coverage' + qs);
+        const body = await r.json().catch(() => null);
+        if (mine !== seq) return;               // a newer drill-down won
+        if (r.status === 404 && body && body.error === 'unknown_state') { failed = 'unknown_state'; }
+        else if (!r.ok || !body || !body.national) { failed = 'network'; }
+        else {
+          data = body;
+          if (body.states) lastStates = body.states;
+          // Answer in the register's own spelling (the API matches any case).
+          if (body.state && body.state !== view.state) {
+            view.state = body.state;
+            history.replaceState(null, '', 'coverage.html?state=' + encodeURIComponent(body.state));
+          }
+        }
+      } catch (e) {
+        if (mine !== seq) return;
+        failed = 'network';
+      }
+      paint();
+    }
+
+    function go(state) {
+      view = { state };
+      history.pushState(null, '', state ? 'coverage.html?state=' + encodeURIComponent(state) : 'coverage.html');
+      load();
+      const card = $('tbl').closest('.card');
+      if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' });
+    }
+
+    $('rows').addEventListener('click', (e) => {
+      const b = e.target.closest('.cov-row-btn');
+      if (b) go(b.getAttribute('data-state'));
+    });
+    $('crumb-all').addEventListener('click', () => go(''));
+    window.addEventListener('popstate', () => {
+      view = { state: new URLSearchParams(location.search).get('state') || '' };
+      load();
+    });
+    document.addEventListener('hawkeye-lang', paint);
+
+    load();
+  })();
+  </script>
+  <script src="tg.js?v=95"></script>
+  <script src="/i18n.js?v=10"></script>
+  <script src="/lang.js?v=9"></script>
+  <script src="menu.js?v=181"></script>
+  <script src="shell.js?v=2" defer></script>
+</body>
+</html>

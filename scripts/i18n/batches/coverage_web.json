@@ -1,0 +1,272 @@
+{
+  "coverage.page-title": {
+    "en": "Hawkeye — Observer Coverage",
+    "ha": "Hawkeye — Yawan Rufewar Masu Lura",
+    "ig": "Hawkeye — Mkpuchi Ndị Na-ekiri Ihe",
+    "yo": "Hawkeye — Ìbòòrí Àwọn Olùwòran"
+  },
+  "coverage.observer-coverage": {
+    "en": "Observer Coverage",
+    "ha": "Yawan Rufewar Masu Lura",
+    "ig": "Mkpuchi Ndị Na-ekiri Ihe",
+    "yo": "Ìbòòrí Àwọn Olùwòran"
+  },
+  "coverage.lede": {
+    "en": "How many polling units have at least one observer ready to photograph the result. We count units, never people.",
+    "ha": "Rukunan zaɓe nawa ne ke da aƙalla mai lura ɗaya da ke shirye ya ɗauki hoton sakamako. Muna ƙidaya rukunan zaɓe, ba mutane ba.",
+    "ig": "Ole ngalaba ntuli aka nwere opekata mpe otu onye na-ekiri ihe dị njikere ise foto nsonaazụ. Anyị na-agụ ngalaba, ọ bụghị mmadụ.",
+    "yo": "Iye ẹ̀ka ìdìbò tí ó ní ó kéré tán olùwòran kan tí ó ṣetán láti ya fọ́tò àbájáde. A ń ka ẹ̀ka ìdìbò, kì í ṣe ènìyàn."
+  },
+  "coverage.nationwide": {
+    "en": "Nationwide",
+    "ha": "Faɗin ƙasa",
+    "ig": "Na mba niile",
+    "yo": "Jákèjádò orílẹ̀-èdè"
+  },
+  "coverage.n-of-m-units-covered": {
+    "en": "{covered} of {units} polling units covered",
+    "ha": "An rufe rukunan zaɓe {covered} cikin {units}",
+    "ig": "E kpuchiri ngalaba ntuli aka {covered} n'ime {units}",
+    "yo": "A ti bò ẹ̀ka ìdìbò {covered} nínú {units}"
+  },
+  "coverage.states-at-goal": {
+    "en": "{n} of {m} states have reached 1%",
+    "ha": "Jihohi {n} cikin {m} sun kai 1%",
+    "ig": "Steeti {n} n'ime {m} eruola 1%",
+    "yo": "Ìpínlẹ̀ {n} nínú {m} ti dé 1%"
+  },
+  "coverage.goal-note": {
+    "en": "First goal: 1% of polling units in every state by 9 January — enough for a fair national sample. 10% makes a real independent record.",
+    "ha": "Burin farko: kashi 1% na rukunan zaɓe a kowace jiha kafin 9 ga Janairu — ya isa samfurin ƙasa mai adalci. Kashi 10% zai samar da cikakken bayani mai zaman kansa.",
+    "ig": "Ebumnuche mbụ: 1% nke ngalaba ntuli aka na steeti ọ bụla tupu 9 Jenụwarị — o zuru maka ihe nlele mba ziri ezi. 10% na-eme ka ọ bụrụ ezigbo ndekọ nweere onwe ya.",
+    "yo": "Àfojúsùn àkọ́kọ́: 1% àwọn ẹ̀ka ìdìbò ní gbogbo ìpínlẹ̀ ṣáájú 9 Oṣù Ṣẹ́rẹ́ — ó tó fún àyẹ̀wò orílẹ̀-èdè tí ó tọ́. 10% yóò sọ ọ́ di àkọsílẹ̀ olómìnira tòótọ́."
+  },
+  "coverage.states-by-coverage": {
+    "en": "States by coverage",
+    "ha": "Jihohi bisa yawan rufewa",
+    "ig": "Steeti site na mkpuchi",
+    "yo": "Àwọn ìpínlẹ̀ nípa ìbòòrí"
+  },
+  "coverage.lgas-in-state": {
+    "en": "{state}: local governments",
+    "ha": "{state}: kananan hukumomi",
+    "ig": "{state}: mpaghara ọchịchị obodo",
+    "yo": "{state}: àwọn agbègbè ìjọba àdúgbò"
+  },
+  "coverage.col-lga": {
+    "en": "Local government",
+    "ha": "Karamar hukuma",
+    "ig": "Mpaghara ọchịchị obodo",
+    "yo": "Agbègbè ìjọba àdúgbò"
+  },
+  "coverage.coverage": {
+    "en": "Coverage",
+    "ha": "Yawan rufewa",
+    "ig": "Mkpuchi",
+    "yo": "Ìbòòrí"
+  },
+  "coverage.rank": {
+    "en": "Rank",
+    "ha": "Matsayi",
+    "ig": "Ọnọdụ",
+    "yo": "Ipò"
+  },
+  "coverage.units-covered-short": {
+    "en": "{covered} of {units} units",
+    "ha": "Rukunai {covered} cikin {units}",
+    "ig": "Ngalaba {covered} n'ime {units}",
+    "yo": "Ẹ̀ka {covered} nínú {units}"
+  },
+  "coverage.all-states": {
+    "en": "All states",
+    "ha": "Duk jihohi",
+    "ig": "Steeti niile",
+    "yo": "Gbogbo ìpínlẹ̀"
+  },
+  "coverage.breadcrumb-aria": {
+    "en": "Where you are",
+    "ha": "Inda kake",
+    "ig": "Ebe ị nọ",
+    "yo": "Ibi tí o wà"
+  },
+  "coverage.tap-a-state": {
+    "en": "Tap a state to see its local governments.",
+    "ha": "Danna jiha don ka ga kananan hukumominta.",
+    "ig": "Pịa steeti ka ị hụ mpaghara ọchịchị obodo ya.",
+    "yo": "Tẹ ìpínlẹ̀ kan láti rí àwọn agbègbè ìjọba àdúgbò rẹ̀."
+  },
+  "coverage.open-state-aria": {
+    "en": "Show local governments in {state}",
+    "ha": "Nuna kananan hukumomin {state}",
+    "ig": "Gosi mpaghara ọchịchị obodo dị na {state}",
+    "yo": "Fi àwọn agbègbè ìjọba àdúgbò ní {state} hàn"
+  },
+  "coverage.table-states-aria": {
+    "en": "Polling-unit coverage by state",
+    "ha": "Yawan rufewar rukunan zaɓe bisa jiha",
+    "ig": "Mkpuchi ngalaba ntuli aka site na steeti",
+    "yo": "Ìbòòrí ẹ̀ka ìdìbò nípa ìpínlẹ̀"
+  },
+  "coverage.table-lgas-aria": {
+    "en": "Polling-unit coverage by local government in {state}",
+    "ha": "Yawan rufewar rukunan zaɓe bisa karamar hukuma a {state}",
+    "ig": "Mkpuchi ngalaba ntuli aka site na mpaghara ọchịchị obodo na {state}",
+    "yo": "Ìbòòrí ẹ̀ka ìdìbò nípa agbègbè ìjọba àdúgbò ní {state}"
+  },
+  "coverage.progress-aria": {
+    "en": "{pct} of polling units covered",
+    "ha": "An rufe {pct} na rukunan zaɓe",
+    "ig": "E kpuchiri {pct} nke ngalaba ntuli aka",
+    "yo": "A ti bò {pct} àwọn ẹ̀ka ìdìbò"
+  },
+  "coverage.privacy-note": {
+    "en": "Figures stop at local government level. Which polling units are covered, and by whom, is never published.",
+    "ha": "Alƙaluma sun tsaya a matakin karamar hukuma. Ba a taɓa wallafa waɗanne rukunan zaɓe aka rufe ba, ko wanda ya rufe su.",
+    "ig": "Ọnụọgụ na-akwụsị n'ọkwa mpaghara ọchịchị obodo. A naghị ebipụta ngalaba ntuli aka e kpuchiri, ma ọ bụ onye kpuchiri ha.",
+    "yo": "Àwọn nọ́mbà dúró sí ìpele agbègbè ìjọba àdúgbò. A kì í tẹ àwọn ẹ̀ka ìdìbò tí a ti bò jáde, tàbí ẹni tí ó bò wọ́n."
+  },
+  "coverage.updated-at": {
+    "en": "Updated {time}. Figures refresh every 10 minutes.",
+    "ha": "An sabunta {time}. Alƙaluma na sabuntuwa duk bayan minti 10.",
+    "ig": "E melitere ya {time}. Ọnụọgụ na-emelite kwa nkeji 10.",
+    "yo": "A ṣe àtúnṣe rẹ̀ ní {time}. Àwọn nọ́mbà ń ṣe àtúnṣe ní gbogbo ìṣẹ́jú 10."
+  },
+  "coverage.load-failed": {
+    "en": "Could not load coverage. Check your connection and try again.",
+    "ha": "Ba a iya loda yawan rufewa ba. Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
+    "ig": "Enweghị ike ibugo mkpuchi. Lelee njikọ ịntanetị gị wee nwaa ọzọ.",
+    "yo": "A kò lè gbé ìbòòrí jáde. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  },
+  "coverage.try-again": {
+    "en": "Try again",
+    "ha": "Sake gwadawa",
+    "ig": "Nwaa ọzọ",
+    "yo": "Tún gbìyànjú"
+  },
+  "coverage.unknown-state": {
+    "en": "That state is not in the register.",
+    "ha": "Wannan jihar ba ta cikin rajista.",
+    "ig": "Steeti ahụ adịghị na ndekọ aha.",
+    "yo": "Ìpínlẹ̀ yẹn kò sí nínú àkọsílẹ̀."
+  },
+  "coverage.none-yet": {
+    "en": "No polling units are covered here yet. Yours could be the first.",
+    "ha": "Har yanzu ba a rufe ko rukunin zaɓe ɗaya a nan ba. Naka zai iya zama na farko.",
+    "ig": "E kpuchibeghị ngalaba ntuli aka ọ bụla ebe a. Nke gị nwere ike ịbụ nke mbụ.",
+    "yo": "A kò tíì bò ẹ̀ka ìdìbò kankan níbí. Tìrẹ lè jẹ́ àkọ́kọ́."
+  },
+  "coverage.stay-for-the-count": {
+    "en": "Stay for the count",
+    "ha": "Ku tsaya domin ƙidaya",
+    "ig": "Nọrọnụ maka ọgụgụ",
+    "yo": "Ẹ dúró fún ìkà"
+  },
+  "coverage.cta-body": {
+    "en": "Save your polling unit and do the free practice run. On 16 January, vote, then stay to photograph the result when it is posted.",
+    "ha": "Ajiye rukunin zaɓenka ka kuma yi gwajin atisaye kyauta. A ranar 16 ga Janairu, ka jefa ƙuri'a, sannan ka tsaya ka ɗauki hoton sakamako idan an liƙa shi.",
+    "ig": "Chekwaa ngalaba ntuli aka gị ma mee ọsọ omume n'efu. Na 16 Jenụwarị, tụọ vootu, wee nọrọ ise foto nsonaazụ mgbe e gosiri ya ọha.",
+    "yo": "Fi ẹ̀ka ìdìbò rẹ pamọ́ kí o sì ṣe eré àdánwò ọ̀fẹ́. Ní 16 Oṣù Ṣẹ́rẹ́, dìbò, lẹ́yìn náà dúró láti ya fọ́tò àbájáde nígbà tí wọ́n bá lẹ̀ ẹ́."
+  },
+  "coverage.save-your-unit": {
+    "en": "Save your polling unit",
+    "ha": "Ajiye rukunin zaɓenka",
+    "ig": "Chekwaa ngalaba ntuli aka gị",
+    "yo": "Fi ẹ̀ka ìdìbò rẹ pamọ́"
+  },
+  "coverage.change-your-unit": {
+    "en": "Save or change your polling unit",
+    "ha": "Ajiye ko canza rukunin zaɓenka",
+    "ig": "Chekwaa ma ọ bụ gbanwee ngalaba ntuli aka gị",
+    "yo": "Fi ẹ̀ka ìdìbò rẹ pamọ́ tàbí yí i padà"
+  },
+  "coverage.try-practice": {
+    "en": "Try the practice run",
+    "ha": "Gwada gwajin atisaye",
+    "ig": "Nwaa ọsọ omume",
+    "yo": "Gbìyànjú eré àdánwò"
+  },
+  "coverage.safety": {
+    "en": "No result is worth your life. Follow officials' instructions, never interfere, and photograph only what is posted or handed out.",
+    "ha": "Babu sakamakon da ya fi ranka daraja. Ka bi umarnin jami'an zaɓe, kada ka tsoma baki, kuma ka ɗauki hoton abin da aka liƙa ko aka ba ka kawai.",
+    "ig": "Ọ dịghị nsonaazụ ọ bụla dị mkpa karịa ndụ gị. Soro ntụziaka ndị ọrụ ntuli aka, etinyela aka n'ọrụ ha, ma see foto naanị ihe e gosiri ọha ma ọ bụ nke e nyere gị.",
+    "yo": "Kò sí àbájáde kankan tí ó ṣe pàtàkì ju ẹ̀mí rẹ lọ. Tẹ̀lé ìtọ́ni àwọn òṣìṣẹ́ ìdìbò, má ṣe dí iṣẹ́ wọn lọ́wọ́, kí o sì ya fọ́tò ohun tí wọ́n lẹ̀ ní gbangba tàbí tí wọ́n fún ọ nìkan."
+  },
+  "about.see-observer-coverage": {
+    "en": "<a href=\"coverage.html\">See which states need observers →</a>",
+    "ha": "<a href=\"coverage.html\">Duba jihohin da ke buƙatar masu lura →</a>",
+    "ig": "<a href=\"coverage.html\">Hụ steeti ndị chọrọ ndị na-ekiri ihe →</a>",
+    "yo": "<a href=\"coverage.html\">Wo àwọn ìpínlẹ̀ tí ó nílò olùwòran →</a>"
+  },
+  "coverage.admin.intro": {
+    "en": "Polling units with at least one saved unit from a live, non-team account. Drill down to a ward to list the units nobody has saved yet — that is where to recruit next.",
+    "ha": "Rukunan zaɓe da ke da aƙalla rukunin da aka ajiye ɗaya daga asusu mai aiki wanda ba na ƙungiyarmu ba. Shiga har zuwa unguwa don ganin rukunan da babu wanda ya ajiye su tukuna — a nan ne za a nemo mutane na gaba.",
+    "ig": "Ngalaba ntuli aka nwere opekata mpe otu ngalaba echekwara site n'akaụntụ na-arụ ọrụ nke na-abụghị nke otu anyị. Banye ruo na ward ka ị hụ ngalaba ndị ọ dịbeghị onye chekwara — ebe ahụ ka a ga-achọ ndị mmadụ ọzọ.",
+    "yo": "Àwọn ẹ̀ka ìdìbò tí ó ní ó kéré tán ẹ̀ka kan tí àkàǹtì tí ó ń ṣiṣẹ́, tí kì í ṣe ti ẹgbẹ́ wa, fi pamọ́. Wọlé dé àgọ́ kan láti rí àwọn ẹ̀ka tí ẹnikẹ́ni kò tíì fi pamọ́ — ibẹ̀ ni a ó ti wá ènìyàn kún un."
+  },
+  "coverage.admin.private-note": {
+    "en": "Ward figures and uncovered lists are private: they show where nobody is watching. Never post them publicly.",
+    "ha": "Alƙaluman unguwa da jerin rukunan da ba a rufe ba sirri ne: suna nuna inda babu mai lura. Kada ka taɓa wallafa su a bainar jama'a.",
+    "ig": "Ọnụọgụ ward na ndepụta ngalaba e kpuchighị bụ nzuzo: ha na-egosi ebe ọ na-adịghị onye na-ekiri. Etinyela ha n'ihu ọha mgbe ọ bụla.",
+    "yo": "Àwọn nọ́mbà àgọ́ àti àkójọ àwọn ẹ̀ka tí a kò bò jẹ́ àṣírí: wọ́n ń fi ibi tí kò sí olùwòran hàn. Má ṣe fi wọ́n sí gbangba láé."
+  },
+  "coverage.admin.col-unit-code": {
+    "en": "Unit code",
+    "ha": "Lambar rukuni",
+    "ig": "Koodu ngalaba",
+    "yo": "Kóòdù ẹ̀ka"
+  },
+  "coverage.admin.col-unit-name": {
+    "en": "Polling unit",
+    "ha": "Rukunin zaɓe",
+    "ig": "Ngalaba ntuli aka",
+    "yo": "Ẹ̀ka ìdìbò"
+  },
+  "coverage.admin.wards-in": {
+    "en": "{lga}, {state}: wards",
+    "ha": "{lga}, {state}: unguwanni",
+    "ig": "{lga}, {state}: ward niile",
+    "yo": "{lga}, {state}: àwọn àgọ́"
+  },
+  "coverage.admin.uncovered-in": {
+    "en": "{ward}: {n} uncovered units",
+    "ha": "{ward}: rukunai {n} da ba a rufe ba",
+    "ig": "{ward}: ngalaba {n} e kpuchighị",
+    "yo": "{ward}: ẹ̀ka {n} tí a kò bò"
+  },
+  "coverage.admin.all-covered": {
+    "en": "Every unit in this ward has an observer.",
+    "ha": "Kowane rukuni a wannan unguwa yana da mai lura.",
+    "ig": "Ngalaba ọ bụla na ward a nwere onye na-ekiri ihe.",
+    "yo": "Gbogbo ẹ̀ka ní àgọ́ yìí ló ní olùwòran."
+  },
+  "coverage.admin.unlock-first": {
+    "en": "Unlock the console first.",
+    "ha": "Buɗe na'urar gudanarwa tukuna.",
+    "ig": "Mepee njikwa ahụ mbụ.",
+    "yo": "Kọ́kọ́ ṣí kọ́nsólù náà."
+  },
+  "coverage.admin.refresh": {
+    "en": "Refresh",
+    "ha": "Sabunta",
+    "ig": "Mee ọhụrụ",
+    "yo": "Sọ di tuntun"
+  },
+  "coverage.admin.error": {
+    "en": "Could not load coverage ({error}).",
+    "ha": "Ba a iya loda yawan rufewa ba ({error}).",
+    "ig": "Enweghị ike ibugo mkpuchi ({error}).",
+    "yo": "A kò lè gbé ìbòòrí jáde ({error})."
+  },
+  "coverage.admin.show-wards-aria": {
+    "en": "Show wards in {lga}",
+    "ha": "Nuna unguwannin {lga}",
+    "ig": "Gosi ward dị na {lga}",
+    "yo": "Fi àwọn àgọ́ ní {lga} hàn"
+  },
+  "coverage.admin.show-uncovered-aria": {
+    "en": "Show uncovered units in {ward}",
+    "ha": "Nuna rukunan da ba a rufe ba a {ward}",
+    "ig": "Gosi ngalaba e kpuchighị na {ward}",
+    "yo": "Fi àwọn ẹ̀ka tí a kò bò ní {ward} hàn"
+  }
+}

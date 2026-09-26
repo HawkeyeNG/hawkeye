@@ -1,0 +1,200 @@
+{
+  "n.components.practice-day-card.title": {
+    "en": "National Practice Day",
+    "ha": "Ranar Atisaye ta Ƙasa",
+    "ig": "Ụbọchị Omume nke Mba",
+    "yo": "Ọjọ́ Àdánwò Orílẹ̀-èdè"
+  },
+  "n.components.practice-day-card.live-title": {
+    "en": "It’s Practice Day",
+    "ha": "Yau ce Ranar Atisaye",
+    "ig": "Taa bụ Ụbọchị Omume",
+    "yo": "Òní ni Ọjọ́ Àdánwò"
+  },
+  "n.components.practice-day-card.after-title": {
+    "en": "Practice Day results",
+    "ha": "Sakamakon Ranar Atisaye",
+    "ig": "Nsonaazụ Ụbọchị Omume",
+    "yo": "Àbájáde Ọjọ́ Àdánwò"
+  },
+  "n.components.practice-day-card.before-line": {
+    "en": "Everyone runs the mock election on the same day, and the combined count is shared.",
+    "ha": "Kowa zai yi zaɓen gwaji a rana ɗaya, kuma za a raba jimillar ƙidayar.",
+    "ig": "Onye ọ bụla na-eme ntuli aka omume n’otu ụbọchị ahụ, a na-ekerịta ngụkọta ya.",
+    "yo": "Gbogbo ènìyàn ló máa ṣe ìdìbò àdánwò ní ọjọ́ kan náà, a ó sì pín àpapọ̀ ìkàyè."
+  },
+  "n.components.practice-day-card.practise-now": {
+    "en": "Practise now",
+    "ha": "Yi atisaye yanzu",
+    "ig": "Mee omume ugbu a",
+    "yo": "Ṣe àdánwò nísinsìnyí"
+  },
+  "n.components.practice-day-card.see-count": {
+    "en": "See the count →",
+    "ha": "Duba ƙidayar →",
+    "ig": "Hụ ngụkọta →",
+    "yo": "Wo ìkàyè →"
+  },
+  "n.components.practice-day-card.see-results": {
+    "en": "See the combined count →",
+    "ha": "Duba jimillar ƙidayar →",
+    "ig": "Hụ ngụkọta niile →",
+    "yo": "Wo àpapọ̀ ìkàyè →"
+  },
+  "n.components.practice-day-card.next": {
+    "en": "Next Practice Day: {v0}",
+    "ha": "Ranar Atisaye ta gaba: {v0}",
+    "ig": "Ụbọchị Omume na-esote: {v0}",
+    "yo": "Ọjọ́ Àdánwò tó kàn: {v0}"
+  },
+  "n.components.practice-day-card.live-none": {
+    "en": "No one has practised yet today. Be the first.",
+    "ha": "Babu wanda ya yi atisaye tukuna a yau. Ka zama na farko.",
+    "ig": "Ọ dịbeghị onye mere omume taa. Bụrụ onye mbụ.",
+    "yo": "Kò sí ẹni tó tíì ṣe àdánwò lónìí. Jẹ́ ẹni àkọ́kọ́."
+  },
+  "n.components.practice-day-card.live-count-one": {
+    "en": "1 observer has practised today.",
+    "ha": "Mai lura 1 ya yi atisaye a yau.",
+    "ig": "Onye na-ekiri ihe 1 emeela omume taa.",
+    "yo": "Olùwòran 1 ti ṣe àdánwò lónìí."
+  },
+  "n.components.practice-day-card.live-count": {
+    "en": "{v0} observers have practised today.",
+    "ha": "Masu lura {v0} sun yi atisaye a yau.",
+    "ig": "Ndị na-ekiri ihe {v0} emeela omume taa.",
+    "yo": "Àwọn olùwòran {v0} ti ṣe àdánwò lónìí."
+  },
+  "n.components.practice-day-card.after-none": {
+    "en": "No observers practised on {v0}.",
+    "ha": "Babu mai lura da ya yi atisaye a {v0}.",
+    "ig": "Ọ dịghị onye na-ekiri ihe mere omume na {v0}.",
+    "yo": "Kò sí olùwòran tó ṣe àdánwò ní {v0}."
+  },
+  "n.components.practice-day-card.after-count-one": {
+    "en": "1 observer practised on {v0}.",
+    "ha": "Mai lura 1 ya yi atisaye a {v0}.",
+    "ig": "Onye na-ekiri ihe 1 mere omume na {v0}.",
+    "yo": "Olùwòran 1 ṣe àdánwò ní {v0}."
+  },
+  "n.components.practice-day-card.after-count": {
+    "en": "{v0} observers practised on {v1}.",
+    "ha": "Masu lura {v0} sun yi atisaye a {v1}.",
+    "ig": "Ndị na-ekiri ihe {v0} mere omume na {v1}.",
+    "yo": "Àwọn olùwòran {v0} ṣe àdánwò ní {v1}."
+  },
+  "n.components.practice-day-card.window": {
+    "en": "{v0}–{v1} WAT",
+    "ha": "{v0}–{v1} WAT",
+    "ig": "{v0}–{v1} WAT",
+    "yo": "{v0}–{v1} WAT"
+  },
+  "n.app.practice-day.title": {
+    "en": "National Practice Day",
+    "ha": "Ranar Atisaye ta Ƙasa",
+    "ig": "Ụbọchị Omume nke Mba",
+    "yo": "Ọjọ́ Àdánwò Orílẹ̀-èdè"
+  },
+  "n.app.practice-day.lede": {
+    "en": "On a National Practice Day every observer runs the same mock election (Party A–F) on the same day. Only the combined count is shown here, never who practised or where.",
+    "ha": "A Ranar Atisaye ta Ƙasa, kowane mai lura yana yin zaɓen gwaji iri ɗaya (Party A–F) a rana ɗaya. Jimillar ƙidaya kawai ake nunawa a nan, ba wanda ya yi atisaye ko inda ya yi ba.",
+    "ig": "N’Ụbọchị Omume nke Mba, onye ọ bụla na-ekiri ihe na-eme otu ntuli aka omume (Party A–F) n’otu ụbọchị. Naanị ngụkọta niile ka e gosiri ebe a, ọ bụghị onye mere omume ma ọ bụ ebe o mere ya.",
+    "yo": "Ní Ọjọ́ Àdánwò Orílẹ̀-èdè, gbogbo olùwòran ló ń ṣe ìdìbò àdánwò kan náà (Party A–F) ní ọjọ́ kan náà. Àpapọ̀ ìkàyè nìkan ni a fi hàn níbí, kì í ṣe ẹni tó ṣe àdánwò tàbí ibi tó ti ṣe é."
+  },
+  "n.app.practice-day.status-before": {
+    "en": "Opens {v0}, {v1}. The count appears here once it opens.",
+    "ha": "Zai buɗe {v0}, {v1}. Ƙidayar za ta bayyana a nan da zarar ya buɗe.",
+    "ig": "Ọ ga-emepe {v0}, {v1}. Ngụkọta ga-apụta ebe a ozugbo o mepere.",
+    "yo": "Yóò ṣí ní {v0}, {v1}. Ìkàyè yóò hàn níbí ní kété tí ó bá ṣí."
+  },
+  "n.app.practice-day.status-live": {
+    "en": "Open now until {v0} WAT. The count updates every minute.",
+    "ha": "A buɗe yake yanzu har zuwa {v0} WAT. Ƙidayar tana sabuntawa kowane minti.",
+    "ig": "Ọ meghere ugbu a ruo {v0} WAT. Ngụkọta na-emelite kwa nkeji.",
+    "yo": "Ó ṣí sílẹ̀ báyìí títí di {v0} WAT. Ìkàyè ń ṣe àtúnṣe ní ìṣẹ́jú kọ̀ọ̀kan."
+  },
+  "n.app.practice-day.status-after": {
+    "en": "Closed. Final count for {v0}.",
+    "ha": "An rufe. Ƙidayar ƙarshe ta {v0}.",
+    "ig": "Emechiela. Ngụkọta ikpeazụ maka {v0}.",
+    "yo": "Ó ti tì. Ìkàyè ìkẹyìn fún {v0}."
+  },
+  "n.app.practice-day.observer-practised": {
+    "en": "observer practised",
+    "ha": "mai lura ya yi atisaye",
+    "ig": "onye na-ekiri ihe mere omume",
+    "yo": "olùwòran ṣe àdánwò"
+  },
+  "n.app.practice-day.observers-practised": {
+    "en": "observers practised",
+    "ha": "masu lura sun yi atisaye",
+    "ig": "ndị na-ekiri ihe mere omume",
+    "yo": "àwọn olùwòran ṣe àdánwò"
+  },
+  "n.app.practice-day.combined-heading": {
+    "en": "Combined mock count",
+    "ha": "Jimillar ƙidayar gwaji",
+    "ig": "Ngụkọta omume niile",
+    "yo": "Àpapọ̀ ìkàyè àdánwò"
+  },
+  "n.app.practice-day.no-tally": {
+    "en": "No mock counts yet.",
+    "ha": "Babu ƙidayar gwaji tukuna.",
+    "ig": "Enwebeghị ngụkọta omume.",
+    "yo": "Kò tíì sí ìkàyè àdánwò."
+  },
+  "n.app.practice-day.combined-note": {
+    "en": "Each observer’s latest mock count, added together. Fictional parties only.",
+    "ha": "Ƙidayar gwaji ta ƙarshe ta kowane mai lura, an haɗa su wuri ɗaya. Jam’iyyun ƙage kawai.",
+    "ig": "Ngụkọta omume ikpeazụ nke onye ọ bụla na-ekiri ihe, a gbakọtara ha. Naanị otu ndọrọ ndọrọ ọchịchị e chepụtara echepụta.",
+    "yo": "Ìkàyè àdánwò ìkẹyìn olùwòran kọ̀ọ̀kan, tí a ṣe àkópọ̀ rẹ̀. Àwọn ẹgbẹ́ òṣèlú àròsọ nìkan."
+  },
+  "n.app.practice-day.method": {
+    "en": "Counts observers who were signed in on the phone they practised on. Hawkeye team accounts are left out.",
+    "ha": "Ana ƙirga masu lura da suka shiga asusunsu a wayar da suka yi atisaye da ita. Ba a ƙirga asusun ƙungiyar Hawkeye ba.",
+    "ig": "Ọ na-agụ ndị na-ekiri ihe banyere n’akaụntụ ha na ekwentị ha ji mee omume. A naghị agụ akaụntụ ndị otu Hawkeye.",
+    "yo": "Ó ń ka àwọn olùwòran tí wọ́n wọlé sí àkàǹtì wọn lórí fóònù tí wọ́n fi ṣe àdánwò. A kò ka àkàǹtì ẹgbẹ́ Hawkeye."
+  },
+  "n.app.practice-day.none-scheduled": {
+    "en": "No Practice Day is scheduled right now.",
+    "ha": "Babu Ranar Atisaye da aka tsara a yanzu.",
+    "ig": "Enweghị Ụbọchị Omume a haziri ugbu a.",
+    "yo": "Kò sí Ọjọ́ Àdánwò tí a ṣètò báyìí."
+  },
+  "n.app.practice-day.load-error": {
+    "en": "Could not load the Practice Day count. Check your connection and try again.",
+    "ha": "Ba a iya loda ƙidayar Ranar Atisaye ba. Duba haɗin intanet ɗinka ka sake gwadawa.",
+    "ig": "Enweghị ike ibudata ngụkọta Ụbọchị Omume. Lelee njikọ gị ma nwaa ọzọ.",
+    "yo": "A kò lè gbé ìkàyè Ọjọ́ Àdánwò wá. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  },
+  "n.app.practice-day.try-again": {
+    "en": "Try again",
+    "ha": "Sake gwadawa",
+    "ig": "Nwaa ọzọ",
+    "yo": "Tún gbìyànjú"
+  },
+  "n.app.practice-day.all-days": {
+    "en": "Practice Days",
+    "ha": "Ranakun Atisaye",
+    "ig": "Ụbọchị Omume",
+    "yo": "Àwọn Ọjọ́ Àdánwò"
+  },
+  "n.app.practice-day.phase-before": {
+    "en": "Upcoming",
+    "ha": "Mai zuwa",
+    "ig": "Na-abịa",
+    "yo": "Ń bọ̀"
+  },
+  "n.app.practice-day.phase-live": {
+    "en": "Open now",
+    "ha": "A buɗe yanzu",
+    "ig": "Emepere ugbu a",
+    "yo": "Ó ṣí báyìí"
+  },
+  "n.app.practice-day.phase-after": {
+    "en": "Closed",
+    "ha": "An rufe",
+    "ig": "Emechiri",
+    "yo": "Ó ti tì"
+  }
+}

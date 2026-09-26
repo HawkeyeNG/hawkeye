@@ -145,6 +145,15 @@
     .alert-line time { margin-left: auto; color: var(--muted); font-size: 0.74rem; flex: none; }
     .home-empty { color: var(--muted); font-size: 0.85rem; padding: 6px 0; }
     #home-ledger .lcard { margin-bottom: 10px; }
+    /* National Practice Day card (practice-day.js). A gold edge marks it as the
+       one time-bound card on the page; everything else is the home-card shape. */
+    .pday-card { border-left: 4px solid var(--gold); }
+    .pday-card[hidden] { display: none; }
+    .pday-card h2 { margin-bottom: 6px; }
+    .pday-when { margin: 0 0 8px; color: var(--muted); font-size: 0.85rem; }
+    .pday-line { margin: 0 0 12px; font-size: 0.9rem; line-height: 1.4; }
+    .pday-card .pday-n { color: var(--link); font-size: 1rem; }
+    .pday-card .pday-go { padding: 10px 18px; font-size: 0.9rem; }
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -267,6 +276,9 @@
 
       <div class="home-cols">
         <div class="home-stack">
+          <!-- National Practice Day: painted by practice-day.js from
+               /api/practice-days, and hidden whenever there is no day to show. -->
+          <div class="home-card pday-card" id="pday-card" hidden aria-live="polite"></div>
           <div class="home-card">
             <h2><span data-i18n="index.latest-alerts">Latest Alerts</span> <a data-i18n="index.all-alerts" href="notifications.html">All Alerts →</a></h2>
             <div id="home-alerts"><p data-i18n="index.loading" class="home-empty">Loading…</p></div>
@@ -800,7 +812,8 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=180"></script>
+  <script src="practice-day.js?v=1"></script>
+  <script src="menu.js?v=181"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

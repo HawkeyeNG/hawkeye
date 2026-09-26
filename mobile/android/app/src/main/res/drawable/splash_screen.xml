@@ -10,7 +10,7 @@
         <bitmap
             android:src="@drawable/splash_icon"
             android:gravity="center"
-            android:width="180dp"
-            android:height="180dp" />
+            android:width="240dp"
+            android:height="240dp" />
     </item>
 </layer-list>

@@ -16,7 +16,7 @@
     // between Android's launch hawk and the cover's hawk. Cleared with the cover.
     var C=window.Capacitor;
     if(C&&C.isNativePlatform&&C.isNativePlatform()&&!sessionStorage.getItem("hk_booted"))
-      document.documentElement.style.background="#004225 url(splash-icon.png?v=1) center/180px 180px no-repeat";
+      document.documentElement.style.background="#004225 url(splash-icon.png?v=1) center/240px 240px no-repeat";
   }catch(e){}})();</script>
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=191" />
@@ -191,12 +191,12 @@
     } catch (x) { app = false; }
     if (!app) return kill();
     // The SAME hawk, size and place as the Android window background
-    // (res/drawable/splash_screen.xml: splash_icon.png, 180dp, centred), so the
+    // (res/drawable/splash_screen.xml: splash_icon.png, 240dp, centred — the size Android 12+ draws the splash icon canvas), so the
     // launch image carries straight on. A plain field here painted OVER that
     // hawk and left a blank green screen until the page loaded (2026-09-26).
     // App only: a browser never requests the image.
     var i = new Image(); i.src = "splash-icon.png?v=1"; i.alt = ""; i.decoding = "sync";
-    i.style.cssText = "width:180px;height:180px";
+    i.style.cssText = "width:240px;height:240px";
     el.appendChild(i);
     window.addEventListener("load", function () { setTimeout(kill, 150); }, { once: true });
     setTimeout(kill, 2500);

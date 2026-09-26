@@ -21,6 +21,9 @@
   const WEB_CHAT = 'https://hawkeye.com.ng/about.html?chat=1';
   const inApp = !!window.Capacitor;
   const arrivedForChat = new URLSearchParams(location.search).get('chat') === '1';
+  // data-chat-nofab on the <script> tag (the home screen): open from the page's own
+  // card, keep Ask Hawkeye in the corner, and add no chat bubble of ours.
+  const noFab = !!(document.currentScript && document.currentScript.hasAttribute('data-chat-nofab'));
   const buttons = document.querySelectorAll('[data-chat-open]');
   if (!buttons.length) return;
   // EMBEDDED in the native app's "Chat with us" modal (native/src/app/chat.tsx,
@@ -54,7 +57,7 @@
   // mounted by menu.js) is hidden on these pages: two chat bubbles in one
   // corner, one of them a bot and one a person, is a guessing game.
   const st = document.createElement('style');
-  st.textContent = '#hk-fab,#hk-panel{display:none!important}'
+  st.textContent = (noFab ? '' : '#hk-fab,#hk-panel{display:none!important}')
     + '#hk-chat-fab{position:fixed;right:18px;bottom:18px;z-index:98;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}'
     + '#hk-chat-fab:hover{filter:brightness(1.08)}#hk-chat-fab:focus-visible{outline:3px solid var(--gold,#f5b301);outline-offset:2px}'
     // Above the app's tab bar, exactly where #hk-fab sits (styles.css).
@@ -73,7 +76,7 @@
   fab.setAttribute('data-i18n-attr', 'aria-label:common.chat-with-us');
   fab.setAttribute('aria-label', tr('common.chat-with-us', 'Chat with us'));
   fab.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 9 9 0 0 1-3.8-.8L3 21l1.9-4.6A8.2 8.2 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg>';
-  document.body.appendChild(fab);
+  if (!noFab) document.body.appendChild(fab);
   let open = false;
 
   let loading = null;
@@ -110,8 +113,10 @@
     return loading;
   }
 
-  [...buttons, fab].forEach((btn) => {
-    btn.addEventListener('click', async () => {
+  [...buttons, ...(noFab ? [] : [fab])].forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      // The home card is a link to faq.html?chat=1, kept only as the fallback below.
+      if (e) e.preventDefault();
       // The corner button toggles; the in-page buttons only open.
       if (btn === fab && open) { window.Intercom('hide'); return; }
       const status = btn.parentElement.querySelector('[data-chat-status]');
@@ -136,6 +141,8 @@
         window.Intercom('show');
       } catch (_) {
         if (inApp) { window.open(WEB_CHAT, '_blank'); return; }
+        // A page whose security policy does not admit Intercom: go where it can load.
+        if (btn.href) { location.href = btn.href; return; }
         if (status) {
           status.textContent = tr('common.chat-could-not-load',
             'The chat could not load. Email info@hawkeye.com.ng instead.');
@@ -149,5 +156,5 @@
   // Arriving from a "Chat with us" (the apps' WEB_CHAT, or the home card's
   // faq.html?chat=1 — in Lite too): that tap was the request, so open the
   // messenger now rather than asking for a second one.
-  if (arrivedForChat) fab.click();
+  if (arrivedForChat) (noFab ? buttons[0] : fab).click();
 })();

@@ -279,7 +279,7 @@
               <div><strong id="ms-races">0</strong><span data-i18n="index.races-followed">races followed</span></div>
             </div>
           </div>
-          <a class="home-card home-chat" href="faq.html?chat=1">
+          <a class="home-card home-chat" href="faq.html?chat=1" data-chat-open>
             <span class="home-chat-ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5b301" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
             <span class="home-chat-tx"><strong data-i18n="index.chat-card-title">Questions? Chat with us</strong><small data-i18n="index.chat-card-sub">Someone on the Hawkeye team answers — about reporting, practice runs or results.</small></span>
             <span class="home-chat-go" aria-hidden="true">›</span>
@@ -795,6 +795,8 @@
       if (dlgEl) dlgEl.addEventListener('click', (e) => { if (e.target === dlgEl) dlgEl.close(); });
     })();
   </script>
+  <!-- The home card opens the support chat right here (no FAQ detour). -->
+  <script src="chat.js?v=12" data-chat-nofab defer></script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>

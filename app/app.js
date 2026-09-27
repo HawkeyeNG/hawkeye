@@ -136,7 +136,9 @@ async function api(path, opts = {}) {
   opts.headers = { ...(opts.headers || {}), 'x-device-id': await getDeviceId() };
   const res = await fetch(API + path, opts);
   const body = await res.json().catch(() => ({}));
-  return { status: res.status, body };
+  // retryAfter: null cross-origin unless the server exposes the header; callers
+  // fall back to body.retryAfterS.
+  return { status: res.status, body, retryAfter: (res.headers && res.headers.get('retry-after')) || null };
 }
 /**
  * ONE RETRY, AND A REAL DEADLINE — the rule native/src/app/report/result.tsx
@@ -541,12 +543,13 @@ function applySignUpMode() {
   if ($('ref-opt')) $('ref-opt').hidden = false;
 }
 
-/* ---------- "Have an invite code?" (sign-up only) ----------
+/* ---------- Invite code field (sign-up only) ----------
  * The one way a referral survives an App Store install: invite.html prints the
- * code and it is typed here. Twin of native sign-in.tsx. Collapsed behind a
- * link; open and filled when referral.js already holds a code from the link,
- * so the reader can see it came along. The server keeps the rule that matters:
- * a code is recorded only when /verify CREATES the observer, first code wins. */
+ * code and it is typed here. Twin of native sign-in.tsx. Always visible on the
+ * create-account form (observe.html #ref-opt); filled when referral.js already
+ * holds a code from the link, so the reader can see it came along. The server
+ * keeps the rule that matters: a code is recorded only when /verify CREATES the
+ * observer, first code wins. */
 
 /* A TYPED code. Forgiving of case, spaces and hyphens; strict about the rest —
    stricter than referral.js normalize(), which drops stray characters: right for
@@ -558,16 +561,11 @@ function typedInviteCode(raw) {
   if (!c) return '';
   return /^[2-9A-HJKMNP-TV-Z]{6}$/.test(c) ? c : null;
 }
-function revealInviteField() {
-  if ($('ref-wrap')) $('ref-wrap').hidden = false;
-  if ($('ref-toggle-line')) $('ref-toggle-line').hidden = true;
-}
 (function initInviteField() {
   const input = $('ref-input');
   if (!input) return;
   const parked = (window.HAWKEYE_REFERRAL && window.HAWKEYE_REFERRAL.pending()) || '';
-  if (parked) { input.value = parked; revealInviteField(); }
-  if ($('ref-toggle')) $('ref-toggle').onclick = (e) => { e.preventDefault(); revealInviteField(); input.focus(); };
+  if (parked) input.value = parked;
   input.addEventListener('input', () => { if ($('ref-err')) $('ref-err').hidden = true; });
 })();
 /* False (and the field says why) when a typed code is not a code. Checked
@@ -577,7 +575,7 @@ function inviteFieldOk() {
   if (IS_SIGNIN || !input) return true;
   const ok = typedInviteCode(input.value) !== null;
   if ($('ref-err')) $('ref-err').hidden = ok;
-  if (!ok) { revealInviteField(); input.focus(); }
+  if (!ok) input.focus();
   return ok;
 }
 /* What /verify carries: on sign-up, whatever the field holds (nothing when the
@@ -2227,15 +2225,21 @@ $('btn-submit').onclick = async () => {
   // all goes wrong — proxy mode, no bucket, CORS, a flaky link — direct() gives
   // back null and the original multipart post runs untouched. A report is never
   // lost to a storage optimisation.
+  // EXCEPT "busy": a presign refused 429/503 must not become a multipart post —
+  // that pushes the photo bytes through the origin just when it asked for less.
+  // The report is parked in the outbox below instead, until Retry-After.
   let directBody = null;
+  let presignBusy = null;
   if (window.HawkeyeDirect) {
-    const okDirect = await window.HawkeyeDirect.upload({
+    const D = window.HawkeyeDirect;
+    const up = await (D.tryUpload || D.upload)({
       base: (window.HAWKEYE && window.HAWKEYE.apiBase) || '',
       token: localStorage.getItem('hawkeye_token'),
       blobs: { sheet: shots.sheet.blob, venue: shots.venue.blob },
       hashes: { sheet: imageSha256, venue: venueImageSha256 },
     });
-    if (okDirect) {
+    if (up && up.busy) presignBusy = up;
+    else if (up === true) {
       const f = {};
       for (const [k, v] of form.entries()) if (typeof v === 'string') f[k] = v;
       directBody = JSON.stringify({ ...f, imageSha256, venueImageSha256 });
@@ -2254,40 +2258,56 @@ $('btn-submit').onclick = async () => {
       : { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}` },
     body: directBody || form,
   });
-  let status, body;
+  // Hand the signed report to the offline outbox and show it as saved. The
+  // report is already signed over its exact bytes, so it can wait — on every
+  // platform, since IndexedDB is universal; outbox.js's own listeners drive the
+  // retry (the Capacitor shell fires those same events). `notBefore` holds the
+  // first retry when the server asked for time. False when there is no outbox.
+  const park = async (lead, notBefore) => {
+    if (!(window.HAWKEYE && window.HawkeyeOutbox)) return false;
+    const fields = {};
+    for (const [k, v] of form.entries()) if (typeof v === 'string') fields[k] = v;
+    // Carried so a later flush can presign without re-hashing the blobs. The
+    // signature already covers these exact values, so recording them changes
+    // nothing evidentiary.
+    fields.imageSha256 = imageSha256;
+    fields.venueImageSha256 = venueImageSha256;
+    try {
+      await window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob, ...(notBefore ? { notBefore } : {}) });
+      keepCopies(); // here, not when the outbox flushes it later
+    } catch { /* ignore */ }
+    shots.sheet = null; shots.venue = null;
+    const offlineContest = (contests.find((c) => c.code === fields.contest) || {}).name || fields.contest || '';
+    let offlineVotes = [];
+    try { offlineVotes = JSON.parse(fields.votes); } catch { /* card just omits them */ }
+    $('result-summary').innerHTML = `
+      <p><strong>${selectedPu ? selectedPu.name : ''}</strong> — ${offlineContest}</p>
+      <p>${lead}</p>`;
+    $('entry-hash').textContent = '';
+    $('receipt-wrap').hidden = true;
+    showReceipt(receiptData(offlineContest, offlineVotes, ''));
+    show('screen-result');
+    $('btn-submit').disabled = false;
+    return true;
+  };
+  const busyLine = () => T('observe.server-busy-saved', 'Hawkeye is busy right now — your signed report is saved on this phone and sends automatically.');
+  // First retry: Retry-After plus jitter (outbox.js decides the numbers).
+  const holdUntil = (st, ra) => Date.now() + (window.HawkeyeOutbox && window.HawkeyeOutbox.retryDelayMs
+    ? window.HawkeyeOutbox.retryDelayMs(st, ra, 0) : 60000);
+
+  if (presignBusy) {
+    if (await park(busyLine(), holdUntil(presignBusy.status, presignBusy.retryAfter))) return;
+    $('submit-status').textContent = T('observe.server-busy-try-again', 'Hawkeye is busy — try again in a minute.');
+    $('btn-submit').disabled = false;
+    return;
+  }
+
+  let status, body, retryAfter;
   try {
-    ({ status, body } = await post());
+    ({ status, body, retryAfter } = await post());
   } catch {
-    // Network failure. The report is already signed over its exact bytes, so we
-    // queue it and flush on reconnect (offline outbox) — on every platform, since
-    // IndexedDB is universal. outbox.js's own 'online' + DOMContentLoaded listeners
-    // drive the retry (the Capacitor shell fires those same events).
-    if (window.HAWKEYE && window.HawkeyeOutbox) {
-      const fields = {};
-      for (const [k, v] of form.entries()) if (typeof v === 'string') fields[k] = v;
-      // Carried so a later flush can presign without re-hashing the blobs. The
-      // signature already covers these exact values, so recording them changes
-      // nothing evidentiary.
-      fields.imageSha256 = imageSha256;
-      fields.venueImageSha256 = venueImageSha256;
-      try {
-        await window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob });
-        keepCopies(); // here, not when the outbox flushes it later
-      } catch { /* ignore */ }
-      shots.sheet = null; shots.venue = null;
-      const offlineContest = (contests.find((c) => c.code === fields.contest) || {}).name || fields.contest || '';
-      let offlineVotes = [];
-      try { offlineVotes = JSON.parse(fields.votes); } catch { /* card just omits them */ }
-      $('result-summary').innerHTML = `
-        <p><strong>${selectedPu ? selectedPu.name : ''}</strong> — ${offlineContest}</p>
-        <p>${T('observe.saved-offline', 'Saved offline — your signed report sends automatically when you are back online.')}</p>`;
-      $('entry-hash').textContent = '';
-      $('receipt-wrap').hidden = true;
-      showReceipt(receiptData(offlineContest, offlineVotes, ''));
-      show('screen-result');
-      $('btn-submit').disabled = false;
-      return;
-    }
+    // Network failure: queue it and flush on reconnect (offline outbox).
+    if (await park(T('observe.saved-offline', 'Saved offline — your signed report sends automatically when you are back online.'))) return;
     $('submit-status').textContent = T('observe.you-appear-to-be-offline-check-your', 'You appear to be offline — check your connection and try again.');
     $('btn-submit').disabled = false;
     return;
@@ -2298,13 +2318,20 @@ $('btn-submit').onclick = async () => {
   if (status === 401) {
     localStorage.removeItem('hawkeye_token');
     $('submit-status').textContent = T('observe.refreshing-your-session', 'Refreshing your session…');
-    if (await tryResume()) ({ status, body } = await post());
+    if (await tryResume()) ({ status, body, retryAfter } = await post());
   }
   if (status === 401) {
     $('submit-status').textContent = T('observe.session-expired-verify-your-phone-again-to', 'Session expired — verify your phone again to submit.');
     resetAuthPane();
     show('screen-register');
     return;
+  }
+  // The report is fine, the server is not (busy 503, rate-limited 429, down,
+  // timed out): exactly the class the outbox retries — native has queued these
+  // all along — so park it rather than ask the observer to keep tapping Submit.
+  if (status >= 500 || status === 408 || status === 425 || status === 429) {
+    const ra = retryAfter || (body && body.retryAfterS != null ? String(body.retryAfterS) : null);
+    if (await park(busyLine(), holdUntil(status, ra))) return;
   }
   if (status !== 201) {
     $('submit-status').textContent = explain(body);

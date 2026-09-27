@@ -68,11 +68,28 @@ console.log('=== /download is the page a shared link opens ===');
   const play = await p.$eval('.dl-badges a[href*="play.google.com"]', (a) => ({ hidden: a.hidden, w: a.querySelector('img').naturalWidth }));
   check('the Play badge is shown', play.hidden, false);
   check('and its artwork actually loaded (not the text fallback)', play.w, (w) => w > 100);
-  // THE CONTROL for the line above: the App Store badge must be HIDDEN, because
-  // the listing is not live. A test that only checks what is visible would pass
-  // just as happily if every badge were shown.
-  check('the App Store badge stays dark until the listing is live',
-    await p.$eval('#ios-cta', (a) => a.hidden), true);
+  /**
+   * THE CONTROL for the line above. It used to be "#ios-cta stays hidden until
+   * the listing is live" — true then, and retired on purpose twice since: the
+   * App Store listing went live on 2026-09-02 (8fac697), and the page now
+   * carries all FOUR listings, Hawkeye and Lite on each store (227685a), with
+   * no #ios-cta id left to find.
+   *
+   * The point it made still stands: "a badge is visible" passes just as happily
+   * if every badge is wrong. So this pins the exact set a forwarded link must
+   * deliver, read off the LAYOUT (not .hidden) — one missing, one hidden, one
+   * duplicated or one pointed at the wrong app and this goes red.
+   * tests/app_store_badge_test.mjs and tests/play_badge_test.mjs own the detail.
+   */
+  check('every store listing is offered, each exactly once',
+    (await p.$$eval('.dl-badges a', (as) => as.filter((a) => a.getClientRects().length > 0)
+      .map((a) => a.getAttribute('href')).sort())).join(' '),
+    [
+      'https://apps.apple.com/app/id6804218478',
+      'https://apps.apple.com/app/id6806090537',
+      'https://play.google.com/store/apps/details?id=ng.com.hawkeye.lite',
+      'https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer',
+    ].join(' '));
   check('no sideways scroll on a phone',
     await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
   await p.close();

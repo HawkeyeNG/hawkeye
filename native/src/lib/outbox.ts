@@ -32,8 +32,9 @@ import { getIdentity } from '@/lib/identity';
 // with submit's multipart + session helpers. Both directions are function calls
 // made at runtime, never at module-evaluation time, so the cycle resolves.
 import { filePart, remintSession } from '@/lib/submit';
-import { uploadDirect } from '@/lib/direct-upload';
+import { isDirectBusy, uploadDirect, type DirectBusy } from '@/lib/direct-upload';
 import { t as i18nT } from '@/lib/i18n';
+import { holdsQueue, retryAfterOf, retryDelayMs, retryableStatus } from '@/lib/retry';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -53,6 +54,8 @@ export type Job = {
   files: JobFile[];
   /** Human line for a queue list — "Result · 12-04-08-003 · PRES". */
   label: string;
+  /** Epoch ms the server asked us to wait until (Retry-After + jitter). */
+  notBefore?: number;
 };
 
 type StoredJob = {
@@ -67,6 +70,12 @@ type StoredJob = {
   attempts: number;
   /** Epoch ms before which a flush skips this job. */
   nextAttemptAt: number;
+  /**
+   * Epoch ms before which the SERVER asked us not to retry (a 429/503, with its
+   * Retry-After when it sent one). Unlike nextAttemptAt, a reconnect does not
+   * reset this: the phone regaining signal is no news about a busy origin.
+   */
+  notBefore?: number;
   lastError?: string;
 };
 
@@ -85,11 +94,12 @@ const PATHS: Record<JobKind, string> = {
   incident: '/api/incidents',
 };
 
-/**
- * 30s, 2m, 8m, then 30m forever. Never a permanent give-up on 5xx: on election
- * day the backend can be down for hours, and the report is the only copy.
+/*
+ * Backoff: lib/retry.ts BACKOFF_MS — ceilings of 30s, 2m, 8m, then 30m forever,
+ * now with full jitter, and the server's Retry-After (+0–50%) when it sends
+ * one. Never a permanent give-up on 5xx: on election day the backend can be
+ * down for hours, and the report is the only copy.
  */
-const BACKOFF_MS = [30_000, 120_000, 480_000, 1_800_000];
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -249,7 +259,10 @@ export async function queueJob(job: Job): Promise<void> {
     label: job.label,
     queuedAt: Date.now(),
     attempts: 0,
-    nextAttemptAt: Date.now() + BACKOFF_MS[0],
+    // First retry: jittered within the first backoff ceiling, and never before
+    // the server's own Retry-After when the submit was refused as busy.
+    nextAttemptAt: Math.max(Date.now() + retryDelayMs(0, null, 0), job.notBefore ?? 0),
+    ...(job.notBefore ? { notBefore: job.notBefore } : {}),
   });
   await persist();
 }
@@ -304,14 +317,34 @@ async function retire(job: StoredJob) {
   await persist().catch(() => undefined);
 }
 
-/** Keep a job and push its next attempt out. */
-function defer(job: StoredJob, why: string, retryAfterMs?: number) {
+/**
+ * Keep a job and push its next attempt out: the server's Retry-After (+0–50%)
+ * for a 429/503 that sent one, otherwise full jitter under the backoff ceiling
+ * for this attempt. `status` 0 = no response (network).
+ */
+function defer(job: StoredJob, why: string, status = 0, retryAfter: string | null = null) {
   job.attempts += 1;
   job.lastError = why;
-  job.nextAttemptAt =
-    Date.now() + (retryAfterMs ?? BACKOFF_MS[Math.min(job.attempts, BACKOFF_MS.length - 1)]);
+  job.nextAttemptAt = Date.now() + retryDelayMs(status, retryAfter, job.attempts);
+  // A busy server is not the network: a reconnect must not bring this forward.
+  if (holdsQueue(status)) job.notBefore = job.nextAttemptAt;
   publish({ lastError: why });
   void persist().catch(() => undefined);
+}
+
+/**
+ * The server said busy (429/503): hold EVERY job still queued, not just the one
+ * that asked — each with its own jitter, so the queue does not return as one
+ * burst either. Only `first` counts it as a failed attempt.
+ */
+function holdQueue(first: StoredJob, why: string, status: number, retryAfter: string | null) {
+  for (const j of jobs) {
+    if (j === first) continue;
+    const at = Date.now() + retryDelayMs(status, retryAfter, j.attempts);
+    j.nextAttemptAt = Math.max(j.nextAttemptAt, at);
+    j.notBefore = Math.max(j.notBefore ?? 0, at);
+  }
+  defer(first, why, status, retryAfter); // persists the lot
 }
 
 // -- flush --------------------------------------------------------------------
@@ -328,7 +361,7 @@ function buildForm(job: StoredJob): FormData {
   return form;
 }
 
-async function post(job: StoredJob, token: string, deviceId: string): Promise<Response> {
+async function post(job: StoredJob, token: string, deviceId: string): Promise<Response | DirectBusy> {
   // The mode is decided HERE, not when the report was queued. A report captured
   // with no signal and flushed hours later should use whatever the server
   // offers now, and a job queued before direct upload existed still flushes
@@ -345,7 +378,10 @@ async function post(job: StoredJob, token: string, deviceId: string): Promise<Re
       sheetSha256: job.body.imageSha256,
       venueSha256: job.body.venueImageSha256,
     }).catch(() => null);
-    if (ok) json = JSON.stringify(job.body);
+    // Presign refused as busy: hand that back rather than post the photos
+    // multipart THROUGH the origin that just asked for less.
+    if (isDirectBusy(ok)) return ok;
+    if (ok === true) json = JSON.stringify(job.body);
   }
   return fetch(`${BASE}${PATHS[job.kind]}`, {
     method: 'POST',
@@ -389,19 +425,23 @@ let online = true;
 /**
  * Try to deliver everything due. Never throws, never runs twice at once.
  *
- * Retry rules are app/outbox.js's, unchanged: 2xx or 409 retires the job (the
- * server has it either way), any other 4xx except 429 is unfixable by retrying
- * and is dropped with its reason, 5xx and 429 stay queued.
+ * Retry rules are app/outbox.js's: 2xx or 409 retires the job (the server has
+ * it either way); 429 and 503 — the server or this observer over a limit — hold
+ * the WHOLE queue until Retry-After (+ jitter) and stop the flush; other 5xx,
+ * 408 and 425 stay queued with a jittered backoff; any other 4xx is unfixable
+ * by retrying and is dropped with its reason.
  *
  * `ignoreBackoff` is for a genuine connectivity change: the backoff exists to
  * stop us hammering a network that is down, and a reconnect is precisely the
- * news that says it isn't.
+ * news that says it isn't. It never overrides a server's `notBefore`.
  */
 export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promise<{ sent: number }> {
   if (sending) return { sent: 0 };
   await load();
   if (!jobs.length) return { sent: 0 };
-  if (opts.ignoreBackoff) for (const job of jobs) job.nextAttemptAt = 0;
+  if (opts.ignoreBackoff) {
+    for (const job of jobs) job.nextAttemptAt = (job.notBefore ?? 0) > Date.now() ? job.notBefore! : 0;
+  }
 
   sending = true;
   publish({ sending: true });
@@ -410,7 +450,7 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
   try {
     const id = await getIdentity();
     for (const job of [...jobs]) {
-      if (job.nextAttemptAt > Date.now()) continue;
+      if (Math.max(job.nextAttemptAt, job.notBefore ?? 0) > Date.now()) continue;
 
       // A job whose photos are gone throws on every read, which the loop below
       // reads as "still offline" — it would sit at the head of the queue
@@ -426,7 +466,7 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
       const token = await SecureStore.getItemAsync(K_TOKEN);
       if (!token) break; // signed out — nothing to send with, and the job is still good
 
-      let res: Response;
+      let res: Response | DirectBusy;
       try {
         res = await post(job, token, id.deviceId);
       } catch (e) {
@@ -454,6 +494,12 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
         }
       }
 
+      // Presign refused as busy (429/503): nothing was posted. Hold the queue.
+      if (isDirectBusy(res)) {
+        holdQueue(job, `server busy (HTTP ${res.status})`, res.status, res.retryAfter);
+        break;
+      }
+
       // 409 USED TO MEAN "the server already has it" — already_submitted or
       // duplicate_image — so retiring the job was right. Direct upload adds a
       // 409 that means the OPPOSITE: photo_not_uploaded, i.e. the bucket does
@@ -469,14 +515,18 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
       } else if (res.status === 401) {
         defer(job, 'session expired (HTTP 401)');
         break;
-      } else if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+      } else if (holdsQueue(res.status)) {
+        // Busy or rate-limited: every job behind this one would hear the same.
+        holdQueue(job, `HTTP ${res.status}`, res.status, await retryAfterOf(res));
+        break;
+      } else if (res.status >= 400 && res.status < 500 && !retryableStatus(res.status)) {
         const why = await refusal(res);
         await retire(job);
         await recordDrop(job, why);
         publish({ lastError: why });
       } else {
-        const retryAfter = Number(res.headers.get('retry-after')) * 1000;
-        defer(job, `HTTP ${res.status}`, Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined);
+        // Other 5xx, 408, 425: keep it, jittered backoff.
+        defer(job, `HTTP ${res.status}`, res.status, await retryAfterOf(res));
       }
     }
   } catch (e) {
@@ -491,6 +541,19 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
 // -- triggers -----------------------------------------------------------------
 
 let started = false;
+
+/*
+ * Reconnect and resume are the moments every phone in an area acts at once (a
+ * mast comes back; everyone unlocks at the close of poll), so those flushes
+ * start after a random delay instead of on the event. The periodic sweep and
+ * the background task are already spread by when each phone started / when the
+ * OS wakes it.
+ */
+const RECONNECT_STAGGER_MS = 10_000;
+const RESUME_STAGGER_MS = 3_000;
+function staggered(maxMs: number, opts?: { ignoreBackoff?: boolean }) {
+  setTimeout(() => void flushOutbox(opts), Math.floor(Math.random() * maxMs));
+}
 
 /**
  * Wire the flush triggers. Runs on import so the queue drains whether or not a
@@ -510,7 +573,8 @@ export function initOutbox(): void {
       const up = state.isConnected !== false && state.isInternetReachable !== false;
       // The offline->online EDGE only: NetInfo re-emits on every interface
       // detail change, and flushing per event would re-read the photos each time.
-      if (up && !online) void flushOutbox({ ignoreBackoff: true });
+      // Staggered: a mast coming back reconnects every phone under it at once.
+      if (up && !online) staggered(RECONNECT_STAGGER_MS, { ignoreBackoff: true });
       online = up;
     });
   } catch {
@@ -521,7 +585,7 @@ export function initOutbox(): void {
   }
 
   AppState.addEventListener('change', (s) => {
-    if (s === 'active') void flushOutbox();
+    if (s === 'active') staggered(RESUME_STAGGER_MS);
   });
 
   // Foreground sweep. A network that degrades without ever dropping — captive

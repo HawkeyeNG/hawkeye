@@ -100,7 +100,15 @@ console.log('\n=== the code is caught, shown, and carried ===');
 check('shown in readable characters', a.code, 'H7KMN3');
 check('the code block is visible', a.codeShown, true);
 check('parked for the signup request', a.stored, 'H7KMN3');
-check('"continue on web" carries it too', a.webHref, (h) => h.includes('r=H7KMN3'));
+// Straight to the create-account form, not the home page.
+check('"continue on web" goes to sign-up, carrying it', a.webHref, (h) => {
+  const u = new URL(h);
+  return u.pathname === '/observe.html' && u.searchParams.get('intent') === 'observe' && u.searchParams.get('ref') === 'H7KMN3';
+});
+check('CONTROL that check rejects the old home-page link', `${base}/?r=H7KMN3`, (h) => {
+  const u = new URL(h);
+  return !(u.pathname === '/observe.html' && u.searchParams.get('ref') === 'H7KMN3');
+});
 
 console.log('\n=== a bad or absent code degrades quietly ===');
 // CONTROL: with no code the page is still a working download page — an invite
@@ -205,7 +213,8 @@ console.log('\n=== clicking the invite row ===');
   const blocked = await clickInvite({ clipboard: false });
   // THE CASE THAT SHIPPED BROKEN. Something must appear on the page.
   check('with the clipboard blocked, the link is revealed', blocked.revealed, true);
-  check('and it is the real invite link', blocked.revealedValue, (v) => /\/invite\.html\?r=H7KMN3$/.test(v || ''));
+  // /open, the path both apps claim: installed, the app opens on sign-up.
+  check('and it is the real invite link', blocked.revealedValue, (v) => /\/open\?to=invite&ref=H7KMN3$/.test(v || ''));
   check('and the row says where to look', blocked.label, (t) => /copy it below/i.test(t));
   // A dialog is NOT an acceptable answer here: the browsers that block the
   // clipboard are the same ones that suppress prompt().
@@ -227,7 +236,7 @@ console.log('\n=== the copied link leaves the device ===');
 {
   const local = await clickInvite({ clipboard: false });
   check('a device-local origin is replaced with the live site', local.revealedValue,
-    (v) => /^https:\/\/hawkeye\.com\.ng\/invite\.html\?r=/.test(v || ''));
+    (v) => /^https:\/\/hawkeye\.com\.ng\/open\?to=invite&ref=/.test(v || ''));
   check('nothing device-local survives in the link', local.revealedValue,
     (v) => !/localhost|127\.0\.0\.1|capacitor:/i.test(v || ''));
 }

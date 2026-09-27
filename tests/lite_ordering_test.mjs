@@ -84,14 +84,33 @@ const vis = (pg, sel) => pg.evaluate((s) => {
   await pg.goto('https://hk.test/observe.html?intent=signin', { waitUntil: 'commit' });
   // Sample as early as the document allows, which is where the flash lived.
   await pg.waitForTimeout(140);
+  /* RENDERED, not the attribute. This read `#signin-line:not([hidden])`, which
+     asks whether app.js has run yet -- it sets .hidden later, and at 140ms it
+     sometimes had and sometimes had not, so the check failed about one run in
+     three against a page that never showed the line. What keeps it off the first
+     paint is `html.intent-signin #signin-line{display:none !important}` in
+     styles.css, keyed on the class the inline head script adds; the layout is
+     the thing that answers "is it showing". The control below proves this same
+     probe does see the line when it IS rendered. */
   const early = await pg.evaluate(() => ({
     title: (document.getElementById('register-title') || {}).textContent || '',
-    signupLinkShown: !!document.querySelector('#signin-line:not([hidden])'),
+    signupLinkShown: (() => { const el = document.getElementById('signin-line'); return !!el && el.getClientRects().length > 0; })(),
     cls: document.documentElement.className,
   }));
   check('sign-in title is set before paint', /sign in/i.test(early.title), early);
   check('the sign-up cross-link is not showing', early.signupLinkShown === false, early);
   check('the intent-signin class is on <html>', /intent-signin/.test(early.cls), early);
+  /* AND ONCE THE SCREEN IS UP. At 140ms #screen-register itself is often still
+     [hidden] (app.js reveals it), so the early probe alone can miss a regression.
+     Checked with a mutation -- styles.css without the intent-signin rule plus
+     app.js without its `signin-line.hidden = true` -- this settled read went red
+     on every run; the early one only when app.js happened to be in by 140ms. */
+  const up = await pg.waitForFunction(() => {
+    const s = document.getElementById('screen-register');
+    return !!s && s.getClientRects().length > 0;
+  }, null, { timeout: 5000 }).then(() => true, () => false);
+  const late = await pg.evaluate(() => { const el = document.getElementById('signin-line'); return !!el && el.getClientRects().length > 0; });
+  check('once the sign-in screen is up, the cross-link still is not showing', up && late === false, { up, late });
   await pg.context().close();
 
   // CONTROL: without the param this must still be the SIGN-UP screen, so the
@@ -104,6 +123,15 @@ const vis = (pg, sel) => pg.evaluate((s) => {
     cls: document.documentElement.className,
   }));
   check('control: sign-up entry is NOT forced into sign-in', !/sign in/i.test(ctl.title) && !/intent-signin/.test(ctl.cls), ctl);
+  // The same probe, on the screen where the cross-link belongs: if it can never
+  // read true, the sign-in assertion above is measuring nothing. WAITED FOR, not
+  // sampled at 140ms -- this is about whether the probe can see the line at all,
+  // and the sign-up card is not always laid out that early (1 run in 6).
+  const probeSees = await pg2.waitForFunction(() => {
+    const el = document.getElementById('signin-line');
+    return !!el && el.getClientRects().length > 0;
+  }, null, { timeout: 5000 }).then(() => true, () => false);
+  check('control: the rendered-probe sees the cross-link on sign-up', probeSees === true, { probeSees });
   await pg2.context().close();
 }
 

@@ -92,7 +92,12 @@ check('asks for that state, not the contest', gapsAsked, [{ contest: 'GOV', regi
   // The whole point: the places listed are ones a reader in Jigawa can reach.
   check('lists Jigawa LGAs', c.chips.length, lgasOf('Jigawa').length);
   check('and no other state', c.chips, (v) => !v.includes('Abia') && v.includes('Auyo'));
-  check('the sentence says where', c.hint, (t) => /LGAs in Jigawa have no reports/.test(t));
+  // Wording since 2c0a8fd ("the count stays, the list goes behind a
+  // disclosure"): "N of M <units> in <place> have reports so far", matched to
+  // the native twin. The count is of THIS state's LGAs, not the contest's 37.
+  check('the sentence says where', c.hint,
+    (t) => new RegExp(`^0 of ${lgasOf('Jigawa').length} LGAs in Jigawa have reports so far`).test(t));
+  check('and does not fall back to the contest-wide sentence', c.hint, (t) => !/in this election/.test(t));
 }
 
 console.log('\n=== the whole contest, uncropped ===');
@@ -104,6 +109,8 @@ check('asks contest-wide', gapsAsked, [{ contest: 'GOV', region: null }]);
   // Unnarrowed the card is still right — it is the contest that is nationwide.
   check('keeps the generic heading', c.title, 'Help cover these states');
   check('and lists states', c.chips, (v) => v.includes('Abia'));
+  // The control for "the sentence says where": uncropped it names no place.
+  check('and its sentence is contest-wide', c.hint, (t) => /^0 of 37 states in this election have reports so far/.test(t));
 }
 
 console.log('\n=== an unresolvable region ===');

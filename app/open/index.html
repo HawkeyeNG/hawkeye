@@ -11,7 +11,7 @@
   <!-- One directory deeper than the rest of the site: this file is served as
        /open (not /open.html) so the URL is a valid Expo Router route on the
        native side. Hence the ../ on every asset. -->
-  <link rel="stylesheet" href="../styles.css?v=151" />
+  <link rel="stylesheet" href="../styles.css?v=193" />
 </head>
 <body>
   <!--
@@ -37,15 +37,31 @@
         mapunit: '../map-unit.html', ledger: '../ledger.html', results: '../results.html',
         activity: '../profile.html', ask: '../index.html',
         // App Store In-App Events (National Practice Day) deep-link Lite here.
-        practiceday: '../practice-day.html'
+        practiceday: '../practice-day.html',
+        // An invite link (invite-unit.js, profile.html, native lib/referral.ts):
+        // /open?to=invite&ref=CODE&unit=PU. With the app installed it never
+        // gets here; in a browser, the invite page, same params.
+        invite: '../invite.html'
       };
       var qp = new URLSearchParams(location.search);
       var to = qp.get('to') || '';
       qp.delete('to');
       var rest = qp.toString();
       // Unknown target -> home, never an error page: a stale link from an old
-      // bot message should still land somewhere useful.
-      var dest = (TARGETS[to] || 'index.html') + (rest ? (TARGETS[to] ? '?' : '?') + rest : '');
+      // bot message should still land somewhere useful. '../', like every
+      // target: the site serves this page at /open/, where a bare 'index.html'
+      // is THIS file, reloading itself forever.
+      var dest = (TARGETS[to] || '../index.html') + (rest ? '?' + rest : '');
+      // INSIDE HAWKEYE LITE (native.js hands /open links to this page) the
+      // reader already has an app, so invite.html's store buttons are the wrong
+      // answer: straight to sign-up with the code and unit (referral.js parks
+      // them there), or home when already signed in.
+      if (to === 'invite') {
+        var lite = false, signedIn = false;
+        try { lite = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); } catch (e) { lite = false; }
+        try { signedIn = !!localStorage.getItem('hawkeye_token'); } catch (e) { signedIn = false; }
+        if (lite) dest = signedIn ? '../index.html' : '../observe.html?intent=observe' + (rest ? '&' + rest : '');
+      }
       document.getElementById('manual').href = dest;
       location.replace(dest);
     })();

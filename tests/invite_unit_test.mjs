@@ -18,7 +18,7 @@
  * ONCE; never after a real result (native and web source checks); and the
  * native More tab's coverage link.
  */
-import { createRequire } from 'node:module';
+import { createRequire, stripTypeScriptTypes } from 'node:module';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
@@ -41,8 +41,10 @@ const check = (label, got, want) => {
 
 /** The rule under test, as one predicate: an invite to THIS unit, on the live
  *  origin, and no device-local address anywhere in what was sent. */
+/*  /open?to=invite: the path both apps claim, so the link opens an installed
+ *  app on sign-up; in a browser open/index.html forwards it to invite.html. */
 const liveInvite = (text, unit) => typeof text === 'string'
-  && text.includes(`${LIVE}/invite.html?ref=${CODE}&unit=${unit}`)
+  && text.includes(`${LIVE}/open?to=invite&ref=${CODE}&unit=${unit}`)
   && !/localhost|127\.0\.0\.1|capacitor:|file:/.test(text);
 
 // ---------------------------------------------------------------------------
@@ -54,7 +56,15 @@ console.log('=== native + web source: where it may and may not appear ===');
   const usesDeviceOrigin = (src) => /\bBASE\b|location\.origin|EXPO_PUBLIC_API_BASE/.test(src);
   check('and never from BASE / location', usesDeviceOrigin(fn), false);
   check('CONTROL the origin check flags a BASE-built link',
-    usesDeviceOrigin('export function inviteUnitUrl(c, p) { return `${BASE}/invite.html?ref=${c}`; }'), true);
+    usesDeviceOrigin('export function inviteUnitUrl(c, p) { return `${BASE}/open?to=invite&ref=${c}`; }'), true);
+  // The function itself, run: the new format, and a bad unit left off.
+  const urlSrc = lib.slice(lib.indexOf('export const INVITE_ORIGIN'), lib.indexOf('/**', lib.indexOf('export function inviteUnitUrl')));
+  const inviteUnitUrl = new Function(`${stripTypeScriptTypes(urlSrc, { mode: 'strip' }).replace(/^export /gm, '')}; return inviteUnitUrl;`)();
+  check('native link: /open?to=invite with code + unit', inviteUnitUrl(CODE, THEIRS.pu_code),
+    `${LIVE}/open?to=invite&ref=${CODE}&unit=${THEIRS.pu_code}`);
+  check('native link: a malformed unit is left off', inviteUnitUrl(CODE, '37-06-01-1O5'), `${LIVE}/open?to=invite&ref=${CODE}`);
+  check('native profile invite (lib/referral.ts) uses /open too',
+    /const INVITE_BASE = 'https:\/\/hawkeye\.com\.ng\/open\?to=invite&ref=';/.test(fs.readFileSync(`${ROOT}/native/src/lib/referral.ts`, 'utf8')), true);
 
   const route = fs.readFileSync(`${ROOT}/native/src/app/choose-unit.tsx`, 'utf8');
   check('native /choose-unit reads ?unit= into the chooser', /prefillCode=\{typeof unit === 'string'/.test(route), true);
@@ -114,7 +124,13 @@ const server = http.createServer((req, res) => {
   if (url === '/api/register/search') return json({ truncated: false, units: [THEIRS] });
   if (url === '/api/practice') return json({ active: false });
   if (url.startsWith('/api/')) return json({});
-  const f = path.join(APP, decodeURIComponent(url));
+  let f = path.join(APP, decodeURIComponent(url));
+  /* A directory, as the live site serves /open: 301 to the slash form (query
+     kept), then its index.html. */
+  if (f.startsWith(APP) && fs.existsSync(f) && fs.statSync(f).isDirectory() && fs.existsSync(path.join(f, 'index.html'))) {
+    if (!url.endsWith('/')) { res.writeHead(301, { location: `${url}/${q ? `?${q}` : ''}` }); return res.end(); }
+    f = path.join(f, 'index.html');
+  }
   if (!f.startsWith(APP) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' });
   fs.createReadStream(f).pipe(res);
@@ -149,8 +165,10 @@ const copied = (p) => p.evaluate(() => window.__copied.slice());
 
 console.log(`\n=== the copied link names the live site (page served from ${base}) ===`);
 check('CONTROL the rule flags a link built from location.origin',
-  liveInvite(`${base}/invite.html?ref=${CODE}&unit=${MINE.pu_code}`, MINE.pu_code), false);
-check('CONTROL and passes the real thing', liveInvite(`x ${LIVE}/invite.html?ref=${CODE}&unit=${MINE.pu_code}`, MINE.pu_code), true);
+  liveInvite(`${base}/open?to=invite&ref=${CODE}&unit=${MINE.pu_code}`, MINE.pu_code), false);
+check('CONTROL the rule flags the old invite.html form (it opens no app)',
+  liveInvite(`x ${LIVE}/invite.html?ref=${CODE}&unit=${MINE.pu_code}`, MINE.pu_code), false);
+check('CONTROL and passes the real thing', liveInvite(`x ${LIVE}/open?to=invite&ref=${CODE}&unit=${MINE.pu_code}`, MINE.pu_code), true);
 
 console.log('\n=== (b) Profile: next to My Polling Unit, only with a unit saved ===');
 {
@@ -241,7 +259,7 @@ console.log('\n=== invite.html shows the unit and carries it on ===');
     code: localStorage.getItem('hawkeye_referral'),
   }));
   check('the invited unit is printed', [v.shown, v.name], [true, THEIRS.name]);
-  check('"continue in this browser" keeps code and unit', v.web, `/?r=${CODE}&unit=${THEIRS.pu_code}`);
+  check('"continue in this browser" goes to sign-up with code and unit', v.web, `/observe.html?intent=observe&ref=${CODE}&unit=${THEIRS.pu_code}`);
   check('referral.js parks both', [v.code, v.parked], [CODE, THEIRS.pu_code]);
   await p.goto(`${base}/invite.html?ref=${CODE}`, { waitUntil: 'networkidle' });
   check('CONTROL an invite with no unit prints none',
@@ -252,6 +270,78 @@ console.log('\n=== invite.html shows the unit and carries it on ===');
   await p.goto(`${base}/invite.html?ref=${CODE}&unit=37-06-01-1O5`, { waitUntil: 'networkidle' });
   check('a malformed unit is dropped, not guessed', await p.evaluate(() => localStorage.getItem('hawkeye_invite_unit')), null);
   await ctx.close();
+}
+
+console.log('\n=== "Continue in this browser" → the create-account form ===');
+{
+  const ctx = await context({ signedIn: false });
+  const p = await ctx.newPage();
+  await p.goto(`${base}/invite.html?ref=${CODE}&unit=${THEIRS.pu_code}`, { waitUntil: 'networkidle' });
+  await Promise.all([p.waitForURL(/observe\.html/, { timeout: 8000 }).catch(() => {}), p.click('#g-web')]);
+  await p.waitForLoadState('networkidle').catch(() => {});
+  const s = await p.evaluate(() => ({
+    path: location.pathname,
+    field: !!document.getElementById('ref-input') && !document.getElementById('ref-input').closest('[hidden]'),
+    value: document.getElementById('ref-input') ? document.getElementById('ref-input').value : null,
+    unit: localStorage.getItem('hawkeye_invite_unit'),
+    signin: document.documentElement.classList.contains('intent-signin'),
+  }));
+  check('lands on the sign-up form, not home', [s.path, s.signin], ['/observe.html', false]);
+  check('the invite field is shown and holds the code', [s.field, s.value], [true, CODE]);
+  check('the unit is parked for the chooser', s.unit, THEIRS.pu_code);
+  await ctx.close();
+
+  const ctx2 = await context({ signedIn: true });   // CONTROL: already signed in
+  const p2 = await ctx2.newPage();
+  await p2.goto(`${base}/invite.html?ref=${CODE}&unit=${THEIRS.pu_code}`, { waitUntil: 'networkidle' });
+  check('CONTROL signed in: nothing to sign up for, home', await p2.evaluate(() => document.getElementById('g-web').getAttribute('href')), '/');
+  await ctx2.close();
+}
+
+console.log('\n=== /open?to=invite in a browser → invite.html, same params ===');
+{
+  /** Where a page load of `u` finally settles (open/index.html replaces itself). */
+  async function landsOn(u, { signedIn = false, lite = false } = {}) {
+    const ctx = await context({ signedIn });
+    if (lite) await ctx.addInitScript(() => { window.Capacitor = { isNativePlatform: () => true }; });
+    const p = await ctx.newPage();
+    const errs = [];
+    p.on('pageerror', (e) => errs.push(String(e)));
+    let loads = 0;
+    p.on('load', () => { loads++; });
+    // A page that reloads itself forever never fires a settled 'load' for
+    // goto — that is a FAIL to report below, not a crash.
+    await p.goto(u, { waitUntil: 'commit', timeout: 8000 }).catch(() => {});
+    await p.waitForURL((x) => !/\/open\/?(index\.html)?$/.test(new URL(x).pathname), { timeout: 5000 }).catch(() => {});
+    await p.waitForTimeout(600);
+    const out = { path: new URL(p.url()).pathname, q: Object.fromEntries(new URL(p.url()).searchParams), loads, errs };
+    if (out.path === '/invite.html') {
+      await p.waitForLoadState('load').catch(() => {});
+      out.unitShown = await p.evaluate(() => document.getElementById('g-unitwrap').getClientRects().length > 0).catch(() => null);
+    }
+    await ctx.close();
+    return out;
+  }
+  const w = await landsOn(`${base}/open?to=invite&ref=${CODE}&unit=${THEIRS.pu_code}`);
+  check('a browser lands on invite.html', w.path, '/invite.html');
+  check('with ref + unit, and no `to`', w.q, { ref: CODE, unit: THEIRS.pu_code });
+  check('which prints the invited unit', w.unitShown, true);
+  check('no page error', w.errs, []);
+  const signedInWeb = await landsOn(`${base}/open?to=invite&ref=${CODE}`, { signedIn: true });
+  check('a signed-in browser still gets the invite page (its buttons decide)', signedInWeb.path, '/invite.html');
+  const bot = await landsOn(`${base}/open?to=report&pu=${THEIRS.pu_code}`);
+  check('CONTROL the bot\'s to=report still goes to the report page', [bot.path, bot.q], ['/observe.html', { pu: THEIRS.pu_code }]);
+  const stale = await landsOn(`${base}/open?to=nonsense`);
+  check('an unknown target lands on home, once (no reload loop)', [stale.path, stale.loads <= 3], ['/index.html', true]);
+
+  // HAWKEYE LITE: native.js hands /open links to /open/index.html inside the app.
+  const lite = await landsOn(`${base}/open/index.html?to=invite&ref=${CODE}&unit=${THEIRS.pu_code}`, { lite: true });
+  check('Lite, signed out: straight to sign-up with code + unit (no store page)', [lite.path, lite.q],
+    ['/observe.html', { intent: 'observe', ref: CODE, unit: THEIRS.pu_code }]);
+  const liteIn = await landsOn(`${base}/open/index.html?to=invite&ref=${CODE}`, { lite: true, signedIn: true });
+  check('Lite, signed in: home', liteIn.path, '/index.html');
+  const notLite = await landsOn(`${base}/open/index.html?to=invite&ref=${CODE}`);
+  check('CONTROL the same URL outside Lite is the invite page', notLite.path, '/invite.html');
 }
 
 console.log('\n=== sign-up: the chooser opens with the invited unit selected ===');

@@ -12,6 +12,14 @@
  * must never lose a report because a storage optimisation was unavailable, and
  * the server accepts multipart in either mode precisely so this can be true.
  *
+ * EXCEPT "BUSY". A presign answered 429 (this observer is rate-limited) or 503
+ * (the origin is shedding load) means "not now", not "direct upload is
+ * unavailable". Falling back to multipart there pushes the photo bytes THROUGH
+ * the origin at exactly the moment it asked for less (ELECTION-NIGHT-HOSTING.md
+ * §2.4, the CGNAT finding). That case returns a DirectBusy instead, and the
+ * caller parks the signed report in the outbox until Retry-After. 409
+ * `direct_upload_disabled` (proxy mode) still falls back, as before.
+ *
  * NO CORS HERE. React Native is not a browser, so the bucket's CORS policy is
  * irrelevant to this path — unlike the web client, which is preflighted.
  *
@@ -25,6 +33,12 @@ import { File } from 'expo-file-system';
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
 export type DirectSlot = { field: string; uri: string };
+
+/** Presign refused as 429/503: hold the report, do not post multipart. */
+export type DirectBusy = { busy: true; status: number; retryAfter: string | null };
+
+export const isDirectBusy = (x: unknown): x is DirectBusy =>
+  !!x && typeof x === 'object' && (x as DirectBusy).busy === true;
 
 type PresignSlot = {
   url?: string;
@@ -42,7 +56,10 @@ async function bytesOf(uri: string): Promise<Uint8Array> {
  * Presign, then PUT both photos to the bucket.
  *
  * @returns true when both photos are in the bucket and the caller should submit
- *   hashes as JSON; null when the caller should fall back to multipart.
+ *   hashes as JSON; null when the caller should fall back to multipart; a
+ *   DirectBusy when the presign was refused 429/503 — the caller must NOT post
+ *   multipart, but queue the report until `retryAfter` (the Retry-After header,
+ *   else the body's retryAfterS; null if neither).
  */
 export async function uploadDirect(args: {
   token: string;
@@ -51,7 +68,7 @@ export async function uploadDirect(args: {
   venueUri: string;
   sheetSha256: string;
   venueSha256: string;
-}): Promise<true | null> {
+}): Promise<true | null | DirectBusy> {
   const { token, deviceId, sheetUri, venueUri, sheetSha256, venueSha256 } = args;
   if (!token || !sheetSha256 || !venueSha256) return null;
 
@@ -83,7 +100,16 @@ export async function uploadDirect(args: {
       }),
     });
     // 409 is the server saying "I am in proxy mode" — an answer, not a fault.
-    if (res.status === 409 || !res.ok) return null;
+    if (res.status === 409) return null;
+    if (res.status === 429 || res.status === 503) {
+      let retryAfter = res.headers.get('retry-after');
+      if (!retryAfter) {
+        const b = (await res.json().catch(() => null)) as { retryAfterS?: number } | null;
+        if (b && b.retryAfterS != null) retryAfter = String(b.retryAfterS);
+      }
+      return { busy: true, status: res.status, retryAfter };
+    }
+    if (!res.ok) return null;
     plan = (await res.json()) as typeof plan;
   } catch {
     return null;

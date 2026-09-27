@@ -18,10 +18,12 @@
  */
 import { authedGet } from '@/lib/auth';
 
-/** Where an invite lands. `invite.html` routes the phone to its own store and
- *  carries the code through Play's install referrer; iOS has no equivalent, so
- *  the page prints the code for the reader to type. See app/invite.html. */
-const INVITE_BASE = 'https://hawkeye.com.ng/invite.html?r=';
+/** Where an invite lands. /open is claimed by the app (App Links / Universal
+ *  Links), so with the app installed it opens straight onto sign-up (app/open.tsx);
+ *  without it, app/open/index.html forwards to invite.html, which routes the
+ *  phone to its own store and carries the code through Play's install referrer.
+ *  iOS has no equivalent, so that page prints the code for the reader to type. */
+const INVITE_BASE = 'https://hawkeye.com.ng/open?to=invite&ref=';
 
 export type Referral = {
   code: string;

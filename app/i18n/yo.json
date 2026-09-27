@@ -1,4 +1,39 @@
 {
+  "_meta": {
+    "language": "Yorùbá",
+    "code": "yo",
+    "review": "machine-draft",
+    "glossary": {
+      "review": "provisional",
+      "reviewers": 1,
+      "anonymous": true,
+      "note": "The 25 election terms in i18n/GLOSSARY.md were checked by an anonymous Yorùbá speaker and are used here VERBATIM, tone marks included or omitted exactly as the reviewer wrote them. Several glossary entries (Iṣẹlẹ, Rira ibo, Gbe jade, Nomba siriali) carry no tone marks while the rest do — a reviewer should say whether that is intentional before this is called reviewed.",
+      "reviewedBy": null,
+      "anonymousByRequest": true
+    },
+    "target": 3,
+    "note": "UI strings are a language-model draft. Yorùbá needs the subdotted letters ẹ ọ ṣ AND the combining tone marks U+0300/U+0301, which live in a different Unicode block; both are in the rebuilt web fonts but NOT in Spline Sans, which is why --display swaps to Inter for this language.",
+    "priority": [
+      "tour.note",
+      "observe.signed-on-this-device-and-written",
+      "observe.your-report-is-on-the-public",
+      "profile.deletes-your-observer-identity-your-key",
+      "index.counts-only-become-trusted-when-independent",
+      "faq.when-independent-observers-at-the-same",
+      "guide.one-report-per-election-per-polling",
+      "guide.reports-are-permanent-nothing-can-be",
+      "how.a-verified-phone-number-is-one",
+      "dashboard.auto-refreshes-every-30-seconds-hawkeye",
+      "integrity.automated-flags-aid-scrutiny-they-are",
+      "ledger.the-chain-head-can-be-anchored",
+      "map-unit.crowd-mapping-is-optional-and-community",
+      "political.incumbency-data-is-provisional-and-community",
+      "race.candidate-information-is-compiled-from-public",
+      "support.always-confirm-the-address-after-pasting"
+    ],
+    "priorityNote": "Read these first. The first four are evidential or irreversible-action warnings; the rest either carry the INEC notice as a trailing clause or tell an observer a hard rule they must not misunderstand. None of the interface strings has been read by a speaker yet.",
+    "coverage": "All 40 pages plus the runtime shell chrome. Not covered: the first-run tour in menu.js, and backend SMS/OTP/Telegram/push text."
+  },
   "privacy.all-traffic-is-encrypted-https-phone": "Gbogbo ìjùmọ̀sọ̀rọ̀ ìtakùn ni a fi ìsekóòdù bò (HTTPS). A ń ṣe àwọn nọ́mbà fóònù ní hash HMAC, a ń fọwọ́sí àwọn ìròyìn lórí ẹ̀rọ tìrẹ fúnra rẹ̀ pẹ̀lú kọ́kọ́rọ́ tí kì í kúrò lórí rẹ̀ láé, a sì ń fi ààlà sí ìwọ̀n ààyè, a sì ń ṣàyẹ̀wò fún bot.",
   "privacy.hawkeye-is-built-to-protect-the": "A kọ́ Hawkeye láti dáàbò bo àwọn ènìyàn tí wọ́n ń lò ó. Èyí ṣàlàyé ní pàtó ohun tí a ń kójọ, ìdí rẹ̀, ohun tí ó ń di gbangba, àti ohun tí ó dúró ní àṣírí.",
   "privacy.one-time-codes-they-expire-in": "Àwọn kóòdù ìgbà kan — wọ́n ń parí ní ìṣẹ́jú díẹ̀, a sì ń pa wọ́n rẹ́ ní kété tí a bá lò wọ́n.",
@@ -36,41 +71,6 @@
   "common.hawkeye-is-an-independent-transparency-initiative-2": "Hawkeye jẹ́ ètò olómìnira fún ìtàkùn ojú. Àbájáde ìjọba jẹ́ ti INEC.",
   "common.hawkeye-is-an-independent-transparency-initiative-3": "Hawkeye jẹ́ ètò olómìnira fún ìtàkùn ojú, kò sì ní ìbátan pẹ̀lú INEC. Àbájáde ìjọba ni èyí tí INEC kéde.",
   "index.not-affiliated-with-inec-or-any": "Hawkeye kò ní ìbátan pẹ̀lú INEC tàbí ẹgbẹ́ òṣèlú kankan. Àbájáde ìjọba jẹ́ ti INEC.",
-  "_meta": {
-    "language": "Yorùbá",
-    "code": "yo",
-    "review": "machine-draft",
-    "glossary": {
-      "review": "provisional",
-      "reviewers": 1,
-      "anonymous": true,
-      "note": "The 25 election terms in i18n/GLOSSARY.md were checked by an anonymous Yorùbá speaker and are used here VERBATIM, tone marks included or omitted exactly as the reviewer wrote them. Several glossary entries (Iṣẹlẹ, Rira ibo, Gbe jade, Nomba siriali) carry no tone marks while the rest do — a reviewer should say whether that is intentional before this is called reviewed.",
-      "reviewedBy": null,
-      "anonymousByRequest": true
-    },
-    "target": 3,
-    "note": "UI strings are a language-model draft. Yorùbá needs the subdotted letters ẹ ọ ṣ AND the combining tone marks U+0300/U+0301, which live in a different Unicode block; both are in the rebuilt web fonts but NOT in Spline Sans, which is why --display swaps to Inter for this language.",
-    "priority": [
-      "tour.note",
-      "observe.signed-on-this-device-and-written",
-      "observe.your-report-is-on-the-public",
-      "profile.deletes-your-observer-identity-your-key",
-      "index.counts-only-become-trusted-when-independent",
-      "faq.when-independent-observers-at-the-same",
-      "guide.one-report-per-election-per-polling",
-      "guide.reports-are-permanent-nothing-can-be",
-      "how.a-verified-phone-number-is-one",
-      "dashboard.auto-refreshes-every-30-seconds-hawkeye",
-      "integrity.automated-flags-aid-scrutiny-they-are",
-      "ledger.the-chain-head-can-be-anchored",
-      "map-unit.crowd-mapping-is-optional-and-community",
-      "political.incumbency-data-is-provisional-and-community",
-      "race.candidate-information-is-compiled-from-public",
-      "support.always-confirm-the-address-after-pasting"
-    ],
-    "priorityNote": "Read these first. The first four are evidential or irreversible-action warnings; the rest either carry the INEC notice as a trailing clause or tell an observer a hard rule they must not misunderstand. None of the interface strings has been read by a speaker yet.",
-    "coverage": "All 40 pages plus the runtime shell chrome. Not covered: the first-run tour in menu.js, and backend SMS/OTP/Telegram/push text."
-  },
   "404.that-page-doesn-t-exist-it": "Ojú ìwé yẹn kò sí — ó lè jẹ́ pé a ti kó o lọ, tàbí a kọ ọ̀nà náà lọ́nà tí kò tọ́.",
   "about.about-hawkeye": "Nípa Hawkeye",
   "about.an-independent-nonpartisan-record-of-what": "Àkọsílẹ̀ olómìnira, tí kò ṣe ti ẹgbẹ́ kankan, nípa ohun tí a kéde ní ẹ̀ka ìdìbò kọ̀ọ̀kan — àwọn ará Nàìjíríà lásán ni wọ́n kọ ọ́ sílẹ̀, wọ́n fìdí rẹ̀ múlẹ̀, wọ́n sì tẹ̀ ẹ́ jáde.",
@@ -1877,9 +1877,13 @@
   "about.press-kit": "Oníròyìn: àwọn òtítọ́, àwọn ọjọ́ pàtàkì, àmì áàpù àti àwọn àwòrán ojú-ìṣàfihàn wà nínú <a href=\"press.html\">àkójọ fún oníròyìn wa →</a>",
   "about.run-by-inixien-hope-initiative": "<strong>IniXien Hope Initiative</strong> ni ó ń ṣàkóso Hawkeye, àjọ tí kì í ṣe fún èrè ní Nàìjíríà (ìforúkọsílẹ̀ rẹ̀ ń lọ lọ́wọ́). Ilé-iṣẹ́ ìbátan rẹ̀, <strong>IniXien, LLC</strong>, fún un ní ẹ̀tọ́ láti lo Hawkeye lọ́fẹ̀ẹ́ títí láé. Àwọn ìròyìn olùwòran, àti ìwé àkọsílẹ̀ tí wọ́n ń kọ́, ń wà ní ṣíṣí fún ẹnikẹ́ni láti kà kí ó sì ṣàyẹ̀wò.",
   "privacy.collect.captain": "<strong>Ìbéèrè rẹ láti di olùdarí àgọ́, tí o bá fi ránṣẹ́</strong> — àgọ́ tí o máa bójú tó, àjọ kan (àṣàyàn), àkọsílẹ̀ kúkúrú, àti iye àwọn olùyọ̀ǹda tí o lè mú wá. Ìkìlọ̀ Hawkeye nìkan ni a fi ń kàn sí ọ nípa rẹ̀ (àtòjọ ìkìlọ̀ inú ohun èlò náà, ìkìlọ̀ push, àti Telegram tí o bá so ó pọ̀), kì í ṣe nípa pípe fóònù. A máa pa á rẹ́ tí o bá pa àkọọ́lẹ̀ rẹ rẹ́.",
-  "observe.have-an-invite-code": "Ṣé o ní kóòdù ìpè?",
   "observe.invite-code-optional": "Kóòdù ìpè (àṣàyàn)",
   "observe.invite-code-invalid": "Kóòdù ìpè ní lẹ́tà àti nọ́mbà 6. Ṣàyẹ̀wò rẹ̀, tàbí fi òfìfo sílẹ̀.",
   "invite.open-in-app": "Ṣé o ti ní ohun-èlò náà? Ṣí i",
-  "map.osm-contributors": "àwọn olùkópa OpenStreetMap"
+  "map.osm-contributors": "àwọn olùkópa OpenStreetMap",
+  "observe.server-busy-saved": "Hawkeye ń ṣiṣẹ́ lọ́wọ́ báyìí — a ti fi ìròyìn rẹ tí o fọwọ́sí pamọ́ sórí fóònù yìí, yóò sì ránṣẹ́ fúnra rẹ̀.",
+  "observe.server-busy-try-again": "Hawkeye ń ṣiṣẹ́ lọ́wọ́ — gbìyànjú lẹ́ẹ̀kan sí i ní ìṣẹ́jú kan.",
+  "dashboard.could-not-refresh-retrying": "Kò ṣeé ṣe láti sọ ọ́ di tuntun — a ó tún gbìyànjú ní ìṣẹ́jú-àáyá 30.",
+  "dashboard.latest-reports-note": "À ń fi àwọn ìròyìn {n} tó dé kẹ́yìn hàn, èyí tó tuntun jùlọ lákọ̀ọ́kọ́.",
+  "profile.invite-a-second-observer": "Pe Olùwòran Kejì"
 }

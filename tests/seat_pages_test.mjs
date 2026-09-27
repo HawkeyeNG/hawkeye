@@ -87,9 +87,32 @@ check('a one-LGA seat falls back to its outline, not a lone shape',
 check('and is still titled', await p.textContent('h1'), (t) => t.includes(single[0]));
 
 console.log('\n=== unknown seats build nothing ===');
-await p.goto(`${base}/race.html?contest=SEN&seat=Nowhere%20Central`, { waitUntil: 'networkidle' });
-await p.waitForSelector('.race-absence', { timeout: 10000 });
-check('no page for a seat that does not exist', await p.textContent('.race-absence'), (t) => /unavailable/i.test(t));
+/**
+ * NO PAGE, BUT A WAY ON. An unresolved seat used to end on a bare "Race data
+ * unavailable". Since 406101f a combined contest (SEN/REP/SHA/LGA) that nothing
+ * could resolve shows the district picker instead. What must still hold is that
+ * nothing is BUILT for the invented name: no heading naming it, no map, no
+ * figures - which would have to be some other seat's.
+ */
+const probe = async (name) => {
+  await p.goto(`${base}/race.html?contest=SEN&seat=${encodeURIComponent(name)}`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.race-absence, .race-map', { timeout: 10000 });
+  return p.evaluate((s) => ({
+    named: (document.querySelector('h1')?.textContent || '').includes(s),
+    maps: document.querySelectorAll('.race-map').length,
+    stats: document.querySelectorAll('.race-statbar .s').length,
+    absence: document.querySelector('.race-absence')?.textContent || '',
+    picker: !!document.getElementById('race-picker-slot'),
+  }), name);
+};
+const ghost = await probe('Nowhere Central');
+check('no page for a seat that does not exist', [ghost.named, ghost.maps, ghost.stats], [false, 0, 0]);
+check('it offers the district picker instead', ghost.picker && /Choose your senatorial district/i.test(ghost.absence), true);
+// CONTROL: the same probe on a real seat sees a page, so "nothing" above is a
+// statement about the invented name, not a probe that cannot see one.
+const real = await probe(seat);
+check('CONTROL the same probe sees a real seat page',
+  [real.named, real.maps > 0, real.stats > 0, real.picker], [true, true, true, false]);
 
 console.log('\n=== the board links every district ===');
 await p.goto(`${base}/results.html?contest=SEN`, { waitUntil: 'networkidle' });

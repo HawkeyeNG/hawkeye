@@ -27,7 +27,7 @@ const check = (label, got, want) => {
 };
 
 // Load race.js as the page loads it.
-const sandbox = { window: {}, document: { title: '' }, fetch: async () => ({}), console: { log() {}, warn() {}, error() {} } };
+const sandbox = { window: {}, document: { title: '', addEventListener() {} }, fetch: async () => ({}), console: { log() {}, warn() {}, error() {} } };
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(`${A}/race.js`, 'utf8'), sandbox);
 const { seatRace, stateRace } = sandbox.window;

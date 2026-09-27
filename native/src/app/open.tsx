@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useAuth } from '@/lib/auth';
 import { t as i18nT } from '@/lib/i18n';
 
 /**
@@ -33,8 +34,32 @@ export default function Open() {
   // Everything except `to` is passed straight through, so the bot's existing
   // ?pu=&contest=&votes= handoff survives the hop into the app.
   const { to, ...rest } = useLocalSearchParams<{ to?: string }>();
+  // Resolved by now: the root layout renders no Stack while auth is 'loading'.
+  const auth = useAuth();
 
   useEffect(() => {
+    /*
+     * AN INVITE LINK — /open?to=invite&ref=CODE&unit=PU (app/invite-unit.js,
+     * lib/invite-unit.ts, lib/referral.ts). +native-intent.tsx has already
+     * parked the code and unit (lib/pending-invite.ts; sign-up waits for that
+     * write), so this only chooses the screen:
+     *   signed out → the create-account form, code filled in. Welcome goes
+     *     UNDER it, so its close button returns to the door, as when "Become an
+     *     observer" opens it — on a cold start there is nothing else to return to.
+     *   signed in  → home. An invitation only attaches to a NEW account.
+     * The root layout lets a signed-out reader stay on /open for this reason.
+     */
+    if (String(to || '') === 'invite') {
+      if (auth.status === 'signedIn') {
+        router.replace('/(tabs)');
+      } else if (router.canGoBack()) {
+        router.replace('/sign-in?intent=signup');
+      } else {
+        router.replace('/welcome');
+        router.push('/sign-in?intent=signup');
+      }
+      return;
+    }
     const path = TARGETS[String(to || '')] ?? '/(tabs)';
     const params: Record<string, string> = {};
     for (const [k, v] of Object.entries(rest)) {

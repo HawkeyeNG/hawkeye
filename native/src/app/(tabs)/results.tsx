@@ -10,6 +10,7 @@ import { isCombined, RacePicker } from '@/components/race-picker';
 import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
+import { useForegroundInterval } from '@/hooks/use-foreground-interval';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   asMapLevel,
@@ -493,11 +494,8 @@ export default function Results() {
     if (g) setGaps({ ...g, forRace: raceKey });
   }, [contestCode, raceKey, scope, contests.length, loadContests]);
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, REFRESH_MS);
-    return () => clearInterval(t);
-  }, [load]);
+  // Polls only while the app is in the foreground (hooks/use-foreground-interval).
+  useForegroundInterval(load, REFRESH_MS);
 
   /**
    * A board is never allowed to show one race's votes under another's name —

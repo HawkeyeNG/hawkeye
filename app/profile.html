@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=192" />
+  <link rel="stylesheet" href="styles.css?v=193" />
   <script src="native.js?v=120"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -190,7 +190,7 @@
              carries the referral code and this unit's code, nothing else
              (invite-unit.js). -->
         <button type="button" class="prow" id="btn-invite-unit" hidden>
-          <span data-i18n="invite2.button" class="prow-k prow-stack">Invite a second observer</span>
+          <span data-i18n="profile.invite-a-second-observer" class="prow-k prow-stack">Invite a Second Observer</span>
           <span data-i18n="invite2.why" class="prow-v" id="p-invite-unit">When two observers at the same unit report the same numbers, its count is verified.</span>
           <span class="prow-c" aria-hidden="true">›</span>
         </button>
@@ -442,7 +442,9 @@
           T('profile.invite-failed', 'Could not load') + (status ? ' · ' + status : '');
         return;
       }
-      referralUrl = hkShareOrigin() + '/invite.html?r=' + encodeURIComponent(body.code);
+      /* /open, which both apps claim: installed, the link opens the app on
+         sign-up; otherwise open/index.html forwards it to invite.html. */
+      referralUrl = hkShareOrigin() + '/open?to=invite&ref=' + encodeURIComponent(body.code);
       $('p-ref-code').textContent = body.code;
       /* TWO NUMBERS, because they mean different things and only the second one
          would ever be paid on. Saying "3 signed up · 1 observed" from the start
@@ -707,7 +709,7 @@
   <script src="device.js"></script>
   <script src="share.js?v=3"></script>
   <script src="referral.js?v=2"></script>
-  <script src="invite-unit.js?v=1"></script>
+  <script src="invite-unit.js?v=2"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
   <script src="menu.js?v=183"></script>

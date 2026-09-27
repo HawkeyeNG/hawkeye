@@ -1263,7 +1263,7 @@
   "n.app.tabs.index.practice-nudge-sub": "Gwada aika sakamako a rukunin zaɓe na atisaye kafin Ranar zaɓe. Babu abin da ka shigar da zai zama sakamako na gaske.",
   "n.app.tabs.index.practice-nudge-go": "Fara gwajin atisaye",
   "n.app.tabs.index.practice-nudge-dismiss": "Rufe",
-  "n.app.sign-in.have-an-invite-code": "Kana da lambar gayyata?",
   "n.app.sign-in.invite-code-optional": "Lambar gayyata (ba dole ba)",
-  "n.app.sign-in.invite-code-invalid": "Lambar gayyata tana da haruffa da lambobi 6. Duba ta, ko ka bar ta fanko."
+  "n.app.sign-in.invite-code-invalid": "Lambar gayyata tana da haruffa da lambobi 6. Duba ta, ko ka bar ta fanko.",
+  "n.lib.submit.server-busy-saved": "Hawkeye yana cike da aiki yanzu — an ajiye rahotonka da aka sanya wa hannu a wannan wayar, kuma zai aika kansa da zarar ya yiwu."
 }

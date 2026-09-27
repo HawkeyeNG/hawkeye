@@ -66,8 +66,8 @@ async function readChrome(lang, page = 'index.html', shell = false) {
   await ctx.addInitScript((o) => {
     const code = o.code;
     // The app shell (installed PWA / Capacitor) is a different chrome: it grows
-    // a tab bar and moves the theme toggle into the ☰ panel. Both are painted
-    // by menu.js, so both need reading.
+    // a tab bar and keeps the theme toggle on Home only. Both are painted by
+    // menu.js, so both need reading.
     if (o.shell) {
       Object.defineProperty(window, 'HAWKEYE', { value: { native: true, apiBase: '' }, writable: false, configurable: false });
       const mark = () => { if (document.documentElement) document.documentElement.classList.add('native-app'); };
@@ -98,7 +98,11 @@ async function readChrome(lang, page = 'index.html', shell = false) {
       accordions: all('#menu-panel .menu-acc span'),
       panelLinks: all('#menu-panel a'),
       tabs: all('.tabbar .tl'),
-      themeRow: txt('#menu-panel .menu-theme'),
+      // The theme control is the header toggle (sun/moon, no visible text), so
+      // its words live in aria-label. The ☰ "Switch to … mode" row was removed
+      // on purpose in b16f1bd; menuThemeRow guards against it coming back.
+      themeBtn: (() => { const e = document.querySelector('.theme-btn:not(.close-btn):not(.lang-btn)'); return e ? e.getAttribute('aria-label') : null; })(),
+      menuThemeRow: !!document.querySelector('#menu-panel .menu-theme'),
       disclaimerMore: txt('.gov-disc-more'),
     };
   });
@@ -117,12 +121,20 @@ check('the ☰ panel has group headings', en.groups.length >= 4, en.groups);
 check('  ...including "Take part"', en.groups.includes('Take part'), en.groups);
 check('the ☰ panel has a Report accordion', en.accordions.includes('Report'), en.accordions);
 check('the ☰ panel injected its links', en.panelLinks.includes('My Profile') && en.panelLinks.includes('Practice Run'), en.panelLinks);
-// The theme ROW only exists where the header carries no theme BUTTON — i.e.
-// everywhere but Home — and the disclaimer bar only on the results-style pages
-// in NEEDS_DISCLAIMER. Read both where they actually render.
+// The theme control is the header toggle: on the website every page has it
+// (read here on Home), in the app shell only Home does. There is no ☰ theme row
+// any more (b16f1bd:
+// it rendered invisible against the dark panel, and two controls for one
+// setting must be kept in step). Its label is an aria-label that menu.js sets
+// through i18nT() BEFORE the bundle lands — exactly the "frozen in English"
+// shape — so it must be read after the language event has repainted it.
+// The disclaimer bar only renders on the results-style pages in
+// NEEDS_DISCLAIMER; read it where it actually renders.
 const enR = await readChrome('en', 'results.html', true);
 const haR = await readChrome('ha', 'results.html', true);
-check('the theme row reads in English', enR.themeRow === 'Switch to light mode' || enR.themeRow === 'Switch to dark mode', enR.themeRow);
+const THEME_EN = ['Switch to light mode', 'Switch to dark mode'];
+check('the theme toggle is labelled in English', THEME_EN.includes(en.themeBtn), en.themeBtn);
+check('no ☰ theme row came back (removed on purpose)', !en.menuThemeRow && !enR.menuThemeRow, { web: en.menuThemeRow, shell: enR.menuThemeRow });
 const enW = await readChrome('en', 'results.html');
 const haW = await readChrome('ha', 'results.html');
 check('the disclaimer offers Details', enW.disclaimerMore === 'Details ›', enW.disclaimerMore);
@@ -145,7 +157,7 @@ for (let i = 0; i < en.footer.length; i++) {
 // Home's header name IS the wordmark and must NOT be translated.
 check('the wordmark stays HAWKEYE', ha.headerName === 'HAWKEYE', ha.headerName);
 moved('the skip link translated', en.skip, ha.skip);
-moved('the theme row translated', enR.themeRow, haR.themeRow);
+moved('the theme toggle label translated', en.themeBtn, ha.themeBtn);
 moved('"Details ›" translated', enW.disclaimerMore, haW.disclaimerMore);
 check('the shell grew a tab bar', enR.tabs.length === 5, enR.tabs);
 for (let i = 0; i < enR.tabs.length; i++) moved(`tab "${enR.tabs[i]}" translated`, enR.tabs[i], haR.tabs[i]);

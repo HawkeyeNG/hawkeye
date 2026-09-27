@@ -96,7 +96,24 @@ check('the chooser closes', await p.$eval('#race-picker', (e) => e.hidden), true
 check('and it is the race that was picked', asked.map((a) => a.contest), ['GOV']);
 check('named on the card', await p.textContent('#race-name'), 'Governorship (2027)');
 
+// GOVERNORSHIP HAS NO SCOPE PICKER ANY MORE. Since 647e111 ("Race picker:
+// governorship too, as one step") GOV is a combined contest, and d860ff7 hides
+// the whole Follow/scope toolbar on one — the race picker, which navigates to a
+// state's own page, answers "which one" instead. The picker that FILTERS is now
+// the presidency's, so that is where the filter is exercised.
+check('GOV offers its race picker instead of the scope toolbar',
+  await p.evaluate(() => [getComputedStyle(document.getElementById('follow')).display, document.getElementById('race-picker-slot').hidden]),
+  ['none', false]);
+
 console.log('\n=== the scope picker now FILTERS, as its label claims ===');
+asked.length = 0;
+await p.click('#btn-race');
+await p.click('.race-opt[data-code="PRES"]');
+await p.waitForFunction(() => getComputedStyle(document.getElementById('follow')).display !== 'none'
+  && document.querySelectorAll('#sel-scope option').length > 1, null, { timeout: 10000 });
+check('switching to the presidency loads its board', asked.map((a) => a.contest), (c) => c.includes('PRES'));
+check('and brings the scope picker back', await p.isVisible('#sel-scope'), true);
+check('while the race picker goes', await p.$eval('#race-picker-slot', (e) => e.hidden), true);
 asked.length = 0;
 await p.selectOption('#sel-scope', 'Osun');
 // WAIT ON THE MAP, not the title. The board now paints its numbers and headings
@@ -141,7 +158,11 @@ check('native seeds no default race', /defaultRace/.test(nat), false);
 // The chooser is DERIVED from "nothing chosen", not opened by an effect — an
 // effect would paint one empty board first and re-fire on every dep change.
 check('its chooser is derived, not an effect', /const nothingChosen = !race && !wholeContest;/.test(nat), true);
-check('and it is what the screen shows', /const choosing = picking \|\| nothingChosen;/.test(nat), true);
+// Since 377e449 ("A card tap stops flashing the chooser") a deep link still on
+// its way in does not count as "nothing chosen" — and that guard is derived too
+// (a const off the link params), not state an effect has to remember to clear.
+check('and it is what the screen shows', /const choosing = picking \|\| \(nothingChosen && !linkPending\);/.test(nat), true);
+check('its link-pending guard is derived as well', /const linkPending =\s*!!linkContest && appliedKey !== /.test(nat), true);
 // Both platforms order the elections by seat magnitude. Two different orders is
 // the kind of difference a reader reads as a bug in one of them.
 //

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { loadStatesGeo, NigeriaMap, NO_DATA_FILL, normState } from '@/components/nigeria-map';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
+import { useForegroundInterval } from '@/hooks/use-foreground-interval';
 import { loadPolitical, partyColor, partyName, type Political } from '@/lib/political';
 import { humanError } from '@/lib/errors';
 import { clock } from '@/lib/dates';
@@ -133,14 +134,8 @@ export default function MapScreen() {
     }
   }, [code]);
 
-  useEffect(() => {
-    // `load` is async and every setState in it lands after a network round-trip,
-    // so this is not the synchronous cascade the rule is aimed at.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-    const t = setInterval(load, REFRESH_MS);
-    return () => clearInterval(t);
-  }, [load]);
+  // Polls only while the app is in the foreground (hooks/use-foreground-interval).
+  useForegroundInterval(load, REFRESH_MS);
 
   const contest = contests.find((c) => c.code === code) ?? null;
   const stateKeyed = !tally || STATE_KEYED.has(tally.level);

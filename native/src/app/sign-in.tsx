@@ -111,16 +111,16 @@ export default function SignIn() {
   const [isNewAccount, setIsNewAccount] = useState(false);
 
   /**
-   * "HAVE AN INVITE CODE?" — sign-up only. The one route for a referral on an
+   * "INVITE CODE (OPTIONAL)" — sign-up only. The one route for a referral on an
    * iPhone, which has no install referrer: invite.html prints the code and this
-   * is where it is typed. Collapsed behind a link, since most people have none;
-   * OPEN and filled when an invitation is already parked on this phone (Play
-   * referrer, or a link that opened the app), so they can see it came along.
+   * is where it is typed. ALWAYS SHOWN on the create-account form — it was once
+   * behind a "Have an invite code?" link, and the people with a code are the
+   * ones who miss a link. Filled when an invitation is already parked on this
+   * phone (Play referrer, or a link that opened the app); empty = no code.
    * Validated before a code is sent — a typo is caught while it is still cheap.
    * The server keeps the rule that matters: it records a code only on a NEW
-   * account, first code wins.
+   * account, first code wins. Twin of app/observe.html #ref-input.
    */
-  const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [inviteBad, setInviteBad] = useState(false);
   useEffect(() => {
@@ -128,7 +128,6 @@ export default function SignIn() {
     pendingInviteCode().then((c) => {
       if (!alive || !c) return;
       setInviteCode((typed) => typed || c);
-      setInviteOpen(true);
     });
     return () => { alive = false; };
   }, []);
@@ -213,7 +212,6 @@ export default function SignIn() {
     // A typed invite code that is not one stops here, before a paid code goes
     // out. Empty is fine: the field is optional.
     if (purpose === 'signup' && typedInviteCode(inviteCode) === null) {
-      setInviteOpen(true);
       setInviteBad(true);
       return;
     }
@@ -600,36 +598,30 @@ export default function SignIn() {
               {/* Sign-up only: reset and rescue are for accounts that exist,
                   and a referral can only attach to a new one. */}
               {purpose === 'signup' ? (
-                inviteOpen ? (
-                  <View className="pt-4">
-                    <Text className="pb-1 text-sm font-semibold text-muted">
-                      {i18nT('n.app.sign-in.invite-code-optional')}
+                <View className="pt-4">
+                  <Text className="pb-1 text-sm font-semibold text-muted">
+                    {i18nT('n.app.sign-in.invite-code-optional')}
+                  </Text>
+                  <TextInput
+                    className="rounded-2xl bg-card px-4 py-3 text-lg text-ink"
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    autoComplete="off"
+                    maxLength={12}
+                    value={inviteCode}
+                    onChangeText={(v) => {
+                      setInviteCode(v);
+                      setInviteBad(false);
+                    }}
+                    editable={!busy}
+                    accessibilityLabel={i18nT('n.app.sign-in.invite-code-optional')}
+                  />
+                  {inviteBad ? (
+                    <Text className="pt-1 text-sm text-bad-ink" accessibilityRole="alert">
+                      {i18nT('n.app.sign-in.invite-code-invalid')}
                     </Text>
-                    <TextInput
-                      className="rounded-2xl bg-card px-4 py-3 text-lg text-ink"
-                      autoCapitalize="characters"
-                      autoCorrect={false}
-                      autoComplete="off"
-                      maxLength={12}
-                      value={inviteCode}
-                      onChangeText={(v) => {
-                        setInviteCode(v);
-                        setInviteBad(false);
-                      }}
-                      editable={!busy}
-                      accessibilityLabel={i18nT('n.app.sign-in.invite-code-optional')}
-                    />
-                    {inviteBad ? (
-                      <Text className="pt-1 text-sm text-bad-ink" accessibilityRole="alert">
-                        {i18nT('n.app.sign-in.invite-code-invalid')}
-                      </Text>
-                    ) : null}
-                  </View>
-                ) : (
-                  <Pressable className="mt-4 self-start" onPress={() => setInviteOpen(true)}>
-                    <Text className="text-sm font-semibold text-good-ink">{i18nT('n.app.sign-in.have-an-invite-code')}</Text>
-                  </Pressable>
-                )
+                  ) : null}
+                </View>
               ) : null}
               <Pressable
                 disabled={busy || phone.trim().length < 10}

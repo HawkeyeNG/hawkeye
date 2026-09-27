@@ -16,6 +16,21 @@
  * Every case here is run TWICE against the same page: once with the race
  * declared and once with nothing declared. A test that only asserts the button
  * disappears would pass just as well if the button never rendered at all.
+ *
+ * THE BOARD UNDER TEST IS THE PRESIDENCY'S (it was the governorship's). Since
+ * 647e111 GOV is a combined contest, and d860ff7 removes the whole Follow/scope
+ * toolbar from a combined board — the race picker, which navigates to a
+ * state's own page, replaces it. A by-election with constituencies no longer
+ * reaches this board either: results.html location.replace()s it to its race
+ * page. So the leaderboard's own Follow button now exists only for a contest
+ * that is one race, and PRES is the one in the catalogue. The region rule is
+ * unchanged — a state of the presidency is a scope like any other.
+ *
+ * "HIDDEN" MEANS NOT ON SCREEN, not `btn.hidden === true`. The page's own
+ * stylesheet gives every button `display: block`, which outranks the UA
+ * `[hidden] { display: none }` — results.html says so itself about the Follow
+ * button (paintRacePicker). So both the property and the rendered visibility
+ * are read, and the verdict is the visibility.
  */
 import { createRequire } from 'node:module';
 const require_ = createRequire('/home/elrio/hawkeye/tests/ui/');
@@ -43,16 +58,16 @@ const STATES = ['Kano', 'Osun'];
 let DECLARATIONS = [];
 const API = {
   '/api/contests': () => [{
-    code: 'GOV', name: 'Governorship', election: '2027 Governorship Election',
-    date: '2027-02-06', states: STATES, open: true, opensAt: null,
+    code: 'PRES', name: 'Presidential', election: '2027 Presidential Election',
+    date: '2027-01-16', open: true, opensAt: null,
   }],
   '/api/declarations': () => DECLARATIONS,
-  '/api/national/GOV': () => ({
-    contest: 'GOV', level: 'state', scope: null, subunits: STATES,
+  '/api/national/PRES': () => ({
+    contest: 'PRES', level: 'state', scope: null, subunits: STATES,
     updatedAt: Date.now(), unitsReporting: 0, inDispute: 0, national: [], regions: [],
   }),
   '/api/coverage/gaps': () => ({
-    contest: 'GOV', scope: null, level: 'state', unit: 'state', unitPlural: 'states',
+    contest: 'PRES', scope: null, level: 'state', unit: 'state', unitPlural: 'states',
     statesTotal: STATES.length, statesReported: 0, missing: STATES,
   }),
 };
@@ -85,14 +100,18 @@ const b = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwri
  */
 async function board(scope) {
   const p = await b.newPage({ viewport: { width: 390, height: 844 } });
-  await p.goto(`${base}/results.html?contest=GOV${scope ? `&scope=${encodeURIComponent(scope)}` : ''}`);
-  await p.waitForSelector('#btn-follow', { timeout: 10000 });
+  await p.goto(`${base}/results.html?contest=PRES${scope ? `&scope=${encodeURIComponent(scope)}` : ''}`);
+  // The TOOLBAR, not the button: the toolbar is what a non-combined board
+  // reveals, and the button inside it is exactly what may (rightly) be gone.
+  await p.waitForFunction(() => getComputedStyle(document.getElementById('follow')).display !== 'none'
+    && document.querySelectorAll('#sel-scope option').length > 1, null, { timeout: 10000 });
   await p.waitForTimeout(700);
   const r = await p.evaluate(() => {
     const btn = document.getElementById('btn-follow');
     return {
       text: btn.textContent.trim(),
-      hidden: btn.hidden,
+      hiddenProp: btn.hidden,
+      hidden: !btn.checkVisibility(),
       scope: document.getElementById('sel-scope').value,
       helper: typeof window.raceIsClosed,
     };
@@ -107,18 +126,21 @@ DECLARATIONS = [];
   const r = await board('');
   check('the shared helper is exposed for this page', r.helper, 'function');
   check('the button is shown', r.hidden, false);
-  check('and says what it follows', r.text, '🔔 Follow all governorship races');
+  // The presidency is ONE race: no "all … races" reading (follow.js:followSubject).
+  check('and says what it follows', r.text, '🔔 Follow this race');
 }
 {
   const r = await board('Osun');
+  check('the deep-linked region is the one picked', r.scope, 'Osun');
   check('a single state too', r.hidden, false);
   check('named by its region', r.text, '🔔 Follow Osun');
 }
 
 console.log('\n=== one state declared: that state alone stops being offered ===');
-DECLARATIONS = [{ contest: 'GOV', scope: 'Osun', label: 'Osun Governorship (2026)' }];
+DECLARATIONS = [{ contest: 'PRES', scope: 'Osun', label: 'Osun (Presidential 2027)' }];
 {
   const r = await board('Osun');
+  check('the page decided the declared state is closed', r.hiddenProp, true);
   check('the declared state hides the button', r.hidden, true);
 }
 {
@@ -130,11 +152,12 @@ DECLARATIONS = [{ contest: 'GOV', scope: 'Osun', label: 'Osun Governorship (2026
   check('and so is another state', k.hidden, false);
 }
 
-console.log('\n=== the whole contest declared: a by-election, the day after ===');
-DECLARATIONS = [{ contest: 'GOV', scope: '', label: 'Governorship' }];
+console.log('\n=== the whole contest declared: the day after ===');
+DECLARATIONS = [{ contest: 'PRES', scope: '', label: 'Presidential' }];
 {
   const all = await board('');
   const one = await board('Kano');
+  check('the page decided every region is closed', `${all.hiddenProp} / ${one.hiddenProp}`, 'true / true');
   check('an unscoped declaration closes every region', `${all.hidden} / ${one.hidden}`, 'true / true');
 }
 

@@ -1,0 +1,40 @@
+# Copy to .github/workflows/loadtest.yml when the harness is committed.
+# MANUAL ONLY (workflow_dispatch); never on push or schedule. The target is a
+# fixed choice list, so the workflow cannot be pointed at production at all.
+# A GitHub-hosted runner is one IP with ~2 vCPU: fine for the read scenario and
+# smoke/edge profiles. Run origin/stress profiles from a VM (README, "Where to run").
+name: loadtest (staging, manual)
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        type: choice
+        options: [read]
+        default: read
+      profile:
+        type: choice
+        options: [smoke, edge]
+        default: smoke
+      target:
+        type: choice
+        options: ['https://staging.hawkeye.com.ng']
+        default: 'https://staging.hawkeye.com.ng'
+permissions:
+  contents: read
+concurrency:
+  group: loadtest
+  cancel-in-progress: false
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      - name: Run
+        run: bash scripts/loadtest/run.sh "${{ inputs.scenario }}" --base-url "${{ inputs.target }}" --profile "${{ inputs.profile }}" --time-scale 0.3 --out "$RUNNER_TEMP/k6"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-summary
+          path: ${{ runner.temp }}/k6/summary.json

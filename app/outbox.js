@@ -76,8 +76,54 @@
     tell(fresh);
   };
 
+  /* WHEN TO TRY AGAIN (ELECTION-NIGHT-HOSTING.md §2.5, P0 item 10). The phone
+     is the queue, so admission control at the origin loses nothing — PROVIDED
+     the phones do not all come back in the same second. Two rules:
+     - the server's Retry-After is a floor, never a suggestion, plus 0–50% random
+       on top, so two phones told "30" do not both return at exactly 30 s;
+     - with no Retry-After, full jitter over native's backoff ceilings
+       (outbox.ts BACKOFF_MS): a uniform wait in [0, ceiling). */
+  const BACKOFF_MS = [30000, 120000, 480000, 1800000];
+  // A header is the server's word, but a wrong one must not freeze the queue.
+  const RETRY_AFTER_CAP_MS = 15 * 60000;
+  // "Not now" rather than "never". Every other 4xx keeps its old handling.
+  const retryableStatus = (s) => s >= 500 || s === 408 || s === 425 || s === 429;
+  // Answers about the SERVER (busy) or this OBSERVER (rate-limited), not about
+  // one report: every report behind it would get the same answer, so stop.
+  const holdsQueue = (s) => s === 429 || s === 503;
+  /** Retry-After as ms from `now` — delta-seconds or an HTTP-date; null if absent or unreadable. */
+  function parseRetryAfter(v, now) {
+    const s = v == null ? '' : String(v).trim();
+    if (!s) return null;
+    if (/^\d+(\.\d+)?$/.test(s)) return Math.min(RETRY_AFTER_CAP_MS, Math.round(Number(s) * 1000));
+    const at = Date.parse(s);
+    return Number.isFinite(at) ? Math.min(RETRY_AFTER_CAP_MS, Math.max(0, at - now)) : null;
+  }
+  /**
+   * How long to wait before the next attempt. Retry-After is honoured for the
+   * two statuses that define it here (429, 503); `attempt` counts earlier
+   * failures (0 = first). `rand`/`now` are injectable for tests.
+   */
+  function retryDelayMs(status, retryAfter, attempt, rand, now) {
+    const r = rand || Math.random;
+    const ra = (status === 429 || status === 503) ? parseRetryAfter(retryAfter, now == null ? Date.now() : now) : null;
+    if (ra != null) return ra + Math.floor(r() * 0.5 * Math.max(ra, 2000));
+    return Math.floor(r() * BACKOFF_MS[Math.min(Math.max(0, attempt | 0), BACKOFF_MS.length - 1)]);
+  }
+  // Retry-After from a response: the header, else the body's retryAfterS (a
+  // cross-origin page — the Lite shell — cannot read an unexposed header).
+  const retryAfterOf = (resp, body) => {
+    let h = null;
+    try { h = resp.headers.get('retry-after'); } catch { /* no headers */ }
+    return h || (body && body.retryAfterS != null ? String(body.retryAfterS) : null);
+  };
+
   let busy = null; // one flush at a time per realm; overlapping triggers share it
   const Outbox = {
+    retryDelayMs,
+    parseRetryAfter,
+    retryableStatus,
+    /** `entry.notBefore` (epoch ms), when given, holds the first attempt until then. */
     async queue(entry) {
       const id = await run('readwrite', (s) => s.add({ ...entry, queuedAt: Date.now() }));
       session().catch(() => {}); // the worker needs the token to send it
@@ -95,20 +141,43 @@
       const base = (G.HAWKEYE && G.HAWKEYE.apiBase) || '';
       let sent = 0;
       const fresh = [];
-      for (const it of (await Outbox.all() || [])) {
+      // Per-report "not before" + failure count, keyed by queue id. Kept in the
+      // meta database, not written back onto the report: a put() of a report
+      // another realm (the service worker) has just sent and deleted would
+      // resurrect it.
+      const retry = (await getKv('retry').catch(() => null)) || {};
+      let retryDirty = false;
+      const later = (it, status, ra, tried) => {
+        const prev = retry[it.id] || { at: 0, n: 0 };
+        const at = Date.now() + retryDelayMs(status, ra, prev.n);
+        retry[it.id] = { at: Math.max(at, prev.at || 0), n: prev.n + (tried ? 1 : 0) };
+        retryDirty = true;
+      };
+      const forget = (it) => { if (retry[it.id]) { delete retry[it.id]; retryDirty = true; } };
+      // A busy/rate-limited answer holds EVERY report still queued, each with its
+      // own jitter, so the queue does not come back as one burst either.
+      const holdRest = (rest, status, ra) => rest.forEach((x, j) => later(x, status, ra, j === 0));
+      const items = (await Outbox.all()) || [];
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        if (Math.max(it.notBefore || 0, (retry[it.id] && retry[it.id].at) || 0) > Date.now()) continue; // not due
         // The mode is decided HERE, not when the report was queued. A report
         // captured underground and flushed on the surface should use whatever
         // the server offers now; and a queue written before direct upload
         // existed still flushes, because it carries the blobs either way.
         let directBody = null;
         if (!it.url && G.HawkeyeDirect && it.fields.imageSha256 && it.fields.venueImageSha256) {
-          const ok = await G.HawkeyeDirect.upload({
+          const D = G.HawkeyeDirect;
+          const up = await (D.tryUpload || D.upload)({
             base,
             token,
             blobs: { sheet: it.sheet, venue: it.venue },
             hashes: { sheet: it.fields.imageSha256, venue: it.fields.venueImageSha256 },
           });
-          if (ok) directBody = JSON.stringify({ ...it.fields });
+          // Presign refused as busy (429/503): NOT a reason to push the photo
+          // bytes through the origin instead. Hold the queue until Retry-After.
+          if (up && up.busy) { holdRest(items.slice(i), up.status, up.retryAfter); break; }
+          if (up === true) directBody = JSON.stringify({ ...it.fields });
         }
         const form = new FormData();
         for (const [k, v] of Object.entries(it.fields)) form.set(k, v);
@@ -136,18 +205,29 @@
         const retryable409 = resp.status === 409
           && body && (body.error === 'photo_not_uploaded' || body.error === 'storage_unavailable');
         if (retryable409) { /* leave queued — the next flush re-presigns and re-PUTs */ }
-        else if (resp.ok || resp.status === 409) { await Outbox.remove(it.id); sent++; }        // landed or already there
+        else if (resp.ok || resp.status === 409) { await Outbox.remove(it.id); forget(it); sent++; } // landed or already there
         // 401 is the SESSION, not the report: it used to fall into the drop below
         // and delete a signed report because a token expired while it waited.
         // Keep it; the next flush after sign-in sends it (native defers it too).
         else if (resp.status === 401) break;
-        else if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) { // unfixable -> drop, and SAY so
+        // 429 / 503: the server or this observer is over its limit \u2014 every
+        // report behind this one would hear the same, so hold them all and stop.
+        else if (holdsQueue(resp.status)) { holdRest(items.slice(i), resp.status, retryAfterOf(resp, body)); break; }
+        // Other 5xx, 408, 425 -> leave queued, retry after a jittered backoff.
+        else if (retryableStatus(resp.status)) later(it, resp.status, retryAfterOf(resp, body), true);
+        else if (resp.status >= 400 && resp.status < 500) { // unfixable -> drop, and SAY so
           await Outbox.remove(it.id);
+          forget(it);
           const f = it.fields || {};
           fresh.push({ label: it.label || [f.puCode, f.contest].filter(Boolean).join(' \u00b7 ') || 'report',
             queuedAt: it.queuedAt, droppedAt: Date.now(), why: refusal(resp.status, body) });
         }
-        // 5xx / 429 -> leave queued, retry later
+      }
+      if (retryDirty) {
+        // Drop entries for reports no longer queued (sent or dropped elsewhere).
+        const live = new Set(items.map((x) => String(x.id)));
+        for (const k of Object.keys(retry)) if (!live.has(k)) delete retry[k];
+        await putKv('retry', retry).catch(() => {});
       }
       if (fresh.length) {
         await record(fresh).catch(() => {});
@@ -160,11 +240,15 @@
   G.HawkeyeOutbox = Outbox;
 
   const go = () => Outbox.flush().catch(() => {});
+  // Reconnect and resume are the moments every phone in an area acts at once
+  // (a mast comes back; everyone unlocks at close of poll), so the first
+  // attempt is staggered by a random delay rather than fired on the event.
+  const goSoon = (maxMs) => setTimeout(go, Math.floor(Math.random() * maxMs));
   if (inPage) {
-    G.addEventListener('online', go);
+    G.addEventListener('online', () => goSoon(10000));
     // Coming back to the tab or app (the Lite shell resumes its WebView this
     // way) is often the first moment the network is back.
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') go(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') goSoon(3000); });
     setInterval(() => { if (document.visibilityState === 'visible') go(); }, 60000);
     const start = async () => {
       // Drops the service worker recorded while no page was open.
@@ -179,7 +263,10 @@
     // later, so anything still queued (offline again, 5xx) rejects.
     G.addEventListener('sync', (e) => {
       if (e.tag !== 'hawkeye-outbox') return;
-      e.waitUntil(Outbox.flush().then(async () => { if (await Outbox.count()) throw new Error('outbox not empty'); }));
+      // Chrome fires this on reconnect for every phone at once: stagger it too.
+      e.waitUntil(new Promise((r) => setTimeout(r, Math.floor(Math.random() * 5000)))
+        .then(() => Outbox.flush())
+        .then(async () => { if (await Outbox.count()) throw new Error('outbox not empty'); }));
     });
   }
 })(self);

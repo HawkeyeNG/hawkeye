@@ -203,7 +203,11 @@ function RootShell() {
   useEffect(() => {
     if (auth.status !== 'signedOut') return;
     const top = segments[0];
-    const allowed = top === 'welcome' || top === 'sign-in' || top === 'practice';
+    // 'open' is a redirect stub that replaces itself at once (app/open.tsx). An
+    // invite link sends a signed-out reader from it to sign-up; bouncing it to
+    // welcome here as well would race that and tear the sign-up screen down.
+    // Every other target it routes to is still checked here when it lands.
+    const allowed = top === 'welcome' || top === 'sign-in' || top === 'practice' || top === 'open';
     if (allowed) return;
 
     /**

@@ -11,7 +11,8 @@ import { File } from 'expo-file-system';
 import * as SecureStore from '@/lib/secure-store';
 
 import { bootstrapAuth } from '@/lib/auth';
-import { uploadDirect } from '@/lib/direct-upload';
+import { isDirectBusy, uploadDirect } from '@/lib/direct-upload';
+import { holdsQueue, retryAfterOf, retryDelayMs, retryableStatus } from '@/lib/retry';
 import { confirmSigning } from '@/lib/biometric';
 import { getIdentity } from '@/lib/identity';
 // TYPE-ONLY, so this edge is erased at compile time and creates no runtime
@@ -328,11 +329,13 @@ async function handOff(
   label: string,
   why: string,
   lead = i18nT('n.lib.submit.saved-on-this-phone-your-signed'),
+  /** Epoch ms the server asked us to wait until (Retry-After + jitter). */
+  notBefore?: number,
 ): Promise<SubmitResult> {
   try {
     // Resolved here rather than at module load: see the import note at the top.
     const { queueJob } = await import('@/lib/outbox');
-    await queueJob({ kind, body, files, label });
+    await queueJob({ kind, body, files, label, notBefore });
     return {
       ok: false,
       queued: true,
@@ -346,6 +349,19 @@ async function handOff(
       message: i18nT('n.lib.submit.upload-failed-and-the-report-could', { v0: why, v1: errText(e) }),
     };
   }
+}
+
+/**
+ * Park arguments for a response the outbox should retry: the lead line and the
+ * first-retry time. 429/503 are "the server is busy" and honour Retry-After;
+ * other retryable statuses keep the default "saved on this phone" lead.
+ */
+async function retryPlan(res: Response): Promise<{ lead?: string; notBefore?: number }> {
+  if (!holdsQueue(res.status)) return {};
+  return {
+    lead: i18nT('n.lib.submit.server-busy-saved'),
+    notBefore: Date.now() + retryDelayMs(res.status, await retryAfterOf(res), 0),
+  };
 }
 
 /**
@@ -468,8 +484,8 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   const label = i18nT('n.lib.submit.result', { v0: input.puCode, v1: input.contest });
 
   /** Outbox for a real report, nothing at all for a rehearsal. */
-  const park = (why: string, lead?: string): SubmitResult | Promise<SubmitResult> =>
-    input.dryRun ? undeliveredDryRun(why) : handOff('result', fields, files, label, why, lead);
+  const park = (why: string, lead?: string, notBefore?: number): SubmitResult | Promise<SubmitResult> =>
+    input.dryRun ? undeliveredDryRun(why) : handOff('result', fields, files, label, why, lead, notBefore);
 
   // DIRECT UPLOAD WHEN THE SERVER OFFERS IT. The photos go straight to the
   // bucket and only hashes come here, because inbound bytes count against the
@@ -485,7 +501,17 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     sheetSha256: imageSha256,
     venueSha256: venueImageSha256,
   }).catch(() => null);
-  if (direct) buildJson = () => JSON.stringify(fields);
+  // EXCEPT "busy": a presign refused 429/503 must not become a multipart post,
+  // which would push the photo bytes through the origin just when it asked for
+  // less. Park the report until Retry-After instead.
+  if (isDirectBusy(direct)) {
+    return park(
+      `HTTP ${direct.status}`,
+      i18nT('n.lib.submit.server-busy-saved'),
+      Date.now() + retryDelayMs(direct.status, direct.retryAfter, 0),
+    );
+  }
+  if (direct === true) buildJson = () => JSON.stringify(fields);
 
   let res: Response;
   try {
@@ -506,8 +532,9 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   }
   // The report is fine, the server is not. Exactly the class the outbox retries,
   // so queue it instead of making the observer stand at the unit and retry.
-  if (res.status >= 500 || res.status === 429) {
-    return park(`HTTP ${res.status}`);
+  if (retryableStatus(res.status)) {
+    const plan = await retryPlan(res);
+    return park(`HTTP ${res.status}`, plan.lead, plan.notBefore);
   }
 
   const body = (await res.json().catch(() => ({}))) as {
@@ -610,8 +637,8 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
   const label = i18nT('n.lib.submit.collation', { v0: input.level, v1: input.ward || input.lga || input.state, v2: input.contest });
 
   /** Outbox for a real report, nothing at all for a rehearsal. */
-  const park = (why: string, lead?: string): SubmitResult | Promise<SubmitResult> =>
-    input.dryRun ? undeliveredDryRun(why) : handOff('collation', fields, files, label, why, lead);
+  const park = (why: string, lead?: string, notBefore?: number): SubmitResult | Promise<SubmitResult> =>
+    input.dryRun ? undeliveredDryRun(why) : handOff('collation', fields, files, label, why, lead, notBefore);
 
   let res: Response;
   try {
@@ -626,8 +653,9 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
       i18nT('n.lib.submit.signed-out-your-signed-report-is'),
     );
   }
-  if (res.status >= 500 || res.status === 429) {
-    return park(`HTTP ${res.status}`);
+  if (retryableStatus(res.status)) {
+    const plan = await retryPlan(res);
+    return park(`HTTP ${res.status}`, plan.lead, plan.notBefore);
   }
 
   const body = (await res.json().catch(() => ({}))) as {

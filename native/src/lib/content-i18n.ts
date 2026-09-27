@@ -11,9 +11,9 @@
  * sentence gets the same translation" is the right outcome rather than a
  * collision — see the note in scripts/i18n/extract_native_content.mjs.
  *
- * A string with no entry here falls through as English, which is what the
- * privacy page wants (it is English by policy) and is also the safe degradation
- * for anything reworded in content.ts before this file was rebuilt.
+ * A string with no entry here falls through as English, the safe degradation
+ * for anything reworded in content.ts before this file was rebuilt. Privacy and
+ * terms are translated like the rest (since f2f1a58).
  */
 export const CONTENT_I18N: Record<string, Record<string, string>> = {
   "ha": {
@@ -219,7 +219,8 @@ export const CONTENT_I18N: Record<string, Record<string, string>> = {
     "Can one person submit multiple reports with different SIM cards?": "Mutum ɗaya zai iya shigar da rahotanni da yawa da katunan SIM daban-daban?",
     "Each device carries a fingerprint, and one device can report each race only once — no matter how many numbers are registered on it. Independent reports must come from genuinely different people on different phones.": "Kowace na'ura tana da yatsa, kuma na'ura ɗaya tana iya kai rahoton kowace gasa sau ɗaya kawai — komai yawan lambobin da aka yi rijista a kanta. Dole rahotanni masu zaman kansu su fito daga mutane daban-daban na gaskiya a wayoyi daban-daban.",
     "How do I get alerts for races I care about?": "Yaya zan samu sanarwa kan gasar da nake so?",
-    "Verify your phone once, then on the results page choose an election and a state, district or constituency and press Follow. You'll get a Telegram message whenever new reports land.": "Ka tabbatar da wayarka sau ɗaya, sannan a shafin sakamako ka zaɓi zaɓe da jiha, yanki ko mazaɓa sai ka danna Bi. Za ka samu saƙon Telegram duk lokacin da sabbin rahotanni suka shigo."
+    "Verify your phone once, then on the results page choose an election and a state, district or constituency and press Follow. You'll get a Telegram message whenever new reports land.": "Ka tabbatar da wayarka sau ɗaya, sannan a shafin sakamako ka zaɓi zaɓe da jiha, yanki ko mazaɓa sai ka danna Bi. Za ka samu saƙon Telegram duk lokacin da sabbin rahotanni suka shigo.",
+    "The English version of this document is the authoritative one. Any translation is provided for convenience; where they differ, the English version applies.": "Sigar Turanci ta wannan takarda ita ce mai iko. Ana bayar da kowace fassara don sauƙaƙawa kaɗai; idan suka sha bamban, sigar Turanci ce ake bi."
   },
   "ig": {
     "A Device Fingerprint": "Akara Mkpịsị Aka Ngwaọrụ",
@@ -424,7 +425,8 @@ export const CONTENT_I18N: Record<string, Record<string, string>> = {
     "Can one person submit multiple reports with different SIM cards?": "Otu onye ọ nwere ike ịnyefe akụkọ dị iche iche site na kaadị SIM dị iche?",
     "Each device carries a fingerprint, and one device can report each race only once — no matter how many numbers are registered on it. Independent reports must come from genuinely different people on different phones.": "Ngwaọrụ ọ bụla nwere mbadamba mkpịsị aka, otu ngwaọrụ nwekwara ike ịkọ asọmpi ọ bụla naanị otu ugboro — n'agbanyeghị nọmba ole edebanyere na ya. Akụkọ nweere onwe ha ga-esi n'aka ndị mmadụ dị iche n'ezie na ekwentị dị iche.",
     "How do I get alerts for races I care about?": "Kedu ka m ga-esi nweta ọkwa maka asọmpi ndị m na-eche banyere ha?",
-    "Verify your phone once, then on the results page choose an election and a state, district or constituency and press Follow. You'll get a Telegram message whenever new reports land.": "Kwado ekwentị gị otu ugboro, wee họrọ ntuli aka na steeti, mpaghara ma ọ bụ mpaghara ntuli aka n'ibe nsonaazụ ma pịa Soro. Ị ga-enweta ozi Telegram mgbe ọ bụla akụkọ ọhụrụ batara."
+    "Verify your phone once, then on the results page choose an election and a state, district or constituency and press Follow. You'll get a Telegram message whenever new reports land.": "Kwado ekwentị gị otu ugboro, wee họrọ ntuli aka na steeti, mpaghara ma ọ bụ mpaghara ntuli aka n'ibe nsonaazụ ma pịa Soro. Ị ga-enweta ozi Telegram mgbe ọ bụla akụkọ ọhụrụ batara.",
+    "The English version of this document is the authoritative one. Any translation is provided for convenience; where they differ, the English version applies.": "Ederede Bekee nke akwụkwọ a bụ nke nwere ikike. A na-enye nsụgharị ọ bụla naanị maka mfe; ebe ọ bụla ha dịgasị iche, ọ bụ ederede Bekee ga-achị."
   },
   "yo": {
     "A Device Fingerprint": "Àmì-Ìka Ẹ̀rọ",
@@ -629,6 +631,7 @@ export const CONTENT_I18N: Record<string, Record<string, string>> = {
     "Can one person submit multiple reports with different SIM cards?": "Ṣé ẹnìkan lè fi ìròyìn púpọ̀ sílẹ̀ pẹ̀lú káàdì SIM ọ̀tọ̀ọ̀tọ̀?",
     "Each device carries a fingerprint, and one device can report each race only once — no matter how many numbers are registered on it. Independent reports must come from genuinely different people on different phones.": "Ẹ̀rọ kọ̀ọ̀kan ní ìtẹ̀kà, ẹ̀rọ kan sì lè jábọ̀ ìdíje kọ̀ọ̀kan lẹ́ẹ̀kan ṣoṣo — láìka iye nọ́mbà tí a forúkọsílẹ̀ sórí rẹ̀ sí. Àwọn ìròyìn òmìnira gbọdọ̀ wá láti ọ̀dọ̀ ènìyàn ọ̀tọ̀ọ̀tọ̀ gidi lórí fóònù ọ̀tọ̀ọ̀tọ̀.",
     "How do I get alerts for races I care about?": "Báwo ni mo ṣe lè gba ìkìlọ̀ fún àwọn ìdíje tí ó wu mí?",
-    "Verify your phone once, then on the results page choose an election and a state, district or constituency and press Follow. You'll get a Telegram message whenever new reports land.": "Jẹ́rìísí fóònù rẹ lẹ́ẹ̀kan, lẹ́yìn náà ní ojú-ìwé àbájáde yan ìdìbò àti ìpínlẹ̀, ẹkùn tàbí agbègbè kí o sì tẹ Tẹ̀lé. Ìwọ yóò gba ìfiránṣẹ́ Telegram nígbàkigbà tí ìròyìn tuntun bá dé."
+    "Verify your phone once, then on the results page choose an election and a state, district or constituency and press Follow. You'll get a Telegram message whenever new reports land.": "Jẹ́rìísí fóònù rẹ lẹ́ẹ̀kan, lẹ́yìn náà ní ojú-ìwé àbájáde yan ìdìbò àti ìpínlẹ̀, ẹkùn tàbí agbègbè kí o sì tẹ Tẹ̀lé. Ìwọ yóò gba ìfiránṣẹ́ Telegram nígbàkigbà tí ìròyìn tuntun bá dé.",
+    "The English version of this document is the authoritative one. Any translation is provided for convenience; where they differ, the English version applies.": "Ẹ̀yà Gẹ̀ẹ́sì ti ìwé yìí ni ó ní àṣẹ. A ń pèsè ìtumọ̀ èyíkéyìí fún ìrọ̀rùn; níbi tí wọ́n bá yàtọ̀ síra, ẹ̀yà Gẹ̀ẹ́sì ni ó ń ṣàkóso."
   }
 };

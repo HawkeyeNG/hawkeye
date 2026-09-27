@@ -1,4 +1,39 @@
 {
+  "_meta": {
+    "language": "Igbo",
+    "code": "ig",
+    "review": "machine-draft",
+    "glossary": {
+      "review": "provisional",
+      "reviewers": 1,
+      "anonymous": true,
+      "note": "The 25 election terms in i18n/GLOSSARY.md were checked by an anonymous Igbo speaker. The UI strings below reuse those terms but have NOT themselves been read by a speaker.",
+      "reviewedBy": null,
+      "anonymousByRequest": true
+    },
+    "target": 3,
+    "note": "UI strings are a language-model draft. Igbo needs the subdotted vowels ị ọ ụ and the dotted ṅ — they render only because the web fonts were rebuilt on 2026-09-07, and ṅ is missing from Spline Sans, which is why --display swaps to Inter for this language.",
+    "priority": [
+      "tour.note",
+      "observe.signed-on-this-device-and-written",
+      "observe.your-report-is-on-the-public",
+      "profile.deletes-your-observer-identity-your-key",
+      "index.counts-only-become-trusted-when-independent",
+      "faq.when-independent-observers-at-the-same",
+      "guide.one-report-per-election-per-polling",
+      "guide.reports-are-permanent-nothing-can-be",
+      "how.a-verified-phone-number-is-one",
+      "dashboard.auto-refreshes-every-30-seconds-hawkeye",
+      "integrity.automated-flags-aid-scrutiny-they-are",
+      "ledger.the-chain-head-can-be-anchored",
+      "map-unit.crowd-mapping-is-optional-and-community",
+      "political.incumbency-data-is-provisional-and-community",
+      "race.candidate-information-is-compiled-from-public",
+      "support.always-confirm-the-address-after-pasting"
+    ],
+    "priorityNote": "Read these first. The first four are evidential or irreversible-action warnings; the rest either carry the INEC notice as a trailing clause or tell an observer a hard rule they must not misunderstand. None of the interface strings has been read by a speaker yet.",
+    "coverage": "All 40 pages plus the runtime shell chrome. Not covered: the first-run tour in menu.js, and backend SMS/OTP/Telegram/push text."
+  },
   "privacy.all-traffic-is-encrypted-https-phone": "A na-ekpuchi data niile na-agafe (HTTPS). A na-eji HMAC mee nọmba ekwentị ka ọ bụrụ hash; a na-abịanye aka n'akụkọ na ngwaọrụ nke gị site n'igodo na-adịghị apụ na ya; a na-amachikwa ugboro ole a pụrụ ịnweta ya, a na-enyochakwa iji chọpụta bọt.",
   "privacy.hawkeye-is-built-to-protect-the": "E wuru Hawkeye iji chebe ndị na-eji ya. Nke a na-akọwa kpọmkwem ihe anyị na-anakọta, ihe kpatara ya, ihe na-abụ nke ọha, na ihe na-anọgide na nzuzo.",
   "privacy.one-time-codes-they-expire-in": "Koodu otu oge — ha na-agwụ n'ime nkeji ole na ole, a na-ehichapụkwa ha ozugbo e jiri ha.",
@@ -36,41 +71,6 @@
   "common.hawkeye-is-an-independent-transparency-initiative-2": "Hawkeye bụ atụmatụ nghọta ọha nweere onwe ya. Nsonaazụ gọọmentị bụ nke INEC.",
   "common.hawkeye-is-an-independent-transparency-initiative-3": "Hawkeye bụ atụmatụ nghọta ọha nweere onwe ya, o nweghịkwa njikọ na INEC. Nsonaazụ gọọmentị bụ ndị INEC kwupụtara.",
   "index.not-affiliated-with-inec-or-any": "Hawkeye enweghị njikọ na INEC ma ọ bụ pati ndọrọndọrọ ọchịchị ọ bụla. Nsonaazụ gọọmentị bụ nke INEC.",
-  "_meta": {
-    "language": "Igbo",
-    "code": "ig",
-    "review": "machine-draft",
-    "glossary": {
-      "review": "provisional",
-      "reviewers": 1,
-      "anonymous": true,
-      "note": "The 25 election terms in i18n/GLOSSARY.md were checked by an anonymous Igbo speaker. The UI strings below reuse those terms but have NOT themselves been read by a speaker.",
-      "reviewedBy": null,
-      "anonymousByRequest": true
-    },
-    "target": 3,
-    "note": "UI strings are a language-model draft. Igbo needs the subdotted vowels ị ọ ụ and the dotted ṅ — they render only because the web fonts were rebuilt on 2026-09-07, and ṅ is missing from Spline Sans, which is why --display swaps to Inter for this language.",
-    "priority": [
-      "tour.note",
-      "observe.signed-on-this-device-and-written",
-      "observe.your-report-is-on-the-public",
-      "profile.deletes-your-observer-identity-your-key",
-      "index.counts-only-become-trusted-when-independent",
-      "faq.when-independent-observers-at-the-same",
-      "guide.one-report-per-election-per-polling",
-      "guide.reports-are-permanent-nothing-can-be",
-      "how.a-verified-phone-number-is-one",
-      "dashboard.auto-refreshes-every-30-seconds-hawkeye",
-      "integrity.automated-flags-aid-scrutiny-they-are",
-      "ledger.the-chain-head-can-be-anchored",
-      "map-unit.crowd-mapping-is-optional-and-community",
-      "political.incumbency-data-is-provisional-and-community",
-      "race.candidate-information-is-compiled-from-public",
-      "support.always-confirm-the-address-after-pasting"
-    ],
-    "priorityNote": "Read these first. The first four are evidential or irreversible-action warnings; the rest either carry the INEC notice as a trailing clause or tell an observer a hard rule they must not misunderstand. None of the interface strings has been read by a speaker yet.",
-    "coverage": "All 40 pages plus the runtime shell chrome. Not covered: the first-run tour in menu.js, and backend SMS/OTP/Telegram/push text."
-  },
   "404.that-page-doesn-t-exist-it": "Peeji ahụ adịghị — enwere ike na ọ kwagara, ma ọ bụ na e dehiere njikọ ahụ.",
   "about.about-hawkeye": "Gbasara Hawkeye",
   "about.an-independent-nonpartisan-record-of-what": "Ndekọ nweere onwe ya, nke na-akwadoghị pati ọ bụla, nke ihe a kwupụtara na ngalaba ntuli aka ọ bụla — ndị Naịjirịa nkịtị dekọrọ ya, nyochaa ya ma bipụta ya.",
@@ -1877,9 +1877,13 @@
   "about.press-kit": "Ndị nta akụkọ: eziokwu, ụbọchị ndị dị mkpa, akara ngwa na foto ihuenyo dị na <a href=\"press.html\">ngwugwu ndị nta akụkọ anyị →</a>",
   "about.run-by-inixien-hope-initiative": "<strong>IniXien Hope Initiative</strong> na-arụ Hawkeye, otu Naịjirịa na-anaghị achọ uru (a na-edebanye aha ya ugbu a). Ụlọ ọrụ nwanne ya, <strong>IniXien, LLC</strong>, na-enye ya ikike iji Hawkeye n'efu ruo mgbe ebighị ebi. Akụkọ ndị na-ekiri ihe, na ndekọ ha na-ewu, na-anọgide ghe oghe ka onye ọ bụla gụọ ma nyochaa.",
   "privacy.collect.captain": "<strong>Arịrịọ gị ịbụ onye ndú ward, ọ bụrụ na i zitere ya</strong> — ward ị ga-elekọta, nzukọ (nhọrọ), obere ederede, na ọnụọgụ ndị ọrụ afọ ofufo ị nwere ike iweta. Anyị na-akpọtụrụ gị gbasara ya naanị site na ọkwa Hawkeye (ebe ọkwa nke ngwa ahụ, ọkwa push, na Telegram ma ọ bụrụ na i jikọrọ ya), ọ bụghị site n'oku ekwentị. A na-ehichapụ ya ma ọ bụrụ na i hichapụ akaụntụ gị.",
-  "observe.have-an-invite-code": "Ị nwere koodu ọkpụkpọ?",
   "observe.invite-code-optional": "Koodu ọkpụkpọ (nhọrọ)",
   "observe.invite-code-invalid": "Koodu ọkpụkpọ nwere mkpụrụedemede na ọnụọgụ 6. Lelee ya, ma ọ bụ hapụ ya oghere.",
   "invite.open-in-app": "Ị nwere ngwa ahụ? Mepee ya",
-  "map.osm-contributors": "ndị na-atụnye ụtụ na OpenStreetMap"
+  "map.osm-contributors": "ndị na-atụnye ụtụ na OpenStreetMap",
+  "observe.server-busy-saved": "Hawkeye nọ n'ọrụ ugbu a — echekwara akụkọ gị e binyere aka n'ekwentị a, ọ ga-eziga onwe ya ozugbo.",
+  "observe.server-busy-try-again": "Hawkeye nọ n'ọrụ — nwaa ọzọ n'otu nkeji.",
+  "dashboard.could-not-refresh-retrying": "Enweghị ike imelite — a ga-anwa ọzọ n'ime sekọnd 30.",
+  "dashboard.latest-reports-note": "Na-egosi akụkọ {n} kacha ọhụrụ, nke ọhụrụ na mbụ.",
+  "profile.invite-a-second-observer": "Kpọọ Onye Na-ekiri Ihe Nke Abụọ"
 }

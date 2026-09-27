@@ -166,12 +166,15 @@ for (const [code, seat, lga, wards, units, drawn] of [
 
 console.log('\n=== the ballot reaches the page ===');
 r = await open('contest=REP_BYE_GOMBE_2026');
-for (const name of ['Yaya Alfa Muhammad', "Kallamu Usman Maijama'a", 'Gaddafi Haruna', 'Abdulkarim Abdulmajib']) {
+// Maigari Jungudo (LP) came second and was missing from INEC's pre-poll list;
+// the catalogue was reconciled against the declared result (backend 0b3fc93f).
+for (const name of ['Yaya Alfa Muhammad', "Kallamu Usman Maijama'a", 'Gaddafi Haruna', 'Abdulkarim Abdulmajib',
+  'Maigari Jungudo']) {
   check(`Gombe shows ${name}`, r.body, (t) => t.includes(name));
 }
 check('Gombe calls them candidates', r.body, (t) => /Declared candidates/i.test(t));
 check('Gombe no longer says the list is missing', r.body,
-  (t) => !/has not published the candidate list/i.test(t));
+  (t) => !/has not published the candidate list|never published a candidate list/i.test(t));
 
 r = await open('contest=SHA_BYE_KANO_DAWAKINKUDU_2026');
 check('Dawakin Kudu heads the list "Parties on the ballot"', r.body,
@@ -182,12 +185,17 @@ check('Dawakin Kudu shows all six parties', r.body,
 check('Dawakin Kudu says the names are not published', r.body,
   (t) => /Candidate name not published/i.test(t));
 // CONTROL: a seat with no published ballot must still say so, or the two states
-// above prove nothing.
+// above prove nothing. Udu was DECLARED on 20 Sep 2026 without a list ever
+// appearing, so it now says the list was NEVER published rather than promising
+// it "yet" under the winner (app b67d075). The open-race wording is held by the
+// 2027 general seat control at the bottom of this file.
 r = await open('contest=SHA_BYE_DELTA_UDU_2026');
 check('CONTROL Udu still says the list is missing', r.body,
-  (t) => /has not published the candidate list/i.test(t));
+  (t) => /INEC never published a candidate list for this by-election/i.test(t));
+check('CONTROL Udu no longer promises the list is coming', r.body,
+  (t) => !/has not published the candidate list/i.test(t));
 check('CONTROL Udu heads no candidate list', r.body,
-  (t) => !/Parties on the ballot/i.test(t));
+  (t) => !/Parties on the ballot|Declared candidates/i.test(t));
 
 console.log('\n=== an unknown contest builds NO page ===');
 r = await open('contest=NOT_A_REAL_CONTEST', { expectMap: false });
@@ -200,6 +208,10 @@ r = await open('contest=GOV&state=Bauchi');
 check('a generated governorship still renders its LGAs', r.shapes, (n) => n === 20);
 r = await open('contest=REP&seat=Gombe%2FKwami%2FFunakaye');
 check('the 2027 general seat page still renders', r.shapes, 3);
+// An OPEN race still promises the list - the declared wording above is keyed on
+// the result, not applied everywhere.
+check('and, being open, still says the list is not published yet', r.body,
+  (t) => /has not published the candidate list for this race yet/i.test(t));
 
 check('no page errors anywhere', errs, []);
 await b.close();

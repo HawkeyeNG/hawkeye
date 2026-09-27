@@ -24,6 +24,22 @@ const argv = process.argv.slice(2);
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i > -1 ? argv[i + 1] : d; };
 const BASE = arg('base', 'http://localhost:8430');
 
+/* THIS NEEDS A RUNNING BACKEND (it serves the pages and the API the signed-in
+   shell calls with the dev session minted below), and
+   run_all.sh does not start one — so with nothing on BASE it used to die inside
+   Playwright with ERR_CONNECTION_REFUSED, which reads like a page defect. Say
+   what is missing instead. Still a failure (exit 2): a test that passes when it
+   could not look is not a test. */
+try {
+  await fetch(`${BASE}/index.html`, { signal: AbortSignal.timeout(5000) });
+} catch (e) {
+  console.error(`NO BACKEND at ${BASE} (${e.cause?.code || e.message}).\n`
+    + 'Start one first — the "hawkeye-backend" launch config, or\n'
+    + '  cd backend && SMS_PROVIDER=console node src/server.js\n'
+    + 'or point this at one with --base http://localhost:<port>.');
+  process.exit(2);
+}
+
 /* SIGNED IN, OR THIS TESTS NOTHING.
    In the app shell authgate.js leaves only the auth funnel and practice open, so
    a signed-out run asking for ledger.html lands on observe.html — a TAB page,
@@ -73,7 +89,11 @@ async function inspect(page, shell) {
     landed: (location.pathname.split('/').pop() || 'index.html').toLowerCase(),
     close: !!document.querySelector('.close-btn'),
     theme: !!document.querySelector('.theme-btn:not(.close-btn)'),
-    menuTheme: !!document.querySelector('#menu-panel .menu-theme'),
+    // By what it DOES, not only the old row's class: a re-added toggle under any
+    // class name still says "Switch to light/dark mode" (text or aria-label).
+    menuTheme: !!document.querySelector('#menu-panel .menu-theme, #menu-panel .theme-btn')
+      || [...document.querySelectorAll('#menu-panel button, #menu-panel a')].some((el) =>
+        /switch to (light|dark) mode/i.test(`${el.textContent} ${el.getAttribute('aria-label') || ''}`)),
     menuSocial: !!document.querySelector('#menu-panel .social-row'),
   }));
   await ctx.close();
@@ -103,11 +123,18 @@ for (const [page, want] of CASES) {
     + (ok || !stayed ? '' : `  wanted close=${want.close} theme=${want.theme}`));
 }
 
-// The toggle must still be reachable on the pages that gave it up, and the
-// social links must exist somewhere in the app at all — the shell hides the
+// The social links must exist somewhere in the app at all — the shell hides the
 // footer, which is where they used to be.
+//
+// THE THEME TOGGLE IS DELIBERATELY NOT IN THE MENU any more. This asserted the
+// opposite until b16f1bd (2026-09-12) removed the row: it rendered as unstyled
+// text, invisible against the dark panel, and it was a second control for a
+// setting the header already owns. Home's header toggle is now the single place
+// to change theme — which the index.html case above already asserts
+// (theme=true) — so the reachability this line used to guard is still covered,
+// and what it guards now is that the duplicate does not creep back.
 const deep = await inspect('ledger.html', true);
-for (const [label, val] of [['menu carries the theme toggle', deep.menuTheme], ['menu carries the social row', deep.menuSocial]]) {
+for (const [label, val] of [['menu does NOT carry a second theme control', !deep.menuTheme], ['menu carries the social row', deep.menuSocial]]) {
   if (!val) { console.log(`  FAIL ${label}`); bad++; } else console.log(`  ok   ${label}`);
 }
 

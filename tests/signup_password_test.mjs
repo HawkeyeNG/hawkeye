@@ -63,19 +63,50 @@ check('reached only for an existing account WITH a password',
 check('the pane says the account already exists',
   /This account already exists/.test(signin), true);
 check('it offers the forgot-password route', /Forgot your password\?/.test(signin), true);
-check('worded for both routes into the pane',
-  /existsAfterOtp \? 'Set a new one' : 'Reset it'/.test(signin), true);
+/* Keyed in bd6de75 (native i18n tranche 3) as a bare expression —
+   `existsAfterOtp ? i18nT('…set-a-new-one') : i18nT('…reset-it')` — which the
+   shared helper does not resolve (it only rewrites `{i18nT('k')}`). Resolve
+   bare calls here, through the same native bundle, so the check still reads the
+   English a reader sees and still pins which wording goes with which route. */
+const NATIVE_EN = JSON.parse(fs.readFileSync(`${N}/lib/i18n/en.json`, 'utf8'));
+const bareEnglish = (src) => src.replace(/i18nT\('([^']+)'\)/g,
+  (m, k) => (Object.hasOwn(NATIVE_EN, k) ? `'${NATIVE_EN[k]}'` : m));
+const BOTH_ROUTES = /existsAfterOtp \? 'Set a new one' : 'Reset it'/;
+check('worded for both routes into the pane', BOTH_ROUTES.test(bareEnglish(signin)), true);
+// CONTROL: the two wordings swapped between the routes must go red.
+check('CONTROL: swapped wordings are caught', BOTH_ROUTES.test(bareEnglish(signin
+  .replace("'n.app.sign-in.set-a-new-one'", "'SWAP'")
+  .replace("'n.app.sign-in.reset-it'", "'n.app.sign-in.set-a-new-one'")
+  .replace("'SWAP'", "'n.app.sign-in.reset-it'"))), false);
 check('and a way out if the number was not theirs', /signOut\(\)/.test(signin), true);
 
 console.log('\n=== how the client learns it ===');
-check('verifyOtp returns isNew / hadPassword', /isNew\?: boolean; hadPassword\?: boolean/.test(auth), true);
+// 2305169 put needsUnit between the two, so read the one return type as a whole
+// rather than requiring the fields to be adjacent.
+check('verifyOtp returns isNew / hadPassword',
+  /Promise<\{[^}]*\bisNew\?: boolean;[^}]*\bhadPassword\?: boolean[^}]*\}>/.test(auth), true);
+// ...and hadPassword is the server's hasPassword, not some other flag.
+check('and hadPassword is mapped from the server\'s hasPassword',
+  /isNew: r\.isNew,[^}\n]*hadPassword: r\.hasPassword/.test(auth), true);
 // An older server sends neither; undefined must not be read as "new".
 check('an unstated answer falls back to the normal path',
   /r\.isNew === false/.test(signin), true);
 
 console.log('\n=== and the server only says so AFTER the code ===');
-check('/verify returns isNew and hasPassword',
-  /res\.json\(\{[\s\S]{0,200}?isNew,[\s\S]{0,120}?hasPassword: !!observer\.password_hash/.test(observers), true);
+/* Scoped to the /verify handler's own res.json({...}) rather than a byte window:
+   fc6f7190 put needsUnit (and its comment) between isNew and hasPassword. */
+const verifyReply = (src) => {
+  const at = src.indexOf("observersRouter.post('/verify',");
+  if (at < 0) return '';
+  const next = src.indexOf('observersRouter.', at + 1);
+  const handler = src.slice(at, next < 0 ? undefined : next);
+  return (/res\.json\(\{([\s\S]*?)\}\);/.exec(handler) || [])[1] || '';
+};
+const saysBoth = (reply) => /\bisNew,/.test(reply) && /hasPassword: !!observer\.password_hash/.test(reply);
+check('/verify returns isNew and hasPassword', saysBoth(verifyReply(observers)), true);
+// CONTROL: the same reply with hasPassword dropped must go red.
+check('CONTROL: a /verify reply without hasPassword is caught',
+  saysBoth(verifyReply(observers.replace(/hasPassword: !!observer\.password_hash,?/, ''))), false);
 // AND BEFORE ONE, WHERE IT SAVES MONEY. Every OTP is a billed send, and a
 // sign-up on a registered number has exactly one possible outcome, so /register
 // refuses it without sending. That does tell a caller the number is registered

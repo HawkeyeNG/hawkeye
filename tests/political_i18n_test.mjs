@@ -140,7 +140,13 @@ console.log('\n=== both clients read the same overlay ===');
 {
   const webJs = fs.readFileSync(`${ROOT}/app/i18n.js`, 'utf8');
   const nat = fs.readFileSync(`${ROOT}/native/src/lib/political.ts`, 'utf8');
-  check('the web fetches /i18n/political.json', webJs.includes("'/i18n/political.json'"));
+  // RELATIVE since 171606c: in the app shell native.js rewrites a leading-slash
+  // URL to the live host, so '/i18n/…' fetched over the network a file the APK
+  // already contains. Every page sits at the web root (the room carries
+  // <base href="/">), so 'i18n/political.json' IS /i18n/political.json there.
+  const webFetch = webJs.match(/fetch\(\s*'(\/?i18n\/political\.json)'/);
+  check('the web fetches /i18n/political.json', !!webFetch, webFetch && webFetch[1]);
+  check('  ...relatively, so the shell reads its bundled copy', !!webFetch && webFetch[1] === 'i18n/political.json', webFetch && webFetch[1]);
   check('native fetches the same path', /\/i18n\/political\.json/.test(nat));
   check('native translates at CALL time, not inside the memo',
     nat.includes('const lang = currentLang_();') && nat.includes('function loadPoliticalRaw()'));

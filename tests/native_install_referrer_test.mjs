@@ -238,6 +238,22 @@ const K = { code: 'hawkeye.invite.code', unit: 'hawkeye.invite.unit', read: 'haw
   check('a DIFFERENT invitation without a unit clears it', [await M.pendingInviteCode(), w.store.has(K.unit)], ['ABCDEF', false]);
 }
 {
+  /* /open?to=invite opens sign-up AT ONCE (app/open.tsx), and sign-up reads the
+     code on mount — no 10 ms grace, as above. The readers wait for the write. */
+  const { M } = await fresh({ os: 'ios' });
+  M.captureInviteLink(`https://hawkeye.com.ng/open?to=invite&ref=${CODE}&unit=${UNIT}`);
+  check('an invite link read at once (sign-up mounting) finds the code', await M.pendingInviteCode(), CODE);
+  const { M: M2 } = await fresh({ os: 'ios' });
+  M2.captureInviteLink(`https://hawkeye.com.ng/open?to=invite&ref=${CODE}&unit=${UNIT}`);
+  check('and the chooser, read at once, finds the unit', await M2.takeInviteUnit(), UNIT);
+  /* CONTROL: without the wait the same immediate read misses the code. */
+  const noWait = PENDING_TS.replaceAll('if (parking) await parking;', '');
+  check('CONTROL the mutation applied', noWait !== PENDING_TS, true);
+  const { M: M3 } = await fresh({ os: 'ios' }, noWait);
+  M3.captureInviteLink(`https://hawkeye.com.ng/open?to=invite&ref=${CODE}&unit=${UNIT}`);
+  check('CONTROL without the wait an immediate read misses it', await M3.pendingInviteCode(), undefined);
+}
+{
   /* CONTROL: the precedence check above must be able to fail. With the
      no-overwrite guard deleted, the install referrer wins instead. */
   const mutated = PENDING_TS.replace('if (before && !overwrite) return;', '');
@@ -343,6 +359,7 @@ try {
   check('it names the PRODUCTION package only', it?.pkg, 'ng.com.hawkeye.observer');
   check('its data URI is the app scheme, and the app reads code + unit from it', P.parseInviteLink(it?.data), { code: CODE, unit: UNIT });
   check('its data URI is hawkeye://open (the /open route)', it?.data.startsWith('hawkeye://open?'), true);
+  check('marked as an invite, so the app opens sign-up (open.tsx to=invite)', new URL(it?.data || 'x:').searchParams.get('to'), 'invite');
   check('not installed: falls back to the Play link, referrer and all', it?.fallback, a.store);
   check('the fallback is encoded — no raw ; or # to cut the intent short', /[;#]/.test(it?.rawFallback || ';'), false);
   check('iPhone: shown', i.openShown, true);
@@ -353,7 +370,7 @@ try {
   check('a laptop: NOT shown (phones only)', d.openShown, false);
   check('CONTROL without the page\'s [hidden] rule it WOULD show', d.shownWithoutRule, true);
 
-  console.log('\n=== observe.html: "Have an invite code?" on web sign-up ===');
+  console.log('\n=== observe.html: "Invite code (optional)" always on web sign-up ===');
   async function signup(qs = '') {
     const ctx = await b.newContext({ viewport: { width: 390, height: 820 } });
     const p = await ctx.newPage();
@@ -376,10 +393,7 @@ try {
   };
   /** Phone + channel, then Request OTP. Resolves to the /register post or null. */
   async function requestCode(p, code) {
-    if (code !== undefined) {
-      if (!(await visible(p, 'ref-input'))) await p.click('#ref-toggle');
-      await p.fill('#ref-input', code);
-    }
+    if (code !== undefined) await p.fill('#ref-input', code);
     await p.fill('#auth-input', '08031234567');
     await p.check('input[name="otp-channel"][value="telegram"]');
     const from = posts.length;
@@ -396,10 +410,19 @@ try {
 
   {
     const { ctx, p, errors } = await signup();
-    check('no code: the link shows, the field does not', [await visible(p, 'ref-toggle'), await visible(p, 'ref-input')], [true, false]);
-    await p.click('#ref-toggle');
-    check('the link reveals the field', [await visible(p, 'ref-input'), await visible(p, 'ref-toggle')], [true, false]);
+    check('no code: the field is visible, and empty', [await visible(p, 'ref-input'), await p.inputValue('#ref-input')], [true, '']);
+    check('labelled "Invite code (optional)"', await p.evaluate(() => document.querySelector('label[for="ref-input"]').textContent.trim()), 'Invite code (optional)');
+    check('no "Have an invite code?" link to find first', await p.evaluate(() => !!document.getElementById('ref-toggle')), false);
+    /* CONTROL for visible(): the same field inside a [hidden] box reads hidden. */
+    await p.evaluate(() => { document.getElementById('ref-opt').hidden = true; });
+    check('CONTROL visible() sees a hidden field as hidden', await visible(p, 'ref-input'), false);
     check('no page error', errors, []);
+    await ctx.close();
+  }
+  {
+    const { ctx, p } = await signup();
+    await requestCode(p);
+    check('empty = no code: /verify sends none', await verify(p).then((v) => v !== null && !('referralCode' in v.body)), true);
     await ctx.close();
   }
   {
@@ -431,7 +454,7 @@ try {
   }
   {
     const { ctx, p } = await signup(`?intent=signin&r=${CODE}`);
-    check('sign-in: no invite field at all', [await visible(p, 'ref-toggle'), await visible(p, 'ref-input')], [false, false]);
+    check('sign-in: no invite field at all', await visible(p, 'ref-input'), false);
     await ctx.close();
   }
 } finally {
@@ -454,7 +477,23 @@ console.log('\n=== native sources ===');
   const signIn = read('native/src/app/sign-in.tsx');
   check('sign-up opens the chooser with the invited unit',
     /takeInviteUnit\(\)[\s\S]{0,200}\/choose-unit\?onboard=1&unit=\$\{encodeURIComponent\(unit\)\}/.test(signIn), true);
-  check('the invite field is on the create-account path only', /\{purpose === 'signup' \? \(\s*inviteOpen \? \(/.test(signIn), true);
+  /* ALWAYS SHOWN on the create-account path: the sign-up branch renders the
+     field directly, with no open/closed state in front of it. */
+  const alwaysShown = (src) => /\{purpose === 'signup' \? \(\s*<View className="pt-4">\s*<Text[^>]*>\s*\{i18nT\('n\.app\.sign-in\.invite-code-optional'\)\}/.test(src)
+    && !/inviteOpen|have-an-invite-code/.test(src);
+  check('the invite field is on the create-account path only, always shown', alwaysShown(signIn), true);
+  check('CONTROL the old collapsed form fails that check',
+    alwaysShown("{purpose === 'signup' ? (\n  inviteOpen ? (\n  <View className=\"pt-4\">\n <Text className=\"x\">\n{i18nT('n.app.sign-in.invite-code-optional')}"), false);
+
+  const open = read('native/src/app/open.tsx');
+  const inviteBranch = open.slice(open.indexOf("=== 'invite'"), open.indexOf('const path = TARGETS'));
+  check('open.tsx to=invite: signed in goes home', /auth\.status === 'signedIn'\) \{\s*router\.replace\('\/\(tabs\)'\);/.test(inviteBranch), true);
+  check('signed out goes to the create-account form',
+    (inviteBranch.match(/'\/sign-in\?intent=signup'/g) || []).length, 2);
+  check('with welcome under it when there is nothing to go back to',
+    /router\.replace\('\/welcome'\);\s*router\.push\('\/sign-in\?intent=signup'\);/.test(inviteBranch), true);
+  check('the root layout lets a signed-out reader through /open (else it races the push)',
+    /const allowed = top === 'welcome' \|\| top === 'sign-in' \|\| top === 'practice' \|\| top === 'open';/.test(read('native/src/app/_layout.tsx')), true);
   const onReq = signIn.slice(signIn.indexOf('const onRequest'), signIn.indexOf('const onRequest') + 700);
   check('a bad typed code stops Send code before any code goes out',
     onReq.indexOf("typedInviteCode(inviteCode) === null") > -1 && onReq.indexOf("typedInviteCode(inviteCode) === null") < onReq.indexOf("send('Sending')"), true);
@@ -490,9 +529,20 @@ console.log('\n=== every new string, in four languages ===');
   const observe = read('app/observe.html');
   const invite = read('app/invite.html');
   const webUses = [
-    ['observe.have-an-invite-code', observe], ['observe.invite-code-optional', observe],
+    ['observe.invite-code-optional', observe],
     ['observe.invite-code-invalid', observe], ['invite.open-in-app', invite],
   ];
+  /* "Have an invite code?" went with the collapsed field (always shown now):
+     no markup or code asks for it, and it is out of every bundle. */
+  const gone = [
+    ['observe.have-an-invite-code', ['app/i18n/en.json', 'app/i18n/ha.json', 'app/i18n/ig.json', 'app/i18n/yo.json', 'scripts/i18n/catalogue.json']],
+    ['n.app.sign-in.have-an-invite-code', ['native/src/lib/i18n/en.json', 'native/src/lib/i18n/ha.json', 'native/src/lib/i18n/ig.json', 'native/src/lib/i18n/yo.json', 'scripts/i18n/native_catalogue.json']],
+  ];
+  const usedAnywhere = (k) => ['app/observe.html', 'app/app.js', 'native/src/app/sign-in.tsx'].some((f) => read(f).includes(k.split('.').pop()));
+  for (const [k, files] of gone) {
+    check(`${k}: unused and removed`, [usedAnywhere(k), files.filter((f) => k in JSON.parse(read(f)))], [false, []]);
+  }
+  check('CONTROL the removal check finds a key that is still there', 'observe.invite-code-optional' in JSON.parse(read('app/i18n/en.json')), true);
   for (const [k, html] of webUses) {
     const m = new RegExp(`data-i18n="${k.replace(/\./g, '\\.')}"[^>]*>([^<]+)<`).exec(html);
     check(`web ${k}: in the markup, in the batch, complete`, !!m && complete(WEB[k]), true);
@@ -501,10 +551,10 @@ console.log('\n=== every new string, in four languages ===');
   // Native: every new key sign-in.tsx asks for.
   const signIn = read('native/src/app/sign-in.tsx');
   const nativeUses = [...new Set([...signIn.matchAll(/i18nT\('(n\.app\.sign-in\.(?:have-an-invite-code|invite-code-[a-z-]+))'\)/g)].map((m) => m[1]))];
-  check('native: three new keys used', nativeUses.length, 3);
+  check('native: two invite keys used', nativeUses.length, 2);
   for (const k of nativeUses) check(`native ${k}: in the batch, complete`, complete(NATIVE[k]), true);
   check('native and web say the same thing in every language',
-    ['have-an-invite-code', 'invite-code-optional', 'invite-code-invalid'].every((s) =>
+    ['invite-code-optional', 'invite-code-invalid'].every((s) =>
       JSON.stringify(NATIVE[`n.app.sign-in.${s}`]) === JSON.stringify(WEB[`observe.${s}`])), true);
 }
 

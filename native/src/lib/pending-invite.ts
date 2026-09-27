@@ -94,16 +94,31 @@ export function captureInstallReferrer(signedIn: boolean): Promise<void> {
   return reading;
 }
 
+/**
+ * A link's invitation still being written. An invite link (/open?to=invite)
+ * opens sign-up at once (app/open.tsx), and sign-up reads the code on mount —
+ * possibly before these two AsyncStorage writes land. The readers below wait
+ * for it, as they wait for the referrer read.
+ */
+let parking: Promise<void> | null = null;
+
 /** +native-intent.tsx, for every link that opens the app. Fire and forget. */
 export function captureInviteLink(url: unknown): void {
   const inv = parseInviteLink(url);
-  if (inv.code) park(inv, true).catch(() => {});
+  if (!inv.code) return;
+  const p: Promise<void> = park(inv, true)
+    .catch(() => {})
+    .finally(() => {
+      if (parking === p) parking = null;
+    });
+  parking = p;
 }
 
 /** The code to send with /verify, or undefined (so JSON leaves the field out). */
 export async function pendingInviteCode(): Promise<string | undefined> {
   try {
     if (reading) await reading;
+    if (parking) await parking;
     return normalizeCode(await AsyncStorage.getItem(K_CODE)) ?? undefined;
   } catch {
     return undefined;
@@ -127,6 +142,7 @@ export async function settleInviteAfterVerify(r: { isNew?: boolean; needsUnit?: 
 /** The invited unit for the sign-up chooser — read AND cleared. */
 export async function takeInviteUnit(): Promise<string | null> {
   try {
+    if (parking) await parking;
     const unit = normalizeUnit(await AsyncStorage.getItem(K_UNIT));
     await AsyncStorage.removeItem(K_UNIT);
     return unit;

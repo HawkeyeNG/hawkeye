@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=192" />
+  <link rel="stylesheet" href="styles.css?v=193" />
   <style>
     /* The result sheets behind a card. Inline, not styles.css: that file is
        versioned on every page, and only this one needs these rules. */
@@ -72,6 +72,7 @@
     <p data-i18n="dashboard.confidence-share-of-independent-observers-reporting" class="lede">Confidence = share of independent observers reporting the same numbers.</p>
     <a id="ledger-status" class="ledger-card" href="ledger.html">Checking ledger integrity…</a>
     <div id="results"><div class="skel" style="height:16px;margin:8px 0"></div><div class="skel" style="height:16px;margin:8px 0;width:80%"></div><div class="skel" style="height:16px;margin:8px 0;width:60%"></div></div>
+    <p id="results-note" class="meta" aria-live="polite"></p>
   </main>
 
   <footer class="gov-footer">
@@ -96,17 +97,38 @@
        i18n.js AFTER this script, so the first paint can precede the bundle. */
     const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
 
+    /* The newest RESULTS_LIMIT units only. The unbounded list was every result
+       plus every sheet link in one response, every 30 s, per open tab — at
+       election scale hundreds of MB, and the origin's largest single failure
+       point (docs/private/ELECTION-NIGHT-HOSTING.md §5 item 1). */
+    const RESULTS_LIMIT = 100;
+    // A non-2xx (503 busy, 410 switched off) is a failed refresh, NOT an empty
+    // log: parsed as data, {error:'server_busy'} would render "No reports yet."
+    const getJson = (u) => fetch(u).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+
     async function refresh() {
       const [results, ledger] = await Promise.all([
-        fetch('/api/results').then((r) => r.json()),
-        fetch('/api/ledger/verify').then((r) => r.json()),
+        getJson('/api/results?limit=' + RESULTS_LIMIT),
+        getJson('/api/ledger/verify'),
       ]);
 
       const lc = document.getElementById('ledger-status');
-      lc.className = 'ledger-card ' + (ledger.ok ? 'ok' : 'bad');
-      lc.innerHTML = ledger.ok
-        ? `Ledger intact — ${ledger.entries} entries · verify it yourself`
-        : T('dashboard.ledger-tampered-inspect-the-chain', 'LEDGER TAMPERED (entry {id}) · inspect the chain').replace('{id}', ledger.brokenAtId);
+      if (ledger) {
+        lc.className = 'ledger-card ' + (ledger.ok ? 'ok' : 'bad');
+        lc.innerHTML = ledger.ok
+          ? `Ledger intact — ${ledger.entries} entries · verify it yourself`
+          : T('dashboard.ledger-tampered-inspect-the-chain', 'LEDGER TAMPERED (entry {id}) · inspect the chain').replace('{id}', ledger.brokenAtId);
+      }
+
+      const note = document.getElementById('results-note');
+      if (!Array.isArray(results)) {
+        // Keep whatever is already on screen, and say it is not fresh.
+        note.textContent = T('dashboard.could-not-refresh-retrying', 'Could not refresh — trying again in 30 seconds.');
+        return;
+      }
+      note.textContent = results.length
+        ? T('dashboard.latest-reports-note', 'Showing the latest {n} reports, newest first.').replace('{n}', results.length)
+        : '';
 
       const wrap = document.getElementById('results');
       if (!results.length) {

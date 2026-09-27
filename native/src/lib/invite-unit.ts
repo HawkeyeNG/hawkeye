@@ -14,10 +14,12 @@ import { myReferral } from '@/lib/referral';
  * an observer can recruit is someone who will stand at THEIR unit. This is the
  * ordinary invite (lib/referral.ts) with the sender's unit added:
  *
- *     https://hawkeye.com.ng/invite.html?ref=CODE&unit=NN-NN-NN-NNN
+ *     https://hawkeye.com.ng/open?to=invite&ref=CODE&unit=NN-NN-NN-NNN
  *
  * and on the website a recipient who signs up lands on the chooser with that
- * unit selected. /choose-unit here takes the same `unit` param.
+ * unit selected. /choose-unit here takes the same `unit` param. /open because
+ * this app already claims it: installed, the link opens straight onto sign-up
+ * (app/open.tsx); not installed, app/open/index.html forwards to invite.html.
  *
  * THE ORIGIN IS WRITTEN OUT. Never BASE: that follows EXPO_PUBLIC_API_BASE,
  * which is a dev server on a dev build, and a link someone SENDS has left this
@@ -37,7 +39,7 @@ const PU_RE = /^\d{2}-\d{2}-\d{2}-\d{3}$/;
 export const isUnitCode = (s: unknown): s is string => typeof s === 'string' && PU_RE.test(s);
 
 export function inviteUnitUrl(code: string, puCode: string): string {
-  const url = `${INVITE_ORIGIN}/invite.html?ref=${encodeURIComponent(code)}`;
+  const url = `${INVITE_ORIGIN}/open?to=invite&ref=${encodeURIComponent(code)}`;
   return isUnitCode(puCode) ? `${url}&unit=${encodeURIComponent(puCode)}` : url;
 }
 

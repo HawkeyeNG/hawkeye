@@ -7,10 +7,16 @@
  * who will stand at THEIR unit. This is the ordinary invite link (referral.js,
  * /api/observers/referral) with the sender's unit added:
  *
- *     https://hawkeye.com.ng/invite.html?ref=CODE&unit=NN-NN-NN-NNN
+ *     https://hawkeye.com.ng/open?to=invite&ref=CODE&unit=NN-NN-NN-NNN
  *
  * and when the recipient signs up, choose-unit.html opens with that unit
  * already selected. They confirm it or change it.
+ *
+ * /open, NOT /invite.html: /open is a path both apps already claim (App Links,
+ * Universal Links — native/app.json, .well-known/apple-app-site-association),
+ * so with the app installed the link opens it straight onto sign-up. Without
+ * the app, open/index.html forwards the same params to invite.html. Old
+ * invite.html links keep working; they just always open the browser.
  *
  * THE ORIGIN IS WRITTEN OUT, NEVER READ FROM location. A link the user SENDS
  * has left this device by definition. In Hawkeye Lite this very file is served
@@ -45,7 +51,7 @@
 
   /** The link. A unit that fails the format is left off rather than sent. */
   function link(code, pu) {
-    var url = ORIGIN + '/invite.html?ref=' + enc(code);
+    var url = ORIGIN + '/open?to=invite&ref=' + enc(code);
     return validUnit(pu) ? url + '&unit=' + enc(pu) : url;
   }
 

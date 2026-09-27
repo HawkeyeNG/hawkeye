@@ -1851,9 +1851,13 @@
   "about.press-kit": "Journalists: facts, key dates, the app icon and screenshots are in our <a href=\"press.html\">press kit →</a>",
   "about.run-by-inixien-hope-initiative": "Hawkeye is run by <strong>IniXien Hope Initiative</strong>, a Nigerian non-profit (registration in progress). Its sister company, <strong>IniXien, LLC</strong>, grants it perpetual free use of Hawkeye. Observers' reports, and the ledger they form, stay open for anyone to read and verify.",
   "privacy.collect.captain": "<strong>Your ward-captain application, if you send one</strong> — the ward you would cover, an optional organisation, a short note, and how many volunteers you could bring. We contact you about it only through Hawkeye alerts (the in-app feed, push, and Telegram if you linked it), never by phone. It is deleted with your account.",
-  "observe.have-an-invite-code": "Have an invite code?",
   "observe.invite-code-optional": "Invite code (optional)",
   "observe.invite-code-invalid": "Invite codes have 6 letters and numbers. Check it, or leave it blank.",
   "invite.open-in-app": "Already have the app? Open it",
-  "map.osm-contributors": "OpenStreetMap contributors"
+  "map.osm-contributors": "OpenStreetMap contributors",
+  "observe.server-busy-saved": "Hawkeye is busy right now — your signed report is saved on this phone and sends automatically.",
+  "observe.server-busy-try-again": "Hawkeye is busy — try again in a minute.",
+  "dashboard.could-not-refresh-retrying": "Could not refresh — trying again in 30 seconds.",
+  "dashboard.latest-reports-note": "Showing the latest {n} reports, newest first.",
+  "profile.invite-a-second-observer": "Invite a Second Observer"
 }

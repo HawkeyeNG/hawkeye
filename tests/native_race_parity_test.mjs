@@ -220,17 +220,30 @@ console.log('\n=== the by-election ballot: names, parties, or neither ===');
 {
   const of = (code) => contests.find((c) => c.code === code);
   const race = (code) => rn.byElectionRace(of(code), seats, political);
+  /**
+   * THE SAME CONTEST BEFORE POLLING DAY. All five were declared on 20 Sep 2026,
+   * and a declared race words its notes differently (backend 22ff604f, app
+   * b67d075: "not published yet" is a lie under a declared winner). Stripping
+   * `declared` puts the open-race wording back under test - on both clients -
+   * since no live contest exercises it any more.
+   */
+  const open = (code) => { const { declared, ...rest } = of(code); return rest; };
+  const openRace = (code) => rn.byElectionRace(open(code), seats, political);
 
+  // Five, not four: INEC's pre-poll list of 17 Sep omitted Labour, who came
+  // second; the catalogue was reconciled against the declared result
+  // (backend 0b3fc93f).
   const gombe = race('REP_BYE_GOMBE_2026');
-  check('Gombe lists four candidates', (gombe?.candidates ?? []).length, 4);
+  check('Gombe lists five candidates', (gombe?.candidates ?? []).length, 5);
   check('Gombe is labelled candidates', gombe?.fieldLabel, 'candidates');
-  check('Gombe carries every party', (gombe?.candidates ?? []).map((c) => c.party).sort(),
-    ['APC', 'APM', 'APP', 'NNPP']);
+  check('Gombe carries every party, the runner-up (LP) included',
+    (gombe?.candidates ?? []).map((c) => c.party).sort(), ['APC', 'APM', 'APP', 'LP', 'NNPP']);
   check('Gombe names no candidate twice',
-    new Set((gombe?.candidates ?? []).map((c) => c.name)).size, 4);
-  check('Gombe says where the list came from', /Secretary to the Commission/.test(gombe?.note ?? ''), true);
+    new Set((gombe?.candidates ?? []).map((c) => c.name)).size, 5);
+  check('Gombe says where the list came from',
+    /Reconciled against the declared result/.test(gombe?.note ?? ''), true);
   check('Gombe does NOT say the list is missing',
-    /has not published the candidate list/.test(gombe?.note ?? ''), false);
+    /has not published the candidate list|never published a candidate list/.test(gombe?.note ?? ''), false);
 
   const kano = race('SHA_BYE_KANO_DAWAKINKUDU_2026');
   check('Dawakin Kudu lists six parties', (kano?.candidates ?? []).length, 6);
@@ -239,16 +252,30 @@ console.log('\n=== the by-election ballot: names, parties, or neither ===');
     (kano?.candidates ?? []).every((c) => c.meta === 'Candidate name not published'), true);
   check('Dawakin Kudu keeps the party CODE as the join key, not the long name',
     (kano?.candidates ?? []).map((c) => c.party).sort(), ['ADP', 'APC', 'APP', 'LP', 'PDP', 'PRP']);
-  check('Dawakin Kudu points the reader at the notice',
-    /notice posted at your polling/.test(kano?.note ?? ''), true);
+  // Declared: the seat is decided, so no more "photograph the notice".
+  check('Dawakin Kudu, declared, points at the result instead of the notice',
+    /declared result is above/.test(kano?.note ?? '') && !/notice posted at your polling/.test(kano?.note ?? ''), true);
+  // CONTROL: the same contest while open still sends the reader to the notice.
+  check('Dawakin Kudu, open, points the reader at the notice',
+    /notice posted at your polling/.test(openRace('SHA_BYE_KANO_DAWAKINKUDU_2026')?.note ?? ''), true);
+  check('and both clients word the open race the same',
+    same(openRace('SHA_BYE_KANO_DAWAKINKUDU_2026'),
+      web.byElectionRace(open('SHA_BYE_KANO_DAWAKINKUDU_2026'), seats, political)), true);
 
   // THE CONTROL. Three of the five seats have no published ballot at all, and
-  // their pages must still say so in the old words.
+  // their pages must still say so - "never published" now they are declared,
+  // and the old words for the same contest while it is open.
   for (const code of ['SHA_BYE_DELTA_UDU_2026', 'SHA_BYE_BAUCHI_SAKWA_2026', 'SHA_BYE_BAUCHI_DISINA_2026']) {
     const r = race(code);
     check(`${code} shows no ballot`, (r?.candidates ?? []).length, 0);
-    check(`${code} still says the list is missing`,
-      /INEC has not published the candidate list for this by-election yet/.test(r?.note ?? ''), true);
+    check(`${code} says the list was never published`,
+      /INEC never published a candidate list for this by-election/.test(r?.note ?? ''), true);
+    check(`${code} no longer promises it is coming`, /\byet\b/.test(r?.note ?? ''), false);
+    const o = openRace(code);
+    check(`${code}, open, still says the list is missing in the old words`,
+      /INEC has not published the candidate list for this by-election yet/.test(o?.note ?? ''), true);
+    check(`${code}, open, agrees on both clients`,
+      same(o, web.byElectionRace(open(code), seats, political)), true);
   }
 
   // A GENERAL contest must never take a by-election's ballot: it covers 360

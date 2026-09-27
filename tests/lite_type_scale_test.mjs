@@ -126,23 +126,57 @@ console.log('\n=== My Profile mirrors the app ===');
   // at the foot — and the assertion then read "Password + My polling unit +
   // Share Hawkeye" and failed. What it is about is the ACCOUNT card's shape, so
   // it says so, and adding a fourth row somewhere else cannot break it again.
-  const rows = await p.evaluate(() => [
-    ...document.querySelectorAll('.prows')[0].querySelectorAll('.prow'),
-  ].map((r) => ({
-    k: r.querySelector('.prow-k')?.textContent.trim(),
-    hasValue: !!r.querySelector('.prow-v'),
-    hasChevron: !!r.querySelector('.prow-c'),
-  })));
-  check('both settings are rows', rows.map((r) => r.k).join(' + '), 'Password + My polling unit');
+  //
+  // AND IT PINS THE HEAD OF THE CARD, NOT ITS WHOLE LENGTH. The Account card has
+  // since grown rows of its own on purpose — Language (8609797), Save Report
+  // Media to Phone (97454bd), Notifications, and Invite a second observer under
+  // the unit it is about (35211d2) — and a new Invite card now sits between it
+  // and Find Hawkeye, so both `=== 'Password + My polling unit'` and
+  // `.prows[1]` went stale. The claim was never "these are the only two rows";
+  // it was "these two settings are rows in the Account card, not cards of their
+  // own". Found by what they ARE, not by position, so the next added row or card
+  // does not break it a third time.
+  const shape = () => {
+    const cards = [...document.querySelectorAll('.prows')];
+    const key = (r) => r.querySelector('.prow-k')?.textContent.trim();
+    const account = document.getElementById('btn-pw-open')?.closest('.prows') ?? null;
+    const rows = account ? [...account.querySelectorAll('.prow')] : [];
+    const shareRow = [...document.querySelectorAll('.prows .prow')].find((r) => key(r) === 'Share Hawkeye');
+    const shareCard = shareRow?.closest('.prows') ?? null;
+    return {
+      accountIsFirst: !!account && cards[0] === account,
+      head: rows.slice(0, 2).map(key).join(' + '),
+      // The OLD shape: a card of its own, headed by the setting's name.
+      oldCards: [...document.querySelectorAll('.pcard h2')].map((h) => h.textContent.trim())
+        .filter((t) => /^(password|my polling unit)$/i.test(t)),
+      everyValue: rows.length > 0 && rows.every((r) => !!r.querySelector('.prow-v')),
+      everyWayIn: rows.length > 0 && rows.every((r) => !!r.querySelector('.prow-c')),
+      shareOwnCard: !!shareCard && shareCard !== account && shareCard.querySelectorAll('.prow').length === 1,
+    };
+  };
+  const s = await p.evaluate(shape);
+  check('the Account card is the first row card', s.accountIsFirst, true);
+  check('both settings are rows, leading it', s.head, 'Password + My Polling Unit');
+  check('and neither is a card of its own any more', s.oldCards.join(), '');
   // The other user of the row shape, pinned so the two cards cannot silently
   // become one.
-  check('Share Hawkeye is a row of its own, in its own card', await p.evaluate(() => {
-    const cards = [...document.querySelectorAll('.prows')];
-    return cards.length > 1 && cards[1].querySelectorAll('.prow').length === 1
-      && cards[1].querySelector('.prow-k').textContent.trim() === 'Share Hawkeye';
-  }), true);
-  check('each row states its current value', rows.every((r) => r.hasValue), true);
-  check('and offers a way in', rows.every((r) => r.hasChevron), true);
+  check('Share Hawkeye is a row of its own, in its own card', s.shareOwnCard, true);
+  check('each row states its current value', s.everyValue, true);
+  check('and offers a way in', s.everyWayIn, true);
+
+  // CONTROLS, on the live page: break each shape the checks above claim to see,
+  // and they must see it. Share moved into the Account card; a row that lost its
+  // value. If either still reads true, the matching check above is vacuous.
+  const broken = await p.evaluate((fn) => {
+    const probe = new Function(`return (${fn})()`);
+    const share = [...document.querySelectorAll('.prows .prow')]
+      .find((r) => r.querySelector('.prow-k')?.textContent.trim() === 'Share Hawkeye');
+    document.getElementById('btn-pw-open').closest('.prows').appendChild(share);
+    document.querySelector('#btn-pw-open .prow-v').remove();
+    return probe();
+  }, shape.toString());
+  check('control: Share folded into Account is caught', broken.shareOwnCard, false);
+  check('control: a row with no value is caught', broken.everyValue, false);
   // The advice moved into the modals; it must not still be standing on the page.
   const body = await p.evaluate(() => document.body.innerText);
   check('the standing password advice is gone', /Forgot it\? Reset it from the/.test(body), false);

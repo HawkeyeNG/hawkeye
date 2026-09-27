@@ -1,11 +1,12 @@
 import Feather from '@expo/vector-icons/Feather';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 import { InfoDot } from '@/components/info-dot';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
+import { useForegroundInterval } from '@/hooks/use-foreground-interval';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
 import { t as i18nT } from '@/lib/i18n';
@@ -85,7 +86,9 @@ export default function ReportsLog() {
   const load = useCallback(async () => {
     try {
       const [r, l] = await Promise.all([
-        jget<Row[]>('/api/results'),
+        // The newest 100 only: the bare call was every result plus every sheet
+        // link, every 30 s (ELECTION-NIGHT-HOSTING.md §5 item 1).
+        jget<Row[]>('/api/results?limit=100'),
         jget<Ledger>('/api/ledger/verify'),
       ]);
       setRows(r);
@@ -96,11 +99,8 @@ export default function ReportsLog() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, REFRESH_MS);
-    return () => clearInterval(t);
-  }, [load]);
+  // Polls only while the app is in the foreground (hooks/use-foreground-interval).
+  useForegroundInterval(load, REFRESH_MS);
 
   const onRefresh = async () => {
     setRefreshing(true);

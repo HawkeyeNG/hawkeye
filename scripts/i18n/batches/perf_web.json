@@ -1,0 +1,26 @@
+{
+  "observe.server-busy-saved": {
+    "en": "Hawkeye is busy right now — your signed report is saved on this phone and sends automatically.",
+    "ha": "Hawkeye yana cike da aiki yanzu — an ajiye rahotonka mai sa hannu a wannan wayar, kuma zai tafi ta atomatik.",
+    "ig": "Hawkeye nọ n'ọrụ ugbu a — echekwara akụkọ gị e binyere aka n'ekwentị a, ọ ga-eziga onwe ya ozugbo.",
+    "yo": "Hawkeye ń ṣiṣẹ́ lọ́wọ́ báyìí — a ti fi ìròyìn rẹ tí o fọwọ́sí pamọ́ sórí fóònù yìí, yóò sì ránṣẹ́ fúnra rẹ̀."
+  },
+  "observe.server-busy-try-again": {
+    "en": "Hawkeye is busy — try again in a minute.",
+    "ha": "Hawkeye yana cike da aiki — sake gwadawa nan da minti ɗaya.",
+    "ig": "Hawkeye nọ n'ọrụ — nwaa ọzọ n'otu nkeji.",
+    "yo": "Hawkeye ń ṣiṣẹ́ lọ́wọ́ — gbìyànjú lẹ́ẹ̀kan sí i ní ìṣẹ́jú kan."
+  },
+  "dashboard.could-not-refresh-retrying": {
+    "en": "Could not refresh — trying again in 30 seconds.",
+    "ha": "An kasa sabuntawa — za a sake gwadawa nan da daƙiƙa 30.",
+    "ig": "Enweghị ike imelite — a ga-anwa ọzọ n'ime sekọnd 30.",
+    "yo": "Kò ṣeé ṣe láti sọ ọ́ di tuntun — a ó tún gbìyànjú ní ìṣẹ́jú-àáyá 30."
+  },
+  "dashboard.latest-reports-note": {
+    "en": "Showing the latest {n} reports, newest first.",
+    "ha": "Ana nuna rahotanni {n} na baya-bayan nan, sabbi a farko.",
+    "ig": "Na-egosi akụkọ {n} kacha ọhụrụ, nke ọhụrụ na mbụ.",
+    "yo": "À ń fi àwọn ìròyìn {n} tó dé kẹ́yìn hàn, èyí tó tuntun jùlọ lákọ̀ọ́kọ́."
+  }
+}

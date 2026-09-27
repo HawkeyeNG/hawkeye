@@ -121,8 +121,23 @@ console.log('\n=== and the drawing side refuses to run without geometry ===');
 // throwing where the catch above stops a rejection propagating.
 check('renderMap bails when a needed layer is missing',
   /if \(!STATES\?\.states \|\| \(need && !need\(\)\)\)/.test(SRC), true);
-check('the guard covers lga, senatorial AND federal, not just states',
-  /const LAYER = \{ lga: \(\) => LGAS, senatorial: \(\) => DGEO, federal: \(\) => CGEO \}/.test(SRC), true);
+/* The LAYER map, parsed into level -> layer rather than matched as one literal
+   line: 3f60130 added `ward: () => WARDGEO` (ward-level boards) and wrapped the
+   object across two lines, which is growth, not a regression. What must hold is
+   that every drawable level maps to the layer it draws from. */
+const layerMap = (src) => {
+  const m = /const LAYER = \{([\s\S]*?)\};/.exec(src);
+  return m ? Object.fromEntries([...m[1].matchAll(/(\w+):\s*\(\)\s*=>\s*(\w+)/g)].map((e) => [e[1], e[2]])) : {};
+};
+const WANT_LAYERS = { lga: 'LGAS', senatorial: 'DGEO', federal: 'CGEO', ward: 'WARDGEO' };
+const hasLayers = (src) => {
+  const got = layerMap(src);
+  return Object.entries(WANT_LAYERS).every(([level, layer]) => got[level] === layer);
+};
+check('the guard covers lga, senatorial, federal AND ward, not just states', hasLayers(SRC), true);
+// CONTROL: the same check against the source with one level dropped must go red.
+check('CONTROL: a LAYER map missing federal is caught',
+  hasLayers(SRC.replace(/federal:\s*\(\)\s*=>\s*CGEO,?/, '')), false);
 check('it says so on screen rather than rendering nothing', /Map unavailable/.test(SRC), true);
 check('the follow picker tolerates a null layer',
   /\(DGEO\?\.regions \?\? \[\]\)/.test(SRC) && /\(STATES\?\.states \?\? \[\]\)/.test(SRC), true);

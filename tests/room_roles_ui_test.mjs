@@ -166,7 +166,13 @@ check('observer: reached the room at all', obs.loaded, true);
 check('observer: no row actions anywhere', obs.onChidi, (a) => a === null || a.length === 0);
 check('observer: no invite, new-room, delete or sign-out', obs.header,
   (h) => !h.includes('invite-btn') && !h.includes('new-btn') && !h.includes('del-btn') && !h.includes('leave-btn'));
-check('observer: told why it is read-only', obs.teamText, (t) => /only its managers/i.test(t));
+/* Reworded in 35211d2 (room member privacy): a plain member no longer sees the
+   deployment at all, so the note says whose it is rather than "you can read
+   everything; only its managers can change anything". */
+const READ_ONLY_WHY = /for this room’s managers and coordinators/i;
+check('observer: told why it is read-only', obs.teamText, (t) => READ_ONLY_WHY.test(t));
+// CONTROL: an owner manages the room, so the same check must NOT find the note there.
+check('CONTROL: the owner is not shown the read-only note', owner.teamText, (t) => !READ_ONLY_WHY.test(t));
 
 /* --- and it all translates ------------------------------------------------ */
 /* CONTROL FIRST: these words must be PRESENT in English, or "absent in Hausa"
@@ -371,7 +377,11 @@ ME = { role: 'owner', scope_kind: '', scope_value: '' };
     const hdr = document.querySelector('.gov-header').getBoundingClientRect();
     const pane = document.getElementById('sr-scroll');
     const pr = pane.getBoundingClientRect();
+    const foot = document.querySelector('footer.console-foot');
+    const fr = foot ? foot.getBoundingClientRect() : null;
     return {
+      footTop: fr ? fr.top : null, footBottom: fr ? fr.bottom : null,
+      footHeight: fr ? fr.height : 0,
       hdrWidth: hdr.width, hdrTop: hdr.top,
       docWidth: document.documentElement.clientWidth,
       winWidth: window.innerWidth,
@@ -389,8 +399,16 @@ ME = { role: 'owner', scope_kind: '', scope_value: '' };
   check('the pane starts at the bottom of the header, not at the top of the window', geo,
     (g) => g.paneTop > 0 && Math.abs(g.paneTop - (g.hdrTop + g.hdrWidth * 0)) >= 0
       && g.paneTop >= 40);
-  check('and runs to the bottom of the window', geo,
-    (g) => Math.abs(g.paneBottom - g.winHeight) <= 1);
+  /* Since 2b4f329 the copyright footer sits AFTER the pane, pinned to the
+     viewport floor by the same flex column ("the room's footer was
+     unreachable"). So the pane runs down to the footer, and the footer to the
+     bottom of the window — together they still fill it, with nothing below. */
+  const fillsToFloor = (g) => g.footHeight > 0
+    && Math.abs(g.paneBottom - g.footTop) <= 1 && Math.abs(g.footBottom - g.winHeight) <= 1;
+  check('and runs down to the pinned footer, which sits on the bottom of the window', geo, fillsToFloor);
+  // CONTROL: a pane that stopped short of the footer (a gap under the roster) must go red.
+  check('CONTROL: a pane ending 48px above the footer is caught',
+    fillsToFloor({ ...geo, paneBottom: geo.footTop - 48 }), false);
 
   /* Scrolling the pane must still drive the fade-in and must not move the
      header, which is the whole point of taking it out of the scroller. */

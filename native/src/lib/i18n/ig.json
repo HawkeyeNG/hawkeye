@@ -1263,7 +1263,7 @@
   "n.app.tabs.index.practice-nudge-sub": "Mee omume ịkọ nsonaazụ na ngalaba ntuli aka omume tupu Ụbọchị ntuli aka. Ọ dịghị ihe ị tinyere ga-agụ dị ka ezigbo nsonaazụ.",
   "n.app.tabs.index.practice-nudge-go": "Malite ọsọ omume",
   "n.app.tabs.index.practice-nudge-dismiss": "Mechie",
-  "n.app.sign-in.have-an-invite-code": "Ị nwere koodu ọkpụkpọ?",
   "n.app.sign-in.invite-code-optional": "Koodu ọkpụkpọ (nhọrọ)",
-  "n.app.sign-in.invite-code-invalid": "Koodu ọkpụkpọ nwere mkpụrụedemede na ọnụọgụ 6. Lelee ya, ma ọ bụ hapụ ya oghere."
+  "n.app.sign-in.invite-code-invalid": "Koodu ọkpụkpọ nwere mkpụrụedemede na ọnụọgụ 6. Lelee ya, ma ọ bụ hapụ ya oghere.",
+  "n.lib.submit.server-busy-saved": "Hawkeye nọ n'ọrụ ugbu a — e chekwara akụkọ ị bịanyere aka na ya n'ekwentị a, ọ ga-ezipụ onwe ya ozugbo o kwere."
 }

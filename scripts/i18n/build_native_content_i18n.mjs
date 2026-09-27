@@ -67,9 +67,9 @@ const body = `/**
  * sentence gets the same translation" is the right outcome rather than a
  * collision — see the note in scripts/i18n/extract_native_content.mjs.
  *
- * A string with no entry here falls through as English, which is what the
- * privacy page wants (it is English by policy) and is also the safe degradation
- * for anything reworded in content.ts before this file was rebuilt.
+ * A string with no entry here falls through as English, the safe degradation
+ * for anything reworded in content.ts before this file was rebuilt. Privacy and
+ * terms are translated like the rest (since f2f1a58).
  */
 export const CONTENT_I18N: Record<string, Record<string, string>> = ${JSON.stringify(out, null, 2)};
 `;

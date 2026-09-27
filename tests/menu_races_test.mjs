@@ -121,8 +121,20 @@ check('a state chip carries the contest it expands from',
 check('the assembly expander has its own open state', /asmOpen/.test(racesScreen), true);
 // "Open" beside a January 2027 date read as "reporting is open", which on an
 // election app is the wrong thing to leave ambiguous.
-check('no pill claims an unopened election is open', racesScreen.includes(": 'Open';"), false);
-check('it says what tapping does', racesScreen.includes(": 'View';"), true);
+//
+// The pill's words are i18n keys since 74af638 ("native i18n: the screens from
+// the screenshots"), so a grep for the English literal can no longer fail
+// either way. Read the pill expression, resolve each key through the English
+// catalogue, and assert on the words a reader sees.
+const NATIVE_EN = JSON.parse(readFileSync('/home/elrio/hawkeye/native/src/lib/i18n/en.json', 'utf8'));
+const pillExpr = (racesScreen.match(/const pill = ([^\n]*);/) || [])[1] || '';
+const pillWords = [...pillExpr.matchAll(/i18nT\('([^']+)'\)|'([^']*)'/g)]
+  .filter((m) => m[1] || !/^(completed|ongoing)$/.test(m[2]))
+  .map((m) => (m[1] ? NATIVE_EN[m[1]] ?? `<missing ${m[1]}>` : m[2]));
+check('the pill expression was found, with its three arms', pillWords.length, 3);
+check('no pill claims an unopened election is open', pillWords.includes('Open'), false);
+// The last arm is the one an upcoming race lands on.
+check('it says what tapping does', pillWords.at(-1), 'View');
 // ScreenHeader already prints the title; the page printed it again one line down.
 check('the page does not print its own title twice',
   /className="text-2xl font-bold text-ink">Races</.test(racesScreen), false);

@@ -1,0 +1,584 @@
+#!/usr/bin/env bash
+# Bootstrap the Hawkeye STAGING server (docs/private/ELECTION-NIGHT-HOSTING.md §2.2, §2.3).
+#
+# FROM YOUR MACHINE (repo root; the account guard runs first):
+#   scripts/staging/bootstrap.sh --dry-run           # build + check the code bundle only; no AWS call
+#   scripts/staging/bootstrap.sh                     # ship code, run the on-host setup over SSM
+#   scripts/staging/bootstrap.sh --seed-db FILE      # ...and restore FILE (a prod snapshot) as the DB,
+#                                                    #    only if the server has no DB yet
+#   --allow-dirty    ship uncommitted changes (refused by default: staging must run a known revision)
+#   --readers N      reader processes (default auto = vCPUs/2, 1..8; re-evaluated at every boot)
+#
+# ON THE INSTANCE (what SSM runs; you never call this by hand):
+#   bootstrap.sh --on-host --bucket B --stamp S [--seed-db] [--readers N]
+#
+# What the server gets: Node 22 LTS, Caddy (Cloudflare Origin CA cert, or `tls internal`
+# until you add one), Litestream (replica #2 to S3 always, #1 to R2 once its keys exist),
+# an unprivileged `hawkeye` user, the data volume at /var/lib/hawkeye, and systemd units:
+#   hawkeye-prestart  (boot: secrets from SSM Parameter Store -> /run/hawkeye, tmpfs)
+#   hawkeye-writer    ROLE=writer :8430   every non-GET, the only request-path writer
+#   hawkeye-reader@N  ROLE=reader :844N   public GETs + static (SQLite query_only)
+#   hawkeye-worker    ROLE=worker :8450   every timer: OCR, analysis, push waves, IReV, anchor, sweep
+#   litestream, caddy, all grouped under hawkeye.target
+# NO SECRET IS EVER WRITTEN TO DISK OR INTO THIS SCRIPT: they are read from SSM at every boot.
+set -euo pipefail
+
+# Pinned downloads (verified by hash; bump deliberately).
+NODE_VERSION="v22.23.3"   # 22 = the LTS the backend is tested on; better-sqlite3 9.6.0 predates Node 24
+NODE_SHA256="a44aeb94849a299b22df10b9e622ec2f605c2183501bc40590705131de7c740f"   # node-v22.23.3-linux-arm64.tar.xz (nodejs.org SHASUMS256.txt)
+CADDY_VERSION="2.11.4"
+CADDY_SHA512="d5a7c423853c24a799765e0e8210d5c7c22a8f56ed37a3cae2fb9f58be138853c02b4efd6b59d576e6d8c7c0d30b9c1592deeaa6a536ff69bcca23b8c1ea709c"   # caddy_2.11.4_linux_arm64.tar.gz (release checksums file)
+# Litestream 0.3.x, NOT 0.5.x: 0.5 dropped multiple replicas per database, and the plan
+# needs two (R2 + S3). 0.3.14 publishes no checksum file; this hash was measured on 27 Sep 2026.
+LITESTREAM_VERSION="0.3.14"
+LITESTREAM_SHA256="4d375a66653e4a9b27a5b38ce9cb73681c39893ba0485f81ab860d4cd427e642"
+
+REGION_H="eu-west-1"
+SSM_PREFIX_H="/hawkeye/staging"
+DATA=/var/lib/hawkeye
+
+# =====================================================================================
+#  ON-HOST MODE (root on the staging instance, via SSM Run Command)
+# =====================================================================================
+on_host() {
+  local BUCKET="" STAMP="" SEED="" READERS="auto"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --bucket) BUCKET="$2"; shift 2 ;;
+      --stamp) STAMP="$2"; shift 2 ;;
+      --seed-db) SEED=1; shift ;;
+      --readers) READERS="$2"; shift 2 ;;
+      *) echo "on-host: unknown option $1" >&2; exit 2 ;;
+    esac
+  done
+  exec > >(tee -a /var/log/hawkeye-bootstrap.log) 2>&1
+  export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"   # SSM's PATH is minimal
+  log() { echo "[bootstrap $(date -u +%H:%M:%S)] $*"; }
+  fail() { echo "[bootstrap] FAILED: $*" >&2; exit 1; }
+  [ "$(id -u)" = 0 ] || fail "must run as root"
+  [ "$(uname -m)" = aarch64 ] || fail "expected arm64 (Graviton), got $(uname -m)"
+  [ -n "$BUCKET" ] && [ -n "$STAMP" ] || fail "--bucket and --stamp are required"
+  # This box must BE staging: read its own tag through IMDSv2.
+  local tok envtag
+  tok="$(curl -fsS -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 300')"
+  envtag="$(curl -fsS -H "X-aws-ec2-metadata-token: $tok" http://169.254.169.254/latest/meta-data/tags/instance/env || true)"
+  [ "$envtag" = staging ] || fail "this instance is not tagged env=staging (got '$envtag'); refusing"
+
+  log "packages"
+  dnf -y -q install tar xz gzip gcc-c++ make python3 sqlite >/dev/null
+
+  local W; W="$(mktemp -d)"
+  fetch() { curl -fsSL --retry 3 --max-time 300 -o "$2" "$1"; }
+  if [ "$(/usr/local/bin/node --version 2>/dev/null || true)" != "$NODE_VERSION" ]; then
+    log "node $NODE_VERSION"
+    fetch "https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-arm64.tar.xz" "$W/node.tar.xz"
+    echo "$NODE_SHA256  $W/node.tar.xz" | sha256sum -c - >/dev/null || fail "node checksum mismatch"
+    rm -rf "/opt/node-$NODE_VERSION"; mkdir -p "/opt/node-$NODE_VERSION"
+    tar -xJf "$W/node.tar.xz" -C "/opt/node-$NODE_VERSION" --strip-components=1
+    for b in node npm npx; do ln -sfn "/opt/node-$NODE_VERSION/bin/$b" "/usr/local/bin/$b"; done
+  fi
+  if ! /usr/local/bin/caddy version 2>/dev/null | grep -q "v$CADDY_VERSION"; then
+    log "caddy $CADDY_VERSION"
+    fetch "https://github.com/caddyserver/caddy/releases/download/v$CADDY_VERSION/caddy_${CADDY_VERSION}_linux_arm64.tar.gz" "$W/caddy.tgz"
+    echo "$CADDY_SHA512  $W/caddy.tgz" | sha512sum -c - >/dev/null || fail "caddy checksum mismatch"
+    tar -xzf "$W/caddy.tgz" -C "$W" caddy && install -m 0755 "$W/caddy" /usr/local/bin/caddy
+  fi
+  if ! /usr/local/bin/litestream version 2>/dev/null | grep -q "$LITESTREAM_VERSION"; then
+    log "litestream $LITESTREAM_VERSION"
+    fetch "https://github.com/benbjohnson/litestream/releases/download/v$LITESTREAM_VERSION/litestream-v$LITESTREAM_VERSION-linux-arm64.tar.gz" "$W/ls.tgz"
+    echo "$LITESTREAM_SHA256  $W/ls.tgz" | sha256sum -c - >/dev/null || fail "litestream checksum mismatch"
+    tar -xzf "$W/ls.tgz" -C "$W" litestream && install -m 0755 "$W/litestream" /usr/local/bin/litestream
+  fi
+
+  log "users"
+  id hawkeye >/dev/null 2>&1 || useradd --system --home-dir "$DATA" --no-create-home --shell /sbin/nologin hawkeye
+  id caddy >/dev/null 2>&1 || useradd --system --home-dir /var/lib/caddy --create-home --shell /sbin/nologin caddy
+
+  log "data volume -> $DATA"
+  if ! findmnt -rn "$DATA" >/dev/null; then
+    local rootdisk dev=""
+    rootdisk="$(lsblk -no PKNAME "$(findmnt -no SOURCE /)")"
+    if blkid -L hawkeye-data >/dev/null 2>&1; then dev="$(blkid -L hawkeye-data)"
+    else
+      for d in $(lsblk -dnpo NAME,TYPE | awk '$2=="disk"{print $1}'); do
+        [ "$(basename "$d")" = "$rootdisk" ] && continue
+        [ -z "$(lsblk -no FSTYPE "$d" | tr -d '[:space:]')" ] || continue   # never format a disk that has data
+        dev="$d"; break
+      done
+      [ -n "$dev" ] || fail "no empty data disk found (expected the gp3 data volume from provision.sh)"
+      mkfs.ext4 -q -L hawkeye-data "$dev"
+    fi
+    mkdir -p "$DATA"
+    grep -q 'LABEL=hawkeye-data' /etc/fstab || echo "LABEL=hawkeye-data $DATA ext4 defaults,noatime,nofail 0 2" >> /etc/fstab
+    mount "$DATA"
+  fi
+  install -d -o hawkeye -g hawkeye -m 0750 "$DATA" "$DATA/storage" "$DATA/storage/uploads"
+  install -d -o root -g root -m 0755 /opt/hawkeye/releases /etc/hawkeye /usr/local/libexec/hawkeye /etc/caddy
+
+  log "code (deploy/$STAMP)"
+  local REL="/opt/hawkeye/releases/$STAMP"
+  aws --region "$REGION_H" s3 cp --only-show-errors "s3://$BUCKET/deploy/$STAMP/bundle.tgz" "$W/bundle.tgz"
+  rm -rf "$REL"; mkdir -p "$REL"; tar -xzf "$W/bundle.tgz" -C "$REL"
+  [ ! -e "$REL/backend/.env" ] || fail "the bundle contains backend/.env; refusing"
+  rm -rf "$REL/backend/storage"; ln -sfn "$DATA/storage" "$REL/backend/storage"
+  log "npm ci (backend)"
+  if ! (cd "$REL/backend" && HOME=/root npm ci --omit=dev --no-audit --no-fund >"$W/npm.log" 2>&1); then
+    if grep -q EBADPLATFORM "$W/npm.log"; then
+      # backend/package.json lists @ffmpeg-installer/linux-x64 as a DIRECT dependency, which
+      # npm refuses on arm64. --force installs anyway; video transcoding then has no ffmpeg
+      # on Graviton until the backend adds @ffmpeg-installer/linux-arm64 (or sets FFMPEG_PATH).
+      log "WARNING: EBADPLATFORM (x64-only dependency on arm64); retrying with --force"
+      (cd "$REL/backend" && HOME=/root npm ci --omit=dev --no-audit --no-fund --force >"$W/npm.log" 2>&1) || { tail -40 "$W/npm.log"; fail "npm ci"; }
+    else tail -40 "$W/npm.log"; fail "npm ci"; fi
+  fi
+  (cd "$REL/backend" && /usr/local/bin/node -e 'require("better-sqlite3"); require("sharp")') || fail "native modules do not load on arm64"
+  chown -R root:root "$REL"; chmod -R go-w "$REL"
+  ln -sfn "$REL" /opt/hawkeye/current
+
+  if [ -n "$SEED" ]; then
+    if [ -e "$DATA/storage/hawkeye.db" ]; then
+      log "a database already exists; NOT overwriting it with the seed (restore deliberately if you mean it)"
+    else
+      log "seeding the database from deploy/$STAMP/seed.db"
+      aws --region "$REGION_H" s3 cp --only-show-errors "s3://$BUCKET/deploy/$STAMP/seed.db" "$W/seed.db"
+      [ "$(sqlite3 "$W/seed.db" 'PRAGMA integrity_check;')" = ok ] || fail "seed.db fails integrity_check"
+      install -o hawkeye -g hawkeye -m 0640 "$W/seed.db" "$DATA/storage/hawkeye.db"
+      aws --region "$REGION_H" s3 rm --only-show-errors "s3://$BUCKET/deploy/$STAMP/seed.db"
+    fi
+  fi
+  rm -rf "$W"
+
+  log "config"
+  cat > /etc/hawkeye/staging.env <<EOF
+# NON-secret settings. Secrets come from SSM ($SSM_PREFIX_H/env/*) into /run/hawkeye/app.env at boot.
+APP_ENV=staging
+NODE_ENV=production
+SMS_PROVIDER=console
+SMS_OTP_ENABLED=false
+DB_PATH=$DATA/storage/hawkeye.db
+UPLOAD_DIR=$DATA/storage/uploads
+PUBLIC_BASE_URL=https://staging.hawkeye.com.ng
+UV_THREADPOOL_SIZE=16
+READERS=$READERS
+EOF
+  echo "$STAMP" > /etc/hawkeye/release
+
+  # ---- boot-time loader: SSM -> /run/hawkeye (tmpfs). Runs before every app start. ----
+  cat > /usr/local/libexec/hawkeye/prestart <<'PY'
+#!/usr/bin/env python3
+"""Boot-time loader for Hawkeye staging. Reads SSM Parameter Store and writes
+/run/hawkeye/{app.env,litestream.yml,caddy-tls.caddy,caddy-readers.caddy,readers,tls/}.
+/run is tmpfs: secrets never touch the disk. REFUSES (exit 1, so nothing starts)
+if staging has any credential that could message a real person."""
+import json, os, re, subprocess, sys, grp, pwd
+PREFIX, REGION, RUN = "/hawkeye/staging", "eu-west-1", "/run/hawkeye"
+def die(m): print("prestart: REFUSED: " + m, file=sys.stderr); sys.exit(1)
+out = subprocess.run(["aws", "--region", REGION, "ssm", "get-parameters-by-path", "--path", PREFIX,
+                      "--recursive", "--with-decryption", "--output", "json"], check=True, capture_output=True, text=True).stdout
+params = {p["Name"][len(PREFIX) + 1:]: p["Value"] for p in json.loads(out)["Parameters"]}
+env = {k[4:]: v for k, v in params.items() if k.startswith("env/")}
+ls = {k[11:]: v for k, v in params.items() if k.startswith("litestream/")}
+tls = {k[4:]: v for k, v in params.items() if k.startswith("tls/")}
+# Staging restores a PRODUCTION snapshot: real phone hashes, real push tokens. Nothing on
+# this box may be able to reach a real person (scripts/loadtest/README.md).
+FORBIDDEN = ["SENDCHAMP_API_KEY", "TERMII_API_KEY", "BULKSMS_NG_API_TOKEN", "WA_CLOUD_TOKEN", "WA_PHONE_NUMBER_ID",
+             "TELEGRAM_BOT_TOKEN", "TELEGRAM_TEST_BOT_TOKEN", "FCM_PRIVATE_KEY", "FCM_CLIENT_EMAIL", "VAPID_PRIVATE_KEY",
+             "X_API_KEY", "X_ACCESS_TOKEN", "META_PAGE_TOKEN", "TIKTOK_CLIENT_SECRET", "MASTER_PHONE"]
+for k in FORBIDDEN:
+    if env.get(k): die(f"{PREFIX}/env/{k} is set. Staging must hold no messaging, push or social credentials.")
+for k, want in (("APP_ENV", "staging"), ("SMS_PROVIDER", "console")):
+    if k in env and env[k] != want: die(f"{k}={env[k]} in SSM; staging requires {want}")
+if env.get("SMS_OTP_ENABLED", "").lower() in ("1", "true", "yes", "on"): die("SMS_OTP_ENABLED is on")
+for k in ("JWT_SECRET", "ORACLE_SECRET", "PHONE_SALT"):
+    if len(env.get(k, "")) < 32: die(f"{PREFIX}/env/{k} missing or short (provision.sh creates it)")
+SAFE = re.compile(r"^[A-Za-z0-9._:/+=@,\-]*$")
+for k, v in env.items():
+    if not re.match(r"^[A-Z][A-Z0-9_]*$", k) or not SAFE.match(v): die(f"env/{k}: bad name or value characters")
+blob = all(env.get(k) for k in ("S3_BUCKET", "S3_ENDPOINT", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"))
+env.setdefault("UPLOAD_MODE", "direct" if blob else "proxy")
+env.setdefault("BLOB_DRIVER", "s3" if blob else "fs")
+if not blob: print("prestart: WARNING no R2 evidence-bucket keys (env/S3_*): UPLOAD_MODE=proxy, BLOB_DRIVER=fs", file=sys.stderr)
+gid_h, gid_c = grp.getgrnam("hawkeye").gr_gid, grp.getgrnam("caddy").gr_gid
+os.makedirs(RUN + "/tls", exist_ok=True); os.chmod(RUN, 0o751); os.chmod(RUN + "/tls", 0o750); os.chown(RUN + "/tls", 0, gid_c)
+def write(path, text, mode, gid):
+    tmp = path + ".tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+    with os.fdopen(fd, "w") as f: f.write(text)
+    os.chown(tmp, 0, gid); os.chmod(tmp, mode); os.replace(tmp, path)
+write(RUN + "/app.env", "".join(f"{k}={v}\n" for k, v in sorted(env.items())), 0o640, gid_h)
+# The app's origin lock (X-Origin-Auth) applies to every request, localhost included:
+# root's own health checks send it from this file (curl -H @file), never on a command line.
+write(RUN + "/origin-auth.hdr", f"X-Origin-Auth: {env['ORIGIN_AUTH_SECRET']}\n" if env.get("ORIGIN_AUTH_SECRET") else "", 0o600, 0)
+# Litestream: replica #2 (S3, instance role) always; #1 (R2) when its four params exist.
+db = "/var/lib/hawkeye/storage/hawkeye.db"
+bucket = open("/etc/hawkeye/replica-bucket").read().strip()
+reps = [f"""      - name: s3
+        type: s3
+        bucket: {bucket}
+        path: litestream/hawkeye.db
+        region: {REGION}
+        sync-interval: 10s
+        snapshot-interval: 1h
+        retention: 72h
+"""]
+if all(ls.get(k) for k in ("R2_BUCKET", "R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY")):
+    for k in ls:
+        if not SAFE.match(ls[k]): die(f"litestream/{k}: bad characters")
+    reps.insert(0, f"""      - name: r2
+        type: s3
+        bucket: {ls['R2_BUCKET']}
+        path: hawkeye.db
+        endpoint: {ls['R2_ENDPOINT']}
+        region: auto
+        access-key-id: {ls['R2_ACCESS_KEY_ID']}
+        secret-access-key: {ls['R2_SECRET_ACCESS_KEY']}
+        sync-interval: 1s
+        snapshot-interval: 1h
+        retention: 72h
+""")
+else:
+    print("prestart: WARNING no R2 replica keys (litestream/R2_*): replicating to S3 only", file=sys.stderr)
+write(RUN + "/litestream.yml", f"dbs:\n  - path: {db}\n    replicas:\n" + "".join(reps), 0o640, gid_h)
+# TLS: Cloudflare Origin CA cert if present, else Caddy's internal CA (Cloudflare "Full", not "Full (strict)").
+if tls.get("origin_cert") and tls.get("origin_key"):
+    write(RUN + "/tls/origin.pem", tls["origin_cert"].strip() + "\n", 0o640, gid_c)
+    write(RUN + "/tls/origin.key", tls["origin_key"].strip() + "\n", 0o640, gid_c)
+    write(RUN + "/caddy-tls.caddy", "tls /run/hawkeye/tls/origin.pem /run/hawkeye/tls/origin.key\n", 0o644, 0)
+else:
+    print("prestart: WARNING no Origin CA cert (tls/origin_cert, tls/origin_key): Caddy uses `tls internal`", file=sys.stderr)
+    write(RUN + "/caddy-tls.caddy", "tls internal\n", 0o644, 0)
+# Readers: auto = vCPUs/2 (1..8), so a resize to c7g.4xlarge gets 8 on the next boot.
+want = "auto"
+for line in open("/etc/hawkeye/staging.env"):
+    if line.startswith("READERS="): want = line.split("=", 1)[1].strip()
+n = max(1, min(8, (os.cpu_count() or 2) // 2)) if want == "auto" else max(1, min(8, int(want)))
+write(RUN + "/readers", f"{n}\n", 0o644, 0)
+write(RUN + "/caddy-readers.caddy", "to " + " ".join(f"127.0.0.1:{8440 + i}" for i in range(1, n + 1)) + "\n", 0o644, 0)
+print(f"prestart: ok (readers={n}, upload={env['UPLOAD_MODE']}/{env['BLOB_DRIVER']}, r2_replica={'yes' if len(reps) == 2 else 'no'})")
+PY
+  chmod 0755 /usr/local/libexec/hawkeye/prestart
+  echo "$BUCKET" > /etc/hawkeye/replica-bucket
+
+  cat > /usr/local/libexec/hawkeye/start-readers <<'SH'
+#!/usr/bin/env bash
+# Start reader@1..N (N from prestart) once the writer answers; stop any above N.
+set -euo pipefail
+n="$(cat /run/hawkeye/readers)"
+for _ in $(seq 1 60); do curl -fsS --max-time 2 -H @/run/hawkeye/origin-auth.hdr http://127.0.0.1:8430/api/health >/dev/null 2>&1 && break; sleep 1; done
+for i in $(seq 1 8); do
+  if [ "$i" -le "$n" ]; then systemctl start "hawkeye-reader@$i.service"; else systemctl stop "hawkeye-reader@$i.service" 2>/dev/null || true; fi
+done
+SH
+  chmod 0755 /usr/local/libexec/hawkeye/start-readers
+
+  log "systemd units"
+  local COMMON="User=hawkeye
+Group=hawkeye
+WorkingDirectory=/opt/hawkeye/current/backend
+EnvironmentFile=/etc/hawkeye/staging.env
+EnvironmentFile=/run/hawkeye/app.env
+ExecStart=/usr/local/bin/node src/server.js
+Restart=always
+RestartSec=2
+LimitNOFILE=65536
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=$DATA"
+  cat > /etc/systemd/system/hawkeye-prestart.service <<EOF
+[Unit]
+Description=Hawkeye: load secrets from SSM into /run/hawkeye
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=$DATA
+PartOf=hawkeye.target
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/libexec/hawkeye/prestart
+EOF
+  cat > /etc/systemd/system/hawkeye-writer.service <<EOF
+[Unit]
+Description=Hawkeye writer (ROLE=writer, the only request-path writer)
+Requires=hawkeye-prestart.service
+After=hawkeye-prestart.service
+PartOf=hawkeye.target
+[Service]
+Environment=ROLE=writer PORT=8430 HOST_ID=staging-writer
+$COMMON
+[Install]
+WantedBy=hawkeye.target
+EOF
+  cat > /etc/systemd/system/hawkeye-reader@.service <<EOF
+[Unit]
+Description=Hawkeye reader %i (ROLE=reader, query_only)
+Requires=hawkeye-prestart.service
+After=hawkeye-prestart.service hawkeye-writer.service
+PartOf=hawkeye.target
+[Service]
+Environment=ROLE=reader PORT=844%i HOST_ID=staging-reader-%i
+$COMMON
+EOF
+  cat > /etc/systemd/system/hawkeye-worker.service <<EOF
+[Unit]
+Description=Hawkeye worker (ROLE=worker: every timer and queue)
+Requires=hawkeye-prestart.service
+After=hawkeye-prestart.service hawkeye-writer.service
+PartOf=hawkeye.target
+[Service]
+Environment=ROLE=worker PORT=8450 HOST_ID=staging-worker
+$COMMON
+[Install]
+WantedBy=hawkeye.target
+EOF
+  cat > /etc/systemd/system/hawkeye-readers.service <<EOF
+[Unit]
+Description=Hawkeye: start N readers (N = vCPUs/2 unless READERS is set)
+Requires=hawkeye-prestart.service
+After=hawkeye-writer.service
+PartOf=hawkeye.target
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/libexec/hawkeye/start-readers
+[Install]
+WantedBy=hawkeye.target
+EOF
+  cat > /etc/systemd/system/hawkeye-litestream.service <<EOF
+[Unit]
+Description=Litestream: continuous SQLite replication (R2 + S3)
+Requires=hawkeye-prestart.service
+After=hawkeye-writer.service
+PartOf=hawkeye.target
+[Service]
+User=hawkeye
+Group=hawkeye
+ExecStart=/usr/local/bin/litestream replicate -config /run/hawkeye/litestream.yml
+Restart=always
+RestartSec=2
+[Install]
+WantedBy=hawkeye.target
+EOF
+  cat > /etc/systemd/system/hawkeye-caddy.service <<EOF
+[Unit]
+Description=Caddy: TLS (Cloudflare Origin CA) and role routing
+Requires=hawkeye-prestart.service
+After=hawkeye-prestart.service
+PartOf=hawkeye.target
+[Service]
+User=caddy
+Group=caddy
+Environment=HOME=/var/lib/caddy XDG_DATA_HOME=/var/lib/caddy XDG_CONFIG_HOME=/var/lib/caddy
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+ExecStart=/usr/local/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+Restart=always
+[Install]
+WantedBy=hawkeye.target
+EOF
+  cat > /etc/systemd/system/hawkeye.target <<EOF
+[Unit]
+Description=Hawkeye staging (writer, readers, worker, litestream, caddy)
+Wants=hawkeye-prestart.service hawkeye-writer.service hawkeye-readers.service hawkeye-worker.service hawkeye-litestream.service hawkeye-caddy.service
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  # Caddy: public GETs and static files -> readers; everything else -> the writer.
+  # Authenticated GETs (/api/observers/me, /notifications, /my/rooms...) stay on the
+  # writer until the ROLE work (plan §5 item 6) confirms none of them writes.
+  # The site is NAMED (Cloudflare sends SNI staging.hawkeye.com.ng; `tls internal` needs a
+  # name to issue for); default_sni covers clients that send none.
+  cat > /etc/caddy/Caddyfile <<'EOF'
+{
+	admin localhost:2019
+	default_sni staging.hawkeye.com.ng
+	auto_https disable_redirects
+	skip_install_trust
+}
+staging.hawkeye.com.ng {
+	import /run/hawkeye/caddy-tls.caddy
+	encode gzip
+	@reads {
+		method GET HEAD
+		path /api/national/* /api/contests /api/declarations /api/integrity/* /api/incidents /api/docket /api/anchors /api/ledger/* /api/results /api/results/* /api/register/* /api/polling-units*
+	}
+	@static {
+		method GET HEAD
+		not path /api/*
+	}
+	handle @reads {
+		reverse_proxy {
+			import /run/hawkeye/caddy-readers.caddy
+			lb_policy least_conn
+		}
+	}
+	handle @static {
+		reverse_proxy {
+			import /run/hawkeye/caddy-readers.caddy
+			lb_policy least_conn
+		}
+	}
+	handle {
+		reverse_proxy 127.0.0.1:8430
+	}
+}
+http:// {
+	redir https://staging.hawkeye.com.ng{uri} 308
+}
+EOF
+
+  # One command to re-read SSM (new keys, a new cert) and restart every role, writer first.
+  cat > /usr/local/sbin/hawkeye-restart <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+systemctl restart hawkeye-prestart.service || { journalctl -u hawkeye-prestart -n 30 --no-pager; exit 1; }
+/usr/local/bin/caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
+systemctl restart hawkeye-writer.service
+systemctl restart hawkeye-worker.service hawkeye-litestream.service hawkeye-caddy.service
+systemctl stop 'hawkeye-reader@*.service' 2>/dev/null || true
+systemctl restart hawkeye-readers.service
+SH
+  chmod 0755 /usr/local/sbin/hawkeye-restart
+
+  log "start"
+  systemctl daemon-reload
+  systemctl enable hawkeye.target hawkeye-writer.service hawkeye-worker.service hawkeye-readers.service hawkeye-litestream.service hawkeye-caddy.service >/dev/null 2>&1
+  /usr/local/sbin/hawkeye-restart || fail "start failed (prestart refusal or Caddyfile; see above)"
+
+  log "verify by behaviour"
+  local h ok=1 n
+  local A=(-H @/run/hawkeye/origin-auth.hdr)   # the origin lock covers localhost too
+  for _ in $(seq 1 60); do h="$(curl -fsS --max-time 2 "${A[@]}" http://127.0.0.1:8430/api/health 2>/dev/null)" && break; sleep 1; done
+  echo "writer   ${h:-NO ANSWER}"
+  grep -q '"env":"staging"' <<<"${h:-}" && grep -q '"role":"writer"' <<<"$h" || ok=0
+  grep -q '"smsOtp":false' <<<"${h:-}" && grep -q '"waCloud":false' <<<"$h" || ok=0
+  n="$(cat /run/hawkeye/readers)"
+  for i in $(seq 1 "$n"); do
+    h="$(curl -fsS --max-time 5 "${A[@]}" "http://127.0.0.1:844$i/api/health" 2>/dev/null || true)"
+    echo "reader$i  ${h:-NO ANSWER}"; grep -q '"role":"reader"' <<<"$h" || ok=0
+  done
+  h="$(curl -fsS --max-time 5 "${A[@]}" http://127.0.0.1:8450/api/health 2>/dev/null || true)"
+  echo "worker   ${h:-NO ANSWER}"; grep -q '"role":"worker"' <<<"$h" || ok=0
+  h="$(curl -skS --max-time 5 "${A[@]}" -o /dev/null -w '%{http_code}' --resolve staging.hawkeye.com.ng:443:127.0.0.1 https://staging.hawkeye.com.ng/results.html || true)"
+  echo "caddy    GET /results.html via :443 -> HTTP $h"; [ "$h" = 200 ] || ok=0
+  systemctl is-active --quiet hawkeye-litestream.service && echo "litestream active" || { echo "litestream NOT active"; ok=0; }
+  sleep 5; /usr/local/bin/litestream generations -config /run/hawkeye/litestream.yml "$DATA/storage/hawkeye.db" 2>&1 | head -5 || true
+  [ "$ok" = 1 ] || fail "verification failed (journalctl -u 'hawkeye-*')"
+  log "DONE: release $STAMP is live on staging"
+}
+
+if [ "${1:-}" = "--on-host" ]; then shift; on_host "$@"; exit 0; fi
+
+# =====================================================================================
+#  LOCAL MODE (your machine)
+# =====================================================================================
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib.sh
+. "$HERE/lib.sh"
+REPO="$(cd "$HERE/../.." && pwd)"
+
+DRY=""; DIRTY_OK=""; SEED_DB=""; READERS="auto"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY=1; shift ;;
+    --allow-dirty) DIRTY_OK=1; shift ;;
+    --seed-db) SEED_DB="${2:-}"; shift 2 ;;
+    --readers) READERS="${2:-}"; shift 2 ;;
+    -h|--help) sed -n '2,26p' "$0"; exit 0 ;;
+    *) die "unknown option '$1' (see --help)" ;;
+  esac
+done
+[ "$READERS" = auto ] || [[ "$READERS" =~ ^[1-8]$ ]] || die "--readers must be auto or 1..8"
+[ -d "$REPO/backend/.git" ] || [ -f "$REPO/backend/.git" ] || die "$REPO/backend is not a git checkout (the private backend repo)"
+if [ -n "$SEED_DB" ]; then
+  [ -f "$SEED_DB" ] || die "--seed-db: $SEED_DB not found"
+  [ "$(head -c 15 "$SEED_DB")" = "SQLite format 3" ] || die "--seed-db: $SEED_DB is not a SQLite database"
+fi
+
+# ---- 1. The code bundle: tracked + untracked-but-not-ignored files only -------------------
+DIRTY="$( { git -C "$REPO" status --porcelain -- app scripts/loadtest scripts/staging
+            git -C "$REPO/backend" status --porcelain -- src package.json package-lock.json | sed -E 's#^(...)#\1backend/#'; } | sed '/^$/d')"
+if [ -n "$DIRTY" ] && [ -z "$DIRTY_OK" ]; then
+  if [ -z "$DRY" ]; then die "uncommitted changes ($(wc -l <<<"$DIRTY") files); commit them or pass --allow-dirty:
+$(head -10 <<<"$DIRTY")"; fi
+  say "NOTE: $(wc -l <<<"$DIRTY") uncommitted file(s); a real run refuses without --allow-dirty. First few:"
+  head -5 <<<"$DIRTY" | sed 's/^/    /' >&2
+fi
+WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+MAIN_SHA="$(git -C "$REPO" rev-parse --short HEAD)"; BACK_SHA="$(git -C "$REPO/backend" rev-parse --short HEAD)"
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)-${BACK_SHA}"
+[ -n "$DIRTY" ] && STAMP="$STAMP-dirty"
+mkdir -p "$WORK/backend"; printf '%s\n' "backend-$BACK_SHA+app-$MAIN_SHA${DIRTY:+-dirty}" > "$WORK/backend/REVISION"
+git -C "$REPO" ls-files -z --cached --others --exclude-standard -- app scripts/loadtest scripts/staging > "$WORK/list"
+git -C "$REPO/backend" ls-files -z --cached --others --exclude-standard -- src package.json package-lock.json eng.traineddata \
+  | while IFS= read -r -d '' f; do printf 'backend/%s\0' "$f"; done >> "$WORK/list"
+# Deleted-but-still-tracked files would make tar fail; keep only what exists.
+while IFS= read -r -d '' f; do [ -e "$REPO/$f" ] && printf '%s\0' "$f"; done < "$WORK/list" > "$WORK/list.ok"
+tar -czf "$WORK/bundle.tgz" -C "$REPO" --null -T "$WORK/list.ok" --no-null -C "$WORK" backend/REVISION
+# Nothing secret or stateful may ship. Checked on the ARTIFACT, not on the file list.
+BAD="$(tar -tzf "$WORK/bundle.tgz" | grep -E '(^|/)\.env($|\.)|(^|/)node_modules/|^backend/storage/|(^|/)\.fixtures/|\.(db|db-wal|db-shm|pem|key|p12|jks|keystore)$|anchor_key\.json$|google-services\.json$' | grep -v '\.env\.example$' || true)"
+[ -z "$BAD" ] || die "the bundle would ship files it must not:
+$BAD"
+NFILES="$(tar -tzf "$WORK/bundle.tgz" | wc -l)"; SIZE="$(du -h "$WORK/bundle.tgz" | cut -f1)"
+say "bundle: $NFILES files, $SIZE, revision $(cat "$WORK/backend/REVISION") (checked: no .env, keys, DBs, node_modules, fixtures)"
+
+if [ -n "$DRY" ]; then
+  cat <<EOF
+
+== bootstrap DRY RUN (no AWS call). A real run would:
+   1. check the account is $HAWKEYE_ACCOUNT, find the running instance tagged project=$TAG_PROJECT env=$TAG_ENV
+   2. upload the bundle (and bootstrap.sh${SEED_DB:+, and the seed DB}) to s3://$BUCKET/deploy/$STAMP/
+   3. run bootstrap.sh --on-host over SSM Run Command (no SSH), which installs Node $NODE_VERSION, Caddy $CADDY_VERSION,
+      Litestream $LITESTREAM_VERSION (hash-pinned), formats/mounts the data volume at $DATA, npm ci on arm64,
+      writes the systemd units + Caddyfile + the boot-time SSM loader, starts hawkeye.target, and verifies
+      /api/health of the writer, every reader and the worker, plus :443 through Caddy
+   Top of the bundle by size:
+EOF
+  tar -tvzf "$WORK/bundle.tgz" | sort -k3 -nr | awk 'NR<=8 {printf "     %10s  %s\n", $3, $6}'
+  exit 0
+fi
+
+# ---- 2. AWS: guard first --------------------------------------------------------------------
+require_account
+IID="$(aws_ ec2 describe-instances --filters Name=tag:project,Values="$TAG_PROJECT" Name=tag:env,Values="$TAG_ENV" \
+  Name=instance-state-name,Values=running --query 'Reservations[].Instances[].InstanceId' --output text)"
+[ -n "$IID" ] || die "no running instance tagged env=staging (run provision.sh --apply, or start it)"
+[ "$(wc -w <<<"$IID")" = 1 ] || die "more than one staging instance is running: $IID"
+for _ in $(seq 1 30); do
+  st="$(aws_ ssm describe-instance-information --filters Key=InstanceIds,Values="$IID" --query 'InstanceInformationList[0].PingStatus' --output text 2>/dev/null || true)"
+  [ "$st" = Online ] && break; say "waiting for the SSM agent on $IID ($st)"; sleep 10
+done
+[ "$st" = Online ] || die "SSM agent on $IID is not Online"
+
+say "uploading to s3://$BUCKET/deploy/$STAMP/"
+aws_ s3 cp --only-show-errors "$WORK/bundle.tgz" "s3://$BUCKET/deploy/$STAMP/bundle.tgz"
+aws_ s3 cp --only-show-errors "$HERE/bootstrap.sh" "s3://$BUCKET/deploy/$STAMP/bootstrap.sh"
+EXTRA="--readers $READERS"
+if [ -n "$SEED_DB" ]; then
+  aws_ s3 cp --only-show-errors "$SEED_DB" "s3://$BUCKET/deploy/$STAMP/seed.db"; EXTRA="$EXTRA --seed-db"
+fi
+
+CMD1="aws --region $REGION s3 cp --only-show-errors s3://$BUCKET/deploy/$STAMP/bootstrap.sh /root/hawkeye-bootstrap.sh"
+CMD2="bash /root/hawkeye-bootstrap.sh --on-host --bucket $BUCKET --stamp $STAMP $EXTRA"
+CID="$(aws_ ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript \
+  --comment "hawkeye staging bootstrap $STAMP" --timeout-seconds 600 \
+  --parameters "{\"commands\":[\"set -euo pipefail\",\"$CMD1\",\"$CMD2\"],\"executionTimeout\":[\"3600\"]}" \
+  --query Command.CommandId --output text)"
+say "SSM command $CID running on $IID (log on the host: /var/log/hawkeye-bootstrap.log)"
+errs=0; waited=0
+while :; do
+  sleep 15; waited=$((waited + 15))
+  # Right after send-command the invocation may not exist yet (InvocationDoesNotExist): tolerate
+  # a few errors, but never loop forever on a persistent one (permissions, a wrong id).
+  if st="$(aws_ ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text 2>/dev/null)"; then errs=0
+  else errs=$((errs + 1)); st=Pending; [ "$errs" -lt 8 ] || die "cannot read the status of SSM command $CID (8 errors in a row)"; fi
+  [ "$waited" -lt 3900 ] || die "SSM command $CID still $st after 65 min"
+  case "$st" in Pending|InProgress|Delayed) printf '.' >&2 ;; *) echo >&2; break ;; esac
+done
+aws_ ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardOutputContent --output text | tail -40
+ERRS="$(aws_ ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardErrorContent --output text | tail -20)"
+[ -z "$ERRS" ] || { echo "--- stderr:"; echo "$ERRS"; }
+[ "$st" = Success ] || die "bootstrap finished with status $st"
+say "staging bootstrapped: release $STAMP. Shell: aws ssm start-session --region $REGION --target $IID"

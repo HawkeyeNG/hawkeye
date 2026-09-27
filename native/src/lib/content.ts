@@ -479,10 +479,11 @@ export const PAGES: Record<string, Page> = {
  * Consumers call getPages() inside their component body, and the provider
  * remounts them with key={lang}, so the content follows the language.
  *
- * Anything with no entry in CONTENT_I18N falls through AS ENGLISH — which is
- * what the privacy page wants (English by policy) and the safe degradation for
- * copy reworded here before the translations were rebuilt. It can never render a
- * raw key, because there are no keys.
+ * Anything with no entry in CONTENT_I18N falls through AS ENGLISH — the safe
+ * degradation for copy reworded here before the translations were rebuilt.
+ * Privacy and terms are translated like every other page (since f2f1a58); only
+ * their governing-language sentence says the English text prevails. It can never
+ * render a raw key, because there are no keys.
  */
 function translateNode<T>(node: T, dict: Record<string, string>): T {
   if (typeof node === 'string') return (dict[node] ?? node) as unknown as T;

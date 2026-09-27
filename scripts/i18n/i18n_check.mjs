@@ -9,20 +9,16 @@ import fs from 'node:fs';
 const DIR = '/home/elrio/hawkeye/app/i18n';
 const cat = JSON.parse(fs.readFileSync('/home/elrio/hawkeye/scripts/i18n/catalogue.json', 'utf8'));
 
-/* Deliberately NOT translated. Legal and evidential wording goes to a human
-   translator or stays in English; a mistranslated disclaimer is a legal
-   exposure. These render from the English in the markup. */
-const ENGLISH_ONLY_KEYS = [
-  'common.hawkeye-is-an-independent-transparency-initiative',
-  'common.hawkeye-is-an-independent-transparency-initiative-2',
-  'common.hawkeye-is-an-independent-transparency-initiative-3',
-  'index.not-affiliated-with-inec-or-any',
-];
-/* Whole pages, not single strings: the privacy policy and the terms are the
-   documents a mistranslation is most expensive in, and every sentence of them
-   is legal text. Their shared header, menu and footer still translate, because
-   those strings are `common.*` and live on twenty other pages. */
-const ENGLISH_ONLY_PAGES = ['privacy', 'terms'];
+/* Deliberately NOT translated: keys, and whole pages by their key prefix, that
+   render from the English in the markup. BOTH EMPTY NOW. The INEC disclaimer,
+   the non-affiliation notice, and the privacy and terms pages were English by
+   policy until f2f1a58 translated them into ha/ig/yo (reviewed by literal
+   back-translation; each page keeps a governing-language sentence saying the
+   English prevails). They are written into en.json _meta by --build-en, and
+   auto_key.mjs / rendered_gaps.mjs read them from there, so listing anything
+   here again would quietly stop those pages being keyed and checked. */
+const ENGLISH_ONLY_KEYS = [];
+const ENGLISH_ONLY_PAGES = [];
 const isEnglishOnly = (k) => ENGLISH_ONLY_KEYS.includes(k)
   || ENGLISH_ONLY_PAGES.includes(k.split('.')[0]);
 
@@ -124,10 +120,25 @@ for (const code of ['ha', 'ig', 'yo']) {
     'common.info-hawkeye-com-ng', 'common.meta-facebook-instagram', 'common.tiktok',
     'common.x-admin-secret', 'common.x-twitter', 'meta.https-hawkeye-com-ng',
     'support.qr', 'download.hawkeye-lite', 'download.7-9-mb', 'tiktok.self-only', 'tiktok.public-to-everyone-after-audit',
+    // A place name and a year; a brand with its bot handle and t.me link; a
+    // platform name and a file size (the sibling of download.7-9-mb); the
+    // Telegram brand alone (observe.telegram is exempt the same way below).
+    'nav.osun-2026', 'about.telegram-hawkeyengbot', 'download.android-35-mb',
+    'index.android', 'captain.admin.reach-telegram',
+    /* Pure format templates: nothing but placeholders, punctuation and the WAT
+       zone code. The words that fill them (practiceday.weekdays / .months) are
+       translated keys of their own and are still checked. */
+    'practiceday.date', 'practiceday.window',
+    /* The count cell under a number on race pages ("30 | LGA"). Kept as the INEC
+       acronym on purpose, not missed: every translator ALSO rewrote the plural
+       race.lgas from "LGAs" to "LGA", which an untranslated key would not do. */
+    'race.lga',
   ];
   const SAME_OK = {
     ha: ['common.menu', 'index.iphone-ipad', ...IDENTIFIERS],
-    ig: ['common.menu', 'common.ward', 'index.iphone-ipad', ...IDENTIFIERS],
+    // GLOSSARY.md #7: Igbo keeps "Ward" — the same choice as common.ward, in
+    // the count cell (race.ward) and the lower-case unit label (unit.ward.one).
+    ig: ['common.menu', 'common.ward', 'race.ward', 'unit.ward.one', 'index.iphone-ipad', ...IDENTIFIERS],
     yo: ['index.iphone-ipad', ...IDENTIFIERS],
   };
   const untranslated = keys.filter((k) => b[k] === en[k]

@@ -79,6 +79,29 @@ check('the web twin still does the same',
 console.log('\n=== buttons are sentence case where a reader sees them ===');
 const PROPER = /^(Hawkeye|INEC|Nigeria|Nigerian|Osun|Telegram|WhatsApp|Google|Play|Apple|PU|EC8A|EC8B|EC8C|EC8D|SMS|OTP|ID|GPS|Rekor|Sigstore|SHA|FCT|Store|App|I|TikTok|X|Web|Android|iOS|iPhone|Chrome|Safari)$/;
 const SKIP = /^(admin|post|preview|bench|review|tiktok|train|train2|traindavina|trainderek)\./;
+/** True when a word after the first is Title-Cased without being a proper noun. */
+const isTitleCase = (label) => {
+  const words = label.split(/\s+/).filter((w) => /^[A-Za-z]/.test(w));
+  let newSentence = false;
+  return words.some((w, k) => {
+    const bare = w.replace(/[^A-Za-z].*$/, '');
+    const bad = k > 0 && !newSentence && /^[A-Z][a-z]/.test(bare)
+      && !PROPER.test(bare) && bare !== bare.toUpperCase();
+    newSentence = /[.?!:]$/.test(w);
+    return bad;
+  });
+};
+/* THE ONE DELIBERATE EXCEPTION: MY PROFILE'S OWN LABELS. 97454bd ("My Profile:
+   existing labels in Title Case") was the owner's call — the Profile items looked
+   wrong in sentence case — and it edited the shared profile.* keys in place, so
+   the same Title-Case wording also titles the pages that reuse them (the unit
+   chooser's "Save This Unit", practice's "Choose Your Polling Unit"). Exempt
+   exactly the English of a profile.* key; any other Title-Case button still
+   fails. */
+const WEB_EN = JSON.parse(fs.readFileSync(`${ROOT}/app/i18n/en.json`, 'utf8'));
+const PROFILE_LABELS = new Set(Object.entries(WEB_EN)
+  .filter(([k, v]) => k.startsWith('profile.') && typeof v === 'string').map(([, v]) => v.trim()));
+const flagged = (label) => isTitleCase(label) && !PROFILE_LABELS.has(label);
 const offenders = [];
 for (const name of fs.readdirSync(`${ROOT}/app`)) {
   if (!/\.html$/.test(name) || SKIP.test(name)) continue;
@@ -91,15 +114,7 @@ for (const name of fs.readdirSync(`${ROOT}/app`)) {
     for (const m of hits) {
       const label = m[1].replace(/&[a-z]+;/g, ' ').trim();
       if (!label || label.length > 42) continue;
-      const words = label.split(/\s+/).filter((w) => /^[A-Za-z]/.test(w));
-      let newSentence = false;
-      words.forEach((w, k) => {
-        const bare = w.replace(/[^A-Za-z].*$/, '');
-        const bad = k > 0 && !newSentence && /^[A-Z][a-z]/.test(bare)
-          && !PROPER.test(bare) && bare !== bare.toUpperCase();
-        newSentence = /[.?!:]$/.test(w);
-        if (bad) offenders.push(`${name}:${i + 1} "${label}"`);
-      });
+      if (flagged(label)) offenders.push(`${name}:${i + 1} "${label}"`);
     }
   });
 }
@@ -120,12 +135,22 @@ check('and so is the ledger link',
 console.log('\n=== the follow control names the action, and is findable ===');
 const FOLLOW_TSX = readNative(`${ROOT}/native/src/components/follow-race.tsx`);
 const FOLLOW_JS = fs.readFileSync(`${ROOT}/app/follow.js`, 'utf8');
+/* Since 00fe7e8 (native tranche 4 batch B) the words live in
+   native/src/lib/i18n/en.json behind i18nT('key', { v0: subject }) — a form
+   readNative() does not resolve — so resolve the keys here and keep asking what
+   the control SAYS. Every `following ? A : B` pair is read, label and a11y label. */
+const NATIVE_EN = JSON.parse(fs.readFileSync(`${ROOT}/native/src/lib/i18n/en.json`, 'utf8'));
+const FOLLOW_RAW = fs.readFileSync(`${ROOT}/native/src/components/follow-race.tsx`, 'utf8');
+const followPairs = [...FOLLOW_RAW.matchAll(
+  /following\s*\?\s*i18nT\('([^']+)',\s*\{\s*v0: subject\s*\}\)\s*:\s*i18nT\('([^']+)',\s*\{\s*v0: subject\s*\}\)/g,
+)].map((m) => [NATIVE_EN[m[1]], NATIVE_EN[m[2]]]);
 check('native says Unfollow once subscribed',
-  /following \? `Unfollow \$\{subject\}` : `Follow \$\{subject\}`/.test(FOLLOW_TSX), true);
+  followPairs.some(([on, off]) => on === 'Unfollow {v0}' && off === 'Follow {v0}'), true);
 check('web says Unfollow once subscribed',
   /followed \? '🔕 Unfollow ' : '🔔 Follow '/.test(FOLLOW_JS), true);
 check('native no longer says Following in the label',
-  /`Following \$\{subject\}`/.test(FOLLOW_TSX), false);
+  followPairs.map(([on]) => /^Following\b/.test(on ?? '')),
+  (got) => got.length > 0 && got.every((x) => !x));
 // The BUTTON's textContent only. The confirmation message below it still reads
 // "🔔 Following this race. You will be alerted…" — that is prose stating a
 // state, which is exactly what a message is for, and it is not a control.
@@ -135,7 +160,8 @@ check('web no longer writes Following into the button',
 check('native still reports state to assistive tech',
   /accessibilityState=\{\{ selected: following/.test(FOLLOW_TSX), true);
 check('web still sets aria-pressed', /aria-pressed/.test(FOLLOW_JS), true);
-check('the detail line still says alerts are on', /'Alerts on'/.test(FOLLOW_TSX), true);
+const detailKey = (FOLLOW_RAW.match(/const detail = following \? i18nT\('([^']+)'\)/) || [])[1];
+check('the detail line still says alerts are on', NATIVE_EN[detailKey], 'Alerts on');
 // Visibility: a bare bg-card made the only way out look like a status panel.
 check('native gives the subscribed state a border',
   /border border-good-ink bg-card/.test(FOLLOW_TSX), true);
@@ -144,14 +170,16 @@ check('and styles it', /\.race-cta \.btn-quiet\.btn-following/.test(
   fs.readFileSync(`${ROOT}/app/styles.css`, 'utf8')), true);
 
 console.log('\n=== control: this scan can actually find one ===');
-// A label that IS Title Case, proving the detector above is not vacuous.
-const probe = 'Report Another Unit'.split(/\s+/);
-check('a Title-Case label is detected',
-  probe.slice(1).some((w) => /^[A-Z][a-z]/.test(w) && !PROPER.test(w)), true);
-check('a sentence-case one is not',
-  'Report another unit'.split(/\s+/).slice(1).some((w) => /^[A-Z][a-z]/.test(w) && !PROPER.test(w)), false);
-check('and a proper noun is left alone',
-  'Install Web App'.split(/\s+/).slice(1).some((w) => /^[A-Z][a-z]/.test(w) && !PROPER.test(w)), false);
+// Run through the SAME predicate the scan uses, exemption included, so a
+// detector (or an exemption) that swallowed everything would show here.
+check('a Title-Case label is detected', flagged('Report Another Unit'), true);
+check('a sentence-case one is not', flagged('Report another unit'), false);
+check('and a proper noun is left alone', flagged('Install Web App'), false);
+check('a Profile label is Title Case and exempt (97454bd)',
+  [isTitleCase('Sign Out on This Device'), PROFILE_LABELS.has('Sign Out on This Device'), flagged('Sign Out on This Device')],
+  [true, true, false]);
+check('the exemption is Profile wording only, not Title Case in general',
+  flagged('Save This Report'), true);
 
 console.log(fail ? `\n${fail} FAILED` : '\nAll passed');
 process.exit(fail ? 1 : 0);

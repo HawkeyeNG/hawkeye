@@ -17,7 +17,8 @@
  *  · a translation dictionary that silently fails to load, or a walk that stops
  *    at the first nesting level, leaving deep prose English while the titles
  *    move — which would look almost right in a screenshot;
- *  · the privacy page getting translated after all, when it is English by policy.
+ *  · the privacy page falling back to English. It was English by policy until
+ *    f2f1a58 translated terms and privacy; since then it must move like the rest.
  */
 import fs from 'node:fs';
 
@@ -116,11 +117,20 @@ for (const lang of ['ha', 'ig', 'yo']) {
   check('  ...and all of it moved', deep.every(({ v, t }) => t !== v),
     deep.filter(({ v, t }) => t === v).slice(0, 3).map((s) => s.p));
 
+  /* PRIVACY IS TRANSLATED NOW. It was English by policy until f2f1a58 ("legal:
+     translate terms and privacy into ha/ig/yo, web and app") lifted that policy
+     and put its strings into CONTENT_I18N, reviewed by back-translation. So the
+     old "stayed English" guard now points the other way: a privacy promise left
+     in English under a translated app is the regression. Held to the same prose
+     rule as every other page, and counted, so a dictionary that dropped the
+     legal batch cannot pass by having nothing to check. */
   const priv = before
     .map(([p, v], i) => ({ p, v, t: after[i][1] }))
-    .filter(({ p }) => p.startsWith('.privacy'));
-  check(`the privacy page stayed English (${priv.length} strings)`, priv.every(({ v, t }) => t === v),
-    priv.filter(({ v, t }) => t !== v).slice(0, 3).map((s) => s.p));
+    .filter(({ p, v }) => p.startsWith('.privacy') && !MACHINERY.test(p)
+      && v.trim().length > 12 && /\s/.test(v) && /[A-Za-z]{2}/.test(v));
+  check(`the privacy page has prose to check (${priv.length} strings)`, priv.length > 20, priv.length);
+  check('  ...and all of it moved (policy lifted in f2f1a58)', priv.every(({ v, t }) => t !== v),
+    priv.filter(({ v, t }) => t === v).slice(0, 4).map((s) => `${s.p}: ${s.v.slice(0, 50)}`));
 }
 
 /**

@@ -88,10 +88,28 @@ const code = transform(fs.readFileSync(SRC, 'utf8'), {
   filePath: SRC,
 }).code;
 
+/**
+ * NATIVE'S ENGLISH, AS THE APP RESOLVES IT. Since 43d167f the tab bar's titles
+ * are i18nT('nav.*'), and since 8bc1299 TOUR_STEPS holds keys rather than
+ * English (wrapped in lazyT so nothing freezes at import); components/tour.tsx
+ * renders i18nT(step.titleKey) / i18nT(step.bodyKey). So "what a reader sees" is
+ * the key looked up in native/src/lib/i18n/en.json — a separate bundle from the
+ * web's app/i18n/en.json, which is what keeps Part Two's parity check a real
+ * comparison between two codebases. Like native's own t(), a key that does not
+ * resolve comes back as ITSELF: that is the failure a reader would see, and it
+ * fails every title/body comparison below rather than being papered over.
+ */
+const NATIVE_EN = JSON.parse(fs.readFileSync(`${ROOT}/native/src/lib/i18n/en.json`, 'utf8'));
+const nt = (k) => (Object.hasOwn(NATIVE_EN, k) ? NATIVE_EN[k] : k);
+
 function loadTour(store) {
   const module_ = { exports: {} };
-  const fakeRequire = (id) =>
-    id.includes('async-storage') ? { default: store, __esModule: true } : {};
+  /* lazyT is identity here: TOUR_STEPS is read through titleKey/bodyKey below,
+     exactly as the render site reads it, not through the proxy. */
+  const fakeRequire = (id) => (
+    id.includes('async-storage') ? { default: store, __esModule: true }
+      : id === '@/lib/i18n' ? { t: nt, lazyT: (x) => x }
+        : {});
   new Function('require', 'module', 'exports', 'process', code)(
     fakeRequire, module_, module_.exports, { env: {} },
   );
@@ -115,8 +133,10 @@ const brokenStore = {
 
 console.log('=== the tour describes the tab bar that exists ===');
 const layout = fs.readFileSync(`${ROOT}/native/src/app/(tabs)/_layout.tsx`, 'utf8');
-// Pull the real tabs out of the layout, in the order they are declared.
-const tabs = [...layout.matchAll(/title:\s*'([^']+)'/g)].map((m) => m[1]);
+// Pull the real tabs out of the layout, in the order they are declared — as the
+// English a reader sees: a literal title, or an i18nT('nav.*') key resolved.
+const tabs = [...layout.matchAll(/title:\s*(?:'([^']+)'|i18nT\('([^']+)'\))/g)]
+  .map((m) => m[1] ?? nt(m[2]));
 /** The `name=` each Tabs.Screen is registered under — what a step's `route` is. */
 const layoutRoutes = [...layout.matchAll(/<Tabs\.Screen\s+name="([a-z]+)"/g)].map((m) => m[1]);
 /**
@@ -136,7 +156,10 @@ check('and registers them under the five routes the tour names',
   layoutRoutes, ['index', 'results', 'report', 'alerts', 'more']);
 
 const tour = loadTour(memStore());
-const steps = tour.TOUR_STEPS;
+/** Each step as components/tour.tsx renders it: title and body through their keys. */
+const steps = tour.TOUR_STEPS.map((s) => ({ ...s, title: nt(s.titleKey), body: nt(s.bodyKey) }));
+check('every step key resolves in the native bundle (none renders as its own name)',
+  tour.TOUR_STEPS.flatMap((s) => [s.titleKey, s.bodyKey]).filter((k) => !k || nt(k) === k), []);
 check('one step per tab', steps.length, tabs.length);
 check(
   'each step names its tab, in tab order',
@@ -227,6 +250,9 @@ console.log('\n=== control: the native assertions can fail ===');
   check('a reordered tour would be caught', JSON.stringify(wrong) === JSON.stringify(tabs), false);
   control('route parity — a step pointing at the wrong tab must go red',
     JSON.stringify([...steps.map((s) => s.route)].reverse()) === JSON.stringify(layoutRoutes));
+  // The key lookup must not be able to invent English for a key the bundle lacks.
+  control('key resolution — a key missing from the bundle must come back as itself',
+    nt('tour.no-such-step.body') !== 'tour.no-such-step.body');
 }
 
 /* ==========================================================================
@@ -242,7 +268,9 @@ function nativeNote() {
   const src = fs.readFileSync(`${ROOT}/native/src/components/tour.tsx`, 'utf8');
   const m = /text-faint">\s*([\s\S]*?)\s*<\/Text>/.exec(src);
   if (!m) throw new Error('the nonpartisan paragraph was not found in tour.tsx');
-  return m[1].replace(/\s+/g, ' ').trim();
+  // Keyed since the native i18n tranches: {i18nT("n.components.tour.…")}.
+  const key = /^\{i18nT\(["']([^"']+)["']\)\}$/.exec(m[1].trim());
+  return (key ? nt(key[1]) : m[1]).replace(/\s+/g, ' ').trim();
 }
 const NOTE = nativeNote();
 
@@ -310,7 +338,13 @@ const JWT = () => {
  * itself is asserted separately, with langAsked: false.
  */
 async function shell({ lite = true, seen = false, faultStorage = false, width = 390, langAsked = true } = {}) {
-  const ctx = await b.newContext({ viewport: { width, height: 780 } });
+  /* reducedMotion: headless Chromium (playwright-core 1.61, since 6a956d0) stops
+     producing frames after a cross-document view transition (styles.css
+     @view-transition), so the first tab tap left a page where rAF never fired
+     and this file hung forever. The site skips the transition for reduced-motion
+     readers, so this is a real configuration — the same fix choose_unit_test and
+     invite_unit_test already carry. */
+  const ctx = await b.newContext({ viewport: { width, height: 780 }, reducedMotion: 'reduce' });
   await ctx.addInitScript((o) => {
     if (o.lite) {
       Object.defineProperty(window, 'HAWKEYE', {
@@ -911,9 +945,12 @@ console.log('\n=== the website (no Lite shell) is untouched ===');
   check('10. no "#tour" anchor anywhere in the panel', g.anyTourAnchor, false);
   check('10. "Learn & about" still leads with "How Hawkeye Works"',
     g.rows && g.rows[0] && g.rows[0].text, 'How Hawkeye Works');
+  // The group has since grown two web pages of its own — the ward captain's
+  // guide (35211d2) and the press kit (571024b) — neither of which is the tour.
   check('10. the group is otherwise untouched',
     g.rows && g.rows.map((r) => r.href),
-    ['how.html', 'guide.html', 'faq.html', 'about.html', 'support.html', 'privacy.html', 'terms.html']);
+    ['how.html', 'guide.html', 'captain-guide.html', 'faq.html', 'about.html', 'press.html',
+      'support.html', 'privacy.html', 'terms.html']);
   await ctx.close();
 }
 {

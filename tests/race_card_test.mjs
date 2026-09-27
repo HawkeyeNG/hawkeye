@@ -101,7 +101,11 @@ console.log('   ', JSON.stringify(c));
 check('counts wards', c.Wards, (v) => Number(v) > 0);
 check('wards match the seat table', Number(c.Wards), SEATS.SHA['Delta|Udu'].wards);
 check('polling units, which it never had', c['Polling units'], (v) => /^~[\d,]+$/.test(String(v)));
-check('Candidates TBD', c.Candidates, 'TBD');
+// Udu was DECLARED on 20 Sep 2026 without a list ever being published. TBD
+// promises a number that is coming; a decided race has nothing left to come,
+// so the cell stays but says so (app 00aa480). The seats above are open and
+// still read TBD - they are this check's control.
+check('a declared race with no list says None published, not TBD', c.Candidates, 'None published');
 
 console.log('\n=== control: a race WITH candidates shows the number, not TBD ===');
 c = await card('race=raceOsun2026');

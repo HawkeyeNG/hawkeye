@@ -687,7 +687,7 @@ label > input[type="checkbox"], label > input[type="radio"] { flex: none; }
    The install button in the situation-room header needed exactly this fix; a
    rule here means the next one does not.
    No !important needed: `input[hidden]` is one attribute more specific. */
-input[hidden], select[hidden], textarea[hidden] { display: none; }
+input[hidden], select[hidden], textarea[hidden], button[hidden] { display: none; }
 
 input:hover, select:hover { border-color: var(--green-700); }
 input:focus, select:focus, button:focus, summary:focus, a:focus {

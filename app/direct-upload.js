@@ -15,6 +15,15 @@
  * unavailable. There is no configuration on the phone; the SERVER decides, and
  * one client build works against either mode.
  *
+ * EXCEPT WHEN THE SERVER SAYS "BUSY". A presign answered 429 (this observer is
+ * rate-limited) or 503 (the origin is shedding load) is not "direct upload is
+ * unavailable" — it is "not now". Falling back to multipart there sends the
+ * photo bytes THROUGH the origin at exactly the moment it asked for less
+ * (ELECTION-NIGHT-HOSTING.md §2.4, the CGNAT finding). tryUpload() hands that
+ * back as { busy, status, retryAfter } so the caller parks the signed report in
+ * the outbox until Retry-After. upload() keeps the old true|null contract for
+ * any caller that has not learned about busy.
+ *
  * WHAT IT DOES NOT DO: compute a perceptual hash. That was tried and measured —
  * a browser canvas cannot reproduce the server's sharp pipeline (0/24 exact
  * matches over real sheets, median 10 bits apart against a threshold of 4) — so
@@ -26,11 +35,14 @@
   /**
    * Presign, then PUT both photos to the bucket.
    *
-   * @returns {Promise<boolean|null>} true when both photos are in the bucket and
-   *   the caller should submit hashes as JSON; null when the caller should fall
-   *   back to the multipart path.
+   * @returns {Promise<true|null|{busy:true,status:number,retryAfter:string|null}>}
+   *   true when both photos are in the bucket and the caller should submit
+   *   hashes as JSON; null when the caller should fall back to the multipart
+   *   path; a busy object when the server refused the presign as 429/503 — the
+   *   caller must NOT post multipart, but hold the report until `retryAfter`
+   *   (the Retry-After header, else the body's retryAfterS; null if neither).
    */
-  async function upload({ base, token, blobs, hashes }) {
+  async function tryUpload({ base, token, blobs, hashes }) {
     if (!token || !navigator.onLine) return null;
     let plan;
     try {
@@ -50,6 +62,16 @@
       });
       // 409 is the server saying "I am in proxy mode" — an answer, not a fault.
       if (r.status === 409) return null;
+      if (r.status === 429 || r.status === 503) {
+        // The header is unreadable cross-origin (the Lite shell) unless the
+        // server exposes it, so the body's retryAfterS is the fallback.
+        let ra = null;
+        try { ra = r.headers.get('retry-after'); } catch { /* no headers */ }
+        if (!ra) {
+          try { const b = await r.json(); if (b && b.retryAfterS != null) ra = String(b.retryAfterS); } catch { /* not json */ }
+        }
+        return { busy: true, status: r.status, retryAfter: ra };
+      }
       if (!r.ok) return null;
       plan = await r.json();
     } catch { return null; }
@@ -77,5 +99,9 @@
     return true;
   }
 
-  window.HawkeyeDirect = { upload };
+  // The old contract: busy degrades to multipart, exactly as before. Kept for a
+  // cached caller that predates tryUpload; every caller in this repo uses tryUpload.
+  const upload = async (opts) => ((await tryUpload(opts)) === true ? true : null);
+
+  window.HawkeyeDirect = { upload, tryUpload };
 }());

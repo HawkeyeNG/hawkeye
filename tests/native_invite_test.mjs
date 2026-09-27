@@ -55,8 +55,18 @@ const check = (label, got, want) => {
     /Clipboard\.setStringAsync\(referral\.url\)/.test(p), true);
 
   const lib = read('native/src/lib/referral.ts');
-  check('the link points at invite.html, which routes to the right store',
-    /invite\.html\?r=/.test(lib), true);
+  /* THE LINK GOES THROUGH /open NOW (it pointed straight at invite.html?r=).
+     /open is claimed by the app, so an installed app opens on sign-up with the
+     code; without the app, app/open/index.html forwards `to=invite` to
+     invite.html with the same params, and referral.js reads ?ref= as well as
+     ?r=. So both halves are checked: the link, and the forward it relies on. */
+  check('the link points at /open?to=invite, which the app claims',
+    /\/open\?to=invite&ref=/.test(lib), true);
+  const openPage = read('app/open/index.html');
+  check('...and without the app /open forwards it to invite.html (store routing)',
+    /invite:\s*'\.\.\/invite\.html'/.test(openPage), true);
+  check('...which reads ?ref= as the code',
+    /p\.get\('ref'\)/.test(read('app/referral.js')), true);
   check('a failed lookup returns null rather than throwing',
     /catch \{\s*return null;\s*\}/.test(lib), true);
   check('it does NOT ride on /me', !/observers\/me/.test(lib) && /observers\/referral/.test(lib), true);

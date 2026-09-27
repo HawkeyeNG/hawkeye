@@ -1,0 +1,4 @@
+# Staging-only tokens, private keys and synthetic photos from seed/
+.fixtures/
+# k6 run output
+results/

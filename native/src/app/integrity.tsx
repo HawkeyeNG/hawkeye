@@ -7,6 +7,7 @@ import { ActivityIndicator, Animated, Pressable, RefreshControl, ScrollView, Tex
 import { SectionLabel, Stat } from '@/components/content-kit';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
+import { useForegroundInterval } from '@/hooks/use-foreground-interval';
 import { flagLabel } from '@/lib/flags';
 import { pick } from '@/lib/haptics';
 import { useUi } from '@/lib/theme';
@@ -250,11 +251,8 @@ export default function Integrity() {
     }
   }, [loadRows]);
 
-  useEffect(() => {
-    loadAll();
-    const t = setInterval(loadAll, REFRESH_MS);
-    return () => clearInterval(t);
-  }, [loadAll]);
+  // Polls only while the app is in the foreground (hooks/use-foreground-interval).
+  useForegroundInterval(loadAll, REFRESH_MS);
 
   useEffect(() => {
     loadRows().catch(() => {});

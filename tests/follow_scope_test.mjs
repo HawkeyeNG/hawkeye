@@ -38,10 +38,27 @@ const pluralsIn = (src) => {
   for (const m of body[1].matchAll(/(\w+)\s*:\s*'([^']*)'/g)) out[m[1]] = m[2];
   return out;
 };
+// Native no longer holds literals: since 5e47ac1 ("unfreeze the label maps") the
+// map lives inside contestPlural() as i18nT(key) calls, resolved at call time so
+// a language change reaches it. So read the keys out of that function and look
+// them up in the English catalogue — the words a reader actually sees.
+const NATIVE_EN = JSON.parse(fs.readFileSync(`${ROOT}/native/src/lib/i18n/en.json`, 'utf8'));
+const nativeSrc = fs.readFileSync(`${ROOT}/native/src/components/follow-race.tsx`, 'utf8');
+const nativePluralsIn = (src) => {
+  const body = src.match(/function contestPlural\b[\s\S]*?\{([\s\S]*?)\};\s*return/);
+  if (!body) return null;
+  const out = {};
+  for (const m of body[1].matchAll(/(\w+)\s*:\s*i18nT\('([^']+)'\)/g)) out[m[1]] = NATIVE_EN[m[2]] ?? `<missing ${m[2]}>`;
+  return out;
+};
 const webPlural = pluralsIn(fs.readFileSync(`${APP}/follow.js`, 'utf8'));
-const nativePlural = pluralsIn(fs.readFileSync(`${ROOT}/native/src/components/follow-race.tsx`, 'utf8'));
+const nativePlural = nativePluralsIn(nativeSrc);
 check('web names every contest', webPlural, { GOV: 'governorship', SEN: 'Senate', REP: 'House of Reps', SHA: 'State Assembly' });
 check('native says exactly the same', nativePlural, webPlural);
+// And the sentence around the word: web builds 'all ' + word + ' races' and
+// 'this race'; native must carry the same English templates.
+check('native wraps it the same way', [NATIVE_EN['n.components.follow-race.all-races'], NATIVE_EN['n.components.follow-race.this-race']], ['all {v0} races', 'this race']);
+check('web wraps it that way too', /'all ' \+ \(CONTEST_PLURAL\[contest\] \|\| contest\) \+ ' races'/.test(fs.readFileSync(`${APP}/follow.js`, 'utf8')), true);
 // PRES is absent from both on purpose — it is one national race, so an empty
 // region there IS the single race and "all Presidential races" would be a lie.
 check('neither claims a plural for the presidency', [webPlural.PRES, nativePlural.PRES], [undefined, undefined]);
@@ -60,8 +77,16 @@ const server = http.createServer((req, res) => {
     return req.on('end', () => { posted.push({ method: req.method, body: JSON.parse(body || '{}') }); json({ ok: true }); });
   }
   if (url.startsWith('/api/national/')) {
+    const contest = url.split('/').pop();
+    // The presidency's board is by state (its regions are what ?scope= names).
+    if (contest === 'PRES') {
+      return json({
+        contest, level: 'state', scope: null, subunits: ['Kano', 'Osun'],
+        updatedAt: Date.now(), unitsReporting: 0, inDispute: 0, national: [], regions: [],
+      });
+    }
     return json({
-      contest: url.split('/').pop(), level: 'senatorial', scope: null, subunits: null,
+      contest, level: 'senatorial', scope: null, subunits: null,
       updatedAt: Date.now(), unitsReporting: 0, inDispute: 0, national: [], regions: [],
     });
   }
@@ -156,26 +181,47 @@ console.log('\n=== already covered by a follow-everything row ===');
 }
 
 // ── 6. The category board follows the category ────────────────────────────────
-console.log('\n=== the leaderboard says which election it would follow ===');
+// SUPERSEDED IN PART, 2026-08-30. This section asserted "🔔 Follow all Senate
+// races" on the Senate board. 57380d5 / d860ff7 / 647e111 went further than
+// labelling it: on a combined contest (SEN, REP, SHA, LGA, and GOV) the board
+// offers NO follow-everything button at all — the race picker replaces the
+// whole Follow/scope toolbar and sends the reader to one seat's page, which
+// section 2 covers. So the original bug (a reader after their own senator
+// signed up for all 109) is now held by the button's ABSENCE there, and the
+// label is asserted only where the button exists: the presidency.
+console.log('\n=== the leaderboard only offers a follow that is one race ===');
 {
   const p = await openPage(true);
   const label = () => p.$eval('#btn-follow', (e) => e.textContent.trim());
-  const pick = async (v) => p.$eval('#sel-scope', (e, val) => { e.value = val; e.dispatchEvent(new Event('change')); }, v);
+  const toolbar = () => p.evaluate(() => ({
+    follow: getComputedStyle(document.getElementById('follow')).display !== 'none'
+      && document.getElementById('btn-follow').checkVisibility(),
+    picker: !document.getElementById('race-picker-slot').hidden,
+  }));
 
-  await p.goto(`${base}/results.html?contest=SEN`, { waitUntil: 'domcontentloaded' });
-  await p.waitForFunction(() => document.getElementById('btn-follow').textContent.includes('Follow all'), { timeout: 10000 });
-  check('Senate board offers the whole election', await label(), '🔔 Follow all Senate races');
-  await pick('Kano Central');
-  check('a chosen district names itself', await label(), '🔔 Follow Kano Central');
-  await pick('');
-  check('and back', await label(), '🔔 Follow all Senate races');
-
-  for (const [code, want] of [['GOV', '🔔 Follow all governorship races'], ['REP', '🔔 Follow all House of Reps races'], ['SHA', '🔔 Follow all State Assembly races'], ['PRES', '🔔 Follow this race']]) {
+  for (const code of ['SEN', 'GOV', 'REP', 'SHA']) {
     await p.goto(`${base}/results.html?contest=${code}`, { waitUntil: 'domcontentloaded' });
-    await p.waitForFunction(() => /Follow \S/.test(document.getElementById('btn-follow').textContent), { timeout: 10000 });
-    // The presidency is ONE race, so its board is the race — no "all of them".
-    check(`${code} board`, await label(), want);
+    // Waited on, then asserted: a board that never mounts the picker must read
+    // as a FAIL below, not as a crash that hides the remaining checks.
+    await p.waitForFunction(() => !document.getElementById('race-picker-slot').hidden, null, { timeout: 10000 })
+      .catch(() => {});
+    check(`${code} board offers a seat picker, not a follow-them-all button`, await toolbar(), { follow: false, picker: true });
   }
+
+  // THE CONTROL: the same probe on the presidency must find the button, or the
+  // loop above would pass on a page that never renders one.
+  await p.goto(`${base}/results.html?contest=PRES`, { waitUntil: 'domcontentloaded' });
+  await p.waitForFunction(() => /Follow \S/.test(document.getElementById('btn-follow').textContent)
+    && getComputedStyle(document.getElementById('follow')).display !== 'none', null, { timeout: 10000 });
+  check('PRES board offers Follow', await toolbar(), { follow: true, picker: false });
+  // The presidency is ONE race, so its board is the race — no "all of them".
+  check('PRES board', await label(), '🔔 Follow this race');
+  // A region names itself. By deep link — the path every follow alert arrives
+  // on — because picking a state here crops the board and rebuilds the picker.
+  await p.goto(`${base}/results.html?contest=PRES&scope=Kano`, { waitUntil: 'domcontentloaded' });
+  await p.waitForFunction(() => document.getElementById('btn-follow').textContent.includes('Kano'), null, { timeout: 10000 })
+    .catch(() => {});
+  check('a chosen region names itself', await label(), '🔔 Follow Kano');
   await p.close();
 }
 

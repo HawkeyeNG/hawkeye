@@ -19,7 +19,7 @@
       document.documentElement.style.background="#004225 url(splash-icon.png?v=1) center/240px 240px no-repeat";
   }catch(e){}})();</script>
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=192" />
+  <link rel="stylesheet" href="styles.css?v=193" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -611,7 +611,7 @@
       { pu_code: '05-08-03-014', contest: 'GOV', entry_hash: '41d9b09cd8fa2c1a', votes: [{ party: 'Party A', n: 301 }, { party: 'Party B', n: 246 }, { party: 'Party C', n: 71 }] },
       { pu_code: '14-05-02-024', contest: 'SEN', entry_hash: 'c78e52aa11f090df', votes: [{ party: 'Party A', n: 176 }, { party: 'Party B', n: 158 }, { party: 'Party C', n: 44 }] },
     ];
-    fetch('/api/ledger/entries').then((r) => r.json()).then((rows) => {
+    fetch('/api/ledger/entries?limit=3&fields=feed').then((r) => r.json()).then((rows) => {
       const last = rows.slice(-3).reverse();
       document.getElementById('ledger-stack').innerHTML =
         (last.length ? last.map((e) => lcard(e, false)) : SAMPLES.map((e) => lcard(e, true))).join('');
@@ -770,7 +770,7 @@
         }));
       }).catch(() => {});
 
-      fetch('/api/ledger/entries').then((r) => r.json()).then((rows) => {
+      fetch('/api/ledger/entries?limit=3&fields=feed').then((r) => r.json()).then((rows) => {
         const last = rows.slice(-3).reverse();
         if (last.length) document.getElementById('home-ledger').innerHTML = last.map((e) => lcard(e, false)).join('');
       }).catch(() => {});
@@ -817,12 +817,32 @@
       // longer true and the old label would send people down the fallback path
       // in preference to the store.
       if (btn) btn.textContent = 'Or install the web app — no store, no download';
+      // The visitor's own platform goes first; the other stays available,
+      // because people install on a phone from a link opened on a laptop. Shared
+      // by BOTH ways into the dialog: it used to live only in the #install-cta
+      // click handler, so arriving by #install (the only route left since the
+      // button moved to download.html) showed the steps in markup order.
+      function orderForThisPlatform() {
+        const ios = document.getElementById('pwa-ios');
+        const android = document.getElementById('pwa-android');
+        if (!ios || !android) return;
+        if (isIOS) ios.parentNode.insertBefore(ios, android);
+        if (isIOS || isAndroid) {
+          (isIOS ? ios : android).classList.add('is-yours');
+        } else if (hint) {
+          hint.innerHTML = 'On this computer, use the <strong>install</strong> icon in your browser’s address bar — or follow the steps below on your phone.';
+          hint.hidden = false;
+        }
+      }
       // download.html sends people here with #install for the home-screen route.
       // Without this the hash matched no element and they landed on the hero with
       // no dialog — the one thing that page promised them.
       if (location.hash === '#install') {
         const d = document.getElementById('install-modal');
-        if (d && typeof d.showModal === 'function') { try { d.showModal(); } catch (e) {} }
+        if (d && typeof d.showModal === 'function') {
+          orderForThisPlatform();
+          try { d.showModal(); } catch (e) {}
+        }
       }
       // Samsung Internet's PWA install is blocked by Play Protect ("built for an
       // older version of Android") — its wrapper, not our site; the same manifest
@@ -846,19 +866,7 @@
         // hint under the button was too little to act on, so open the dialog with
         // the full steps for both platforms instead.
         const dlg = document.getElementById('install-modal');
-        // The visitor's own platform goes first; the other stays available,
-        // because people install on a phone from a link opened on a laptop.
-        if (isIOS) {
-          const ios = document.getElementById('pwa-ios');
-          ios.parentNode.insertBefore(ios, document.getElementById('pwa-android'));
-        }
-        if (isIOS || isAndroid) {
-          (isIOS ? document.getElementById('pwa-ios') : document.getElementById('pwa-android'))
-            .classList.add('is-yours');
-        } else {
-          hint.innerHTML = 'On this computer, use the <strong>install</strong> icon in your browser’s address bar — or follow the steps below on your phone.';
-          hint.hidden = false;
-        }
+        orderForThisPlatform();
         if (typeof dlg.showModal === 'function') {
           dlg.showModal();
           dlg.querySelector('h2').focus();

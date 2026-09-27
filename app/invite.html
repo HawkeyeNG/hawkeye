@@ -28,7 +28,7 @@
 <meta name="description" data-i18n-attr="content:invite.meta-description" content="Someone has invited you to observe an election with Hawkeye — a public copy of the result announced at your polling unit.">
 <meta name="theme-color" content="#00251a">
 <link rel="icon" href="/favicon.ico">
-<link rel="stylesheet" href="/styles.css?v=192">
+<link rel="stylesheet" href="/styles.css?v=193">
 <style>
   /* The landing hero's own recipe, from styles.css, applied to the whole page
      rather than a band at the top: this page IS the hero. */
@@ -233,10 +233,10 @@
     store.textContent = T('invite.download-hawkeye', 'Download Hawkeye');
   }
 
-  /* ALREADY INSTALLED. The native app's own scheme, `hawkeye://open?ref=&unit=`,
-     which native/src/app/+native-intent.tsx reads and parks for sign-up (the
-     /open route then lands a signed-out reader on welcome). Phones only: a
-     laptop has no app to open.
+  /* ALREADY INSTALLED. The native app's own scheme,
+     `hawkeye://open?to=invite&ref=&unit=`, which native/src/app/+native-intent.tsx
+     reads and parks for sign-up; open.tsx then takes a signed-out reader to
+     sign-up and a signed-in one home. Phones only: a laptop has no app to open.
        Android — an intent:// URL naming the PRODUCTION package, so only the
          store app answers it (never Lite or a dev build), and falling back to
          the Play link above, referrer and all, when it is not installed.
@@ -244,7 +244,7 @@
          is missing, which is why the button asks "Already have the app?". */
   var openBtn = document.getElementById('g-open');
   if (isAndroid || isIOS) {
-    var q = code ? '?ref=' + encodeURIComponent(code) + (unit ? '&unit=' + encodeURIComponent(unit) : '') : '';
+    var q = '?to=invite' + (code ? '&ref=' + encodeURIComponent(code) + (unit ? '&unit=' + encodeURIComponent(unit) : '') : '');
     openBtn.href = isAndroid
       ? 'intent://open' + q + '#Intent;scheme=hawkeye;package=' + ANDROID_PACKAGE
         + ';S.browser_fallback_url=' + encodeURIComponent(store.href) + ';end'
@@ -254,9 +254,16 @@
 
   /* The web client is a full client, so "continue here" is a real answer and
      not a consolation — and it is the one route where the code needs no
-     retyping on any platform, because referral.js already has it. */
-  document.getElementById('g-web').href = '/' + (code ? '?r=' + encodeURIComponent(code)
-    + (unit ? '&unit=' + encodeURIComponent(unit) : '') : '');
+     retyping on any platform, because referral.js already has it.
+     STRAIGHT TO SIGN-UP (observe.html's create-account form, where the code is
+     already filled in), not the home page: an invitation is an invitation to
+     make an account. The code and unit ride along as well as being parked, so
+     the form still has them if storage is off. Someone already signed in has
+     nothing to sign up for, and goes home. */
+  var signedIn = false;
+  try { signedIn = !!localStorage.getItem('hawkeye_token'); } catch (e) { signedIn = false; }
+  document.getElementById('g-web').href = signedIn ? '/' : '/observe.html?intent=observe'
+    + (code ? '&ref=' + encodeURIComponent(code) + (unit ? '&unit=' + encodeURIComponent(unit) : '') : '');
 })();
 </script>
 </body>

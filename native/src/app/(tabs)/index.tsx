@@ -2,7 +2,7 @@ import Feather from '@expo/vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FlashList } from '@shopify/flash-list';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 
 import { HeaderControls } from '@/components/header-controls';
@@ -10,6 +10,7 @@ import { PracticeDayCard } from '@/components/practice-day-card';
 import { ScreenHeader } from '@/components/screen-header';
 import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
+import { useForegroundInterval } from '@/hooks/use-foreground-interval';
 import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
 import { authedGet, useAuth } from '@/lib/auth';
 import { useUi, type Tone } from '@/lib/theme';
@@ -365,8 +366,11 @@ export default function Home() {
     const [c, i, ledger, incidents, flags, docket] = await Promise.all([
       api.contests().catch(() => null),
       api.integrity().catch(() => null),
+      // The 40 rows the feed draws, and only the columns it reads. The bare call
+      // was the newest 1,000 rows with every ledger payload — ~2 MB every 30 s
+      // of the observer's own data (ELECTION-NIGHT-HOSTING.md §5 item 4).
       jget<{ id: number; pu_code: string; contest: string; created_at: number }[]>(
-        '/api/ledger/entries',
+        '/api/ledger/entries?limit=40&fields=feed',
       ),
       jget<{
         incidents: {
@@ -466,11 +470,9 @@ export default function Home() {
     setItems(merged.slice(0, 80));
   }, []);
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, REFRESH_MS);
-    return () => clearInterval(t);
-  }, [load]);
+  // Six requests every 30 s — only while the app is in the foreground
+  // (hooks/use-foreground-interval). Tabs stay mounted in a pocket.
+  useForegroundInterval(load, REFRESH_MS);
 
   const shown = useMemo(
     () => (filter === 'all' ? items : (items ?? []).filter((x) => x.kind === filter)),

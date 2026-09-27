@@ -124,7 +124,8 @@ jobs:
             --region=scripts/tiles/nigeria_region.geojson \
             --maxzoom="$MAXZOOM" --download-threads=8
           pmtiles verify nigeria.pmtiles
-          pmtiles show nigeria.pmtiles | head -20
+          # To a file first: `show | head` SIGPIPEs show, and pipefail turns that into exit 141.
+          pmtiles show nigeria.pmtiles > show.txt; head -20 show.txt
           ls -l nigeria.pmtiles
 
       - name: Check the artifact (not the input)

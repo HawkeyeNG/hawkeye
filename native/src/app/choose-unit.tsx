@@ -20,9 +20,11 @@ import { emitMyUnitSaved } from '@/lib/my-unit';
  *
  * Either may add ?unit=NN-NN-NN-NNN: a unit to open with SELECTED (not saved)
  * — the one a "bring a second observer to your unit" invitation brought. Same
- * parameter as the web's choose-unit.html. The app cannot yet receive it from
- * an invite link by itself (no install referrer, and invite.html is not an App
- * Link), so today it arrives only when something routes here with it.
+ * parameter as the web's choose-unit.html. Since 1.0.8 sign-in.tsx adds it to
+ * the onboard step from the invitation lib/pending-invite.ts parked: Android's
+ * Play install referrer, or an /open or hawkeye:// link carrying `unit`. An iOS
+ * fresh install has no referrer, so there the reader picks the unit by hand
+ * (invite.html prints it for them).
  *
  * It replaced a ModalCard. The sign-up flow used to close that modal and wait
  * 350ms for its fade before navigating (replacing the stack under a fading

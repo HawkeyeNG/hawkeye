@@ -13,6 +13,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AskFab } from '@/components/ask-fab';
 import { bootstrapAuth, useAuth } from '@/lib/auth';
+import { captureInstallReferrer } from '@/lib/pending-invite';
 // Side-effect import: registers the background bitmap-cache purge. See lib/memory.ts
 // for why (Play's Feb 2027 bitmap-memory threshold, and a camera app full of
 // full-page result sheets).
@@ -189,6 +190,16 @@ function RootShell() {
   // Device-verify: no flash, no loop, correct bounce.
   const auth = useAuth();
   const segments = useSegments();
+
+  // ANDROID, FRESH INSTALL FROM AN INVITE: the code and unit rode through Play
+  // as the install referrer. Read once auth has resolved, so an update to a
+  // signed-in phone never picks up an old install's invitation. Quiet, once.
+  // lib/pending-invite.ts.
+  useEffect(() => {
+    if (auth.status === 'loading') return;
+    captureInstallReferrer(auth.status === 'signedIn');
+  }, [auth.status]);
+
   useEffect(() => {
     if (auth.status !== 'signedOut') return;
     const top = segments[0];

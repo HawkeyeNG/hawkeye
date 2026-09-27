@@ -1262,5 +1262,8 @@
   "n.app.tabs.index.practice-nudge-title": "Try a practice run — 5 minutes",
   "n.app.tabs.index.practice-nudge-sub": "Rehearse reporting a result on a practice polling unit before polling day. Nothing you enter counts as a real result.",
   "n.app.tabs.index.practice-nudge-go": "Start the practice run",
-  "n.app.tabs.index.practice-nudge-dismiss": "Dismiss"
+  "n.app.tabs.index.practice-nudge-dismiss": "Dismiss",
+  "n.app.sign-in.have-an-invite-code": "Have an invite code?",
+  "n.app.sign-in.invite-code-optional": "Invite code (optional)",
+  "n.app.sign-in.invite-code-invalid": "Invite codes have 6 letters and numbers. Check it, or leave it blank."
 }

@@ -124,7 +124,8 @@ import fitz, json, sys
 d = fitz.open(sys.argv[1])
 print(json.dumps({"pages": d.page_count, "text": " ".join(" ".join(p.get_text().split()) for p in d)}))`;
 const res = JSON.parse(execFileSync('python3', ['-c', py, OUT], { encoding: 'utf8' }));
-const norm = (s) => s.replace(/\s+/g, ' ').replace(/[‘’]/g, "'").trim();
+// A word wrapped at its own hyphen ("non-" / "profit") comes back as "non- profit".
+const norm = (s) => s.replace(/\s+/g, ' ').replace(/[‘’]/g, "'").replace(/(\w)- (?=\w)/g, '$1-').trim();
 const text = norm(res.text);
 const missing = expect.filter((s) => !text.includes(norm(s)));
 // Control: a sentence that is NOT on the sheet must be reported missing.

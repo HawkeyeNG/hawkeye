@@ -253,7 +253,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // The ward captain's guide sits beside the Observer Guide. Web only for now
     // (native's More screen has no counterpart yet), and here rather than in
     // Take part because that group is hidden on desktop.
-    ['Learn & about', ['#tour', 'how.html', 'guide.html', 'captain-guide.html', 'faq.html', 'about.html', 'support.html', 'privacy.html', 'terms.html']],
+    ['Learn & about', ['#tour', 'how.html', 'guide.html', 'captain-guide.html', 'faq.html', 'about.html', 'press.html', 'support.html', 'privacy.html', 'terms.html']],
     /**
      * Where native puts it too — the app's More screen ends with a "Find
      * Hawkeye" section (components/social-row.tsx) and the share control sits
@@ -293,6 +293,14 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       cg.href = 'captain-guide.html';
       i18nSet(cg, 'captain-guide.title', "Ward Captain's Guide");
       panel.appendChild(cg);
+    }
+    // The press kit (press.html), under Learn & about beside About & Contact.
+    // Injected for the same reason again: no page static-lists it. Public.
+    if (!panel.querySelector('a[href="press.html"]')) {
+      const pk = document.createElement('a');
+      pk.href = 'press.html';
+      i18nSet(pk, 'press.press-kit', 'Press Kit');
+      panel.appendChild(pk);
     }
     // The situation room, under Live data. Injected for the same reason as races
     // and profile: the 'Live data' array above only REGROUPS anchors that already

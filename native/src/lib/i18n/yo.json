@@ -1262,5 +1262,8 @@
   "n.app.tabs.index.practice-nudge-title": "Gbìyànjú eré àdánwò — ìṣẹ́jú 5",
   "n.app.tabs.index.practice-nudge-sub": "Ṣe àdánwò jíjábọ̀ àbájáde ní ẹ̀ka ìdìbò àdánwò kí Ọjọ́ ìdìbò tó dé. Kò sí ohun tí o bá tẹ̀ sí i tí yóò kà gẹ́gẹ́ bí àbájáde gidi.",
   "n.app.tabs.index.practice-nudge-go": "Bẹ̀rẹ̀ eré àdánwò",
-  "n.app.tabs.index.practice-nudge-dismiss": "Ti"
+  "n.app.tabs.index.practice-nudge-dismiss": "Ti",
+  "n.app.sign-in.have-an-invite-code": "Ṣé o ní kóòdù ìpè?",
+  "n.app.sign-in.invite-code-optional": "Kóòdù ìpè (àṣàyàn)",
+  "n.app.sign-in.invite-code-invalid": "Kóòdù ìpè ní lẹ́tà àti nọ́mbà 6. Ṣàyẹ̀wò rẹ̀, tàbí fi òfìfo sílẹ̀."
 }

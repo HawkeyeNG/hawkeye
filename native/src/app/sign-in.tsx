@@ -25,6 +25,8 @@ import {
   type RegisterResult,
 } from '@/lib/auth';
 import { BASE, BRAND, api } from '@/lib/api';
+import { typedInviteCode } from '@/lib/invite-parse';
+import { clearInviteUnit, pendingInviteCode, takeInviteUnit } from '@/lib/pending-invite';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
 
@@ -108,6 +110,29 @@ export default function SignIn() {
    */
   const [isNewAccount, setIsNewAccount] = useState(false);
 
+  /**
+   * "HAVE AN INVITE CODE?" — sign-up only. The one route for a referral on an
+   * iPhone, which has no install referrer: invite.html prints the code and this
+   * is where it is typed. Collapsed behind a link, since most people have none;
+   * OPEN and filled when an invitation is already parked on this phone (Play
+   * referrer, or a link that opened the app), so they can see it came along.
+   * Validated before a code is sent — a typo is caught while it is still cheap.
+   * The server keeps the rule that matters: it records a code only on a NEW
+   * account, first code wins.
+   */
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteBad, setInviteBad] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    pendingInviteCode().then((c) => {
+      if (!alive || !c) return;
+      setInviteCode((typed) => typed || c);
+      setInviteOpen(true);
+    });
+    return () => { alive = false; };
+  }, []);
+
   // Resend cooldown — protects the backend's OTP rate limit from tap-spam and
   // gives the first send a fair chance to arrive (NG SMS can take ~30s).
   useEffect(() => {
@@ -185,6 +210,14 @@ export default function SignIn() {
   };
 
   const onRequest = () => {
+    // A typed invite code that is not one stops here, before a paid code goes
+    // out. Empty is fine: the field is optional.
+    if (purpose === 'signup' && typedInviteCode(inviteCode) === null) {
+      setInviteOpen(true);
+      setInviteBad(true);
+      return;
+    }
+    setInviteBad(false);
     setTgLink(null);
     setStep('otp');
     setTimeout(() => otpRef.current?.focus(), 250);
@@ -194,7 +227,14 @@ export default function SignIn() {
   const onVerify = async () => {
     setBusy(true);
     try {
-      const r = await verifyOtp(phone.trim(), otp.trim());
+      // Sign-up sends what the field holds (null when left empty — the person's
+      // choice, even over a parked invitation). Reset and rescue send the
+      // parked one, as before; the server ignores it for an existing account.
+      const r = await verifyOtp(
+        phone.trim(),
+        otp.trim(),
+        purpose === 'signup' ? { referralCode: typedInviteCode(inviteCode) || null } : {},
+      );
       if (!r.ok) {
         setLine(
           r.error === 'otp_incorrect' ? 'Wrong code — check and retry.'
@@ -361,10 +401,19 @@ export default function SignIn() {
         // so Back can never return to a password step that is already done.
         // There is no modal to fade out any more, so nothing to wait for.
         // Cast: typed routes regenerate on the next `expo start`.
+        //
+        // INVITED TO A UNIT? Then the chooser opens with it SELECTED, not saved
+        // — theirs to confirm or change, as on the web. Taken (read and
+        // cleared) here: it is a suggestion for this one step, and the route
+        // param carries it from now on. lib/pending-invite.ts.
         if (purpose === 'signup' && isNewAccount) {
-          router.replace('/choose-unit?onboard=1' as never);
+          const unit = await takeInviteUnit();
+          router.replace(
+            (unit ? `/choose-unit?onboard=1&unit=${encodeURIComponent(unit)}` : '/choose-unit?onboard=1') as never,
+          );
           return;
         }
+        clearInviteUnit();
         router.replace('/(tabs)');
         return;
       }
@@ -548,6 +597,40 @@ export default function SignIn() {
                   </Pressable>
                 ))}
               </View>
+              {/* Sign-up only: reset and rescue are for accounts that exist,
+                  and a referral can only attach to a new one. */}
+              {purpose === 'signup' ? (
+                inviteOpen ? (
+                  <View className="pt-4">
+                    <Text className="pb-1 text-sm font-semibold text-muted">
+                      {i18nT('n.app.sign-in.invite-code-optional')}
+                    </Text>
+                    <TextInput
+                      className="rounded-2xl bg-card px-4 py-3 text-lg text-ink"
+                      autoCapitalize="characters"
+                      autoCorrect={false}
+                      autoComplete="off"
+                      maxLength={12}
+                      value={inviteCode}
+                      onChangeText={(v) => {
+                        setInviteCode(v);
+                        setInviteBad(false);
+                      }}
+                      editable={!busy}
+                      accessibilityLabel={i18nT('n.app.sign-in.invite-code-optional')}
+                    />
+                    {inviteBad ? (
+                      <Text className="pt-1 text-sm text-bad-ink" accessibilityRole="alert">
+                        {i18nT('n.app.sign-in.invite-code-invalid')}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : (
+                  <Pressable className="mt-4 self-start" onPress={() => setInviteOpen(true)}>
+                    <Text className="text-sm font-semibold text-good-ink">{i18nT('n.app.sign-in.have-an-invite-code')}</Text>
+                  </Pressable>
+                )
+              ) : null}
               <Pressable
                 disabled={busy || phone.trim().length < 10}
                 onPress={onRequest}

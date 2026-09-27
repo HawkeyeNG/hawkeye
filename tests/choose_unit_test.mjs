@@ -68,7 +68,9 @@ console.log('\n=== native: the chooser is its own route, and sign-up lands on it
   const layout = fs.readFileSync(`${ROOT}/native/src/app/_layout.tsx`, 'utf8');
   check('the stack registers it', /name="choose-unit"/.test(layout), true);
   const signIn = fs.readFileSync(`${ROOT}/native/src/app/sign-in.tsx`, 'utf8');
-  check('a new sign-up goes to the page with onboard=1', /router\.replace\('\/choose-unit\?onboard=1'/.test(signIn), true);
+  // 1.0.8: with an invited unit it adds &unit= (tests/native_install_referrer_test.mjs).
+  check('a new sign-up goes to the page with onboard=1',
+    /router\.replace\(\s*\(unit \? `\/choose-unit\?onboard=1&unit=\$\{encodeURIComponent\(unit\)\}` : '\/choose-unit\?onboard=1'\)/.test(signIn), true);
   // No modal left anywhere: a second chooser would drift from this one.
   const tsx = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
     d.isDirectory() ? tsx(path.join(dir, d.name)) : /\.tsx?$/.test(d.name) ? [path.join(dir, d.name)] : []);

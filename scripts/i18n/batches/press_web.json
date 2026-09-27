@@ -1,0 +1,374 @@
+{
+  "press.page-title": {
+    "en": "Hawkeye — Press Kit",
+    "ha": "Hawkeye — Kayan 'Yan Jarida",
+    "ig": "Hawkeye — Ngwugwu Ndị Nta Akụkọ",
+    "yo": "Hawkeye — Àkójọ fún Oníròyìn"
+  },
+  "press.press-kit": {
+    "en": "Press Kit",
+    "ha": "Kayan 'Yan Jarida",
+    "ig": "Ngwugwu Ndị Nta Akụkọ",
+    "yo": "Àkójọ fún Oníròyìn"
+  },
+  "press.lede": {
+    "en": "What Hawkeye is, how it works, the key dates, and files you can use in your reporting.",
+    "ha": "Menene Hawkeye, yadda take aiki, muhimman ranaku, da fayilolin da za ku iya amfani da su a rahotonku.",
+    "ig": "Ihe Hawkeye bụ, otú o si arụ ọrụ, ụbọchị ndị dị mkpa, na faịlụ ị nwere ike iji na akụkọ gị.",
+    "yo": "Ohun tí Hawkeye jẹ́, bí ó ṣe ń ṣiṣẹ́, àwọn ọjọ́ pàtàkì, àti àwọn fáìlì tí o lè lò nínú ìròyìn rẹ."
+  },
+  "press.summary-h": {
+    "en": "In brief",
+    "ha": "A taƙaice",
+    "ig": "Na nkenke",
+    "yo": "Ní ṣókí"
+  },
+  "press.summary": {
+    "en": "Hawkeye is a free, open-source app that lets any Nigerian at a polling unit photograph the result sheet (Form EC8A) announced there and add it to a public record anyone can check. Reports from the same unit are compared with each other and with the copy INEC uploads to its IReV portal, so agreement, or a mismatch, is visible to all. Hawkeye is independent and nonpartisan: it does not declare results, it is not a rival count, and it is not affiliated with INEC or any party or candidate.",
+    "ha": "Hawkeye manhaja ce kyauta, mai buɗaɗɗen tushe, da ke ba kowane ɗan Najeriya a rukunin zaɓe damar ɗaukar hoton takardar sakamako (Fom EC8A) da aka sanar a wurin, ya kuma ƙara ta cikin rikodin jama'a da kowa zai iya dubawa. Ana kwatanta rahotanni daga rukuni ɗaya da juna, da kuma kwafin da INEC ke ɗorawa a shafinta na IReV, don kowa ya ga inda aka yi daidai ko aka saɓa. Hawkeye mai zaman kanta ce, ba ta goyon bayan kowace jam'iyya: ba ta sanar da sakamako, ba ƙidaya ce ta kishiya ba, kuma ba ta da alaƙa da INEC ko wata jam'iyya ko ɗan takara.",
+    "ig": "Hawkeye bụ ngwa n’efu nke koodu ya ghe oghe, nke na-enye onye Naịjirịa ọ bụla nọ na ngalaba ntuli aka ohere ise foto mpempe akwụkwọ nsonaazụ (Fọm EC8A) a kwupụtara n’ebe ahụ ma tinye ya na ndekọ ọha onye ọ bụla nwere ike inyocha. A na-atụnyere akụkọ si n’otu ngalaba n’etiti onwe ha, na nnomi INEC na-ebugo na ọnụ ụzọ IReV ya, ka onye ọ bụla hụ ebe ha kwekọrọ ma ọ bụ ebe ha na-ekwekọghị. Hawkeye nweere onwe ya ma na-akwadoghị pati ọ bụla: ọ naghị ekwupụta nsonaazụ, ọ bụghị ngụkọ na-asọ mpi, o nweghịkwa njikọ na INEC ma ọ bụ pati ma ọ bụ onye na-azọ ọkwa ọ bụla.",
+    "yo": "Hawkeye jẹ́ áàpù ọ̀fẹ́ tí kóòdù rẹ̀ wà ní gbangba, tí ó ń jẹ́ kí ọmọ Nàìjíríà èyíkéyìí ní ẹ̀ka ìdìbò ya fọ́tò ìwé àbájáde (Fọ́ọ̀mù EC8A) tí a kéde níbẹ̀, kí ó sì fi kún àkọsílẹ̀ gbangba tí ẹnikẹ́ni lè ṣàyẹ̀wò. A ń fi àwọn ìròyìn láti ẹ̀ka kan náà wé ara wọn, àti ẹ̀dà tí INEC gbé sí ojú-ìwé IReV rẹ̀, kí gbogbo ènìyàn lè rí ibi tí wọ́n ti bá ara mu tàbí ibi tí wọn kò ti bá ara mu. Hawkeye jẹ́ olómìnira, kò sì ṣe ti ẹgbẹ́ kankan: kì í kéde àbájáde, kì í ṣe ìkàyè alátakò, kò sì ní ìbátan pẹ̀lú INEC tàbí ẹgbẹ́ òṣèlú tàbí olùdíje kankan."
+  },
+  "press.key-facts": {
+    "en": "Key facts",
+    "ha": "Muhimman bayanai",
+    "ig": "Eziokwu ndị dị mkpa",
+    "yo": "Àwọn òtítọ́ pàtàkì"
+  },
+  "press.fact-what-k": {
+    "en": "What it is",
+    "ha": "Menene",
+    "ig": "Ihe ọ bụ",
+    "yo": "Ohun tí ó jẹ́"
+  },
+  "press.fact-what-v": {
+    "en": "A free app for citizens to photograph and report the result announced at their polling unit, and compare it with INEC's IReV.",
+    "ha": "Manhaja kyauta da 'yan ƙasa ke amfani da ita don ɗaukar hoto da ba da rahoton sakamakon da aka sanar a rukunin zaɓensu, su kuma kwatanta shi da IReV na INEC.",
+    "ig": "Ngwa n’efu ụmụ amaala ji ese foto ma kọọ nsonaazụ a kwupụtara na ngalaba ntuli aka ha, ma tụnyere ya na IReV nke INEC.",
+    "yo": "Áàpù ọ̀fẹ́ tí àwọn aráàlú fi ń ya fọ́tò àbájáde tí a kéde ní ẹ̀ka ìdìbò wọn, tí wọ́n fi ń ròyìn rẹ̀, tí wọ́n sì fi ń wé e mọ́ IReV ti INEC."
+  },
+  "press.fact-where-k": {
+    "en": "Available on",
+    "ha": "Ana samu a",
+    "ig": "Dị na",
+    "yo": "Ó wà lórí"
+  },
+  "press.fact-where-v": {
+    "en": "Hawkeye and Hawkeye Lite for Android and iPhone, and on the web at <a href=\"index.html\">hawkeye.com.ng</a>. <a href=\"download.html\">Get the app →</a>",
+    "ha": "Hawkeye da Hawkeye Lite a Android da iPhone, da kuma a yanar gizo a <a href=\"index.html\">hawkeye.com.ng</a>. <a href=\"download.html\">Sami manhajar →</a>",
+    "ig": "Hawkeye na Hawkeye Lite na Android na iPhone, nakwa n’ịntanetị na <a href=\"index.html\">hawkeye.com.ng</a>. <a href=\"download.html\">Nweta ngwa ahụ →</a>",
+    "yo": "Hawkeye àti Hawkeye Lite lórí Android àti iPhone, àti lórí ayélujára ní <a href=\"index.html\">hawkeye.com.ng</a>. <a href=\"download.html\">Gba áàpù náà →</a>"
+  },
+  "press.fact-cost-k": {
+    "en": "Cost",
+    "ha": "Kuɗi",
+    "ig": "Ọnụ ahịa",
+    "yo": "Iye owó"
+  },
+  "press.fact-cost-v": {
+    "en": "Free. No advertising.",
+    "ha": "Kyauta. Babu talla.",
+    "ig": "N’efu. Enweghị mgbasa ozi.",
+    "yo": "Ọ̀fẹ́ ni. Kò sí ìpolówó."
+  },
+  "press.fact-code-k": {
+    "en": "Code",
+    "ha": "Tushen manhaja",
+    "ig": "Koodu",
+    "yo": "Kóòdù"
+  },
+  "press.fact-code-v": {
+    "en": "Open source on <a href=\"https://github.com/HawkeyeNG/hawkeye\" target=\"_blank\" rel=\"noopener\">GitHub</a>, with an <a href=\"https://github.com/hawkeye-ng/hawkeye-verify\" target=\"_blank\" rel=\"noopener\">open verifier library</a> anyone can run.",
+    "ha": "A buɗe yake ga kowa a <a href=\"https://github.com/HawkeyeNG/hawkeye\" target=\"_blank\" rel=\"noopener\">GitHub</a>, tare da <a href=\"https://github.com/hawkeye-ng/hawkeye-verify\" target=\"_blank\" rel=\"noopener\">buɗaɗɗen ɗakin karatu na tantancewa</a> da kowa zai iya gudanarwa.",
+    "ig": "Koodu ya ghe oghe na <a href=\"https://github.com/HawkeyeNG/hawkeye\" target=\"_blank\" rel=\"noopener\">GitHub</a>, ya na <a href=\"https://github.com/hawkeye-ng/hawkeye-verify\" target=\"_blank\" rel=\"noopener\">ọbá akwụkwọ nyocha ghe oghe</a> onye ọ bụla nwere ike ịgba.",
+    "yo": "Kóòdù rẹ̀ wà ní gbangba lórí <a href=\"https://github.com/HawkeyeNG/hawkeye\" target=\"_blank\" rel=\"noopener\">GitHub</a>, pẹ̀lú <a href=\"https://github.com/hawkeye-ng/hawkeye-verify\" target=\"_blank\" rel=\"noopener\">ibi-ìkówèésí olùṣàyẹ̀wò tí ó ṣí sílẹ̀</a> tí ẹnikẹ́ni lè lò."
+  },
+  "press.fact-lang-k": {
+    "en": "Languages",
+    "ha": "Harsuna",
+    "ig": "Asụsụ",
+    "yo": "Àwọn èdè"
+  },
+  "press.fact-lang-v": {
+    "en": "English, Hausa, Igbo and Yorùbá.",
+    "ha": "Turanci, Hausa, Igbo da Yarbanci.",
+    "ig": "Bekee, Hausa, Igbo na Yorùbá.",
+    "yo": "Gẹ̀ẹ́sì, Hausa, Igbo àti Yorùbá."
+  },
+  "press.fact-units-k": {
+    "en": "Polling units",
+    "ha": "Rukunan zaɓe",
+    "ig": "Ngalaba ntuli aka",
+    "yo": "Àwọn ẹ̀ka ìdìbò"
+  },
+  "press.fact-units-v": {
+    "en": "All 176,846 on INEC's register can be reported.",
+    "ha": "Ana iya ba da rahoton dukkan 176,846 da ke rijistar INEC.",
+    "ig": "Enwere ike ịkọ akụkọ banyere 176,846 niile dị na ndekọ INEC.",
+    "yo": "Gbogbo 176,846 tí ó wà nínú àkọsílẹ̀ INEC ni a lè ròyìn."
+  },
+  "press.fact-operator-k": {
+    "en": "Run by",
+    "ha": "Mai gudanarwa",
+    "ig": "Onye na-arụ ya",
+    "yo": "Olùṣàkóso"
+  },
+  "press.fact-operator-v": {
+    "en": "IniXien Hope Initiative, a Nigerian non-profit (registration in progress). Its sister company, IniXien, LLC, grants it perpetual free use of Hawkeye.",
+    "ha": "IniXien Hope Initiative, ƙungiya mai zaman kanta ta Najeriya da ba ta neman riba (ana kan yi mata rijista). Kamfanin 'yar'uwarta, IniXien, LLC, ya ba ta damar amfani da Hawkeye kyauta har abada.",
+    "ig": "IniXien Hope Initiative, otu Naịjirịa na-anaghị achọ uru (a na-edebanye aha ya ugbu a). Ụlọ ọrụ nwanne ya, IniXien, LLC, na-enye ya ikike iji Hawkeye n'efu ruo mgbe ebighị ebi.",
+    "yo": "IniXien Hope Initiative, àjọ tí kì í ṣe fún èrè ní Nàìjíríà (ìforúkọsílẹ̀ rẹ̀ ń lọ lọ́wọ́). Ilé-iṣẹ́ ìbátan rẹ̀, IniXien, LLC, fún un ní ẹ̀tọ́ láti lo Hawkeye lọ́fẹ̀ẹ́ títí láé."
+  },
+  "press.fact-status-k": {
+    "en": "Affiliation",
+    "ha": "Alaƙa",
+    "ig": "Njikọ",
+    "yo": "Ìbátan"
+  },
+  "press.fact-status-v": {
+    "en": "Independent and nonpartisan. Not affiliated with INEC or any party or candidate. Official results are those declared by INEC.",
+    "ha": "Mai zaman kanta ce kuma ba ta goyon bayan kowace jam'iyya. Ba ta da alaƙa da INEC ko wata jam'iyya ko ɗan takara. Sakamako na hukuma su ne waɗanda INEC ta sanar.",
+    "ig": "Ọ nweere onwe ya, ọ naghị akwado pati ọ bụla. O nweghị njikọ na INEC ma ọ bụ pati ma ọ bụ onye na-azọ ọkwa ọ bụla. Nsonaazụ gọọmentị bụ ndị INEC kwupụtara.",
+    "yo": "Olómìnira ni, kò sì ṣe ti ẹgbẹ́ kankan. Kò ní ìbátan pẹ̀lú INEC tàbí ẹgbẹ́ òṣèlú tàbí olùdíje kankan. Àbájáde ìjọba ni èyí tí INEC kéde."
+  },
+  "press.how-h": {
+    "en": "How it works",
+    "ha": "Yadda take aiki",
+    "ig": "Otú o si arụ ọrụ",
+    "yo": "Bí ó ṣe ń ṣiṣẹ́"
+  },
+  "press.step-1": {
+    "en": "<strong>Photograph the sheet.</strong> At the polling unit, an observer photographs the announced result sheet and the venue in the app. Photos are taken live and GPS-stamped; gallery uploads are not accepted.",
+    "ha": "<strong>Ɗauki hoton takardar.</strong> A rukunin zaɓe, mai lura yana ɗaukar hoton takardar sakamako da aka sanar da kuma wurin a cikin manhajar. Ana ɗaukar hotuna kai tsaye tare da alamar GPS; ba a karɓar hotuna daga gallery.",
+    "ig": "<strong>See foto mpempe ahụ.</strong> Na ngalaba ntuli aka, onye na-ekiri ihe na-ese foto mpempe akwụkwọ nsonaazụ a kwupụtara na ebe ahụ n’ime ngwa ahụ. A na-ese foto ozugbo ma tinye akara GPS; a naghị anabata foto si na gallery.",
+    "yo": "<strong>Ya fọ́tò ìwé náà.</strong> Ní ẹ̀ka ìdìbò, olùwòran ń ya fọ́tò ìwé àbájáde tí a kéde àti ibi náà nínú áàpù. A ń ya fọ́tò tààrà pẹ̀lú àmì GPS; a kì í gba fọ́tò láti gallery."
+  },
+  "press.step-2": {
+    "en": "<strong>Sign and record.</strong> The report is signed on the observer's own phone, with a key Hawkeye never holds, and added to a public record that cannot be quietly edited.",
+    "ha": "<strong>Sa hannu kuma a rubuta.</strong> Ana sanya hannu kan rahoton a wayar mai lura da kansa, da makullin da Hawkeye ba ta taɓa riƙewa ba, sannan a ƙara shi cikin rikodin jama'a da ba za a iya gyara shi a ɓoye ba.",
+    "ig": "<strong>Bịanye aka ma dekọọ.</strong> A na-abịanye aka n’akụkọ ahụ na ekwentị nke onye na-ekiri ihe n’onwe ya, site n’igodo Hawkeye anaghị ejide, ma tinye ya na ndekọ ọha nke a na-apụghị idezi na nzuzo.",
+    "yo": "<strong>Fọwọ́sí kí o sì kọ sílẹ̀.</strong> A ń fọwọ́sí ìròyìn náà lórí fóònù olùwòran fúnra rẹ̀, pẹ̀lú kọ́kọ́rọ́ tí Hawkeye kì í mú, a sì ń fi kún àkọsílẹ̀ gbangba tí a kò lè ṣàtúnṣe rẹ̀ ní bòókẹ́lẹ́."
+  },
+  "press.step-3": {
+    "en": "<strong>Compare in the open.</strong> Reports from the same unit are compared with each other and with INEC's own sheet on IReV. A count is marked verified only when independent observers agree, and a disagreement is shown, never hidden.",
+    "ha": "<strong>Kwatanta a fili.</strong> Ana kwatanta rahotanni daga rukuni ɗaya da juna da kuma takardar INEC da kanta a IReV. Ana yi wa ƙidaya alamar an tabbatar ne kawai idan masu lura masu zaman kansu sun yi daidai, kuma ana nuna saɓani, ba a taɓa ɓoye shi ba.",
+    "ig": "<strong>Tụnyere n’ihu ọha.</strong> A na-atụnyere akụkọ si n’otu ngalaba n’etiti onwe ha na mpempe akwụkwọ INEC n’onwe ya na IReV. A na-aka ngụkọ akara na e nyochala ya naanị mgbe ndị na-ekiri ihe nweere onwe ha kwekọrọ, a na-egosikwa esemokwu, a naghị ezo ya.",
+    "yo": "<strong>Fi wé ara wọn ní gbangba.</strong> A ń fi àwọn ìròyìn láti ẹ̀ka kan náà wé ara wọn àti ìwé INEC fúnra rẹ̀ lórí IReV. A máa ń sàmì sí ìkàyè pé a ti fìdí rẹ̀ múlẹ̀ kìkì nígbà tí àwọn olùwòran olómìnira bá fohùn ṣọ̀kan, a sì ń fi àìbámu hàn, a kì í fi pamọ́."
+  },
+  "press.trust-h": {
+    "en": "Check it yourself",
+    "ha": "Duba shi da kanku",
+    "ig": "Nyochaa ya n’onwe gị",
+    "yo": "Ṣàyẹ̀wò rẹ̀ fúnra rẹ"
+  },
+  "press.trust-open": {
+    "en": "<strong>Open source.</strong> The code is public on <a href=\"https://github.com/HawkeyeNG/hawkeye\" target=\"_blank\" rel=\"noopener\">GitHub</a>, and the open verifier lets anyone re-check the record with their own tools.",
+    "ha": "<strong>Buɗaɗɗen tushe.</strong> Lambobin manhajar suna a fili a <a href=\"https://github.com/HawkeyeNG/hawkeye\" target=\"_blank\" rel=\"noopener\">GitHub</a>, kuma buɗaɗɗen mai tantancewa yana ba kowa damar sake duba rikodin da kayan aikinsa.",
+    "ig": "<strong>Koodu ghe oghe.</strong> Koodu ahụ dị n’ihu ọha na <a href=\"https://github.com/HawkeyeNG/hawkeye\" target=\"_blank\" rel=\"noopener\">GitHub</a>, ihe nyocha ghe oghe na-enyekwa onye ọ bụla ohere inyochagharị ndekọ ahụ site na ngwa nke ya.",
+    "yo": "<strong>Kóòdù gbangba.</strong> Kóòdù náà wà ní gbangba lórí <a href=\"https://github.com/HawkeyeNG/hawkeye\" target=\"_blank\" rel=\"noopener\">GitHub</a>, olùṣàyẹ̀wò gbangba náà sì ń jẹ́ kí ẹnikẹ́ni tún àkọsílẹ̀ náà ṣàyẹ̀wò pẹ̀lú irinṣẹ́ tirẹ̀."
+  },
+  "press.trust-ledger": {
+    "en": "<strong>Public ledger.</strong> Every report is chained to the one before it, and the ledger's fingerprint is published in Sigstore Rekor, an independent public log Hawkeye does not run. Anyone can <a href=\"ledger.html\">re-check it in the browser</a>, with no account.",
+    "ha": "<strong>Littafin rikodi na jama'a.</strong> Kowane rahoto yana haɗe da wanda ya gabace shi, kuma ana wallafa sawun littafin a Sigstore Rekor, rikodin jama'a mai zaman kansa wanda Hawkeye ba ta gudanarwa. Kowa na iya <a href=\"ledger.html\">sake duba shi a burauza</a>, ba tare da asusu ba.",
+    "ig": "<strong>Ndekọ ọha.</strong> Akụkọ ọ bụla jikọtara na nke bu ya ụzọ, a na-ebipụtakwa akara mkpịsị aka ndekọ ahụ na Sigstore Rekor, ndekọ ọha nweere onwe ya nke Hawkeye anaghị arụ. Onye ọ bụla nwere ike <a href=\"ledger.html\">inyochagharị ya n’ihe nchọgharị</a>, na-enweghị akaụntụ.",
+    "yo": "<strong>Ìwé àkọsílẹ̀ gbangba.</strong> Gbogbo ìròyìn ni a so mọ́ èyí tí ó ṣáájú rẹ̀, a sì ń tẹ àmì-ìdánimọ̀ ìwé àkọsílẹ̀ náà jáde sí Sigstore Rekor, àkọsílẹ̀ gbangba olómìnira tí Hawkeye kò ṣàkóso. Ẹnikẹ́ni lè <a href=\"ledger.html\">tún un ṣàyẹ̀wò nínú aṣàwákiri</a>, láìsí àkáǹtì."
+  },
+  "press.trust-photos": {
+    "en": "<strong>Photo privacy.</strong> Result sheets are public, as INEC posts them at the unit. Photos of the venue, which can show voters, are never published. Phone numbers are stored only as one-way hashes.",
+    "ha": "<strong>Sirrin hotuna.</strong> Takardun sakamako a fili suke, kamar yadda INEC ke liƙa su a rukunin zaɓe. Ba a taɓa wallafa hotunan wurin ba, domin za su iya nuna masu zaɓe. Ana adana lambobin waya a matsayin hash na hanya ɗaya kawai.",
+    "ig": "<strong>Nzuzo foto.</strong> Mpempe akwụkwọ nsonaazụ dị n’ihu ọha, dịka INEC na-akwụnye ha na ngalaba ahụ. A naghị ebipụta foto nke ebe ahụ, n’ihi na ha nwere ike igosi ndị ntuli aka. A na-echekwa nọmba ekwentị naanị dị ka hash ụzọ otu.",
+    "yo": "<strong>Àṣírí fọ́tò.</strong> Ìwé àbájáde wà ní gbangba, gẹ́gẹ́ bí INEC ṣe ń lẹ̀ wọ́n mọ́ ẹ̀ka ìdìbò. A kì í tẹ fọ́tò ibi náà jáde, nítorí ó lè fi àwọn olùdìbò hàn. A ń pa àwọn nọ́mbà fóònù mọ́ gẹ́gẹ́ bí hash ọ̀nà kan ṣoṣo nìkan."
+  },
+  "press.trust-nonpartisan": {
+    "en": "<strong>Nonpartisan.</strong> Hawkeye declares no winners and backs no party or candidate. It takes no political money and carries no advertising.",
+    "ha": "<strong>Ba ta goyon bayan kowace jam'iyya.</strong> Hawkeye ba ta sanar da wanda ya yi nasara, kuma ba ta goyon bayan wata jam'iyya ko ɗan takara. Ba ta karɓar kuɗin siyasa, kuma babu talla a cikinta.",
+    "ig": "<strong>Na-akwadoghị pati ọ bụla.</strong> Hawkeye anaghị ekwupụta onye meriri, ọ naghịkwa akwado pati ma ọ bụ onye na-azọ ọkwa ọ bụla. Ọ naghị anara ego ndọrọndọrọ ọchịchị, ọ naghịkwa ebu mgbasa ozi.",
+    "yo": "<strong>Kò ṣe ti ẹgbẹ́ kankan.</strong> Hawkeye kì í kéde ẹni tí ó ṣẹ́gun, kò sì ṣàtìlẹ́yìn fún ẹgbẹ́ òṣèlú tàbí olùdíje kankan. Kì í gba owó òṣèlú, kò sì ní ìpolówó."
+  },
+  "press.dates-h": {
+    "en": "Key dates",
+    "ha": "Muhimman ranaku",
+    "ig": "Ụbọchị ndị dị mkpa",
+    "yo": "Àwọn ọjọ́ pàtàkì"
+  },
+  "press.date-pd1": {
+    "en": "Saturday, 12 December 2026",
+    "ha": "Asabar, 12 Disamba 2026",
+    "ig": "Satọdee, 12 Disemba 2026",
+    "yo": "Ọjọ́ Àbámẹ́ta, 12 Ọ̀pẹ̀ 2026"
+  },
+  "press.date-pd1-what": {
+    "en": "<strong>National Practice Day.</strong> Observers across Nigeria run the same mock election, 08:00–18:00 WAT. Only the combined count is shared, and practice is never counted as a result. <a href=\"practice-day.html\">About Practice Day →</a>",
+    "ha": "<strong>Ranar Atisaye ta Ƙasa.</strong> Masu lura a faɗin Najeriya za su yi zaɓen gwaji iri ɗaya, 08:00–18:00 WAT. Jimillar ƙidaya kaɗai ake rabawa, kuma ba a taɓa ƙidaya atisaye a matsayin sakamako ba. <a href=\"practice-day.html\">Game da Ranar Atisaye →</a>",
+    "ig": "<strong>Ụbọchị Omume nke Mba.</strong> Ndị na-ekiri ihe n’ofe Naịjirịa na-eme otu ntuli aka omume, 08:00–18:00 WAT. Naanị ngụkọta ka a na-ekerịta, a naghịkwa agụ omume dị ka nsonaazụ. <a href=\"practice-day.html\">Gbasara Ụbọchị Omume →</a>",
+    "yo": "<strong>Ọjọ́ Àdánwò Orílẹ̀-èdè.</strong> Àwọn olùwòran jákèjádò Nàìjíríà ń ṣe ìdìbò àdánwò kan náà, 08:00–18:00 WAT. Àpapọ̀ ìkàyè nìkan ni a ń pín, a kì í sì í ka àdánwò sí àbájáde. <a href=\"practice-day.html\">Nípa Ọjọ́ Àdánwò →</a>"
+  },
+  "press.date-pd2": {
+    "en": "Saturday, 9 January 2027",
+    "ha": "Asabar, 9 Janairu 2027",
+    "ig": "Satọdee, 9 Jenụwarị 2027",
+    "yo": "Ọjọ́ Àbámẹ́ta, 9 Ṣẹ́rẹ́ 2027"
+  },
+  "press.date-pd2-what": {
+    "en": "<strong>National Practice Day.</strong> A final run, one week before the vote.",
+    "ha": "<strong>Ranar Atisaye ta Ƙasa.</strong> Atisaye na ƙarshe, mako ɗaya kafin zaɓe.",
+    "ig": "<strong>Ụbọchị Omume nke Mba.</strong> Omume ikpeazụ, otu izu tupu ntuli aka.",
+    "yo": "<strong>Ọjọ́ Àdánwò Orílẹ̀-èdè.</strong> Àdánwò ìkẹyìn, ọ̀sẹ̀ kan ṣáájú ìdìbò."
+  },
+  "press.date-pres": {
+    "en": "Saturday, 16 January 2027",
+    "ha": "Asabar, 16 Janairu 2027",
+    "ig": "Satọdee, 16 Jenụwarị 2027",
+    "yo": "Ọjọ́ Àbámẹ́ta, 16 Ṣẹ́rẹ́ 2027"
+  },
+  "press.date-pres-what": {
+    "en": "<strong>Presidential and National Assembly elections.</strong>",
+    "ha": "<strong>Zaɓen shugaban ƙasa da na Majalisar Dokoki ta Ƙasa.</strong>",
+    "ig": "<strong>Ntuli aka onyeisiala na nke Ụlọ Omebe Iwu nke Mba.</strong>",
+    "yo": "<strong>Ìdìbò ààrẹ àti ti Ilé Ìgbìmọ̀ Aṣòfin Àpapọ̀.</strong>"
+  },
+  "press.date-gov": {
+    "en": "Saturday, 6 February 2027",
+    "ha": "Asabar, 6 Faburairu 2027",
+    "ig": "Satọdee, 6 Febrụwarị 2027",
+    "yo": "Ọjọ́ Àbámẹ́ta, 6 Èrèlè 2027"
+  },
+  "press.date-gov-what": {
+    "en": "<strong>Governorship and State House of Assembly elections.</strong>",
+    "ha": "<strong>Zaɓen gwamna da na Majalisar Dokokin Jiha.</strong>",
+    "ig": "<strong>Ntuli aka gọvanọ na nke Ụlọ Omebe Iwu Steeti.</strong>",
+    "yo": "<strong>Ìdìbò gómìnà àti ti Ilé Ìgbìmọ̀ Aṣòfin Ìpínlẹ̀.</strong>"
+  },
+  "press.dates-note": {
+    "en": "Election dates are set by INEC. Check <a href=\"https://www.inecnigeria.org\" target=\"_blank\" rel=\"noopener\">inecnigeria.org</a> for any change.",
+    "ha": "INEC ce ke tsara ranakun zaɓe. Duba <a href=\"https://www.inecnigeria.org\" target=\"_blank\" rel=\"noopener\">inecnigeria.org</a> don kowane sauyi.",
+    "ig": "Ọ bụ INEC na-ahazi ụbọchị ntuli aka. Lelee <a href=\"https://www.inecnigeria.org\" target=\"_blank\" rel=\"noopener\">inecnigeria.org</a> maka mgbanwe ọ bụla.",
+    "yo": "INEC ni ó ń ṣètò àwọn ọjọ́ ìdìbò. Ṣàyẹ̀wò <a href=\"https://www.inecnigeria.org\" target=\"_blank\" rel=\"noopener\">inecnigeria.org</a> fún ìyípadà èyíkéyìí."
+  },
+  "press.downloads-h": {
+    "en": "Downloads",
+    "ha": "Abubuwan saukewa",
+    "ig": "Ihe ibudata",
+    "yo": "Àwọn ohun ìgbàsílẹ̀"
+  },
+  "press.dl-note": {
+    "en": "You are welcome to use these files when reporting on Hawkeye.",
+    "ha": "Kuna da damar amfani da waɗannan fayiloli yayin rahoto kan Hawkeye.",
+    "ig": "Ị nwere ike iji faịlụ ndị a mgbe ị na-akọ akụkọ banyere Hawkeye.",
+    "yo": "Ẹ lè lo àwọn fáìlì wọ̀nyí nígbà tí ẹ bá ń ròyìn nípa Hawkeye."
+  },
+  "press.icon-h": {
+    "en": "App icon",
+    "ha": "Alamar manhaja",
+    "ig": "Akara ngwa",
+    "yo": "Àmì áàpù"
+  },
+  "press.icon-note": {
+    "en": "The Hawkeye hawk. Please use it as supplied, without recolouring, cropping or adding to it.",
+    "ha": "Shaho na Hawkeye. Da fatan za a yi amfani da shi yadda yake, ba tare da sauya launinsa, yanke shi ko ƙara masa wani abu ba.",
+    "ig": "Egbe Hawkeye. Biko jiri ya otú o si dị, n’agbanweghị agba ya, ebipụghị ya, ma ọ bụ tinyeghị ihe na ya.",
+    "yo": "Àṣá Hawkeye. Jọ̀wọ́ lò ó bí ó ṣe wà, láìyí àwọ̀ rẹ̀ padà, láìgé e, tàbí láìfi nǹkan kún un."
+  },
+  "press.icon-alt": {
+    "en": "The Hawkeye app icon: a green hawk's head with a yellow eye",
+    "ha": "Alamar manhajar Hawkeye: kan shaho kore mai ido rawaya",
+    "ig": "Akara ngwa Hawkeye: isi egbe akwụkwọ ndụ nwere anya odo",
+    "yo": "Àmì áàpù Hawkeye: orí àṣá aláwọ̀ ewé tí ojú rẹ̀ jẹ́ òféèfé"
+  },
+  "press.shots-h": {
+    "en": "Screenshots",
+    "ha": "Hotunan allo",
+    "ig": "Foto ihuenyo",
+    "yo": "Àwòrán ojú-ìṣàfihàn"
+  },
+  "press.shots-note": {
+    "en": "From the app store listing, 1080 × 1920 PNG. They show a specimen sheet and practice mode, not real results. Tap an image to download it.",
+    "ha": "Daga shafin manhajar a shagon manhajoji, PNG 1080 × 1920. Suna nuna takardar misali da yanayin atisaye, ba sakamako na gaske ba. Taɓa hoto don sauke shi.",
+    "ig": "Site na ndepụta ụlọ ahịa ngwa, PNG 1080 × 1920. Ha na-egosi mpempe akwụkwọ ihe atụ na ọnọdụ omume, ọ bụghị nsonaazụ n’ezie. Pịa foto ka ibudata ya.",
+    "yo": "Láti ojú-ìwé áàpù ní ilé ìtajà áàpù, PNG 1080 × 1920. Wọ́n ń fi ìwé àpẹẹrẹ àti ipò àdánwò hàn, kì í ṣe àbájáde gidi. Tẹ àwòrán kan láti gbà á sílẹ̀."
+  },
+  "press.shot-1": {
+    "en": "Photograph the result sheet",
+    "ha": "Ɗauki hoton takardar sakamako",
+    "ig": "See foto mpempe akwụkwọ nsonaazụ",
+    "yo": "Ya fọ́tò ìwé àbájáde"
+  },
+  "press.shot-1-alt": {
+    "en": "The in-app camera framing a specimen EC8A result sheet",
+    "ha": "Kyamarar manhajar tana nuna takardar sakamako EC8A ta misali",
+    "ig": "Igwefoto ngwa ahụ na-ese mpempe akwụkwọ nsonaazụ EC8A ihe atụ",
+    "yo": "Kámẹ́rà inú áàpù tí ó ń fojú sí ìwé àbájáde EC8A àpẹẹrẹ"
+  },
+  "press.shot-2": {
+    "en": "Published where anyone can check",
+    "ha": "An wallafa inda kowa zai iya dubawa",
+    "ig": "E bipụtara ya ebe onye ọ bụla nwere ike inyocha",
+    "yo": "A tẹ̀ ẹ́ jáde níbi tí ẹnikẹ́ni ti lè ṣàyẹ̀wò"
+  },
+  "press.shot-2-alt": {
+    "en": "A finished practice report with its ledger fingerprint",
+    "ha": "Rahoton atisaye da aka kammala tare da sawun littafin rikodi",
+    "ig": "Akụkọ omume emechara ya na akara mkpịsị aka ndekọ ya",
+    "yo": "Ìròyìn àdánwò tí a parí pẹ̀lú àmì-ìdánimọ̀ ìwé àkọsílẹ̀ rẹ̀"
+  },
+  "press.shot-3": {
+    "en": "Practise before election day",
+    "ha": "Yi atisaye kafin ranar zaɓe",
+    "ig": "Mee omume tupu ụbọchị ntuli aka",
+    "yo": "Ṣe àdánwò ṣáájú ọjọ́ ìdìbò"
+  },
+  "press.shot-3-alt": {
+    "en": "Entering practice counts for a demo polling unit",
+    "ha": "Shigar da ƙidayar atisaye don rukunin zaɓe na misali",
+    "ig": "Itinye ngụkọ omume maka ngalaba ntuli aka ihe atụ",
+    "yo": "Títẹ ìkàyè àdánwò sílẹ̀ fún ẹ̀ka ìdìbò àpẹẹrẹ"
+  },
+  "press.factsheet-h": {
+    "en": "Fact sheet",
+    "ha": "Takardar bayanai",
+    "ig": "Mpempe akwụkwọ eziokwu",
+    "yo": "Ìwé òtítọ́ ní ṣókí"
+  },
+  "press.factsheet-note": {
+    "en": "One page with the facts above, ready to print or attach.",
+    "ha": "Shafi ɗaya mai ɗauke da bayanan da ke sama, a shirye don bugawa ko haɗawa.",
+    "ig": "Otu peeji nwere eziokwu ndị dị n’elu, dị njikere ibipụta ma ọ bụ itinye.",
+    "yo": "Ojú-ìwé kan tí ó ní àwọn òtítọ́ tí ó wà lókè, tí ó ṣetán láti tẹ̀ tàbí láti so mọ́ ìfiránṣẹ́."
+  },
+  "press.factsheet-dl": {
+    "en": "Download the fact sheet (PDF)",
+    "ha": "Sauke takardar bayanai (PDF)",
+    "ig": "Budata mpempe akwụkwọ eziokwu (PDF)",
+    "yo": "Gba ìwé òtítọ́ ní ṣókí sílẹ̀ (PDF)"
+  },
+  "press.contact-h": {
+    "en": "Press contact",
+    "ha": "Tuntuɓar 'yan jarida",
+    "ig": "Kpọtụrụ maka ndị nta akụkọ",
+    "yo": "Ìbánisọ̀rọ̀ fún oníròyìn"
+  },
+  "press.contact-body": {
+    "en": "For interviews and questions, email <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a> or call <a href=\"tel:+2349078727777\">+234 907 872 7777</a>.",
+    "ha": "Don hira da tambayoyi, aika imel zuwa <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a> ko ku kira <a href=\"tel:+2349078727777\">+234 907 872 7777</a>.",
+    "ig": "Maka ajụjụ ọnụ na ajụjụ ndị ọzọ, zipu email na <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a> ma ọ bụ kpọọ <a href=\"tel:+2349078727777\">+234 907 872 7777</a>.",
+    "yo": "Fún ìfọ̀rọ̀wánilẹ́nuwò àti ìbéèrè, fi ímeèlì ránṣẹ́ sí <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a> tàbí pè <a href=\"tel:+2349078727777\">+234 907 872 7777</a>."
+  },
+  "press.try-it": {
+    "en": "<strong>Try it yourself.</strong> A <a href=\"practice.html\">practice run</a> needs no sign-up, and nothing you enter is published.",
+    "ha": "<strong>Gwada da kanku.</strong> <a href=\"practice.html\">Gwajin atisaye</a> ba ya buƙatar rijista, kuma ba a wallafa komai da kuka shigar.",
+    "ig": "<strong>Nwaa ya n’onwe gị.</strong> <a href=\"practice.html\">Ọsọ omume</a> achọghị ndebanye aha, a naghịkwa ebipụta ihe ọ bụla ị tinyere.",
+    "yo": "<strong>Gbìyànjú rẹ̀ fúnra rẹ.</strong> <a href=\"practice.html\">Àdánwò</a> kò nílò ìforúkọsílẹ̀, a kì í sì í tẹ ohunkóhun tí o bá tẹ̀ sílẹ̀ jáde."
+  },
+  "about.press-kit": {
+    "en": "Journalists: facts, key dates, the app icon and screenshots are in our <a href=\"press.html\">press kit →</a>",
+    "ha": "'Yan jarida: bayanai, muhimman ranaku, alamar manhaja da hotunan allo suna cikin <a href=\"press.html\">kayan 'yan jaridarmu →</a>",
+    "ig": "Ndị nta akụkọ: eziokwu, ụbọchị ndị dị mkpa, akara ngwa na foto ihuenyo dị na <a href=\"press.html\">ngwugwu ndị nta akụkọ anyị →</a>",
+    "yo": "Oníròyìn: àwọn òtítọ́, àwọn ọjọ́ pàtàkì, àmì áàpù àti àwọn àwòrán ojú-ìṣàfihàn wà nínú <a href=\"press.html\">àkójọ fún oníròyìn wa →</a>"
+  },
+  "about.run-by-inixien-hope-initiative": {
+    "en": "Hawkeye is run by <strong>IniXien Hope Initiative</strong>, a Nigerian non-profit (registration in progress). Its sister company, <strong>IniXien, LLC</strong>, grants it perpetual free use of Hawkeye. Observers' reports, and the ledger they form, stay open for anyone to read and verify.",
+    "ha": "<strong>IniXien Hope Initiative</strong> ce ke gudanar da Hawkeye, ƙungiya mai zaman kanta ta Najeriya da ba ta neman riba (ana kan yi mata rijista). Kamfanin 'yar'uwarta, <strong>IniXien, LLC</strong>, ya ba ta damar amfani da Hawkeye kyauta har abada. Rahotannin masu lura, da littafin rikodin da suke samarwa, suna nan a bude ga kowa ya karanta ya kuma tabbatar.",
+    "ig": "<strong>IniXien Hope Initiative</strong> na-arụ Hawkeye, otu Naịjirịa na-anaghị achọ uru (a na-edebanye aha ya ugbu a). Ụlọ ọrụ nwanne ya, <strong>IniXien, LLC</strong>, na-enye ya ikike iji Hawkeye n'efu ruo mgbe ebighị ebi. Akụkọ ndị na-ekiri ihe, na ndekọ ha na-ewu, na-anọgide ghe oghe ka onye ọ bụla gụọ ma nyochaa.",
+    "yo": "<strong>IniXien Hope Initiative</strong> ni ó ń ṣàkóso Hawkeye, àjọ tí kì í ṣe fún èrè ní Nàìjíríà (ìforúkọsílẹ̀ rẹ̀ ń lọ lọ́wọ́). Ilé-iṣẹ́ ìbátan rẹ̀, <strong>IniXien, LLC</strong>, fún un ní ẹ̀tọ́ láti lo Hawkeye lọ́fẹ̀ẹ́ títí láé. Àwọn ìròyìn olùwòran, àti ìwé àkọsílẹ̀ tí wọ́n ń kọ́, ń wà ní ṣíṣí fún ẹnikẹ́ni láti kà kí ó sì ṣàyẹ̀wò."
+  }
+}

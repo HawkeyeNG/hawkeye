@@ -1262,5 +1262,8 @@
   "n.app.tabs.index.practice-nudge-title": "Nwaa ọsọ omume — nkeji 5",
   "n.app.tabs.index.practice-nudge-sub": "Mee omume ịkọ nsonaazụ na ngalaba ntuli aka omume tupu Ụbọchị ntuli aka. Ọ dịghị ihe ị tinyere ga-agụ dị ka ezigbo nsonaazụ.",
   "n.app.tabs.index.practice-nudge-go": "Malite ọsọ omume",
-  "n.app.tabs.index.practice-nudge-dismiss": "Mechie"
+  "n.app.tabs.index.practice-nudge-dismiss": "Mechie",
+  "n.app.sign-in.have-an-invite-code": "Ị nwere koodu ọkpụkpọ?",
+  "n.app.sign-in.invite-code-optional": "Koodu ọkpụkpọ (nhọrọ)",
+  "n.app.sign-in.invite-code-invalid": "Koodu ọkpụkpọ nwere mkpụrụedemede na ọnụọgụ 6. Lelee ya, ma ọ bụ hapụ ya oghere."
 }

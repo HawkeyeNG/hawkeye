@@ -1,0 +1,26 @@
+{
+  "observe.have-an-invite-code": {
+    "en": "Have an invite code?",
+    "ha": "Kana da lambar gayyata?",
+    "ig": "Ị nwere koodu ọkpụkpọ?",
+    "yo": "Ṣé o ní kóòdù ìpè?"
+  },
+  "observe.invite-code-optional": {
+    "en": "Invite code (optional)",
+    "ha": "Lambar gayyata (ba dole ba)",
+    "ig": "Koodu ọkpụkpọ (nhọrọ)",
+    "yo": "Kóòdù ìpè (àṣàyàn)"
+  },
+  "observe.invite-code-invalid": {
+    "en": "Invite codes have 6 letters and numbers. Check it, or leave it blank.",
+    "ha": "Lambar gayyata tana da haruffa da lambobi 6. Duba ta, ko ka bar ta fanko.",
+    "ig": "Koodu ọkpụkpọ nwere mkpụrụedemede na ọnụọgụ 6. Lelee ya, ma ọ bụ hapụ ya oghere.",
+    "yo": "Kóòdù ìpè ní lẹ́tà àti nọ́mbà 6. Ṣàyẹ̀wò rẹ̀, tàbí fi òfìfo sílẹ̀."
+  },
+  "invite.open-in-app": {
+    "en": "Already have the app? Open it",
+    "ha": "Kana da manhajar? Buɗe ta",
+    "ig": "Ị nwere ngwa ahụ? Mepee ya",
+    "yo": "Ṣé o ti ní ohun-èlò náà? Ṣí i"
+  }
+}

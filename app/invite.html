@@ -90,6 +90,9 @@
   .iv-btns { display: flex; flex-direction: column; gap: 11px; width: 100%;
              max-width: 20rem; margin: clamp(26px, 6vh, 38px) 0 0; }
   .iv-btns a { width: 100%; box-sizing: border-box; text-align: center; }
+  /* .btn-ghost sets display:inline-block, an author rule that beats the UA's
+     [hidden] — so the phone-only "Open it" button needs this to stay hidden. */
+  .iv-btns a[hidden] { display: none; }
 
   .iv-unit { margin: 14px 0 0; max-width: 24rem; line-height: 1.4; }
   .iv-unit small { display: block; margin-bottom: 5px; font-size: .76rem;
@@ -126,8 +129,9 @@
 
     <!-- THE UNIT, when the invite is "bring a second observer to your unit".
          Shown because it is in THIS link — the page asks the server nothing
-         about who watches it. Printed for the same reason the code is: the
-         apps cannot read it through a store install, so it travels by eye. -->
+         about who watches it. Printed for the same reason the code is: an
+         App Store install cannot carry it (Play's referrer can, to the native
+         app from 1.0.8, but not to Lite or an older build), so it travels by eye. -->
     <p class="iv-unit" id="g-unitwrap" hidden>
       <small data-i18n="invite2.unit-label">The polling unit you were invited to</small>
       <b id="g-unit-name"></b>
@@ -137,6 +141,10 @@
 
     <div class="iv-btns">
       <a data-i18n="invite.get-the-app" class="btn-accent" id="g-store" href="/download">Get the app</a>
+      <!-- Phones only (the script reveals it). A store link cannot reach an app
+           that is already installed — Play's "Open" passes no referrer — so this
+           opens it directly with the same code and unit. -->
+      <a data-i18n="invite.open-in-app" class="btn-ghost" id="g-open" href="#" hidden>Already have the app? Open it</a>
       <a data-i18n="invite.continue-in-this-browser" class="btn-ghost" id="g-web" href="/">Continue in this browser</a>
     </div>
 
@@ -162,8 +170,9 @@
   function T(key, english) {
     return window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english;
   }
+  var ANDROID_PACKAGE = 'ng.com.hawkeye.observer';
   var STORES = {
-    android: 'https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer',
+    android: 'https://play.google.com/store/apps/details?id=' + ANDROID_PACKAGE,
     ios: 'https://apps.apple.com/app/id6804218478'
   };
 
@@ -203,8 +212,13 @@
   if (isAndroid) {
     /* THE ONE PLATFORM WHERE THE CODE SURVIVES THE STORE. Play passes `referrer`
        through to the installed app via the Install Referrer API, so an Android
-       user never has to retype anything. */
-    store.href = STORES.android + (code ? '&referrer=' + encodeURIComponent(code) : '');
+       user never has to retype anything. It carries the unit too, in the same
+       query form as this page's own link — `ref=CODE&unit=NN-NN-NN-NNN`,
+       encoded as ONE value — and the app (1.0.8+, native/src/lib/invite-parse.ts)
+       opens the sign-up chooser with that unit selected. Earlier app builds
+       never read the referrer, so nothing depends on the old bare-code form. */
+    var referrer = code ? 'ref=' + code + (unit ? '&unit=' + unit : '') : '';
+    store.href = STORES.android + (referrer ? '&referrer=' + encodeURIComponent(referrer) : '');
     store.textContent = T('invite.get-on-play', 'Get Hawkeye on Google Play');
   } else if (isIOS) {
     /* Apple has no install referrer, so the code has to travel by eye. Say so
@@ -217,6 +231,25 @@
        and the direct APK. */
     store.href = '/download';
     store.textContent = T('invite.download-hawkeye', 'Download Hawkeye');
+  }
+
+  /* ALREADY INSTALLED. The native app's own scheme, `hawkeye://open?ref=&unit=`,
+     which native/src/app/+native-intent.tsx reads and parks for sign-up (the
+     /open route then lands a signed-out reader on welcome). Phones only: a
+     laptop has no app to open.
+       Android — an intent:// URL naming the PRODUCTION package, so only the
+         store app answers it (never Lite or a dev build), and falling back to
+         the Play link above, referrer and all, when it is not installed.
+       iPhone — the bare scheme. Safari says the address is invalid if the app
+         is missing, which is why the button asks "Already have the app?". */
+  var openBtn = document.getElementById('g-open');
+  if (isAndroid || isIOS) {
+    var q = code ? '?ref=' + encodeURIComponent(code) + (unit ? '&unit=' + encodeURIComponent(unit) : '') : '';
+    openBtn.href = isAndroid
+      ? 'intent://open' + q + '#Intent;scheme=hawkeye;package=' + ANDROID_PACKAGE
+        + ';S.browser_fallback_url=' + encodeURIComponent(store.href) + ';end'
+      : 'hawkeye://open' + q;
+    openBtn.hidden = false;
   }
 
   /* The web client is a full client, so "continue here" is a real answer and

@@ -79,7 +79,10 @@ const a = await landing(ANDROID);
 check('Android goes to Play', a.storeHref, (h) => h.startsWith('https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer'));
 // The ONE platform where the code survives the store. If this ever drops off,
 // every Android install silently loses its attribution.
-check('Android carries the code through Play Install Referrer', a.storeHref, (h) => h.includes('referrer=H7KMN3'));
+// Query form since native 1.0.8 (`ref=CODE[&unit=PU]`, one encoded value) —
+// tests/native_install_referrer_test.mjs covers the unit and the app's parser.
+check('Android carries the code through Play Install Referrer', a.storeHref,
+  (h) => new URL(h).searchParams.get('referrer') === 'ref=H7KMN3');
 check('Android is not told to retype it', a.iosNote, false);
 
 const i = await landing(IPHONE);

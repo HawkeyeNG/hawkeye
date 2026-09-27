@@ -7,6 +7,7 @@ import { useSyncExternalStore } from 'react';
 
 import { getIdentity } from '@/lib/identity';
 import { currentLangForOtp } from '@/lib/i18n';
+import { pendingInviteCode, settleInviteAfterVerify } from '@/lib/pending-invite';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -108,8 +109,16 @@ export function requestOtp(
 export async function verifyOtp(
   phone: string,
   otp: string,
+  /** Sign-up's "Invite code" field: a code, or null when the person left it
+   *  empty. Omitted (reset, rescue) means the parked invitation, as before. */
+  opts: { referralCode?: string | null } = {},
 ): Promise<{ ok: boolean; error?: string; hint?: string; isNew?: boolean; needsUnit?: boolean; hadPassword?: boolean }> {
   const id = await getIdentity();
+  // WHO INVITED THEM, exactly as app.js sends it: `referralCode` on /verify,
+  // absent when there is none. The server records it only if this verify
+  // CREATES the observer, so an existing account's referral cannot be changed
+  // from here. See lib/pending-invite.ts.
+  const referralCode = opts.referralCode === undefined ? await pendingInviteCode() : opts.referralCode || undefined;
   const r = await post<{
     ok?: boolean;
     observerId?: number;
@@ -121,13 +130,14 @@ export async function verifyOtp(
     hasPassword?: boolean;
   }>(
     '/api/observers/verify',
-    { phone, otp, publicKeyJwk: id.publicKeyJwk },
+    { phone, otp, publicKeyJwk: id.publicKeyJwk, referralCode },
     { 'x-device-id': id.deviceId },
   );
   if (r.ok && r.token && r.observerId) {
     await SecureStore.setItemAsync(K_TOKEN, r.token);
     await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
     await SecureStore.deleteItemAsync(K_OPTED_OUT);
+    await settleInviteAfterVerify(r);
     set({ status: 'signedIn', observerId: r.observerId, token: r.token });
     // An older server sends neither field. `undefined` then means "not stated",
     // and the caller falls back to the ordinary sign-up path rather than

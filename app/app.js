@@ -538,6 +538,55 @@ function applySignUpMode() {
   if ($('signup-line')) $('signup-line').hidden = true;
   if ($('signin-line')) $('signin-line').hidden = false;
   if ($('pw-opt')) $('pw-opt').hidden = false;
+  if ($('ref-opt')) $('ref-opt').hidden = false;
+}
+
+/* ---------- "Have an invite code?" (sign-up only) ----------
+ * The one way a referral survives an App Store install: invite.html prints the
+ * code and it is typed here. Twin of native sign-in.tsx. Collapsed behind a
+ * link; open and filled when referral.js already holds a code from the link,
+ * so the reader can see it came along. The server keeps the rule that matters:
+ * a code is recorded only when /verify CREATES the observer, first code wins. */
+
+/* A TYPED code. Forgiving of case, spaces and hyphens; strict about the rest —
+   stricter than referral.js normalize(), which drops stray characters: right for
+   a link, wrong for typing, where "ABCDEOF" (O for 0) would drop to "ABCDEF", a
+   stranger's code. Returns '' when nothing was typed, null when it is not a
+   code. Twin of native lib/invite-parse.ts typedInviteCode(). */
+function typedInviteCode(raw) {
+  const c = String(raw || '').toUpperCase().replace(/[\s-]+/g, '');
+  if (!c) return '';
+  return /^[2-9A-HJKMNP-TV-Z]{6}$/.test(c) ? c : null;
+}
+function revealInviteField() {
+  if ($('ref-wrap')) $('ref-wrap').hidden = false;
+  if ($('ref-toggle-line')) $('ref-toggle-line').hidden = true;
+}
+(function initInviteField() {
+  const input = $('ref-input');
+  if (!input) return;
+  const parked = (window.HAWKEYE_REFERRAL && window.HAWKEYE_REFERRAL.pending()) || '';
+  if (parked) { input.value = parked; revealInviteField(); }
+  if ($('ref-toggle')) $('ref-toggle').onclick = (e) => { e.preventDefault(); revealInviteField(); input.focus(); };
+  input.addEventListener('input', () => { if ($('ref-err')) $('ref-err').hidden = true; });
+})();
+/* False (and the field says why) when a typed code is not a code. Checked
+   before a paid code goes out, and again before /verify. */
+function inviteFieldOk() {
+  const input = $('ref-input');
+  if (IS_SIGNIN || !input) return true;
+  const ok = typedInviteCode(input.value) !== null;
+  if ($('ref-err')) $('ref-err').hidden = ok;
+  if (!ok) { revealInviteField(); input.focus(); }
+  return ok;
+}
+/* What /verify carries: on sign-up, whatever the field holds (nothing when the
+   person emptied it — their choice, even over a parked code); on sign-in and
+   its forgotten-password route, the parked code as before. */
+function referralForVerify() {
+  const input = $('ref-input');
+  if (!IS_SIGNIN && input) return typedInviteCode(input.value) || undefined;
+  return (window.HAWKEYE_REFERRAL && window.HAWKEYE_REFERRAL.pending()) || undefined;
 }
 
 /**
@@ -786,6 +835,7 @@ $('btn-auth').onclick = async () => {
     const phone = input.value.trim();
     const channel = pickedChannel();
     if (!channel) return alert('Choose where to receive your code — WhatsApp or Telegram.');
+    if (!inviteFieldOk()) return;
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -823,6 +873,7 @@ $('btn-auth').onclick = async () => {
   const settingPw = authMode !== 'password';
   const newPw = settingPw && $('pw-opt-input') ? $('pw-opt-input').value : '';
   if (settingPw && newPw.length < 8) return alert('Your password must be at least 8 characters.');
+  if (authMode !== 'password' && !inviteFieldOk()) return;
 
   if (authMode === 'password') {
     if (!input.value.trim()) return alert('Enter your phone number.');
@@ -835,8 +886,8 @@ $('btn-auth').onclick = async () => {
   /* WHO BROUGHT THEM. Sent on every sign-in attempt and used by the server only
      when the account is genuinely NEW — attribution on a returning sign-in would
      let anyone claim an existing observer by routing them through a link. Absent
-     is fine and never blocks the request. */
-  const referralCode = (window.HAWKEYE_REFERRAL && window.HAWKEYE_REFERRAL.pending()) || undefined;
+     is fine and never blocks the request. On sign-up it is the invite field. */
+  const referralCode = referralForVerify();
   const payload = authMode === 'password'
     ? { phone: input.value.trim(), password: $('pw-signin-input').value, publicKeyJwk, referralCode }
     : { phone: pendingPhone, otp: input.value.trim(), publicKeyJwk, referralCode };

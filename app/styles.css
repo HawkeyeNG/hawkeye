@@ -232,7 +232,13 @@ main.wrap { max-width: 840px; }
    PWA install prompt look like a primary action inside the fold. Keep it compact
    and clearly secondary. */
 .hero-fold #install-cta { display: inline-block; width: auto; margin: 0; padding: 9px 15px; font-size: 0.85rem; box-shadow: none; }
-.brand-text { display: flex; flex-direction: column; }
+/* .brand shrinks (min-width:0) but its text did not: on a signed-out skinny phone
+   (Fold half-screen, 344px) "HAWKEYE" ran 29px UNDER the Sign in button. The text
+   now clips instead of overlapping, and the home wordmark gives way to the hawk
+   alone while Sign in is in the row (the row needs ~383px with it). */
+.brand-text { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.brand-text strong, .brand-text span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 390px) { .brand-row:has(> a.signin-btn) .brand-text:not(.is-page) { display: none; } }
 .brand-text strong { font-family: var(--display); font-size: 1.08rem; letter-spacing: 0.07em; }
 .brand-text span { font-size: 0.68rem; color: var(--header-sub); letter-spacing: 0.03em; }
 .gov-header nav a { color: var(--header-ink); font-weight: 700; text-decoration: none; border-bottom: 2px solid transparent; }

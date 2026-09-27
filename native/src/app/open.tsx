@@ -25,6 +25,8 @@ const TARGETS: Record<string, string> = {
   results: '/(tabs)/results',
   activity: '/profile',
   ask: '/assistant',
+  // Same target as app/open/index.html (App Store In-App Events link Lite there).
+  practiceday: '/practice-day',
 };
 
 export default function Open() {

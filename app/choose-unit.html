@@ -143,6 +143,18 @@
       color: var(--muted); font-size: 0.9rem; font-weight: 600; text-decoration: none;
     }
     .cu-quiet:hover { color: var(--ink); }
+    /* The unit an invitation brought: one line under the name, in the link ink,
+       so the reader knows why something is already selected. */
+    .cu-invited { display: block; margin-top: 3px; font-size: 0.8rem; font-weight: 600; color: var(--link); }
+    /* `button { display: block }` in styles.css is an author rule and beats the
+       UA's [hidden], so Save needs its own to step aside for the invite. */
+    .cu-invited[hidden], .cu-after[hidden], button.cu-save[hidden] { display: none; }
+    /* ONCE, AFTER THE FIRST SAVE: the invite takes Save's place in the footer
+       rather than opening over the page. Light — a line, a button, a way on. */
+    .cu-after { margin: 0 0 2px; }
+    .cu-after-k { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 0.8rem; font-weight: 800; color: var(--green); }
+    .cu-after strong { display: block; font-size: 1rem; }
+    .cu-after p.cu-after-why { margin: 3px 0 10px; font-size: 0.86rem; color: var(--muted); }
   </style>
   <script src="authgate.js?v=3"></script>
 </head>
@@ -224,8 +236,23 @@
         <span class="cu-picked-k" data-i18n="choose-unit.selected">Selected</span>
         <strong id="unit-picked-name"></strong>
         <span class="cu-picked-sub" id="unit-picked-sub"></span>
+        <span class="cu-invited" id="unit-invited" data-i18n="invite2.prefilled" hidden>You were invited to this unit. Save it, or choose another.</span>
       </div>
       <p class="cu-msg" id="unit-msg" role="alert" hidden></p>
+      <!-- "Bring a second observer to your unit" — shown once, after the first
+           save, in Save's place. See offerInvite() below. -->
+      <div class="cu-after" id="cu-after" hidden>
+        <p class="cu-after-k">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          <span data-i18n="invite2.saved-title">Unit saved</span>
+        </p>
+        <strong data-i18n="invite2.title">Bring a second observer to your unit</strong>
+        <p class="cu-after-why" data-i18n="invite2.why">When two observers at the same unit report the same numbers, its count is verified.</p>
+        <button type="button" class="cu-save" id="cu-invite" data-i18n="invite2.button">Invite a second observer</button>
+        <p class="cu-line" id="cu-invite-status" role="status" aria-live="polite"></p>
+        <!-- Painted by paint(): "Not now" until something was sent, then "Done". -->
+        <a class="cu-quiet" id="cu-after-on" href="index.html">Not now</a>
+      </div>
       <!-- Disabled until something is chosen, rather than hidden: a button that
            comes and goes moves Skip under the reader's thumb between taps. -->
       <button type="button" class="cu-save" id="btn-unit-save" disabled>Save This Unit</button>
@@ -235,6 +262,9 @@
     </div>
   </main>
 
+  <!-- Before the page script, which reads the invited unit synchronously. -->
+  <script src="referral.js?v=2"></script>
+  <script src="invite-unit.js?v=1"></script>
   <script>
     (function () {
       const $ = (id) => document.getElementById(id);
@@ -259,6 +289,15 @@
       const ONBOARD = qs.get('onboard') === '1';
       const CURRENT = (qs.get('current') || '').trim();
       const token = () => { try { return localStorage.getItem('hawkeye_token'); } catch { return null; } };
+      /* THE UNIT AN INVITATION BROUGHT ("bring a second observer to your
+         unit"). invite.html parks it beside the referral code; at the end of a
+         new sign-up this page opens with it SELECTED — never saved: the reader
+         confirms it or picks another. `?unit=` names one directly (native's
+         /choose-unit takes the same). Canonical codes only. */
+      const REF = window.HAWKEYE_REFERRAL;
+      const IU = window.HawkeyeInviteUnit;
+      const okUnit = (s) => (REF && REF.normalizeUnit ? REF.normalizeUnit(s) : '');
+      const INVITED = okUnit(qs.get('unit')) || (ONBOARD && REF && REF.pendingUnit ? REF.pendingUnit() : '');
 
       // Synchronous, before menu.js and i18n.js read the markup.
       if (ONBOARD) {
@@ -277,6 +316,9 @@
       let pickedFrom = '';
       let saving = false;
       let saveErr = null;
+      /* Set once the save has landed and the invite is on offer:
+         { unit, url, sent, status }. While set, the footer is the invite. */
+      let after = null;
 
       // -- near me ------------------------------------------------------------
       const MAX_NEAR = 8;
@@ -370,6 +412,7 @@
         box.hidden = !picked;
         $('unit-picked-name').textContent = picked ? (picked.name || picked.pu_code) : '';
         $('unit-picked-sub').textContent = picked ? where(picked) : '';
+        $('unit-invited').hidden = !(picked && INVITED && picked.pu_code === INVITED && !after);
 
         const m = $('unit-msg');
         m.hidden = !saveErr;
@@ -378,9 +421,19 @@
           : '';
 
         const save = $('btn-unit-save');
+        save.hidden = !!after;
         save.disabled = !picked || saving;
         save.setAttribute('aria-busy', String(saving));
         save.textContent = saving ? T('map-unit.saving', 'Saving…') : T('profile.save-this-unit', 'Save This Unit');
+
+        // The invite, in Save's place. Skip / Close give way to its own link.
+        $('cu-after').hidden = !after;
+        $('cu-skip').hidden = !ONBOARD || !!after;
+        $('cu-close').hidden = ONBOARD || !!after;
+        if (after) {
+          $('cu-invite-status').textContent = after.status ? say(after.status) : '';
+          $('cu-after-on').textContent = after.sent ? T('invite2.done', 'Done') : T('common.not-now', 'Not now');
+        }
       }
       document.addEventListener('hawkeye-lang', paint);
 
@@ -599,7 +652,8 @@
         if (leaving) return;
         leaving = true;
         // Sign-up: Home, by REPLACE, so Back never returns to a finished step.
-        if (ONBOARD) { location.replace('index.html'); return; }
+        // The invited unit was a suggestion for this step only; it is over.
+        if (ONBOARD) { if (REF && REF.clearUnit) REF.clearUnit(); location.replace('index.html'); return; }
         // From Profile: go BACK to it when it is the page underneath, so Back
         // from Profile does not land here again. Profile re-reads the saved
         // unit on pageshow. Anywhere else, replace with a fresh Profile.
@@ -618,7 +672,7 @@
       addEventListener('pagehide', () => { clearTimeout(fallback); });
       // Restored from the back/forward cache: this is a fresh visit, not a
       // departure still in flight.
-      addEventListener('pageshow', (e) => { if (e.persisted) { leaving = false; saving = false; paint(); } });
+      addEventListener('pageshow', (e) => { if (e.persisted) { leaving = false; saving = false; after = null; paint(); } });
       for (const id of ['cu-skip', 'cu-close']) {
         $(id).addEventListener('click', (e) => { e.preventDefault(); if (!saving) leave(); });
       }
@@ -631,7 +685,9 @@
           if (!e.target.closest || !e.target.closest('.gov-header .close-btn')) return;
           e.preventDefault();
           e.stopPropagation();
-          if (!saving) leave();
+          // After a save the invite is on offer and `saving` stays set; the
+          // cross then means "Not now".
+          if (!saving || after) leave();
         }, true);
       }
 
@@ -662,6 +718,7 @@
             return;
           }
           ok = true;
+          if (await offerInvite(unit)) return;
           leave();
         } catch {
           saveErr = msg('choose-unit.please-check-your-connection-and-try-2', 'Please check your connection and try again.');
@@ -669,6 +726,54 @@
           if (!ok) { saving = false; paint(); }
         }
       });
+
+      // -- once, after the first save: bring a second observer ---------------
+      /**
+       * Matching reports from two observers verify a unit's count, so the
+       * moment someone has just said which unit is theirs is the moment to ask
+       * them to bring a second person to it. ONCE per device, and light: the
+       * footer changes in place, nothing opens over the page, and "Not now"
+       * leaves exactly as Save would have.
+       *
+       * Not offered when the unit saved IS the one an invitation brought —
+       * that reader is the second observer. And never when the invite link
+       * cannot be made (signed out, offline, server down): the page simply
+       * leaves as it always did, within a few seconds at worst.
+       */
+      const OFFERED_KEY = 'hawkeye_invite2_offered';
+      async function offerInvite(unit) {
+        if (!IU || !IU.validUnit(unit.pu_code)) return false;
+        if (INVITED && unit.pu_code === INVITED) return false;
+        try { if (localStorage.getItem(OFFERED_KEY)) return false; } catch { return false; }
+        const code = await Promise.race([
+          IU.referralCode(),
+          new Promise((r) => setTimeout(() => r(''), 4000)),
+        ]).catch(() => '');
+        if (!code) return false;
+        try { localStorage.setItem(OFFERED_KEY, '1'); } catch { /* shown this once anyway */ }
+        after = { unit, url: IU.link(code, unit.pu_code), sent: false, status: null };
+        paint();
+        return true;
+      }
+      $('cu-invite').addEventListener('click', async () => {
+        if (!after) return;
+        const how = await IU.share(after.url);
+        after.sent = true;
+        if (how === 'copied') after.status = msg('profile.copied', 'Copied');
+        else if (how === 'manual') { IU.reveal($('cu-invite'), after.url); after.status = msg('profile.copy-it-here', 'Copy it below'); }
+        else after.status = null;
+        paint();
+      });
+      $('cu-after-on').addEventListener('click', (e) => { e.preventDefault(); leave(); });
+
+      /* The invited unit, selected before anything else is touched. Named from
+         the register when it answers; the code stands in until then (or
+         offline), and Save's own check refuses a unit the register lacks. */
+      if (INVITED) {
+        picked = { pu_code: INVITED, name: INVITED };
+        pickedFrom = 'invite';
+        enrich(INVITED);
+      }
 
       paint();
       // pu-search.js loads after this script; mount once it has.
@@ -681,7 +786,7 @@
   <script src="pu-search.js?v=8"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=181"></script>
+  <script src="menu.js?v=182"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

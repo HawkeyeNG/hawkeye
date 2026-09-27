@@ -91,6 +91,14 @@
              max-width: 20rem; margin: clamp(26px, 6vh, 38px) 0 0; }
   .iv-btns a { width: 100%; box-sizing: border-box; text-align: center; }
 
+  .iv-unit { margin: 14px 0 0; max-width: 24rem; line-height: 1.4; }
+  .iv-unit small { display: block; margin-bottom: 5px; font-size: .76rem;
+                   letter-spacing: .09em; text-transform: uppercase; color: #a9c2b4; }
+  .iv-unit b { display: block; font-size: 1.08rem; color: #fff; }
+  .iv-unit b:empty { display: none; }
+  .iv-unit span { display: block; font: 600 .95rem/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--gold); }
+  .iv-unit em { display: block; margin-top: 6px; font-style: normal; font-size: .86rem; color: #a9c2b4; }
+
   .iv-note { color: #a9c2b4; font-size: .88rem; line-height: 1.5; margin: 18px 0 0; max-width: 25rem; }
 
   .iv-foot {
@@ -116,6 +124,17 @@
       <b id="g-code"></b>
     </p>
 
+    <!-- THE UNIT, when the invite is "bring a second observer to your unit".
+         Shown because it is in THIS link — the page asks the server nothing
+         about who watches it. Printed for the same reason the code is: the
+         apps cannot read it through a store install, so it travels by eye. -->
+    <p class="iv-unit" id="g-unitwrap" hidden>
+      <small data-i18n="invite2.unit-label">The polling unit you were invited to</small>
+      <b id="g-unit-name"></b>
+      <span id="g-unit-code"></span>
+      <em data-i18n="invite2.unit-note">When the app asks for your polling unit, choose this one — or change it.</em>
+    </p>
+
     <div class="iv-btns">
       <a data-i18n="invite.get-the-app" class="btn-accent" id="g-store" href="/download">Get the app</a>
       <a data-i18n="invite.continue-in-this-browser" class="btn-ghost" id="g-web" href="/">Continue in this browser</a>
@@ -133,7 +152,7 @@
 
 <script src="/i18n.js?v=10"></script>
 <script src="/lang.js?v=9"></script>
-<script src="/referral.js?v=1"></script>
+<script src="/referral.js?v=2"></script>
 <script src="/monitor.js?v=3" defer></script>
 <script>
 (function () {
@@ -152,6 +171,28 @@
   if (code) {
     document.getElementById('g-code').textContent = code;
     document.getElementById('g-codewrap').hidden = false;
+  }
+
+  /* The unit comes from THIS page's own link, never from storage: a unit parked
+     by an older invite must not be presented as this one's. Only with a code,
+     as referral.js keeps it. The name is a public register lookup, and the
+     code alone still stands if that lookup fails. */
+  var R = window.HAWKEYE_REFERRAL;
+  var unit = '';
+  try { unit = code && R && R.normalizeUnit ? R.normalizeUnit(new URLSearchParams(location.search).get('unit')) : ''; } catch (e) { unit = ''; }
+  if (unit) {
+    document.getElementById('g-unit-code').textContent = unit;
+    document.getElementById('g-unitwrap').hidden = false;
+    fetch('/api/register/unit?pu_code=' + encodeURIComponent(unit))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (b) {
+        var u = b && b.unit;
+        if (!u || u.pu_code !== unit) return;
+        document.getElementById('g-unit-name').textContent = u.name || '';
+        document.getElementById('g-unit-code').textContent =
+          [unit, u.ward, u.lga, u.state].filter(Boolean).join(' · ');
+      })
+      .catch(function () { /* the code is enough */ });
   }
 
   var ua = navigator.userAgent || '';
@@ -181,7 +222,8 @@
   /* The web client is a full client, so "continue here" is a real answer and
      not a consolation — and it is the one route where the code needs no
      retyping on any platform, because referral.js already has it. */
-  document.getElementById('g-web').href = '/' + (code ? '?r=' + encodeURIComponent(code) : '');
+  document.getElementById('g-web').href = '/' + (code ? '?r=' + encodeURIComponent(code)
+    + (unit ? '&unit=' + encodeURIComponent(unit) : '') : '');
 })();
 </script>
 </body>

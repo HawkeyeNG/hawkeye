@@ -1209,5 +1209,18 @@
   "n.app.practice-day.all-days": "Practice Days",
   "n.app.practice-day.phase-before": "Upcoming",
   "n.app.practice-day.phase-live": "Open now",
-  "n.app.practice-day.phase-after": "Closed"
+  "n.app.practice-day.phase-after": "Closed",
+  "n.invite2.title": "Bring a second observer to your unit",
+  "n.invite2.why": "When two observers at the same unit report the same numbers, its count is verified.",
+  "n.invite2.button": "Invite a second observer",
+  "n.invite2.share-text": "Watch my polling unit with me on Hawkeye. When two of us report the same numbers there, the count is verified.",
+  "n.invite2.failed": "Could not make your invite link. Tap to try again.",
+  "n.invite2.choose-first": "Save your polling unit first, then invite a second observer to it.",
+  "n.invite2.saved-title": "Unit saved",
+  "n.invite2.prefilled": "You were invited to this unit. Save it, or choose another.",
+  "coverage.observer-coverage": "Observer Coverage",
+  "n.app.tabs.index.practice-nudge-title": "Try a practice run — 5 minutes",
+  "n.app.tabs.index.practice-nudge-sub": "Rehearse reporting a result on a practice polling unit before polling day. Nothing you enter counts as a real result.",
+  "n.app.tabs.index.practice-nudge-go": "Start the practice run",
+  "n.app.tabs.index.practice-nudge-dismiss": "Dismiss"
 }

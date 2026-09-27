@@ -1249,5 +1249,18 @@
   "n.app.practice-day.all-days": "Ranakun Atisaye",
   "n.app.practice-day.phase-before": "Mai zuwa",
   "n.app.practice-day.phase-live": "A buɗe yanzu",
-  "n.app.practice-day.phase-after": "An rufe"
+  "n.app.practice-day.phase-after": "An rufe",
+  "n.invite2.title": "Kawo mai lura na biyu zuwa rukunin zaɓenka",
+  "n.invite2.why": "Idan masu lura biyu a rukunin zaɓe ɗaya suka bayar da alkaluma iri ɗaya, ana tabbatar da ƙidayarsa.",
+  "n.invite2.button": "Gayyaci mai lura na biyu",
+  "n.invite2.share-text": "Ka sa ido a rukunin zaɓena tare da ni a Hawkeye. Idan mu biyu muka bayar da alkaluma iri ɗaya a can, ana tabbatar da ƙidayar.",
+  "n.invite2.failed": "An kasa ƙirƙirar hanyar gayyatarka. Danna don sake gwadawa.",
+  "n.invite2.choose-first": "Ka fara ajiye rukunin zaɓenka, sannan ka gayyaci mai lura na biyu zuwa gare shi.",
+  "n.invite2.saved-title": "An ajiye rukunin zaɓe",
+  "n.invite2.prefilled": "An gayyace ka zuwa wannan rukunin zaɓe. Ajiye shi, ko ka zaɓi wani.",
+  "coverage.observer-coverage": "Yawan Rufewar Masu Lura",
+  "n.app.tabs.index.practice-nudge-title": "Gwada gwajin atisaye — minti 5",
+  "n.app.tabs.index.practice-nudge-sub": "Gwada aika sakamako a rukunin zaɓe na atisaye kafin Ranar zaɓe. Babu abin da ka shigar da zai zama sakamako na gaske.",
+  "n.app.tabs.index.practice-nudge-go": "Fara gwajin atisaye",
+  "n.app.tabs.index.practice-nudge-dismiss": "Rufe"
 }

@@ -250,7 +250,10 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // profile.html precedent — and injected ONLY in the app shell. On the
     // website links.get('#tour') finds nothing, this item resolves to null and
     // the rendered group is byte-identical to before.
-    ['Learn & about', ['#tour', 'how.html', 'guide.html', 'faq.html', 'about.html', 'support.html', 'privacy.html', 'terms.html']],
+    // The ward captain's guide sits beside the Observer Guide. Web only for now
+    // (native's More screen has no counterpart yet), and here rather than in
+    // Take part because that group is hidden on desktop.
+    ['Learn & about', ['#tour', 'how.html', 'guide.html', 'captain-guide.html', 'faq.html', 'about.html', 'support.html', 'privacy.html', 'terms.html']],
     /**
      * Where native puts it too — the app's More screen ends with a "Find
      * Hawkeye" section (components/social-row.tsx) and the share control sits
@@ -281,6 +284,15 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       cv.href = 'coverage.html';
       i18nSet(cv, 'coverage.observer-coverage', 'Observer Coverage');
       panel.appendChild(cv);
+    }
+    // The ward captain's guide (captain-guide.html), under Learn & about.
+    // Injected for the same reason as coverage: no page static-lists it. Public;
+    // its "apply" button leads to captain.html, which is gated.
+    if (!panel.querySelector('a[href="captain-guide.html"]')) {
+      const cg = document.createElement('a');
+      cg.href = 'captain-guide.html';
+      i18nSet(cg, 'captain-guide.title', "Ward Captain's Guide");
+      panel.appendChild(cg);
     }
     // The situation room, under Live data. Injected for the same reason as races
     // and profile: the 'Live data' array above only REGROUPS anchors that already

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   KeyboardAvoidingView,
   Linking,
   Pressable,
@@ -30,6 +31,7 @@ import { Crumb, Prompt } from '@/components/wizard';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { getIdentity } from '@/lib/identity';
+import { inviteAfterSave, isUnitCode, shareInviteUnit } from '@/lib/invite-unit';
 import { describeFixFailure, DISCOVERY_RADIUS_M, tryQuickFix, type Fix } from '@/lib/location';
 import { regFetch } from '@/lib/register-fetch';
 import * as SecureStore from '@/lib/secure-store';
@@ -308,6 +310,7 @@ const Pane = ({ children, flush }: { children: ReactNode; flush?: boolean }) => 
 export function ChooseUnitScreen({
   onboard = false,
   currentCode,
+  prefillCode,
   onSaved,
   onSkip,
   onClose,
@@ -322,6 +325,13 @@ export function ChooseUnitScreen({
   onboard?: boolean;
   /** The unit already saved, so the lists can mark it "Saved". */
   currentCode?: string | null;
+  /**
+   * A unit to open with SELECTED, not saved — the one an invitation brought
+   * ("bring a second observer to your unit", ?unit= on the route). The reader
+   * confirms it or picks another; Save's own check refuses a unit the register
+   * lacks. Canonical codes only.
+   */
+  prefillCode?: string | null;
   /** Fires once the server has accepted the unit. The route navigates. */
   onSaved: (unit: Row) => void;
   /** Onboarding only: the reader chose not to pick a unit now. */
@@ -335,6 +345,27 @@ export function ChooseUnitScreen({
   const [tab, setTab] = useState<Tab | null>(null);
   const [picked, setPicked] = useState<Row | null>(null);
   const [saving, setSaving] = useState(false);
+  /**
+   * ONCE, AFTER THE FIRST SAVE: "bring a second observer to your unit" takes
+   * Save's place in the footer (lib/invite-unit.ts decides whether). While set,
+   * the unit is saved and the page is only waiting to be left — every way out
+   * (the button, the cross, Android back) finishes through onSaved, so Profile
+   * still hears which unit it was.
+   */
+  const [after, setAfter] = useState<{ unit: Row; url: string } | null>(null);
+  const invited = isUnitCode(prefillCode) ? prefillCode : null;
+  const finish = () => {
+    if (after) onSaved(after.unit);
+  };
+  useEffect(() => {
+    if (!after) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      onSaved(after.unit);
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [after]);
 
   // -- near me --------------------------------------------------------------
   const [near, setNear] = useState<NearRow[]>([]);
@@ -686,6 +717,16 @@ export function ChooseUnitScreen({
     }
   };
 
+  /* The invited unit, selected on arrival and named from the register behind it
+     (the code stands in until then, or offline). Once only: a later choice is
+     the reader's own. */
+  useEffect(() => {
+    if (!invited) return;
+    setPicked((p) => p ?? { pu_code: invited, name: invited });
+    void enrich(invited);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const chooseNear = (n: NearRow) => {
     setPicked(n.unit ?? { pu_code: n.puCode, name: n.name, ward: n.ward });
     if (!n.unit) void enrich(n.puCode);
@@ -742,6 +783,11 @@ export function ChooseUnitScreen({
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       saved = true;
+      const url = await inviteAfterSave(unit.pu_code, invited);
+      if (url) {
+        setAfter({ unit, url });
+        return;
+      }
       onSaved(unit);
     } catch {
       notice.show(i18nT('n.app.map-unit.could-not-save-your-polling-unit'), i18nT('n.components.choose-unit.please-check-your-connection-and-try-2'));
@@ -780,8 +826,8 @@ export function ChooseUnitScreen({
         title={onboard ? i18nT('n.app.sign-in.create-your-account') : i18nT('profile.my-profile')}
         translateY={translateY}
         right={onboard ? 'none' : 'close'}
-        onClose={onClose}
-        onHome={onboard ? onSkip : undefined}
+        onClose={after ? finish : onClose}
+        onHome={onboard ? (after ? finish : onSkip) : undefined}
       />
 
       <KeyboardAvoidingView behavior="padding" className="flex-1">
@@ -1068,8 +1114,47 @@ export function ChooseUnitScreen({
                   {[chosen.ward, chosen.lga, chosen.state].filter(Boolean).join(' · ')}
                 </Text>
               ) : null}
+              {/* Why something is already selected. */}
+              {invited && chosen.pu_code === invited && !after ? (
+                <Text className="pt-0.5 text-[11px] font-semibold text-good-ink">{i18nT('n.invite2.prefilled')}</Text>
+              ) : null}
             </View>
           ) : null}
+          {after ? (
+            <View>
+              <View className="flex-row items-center">
+                <Feather name="check-circle" size={14} color={ui.tint.good.ink} />
+                <Text className="pl-1.5 text-[11px] font-bold uppercase tracking-wider text-good-ink">
+                  {i18nT('n.invite2.saved-title')}
+                </Text>
+              </View>
+              <Text className="pt-1.5 text-base font-bold text-ink">{i18nT('n.invite2.title')}</Text>
+              <Text className="pb-3 pt-0.5 text-sm text-muted">{i18nT('n.invite2.why')}</Text>
+              <Pressable
+                onPress={async () => {
+                  // Sent: the job is done, so the page goes on. A sheet
+                  // dismissed on iOS stays here, with "Not now" still offered.
+                  if (await shareInviteUnit(after.url)) onSaved(after.unit);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={i18nT('n.invite2.button')}
+                className="flex-row items-center justify-center rounded-2xl bg-hawk-gold py-4 active:opacity-80"
+              >
+                <Feather name="share-2" size={16} color={BRAND.ink} />
+                <Text className="pl-2 text-base font-bold text-hawk-ink">{i18nT('n.invite2.button')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={finish}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel={i18nT('lang.later')}
+                className="mt-1 items-center py-2.5 active:opacity-60"
+              >
+                <Text className="text-sm font-semibold text-muted">{i18nT('lang.later')}</Text>
+              </Pressable>
+            </View>
+          ) : (
+          <>
           {/* Disabled until something is chosen, rather than hidden: a button
               that appears and disappears moves Skip under the reader's thumb
               between taps. Gold with brand ink when live; the muted disabled
@@ -1102,6 +1187,8 @@ export function ChooseUnitScreen({
               <Text className="text-sm font-semibold text-muted">{i18nT('map-unit.skip-for-now')}</Text>
             </Pressable>
           ) : null}
+          </>
+          )}
         </PinnedFooter>
       </KeyboardAvoidingView>
 

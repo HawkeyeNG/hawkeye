@@ -98,6 +98,10 @@ const GROUPS: { title: string; titleKey: string; items: MenuItem[] }[] = [
       // pinned to the menu. The filter the accordion was reaching for already
       // lives on /races.
       { label: 'Races', labelKey: 'races.races', href: 'native:/races', icon: 'trending-up' },
+      // OBSERVER COVERAGE — where menu.js puts it, after Races. No native screen
+      // yet, so it opens the live page in the in-app browser like any
+      // non-`native:` row (the `go` handlers below). Units counted, never people.
+      { label: 'Observer Coverage', labelKey: 'coverage.observer-coverage', href: 'coverage.html', icon: 'users' },
       { label: 'Public Reports Log', labelKey: 'common.public-reports-log', href: 'native:/reports-log', icon: 'list' },
       { label: 'Political Data', labelKey: 'common.political-data', href: 'native:/political', icon: 'pie-chart' },
     ],

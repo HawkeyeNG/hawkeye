@@ -22,6 +22,7 @@ import { CaptureCamera, type Media } from '@/components/capture-camera';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { SerialField } from '@/components/serial-field';
 import { ContestPicker } from '@/components/contest-picker';
+import { InviteUnitCard } from '@/components/invite-unit-card';
 import { NoticeSheet, useNotice } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import { ReceiptCard } from '@/components/receipt-card';
@@ -1943,6 +1944,9 @@ export default function Practice() {
               )}
               <Text className="pt-3 text-xs text-muted">{i18nT('n.app.practice.preview-reported-explain')}</Text>
             </View>
+            {/* BRING A SECOND OBSERVER TO YOUR UNIT — the next step after the
+                line above. Signed in only; renders nothing otherwise. */}
+            <InviteUnitCard />
             {/* Practice is its own chain — and its head is published in the SAME
                 daily Sigstore Rekor artifact as the real ledger (practiceHead in
                 backend/src/services/anchor.js). So a rehearsal really can be

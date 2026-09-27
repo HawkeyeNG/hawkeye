@@ -787,6 +787,10 @@ const iAmOwner = () => myRank() === 0;
 const iManage = () => myRank() < 99;
 /* Nothing sits below a ward, so a ward coordinator appoints nobody. */
 const iDelegate = () => myRank() <= 4;
+/* WHERE THE TEAM IS DEPLOYED is for managers and coordinators. A plain member
+   gets their own row and the room's totals; the server has already cut the
+   rest (routes/groups.js, req.plain), and this only decides what to draw. */
+const iSeeDeployment = () => iManage();
 const roleRowOf = (obsId) => ((S.group || {}).managers || []).find((x) => x.observer_id === obsId) || null;
 /* Strictly below me, and never the owner — see canActOn() on the server. */
 const iOutrank = (obsId) => {
@@ -799,6 +803,9 @@ const iOutrank = (obsId) => {
 function render() {
   if (!S.groups.length) return renderWelcome();
   const g = S.group || {};
+  /* The Coverage tab is the deployment overlay; a plain member does not get it,
+     including by ?tab=coverage or a drill from the overview. */
+  if (S.tab === 'coverage' && S.group && !iSeeDeployment()) S.tab = 'overview';
   const scope = g.scope || T('situation-room.nationwide', 'Nationwide');
   $('sr').innerHTML = `
     <div class="sr-bar">
@@ -822,9 +829,9 @@ function render() {
     </div>
     <div class="sr-tabs" role="tablist">
       <button role="tab" aria-selected="${S.tab === 'overview'}" data-tab="overview" title="1">${T('situation-room.overview', 'Overview')}</button>
-      <button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage" title="2">${T('situation-room.coverage', 'Coverage')}</button>
-      <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team" title="3">${T('situation-room.team', 'Team')}</button>
-      <button role="tab" aria-selected="${S.tab === 'incidents'}" data-tab="incidents" title="4">${T('situation-room.incidents', 'Incidents')}</button>
+      ${iSeeDeployment() ? `<button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage" title="2">${T('situation-room.coverage', 'Coverage')}</button>` : ''}
+      <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team" title="${iSeeDeployment() ? 3 : 2}">${T('situation-room.team', 'Team')}</button>
+      <button role="tab" aria-selected="${S.tab === 'incidents'}" data-tab="incidents" title="${iSeeDeployment() ? 4 : 3}">${T('situation-room.incidents', 'Incidents')}</button>
     </div>
     <div id="sr-body"><div class="sr-msg">${T('index.loading', 'Loading…')}</div></div>`;
 
@@ -1275,9 +1282,11 @@ async function doCheckIn(btn) {
  * read as nobody having filed anywhere in the ward.
  */
 function sumNodes(c) {
+  /* `|| 0` throughout: a plain member's rows carry no deployment fields at all. */
   const tot = (c.nodes || []).reduce((a, x) => ({
     units: a.units + x.units, reported: a.reported + (x.reported || 0),
-    assigned: a.assigned + x.assigned, on_unit: a.on_unit + x.on_unit, mismatched: a.mismatched + x.mismatched,
+    assigned: a.assigned + (x.assigned || 0), on_unit: a.on_unit + (x.on_unit || 0),
+    mismatched: a.mismatched + (x.mismatched || 0),
   }), { units: 0, reported: 0, assigned: 0, on_unit: 0, mismatched: 0 });
   if (c.totals) { tot.units = c.totals.units; tot.reported = c.totals.reported; }
   return tot;
@@ -1299,6 +1308,7 @@ function renderOverview() {
      ward's units rank by where WE are thinnest: nobody down for it first, then
      ours not yet in, then ours reported. */
   const perUnit = c.level === 'unit';
+  const deploy = iSeeDeployment();
   const open = (x) => (perUnit ? (x.assigned ? 0 : 2) + (x.member_reported ? 0 : 1) : x.units - x.reported);
   const gaps = nodes.slice().sort((a, b) => open(b) - open(a) || a.name.localeCompare(b.name));
   const reports = (S.activity && S.activity.reports) || [];
@@ -1343,12 +1353,17 @@ function renderOverview() {
     </div>` : ''}
     ${attendanceStripHtml()}
     ${discrepancyHtml()}
+    ${deploy ? '' : `<div class="sr-note">${T('situation-room.restricted-note', 'Where this room’s observers are deployed is for its managers and coordinators. You see your own place, on the Team tab, and the room’s totals.')}</div>`}
     <div class="sr-heads">
       <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>${T('situation-room.of-units-reported', 'of {n} units reported', { n: n(tot.units) })}</span></div>
       <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>${T('situation-room.coverage', 'Coverage')}</span></div>
-      <div class="sr-head ok"><b class="num">${n(tot.on_unit)}</b><span>${T('situation-room.on-their-unit', 'On their unit')}</span></div>
+      ${deploy ? `<div class="sr-head ok"><b class="num">${n(tot.on_unit)}</b><span>${T('situation-room.on-their-unit', 'On their unit')}</span></div>
       <div class="sr-head off"><b class="num">${n(tot.mismatched)}</b><span>${T('situation-room.filed-elsewhere', 'Filed elsewhere')}</span></div>
-      <div class="sr-head wait"><b class="num">${n(silent)}</b><span>${T('situation-room.yet-to-report', 'Yet to report')}</span></div>
+      <div class="sr-head wait"><b class="num">${n(silent)}</b><span>${T('situation-room.yet-to-report', 'Yet to report')}</span></div>`
+    /* A plain member's figures are the room's TOTALS, from the room itself —
+       the tree they were given carries no deployment at all. */
+    : `<div class="sr-head"><b class="num">${n(S.group.members || 0)}</b><span>${T('situation-room.observers', 'Observers')}</span></div>
+      <div class="sr-head ok"><b class="num">${n(S.group.reported || 0)}</b><span>${T('situation-room.ours-reported-count', 'Of ours have reported')}</span></div>`}
     </div>
     <div class="sr-two">
       <div>
@@ -1362,9 +1377,10 @@ function renderOverview() {
         <div class="sr-card sr-panel">${gaps.length ? `<div class="sr-scroll">
           <table class="sr-tbl" style="min-width:0">
           <tbody>${gaps.map((x) => `<tr${isMine(c, x.key) ? ' class="mine"' : ''}>
-            <td><button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>
+            <td>${deploy ? `<button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>
               ${x.assigned ? `<span class="sr-sub">${T('situation-room.n-of-ours-here', '{n} of ours here', { n: n(x.assigned) })}</span>`
-                : `<span class="sr-sub" style="color:var(--wait)">${T('situation-room.nobody-assigned', 'nobody assigned')}</span>`}</td>
+                : `<span class="sr-sub" style="color:var(--wait)">${T('situation-room.nobody-assigned', 'nobody assigned')}</span>`}`
+    : esc(x.name)}</td>
             ${perUnit ? `<td><span class="sr-sub"${x.member_reported ? ' style="color:var(--ok)"' : ''}>${x.member_reported
               ? T('situation-room.unit-reported-by-ours', 'reported by ours')
               : T('situation-room.unit-no-report-from-ours', 'no report from ours yet')}</span></td>`
@@ -1386,12 +1402,14 @@ function renderOverview() {
     '{v0} (your area)', { v0: S.group.me.scope_value })) : ''}
     ${partiesHtml(S.tally, raceArea())}
     ${presidentialHtml(S.tally)}
-    <h2 class="sr-h2">${T('situation-room.reports-coming-in', 'Reports coming in')}</h2>
+    ${/* A plain member's feed is their own reports only (server-side). */ ''}
+    <h2 class="sr-h2">${deploy ? T('situation-room.reports-coming-in', 'Reports coming in') : T('situation-room.your-reports', 'Your reports')}</h2>
     <div class="sr-card${reports.length > 4 ? ' sr-panel' : ''}">${reports.length
           ? `<div class="sr-scroll">${reports.map(activityRow).join('')}</div>`
-            + (reports.length > 4 ? `<div class="sr-count">${n(reports.length)} most recent</div>` : '')
-          : `<div class="sr-msg">${T('situation-room.no-reports-from-your-observers-yet', 'No reports from your observers yet.')}<br />
-             ${T('situation-room.they-will-appear-the-moment-one-is-published', 'They will appear here the moment one is published.')}</div>`}</div>
+            + (reports.length > 4 ? `<div class="sr-count">${T('situation-room.n-most-recent', '{n} most recent', { n: n(reports.length) })}</div>` : '')
+          : deploy ? `<div class="sr-msg">${T('situation-room.no-reports-from-your-observers-yet', 'No reports from your observers yet.')}<br />
+             ${T('situation-room.they-will-appear-the-moment-one-is-published', 'They will appear here the moment one is published.')}</div>`
+            : `<div class="sr-msg">${T('situation-room.no-reports-from-you-yet', 'You have not filed a report in this race since joining.')}</div>`}</div>
 `;
 
   document.querySelectorAll('#sr-body .drill').forEach((b) =>
@@ -1749,14 +1767,12 @@ async function drawMap(nodes) {
         stroke="${node.assigned ? 'var(--accent)' : 'currentColor'}"
         stroke-opacity="${node.assigned ? 0.95 : 0.35}" stroke-width="${node.assigned ? 1.6 : 0.9}"
         stroke-linejoin="round" vector-effect="non-scaling-stroke"
-        ><title>${T('situation-room.map-tooltip', '{place} — {pct}% reported ({rep} of {units})', { place: esc(node.name), pct: p, rep: n(node.reported), units: n(node.units) })}${node.assigned
-          ? T('situation-room.map-tooltip-ours', ', {n} of ours', { n: n(node.assigned) })
-          : T('situation-room.map-tooltip-nobody', ', nobody assigned')}</title></path>`;
+        ><title>${T('situation-room.map-tooltip', '{place} — {pct}% reported ({rep} of {units})', { place: esc(node.name), pct: p, rep: n(node.reported), units: n(node.units) })}${oursTip(node)}</title></path>`;
     }).join('')}
   </svg>
   <div class="sr-legend" style="margin-top:10px">
     <span>${T('situation-room.legend-deeper-green', 'Deeper green — more units reported')}</span>
-    <span><b style="color:var(--accent)">&#9633;</b> ${T('situation-room.legend-outlined', 'outlined — we have observers there')}</span>
+    ${iSeeDeployment() ? `<span><b style="color:var(--accent)">&#9633;</b> ${T('situation-room.legend-outlined', 'outlined — we have observers there')}</span>` : ''}
   </div>`;
   wireMapTaps(host);
 }
@@ -1794,14 +1810,12 @@ async function drawWardMap(host, nodes, lvl) {
         return `<path d="${d}" fill="var(--ok)" fill-opacity="${(0.05 + (p / 100) * 0.8).toFixed(3)}"
           stroke="${node.assigned ? 'var(--accent)' : 'currentColor'}" stroke-opacity="${node.assigned ? 0.95 : 0.35}"
           stroke-width="${node.assigned ? 1.6 : 0.9}" stroke-linejoin="round" vector-effect="non-scaling-stroke"
-          ><title>${T('situation-room.map-tooltip', '{place} — {pct}% reported ({rep} of {units})', { place: esc(node.name), pct: p, rep: n(node.reported), units: n(node.units) })}${node.assigned
-          ? T('situation-room.map-tooltip-ours', ', {n} of ours', { n: n(node.assigned) })
-          : T('situation-room.map-tooltip-nobody', ', nobody assigned')}</title></path>`;
+          ><title>${T('situation-room.map-tooltip', '{place} — {pct}% reported ({rep} of {units})', { place: esc(node.name), pct: p, rep: n(node.reported), units: n(node.units) })}${oursTip(node)}</title></path>`;
       }).join('')}
     </svg>
     <div class="sr-legend" style="margin-top:10px">
       <span>${T('situation-room.legend-deeper-green', 'Deeper green — more units reported')}</span>
-      <span><b style="color:var(--accent)">&#9633;</b> ${T('situation-room.legend-outlined', 'outlined — we have observers there')}</span>
+      ${iSeeDeployment() ? `<span><b style="color:var(--accent)">&#9633;</b> ${T('situation-room.legend-outlined', 'outlined — we have observers there')}</span>` : ''}
     </div>`;
     wireMapTaps(host);
     wireMapZoom(host);
@@ -1959,6 +1973,15 @@ function openSheet(title) {
  * hover and a phone never shows at all. Read the same <title> back rather than
  * restating the numbers, so the tapped text can never drift from the hovered.
  */
+/* The "of ours" half of an area's tooltip. Nothing for a plain member: their
+   tree carries no deployment, and "nobody assigned" would be a false claim. */
+function oursTip(node) {
+  if (!iSeeDeployment()) return '';
+  return node.assigned
+    ? T('situation-room.map-tooltip-ours', ', {n} of ours', { n: n(node.assigned) })
+    : T('situation-room.map-tooltip-nobody', ', nobody assigned');
+}
+
 function wireMapTaps(host) {
   const svg = host.querySelector('svg');
   if (!svg) return;
@@ -2373,21 +2396,25 @@ function exportCsv(level, rows) {
  */
 function renderIncidents() {
   const list = (S.incidents && S.incidents.incidents) || [];
-  const ours = list.filter((x) => x.ours).length;
-  const mine = S.incFilter === 'ours';
+  /* A plain member is marked "ours" only on their OWN incidents; the room's
+     count comes from the server as a total (ours_total), and the "only ours"
+     filter — which for them would mean "only mine" — is not offered. */
+  const deploy = iSeeDeployment();
+  const oursTotal = S.incidents && S.incidents.ours_total != null ? S.incidents.ours_total : list.filter((x) => x.ours).length;
+  const mine = deploy && S.incFilter === 'ours';
   const shown = mine ? list.filter((x) => x.ours) : list;
 
   $('sr-body').innerHTML = `
     <div class="sr-heads">
       <div class="sr-head"><b class="num">${n(list.length)}</b><span>${T('situation-room.published-in-this-race', 'Published in this race')}</span></div>
-      <div class="sr-head ok"><b class="num">${n(ours)}</b><span>${T('situation-room.filed-by-your-observers', 'Filed by your observers')}</span></div>
+      <div class="sr-head ok"><b class="num">${n(oursTotal)}</b><span>${T('situation-room.filed-by-your-observers', 'Filed by your observers')}</span></div>
     </div>
-    <div class="sr-bar" style="border:0;padding:0 0 10px">
+    ${deploy ? `<div class="sr-bar" style="border:0;padding:0 0 10px">
       <select class="sr-sel" id="inc-filter">
         <option value="all"${mine ? '' : ' selected'}>${T('situation-room.everything-published-here', 'Everything published here')}</option>
         <option value="ours"${mine ? ' selected' : ''}>${T('situation-room.only-what-your-observers-filed', 'Only what your observers filed')}</option>
       </select>
-    </div>
+    </div>` : ''}
     ${shown.length ? `<div class="sr-card">${shown.map(incidentRow).join('')}</div>` : `
     <div class="sr-empty"><h2>${list.length
       ? T('situation-room.none-from-your-observers-yet', 'None from your observers yet')
@@ -2398,10 +2425,12 @@ function renderIncidents() {
     <div class="sr-note">
       ${T('situation-room.incidents-note',
     '<strong>This is the public list.</strong> Every incident here is already on Hawkeye for anyone to read — nothing is shown before it is published, and no other group’s observers are named. What this tab adds is which ones came from your people. Weighing a claim happens in the <a href="docket.html" style="color:var(--accent)">public docket</a>, not here.')}
-      <br />${T('situation-room.incidents-unit-note', 'Units are shown only for incidents your own observers filed; the rest are placed by ward.')}
+      <br />${deploy
+    ? T('situation-room.incidents-unit-note', 'Units are shown only for incidents your own observers filed; the rest are placed by ward.')
+    : T('situation-room.incidents-restricted-note', 'Only your own incidents are marked as yours and shown at their unit. Which of the rest came from this room’s observers is for its managers and coordinators.')}
     </div>`;
 
-  $('inc-filter').addEventListener('change', (e) => { S.incFilter = e.target.value; renderIncidents(); });
+  if ($('inc-filter')) $('inc-filter').addEventListener('change', (e) => { S.incFilter = e.target.value; renderIncidents(); });
 }
 
 function incidentRow(x) {
@@ -2458,6 +2487,31 @@ function renderTeam() {
   const count = (s) => t.members.filter((m) => m.status === s).length;
   const proposed = t.members.filter((m) => m.assign_state === 'proposed').length;
 
+  /* A PLAIN MEMBER: the room's totals, their own row, and why that is all.
+     The server sends only their own row, so counting it would read "1
+     observer"; the totals come from the room itself. */
+  if (!iSeeDeployment()) {
+    const g = S.group || {};
+    const a = g.attendance || {};
+    $('sr-body').innerHTML = `
+    <div class="sr-heads">
+      <div class="sr-head"><b class="num">${n(g.members || 0)}</b><span>${T('situation-room.observers', 'Observers')}</span></div>
+      <div class="sr-head"><b class="num">${n(a.checkedIn || 0)}</b><span>${T('situation-room.checked-in-today', 'Checked in today')}</span></div>
+      <div class="sr-head ok"><b class="num">${n(g.reported || 0)}</b><span>${T('situation-room.ours-reported-count', 'Of ours have reported')}</span></div>
+      <div class="sr-head"><b class="num">${n(Math.max(0, (g.members || 0) - (g.assigned || 0)))}</b><span>${T('situation-room.no-unit-set', 'No unit set')}</span></div>
+    </div>
+    ${checkInCardHtml()}
+    <div class="sr-note">
+      <strong>${T('situation-room.read-only-title', "You are on this campaign’s roster.")}</strong>
+      ${T('situation-room.restricted-body', 'Where the team is deployed — the roster, its units and check-ins — is for this room’s managers and coordinators. You see your own place here and the room’s totals above.')}
+    </div>
+    ${ms.length ? `<div class="sr-wrap"><table class="sr-tbl text">
+      <thead><tr><th>${T('profile.observer', 'Observer')}</th><th>${T('race.status', 'Status')}</th><th>${T('situation-room.checked-in', 'Checked in')}</th><th>${T('situation-room.assigned-unit', 'Assigned unit')}</th><th>${T('situation-room.reported-from', 'Reported from')}</th><th></th></tr></thead>
+      <tbody>${ms.map(memberRow).join('')}</tbody>
+    </table></div>` : ''}`;
+    return;
+  }
+
   $('sr-body').innerHTML = `
     <div class="sr-heads">
       <div class="sr-head"><b class="num">${n(t.members.length)}</b><span>${T('situation-room.observers', 'Observers')}</span></div>
@@ -2474,10 +2528,6 @@ function renderTeam() {
     </div>
     ${checkInCardHtml()}
     ${rosterToolsHtml()}
-    ${iManage() ? '' : `<div class="sr-note">
-      <strong>${T('situation-room.read-only-title', "You are on this campaign’s roster.")}</strong>
-      ${T('situation-room.read-only-body', "This is the campaign’s own view of the race. You can read everything here; only its managers can change anything in it.")}
-    </div>`}
     ${managersHtml()}
     ${(() => {
       /* Pointed out ONCE at the top, not only per row: in a roster of hundreds a

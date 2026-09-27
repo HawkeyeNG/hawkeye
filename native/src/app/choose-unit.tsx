@@ -18,6 +18,12 @@ import { emitMyUnitSaved } from '@/lib/my-unit';
  *                            cross and Save both go back to Profile, which
  *                            updates its row from emitMyUnitSaved in place.
  *
+ * Either may add ?unit=NN-NN-NN-NNN: a unit to open with SELECTED (not saved)
+ * — the one a "bring a second observer to your unit" invitation brought. Same
+ * parameter as the web's choose-unit.html. The app cannot yet receive it from
+ * an invite link by itself (no install referrer, and invite.html is not an App
+ * Link), so today it arrives only when something routes here with it.
+ *
  * It replaced a ModalCard. The sign-up flow used to close that modal and wait
  * 350ms for its fade before navigating (replacing the stack under a fading
  * modal is the mid-dismiss navigation alerts.tsx guards against). There is no
@@ -25,7 +31,7 @@ import { emitMyUnitSaved } from '@/lib/my-unit';
  * tap queueing two of them.
  */
 export default function ChooseUnitRoute() {
-  const { onboard, current } = useLocalSearchParams<{ onboard?: string; current?: string }>();
+  const { onboard, current, unit } = useLocalSearchParams<{ onboard?: string; current?: string; unit?: string }>();
   const isOnboard = onboard === '1';
   const leaving = useRef(false);
 
@@ -52,6 +58,7 @@ export default function ChooseUnitRoute() {
     <ChooseUnitScreen
       onboard={isOnboard}
       currentCode={typeof current === 'string' && current ? current : null}
+      prefillCode={typeof unit === 'string' && unit ? unit : null}
       onSaved={(unit) => {
         emitMyUnitSaved(unit);
         leave(isOnboard ? 'tabs' : 'back');

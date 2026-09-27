@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#00482b">
+  <meta name="description" content="Apply to be a Hawkeye ward captain: help fill the polling units in your ward with observers who stay for the count.">
+  <title data-i18n="captain.page-title">Hawkeye — Become a Ward Captain</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=191">
+  <script src="native.js?v=120"></script>
+  <script src="/monitor.js?v=3" defer></script>
+  <!-- Signed in only: captain.html is in neither of authgate's open lists, so
+       a signed-out visitor is sent to sign in and brought back here. -->
+  <script src="authgate.js?v=3"></script>
+  <style>
+    /* Page-scoped, like coverage.html: styles.css is in the worker's shell. */
+    main.cap-main { padding-top: 16px; }
+    .cap-form textarea { width: 100%; min-height: 96px; resize: vertical; font: inherit; }
+    .cap-optional { color: var(--muted); font-weight: 400; }
+    .cap-consent { display: flex; gap: 10px; align-items: flex-start; margin: 14px 0 6px; font-weight: 400; }
+    .cap-consent input { width: 22px; height: 22px; margin: 2px 0 0; flex: 0 0 auto; }
+    .cap-status-card h2 { margin-top: 0; }
+    .cap-badge { display: inline-block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .cap-badge.approved { color: var(--link); border-color: var(--link); }
+    .cap-err { color: var(--text-danger); }
+    .cap-ok { color: var(--link); }
+    .cap-retry { width: auto; margin: 8px 0 0; }
+  </style>
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true"><img src="logo.svg?v=101" alt="" width="30" height="30" style="display:block" /></span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false" onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">☰</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a data-i18n="common.about-contact" href="about.html">About &amp; Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy &amp; Data</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap cap-main">
+    <h1 data-i18n="captain.title">Become a Ward Captain</h1>
+    <p data-i18n-html="captain.lede" class="lede">A ward captain gets people to stay for the count at the polling units in one ward. Read the <a class="link" href="captain-guide.html">captain's guide</a> first.</p>
+
+    <!-- Painted by the script (and repainted on a language change), so no
+         data-i18n on anything inside: apply() would put the English back. -->
+    <p id="load-status" class="status" role="status"></p>
+
+    <section id="status-card" class="card cap-status-card" hidden></section>
+
+    <form id="cap-form" class="card cap-form" novalidate hidden>
+      <h2 data-i18n="captain.your-ward">Your ward</h2>
+      <label data-i18n="common.state" for="sel-state">State</label>
+      <select id="sel-state" required></select>
+      <label data-i18n="common.local-government-area" for="sel-lga">Local Government Area</label>
+      <select id="sel-lga" required disabled></select>
+      <label data-i18n="common.ward" for="sel-ward">Ward</label>
+      <select id="sel-ward" required disabled></select>
+
+      <h2 data-i18n="captain.about-you">About you</h2>
+      <label for="f-org"><span data-i18n="captain.organisation">Organisation</span> <span data-i18n="captain.optional" class="cap-optional">(optional)</span></label>
+      <input id="f-org" type="text" maxlength="120" autocomplete="organization" aria-describedby="org-hint">
+      <p data-i18n="captain.organisation-hint" id="org-hint" class="hint">For example a residents' association, a youth group or a union branch.</p>
+      <label data-i18n="captain.note" for="f-note">Why you, and any experience</label>
+      <textarea id="f-note" maxlength="600" required aria-describedby="note-hint"></textarea>
+      <p data-i18n="captain.note-hint" id="note-hint" class="hint">A few lines: who you know in the ward, and anything you have organised before. Please leave out phone numbers.</p>
+      <label data-i18n="captain.volunteers" for="f-vol">How many volunteers could you bring?</label>
+      <input id="f-vol" type="number" inputmode="numeric" min="0" max="500" step="1" value="0" required>
+
+      <h2 data-i18n="captain.contact-h">How we reach you</h2>
+      <!-- In-app only: no name and no phone are asked for or stored. The two
+           links are where alerts are switched on — this device's push
+           (notifications.html) and the Telegram bot, which links by the
+           number the account already has. -->
+      <p data-i18n-html="captain.contact" class="hint">We reply through Hawkeye alerts, never by phone call. <a class="link" href="notifications.html">Turn on notifications</a>, or open <a class="link" href="https://t.me/HawkEyeNGBot" target="_blank" rel="noopener">@HawkEyeNGBot</a> on Telegram and share your number there, so our reply reaches you.</p>
+      <label class="cap-consent"><input id="f-consent" type="checkbox" required><span data-i18n="captain.consent">Hawkeye may send me alerts about this application.</span></label>
+      <p data-i18n="captain.privacy" class="hint">Only the Hawkeye team sees your application. It is deleted if you delete your account.</p>
+
+      <button data-i18n="captain.submit" id="btn-submit" type="submit">Send application</button>
+      <p id="form-status" class="status" role="status" aria-live="polite"></p>
+    </form>
+
+    <p data-i18n="captain.no-access-note" class="hint">Being a captain gives you no special access in the app. Hawkeye never shares who watches which polling unit.</p>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a data-i18n="common.privacy-data" href="privacy.html">Privacy &amp; Data</a><a data-i18n="index.how-it-works" href="how.html">How It Works</a><a href="faq.html">FAQ</a></nav>
+    <p data-i18n="common.hawkeye-is-an-independent-transparency-initiative-2">Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+    <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">© 2026 IniXien, LLC. All rights reserved.</p>
+  </div></footer>
+
+  <script src="device.js"></script>
+  <script>
+  /**
+   * WARD CAPTAIN APPLICATION — POST /api/captains/apply, GET /api/captains/mine
+   * (backend routes/captains.js). One open application per observer. No name
+   * and no phone: the owner replies through Hawkeye alerts.
+   *
+   * The ward comes from the same register cascade as collation.html and
+   * map-unit.html (/api/register/states|lgas|wards). Every painted string goes
+   * through T() when it is painted, and the page repaints on `hawkeye-lang`.
+   */
+  (function () {
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    const fill = (s, vars) => String(s).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const $ = (id) => document.getElementById(id);
+    const token = () => { try { return localStorage.getItem('hawkeye_token') || ''; } catch (e) { return ''; } };
+
+    const STATUS_EN = { new: 'New', contacted: 'Contacted', approved: 'Approved', declined: 'Declined' };
+    const STATUS_LINE_EN = {
+      new: 'We have your application. Our reply will come as a Hawkeye alert.',
+      contacted: 'We have sent you a message. Check your Hawkeye alerts.',
+      approved: 'You are the Hawkeye ward captain for this ward. Start with the captain’s guide.',
+      declined: 'This application was not taken forward. You can apply again, for this ward or another.',
+    };
+    const ERR_EN = {
+      ward_required: 'Choose your state, local government and ward.',
+      unknown_ward: 'That ward is not in the register. Choose it again from the lists.',
+      note_required: 'Tell us briefly why you, and any experience.',
+      bad_volunteers: 'Enter a number of volunteers from 0 to 500.',
+      consent_required: 'Tick the box so we can send you alerts about this application.',
+      already_applied: 'You already have an open application.',
+      rate_limited: 'Too many tries. Wait a few minutes and try again.',
+      signed_out: 'Your session has ended. Sign in again to apply.',
+      network: 'Could not reach Hawkeye. Check your connection and try again.',
+      failed: 'Something went wrong. Please try again.',
+    };
+    // Server codes are snake_case; bundle keys are kebab-case like every other key.
+    const errText = (code) => (ERR_EN[code]
+      ? T('captain.err.' + code.replace(/_/g, '-'), ERR_EN[code])
+      : T('captain.err.failed', ERR_EN.failed));
+
+    let app = null;          // the latest application, or null
+    let canApply = false;
+    let loadErr = null;      // error code from GET /mine
+    let loading = false;
+    let notice = null;       // { ok } after sending, or { ok:false, code } when the form is gone
+    let formMsg = null;      // { ok, code } after a submit
+    let regErr = false;      // a register list failed to load
+
+    async function api(path, init) {
+      const headers = Object.assign({ authorization: 'Bearer ' + token() }, (init && init.headers) || {});
+      try { if (window.getDeviceId) headers['x-device-id'] = await window.getDeviceId(); } catch (e) { /* optional */ }
+      const r = await fetch(path, Object.assign({}, init, { headers }));
+      const body = await r.json().catch(() => null);
+      return { status: r.status, body };
+    }
+
+    function codeOf(res) {
+      if (res.status === 401) return 'signed_out';
+      if (res.status === 429) return 'rate_limited';
+      return (res.body && res.body.error && ERR_EN[res.body.error]) ? res.body.error : 'failed';
+    }
+
+    /* --- the register cascade -------------------------------------------- */
+    function fillSelect(sel, items) {
+      const keep = sel.value;
+      sel.innerHTML = '';
+      const ph = document.createElement('option');
+      ph.value = '';
+      ph.textContent = T('common.select', '— select —');
+      sel.appendChild(ph);
+      for (const v of items || []) {
+        if (v == null || v === '') continue;
+        const o = document.createElement('option');
+        o.value = v; o.textContent = v;
+        sel.appendChild(o);
+      }
+      sel.disabled = !(items && items.length);
+      if (keep && [...sel.options].some((o) => o.value === keep)) sel.value = keep;
+    }
+    async function reg(path) {
+      try {
+        const r = await fetch('/api/register/' + path);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const list = await r.json();
+        if (!Array.isArray(list)) throw new Error('bad');
+        regErr = false;
+        return list;
+      } catch (e) {
+        regErr = true;
+        paintForm();
+        return [];
+      }
+    }
+    async function loadStates() { fillSelect($('sel-state'), await reg('states')); }
+    $('sel-state').addEventListener('change', async () => {
+      fillSelect($('sel-lga'), []); fillSelect($('sel-ward'), []);
+      if ($('sel-state').value) fillSelect($('sel-lga'), await reg('lgas?state=' + encodeURIComponent($('sel-state').value)));
+    });
+    $('sel-lga').addEventListener('change', async () => {
+      fillSelect($('sel-ward'), []);
+      if ($('sel-lga').value) {
+        fillSelect($('sel-ward'), await reg('wards?state=' + encodeURIComponent($('sel-state').value) + '&lga=' + encodeURIComponent($('sel-lga').value)));
+      }
+    });
+
+    /* --- painting --------------------------------------------------------- */
+    function paintStatus() {
+      const card = $('status-card');
+      if (!app) { card.hidden = true; card.innerHTML = ''; return; }
+      const when = new Date(app.createdAt).toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' });
+      card.hidden = false;
+      card.innerHTML = '<h2>' + esc(T('captain.your-application', 'Your application')) + '</h2>'
+        + '<p><span class="cap-badge ' + esc(app.status) + '">' + esc(T('captain.status.' + app.status, STATUS_EN[app.status] || app.status)) + '</span></p>'
+        + '<p><b>' + esc(app.ward) + '</b>, ' + esc(app.lga) + ', ' + esc(app.state) + '</p>'
+        + '<p class="meta">' + esc(fill(T('captain.applied-on', 'Sent {date}'), { date: when })) + '</p>'
+        + '<p>' + esc(T('captain.status-line.' + app.status, STATUS_LINE_EN[app.status] || '')) + '</p>'
+        + (app.status === 'approved'
+          ? '<a class="btn-link" href="captain-guide.html">' + esc(T('captain.read-guide', 'Read the captain’s guide')) + '</a>'
+          : '')
+        // Replies arrive as alerts, so the feed is one tap away.
+        + (app.status !== 'declined'
+          ? '<p><a class="link" href="notifications.html">' + esc(T('captain.open-alerts', 'Open your alerts')) + '</a></p>'
+          : '');
+    }
+
+    function paintForm() {
+      $('cap-form').hidden = !canApply;
+      // Placeholders of the three lists, in the current language.
+      for (const id of ['sel-state', 'sel-lga', 'sel-ward']) {
+        const ph = $(id).querySelector('option[value=""]');
+        if (ph) ph.textContent = T('common.select', '— select —');
+      }
+      const st = $('form-status');
+      if (regErr) { st.className = 'status cap-err'; st.textContent = T('captain.err.register', 'Could not load the list of places. Check your connection and try again.'); return; }
+      if (!formMsg) { st.className = 'status'; st.textContent = ''; return; }
+      st.className = 'status ' + (formMsg.ok ? 'cap-ok' : 'cap-err');
+      st.textContent = formMsg.ok ? T('captain.sent', 'Application sent. Thank you.') : errText(formMsg.code);
+    }
+
+    function paintLoad() {
+      const el = $('load-status');
+      if (loading) { el.className = 'status'; el.textContent = T('index.loading', 'Loading…'); return; }
+      if (!loadErr && notice) {
+        el.className = 'status ' + (notice.ok ? 'cap-ok' : 'cap-err');
+        el.textContent = notice.ok ? T('captain.sent', 'Application sent. Thank you.') : errText(notice.code);
+        return;
+      }
+      if (!loadErr) { el.innerHTML = ''; el.className = 'status'; return; }
+      el.className = 'status cap-err';
+      el.innerHTML = esc(errText(loadErr))
+        + (loadErr === 'signed_out'
+          ? ' <a class="link" href="observe.html?intent=signin&amp;next=captain.html">' + esc(T('captain.sign-in', 'Sign in')) + '</a>'
+          : '<br><button type="button" class="secondary cap-retry" id="retry">' + esc(T('coverage.try-again', 'Try again')) + '</button>');
+      const b = $('retry');
+      if (b) b.onclick = () => load();
+    }
+
+    function paint() { paintLoad(); paintStatus(); paintForm(); }
+
+    /* --- data ------------------------------------------------------------- */
+    async function load() {
+      loadErr = null; notice = null; loading = true;
+      paintLoad();
+      let res;
+      try { res = await api('/api/captains/mine'); } catch (e) { res = null; }
+      loading = false;
+      if (!res) loadErr = 'network';
+      else if (res.status !== 200 || !res.body) loadErr = codeOf(res);
+      else {
+        app = res.body.application || null;
+        canApply = !!res.body.canApply;
+        if (canApply && $('sel-state').options.length <= 1) loadStates();
+      }
+      paint();
+    }
+
+    $('cap-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = $('btn-submit');
+      const body = {
+        state: $('sel-state').value, lga: $('sel-lga').value, ward: $('sel-ward').value,
+        organisation: $('f-org').value.trim(), note: $('f-note').value.trim(),
+        volunteers: Number($('f-vol').value), consent: $('f-consent').checked,
+      };
+      // The same checks the server makes, so the common mistakes answer at once.
+      let code = null;
+      if (!body.state || !body.lga || !body.ward) code = 'ward_required';
+      else if (!body.note) code = 'note_required';
+      else if (!Number.isInteger(body.volunteers) || body.volunteers < 0 || body.volunteers > 500) code = 'bad_volunteers';
+      else if (!body.consent) code = 'consent_required';
+      if (code) { formMsg = { ok: false, code }; paintForm(); return; }
+
+      btn.disabled = true;
+      formMsg = null; paintForm();
+      let res;
+      try {
+        res = await api('/api/captains/apply', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+        });
+      } catch (err) { res = null; }
+      btn.disabled = false;
+      if (res && res.status === 201 && res.body && res.body.application) {
+        app = res.body.application;
+        canApply = false;
+        formMsg = null;
+        notice = { ok: true };
+        paint();
+        $('status-card').scrollIntoView({ block: 'start' });
+        return;
+      }
+      if (res && res.status === 409 && res.body && res.body.application) {
+        app = res.body.application; canApply = false;
+      }
+      formMsg = { ok: false, code: res ? codeOf(res) : 'network' };
+      // With the form gone (409), the message moves above the status card.
+      if (!canApply) notice = formMsg;
+      paint();
+    });
+
+    document.addEventListener('hawkeye-lang', paint);
+
+    load();
+  })();
+  </script>
+  <script src="tg.js?v=95"></script>
+  <script src="/i18n.js?v=10"></script>
+  <script src="/lang.js?v=9"></script>
+  <script src="menu.js?v=182"></script>
+  <script src="shell.js?v=2" defer></script>
+</body>
+</html>

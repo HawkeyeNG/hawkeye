@@ -29,6 +29,7 @@ import { isSaveToDeviceEnabled, setSaveToDeviceEnabled } from '@/lib/save-to-dev
 import { shareHawkeye } from '@/lib/share';
 import { onMyUnitSaved } from '@/lib/my-unit';
 import { myReferral, type Referral } from '@/lib/referral';
+import { inviteUnitUrl, isUnitCode, shareInviteUnit } from '@/lib/invite-unit';
 import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
@@ -641,6 +642,21 @@ export default function Profile() {
                   } as never)
                 }
               />
+              {/* BRING A SECOND OBSERVER TO YOUR UNIT. Directly under the unit
+                  it is about, and only once one is saved (and the invite code
+                  has arrived): two matching reports verify a unit's count. The
+                  link carries the code and this unit's code, nothing else. */}
+              {savedUnit && referral && isUnitCode(savedUnit.pu_code) ? (
+                <Row
+                  icon="user-plus"
+                  label={i18nT('n.invite2.button')}
+                  sub={<Text className="pt-0.5 text-xs text-muted">{i18nT('n.invite2.why')}</Text>}
+                  chevron
+                  onPress={() => {
+                    void shareInviteUnit(inviteUnitUrl(referral.code, savedUnit.pu_code));
+                  }}
+                />
+              ) : null}
             </View>
             {/* Headed, not bare: these chips used to float under the account
                 card as naked codes, and read as noise rather than as the

@@ -555,11 +555,17 @@
        fallback, so a missing tag degrades quietly rather than loudly --
        which is exactly why the tag has to be asserted, not eyeballed. -->
   <script src="geo-msg.js?v=1"></script>
+  <!-- THE INVITE CODE, AT THE ONE PAGE THAT CAN SPEND IT. app.js sends
+       window.HAWKEYE_REFERRAL.pending() with the sign-up request, but this page
+       never loaded referral.js, so the object was undefined here and every web
+       sign-up went out with no code: the invite page parked it in storage and
+       nothing read it back. Also catches ?r=/&unit= arriving here directly. -->
+  <script src="referral.js?v=2"></script>
   <script src="app.js?v=172" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=181" defer></script>
+  <script src="menu.js?v=182" defer></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

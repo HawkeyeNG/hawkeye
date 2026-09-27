@@ -154,6 +154,24 @@
     .pday-line { margin: 0 0 12px; font-size: 0.9rem; line-height: 1.4; }
     .pday-card .pday-n { color: var(--link); font-size: 1rem; }
     .pday-card .pday-go { padding: 10px 18px; font-size: 0.9rem; }
+    /* "Try a practice run" (signed in, never practised). Same gold edge: it is
+       the other practice card, and AT MOST ONE shows. The server says when this
+       one may (GET /api/practice/nudge: never around a National Practice Day);
+       while it shows, the Practice Day card steps aside via .pday-yield. */
+    #pday-card.pday-yield { display: none; }
+    .pnudge-card h2 { margin-bottom: 6px; }
+    /* Undo styles.css's full-width green `button` — this is a small ×. The tap
+       target is 44px through ::after, NOT a negative margin (home_spacing_test
+       forbids those here), so the heading row keeps its height. */
+    .home-card .pnudge-x {
+      position: relative; display: grid; place-items: center; flex: none; width: 28px; height: 28px;
+      margin: 0; padding: 0;
+      background: none; border: 0; border-radius: 999px; box-shadow: none; cursor: pointer;
+      color: var(--muted); font-size: 1.35rem; font-weight: 400; line-height: 1;
+    }
+    .home-card .pnudge-x::after { content: ''; position: absolute; inset: -8px; }
+    .home-card .pnudge-x:hover, .home-card .pnudge-x:focus-visible { color: var(--ink); background: var(--tint); filter: none; }
+    .home-card .pnudge-x:active { transform: none; }
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -279,6 +297,9 @@
           <!-- National Practice Day: painted by practice-day.js from
                /api/practice-days, and hidden whenever there is no day to show. -->
           <div class="home-card pday-card" id="pday-card" hidden aria-live="polite"></div>
+          <!-- "Try a practice run": painted below from /api/practice/nudge; hidden
+               unless the server says show and the observer has not dismissed it. -->
+          <div class="home-card pday-card pnudge-card" id="pnudge-card" hidden></div>
           <div class="home-card">
             <h2><span data-i18n="index.latest-alerts">Latest Alerts</span> <a data-i18n="index.all-alerts" href="notifications.html">All Alerts →</a></h2>
             <div id="home-alerts"><p data-i18n="index.loading" class="home-empty">Loading…</p></div>
@@ -633,6 +654,51 @@
       };
       paintHome();
       document.addEventListener('hawkeye-lang', paintHome);
+
+      /**
+       * "TRY A PRACTICE RUN — 5 MINUTES", for an observer who never has.
+       *
+       * The SERVER decides whether it may show (GET /api/practice/nudge): never
+       * practised on their device, the sandbox open, and no National Practice
+       * Day near — on and around its day that card holds the page. At most one
+       * practice card: while this one shows, #pday-card steps aside
+       * (.pday-yield); dismissing this hands the slot back. Dismissal is per
+       * observer, on this device. Painted from keys on every language change,
+       * never kept as text. Any failure leaves it hidden.
+       */
+      const nudgeCard = document.getElementById('pnudge-card');
+      const pdayCard = document.getElementById('pday-card');
+      const NUDGE_KEY = 'hawkeye_practice_nudge_dismissed_' + me.observerId;
+      let nudgeOn = false;
+      const nudgeDismissed = () => { try { return localStorage.getItem(NUDGE_KEY) === '1'; } catch { return false; } };
+      const paintNudge = () => {
+        if (!nudgeCard) return;
+        if (!nudgeOn || nudgeDismissed()) {
+          nudgeCard.hidden = true;
+          nudgeCard.innerHTML = '';
+          if (pdayCard) pdayCard.classList.remove('pday-yield');
+          return;
+        }
+        nudgeCard.innerHTML =
+          '<h2><span>' + esc(tt('index.practice-nudge-title', 'Try a practice run — 5 minutes')) + '</span>'
+          + '<button type="button" class="pnudge-x" aria-label="' + esc(tt('index.practice-nudge-dismiss', 'Dismiss')) + '">×</button></h2>'
+          + '<p class="pday-line">' + esc(tt('index.practice-nudge-sub', 'Rehearse reporting a result on a practice polling unit before polling day. Nothing you enter counts as a real result.')) + '</p>'
+          + '<a class="btn-accent pday-go" href="practice.html">' + esc(tt('index.practice-nudge-go', 'Start the practice run')) + '</a>';
+        nudgeCard.querySelector('.pnudge-x').addEventListener('click', () => {
+          try { localStorage.setItem(NUDGE_KEY, '1'); } catch { /* hidden for this visit either way */ }
+          nudgeOn = false;
+          paintNudge();
+        });
+        nudgeCard.hidden = false;
+        if (pdayCard) pdayCard.classList.add('pday-yield');
+      };
+      if (!nudgeDismissed()) {
+        fetch('/api/practice/nudge', { headers: auth })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((j) => { nudgeOn = !!(j && j.show === true); paintNudge(); })
+          .catch(() => {});
+      }
+      document.addEventListener('hawkeye-lang', paintNudge);
       document.getElementById('ms-reports').textContent = (me.reports || []).length + (me.collation || []).length;
       document.getElementById('ms-incidents').textContent = (me.incidents || []).length;
       document.getElementById('ms-races').textContent = (me.subscriptions || []).length;
@@ -813,7 +879,7 @@
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
   <script src="practice-day.js?v=1"></script>
-  <script src="menu.js?v=181"></script>
+  <script src="menu.js?v=182"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

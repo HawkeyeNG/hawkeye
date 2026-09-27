@@ -1,6 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FlashList } from '@shopify/flash-list';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 
@@ -10,6 +11,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
+import { authedGet, useAuth } from '@/lib/auth';
 import { useUi, type Tone } from '@/lib/theme';
 import { dayMonth, longDate } from '@/lib/dates';
 import { t as i18nT, lazyT, useT } from '@/lib/i18n';
@@ -223,6 +225,99 @@ const FILTERS: { key: Kind | 'all'; label: string }[] = lazyT([
   { key: 'case', label: 'n.app.tabs.index.filter-cases' },
 ]);
 
+/**
+ * "TRY A PRACTICE RUN — 5 MINUTES", for a signed-in observer who never has.
+ *
+ * The SERVER decides whether it may show (GET /api/practice/nudge — the web
+ * home asks the same question): never practised on their device, the sandbox
+ * open, and no National Practice Day near. At most one practice card: while
+ * this shows, the Practice Day card is not rendered; on and around a Practice
+ * Day the server says no and that card holds the slot. Dismissal is per
+ * observer, on this device. Asked again on every focus, so coming back from a
+ * practice run hides it. Any failure leaves it hidden.
+ */
+const nudgeKey = (id: number) => `hawkeye.practiceNudge.dismissed.${id}`;
+
+function usePracticeNudge(): [boolean, () => void] {
+  const auth = useAuth();
+  const observerId = auth.status === 'signedIn' ? auth.observerId : null;
+  const [show, setShow] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      if (!observerId) {
+        setShow(false);
+        return undefined;
+      }
+      (async () => {
+        try {
+          if ((await AsyncStorage.getItem(nudgeKey(observerId))) === '1') {
+            if (alive) setShow(false);
+            return;
+          }
+        } catch {
+          /* unreadable flag: ask the server anyway; dismissing again is cheap */
+        }
+        try {
+          const r = await authedGet<{ show?: boolean }>('/api/practice/nudge', { signOutOn401: false });
+          if (alive) setShow(r?.show === true);
+        } catch {
+          if (alive) setShow(false);
+        }
+      })();
+      return () => {
+        alive = false;
+      };
+    }, [observerId]),
+  );
+
+  const dismiss = useCallback(() => {
+    setShow(false);
+    if (observerId) AsyncStorage.setItem(nudgeKey(observerId), '1').catch(() => {});
+  }, [observerId]);
+
+  return [show, dismiss];
+}
+
+function PracticeNudgeCard({ onDismiss }: { onDismiss: () => void }) {
+  const ui = useUi();
+  const practise = () => router.push('/practice' as never);
+  return (
+    <Pressable
+      className="mb-3 rounded-2xl border-l-4 border-hawk-gold bg-card px-4 py-4 active:opacity-90"
+      onPress={practise}
+      accessibilityRole="button"
+    >
+      <View className="flex-row items-center">
+        <Feather name="play-circle" size={16} color={ui.tint.good.ink} />
+        <Text className="flex-1 pl-2 text-[15px] font-bold text-ink">
+          {i18nT('n.app.tabs.index.practice-nudge-title')}
+        </Text>
+        <Pressable
+          onPress={onDismiss}
+          hitSlop={12}
+          className="-my-2 -mr-2 rounded-full p-2 active:opacity-60"
+          accessibilityRole="button"
+          accessibilityLabel={i18nT('n.app.tabs.index.practice-nudge-dismiss')}
+        >
+          <Feather name="x" size={18} color={ui.faint} />
+        </Pressable>
+      </View>
+      <Text className="pt-2 text-[14px] leading-5 text-ink">{i18nT('n.app.tabs.index.practice-nudge-sub')}</Text>
+      <View className="flex-row pt-3">
+        <Pressable
+          onPress={practise}
+          className="rounded-full bg-hawk-gold px-4 py-2.5 active:opacity-80"
+          accessibilityRole="button"
+        >
+          <Text className="text-sm font-bold text-hawk-green">{i18nT('n.app.tabs.index.practice-nudge-go')}</Text>
+        </Pressable>
+      </View>
+    </Pressable>
+  );
+}
+
 async function jget<T>(path: string): Promise<T | null> {
   try {
     const r = await fetch(`${BASE}${path}`, { headers: { accept: 'application/json' } });
@@ -264,6 +359,7 @@ export default function Home() {
   const [allElections, setAllElections] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [practiceNudge, dismissPracticeNudge] = usePracticeNudge();
 
   const load = useCallback(async () => {
     const [c, i, ledger, incidents, flags, docket] = await Promise.all([
@@ -471,8 +567,10 @@ export default function Home() {
         </Pressable>
       ) : null}
 
-      {/* National Practice Day: renders nothing when there is no day to show. */}
-      <PracticeDayCard />
+      {/* At most one practice card. The nudge only shows when the server says
+          no Practice Day is near, so on and around its day that card wins.
+          PracticeDayCard renders nothing when there is no day to show. */}
+      {practiceNudge ? <PracticeNudgeCard onDismiss={dismissPracticeNudge} /> : <PracticeDayCard />}
 
       <View className="flex-row gap-3">
         <Pressable

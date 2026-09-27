@@ -1249,5 +1249,18 @@
   "n.app.practice-day.all-days": "Àwọn Ọjọ́ Àdánwò",
   "n.app.practice-day.phase-before": "Ń bọ̀",
   "n.app.practice-day.phase-live": "Ó ṣí báyìí",
-  "n.app.practice-day.phase-after": "Ó ti tì"
+  "n.app.practice-day.phase-after": "Ó ti tì",
+  "n.invite2.title": "Mú olùwòran kejì wá sí ẹ̀ka ìdìbò rẹ",
+  "n.invite2.why": "Nígbà tí olùwòran méjì ní ẹ̀ka ìdìbò kan náà bá ròyìn nọ́ńbà kan náà, a ó fìdí ìkàyè rẹ̀ múlẹ̀.",
+  "n.invite2.button": "Pe olùwòran kejì",
+  "n.invite2.share-text": "Bá mi ṣọ́ ẹ̀ka ìdìbò mi lórí Hawkeye. Tí àwa méjèèjì bá ròyìn nọ́ńbà kan náà níbẹ̀, a ó fìdí ìkàyè náà múlẹ̀.",
+  "n.invite2.failed": "A kò lè ṣe ọ̀nà ìpè rẹ. Tẹ̀ láti tún gbìyànjú.",
+  "n.invite2.choose-first": "Kọ́kọ́ fi ẹ̀ka ìdìbò rẹ pamọ́, lẹ́yìn náà pe olùwòran kejì síbẹ̀.",
+  "n.invite2.saved-title": "A ti fi ẹ̀ka ìdìbò pamọ́",
+  "n.invite2.prefilled": "A pè ọ́ sí ẹ̀ka ìdìbò yìí. Fi í pamọ́, tàbí yan òmíràn.",
+  "coverage.observer-coverage": "Ìbòòrí Àwọn Olùwòran",
+  "n.app.tabs.index.practice-nudge-title": "Gbìyànjú eré àdánwò — ìṣẹ́jú 5",
+  "n.app.tabs.index.practice-nudge-sub": "Ṣe àdánwò jíjábọ̀ àbájáde ní ẹ̀ka ìdìbò àdánwò kí Ọjọ́ ìdìbò tó dé. Kò sí ohun tí o bá tẹ̀ sí i tí yóò kà gẹ́gẹ́ bí àbájáde gidi.",
+  "n.app.tabs.index.practice-nudge-go": "Bẹ̀rẹ̀ eré àdánwò",
+  "n.app.tabs.index.practice-nudge-dismiss": "Ti"
 }

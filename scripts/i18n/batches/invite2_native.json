@@ -1,0 +1,56 @@
+{
+  "n.invite2.title": {
+    "en": "Bring a second observer to your unit",
+    "ha": "Kawo mai lura na biyu zuwa rukunin zaɓenka",
+    "ig": "Kpọta onye na-ekiri ihe nke abụọ na ngalaba ntuli aka gị",
+    "yo": "Mú olùwòran kejì wá sí ẹ̀ka ìdìbò rẹ"
+  },
+  "n.invite2.why": {
+    "en": "When two observers at the same unit report the same numbers, its count is verified.",
+    "ha": "Idan masu lura biyu a rukunin zaɓe ɗaya suka bayar da alkaluma iri ɗaya, ana tabbatar da ƙidayarsa.",
+    "ig": "Mgbe ndị na-ekiri ihe abụọ n'otu ngalaba ntuli aka kọrọ otu ọnụọgụ ahụ, ngụkọ ya na-aghọ nke e nyochara.",
+    "yo": "Nígbà tí olùwòran méjì ní ẹ̀ka ìdìbò kan náà bá ròyìn nọ́ńbà kan náà, a ó fìdí ìkàyè rẹ̀ múlẹ̀."
+  },
+  "n.invite2.button": {
+    "en": "Invite a second observer",
+    "ha": "Gayyaci mai lura na biyu",
+    "ig": "Kpọọ onye na-ekiri ihe nke abụọ",
+    "yo": "Pe olùwòran kejì"
+  },
+  "n.invite2.share-text": {
+    "en": "Watch my polling unit with me on Hawkeye. When two of us report the same numbers there, the count is verified.",
+    "ha": "Ka sa ido a rukunin zaɓena tare da ni a Hawkeye. Idan mu biyu muka bayar da alkaluma iri ɗaya a can, ana tabbatar da ƙidayar.",
+    "ig": "Soro m kiri ngalaba ntuli aka m na Hawkeye. Mgbe anyị abụọ kọrọ otu ọnụọgụ ahụ n'ebe ahụ, ngụkọ ahụ na-aghọ nke e nyochara.",
+    "yo": "Bá mi ṣọ́ ẹ̀ka ìdìbò mi lórí Hawkeye. Tí àwa méjèèjì bá ròyìn nọ́ńbà kan náà níbẹ̀, a ó fìdí ìkàyè náà múlẹ̀."
+  },
+  "n.invite2.failed": {
+    "en": "Could not make your invite link. Tap to try again.",
+    "ha": "An kasa ƙirƙirar hanyar gayyatarka. Danna don sake gwadawa.",
+    "ig": "Enweghị ike ịmepụta njikọ ọkpụkpọ gị. Pịa ka ị nwaa ọzọ.",
+    "yo": "A kò lè ṣe ọ̀nà ìpè rẹ. Tẹ̀ láti tún gbìyànjú."
+  },
+  "n.invite2.choose-first": {
+    "en": "Save your polling unit first, then invite a second observer to it.",
+    "ha": "Ka fara ajiye rukunin zaɓenka, sannan ka gayyaci mai lura na biyu zuwa gare shi.",
+    "ig": "Buru ụzọ chekwaa ngalaba ntuli aka gị, wee kpọọ onye na-ekiri ihe nke abụọ ka ọ bịa ebe ahụ.",
+    "yo": "Kọ́kọ́ fi ẹ̀ka ìdìbò rẹ pamọ́, lẹ́yìn náà pe olùwòran kejì síbẹ̀."
+  },
+  "n.invite2.saved-title": {
+    "en": "Unit saved",
+    "ha": "An ajiye rukunin zaɓe",
+    "ig": "E chekwara ngalaba ntuli aka",
+    "yo": "A ti fi ẹ̀ka ìdìbò pamọ́"
+  },
+  "n.invite2.prefilled": {
+    "en": "You were invited to this unit. Save it, or choose another.",
+    "ha": "An gayyace ka zuwa wannan rukunin zaɓe. Ajiye shi, ko ka zaɓi wani.",
+    "ig": "A kpọrọ gị ka ị bịa ngalaba ntuli aka a. Chekwaa ya, ma ọ bụ họrọ nke ọzọ.",
+    "yo": "A pè ọ́ sí ẹ̀ka ìdìbò yìí. Fi í pamọ́, tàbí yan òmíràn."
+  },
+  "coverage.observer-coverage": {
+    "en": "Observer Coverage",
+    "ha": "Yawan Rufewar Masu Lura",
+    "ig": "Mkpuchi Ndị Na-ekiri Ihe",
+    "yo": "Ìbòòrí Àwọn Olùwòran"
+  }
+}

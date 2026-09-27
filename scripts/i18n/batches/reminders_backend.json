@@ -1,0 +1,62 @@
+{
+  "eday.date": {
+    "en": "{weekday}, {day} {month}",
+    "ha": "{weekday}, {day} {month}",
+    "ig": "{weekday}, {day} {month}",
+    "yo": "{weekday}, {day} {month}"
+  },
+  "eday.name.pres-nass": {
+    "en": "Presidential and National Assembly elections",
+    "ha": "Zaɓen Shugaban Ƙasa da na Majalisar Ƙasa",
+    "ig": "Ntuli aka Onye Isi Ala na nke Ụlọ Omebe Iwu Mba",
+    "yo": "Ìdìbò Ààrẹ àti ti Ilé Aṣòfin Orílẹ̀-èdè"
+  },
+  "eday.remind.days.title": {
+    "en": "Polling day is in {n} days",
+    "ha": "Saura kwana {n} zuwa Ranar zaɓe",
+    "ig": "Ụbọchị ntuli aka ga-abịa n’ime ụbọchị {n}",
+    "yo": "Ó ku ọjọ́ {n} sí Ọjọ́ ìdìbò"
+  },
+  "eday.remind.days.when": {
+    "en": "{election}: {date}. Polls open at {time} {zone}.",
+    "ha": "{election}: {date}. Za a fara zaɓe da ƙarfe {time} {zone}.",
+    "ig": "{election}: {date}. Ntuli aka ga-amalite n’elekere {time} {zone}.",
+    "yo": "{election}: {date}. Ìdìbò yóò bẹ̀rẹ̀ ní agogo {time} {zone}."
+  },
+  "eday.remind.hours.title": {
+    "en": "Polls open in {n} hours",
+    "ha": "Za a fara zaɓe cikin awa {n}",
+    "ig": "Ntuli aka ga-amalite n’ime awa {n}",
+    "yo": "Ìdìbò yóò bẹ̀rẹ̀ lẹ́yìn wákàtí {n}"
+  },
+  "eday.remind.hours.when": {
+    "en": "{election}: polls open at {time} {zone} today.",
+    "ha": "{election}: za a fara zaɓe da ƙarfe {time} {zone} a yau.",
+    "ig": "{election}: ntuli aka ga-amalite n’elekere {time} {zone} taa.",
+    "yo": "{election}: ìdìbò yóò bẹ̀rẹ̀ ní agogo {time} {zone} lónìí."
+  },
+  "eday.remind.unit": {
+    "en": "Stay for the count at {unit}, and photograph the result sheet when it is posted.",
+    "ha": "Ka tsaya domin ƙidaya a {unit}, ka kuma ɗauki hoton Takardar Sakamako idan an liƙa ta.",
+    "ig": "Nọrọ maka ọgụgụ na {unit}, ma see foto nke mpempe akwụkwọ nsonaazụ mgbe e gosiri ya ọha.",
+    "yo": "Dúró fún ìkà ní {unit}, kí o sì ya fọ́tò Ìwé Àbájáde nígbà tí wọ́n bá lẹ̀ ẹ́."
+  },
+  "eday.remind.nounit": {
+    "en": "You have not saved a polling unit yet. Save yours in Hawkeye now so you are ready to report from it.",
+    "ha": "Ba ka ajiye rukunin zaɓe ba tukuna. Ajiye naka a Hawkeye yanzu domin ka shirya aika rahoto daga can.",
+    "ig": "Ị chekwabeghị ngalaba ntuli aka ọ bụla. Chekwaa nke gị na Hawkeye ugbu a ka ị dị njikere ịkọ akụkọ site n’ebe ahụ.",
+    "yo": "O kò tíì fi ẹ̀ka ìdìbò kankan pamọ́. Fi tìrẹ pamọ́ sí Hawkeye nísinsìnyí kí o lè múra láti jábọ̀ láti ibẹ̀."
+  },
+  "pnudge.title": {
+    "en": "Try a practice run — 5 minutes",
+    "ha": "Gwada gwajin atisaye — minti 5",
+    "ig": "Nwaa ọsọ omume — nkeji 5",
+    "yo": "Gbìyànjú eré àdánwò — ìṣẹ́jú 5"
+  },
+  "pnudge.body": {
+    "en": "Rehearse reporting a result on a practice polling unit before polling day. Nothing you enter counts as a real result.",
+    "ha": "Gwada aika sakamako a rukunin zaɓe na atisaye kafin Ranar zaɓe. Babu abin da ka shigar da zai zama sakamako na gaske.",
+    "ig": "Mee omume ịkọ nsonaazụ na ngalaba ntuli aka omume tupu Ụbọchị ntuli aka. Ọ dịghị ihe ị tinyere ga-agụ dị ka ezigbo nsonaazụ.",
+    "yo": "Ṣe àdánwò jíjábọ̀ àbájáde ní ẹ̀ka ìdìbò àdánwò kí Ọjọ́ ìdìbò tó dé. Kò sí ohun tí o bá tẹ̀ sí i tí yóò kà gẹ́gẹ́ bí àbájáde gidi."
+  }
+}

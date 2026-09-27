@@ -1,0 +1,614 @@
+{
+  "captain.page-title": {
+    "en": "Hawkeye — Become a Ward Captain",
+    "ha": "Hawkeye — Zama Kyaftin na Unguwa",
+    "ig": "Hawkeye — Bụrụ Onye Ndú Ward",
+    "yo": "Hawkeye — Di Olùdarí Àgọ́"
+  },
+  "captain.title": {
+    "en": "Become a Ward Captain",
+    "ha": "Zama Kyaftin na Unguwa",
+    "ig": "Bụrụ Onye Ndú Ward",
+    "yo": "Di Olùdarí Àgọ́"
+  },
+  "captain.lede": {
+    "en": "A ward captain gets people to stay for the count at the polling units in one ward. Read the <a class=\"link\" href=\"captain-guide.html\">captain's guide</a> first.",
+    "ha": "Kyaftin na unguwa yana sa mutane su tsaya domin ƙidaya a rukunan zaɓe na unguwa ɗaya. Karanta <a class=\"link\" href=\"captain-guide.html\">jagorar kyaftin</a> tukuna.",
+    "ig": "Onye ndú ward na-eme ka ndị mmadụ nọrọ maka ọgụgụ na ngalaba ntuli aka dị n'otu ward. Buru ụzọ gụọ <a class=\"link\" href=\"captain-guide.html\">ntuziaka onye ndú</a>.",
+    "yo": "Olùdarí àgọ́ ń jẹ́ kí àwọn ènìyàn dúró fún ìkà ní àwọn ẹ̀ka ìdìbò inú àgọ́ kan. Kọ́kọ́ ka <a class=\"link\" href=\"captain-guide.html\">ìtọ́sọ́nà olùdarí</a>."
+  },
+  "captain.your-ward": {
+    "en": "Your ward",
+    "ha": "Unguwarka",
+    "ig": "Ward gị",
+    "yo": "Àgọ́ rẹ"
+  },
+  "captain.about-you": {
+    "en": "About you",
+    "ha": "Game da kai",
+    "ig": "Gbasara gị",
+    "yo": "Nípa rẹ"
+  },
+  "captain.organisation": {
+    "en": "Organisation",
+    "ha": "Ƙungiya",
+    "ig": "Nzukọ",
+    "yo": "Àjọ"
+  },
+  "captain.optional": {
+    "en": "(optional)",
+    "ha": "(ba dole ba)",
+    "ig": "(nhọrọ)",
+    "yo": "(àṣàyàn)"
+  },
+  "captain.organisation-hint": {
+    "en": "For example a residents' association, a youth group or a union branch.",
+    "ha": "Misali ƙungiyar mazauna unguwa, ƙungiyar matasa ko reshen ƙungiyar ma'aikata.",
+    "ig": "Dịka ọmụmaatụ, otu ndị bi n'obodo, otu ndị ntorobịa ma ọ bụ alaka otu ndị ọrụ.",
+    "yo": "Fún àpẹẹrẹ ẹgbẹ́ olùgbé àdúgbò, ẹgbẹ́ ọ̀dọ́ tàbí ẹ̀ka ẹgbẹ́ òṣìṣẹ́."
+  },
+  "captain.note": {
+    "en": "Why you, and any experience",
+    "ha": "Me ya sa kai, da duk wata ƙwarewa",
+    "ig": "Gịnị mere gị, na ahụmahụ ọ bụla",
+    "yo": "Kí ló dé tí ìwọ, àti ìrírí èyíkéyìí"
+  },
+  "captain.note-hint": {
+    "en": "A few lines: who you know in the ward, and anything you have organised before. Please leave out phone numbers.",
+    "ha": "'Yan layuka kaɗan: waɗanda ka sani a unguwar, da duk abin da ka taɓa shiryawa a baya. Don Allah kada ka rubuta lambobin waya.",
+    "ig": "Ahịrị ole na ole: ndị ị ma na ward ahụ, na ihe ọ bụla ị haziri na mbụ. Biko etinyela nọmba ekwentị.",
+    "yo": "Ìlà díẹ̀: àwọn tí o mọ̀ nínú àgọ́ náà, àti ohunkóhun tí o ti ṣètò rí. Jọ̀wọ́ má ṣe kọ nọ́mbà fóònù."
+  },
+  "captain.volunteers": {
+    "en": "How many volunteers could you bring?",
+    "ha": "Masu sa kai nawa za ka iya kawowa?",
+    "ig": "Ndị ọrụ afọ ofufo ole ka ị nwere ike iweta?",
+    "yo": "Àwọn olùyọ̀ǹda mélòó ni o lè mú wá?"
+  },
+  "captain.contact-h": {
+    "en": "How we reach you",
+    "ha": "Yadda za mu same ka",
+    "ig": "Otu anyị ga-esi ruo gị",
+    "yo": "Bí a ó ṣe kàn sí ọ"
+  },
+  "captain.contact": {
+    "en": "We reply through Hawkeye alerts, never by phone call. <a class=\"link\" href=\"notifications.html\">Turn on notifications</a>, or open <a class=\"link\" href=\"https://t.me/HawkEyeNGBot\" target=\"_blank\" rel=\"noopener\">@HawkEyeNGBot</a> on Telegram and share your number there, so our reply reaches you.",
+    "ha": "Muna amsawa ta sanarwar Hawkeye, ba ta kiran waya ba. <a class=\"link\" href=\"notifications.html\">Kunna sanarwa</a>, ko ka buɗe <a class=\"link\" href=\"https://t.me/HawkEyeNGBot\" target=\"_blank\" rel=\"noopener\">@HawkEyeNGBot</a> a Telegram ka raba lambarka a can, domin amsarmu ta iso gare ka.",
+    "ig": "Anyị na-aza site na ọkwa Hawkeye, ọ bụghị site n'oku ekwentị. <a class=\"link\" href=\"notifications.html\">Gbanwuo ọkwa</a>, ma ọ bụ mepee <a class=\"link\" href=\"https://t.me/HawkEyeNGBot\" target=\"_blank\" rel=\"noopener\">@HawkEyeNGBot</a> na Telegram ma kesaa nọmba gị ebe ahụ, ka azịza anyị ruo gị aka.",
+    "yo": "A máa ń fèsì nípasẹ̀ ìkìlọ̀ Hawkeye, kì í ṣe nípa pípe fóònù. <a class=\"link\" href=\"notifications.html\">Tan ìfitónilétí</a>, tàbí ṣí <a class=\"link\" href=\"https://t.me/HawkEyeNGBot\" target=\"_blank\" rel=\"noopener\">@HawkEyeNGBot</a> lórí Telegram kí o sì pín nọ́mbà rẹ níbẹ̀, kí èsì wa lè dé ọ̀dọ̀ rẹ."
+  },
+  "captain.consent": {
+    "en": "Hawkeye may send me alerts about this application.",
+    "ha": "Hawkeye na iya aiko mini da sanarwa game da wannan buƙata.",
+    "ig": "Hawkeye nwere ike iziga m ọkwa gbasara arịrịọ a.",
+    "yo": "Hawkeye lè fi ìkìlọ̀ ránṣẹ́ sí mi nípa ìbéèrè yìí."
+  },
+  "captain.privacy": {
+    "en": "Only the Hawkeye team sees your application. It is deleted if you delete your account.",
+    "ha": "Ƙungiyar Hawkeye kaɗai ke ganin buƙatarka. Za a goge ta idan ka goge asusunka.",
+    "ig": "Naanị ndị otu Hawkeye na-ahụ arịrịọ gị. A na-ehichapụ ya ma ọ bụrụ na ihichapụ akaụntụ gị.",
+    "yo": "Ẹgbẹ́ Hawkeye nìkan ló ń rí ìbéèrè rẹ. A máa pa á rẹ́ tí o bá pa àkọọ́lẹ̀ rẹ rẹ́."
+  },
+  "captain.open-alerts": {
+    "en": "Open your alerts",
+    "ha": "Buɗe sanarwarka",
+    "ig": "Mepee ọkwa gị",
+    "yo": "Ṣí àwọn ìkìlọ̀ rẹ"
+  },
+  "captain.submit": {
+    "en": "Send application",
+    "ha": "Aika buƙata",
+    "ig": "Zipu arịrịọ",
+    "yo": "Fi ìbéèrè ránṣẹ́"
+  },
+  "captain.no-access-note": {
+    "en": "Being a captain gives you no special access in the app. Hawkeye never shares who watches which polling unit.",
+    "ha": "Zama kyaftin ba ya ba ka wata dama ta musamman a manhajar. Hawkeye ba ya taɓa bayyana wanda ke lura da wane rukunin zaɓe.",
+    "ig": "Ịbụ onye ndú anaghị enye gị ohere pụrụ iche n'ime ngwa ahụ. Hawkeye anaghị ekpughe onye na-ekiri ngalaba ntuli aka ọ bụla.",
+    "yo": "Jíjẹ́ olùdarí kò fún ọ ní àǹfààní àkànṣe kankan nínú áàpù. Hawkeye kì í sọ ẹni tí ń wo ẹ̀ka ìdìbò wo."
+  },
+  "captain.status.new": {
+    "en": "New",
+    "ha": "Sabo",
+    "ig": "Ọhụrụ",
+    "yo": "Tuntun"
+  },
+  "captain.status.contacted": {
+    "en": "Contacted",
+    "ha": "An tuntuɓa",
+    "ig": "Akpọtụrụla",
+    "yo": "A ti kàn sí"
+  },
+  "captain.status.approved": {
+    "en": "Approved",
+    "ha": "An amince",
+    "ig": "Akwadoro",
+    "yo": "A ti fọwọ́ sí"
+  },
+  "captain.status.declined": {
+    "en": "Declined",
+    "ha": "Ba a karɓa ba",
+    "ig": "Anabataghị",
+    "yo": "A kò gbà á"
+  },
+  "captain.status-line.new": {
+    "en": "We have your application. Our reply will come as a Hawkeye alert.",
+    "ha": "Mun karɓi buƙatarka. Amsarmu za ta zo a matsayin sanarwar Hawkeye.",
+    "ig": "Anyị nwetara arịrịọ gị. Azịza anyị ga-abịa dị ka ọkwa Hawkeye.",
+    "yo": "A ti gba ìbéèrè rẹ. Èsì wa yóò dé gẹ́gẹ́ bí ìkìlọ̀ Hawkeye."
+  },
+  "captain.status-line.contacted": {
+    "en": "We have sent you a message. Check your Hawkeye alerts.",
+    "ha": "Mun aiko maka da saƙo. Duba sanarwarka ta Hawkeye.",
+    "ig": "Anyị ezitela gị ozi. Lelee ọkwa Hawkeye gị.",
+    "yo": "A ti fi ọ̀rọ̀ ránṣẹ́ sí ọ. Ṣàyẹ̀wò àwọn ìkìlọ̀ Hawkeye rẹ."
+  },
+  "captain.status-line.approved": {
+    "en": "You are the Hawkeye ward captain for this ward. Start with the captain’s guide.",
+    "ha": "Kai ne kyaftin na Hawkeye na wannan unguwa. Fara da jagorar kyaftin.",
+    "ig": "Ị bụ onye ndú Hawkeye maka ward a. Malite na ntuziaka onye ndú.",
+    "yo": "Ìwọ ni olùdarí àgọ́ Hawkeye fún àgọ́ yìí. Bẹ̀rẹ̀ pẹ̀lú ìtọ́sọ́nà olùdarí."
+  },
+  "captain.status-line.declined": {
+    "en": "This application was not taken forward. You can apply again, for this ward or another.",
+    "ha": "Ba a ci gaba da wannan buƙata ba. Za ka iya sake nema, don wannan unguwa ko wata.",
+    "ig": "Anaghị aga n'ihu na arịrịọ a. Ị nwere ike itinye ọzọ, maka ward a ma ọ bụ nke ọzọ.",
+    "yo": "A kò tẹ̀síwájú pẹ̀lú ìbéèrè yìí. O lè tún béèrè, fún àgọ́ yìí tàbí òmíràn."
+  },
+  "captain.err.ward-required": {
+    "en": "Choose your state, local government and ward.",
+    "ha": "Zaɓi jiharka, karamar hukumarka da unguwarka.",
+    "ig": "Họrọ steeti gị, mpaghara ọchịchị obodo gị na ward gị.",
+    "yo": "Yan ìpínlẹ̀ rẹ, agbègbè ìjọba àdúgbò rẹ àti àgọ́ rẹ."
+  },
+  "captain.err.unknown-ward": {
+    "en": "That ward is not in the register. Choose it again from the lists.",
+    "ha": "Wannan unguwa ba ta cikin rajista. Sake zaɓar ta daga jerin.",
+    "ig": "Ward ahụ adịghị na ndekọ. Họrọ ya ọzọ site na ndepụta.",
+    "yo": "Àgọ́ yẹn kò sí nínú àkọsílẹ̀. Tún yàn án láti inú àwọn àtòjọ."
+  },
+  "captain.err.note-required": {
+    "en": "Tell us briefly why you, and any experience.",
+    "ha": "Faɗa mana a taƙaice me ya sa kai, da duk wata ƙwarewa.",
+    "ig": "Gwa anyị nkenke ihe mere gị, na ahụmahụ ọ bụla.",
+    "yo": "Sọ fún wa ní ṣókí ìdí tí ìwọ, àti ìrírí èyíkéyìí."
+  },
+  "captain.err.bad-volunteers": {
+    "en": "Enter a number of volunteers from 0 to 500.",
+    "ha": "Shigar da adadin masu sa kai daga 0 zuwa 500.",
+    "ig": "Tinye ọnụọgụ ndị ọrụ afọ ofufo site na 0 ruo 500.",
+    "yo": "Tẹ iye àwọn olùyọ̀ǹda láti 0 sí 500."
+  },
+  "captain.err.consent-required": {
+    "en": "Tick the box so we can send you alerts about this application.",
+    "ha": "Yi alama a akwatin domin mu iya aiko maka da sanarwa game da wannan buƙata.",
+    "ig": "Kaa igbe ahụ akara ka anyị nwee ike iziga gị ọkwa gbasara arịrịọ a.",
+    "yo": "Fi àmì sí àpótí náà kí a lè fi ìkìlọ̀ ránṣẹ́ sí ọ nípa ìbéèrè yìí."
+  },
+  "captain.err.already-applied": {
+    "en": "You already have an open application.",
+    "ha": "Kana da buƙatar da ke buɗe tuni.",
+    "ig": "Ị nweelarị arịrịọ mepere emepe.",
+    "yo": "O ti ní ìbéèrè kan tí ó ṣì ṣí sílẹ̀."
+  },
+  "captain.err.rate-limited": {
+    "en": "Too many tries. Wait a few minutes and try again.",
+    "ha": "Gwaje-gwaje sun yi yawa. Jira 'yan mintuna ka sake gwadawa.",
+    "ig": "Mgbalị karịrị akarị. Chere nkeji ole na ole, wee nwaa ọzọ.",
+    "yo": "Ìgbìyànjú ti pọ̀ jù. Dúró ìṣẹ́jú díẹ̀ kí o tún gbìyànjú."
+  },
+  "captain.err.signed-out": {
+    "en": "Your session has ended. Sign in again to apply.",
+    "ha": "Zamanka ya ƙare. Sake shiga domin ka nema.",
+    "ig": "Oge nbanye gị agwụla. Banye ọzọ ka itinye arịrịọ.",
+    "yo": "Ìgbà ìwọlé rẹ ti parí. Tún wọlé láti béèrè."
+  },
+  "captain.err.network": {
+    "en": "Could not reach Hawkeye. Check your connection and try again.",
+    "ha": "Ba a iya isa ga Hawkeye ba. Duba haɗin intanet ɗinka ka sake gwadawa.",
+    "ig": "Enweghị ike iru Hawkeye. Lelee njikọ gị wee nwaa ọzọ.",
+    "yo": "A kò lè dé ọ̀dọ̀ Hawkeye. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o tún gbìyànjú."
+  },
+  "captain.err.failed": {
+    "en": "Something went wrong. Please try again.",
+    "ha": "Wani abu ya faru ba daidai ba. Da fatan za a sake gwadawa.",
+    "ig": "Ihe adịghị mma mere. Biko nwaa ọzọ.",
+    "yo": "Nǹkan kan ṣẹlẹ̀ tí kò tọ́. Jọ̀wọ́ tún gbìyànjú."
+  },
+  "captain.err.register": {
+    "en": "Could not load the list of places. Check your connection and try again.",
+    "ha": "Ba a iya loda jerin wurare ba. Duba haɗin intanet ɗinka ka sake gwadawa.",
+    "ig": "Enweghị ike ibudata ndepụta ebe. Lelee njikọ gị wee nwaa ọzọ.",
+    "yo": "A kò lè gbé àtòjọ àwọn ibi wá. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o tún gbìyànjú."
+  },
+  "captain.your-application": {
+    "en": "Your application",
+    "ha": "Buƙatarka",
+    "ig": "Arịrịọ gị",
+    "yo": "Ìbéèrè rẹ"
+  },
+  "captain.applied-on": {
+    "en": "Sent {date}",
+    "ha": "An aika {date}",
+    "ig": "Ezipụrụ {date}",
+    "yo": "A fi ránṣẹ́ {date}"
+  },
+  "captain.read-guide": {
+    "en": "Read the captain’s guide",
+    "ha": "Karanta jagorar kyaftin",
+    "ig": "Gụọ ntuziaka onye ndú",
+    "yo": "Ka ìtọ́sọ́nà olùdarí"
+  },
+  "captain.sent": {
+    "en": "Application sent. Thank you.",
+    "ha": "An aika buƙata. Mun gode.",
+    "ig": "Ezipụla arịrịọ. Daalụ.",
+    "yo": "A ti fi ìbéèrè ránṣẹ́. A dúpẹ́."
+  },
+  "captain.sign-in": {
+    "en": "Sign in",
+    "ha": "Shiga",
+    "ig": "Banye",
+    "yo": "Wọlé"
+  },
+  "captain.admin.title": {
+    "en": "Captain applications",
+    "ha": "Buƙatun kyaftin",
+    "ig": "Arịrịọ ndị ndú",
+    "yo": "Àwọn ìbéèrè olùdarí"
+  },
+  "captain.admin.intro": {
+    "en": "People offering to recruit observers for one ward. Message them through Hawkeye alerts, then set the status. Approving gives them no access to anything: share a ward's uncovered units personally, never on a public page.",
+    "ha": "Mutanen da ke son ɗaukar masu lura don unguwa ɗaya. Aika musu saƙo ta sanarwar Hawkeye, sannan ka saita matsayi. Amincewa ba ta ba su damar ganin komai ba: raba rukunan zaɓen unguwa da ba a rufe ba da kanka, ba a shafin jama'a ba.",
+    "ig": "Ndị na-enye onwe ha ịchọta ndị na-ekiri ihe maka otu ward. Zitere ha ozi site na ọkwa Hawkeye, wee setịpụ ọnọdụ. Ịkwado anaghị enye ha ohere ịhụ ihe ọ bụla: kesaa ngalaba ntuli aka ward a na-ekpuchighị n'onwe gị, ọ bụghị n'ibe ọha.",
+    "yo": "Àwọn tí ń fẹ́ gba olùwòran fún àgọ́ kan. Fi ọ̀rọ̀ ránṣẹ́ sí wọn nípasẹ̀ ìkìlọ̀ Hawkeye, lẹ́yìn náà ṣètò ipò. Fífọwọ́sí kò fún wọn ní àǹfààní sí ohunkóhun: pín àwọn ẹ̀ka ìdìbò àgọ́ tí a kò tíì bò fún wọn fúnra rẹ, kì í ṣe lórí ojú-ìwé gbogbogbò."
+  },
+  "captain.admin.show": {
+    "en": "Show",
+    "ha": "Nuna",
+    "ig": "Gosi",
+    "yo": "Fihàn"
+  },
+  "captain.admin.all": {
+    "en": "All",
+    "ha": "Duka",
+    "ig": "Niile",
+    "yo": "Gbogbo"
+  },
+  "captain.admin.volunteers-applied": {
+    "en": "{n} volunteers · applied {date}",
+    "ha": "Masu sa kai {n} · an nema {date}",
+    "ig": "Ndị ọrụ afọ ofufo {n} · etinyere {date}",
+    "yo": "Olùyọ̀ǹda {n} · béèrè {date}"
+  },
+  "captain.admin.team-account": {
+    "en": "Team account",
+    "ha": "Asusun ƙungiya",
+    "ig": "Akaụntụ ndị otu",
+    "yo": "Àkọọ́lẹ̀ ẹgbẹ́"
+  },
+  "captain.admin.status-aria": {
+    "en": "Status for {ward}",
+    "ha": "Matsayi na {ward}",
+    "ig": "Ọnọdụ maka {ward}",
+    "yo": "Ipò fún {ward}"
+  },
+  "captain.admin.load-error": {
+    "en": "Could not load applications ({error}).",
+    "ha": "Ba a iya loda buƙatun ba ({error}).",
+    "ig": "Enweghị ike ibudata arịrịọ ({error}).",
+    "yo": "A kò lè gbé àwọn ìbéèrè wá ({error})."
+  },
+  "captain.admin.none-with-status": {
+    "en": "No applications with this status.",
+    "ha": "Babu buƙatu masu wannan matsayi.",
+    "ig": "Enweghị arịrịọ nwere ọnọdụ a.",
+    "yo": "Kò sí ìbéèrè pẹ̀lú ipò yìí."
+  },
+  "captain.admin.none": {
+    "en": "No applications yet.",
+    "ha": "Babu buƙatu tukuna.",
+    "ig": "Enwebeghị arịrịọ.",
+    "yo": "Kò tíì sí ìbéèrè kankan."
+  },
+  "captain.admin.saved": {
+    "en": "Saved.",
+    "ha": "An ajiye.",
+    "ig": "Echekwala.",
+    "yo": "A ti fi pamọ́."
+  },
+  "captain.admin.another-open": {
+    "en": "This person has another open application. Decline that one first.",
+    "ha": "Wannan mutumin yana da wata buƙatar da ke buɗe. Ƙi waccan tukuna.",
+    "ig": "Onye a nwere arịrịọ ọzọ mepere emepe. Buru ụzọ jụ nke ahụ.",
+    "yo": "Ẹni yìí ní ìbéèrè míì tí ó ṣì ṣí sílẹ̀. Kọ́kọ́ kọ ìyẹn."
+  },
+  "captain.admin.reach": {
+    "en": "Reaches: {channels}",
+    "ha": "Ana iya samu ta: {channels}",
+    "ig": "Enwere ike iru ya site na: {channels}",
+    "yo": "A lè dé ọ̀dọ̀ rẹ̀ nípasẹ̀: {channels}"
+  },
+  "captain.admin.reach-feed": {
+    "en": "Alerts feed",
+    "ha": "Jerin sanarwa",
+    "ig": "Ndepụta ọkwa",
+    "yo": "Àkójọ ìkìlọ̀"
+  },
+  "captain.admin.reach-push": {
+    "en": "Push on {n} devices",
+    "ha": "Sanarwar turawa a na'urori {n}",
+    "ig": "Ọkwa push na ngwaọrụ {n}",
+    "yo": "Ìfitónilétí lórí ẹ̀rọ {n}"
+  },
+  "captain.admin.reach-telegram": {
+    "en": "Telegram",
+    "ha": "Telegram",
+    "ig": "Telegram",
+    "yo": "Telegram"
+  },
+  "captain.admin.reach-no-telegram": {
+    "en": "No Telegram",
+    "ha": "Babu Telegram",
+    "ig": "Enweghị Telegram",
+    "yo": "Kò sí Telegram"
+  },
+  "captain.admin.last-messaged": {
+    "en": "Last messaged {date} · {n} sent",
+    "ha": "Saƙo na ƙarshe {date} · an aika {n}",
+    "ig": "Ozi ikpeazụ {date} · ezipụrụ {n}",
+    "yo": "Ọ̀rọ̀ ìkẹyìn {date} · a fi {n} ránṣẹ́"
+  },
+  "captain.admin.message": {
+    "en": "Message applicant",
+    "ha": "Aika wa mai nema saƙo",
+    "ig": "Zitere onye tinyere arịrịọ ozi",
+    "yo": "Fi ọ̀rọ̀ ránṣẹ́ sí olùbéèrè"
+  },
+  "captain.admin.message-label": {
+    "en": "Message, sent as a Hawkeye alert",
+    "ha": "Saƙo, wanda za a aika a matsayin sanarwar Hawkeye",
+    "ig": "Ozi, a ga-eziga ya dị ka ọkwa Hawkeye",
+    "yo": "Ọ̀rọ̀, tí a ó fi ránṣẹ́ gẹ́gẹ́ bí ìkìlọ̀ Hawkeye"
+  },
+  "captain.admin.send": {
+    "en": "Send",
+    "ha": "Aika",
+    "ig": "Zipu",
+    "yo": "Fi ránṣẹ́"
+  },
+  "captain.admin.cancel": {
+    "en": "Cancel",
+    "ha": "Soke",
+    "ig": "Kagbuo",
+    "yo": "Fagilé"
+  },
+  "captain.admin.message-empty": {
+    "en": "Write a message first.",
+    "ha": "Rubuta saƙo tukuna.",
+    "ig": "Buru ụzọ dee ozi.",
+    "yo": "Kọ́kọ́ kọ ọ̀rọ̀ kan."
+  },
+  "captain.admin.sent": {
+    "en": "Sent to their alerts.",
+    "ha": "An aika zuwa sanarwarsu.",
+    "ig": "Ezigara ya n'ọkwa ha.",
+    "yo": "A ti fi ránṣẹ́ sí àwọn ìkìlọ̀ wọn."
+  },
+  "captain.admin.sent-telegram": {
+    "en": "Sent to their alerts and Telegram.",
+    "ha": "An aika zuwa sanarwarsu da Telegram.",
+    "ig": "Ezigara ya n'ọkwa ha na Telegram.",
+    "yo": "A ti fi ránṣẹ́ sí àwọn ìkìlọ̀ wọn àti Telegram."
+  },
+  "captain.admin.too-soon": {
+    "en": "A message went a moment ago. Wait a minute before sending another.",
+    "ha": "An aika saƙo ɗan lokaci kaɗan da ya wuce. Jira minti ɗaya kafin ka aika wani.",
+    "ig": "Ozi gara obere oge gara aga. Chere otu nkeji tupu i ziga ọzọ.",
+    "yo": "Ọ̀rọ̀ kan lọ ní ìṣẹ́jú díẹ̀ sẹ́yìn. Dúró ìṣẹ́jú kan kí o tó fi òmíràn ránṣẹ́."
+  },
+  "captain.admin.rate-limited": {
+    "en": "Too many messages. Wait a few minutes.",
+    "ha": "Saƙonni sun yi yawa. Jira 'yan mintuna.",
+    "ig": "Ozi karịrị akarị. Chere nkeji ole na ole.",
+    "yo": "Ọ̀rọ̀ ti pọ̀ jù. Dúró ìṣẹ́jú díẹ̀."
+  },
+  "captain.admin.not-active": {
+    "en": "This account is no longer active.",
+    "ha": "Wannan asusu ba ya aiki kuma.",
+    "ig": "Akaụntụ a anaghịzi arụ ọrụ.",
+    "yo": "Àkọọ́lẹ̀ yìí kò ṣiṣẹ́ mọ́."
+  },
+  "captain.admin.send-error": {
+    "en": "Could not send ({error}).",
+    "ha": "Ba a iya aikawa ba ({error}).",
+    "ig": "Enweghị ike iziga ({error}).",
+    "yo": "A kò lè fi ránṣẹ́ ({error})."
+  },
+  "captain.admin.save-error": {
+    "en": "Could not change the status ({error}).",
+    "ha": "Ba a iya canza matsayin ba ({error}).",
+    "ig": "Enweghị ike ịgbanwe ọnọdụ ({error}).",
+    "yo": "A kò lè yí ipò náà padà ({error})."
+  },
+  "captain-guide.page-title": {
+    "en": "Hawkeye — Ward Captain's Guide",
+    "ha": "Hawkeye — Jagorar Kyaftin na Unguwa",
+    "ig": "Hawkeye — Ntuziaka Onye Ndú Ward",
+    "yo": "Hawkeye — Ìtọ́sọ́nà Olùdarí Àgọ́"
+  },
+  "captain-guide.title": {
+    "en": "Ward Captain's Guide",
+    "ha": "Jagorar Kyaftin na Unguwa",
+    "ig": "Ntuziaka Onye Ndú Ward",
+    "yo": "Ìtọ́sọ́nà Olùdarí Àgọ́"
+  },
+  "captain-guide.lede": {
+    "en": "A ward captain makes sure someone stays for the count at every polling unit in one ward. You are a volunteer, and Hawkeye stays independent of every party.",
+    "ha": "Kyaftin na unguwa yana tabbatar da cewa wani ya tsaya domin ƙidaya a kowane rukunin zaɓe na unguwa ɗaya. Kai mai sa kai ne, kuma Hawkeye ba ya goyon bayan kowace jam'iyya.",
+    "ig": "Onye ndú ward na-ahụ na mmadụ na-anọ maka ọgụgụ na ngalaba ntuli aka ọ bụla dị n'otu ward. Ị bụ onye ọrụ afọ ofufo, Hawkeye anaghị adabere n'otu ndọrọ ndọrọ ọchịchị ọ bụla.",
+    "yo": "Olùdarí àgọ́ ń rí i dájú pé ẹnìkan dúró fún ìkà ní gbogbo ẹ̀ka ìdìbò inú àgọ́ kan. Olùyọ̀ǹda ni ọ́, Hawkeye kò sì gbè sẹ́yìn ẹgbẹ́ òṣèlú kankan."
+  },
+  "captain-guide.what-h": {
+    "en": "What a ward captain does",
+    "ha": "Abin da kyaftin na unguwa ke yi",
+    "ig": "Ihe onye ndú ward na-eme",
+    "yo": "Ohun tí olùdarí àgọ́ ń ṣe"
+  },
+  "captain-guide.what-1": {
+    "en": "Fill the uncovered units in your ward. Once you are approved, the Hawkeye team tells you personally which units still need someone.",
+    "ha": "Cike rukunan zaɓen da ba a rufe ba a unguwarka. Da zarar an amince da kai, ƙungiyar Hawkeye za ta faɗa maka da kanta waɗanne rukunan zaɓe ne har yanzu suke buƙatar wani.",
+    "ig": "Mejupụta ngalaba ntuli aka a na-ekpuchighị na ward gị. Ozugbo akwadoro gị, ndị otu Hawkeye ga-agwa gị n'onwe ha ngalaba ndị ka chọrọ mmadụ.",
+    "yo": "Kún àwọn ẹ̀ka ìdìbò tí a kò tíì bò nínú àgọ́ rẹ. Nígbà tí a bá ti fọwọ́ sí ọ, ẹgbẹ́ Hawkeye yóò sọ fún ọ fúnra wọn àwọn ẹ̀ka tí ó ṣì nílò ẹnìkan."
+  },
+  "captain-guide.what-2": {
+    "en": "Get each volunteer through the <a class=\"link\" href=\"practice.html\">practice run</a>, then the National Practice Days on Saturday 12 December and Saturday 9 January.",
+    "ha": "Ka tabbatar kowane mai sa kai ya yi <a class=\"link\" href=\"practice.html\">gwajin atisaye</a>, sannan Ranakun Atisaye na Ƙasa a ranar Asabar 12 ga Disamba da Asabar 9 ga Janairu.",
+    "ig": "Mee ka onye ọrụ afọ ofufo ọ bụla mee <a class=\"link\" href=\"practice.html\">ọsọ omume</a>, wee sonye n'Ụbọchị Omume nke Mba na Satọdee 12 Disemba na Satọdee 9 Jenụwarị.",
+    "yo": "Ran olùyọ̀ǹda kọ̀ọ̀kan lọ́wọ́ láti ṣe <a class=\"link\" href=\"practice.html\">eré àdánwò</a>, lẹ́yìn náà Ọjọ́ Àdánwò Orílẹ̀-èdè ní Ọjọ́ Àbámẹ́ta 12 Oṣù Ọ̀pẹ àti Ọjọ́ Àbámẹ́ta 9 Oṣù Ṣẹ́rẹ́."
+  },
+  "captain-guide.what-3": {
+    "en": "In election week, send reminders: save your polling unit, charge your phone, and stay for the count.",
+    "ha": "A makon zaɓe, aika da tunatarwa: ajiye rukunin zaɓenka, caji wayarka, kuma ka tsaya domin ƙidaya.",
+    "ig": "N'izu ntuli aka, zipu ncheta: chekwaa ngalaba ntuli aka gị, chaja ekwentị gị, ma nọrọ maka ọgụgụ.",
+    "yo": "Ní ọ̀sẹ̀ ìdìbò, fi ìránnilétí ránṣẹ́: fi ẹ̀ka ìdìbò rẹ pamọ́, gba agbára fóònù rẹ, kí o sì dúró fún ìkà."
+  },
+  "captain-guide.what-4": {
+    "en": "On 16 January, vote, then stay for the count at your own polling unit and photograph the result when it is posted.",
+    "ha": "A ranar 16 ga Janairu, ka jefa ƙuri'a, sannan ka tsaya domin ƙidaya a rukunin zaɓenka ka ɗauki hoton sakamako idan an liƙa shi.",
+    "ig": "Na 16 Jenụwarị, tụọ vootu, wee nọrọ maka ọgụgụ na ngalaba ntuli aka gị ma see foto nsonaazụ mgbe e gosiri ya ọha.",
+    "yo": "Ní 16 Oṣù Ṣẹ́rẹ́, dìbò, lẹ́yìn náà dúró fún ìkà ní ẹ̀ka ìdìbò tìrẹ kí o sì ya fọ́tò àbájáde nígbà tí wọ́n bá lẹ̀ ẹ́."
+  },
+  "captain-guide.invite-h": {
+    "en": "How to invite people",
+    "ha": "Yadda ake gayyatar mutane",
+    "ig": "Otu esi akpọ ndị mmadụ",
+    "yo": "Bí o ṣe lè pe àwọn ènìyàn"
+  },
+  "captain-guide.invite-1": {
+    "en": "Your own invite link is in <a class=\"link\" href=\"profile.html\">My Profile</a>, under Invite. Share it on WhatsApp or by text. Each person who signs up with it shows on your profile.",
+    "ha": "Hanyar gayyatarka tana cikin <a class=\"link\" href=\"profile.html\">Bayanaina</a>, ƙarƙashin Gayyata. Raba ta a WhatsApp ko ta saƙon tes. Duk wanda ya yi rijista da ita zai bayyana a bayananka.",
+    "ig": "Njikọ ọkpụkpọ gị dị na <a class=\"link\" href=\"profile.html\">Profaịlụ M</a>, n'okpuru Kpọọ. Kesaa ya na WhatsApp ma ọ bụ site na ozi ederede. Onye ọ bụla debanyere aha site na ya na-egosi na profaịlụ gị.",
+    "yo": "Ìjápọ̀ ìpè tìrẹ wà ní <a class=\"link\" href=\"profile.html\">Àkọọ́lẹ̀ Mi</a>, lábẹ́ Pè. Pín in lórí WhatsApp tàbí nípasẹ̀ ọ̀rọ̀ ìfiránṣẹ́. Ẹnikẹ́ni tí ó forúkọ sílẹ̀ pẹ̀lú rẹ̀ yóò hàn lórí àkọọ́lẹ̀ rẹ."
+  },
+  "captain-guide.invite-2": {
+    "en": "For groups and notice boards, share the <a class=\"link\" href=\"download.html\">Get Hawkeye</a> page.",
+    "ha": "Don ƙungiyoyi da allon sanarwa, raba shafin <a class=\"link\" href=\"download.html\">Sami Hawkeye</a>.",
+    "ig": "Maka otu na bọọdụ ọkwa, kesaa ibe <a class=\"link\" href=\"download.html\">Nweta Hawkeye</a>.",
+    "yo": "Fún àwọn ẹgbẹ́ àti pátákó ìkéde, pín ojú-ìwé <a class=\"link\" href=\"download.html\">Gba Hawkeye</a>."
+  },
+  "captain-guide.invite-3": {
+    "en": "Each volunteer saves their own polling unit in the app. Never collect a list of who is going where.",
+    "ha": "Kowane mai sa kai yana ajiye rukunin zaɓensa da kansa a manhajar. Kada ka taɓa tattara jerin wanda zai je ina.",
+    "ig": "Onye ọrụ afọ ofufo ọ bụla na-echekwa ngalaba ntuli aka nke ya n'ime ngwa ahụ. Achịkọtala ndepụta onye na-aga ebe.",
+    "yo": "Olùyọ̀ǹda kọ̀ọ̀kan ń fi ẹ̀ka ìdìbò tirẹ̀ pamọ́ nínú áàpù fúnra rẹ̀. Má ṣe kó àtòjọ ẹni tí ń lọ sí ibo jọ."
+  },
+  "captain-guide.rules-h": {
+    "en": "Stay nonpartisan",
+    "ha": "Ka zama ba ruwanka da jam'iyya",
+    "ig": "Anọla n'akụkụ otu ndọrọ ndọrọ ọchịchị ọ bụla",
+    "yo": "Má ṣe gbè sẹ́yìn ẹgbẹ́ òṣèlú kankan"
+  },
+  "captain-guide.rules-1": {
+    "en": "Recruit anyone, from any party or none. Party agents are welcome on the same terms as everyone else.",
+    "ha": "Ka ɗauki kowa, daga kowace jam'iyya ko ba jam'iyya. Wakilan jam'iyya suna da maraba bisa sharuɗɗa iri ɗaya da kowa.",
+    "ig": "Nabata onye ọ bụla, site n'otu ọ bụla ma ọ bụ n'enweghị otu. A nabatara ndị nnọchite anya otu n'otu ụkpụrụ ahụ dị ka onye ọ bụla ọzọ.",
+    "yo": "Gba ẹnikẹ́ni, láti inú ẹgbẹ́ òṣèlú èyíkéyìí tàbí láìsí ẹgbẹ́. A gba àwọn aṣojú ẹgbẹ́ lábẹ́ òfin kan náà bí gbogbo ènìyàn."
+  },
+  "captain-guide.rules-2": {
+    "en": "No party names, logos, colours or slogans in anything you send about Hawkeye.",
+    "ha": "Kada a sa sunayen jam'iyya, tambari, launuka ko take a duk abin da ka aika game da Hawkeye.",
+    "ig": "Etinyela aha otu, akara ngosi, agba ma ọ bụ ụkpụrụ okwu n'ihe ọ bụla ị na-eziga gbasara Hawkeye.",
+    "yo": "Kò gbọdọ̀ sí orúkọ ẹgbẹ́, àmì, àwọ̀ tàbí àkọlé ẹgbẹ́ nínú ohunkóhun tí o fi ránṣẹ́ nípa Hawkeye."
+  },
+  "captain-guide.rules-3": {
+    "en": "Say \"record what is announced\". Never promise to expose rigging, and never predict a winner.",
+    "ha": "Ka ce \"a naɗi abin da aka sanar\". Kada ka taɓa yin alƙawarin fallasa maguɗi, kuma kada ka yi hasashen wanda zai ci.",
+    "ig": "Kwuo \"dekọọ ihe a mara ọkwa\". Ekwela nkwa ikpughe aghụghọ ntuli aka, ma ebula amụma onye ga-emeri.",
+    "yo": "Sọ pé \"ṣe àkọsílẹ̀ ohun tí wọ́n kéde\". Má ṣe ṣèlérí láti tú màgòmágó síta, má sì ṣe sọ tẹ́lẹ̀ ẹni tí yóò borí."
+  },
+  "captain-guide.rules-4": {
+    "en": "Hawkeye is not INEC and not a party. Say so first.",
+    "ha": "Hawkeye ba INEC ba ne, kuma ba jam'iyya ba ne. Ka faɗi haka tun farko.",
+    "ig": "Hawkeye abụghị INEC, abụghịkwa otu ndọrọ ndọrọ ọchịchị. Buru ụzọ kwuo nke a.",
+    "yo": "Hawkeye kì í ṣe INEC, kì í sì í ṣe ẹgbẹ́ òṣèlú. Kọ́kọ́ sọ bẹ́ẹ̀."
+  },
+  "captain-guide.rules-5": {
+    "en": "Never offer money or gifts for joining or reporting.",
+    "ha": "Kada ka taɓa ba da kuɗi ko kyauta don shiga ko bayar da rahoto.",
+    "ig": "Enyela ego ma ọ bụ onyinye maka isonye ma ọ bụ ịkọ akụkọ.",
+    "yo": "Má ṣe fún ẹnikẹ́ni ní owó tàbí ẹ̀bùn fún dídarapọ̀ tàbí fífi ìròyìn ránṣẹ́."
+  },
+  "captain-guide.safety-h": {
+    "en": "Stay safe and follow the law",
+    "ha": "Ka zauna lafiya kuma ka bi doka",
+    "ig": "Nọrọ na nchekwa ma soro iwu",
+    "yo": "Wà ní àìléwu kí o sì tẹ̀lé òfin"
+  },
+  "captain-guide.safety-1": {
+    "en": "No result is worth your life. If there is trouble, leave, and report it later from somewhere safe.",
+    "ha": "Babu sakamakon da ya fi ranka daraja. Idan an sami tashin hankali, ka bar wurin, ka kai rahoto daga baya daga wuri mai aminci.",
+    "ig": "Ọ dịghị nsonaazụ ọ bụla dị mkpa karịa ndụ gị. Ọ bụrụ na nsogbu dapụtara, pụọ, ma kọọ ya emesịa site n'ebe nchekwa.",
+    "yo": "Kò sí àbájáde kankan tí ó ṣe pàtàkì ju ẹ̀mí rẹ lọ. Tí wàhálà bá wà, kúrò níbẹ̀, kí o sì fi ìròyìn ránṣẹ́ lẹ́yìn náà láti ibi tí ó ní àbò."
+  },
+  "captain-guide.safety-2": {
+    "en": "Never interfere with election officials, voters or materials. Follow officials' instructions.",
+    "ha": "Kada ka taɓa tsoma baki ga jami'an zaɓe, masu zaɓe ko kayan zaɓe. Ka bi umarnin jami'ai.",
+    "ig": "Etinyela aka n'ọrụ ndị ọrụ ntuli aka, ndị ntuli aka ma ọ bụ ngwa ntuli aka. Soro ntụziaka ndị ọrụ.",
+    "yo": "Má ṣe dí àwọn òṣìṣẹ́ ìdìbò, àwọn olùdìbò tàbí àwọn ohun èlò ìdìbò lọ́wọ́. Tẹ̀lé ìtọ́ni àwọn òṣìṣẹ́."
+  },
+  "captain-guide.safety-3": {
+    "en": "Follow the Electoral Act and INEC's rules. Photograph only what is posted or handed out.",
+    "ha": "Ka bi Dokar Zaɓe da ƙa'idojin INEC. Ka ɗauki hoton abin da aka liƙa ko aka raba kawai.",
+    "ig": "Soro Iwu Ntuli Aka na iwu INEC. See foto naanị ihe e gosiri ọha ma ọ bụ nke e nyere.",
+    "yo": "Tẹ̀lé Òfin Ìdìbò àti àwọn òfin INEC. Ya fọ́tò ohun tí wọ́n lẹ̀ ní gbangba tàbí tí wọ́n pín nìkan."
+  },
+  "captain-guide.never-h": {
+    "en": "What Hawkeye never does",
+    "ha": "Abin da Hawkeye ba ya taɓa yi",
+    "ig": "Ihe Hawkeye anaghị eme",
+    "yo": "Ohun tí Hawkeye kì í ṣe"
+  },
+  "captain-guide.never-1": {
+    "en": "It never shares who watches which polling unit — not with you, not with a party, not with anyone.",
+    "ha": "Ba ya taɓa bayyana wanda ke lura da wane rukunin zaɓe — ba a gare ka ba, ba ga jam'iyya ba, ba ga kowa ba.",
+    "ig": "Ọ naghị ekpughe onye na-ekiri ngalaba ntuli aka ọ bụla — ọ bụghị gị, ọ bụghị otu ndọrọ ndọrọ ọchịchị, ọ bụghị onye ọ bụla.",
+    "yo": "Kì í sọ ẹni tí ń wo ẹ̀ka ìdìbò wo — kì í ṣe fún ọ, kì í ṣe fún ẹgbẹ́ òṣèlú, kì í ṣe fún ẹnikẹ́ni."
+  },
+  "captain-guide.never-2": {
+    "en": "It never publishes coverage below local government level.",
+    "ha": "Ba ya taɓa wallafa yawan rufewa ƙasa da matakin karamar hukuma.",
+    "ig": "Ọ naghị ebipụta mkpuchi n'okpuru ọkwa mpaghara ọchịchị obodo.",
+    "yo": "Kì í tẹ ìbòòrí jáde ní ìsàlẹ̀ ìpele agbègbè ìjọba àdúgbò."
+  },
+  "captain-guide.never-3": {
+    "en": "Being a captain gives you no access to anyone's details in the app.",
+    "ha": "Zama kyaftin ba ya ba ka damar ganin bayanan kowa a manhajar.",
+    "ig": "Ịbụ onye ndú anaghị enye gị ohere ịhụ nkọwa onye ọ bụla n'ime ngwa ahụ.",
+    "yo": "Jíjẹ́ olùdarí kò fún ọ ní àǹfààní sí ìsọfúnni ẹnikẹ́ni nínú áàpù."
+  },
+  "captain-guide.cta-h": {
+    "en": "Ready to help?",
+    "ha": "Ka shirya taimakawa?",
+    "ig": "Ị dị njikere inyere aka?",
+    "yo": "Ṣé o ṣetán láti ṣèrànwọ́?"
+  },
+  "captain-guide.apply": {
+    "en": "Apply to be a ward captain",
+    "ha": "Nemi zama kyaftin na unguwa",
+    "ig": "Tinye arịrịọ ịbụ onye ndú ward",
+    "yo": "Béèrè láti di olùdarí àgọ́"
+  },
+  "captain-guide.see-coverage": {
+    "en": "See observer coverage",
+    "ha": "Duba yawan rufewar masu lura",
+    "ig": "Lee mkpuchi ndị na-ekiri ihe",
+    "yo": "Wo ìbòòrí àwọn olùwòran"
+  },
+  "coverage.become-captain": {
+    "en": "Help fill your ward — become a ward captain",
+    "ha": "Taimaka a cike unguwarka — zama kyaftin na unguwa",
+    "ig": "Nyere aka mejupụta ward gị — bụrụ onye ndú ward",
+    "yo": "Ràn wá lọ́wọ́ láti kún àgọ́ rẹ — di olùdarí àgọ́"
+  }
+}

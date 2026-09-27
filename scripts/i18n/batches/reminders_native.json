@@ -1,0 +1,26 @@
+{
+  "n.app.tabs.index.practice-nudge-title": {
+    "en": "Try a practice run — 5 minutes",
+    "ha": "Gwada gwajin atisaye — minti 5",
+    "ig": "Nwaa ọsọ omume — nkeji 5",
+    "yo": "Gbìyànjú eré àdánwò — ìṣẹ́jú 5"
+  },
+  "n.app.tabs.index.practice-nudge-sub": {
+    "en": "Rehearse reporting a result on a practice polling unit before polling day. Nothing you enter counts as a real result.",
+    "ha": "Gwada aika sakamako a rukunin zaɓe na atisaye kafin Ranar zaɓe. Babu abin da ka shigar da zai zama sakamako na gaske.",
+    "ig": "Mee omume ịkọ nsonaazụ na ngalaba ntuli aka omume tupu Ụbọchị ntuli aka. Ọ dịghị ihe ị tinyere ga-agụ dị ka ezigbo nsonaazụ.",
+    "yo": "Ṣe àdánwò jíjábọ̀ àbájáde ní ẹ̀ka ìdìbò àdánwò kí Ọjọ́ ìdìbò tó dé. Kò sí ohun tí o bá tẹ̀ sí i tí yóò kà gẹ́gẹ́ bí àbájáde gidi."
+  },
+  "n.app.tabs.index.practice-nudge-go": {
+    "en": "Start the practice run",
+    "ha": "Fara gwajin atisaye",
+    "ig": "Malite ọsọ omume",
+    "yo": "Bẹ̀rẹ̀ eré àdánwò"
+  },
+  "n.app.tabs.index.practice-nudge-dismiss": {
+    "en": "Dismiss",
+    "ha": "Rufe",
+    "ig": "Mechie",
+    "yo": "Ti"
+  }
+}

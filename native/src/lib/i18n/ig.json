@@ -1249,5 +1249,18 @@
   "n.app.practice-day.all-days": "Ụbọchị Omume",
   "n.app.practice-day.phase-before": "Na-abịa",
   "n.app.practice-day.phase-live": "Emepere ugbu a",
-  "n.app.practice-day.phase-after": "Emechiri"
+  "n.app.practice-day.phase-after": "Emechiri",
+  "n.invite2.title": "Kpọta onye na-ekiri ihe nke abụọ na ngalaba ntuli aka gị",
+  "n.invite2.why": "Mgbe ndị na-ekiri ihe abụọ n'otu ngalaba ntuli aka kọrọ otu ọnụọgụ ahụ, ngụkọ ya na-aghọ nke e nyochara.",
+  "n.invite2.button": "Kpọọ onye na-ekiri ihe nke abụọ",
+  "n.invite2.share-text": "Soro m kiri ngalaba ntuli aka m na Hawkeye. Mgbe anyị abụọ kọrọ otu ọnụọgụ ahụ n'ebe ahụ, ngụkọ ahụ na-aghọ nke e nyochara.",
+  "n.invite2.failed": "Enweghị ike ịmepụta njikọ ọkpụkpọ gị. Pịa ka ị nwaa ọzọ.",
+  "n.invite2.choose-first": "Buru ụzọ chekwaa ngalaba ntuli aka gị, wee kpọọ onye na-ekiri ihe nke abụọ ka ọ bịa ebe ahụ.",
+  "n.invite2.saved-title": "E chekwara ngalaba ntuli aka",
+  "n.invite2.prefilled": "A kpọrọ gị ka ị bịa ngalaba ntuli aka a. Chekwaa ya, ma ọ bụ họrọ nke ọzọ.",
+  "coverage.observer-coverage": "Mkpuchi Ndị Na-ekiri Ihe",
+  "n.app.tabs.index.practice-nudge-title": "Nwaa ọsọ omume — nkeji 5",
+  "n.app.tabs.index.practice-nudge-sub": "Mee omume ịkọ nsonaazụ na ngalaba ntuli aka omume tupu Ụbọchị ntuli aka. Ọ dịghị ihe ị tinyere ga-agụ dị ka ezigbo nsonaazụ.",
+  "n.app.tabs.index.practice-nudge-go": "Malite ọsọ omume",
+  "n.app.tabs.index.practice-nudge-dismiss": "Mechie"
 }

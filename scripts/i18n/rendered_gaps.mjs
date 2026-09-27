@@ -66,6 +66,9 @@ const KEEP = new Set(['HAWKEYE', 'Hawkeye', 'INEC', 'EC8A', 'EC8B', 'IReV', 'PDP
   'Firefox', 'Android', 'iPhone', 'Samsung', 'Google', 'Apple', 'Play', 'App Store', 'PWA', 'SHA-256', 'Rekor',
   'hawkeye.com.ng', 'inecnigeria.org', 'inecelectionresults.ng', 'GPS', 'OTP', 'PU', 'LGA', 'NIN', 'ID', 'SMS',
   'FCT', 'NASS', 'IReV', 'EC8B', 'NIWA',   // acronyms the app uses untranslated throughout
+  // Each language by its OWN name (endonym), as a language picker shows it: the
+  // share kit on stay.html offers the message and flyers in all four.
+  'English', 'Hausa', 'Igbo', 'Yorùbá',
   // Crypto networks on support.html. Chain names are proper nouns and the
   // addresses beside them MUST be byte-identical in every language — a
   // "translated" wallet address is money sent nowhere.

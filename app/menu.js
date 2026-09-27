@@ -253,7 +253,9 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // The ward captain's guide sits beside the Observer Guide. Web only for now
     // (native's More screen has no counterpart yet), and here rather than in
     // Take part because that group is hidden on desktop.
-    ['Learn & about', ['#tour', 'how.html', 'guide.html', 'captain-guide.html', 'faq.html', 'about.html', 'press.html', 'support.html', 'privacy.html', 'terms.html']],
+    // "Stay for the count" (stay.html), the page every recruitment message
+    // points at, sits just before it: the ask, then the job of spreading it.
+    ['Learn & about', ['#tour', 'how.html', 'guide.html', 'stay.html', 'captain-guide.html', 'faq.html', 'about.html', 'press.html', 'support.html', 'privacy.html', 'terms.html']],
     /**
      * Where native puts it too — the app's More screen ends with a "Find
      * Hawkeye" section (components/social-row.tsx) and the share control sits
@@ -293,6 +295,14 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       cg.href = 'captain-guide.html';
       i18nSet(cg, 'captain-guide.title', "Ward Captain's Guide");
       panel.appendChild(cg);
+    }
+    // "Stay for the count" (stay.html), under Learn & about before the captain's
+    // guide. Injected for the same reason: no page static-lists it. Public.
+    if (!panel.querySelector('a[href="stay.html"]')) {
+      const st = document.createElement('a');
+      st.href = 'stay.html';
+      i18nSet(st, 'stay.menu', 'Stay for the Count');
+      panel.appendChild(st);
     }
     // The press kit (press.html), under Learn & about beside About & Contact.
     // Injected for the same reason again: no page static-lists it. Public.

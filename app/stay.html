@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#00482b">
+  <meta name="description" content="On 16 January 2027, vote, then stay at your polling unit until the result is announced, and photograph it with Hawkeye. Three steps, the key dates, and a WhatsApp message and flyers to share.">
+  <title data-i18n="stay.page-title">Hawkeye — Stay for the Count</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=193">
+  <script src="native.js?v=120"></script>
+  <script src="/monitor.js?v=3" defer></script>
+  <style>
+    main.stay-main { padding-top: 16px; }
+    .stay-kicker { display: inline-block; background: var(--gold); color: #00331e; font-weight: 700; font-size: 0.9rem; border-radius: 6px; padding: 4px 10px; margin: 0 0 4px; font-variant-numeric: tabular-nums; }
+    .stay-indep { border-left: 4px solid var(--gold); background: var(--tint); border-radius: 0 10px 10px 0; padding: 10px 14px; font-weight: 600; margin: 0 0 16px; }
+    .stay-main .card h2 { margin-top: 0; }
+    .stay-main .card h3 { margin: 18px 0 6px; font-size: 1.05rem; }
+    .stay-steps { padding-left: 1.3em; margin: 8px 0 0; display: grid; gap: 10px; }
+    .stay-main .card a:not(.btn-link), .stay-main > p a { color: var(--link); font-weight: 600; }
+    .stay-dates { display: grid; grid-template-columns: minmax(10rem, 14rem) 1fr; gap: 12px 18px; margin: 0; }
+    .stay-dates dt { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stay-dates dd { margin: 0; }
+    .stay-safety { border-left: 4px solid var(--gold); }
+    .stay-list { margin: 8px 0 0; padding-left: 1.2em; }
+    .stay-list li { margin: 6px 0; }
+    .stay-more { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+    .stay-main .stay-more h3 { margin: 0 0 4px; }
+    .stay-more p { margin: 0; }
+    .stay-langs { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 10px; }
+    .stay-langs button { display: inline-block; width: auto; margin: 0; padding: 8px 14px; font-size: 0.95rem; border-radius: 999px; border: 1.5px solid var(--border); background: var(--surface); color: var(--link); box-shadow: none; }
+    .stay-langs button[aria-checked="true"] { background: var(--green-dark); border-color: var(--green-dark); color: #fff; }
+    #wa-msg { display: block; width: 100%; box-sizing: border-box; min-height: 17rem; padding: 12px 13px; font-size: 0.92rem; line-height: 1.45; resize: vertical; white-space: pre-wrap; }
+    .stay-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .stay-actions button, .stay-actions .btn-link { margin: 0; }
+    .stay-files { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+    .stay-files a { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 14px; text-decoration: none; }
+    .stay-files a:hover { background: var(--tint); border-color: var(--link); }
+    .stay-tag { font-size: 0.8rem; font-weight: 600; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; }
+    @media (max-width: 560px) {
+      .stay-dates { grid-template-columns: 1fr; gap: 2px 0; }
+      .stay-dates dd { margin-bottom: 10px; }
+    }
+    @media (max-width: 420px) { .stay-actions { grid-template-columns: 1fr; } }
+  </style>
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Hawkeye">
+  <meta property="og:title" content="Stay for the count — Hawkeye">
+  <meta property="og:description" content="On 16 January 2027, vote, then stay at your polling unit until the result is announced, and photograph it with Hawkeye.">
+  <meta property="og:url" content="https://hawkeye.com.ng/stay">
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- No authgate.js: the destination of every recruitment message, so it is
+       public to everyone, signed in or not, on the web and in the app shell.
+       Copy lives in scripts/i18n/batches/stay_web.json. The WhatsApp message
+       there (stay.wa-message) is also written to stay/whatsapp.json, so the
+       share kit can offer all four languages whatever the page language is.
+       The flyers are built by docs/private/outreach/stay-for-the-count/build.mjs
+       and copied to stay/. Every link this page hands out is built on
+       https://hawkeye.com.ng, never location.origin: in the app shell that is
+       the phone itself. -->
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true"><img src="logo.svg?v=101" alt="" width="30" height="30" style="display:block" /></span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false" onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">☰</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a data-i18n="common.about-contact" href="about.html">About &amp; Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy &amp; Data</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap stay-main" id="main">
+    <p class="stay-kicker" data-i18n="press.date-pres">Saturday, 16 January 2027</p>
+    <h1 data-i18n="stay.title">Stay for the count</h1>
+    <p data-i18n="stay.lede" class="lede">On Saturday 16 January 2027, vote, then stay at your polling unit until the result is announced, and photograph it with Hawkeye. Your photo becomes part of a public record anyone can check.</p>
+    <p data-i18n="stay.indep" class="stay-indep">Hawkeye is independent and nonpartisan: not INEC, not the government, not a political party.</p>
+
+    <section class="card">
+      <h2 data-i18n="stay.steps-h">Three steps before 16 January</h2>
+      <ol class="stay-steps">
+        <li data-i18n-html="stay.step-app"><strong>Get the app.</strong> Hawkeye Election Monitor or Hawkeye Lite, free on Google Play and the App Store. <a href="download.html">Get the app →</a></li>
+        <li data-i18n-html="stay.step-unit"><strong>Save your polling unit.</strong> The unit where you vote. Do it now, not on the day. <a href="choose-unit.html">Save your unit →</a></li>
+        <li data-i18n-html="stay.step-practise"><strong>Practise.</strong> The free practice run takes a few minutes, needs no sign-up, and nothing you enter is published. <a href="practice.html">Start the practice run →</a></li>
+      </ol>
+      <h3 data-i18n="stay.day-h">On election day</h3>
+      <p data-i18n="stay.day-body">Vote, then stay for the count, or come back before counting ends. When the result is posted, photograph it in Hawkeye and submit. Photograph each result sheet: Presidential, Senate and House of Representatives. No signal? Hawkeye saves your report and sends it when you have signal.</p>
+      <a class="btn-link" href="download.html" data-i18n="download.get-hawkeye">Get Hawkeye</a>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="press.dates-h">Key dates</h2>
+      <dl class="stay-dates">
+        <dt data-i18n="press.date-pd1">Saturday, 12 December 2026</dt>
+        <dd data-i18n-html="press.date-pd1-what"><strong>National Practice Day.</strong> Observers across Nigeria run the same mock election, 08:00–18:00 WAT. Only the combined count is shared, and practice is never counted as a result. <a href="practice-day.html">About Practice Day →</a></dd>
+        <dt data-i18n="press.date-pd2">Saturday, 9 January 2027</dt>
+        <dd data-i18n-html="press.date-pd2-what"><strong>National Practice Day.</strong> A final run, one week before the vote.</dd>
+        <dt data-i18n="press.date-pres">Saturday, 16 January 2027</dt>
+        <dd data-i18n-html="stay.date-pres-what"><strong>Election day.</strong> Presidential and National Assembly elections. Stay for the count.</dd>
+      </dl>
+    </section>
+
+    <section class="card stay-safety">
+      <h2 data-i18n="captain-guide.safety-h">Stay safe and follow the law</h2>
+      <ul class="stay-list">
+        <li data-i18n="captain-guide.safety-1">No result is worth your life. If there is trouble, leave, and report it later from somewhere safe.</li>
+        <li data-i18n="captain-guide.safety-2">Never interfere with election officials, voters or materials. Follow officials' instructions.</li>
+        <li data-i18n="captain-guide.safety-3">Follow the Electoral Act and INEC's rules. Photograph only what is posted or handed out.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="stay.more-h">Do more</h2>
+      <ul class="stay-more">
+        <li>
+          <h3 data-i18n="stay.cert-h">Earn the observer certificate</h3>
+          <p data-i18n-html="stay.cert-body">Do the <a href="practice.html">practice run</a>, then answer 7 short questions on observing well and within the law. <a href="certificate.html">Get your certificate →</a></p>
+        </li>
+        <li>
+          <h3 data-i18n="stay.captain-h">Become a ward captain</h3>
+          <p data-i18n-html="stay.captain-body">A ward captain makes sure someone stays for the count at every polling unit in one ward. <a href="captain-guide.html">Read the captain's guide</a>, then <a href="captain.html">apply →</a></p>
+        </li>
+        <li>
+          <h3 data-i18n="stay.second-h">Bring a second observer</h3>
+          <p data-i18n-html="stay.second-body">When two observers at the same unit report the same numbers, its count is verified. Once your unit is saved, open <a href="profile.html">My Profile</a> and tap <strong>Invite a Second Observer</strong> to send a link set to your unit.</p>
+        </li>
+        <li>
+          <h3 data-i18n="stay.coverage-h">See where observers are needed</h3>
+          <p data-i18n-html="stay.coverage-body">Observer coverage by state and local government. It never shows who watches which unit. <a href="coverage.html">See observer coverage →</a></p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="card" id="share">
+      <h2 data-i18n="stay.share-h">Share kit</h2>
+      <p data-i18n="stay.share-lede">Send it to your family, your neighbours and your groups. Everything here is free to share and print.</p>
+
+      <h3 id="wa-h" data-i18n="stay.wa-h">WhatsApp message</h3>
+      <!-- Language names are the languages' own names, the same in every
+           language (like lang.js's picker), so they carry no key. -->
+      <div class="stay-langs" role="radiogroup" aria-label="Language" data-i18n-attr="aria-label:stay.msg-lang">
+        <button type="button" role="radio" aria-checked="true" data-msg-lang="en" lang="en" translate="no">English</button>
+        <button type="button" role="radio" aria-checked="false" data-msg-lang="ha" lang="ha" translate="no">Hausa</button>
+        <button type="button" role="radio" aria-checked="false" data-msg-lang="ig" lang="ig" translate="no">Igbo</button>
+        <button type="button" role="radio" aria-checked="false" data-msg-lang="yo" lang="yo" translate="no">Yorùbá</button>
+      </div>
+      <p id="wa-draft" class="hint" data-i18n="stay.draft" hidden>Draft translation: not yet reviewed by a native speaker.</p>
+      <!-- The English message is the markup fallback; the script replaces it. -->
+      <textarea id="wa-msg" readonly rows="16" lang="en" aria-labelledby="wa-h" spellcheck="false">STAY FOR THE COUNT – Saturday 16 January 2027
+
+Hawkeye is a free app for Nigerians. It is independent and nonpartisan: not INEC, not the government, not a political party.
+
+Before 16 January:
+1. Install Hawkeye Election Monitor or Hawkeye Lite (Google Play or App Store)
+2. Verify your number
+3. Save your polling unit
+4. Do the free practice run
+
+On the day: vote, then stay for the count or come back. When the result is posted, photograph it in Hawkeye and submit. It becomes part of a public record anyone can check. No signal? It sends later.
+
+No result is worth your life. Follow officials' instructions. Never interfere or argue. Photograph only what is posted or handed out.
+
+https://hawkeye.com.ng/stay</textarea>
+      <div class="stay-actions">
+        <button type="button" id="wa-copy" data-i18n="stay.copy">Copy message</button>
+        <a id="wa-share" class="btn-link" href="https://wa.me/?text=" target="_blank" rel="noopener" data-i18n="stay.share-wa">Share on WhatsApp</a>
+      </div>
+      <p id="wa-status" class="hint" role="status" aria-live="polite"></p>
+
+      <h3 data-i18n="stay.flyer-h">Printable flyer</h3>
+      <p data-i18n="stay.flyer-note">One A5 page with a QR code that opens this page. Print at A5, or on A4 at 141%.</p>
+      <ul class="stay-files">
+        <li><a href="stay/flyer-en.pdf" download="Hawkeye-Stay-for-the-count-English.pdf"><span><span translate="no">English</span> · <span data-i18n="stay.flyer-dl">Flyer (PDF)</span></span></a></li>
+        <li><a href="stay/flyer-ha.pdf" download="Hawkeye-Stay-for-the-count-Hausa.pdf" lang="ha"><span><span translate="no">Hausa</span> · <span data-i18n="stay.flyer-dl">Flyer (PDF)</span></span><span class="stay-tag" data-i18n="stay.draft-tag">draft translation</span></a></li>
+        <li><a href="stay/flyer-ig.pdf" download="Hawkeye-Stay-for-the-count-Igbo.pdf" lang="ig"><span><span translate="no">Igbo</span> · <span data-i18n="stay.flyer-dl">Flyer (PDF)</span></span><span class="stay-tag" data-i18n="stay.draft-tag">draft translation</span></a></li>
+        <li><a href="stay/flyer-yo.pdf" download="Hawkeye-Stay-for-the-count-Yoruba.pdf" lang="yo"><span><span translate="no">Yorùbá</span> · <span data-i18n="stay.flyer-dl">Flyer (PDF)</span></span><span class="stay-tag" data-i18n="stay.draft-tag">draft translation</span></a></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="press.data-h">How much data does it use?</h2>
+      <p data-i18n-html="stay.data-body">About 2 MB to report the three results. A 100 MB bundle covers the whole day with a wide margin. <a href="press/Hawkeye-Data-Use.pdf" download>Data-use guide (PDF)</a> · <a href="press.html#data">All the figures →</a></p>
+    </section>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a data-i18n="common.privacy-data" href="privacy.html">Privacy &amp; Data</a><a data-i18n="index.how-it-works" href="how.html">How It Works</a><a href="faq.html">FAQ</a></nav>
+    <p data-i18n="common.hawkeye-is-an-independent-transparency-initiative-2">Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+    <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">© 2026 IniXien, LLC. All rights reserved.</p>
+  </div></footer>
+
+  <script src="tg.js?v=95"></script>
+  <script src="/i18n.js?v=10"></script>
+  <script src="/lang.js?v=9"></script>
+  <script src="menu.js?v=184"></script>
+  <script src="shell.js?v=2" defer></script>
+  <script>
+  /* The share kit. The message follows the page language by default (it is a
+     key, stay.wa-message, translated at render time), and the four buttons let
+     a recruiter send it in any of the four whatever the page is in: the other
+     languages come from stay/whatsapp.json, written from the same batch entry. */
+  (function () {
+    var CODES = ['en', 'ha', 'ig', 'yo'];
+    var ta = document.getElementById('wa-msg');
+    var share = document.getElementById('wa-share');
+    var status = document.getElementById('wa-status');
+    var draft = document.getElementById('wa-draft');
+    var btns = document.querySelectorAll('[data-msg-lang]');
+    var EN = ta.value;                    // the markup fallback, captured before anything paints
+    var chosen = null;                    // null = follow the page language
+    var shown = 'en';                     // the language the box actually holds
+    var all = null;                       // the fetch of stay/whatsapp.json, made once and only if needed
+    var paintSeq = 0;
+    var I = function () { return window.HawkeyeI18n; };
+    var T = function (k, en) { var i = I(); return i ? i.t(k, en) : en; };
+    var pageLang = function () { var i = I(); var c = i && i.current; return CODES.indexOf(c) >= 0 ? c : 'en'; };
+
+    function message(code) {
+      if (code === 'en') return Promise.resolve(EN);
+      if (code === pageLang()) return Promise.resolve(T('stay.wa-message', EN));
+      all = all || fetch('stay/whatsapp.json', { cache: 'no-cache' }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      });
+      return all.then(function (m) { return (m && m[code]) || EN; }).catch(function () { all = null; return null; });
+    }
+
+    function mark(code) {
+      btns.forEach(function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-msg-lang') === code)); });
+      draft.hidden = code === 'en';
+    }
+
+    function paint() {
+      var code = chosen || pageLang();
+      var seq = ++paintSeq;
+      mark(code);
+      status.textContent = '';
+      return message(code).then(function (text) {
+        if (seq !== paintSeq) return;          // a later choice won
+        if (text == null) {                    // offline, never fetched: keep what is shown, and say so
+          mark(shown);
+          status.textContent = T('stay.lang-failed', 'Could not load that language. Check your connection and try again.');
+          return;
+        }
+        shown = code;
+        ta.textContent = text;                 // the default value too, so what the DOM says is what shows
+        ta.value = text;
+        ta.lang = code;
+        // wa.me is absolute, and the message's own link is https://hawkeye.com.ng/stay.
+        share.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+      });
+    }
+
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () { chosen = b.getAttribute('data-msg-lang'); paint(); });
+    });
+
+    document.getElementById('wa-copy').addEventListener('click', function () {
+      var text = ta.value;
+      var say = function (ok) {
+        status.textContent = ok
+          ? T('stay.copied', 'Copied. Paste it into WhatsApp, SMS or any group.')
+          : T('stay.copy-failed', 'Could not copy. Select the message and copy it yourself.');
+        if (!ok) { ta.focus(); ta.select(); }
+      };
+      var legacy = function () {
+        try { ta.focus(); ta.select(); ta.setSelectionRange(0, text.length); return document.execCommand('copy'); } catch (e) { return false; }
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { say(true); }, function () { say(legacy()); });
+      } else {
+        say(legacy());
+      }
+    });
+
+    // A page-language change re-points the kit at the new language, and
+    // i18n.js announces every dictionary load, including the first.
+    document.addEventListener('hawkeye-lang', function () { chosen = null; paint(); });
+    paint();
+  })();
+  </script>
+</body>
+</html>

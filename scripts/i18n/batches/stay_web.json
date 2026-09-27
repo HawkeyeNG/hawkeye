@@ -1,0 +1,344 @@
+{
+  "stay.page-title": {
+    "en": "Hawkeye — Stay for the Count",
+    "ha": "Hawkeye — Ku Tsaya Domin Ƙidaya",
+    "ig": "Hawkeye — Nọrọ Maka Ọgụgụ",
+    "yo": "Hawkeye — Dúró Fún Ìkà"
+  },
+  "stay.menu": {
+    "en": "Stay for the Count",
+    "ha": "Ku Tsaya Domin Ƙidaya",
+    "ig": "Nọrọ Maka Ọgụgụ",
+    "yo": "Dúró Fún Ìkà"
+  },
+  "stay.title": {
+    "en": "Stay for the count",
+    "ha": "Ku tsaya domin ƙidaya",
+    "ig": "Nọrọnụ maka ọgụgụ",
+    "yo": "Ẹ dúró fún ìkà"
+  },
+  "stay.lede": {
+    "en": "On Saturday 16 January 2027, vote, then stay at your polling unit until the result is announced, and photograph it with Hawkeye. Your photo becomes part of a public record anyone can check.",
+    "ha": "A ranar Asabar 16 ga Janairu 2027, ku jefa ƙuri'a, sannan ku tsaya a rukunin zaɓenku har sai an sanar da sakamako, ku ɗauki hotonsa da Hawkeye. Hotonku zai shiga littafin jama'a da kowa zai iya dubawa.",
+    "ig": "Na Satọdee 16 Jenụwarị 2027, tụọnụ vootu, wee nọrọ na ngalaba ntuli aka unu ruo mgbe a mara ọkwa nsonaazụ, ma jiri Hawkeye see ya foto. Foto unu ga-abụ akụkụ nke ndekọ ọha onye ọ bụla nwere ike ilele.",
+    "yo": "Ní Ọjọ́ Àbámẹ́ta 16 Ṣẹ́rẹ́ 2027, ẹ dìbò, lẹ́yìn náà ẹ dúró sí ẹ̀ka ìdìbò yín títí wọn yóò fi kéde àbájáde, kí ẹ sì fi Hawkeye ya fọ́tò rẹ̀. Fọ́tò yín yóò di ara àkọsílẹ̀ gbangba tí ẹnikẹ́ni lè ṣàyẹ̀wò."
+  },
+  "stay.indep": {
+    "en": "Hawkeye is independent and nonpartisan: not INEC, not the government, not a political party.",
+    "ha": "Hawkeye tana da zaman kanta kuma ba ta goyon bayan kowace jam'iyya: ba INEC ba ce, ba gwamnati ba ce, ba jam'iyyar siyasa ba ce.",
+    "ig": "Hawkeye nweere onwe ya, ọ dịghịkwa n'akụkụ pati ọ bụla: ọ bụghị INEC, ọ bụghị gọọmentị, ọ bụghị pati ndọrọndọrọ ọchịchị.",
+    "yo": "Hawkeye jẹ́ olómìnira, kò sì ṣe ojúsàájú ẹgbẹ́ kankan: kì í ṣe INEC, kì í ṣe ìjọba, kì í sì í ṣe ẹgbẹ́ òṣèlú."
+  },
+  "stay.steps-h": {
+    "en": "Three steps before 16 January",
+    "ha": "Matakai uku kafin 16 ga Janairu",
+    "ig": "Nzọụkwụ atọ tupu 16 Jenụwarị",
+    "yo": "Ìgbésẹ̀ mẹ́ta ṣáájú 16 Ṣẹ́rẹ́"
+  },
+  "stay.step-app": {
+    "en": "<strong>Get the app.</strong> Hawkeye Election Monitor or Hawkeye Lite, free on Google Play and the App Store. <a href=\"download.html\">Get the app →</a>",
+    "ha": "<strong>Ku sami manhajar.</strong> Hawkeye Election Monitor ko Hawkeye Lite, kyauta a Google Play da App Store. <a href=\"download.html\">Sami manhajar →</a>",
+    "ig": "<strong>Nwetanụ ngwa ahụ.</strong> Hawkeye Election Monitor ma ọ bụ Hawkeye Lite, n'efu na Google Play na App Store. <a href=\"download.html\">Nweta ngwa ahụ →</a>",
+    "yo": "<strong>Ẹ gba ohun èlò náà.</strong> Hawkeye Election Monitor tàbí Hawkeye Lite, ọ̀fẹ́ lórí Google Play àti App Store. <a href=\"download.html\">Gba ohun èlò náà →</a>"
+  },
+  "stay.step-unit": {
+    "en": "<strong>Save your polling unit.</strong> The unit where you vote. Do it now, not on the day. <a href=\"choose-unit.html\">Save your unit →</a>",
+    "ha": "<strong>Ku ajiye rukunin zaɓenku.</strong> Inda kuke jefa ƙuri'a. Ku yi haka yanzu, ba a ranar zaɓe ba. <a href=\"choose-unit.html\">Ajiye rukuninka →</a>",
+    "ig": "<strong>Chekwaanụ ngalaba ntuli aka unu.</strong> Ebe unu na-atụ vootu. Meenụ ya ugbu a, ọ bụghị n'ụbọchị ahụ. <a href=\"choose-unit.html\">Chekwaa ngalaba gị →</a>",
+    "yo": "<strong>Ẹ fi ẹ̀ka ìdìbò yín pamọ́.</strong> Ibi tí ẹ ti ń dìbò. Ẹ ṣe é nísinsìnyí, kì í ṣe ní ọjọ́ ìdìbò. <a href=\"choose-unit.html\">Fi ẹ̀ka rẹ pamọ́ →</a>"
+  },
+  "stay.step-practise": {
+    "en": "<strong>Practise.</strong> The free practice run takes a few minutes, needs no sign-up, and nothing you enter is published. <a href=\"practice.html\">Start the practice run →</a>",
+    "ha": "<strong>Ku yi atisaye.</strong> Gwajin atisaye kyauta ne, 'yan mintuna kawai, ba sai an yi rijista ba, kuma ba a wallafa komai da kuka shigar. <a href=\"practice.html\">Fara gwajin atisaye →</a>",
+    "ig": "<strong>Meenụ omume.</strong> Ọsọ omume n'efu na-ewe nkeji ole na ole, ọ chọghị ndebanye aha, a naghịkwa ebipụta ihe ọ bụla unu tinyere. <a href=\"practice.html\">Malite ọsọ omume →</a>",
+    "yo": "<strong>Ẹ ṣe àdánwò.</strong> Eré àdánwò ọ̀fẹ́ gba ìṣẹ́jú díẹ̀ péré, kò nílò ìforúkọsílẹ̀, a kì í sì í tẹ ohunkóhun tí ẹ bá tẹ̀ sí i jáde. <a href=\"practice.html\">Bẹ̀rẹ̀ eré àdánwò →</a>"
+  },
+  "stay.day-h": {
+    "en": "On election day",
+    "ha": "A ranar zaɓe",
+    "ig": "N'ụbọchị ntuli aka",
+    "yo": "Ní ọjọ́ ìdìbò"
+  },
+  "stay.day-body": {
+    "en": "Vote, then stay for the count, or come back before counting ends. When the result is posted, photograph it in Hawkeye and submit. Photograph each result sheet: Presidential, Senate and House of Representatives. No signal? Hawkeye saves your report and sends it when you have signal.",
+    "ha": "Ku jefa ƙuri'a, sannan ku tsaya domin ƙidaya, ko ku dawo kafin a gama ƙidaya. Idan an liƙa sakamako, ku ɗauki hotonsa da Hawkeye ku aika. Ku ɗauki hoton kowace takardar sakamako: ta Shugaban Ƙasa, ta Majalisar Dattawa da ta Majalisar Wakilai. Babu yanar gizo? Hawkeye za ta ajiye rahotonku, ta aika idan kun dawo kan layi.",
+    "ig": "Tụọnụ vootu, wee nọrọ maka ọgụgụ, ma ọ bụ laghachinụ tupu ọgụgụ agwụ. Mgbe e gosiri ọha nsonaazụ, jiri Hawkeye see ya foto ma zipu ya. Seenụ foto mpempe akwụkwọ nsonaazụ ọ bụla: nke Onyeisiala, nke Sineti na nke Ụlọ Ndị Nnọchiteanya. Enweghị netwọk? Hawkeye ga-echekwa akụkọ unu ma ziga ya mgbe netwọk laghachiri.",
+    "yo": "Ẹ dìbò, lẹ́yìn náà ẹ dúró fún ìkà, tàbí kí ẹ padà wá kí wọ́n tó parí ìkà. Nígbà tí wọ́n bá lẹ̀ àbájáde, ẹ fi Hawkeye ya fọ́tò rẹ̀ kí ẹ sì fi ránṣẹ́. Ẹ ya fọ́tò ìwé àbájáde kọ̀ọ̀kan: ti Ààrẹ, ti Ilé Aṣòfin Àgbà àti ti Ilé Aṣòfin Kékeré. Kò sí íńtánẹ́ẹ̀tì? Hawkeye yóò fi ìròyìn yín pamọ́, yóò sì fi ránṣẹ́ nígbà tí íńtánẹ́ẹ̀tì bá dé."
+  },
+  "stay.date-pres-what": {
+    "en": "<strong>Election day.</strong> Presidential and National Assembly elections. Stay for the count.",
+    "ha": "<strong>Ranar zaɓe.</strong> Zaɓen shugaban ƙasa da na Majalisar Dokoki ta Ƙasa. Ku tsaya domin ƙidaya.",
+    "ig": "<strong>Ụbọchị ntuli aka.</strong> Ntuli aka onyeisiala na nke Ụlọ Omebe Iwu nke Mba. Nọrọnụ maka ọgụgụ.",
+    "yo": "<strong>Ọjọ́ ìdìbò.</strong> Ìdìbò ààrẹ àti ti Ilé Ìgbìmọ̀ Aṣòfin Àpapọ̀. Ẹ dúró fún ìkà."
+  },
+  "stay.more-h": {
+    "en": "Do more",
+    "ha": "Ku ƙara taimakawa",
+    "ig": "Mee karịa",
+    "yo": "Ẹ ṣe jù bẹ́ẹ̀ lọ"
+  },
+  "stay.cert-h": {
+    "en": "Earn the observer certificate",
+    "ha": "Ku sami takardar shaidar mai lura",
+    "ig": "Nweta asambodo onye na-ekiri ihe",
+    "yo": "Gba ìwé-ẹ̀rí olùwòran"
+  },
+  "stay.cert-body": {
+    "en": "Do the <a href=\"practice.html\">practice run</a>, then answer 7 short questions on observing well and within the law. <a href=\"certificate.html\">Get your certificate →</a>",
+    "ha": "Ku yi <a href=\"practice.html\">gwajin atisaye</a>, sannan ku amsa gajerun tambayoyi 7 kan yadda ake lura da kyau kuma bisa doka. <a href=\"certificate.html\">Sami takardar shaidarka →</a>",
+    "ig": "Meenụ <a href=\"practice.html\">ọsọ omume</a>, wee zaa ajụjụ mkpirikpi 7 gbasara otú e si ekiri ihe nke ọma na n'ụzọ iwu. <a href=\"certificate.html\">Nweta asambodo gị →</a>",
+    "yo": "Ẹ ṣe <a href=\"practice.html\">eré àdánwò</a>, lẹ́yìn náà ẹ dáhùn ìbéèrè kúkúrú 7 nípa bí a ṣe ń wòran dáadáa àti ní ìbámu pẹ̀lú òfin. <a href=\"certificate.html\">Gba ìwé-ẹ̀rí rẹ →</a>"
+  },
+  "stay.captain-h": {
+    "en": "Become a ward captain",
+    "ha": "Zama kyaftin na unguwa",
+    "ig": "Bụrụ onye ndú ward",
+    "yo": "Di olùdarí àgọ́"
+  },
+  "stay.captain-body": {
+    "en": "A ward captain makes sure someone stays for the count at every polling unit in one ward. <a href=\"captain-guide.html\">Read the captain's guide</a>, then <a href=\"captain.html\">apply →</a>",
+    "ha": "Kyaftin na unguwa yana tabbatar da cewa wani ya tsaya domin ƙidaya a kowane rukunin zaɓe na unguwa ɗaya. <a href=\"captain-guide.html\">Karanta jagorar kyaftin</a>, sannan ka <a href=\"captain.html\">nema →</a>",
+    "ig": "Onye ndú ward na-ahụ na mmadụ nọrọ maka ọgụgụ na ngalaba ntuli aka ọ bụla dị n'otu ward. <a href=\"captain-guide.html\">Gụọ ntuziaka onye ndú</a>, wee <a href=\"captain.html\">tinye arịrịọ →</a>",
+    "yo": "Olùdarí àgọ́ ń rí i dájú pé ẹnìkan dúró fún ìkà ní gbogbo ẹ̀ka ìdìbò ní àgọ́ kan. <a href=\"captain-guide.html\">Ka ìtọ́sọ́nà olùdarí</a>, lẹ́yìn náà <a href=\"captain.html\">béèrè →</a>"
+  },
+  "stay.second-h": {
+    "en": "Bring a second observer",
+    "ha": "Ku kawo mai lura na biyu",
+    "ig": "Kpọta onye na-ekiri ihe nke abụọ",
+    "yo": "Mú olùwòran kejì wá"
+  },
+  "stay.second-body": {
+    "en": "When two observers at the same unit report the same numbers, its count is verified. Once your unit is saved, open <a href=\"profile.html\">My Profile</a> and tap <strong>Invite a Second Observer</strong> to send a link set to your unit.",
+    "ha": "Idan masu lura biyu a rukunin zaɓe ɗaya suka bayar da alkaluma iri ɗaya, ana tabbatar da ƙidayarsa. Da zarar kun ajiye rukuninku, ku buɗe <a href=\"profile.html\">Bayanaina</a> ku danna <strong>Gayyaci Mai Lura Na Biyu</strong> don aika hanyar haɗi da aka saita zuwa rukuninku.",
+    "ig": "Mgbe ndị na-ekiri ihe abụọ n'otu ngalaba ntuli aka kọrọ otu ọnụọgụ ahụ, ngụkọ ya na-aghọ nke e nyochara. Ozugbo i chekwara ngalaba gị, mepee <a href=\"profile.html\">Profaịlụ M</a> ma pịa <strong>Kpọọ Onye Na-ekiri Ihe Nke Abụọ</strong> iji zipu njikọ e setịpụrụ maka ngalaba gị.",
+    "yo": "Nígbà tí olùwòran méjì ní ẹ̀ka ìdìbò kan náà bá ròyìn nọ́ńbà kan náà, a ó fìdí ìkàyè rẹ̀ múlẹ̀. Nígbà tí o bá ti fi ẹ̀ka rẹ pamọ́, ṣí <a href=\"profile.html\">Àkọọ́lẹ̀ Mi</a> kí o sì tẹ <strong>Pe Olùwòran Kejì</strong> láti fi ìjápọ̀ tí a ṣètò fún ẹ̀ka rẹ ránṣẹ́."
+  },
+  "stay.coverage-h": {
+    "en": "See where observers are needed",
+    "ha": "Duba inda ake bukatar masu lura",
+    "ig": "Lee ebe a chọrọ ndị na-ekiri ihe",
+    "yo": "Wo ibi tí a ti nílò olùwòran"
+  },
+  "stay.coverage-body": {
+    "en": "Observer coverage by state and local government. It never shows who watches which unit. <a href=\"coverage.html\">See observer coverage →</a>",
+    "ha": "Yawan rufewar masu lura bisa jiha da ƙaramar hukuma. Ba ya taɓa nuna wanda ke lura da wane rukuni. <a href=\"coverage.html\">Duba yawan rufewar masu lura →</a>",
+    "ig": "Mkpuchi ndị na-ekiri ihe site na steeti na ọchịchị ime obodo. Ọ naghị egosi onye na-ekiri ngalaba ọ bụla. <a href=\"coverage.html\">Lee mkpuchi ndị na-ekiri ihe →</a>",
+    "yo": "Ìbòòrí àwọn olùwòran ní ìpínlẹ̀ àti ìjọba ìbílẹ̀. Kì í fi ẹni tó ń wo ẹ̀ka kọ̀ọ̀kan hàn. <a href=\"coverage.html\">Wo ìbòòrí àwọn olùwòran →</a>"
+  },
+  "stay.share-h": {
+    "en": "Share kit",
+    "ha": "Kayan rabawa",
+    "ig": "Ngwugwu nkesa",
+    "yo": "Àkójọ fún pínpín"
+  },
+  "stay.share-lede": {
+    "en": "Send it to your family, your neighbours and your groups. Everything here is free to share and print.",
+    "ha": "Ku aika wa iyalanku, maƙwabtanku da ƙungiyoyinku. Komai a nan kyauta ne don rabawa da bugawa.",
+    "ig": "Zigara ya ezinụlọ unu, ndị agbata obi unu na otu unu. Ihe niile dị ebe a bụ n'efu ikesa na ibipụta.",
+    "yo": "Ẹ fi ránṣẹ́ sí ẹbí yín, àwọn aládùúgbò yín àti àwọn ẹgbẹ́ yín. Ohun gbogbo níbí jẹ́ ọ̀fẹ́ láti pín àti láti tẹ̀ jáde."
+  },
+  "stay.msg-lang": {
+    "en": "Language",
+    "ha": "Harshe",
+    "ig": "Asụsụ",
+    "yo": "Èdè"
+  },
+  "stay.wa-h": {
+    "en": "WhatsApp message",
+    "ha": "Saƙon WhatsApp",
+    "ig": "Ozi WhatsApp",
+    "yo": "Ọ̀rọ̀ WhatsApp"
+  },
+  "stay.wa-message": {
+    "en": "STAY FOR THE COUNT – Saturday 16 January 2027\n\nHawkeye is a free app for Nigerians. It is independent and nonpartisan: not INEC, not the government, not a political party.\n\nBefore 16 January:\n1. Install Hawkeye Election Monitor or Hawkeye Lite (Google Play or App Store)\n2. Verify your number\n3. Save your polling unit\n4. Do the free practice run\n\nOn the day: vote, then stay for the count or come back. When the result is posted, photograph it in Hawkeye and submit. It becomes part of a public record anyone can check. No signal? It sends later.\n\nNo result is worth your life. Follow officials' instructions. Never interfere or argue. Photograph only what is posted or handed out.\n\nhttps://hawkeye.com.ng/stay",
+    "ha": "KU TSAYA DOMIN ƘIDAYA – 16 ga Janairu 2027\n\nHawkeye manhaja ce ta kyauta, mai zaman kanta: ba INEC ba ce, ba gwamnati ba ce, ba jam'iyyar siyasa ba ce.\n\nKafin 16 ga Janairu:\n1. Ku shigar da Hawkeye Election Monitor ko Hawkeye Lite\n2. Ku tabbatar da lambarku\n3. Ku ajiye rukunin zaɓenku\n4. Ku yi gwajin atisaye\n\nA ranar zaɓe: ku jefa ƙuri'a, ku tsaya domin ƙidaya ko ku dawo. Idan an liƙa sakamako, ku ɗauki hotonsa da Hawkeye ku aika. Zai shiga littafin jama'a da kowa zai iya dubawa. Babu yanar gizo? Zai tafi daga baya.\n\nBabu sakamakon da ya fi ranku daraja. Ku bi umarnin jami'an zaɓe. Kada ku tsoma baki, kada ku yi gardama. Ku ɗauki hoton abin da aka liƙa ko aka ba ku kawai.\n\nhttps://hawkeye.com.ng/stay",
+    "ig": "NỌRỌNỤ MAKA ỌGỤGỤ – 16 Jenụwarị 2027\n\nHawkeye bụ ngwa n'efu nweere onwe ya: ọ bụghị INEC, ọ bụghị gọọmentị, ọ bụghị pati ndọrọndọrọ ọchịchị.\n\nTupu 16 Jenụwarị:\n1. Wụnyenụ Hawkeye Election Monitor ma ọ bụ Hawkeye Lite\n2. Nyochaanụ nọmba unu\n3. Chekwaanụ ngalaba ntuli aka unu\n4. Meenụ ọsọ omume\n\nN'ụbọchị ahụ: tụọnụ vootu, nọrọ maka ọgụgụ ma ọ bụ laghachi. Mgbe e gosiri nsonaazụ, seenụ ya foto ma zipu ya. Ọ ga-abanye na ndekọ ọha onye ọ bụla nwere ike ilele. Enweghị netwọk? Ọ ga-eziga ya emesịa.\n\nỌ dịghị nsonaazụ ọ bụla dị mkpa karịa ndụ unu. Soronụ ntụziaka ndị ọrụ ntuli aka. Unu etinyela aka n'ọrụ ha, unu esela okwu. Seenụ foto naanị ihe e gosiri ọha ma ọ bụ nke e nyere unu.\n\nhttps://hawkeye.com.ng/stay",
+    "yo": "Ẹ DÚRÓ FÚN ÌKÀ – 16 Ṣẹ́rẹ́ (January) 2027\n\nHawkeye jẹ́ ohun èlò ọ̀fẹ́ àti olómìnira: kì í ṣe INEC, kì í ṣe ìjọba, kì í sì í ṣe ẹgbẹ́ òṣèlú.\n\nṢáájú 16 Ṣẹ́rẹ́:\n1. Ẹ gba Hawkeye Election Monitor tàbí Hawkeye Lite\n2. Ẹ fìdí nọ́mbà yín múlẹ̀\n3. Ẹ fi ẹ̀ka ìdìbò yín pamọ́\n4. Ẹ ṣe eré àdánwò ọ̀fẹ́\n\nNí ọjọ́ náà: ẹ dìbò, ẹ dúró fún ìkà tàbí ẹ padà wá. Tí wọ́n bá lẹ̀ àbájáde, ẹ ya fọ́tò rẹ̀ kí ẹ sì fi ránṣẹ́. Yóò di ara àkọsílẹ̀ gbangba tí ẹnikẹ́ni lè ṣàyẹ̀wò. Kò sí íńtánẹ́ẹ̀tì? Yóò ránṣẹ́ lẹ́yìn.\n\nKò sí àbájáde kankan tí ó ṣe pàtàkì ju ẹ̀mí yín lọ. Ẹ tẹ̀lé ìtọ́ni àwọn òṣìṣẹ́ ìdìbò. Ẹ má ṣe dí wọn lọ́wọ́, ẹ má sì bá ẹnikẹ́ni jiyàn. Ẹ ya fọ́tò ohun tí wọ́n lẹ̀ tàbí tí wọ́n fún yín nìkan.\n\nhttps://hawkeye.com.ng/stay"
+  },
+  "stay.copy": {
+    "en": "Copy message",
+    "ha": "Kwafi saƙon",
+    "ig": "Detuo ozi ahụ",
+    "yo": "Ṣàdàkọ ọ̀rọ̀ náà"
+  },
+  "stay.copied": {
+    "en": "Copied. Paste it into WhatsApp, SMS or any group.",
+    "ha": "An kwafa. Ku liƙa shi a WhatsApp, SMS ko kowace ƙungiya.",
+    "ig": "E detuola ya. Mado ya na WhatsApp, SMS ma ọ bụ otu ọ bụla.",
+    "yo": "A ti ṣàdàkọ rẹ̀. Lẹ̀ ẹ́ sínú WhatsApp, SMS tàbí ẹgbẹ́ èyíkéyìí."
+  },
+  "stay.copy-failed": {
+    "en": "Could not copy. Select the message and copy it yourself.",
+    "ha": "An kasa kwafa. Ku zaɓi saƙon ku kwafa da kanku.",
+    "ig": "Enweghị ike idetuo ya. Họrọ ozi ahụ ma detuo ya n'onwe gị.",
+    "yo": "A kò lè ṣàdàkọ rẹ̀. Yan ọ̀rọ̀ náà kí o sì ṣàdàkọ rẹ̀ fúnra rẹ."
+  },
+  "stay.lang-failed": {
+    "en": "Could not load that language. Check your connection and try again.",
+    "ha": "An kasa loda wannan harshe. Ku duba haɗinku sannan ku sake gwadawa.",
+    "ig": "Enweghị ike ibudata asụsụ ahụ. Lelee njikọ gị wee nwaa ọzọ.",
+    "yo": "A kò lè gbé èdè yẹn wá. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì gbìyànjú lẹ́ẹ̀kan sí i."
+  },
+  "stay.share-wa": {
+    "en": "Share on WhatsApp",
+    "ha": "Raba a WhatsApp",
+    "ig": "Kesaa na WhatsApp",
+    "yo": "Pín lórí WhatsApp"
+  },
+  "stay.draft": {
+    "en": "Draft translation: not yet reviewed by a native speaker.",
+    "ha": "Fassarar gwaji: har yanzu ɗan asalin harshen bai duba ta ba.",
+    "ig": "Ntụgharị nnwale: onye asụsụ ya bụ asụsụ obodo enyochabeghị ya.",
+    "yo": "Ìtumọ̀ àkọ́kọ́: abínibí èdè náà kò tíì ṣàyẹ̀wò rẹ̀."
+  },
+  "stay.draft-tag": {
+    "en": "draft translation",
+    "ha": "fassarar gwaji",
+    "ig": "ntụgharị nnwale",
+    "yo": "ìtumọ̀ àkọ́kọ́"
+  },
+  "stay.flyer-h": {
+    "en": "Printable flyer",
+    "ha": "Takardar talla don bugawa",
+    "ig": "Akwụkwọ mgbasa ozi a na-ebipụta",
+    "yo": "Ìwé ìpolongo fún títẹ̀"
+  },
+  "stay.flyer-note": {
+    "en": "One A5 page with a QR code that opens this page. Print at A5, or on A4 at 141%.",
+    "ha": "Shafi ɗaya na A5 mai lambar QR da ke buɗe wannan shafin. Ku buga a A5, ko a A4 a 141%.",
+    "ig": "Otu peeji A5 nwere koodu QR na-emepe peeji a. Bipụta ya na A5, ma ọ bụ na A4 na 141%.",
+    "yo": "Ojú-ìwé A5 kan tí ó ní kóòdù QR tí ó ń ṣí ojú-ìwé yìí. Ẹ tẹ̀ ẹ́ ní A5, tàbí ní A4 ní 141%."
+  },
+  "stay.flyer-dl": {
+    "en": "Flyer (PDF)",
+    "ha": "Takardar talla (PDF)",
+    "ig": "Akwụkwọ mgbasa ozi (PDF)",
+    "yo": "Ìwé ìpolongo (PDF)"
+  },
+  "stay.data-body": {
+    "en": "About 2 MB to report the three results. A 100 MB bundle covers the whole day with a wide margin. <a href=\"press/Hawkeye-Data-Use.pdf\" download>Data-use guide (PDF)</a> · <a href=\"press.html#data\">All the figures →</a>",
+    "ha": "Kusan MB 2 don bayar da rahoton sakamako uku. Data ta MB 100 za ta ishe ku duk rana da ragi mai yawa. <a href=\"press/Hawkeye-Data-Use.pdf\" download>Jagorar amfani da data (PDF)</a> · <a href=\"press.html#data\">Duk alkaluman →</a>",
+    "ig": "Ihe dị ka MB 2 iji kọọ nsonaazụ atọ ahụ. Ngwugwu data MB 100 ga-ezuru ụbọchị niile, fọdụkwa nke ukwuu. <a href=\"press/Hawkeye-Data-Use.pdf\" download>Ntuziaka ojiji data (PDF)</a> · <a href=\"press.html#data\">Ọnụọgụgụ niile →</a>",
+    "yo": "Nǹkan bí MB 2 láti ròyìn àbájáde mẹ́tẹ̀ẹ̀ta. Dátà MB 100 tó fún gbogbo ọjọ́ náà, yóò sì ṣẹ́kù púpọ̀. <a href=\"press/Hawkeye-Data-Use.pdf\" download>Ìtọ́sọ́nà lílo dátà (PDF)</a> · <a href=\"press.html#data\">Gbogbo àwọn nọ́ńbà →</a>"
+  },
+  "press.data-h": {
+    "en": "How much data does it use?",
+    "ha": "Data nawa take amfani da ita?",
+    "ig": "Data ole ka ọ na-eji?",
+    "yo": "Dátà mélòó ni ó ń lò?"
+  },
+  "press.data-lede": {
+    "en": "For parties and groups budgeting mobile data for polling-unit agents on 16 January. The figures are per agent.",
+    "ha": "Ga jam'iyyu da ƙungiyoyi masu tsara kasafin data ga wakilansu na rukunin zaɓe a ranar 16 ga Janairu. Alkaluman na kowane wakili ne.",
+    "ig": "Maka pati na otu na-ahazi data ekwentị maka ndị nnọchite anya ha na ngalaba ntuli aka na 16 Jenụwarị. Ọnụọgụgụ ndị a bụ maka onye nnọchite anya ọ bụla.",
+    "yo": "Fún àwọn ẹgbẹ́ òṣèlú àti àwọn ẹgbẹ́ tí ń ṣètò dátà fún àwọn aṣojú wọn ní ẹ̀ka ìdìbò ní 16 Ṣẹ́rẹ́. Àwọn nọ́ńbà wọ̀nyí jẹ́ fún aṣojú kọ̀ọ̀kan."
+  },
+  "press.data-col-use": {
+    "en": "Use",
+    "ha": "Amfani",
+    "ig": "Ojiji",
+    "yo": "Lílò"
+  },
+  "press.data-col-data": {
+    "en": "Data",
+    "ha": "Yawan data",
+    "ig": "Ọnụọgụ data",
+    "yo": "Dátà"
+  },
+  "press.data-r1-k": {
+    "en": "Reporting the Presidential, Senate and House results only",
+    "ha": "Bayar da rahoton sakamakon Shugaban Ƙasa, Majalisar Dattawa da Majalisar Wakilai kawai",
+    "ig": "Ịkọ naanị nsonaazụ Onyeisiala, Sineti na Ụlọ Ndị Nnọchiteanya",
+    "yo": "Ìròyìn àbájáde Ààrẹ, Ilé Aṣòfin Àgbà àti Ilé Aṣòfin Kékeré nìkan"
+  },
+  "press.data-r1-v": {
+    "en": "About 2 MB (about 0.4 MB of compressed photos per report, plus retries)",
+    "ha": "Kusan MB 2 (kusan MB 0.4 na hotuna da aka matsa a kowane rahoto, da sake gwadawa)",
+    "ig": "Ihe dị ka MB 2 (ihe dị ka MB 0.4 nke foto a kpakọrọ n'akụkọ ọ bụla, gbakwunyere mgbalị ọzọ)",
+    "yo": "Nǹkan bí MB 2 (nǹkan bí MB 0.4 fọ́tò tí a ti fún pọ̀ fún ìròyìn kọ̀ọ̀kan, pẹ̀lú àtúngbìyànjú)"
+  },
+  "press.data-r2-k": {
+    "en": "Reporting, plus checking results a few times (2–3 hours with the app open)",
+    "ha": "Bayar da rahoto, da duba sakamako sau kaɗan (awa 2–3 da manhajar a buɗe)",
+    "ig": "Ịkọ akụkọ, gbakwunyere ilele nsonaazụ ugboro ole na ole (awa 2–3 ngwa ahụ ghe oghe)",
+    "yo": "Ìròyìn, pẹ̀lú wíwo àbájáde nígbà mélòó kan (wákàtí 2–3 tí ohun èlò náà ṣí sílẹ̀)"
+  },
+  "press.data-r2-v": {
+    "en": "About 10–15 MB",
+    "ha": "Kusan MB 10–15",
+    "ig": "Ihe dị ka MB 10–15",
+    "yo": "Nǹkan bí MB 10–15"
+  },
+  "press.data-r3-k": {
+    "en": "Heavy use: following results and maps all evening",
+    "ha": "Amfani mai yawa: bin sakamako da taswirori duk maraice",
+    "ig": "Ojiji dị arọ: iso nsonaazụ na maapụ n'abalị niile",
+    "yo": "Lílò tó pọ̀: títẹ̀lé àbájáde àti àwòrán ilẹ̀ ní gbogbo ìrọ̀lẹ́"
+  },
+  "press.data-r3-v": {
+    "en": "About 30–50 MB",
+    "ha": "Kusan MB 30–50",
+    "ig": "Ihe dị ka MB 30–50",
+    "yo": "Nǹkan bí MB 30–50"
+  },
+  "press.data-r4-k": {
+    "en": "Each optional incident report with video",
+    "ha": "Kowane rahoton aukuwa mai bidiyo (na zaɓi)",
+    "ig": "Akụkọ ihe mere ọ bụla nwere vidiyo (nhọrọ)",
+    "yo": "Ìròyìn ìṣẹ̀lẹ̀ kọ̀ọ̀kan tí ó ní fídíò (àṣàyàn)"
+  },
+  "press.data-r4-v": {
+    "en": "1–12 MB per video in the Hawkeye app; up to 25 MB per video in Hawkeye Lite or a browser. At most 2 videos per report.",
+    "ha": "MB 1–12 a kowane bidiyo a manhajar Hawkeye; har MB 25 a kowane bidiyo a Hawkeye Lite ko burauza. Bidiyo 2 ne mafi yawa a kowane rahoto.",
+    "ig": "MB 1–12 kwa vidiyo na ngwa Hawkeye; ruo MB 25 kwa vidiyo na Hawkeye Lite ma ọ bụ ihe nchọgharị. Vidiyo 2 kacha n'akụkọ ọ bụla.",
+    "yo": "MB 1–12 fún fídíò kọ̀ọ̀kan nínú ohun èlò Hawkeye; tó MB 25 fún fídíò kọ̀ọ̀kan nínú Hawkeye Lite tàbí aṣàwákiri. Fídíò 2 ló pọ̀ jù fún ìròyìn kan."
+  },
+  "press.data-advice": {
+    "en": "<strong>Our advice:</strong> a 100 MB bundle per agent covers the day with a wide margin. 50 MB is enough for reporting plus moderate checking.",
+    "ha": "<strong>Shawararmu:</strong> data ta MB 100 ga kowane wakili za ta ishe shi duk rana da ragi mai yawa. MB 50 ta isa don bayar da rahoto da duba sakamako a matsakaici.",
+    "ig": "<strong>Ndụmọdụ anyị:</strong> ngwugwu data MB 100 maka onye nnọchite anya ọ bụla ga-ezuru ụbọchị ahụ, fọdụkwa nke ukwuu. MB 50 ezuola maka ịkọ akụkọ na ilele nsonaazụ n'oke.",
+    "yo": "<strong>Ìmọ̀ràn wa:</strong> dátà MB 100 fún aṣojú kọ̀ọ̀kan tó fún ọjọ́ náà, yóò sì ṣẹ́kù púpọ̀. MB 50 tó fún ìròyìn àti wíwo àbájáde níwọ̀nba."
+  },
+  "press.data-before": {
+    "en": "<strong>Before the day, on Wi-Fi:</strong> install the app, do a practice run, and let the offline polling-unit list download.",
+    "ha": "<strong>Kafin ranar, a kan Wi-Fi:</strong> ku shigar da manhajar, ku yi gwajin atisaye, ku bar jerin rukunonin zaɓe na aiki ba tare da intanet ya sauka.",
+    "ig": "<strong>Tupu ụbọchị ahụ, na Wi-Fi:</strong> wụnye ngwa ahụ, mee ọsọ omume, ma hapụ ndepụta ngalaba ntuli aka maka ojiji na-enweghị ịntanetị ka ọ budata.",
+    "yo": "<strong>Ṣáájú ọjọ́ náà, lórí Wi-Fi:</strong> ẹ gba ohun èlò náà sórí fóònù, ẹ ṣe eré àdánwò, kí ẹ sì jẹ́ kí àkójọ ẹ̀ka ìdìbò fún lílò láìsí íńtánẹ́ẹ̀tì wọlé."
+  },
+  "press.data-why": {
+    "en": "Why so little: every photo is compressed on the phone before it is sent, and the Hawkeye app stops refreshing when it is in the background.",
+    "ha": "Dalilin da ya sa take da ƙanƙanta: ana matsa kowane hoto a waya kafin a aika shi, kuma manhajar Hawkeye tana daina sabuntawa idan tana baya.",
+    "ig": "Ihe mere o ji dị ntakịrị: a na-akpakọ foto ọ bụla n'ekwentị tupu e ziga ya, ngwa Hawkeye na-akwụsịkwa imelite mgbe ọ nọ n'azụ.",
+    "yo": "Ìdí tí ó fi kéré: a máa ń fún gbogbo fọ́tò pọ̀ lórí fóònù kí a tó fi ránṣẹ́, ohun èlò Hawkeye sì máa ń dáwọ́ ìsọdọ̀tun dúró nígbà tí kò bá sí lójú."
+  },
+  "press.data-browser": {
+    "en": "Reporting from a web browser instead of an app also downloads about 7 MB of sheet-reading tools the first time. The apps don't need them.",
+    "ha": "Bayar da rahoto daga burauzar yanar gizo maimakon manhaja zai sauke kusan MB 7 na kayan karanta takarda a karon farko. Manhajojin ba sa bukatarsu.",
+    "ig": "Ịkọ akụkọ site na ihe nchọgharị weebụ kama ngwa na-ebudatakwa ihe dị ka MB 7 nke ngwaọrụ ịgụ mpempe akwụkwọ na nke mbụ. Ngwa ndị ahụ achọghị ha.",
+    "yo": "Ìròyìn láti inú aṣàwákiri dípò ohun èlò tún máa ń gba nǹkan bí MB 7 ti irinṣẹ́ kíka ìwé sílẹ̀ ní ìgbà àkọ́kọ́. Àwọn ohun èlò kò nílò wọn."
+  },
+  "press.data-note": {
+    "en": "These are estimates from lab measurements. We will measure them again on the National Practice Day, 12 December 2026, and update this page.",
+    "ha": "Waɗannan ƙiyasi ne daga gwaje-gwajen dakin gwaji. Za mu sake auna su a Ranar Atisaye ta Ƙasa, 12 ga Disamba 2026, mu sabunta wannan shafin.",
+    "ig": "Ndị a bụ atụmatụ sitere na nlele ụlọ nyocha. Anyị ga-atụ ha ọzọ n'Ụbọchị Omume nke Mba, 12 Disemba 2026, ma melite peeji a.",
+    "yo": "Ìṣirò láti inú àyẹ̀wò yàrá ìwádìí ni ìwọ̀nyí. A ó tún wọ̀n wọ́n ní Ọjọ́ Àdánwò Orílẹ̀-èdè, 12 Ọ̀pẹ̀ 2026, a ó sì ṣe àtúnṣe ojú-ìwé yìí."
+  },
+  "press.data-pdf": {
+    "en": "Download the data-use guide (PDF)",
+    "ha": "Sauke jagorar amfani da data (PDF)",
+    "ig": "Budata ntuziaka ojiji data (PDF)",
+    "yo": "Gba ìtọ́sọ́nà lílo dátà sílẹ̀ (PDF)"
+  },
+  "press.stay": {
+    "en": "<strong>Recruiting observers?</strong> The <a href=\"stay.html\">Stay for the count</a> page has a WhatsApp message and printable flyers in four languages.",
+    "ha": "<strong>Kuna ɗaukar masu lura?</strong> Shafin <a href=\"stay.html\">Ku tsaya domin ƙidaya</a> yana da saƙon WhatsApp da takardun talla na bugawa cikin harsuna huɗu.",
+    "ig": "<strong>Ị na-ewebata ndị na-ekiri ihe?</strong> Peeji <a href=\"stay.html\">Nọrọnụ maka ọgụgụ</a> nwere ozi WhatsApp na akwụkwọ mgbasa ozi a na-ebipụta n'asụsụ anọ.",
+    "yo": "<strong>Ṣé ẹ ń gba olùwòran?</strong> Ojú-ìwé <a href=\"stay.html\">Ẹ dúró fún ìkà</a> ní ọ̀rọ̀ WhatsApp àti ìwé ìpolongo fún títẹ̀ ní èdè mẹ́rin."
+  },
+  "about.stay-for-the-count": {
+    "en": "<a href=\"stay.html\">Stay for the count on 16 January →</a>",
+    "ha": "<a href=\"stay.html\">Ku tsaya domin ƙidaya a ranar 16 ga Janairu →</a>",
+    "ig": "<a href=\"stay.html\">Nọrọ maka ọgụgụ na 16 Jenụwarị →</a>",
+    "yo": "<a href=\"stay.html\">Dúró fún ìkà ní 16 Ṣẹ́rẹ́ →</a>"
+  }
+}

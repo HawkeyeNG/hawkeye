@@ -945,11 +945,12 @@ console.log('\n=== the website (no Lite shell) is untouched ===');
   check('10. no "#tour" anchor anywhere in the panel', g.anyTourAnchor, false);
   check('10. "Learn & about" still leads with "How Hawkeye Works"',
     g.rows && g.rows[0] && g.rows[0].text, 'How Hawkeye Works');
-  // The group has since grown two web pages of its own — the ward captain's
-  // guide (35211d2) and the press kit (571024b) — neither of which is the tour.
+  // The group has since grown three web pages of its own — the ward captain's
+  // guide (35211d2), the press kit (571024b) and "Stay for the count" — none of
+  // which is the tour.
   check('10. the group is otherwise untouched',
     g.rows && g.rows.map((r) => r.href),
-    ['how.html', 'guide.html', 'captain-guide.html', 'faq.html', 'about.html', 'press.html',
+    ['how.html', 'guide.html', 'stay.html', 'captain-guide.html', 'faq.html', 'about.html', 'press.html',
       'support.html', 'privacy.html', 'terms.html']);
   await ctx.close();
 }

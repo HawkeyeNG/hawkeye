@@ -35,6 +35,12 @@
     .press-shot { display: block; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
     .press-shot img { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; }
     .press-shots figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 6px; line-height: 1.35; }
+    .press-data { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 0.95rem; }
+    .press-data th, .press-data td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--border); }
+    .press-data thead th { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding-top: 0; }
+    .press-data tbody th { font-weight: 600; width: 52%; }
+    .press-data td { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .press-data-pdf { margin-top: 14px; }
     @media (max-width: 560px) {
       .press-facts, .press-dates { grid-template-columns: 1fr; gap: 2px 0; }
       .press-facts dd, .press-dates dd { margin-bottom: 10px; }
@@ -136,6 +142,24 @@
     </dl>
     <p data-i18n-html="press.dates-note" class="hint">Election dates are set by INEC. Check <a href="https://www.inecnigeria.org" target="_blank" rel="noopener">inecnigeria.org</a> for any change.</p>
 
+    <h2 id="data" data-i18n="press.data-h">How much data does it use?</h2>
+    <p data-i18n="press.data-lede" class="lede">For parties and groups budgeting mobile data for polling-unit agents on 16 January. The figures are per agent.</p>
+    <table class="press-data">
+      <thead><tr><th scope="col" data-i18n="press.data-col-use">Use</th><th scope="col" data-i18n="press.data-col-data">Data</th></tr></thead>
+      <tbody>
+        <tr><th scope="row" data-i18n="press.data-r1-k">Reporting the Presidential, Senate and House results only</th><td data-i18n="press.data-r1-v">About 2 MB (about 0.4 MB of compressed photos per report, plus retries)</td></tr>
+        <tr><th scope="row" data-i18n="press.data-r2-k">Reporting, plus checking results a few times (2–3 hours with the app open)</th><td data-i18n="press.data-r2-v">About 10–15 MB</td></tr>
+        <tr><th scope="row" data-i18n="press.data-r3-k">Heavy use: following results and maps all evening</th><td data-i18n="press.data-r3-v">About 30–50 MB</td></tr>
+        <tr><th scope="row" data-i18n="press.data-r4-k">Each optional incident report with video</th><td data-i18n="press.data-r4-v">1–12 MB per video in the Hawkeye app; up to 25 MB per video in Hawkeye Lite or a browser. At most 2 videos per report.</td></tr>
+      </tbody>
+    </table>
+    <p data-i18n-html="press.data-advice"><strong>Our advice:</strong> a 100 MB bundle per agent covers the day with a wide margin. 50 MB is enough for reporting plus moderate checking.</p>
+    <p data-i18n-html="press.data-before"><strong>Before the day, on Wi-Fi:</strong> install the app, do a practice run, and let the offline polling-unit list download.</p>
+    <p data-i18n="press.data-why" class="hint">Why so little: every photo is compressed on the phone before it is sent, and the Hawkeye app stops refreshing when it is in the background.</p>
+    <p data-i18n="press.data-browser" class="hint">Reporting from a web browser instead of an app also downloads about 7 MB of sheet-reading tools the first time. The apps don't need them.</p>
+    <p data-i18n="press.data-note" class="hint">These are estimates from lab measurements. We will measure them again on the National Practice Day, 12 December 2026, and update this page.</p>
+    <a class="btn-link press-data-pdf" href="press/Hawkeye-Data-Use.pdf" download data-i18n="press.data-pdf">Download the data-use guide (PDF)</a>
+
     <h2 data-i18n="press.downloads-h">Downloads</h2>
     <p data-i18n="press.dl-note" class="lede">You are welcome to use these files when reporting on Hawkeye.</p>
 
@@ -182,6 +206,7 @@
     <h2 data-i18n="press.contact-h">Press contact</h2>
     <p data-i18n-html="press.contact-body">For interviews and questions, email <a href="mailto:info@hawkeye.com.ng">info@hawkeye.com.ng</a> or call <a href="tel:+2349078727777">+234 907 872 7777</a>.</p>
     <p data-i18n-html="press.try-it"><strong>Try it yourself.</strong> A <a href="practice.html">practice run</a> needs no sign-up, and nothing you enter is published.</p>
+    <p data-i18n-html="press.stay"><strong>Recruiting observers?</strong> The <a href="stay.html">Stay for the count</a> page has a WhatsApp message and printable flyers in four languages.</p>
   </main>
 
   <footer class="gov-footer"><div class="wrap">
@@ -192,7 +217,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=183"></script>
+  <script src="menu.js?v=184"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

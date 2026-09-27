@@ -1709,5 +1709,17 @@
   "practiceday.page-title": "National Practice Day — Hawkeye",
   "practiceday.weekdays": "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday",
   "practiceday.months": "January,February,March,April,May,June,July,August,September,October,November,December",
-  "practiceday.date": "{weekday}, {day} {month}"
+  "practiceday.date": "{weekday}, {day} {month}",
+  "situation-room.n-of-ours-here": "{n} of ours here",
+  "situation-room.unit-reported-by-ours": "reported by ours",
+  "situation-room.unit-no-report-from-ours": "no report from ours yet",
+  "situation-room.where-we-are-thinnest": "Where we are thinnest",
+  "situation-room.unit-status-ours-only": "Unit by unit, a room sees only its own observers. Reports from anyone else count in the area totals, never against a unit.",
+  "situation-room.legend-filled-reported-ours": "Filled — one of ours reported",
+  "situation-room.reported-by-ours": "Reported by ours",
+  "situation-room.only-where-ours-have-not-reported": "Only where ours have not reported",
+  "situation-room.incident-no-unit-given": "{state} — no unit given",
+  "situation-room.incident-location-not-given": "Location not given",
+  "situation-room.incident-filed-by": "filed by {who}",
+  "situation-room.incidents-unit-note": "Units are shown only for incidents your own observers filed; the rest are placed by ward."
 }

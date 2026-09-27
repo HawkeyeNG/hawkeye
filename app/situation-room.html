@@ -1266,23 +1266,41 @@ async function doCheckIn(btn) {
   }
 }
 
+/**
+ * The listed area's totals.
+ *
+ * `reported` comes from the server's `totals` when it sends one: a UNIT row
+ * carries no report status of its own (anyone's report at one unit is another
+ * observer's unit, and a room sees only its own), so summing unit rows would
+ * read as nobody having filed anywhere in the ward.
+ */
+function sumNodes(c) {
+  const tot = (c.nodes || []).reduce((a, x) => ({
+    units: a.units + x.units, reported: a.reported + (x.reported || 0),
+    assigned: a.assigned + x.assigned, on_unit: a.on_unit + x.on_unit, mismatched: a.mismatched + x.mismatched,
+  }), { units: 0, reported: 0, assigned: 0, on_unit: 0, mismatched: 0 });
+  if (c.totals) { tot.units = c.totals.units; tot.reported = c.totals.reported; }
+  return tot;
+}
+
 function renderOverview() {
   const c = S.overview || { nodes: [] };
   const nodes = c.nodes || [];
-  const tot = nodes.reduce((a, x) => ({
-    units: a.units + x.units, reported: a.reported + x.reported,
-    assigned: a.assigned + x.assigned, on_unit: a.on_unit + x.on_unit, mismatched: a.mismatched + x.mismatched,
-  }), { units: 0, reported: 0, assigned: 0, on_unit: 0, mismatched: 0 });
+  const tot = sumNodes(c);
   const silent = Math.max(0, tot.assigned - tot.on_unit - tot.mismatched);
   /* Worst first, and ALL of them. Truncating to six hid most of the election
      behind a list that looked complete — and "most missing" is precisely the
      list a manager needs to reach the bottom of. Ranked by unreported UNITS,
      not percentage: a 60%-covered LGA with 700 units has more of the election
-     missing than a 0%-covered one with twelve. Units another observer has
-     saved (`watched`) rank below the ones nobody is standing at. */
-  const open = (x) => x.units - x.reported - (x.watched || 0);
-  const gaps = nodes.slice()
-    .sort((a, b) => open(b) - open(a) || (b.units - b.reported) - (a.units - a.reported) || a.name.localeCompare(b.name));
+     missing than a 0%-covered one with twelve.
+
+     UNIT BY UNIT, ONLY OURS. A unit row says nothing about anybody outside
+     the room — neither who has saved it nor who has filed from it — so a
+     ward's units rank by where WE are thinnest: nobody down for it first, then
+     ours not yet in, then ours reported. */
+  const perUnit = c.level === 'unit';
+  const open = (x) => (perUnit ? (x.assigned ? 0 : 2) + (x.member_reported ? 0 : 1) : x.units - x.reported);
+  const gaps = nodes.slice().sort((a, b) => open(b) - open(a) || a.name.localeCompare(b.name));
   const reports = (S.activity && S.activity.reports) || [];
 
   /**
@@ -1294,7 +1312,7 @@ function renderOverview() {
    * the whole race, side by side, and the gap between them named.
    */
   const mineNodes = c.mine ? nodes.filter((x) => isMine(c, x.key)) : [];
-  const mineTot = mineNodes.reduce((a, x) => ({ units: a.units + x.units, reported: a.reported + x.reported }),
+  const mineTot = mineNodes.reduce((a, x) => ({ units: a.units + x.units, reported: a.reported + (x.reported || 0) }),
     { units: 0, reported: 0 });
   const minePct = mineTot.units ? (mineTot.reported / mineTot.units) * 100 : 0;
   const allPct = tot.units ? (tot.reported / tot.units) * 100 : 0;
@@ -1338,18 +1356,23 @@ function renderOverview() {
         <div class="sr-card sr-panel" id="sr-map"><div class="sr-msg">${T('situation-room.drawing-the-map', 'Drawing the map…')}</div></div>
       </div>
       <div>
-        <h2 class="sr-h2">${T('situation-room.where-the-election-is-most-missing', 'Where the election is most missing')}</h2>
+        <h2 class="sr-h2">${perUnit
+    ? T('situation-room.where-we-are-thinnest', 'Where we are thinnest')
+    : T('situation-room.where-the-election-is-most-missing', 'Where the election is most missing')}</h2>
         <div class="sr-card sr-panel">${gaps.length ? `<div class="sr-scroll">
           <table class="sr-tbl" style="min-width:0">
           <tbody>${gaps.map((x) => `<tr${isMine(c, x.key) ? ' class="mine"' : ''}>
             <td><button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button>
-              ${x.assigned ? `<span class="sr-sub">${n(x.assigned)} of ours here</span>`
+              ${x.assigned ? `<span class="sr-sub">${T('situation-room.n-of-ours-here', '{n} of ours here', { n: n(x.assigned) })}</span>`
                 : `<span class="sr-sub" style="color:var(--wait)">${T('situation-room.nobody-assigned', 'nobody assigned')}</span>`}</td>
-            <td class="num">${n(x.units - x.reported)}<span class="sr-sub">${T('situation-room.unreported', 'unreported')}</span>${x.watched
-              ? `<span class="sr-sub">${n(x.watched)} watched by others</span>` : ''}</td>
+            ${perUnit ? `<td><span class="sr-sub"${x.member_reported ? ' style="color:var(--ok)"' : ''}>${x.member_reported
+              ? T('situation-room.unit-reported-by-ours', 'reported by ours')
+              : T('situation-room.unit-no-report-from-ours', 'no report from ours yet')}</span></td>`
+    : `<td class="num">${n(x.units - x.reported)}<span class="sr-sub">${T('situation-room.unreported', 'unreported')}</span></td>
             <td style="width:80px"><div class="sr-bar-cell"><span class="num">${pct(x.reported, x.units)}%</span>
-              <span class="sr-track"><span class="sr-fill" style="width:${pct(x.reported, x.units)}%"></span></span></div></td>
+              <span class="sr-track"><span class="sr-fill" style="width:${pct(x.reported, x.units)}%"></span></span></div></td>`}
           </tr>`).join('')}</tbody></table></div>
+          ${perUnit ? `<div class="sr-count">${T('situation-room.unit-status-ours-only', 'Unit by unit, a room sees only its own observers. Reports from anyone else count in the area totals, never against a unit.')}</div>` : ''}
           <div class="sr-count">${T('situation-room.n-places-worst-first', '{v0} {v1}, worst first — scroll for the rest',
     { v0: n(gaps.length), v1: esc((LEVEL_WORD[c.level] || T('situation-room.places', 'places')).toLowerCase()) })}</div>`
           : `<div class="sr-msg">${T('situation-room.nothing-to-show-yet', 'Nothing to show yet.')}</div>`}</div>
@@ -1566,24 +1589,23 @@ function presidentialHtml(t) {
 }
 
 /**
- * One filed report. TEAM AND PUBLIC BOTH APPEAR, and are told apart.
+ * One filed report — always one of OURS.
  *
- * A unit somebody else already covered is not a gap — sending an agent there
- * spends effort where the count exists. But the two are different calls, so
- * they cannot look the same: ours are named and carry the on-unit check, public
- * ones say only that the unit was covered. A public report is never attributed;
- * its unit is already public, who filed it is not the campaign's business.
+ * The feed used to carry strangers' reports too, unattributed, so a manager
+ * could tell "nobody has been there" from "somebody has". Each was a unit and
+ * a time, which is another observer's unit — and a room sees only the units
+ * its own people are at. The server now sends members' reports alone; the
+ * race-wide picture is the area totals.
  */
 function activityRow(r) {
   const off = r.on_unit === false;
-  const cls = !r.ours ? 'idle' : off ? 'off' : 'ok';
-  const glyph = !r.ours ? '&#9633;' : off ? '&#9670;' : '&#9679;';
-  const word = !r.ours ? 'Public' : off ? 'Elsewhere' : 'Ours';
   return `<div class="sr-act">
-    <span class="pill ${cls}"><i>${glyph}</i>${word}</span>
+    <span class="pill ${off ? 'off' : 'ok'}"><i>${off ? '&#9670;' : '&#9679;'}</i>${off
+    ? T('situation-room.elsewhere', 'Elsewhere') : T('situation-room.ours', 'Ours')}</span>
     <div class="sr-act-t">
-      ${r.ours ? `<b>${esc(r.label || 'Observer #' + r.observer_id)}</b> &mdash; ` : ''}${esc(r.name)}
-      <span class="sr-sub">${esc(r.lga || '')}${r.ward ? ' &middot; ' + esc(r.ward) : ''}${off ? ' &middot; not the unit they were down for' : ''}${!r.ours ? ' &middot; covered by someone outside your team' : ''}</span>
+      <b>${esc(r.label || 'Observer #' + r.observer_id)}</b> &mdash; ${esc(r.name)}
+      <span class="sr-sub">${esc(r.lga || '')}${r.ward ? ' &middot; ' + esc(r.ward) : ''}${off
+    ? ' &middot; ' + T('situation-room.not-the-assigned-unit', 'not the assigned unit') : ''}</span>
     </div>
     <span class="sr-act-w">${timeAgo(r.at)}</span>
   </div>`;
@@ -1793,14 +1815,16 @@ async function drawWardMap(host, nodes, lvl) {
   host.innerHTML = `<svg ${box(m)} aria-label="${T('situation-room.map-aria-units', 'Polling units in {ward}', { ward: esc(a.ward) })}">
     <path d="${m.outline}" fill="var(--ok)" fill-opacity="0.05" stroke="currentColor" stroke-opacity="0.45"
       stroke-width="1" vector-effect="non-scaling-stroke" />
+    ${/* OURS ONLY, dot by dot: a unit row carries no report status from anybody
+         outside the room, so a filled dot is one of our own having filed there. */ ''}
     ${m.points.map(({ x, y, node, approx }) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"
-      fill="${node.reported ? 'var(--ok)' : 'none'}"
-      stroke="${node.assigned ? 'var(--accent)' : 'currentColor'}" stroke-opacity="${node.reported || node.assigned ? 0.95 : 0.5}"
-      stroke-width="${node.reported ? 2 : 1}" vector-effect="non-scaling-stroke"
-      ><title>${esc(node.name)} — ${node.reported ? T('situation-room.unit-reported', 'reported') : T('situation-room.unit-no-report-yet', 'no report yet')}${node.assigned ? T('situation-room.map-tooltip-ours', ', {n} of ours', { n: n(node.assigned) }) : ''}${approx ? ' · ' + T('situation-room.position-approximate', 'position approximate') : ''}</title></circle>`).join('')}
+      fill="${node.member_reported ? 'var(--ok)' : 'none'}"
+      stroke="${node.assigned ? 'var(--accent)' : 'currentColor'}" stroke-opacity="${node.member_reported || node.assigned ? 0.95 : 0.5}"
+      stroke-width="${node.member_reported ? 2 : 1}" vector-effect="non-scaling-stroke"
+      ><title>${esc(node.name)} — ${node.member_reported ? T('situation-room.unit-reported-by-ours', 'reported by ours') : T('situation-room.unit-no-report-from-ours', 'no report from ours yet')}${node.assigned ? T('situation-room.map-tooltip-ours', ', {n} of ours', { n: n(node.assigned) }) : ''}${approx ? ' · ' + T('situation-room.position-approximate', 'position approximate') : ''}</title></circle>`).join('')}
   </svg>
   <div class="sr-legend" style="margin-top:10px">
-    <span>${T('situation-room.legend-filled-reported', 'Filled — reported')}</span>
+    <span>${T('situation-room.legend-filled-reported-ours', 'Filled — one of ours reported')}</span>
     <span><b style="color:var(--accent)">&#9675;</b> ${T('situation-room.legend-ringed-ours', 'ringed — one of ours is assigned')}</span>
     <span>${T('situation-room.legend-positions-approximate', 'Most positions are approximate — placed inside the ward')}</span>
   </div>`;
@@ -2092,11 +2116,10 @@ function wireMapZoom(host) {
 function renderCoverage() {
   const c = S.coverage || { nodes: [] };
   const nodes = c.nodes || [];
-  const tot = nodes.reduce((a, x) => ({
-    units: a.units + x.units, reported: a.reported + x.reported,
-    assigned: a.assigned + x.assigned, on_unit: a.on_unit + x.on_unit, mismatched: a.mismatched + x.mismatched,
-  }), { units: 0, reported: 0, assigned: 0, on_unit: 0, mismatched: 0 });
+  const tot = sumNodes(c);
   const silent = tot.assigned - tot.on_unit - tot.mismatched;
+  /* A unit row carries only OUR report (member_reported); see sumNodes. */
+  const perUnit = c.level === 'unit';
   /* DEPLOYMENT TOTALS. Separate from the reporting totals above because they
      answer a different question at a different time: where have we put people,
      weeks before anybody files anything. */
@@ -2109,7 +2132,7 @@ function renderCoverage() {
   }), { units: 0, assigned_units: 0, voters: 0, assigned_voters: 0, unknown: 0 });
 
   const shown = nodes.filter((x) => {
-    if (S.filter === 'gaps') return x.reported < x.units;
+    if (S.filter === 'gaps') return perUnit ? !x.member_reported : x.reported < x.units;
     if (S.filter === 'silent') return x.assigned - x.on_unit - x.mismatched > 0;
     if (S.filter === 'ours') return x.assigned > 0 || x.member_reported > 0;
     if (S.filter === 'undeployed') return (x.units - (x.assigned_units || 0)) > 0;
@@ -2130,7 +2153,7 @@ function renderCoverage() {
       <div class="sr-head"><b class="num">${finePct(dep.assigned_units, dep.units)}</b><span>${T('situation-room.deployed', 'Deployed')}</span></div>
     </div>
     ${dep.unknown ? `<div class="sr-note">${T('situation-room.voters-partial', 'The voter figures are a floor: {n} units here carry no registered-voter count in the register.', { n: n(dep.unknown) })}</div>` : ''}` : `<div class="sr-heads">
-      <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>of ${n(tot.units)} units reported</span></div>
+      <div class="sr-head"><b class="num">${n(tot.reported)}</b><span>${T('situation-room.of-units-reported', 'of {n} units reported', { n: n(tot.units) })}</span></div>
       <div class="sr-head"><b class="num">${finePct(tot.reported, tot.units)}</b><span>${T('situation-room.coverage', 'Coverage')}</span></div>
       <div class="sr-head ok"><b class="num">${n(tot.on_unit)}</b><span>${T('situation-room.on-their-unit', 'On their unit')}</span></div>
       <div class="sr-head off"><b class="num">${n(tot.mismatched)}</b><span>${T('situation-room.filed-elsewhere', 'Filed elsewhere')}</span></div>
@@ -2140,7 +2163,9 @@ function renderCoverage() {
     <div class="sr-tools">
       <select class="sr-sel" id="cov-filter">
         <option value="all"${S.filter === 'all' ? ' selected' : ''}>${T('situation-room.show-everything', 'Show everything')}</option>
-        <option value="gaps"${S.filter === 'gaps' ? ' selected' : ''}>${T('situation-room.only-where-units-are-unreported', 'Only where units are unreported')}</option>
+        <option value="gaps"${S.filter === 'gaps' ? ' selected' : ''}>${perUnit
+    ? T('situation-room.only-where-ours-have-not-reported', 'Only where ours have not reported')
+    : T('situation-room.only-where-units-are-unreported', 'Only where units are unreported')}</option>
         <option value="silent"${S.filter === 'silent' ? ' selected' : ''}>${T('situation-room.only-where-our-observers-are-silent', 'Only where our observers are silent')}</option>
         <option value="ours"${S.filter === 'ours' ? ' selected' : ''}>${T('situation-room.only-where-we-have-people', 'Only where we have people')}</option>
         <!-- DEPLOYMENT, the one view that means something before the day: rank
@@ -2158,7 +2183,9 @@ function renderCoverage() {
         <th>${T('situation-room.nobody', 'Nobody')}</th>
         <th>${T('situation-room.voters-uncovered', 'Voters uncovered')}</th>
         <th>${T('situation-room.deployed', 'Deployed')}</th>` : `
-        <th>${T('situation-room.units', 'Units')}</th><th>${T('situation-room.reported', 'Reported')}</th><th>${T('situation-room.coverage', 'Coverage')}</th>
+        <th>${T('situation-room.units', 'Units')}</th><th>${perUnit
+    ? T('situation-room.reported-by-ours', 'Reported by ours')
+    : T('situation-room.reported', 'Reported')}</th><th>${T('situation-room.coverage', 'Coverage')}</th>
         <th>${T('situation-room.ours', 'Ours')}</th><th>${T('situation-room.on-unit', 'On unit')}</th><th>${T('situation-room.elsewhere', 'Elsewhere')}</th><th>${T('situation-room.silent', 'Silent')}</th>`}
       </tr></thead>
       <tbody>${shown.length
@@ -2174,7 +2201,9 @@ function renderCoverage() {
       <span><b style="color:var(--off)">&#9670;</b> ${T('situation-room.legend-elsewhere', 'Elsewhere')}</span>
       <span><b style="color:var(--wait)">&#9632;</b> ${T('situation-room.legend-silent', 'Silent')}</span>
     </div>
-    ${c.level !== 'unit' ? `<div class="sr-note">${T('situation-room.select-a-row-to-open-the-places', 'Select a row to open the places inside it.')}</div>` : ''}`;
+    <div class="sr-note">${perUnit
+    ? T('situation-room.unit-status-ours-only', 'Unit by unit, a room sees only its own observers. Reports from anyone else count in the area totals, never against a unit.')
+    : T('situation-room.select-a-row-to-open-the-places', 'Select a row to open the places inside it.')}</div>`;
 
   $('cov-filter').addEventListener('change', (e) => { S.filter = e.target.value; renderCoverage(); });
   $('csv').addEventListener('click', () => exportCsv(c.level, shown));
@@ -2220,6 +2249,10 @@ function deployRowHtml(x, cov) {
 
 function rowHtml(x, cov) {
   const silent = Math.max(0, x.assigned - x.on_unit - x.mismatched);
+  /* A unit row has no report status from outside the room: its Reported cell
+     is OUR report there, and a 0-or-100% bar for one unit says nothing. */
+  const perUnit = cov.level === 'unit';
+  const rep = perUnit ? x.member_reported : x.reported;
   const p = pct(x.reported, x.units);
   const cell = (v, cls) => `<td class="num${v ? (cls ? ' ' + cls : '') : ' z'}">${n(v)}</td>`;
   const who = ownerOf(cov, x.key);
@@ -2228,9 +2261,9 @@ function rowHtml(x, cov) {
       : `<button class="drill" data-key="${esc(x.key)}">${esc(x.name)}</button><span class="sr-sub num">${esc(x.key)}</span>`}
       ${who.length ? `<span class="sr-who">${isMine(cov, x.key) ? `<b>${T('situation-room.yours', 'yours')}</b>` : esc(who.join(', '))}</span>` : ''}</td>
     <td class="num">${n(x.units)}</td>
-    <td class="num${x.reported ? '' : ' z'}">${n(x.reported)}</td>
-    <td><div class="sr-bar-cell"><span class="num">${p}%</span>
-      <span class="sr-track"><span class="sr-fill" style="width:${p}%"></span></span></div></td>
+    <td class="num${rep ? '' : ' z'}">${n(rep)}</td>
+    <td>${perUnit ? '<span class="z">—</span>' : `<div class="sr-bar-cell"><span class="num">${p}%</span>
+      <span class="sr-track"><span class="sr-fill" style="width:${p}%"></span></span></div>`}</td>
     ${cell(x.assigned)}
     ${cell(x.on_unit, 'ok-t')}
     ${cell(x.mismatched, 'off-t')}
@@ -2307,10 +2340,14 @@ function exportPartyCsv(t, area) {
 }
 
 function exportCsv(level, rows) {
-  const head = [level, 'code', 'units', 'reported', 'coverage_pct', 'ours', 'on_unit', 'elsewhere', 'silent'];
+  /* A unit row has no `reported` of its own (see /coverage), so its reported
+     and coverage cells are left EMPTY — a 0 would read as "nobody filed here".
+     ours_reported is the room's own figure, at every level. */
+  const head = [level, 'code', 'units', 'reported', 'coverage_pct', 'ours', 'on_unit', 'elsewhere', 'silent', 'ours_reported'];
   const lines = [head.join(',')].concat(rows.map((x) => [
-    JSON.stringify(x.name), JSON.stringify(x.key), x.units, x.reported, pct(x.reported, x.units),
-    x.assigned, x.on_unit, x.mismatched, Math.max(0, x.assigned - x.on_unit - x.mismatched),
+    JSON.stringify(x.name), JSON.stringify(x.key), x.units,
+    x.reported == null ? '' : x.reported, x.reported == null ? '' : pct(x.reported, x.units),
+    x.assigned, x.on_unit, x.mismatched, Math.max(0, x.assigned - x.on_unit - x.mismatched), x.member_reported || 0,
   ].join(',')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
@@ -2361,20 +2398,27 @@ function renderIncidents() {
     <div class="sr-note">
       ${T('situation-room.incidents-note',
     '<strong>This is the public list.</strong> Every incident here is already on Hawkeye for anyone to read — nothing is shown before it is published, and no other group’s observers are named. What this tab adds is which ones came from your people. Weighing a claim happens in the <a href="docket.html" style="color:var(--accent)">public docket</a>, not here.')}
+      <br />${T('situation-room.incidents-unit-note', 'Units are shown only for incidents your own observers filed; the rest are placed by ward.')}
     </div>`;
 
   $('inc-filter').addEventListener('change', (e) => { S.incFilter = e.target.value; renderIncidents(); });
 }
 
 function incidentRow(x) {
-  const place = x.name ? `${esc(x.name)}` : x.state ? `${esc(x.state)} — no unit given` : 'Location not given';
-  const sub = [x.lga, x.ward].filter(Boolean).map(esc).join(' &middot; ');
+  /* Somebody else's incident arrives WITHOUT its unit — a room sees only the
+     units its own people are at — so it is placed by its ward. "No unit given"
+     is kept for the ones that genuinely carry none. */
+  const place = x.name ? esc(x.name)
+    : x.ward ? esc(x.ward)
+      : x.state ? T('situation-room.incident-no-unit-given', '{state} — no unit given', { state: esc(x.state) })
+        : T('situation-room.incident-location-not-given', 'Location not given');
+  const sub = [x.lga, x.name ? x.ward : null].filter(Boolean).map(esc).join(' &middot; ');
   return `<div class="sr-act">
     <span class="pill ${x.ours ? 'ok' : 'idle'}"><i>${x.ours ? '&#9679;' : '&#9633;'}</i>${esc(kindWord(x.kind))}</span>
     <div class="sr-act-t">
       <b>${place}</b>${x.pu_code ? ` <span class="num sr-sub" style="display:inline">${esc(x.pu_code)}</span>` : ''}
       ${x.description ? `<span class="sr-sub">${esc(x.description)}</span>` : ''}
-      ${x.ours ? `<span class="sr-sub" style="color:var(--ok)">filed by ${esc(x.ours.label || 'Observer #' + x.ours.observer_id)}</span>` : ''}
+      ${x.ours ? `<span class="sr-sub" style="color:var(--ok)">${T('situation-room.incident-filed-by', 'filed by {who}', { who: esc(x.ours.label || 'Observer #' + x.ours.observer_id) })}</span>` : ''}
     </div>
     <span class="sr-act-w">${timeAgo(x.at)}</span>
   </div>`;

@@ -1734,5 +1734,17 @@
   "practiceday.page-title": "Ọjọ́ Àdánwò Orílẹ̀-èdè — Hawkeye",
   "practiceday.weekdays": "Ọjọ́ Àìkú,Ọjọ́ Ajé,Ọjọ́ Ìsẹ́gun,Ọjọ́rú,Ọjọ́bọ,Ọjọ́ Ẹtì,Ọjọ́ Àbámẹ́ta",
   "practiceday.months": "Ṣẹ́rẹ́,Èrèlè,Ẹrẹ̀nà,Ìgbé,Ẹ̀bibi,Òkúdu,Agẹmọ,Ògún,Owewe,Ọ̀wàrà,Bélú,Ọ̀pẹ̀",
-  "practiceday.date": "{weekday}, {day} {month}"
+  "practiceday.date": "{weekday}, {day} {month}",
+  "situation-room.n-of-ours-here": "{n} nínú tiwa wà níbí",
+  "situation-room.unit-reported-by-ours": "tiwa ti ròyìn",
+  "situation-room.unit-no-report-from-ours": "kò tíì sí ìròyìn láti ọ̀dọ̀ tiwa",
+  "situation-room.where-we-are-thinnest": "Ibi tí agbára wa kéré jùlọ",
+  "situation-room.unit-status-ours-only": "Ní ẹ̀ka kọ̀ọ̀kan, yàrá yìí ń rí àwọn olùwòran tirẹ̀ nìkan. Ìròyìn láti ọ̀dọ̀ ẹlòmíràn ni a ń kà mọ́ àpapọ̀ agbègbè, kì í ṣe mọ́ ẹ̀ka kan.",
+  "situation-room.legend-filled-reported-ours": "Kíkún — ọ̀kan nínú tiwa ti ròyìn",
+  "situation-room.reported-by-ours": "Ìròyìn tiwa",
+  "situation-room.only-where-ours-have-not-reported": "Ibi tí tiwa kò tíì ròyìn nìkan",
+  "situation-room.incident-no-unit-given": "{state} — a kò fún ẹ̀ka kankan",
+  "situation-room.incident-location-not-given": "A kò fún ibi kankan",
+  "situation-room.incident-filed-by": "{who} ló fi ránṣẹ́",
+  "situation-room.incidents-unit-note": "A ń fi ẹ̀ka hàn fún ìṣẹ̀lẹ̀ tí àwọn olùwòran rẹ fi ránṣẹ́ nìkan; a ń gbé àwọn yòókù sí ipò àgọ́ wọn."
 }

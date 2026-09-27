@@ -1734,5 +1734,17 @@
   "practiceday.page-title": "Ụbọchị Omume nke Mba — Hawkeye",
   "practiceday.weekdays": "Sọndee,Mọnde,Tiuzdee,Wenezdee,Tọsdee,Fraịdee,Satọdee",
   "practiceday.months": "Jenụwarị,Febrụwarị,Maachị,Epreel,Mee,Jun,Julaị,Ọgọọst,Septemba,Ọktoba,Novemba,Disemba",
-  "practiceday.date": "{weekday}, {day} {month}"
+  "practiceday.date": "{weekday}, {day} {month}",
+  "situation-room.n-of-ours-here": "{n} nke anyị nọ ebe a",
+  "situation-room.unit-reported-by-ours": "ndị nke anyị kọrọ",
+  "situation-room.unit-no-report-from-ours": "enwebeghị akụkọ sitere n'aka ndị nke anyị",
+  "situation-room.where-we-are-thinnest": "Ebe anyị kacha adịghị ike",
+  "situation-room.unit-status-ours-only": "N'otu n'otu ngalaba, ụlọ a na-ahụ naanị ndị na-ekiri ihe nke ya. A na-agụkọ akụkọ sitere n'aka ndị ọzọ na mkpokọta mpaghara, ọ bụghị n'otu ngalaba.",
+  "situation-room.legend-filled-reported-ours": "E mejupụtara — otu onye nke anyị kọrọ",
+  "situation-room.reported-by-ours": "Akụkọ nke anyị",
+  "situation-room.only-where-ours-have-not-reported": "Naanị ebe ndị nke anyị na-akọbeghị",
+  "situation-room.incident-no-unit-given": "{state} — enyeghị ngalaba",
+  "situation-room.incident-location-not-given": "Enyeghị ebe",
+  "situation-room.incident-filed-by": "{who} zigara ya",
+  "situation-room.incidents-unit-note": "A na-egosi ngalaba naanị maka ihe ndị na-ekiri ihe gị zigara; a na-etinye ndị ọzọ site na ward."
 }

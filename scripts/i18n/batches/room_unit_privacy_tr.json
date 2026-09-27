@@ -1,0 +1,14 @@
+{
+  "situation-room.n-of-ours-here": { "ha": "{n} daga cikinmu a nan", "ig": "{n} nke anyị nọ ebe a", "yo": "{n} nínú tiwa wà níbí" },
+  "situation-room.unit-reported-by-ours": { "ha": "namu sun bayar da rahoto", "ig": "ndị nke anyị kọrọ", "yo": "tiwa ti ròyìn" },
+  "situation-room.unit-no-report-from-ours": { "ha": "babu rahoto daga namu tukuna", "ig": "enwebeghị akụkọ sitere n'aka ndị nke anyị", "yo": "kò tíì sí ìròyìn láti ọ̀dọ̀ tiwa" },
+  "situation-room.where-we-are-thinnest": { "ha": "Inda muka fi ƙarancin mutane", "ig": "Ebe anyị kacha adịghị ike", "yo": "Ibi tí agbára wa kéré jùlọ" },
+  "situation-room.unit-status-ours-only": { "ha": "A kowane rukuni, ɗakin yana ganin masu lurarsa kawai. Rahotanni daga wasu ana ƙidaya su a jimillar yanki, ba a kan wani rukuni ba.", "ig": "N'otu n'otu ngalaba, ụlọ a na-ahụ naanị ndị na-ekiri ihe nke ya. A na-agụkọ akụkọ sitere n'aka ndị ọzọ na mkpokọta mpaghara, ọ bụghị n'otu ngalaba.", "yo": "Ní ẹ̀ka kọ̀ọ̀kan, yàrá yìí ń rí àwọn olùwòran tirẹ̀ nìkan. Ìròyìn láti ọ̀dọ̀ ẹlòmíràn ni a ń kà mọ́ àpapọ̀ agbègbè, kì í ṣe mọ́ ẹ̀ka kan." },
+  "situation-room.legend-filled-reported-ours": { "ha": "An cike — ɗaya daga cikinmu ya bayar da rahoto", "ig": "E mejupụtara — otu onye nke anyị kọrọ", "yo": "Kíkún — ọ̀kan nínú tiwa ti ròyìn" },
+  "situation-room.reported-by-ours": { "ha": "Rahoton namu", "ig": "Akụkọ nke anyị", "yo": "Ìròyìn tiwa" },
+  "situation-room.only-where-ours-have-not-reported": { "ha": "Inda namu ba su bayar da rahoto ba kawai", "ig": "Naanị ebe ndị nke anyị na-akọbeghị", "yo": "Ibi tí tiwa kò tíì ròyìn nìkan" },
+  "situation-room.incident-no-unit-given": { "ha": "{state} — ba a bayar da rukuni ba", "ig": "{state} — enyeghị ngalaba", "yo": "{state} — a kò fún ẹ̀ka kankan" },
+  "situation-room.incident-location-not-given": { "ha": "Ba a bayar da wuri ba", "ig": "Enyeghị ebe", "yo": "A kò fún ibi kankan" },
+  "situation-room.incident-filed-by": { "ha": "{who} ne ya aika", "ig": "{who} zigara ya", "yo": "{who} ló fi ránṣẹ́" },
+  "situation-room.incidents-unit-note": { "ha": "Ana nuna rukuni ne kawai ga abubuwan da masu luranka suka aika; sauran ana nuna su bisa unguwa.", "ig": "A na-egosi ngalaba naanị maka ihe ndị na-ekiri ihe gị zigara; a na-etinye ndị ọzọ site na ward.", "yo": "A ń fi ẹ̀ka hàn fún ìṣẹ̀lẹ̀ tí àwọn olùwòran rẹ fi ránṣẹ́ nìkan; a ń gbé àwọn yòókù sí ipò àgọ́ wọn." }
+}

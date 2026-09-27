@@ -1735,5 +1735,17 @@
   "practiceday.page-title": "Ranar Atisaye ta Ƙasa — Hawkeye",
   "practiceday.weekdays": "Lahadi,Litinin,Talata,Laraba,Alhamis,Jummaʼa,Asabar",
   "practiceday.months": "Janairu,Faburairu,Maris,Afirilu,Mayu,Yuni,Yuli,Agusta,Satumba,Oktoba,Nuwamba,Disamba",
-  "practiceday.date": "{weekday}, {day} {month}"
+  "practiceday.date": "{weekday}, {day} {month}",
+  "situation-room.n-of-ours-here": "{n} daga cikinmu a nan",
+  "situation-room.unit-reported-by-ours": "namu sun bayar da rahoto",
+  "situation-room.unit-no-report-from-ours": "babu rahoto daga namu tukuna",
+  "situation-room.where-we-are-thinnest": "Inda muka fi ƙarancin mutane",
+  "situation-room.unit-status-ours-only": "A kowane rukuni, ɗakin yana ganin masu lurarsa kawai. Rahotanni daga wasu ana ƙidaya su a jimillar yanki, ba a kan wani rukuni ba.",
+  "situation-room.legend-filled-reported-ours": "An cike — ɗaya daga cikinmu ya bayar da rahoto",
+  "situation-room.reported-by-ours": "Rahoton namu",
+  "situation-room.only-where-ours-have-not-reported": "Inda namu ba su bayar da rahoto ba kawai",
+  "situation-room.incident-no-unit-given": "{state} — ba a bayar da rukuni ba",
+  "situation-room.incident-location-not-given": "Ba a bayar da wuri ba",
+  "situation-room.incident-filed-by": "{who} ne ya aika",
+  "situation-room.incidents-unit-note": "Ana nuna rukuni ne kawai ga abubuwan da masu luranka suka aika; sauran ana nuna su bisa unguwa."
 }

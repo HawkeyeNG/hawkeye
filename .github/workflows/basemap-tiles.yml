@@ -1,0 +1,222 @@
+# Nigeria basemap → Cloudflare R2 (app/basemap.js reads it).
+#
+# Cuts Nigeria out of the Protomaps daily planet build with `pmtiles extract`
+# (only the byte ranges it needs cross the wire — ~435 MB, not the 138 GB
+# planet), checks the result, and uploads ONE file:
+#
+#     s3://<TILES_BUCKET>/nigeria.pmtiles   →   https://tiles.hawkeye.com.ng/nigeria.pmtiles
+#
+# The URL never changes, so a map refresh needs no app deploy. The previous file
+# is kept as nigeria.prev.pmtiles for a one-command rollback.
+#
+# SIZE IS THE DESIGN CONSTRAINT. Cloudflare caches a single file only up to
+# 512 MB (Free/Pro/Business). Under that, every range request is answered from
+# the edge and R2 sees almost nothing; over it, every request goes to R2. Measured
+# on the 2026-09-27 build: z14 over the bbox 2.6,4.2,14.7,13.95 is 550 MB, but
+# over Nigeria's hull + ~33 km (scripts/tiles/nigeria_region.geojson) it is
+# 414 MB. z15 is 1.1 GB either way. The size gate below refuses anything the
+# edge cannot cache unless `allow_uncacheable` is ticked.
+#
+# ONE-TIME SETUP (owner, Cloudflare dashboard) — see docs in the PR / report:
+#   1. R2: create a NEW bucket for tiles only (default name hawkeye-tiles).
+#      NEVER make hawkeye-evidence public: surroundings photos live there.
+#   2. That bucket → Settings → Custom Domains → tiles.hawkeye.com.ng
+#   3. R2 API token: Object Read & Write, THIS bucket only → the two key secrets.
+#   4. Cache Rule: hostname eq tiles.hawkeye.com.ng → Eligible for cache
+#      (.pmtiles is not a default-cached extension, so without this nothing caches).
+#   5. Transform Rule (modify response header), same hostname: set
+#      Access-Control-Allow-Origin: *  and
+#      Access-Control-Expose-Headers: ETag, Content-Range, Content-Length, Accept-Ranges
+#      (the edge cache ignores Origin, so a response cached from a request that
+#      carried none would otherwise break every browser after it).
+#
+# SECRETS (repository → Settings → Secrets and variables → Actions):
+#   R2_ACCOUNT_ID                 Cloudflare account id (the R2 S3 endpoint host)
+#   R2_TILES_ACCESS_KEY_ID        from step 3 — scoped to the tiles bucket only
+#   R2_TILES_SECRET_ACCESS_KEY    from step 3
+#   CF_TILES_PURGE_TOKEN          optional: API token with Zone → Cache Purge only
+#   CF_ZONE_ID                    optional: zone id of hawkeye.com.ng (for the purge)
+# VARIABLES (optional):
+#   TILES_BUCKET        default hawkeye-tiles
+#   TILES_PUBLIC_URL    default https://tiles.hawkeye.com.ng/nigeria.pmtiles
+
+name: Basemap tiles (Nigeria PMTiles → R2)
+
+on:
+  workflow_dispatch:
+    inputs:
+      maxzoom:
+        description: 'Max zoom (14 fits the 512 MB edge-cache limit; 15 does not)'
+        default: '14'
+      build:
+        description: 'Protomaps build, e.g. 20260927 (blank = latest)'
+        default: ''
+      upload:
+        description: 'Upload to R2 (untick for a dry run that only builds and checks)'
+        type: boolean
+        default: true
+      allow_uncacheable:
+        description: 'Allow a file over the 500 MB edge-cache gate'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: basemap-tiles
+  cancel-in-progress: false
+
+env:
+  PMTILES_VERSION: '1.31.2'
+  MAX_CACHEABLE_BYTES: '500000000'   # under Cloudflare's 512 MB per-file cache limit
+  TILES_BUCKET: ${{ vars.TILES_BUCKET || 'hawkeye-tiles' }}
+  TILES_PUBLIC_URL: ${{ vars.TILES_PUBLIC_URL || 'https://tiles.hawkeye.com.ng/nigeria.pmtiles' }}
+
+jobs:
+  tiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate inputs
+        env:
+          IN_MAXZOOM: ${{ inputs.maxzoom }}
+          IN_BUILD: ${{ inputs.build }}
+        run: |
+          set -euo pipefail
+          [[ "$IN_MAXZOOM" =~ ^([0-9]|1[0-5])$ ]] || { echo "::error::maxzoom must be 0-15"; exit 1; }
+          [[ -z "$IN_BUILD" || "$IN_BUILD" =~ ^20[0-9]{6}$ ]] || { echo "::error::build must be YYYYMMDD"; exit 1; }
+          echo "MAXZOOM=$IN_MAXZOOM" >> "$GITHUB_ENV"
+          echo "IN_BUILD=$IN_BUILD" >> "$GITHUB_ENV"
+
+      - name: Install go-pmtiles (checksum-verified)
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          base="https://github.com/protomaps/go-pmtiles/releases/download/v${PMTILES_VERSION}"
+          tgz="go-pmtiles_${PMTILES_VERSION}_Linux_x86_64.tar.gz"
+          curl -fsSL -o "$tgz" "$base/$tgz"
+          curl -fsSL -o checksums.txt "$base/checksums.txt"
+          grep " ${tgz}\$" checksums.txt | sha256sum -c -
+          tar xzf "$tgz" pmtiles
+          sudo install -m 0755 pmtiles /usr/local/bin/pmtiles
+          pmtiles version
+
+      - name: Pick the Protomaps build
+        run: |
+          set -euo pipefail
+          if [ -n "$IN_BUILD" ]; then key="${IN_BUILD}.pmtiles"; else
+            key=$(curl -fsSL https://build-metadata.protomaps.dev/builds.json \
+              | python3 -c 'import json,sys; b=json.load(sys.stdin); print(sorted(x["key"] for x in b)[-1])')
+          fi
+          [[ "$key" =~ ^20[0-9]{6}\.pmtiles$ ]] || { echo "::error::unexpected build key '$key'"; exit 1; }
+          echo "SRC=https://build.protomaps.com/$key" >> "$GITHUB_ENV"
+          echo "BUILD_KEY=$key" >> "$GITHUB_ENV"
+          echo "Using $key"
+
+      - name: Extract Nigeria
+        run: |
+          set -euo pipefail
+          pmtiles extract "$SRC" nigeria.pmtiles \
+            --region=scripts/tiles/nigeria_region.geojson \
+            --maxzoom="$MAXZOOM" --download-threads=8
+          pmtiles verify nigeria.pmtiles
+          pmtiles show nigeria.pmtiles | head -20
+          ls -l nigeria.pmtiles
+
+      - name: Check the artifact (not the input)
+        env:
+          ALLOW_BIG: ${{ inputs.allow_uncacheable }}
+        run: |
+          set -euo pipefail
+          size=$(stat -c %s nigeria.pmtiles)
+          echo "size: $size bytes"
+          if [ "$size" -gt "$MAX_CACHEABLE_BYTES" ] && [ "$ALLOW_BIG" != "true" ]; then
+            echo "::error::$size bytes is over the $MAX_CACHEABLE_BYTES edge-cache gate; lower maxzoom or tick allow_uncacheable"
+            exit 1
+          fi
+          # The file must actually describe Nigeria at the zoom it claims.
+          pmtiles show nigeria.pmtiles --header-json > header.json
+          python3 - <<'PY'
+          import json
+          h = json.load(open("header.json"))
+          mz = h.get("max_zoom", h.get("maxzoom"))
+          assert mz is not None and int(mz) == int(__import__("os").environ["MAXZOOM"]), f"max zoom {mz}"
+          PY
+          # A tile must exist at maxzoom in each of three cities, or the extract is hollow.
+          for city in "Abuja 7.4951 9.0579" "Lagos 3.3792 6.5244" "Kano 8.5167 12.0000"; do
+            set -- $city
+            zxy=$(python3 -c "import math;lon,lat,z=$2,$3,$MAXZOOM;n=2**z;print(z,int((lon+180)/360*n),int((1-math.asinh(math.tan(math.radians(lat)))/math.pi)/2*n))")
+            bytes=$(pmtiles tile nigeria.pmtiles $zxy | wc -c)
+            echo "$1 z/x/y=$zxy: $bytes bytes"
+            [ "$bytes" -gt 100 ] || { echo "::error::no tile for $1 at $zxy"; exit 1; }
+          done
+
+      - name: Upload to R2
+        if: ${{ inputs.upload }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_TILES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_TILES_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          AWS_DEFAULT_REGION: auto
+          # Newer AWS CLIs add checksum headers by default; send them only when required.
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+        run: |
+          set -euo pipefail
+          for v in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ACCOUNT_ID; do
+            [ -n "${!v}" ] || { echo "::error::secret for $v is not set (see the header of this workflow)"; exit 1; }
+          done
+          [ "$TILES_BUCKET" != "hawkeye-evidence" ] || { echo "::error::refusing to write tiles into the evidence bucket"; exit 1; }
+          ep="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          s3="aws --endpoint-url $ep"
+          # Keep the current file for rollback (server-side copy; fine if absent).
+          $s3 s3 cp "s3://$TILES_BUCKET/nigeria.pmtiles" "s3://$TILES_BUCKET/nigeria.prev.pmtiles" --only-show-errors \
+            || echo "no previous nigeria.pmtiles to keep"
+          $s3 s3 cp nigeria.pmtiles "s3://$TILES_BUCKET/nigeria.pmtiles" --only-show-errors \
+            --content-type application/vnd.pmtiles \
+            --cache-control "public, max-age=86400" \
+            --metadata "build=$BUILD_KEY,maxzoom=$MAXZOOM"
+          # Read-only public data: any origin may read it, with ranges; nothing else.
+          cat > cors.json <<'JSON'
+          {"CORSRules":[{"AllowedOrigins":["*"],"AllowedMethods":["GET","HEAD"],
+            "AllowedHeaders":["range","if-match","if-none-match"],
+            "ExposeHeaders":["ETag","Content-Range","Content-Length","Accept-Ranges"],
+            "MaxAgeSeconds":86400}]}
+          JSON
+          $s3 s3api put-bucket-cors --bucket "$TILES_BUCKET" --cors-configuration file://cors.json
+          # The object in the bucket must be byte-identical to what was checked.
+          remote=$($s3 s3api head-object --bucket "$TILES_BUCKET" --key nigeria.pmtiles --query ContentLength --output text)
+          [ "$remote" = "$(stat -c %s nigeria.pmtiles)" ] || { echo "::error::R2 holds $remote bytes, built $(stat -c %s nigeria.pmtiles)"; exit 1; }
+          echo "uploaded $remote bytes as s3://$TILES_BUCKET/nigeria.pmtiles ($BUILD_KEY, z$MAXZOOM)"
+
+      - name: Purge the edge copy
+        if: ${{ inputs.upload }}
+        env:
+          CF_TOKEN: ${{ secrets.CF_TILES_PURGE_TOKEN }}
+          CF_ZONE: ${{ secrets.CF_ZONE_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CF_TOKEN" ] || [ -z "$CF_ZONE" ]; then
+            echo "::warning::no purge secrets; edges serve the old file until its TTL (1 day) runs out"
+            exit 0
+          fi
+          curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE/purge_cache" \
+            -H "Authorization: Bearer $CF_TOKEN" -H 'Content-Type: application/json' \
+            --data "{\"files\":[\"$TILES_PUBLIC_URL\"]}" | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r.get("success"), r.get("errors"); print("purged")'
+
+      - name: Check what the public URL serves
+        if: ${{ inputs.upload }}
+        run: |
+          set -euo pipefail
+          # What a browser does: a range request from the site's origin.
+          curl -sS -o head.bin -D headers.txt -r 0-6 -H 'Origin: https://hawkeye.com.ng' "$TILES_PUBLIC_URL"
+          cat headers.txt
+          grep -qE '^HTTP/[0-9.]+ 206' headers.txt || { echo "::error::no 206 for a range request"; exit 1; }
+          [ "$(cat head.bin)" = "PMTiles" ] || { echo "::error::served bytes are not a PMTiles archive"; exit 1; }
+          grep -qi '^access-control-allow-origin: \*' headers.txt \
+            || { echo "::error::no 'Access-Control-Allow-Origin: *' — browsers will refuse the tiles (setup step 5)"; exit 1; }
+          grep -qi '^cf-cache-status: \(HIT\|MISS\|REVALIDATED\|EXPIRED\)' headers.txt \
+            || echo "::warning::edge is not caching this URL (setup step 4) — every range read goes to R2"

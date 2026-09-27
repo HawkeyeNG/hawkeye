@@ -1937,5 +1937,6 @@
   "observe.have-an-invite-code": "Ṣé o ní kóòdù ìpè?",
   "observe.invite-code-optional": "Kóòdù ìpè (àṣàyàn)",
   "observe.invite-code-invalid": "Kóòdù ìpè ní lẹ́tà àti nọ́mbà 6. Ṣàyẹ̀wò rẹ̀, tàbí fi òfìfo sílẹ̀.",
-  "invite.open-in-app": "Ṣé o ti ní ohun-èlò náà? Ṣí i"
+  "invite.open-in-app": "Ṣé o ti ní ohun-èlò náà? Ṣí i",
+  "map.osm-contributors": "àwọn olùkópa OpenStreetMap"
 }

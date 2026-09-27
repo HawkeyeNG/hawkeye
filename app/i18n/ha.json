@@ -1938,5 +1938,6 @@
   "observe.have-an-invite-code": "Kana da lambar gayyata?",
   "observe.invite-code-optional": "Lambar gayyata (ba dole ba)",
   "observe.invite-code-invalid": "Lambar gayyata tana da haruffa da lambobi 6. Duba ta, ko ka bar ta fanko.",
-  "invite.open-in-app": "Kana da manhajar? Buɗe ta"
+  "invite.open-in-app": "Kana da manhajar? Buɗe ta",
+  "map.osm-contributors": "masu ba da gudummawa ga OpenStreetMap"
 }

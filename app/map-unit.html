@@ -144,6 +144,10 @@
   <script src="register-store.js?v=3"></script>
   <script src="pu-search.js?v=8"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
+  <!-- Vector basemap: our own Nigeria PMTiles, OpenFreeMap if ours fails (basemap.js).
+       Replaces tile.openstreetmap.org, whose usage policy forbids election-night load. -->
+  <script src="vendor/protomaps-leaflet/protomaps-leaflet.js"></script>
+  <script src="basemap.js?v=1"></script>
   <!-- One wording for every "we could not get your position", shared with
        incidents.html and the native screens. Both failure lines on this page
        used to spell out the fallback in full; the fallback is the picker
@@ -301,9 +305,10 @@
       if (zi) zi.setAttribute('data-i18n-attr', 'title:map.zoom-in');
       if (zo) zo.setAttribute('data-i18n-attr', 'title:map.zoom-out');
       if (window.HawkeyeI18n) window.HawkeyeI18n.apply(zc);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19, attribution: '&copy; OpenStreetMap contributors',
-      }).addTo(lmap);
+      // Asynchronous: it probes our tile host first and falls back on its own.
+      // The overlays below do not wait for it — a map with no basemap still
+      // shows every unit and ward.
+      if (window.HawkeyeBasemap) window.HawkeyeBasemap.add(lmap);
       return lmap;
     }
 

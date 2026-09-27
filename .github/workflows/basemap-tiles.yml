@@ -188,7 +188,10 @@ jobs:
             "ExposeHeaders":["ETag","Content-Range","Content-Length","Accept-Ranges"],
             "MaxAgeSeconds":86400}]}
           JSON
-          $s3 s3api put-bucket-cors --bucket "$TILES_BUCKET" --cors-configuration file://cors.json
+          # The token is Object Read & Write only (by design), which cannot set bucket
+          # CORS; the tiles.hawkeye.com.ng Transform Rule sets the CORS headers instead.
+          $s3 s3api put-bucket-cors --bucket "$TILES_BUCKET" --cors-configuration file://cors.json \
+            || echo "::warning::bucket CORS not set (object-only token); relying on the Transform Rule"
           # The object in the bucket must be byte-identical to what was checked.
           remote=$($s3 s3api head-object --bucket "$TILES_BUCKET" --key nigeria.pmtiles --query ContentLength --output text)
           [ "$remote" = "$(stat -c %s nigeria.pmtiles)" ] || { echo "::error::R2 holds $remote bytes, built $(stat -c %s nigeria.pmtiles)"; exit 1; }

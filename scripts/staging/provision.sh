@@ -14,7 +14,8 @@
 #   EC2 (AL2023 arm64, IMDSv2 only, no key pair) + gp3 root + gp3 data volume + public IPv4
 #   security group: 80/443 from Cloudflare's ranges only, egress 443 only, NO port 22 (SSM only)
 #   IAM role + instance profile: SSM Session Manager, S3 on the staging bucket, SSM params under /hawkeye/staging/
-#   S3 bucket: Litestream's second replica + deploy bundles (private, SSE-S3, TLS only)
+#   S3 bucket: hourly DB backups (the copy independent of R2) + deploy bundles, and the Litestream
+#              replica until the R2 keys exist (private, SSE-S3, TLS only)
 #   SSM SecureString parameters: fresh JWT_SECRET / ORACLE_SECRET / PHONE_SALT / ORIGIN_AUTH_SECRET
 # Idempotent: anything that already exists is reused, never replaced.
 set -euo pipefail
@@ -66,9 +67,9 @@ else
 fi
 EBS_DAY="$(money "$EBS_GB*$GP3_GB_MONTH*12/365")"; EBS_MON="$(money "$EBS_GB*$GP3_GB_MONTH")"
 IP_DAY="$(money "$IPV4_HOUR*24")"; IP_MON="$(money "$IPV4_HOUR*730")"
-S3_DAY="$(money "8.64*$S3_PUT_PER_1K + 0.1*$S3_GB_MONTH*12/365")"; S3_MON="$(money "(8.64*$S3_PUT_PER_1K)*365/12 + 0.1*$S3_GB_MONTH")"
-TOT_DAY="$(money "$PRICE*24 + $EBS_GB*$GP3_GB_MONTH*12/365 + $IPV4_HOUR*24 + 8.64*$S3_PUT_PER_1K + 0.1*$S3_GB_MONTH*12/365")"
-TOT_MON="$(money "$PRICE*730 + $EBS_GB*$GP3_GB_MONTH + $IPV4_HOUR*730 + (8.64*$S3_PUT_PER_1K)*365/12 + 0.1*$S3_GB_MONTH")"
+S3_DAY="$(money "8.64*$S3_PUT_PER_1K + 2*$S3_GB_MONTH*12/365")"; S3_MON="$(money "(8.64*$S3_PUT_PER_1K)*365/12 + 2*$S3_GB_MONTH")"
+TOT_DAY="$(money "$PRICE*24 + $EBS_GB*$GP3_GB_MONTH*12/365 + $IPV4_HOUR*24 + 8.64*$S3_PUT_PER_1K + 2*$S3_GB_MONTH*12/365")"
+TOT_MON="$(money "$PRICE*730 + $EBS_GB*$GP3_GB_MONTH + $IPV4_HOUR*730 + (8.64*$S3_PUT_PER_1K)*365/12 + 2*$S3_GB_MONTH")"
 TOT_HR="$(money "$PRICE + $EBS_GB*$GP3_GB_MONTH/730 + $IPV4_HOUR")"
 
 MODE="DRY RUN: nothing is created without --apply"
@@ -91,7 +92,8 @@ cat <<EOF
                        ssm:GetParameter(s)/GetParametersByPath on ${SSM_PREFIX}/*
  7  Instance profile   ${IAM_PATH}$PROFILE_NAME (holds the role)
  8  S3 bucket          $BUCKET: private (all public access blocked), SSE-S3, TLS-only policy,
-                       Litestream replica #2 (litestream/) + deploy bundles (deploy/)
+                       hourly DB backups (backup/: newest 48 hourly + 14 daily) + deploy bundles (deploy/),
+                       and the Litestream replica (litestream/) only until the R2 keys exist
  9  SSM parameters     ${SSM_PREFIX}/env/{JWT_SECRET,ORACLE_SECRET,PHONE_SALT,ORIGIN_AUTH_SECRET}: SecureString (aws/ssm key),
                        generated fresh here (never copied from prod), never printed. Standard tier: free
 
@@ -101,7 +103,7 @@ row "COST (on-demand, eu-west-1, plan §3.1)" "USD/day" "USD/month"
 row "$ITYPE @ $PRICE/h" "$EC2_DAY" "$EC2_MON"
 row "EBS gp3 ${EBS_GB} GB (root $ROOT_GB + data $DATA_GB) @ $GP3_GB_MONTH/GB-mo" "$EBS_DAY" "$EBS_MON"
 row "Public IPv4 @ $IPV4_HOUR/h" "$IP_DAY" "$IP_MON"
-row "S3 replica (upper bound: 8,640 PUT/day, ~0.1 GB)" "$S3_DAY" "$S3_MON"
+row "S3 replica + hourly backups (upper bound: 8,640 PUT/day; ~2 GB = 62 gzipped copies of the ~75 MB DB)" "$S3_DAY" "$S3_MON"
 row "SSM Parameter Store (standard), Session Manager" "0.00" "0.00"
 row "Data out (behind Cloudflare; first 100 GB/mo free)" "0.00" "0.00"
 row "TOTAL (= $TOT_HR/h while it exists; month = 730 h)" "$TOT_DAY" "$TOT_MON"

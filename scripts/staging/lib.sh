@@ -21,7 +21,7 @@ readonly ROLE_NAME="hawkeye-staging-ec2"
 readonly PROFILE_NAME="hawkeye-staging-ec2"
 readonly SG_NAME="hawkeye-staging-origin"
 readonly SSM_PREFIX="/hawkeye/staging"          # SecureString secrets live under here
-readonly BUCKET="hawkeye-staging-replica-${HAWKEYE_ACCOUNT}"   # Litestream copy #2 + deploy bundles
+readonly BUCKET="hawkeye-staging-replica-${HAWKEYE_ACCOUNT}"   # hourly DB backups + deploy bundles (+ Litestream until R2 keys exist)
 readonly AMI_PARAM="/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
 
 # --- Sizes (docs/private/ELECTION-NIGHT-HOSTING.md §2.2, §3.1, §3.2, §4) ------------

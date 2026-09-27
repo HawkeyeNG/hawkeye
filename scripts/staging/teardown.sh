@@ -4,7 +4,7 @@
 #
 #   scripts/staging/teardown.sh               # list what would go, ask for confirmation, delete
 #   scripts/staging/teardown.sh --list        # list only; delete nothing
-#   scripts/staging/teardown.sh --keep-bucket # keep the S3 replica bucket (and its Litestream history)
+#   scripts/staging/teardown.sh --keep-bucket # keep the S3 bucket (its hourly DB backups and any Litestream history)
 #   scripts/staging/teardown.sh --yes         # no prompt (for scripts; still guarded by the account check)
 #
 # Found by TAG (Resource Groups Tagging API + EC2 filters), plus the IAM role and

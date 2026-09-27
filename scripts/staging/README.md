@@ -1,9 +1,9 @@
 # Hawkeye staging on AWS (stand up in November, spend nothing before)
 
 These scripts build the staging copy of the election-night stack described in
-`docs/private/ELECTION-NIGHT-HOSTING.md`: EC2 Graviton in eu-west-1, SQLite with
-Litestream to R2 and S3, Caddy behind Cloudflare, and systemd writer, reader and
-worker roles. **Nothing exists until you run `provision.sh --apply`. Until then
+`docs/private/ELECTION-NIGHT-HOSTING.md`: EC2 Graviton in eu-west-1, SQLite
+with two independent copies (Litestream 0.5 to R2, and an hourly backup to S3),
+Caddy behind Cloudflare, and systemd writer, reader and worker roles. **Nothing exists until you run `provision.sh --apply`. Until then
 staging costs $0.**
 
 | Script | What it does | Safe to run today? |
@@ -75,7 +75,7 @@ The default day breaks down as follows:
 | c7g.xlarge | 3.72 |
 | EBS gp3, 10 GB root + 40 GB data | 0.14 |
 | Public IPv4 | 0.12 |
-| S3 replica (upper bound) | 0.04 |
+| S3 hourly backups + replica (upper bound) | 0.04 |
 | SSM Parameter Store (standard), Session Manager, data out (under 100 GB, behind Cloudflare) | 0 |
 
 - **Stopped** (not torn down): EBS only, **0.14/day**. The public IP is released
@@ -136,7 +136,8 @@ R=eu-west-1; P=/hawkeye/staging; T=(--tags Key=project,Value=hawkeye Key=env,Val
 aws ssm put-parameter --region $R --type SecureString --name $P/tls/origin_cert --value file://staging-origin.pem "${T[@]}"
 aws ssm put-parameter --region $R --type SecureString --name $P/tls/origin_key  --value file://staging-origin.key "${T[@]}"
 
-# Litestream replica #1, R2. Without it the only replica is S3.
+# The Litestream replica, R2. Without it Litestream replicates to the S3 bucket,
+# the same provider as the hourly backup, so the two copies are not independent.
 for k in R2_BUCKET R2_ENDPOINT R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
   read -rsp "$k: " v; echo; aws ssm put-parameter --region $R --type SecureString --name $P/litestream/$k --value "$v" "${T[@]}"; done
 
@@ -155,17 +156,99 @@ bootstrap, run `sudo hawkeye-restart` on the host.
 scripts/staging/bootstrap.sh --seed-db /path/to/hawkeye-snapshot.db
 ```
 
-This installs Node v22.23.3, Caddy 2.11.4 and Litestream 0.3.14. Each download
-is pinned to a hash. It then:
+This installs Node v22.23.3, Caddy 2.11.4 and Litestream 0.5.17. Each download
+is pinned to a hash; Litestream's is the line in its release `checksums.txt`.
+It then:
 
 1. formats and mounts the data volume at `/var/lib/hawkeye`;
-2. runs `npm ci` on arm64;
-3. starts `hawkeye.target`;
+2. runs `npm ci` on arm64 and checks that the npm ffmpeg binary runs;
+3. starts `hawkeye.target`, including Litestream and the hourly backup timer;
 4. proves the result by behaviour. The writer must report `role=writer` and
    `env=staging`, every reader `role=reader`, and the worker `role=worker`, and
-   `:443` must answer through Caddy.
+   `:443` must answer through Caddy;
+5. takes the first hourly backup and runs `hawkeye-restore-test`, which must
+   restore from **both** copies (below).
 
 `--seed-db` never overwrites an existing database.
+
+## The database: two copies, two providers
+
+| Copy | What | Where | RPO | Kept |
+|---|---|---|---|---|
+| 1 | Litestream 0.5, continuous, one replica | R2 `hawkeye-db-staging`, path `hawkeye.db` (S3 `litestream/` until the R2 keys exist) | ≤ 1 s | 72 h of snapshots (hourly) plus LTX |
+| 2 | `hawkeye-db-backup.timer`, hourly at :05: `sqlite3 .backup`, `PRAGMA quick_check` on the copy, gzip | S3 `s3://hawkeye-staging-replica-025232685387/backup/hourly/`, first of each UTC day also in `backup/daily/` | ≤ 1 h | newest 48 hourly and 14 daily, pruned by count |
+
+- Litestream 0.5 allows **one** replica per database. The second copy is
+  therefore not a second Litestream replica. It shares nothing with copy 1: not
+  the tool, the format, the provider or the credentials. Each object carries
+  its SHA-256 and its ledger head in the S3 metadata.
+- Pruning is by count, not age. If the timer stops, the last 48 good copies
+  stay. `systemctl list-timers hawkeye-db-backup.timer` shows the next run;
+  `journalctl -u hawkeye-db-backup` shows each result;
+  `/var/lib/hawkeye/backup/last-ok` holds the time of the last success.
+- The backup opens the database with `no_ckpt_on_close`, so it can never
+  checkpoint the WAL behind Litestream's back.
+- `/api/health` → `litestreamGeneration` is Litestream's position for this
+  database: the TXID of its newest local LTX file (16 hex digits; one per sync
+  that found new writes; the name is kept from 0.3). It is null when Litestream
+  has never run here, and it must rise as reports arrive.
+
+### Restore test (run it after every drill, and weekly)
+
+```bash
+sudo hawkeye-restore-test          # on the host
+```
+
+It restores copy 1 with `litestream restore` and copy 2 from the newest hourly
+object (after checking its SHA-256 against the metadata). For each copy it runs
+`PRAGMA integrity_check` and checks that the copy's ledger head row exists in
+the **live** database with the same hash, so the copy is the same chain and not
+merely a valid file. It prints how far behind live each copy is. Nothing live is
+written, and the scratch directory is removed.
+
+### Restore and failover
+
+Restore by hand, into a scratch path, never over the live file:
+
+```bash
+# copy 1, the Litestream replica (latest, or -timestamp 2026-11-17T01:59:00Z)
+sudo -u hawkeye litestream restore -config /run/hawkeye/litestream.yml \
+  -o /var/lib/hawkeye/restore.db /var/lib/hawkeye/storage/hawkeye.db
+# copy 2, an hourly backup
+aws s3 ls s3://hawkeye-staging-replica-025232685387/backup/hourly/ | tail -3
+aws s3 cp s3://hawkeye-staging-replica-025232685387/backup/hourly/hawkeye-<UTC>.db.gz - | gunzip > /tmp/restore.db
+```
+
+A standby can follow the replica continuously with
+`litestream restore -f -o <path> <replica-url>` (0.5.17 has follow mode). Treat
+the followed file as read-only.
+
+**Failover drill (fenced, manual):**
+
+1. **Fence the primary.** Stop the instance, or detach its security group.
+   From here the old primary must never write again.
+2. **Final restore** on the new host from copy 1 (from copy 2 only if copy 1 is
+   lost; then up to an hour of reports is lost and must come back from phones'
+   outboxes). Run `PRAGMA integrity_check`.
+3. **Point Litestream at a new path.** Put a new, unique `REPLICA_PATH`, such as
+   `hawkeye-20261117-b`, into SSM (below). Never let the new primary write into
+   the old primary's path. The old path stays as it was, as evidence and as a
+   restore point.
+4. **Install the database.** `sudo systemctl stop hawkeye.target`, move the
+   restored file to `/var/lib/hawkeye/storage/hawkeye.db` (owner `hawkeye`),
+   delete any `hawkeye.db-wal`, `hawkeye.db-shm` and
+   `.hawkeye.db-litestream/` beside it, then `sudo hawkeye-restart`.
+5. Switch the Cloudflare origin record.
+6. **Verify by behaviour**: `/api/health` shows the new `host`, the ledger head
+   equals the restored head, and `litestreamGeneration` rises as reports arrive.
+   Then run `sudo hawkeye-restore-test`.
+
+```bash
+aws ssm put-parameter --region eu-west-1 --type SecureString --overwrite \
+  --name /hawkeye/staging/litestream/REPLICA_PATH --value hawkeye-20261117-b
+```
+
+A standby that follows the replica must be pointed at the new path too.
 
 **4. Seed load-test observers**, on the host:
 
@@ -247,21 +330,18 @@ scripts/staging/teardown.sh             # type: delete hawkeye staging
 
 To pause for a few days instead, stop the instance: 0.14 USD/day. To shrink
 back after LT#1, do the same resize with `c7g.xlarge`. Teardown also deletes
-the replica bucket; pass `--keep-bucket` to keep the Litestream history.
+the S3 bucket; pass `--keep-bucket` to keep the hourly backups (and any
+Litestream history in it).
 
 ## Open items for the owner (found while writing this)
 
-1. **Litestream 0.3.14, not 0.5.x.**
-   - 0.5 removed multiple replicas per database. The plan needs two: R2, plus
-     a second copy on S3.
-   - 0.3.14 publishes no checksum file. Its hash was measured on 27 Sep and is
-     pinned in `bootstrap.sh`.
-   - Decide before drill #1. Switching after the drills invalidates them.
-2. **ffmpeg on Graviton.** `backend/package.json` depends directly on
-   `@ffmpeg-installer/linux-x64`, which npm refuses on arm64 (`EBADPLATFORM`).
-   Bootstrap retries with `--force` and warns. Incident video transcoding then
-   has no ffmpeg on arm64 until the backend adds `@ffmpeg-installer/linux-arm64`
-   or sets `FFMPEG_PATH`.
+1. **Settled 27 Sep: Litestream 0.5.17, one replica, plus the hourly S3
+   backup** (see "The database: two copies"). Pinned from the release
+   `checksums.txt`. Replaces 0.3.14, which published no checksum.
+2. **Settled 27 Sep: ffmpeg on Graviton.** The platform binaries
+   (`@ffmpeg-installer/linux-x64` and `linux-arm64`) are backend
+   `optionalDependencies`, so npm picks the right one and `npm ci` needs no
+   `--force`. Bootstrap fails if the ffmpeg it gets does not run.
 3. **Which GETs go to readers.** Caddy sends public boards, static files and
    HTML to the readers, and everything else (authenticated GETs included) to
    the writer. Widen the reader allowlist in the Caddyfile only after the

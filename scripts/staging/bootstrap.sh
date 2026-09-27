@@ -13,13 +13,18 @@
 #   bootstrap.sh --on-host --bucket B --stamp S [--seed-db] [--readers N]
 #
 # What the server gets: Node 22 LTS, Caddy (Cloudflare Origin CA cert, or `tls internal`
-# until you add one), Litestream (replica #2 to S3 always, #1 to R2 once its keys exist),
-# an unprivileged `hawkeye` user, the data volume at /var/lib/hawkeye, and systemd units:
+# until you add one), Litestream 0.5 (ONE continuous replica: R2 once its keys exist, S3 until
+# then), an hourly sqlite3 .backup to S3 (the independent second copy), an unprivileged
+# `hawkeye` user, the data volume at /var/lib/hawkeye, and systemd units:
 #   hawkeye-prestart  (boot: secrets from SSM Parameter Store -> /run/hawkeye, tmpfs)
 #   hawkeye-writer    ROLE=writer :8430   every non-GET, the only request-path writer
 #   hawkeye-reader@N  ROLE=reader :844N   public GETs + static (SQLite query_only)
 #   hawkeye-worker    ROLE=worker :8450   every timer: OCR, analysis, push waves, IReV, anchor, sweep
-#   litestream, caddy, all grouped under hawkeye.target
+#   hawkeye-litestream                    continuous replica, RPO <= 1 s (R2)
+#   hawkeye-db-backup.timer               hourly at :05: sqlite3 .backup -> gzip -> s3://BUCKET/backup/
+#                                         (newest 48 hourly + 14 daily kept), RPO <= 1 h (S3)
+#   caddy, all grouped under hawkeye.target
+# `sudo hawkeye-restore-test` restores from BOTH copies and checks them against the live ledger.
 # NO SECRET IS EVER WRITTEN TO DISK OR INTO THIS SCRIPT: they are read from SSM at every boot.
 set -euo pipefail
 
@@ -28,10 +33,12 @@ NODE_VERSION="v22.23.3"   # 22 = the LTS the backend is tested on; better-sqlite
 NODE_SHA256="a44aeb94849a299b22df10b9e622ec2f605c2183501bc40590705131de7c740f"   # node-v22.23.3-linux-arm64.tar.xz (nodejs.org SHASUMS256.txt)
 CADDY_VERSION="2.11.4"
 CADDY_SHA512="d5a7c423853c24a799765e0e8210d5c7c22a8f56ed37a3cae2fb9f58be138853c02b4efd6b59d576e6d8c7c0d30b9c1592deeaa6a536ff69bcca23b8c1ea709c"   # caddy_2.11.4_linux_arm64.tar.gz (release checksums file)
-# Litestream 0.3.x, NOT 0.5.x: 0.5 dropped multiple replicas per database, and the plan
-# needs two (R2 + S3). 0.3.14 publishes no checksum file; this hash was measured on 27 Sep 2026.
-LITESTREAM_VERSION="0.3.14"
-LITESTREAM_SHA256="4d375a66653e4a9b27a5b38ce9cb73681c39893ba0485f81ab860d4cd427e642"
+# Litestream 0.5.x: ONE replica per database (0.5 removed multiple replicas). The second,
+# independent copy is hawkeye-db-backup.timer, not a second Litestream replica.
+# Hash from the release's checksums.txt, identical to GitHub's asset digest and to a
+# download measured on 27 Sep 2026.
+LITESTREAM_VERSION="0.5.17"
+LITESTREAM_SHA256="f8ca4a050095c1efbda2c4365172e61bf9d955ea0d9ac42f448b52e51819baa5"   # litestream-0.5.17-linux-arm64.tar.gz
 
 REGION_H="eu-west-1"
 SSM_PREFIX_H="/hawkeye/staging"
@@ -85,7 +92,7 @@ on_host() {
   fi
   if ! /usr/local/bin/litestream version 2>/dev/null | grep -q "$LITESTREAM_VERSION"; then
     log "litestream $LITESTREAM_VERSION"
-    fetch "https://github.com/benbjohnson/litestream/releases/download/v$LITESTREAM_VERSION/litestream-v$LITESTREAM_VERSION-linux-arm64.tar.gz" "$W/ls.tgz"
+    fetch "https://github.com/benbjohnson/litestream/releases/download/v$LITESTREAM_VERSION/litestream-$LITESTREAM_VERSION-linux-arm64.tar.gz" "$W/ls.tgz"
     echo "$LITESTREAM_SHA256  $W/ls.tgz" | sha256sum -c - >/dev/null || fail "litestream checksum mismatch"
     tar -xzf "$W/ls.tgz" -C "$W" litestream && install -m 0755 "$W/litestream" /usr/local/bin/litestream
   fi
@@ -122,16 +129,14 @@ on_host() {
   [ ! -e "$REL/backend/.env" ] || fail "the bundle contains backend/.env; refusing"
   rm -rf "$REL/backend/storage"; ln -sfn "$DATA/storage" "$REL/backend/storage"
   log "npm ci (backend)"
-  if ! (cd "$REL/backend" && HOME=/root npm ci --omit=dev --no-audit --no-fund >"$W/npm.log" 2>&1); then
-    if grep -q EBADPLATFORM "$W/npm.log"; then
-      # backend/package.json lists @ffmpeg-installer/linux-x64 as a DIRECT dependency, which
-      # npm refuses on arm64. --force installs anyway; video transcoding then has no ffmpeg
-      # on Graviton until the backend adds @ffmpeg-installer/linux-arm64 (or sets FFMPEG_PATH).
-      log "WARNING: EBADPLATFORM (x64-only dependency on arm64); retrying with --force"
-      (cd "$REL/backend" && HOME=/root npm ci --omit=dev --no-audit --no-fund --force >"$W/npm.log" 2>&1) || { tail -40 "$W/npm.log"; fail "npm ci"; }
-    else tail -40 "$W/npm.log"; fail "npm ci"; fi
-  fi
+  (cd "$REL/backend" && HOME=/root npm ci --omit=dev --no-audit --no-fund >"$W/npm.log" 2>&1) || { tail -40 "$W/npm.log"; fail "npm ci"; }
   (cd "$REL/backend" && /usr/local/bin/node -e 'require("better-sqlite3"); require("sharp")') || fail "native modules do not load on arm64"
+  # The ffmpeg platform binaries are optionalDependencies, which npm skips SILENTLY when it cannot
+  # install one. Say so here rather than find out from an untranscoded incident video.
+  local ffm
+  ffm="$(cd "$REL/backend" && /usr/local/bin/node -e 'console.log(require("@ffmpeg-installer/ffmpeg").path)' 2>"$W/ffm.err")" \
+    && "$ffm" -version >/dev/null 2>&1 || fail "ffmpeg from @ffmpeg-installer does not run on arm64: ${ffm:-$(head -3 "$W/ffm.err")}"
+  log "ffmpeg: $ffm"
   chown -R root:root "$REL"; chmod -R go-w "$REL"
   ln -sfn "$REL" /opt/hawkeye/current
 
@@ -209,36 +214,33 @@ write(RUN + "/app.env", "".join(f"{k}={v}\n" for k, v in sorted(env.items())), 0
 # The app's origin lock (X-Origin-Auth) applies to every request, localhost included:
 # root's own health checks send it from this file (curl -H @file), never on a command line.
 write(RUN + "/origin-auth.hdr", f"X-Origin-Auth: {env['ORIGIN_AUTH_SECRET']}\n" if env.get("ORIGIN_AUTH_SECRET") else "", 0o600, 0)
-# Litestream: replica #2 (S3, instance role) always; #1 (R2) when its four params exist.
+# Litestream 0.5: ONE replica per database. R2 (sync 1 s: RPO <= 1 s) when its four params exist;
+# until then S3 through the instance role (sync 10 s), so staging is never unreplicated. The
+# independent second copy is hawkeye-db-backup.timer (hourly sqlite3 .backup to S3), not Litestream.
+# litestream/REPLICA_PATH (optional) moves the stream to a NEW path: after a promotion or a restore
+# the new primary must never write into the old primary's path (README "Restore and failover").
 db = "/var/lib/hawkeye/storage/hawkeye.db"
 bucket = open("/etc/hawkeye/replica-bucket").read().strip()
-reps = [f"""      - name: s3
-        type: s3
-        bucket: {bucket}
-        path: litestream/hawkeye.db
-        region: {REGION}
-        sync-interval: 10s
-        snapshot-interval: 1h
-        retention: 72h
-"""]
-if all(ls.get(k) for k in ("R2_BUCKET", "R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY")):
-    for k in ls:
-        if not SAFE.match(ls[k]): die(f"litestream/{k}: bad characters")
-    reps.insert(0, f"""      - name: r2
-        type: s3
-        bucket: {ls['R2_BUCKET']}
-        path: hawkeye.db
-        endpoint: {ls['R2_ENDPOINT']}
-        region: auto
-        access-key-id: {ls['R2_ACCESS_KEY_ID']}
-        secret-access-key: {ls['R2_SECRET_ACCESS_KEY']}
-        sync-interval: 1s
-        snapshot-interval: 1h
-        retention: 72h
-""")
+for k in ls:
+    if not SAFE.match(ls[k]): die(f"litestream/{k}: bad characters")
+rpath = ls.get("REPLICA_PATH") or "hawkeye.db"
+if not re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", rpath): die("litestream/REPLICA_PATH: one path segment of [A-Za-z0-9._-]")
+q = json.dumps   # a JSON string is a valid YAML scalar; no value is ever parsed as YAML syntax
+r2 = all(ls.get(k) for k in ("R2_BUCKET", "R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"))
+if r2:
+    replica = (f"      type: s3\n      bucket: {q(ls['R2_BUCKET'])}\n      path: {q(rpath)}\n"
+               f"      endpoint: {q(ls['R2_ENDPOINT'])}\n      region: auto\n"
+               f"      access-key-id: {q(ls['R2_ACCESS_KEY_ID'])}\n      secret-access-key: {q(ls['R2_SECRET_ACCESS_KEY'])}\n"
+               f"      sync-interval: 1s\n")
 else:
-    print("prestart: WARNING no R2 replica keys (litestream/R2_*): replicating to S3 only", file=sys.stderr)
-write(RUN + "/litestream.yml", f"dbs:\n  - path: {db}\n    replicas:\n" + "".join(reps), 0o640, gid_h)
+    print("prestart: WARNING no R2 replica keys (litestream/R2_*): Litestream replicates to S3, the SAME provider "
+          "as the hourly backup, until they exist", file=sys.stderr)
+    replica = (f"      type: s3\n      bucket: {q(bucket)}\n      path: {q('litestream/' + rpath)}\n"
+               f"      region: {REGION}\n      sync-interval: 10s\n")
+write(RUN + "/litestream.yml",
+      "# generated by hawkeye-prestart at boot (Litestream 0.5 format: one `replica` per db)\n"
+      "snapshot:\n  interval: 1h\n  retention: 72h\n"
+      f"dbs:\n  - path: {db}\n    replica:\n" + replica, 0o640, gid_h)
 # TLS: Cloudflare Origin CA cert if present, else Caddy's internal CA (Cloudflare "Full", not "Full (strict)").
 if tls.get("origin_cert") and tls.get("origin_key"):
     write(RUN + "/tls/origin.pem", tls["origin_cert"].strip() + "\n", 0o640, gid_c)
@@ -254,7 +256,7 @@ for line in open("/etc/hawkeye/staging.env"):
 n = max(1, min(8, (os.cpu_count() or 2) // 2)) if want == "auto" else max(1, min(8, int(want)))
 write(RUN + "/readers", f"{n}\n", 0o644, 0)
 write(RUN + "/caddy-readers.caddy", "to " + " ".join(f"127.0.0.1:{8440 + i}" for i in range(1, n + 1)) + "\n", 0o644, 0)
-print(f"prestart: ok (readers={n}, upload={env['UPLOAD_MODE']}/{env['BLOB_DRIVER']}, r2_replica={'yes' if len(reps) == 2 else 'no'})")
+print(f"prestart: ok (readers={n}, upload={env['UPLOAD_MODE']}/{env['BLOB_DRIVER']}, litestream={'r2' if r2 else 's3'}:{rpath})")
 PY
   chmod 0755 /usr/local/libexec/hawkeye/prestart
   echo "$BUCKET" > /etc/hawkeye/replica-bucket
@@ -270,6 +272,130 @@ for i in $(seq 1 8); do
 done
 SH
   chmod 0755 /usr/local/libexec/hawkeye/start-readers
+
+  # ---- the independent second copy of the database (plan §2.3): hourly, to S3 ----
+  cat > /usr/local/libexec/hawkeye/db-backup <<'SH'
+#!/usr/bin/env bash
+# Hourly INDEPENDENT copy of the live database to S3 (hawkeye-db-backup.timer). Litestream has ONE
+# replica (R2, RPO <= 1 s); this is the second provider (RPO <= 1 h) and shares nothing with it:
+# not the tool, not the format, not the credentials.
+#   1. sqlite3 .backup: SQLite's online-backup API, a consistent copy while the writer keeps writing
+#   2. PRAGMA quick_check on the COPY; its ledger head goes into the object's metadata
+#   3. gzip -> s3://BUCKET/backup/hourly/hawkeye-<UTC>.db.gz   (metadata: sha256, ledger-id, ledger-hash)
+#   4. the first copy of each UTC day is also copied, server side, to backup/daily/hawkeye-<date>.db.gz
+#   5. prune to the newest 48 hourly and 14 daily objects (names sort by time). Count, not age:
+#      if this timer ever stops, the last good copies stay.
+# Any failure exits non-zero: `systemctl --failed` and `journalctl -u hawkeye-db-backup` say so.
+set -euo pipefail
+DB=/var/lib/hawkeye/storage/hawkeye.db
+WORK=/var/lib/hawkeye/backup
+BUCKET="$(cat /etc/hawkeye/replica-bucket)"
+REGION=eu-west-1
+KEEP_HOURLY=48
+KEEP_DAILY=14
+[ -f "$DB" ] || { echo "db-backup: no database at $DB" >&2; exit 1; }
+mkdir -p "$WORK"; rm -f "$WORK"/hawkeye-*.db "$WORK"/hawkeye-*.db.gz   # leftovers of a killed run
+now="$(date -u +%Y%m%dT%H%M%SZ)"; snap="$WORK/hawkeye-$now.db"
+trap 'rm -f "$snap" "$snap.gz"' EXIT
+# no_ckpt_on_close: should this ever be the last connection, closing it must NOT checkpoint the
+# live WAL. Litestream owns checkpoints: it has to read every frame before it reaches the main file.
+sqlite3 "$DB" ".timeout 30000" ".output /dev/null" ".dbconfig no_ckpt_on_close on" ".output stdout" ".backup '$snap'"
+qc="$(sqlite3 "$snap" 'PRAGMA quick_check;')"
+[ "$qc" = ok ] || { echo "db-backup: the copy fails quick_check: $qc" >&2; exit 1; }
+head="$(sqlite3 "$snap" "SELECT id || ' ' || entry_hash FROM submissions ORDER BY id DESC LIMIT 1;")"
+lid="${head%% *}"; lhash="${head#* }"
+gzip -1 "$snap"
+sha="$(sha256sum "$snap.gz" | cut -d' ' -f1)"; size="$(du -h "$snap.gz" | cut -f1)"
+key="backup/hourly/hawkeye-$now.db.gz"
+aws --region "$REGION" s3 cp --only-show-errors "$snap.gz" "s3://$BUCKET/$key" \
+  --metadata "sha256=$sha,ledger-id=${lid:-none},ledger-hash=${lhash:-none}"
+dkey="backup/daily/hawkeye-${now:0:4}-${now:4:2}-${now:6:2}.db.gz"
+if ! aws --region "$REGION" s3api head-object --bucket "$BUCKET" --key "$dkey" >/dev/null 2>&1; then
+  aws --region "$REGION" s3 cp --only-show-errors "s3://$BUCKET/$key" "s3://$BUCKET/$dkey"   # metadata is copied too
+fi
+prune() { # PREFIX KEEP: delete all but the newest KEEP objects named hawkeye-*.db.gz under PREFIX
+  local k
+  aws --region "$REGION" s3api list-objects-v2 --bucket "$BUCKET" --prefix "$1" --query 'Contents[].Key' --output text \
+    | tr '\t' '\n' | { grep -E "^$1hawkeye-[0-9TZ-]+\.db\.gz\$" || true; } | sort | head -n "-$2" \
+    | while IFS= read -r k; do aws --region "$REGION" s3 rm --only-show-errors "s3://$BUCKET/$k"; echo "db-backup: pruned $k"; done
+}
+prune backup/hourly/ "$KEEP_HOURLY"
+prune backup/daily/ "$KEEP_DAILY"
+date -u +%FT%TZ > "$WORK/last-ok"
+echo "db-backup: ok s3://$BUCKET/$key ($size, sha256 ${sha:0:12}, ledger head #${lid:-none})"
+SH
+  chmod 0755 /usr/local/libexec/hawkeye/db-backup
+
+  cat > /usr/local/sbin/hawkeye-restore-test <<'SH'
+#!/usr/bin/env bash
+# Restore test from EACH copy of the database (plan §2.3; README "Restore and failover"):
+#   A. the Litestream replica (R2; S3 until the R2 keys exist): litestream restore, then checks
+#   B. the newest hourly backup on S3: download, sha256 against its metadata, gunzip, then checks
+# Checks: PRAGMA integrity_check is ok, and the copy's ledger head row exists in the LIVE database
+# with the same hash (it is the same chain, not merely a valid file). Nothing live is written; the
+# scratch directory is removed on exit. Runs as hawkeye (root re-execs), so no root-owned -wal or
+# -shm can ever appear beside the live database.
+#   sudo hawkeye-restore-test [SECONDS]   keep retrying the Litestream restore for SECONDS (default 0)
+set -uo pipefail
+[ "$(id -u)" != 0 ] || exec runuser -u hawkeye -- "$0" "$@"
+DB=/var/lib/hawkeye/storage/hawkeye.db
+LSCONF=/run/hawkeye/litestream.yml
+T=/var/lib/hawkeye/restore-test
+BUCKET="$(cat /etc/hawkeye/replica-bucket)"
+REGION=eu-west-1
+WAIT="${1:-0}"
+rm -rf "$T"; mkdir -p "$T"; chmod 0700 "$T"; trap 'rm -rf "$T"' EXIT
+fails=0
+bad() { echo "FAIL  $*"; fails=$((fails + 1)); }
+# Read the live DB without ever checkpointing it on close (.dbconfig echoes its setting: muted).
+live() { sqlite3 -cmd ".output /dev/null" -cmd ".dbconfig no_ckpt_on_close on" -cmd ".output stdout" -cmd ".timeout 10000" "$DB" "$1"; }
+check_copy() { # NAME FILE STRICT(1 = an empty ledger in the copy is a failure when live has rows)
+  local ic head id hash livehash livehead
+  ic="$(sqlite3 "$2" 'PRAGMA integrity_check;' 2>&1 | head -3 | tr '\n' ' ')"
+  [ "$ic" = "ok " ] || { bad "$1: integrity_check: $ic"; return; }
+  head="$(sqlite3 "$2" "SELECT id || ' ' || entry_hash FROM submissions ORDER BY id DESC LIMIT 1;" 2>&1)" \
+    || { bad "$1: cannot read the ledger: $head"; return; }
+  livehead="$(live 'SELECT coalesce(max(id), 0) FROM submissions;')"
+  if [ -z "$head" ]; then
+    if [ "$3" = 1 ] && [ "$livehead" != 0 ]; then bad "$1: the copy has no ledger rows, live has up to #$livehead"
+    else echo "PASS  $1: integrity ok, ledger empty in this copy (live head #$livehead)"; fi
+    return
+  fi
+  id="${head%% *}"; hash="${head#* }"
+  [[ "$id" =~ ^[0-9]+$ ]] || { bad "$1: odd ledger id '$id'"; return; }
+  livehash="$(live "SELECT entry_hash FROM submissions WHERE id = $id;")"
+  if [ -n "$livehash" ] && [ "$livehash" = "$hash" ]; then
+    echo "PASS  $1: integrity ok, ledger head #$id matches live (live head #$livehead, $((livehead - id)) behind)"
+  else bad "$1: ledger head #$id is not the live chain (live hash '${livehash:-none}')"; fi
+}
+
+where="S3 (no R2 keys yet: SAME provider as the hourly copy)"; grep -q '^ *endpoint:' "$LSCONF" && where="R2"
+echo "== A. Litestream replica, $where"
+end=$((SECONDS + WAIT))
+until litestream restore -config "$LSCONF" -o "$T/litestream.db" "$DB" > "$T/ls.log" 2>&1; do
+  rm -f "$T"/litestream.db*
+  [ "$SECONDS" -lt "$end" ] || { bad "litestream restore: $(tail -3 "$T/ls.log" | tr '\n' ' ')"; break; }
+  sleep 5
+done
+[ -f "$T/litestream.db" ] && check_copy "litestream replica" "$T/litestream.db" 1
+
+echo "== B. newest hourly backup, s3://$BUCKET/backup/hourly/"
+key="$(aws --region "$REGION" s3api list-objects-v2 --bucket "$BUCKET" --prefix backup/hourly/ --query 'Contents[].Key' --output text \
+  | tr '\t' '\n' | { grep -E '^backup/hourly/hawkeye-[0-9]{8}T[0-9]{6}Z\.db\.gz$' || true; } | sort | tail -1)"
+if [ -z "$key" ]; then bad "no hourly backup in s3://$BUCKET/backup/hourly/"
+else
+  want="$(aws --region "$REGION" s3api head-object --bucket "$BUCKET" --key "$key" --query 'Metadata.sha256' --output text)"
+  aws --region "$REGION" s3 cp --only-show-errors "s3://$BUCKET/$key" "$T/hourly.db.gz"
+  got="$(sha256sum "$T/hourly.db.gz" | cut -d' ' -f1)"
+  if [ "$got" != "$want" ]; then bad "$key: sha256 $got does not match its metadata ($want)"
+  elif ! gunzip "$T/hourly.db.gz"; then bad "$key: gunzip failed"
+  else check_copy "hourly ${key#backup/hourly/}" "$T/hourly.db" 0; fi
+fi
+echo
+if [ "$fails" = 0 ]; then echo "restore test: both copies restore and carry the live ledger"; else echo "restore test: $fails FAILED"; fi
+[ "$fails" = 0 ]
+SH
+  chmod 0755 /usr/local/sbin/hawkeye-restore-test
 
   log "systemd units"
   local COMMON="User=hawkeye
@@ -347,7 +473,7 @@ WantedBy=hawkeye.target
 EOF
   cat > /etc/systemd/system/hawkeye-litestream.service <<EOF
 [Unit]
-Description=Litestream: continuous SQLite replication (R2 + S3)
+Description=Litestream 0.5: continuous SQLite replication, ONE replica (R2; S3 until the R2 keys exist)
 Requires=hawkeye-prestart.service
 After=hawkeye-writer.service
 PartOf=hawkeye.target
@@ -357,6 +483,37 @@ Group=hawkeye
 ExecStart=/usr/local/bin/litestream replicate -config /run/hawkeye/litestream.yml
 Restart=always
 RestartSec=2
+[Install]
+WantedBy=hawkeye.target
+EOF
+  cat > /etc/systemd/system/hawkeye-db-backup.service <<EOF
+[Unit]
+Description=Hawkeye: independent DB copy to S3 (sqlite3 .backup; newest 48 hourly + 14 daily kept)
+RequiresMountsFor=$DATA
+[Service]
+Type=oneshot
+User=hawkeye
+Group=hawkeye
+Environment=HOME=$DATA
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+ExecStart=/usr/local/libexec/hawkeye/db-backup
+TimeoutStartSec=45min
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=$DATA
+EOF
+  cat > /etc/systemd/system/hawkeye-db-backup.timer <<EOF
+[Unit]
+Description=Hawkeye: hourly DB backup to S3, at :05
+PartOf=hawkeye.target
+[Timer]
+OnCalendar=*-*-* *:05:00
+Persistent=true
+AccuracySec=1min
 [Install]
 WantedBy=hawkeye.target
 EOF
@@ -379,8 +536,8 @@ WantedBy=hawkeye.target
 EOF
   cat > /etc/systemd/system/hawkeye.target <<EOF
 [Unit]
-Description=Hawkeye staging (writer, readers, worker, litestream, caddy)
-Wants=hawkeye-prestart.service hawkeye-writer.service hawkeye-readers.service hawkeye-worker.service hawkeye-litestream.service hawkeye-caddy.service
+Description=Hawkeye staging (writer, readers, worker, litestream, hourly DB backup, caddy)
+Wants=hawkeye-prestart.service hawkeye-writer.service hawkeye-readers.service hawkeye-worker.service hawkeye-litestream.service hawkeye-db-backup.timer hawkeye-caddy.service
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -439,12 +596,13 @@ systemctl restart hawkeye-writer.service
 systemctl restart hawkeye-worker.service hawkeye-litestream.service hawkeye-caddy.service
 systemctl stop 'hawkeye-reader@*.service' 2>/dev/null || true
 systemctl restart hawkeye-readers.service
+systemctl start hawkeye-db-backup.timer
 SH
   chmod 0755 /usr/local/sbin/hawkeye-restart
 
   log "start"
   systemctl daemon-reload
-  systemctl enable hawkeye.target hawkeye-writer.service hawkeye-worker.service hawkeye-readers.service hawkeye-litestream.service hawkeye-caddy.service >/dev/null 2>&1
+  systemctl enable hawkeye.target hawkeye-writer.service hawkeye-worker.service hawkeye-readers.service hawkeye-litestream.service hawkeye-db-backup.timer hawkeye-caddy.service >/dev/null 2>&1
   /usr/local/sbin/hawkeye-restart || fail "start failed (prestart refusal or Caddyfile; see above)"
 
   log "verify by behaviour"
@@ -464,7 +622,12 @@ SH
   h="$(curl -skS --max-time 5 "${A[@]}" -o /dev/null -w '%{http_code}' --resolve staging.hawkeye.com.ng:443:127.0.0.1 https://staging.hawkeye.com.ng/results.html || true)"
   echo "caddy    GET /results.html via :443 -> HTTP $h"; [ "$h" = 200 ] || ok=0
   systemctl is-active --quiet hawkeye-litestream.service && echo "litestream active" || { echo "litestream NOT active"; ok=0; }
-  sleep 5; /usr/local/bin/litestream generations -config /run/hawkeye/litestream.yml "$DATA/storage/hawkeye.db" 2>&1 | head -5 || true
+  systemctl is-active --quiet hawkeye-db-backup.timer && echo "db backup timer active (hourly at :05)" || { echo "db backup timer NOT active"; ok=0; }
+  # Both copies, proven by restoring them: take the first hourly backup now, then restore from the
+  # Litestream replica (retrying up to 3 min while its first snapshot uploads) and from that backup.
+  if systemctl start hawkeye-db-backup.service; then journalctl -u hawkeye-db-backup.service -n 1 --no-pager -o cat
+  else echo "db backup FAILED"; journalctl -u hawkeye-db-backup.service -n 20 --no-pager -o cat; ok=0; fi
+  /usr/local/sbin/hawkeye-restore-test 180 || ok=0
   [ "$ok" = 1 ] || fail "verification failed (journalctl -u 'hawkeye-*')"
   log "DONE: release $STAMP is live on staging"
 }
@@ -531,9 +694,10 @@ if [ -n "$DRY" ]; then
    1. check the account is $HAWKEYE_ACCOUNT, find the running instance tagged project=$TAG_PROJECT env=$TAG_ENV
    2. upload the bundle (and bootstrap.sh${SEED_DB:+, and the seed DB}) to s3://$BUCKET/deploy/$STAMP/
    3. run bootstrap.sh --on-host over SSM Run Command (no SSH), which installs Node $NODE_VERSION, Caddy $CADDY_VERSION,
-      Litestream $LITESTREAM_VERSION (hash-pinned), formats/mounts the data volume at $DATA, npm ci on arm64,
-      writes the systemd units + Caddyfile + the boot-time SSM loader, starts hawkeye.target, and verifies
-      /api/health of the writer, every reader and the worker, plus :443 through Caddy
+      Litestream $LITESTREAM_VERSION (hash-pinned), formats/mounts the data volume at $DATA, npm ci on arm64
+      (and checks ffmpeg runs), writes the systemd units + Caddyfile + the boot-time SSM loader + the hourly
+      DB backup timer, starts hawkeye.target, and verifies /api/health of the writer, every reader and the
+      worker, :443 through Caddy, and a restore from BOTH database copies (Litestream replica, hourly S3 backup)
    Top of the bundle by size:
 EOF
   tar -tvzf "$WORK/bundle.tgz" | sort -k3 -nr | awk 'NR<=8 {printf "     %10s  %s\n", $3, $6}'

@@ -1885,5 +1885,8 @@
   "observe.server-busy-try-again": "Hawkeye nọ n'ọrụ — nwaa ọzọ n'otu nkeji.",
   "dashboard.could-not-refresh-retrying": "Enweghị ike imelite — a ga-anwa ọzọ n'ime sekọnd 30.",
   "dashboard.latest-reports-note": "Na-egosi akụkọ {n} kacha ọhụrụ, nke ọhụrụ na mbụ.",
-  "profile.invite-a-second-observer": "Kpọọ Onye Na-ekiri Ihe Nke Abụọ"
+  "profile.invite-a-second-observer": "Kpọọ Onye Na-ekiri Ihe Nke Abụọ",
+  "docket.load-more-cases": "Gosi ikpe ndị ọzọ",
+  "docket.showing-n-of-m-cases": "Na-egosi ikpe {n} n'ime {m}",
+  "docket.could-not-load-more-cases": "Enweghị ike ibu ikpe ndị ọzọ — nwaa ọzọ."
 }

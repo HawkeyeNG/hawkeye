@@ -1886,5 +1886,8 @@
   "observe.server-busy-try-again": "Hawkeye yana cike da aiki — sake gwadawa nan da minti ɗaya.",
   "dashboard.could-not-refresh-retrying": "An kasa sabuntawa — za a sake gwadawa nan da daƙiƙa 30.",
   "dashboard.latest-reports-note": "Ana nuna rahotanni {n} na baya-bayan nan, sabbi a farko.",
-  "profile.invite-a-second-observer": "Gayyaci Mai Lura Na Biyu"
+  "profile.invite-a-second-observer": "Gayyaci Mai Lura Na Biyu",
+  "docket.load-more-cases": "Nuna ƙarin shari'o'i",
+  "docket.showing-n-of-m-cases": "Ana nuna shari'o'i {n} daga cikin {m}",
+  "docket.could-not-load-more-cases": "An kasa loda ƙarin shari'o'i — sake gwadawa."
 }

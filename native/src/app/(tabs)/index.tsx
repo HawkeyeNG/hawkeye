@@ -403,7 +403,11 @@ export default function Home() {
           openedAt: number;
           resolvedAt: number | null;
         }[];
-      }>('/api/docket'),
+      }>(
+        // The newest 30 cases, like the 30 flags above: the feed shows 80 rows
+        // across every source. The bare call was every case (~85 KB at 300).
+        '/api/docket?limit=30',
+      ),
     ]);
 
     if (c) setContests(c);

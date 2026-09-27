@@ -1265,5 +1265,8 @@
   "n.app.tabs.index.practice-nudge-dismiss": "Dismiss",
   "n.app.sign-in.invite-code-optional": "Invite code (optional)",
   "n.app.sign-in.invite-code-invalid": "Invite codes have 6 letters and numbers. Check it, or leave it blank.",
-  "n.lib.submit.server-busy-saved": "Hawkeye is busy right now — your signed report is saved on this phone and will send itself as soon as it can."
+  "n.lib.submit.server-busy-saved": "Hawkeye is busy right now — your signed report is saved on this phone and will send itself as soon as it can.",
+  "n.app.docket.load-more-cases": "Load more cases",
+  "n.app.docket.showing-v0-of-v1-cases": "Showing {v0} of {v1} cases",
+  "n.app.docket.could-not-load-more-cases": "Could not load more cases — try again."
 }

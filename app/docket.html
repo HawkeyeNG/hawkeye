@@ -29,6 +29,12 @@
     .tallybar i { display: block; }
     .row-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
     .empty { color: var(--muted); padding: 24px; text-align: center; }
+    #more { text-align: center; margin: 8px 0 16px; }
+    #more .hint { font-size: 0.82rem; color: var(--muted); margin: 0 0 8px; }
+    #more .err { color: var(--text-danger); margin: 0 0 8px; }
+    .more-btn { display: block; width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; font: inherit; font-weight: 700; color: inherit; cursor: pointer; }
+    .more-btn:hover { border-color: var(--green); }
+    .more-btn:disabled { opacity: 0.6; cursor: default; }
     /* stat tiles (.stat-grid/.stile), folds (details.fold) and .sec-label are shared in styles.css */
   </style>
   <meta property="og:type" content="website">
@@ -88,6 +94,7 @@ The docket is on the chain — every case, verdict and resolution is appended to
     <h2 data-i18n="docket.cases" class="sec-label">Cases</h2>
     <p data-i18n="docket.newest-first-open-one-to-see" class="hint" style="margin:0 0 8px">Newest first. Open one to see its evidence and judge it.</p>
     <div id="list"><div class="skel" style="height:60px;margin:8px 0"></div></div>
+    <div id="more"></div>
   </main>
 
   <script>
@@ -111,11 +118,18 @@ The docket is on the chain — every case, verdict and resolution is appended to
      resolved here, at render time, and the render is re-run on a language
      change. */
   const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
-  const paintDocket = () => fetch('/api/docket').then((r) => r.json()).then(async (d) => {
-      const cases = d.cases || [];
-      const by = (s) => cases.filter((c) => c.status === s).length;
-      const verdicts = cases.reduce((n, c) => n + ((c.tally && c.tally.total) || 0), 0);
-      const heldOut = await fetchHeldOut();
+  /* PAGED. /api/docket sends the newest PAGE cases plus `counts` over every
+     case; "Load more" walks back with ?before=<openedAt>_<id> of the last row
+     shown (the id breaks ties: a post-election batch opens with one timestamp).
+     A server from before paging sends every case and no counts, so the tiles
+     then count the rows, which is exactly right for it. */
+  const PAGE = 50;
+  const docket = { d: null, cases: [], heldOut: null, more: false, busy: false, err: false };
+  const renderDocket = () => {
+      const { d, cases, heldOut } = docket;
+      const cnt = d.counts || null;
+      const by = (s) => (cnt ? cnt[s] || 0 : cases.filter((c) => c.status === s).length);
+      const verdicts = cnt ? cnt.verdicts : cases.reduce((n, c) => n + ((c.tally && c.tally.total) || 0), 0);
       const tiles = [
         /* Rebuilt by JS on every refresh, so the label is resolved at render
            time rather than carried on the element (see ledger.html). */
@@ -134,7 +148,16 @@ The docket is on the chain — every case, verdict and resolution is appended to
         di.dataset.ruled = '1';
         di.dataset.info += `\n\nHow a case resolves — a case needs ${d.quorum} verdicts and a ${Math.round(d.supermajority * 100)}% supermajority inside a ${d.windowDays}-day window. Reach that and the crowd's verdict stands: the votes are struck or restored. Fall short and the case is left unresolved.`;
       }
-      if (!cases.length) { $('list').innerHTML = `<div class="empty">${T('docket.no-cases-are-open-for-judging-yet', 'No cases are open for judging yet.')}</div>`; return; }
+      if (!cases.length) {
+        $('list').innerHTML = `<div class="empty">${T('docket.no-cases-are-open-for-judging-yet', 'No cases are open for judging yet.')}</div>`;
+        $('more').innerHTML = '';
+        return;
+      }
+      $('more').innerHTML = cnt && (docket.more || docket.err)
+        ? `<p class="hint">${T('docket.showing-n-of-m-cases', 'Showing {n} of {m} cases').replace('{n}', cases.length.toLocaleString()).replace('{m}', cnt.total.toLocaleString())}</p>`
+          + (docket.err ? `<p class="err">${T('docket.could-not-load-more-cases', 'Could not load more cases — try again.')}</p>` : '')
+          + `<button type="button" class="more-btn" id="more-btn"${docket.busy ? ' disabled' : ''}>${T('docket.load-more-cases', 'Load more cases')}</button>`
+        : '';
       $('list').innerHTML = cases.map((c) => {
         const t = c.tally, tot = Math.max(1, t.total);
         return `<a class="case ${c.status}" href="case.html?id=${c.id}">
@@ -149,13 +172,45 @@ The docket is on the chain — every case, verdict and resolution is appended to
             <i style="width:${(t.inconclusive / tot) * 100}%;background:#b45309"></i>
           </div></a>`;
       }).join('');
-    }).catch(() => { $('list').innerHTML = `<div class="empty">${T('docket.could-not-load-the-docket-try-again', 'Could not load the docket — try again shortly.')}</div>`; });
+  };
+  const hasMore = (d, page, shown) => !!(d.counts && page.length === PAGE && shown < d.counts.total);
+  const paintDocket = () => (docket.pending = fetch('/api/docket?limit=' + PAGE).then((r) => r.json()).then(async (d) => {
+      docket.heldOut = await fetchHeldOut();
+      docket.d = d;
+      docket.cases = d.cases || [];
+      docket.more = hasMore(d, docket.cases, docket.cases.length);
+      docket.err = false;
+      renderDocket();
+    }).catch(() => { $('list').innerHTML = `<div class="empty">${T('docket.could-not-load-the-docket-try-again', 'Could not load the docket — try again shortly.')}</div>`; })
+    .finally(() => { docket.pending = null; }));
+  const loadMore = async () => {
+    const last = docket.cases[docket.cases.length - 1];
+    if (!last || docket.busy) return;
+    docket.busy = true;
+    renderDocket();
+    try {
+      const r = await fetch(`/api/docket?limit=${PAGE}&before=${encodeURIComponent(last.openedAt + '_' + last.id)}`);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      const seen = new Set(docket.cases.map((c) => c.id));
+      const page = d.cases || [];
+      docket.cases = docket.cases.concat(page.filter((c) => !seen.has(c.id)));
+      if (d.counts) docket.d = { ...docket.d, counts: d.counts };
+      docket.more = hasMore(d, page, docket.cases.length);
+      docket.err = false;
+    } catch { docket.err = true; }
+    docket.busy = false;
+    renderDocket();
+  };
+  $('more').addEventListener('click', (e) => { if (e.target.closest('#more-btn')) loadMore(); });
     paintDocket();
     /* The tiles and the case list hold RESOLVED strings, not keys, so i18n.js's
        apply() pass cannot reach them. Repaint on a language change — and note
        this page loads i18n.js AFTER this block, so the first paint may well have
-       run with no dictionary at all; this listener is also what fixes that. */
-    document.addEventListener('hawkeye-lang', paintDocket);
+       run with no dictionary at all; this listener is also what fixes that.
+       Re-render what is loaded rather than refetch, so "Load more" pages survive;
+       a first fetch still in flight renders with the dictionary when it lands. */
+    document.addEventListener('hawkeye-lang', () => (docket.d ? renderDocket() : docket.pending || paintDocket()));
   </script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>

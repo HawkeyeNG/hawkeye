@@ -1,0 +1,20 @@
+{
+  "docket.load-more-cases": {
+    "en": "Load more cases",
+    "ha": "Nuna ƙarin shari'o'i",
+    "ig": "Gosi ikpe ndị ọzọ",
+    "yo": "Fi àwọn ẹjọ́ sí i hàn"
+  },
+  "docket.showing-n-of-m-cases": {
+    "en": "Showing {n} of {m} cases",
+    "ha": "Ana nuna shari'o'i {n} daga cikin {m}",
+    "ig": "Na-egosi ikpe {n} n'ime {m}",
+    "yo": "À ń fi ẹjọ́ {n} hàn nínú {m}"
+  },
+  "docket.could-not-load-more-cases": {
+    "en": "Could not load more cases — try again.",
+    "ha": "An kasa loda ƙarin shari'o'i — sake gwadawa.",
+    "ig": "Enweghị ike ibu ikpe ndị ọzọ — nwaa ọzọ.",
+    "yo": "A kò lè gbé àwọn ẹjọ́ míràn jáde — tún gbìyànjú."
+  }
+}

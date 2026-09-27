@@ -1265,5 +1265,8 @@
   "n.app.tabs.index.practice-nudge-dismiss": "Ti",
   "n.app.sign-in.invite-code-optional": "Kóòdù ìpè (àṣàyàn)",
   "n.app.sign-in.invite-code-invalid": "Kóòdù ìpè ní lẹ́tà àti nọ́mbà 6. Ṣàyẹ̀wò rẹ̀, tàbí fi òfìfo sílẹ̀.",
-  "n.lib.submit.server-busy-saved": "Hawkeye ń ṣiṣẹ́ lọ́wọ́ báyìí — a ti fi ìròyìn rẹ tí o fọwọ́sí pamọ́ sórí fóònù yìí, yóò sì fi ara rẹ̀ ránṣẹ́ ní kété tí ó bá ṣeé ṣe."
+  "n.lib.submit.server-busy-saved": "Hawkeye ń ṣiṣẹ́ lọ́wọ́ báyìí — a ti fi ìròyìn rẹ tí o fọwọ́sí pamọ́ sórí fóònù yìí, yóò sì fi ara rẹ̀ ránṣẹ́ ní kété tí ó bá ṣeé ṣe.",
+  "n.app.docket.load-more-cases": "Fi àwọn ẹjọ́ sí i hàn",
+  "n.app.docket.showing-v0-of-v1-cases": "À ń fi ẹjọ́ {v0} hàn nínú {v1}",
+  "n.app.docket.could-not-load-more-cases": "A kò lè gbé àwọn ẹjọ́ míràn jáde — tún gbìyànjú."
 }

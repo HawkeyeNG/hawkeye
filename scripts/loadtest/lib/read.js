@@ -26,7 +26,7 @@ const MIX = [
   ['integrity_summary', 8, () => '/api/integrity/summary'],
   ['incidents', 8, () => '/api/incidents'],
   ['ledger_head', 8, () => '/api/ledger/entries?limit=3'],
-  ['docket', 5, () => '/api/docket'],
+  ['docket', 5, () => '/api/docket?limit=30'], // the native home tab's call
   ['declarations', 4, () => '/api/declarations'],
   ['anchors', 2, () => '/api/anchors'],
   ['register_states', 3, () => '/api/register/states'],

@@ -1859,5 +1859,8 @@
   "observe.server-busy-try-again": "Hawkeye is busy — try again in a minute.",
   "dashboard.could-not-refresh-retrying": "Could not refresh — trying again in 30 seconds.",
   "dashboard.latest-reports-note": "Showing the latest {n} reports, newest first.",
-  "profile.invite-a-second-observer": "Invite a Second Observer"
+  "profile.invite-a-second-observer": "Invite a Second Observer",
+  "docket.load-more-cases": "Load more cases",
+  "docket.showing-n-of-m-cases": "Showing {n} of {m} cases",
+  "docket.could-not-load-more-cases": "Could not load more cases — try again."
 }

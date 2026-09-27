@@ -1885,5 +1885,8 @@
   "observe.server-busy-try-again": "Hawkeye ń ṣiṣẹ́ lọ́wọ́ — gbìyànjú lẹ́ẹ̀kan sí i ní ìṣẹ́jú kan.",
   "dashboard.could-not-refresh-retrying": "Kò ṣeé ṣe láti sọ ọ́ di tuntun — a ó tún gbìyànjú ní ìṣẹ́jú-àáyá 30.",
   "dashboard.latest-reports-note": "À ń fi àwọn ìròyìn {n} tó dé kẹ́yìn hàn, èyí tó tuntun jùlọ lákọ̀ọ́kọ́.",
-  "profile.invite-a-second-observer": "Pe Olùwòran Kejì"
+  "profile.invite-a-second-observer": "Pe Olùwòran Kejì",
+  "docket.load-more-cases": "Fi àwọn ẹjọ́ sí i hàn",
+  "docket.showing-n-of-m-cases": "À ń fi ẹjọ́ {n} hàn nínú {m}",
+  "docket.could-not-load-more-cases": "A kò lè gbé àwọn ẹjọ́ míràn jáde — tún gbìyànjú."
 }

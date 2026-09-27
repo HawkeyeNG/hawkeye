@@ -32,13 +32,30 @@ type Case = {
   state: string | null;
 };
 
+/** Every case's status, counted by the server (the list below is one page). */
+type DocketCounts = {
+  total: number;
+  open: number;
+  upheld: number;
+  cleared: number;
+  unresolved: number;
+  verdicts: number;
+};
+
 type DocketFeed = {
   rule: string;
   quorum?: number;
   supermajority?: number;
   windowDays?: number;
   cases: Case[];
+  /** Absent from a server that predates paging — which sent EVERY case. */
+  counts?: DocketCounts;
 };
+
+/** One page of cases. The bare call is 50; the home tab asks for 30. */
+const PAGE = 50;
+/** The cursor is the last row itself: openedAt ties inside a batch, id breaks them. */
+const cursorOf = (c: Case) => `${c.openedAt}_${c.id}`;
 
 const when = (t: number | null) => (t ? new Date(t).toLocaleString() : '');
 
@@ -94,8 +111,9 @@ async function fetchHeldOut(): Promise<number | null> {
  * means, and the rules sit in collapsed folds. The case list underneath is
  * unchanged; it is what the reader came for.
  *
- * Where each number comes from: the five case tiles count the case rows in
- * /api/docket, which is the same list rendered below them. The "held out of
+ * Where each number comes from: the five case tiles are /api/docket's `counts`,
+ * over every case — the list below them is paged (50 at a time, "Load more"
+ * walks back with ?before=), so counting its rows would undercount. The "held out of
  * tallies" tile is the server's own `inDispute`, summed across contests from
  * /api/national/:contest — the count of results it actually excluded. It is
  * never inferred from the case rows, which cannot see it (fetchHeldOut), and
@@ -112,6 +130,11 @@ export default function Docket() {
   const [heldOut, setHeldOut] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [counts, setCounts] = useState<DocketCounts | null>(null);
+  /** Another page exists behind the last row shown. */
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [moreErr, setMoreErr] = useState(false);
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScrollList();
 
   const load = useCallback(async () => {
@@ -119,7 +142,7 @@ export default function Docket() {
     // costs the one tile, not the page.
     const held = fetchHeldOut();
     try {
-      const res = await fetch(`${BASE}/api/docket`, { headers: { accept: 'application/json' } });
+      const res = await fetch(`${BASE}/api/docket?limit=${PAGE}`, { headers: { accept: 'application/json' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const d = (await res.json()) as DocketFeed;
       setRule(d.rule);
@@ -128,6 +151,10 @@ export default function Docket() {
       setWindowDays(d.windowDays ?? null);
       setHeldOut(await held);
       setCases(d.cases);
+      setCounts(d.counts ?? null);
+      // No counts = a server from before paging, which sent every case.
+      setHasMore(!!d.counts && d.cases.length === PAGE && d.cases.length < d.counts.total);
+      setMoreErr(false);
       setErr(null);
     } catch (e) {
       setHeldOut(await held);
@@ -135,17 +162,43 @@ export default function Docket() {
     }
   }, []);
 
+  const loadMore = useCallback(async () => {
+    const last = cases?.[cases.length - 1];
+    if (!last || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(
+        `${BASE}/api/docket?limit=${PAGE}&before=${encodeURIComponent(cursorOf(last))}`,
+        { headers: { accept: 'application/json' } },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = (await res.json()) as DocketFeed;
+      const seen = new Set((cases ?? []).map((c) => c.id));
+      const next = [...(cases ?? []), ...d.cases.filter((c) => !seen.has(c.id))];
+      setCases(next);
+      if (d.counts) setCounts(d.counts);
+      setHasMore(!!d.counts && d.cases.length === PAGE && next.length < d.counts.total);
+      setMoreErr(false);
+    } catch {
+      setMoreErr(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [cases, loadingMore]);
+
   useEffect(() => {
     load();
   }, [load]);
 
   /**
-   * Case counts only. Each of these is a straight tally of the case rows this
-   * screen already lists, so each measures exactly what its label says. The
-   * count of results held out of the tallies is deliberately NOT derived here —
-   * it isn't a function of these rows (see fetchHeldOut).
+   * Case counts only, over EVERY case: the server's `counts`, because the list
+   * below is one page of them. A server from before paging sends no counts and
+   * every case, so tallying the rows is then exactly right. The count of results
+   * held out of the tallies is deliberately NOT derived here — it isn't a
+   * function of the cases (see fetchHeldOut).
    */
   const n = useMemo(() => {
+    if (counts) return counts;
     const list = cases ?? [];
     const by = (s: string) => list.filter((c) => c.status === s).length;
     return {
@@ -155,7 +208,7 @@ export default function Docket() {
       cleared: by('cleared'),
       verdicts: list.reduce((sum, c) => sum + (c.tally?.total ?? 0), 0),
     };
-  }, [cases]);
+  }, [cases, counts]);
 
   const pct = supermajority ? Math.round(supermajority * 100) : null;
 
@@ -288,6 +341,34 @@ export default function Docket() {
               setRefreshing(false);
             }}
           />
+        }
+        ListFooterComponent={
+          cases?.length && counts && (hasMore || moreErr) ? (
+            <View className="items-center px-4 pt-2">
+              <Text className="pb-2 text-xs text-muted">
+                {i18nT('n.app.docket.showing-v0-of-v1-cases', {
+                  v0: cases.length.toLocaleString(),
+                  v1: counts.total.toLocaleString(),
+                })}
+              </Text>
+              {moreErr ? (
+                <Text className="pb-2 text-center text-sm text-bad-ink">
+                  {i18nT('n.app.docket.could-not-load-more-cases')}
+                </Text>
+              ) : null}
+              {loadingMore ? (
+                <ActivityIndicator className="py-3" color={ui.tint.good.ink} />
+              ) : (
+                <Pressable
+                  className="w-full items-center rounded-2xl bg-card py-3 active:opacity-80"
+                  accessibilityRole="button"
+                  onPress={loadMore}
+                >
+                  <Text className="text-base font-bold text-ink">{i18nT('n.app.docket.load-more-cases')}</Text>
+                </Pressable>
+              )}
+            </View>
+          ) : null
         }
         ListEmptyComponent={
           cases === null ? null : (

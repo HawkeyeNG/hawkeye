@@ -98,8 +98,9 @@ jobs:
           base="https://github.com/protomaps/go-pmtiles/releases/download/v${PMTILES_VERSION}"
           tgz="go-pmtiles_${PMTILES_VERSION}_Linux_x86_64.tar.gz"
           curl -fsSL -o "$tgz" "$base/$tgz"
-          curl -fsSL -o checksums.txt "$base/checksums.txt"
-          grep " ${tgz}\$" checksums.txt | sha256sum -c -
+          # The release publishes no checksums.txt; this is GitHub's own asset digest
+          # for v1.31.2 (API .assets[].digest). Bump it WITH PMTILES_VERSION.
+          echo "3ed7dbf4ec2e6dfe5e25b6f70d1ffc932729f93c86db353bf514dd71010a312f  ${tgz}" | sha256sum -c -
           tar xzf "$tgz" pmtiles
           sudo install -m 0755 pmtiles /usr/local/bin/pmtiles
           pmtiles version

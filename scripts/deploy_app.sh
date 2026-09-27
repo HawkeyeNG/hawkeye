@@ -150,6 +150,12 @@ public_url() {
   case "$f" in
     app/*) echo "$SITE/${f#app/}" ;;
   esac
+  # With the html-60s edge rule a directory index is also cached under its
+  # directory URL(s); purge those too or "/" serves the old page for a minute.
+  case "$f" in
+    app/index.html) echo "$SITE/" ;;
+    app/*/index.html) local d="${f#app/}"; d="${d%/index.html}"; echo "$SITE/$d/"; echo "$SITE/$d" ;;
+  esac
 }
 
 ok=0; failed=(); unverified=0; purge_urls=()
@@ -159,7 +165,7 @@ for f in "${FILES[@]}"; do
   if ! upload "$f"; then echo "  UPLOAD   FAILED $f"; failed+=("$f"); continue; fi
   verify "$f"; rc=$?
   case $rc in
-    0) echo "  ok       $f"; ok=$((ok+1)); u=$(public_url "$f"); [ -n "$u" ] && purge_urls+=("$u") ;;
+    0) echo "  ok       $f"; ok=$((ok+1)); while IFS= read -r u; do [ -n "$u" ] && purge_urls+=("$u"); done < <(public_url "$f") ;;
     2) echo "  ok*      $f  (not web-served — upload accepted, not verified)"; ok=$((ok+1)); unverified=$((unverified+1)) ;;
     *) echo "  TRUNCATED $f — re-uploading once"
        if upload "$f" && verify "$f"; then echo "    recovered $f"; ok=$((ok+1)); else failed+=("$f"); fi ;;

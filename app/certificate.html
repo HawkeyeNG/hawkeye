@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="The Hawkeye Observer certificate: complete a practice run and a short quiz on observing well and within the law." />
+  <title data-i18n="cert.page-title">Observer Certificate — Hawkeye</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=193" />
+  <script src="native.js?v=120"></script>
+  <script src="/monitor.js?v=3" defer></script>
+  <style>
+    /* .btn-accent and `button` set display, which beats the UA's [hidden]. */
+    #main [hidden] { display: none !important; }
+    .cq-progress { margin: 0 0 6px; color: var(--muted); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.02em; }
+    .cq-question { margin: 0 0 12px; font-size: 1.15rem; line-height: 1.35; }
+    button.cq-opt { text-align: left; margin: 8px 0 0; font-weight: 600; color: var(--ink); background: var(--card);
+      border: 1.5px solid var(--border); box-shadow: none; }
+    button.cq-opt:hover { filter: none; border-color: var(--link); }
+    button.cq-opt:disabled { background: var(--card); color: var(--muted); cursor: default; }
+    button.cq-opt.ok, button.cq-opt.ok:disabled { border-color: var(--link); background: var(--tint-ok); color: var(--ink); }
+    button.cq-opt.bad, button.cq-opt.bad:disabled { border-color: var(--danger); background: var(--tint-danger); color: var(--ink); }
+    .cq-feedback { margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--tint); }
+    .cq-feedback strong { display: block; margin: 0 0 4px; }
+    .cq-feedback p { margin: 0; }
+    .cq-feedback.ok strong { color: var(--link); }
+    .cq-feedback.bad strong { color: var(--text-danger); }
+    .cert-name label { display: block; font-weight: 700; margin: 0 0 6px; }
+    .cert-name input { width: 100%; margin: 0; }
+    .cert-name .hint { margin: 6px 0 0; }
+    #cert-img { display: block; width: 100%; height: auto; margin: 16px 0 4px; border-radius: 8px; border: 1px solid var(--line); background: #fbf7ea; }
+    .cert-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 12px 0 0; }
+    .cert-actions button { margin: 0; }
+    .cert-code { margin: 16px 0 0; }
+    .cert-code code { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.06em; }
+    .cert-code a { color: var(--link); word-break: break-all; }
+    /* PRINT: the certificate alone, one landscape page. The image is the same
+       PNG as on screen, so what prints is exactly what was checked. */
+    @page { size: A4 landscape; margin: 0; }
+    @media print {
+      html, body { background: #fff !important; }
+      body * { visibility: hidden !important; }
+      #cert-img, #cert-img * { visibility: visible !important; }
+      #cert-img { position: fixed; inset: 0; width: 100vw; height: auto; max-height: 100vh; object-fit: contain;
+        margin: 0; border: 0; border-radius: 0; }
+    }
+  </style>
+  <!-- No authgate.js: the page handles "signed out" itself, and it must open
+       signed out when the app hands it a certificate in the in-app browser
+       (the code and the name ride in the #fragment, which never reaches the
+       server — see certificate.js). -->
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true"><img src="logo.svg?v=101" alt="" width="30" height="30" style="display:block" /></span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a data-i18n="common.about-contact" href="about.html">About & Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="main">
+    <h1 data-i18n="cert.title">Hawkeye Observer Certificate</h1>
+    <p class="lede" id="c-lede" data-i18n="cert.lede">Complete a practice run, then answer 7 short questions on observing well and within the law. Get them all right and you receive a certificate to print or share.</p>
+
+    <section class="card" id="c-loading"><p class="hint" data-i18n="cert.loading">Loading…</p></section>
+
+    <section class="card" id="c-error" hidden>
+      <p class="status" data-i18n="cert.load-error">Could not load your certificate. Check your connection and try again.</p>
+      <button type="button" class="secondary" id="c-retry" data-i18n="cert.try-again">Try again</button>
+    </section>
+
+    <section class="card" id="c-signin" hidden>
+      <p data-i18n="cert.signin-body">Sign in to take the quiz and earn your certificate.</p>
+      <a class="btn-accent" href="observe.html?intent=signin&amp;next=certificate.html" data-i18n="cert.signin">Sign in</a>
+    </section>
+
+    <section class="card" id="c-practice" hidden>
+      <h2 data-i18n="cert.practice-first-h">First, complete a practice run</h2>
+      <p data-i18n="cert.practice-first-body">The certificate needs one practice run on this account. It takes about 5 minutes, and nothing you enter counts as a real result.</p>
+      <a class="btn-accent" href="practice.html" data-i18n="cert.practice-go">Start the practice run</a>
+      <button type="button" class="secondary" id="c-recheck" data-i18n="cert.practice-recheck">I have done it — check again</button>
+    </section>
+
+    <section class="card" id="c-quiz" hidden aria-live="polite">
+      <p class="cq-progress" id="cq-progress"></p>
+      <h2 class="cq-question" id="cq-question"></h2>
+      <div id="cq-options"></div>
+      <div class="cq-feedback" id="cq-feedback" hidden>
+        <strong id="cq-verdict"></strong>
+        <p id="cq-why"></p>
+      </div>
+      <button type="button" class="secondary" id="cq-retry" hidden data-i18n="cert.retry">Try this question again</button>
+      <button type="button" id="cq-next" hidden></button>
+      <p class="status" id="cq-status" role="status"></p>
+    </section>
+
+    <section class="card" id="c-invalid" hidden>
+      <p class="status" data-i18n="cert.invalid">This certificate code is not valid.</p>
+    </section>
+
+    <section id="c-done" hidden>
+      <div class="card">
+        <h2 data-i18n="cert.done-h">Your certificate</h2>
+        <p data-i18n="cert.done-body">You completed a practice run and the observer quiz. Thank you for learning to observe well.</p>
+        <div class="cert-name">
+          <label for="cert-name" data-i18n="cert.name-label">Name to print (optional)</label>
+          <!-- NEVER SENT. Read only by certificate.js to draw the picture on
+               this device; it is in no request body, header or URL. -->
+          <input id="cert-name" type="text" maxlength="60" autocomplete="name" spellcheck="false" />
+          <p class="hint" data-i18n="cert.name-note">Your name stays on this device. It is never sent to Hawkeye.</p>
+        </div>
+        <img id="cert-img" alt="" />
+        <div class="cert-actions">
+          <button type="button" id="cert-share" data-i18n="cert.share">Share</button>
+          <button type="button" class="secondary" id="cert-save" data-i18n="cert.save">Save image</button>
+          <button type="button" class="secondary" id="cert-print" data-i18n="cert.print">Print</button>
+        </div>
+        <p class="status" id="cert-status" role="status"></p>
+        <div class="cert-code">
+          <span class="hint" data-i18n="cert.code-label">Verification code</span><br />
+          <code id="cert-code"></code>
+          <p class="hint"><span data-i18n="cert.check-at">Anyone can check it at:</span> <a id="cert-link" href="verify-cert.html"></a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav></nav>
+    <p data-i18n="common.hawkeye-is-an-independent-transparency-initiative-2">Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+  <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+  </div></footer>
+
+  <script src="device.js"></script>
+  <script src="save-media.js?v=1"></script>
+  <script src="certificate.js?v=1"></script>
+  <script src="tg.js?v=95"></script>
+  <script src="/i18n.js?v=10"></script>
+  <script src="/lang.js?v=9"></script>
+  <script src="menu.js?v=183"></script>
+  <script src="shell.js?v=2" defer></script>
+</body>
+</html>

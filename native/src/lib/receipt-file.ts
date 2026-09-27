@@ -44,8 +44,9 @@ function bytesFromBase64(b64: string): Uint8Array {
   return out.subarray(0, o);
 }
 
-/** true when a file actually reached the gallery. */
-export async function saveReceiptPng(card: CardHandle): Promise<boolean> {
+/** true when a file actually reached the gallery. `prefix` names the file —
+ *  the observer certificate (app/certificate.tsx) saves through here too. */
+export async function saveReceiptPng(card: CardHandle, prefix = 'hawkeye-receipt'): Promise<boolean> {
   try {
     if (!card) return false;
     // Asked BEFORE drawing: if copies are off there is nothing to write and no
@@ -58,7 +59,7 @@ export async function saveReceiptPng(card: CardHandle): Promise<boolean> {
     const dir = new Directory(Paths.cache, 'hawkeye-receipts');
     try { dir.create({ intermediates: true, idempotent: true }); } catch { /* already there */ }
     // Stamped, so two reports from one unit do not overwrite each other.
-    const f = new File(dir, `hawkeye-receipt-${Date.now()}.png`);
+    const f = new File(dir, `${prefix}-${Date.now()}.png`);
     try { f.create({ overwrite: true }); } catch { /* already there */ }
     f.write(bytesFromBase64(b64));
 

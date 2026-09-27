@@ -10,7 +10,7 @@
 // are network-first below, so they update on their own. Nothing else volatile
 // belongs in LAZY either — if a file can change between deploys, it goes in the
 // network-first branch, not here.
-const CACHE = 'hawkeye-v483';
+const CACHE = 'hawkeye-v484';
 // The offline outbox, so a Background Sync can send queued reports with every
 // tab closed (Chrome/Android) — see outbox.js. Optional: failing to load it
 // must never cost the service worker itself.
@@ -29,7 +29,7 @@ const SHELL = ['/', '/index.html', '/observe.html', '/profile.html', '/choose-un
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.
 // og-image.png is here too — only crawlers fetch it, and they don't use the SW.
-const LAZY = ['/press.html', '/captain.html', '/captain-guide.html', '/coverage.html', '/practice-day.html', '/opencv.js', '/nga_wards.geojson', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/play-badge.png', '/app-store-badge.svg', '/seat_lgas.json', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/vendor/protomaps-leaflet/protomaps-leaflet.js', '/basemap.js','/og-image.png', '/vendor/sentry/bundle.min.js', '/about.html', '/download.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/practice.html', '/practice.js', '/race.js', '/results.html', '/integrity.html', '/races.html', '/race.html', '/how.html', '/incident-reports.html', '/follow.js', '/guide.html', '/race.css', '/dashboard.html', '/faq.html', '/osun.html'];
+const LAZY = ['/certificate.html', '/certificate.js', '/verify-cert.html', '/press.html', '/captain.html', '/captain-guide.html', '/coverage.html', '/practice-day.html', '/opencv.js', '/nga_wards.geojson', '/states_geo.json', '/lga_geo.json', '/district_geo.json', '/constituency_geo.json', '/play-badge.png', '/app-store-badge.svg', '/seat_lgas.json', '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/vendor/protomaps-leaflet/protomaps-leaflet.js', '/basemap.js','/og-image.png', '/vendor/sentry/bundle.min.js', '/about.html', '/download.html', '/support.html', '/candidates.html', '/political.html', '/privacy.html', '/practice.html', '/practice.js', '/race.js', '/results.html', '/integrity.html', '/races.html', '/race.html', '/how.html', '/incident-reports.html', '/follow.js', '/guide.html', '/race.css', '/dashboard.html', '/faq.html', '/osun.html'];
 
 // Opened ONCE per worker lifetime. The global caches.match() searches every
 // cache in the origin, and re-opening the cache on each request adds latency to

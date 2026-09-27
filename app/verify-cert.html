@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#00482b" />
+  <meta name="description" content="Check a Hawkeye Observer certificate by its code." />
+  <title data-i18n="cert.verify-page-title">Check a Certificate — Hawkeye</title>
+  <!-- Served at /verify-cert too (server.js), the address printed on the
+       certificate — so every URL below is ROOT-relative or bare, never ../ -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/logo.svg?v=101" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="/styles.css?v=193" />
+  <script src="/native.js?v=120"></script>
+  <script src="/monitor.js?v=3" defer></script>
+  <style>
+    #main [hidden] { display: none !important; }
+    .vc-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .vc-form label { display: block; font-weight: 700; margin: 0 0 6px; }
+    .vc-form .vc-field { flex: 1 1 220px; }
+    .vc-form input { width: 100%; margin: 0; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    .vc-form button { width: auto; margin: 0; }
+    .vc-result { margin: 16px 0 0; padding: 14px 16px; border-radius: 10px; }
+    .vc-result h2 { margin: 0 0 6px; font-size: 1.1rem; }
+    .vc-result p { margin: 0; }
+    .vc-valid { background: var(--tint-ok); border-left: 6px solid var(--link); }
+    .vc-invalid { background: var(--tint-danger); border-left: 6px solid var(--danger); }
+    .vc-earn { color: var(--link); font-weight: 600; }
+  </style>
+  <!-- No authgate.js: checking a certificate is public, signed in or not, in
+       the browser and in the app shell. -->
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="/index.html"><span class="crest" aria-hidden="true"><img src="/logo.svg?v=101" alt="" width="30" height="30" style="display:block" /></span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
+        onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a data-i18n="common.report-a-result" href="/observe.html">Report a Result</a>
+        <a data-i18n="common.leaderboard" href="/results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="/dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="/ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.how-hawkeye-works" href="/how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="/guide.html">Observer Guide</a>
+        <a href="/faq.html">FAQ</a>
+        <a data-i18n="common.about-contact" href="/about.html">About & Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="main">
+    <h1 data-i18n="cert.verify-title">Check a Hawkeye Observer Certificate</h1>
+    <p class="lede" data-i18n="cert.verify-lede">Enter the code printed on the certificate.</p>
+    <section class="card">
+      <form class="vc-form" id="vc-form" action="/verify-cert" method="get" autocomplete="off">
+        <div class="vc-field">
+          <label for="vc-code" data-i18n="cert.verify-label">Certificate code</label>
+          <input id="vc-code" name="code" type="text" inputmode="text" maxlength="12" placeholder="ABCD-EFGH" spellcheck="false" />
+        </div>
+        <button type="submit" id="vc-go" data-i18n="cert.verify-button">Check</button>
+      </form>
+      <p class="hint" id="vc-checking" data-i18n="cert.verify-checking" hidden>Checking…</p>
+      <div class="vc-result vc-valid" id="vc-valid" role="status" hidden>
+        <h2 data-i18n="cert.verify-valid-h">Valid certificate</h2>
+        <p id="vc-valid-body"></p>
+      </div>
+      <div class="vc-result vc-invalid" id="vc-invalid" role="status" hidden>
+        <h2 data-i18n="cert.verify-invalid-h">Not valid</h2>
+        <p data-i18n="cert.verify-invalid-body">No Hawkeye Observer certificate has this code. Check the code and try again.</p>
+      </div>
+      <p class="status" id="vc-error" role="status" data-i18n="cert.verify-error" hidden>Could not check the code right now. Try again.</p>
+    </section>
+    <p class="hint" data-i18n="cert.verify-what">A valid certificate means its holder completed a Hawkeye practice run and the observer quiz. Hawkeye stores no names, so this page cannot say who the holder is. It is not INEC accreditation.</p>
+    <p><a class="vc-earn" href="/certificate.html" data-i18n="cert.verify-earn">Earn your own: a practice run and a short quiz</a></p>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav></nav>
+    <p data-i18n="common.hawkeye-is-an-independent-transparency-initiative-2">Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+  <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
+  </div></footer>
+
+  <script>
+    /* The check (backend services/certificates.js): GET /api/cert/verify, no
+       credentials, so the edge may answer it. It says "valid, issued on <date>"
+       or "not valid" — there is no name to say, because none is stored. */
+    (function () {
+      'use strict';
+      var $ = function (id) { return document.getElementById(id); };
+      var T = function (k, en) { return window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en; };
+      var CODE_RE = /^[2-9A-HJKMNP-TV-Z]{8}$/;
+      var norm = function (s) { return String(s || '').toUpperCase().replace(/[^2-9A-HJKMNP-TV-Z]/g, '').slice(0, 9); };
+      var pretty = function (c) { return c.slice(0, 4) + '-' + c.slice(4); };
+      var last = null;   // { code, issuedOn } of a valid answer, repainted on a language change
+
+      function dateWords(iso) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+        if (!m) return '';
+        var months = T('practiceday.months', 'January,February,March,April,May,June,July,August,September,October,November,December').split(',');
+        return Number(m[3]) + ' ' + (months[Number(m[2]) - 1] || '') + ' ' + m[1];
+      }
+      function paintValid() {
+        if (!last) return;
+        $('vc-valid-body').textContent = T('cert.verify-valid-body', 'Hawkeye Observer certificate {code}, issued on {date}.')
+          .replace('{code}', last.code).replace('{date}', dateWords(last.issuedOn));
+      }
+      function only(id) {
+        ['vc-checking', 'vc-valid', 'vc-invalid', 'vc-error'].forEach(function (x) { $(x).hidden = x !== id; });
+      }
+
+      async function check(raw) {
+        var code = norm(raw);
+        last = null;
+        if (!CODE_RE.test(code)) { only('vc-invalid'); return; }
+        $('vc-code').value = pretty(code);
+        only('vc-checking');
+        var ctl = new AbortController();
+        var timer = setTimeout(function () { ctl.abort(); }, 12000);
+        try {
+          var r = await fetch('/api/cert/verify?code=' + encodeURIComponent(pretty(code)), { headers: { accept: 'application/json' }, signal: ctl.signal });
+          var j = await r.json().catch(function () { return null; });
+          if (r.status === 200 && j && j.valid) { last = { code: j.code, issuedOn: j.issuedOn }; paintValid(); only('vc-valid'); return; }
+          if (r.status === 404 || r.status === 400) { only('vc-invalid'); return; }
+          only('vc-error');
+        } catch (e) {
+          only('vc-error');
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
+      $('vc-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var code = norm($('vc-code').value);
+        // The address bar carries the code, so the result can be shared as a link.
+        try { history.replaceState(null, '', location.pathname + (code ? '?code=' + pretty(code) : '')); } catch (err) { /* ignore */ }
+        check(code);
+      });
+      document.addEventListener('hawkeye-lang', paintValid);
+
+      var q = new URLSearchParams(location.search).get('code');
+      if (q) { $('vc-code').value = q; check(q); }
+    })();
+  </script>
+  <script src="/tg.js?v=95"></script>
+  <script src="/i18n.js?v=10"></script>
+  <script src="/lang.js?v=9"></script>
+  <script src="/menu.js?v=183"></script>
+  <script src="/shell.js?v=2" defer></script>
+</body>
+</html>

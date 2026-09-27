@@ -1,0 +1,560 @@
+{
+  "cert.page-title": {
+    "en": "Observer Certificate — Hawkeye",
+    "ha": "Takardar Shaidar Mai Lura — Hawkeye",
+    "ig": "Asambodo Onye Na-ekiri Ihe — Hawkeye",
+    "yo": "Ìwé-ẹ̀rí Olùwòran — Hawkeye"
+  },
+  "cert.title": {
+    "en": "Hawkeye Observer Certificate",
+    "ha": "Takardar Shaidar Mai Lura ta Hawkeye",
+    "ig": "Asambodo Onye Na-ekiri Ihe nke Hawkeye",
+    "yo": "Ìwé-ẹ̀rí Olùwòran Hawkeye"
+  },
+  "cert.lede": {
+    "en": "Complete a practice run, then answer 7 short questions on observing well and within the law. Get them all right and you receive a certificate to print or share.",
+    "ha": "Kammala gwajin atisaye, sannan ka amsa gajerun tambayoyi 7 kan yadda ake lura da kyau kuma bisa doka. Idan ka amsa duka daidai, za ka sami takardar shaida da za ka iya bugawa ko rabawa.",
+    "ig": "Mechaa ọsọ omume, wee zaa ajụjụ nkenke 7 gbasara otu esi ekiri ihe nke ọma n’ụzọ iwu kwadoro. Ọ bụrụ na i zaa ha niile nke ọma, ị ga-enweta asambodo ị nwere ike ibipụta ma ọ bụ kesaa.",
+    "yo": "Parí eré àdánwò kan, lẹ́yìn náà dáhùn ìbéèrè kúkúrú 7 nípa bí a ṣe ń wòran dáadáa ní ìbámu pẹ̀lú òfin. Tí o bá gba gbogbo wọn tọ́, wàá gba ìwé-ẹ̀rí tí o lè tẹ̀ jáde tàbí pín."
+  },
+  "cert.loading": {
+    "en": "Loading…",
+    "ha": "Ana lodi…",
+    "ig": "Na-adọnye…",
+    "yo": "Ń ṣí…"
+  },
+  "cert.load-error": {
+    "en": "Could not load your certificate. Check your connection and try again.",
+    "ha": "Ba a iya loda takardar shaidarka ba. Duba haɗin intanet ɗinka ka sake gwadawa.",
+    "ig": "Enweghị ike ịdọnye asambodo gị. Lelee njikọ gị ma nwaa ọzọ.",
+    "yo": "A kò lè ṣí ìwé-ẹ̀rí rẹ. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  },
+  "cert.try-again": {
+    "en": "Try again",
+    "ha": "Sake gwadawa",
+    "ig": "Nwaa ọzọ",
+    "yo": "Tún gbìyànjú"
+  },
+  "cert.signin-body": {
+    "en": "Sign in to take the quiz and earn your certificate.",
+    "ha": "Shiga don ka amsa tambayoyin ka sami takardar shaidarka.",
+    "ig": "Banye ka zaa ajụjụ ndị a ma nweta asambodo gị.",
+    "yo": "Wọlé láti ṣe ìdánwò náà kí o sì gba ìwé-ẹ̀rí rẹ."
+  },
+  "cert.signin": {
+    "en": "Sign in",
+    "ha": "Shiga",
+    "ig": "Banye",
+    "yo": "Wọlé"
+  },
+  "cert.practice-first-h": {
+    "en": "First, complete a practice run",
+    "ha": "Da farko, kammala gwajin atisaye",
+    "ig": "Nke mbụ, mechaa ọsọ omume",
+    "yo": "Lákọ̀ọ́kọ́, parí eré àdánwò kan"
+  },
+  "cert.practice-first-body": {
+    "en": "The certificate needs one practice run on this account. It takes about 5 minutes, and nothing you enter counts as a real result.",
+    "ha": "Takardar shaidar tana buƙatar gwajin atisaye ɗaya a wannan asusu. Yana ɗaukar kusan minti 5, kuma babu abin da ka shigar da zai zama sakamako na gaske.",
+    "ig": "Asambodo ahụ chọrọ otu ọsọ omume na akaụntụ a. Ọ na-ewe ihe dị ka nkeji 5, ọ dịghịkwa ihe ị tinyere ga-agụ dị ka ezigbo nsonaazụ.",
+    "yo": "Ìwé-ẹ̀rí náà nílò eré àdánwò kan lórí àkàǹtì yìí. Ó gba nǹkan bí ìṣẹ́jú 5, kò sì sí ohun tí o bá tẹ̀ sí i tí yóò kà gẹ́gẹ́ bí àbájáde gidi."
+  },
+  "cert.practice-go": {
+    "en": "Start the practice run",
+    "ha": "Fara gwajin atisaye",
+    "ig": "Malite ọsọ omume",
+    "yo": "Bẹ̀rẹ̀ eré àdánwò"
+  },
+  "cert.practice-recheck": {
+    "en": "I have done it — check again",
+    "ha": "Na kammala — sake dubawa",
+    "ig": "Emechala m ya — lelee ọzọ",
+    "yo": "Mo ti ṣe é — tún ṣàyẹ̀wò"
+  },
+  "cert.progress": {
+    "en": "Question {n} of {total}",
+    "ha": "Tambaya ta {n} cikin {total}",
+    "ig": "Ajụjụ {n} n’ime {total}",
+    "yo": "Ìbéèrè {n} nínú {total}"
+  },
+  "cert.correct": {
+    "en": "Correct.",
+    "ha": "Daidai ne.",
+    "ig": "Ị zara ya nke ọma.",
+    "yo": "O tọ̀nà."
+  },
+  "cert.wrong": {
+    "en": "Not quite.",
+    "ha": "Ba haka ba ne.",
+    "ig": "Ọ bụghị ya.",
+    "yo": "Kò tọ̀nà."
+  },
+  "cert.next": {
+    "en": "Next",
+    "ha": "Na gaba",
+    "ig": "Ọzọ",
+    "yo": "Tókàn"
+  },
+  "cert.retry": {
+    "en": "Try this question again",
+    "ha": "Sake gwada wannan tambayar",
+    "ig": "Nwaa ajụjụ a ọzọ",
+    "yo": "Tún gbìyànjú ìbéèrè yìí"
+  },
+  "cert.finish": {
+    "en": "Get my certificate",
+    "ha": "Karɓi takardar shaidata",
+    "ig": "Nweta asambodo m",
+    "yo": "Gba ìwé-ẹ̀rí mi"
+  },
+  "cert.issuing": {
+    "en": "Issuing your certificate…",
+    "ha": "Ana fitar da takardar shaidarka…",
+    "ig": "A na-enye gị asambodo gị…",
+    "yo": "À ń ṣe ìwé-ẹ̀rí rẹ…"
+  },
+  "cert.issue-failed": {
+    "en": "Could not issue your certificate. Check your connection and try again.",
+    "ha": "Ba a iya fitar da takardar shaidarka ba. Duba haɗin intanet ɗinka ka sake gwadawa.",
+    "ig": "Enweghị ike inye asambodo gị. Lelee njikọ gị ma nwaa ọzọ.",
+    "yo": "A kò lè ṣe ìwé-ẹ̀rí rẹ. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  },
+  "cert.done-h": {
+    "en": "Your certificate",
+    "ha": "Takardar shaidarka",
+    "ig": "Asambodo gị",
+    "yo": "Ìwé-ẹ̀rí rẹ"
+  },
+  "cert.done-body": {
+    "en": "You completed a practice run and the observer quiz. Thank you for learning to observe well.",
+    "ha": "Ka kammala gwajin atisaye da tambayoyin mai lura. Mun gode da ka koyi yadda ake lura da kyau.",
+    "ig": "I mechaala ọsọ omume na ajụjụ onye na-ekiri ihe. Daalụ maka ịmụta otu esi ekiri ihe nke ọma.",
+    "yo": "O ti parí eré àdánwò àti ìdánwò olùwòran. A dúpẹ́ pé o kọ́ bí a ṣe ń wòran dáadáa."
+  },
+  "cert.name-label": {
+    "en": "Name to print (optional)",
+    "ha": "Sunan da za a buga (na zaɓi)",
+    "ig": "Aha a ga-ebipụta (nhọrọ)",
+    "yo": "Orúkọ tí a ó tẹ̀ (àṣàyàn)"
+  },
+  "cert.name-note": {
+    "en": "Your name stays on this device. It is never sent to Hawkeye.",
+    "ha": "Sunanka yana nan a wannan na’urar kawai. Ba a taɓa aika shi zuwa Hawkeye ba.",
+    "ig": "Aha gị na-anọ naanị na ngwaọrụ a. A naghị ezigara Hawkeye ya.",
+    "yo": "Orúkọ rẹ wà lórí ẹ̀rọ yìí nìkan. A kì í fi ránṣẹ́ sí Hawkeye."
+  },
+  "cert.share": {
+    "en": "Share",
+    "ha": "Raba",
+    "ig": "Kesaa",
+    "yo": "Pín"
+  },
+  "cert.save": {
+    "en": "Save image",
+    "ha": "Ajiye hoto",
+    "ig": "Chekwaa foto",
+    "yo": "Fi àwòrán pamọ́"
+  },
+  "cert.print": {
+    "en": "Print",
+    "ha": "Buga",
+    "ig": "Bipụta",
+    "yo": "Tẹ̀ jáde"
+  },
+  "cert.code-label": {
+    "en": "Verification code",
+    "ha": "Lambar tabbatarwa",
+    "ig": "Koodu nyocha",
+    "yo": "Kóòdù ìfẹ̀rí"
+  },
+  "cert.check-at": {
+    "en": "Anyone can check it at:",
+    "ha": "Kowa na iya duba ta a:",
+    "ig": "Onye ọ bụla nwere ike ịlele ya na:",
+    "yo": "Ẹnikẹ́ni lè ṣàyẹ̀wò rẹ̀ ní:"
+  },
+  "cert.share-text": {
+    "en": "I completed a Hawkeye practice run and the observer quiz. Check my certificate: {url}",
+    "ha": "Na kammala gwajin atisaye na Hawkeye da tambayoyin mai lura. Duba takardar shaidata: {url}",
+    "ig": "Emechala m ọsọ omume Hawkeye na ajụjụ onye na-ekiri ihe. Lelee asambodo m: {url}",
+    "yo": "Mo ti parí eré àdánwò Hawkeye àti ìdánwò olùwòran. Ṣàyẹ̀wò ìwé-ẹ̀rí mi: {url}"
+  },
+  "cert.copied": {
+    "en": "Link copied",
+    "ha": "An kwafa hanyar haɗi",
+    "ig": "E detuola njikọ",
+    "yo": "A ti ṣàdàkọ ìjápọ̀"
+  },
+  "cert.saved": {
+    "en": "Saved to your phone.",
+    "ha": "An ajiye a wayarka.",
+    "ig": "Echekwara ya na ekwentị gị.",
+    "yo": "A ti fi pamọ́ sínú fóònù rẹ."
+  },
+  "cert.invalid": {
+    "en": "This certificate code is not valid.",
+    "ha": "Wannan lambar takardar shaida ba ta da inganci.",
+    "ig": "Koodu asambodo a ezighị ezi.",
+    "yo": "Kóòdù ìwé-ẹ̀rí yìí kò fẹsẹ̀ múlẹ̀."
+  },
+  "cert.card-title": {
+    "en": "Hawkeye Observer",
+    "ha": "Mai Lura na Hawkeye",
+    "ig": "Onye Na-ekiri Ihe nke Hawkeye",
+    "yo": "Olùwòran Hawkeye"
+  },
+  "cert.card-line": {
+    "en": "Completed a practice run and the observer quiz",
+    "ha": "Ya kammala gwajin atisaye da tambayoyin mai lura",
+    "ig": "Mechara ọsọ omume na ajụjụ onye na-ekiri ihe",
+    "yo": "Ti parí eré àdánwò àti ìdánwò olùwòran"
+  },
+  "cert.card-issued": {
+    "en": "Issued {date}",
+    "ha": "An bayar a {date}",
+    "ig": "E nyere ya na {date}",
+    "yo": "A fúnni ní {date}"
+  },
+  "cert.card-code": {
+    "en": "Verification code {code}",
+    "ha": "Lambar tabbatarwa {code}",
+    "ig": "Koodu nyocha {code}",
+    "yo": "Kóòdù ìfẹ̀rí {code}"
+  },
+  "cert.card-check": {
+    "en": "Check it at {url}",
+    "ha": "Duba ta a {url}",
+    "ig": "Lelee ya na {url}",
+    "yo": "Ṣàyẹ̀wò rẹ̀ ní {url}"
+  },
+  "cert.card-foot": {
+    "en": "Hawkeye is independent and nonpartisan. This certificate is not INEC accreditation.",
+    "ha": "Hawkeye mai zaman kanta ce kuma ba ta goyon bayan kowace jam’iyya. Wannan takardar shaida ba izinin INEC ba ce.",
+    "ig": "Hawkeye nweere onwe ya, ọ naghịkwa akwado pati ọ bụla. Asambodo a abụghị ikike sitere n’aka INEC.",
+    "yo": "Hawkeye jẹ́ olómìnira, kò sì ṣe ti ẹgbẹ́ kankan. Ìwé-ẹ̀rí yìí kì í ṣe ìwé àṣẹ láti ọ̀dọ̀ INEC."
+  },
+  "cert.q1": {
+    "en": "When do you photograph the result sheet (EC8A)?",
+    "ha": "Yaushe za ka ɗauki hoton takardar sakamako (EC8A)?",
+    "ig": "Olee mgbe ị ga-ese foto mpempe akwụkwọ nsonaazụ (EC8A)?",
+    "yo": "Nígbà wo ni o máa ya fọ́tò ìwé àbájáde (EC8A)?"
+  },
+  "cert.q1-a": {
+    "en": "As soon as you arrive at the polling unit",
+    "ha": "Da zarar ka isa rukunin zaɓe",
+    "ig": "Ozugbo i ruru ngalaba ntuli aka",
+    "yo": "Ní kété tí o bá dé ẹ̀ka ìdìbò"
+  },
+  "cert.q1-b": {
+    "en": "When the result is announced and posted after the count",
+    "ha": "Idan an sanar da sakamako kuma an liƙa shi bayan ƙidaya",
+    "ig": "Mgbe a kwupụtara nsonaazụ ma gosi ya ọha mgbe ọgụgụ gachara",
+    "yo": "Nígbà tí wọ́n bá kéde àbájáde tí wọ́n sì lẹ̀ ẹ́ lẹ́yìn ìkà"
+  },
+  "cert.q1-c": {
+    "en": "Later, from a picture someone sends you",
+    "ha": "Daga baya, daga hoton da wani ya aiko maka",
+    "ig": "Emesịa, site na foto mmadụ zitere gị",
+    "yo": "Lẹ́yìn náà, láti inú fọ́tò tí ẹnìkan fi ránṣẹ́ sí ọ"
+  },
+  "cert.q1-why": {
+    "en": "Stay for the count. The presiding officer counts the ballots in public and fills in the EC8A; the announcement is the moment that matters. Photograph only what is posted or handed out.",
+    "ha": "Ka tsaya domin ƙidaya. Jami’in zaɓe mai jagoranci yana ƙidaya ƙuri’u a gaban jama’a kuma ya cike EC8A; sanarwar ita ce lokacin da ya fi muhimmanci. Ka ɗauki hoton abin da aka liƙa ko aka ba ka kawai.",
+    "ig": "Nọrọ maka ọgụgụ. Onye isi ọrụ ntuli aka na-agụ akwụkwọ ntuli aka n’ihu ọha ma dejupụta EC8A; mkpọsa ahụ bụ oge kachasị mkpa. See foto naanị ihe e gosiri ọha ma ọ bụ nke e nyere gị.",
+    "yo": "Dúró fún ìkà. Olórí òṣìṣẹ́ ìdìbò ń ka ìwé ìdìbò ní gbangba, ó sì ń kọ EC8A; ìkéde náà ni àkókò tí ó ṣe pàtàkì. Ya fọ́tò ohun tí wọ́n lẹ̀ ní gbangba tàbí tí wọ́n fún ọ nìkan."
+  },
+  "cert.q2": {
+    "en": "Can you report with a photo from your gallery, or a screenshot?",
+    "ha": "Za ka iya kai rahoto da hoto daga gallery ɗinka, ko hoton allo?",
+    "ig": "Ị nwere ike iji foto sitere na gallery gị, ma ọ bụ foto ihuenyo, kọọ akụkọ?",
+    "yo": "Ṣé o lè fi fọ́tò láti gallery rẹ, tàbí fọ́tò ojú ìwé, jábọ̀?"
+  },
+  "cert.q2-a": {
+    "en": "No. Photos are taken live in the app, at the unit",
+    "ha": "A’a. Ana ɗaukar hotuna kai tsaye a cikin manhajar, a rukunin",
+    "ig": "Mba. A na-ese foto ozugbo n’ime ngwa ahụ, na ngalaba ahụ",
+    "yo": "Rárá. A ń ya fọ́tò tààrà nínú áàpù, ní ẹ̀ka náà"
+  },
+  "cert.q2-b": {
+    "en": "Yes, if the photo is clear",
+    "ha": "Eh, idan hoton ya fita sosai",
+    "ig": "Ee, ọ bụrụ na foto ahụ doro anya",
+    "yo": "Bẹ́ẹ̀ni, tí fọ́tò náà bá ṣe kedere"
+  },
+  "cert.q2-c": {
+    "en": "Yes, if a friend at the unit sent it",
+    "ha": "Eh, idan wani abokinka a rukunin ya aiko shi",
+    "ig": "Ee, ọ bụrụ na enyi nọ na ngalaba ahụ zitere ya",
+    "yo": "Bẹ́ẹ̀ni, tí ọ̀rẹ́ kan ní ẹ̀ka náà bá fi ránṣẹ́"
+  },
+  "cert.q2-why": {
+    "en": "Live photos only: no gallery uploads, no screenshots. Each photo is GPS-stamped when it is taken, which makes a report hard to fake from somewhere else.",
+    "ha": "Hotunan kai tsaye kaɗai: babu ɗorawa daga gallery, babu hoton allo. Ana sanya wa kowane hoto alamar GPS a lokacin da aka ɗauke shi, wanda ke sa rahoto ya yi wuyar ƙirƙira daga wani wuri.",
+    "ig": "Naanị foto ozugbo: ọ dịghị mbulite gallery, ọ dịghị foto ihuenyo. A na-etinye akara GPS na foto ọ bụla mgbe e sere ya, nke na-eme ka ọ sie ike ịgha akụkọ ụgha site n’ebe ọzọ.",
+    "yo": "Fọ́tò tààrà nìkan: kò sí ìgbésókè gallery, kò sí fọ́tò ojú ìwé. A ń fi àmì GPS sí fọ́tò kọ̀ọ̀kan nígbà tí a bá yà á, èyí sì ń jẹ́ kí ó ṣòro láti parọ́ ìròyìn láti ibòmíràn."
+  },
+  "cert.q3": {
+    "en": "What do you type into your report?",
+    "ha": "Me za ka rubuta a cikin rahotonka?",
+    "ig": "Gịnị ka ị na-ede n’akụkọ gị?",
+    "yo": "Kí ni o máa tẹ̀ sínú ìròyìn rẹ?"
+  },
+  "cert.q3-a": {
+    "en": "Your own estimate of the votes",
+    "ha": "Ƙiyasin ƙuri’u na kanka",
+    "ig": "Atụmatụ vootu nke gị",
+    "yo": "Ìṣirò ìbò tìrẹ fúnra rẹ"
+  },
+  "cert.q3-b": {
+    "en": "The figures someone at the unit tells you",
+    "ha": "Alkaluman da wani a rukunin ya faɗa maka",
+    "ig": "Ọnụọgụ mmadụ nọ na ngalaba ahụ gwara gị",
+    "yo": "Àwọn nọ́mbà tí ẹnìkan ní ẹ̀ka náà sọ fún ọ"
+  },
+  "cert.q3-c": {
+    "en": "Each party’s figure exactly as announced",
+    "ha": "Adadin kowace jam’iyya daidai yadda aka sanar",
+    "ig": "Ọnụọgụ pati ọ bụla kpọmkwem dị ka a kwupụtara ya",
+    "yo": "Nọ́mbà ẹgbẹ́ kọ̀ọ̀kan gẹ́lẹ́ bí wọ́n ṣe kéde rẹ̀"
+  },
+  "cert.q3-why": {
+    "en": "Type each party’s announced figure exactly, then sign and submit while you are still at the unit. Reports are permanent: nothing can be edited or deleted after signing.",
+    "ha": "Ka rubuta adadin da aka sanar na kowace jam’iyya daidai, sannan ka sanya hannu ka aika yayin da kake a rukunin. Rahotanni na dindindin ne: ba za a iya gyara ko share komai ba bayan an sanya hannu.",
+    "ig": "Pịnye ọnụọgụ a kwupụtara maka pati ọ bụla kpọmkwem, wee bịanye aka ma zipu ya mgbe ị ka nọ na ngalaba ahụ. Akụkọ bụ nke ebighị ebi: enweghị ike idezi ma ọ bụ hichapụ ihe ọ bụla mgbe e bịanyechara aka.",
+    "yo": "Tẹ nọ́mbà tí wọ́n kéde fún ẹgbẹ́ kọ̀ọ̀kan gẹ́lẹ́, lẹ́yìn náà fọwọ́ sí i kí o sì fi ránṣẹ́ nígbà tí o ṣì wà ní ẹ̀ka náà. Àwọn ìròyìn jẹ́ ayérayé: a kò lè ṣàtúnṣe tàbí pa ohunkóhun rẹ́ lẹ́yìn ìfọwọ́sí."
+  },
+  "cert.q4": {
+    "en": "How should you treat election officials, voters and materials?",
+    "ha": "Yaya ya kamata ka yi mu’amala da jami’an zaɓe, masu zaɓe da kayan zaɓe?",
+    "ig": "Kedu ka i kwesịrị isi mesoo ndị ọrụ ntuli aka, ndị ntuli aka na ngwa ntuli aka?",
+    "yo": "Báwo ló ṣe yẹ kí o bá àwọn òṣìṣẹ́ ìdìbò, àwọn olùdìbò àti àwọn ohun èlò ìdìbò lò?"
+  },
+  "cert.q4-a": {
+    "en": "Never interfere, and follow officials’ instructions",
+    "ha": "Kada ka taɓa tsoma baki, kuma ka bi umarnin jami’ai",
+    "ig": "Etinyela aka n’ọrụ ha, ma soro ntụziaka ndị ọrụ",
+    "yo": "Má ṣe dí wọn lọ́wọ́ láé, kí o sì tẹ̀lé ìtọ́ni àwọn òṣìṣẹ́"
+  },
+  "cert.q4-b": {
+    "en": "Step in if you think an official made a mistake",
+    "ha": "Ka shiga tsakani idan kana ganin jami’i ya yi kuskure",
+    "ig": "Tinye aka ma ọ bụrụ na i chere na onye ọrụ mehiere",
+    "yo": "Dá sí i tí o bá rò pé òṣìṣẹ́ kan ṣe àṣìṣe"
+  },
+  "cert.q4-c": {
+    "en": "Check the ballot papers yourself",
+    "ha": "Ka duba takardun ƙuri’a da kanka",
+    "ig": "Lelee akwụkwọ ntuli aka n’onwe gị",
+    "yo": "Yẹ ìwé ìdìbò wò fúnra rẹ"
+  },
+  "cert.q4-why": {
+    "en": "Never interfere with election officials, voters or materials. Follow officials’ instructions, and follow the Electoral Act and INEC’s rules.",
+    "ha": "Kada ka taɓa tsoma baki ga jami’an zaɓe, masu zaɓe ko kayan zaɓe. Ka bi umarnin jami’ai, kuma ka bi Dokar Zaɓe da ƙa’idojin INEC.",
+    "ig": "Etinyela aka n’ọrụ ndị ọrụ ntuli aka, ndị ntuli aka ma ọ bụ ngwa ntuli aka. Soro ntụziaka ndị ọrụ, ma soro Iwu Ntuli Aka na iwu INEC.",
+    "yo": "Má ṣe dí àwọn òṣìṣẹ́ ìdìbò, àwọn olùdìbò tàbí àwọn ohun èlò ìdìbò lọ́wọ́. Tẹ̀lé ìtọ́ni àwọn òṣìṣẹ́, kí o sì tẹ̀lé Òfin Ìdìbò àti àwọn òfin INEC."
+  },
+  "cert.q5": {
+    "en": "Trouble breaks out at your polling unit. What do you do?",
+    "ha": "Tashin hankali ya ɓarke a rukunin zaɓenka. Me za ka yi?",
+    "ig": "Nsogbu dapụtara na ngalaba ntuli aka gị. Gịnị ka ị ga-eme?",
+    "yo": "Wàhálà bẹ́ sílẹ̀ ní ẹ̀ka ìdìbò rẹ. Kí ni o máa ṣe?"
+  },
+  "cert.q5-a": {
+    "en": "Stay and keep photographing, whatever happens",
+    "ha": "Ka tsaya ka ci gaba da ɗaukar hotuna, komai ya faru",
+    "ig": "Nọrọ ma na-ese foto, ihe ọ bụla mee",
+    "yo": "Dúró kí o máa ya fọ́tò lọ, ohun yòówù kí ó ṣẹlẹ̀"
+  },
+  "cert.q5-b": {
+    "en": "Leave, and report it later from somewhere safe",
+    "ha": "Ka bar wurin, ka kai rahoto daga baya daga wuri mai aminci",
+    "ig": "Pụọ, ma kọọ ya emesịa site n’ebe nchekwa",
+    "yo": "Kúrò níbẹ̀, kí o sì fi ìròyìn ránṣẹ́ lẹ́yìn náà láti ibi tí ó ní àbò"
+  },
+  "cert.q5-c": {
+    "en": "Try to stop it yourself",
+    "ha": "Ka yi ƙoƙarin dakatar da shi da kanka",
+    "ig": "Gbalịa ịkwụsị ya n’onwe gị",
+    "yo": "Gbìyànjú láti dá a dúró fúnra rẹ"
+  },
+  "cert.q5-why": {
+    "en": "No result is worth your life. If there is trouble, leave, and report it later from somewhere safe.",
+    "ha": "Babu sakamakon da ya fi ranka daraja. Idan an sami tashin hankali, ka bar wurin, ka kai rahoto daga baya daga wuri mai aminci.",
+    "ig": "Ọ dịghị nsonaazụ ọ bụla dị mkpa karịa ndụ gị. Ọ bụrụ na nsogbu dapụtara, pụọ, ma kọọ ya emesịa site n’ebe nchekwa.",
+    "yo": "Kò sí àbájáde kankan tí ó ṣe pàtàkì ju ẹ̀mí rẹ lọ. Tí wàhálà bá wà, kúrò níbẹ̀, kí o sì fi ìròyìn ránṣẹ́ lẹ́yìn náà láti ibi tí ó ní àbò."
+  },
+  "cert.q6": {
+    "en": "When is a count marked “verified”?",
+    "ha": "Yaushe ake yi wa ƙidaya alamar “an tabbatar”?",
+    "ig": "Kedu mgbe a na-akara ọnụọgụgụ “e nyochara”?",
+    "yo": "Nígbà wo ni a ń fi àmì “a fìdí rẹ̀ múlẹ̀” sí ìkà kan?"
+  },
+  "cert.q6-a": {
+    "en": "As soon as one observer reports it",
+    "ha": "Da zarar mai lura ɗaya ya kai rahotonta",
+    "ig": "Ozugbo otu onye na-ekiri ihe kọrọ ya",
+    "yo": "Ní kété tí olùwòran kan bá jábọ̀ rẹ̀"
+  },
+  "cert.q6-b": {
+    "en": "When it is shared widely online",
+    "ha": "Idan an yaɗa ta sosai a intanet",
+    "ig": "Mgbe e kesara ya nke ukwuu n’ịntanetị",
+    "yo": "Nígbà tí wọ́n bá pín in káàkiri lórí ayélujára"
+  },
+  "cert.q6-c": {
+    "en": "When independent observers at the same unit report matching numbers",
+    "ha": "Idan masu lura masu zaman kansu a rukuni ɗaya suka kai rahoton alkaluma iri ɗaya",
+    "ig": "Mgbe ndị na-ekiri ihe nweere onwe ha nọ n’otu ngalaba kọrọ ọnụọgụ dakọrọ",
+    "yo": "Nígbà tí àwọn olùwòran olómìnira ní ẹ̀ka kan náà bá jábọ̀ nọ́mbà tí ó bá ara wọn mu"
+  },
+  "cert.q6-why": {
+    "en": "No single report is trusted on its own. A count is verified when independent observers at the same unit report matching numbers, backed by GPS, matching venue photos and the digits read from the sheet. Hawkeye does not declare results: official results are INEC’s.",
+    "ha": "Ba a amince da rahoto ɗaya shi kaɗai ba. Ana tabbatar da ƙidaya idan masu lura masu zaman kansu a rukuni ɗaya suka kai rahoton alkaluma iri ɗaya, tare da GPS, hotunan wuri masu kama da juna da lambobin da aka karanta daga takardar. Hawkeye ba ta sanar da sakamako: sakamako na hukuma na INEC ne.",
+    "ig": "A naghị atụkwasị obi n’otu akụkọ naanị ya. A na-enyocha ọnụọgụgụ mgbe ndị na-ekiri ihe nweere onwe ha nọ n’otu ngalaba kọrọ ọnụọgụ dakọrọ, nke GPS, foto ebe ahụ dakọrọ na ọnụọgụ a gụrụ site na mpempe akwụkwọ ahụ kwadoro. Hawkeye anaghị ekwupụta nsonaazụ: nsonaazụ gọọmentị bụ nke INEC.",
+    "yo": "A kì í gbẹ́kẹ̀lé ìròyìn kan ṣoṣo fúnra rẹ̀. A ń fìdí ìkà múlẹ̀ nígbà tí àwọn olùwòran olómìnira ní ẹ̀ka kan náà bá jábọ̀ nọ́mbà tí ó bá ara wọn mu, pẹ̀lú GPS, fọ́tò ibi ìdìbò tí ó jọra àti àwọn nọ́mbà tí a kà láti inú ìwé náà. Hawkeye kì í kéde àbájáde: àbájáde ìjọba jẹ́ ti INEC."
+  },
+  "cert.q7": {
+    "en": "What does Hawkeye never share?",
+    "ha": "Me Hawkeye ba ta taɓa bayyanawa ba?",
+    "ig": "Gịnị ka Hawkeye na-adịghị ekpughe mgbe ọ bụla?",
+    "yo": "Kí ni Hawkeye kì í pín rárá?"
+  },
+  "cert.q7-a": {
+    "en": "The count reported at a polling unit",
+    "ha": "Ƙidayar da aka kai rahotonta a rukunin zaɓe",
+    "ig": "Ọnụọgụgụ a kọrọ na ngalaba ntuli aka",
+    "yo": "Ìkà tí a jábọ̀ ní ẹ̀ka ìdìbò kan"
+  },
+  "cert.q7-b": {
+    "en": "Your phone number, or who watches which polling unit",
+    "ha": "Lambar wayarka, ko wanda ke lura da wane rukunin zaɓe",
+    "ig": "Nọmba ekwentị gị, ma ọ bụ onye na-ekiri ngalaba ntuli aka ọ bụla",
+    "yo": "Nọ́mbà fóònù rẹ, tàbí ẹni tí ń wo ẹ̀ka ìdìbò wo"
+  },
+  "cert.q7-c": {
+    "en": "The public ledger",
+    "ha": "Littafin jama’a",
+    "ig": "Akwụkwọ ndekọ ọha",
+    "yo": "Ìwé àkọsílẹ̀ gbangba"
+  },
+  "cert.q7-why": {
+    "en": "Your phone number is hashed and never published or shared. Hawkeye never shares who watches which polling unit: not with a captain, not with a party, not with anyone.",
+    "ha": "Ana yi wa lambar wayarka hash kuma ba a taɓa wallafa ta ko raba ta ba. Hawkeye ba ta taɓa bayyana wanda ke lura da wane rukunin zaɓe ba: ba ga kyaftin ba, ba ga jam’iyya ba, ba ga kowa ba.",
+    "ig": "A na-eme nọmba ekwentị gị hash, a naghịkwa ebipụta ya ma ọ bụ kesaa ya. Hawkeye anaghị ekpughe onye na-ekiri ngalaba ntuli aka ọ bụla: ọ bụghị onye ndú, ọ bụghị otu ndọrọ ndọrọ ọchịchị, ọ bụghị onye ọ bụla.",
+    "yo": "A ń ṣe nọ́mbà fóònù rẹ ní hash, a kì í sì í tẹ̀ ẹ́ jáde tàbí pín in. Hawkeye kì í sọ ẹni tí ń wo ẹ̀ka ìdìbò wo: kì í ṣe fún olùdarí, kì í ṣe fún ẹgbẹ́ òṣèlú, kì í ṣe fún ẹnikẹ́ni."
+  },
+  "cert.verify-page-title": {
+    "en": "Check a Certificate — Hawkeye",
+    "ha": "Duba Takardar Shaida — Hawkeye",
+    "ig": "Lelee Asambodo — Hawkeye",
+    "yo": "Ṣàyẹ̀wò Ìwé-ẹ̀rí — Hawkeye"
+  },
+  "cert.verify-title": {
+    "en": "Check a Hawkeye Observer Certificate",
+    "ha": "Duba Takardar Shaidar Mai Lura ta Hawkeye",
+    "ig": "Lelee Asambodo Onye Na-ekiri Ihe nke Hawkeye",
+    "yo": "Ṣàyẹ̀wò Ìwé-ẹ̀rí Olùwòran Hawkeye"
+  },
+  "cert.verify-lede": {
+    "en": "Enter the code printed on the certificate.",
+    "ha": "Shigar da lambar da aka buga a kan takardar shaidar.",
+    "ig": "Tinye koodu e bipụtara n’asambodo ahụ.",
+    "yo": "Tẹ kóòdù tí a tẹ̀ sórí ìwé-ẹ̀rí náà."
+  },
+  "cert.verify-label": {
+    "en": "Certificate code",
+    "ha": "Lambar takardar shaida",
+    "ig": "Koodu asambodo",
+    "yo": "Kóòdù ìwé-ẹ̀rí"
+  },
+  "cert.verify-button": {
+    "en": "Check",
+    "ha": "Duba",
+    "ig": "Lelee",
+    "yo": "Ṣàyẹ̀wò"
+  },
+  "cert.verify-checking": {
+    "en": "Checking…",
+    "ha": "Ana dubawa…",
+    "ig": "Na-elele…",
+    "yo": "À ń ṣàyẹ̀wò…"
+  },
+  "cert.verify-valid-h": {
+    "en": "Valid certificate",
+    "ha": "Takardar shaida mai inganci",
+    "ig": "Asambodo ziri ezi",
+    "yo": "Ìwé-ẹ̀rí tí ó fẹsẹ̀ múlẹ̀"
+  },
+  "cert.verify-valid-body": {
+    "en": "Hawkeye Observer certificate {code}, issued on {date}.",
+    "ha": "Takardar shaidar Mai Lura ta Hawkeye {code}, an bayar a {date}.",
+    "ig": "Asambodo Onye Na-ekiri Ihe nke Hawkeye {code}, e nyere ya na {date}.",
+    "yo": "Ìwé-ẹ̀rí Olùwòran Hawkeye {code}, tí a fúnni ní {date}."
+  },
+  "cert.verify-invalid-h": {
+    "en": "Not valid",
+    "ha": "Ba ta da inganci",
+    "ig": "Ezighị ezi",
+    "yo": "Kò fẹsẹ̀ múlẹ̀"
+  },
+  "cert.verify-invalid-body": {
+    "en": "No Hawkeye Observer certificate has this code. Check the code and try again.",
+    "ha": "Babu takardar shaidar Mai Lura ta Hawkeye da ke da wannan lambar. Duba lambar ka sake gwadawa.",
+    "ig": "Ọ dịghị asambodo Onye Na-ekiri Ihe nke Hawkeye nwere koodu a. Lelee koodu ahụ ma nwaa ọzọ.",
+    "yo": "Kò sí ìwé-ẹ̀rí Olùwòran Hawkeye tí ó ní kóòdù yìí. Ṣàyẹ̀wò kóòdù náà kí o sì tún gbìyànjú."
+  },
+  "cert.verify-error": {
+    "en": "Could not check the code right now. Try again.",
+    "ha": "Ba a iya duba lambar yanzu ba. Sake gwadawa.",
+    "ig": "Enweghị ike ilele koodu ahụ ugbu a. Nwaa ọzọ.",
+    "yo": "A kò lè ṣàyẹ̀wò kóòdù náà báyìí. Tún gbìyànjú."
+  },
+  "cert.verify-what": {
+    "en": "A valid certificate means its holder completed a Hawkeye practice run and the observer quiz. Hawkeye stores no names, so this page cannot say who the holder is. It is not INEC accreditation.",
+    "ha": "Takardar shaida mai inganci na nufin mai ita ya kammala gwajin atisaye na Hawkeye da tambayoyin mai lura. Hawkeye ba ta ajiye sunaye, don haka wannan shafin ba zai iya faɗin ko wane ne mai ita ba. Ba izinin INEC ba ce.",
+    "ig": "Asambodo ziri ezi pụtara na onye nwe ya mechara ọsọ omume Hawkeye na ajụjụ onye na-ekiri ihe. Hawkeye anaghị echekwa aha, ya mere ibe a enweghị ike ikwu onye nwe ya. Ọ bụghị ikike sitere n’aka INEC.",
+    "yo": "Ìwé-ẹ̀rí tí ó fẹsẹ̀ múlẹ̀ túmọ̀ sí pé ẹni tí ó ni ín ti parí eré àdánwò Hawkeye àti ìdánwò olùwòran. Hawkeye kì í tọ́jú orúkọ, nítorí náà ojú ìwé yìí kò lè sọ ẹni tí ó ni ín. Kì í ṣe ìwé àṣẹ láti ọ̀dọ̀ INEC."
+  },
+  "cert.verify-earn": {
+    "en": "Earn your own: a practice run and a short quiz",
+    "ha": "Sami taka: gwajin atisaye da gajerun tambayoyi",
+    "ig": "Nweta nke gị: ọsọ omume na ajụjụ nkenke",
+    "yo": "Gba tìrẹ: eré àdánwò àti ìdánwò kúkúrú"
+  },
+  "cert.profile-heading": {
+    "en": "Recognition",
+    "ha": "Karramawa",
+    "ig": "Nkwanye ùgwù",
+    "yo": "Ìmọrírì"
+  },
+  "cert.profile-row": {
+    "en": "Observer certificate",
+    "ha": "Takardar shaidar mai lura",
+    "ig": "Asambodo onye na-ekiri ihe",
+    "yo": "Ìwé-ẹ̀rí olùwòran"
+  },
+  "cert.profile-row-sub": {
+    "en": "Practice run + quiz",
+    "ha": "Atisaye + tambayoyi",
+    "ig": "Omume + ajụjụ",
+    "yo": "Àdánwò + ìbéèrè"
+  },
+  "cert.practice-card-h": {
+    "en": "Earn your Hawkeye Observer certificate",
+    "ha": "Sami takardar shaidar Mai Lura ta Hawkeye",
+    "ig": "Nweta asambodo Onye Na-ekiri Ihe nke Hawkeye",
+    "yo": "Gba ìwé-ẹ̀rí Olùwòran Hawkeye rẹ"
+  },
+  "cert.practice-card-body": {
+    "en": "Answer 7 short questions on observing well and within the law.",
+    "ha": "Amsa gajerun tambayoyi 7 kan yadda ake lura da kyau kuma bisa doka.",
+    "ig": "Zaa ajụjụ nkenke 7 gbasara otu esi ekiri ihe nke ọma n’ụzọ iwu kwadoro.",
+    "yo": "Dáhùn ìbéèrè kúkúrú 7 nípa bí a ṣe ń wòran dáadáa ní ìbámu pẹ̀lú òfin."
+  },
+  "cert.practice-card-go": {
+    "en": "Take the quiz",
+    "ha": "Fara tambayoyin",
+    "ig": "Malite ajụjụ ndị ahụ",
+    "yo": "Bẹ̀rẹ̀ ìdánwò náà"
+  }
+}

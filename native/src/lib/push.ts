@@ -174,6 +174,7 @@ const ROUTES: Record<string, string> = {
   'practice.html': '/practice',
   // ?day= rides along (the query is kept below), same as on the web page.
   'practice-day.html': '/practice-day',
+  'certificate.html': '/certificate',
   'observe.html': '/report/result',
   'collation.html': '/report/collation',
   'how.html': '/page?slug=how',

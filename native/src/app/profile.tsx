@@ -852,6 +852,22 @@ export default function Profile() {
               </>
             ) : null}
 
+            {/* The Hawkeye Observer certificate (app/certificate.tsx): a practice
+                run plus the observer quiz; the screen shows it again once earned. */}
+            <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
+              {i18nT('cert.profile-heading')}
+            </Text>
+            <View className="overflow-hidden rounded-2xl bg-card">
+              <Row
+                first
+                icon="award"
+                label={i18nT('cert.profile-row')}
+                value={i18nT('cert.profile-row-sub')}
+                chevron
+                onPress={() => router.push('/certificate' as never)}
+              />
+            </View>
+
             <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
               {i18nT('n.app.profile.find-hawkeye')}
             </Text>

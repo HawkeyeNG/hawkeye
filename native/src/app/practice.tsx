@@ -1983,6 +1983,17 @@ export default function Practice() {
                 {auth.status === 'signedIn' ? i18nT('n.app.practice.report-a-real-result') : i18nT('n.app.practice.become-an-observer')}
               </Text>
             </Pressable>
+            {/* The observer certificate: this run is half of it, the quiz the
+                other half. Signed in only — the certificate belongs to an
+                account (app/certificate.tsx). */}
+            {auth.status === 'signedIn' ? (
+              <Pressable
+                className="mt-3 w-full items-center rounded-2xl bg-hawk-gold py-3 active:opacity-80"
+                onPress={() => router.push('/certificate' as never)}
+              >
+                <Text className="text-sm font-bold text-hawk-green">{i18nT('n.app.certificate.practice-cta')}</Text>
+              </Pressable>
+            ) : null}
             <Pressable className="mt-3 w-full items-center py-2" onPress={restart}>
               <Text className="text-sm font-semibold text-good-ink">{i18nT('practice.practise-again')}</Text>
             </Pressable>

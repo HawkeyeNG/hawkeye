@@ -890,6 +890,9 @@
           // Practice runs carry no observer id, and a crowd-mapped unit comes
           // from a cluster of fixes — neither can have team accounts removed.
           + cell(a.practiceRuns, 'practice runs (all accounts)')
+          // Hawkeye Observer certificates: a count only — the server keeps no
+          // name, and this console never lists who holds one.
+          + cell(a.certifiedObservers, 'certified observers')
           + cell(a.unitsCrowdMapped, 'units crowd-mapped (all accounts)')
           + cell(since, 'first signup', false, 'date');
 

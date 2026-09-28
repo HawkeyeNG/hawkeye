@@ -338,6 +338,20 @@ jobs:
           fi
           echo "ok: google_app_id present"
 
+      # THE OTA GATE (design D9, docs/OTA-SELF-HOSTED.md). Native only: Lite has
+      # no expo-updates. updates.url and the code-signing certificate are
+      # compiled into the bundle's manifest. A build that carries the EAS URL,
+      # no certificate, or a different one can never take an update from
+      # updates.hawkeye.com.ng, and only another store build fixes that. Read
+      # from the bundle's own AndroidManifest (aapt2 protobuf), not app.json.
+      # It runs before Publish, so a bad bundle is never staged on a track.
+      # Test: node native/scripts/test_check_ota_config.mjs
+      - name: The native bundle must point at our OTA server and trust our key
+        if: ${{ inputs.app == 'native' }}
+        env:
+          AAB: ${{ steps.cfg.outputs.aab }}
+        run: node native/scripts/check_ota_config.mjs --aab "$AAB"
+
       - name: Publish to ${{ inputs.track }}
         if: ${{ !inputs.dry_run }}
         env:

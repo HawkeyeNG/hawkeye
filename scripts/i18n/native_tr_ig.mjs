@@ -167,6 +167,7 @@ export default {
   "n.app.ledger.server-check": "Nyocha sava",
   "n.app.ledger.server-head": "Isi sava",
   "n.app.ledger.sheet-photo": "Foto mpempe akwụkwọ",
+  "n.app.ledger.photo-kept-on-observer-phone": "Echekwara foto ahụ n'ekwentị Onye Na-ekiri Ihe",
   "n.app.ledger.single-race-proof": "Ihe Àkàebe Otu Asọmpi",
   "n.app.ledger.the-chain-is-empty-no-report": "Agbụ ahụ tọgbọrọ n'efu — e dekọbeghị akụkọ ọ bụla. Isi ya bụ hash mmalite.",
   "n.app.ledger.venue-photo": "Foto ebe ahụ",

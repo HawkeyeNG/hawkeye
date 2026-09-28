@@ -367,6 +367,27 @@
         <summary data-i18n="admin.push-devices" style="cursor:pointer;font-weight:700">Push devices</summary>
         <div id="push-list"><p data-i18n="index.loading" class="empty">Loading…</p></div>
       </details>
+      <!-- THE ONE-TIME TELEGRAM CHANNEL NOTICE (services/tgChannelNotice.js,
+           /api/admin/tg-notice/*): one DM to everyone who got race alerts as
+           Telegram DMs, saying alerts moved to the channel. Beside Push devices
+           because both are how a message reaches phones. Opening it sends
+           nothing; Send needs SEND typed and runs on the server, once per chat
+           ever. Loads on first open. -->
+      <details id="tgn-wrap" style="margin-top:10px">
+        <summary data-i18n="tgnotice.admin.title" style="cursor:pointer;font-weight:700">Telegram channel notice</summary>
+        <p data-i18n="tgnotice.admin.intro" class="hint">One direct message to everyone who follows a race on Telegram, saying race alerts have moved to our channel. Each chat gets it once, ever. Nothing is sent until you type SEND and press Send notice.</p>
+        <div class="row" style="margin-top:8px;gap:8px">
+          <button data-i18n="coverage.admin.refresh" id="tgn-refresh" class="secondary" style="width:auto;margin:0">Refresh</button>
+        </div>
+        <!-- Painted by the Telegram notice script (and repainted on a language change). -->
+        <div id="tgn-out"></div>
+        <div class="row" style="margin-top:8px;gap:8px;align-items:center;flex-wrap:wrap">
+          <label id="tgn-confirm-label" for="tgn-confirm" style="margin:0"></label>
+          <input id="tgn-confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="width:120px;margin:0" disabled />
+          <button id="tgn-send" type="button" style="width:auto;margin:0" disabled></button>
+        </div>
+        <p id="tgn-status" class="status" role="status"></p>
+      </details>
       <details id="obs-wrap" style="margin-top:10px">
         <summary data-i18n="common.observer-roll" style="cursor:pointer;font-weight:700">Observer Roll</summary>
         <p data-i18n="common.phone-hashes-are-truncated-they-are" class="meta">Phone hashes are truncated. They are one-way, but Nigerian mobile
@@ -2619,6 +2640,197 @@
     panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });
     document.addEventListener('hawkeye-lang', () => { if (loaded) paint(); else paintStatic(); });
     paintStatic();
+  })();
+  </script>
+  <script>
+  /**
+   * TELEGRAM CHANNEL NOTICE — GET /api/admin/tg-notice/preview (counts and each
+   * language's text; sends nothing), POST …/send ({ max, confirm }; returns at
+   * once, the server sends in the background) and GET …/status (progress).
+   * Every gate is on the server; this form makes the owner see the audience and
+   * type SEND, and states that audience as `max` so a bigger one is refused.
+   * Polls gently: /api/admin allows 60 requests per 10 minutes per IP, for the
+   * whole console. Own <script> and helpers, like Organisation codes above.
+   */
+  (function () {
+    const panel = document.getElementById('tgn-wrap');
+    const out = document.getElementById('tgn-out');
+    const status = document.getElementById('tgn-status');
+    const confirmIn = document.getElementById('tgn-confirm');
+    const confirmLabel = document.getElementById('tgn-confirm-label');
+    const sendBtn = document.getElementById('tgn-send');
+    const refresh = document.getElementById('tgn-refresh');
+    if (!panel || !out || !sendBtn) return;
+
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    const fill = (s, vars) => String(s).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const secret = () => sessionStorage.getItem('hawkeye_admin') || '';
+    const LANGS = { en: 'English', ha: 'Hausa', ig: 'Igbo', yo: 'Yorùbá' };
+
+    let data = null;      // preview: live, texts, counts, run (status polls refresh the counts and run)
+    let err = null;
+    let loaded = false;
+    let seq = 0;
+    let msg = null;       // { ok, text } — the last action's outcome
+    let sending = false;
+    let pollTimer = null;
+    let polls = 0;
+
+    const running = () => !!(data && data.run && data.run.state === 'running');
+
+    function runLine(run) {
+      if (!run) return T('tgnotice.admin.no-run', 'Not sent from the console yet.');
+      const v = { sent: run.sent, failed: run.failed, audience: run.audience, error: run.error || '' };
+      if (run.state === 'running') return fill(T('tgnotice.admin.running', 'Sending: {sent} of {audience} sent, {failed} failed. You can close this page; the server keeps going.'), v);
+      if (run.state === 'done') return fill(T('tgnotice.admin.done', 'Last send finished: {sent} of {audience} sent, {failed} failed.'), v);
+      if (run.state === 'interrupted') return fill(T('tgnotice.admin.interrupted', 'Last send stopped after {sent} of {audience} because the server restarted. Send again to reach the rest. Nobody gets it twice.'), v);
+      return fill(T('tgnotice.admin.run-failed', 'Last send stopped with an error after {sent} of {audience} ({error}).'), v);
+    }
+
+    function paintControls() {
+      const n = data ? data.eligible : 0;
+      confirmLabel.textContent = fill(T('tgnotice.admin.confirm-label', 'Type SEND to message {n} chats'), { n });
+      sendBtn.textContent = T('tgnotice.admin.send', 'Send notice');
+      const open = !!data && data.live && n > 0 && !running();
+      confirmIn.disabled = !open;
+      sendBtn.disabled = !open || sending || confirmIn.value !== 'SEND';
+      status.textContent = msg ? msg.text : '';
+      status.className = 'status' + (msg ? (msg.ok ? ' ok' : ' bad') : '');
+    }
+
+    function paint() {
+      paintControls();
+      if (err) {
+        out.innerHTML = '<p class="status bad">' + esc(err === 'unlock'
+          ? T('coverage.admin.unlock-first', 'Unlock the console first.')
+          : fill(T('tgnotice.admin.load-error', 'Could not load the notice ({error}).'), { error: err })) + '</p>';
+        return;
+      }
+      if (!data) { out.innerHTML = '<p class="empty">' + esc(T('index.loading', 'Loading…')) + '</p>'; return; }
+      const p = [];
+      p.push('<p class="status ' + (data.live ? 'ok' : 'bad') + '">' + esc(data.live
+        ? T('tgnotice.admin.live', 'Channel alerts are live.')
+        : T('tgnotice.admin.not-live', 'Channel alerts are not live, so the notice cannot be sent. It needs the channels set, channel alerts switched on, the bot token and the channel strings.')) + '</p>');
+      if (data.ignored && data.ignored.length) {
+        p.push('<p class="meta">' + esc(fill(T('tgnotice.admin.ignored', 'Ignored channel settings: {list}'), { list: data.ignored.join('; ') })) + '</p>');
+      }
+      p.push('<p><b>' + esc(fill(T('tgnotice.admin.waiting', 'Waiting for the notice: {n}'), { n: data.eligible })) + '</b> · '
+        + esc(fill(T('tgnotice.admin.already', 'Already sent: {n}'), { n: data.alreadySent })) + '</p>');
+      if (!data.eligible) p.push('<p class="meta">' + esc(T('tgnotice.admin.nothing', 'Nobody is waiting for the notice.')) + '</p>');
+      // While a run is live its one in-flight chat is unconfirmed too; that is
+      // not a crash, so the note waits until nothing is running.
+      if (data.unconfirmed && !running()) {
+        p.push('<p class="meta">' + esc(fill(T('tgnotice.admin.unconfirmed', 'In flight when the server stopped: {n}. They are not sent again, so they may not have arrived.'), { n: data.unconfirmed })) + '</p>');
+      }
+      p.push('<p class="meta">' + esc(runLine(data.run)) + '</p>');
+      if (data.run && data.run.state === 'done' && data.run.failed) {
+        p.push('<p class="meta">' + esc(T('tgnotice.admin.failed-note', 'Chats that failed (for example, people who blocked the bot) are still waiting. Sending again retries only them.')) + '</p>');
+      }
+      p.push('<p style="margin-top:10px"><b>' + esc(T('tgnotice.admin.per-language', 'Per language')) + '</b></p>');
+      for (const l of Object.keys(LANGS)) {
+        const c = (data.byLang || {})[l] || { eligible: 0, sent: 0 };
+        const tx = (data.texts || {})[l] || {};
+        p.push('<div class="card" style="margin:8px 0;padding:8px 12px">'
+          + '<p><b>' + esc(T('lang.name.' + l, LANGS[l])) + '</b> <span class="meta">'
+          + esc(fill(T('tgnotice.admin.lang-counts', '{eligible} waiting · {sent} sent'), { eligible: c.eligible, sent: c.sent })) + '</span></p>'
+          + '<p class="meta">' + esc(tx.channel
+            ? fill(T('tgnotice.admin.channel', 'Channel: {link}'), { link: tx.channel })
+            : T('tgnotice.admin.no-channel', 'No channel for this language')) + '</p>'
+          + '<pre style="white-space:pre-wrap;margin:6px 0 0;font:inherit">' + esc(tx.text || '') + '</pre></div>');
+      }
+      out.innerHTML = p.join('');
+    }
+
+    function failText(b, httpStatus) {
+      const code = (b && (b.refused || b.error)) || ('HTTP ' + httpStatus);
+      if (code === 'confirm_required') return T('tgnotice.admin.refused-confirm', 'Type SEND exactly, in capital letters.');
+      if (code === 'not_live') return T('tgnotice.admin.not-live', 'Channel alerts are not live, so the notice cannot be sent. It needs the channels set, channel alerts switched on, the bot token and the channel strings.');
+      if (code === 'audience_exceeds_max') return fill(T('tgnotice.admin.refused-more', 'More chats are waiting than the preview showed ({audience}, not {max}). Check the new numbers, then send again.'), { audience: b.audience, max: b.max });
+      if (code === 'max_required') return T('tgnotice.admin.refused-max', 'Refresh the preview, then send again.');
+      if (code === 'already_running') return T('tgnotice.admin.refused-running', 'A send is already running.');
+      if (code === 'nothing_to_send') return T('tgnotice.admin.nothing', 'Nobody is waiting for the notice.');
+      if (code === 'rate_limited') return fill(T('tgnotice.admin.rate-limited', 'Too many console requests. Try again in {s} seconds.'), { s: (b && b.retryAfterS) || 60 });
+      if (httpStatus === 401 || httpStatus === 403) return T('coverage.admin.unlock-first', 'Unlock the console first.');
+      return fill(T('tgnotice.admin.error', 'Could not send ({error}).'), { error: code });
+    }
+
+    /* 5 s for the first half-minute, then 15 s; a 429 waits as long as it says. */
+    function schedulePoll(ms) {
+      clearTimeout(pollTimer);
+      pollTimer = setTimeout(poll, ms || (polls < 6 ? 5000 : 15000));
+    }
+    async function poll() {
+      pollTimer = null;
+      polls++;
+      try {
+        const r = await fetch('/api/admin/tg-notice/status', { headers: { 'x-admin-secret': secret() } });
+        const body = await r.json().catch(() => null);
+        if (r.status === 429) { schedulePoll(Math.max(5, Number(body && body.retryAfterS) || 30) * 1000); return; }
+        if (r.ok && body && typeof body.eligible === 'number') data = Object.assign({}, data, body);
+      } catch { /* the next poll tries again */ }
+      paint();
+      if (running()) schedulePoll(); else polls = 0;
+    }
+
+    async function load() {
+      loaded = true;
+      const mine = ++seq;
+      err = secret() ? null : 'unlock';
+      paint();
+      if (err) return;
+      try {
+        const r = await fetch('/api/admin/tg-notice/preview', { headers: { 'x-admin-secret': secret() } });
+        const body = await r.json().catch(() => null);
+        if (mine !== seq) return;
+        if (!r.ok || !body || typeof body.eligible !== 'number') {
+          err = body && body.error === 'rate_limited'
+            ? failText(body, r.status)
+            : (body && body.error) || ('HTTP ' + r.status);
+        } else data = body;
+      } catch (e) {
+        if (mine !== seq) return;
+        err = e.message || String(e);
+      }
+      paint();
+      if (running() && !pollTimer) schedulePoll();
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      if (!data || confirmIn.value !== 'SEND') return;
+      sending = true;
+      msg = null;
+      paintControls();
+      try {
+        const r = await fetch('/api/admin/tg-notice/send', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-admin-secret': secret() },
+          // `max` is the audience on screen: the server refuses if more are waiting.
+          body: JSON.stringify({ max: data.eligible, confirm: confirmIn.value }),
+        });
+        const body = await r.json().catch(() => null);
+        if (r.status === 202 && body && body.started) {
+          data = Object.assign({}, data, body);
+          msg = { ok: true, text: fill(T('tgnotice.admin.started', 'Started: sending to {n} chats.'), { n: body.run ? body.run.audience : data.eligible }) };
+          confirmIn.value = '';
+          polls = 0;
+          schedulePoll();
+        } else {
+          msg = { ok: false, text: failText(body, r.status) };
+          if (body && typeof body.eligible === 'number') data = Object.assign({}, data, body);
+          if (running()) schedulePoll();
+        }
+      } catch (e) {
+        msg = { ok: false, text: fill(T('tgnotice.admin.error', 'Could not send ({error}).'), { error: e.message || String(e) }) };
+      }
+      sending = false;
+      paint();
+    });
+    confirmIn.addEventListener('input', paintControls);
+    refresh.addEventListener('click', load);
+    panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });
+    document.addEventListener('hawkeye-lang', () => { if (loaded) paint(); else paintControls(); });
+    paintControls();
   })();
   </script>
 <script src="/i18n.js?v=10"></script>

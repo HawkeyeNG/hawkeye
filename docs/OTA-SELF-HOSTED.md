@@ -8,6 +8,174 @@ January). Source: `docs/private/CHEAPEST-ELECTION-NIGHT.html`, D9.
 **Status (28 Sep 2026): built and tested locally, not deployed.** The switch
 happens with native **1.0.9** (store build due by **20 Nov**). Builds 1.0.8 and
 earlier keep reading EAS, because `updates.url` is compiled into the binary.
+`native/app.json` is at **1.0.9**, and both build workflows now refuse a build
+whose artifact does not carry our URL and certificate (see step 8).
+
+## Owner checklist: before the 1.0.9 build ships
+
+| Steps | When | Why |
+|---|---|---|
+| 1–2 | **Before you trigger the build** | The build embeds the certificate. Once it is on phones, a lost key means no update reaches 1.0.9+ until another store build. CI builds the pushed commit. |
+| 3–7 | **Before 1.0.9 ships** (before store review or any production release; the build may sit in TestFlight / Play internal meanwhile) | Without them a 1.0.9 phone reaches no server. Nothing breaks (it runs its built-in bundle), but no update can reach it, and step 9 cannot run. Step 5 is not needed to *reach* the server, but without it every bundle download is an uncached R2 read. |
+| 8–9 | Build, then test on a real phone **before any store review** | Step 9 is the one thing the local test cannot do. |
+| 10 | Any time; **not needed to ship** | No workflow uses these secrets yet; publishing runs from WSL. |
+
+### Before the build
+
+1. **Back up the signing key offline, and prove it is the right key.**
+   1. In WSL, from `~/hawkeye`, run both lines. The two hashes must be
+      identical:
+      ```bash
+      openssl x509 -in native/certs/expo-updates-certificate.crt -noout -pubkey | openssl sha256
+      openssl pkey -in ~/hawkeye-secrets/expo-updates/private-key.pem -pubout | openssl sha256
+      ```
+   2. Plug in a USB drive. In File Explorer, right-click it → **Turn on
+      BitLocker** → **Use a password** → save the recovery key to your
+      password manager → **Encrypt entire drive**.
+   3. Copy `\\wsl.localhost\ubuntu\home\elrio\hawkeye-secrets\expo-updates\`
+      (the key and the certificate copy) to a folder `hawkeye-ota` on that
+      drive.
+   4. In PowerShell, compare the two copies. The hashes must match:
+      ```powershell
+      Get-FileHash E:\hawkeye-ota\private-key.pem   # your drive letter
+      Get-FileHash \\wsl.localhost\ubuntu\home\elrio\hawkeye-secrets\expo-updates\private-key.pem
+      ```
+   5. Eject the drive and store it away from the laptop. Optionally also attach
+      the `.pem` to a password-manager item. Never email it, never paste it
+      into a chat.
+   - **Lost key or expired certificate (2036):** no OTA update reaches 1.0.9+
+     until a store build ships a new certificate.
+   - **Leaked key plus write access to the bucket or Worker:** someone can push
+     code to every 1.0.9+ phone. Rotate by a store build with a new certificate.
+2. **Commit and push the 1.0.9 change set** (version bump, CI gate). First
+   check `node -p "require('./native/app.json').expo.updates.url"` prints
+   `https://updates.hawkeye.com.ng/manifest`. Never run `eas update` or
+   `tmp/ota_publish.sh` from this tree (see the EAS section below): eas-cli
+   rewrites that URL.
+
+### Before 1.0.9 ships
+
+3. **Bucket.** Cloudflare dashboard → **R2 Object Storage** → **Create
+   bucket** → name **`hawkeye-updates`**, location Automatic → **Create
+   bucket**. It is a separate bucket, so its token can touch nothing else.
+   Never use the evidence bucket, and not `hawkeye-tiles` either. In the
+   bucket's **Settings**, leave the **R2.dev subdomain** disabled.
+4. **Custom domain.** Same bucket → **Settings** → **Custom Domains** →
+   **Add** → enter **`updates.hawkeye.com.ng`** → **Continue** → **Connect
+   domain**. Wait until its status is **Active**.
+5. **Cache rule.** Dashboard → the **hawkeye.com.ng** zone → **Caching** →
+   **Cache Rules** → **Create rule**:
+   - Name: `OTA assets`.
+   - Expression (Edit expression): `(http.host eq "updates.hawkeye.com.ng" and
+     starts_with(http.request.uri.path, "/assets/"))`
+   - Cache eligibility: **Eligible for cache**.
+   - Edge TTL: **Use cache-control header if present**.
+   - **Deploy**. Cloudflare does not cache `.hbc` by default.
+   - Then open **Security** → **WAF** (custom rules and rate limiting rules)
+     and check that no rule matches this host: many phones share one carrier
+     IP. Bot Fight Mode stays off.
+6. **R2 token (a Cloudflare Account API token, not a User API token).** R2
+   Object Storage → **Manage API tokens** (under the API menu on the R2 overview)
+   → **Create Account API token**:
+   - Token name: `hawkeye-updates publish`.
+   - Permissions: **Object Read & Write**.
+   - Specify bucket(s): **Apply to specific buckets only** → `hawkeye-updates`.
+   - TTL: Forever (or a date you will diary).
+   - **Create**, then copy into your password manager: the **Access Key ID**,
+     the **Secret Access Key** (shown once) and the S3 endpoint
+     `https://<account-id>.r2.cloudflarestorage.com`.
+
+   It is an Account token because CI will use it, and an Account token does not
+   stop working if a person leaves the account.
+7. **Deploy the Worker** (`hawkeye-ota-manifest`, route
+   `updates.hawkeye.com.ng/manifest*`, R2 binding `OTA_BUCKET` →
+   `hawkeye-updates`). Do this after step 4, because the route needs the
+   hostname to exist. Use either way:
+   - **A. No token (simplest):** `cd ~/hawkeye/scripts/ota_worker && npx
+     wrangler@4 login && npx wrangler@4 deploy`. The login opens a browser
+     with your own Cloudflare session. If the login callback fails from WSL,
+     use B.
+   - **B. A Cloudflare Account API token (not a User API token).** Dashboard →
+     **Manage Account** → **Account API Tokens** → **Create Token** → **Create
+     Custom Token**:
+     - Token name: `hawkeye-ota worker deploy`.
+     - Permissions, exactly these two:
+       - **Account** · **Workers Scripts** · **Edit** (uploads the script;
+         also covers a Worker Custom Domain if you need the fallback below)
+       - **Zone** · **Workers Routes** · **Edit** (creates the
+         `updates.hawkeye.com.ng/manifest*` route)
+     - Zone Resources: **Include** · **Specific zone** · `hawkeye.com.ng`.
+     - TTL: end date **tomorrow**. It is a one-off.
+     - No R2 permission: the binding names an existing bucket, and wrangler
+       does not call the R2 API to deploy it.
+
+     Then deploy without the token touching shell history or argv:
+     ```bash
+     cd ~/hawkeye/scripts/ota_worker
+     read -rs CLOUDFLARE_API_TOKEN && export CLOUDFLARE_API_TOKEN   # paste, Enter
+     export CLOUDFLARE_ACCOUNT_ID=<account-id>   # the id in the R2 endpoint
+     npx wrangler@4 deploy
+     ```
+     `CLOUDFLARE_ACCOUNT_ID` is required: an Account token cannot list your
+     memberships, so wrangler cannot find the account on its own. Delete the
+     token after the deploy (Account API Tokens → … → Delete).
+   - Then open the **hawkeye.com.ng** zone → **Workers Routes** → edit the
+     `updates.hawkeye.com.ng/manifest*` route → **Request limit failure mode**
+     → **Fail open (proceed)** → Save. Past the Free plan's 100,000 requests a day, requests then go to
+     the bucket, `/manifest` is a 404, and phones simply get no update that
+     day. Each cold start of a 1.0.9+ app is one request. When Workers →
+     Metrics approaches 100,000 a day (expected December–January only), switch
+     to **Workers Paid: $5 a month**, including 10M requests, then $0.30 per
+     million.
+   - If a Worker route on the R2 custom domain is refused, deploy the Worker as
+     the hostname's **Custom Domain** instead. It then serves `/assets/*` and
+     `/updates/*` from the binding too (tested). Every asset download then
+     counts as a Worker request.
+   - **Check it:** before anything is published it must answer **204** with an
+     `expo-protocol-version: 1` header:
+     ```bash
+     curl -sS -o /dev/null -D - https://updates.hawkeye.com.ng/manifest \
+       -H 'accept: multipart/mixed' -H 'expo-platform: android' -H 'expo-protocol-version: 1' \
+       -H 'expo-runtime-version: 1.0.9' -H 'expo-channel-name: production'
+     ```
+8. **Build** through the normal workflows, to TestFlight and Play internal
+   first:
+   - **iOS native — build + TestFlight**: `build_number` higher than the last
+     build in App Store Connect → TestFlight (check there; do not trust the
+     `buildNumber` in app.json, which CI overwrites).
+   - **Play upload**: app `native`, track `internal`. The versionCode is set
+     from Play by `scripts/play_next_version.mjs`; app.json's value is ignored
+     when it is behind.
+   - Both workflows now run **`native/scripts/check_ota_config.mjs`** on the
+     built ipa / aab (the ipa's `Expo.plist`; the bundle's protobuf
+     `AndroidManifest`). It fails the run unless the URL is exactly
+     `https://updates.hawkeye.com.ng/manifest`, the code-signing certificate is
+     byte-identical to `native/certs/expo-updates-certificate.crt`, the
+     metadata is `keyid main` / `rsa-v1_5-sha256`, and updates are enabled.
+     On Play it runs before Publish, so a bad bundle is never staged. That
+     step must be green.
+   - Do not build again as 1.0.8: that build would share runtime 1.0.8 with
+     EAS builds, and the publish script refuses runtime 1.0.8.
+9. **First real-device test** (1.0.9 on a test phone, before any store review),
+   with the step 6 credentials exported (see Publishing):
+   - `scripts/ota_publish_self.sh --platform android --message "OTA smoke
+     test"`, then the same with `--apply`.
+   - Relaunch twice: one launch downloads, the next applies. Confirm the change.
+   - Then run `--rollback-embedded --apply` and relaunch twice. Confirm the
+     phone is back on its built-in bundle.
+
+### Any time (not needed to ship)
+
+10. **GitHub secrets.** Repo → Settings → Secrets and variables → Actions:
+    - `gh secret set EXPO_UPDATES_PRIVATE_KEY < ~/hawkeye-secrets/expo-updates/private-key.pem`
+      (pipes the file; never paste the key anywhere).
+    - `gh secret set OTA_R2_ACCESS_KEY_ID`, `gh secret set
+      OTA_R2_SECRET_ACCESS_KEY`, `gh secret set OTA_R2_ENDPOINT`: each prompts
+      for the value (hidden). They come from the step 6 R2 Account API token.
+    - `gh variable set OTA_R2_BUCKET --body hawkeye-updates`.
+
+    No workflow uses them yet; publishing runs from WSL with the same names
+    exported.
 
 ## Design
 
@@ -91,77 +259,8 @@ observers on mobile data.
 | `scripts/ota_manifest.mjs` | builds, signs and verifies protocol responses; `serve` runs worker.js locally |
 | `scripts/ota_worker/worker.js`, `wrangler.toml` | the manifest dispatcher |
 | `scripts/ota_test.sh` | local end-to-end test (no R2, no Cloudflare) |
-
-## Owner steps (one time, before the 1.0.9 build)
-
-1. **Bucket.** Cloudflare → R2 → Create bucket **`hawkeye-updates`**. It is a
-   separate bucket, so its token can touch nothing else. Never use the evidence
-   bucket, and not `hawkeye-tiles` either. Leave the `r2.dev` URL disabled.
-2. **Custom domain.** In the bucket, open Settings → Custom Domains → Connect
-   and enter **`updates.hawkeye.com.ng`**.
-3. **Cache rule.** In the hawkeye.com.ng zone, open Caching → Cache Rules and
-   add "OTA assets": `http.host eq "updates.hawkeye.com.ng" and
-   starts_with(http.request.uri.path, "/assets/")`. Set Eligible for cache, and
-   set Edge TTL to use the cache-control header. Cloudflare does not cache
-   `.hbc` by default. Also check that no WAF custom rule or the zone's
-   rate-limit rule matches this host: many phones share one carrier IP. Bot
-   Fight Mode stays off.
-4. **R2 token.** Go to R2 → Manage API tokens → **Create Account API token**
-   (an account token, not a user token, because CI will use it). Set Object
-   Read & Write, and under "Apply to specific buckets only" choose
-   `hawkeye-updates`. Keep the Access Key ID, the Secret Access Key and the S3
-   endpoint `https://<account-id>.r2.cloudflarestorage.com`.
-5. **Worker.** Run `cd scripts/ota_worker && npx wrangler@4 login && npx
-   wrangler@4 deploy`. It deploys `hawkeye-ota-manifest` on the route
-   `updates.hawkeye.com.ng/manifest*` with the R2 binding `OTA_BUCKET` →
-   `hawkeye-updates`.
-   - Set the route's request-limit failure mode to **Fail open**. Past the
-     Free plan's 100,000 requests a day, requests then go to the bucket,
-     `/manifest` is a 404, and phones simply get no update that day.
-   - Each cold start of a 1.0.9+ app is one request. When Workers → Metrics
-     approaches 100,000 a day (expected December–January only), switch to
-     **Workers Paid: $5 a month**, including 10M requests, then $0.30 per
-     million.
-   - If a Worker route on the R2 custom domain is refused, deploy the Worker as
-     the hostname's **Custom Domain** instead. It then serves `/assets/*` and
-     `/updates/*` from the binding too (tested). Every asset download then
-     counts as a Worker request.
-6. **GitHub secrets.** In repo Settings → Secrets and variables → Actions, add:
-   - `EXPO_UPDATES_PRIVATE_KEY`: set it with `gh secret set
-     EXPO_UPDATES_PRIVATE_KEY < ~/hawkeye-secrets/expo-updates/private-key.pem`.
-     This pipes the file; never paste the key anywhere.
-   - `OTA_R2_ACCESS_KEY_ID`, `OTA_R2_SECRET_ACCESS_KEY`, `OTA_R2_ENDPOINT`: the
-     R2 Account API token from step 4.
-   - Variable `OTA_R2_BUCKET` = `hawkeye-updates`.
-
-   No workflow uses them yet; publishing runs from WSL with the same names
-   exported.
-7. **Back up the key offline** (password manager or an encrypted USB drive).
-   - **Lost key or expired certificate (2036):** no OTA update reaches 1.0.9+
-     until a store build ships a new certificate.
-   - **Leaked key plus write access to the bucket or Worker:** someone can push
-     code to every 1.0.9+ phone. Rotate by a store build with a new certificate.
-8. **The switch (by 20 Nov).**
-   - Bump `native/app.json` `version` to **1.0.9**, plus buildNumber and
-     versionCode as usual. Do not build again as 1.0.8: that build would share
-     runtime 1.0.8 with EAS builds, and the publish script refuses runtime
-     1.0.8.
-   - Commit `native/certs/` and the `updates` block.
-   - Build through the normal workflows, to TestFlight and Play internal first.
-   - Check the **artifact**, not app.json:
-     - iOS: `Expo.plist` must have `EXUpdatesURL =
-       https://updates.hawkeye.com.ng/manifest` and
-       `EXUpdatesCodeSigningCertificate`.
-     - Android: the manifest's `expo.modules.updates.EXPO_UPDATE_URL` and
-       `expo.modules.updates.CODE_SIGNING_CERTIFICATE` meta-data.
-9. **First real-device test** (1.0.9 on a test phone, before any store review):
-   - `scripts/ota_publish_self.sh --platform android --message "OTA smoke
-     test"`, then add `--apply`.
-   - Relaunch twice: one launch downloads, the next applies. Confirm the change.
-   - Then run `--rollback-embedded --apply` and relaunch twice. Confirm the
-     phone is back on its built-in bundle.
-
-   This is the one step the local test cannot do.
+| `native/scripts/check_ota_config.mjs` | CI gate on the built ipa / aab (checklist step 8) |
+| `native/scripts/test_check_ota_config.mjs` | its test: fixtures from Expo's own config plugins, controls that must fail, `--real-aab` for a pre-1.0.9 bundle |
 
 ## Publishing
 
@@ -270,3 +369,15 @@ and checks the following, each with a control that must fail:
   - the R2 secret never appears in argv or output
   - republish, rollback and unpublish go live
   - a corrupted live pointer fails the run and prints the rollback command
+
+**The CI gate** (`native/scripts/check_ota_config.mjs`, checklist step 8) has
+its own test, seconds, no network:
+`node native/scripts/test_check_ota_config.mjs --real-aab <a pre-1.0.9 native .aab>`.
+Its passing fixtures are what Expo's config plugins write from the current
+`native/app.json`, as a binary and an XML `Expo.plist` (written by Python's
+plistlib) and as an aapt2 protobuf manifest. Controls that must fail: the EAS
+URL, a trailing slash, no certificate, a foreign certificate with the same
+subject, a wrong keyid or alg, updates disabled, a duplicated URL entry, and the
+real 1.0.8 bundle. The real bundle's own manifest, with only its updates
+entries swapped for the plugin's, must pass: that proves the protobuf reader
+on real build output.

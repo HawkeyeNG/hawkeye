@@ -168,6 +168,7 @@ export default {
     "n.app.ledger.server-check": "Duban uwar garke",
     "n.app.ledger.server-head": "Kan uwar garke",
     "n.app.ledger.sheet-photo": "Hoton takarda",
+    "n.app.ledger.photo-kept-on-observer-phone": "An ajiye hoton a wayar Mai Lura",
     "n.app.ledger.single-race-proof": "Tabbacin Gasa Ɗaya",
     "n.app.ledger.the-chain-is-empty-no-report": "Babu komai a sarƙar — ba a rubuta wani rahoto ba tukuna. Kan sarƙar shi ne hash na asali.",
     "n.app.ledger.venue-photo": "Hoton wuri",

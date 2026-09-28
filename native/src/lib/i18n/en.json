@@ -226,6 +226,7 @@
   "n.app.ledger.server-check": "Server check",
   "n.app.ledger.server-head": "Server head",
   "n.app.ledger.sheet-photo": "Sheet photo",
+  "n.app.ledger.photo-kept-on-observer-phone": "Photo kept on the observer's phone",
   "n.app.ledger.single-race-proof": "Single-Race Proof",
   "n.app.ledger.the-chain-is-empty-no-report": "The chain is empty — no report has been recorded yet. Head is the genesis hash.",
   "n.app.ledger.venue-photo": "Venue photo",

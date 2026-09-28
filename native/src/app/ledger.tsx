@@ -36,6 +36,9 @@ type Entry = {
   ledger_payload: string;
   image_sha256: string;
   venue_image_sha256: string;
+  // D1 hash-only report: the hashes are committed but the photos stayed on the
+  // observer's phone, so /uploads/<hash>.jpg is not served (SQLite 1/0/null).
+  photos_on_device?: number | boolean | null;
 };
 
 type Anchor = {
@@ -492,22 +495,24 @@ export default function Ledger() {
             <Text className="pt-1 font-mono text-xs text-faint">
               {item.entry_hash.slice(0, 24)}…
             </Text>
+            {/* Sheet only, as on the web ledger. A hash-only report (D1) has no
+                photo on the server, so there is nothing to open. The venue
+                photo is never served publicly (venueGuard answers 404), so it
+                gets no link either; its hash stays in the entry above. */}
             <View className="flex-row pt-2">
-              <Pressable
-                onPress={() =>
-                  WebBrowser.openBrowserAsync(`${BASE}/uploads/${item.image_sha256}.jpg`)
-                }
-              >
-                <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.ledger.sheet-photo')}</Text>
-              </Pressable>
-              <Pressable
-                className="pl-4"
-                onPress={() =>
-                  WebBrowser.openBrowserAsync(`${BASE}/uploads/${item.venue_image_sha256}.jpg`)
-                }
-              >
-                <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.ledger.venue-photo')}</Text>
-              </Pressable>
+              {item.photos_on_device ? (
+                <Text className="text-sm text-muted">
+                  {i18nT('n.app.ledger.photo-kept-on-observer-phone')}
+                </Text>
+              ) : (
+                <Pressable
+                  onPress={() =>
+                    WebBrowser.openBrowserAsync(`${BASE}/uploads/${item.image_sha256}.jpg`)
+                  }
+                >
+                  <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.ledger.sheet-photo')}</Text>
+                </Pressable>
+              )}
             </View>
           </View>
         )}

@@ -41,8 +41,10 @@ type Flag = {
 type Submission = {
   id: number;
   votes: { party: string; count: number }[];
-  sheetUrl: string;
-  venueUrl: string;
+  // null for a D1 hash-only report: the photo stayed on the observer's phone.
+  // There is no venueUrl: surroundings photos are never public (venueGuard).
+  sheetUrl: string | null;
+  photoOnDevice?: boolean;
   capturedAt: number;
   locationVerified: boolean;
   ocr: { matched: number; total: number } | null;
@@ -291,24 +293,27 @@ export default function CaseScreen() {
             <Text className="pt-0.5 text-xs text-muted">
               location {s.locationVerified ? 'verified ✅' : 'unverified'}
             </Text>
+            {/* The docket sends sheetUrl only (as the web case page shows it):
+                null when the photo stayed on the observer's phone (D1), and no
+                surroundings photo ever, so neither may render as a broken image. */}
             <View className="flex-row pt-2">
-              {[
-                { url: s.sheetUrl, cap: 'Result sheet' },
-                { url: s.venueUrl, cap: 'Surroundings' },
-              ].map((img) => (
+              {s.photoOnDevice || !s.sheetUrl ? (
+                <Text className="text-sm text-muted">
+                  {i18nT('n.app.ledger.photo-kept-on-observer-phone')}
+                </Text>
+              ) : (
                 <Pressable
-                  key={img.cap}
-                  className="mr-2 flex-1"
-                  onPress={() => WebBrowser.openBrowserAsync(`${BASE}${img.url}`)}
+                  className="flex-1"
+                  onPress={() => WebBrowser.openBrowserAsync(`${BASE}${s.sheetUrl}`)}
                 >
                   <Image
-                    source={{ uri: `${BASE}${img.url}` }}
+                    source={{ uri: `${BASE}${s.sheetUrl}` }}
                     className="h-32 w-full rounded-xl bg-surface"
                     resizeMode="cover"
                   />
-                  <Text className="pt-1 text-[11px] text-muted">{img.cap} — tap for full size</Text>
+                  <Text className="pt-1 text-[11px] text-muted">Result sheet — tap for full size</Text>
                 </Pressable>
-              ))}
+              )}
             </View>
 
             <View className="pt-2">

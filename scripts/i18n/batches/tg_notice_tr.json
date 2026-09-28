@@ -1,0 +1,147 @@
+{
+  "tgnotice.admin.title": {
+    "ha": "Sanarwar tashar Telegram",
+    "ig": "Ọkwa ọwa Telegram",
+    "yo": "Ìkéde ìkànnì Telegram"
+  },
+  "tgnotice.admin.intro": {
+    "ha": "Saƙo ɗaya kai tsaye ga duk wanda ke bin gasa a Telegram, cewa sanarwar gasa ta koma tasharmu. Kowace hira tana samun sa sau ɗaya kawai, har abada. Ba za a aika komai ba sai ka rubuta SEND ka danna Aika sanarwa.",
+    "ig": "Otu ozi kpọmkwem nye onye ọ bụla na-eso asọmpi na Telegram, na-ekwu na ọkwa asọmpi akwagala n'ọwa anyị. Mkparịta ụka ọ bụla na-enweta ya naanị otu ugboro, ruo mgbe ebighị ebi. Ọ dịghị ihe a ga-eziga ruo mgbe ị dere SEND ma pịa Ziga ọkwa.",
+    "yo": "Ìfiránṣẹ́ tààrà kan sí gbogbo ẹni tó ń tẹ̀lé ìdíje lórí Telegram, pé ìkìlọ̀ ìdíje ti kó lọ sí ìkànnì wa. Ìjíròrò kọ̀ọ̀kan yóò gbà á lẹ́ẹ̀kan ṣoṣo, títí láé. Kò sí ohun tí a ó fi ránṣẹ́ títí o fi tẹ SEND tí o sì tẹ Fi ìkéde ránṣẹ́."
+  },
+  "tgnotice.admin.send": {
+    "ha": "Aika sanarwa",
+    "ig": "Ziga ọkwa",
+    "yo": "Fi ìkéde ránṣẹ́"
+  },
+  "tgnotice.admin.live": {
+    "ha": "Sanarwar tasha tana aiki.",
+    "ig": "Ọkwa ọwa na-arụ ọrụ.",
+    "yo": "Ìkìlọ̀ ìkànnì ti ń ṣiṣẹ́."
+  },
+  "tgnotice.admin.not-live": {
+    "ha": "Sanarwar tasha ba ta aiki ba, don haka ba za a iya aika sanarwar ba. Tana buƙatar saita tashoshi, kunna sanarwar tasha, alamar bot da rubutun tasha.",
+    "ig": "Ọkwa ọwa anaghị arụ ọrụ, ya mere enweghị ike iziga ọkwa a. Ọ chọrọ ka edozie ọwa, gbanwuo ọkwa ọwa, token bot na ederede ọwa.",
+    "yo": "Ìkìlọ̀ ìkànnì kò tíì ṣiṣẹ́, nítorí náà a kò lè fi ìkéde náà ránṣẹ́. Ó nílò kí a ṣètò àwọn ìkànnì, kí a tan ìkìlọ̀ ìkànnì, tókìnì bot àti àwọn ọ̀rọ̀ ìkànnì."
+  },
+  "tgnotice.admin.waiting": {
+    "ha": "Masu jiran sanarwar: {n}",
+    "ig": "Ndị na-eche ọkwa a: {n}",
+    "yo": "Àwọn tó ń dúró de ìkéde náà: {n}"
+  },
+  "tgnotice.admin.already": {
+    "ha": "An riga an aika: {n}",
+    "ig": "Ezigalarị: {n}",
+    "yo": "A ti fi ránṣẹ́ tẹ́lẹ̀: {n}"
+  },
+  "tgnotice.admin.unconfirmed": {
+    "ha": "Waɗanda ake aikawa lokacin da sabar ta tsaya: {n}. Ba za a sake aika musu ba, don haka wataƙila ba su iso ba.",
+    "ig": "Ndị a na-eziga mgbe sava kwụsịrị: {n}. A gaghị eziga ha ọzọ, ya mere o nwere ike ọ ruteghị ha.",
+    "yo": "Àwọn tí a ń fi ránṣẹ́ nígbà tí sáfà dúró: {n}. A kò ní fi ránṣẹ́ sí wọn mọ́, nítorí náà ó lè má dé ọ̀dọ̀ wọn."
+  },
+  "tgnotice.admin.nothing": {
+    "ha": "Babu wanda ke jiran sanarwar.",
+    "ig": "Ọ dịghị onye na-eche ọkwa a.",
+    "yo": "Kò sí ẹni tó ń dúró de ìkéde náà."
+  },
+  "tgnotice.admin.no-run": {
+    "ha": "Ba a aika daga na'urar gudanarwa ba tukuna.",
+    "ig": "Ezibeghị ya site na njikwa.",
+    "yo": "A kò tíì fi ránṣẹ́ láti kọ́nsólù."
+  },
+  "tgnotice.admin.running": {
+    "ha": "Ana aikawa: an aika {sent} cikin {audience}, {failed} sun kasa. Kana iya rufe wannan shafi; sabar za ta ci gaba.",
+    "ig": "A na-eziga: ezigala {sent} n'ime {audience}, {failed} dara. Ị nwere ike imechi peeji a; sava ga-aga n'ihu.",
+    "yo": "A ń fi ránṣẹ́: a ti fi {sent} nínú {audience} ránṣẹ́, {failed} kùnà. O lè pa ojú-ìwé yìí dé; sáfà yóò máa bá a lọ."
+  },
+  "tgnotice.admin.done": {
+    "ha": "Aikawa ta ƙarshe ta kammala: an aika {sent} cikin {audience}, {failed} sun kasa.",
+    "ig": "Iziga ikpeazụ agwụla: ezigala {sent} n'ime {audience}, {failed} dara.",
+    "yo": "Ìfiránṣẹ́ tó kẹ́yìn ti parí: a fi {sent} nínú {audience} ránṣẹ́, {failed} kùnà."
+  },
+  "tgnotice.admin.failed-note": {
+    "ha": "Hirarrakin da suka kasa (misali, mutanen da suka toshe bot ɗin) suna nan suna jira. Sake aikawa zai sake gwada su kaɗai.",
+    "ig": "Mkparịta ụka ndị dara (dịka ọmụmaatụ, ndị gbochiri bot ahụ) ka na-eche. Iziga ọzọ ga-anwale naanị ha ọzọ.",
+    "yo": "Àwọn ìjíròrò tó kùnà (fún àpẹẹrẹ, àwọn tó dí bot náà) ṣì ń dúró. Fífi ránṣẹ́ lẹ́ẹ̀kan sí i yóò tún gbìyànjú àwọn nìkan."
+  },
+  "tgnotice.admin.interrupted": {
+    "ha": "Aikawa ta ƙarshe ta tsaya bayan {sent} cikin {audience} saboda sabar ta sake farawa. Sake aikawa don isa ga sauran. Babu wanda zai samu sau biyu.",
+    "ig": "Iziga ikpeazụ kwụsịrị mgbe {sent} n'ime {audience} gachara n'ihi na sava malitere ọzọ. Ziga ọzọ iji ruo ndị fọdụrụ. Ọ dịghị onye ga-enweta ya ugboro abụọ.",
+    "yo": "Ìfiránṣẹ́ tó kẹ́yìn dúró lẹ́yìn {sent} nínú {audience} nítorí sáfà tún bẹ̀rẹ̀. Tún fi ránṣẹ́ láti dé ọ̀dọ̀ àwọn tó kù. Kò sí ẹni tí yóò gbà á lẹ́ẹ̀mejì."
+  },
+  "tgnotice.admin.run-failed": {
+    "ha": "Aikawa ta ƙarshe ta tsaya da kuskure bayan {sent} cikin {audience} ({error}).",
+    "ig": "Iziga ikpeazụ kwụsịrị na njehie mgbe {sent} n'ime {audience} gachara ({error}).",
+    "yo": "Ìfiránṣẹ́ tó kẹ́yìn dúró pẹ̀lú àṣìṣe lẹ́yìn {sent} nínú {audience} ({error})."
+  },
+  "tgnotice.admin.per-language": {
+    "ha": "Ta kowane harshe",
+    "ig": "Dịka asụsụ si dị",
+    "yo": "Ní èdè kọ̀ọ̀kan"
+  },
+  "tgnotice.admin.lang-counts": {
+    "ha": "{eligible} suna jira · an aika {sent}",
+    "ig": "{eligible} na-eche · ezigala {sent}",
+    "yo": "{eligible} ń dúró · a ti fi {sent} ránṣẹ́"
+  },
+  "tgnotice.admin.channel": {
+    "ha": "Tasha: {link}",
+    "ig": "Ọwa: {link}",
+    "yo": "Ìkànnì: {link}"
+  },
+  "tgnotice.admin.no-channel": {
+    "ha": "Babu tasha don wannan harshe",
+    "ig": "Enweghị ọwa maka asụsụ a",
+    "yo": "Kò sí ìkànnì fún èdè yìí"
+  },
+  "tgnotice.admin.ignored": {
+    "ha": "Saitunan tasha da aka yi watsi da su: {list}",
+    "ig": "Ntọala ọwa a na-eleghara anya: {list}",
+    "yo": "Ètò ìkànnì tí a kọ̀ sílẹ̀: {list}"
+  },
+  "tgnotice.admin.confirm-label": {
+    "ha": "Rubuta SEND don aika saƙo ga hirarraki {n}",
+    "ig": "Dee SEND iji ziga ozi na mkparịta ụka {n}",
+    "yo": "Tẹ SEND láti fi ìfiránṣẹ́ ránṣẹ́ sí ìjíròrò {n}"
+  },
+  "tgnotice.admin.started": {
+    "ha": "An fara: ana aikawa ga hirarraki {n}.",
+    "ig": "Amalitela: a na-eziga na mkparịta ụka {n}.",
+    "yo": "Ó ti bẹ̀rẹ̀: a ń fi ránṣẹ́ sí ìjíròrò {n}."
+  },
+  "tgnotice.admin.refused-confirm": {
+    "ha": "Rubuta SEND daidai, da manyan baƙaƙe.",
+    "ig": "Dee SEND kpọmkwem, n'mkpụrụedemede ukwu.",
+    "yo": "Tẹ SEND gẹ́gẹ́ bí ó ti rí, ní lẹ́tà ńlá."
+  },
+  "tgnotice.admin.refused-more": {
+    "ha": "Hirarraki da ke jira sun fi yadda samfoti ya nuna ({audience}, ba {max} ba). Duba sabbin lambobin, sannan ka sake aikawa.",
+    "ig": "Mkparịta ụka na-eche karịrị ihe nlele gosiri ({audience}, ọ bụghị {max}). Lelee ọnụọgụ ọhụrụ ahụ, wee ziga ọzọ.",
+    "yo": "Ìjíròrò tó ń dúró pọ̀ ju ohun tí àyẹ̀wò fi hàn ({audience}, kì í ṣe {max}). Wo àwọn nọ́ńbà tuntun, lẹ́yìn náà tún fi ránṣẹ́."
+  },
+  "tgnotice.admin.refused-max": {
+    "ha": "Sabunta samfotin, sannan ka sake aikawa.",
+    "ig": "Megharịa ihe nlele ahụ, wee ziga ọzọ.",
+    "yo": "Sọ àyẹ̀wò náà dọ̀tun, lẹ́yìn náà tún fi ránṣẹ́."
+  },
+  "tgnotice.admin.refused-running": {
+    "ha": "Ana riga ana aikawa.",
+    "ig": "A na-eziga ya ugbu a.",
+    "yo": "Ìfiránṣẹ́ kan ti ń lọ lọ́wọ́."
+  },
+  "tgnotice.admin.rate-limited": {
+    "ha": "Buƙatun na'urar gudanarwa sun yi yawa. Sake gwadawa bayan daƙiƙa {s}.",
+    "ig": "Arịrịọ njikwa dị ukwuu. Nwaa ọzọ n'ime sekọnd {s}.",
+    "yo": "Ìbéèrè kọ́nsólù ti pọ̀ jù. Tún gbìyànjú lẹ́yìn ìṣẹ́jú-àáyá {s}."
+  },
+  "tgnotice.admin.load-error": {
+    "ha": "Ba a iya loda sanarwar ba ({error}).",
+    "ig": "Enweghị ike ibugo ọkwa a ({error}).",
+    "yo": "Kò ṣeé gbé ìkéde náà wá ({error})."
+  },
+  "tgnotice.admin.error": {
+    "ha": "Ba a iya aikawa ba ({error}).",
+    "ig": "Enweghị ike iziga ya ({error}).",
+    "yo": "Kò ṣeé fi ránṣẹ́ ({error})."
+  }
+}

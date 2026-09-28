@@ -509,7 +509,10 @@ console.log('\n=== native sources ===');
   const pkg = JSON.parse(read('native/package.json'));
   check('expo-application is a direct dependency', typeof pkg.dependencies['expo-application'], 'string');
   const appJson = JSON.parse(read('native/app.json')).expo;
-  check('app version 1.0.8', appJson.version, '1.0.8');
+  // expo-application arrived in 1.0.8, so the version must be 1.0.8 OR LATER
+  // (an exact 1.0.8 broke on the 1.0.9 bump for the self-hosted OTA switch).
+  const [maj, min, pat] = appJson.version.split('.').map(Number);
+  check('app version is 1.0.8 or later', maj > 1 || (maj === 1 && (min > 0 || pat >= 8)), true);
   check('runtimeVersion follows the app version (a native module was added)', appJson.runtimeVersion, { policy: 'appVersion' });
 }
 

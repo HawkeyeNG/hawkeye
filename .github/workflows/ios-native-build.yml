@@ -311,6 +311,19 @@ jobs:
             || { echo "::error::CFBundleIconName missing — App Store Connect shows no icon"; exit 1; }
           echo "  ok: Firebase config and icon name present"
 
+      # THE OTA GATE (design D9, docs/OTA-SELF-HOSTED.md). updates.url and the
+      # code-signing certificate are compiled into the binary. A build that
+      # carries the EAS URL, no certificate, or a different one can never take
+      # an update from updates.hawkeye.com.ng, and only another store build
+      # fixes that. Read from the ipa's own Expo.plist, not app.json: eas-cli
+      # rewrites app.json's URL, and app.json was right on builds that were not.
+      # Test: node native/scripts/test_check_ota_config.mjs
+      - name: The ipa must point at our OTA server and trust our key
+        run: |
+          set -euo pipefail
+          IPA=$(find "$RUNNER_TEMP/export" -name '*.ipa' | head -1)
+          node native/scripts/check_ota_config.mjs --ipa "$IPA"
+
       # THE GATE THAT WOULD HAVE CAUGHT 1.0.3 (36).
       #
       # That build reached TestFlight and died at launch on every device:

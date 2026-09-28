@@ -22,7 +22,7 @@
     .inc h3 { margin: 0 0 4px; font-size: 1.05rem; }
     .inc .meta { color: var(--muted); font-size: 0.82rem; }
     .inc .m { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
-    .inc .m img, .inc .m video { width: 160px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+    .inc .m img, .inc .m video, .inc .m .hk-vtile { width: 160px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
     .acts { display: flex; gap: 10px; margin-top: 8px; }
     .acts button { margin: 0; width: auto; }
     .btn-reject { background: #6b7280; box-shadow: 0 2px 0 #4b5563; }
@@ -124,6 +124,7 @@
     </section>
   </main>
 
+  <script src="video-player.js?v=1"></script>
   <script>
     const $ = (id) => document.getElementById(id);
 
@@ -260,13 +261,19 @@
       const r = await fetch(`/api/admin/incidents?status=${tab}`, { headers: hdr() });
       if (r.status === 401) { logout(); return; }
       const { incidents, counts } = await r.json();
-      $('c-pending').textContent = counts.pending || 0;
-      $('c-published').textContent = counts.published || 0;
-      $('c-rejected').textContent = counts.rejected || 0;
+      // Only the Pending tab still carries a count badge (Published/Rejected
+      // moved into the dropdown), so the other two ids no longer exist — and
+      // writing to a missing one threw here, before the list was ever drawn.
+      for (const [id, n] of [['c-pending', counts.pending], ['c-published', counts.published], ['c-rejected', counts.rejected]]) {
+        const el = $(id);
+        if (el) el.textContent = n || 0;
+      }
       if (!incidents.length) { $('list').innerHTML = `<p class="empty">Nothing ${tab}.</p>`; return; }
       $('list').innerHTML = incidents.map((i) => {
+        // data-hk-evidence: video-player.js makes this a poster tile that opens
+        // the full-screen player; `controls` is only the no-script fallback.
         const media = (i.media || []).map((m) => m.type === 'video'
-          ? `<video src="/uploads/${m.file}" controls muted></video>`
+          ? `<video data-hk-evidence src="/uploads/${escAttr(m.file)}" preload="metadata" controls muted></video>`
           : `<a href="/uploads/${m.file}" target="_blank"><img src="/uploads/${m.file}" alt="" /></a>`).join('');
         const gps = (i.lat != null && i.lng != null)
           ? ` · <a href="https://maps.google.com/?q=${i.lat},${i.lng}" target="_blank" rel="noopener">📍 map</a>` : '';

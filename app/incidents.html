@@ -328,6 +328,7 @@
   <script src="outbox.js" defer></script>
   <script src="capture.js?v=2"></script>
   <script src="save-media.js?v=1"></script>
+  <script src="video-player.js?v=1"></script>
   <!-- One wording for every "we could not get your position", shared with
        map-unit.html and the native screens. The strings that used to live
        inline here were three sentences long on a status line nobody reads
@@ -1003,7 +1004,10 @@
           <small style="color:var(--muted)"> · ${esc(timeAgo(i.created_at))}</small>
           ${i.description ? `<p>${esc(i.description)}</p>` : ''}
           ${i.media.length ? `<div class="m">${i.media.map((m) => m.type === 'video'
-            ? `<video src="/uploads/${safeFile(m.file)}" controls muted></video>`
+            // data-hk-evidence: video-player.js turns this into a poster tile
+            // that opens our full-screen player and strips the controls
+            // attribute, which stays only as the fallback if that script never loads.
+            ? `<video data-hk-evidence src="/uploads/${safeFile(m.file)}" preload="metadata" controls muted></video>`
             : `<img src="/uploads/${safeFile(m.file)}" alt="incident evidence" loading="lazy" />`).join('')}</div>` : ''}
           <button type="button" class="flag-btn" data-flag="${i.id}">⚑ Report this content</button>
         </div>`).join('');

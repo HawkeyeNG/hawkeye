@@ -15,11 +15,12 @@
  *      through lib/web-routes.ts; and push.ts / +native-intent.tsx consult it.
  *   2. CALL SITES — no browser-opening call anywhere in native/src is handed a
  *      groups / captain / invite / room page or an evidence photo. The one
- *      allowed exception is a VIDEO (no player in the binary), and it must sit
+ *      allowed exception is a VIDEO — on a binary without expo-video, or when a
+ *      clip will not play in components/video-viewer.tsx — and it must sit
  *      behind a `type === 'video'` guard.
- *   3. OTA SAFETY — nothing here added a native module: native/package.json's
- *      dependencies are unchanged from HEAD, and neither expo-video nor expo-av
- *      is among them (so videos still open as before — a store-build item).
+ *   3. OTA SAFETY — the only native module added is expo-video (the player,
+ *      new after 1.0.9), and the incident screen asks canPlayVideoInApp()
+ *      before using it, so older binaries keep opening videos as before.
  *
  *   node tests/native_no_web_pages_test.mjs
  */
@@ -135,9 +136,11 @@ const FORBIDDEN = /my-groups|captain|join\.html|\/join\/|situation-room|\/room\/
 function violations(text, rel = '') {
   return calls(text).filter((c) => FORBIDDEN.test(c.arg)).filter((c) => {
     if (rel !== 'app/incidents.tsx') return true;
-    // THE VIDEO EXCEPTION: the call must be the body of `const openVideo`.
+    // THE VIDEO EXCEPTION: the call must be the body of `const openVideoInBrowser`
+    // — the fallback for binaries without expo-video, and the viewer's own
+    // "Open in browser" when a clip will not play.
     const lineText = text.split('\n')[c.line - 1];
-    return !/^const openVideo = \(file: string\) => WebBrowser\.openBrowserAsync\(mediaUrl\(file\)\);$/.test(lineText.trim());
+    return !/^const openVideoInBrowser = \(file: string\) => WebBrowser\.openBrowserAsync\(mediaUrl\(file\)\);$/.test(lineText.trim());
   }).map((c) => `${rel}:${c.line} ${c.arg.trim().slice(0, 70)}`);
 }
 const files = walk(N);
@@ -161,6 +164,8 @@ check('a video is the only media that still leaves the app, behind its guard',
   /m\.type === 'video' \? openVideo\(m\.file\) : setPhoto\(mediaUrl\(m\.file\)\)/.test(inc), true);
 check('CONTROL the exception does not excuse an unguarded photo',
   violations("const openPhoto = (file: string) => WebBrowser.openBrowserAsync(mediaUrl(file));", 'app/incidents.tsx').length, 1);
+check('CONTROL the exception is exact: the old always-browser openVideo is flagged',
+  violations("const openVideo = (file: string) => WebBrowser.openBrowserAsync(mediaUrl(file));", 'app/incidents.tsx').length, 1);
 for (const f of ['app/ledger.tsx', 'app/case.tsx', 'app/incidents.tsx']) {
   check(`${f} shows photos in the native viewer`, /<ImageViewer\b/.test(read(`${N}${f}`)), true);
 }
@@ -175,14 +180,26 @@ check('More carries Your groups and Apply as Captain, natively',
   /href: 'native:\/my-groups'/.test(more) && /labelKey: 'nav\.apply-as-captain', href: 'native:\/captain'/.test(more), true);
 
 // ========================================================== 3. OTA safety
-console.log('\n=== 3. over the air: no new native module ===');
+console.log('\n=== 3. over the air: expo-video is the one new native module, and it is guarded ===');
 const deps = (json) => Object.keys(JSON.parse(json).dependencies || {}).sort();
 let head = null;
 try { head = execSync('git -c safe.directory=* show HEAD:native/package.json', { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch { /* no git */ }
 check('CONTROL HEAD\'s package.json was readable', !!head, true);
-if (head) check('native dependencies unchanged from HEAD', deps(read(`${ROOT}/native/package.json`)), deps(head));
 const now = deps(read(`${ROOT}/native/package.json`));
-check('no video player is installed (videos stay as they were)', now.filter((d) => /^expo-(video|av)$/.test(d)), []);
+if (head) {
+  // expo-video arrives with the player; anything else new is a store-build item
+  // this test has not been told about.
+  const was = deps(head);
+  const diff = [...now.filter((d) => !was.includes(d)), ...was.filter((d) => !now.includes(d))];
+  check('native dependencies differ from HEAD by expo-video at most', diff.filter((d) => d !== 'expo-video'), []);
+}
+check('expo-video is the player; expo-av is not installed', [now.includes('expo-video'), now.includes('expo-av')], [true, false]);
+/* A 1.0.9-or-older binary has no expo-video and still runs this JS: the screen
+   must ask before it opens the in-app player. The import guard itself is proved
+   by tests/video_viewer_guard_test.mjs. */
+check('incidents opens the in-app player only when the binary can play, the browser otherwise',
+  /const openVideo = \(file: string\) => \(canPlayVideoInApp\(\) \? setVideo\(file\) : openVideoInBrowser\(file\)\);/.test(inc), true);
+check('...and renders the viewer', /<VideoViewer\b/.test(inc), true);
 const viewer = read(`${N}components/image-viewer.tsx`);
 const viewerImports = [...viewer.matchAll(/from '([^'@.][^']*|@[^/']+\/[^/']+)'/g)].map((m) => m[1]).filter((m) => !m.startsWith('@/'));
 check('the viewer uses only packages already in the binary',

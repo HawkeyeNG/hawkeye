@@ -1479,5 +1479,18 @@
   "n.app.my-groups.room-body": "Ɗakin sa ido na {name} yana buɗewa a burauza a kwamfuta. Buɗe wannan adireshin a can ka shiga:\n\n{url}\n\nKada ka shiga shi a burauzar wannan wayar: hakan zai fitar da wannan wayar daga Hawkeye.",
   "n.components.image-viewer.failed": "An kasa buɗe wannan hoton. Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
   "n.app.case.result-sheet-tap-full-size": "Takardar Sakamako — taɓa don cikakken girma",
-  "n.app.incidents.photo": "Hoton shaida"
+  "n.app.incidents.photo": "Hoton shaida",
+  "n.components.video-viewer.label": "Bidiyon shaida",
+  "n.components.video-viewer.play": "Kunna bidiyon",
+  "n.components.video-viewer.pause": "Dakatar da bidiyon",
+  "n.components.video-viewer.replay": "Sake kunnawa daga farko",
+  "n.components.video-viewer.mute": "Kashe sauti",
+  "n.components.video-viewer.unmute": "Kunna sauti",
+  "n.components.video-viewer.seek": "Inda bidiyon ya kai",
+  "n.components.video-viewer.position": "{v0} cikin {v1}",
+  "n.components.video-viewer.loading": "Ana lodawa bidiyon…",
+  "n.components.video-viewer.failed": "An kasa kunna wannan bidiyon. Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
+  "n.components.video-viewer.open-in-browser": "Buɗe a burauza",
+  "n.components.video-viewer.show-controls": "Nuna maɓallan bidiyon",
+  "n.components.video-viewer.hide-controls": "Ɓoye maɓallan bidiyon"
 }

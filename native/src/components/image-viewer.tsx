@@ -21,8 +21,9 @@ import { t as i18nT } from '@/lib/i18n';
  * drags on them), so this ships over the air to 1.0.8 and 1.0.9 alike. No new
  * native module.
  *
- * VIDEOS ARE NOT HANDLED HERE. Neither expo-video nor expo-av is installed, so a
- * video still opens the way it did; playing it in the app needs a store build.
+ * VIDEOS ARE NOT HANDLED HERE: components/video-viewer.tsx plays them, on a
+ * binary that has expo-video (the first store build after 1.0.9). Older binaries
+ * still open a video in the browser — see app/incidents.tsx.
  */
 const MAX_ZOOM = 5;
 const DOUBLE_TAP_ZOOM = 2.5;

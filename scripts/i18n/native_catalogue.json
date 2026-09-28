@@ -1439,5 +1439,18 @@
   "n.app.my-groups.room-body": "The situation room for {name} opens in a web browser on a computer. Open this address there and sign in:\n\n{url}\n\nDo not sign in to it in this phone's browser: that would sign this phone out of Hawkeye.",
   "n.components.image-viewer.failed": "This photo could not be opened. Check your connection and try again.",
   "n.app.case.result-sheet-tap-full-size": "Result sheet — tap for full size",
-  "n.app.incidents.photo": "Evidence photo"
+  "n.app.incidents.photo": "Evidence photo",
+  "n.components.video-viewer.label": "Evidence video",
+  "n.components.video-viewer.play": "Play video",
+  "n.components.video-viewer.pause": "Pause video",
+  "n.components.video-viewer.replay": "Play again from the start",
+  "n.components.video-viewer.mute": "Mute",
+  "n.components.video-viewer.unmute": "Turn sound on",
+  "n.components.video-viewer.seek": "Playback position",
+  "n.components.video-viewer.position": "{v0} of {v1}",
+  "n.components.video-viewer.loading": "Loading video…",
+  "n.components.video-viewer.failed": "This video could not be played. Check your connection and try again.",
+  "n.components.video-viewer.open-in-browser": "Open in browser",
+  "n.components.video-viewer.show-controls": "Show video controls",
+  "n.components.video-viewer.hide-controls": "Hide video controls"
 }

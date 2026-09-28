@@ -1,0 +1,18 @@
+{
+  "video-player.open": { "ha": "Kunna bidiyon shaida", "ig": "Kpọọ vidiyo ihe akaebe", "yo": "Bẹ̀rẹ̀ fídíò ẹ̀rí" },
+  "video-player.dialog": { "ha": "Bidiyon shaida", "ig": "Vidiyo ihe akaebe", "yo": "Fídíò ẹ̀rí" },
+  "video-player.play": { "ha": "Kunna bidiyon", "ig": "Kpọọ vidiyo ahụ", "yo": "Bẹ̀rẹ̀ fídíò náà" },
+  "video-player.pause": { "ha": "Dakatar da bidiyon", "ig": "Kwụsịtụ vidiyo ahụ", "yo": "Dá fídíò náà dúró" },
+  "video-player.replay": { "ha": "Sake kunnawa daga farko", "ig": "Kpọọ ya ọzọ site na mmalite", "yo": "Tún un bẹ̀rẹ̀ láti ìbẹ̀rẹ̀" },
+  "video-player.mute": { "ha": "Kashe sauti", "ig": "Gbanyụọ ụda", "yo": "Pa ohùn" },
+  "video-player.unmute": { "ha": "Kunna sauti", "ig": "Gbanye ụda", "yo": "Tan ohùn" },
+  "video-player.seek": { "ha": "Inda bidiyon ya kai", "ig": "Ebe vidiyo ahụ ruru", "yo": "Ibi tí fídíò náà dé" },
+  "video-player.position": { "ha": "{elapsed} cikin {total}", "ig": "{elapsed} n’ime {total}", "yo": "{elapsed} nínú {total}" },
+  "video-player.loading": { "ha": "Ana lodin bidiyon…", "ig": "Na-adọnye vidiyo…", "yo": "Ń ṣí fídíò…" },
+  "video-player.failed": {
+    "ha": "An kasa kunna wannan bidiyon. Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
+    "ig": "Enweghị ike ịkpọ vidiyo a. Lelee njikọ ịntanetị gị wee nwaa ọzọ.",
+    "yo": "A kò lè ṣí fídíò yìí. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  },
+  "video-player.open-file": { "ha": "Buɗe fayil ɗin bidiyon", "ig": "Mepee faịlụ vidiyo ahụ", "yo": "Ṣí fáìlì fídíò náà" }
+}

@@ -2170,5 +2170,17 @@
   "tgbroadcast.admin.load-error": "Kò ṣeé gbé ìfiránṣẹ́ gbogbogbò wá ({error}).",
   "tgnotice.admin.reason-not-live": "Ìkìlọ̀ ìkànnì kò tíì ṣiṣẹ́, nítorí náà a kò lè fi ìkéde náà ránṣẹ́.",
   "tgnotice.admin.reason-nobody": "Kò sí ẹni tó ń dúró de ìkéde yìí.",
-  "nav.apply-as-captain": "Béèrè Láti Di Olùdarí"
+  "nav.apply-as-captain": "Béèrè Láti Di Olùdarí",
+  "video-player.open": "Bẹ̀rẹ̀ fídíò ẹ̀rí",
+  "video-player.dialog": "Fídíò ẹ̀rí",
+  "video-player.play": "Bẹ̀rẹ̀ fídíò náà",
+  "video-player.pause": "Dá fídíò náà dúró",
+  "video-player.replay": "Tún un bẹ̀rẹ̀ láti ìbẹ̀rẹ̀",
+  "video-player.mute": "Pa ohùn",
+  "video-player.unmute": "Tan ohùn",
+  "video-player.seek": "Ibi tí fídíò náà dé",
+  "video-player.position": "{elapsed} nínú {total}",
+  "video-player.loading": "Ń ṣí fídíò…",
+  "video-player.failed": "A kò lè ṣí fídíò yìí. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú.",
+  "video-player.open-file": "Ṣí fáìlì fídíò náà"
 }

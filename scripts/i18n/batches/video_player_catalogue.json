@@ -1,0 +1,14 @@
+{
+  "video-player.open": "Play video evidence",
+  "video-player.dialog": "Evidence video",
+  "video-player.play": "Play video",
+  "video-player.pause": "Pause video",
+  "video-player.replay": "Play again from the start",
+  "video-player.mute": "Mute",
+  "video-player.unmute": "Turn sound on",
+  "video-player.seek": "Playback position",
+  "video-player.position": "{elapsed} of {total}",
+  "video-player.loading": "Loading video…",
+  "video-player.failed": "This video could not be played. Check your connection and try again.",
+  "video-player.open-file": "Open the video file"
+}

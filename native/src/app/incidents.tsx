@@ -12,6 +12,7 @@ import { InfoDot } from '@/components/info-dot';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { ReportContent } from '@/components/report-content';
 import { ScreenHeader } from '@/components/screen-header';
+import { canPlayVideoInApp, VideoViewer } from '@/components/video-viewer';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { api, BRAND, type Incident } from '@/lib/api';
 import { useUi } from '@/lib/theme';
@@ -58,12 +59,15 @@ function timeAgo(ts: number) {
 const mediaUrl = (file: string) => `${BASE}/uploads/${encodeURI(file)}`;
 
 /**
- * A VIDEO STILL LEAVES THE APP, and only a video. Neither expo-video nor
- * expo-av is in the binary, and a new native module cannot ship over the air —
- * so a clip keeps opening the raw file in the browser until a store build adds
- * a player. Photos open in components/image-viewer.tsx.
+ * A VIDEO PLAYS IN THE APP (components/video-viewer.tsx) on a binary that has
+ * expo-video — the first store build after 1.0.9. Older binaries get this same
+ * JS over the air and have no player, and a native module cannot ship that
+ * way, so there, and only there, a clip still opens the raw file in the browser
+ * as it always did. The viewer's "Open in browser" (offered when a clip will not
+ * play) comes back through here too, so this line stays the one place a video
+ * leaves the app. Photos open in components/image-viewer.tsx.
  */
-const openVideo = (file: string) => WebBrowser.openBrowserAsync(mediaUrl(file));
+const openVideoInBrowser = (file: string) => WebBrowser.openBrowserAsync(mediaUrl(file));
 
 /**
  * Published incidents — native twin of app/incidents.html's feed.
@@ -83,6 +87,10 @@ export default function Incidents() {
   const notice = useNotice();
   /** The photo open full screen (components/image-viewer.tsx), or null. */
   const [photo, setPhoto] = useState<string | null>(null);
+  /** The clip open full screen (components/video-viewer.tsx) — its FILE, so the
+      viewer's browser fallback can go through openVideoInBrowser — or null. */
+  const [video, setVideo] = useState<string | null>(null);
+  const openVideo = (file: string) => (canPlayVideoInApp() ? setVideo(file) : openVideoInBrowser(file));
 
   // Returns the failure so the caller can decide how loudly to say it: a first
   // load has an empty screen to explain itself in, a pull-to-refresh does not.
@@ -246,6 +254,13 @@ export default function Incidents() {
 
       <NoticeSheet {...notice.props} />
       <ImageViewer uri={photo} label={i18nT('n.app.incidents.photo')} onClose={() => setPhoto(null)} />
+      <VideoViewer
+        uri={video ? mediaUrl(video) : null}
+        onClose={() => setVideo(null)}
+        onOpenInBrowser={() => {
+          if (video) openVideoInBrowser(video);
+        }}
+      />
     </View>
   );
 }

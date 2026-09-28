@@ -1496,5 +1496,17 @@
   "train.ocr-training": "OCR Training",
   "train2.ocr-training-set-2": "OCR Training — Set 2",
   "traindavina.ocr-training-davina": "OCR Training — Davina",
-  "trainderek.ocr-training-derek": "OCR Training — Derek"
+  "trainderek.ocr-training-derek": "OCR Training — Derek",
+  "video-player.dialog": "Evidence video",
+  "video-player.failed": "This video could not be played. Check your connection and try again.",
+  "video-player.loading": "Loading video…",
+  "video-player.mute": "Mute",
+  "video-player.open": "Play video evidence",
+  "video-player.open-file": "Open the video file",
+  "video-player.pause": "Pause video",
+  "video-player.play": "Play video",
+  "video-player.position": "{elapsed} of {total}",
+  "video-player.replay": "Play again from the start",
+  "video-player.seek": "Playback position",
+  "video-player.unmute": "Turn sound on"
 }

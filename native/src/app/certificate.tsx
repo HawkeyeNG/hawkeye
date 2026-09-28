@@ -1,6 +1,5 @@
 import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Platform, Pressable, Share, Text, TextInput, View } from 'react-native';
 
@@ -12,10 +11,10 @@ import {
   fetchMine,
   issueCert,
   loadCertName,
-  printUrl,
   saveCertName,
   type Cert,
 } from '@/lib/certificate';
+import { canMakePdf, shareCertificatePdf } from '@/lib/certificate-pdf';
 import { currentLang_, t as i18nT, useT } from '@/lib/i18n';
 import { saveReceiptPng } from '@/lib/receipt-file';
 import { useUi } from '@/lib/theme';
@@ -29,9 +28,55 @@ function Btn({ label, onPress, primary, disabled }: { label: string; onPress: ()
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      className={`mt-3 items-center rounded-full py-3 active:opacity-80 ${primary ? 'bg-hawk-gold' : 'border border-line bg-card'} ${disabled ? 'opacity-60' : ''}`}
+      style={{ minHeight: 48 }}
+      className={`mt-3 items-center justify-center rounded-full py-3 active:opacity-80 ${primary ? 'bg-hawk-gold' : 'border-2 border-good-ink bg-card'} ${disabled ? 'opacity-60' : ''}`}
     >
       <Text className={`text-sm font-bold ${primary ? 'text-hawk-green' : 'text-good-ink'}`}>{label}</Text>
+    </Pressable>
+  );
+}
+
+type OptionLook = 'idle' | 'right' | 'wrong' | 'locked';
+
+/**
+ * One quiz answer, drawn as what it is: a choice to tap. A bordered tile with a
+ * radio circle, 52 pt tall at least, and four looks — idle, pressed (the tile
+ * and circle take the brand tint while a finger is on it), right (filled green
+ * circle with a check) and wrong (filled red circle with a cross). The others
+ * are "locked" while an answer's explanation is showing. Every pair is a theme
+ * token, so both themes keep their contrast (icon on fill: 6.5:1 or better).
+ */
+function QuizOption({ label, look, onPress }: { label: string; look: OptionLook; onPress: () => void }) {
+  const ui = useUi();
+  const disabled = look !== 'idle';
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="radio"
+      accessibilityLabel={label}
+      accessibilityState={{ checked: look === 'right' || look === 'wrong', disabled }}
+      className="mt-3"
+    >
+      {({ pressed }) => {
+        const on = pressed && look === 'idle';
+        const tile = look === 'right' ? 'border-good-ink bg-good'
+          : look === 'wrong' ? 'border-bad-ink bg-bad'
+            : on ? 'border-good-ink bg-good' : 'border-faint bg-surface';
+        const dot = look === 'right' ? 'border-good-ink bg-good-ink'
+          : look === 'wrong' ? 'border-bad-ink bg-bad-ink'
+            : on ? 'border-good-ink' : 'border-muted';
+        return (
+          <View style={{ minHeight: 52 }} className={`flex-row items-center rounded-2xl border-2 px-4 py-3 ${tile}`}>
+            <View className={`mr-3 h-6 w-6 items-center justify-center rounded-full border-2 ${dot}`}>
+              {look === 'right' ? <Feather name="check" size={14} color={ui.card} /> : null}
+              {look === 'wrong' ? <Feather name="x" size={14} color={ui.card} /> : null}
+              {on ? <View className="h-2.5 w-2.5 rounded-full bg-good-ink" /> : null}
+            </View>
+            <Text className={`flex-1 text-base font-semibold leading-6 ${look === 'locked' ? 'text-muted' : 'text-ink'}`}>{label}</Text>
+          </View>
+        );
+      }}
     </Pressable>
   );
 }
@@ -47,8 +92,11 @@ function Btn({ label, onPress, primary, disabled }: { label: string; onPress: ()
  * THE NAME stays on this phone: typed here, kept in AsyncStorage, drawn by
  * CertificateCard. Share sends the verification LINK (no name); "Save image"
  * writes the drawn PNG to the gallery (honouring the keep-copies switch, like
- * the receipt); "Print or save as PDF" opens the web certificate in the in-app
- * browser with the name in the URL #fragment, which no server ever receives.
+ * the receipt); "Print or save as PDF" makes the PDF on the phone with
+ * expo-print (lib/certificate-pdf.ts) — shown only on a binary that has it, so
+ * a 1.0.8 phone running this JS keeps Share + Save image and never sees a dead
+ * button. The code opens the native check (app/verify-cert.tsx). NO WEB PAGE
+ * anywhere in this flow.
  */
 export default function CertificateScreen() {
   useT();
@@ -64,7 +112,10 @@ export default function CertificateScreen() {
   const [issuing, setIssuing] = useState(false);
   const [issueError, setIssueError] = useState(false);
   const [note, setNote] = useState<string | null>(null);   // a key, painted at render
+  const [pdfBusy, setPdfBusy] = useState(false);
   const cardRef = useRef<CertificateCardHandle>(null);
+  // Decided once: the binary does not change under a running screen.
+  const [pdfOk] = useState(canMakePdf);
 
   const startQuiz = useCallback(() => {
     setQi(0); setPhase('ask'); setWrong([]); setAnswers([]); setIssueError(false);
@@ -151,9 +202,18 @@ export default function CertificateScreen() {
     setNote(ok ? 'n.app.certificate.saved' : 'n.app.certificate.save-failed');
   };
 
-  const print = () => {
+  const pdf = async () => {
+    if (!cert || pdfBusy) return;
+    setNote(null);
+    setPdfBusy(true);
+    const r = await shareCertificatePdf(cert, name, currentLang_(), i18nT('n.app.certificate.title'));
+    setPdfBusy(false);
+    if (r !== 'shown') setNote('n.app.certificate.pdf-failed');
+  };
+
+  const verify = () => {
     if (!cert) return;
-    WebBrowser.openBrowserAsync(printUrl(cert, name, currentLang_())).catch(() => undefined);
+    router.push({ pathname: '/verify-cert', params: { code: cert.code } } as never);
   };
 
   return (
@@ -195,26 +255,14 @@ export default function CertificateScreen() {
               {i18nT('cert.progress', { n: qi + 1, total: QUIZ.length })}
             </Text>
             <Text className="pt-2 text-lg font-bold leading-6 text-ink">{i18nT(q.q)}</Text>
-            {q.options.map((key, i) => {
-              const isRight = phase === 'right' && i === q.answer;
-              const isWrong = wrong.includes(i);
-              return (
-                <Pressable
-                  key={key}
-                  onPress={() => pick(i)}
-                  disabled={phase !== 'ask' || isWrong}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isRight, disabled: phase !== 'ask' || isWrong }}
-                  className={`mt-3 flex-row items-center rounded-xl border px-3 py-3 active:opacity-80 ${
-                    isRight ? 'border-good-ink bg-good' : isWrong ? 'border-bad-ink bg-bad' : 'border-line bg-surface'
-                  }`}
-                >
-                  <Text className="flex-1 text-base text-ink">{i18nT(key)}</Text>
-                  {isRight ? <Feather name="check" size={18} color={ui.tint.good.ink} /> : null}
-                  {isWrong ? <Feather name="x" size={18} color={ui.tint.bad.ink} /> : null}
-                </Pressable>
-              );
-            })}
+            <View accessibilityRole="radiogroup">
+              {q.options.map((key, i) => {
+                const look: OptionLook = phase === 'right' && i === q.answer ? 'right'
+                  : wrong.includes(i) ? 'wrong'
+                    : phase !== 'ask' ? 'locked' : 'idle';
+                return <QuizOption key={key} label={i18nT(key)} look={look} onPress={() => pick(i)} />;
+              })}
+            </View>
             {phase !== 'ask' ? (
               <View className={`mt-4 rounded-xl px-3 py-3 ${phase === 'right' ? 'bg-good' : 'bg-bad'}`}>
                 <Text className={`text-sm font-bold ${phase === 'right' ? 'text-good-ink' : 'text-bad-ink'}`}>
@@ -261,13 +309,22 @@ export default function CertificateScreen() {
 
             <Btn primary label={i18nT('cert.share')} onPress={share} />
             <Btn label={i18nT('cert.save')} onPress={save} />
-            <Btn label={i18nT('n.app.certificate.print')} onPress={print} />
+            {/* Only where expo-print is in the binary (1.0.9+). On 1.0.8 the
+                button is not drawn at all: Share and Save image still work. */}
+            {pdfOk ? (
+              <Btn
+                label={pdfBusy ? i18nT('n.app.certificate.making-pdf') : i18nT('n.app.certificate.print')}
+                onPress={pdf}
+                disabled={pdfBusy}
+              />
+            ) : null}
             {note ? <Text className="pt-2 text-sm font-semibold text-muted">{i18nT(note)}</Text> : null}
 
             <Text className="pt-5 text-xs text-muted">{i18nT('cert.code-label')}</Text>
             <Text selectable className="text-lg font-bold tracking-widest text-ink">{cert.code}</Text>
             <Text className="pt-2 text-xs text-muted">{i18nT('cert.check-at')}</Text>
-            <Pressable onPress={() => WebBrowser.openBrowserAsync(cert.verifyUrl).catch(() => undefined)}>
+            {/* The printed address, opening the app's own check — not a browser. */}
+            <Pressable onPress={verify} accessibilityRole="link" className="self-start py-2 active:opacity-70">
               <Text className="text-sm font-semibold text-good-ink">{cert.verifyUrl.replace(/^https?:\/\//, '')}</Text>
             </Pressable>
           </View>

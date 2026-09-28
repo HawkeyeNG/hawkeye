@@ -18,12 +18,27 @@
     #main [hidden] { display: none !important; }
     .cq-progress { margin: 0 0 6px; color: var(--muted); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.02em; }
     .cq-question { margin: 0 0 12px; font-size: 1.15rem; line-height: 1.35; }
-    button.cq-opt { text-align: left; margin: 8px 0 0; font-weight: 600; color: var(--ink); background: var(--card);
-      border: 1.5px solid var(--border); box-shadow: none; }
-    button.cq-opt:hover { filter: none; border-color: var(--link); }
-    button.cq-opt:disabled { background: var(--card); color: var(--muted); cursor: default; }
+    /* A QUIZ ANSWER IS A CHOICE TO TAP, and looks it: a bordered tile with a
+       radio circle, 52px tall at least. Idle, hover/pressed (brand tint),
+       right (filled circle + check), wrong (filled circle + cross); the rest
+       are dimmed while an explanation shows. Theme tokens throughout, so both
+       themes keep their contrast; the icon takes --card on the filled circle. */
+    button.cq-opt { display: flex; align-items: center; gap: 12px; min-height: 52px; text-align: left; margin: 10px 0 0;
+      padding: 12px 14px; font-weight: 600; line-height: 1.35; color: var(--ink); background: var(--tint);
+      border: 2px solid var(--muted); border-color: color-mix(in srgb, var(--muted) 55%, transparent); border-radius: 14px; box-shadow: none; }
+    .cq-dot { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+      border-radius: 50%; border: 2px solid var(--muted); color: var(--card); }
+    .cq-dot svg { width: 14px; height: 14px; display: none; }
+    button.cq-opt:hover:not(:disabled) { filter: none; border-color: var(--link); }
+    button.cq-opt:active:not(:disabled) { transform: scale(0.985); border-color: var(--link); background: var(--tint-ok); }
+    button.cq-opt:active:not(:disabled) .cq-dot { border-color: var(--link); box-shadow: inset 0 0 0 4px var(--tint-ok), inset 0 0 0 12px var(--link); }
+    button.cq-opt:focus-visible { outline: 3px solid var(--link); outline-offset: 2px; }
+    button.cq-opt:disabled { background: var(--tint); color: var(--muted); cursor: default; transform: none; }
     button.cq-opt.ok, button.cq-opt.ok:disabled { border-color: var(--link); background: var(--tint-ok); color: var(--ink); }
+    button.cq-opt.ok .cq-dot { border-color: var(--link); background: var(--link); }
     button.cq-opt.bad, button.cq-opt.bad:disabled { border-color: var(--danger); background: var(--tint-danger); color: var(--ink); }
+    button.cq-opt.bad .cq-dot { border-color: var(--danger); background: var(--danger); color: #fff; }
+    button.cq-opt.ok .cq-ok, button.cq-opt.bad .cq-bad { display: block; }
     .cq-feedback { margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--tint); }
     .cq-feedback strong { display: block; margin: 0 0 4px; }
     .cq-feedback p { margin: 0; }
@@ -133,6 +148,9 @@
         <div class="cert-actions">
           <button type="button" id="cert-share" data-i18n="cert.share">Share</button>
           <button type="button" class="secondary" id="cert-save" data-i18n="cert.save">Save image</button>
+          <!-- A real one-page PDF made on this device (certificate.js makePdf):
+               works in Lite, where window.print() does nothing. -->
+          <button type="button" class="secondary" id="cert-pdf" data-i18n="cert.pdf">Save as PDF</button>
           <button type="button" class="secondary" id="cert-print" data-i18n="cert.print">Print</button>
         </div>
         <p class="status" id="cert-status" role="status"></p>
@@ -153,11 +171,11 @@
 
   <script src="device.js"></script>
   <script src="save-media.js?v=1"></script>
-  <script src="certificate.js?v=1"></script>
+  <script src="certificate.js?v=2"></script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=185"></script>
+  <script src="menu.js?v=186"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

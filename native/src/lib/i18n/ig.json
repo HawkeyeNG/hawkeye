@@ -1358,5 +1358,20 @@
   "n.auth.org-confirm-title": "Nke a ọ bụ nọmba gị?",
   "n.auth.org-confirm-body": "A ga-ejikọ koodu a na {phone} ruo mgbe ebighị ebi.",
   "n.auth.org-confirm-yes": "Ee, mepee akaụntụ m",
-  "n.auth.org-confirm-no": "Gbanwee nọmba"
+  "n.auth.org-confirm-no": "Gbanwee nọmba",
+  "n.app.certificate.making-pdf": "Na-eme PDF…",
+  "n.app.certificate.pdf-failed": "Enweghị ike ịme PDF ahụ. Chekwaa foto ahụ kama.",
+  "n.app.verify-cert.title": "Lelee asambodo",
+  "cert.verify-title": "Lelee Asambodo Onye Na-ekiri Ihe nke Hawkeye",
+  "cert.verify-lede": "Tinye koodu e bipụtara n’asambodo ahụ.",
+  "cert.verify-label": "Koodu asambodo",
+  "cert.verify-button": "Lelee",
+  "cert.verify-checking": "Na-elele…",
+  "cert.verify-valid-h": "Asambodo ziri ezi",
+  "cert.verify-valid-body": "Asambodo Onye Na-ekiri Ihe nke Hawkeye {code}, e nyere ya na {date}.",
+  "cert.verify-invalid-h": "Ezighị ezi",
+  "cert.verify-invalid-body": "Ọ dịghị asambodo Onye Na-ekiri Ihe nke Hawkeye nwere koodu a. Lelee koodu ahụ ma nwaa ọzọ.",
+  "cert.verify-error": "Enweghị ike ilele koodu ahụ ugbu a. Nwaa ọzọ.",
+  "cert.verify-what": "Asambodo ziri ezi pụtara na onye nwe ya mechara ọsọ omume Hawkeye na ajụjụ onye na-ekiri ihe. Hawkeye anaghị echekwa aha, ya mere ibe a enweghị ike ikwu onye nwe ya. Ọ bụghị ikike sitere n’aka INEC.",
+  "cert.verify-earn": "Nweta nke gị: ọsọ omume na ajụjụ nkenke"
 }

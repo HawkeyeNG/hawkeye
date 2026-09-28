@@ -1,0 +1,20 @@
+{
+  "cert.pdf": {
+    "en": "Save as PDF",
+    "ha": "Ajiye a matsayin PDF",
+    "ig": "Chekwaa dị ka PDF",
+    "yo": "Fi pamọ́ bí PDF"
+  },
+  "cert.pdf-saved": {
+    "en": "PDF saved to your phone.",
+    "ha": "An ajiye PDF a wayarka.",
+    "ig": "Echekwara PDF ya na ekwentị gị.",
+    "yo": "A ti fi PDF pamọ́ sínú fóònù rẹ."
+  },
+  "cert.pdf-failed": {
+    "en": "Could not make the PDF. Try Save image instead.",
+    "ha": "Ba a iya yin PDF ɗin ba. Gwada Ajiye hoto a maimakon haka.",
+    "ig": "Enweghị ike ịme PDF ahụ. Nwaa Chekwaa foto kama.",
+    "yo": "A kò lè ṣe PDF náà. Gbìyànjú Fi àwòrán pamọ́ dípò rẹ̀."
+  }
+}

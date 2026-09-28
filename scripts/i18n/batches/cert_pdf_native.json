@@ -1,0 +1,32 @@
+{
+  "n.app.certificate.making-pdf": {
+    "en": "Making the PDF…",
+    "ha": "Ana yin PDF…",
+    "ig": "Na-eme PDF…",
+    "yo": "À ń ṣe PDF…"
+  },
+  "n.app.certificate.pdf-failed": {
+    "en": "Could not make the PDF. Save the image instead.",
+    "ha": "Ba a iya yin PDF ɗin ba. Ajiye hoton a maimakon haka.",
+    "ig": "Enweghị ike ịme PDF ahụ. Chekwaa foto ahụ kama.",
+    "yo": "A kò lè ṣe PDF náà. Fi àwòrán náà pamọ́ dípò rẹ̀."
+  },
+  "n.app.verify-cert.title": {
+    "en": "Check a certificate",
+    "ha": "Duba takardar shaida",
+    "ig": "Lelee asambodo",
+    "yo": "Ṣàyẹ̀wò ìwé-ẹ̀rí"
+  },
+  "cert.verify-title": { "web": true },
+  "cert.verify-lede": { "web": true },
+  "cert.verify-label": { "web": true },
+  "cert.verify-button": { "web": true },
+  "cert.verify-checking": { "web": true },
+  "cert.verify-valid-h": { "web": true },
+  "cert.verify-valid-body": { "web": true },
+  "cert.verify-invalid-h": { "web": true },
+  "cert.verify-invalid-body": { "web": true },
+  "cert.verify-error": { "web": true },
+  "cert.verify-what": { "web": true },
+  "cert.verify-earn": { "web": true }
+}

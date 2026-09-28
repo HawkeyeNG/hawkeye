@@ -4,10 +4,12 @@
  *
  * THE NAME NEVER LEAVES THE PHONE. The server stores no name. The one printed
  * on a certificate is typed on the certificate screen, kept in AsyncStorage and
- * drawn by components/certificate-card.tsx. No function here takes it, except
- * printUrl(), which puts it in a URL #FRAGMENT for the in-app browser — and a
- * fragment is never sent to any server (the web page also wipes it from the
- * address bar the moment it reads it).
+ * drawn by components/certificate-card.tsx and, for the PDF, by
+ * lib/certificate-layout.ts on the phone. No function here takes it.
+ *
+ * ALL NATIVE. The quiz, the certificate, its PDF (lib/certificate-pdf.ts) and
+ * the public check (verifyCode, app/verify-cert.tsx) are screens of this app;
+ * nothing in the flow opens a web page.
  *
  * No strings live here: the quiz is KEYS, translated where it is painted.
  */
@@ -132,16 +134,41 @@ export async function issueCert(answers: number[]): Promise<IssueResult> {
   return { ok: false, error: 'network' };
 }
 
+/* The public check (backend GET /api/cert/verify, the one app/verify-cert.html
+   calls). The alphabet is the code generator's: no 0/1/I/L/O/U. */
+const CODE_CHARS = /[^2-9A-HJKMNP-TV-Z]/g;
+/** "abcd efgh" -> "ABCDEFGH" (at most 8 of the code's own characters). */
+export const normCode = (s: string) => String(s || '').toUpperCase().replace(CODE_CHARS, '').slice(0, 8);
+export const prettyCode = (c: string) => (c.length > 4 ? `${c.slice(0, 4)}-${c.slice(4)}` : c);
+
+export type VerifyResult =
+  | { state: 'valid'; code: string; issuedOn: string }
+  | { state: 'invalid' }
+  | { state: 'error' };
+
 /**
- * The web certificate page, for printing or saving as PDF in the in-app
- * browser. The name goes in the #FRAGMENT, never the query string: a fragment
- * is not part of the request, so no server — ours or a proxy's — ever sees it.
- * Built by hand: React Native's URLSearchParams does not implement set().
+ * No credentials, like the web page, so the edge may answer it. A malformed
+ * code is "not valid" without asking anyone.
  */
-export function printUrl(cert: Cert, name: string, lang: string): string {
-  const parts = [`code=${encodeURIComponent(cert.code)}`];
-  const n = name.trim().slice(0, 60);
-  if (n) parts.push(`name=${encodeURIComponent(n)}`);
-  parts.push(`lang=${encodeURIComponent(lang)}`);
-  return `${BASE}/certificate.html#${parts.join('&')}`;
+export async function verifyCode(raw: string): Promise<VerifyResult> {
+  const code = normCode(raw);
+  if (code.length !== 8) return { state: 'invalid' };
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 12_000);
+  try {
+    const res = await fetch(`${BASE}/api/cert/verify?code=${encodeURIComponent(prettyCode(code))}`, {
+      headers: { accept: 'application/json' },
+      signal: ctl.signal,
+    });
+    const j = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+    if (res.status === 200 && j && j.valid === true && typeof j.code === 'string' && typeof j.issuedOn === 'string') {
+      return { state: 'valid', code: j.code, issuedOn: j.issuedOn };
+    }
+    if (res.status === 404 || res.status === 400) return { state: 'invalid' };
+    return { state: 'error' };
+  } catch {
+    return { state: 'error' };
+  } finally {
+    clearTimeout(timer);
+  }
 }

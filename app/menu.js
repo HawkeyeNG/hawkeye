@@ -1947,6 +1947,13 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   // Never on the sign-up/sign-in flow: that screen is deliberately chrome-free in
   // the app, and a floating chat bubble over an auth form is noise everywhere.
   if (/observe\.html$/.test(location.pathname)) return;
+  // LITE, NOT OVER A TASK THAT FILLS THE SCREEN: the practice run, the other
+  // report flows and the certificate (quiz + check). The native app shows no
+  // bubble there either (ask-fab.tsx HIDDEN, and its certificate is a
+  // full-screen modal), and in Lite the bubble sat over the quiz's own buttons.
+  // The website keeps its placement.
+  if (window.HAWKEYE && window.HAWKEYE.native
+    && /\/(practice|collation|incidents|certificate|verify-cert)\.html$/.test(location.pathname)) return;
   fetch('/api/assistant/health').then((r) => r.json()).then((h) => { if (h && h.enabled) mount(); }).catch(() => {});
 
   function mount() {

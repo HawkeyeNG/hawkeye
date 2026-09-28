@@ -7,14 +7,15 @@
  * onto a canvas here. It is in no request body, header or URL this page sends.
  * The only requests are GET /api/cert/mine and POST /api/cert/issue (answers
  * and the quiz version), both signed in, and GET /api/cert/verify?code= (the
- * public code). tests/certificate_ui_test.mjs records every request the page
+ * public code). Save as PDF (5b) is made on this device and requests nothing. tests/certificate_ui_test.mjs records every request the page
  * makes and fails if the name is in any of them.
  *
  * TWO WAYS IN.
  *   1. Signed in (web, Lite): /api/cert/mine says certified, not practised yet,
  *      or ready for the quiz.
  *   2. certificate.html#code=ABCD-EFGH&name=…&lang=ha — how the native app
- *      opens this page in the in-app browser to print or save it. A #fragment
+ *      USED to open this page in the in-app browser to print it (it now makes
+ *      its own PDF; kept so an app still on the old JS keeps working). A #fragment
  *      is never sent to any server, and it is wiped from the address bar the
  *      moment it is read, before anything else on the page runs. The code is
  *      checked against the public verify endpoint, so a made-up code shows
@@ -92,6 +93,8 @@
     return String(s).replace(/\{(\w+)\}/g, function (m, k) { return params[k] != null ? String(params[k]) : m; });
   }
   function token() { try { return localStorage.getItem('hawkeye_token'); } catch (e) { return null; } }
+  /** Inside Hawkeye Lite (the Capacitor shell), not a browser tab. */
+  function native() { return !!(window.HAWKEYE && window.HAWKEYE.native); }
 
   /* ---------------------------------------------------------------------- */
   /* 1. The fragment, read and wiped FIRST.                                 */
@@ -189,11 +192,25 @@
     $('cq-question').textContent = P(q.q);
     var box = $('cq-options');
     box.innerHTML = '';
+    box.setAttribute('role', 'radiogroup');
+    box.setAttribute('aria-labelledby', 'cq-question');
     q.o.forEach(function (opt, i) {
+      var right = state === 'right' && i === q.a;
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'cq-opt' + (state === 'right' && i === q.a ? ' ok' : '') + (wrong[i] ? ' bad' : '');
-      b.textContent = P(opt);
+      b.className = 'cq-opt' + (right ? ' ok' : '') + (wrong[i] ? ' bad' : '');
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(right || !!wrong[i]));
+      // The radio circle, with the check / cross it fills with (CSS picks one).
+      var dot = document.createElement('span');
+      dot.className = 'cq-dot';
+      dot.setAttribute('aria-hidden', 'true');
+      dot.innerHTML = '<svg class="cq-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+        + '<svg class="cq-bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>';
+      var label = document.createElement('span');
+      label.textContent = P(opt);
+      b.appendChild(dot);
+      b.appendChild(label);
       b.disabled = state !== 'ask' || !!wrong[i];
       b.addEventListener('click', function () { pick(i); });
       box.appendChild(b);
@@ -387,9 +404,12 @@
     $('cert-name').value = saved.slice(0, 60);
     $('cert-code').textContent = cert.code;
     $('cert-link').textContent = cert.verifyUrl.replace(/^https?:\/\//, '');
-    $('cert-link').href = cert.verifyUrl;
-    // window.print does nothing inside the app shell's WebView.
-    $('cert-print').hidden = !!(window.HAWKEYE && window.HAWKEYE.native);
+    // LITE: the bundled check page, inside the app. The printed address is on
+    // the website, and following it from the app shell left Lite for the
+    // browser — the website's page, its header and its chat bubble.
+    $('cert-link').href = native() ? 'verify-cert.html?code=' + encodeURIComponent(cert.code) : cert.verifyUrl;
+    // window.print does nothing inside the app shell's WebView; Save as PDF does.
+    $('cert-print').hidden = native();
     show('c-done');
     draw();
   }
@@ -412,10 +432,10 @@
   var certStatus = null;
   function paintCertStatus() { $('cert-status').textContent = certStatus ? P(certStatus) : ''; }
 
-  function download(blob) {
+  function download(blob, name) {
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = url; a.download = FILE; a.hidden = true;
+    a.href = url; a.download = name || FILE; a.hidden = true;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
   }
@@ -460,6 +480,140 @@
   $('cert-print').addEventListener('click', async function () {
     await draw();
     window.print();
+  });
+
+  /* ---------------------------------------------------------------------- */
+  /* 5b. Save as PDF: a real one-page file, made here.                      */
+  /*                                                                        */
+  /* window.print() does nothing in Lite's WebView, and a print dialog is   */
+  /* not a file anyway. So the certificate is drawn again (1.5x, ~205 dpi   */
+  /* on the page), encoded as a JPEG, and wrapped in the smallest valid PDF */
+  /* there is: one A4-landscape page whose only content is that image       */
+  /* (DCTDecode — a PDF carries a JPEG as-is). No library, no CDN, no       */
+  /* request: the name goes from the input box to the pixels and nowhere   */
+  /* else; the PDF's /Title is the generic one.                             */
+  /* ---------------------------------------------------------------------- */
+  var PDF_FILE = 'hawkeye-observer-certificate.pdf';
+  var PDF_W = 842, PDF_H = 595;      // A4 landscape, in points
+  var PDF_SCALE = 1.5;
+
+  async function certJpeg() {
+    var logo = await loadLogo();
+    var c = document.createElement('canvas');
+    c.width = Math.round(W * PDF_SCALE); c.height = Math.round(H * PDF_SCALE);
+    var x = c.getContext('2d');
+    x.scale(c.width / W, c.height / H);
+    paint(x, lines(cert, $('cert-name').value), logo);
+    var url = c.toDataURL('image/jpeg', 0.92);
+    var size = { w: c.width, h: c.height };
+    c.width = 0; c.height = 0;       // hand the pixels back at once on a small phone
+    if (url.indexOf('data:image/jpeg') !== 0) throw new Error('no JPEG encoder');
+    var bin = atob(url.slice(url.indexOf(',') + 1));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return { bytes: bytes, w: size.w, h: size.h };
+  }
+
+  /** A one-page PDF holding `jpg` edge to edge. Byte offsets are counted as it is built. */
+  function makePdf(jpg) {
+    var parts = [];
+    var len = 0;
+    var offs = [];
+    function add(x) {
+      var b = x;
+      if (typeof x === 'string') { b = new Uint8Array(x.length); for (var i = 0; i < x.length; i++) b[i] = x.charCodeAt(i) & 0xff; }
+      parts.push(b); len += b.length;
+    }
+    function obj(n, dict, stream) {
+      offs[n] = len;
+      add(n + ' 0 obj\n' + dict);
+      if (stream) { add('\nstream\n'); add(stream); add('\nendstream'); }
+      add('\nendobj\n');
+    }
+    var draw = 'q ' + PDF_W + ' 0 0 ' + PDF_H + ' 0 0 cm /Im1 Do Q';
+    add('%PDF-1.4\n');
+    add(new Uint8Array([0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a]));   // "binary file" marker
+    obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PDF_W + ' ' + PDF_H + '] '
+      + '/Resources << /XObject << /Im1 4 0 R >> /ProcSet [/PDF /ImageC] >> /Contents 5 0 R >>');
+    obj(4, '<< /Type /XObject /Subtype /Image /Width ' + jpg.w + ' /Height ' + jpg.h
+      + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.bytes.length + ' >>', jpg.bytes);
+    obj(5, '<< /Length ' + draw.length + ' >>', draw);
+    obj(6, '<< /Title (Hawkeye Observer Certificate) /Producer (Hawkeye) >>');
+    var xref = len;
+    var rows = '0000000000 65535 f \n';
+    for (var n = 1; n <= 6; n++) rows += ('0000000000' + offs[n]).slice(-10) + ' 00000 n \n';
+    add('xref\n0 7\n' + rows + 'trailer\n<< /Size 7 /Root 1 0 R /Info 6 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+    return new Blob(parts, { type: 'application/pdf' });
+  }
+
+  function dataUrl(blob) {
+    return new Promise(function (res, rej) {
+      var r = new FileReader();
+      r.onload = function () { res(String(r.result).replace(/^data:[^;,]*/, 'data:application/pdf')); };
+      r.onerror = function () { rej(r.error); };
+      r.readAsDataURL(blob);
+    });
+  }
+
+  /**
+   * LITE ON ANDROID has no file-saving plugin and its WebView ignores downloads
+   * and the Web Share API. It does have @capacitor-community/media (which writes
+   * any data: URL into the app's "Hawkeye" media folder, Android/media/
+   * ng.com.hawkeye.lite/Hawkeye/, no permission needed — see save-media.js) and
+   * @capacitor/share (which sends a file:// path to the system share sheet).
+   * Together: the PDF is kept on the phone, then offered to Drive, WhatsApp,
+   * a printer… Nothing native is new, so no store build is needed.
+   * Returns true when it handled the file.
+   */
+  async function liteAndroidPdf(blob) {
+    var Cap = window.Capacitor;
+    var Pl = (Cap && Cap.Plugins) || {};
+    var M = Pl.Media;
+    var S = Pl.Share;
+    if (!Cap || !Cap.getPlatform || Cap.getPlatform() !== 'android' || !M || !M.savePhoto || !S || !S.share) return false;
+    var album = null;
+    try { album = sessionStorage.getItem('hawkeye_media_album'); } catch (e) { /* look it up */ }
+    if (!album) {
+      var find = async function () { return (((await M.getAlbums()) || {}).albums || []).find(function (a) { return a.name === 'Hawkeye'; }); };
+      var a = await find();
+      if (!a) { await M.createAlbum({ name: 'Hawkeye' }).catch(function () {}); a = await find(); }
+      if (!a || !a.identifier) throw new Error('no album');
+      album = a.identifier;
+      try { sessionStorage.setItem('hawkeye_media_album', album); } catch (e) { /* memory only */ }
+    }
+    var r = await M.savePhoto({ path: await dataUrl(blob), albumIdentifier: album, fileName: PDF_FILE.replace(/\.pdf$/, '') });
+    if (!r || !r.filePath) throw new Error('not saved');
+    try {
+      await S.share({ files: ['file://' + r.filePath], dialogTitle: T('cert.pdf', 'Save as PDF') });
+    } catch (e) { /* dismissed: the file is saved all the same */ }
+    return true;
+  }
+
+  var pdfBusy = false;
+  $('cert-pdf').addEventListener('click', async function () {
+    if (!cert || pdfBusy) return;
+    pdfBusy = true;
+    $('cert-pdf').disabled = true;
+    certStatus = null; paintCertStatus();
+    try {
+      var blob = makePdf(await certJpeg());
+      if (native()) {
+        if (await liteAndroidPdf(blob)) { certStatus = ['cert.pdf-saved', 'PDF saved to your phone.']; return; }
+        // Lite on iOS: WKWebView's Web Share takes files — Save to Files, Print, AirDrop…
+        var file = new File([blob], PDF_FILE, { type: 'application/pdf' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+        throw new Error('no way to hand over a file here');
+      }
+      download(blob, PDF_FILE);
+    } catch (e) {
+      if (!(e && e.name === 'AbortError')) certStatus = ['cert.pdf-failed', 'Could not make the PDF. Try Save image instead.'];
+    } finally {
+      pdfBusy = false;
+      $('cert-pdf').disabled = false;
+      paintCertStatus();
+    }
   });
 
   /* ---------------------------------------------------------------------- */

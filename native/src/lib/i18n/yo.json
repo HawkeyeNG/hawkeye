@@ -1358,5 +1358,20 @@
   "n.auth.org-confirm-title": "Ṣé nọ́mbà rẹ nìyí?",
   "n.auth.org-confirm-body": "Kóòdù yìí yóò so mọ́ {phone} títí láé.",
   "n.auth.org-confirm-yes": "Bẹ́ẹ̀ ni, ṣí àkàǹtì mi",
-  "n.auth.org-confirm-no": "Yí nọ́mbà padà"
+  "n.auth.org-confirm-no": "Yí nọ́mbà padà",
+  "n.app.certificate.making-pdf": "À ń ṣe PDF…",
+  "n.app.certificate.pdf-failed": "A kò lè ṣe PDF náà. Fi àwòrán náà pamọ́ dípò rẹ̀.",
+  "n.app.verify-cert.title": "Ṣàyẹ̀wò ìwé-ẹ̀rí",
+  "cert.verify-title": "Ṣàyẹ̀wò Ìwé-ẹ̀rí Olùwòran Hawkeye",
+  "cert.verify-lede": "Tẹ kóòdù tí a tẹ̀ sórí ìwé-ẹ̀rí náà.",
+  "cert.verify-label": "Kóòdù ìwé-ẹ̀rí",
+  "cert.verify-button": "Ṣàyẹ̀wò",
+  "cert.verify-checking": "À ń ṣàyẹ̀wò…",
+  "cert.verify-valid-h": "Ìwé-ẹ̀rí tí ó fẹsẹ̀ múlẹ̀",
+  "cert.verify-valid-body": "Ìwé-ẹ̀rí Olùwòran Hawkeye {code}, tí a fúnni ní {date}.",
+  "cert.verify-invalid-h": "Kò fẹsẹ̀ múlẹ̀",
+  "cert.verify-invalid-body": "Kò sí ìwé-ẹ̀rí Olùwòran Hawkeye tí ó ní kóòdù yìí. Ṣàyẹ̀wò kóòdù náà kí o sì tún gbìyànjú.",
+  "cert.verify-error": "A kò lè ṣàyẹ̀wò kóòdù náà báyìí. Tún gbìyànjú.",
+  "cert.verify-what": "Ìwé-ẹ̀rí tí ó fẹsẹ̀ múlẹ̀ túmọ̀ sí pé ẹni tí ó ni ín ti parí eré àdánwò Hawkeye àti ìdánwò olùwòran. Hawkeye kì í tọ́jú orúkọ, nítorí náà ojú ìwé yìí kò lè sọ ẹni tí ó ni ín. Kì í ṣe ìwé àṣẹ láti ọ̀dọ̀ INEC.",
+  "cert.verify-earn": "Gba tìrẹ: eré àdánwò àti ìdánwò kúkúrú"
 }

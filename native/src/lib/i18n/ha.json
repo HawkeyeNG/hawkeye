@@ -1358,5 +1358,20 @@
   "n.auth.org-confirm-title": "Wannan lambar wayarka ce?",
   "n.auth.org-confirm-body": "Za a haɗa wannan lambar ƙungiya da {phone} har abada.",
   "n.auth.org-confirm-yes": "Ee, buɗe asusuna",
-  "n.auth.org-confirm-no": "Canza lamba"
+  "n.auth.org-confirm-no": "Canza lamba",
+  "n.app.certificate.making-pdf": "Ana yin PDF…",
+  "n.app.certificate.pdf-failed": "Ba a iya yin PDF ɗin ba. Ajiye hoton a maimakon haka.",
+  "n.app.verify-cert.title": "Duba takardar shaida",
+  "cert.verify-title": "Duba Takardar Shaidar Mai Lura ta Hawkeye",
+  "cert.verify-lede": "Shigar da lambar da aka buga a kan takardar shaidar.",
+  "cert.verify-label": "Lambar takardar shaida",
+  "cert.verify-button": "Duba",
+  "cert.verify-checking": "Ana dubawa…",
+  "cert.verify-valid-h": "Takardar shaida mai inganci",
+  "cert.verify-valid-body": "Takardar shaidar Mai Lura ta Hawkeye {code}, an bayar a {date}.",
+  "cert.verify-invalid-h": "Ba ta da inganci",
+  "cert.verify-invalid-body": "Babu takardar shaidar Mai Lura ta Hawkeye da ke da wannan lambar. Duba lambar ka sake gwadawa.",
+  "cert.verify-error": "Ba a iya duba lambar yanzu ba. Sake gwadawa.",
+  "cert.verify-what": "Takardar shaida mai inganci na nufin mai ita ya kammala gwajin atisaye na Hawkeye da tambayoyin mai lura. Hawkeye ba ta ajiye sunaye, don haka wannan shafin ba zai iya faɗin ko wane ne mai ita ba. Ba izinin INEC ba ce.",
+  "cert.verify-earn": "Sami taka: gwajin atisaye da gajerun tambayoyi"
 }

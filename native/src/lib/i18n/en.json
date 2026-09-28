@@ -1358,5 +1358,20 @@
   "n.auth.org-confirm-title": "Is this your number?",
   "n.auth.org-confirm-body": "This code will be tied to {phone} for good.",
   "n.auth.org-confirm-yes": "Yes, create my account",
-  "n.auth.org-confirm-no": "Change number"
+  "n.auth.org-confirm-no": "Change number",
+  "n.app.certificate.making-pdf": "Making the PDF…",
+  "n.app.certificate.pdf-failed": "Could not make the PDF. Save the image instead.",
+  "n.app.verify-cert.title": "Check a certificate",
+  "cert.verify-title": "Check a Hawkeye Observer Certificate",
+  "cert.verify-lede": "Enter the code printed on the certificate.",
+  "cert.verify-label": "Certificate code",
+  "cert.verify-button": "Check",
+  "cert.verify-checking": "Checking…",
+  "cert.verify-valid-h": "Valid certificate",
+  "cert.verify-valid-body": "Hawkeye Observer certificate {code}, issued on {date}.",
+  "cert.verify-invalid-h": "Not valid",
+  "cert.verify-invalid-body": "No Hawkeye Observer certificate has this code. Check the code and try again.",
+  "cert.verify-error": "Could not check the code right now. Try again.",
+  "cert.verify-what": "A valid certificate means its holder completed a Hawkeye practice run and the observer quiz. Hawkeye stores no names, so this page cannot say who the holder is. It is not INEC accreditation.",
+  "cert.verify-earn": "Earn your own: a practice run and a short quiz"
 }

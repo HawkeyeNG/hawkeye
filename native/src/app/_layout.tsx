@@ -292,6 +292,7 @@ function RootShell() {
               <Stack.Screen name="practice" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="practice-day" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="certificate" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="verify-cert" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="incidents" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="terms" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="assistant" options={{ presentation: 'fullScreenModal' }} />

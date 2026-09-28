@@ -1,0 +1,212 @@
+{
+  "tgbroadcast.admin.title": {
+    "ha": "Saƙon Telegram ga kowa",
+    "ig": "Ozi izugbe Telegram",
+    "yo": "Ìfiránṣẹ́ gbogbogbò Telegram"
+  },
+  "tgbroadcast.admin.intro": {
+    "ha": "Rubuta saƙo don sakawa a tashoshinmu na Telegram, ko don aika wa masu bin gasa kai tsaye, ko duka biyun. Rubutu mara ado: ana kiyaye sabbin layuka kuma ba a tsara komai ba. Ba za a aika komai ba sai ka rubuta SEND ka danna Aika saƙon.",
+    "ig": "Dee ozi ị ga-etinye n'ọwa Telegram anyị, ma ọ bụ ziga ya kpọmkwem nye ndị na-eso asọmpi, ma ọ bụ ha abụọ. Ederede nkịtị: a na-edebe ahịrị ọhụrụ, ọ dịghịkwa ihe a na-ahazi. Ọ dịghị ihe a ga-eziga ruo mgbe ị dere SEND ma pịa Ziga ozi.",
+    "yo": "Kọ ìfiránṣẹ́ láti gbé sórí àwọn ìkànnì Telegram wa, láti fi ránṣẹ́ tààrà sí àwọn tó ń tẹ̀lé ìdíje, tàbí méjèèjì. Ọ̀rọ̀ lásán: a ó pa àwọn ìlà tuntun mọ́, a kì í sì ṣe àtúnṣe ìrísí kankan. Kò sí ohun tí a ó fi ránṣẹ́ títí o fi tẹ SEND tí o sì tẹ Fi ìfiránṣẹ́ ránṣẹ́."
+  },
+  "tgbroadcast.admin.targets": {
+    "ha": "Aika zuwa",
+    "ig": "Ziga na",
+    "yo": "Fi ránṣẹ́ sí"
+  },
+  "tgbroadcast.admin.target-channels": {
+    "ha": "Saka a tashoshinmu na Telegram, kowane harshe a tasharsa",
+    "ig": "Tinye n'ọwa Telegram anyị, asụsụ ọ bụla n'ọwa nke ya",
+    "yo": "Gbé e sórí àwọn ìkànnì Telegram wa, èdè kọ̀ọ̀kan sí ìkànnì tirẹ̀"
+  },
+  "tgbroadcast.admin.target-followers": {
+    "ha": "Haka kuma aika wa masu bin gasa saƙo kai tsaye, kowa da harshensa, a hankali, sau ɗaya a kowane saƙo",
+    "ig": "Zigakwa ozi kpọmkwem nye ndị na-eso asọmpi, onye ọ bụla n'asụsụ ya, nwayọọ nwayọọ, otu ugboro maka ozi ọ bụla",
+    "yo": "Tún fi ìfiránṣẹ́ tààrà ránṣẹ́ sí àwọn tó ń tẹ̀lé ìdíje, olúkúlùkù ní èdè rẹ̀, díẹ̀díẹ̀, lẹ́ẹ̀kan ṣoṣo fún ìfiránṣẹ́ kọ̀ọ̀kan"
+  },
+  "tgbroadcast.admin.confirm-label": {
+    "ha": "Rubuta SEND don tabbatarwa",
+    "ig": "Dee SEND iji kwado",
+    "yo": "Tẹ SEND láti fìdí rẹ̀ múlẹ̀"
+  },
+  "tgbroadcast.admin.send": {
+    "ha": "Aika saƙon",
+    "ig": "Ziga ozi",
+    "yo": "Fi ìfiránṣẹ́ ránṣẹ́"
+  },
+  "tgbroadcast.admin.resume": {
+    "ha": "Ci gaba da saƙon ƙarshe",
+    "ig": "Gaa n'ihu n'ozi ikpeazụ",
+    "yo": "Tẹ̀síwájú ìfiránṣẹ́ tó kẹ́yìn"
+  },
+  "tgbroadcast.admin.reason-confirm": {
+    "ha": "Rubuta SEND a cikin akwatin don tabbatarwa.",
+    "ig": "Dee SEND n'igbe ahụ iji kwado.",
+    "yo": "Tẹ SEND sínú àpótí náà láti fìdí rẹ̀ múlẹ̀."
+  },
+  "tgbroadcast.admin.reason-no-text": {
+    "ha": "Rubuta saƙon Turanci da farko.",
+    "ig": "Buru ụzọ dee ozi Bekee.",
+    "yo": "Kọ́kọ́ kọ ìfiránṣẹ́ Gẹ̀ẹ́sì."
+  },
+  "tgbroadcast.admin.reason-too-long": {
+    "ha": "Saƙon {lang} ya wuce haruffa {max}.",
+    "ig": "Ozi {lang} karịrị mkpụrụedemede {max}.",
+    "yo": "Ìfiránṣẹ́ {lang} ti ju ohun kikọ {max} lọ."
+  },
+  "tgbroadcast.admin.reason-no-target": {
+    "ha": "Zaɓi inda za a aika: tashoshinmu, masu bin gasa, ko duka biyun.",
+    "ig": "Họrọ ebe ị ga-eziga ya: ọwa anyị, ndị na-eso, ma ọ bụ ha abụọ.",
+    "yo": "Yan ibi tí o fẹ́ fi ránṣẹ́ sí: àwọn ìkànnì wa, àwọn tó ń tẹ̀lé, tàbí méjèèjì."
+  },
+  "tgbroadcast.admin.reason-not-live": {
+    "ha": "Tashoshinmu na Telegram ba sa aiki, don haka ba za a iya saka komai a can ba.",
+    "ig": "Ọwa Telegram anyị anaghị arụ ọrụ, ya mere enweghị ike itinye ihe ọ bụla ebe ahụ.",
+    "yo": "Àwọn ìkànnì Telegram wa kò ṣiṣẹ́, nítorí náà a kò lè gbé ohunkóhun síbẹ̀."
+  },
+  "tgbroadcast.admin.reason-no-followers": {
+    "ha": "Babu mai bin gasa da ya haɗa Telegram, don haka babu wanda za a aika wa saƙo.",
+    "ig": "Ọ dịghị onye na-eso asọmpi jikọrọ Telegram, ya mere ọ dịghị onye a ga-ezigara ozi.",
+    "yo": "Kò sí ẹni tó ń tẹ̀lé ìdíje tó so Telegram pọ̀, nítorí náà kò sí ẹni tí a lè fi ránṣẹ́ sí."
+  },
+  "tgbroadcast.admin.placeholder-en": {
+    "ha": "Rubuta saƙon. Danna Enter don sabon layi.",
+    "ig": "Dee ozi ahụ. Pịa Enter maka ahịrị ọhụrụ.",
+    "yo": "Kọ ìfiránṣẹ́ náà. Tẹ Enter fún ìlà tuntun."
+  },
+  "tgbroadcast.admin.placeholder-other": {
+    "ha": "Ba dole ba ne. Idan ka bar shi babu komai, masu karatun {lang} za su samu saƙon Turanci.",
+    "ig": "Ọ bụghị iwu. Ọ bụrụ na ị hapụ ya efu, ndị na-agụ {lang} ga-enweta ozi Bekee.",
+    "yo": "Kò pọn dandan. Tí o bá fi sílẹ̀ lófo, àwọn òǹkàwé {lang} yóò gba ìfiránṣẹ́ Gẹ̀ẹ́sì."
+  },
+  "tgbroadcast.admin.languages": {
+    "ha": "Harshen saƙo",
+    "ig": "Asụsụ ozi",
+    "yo": "Èdè ìfiránṣẹ́"
+  },
+  "tgbroadcast.admin.chars": {
+    "ha": "{n} / {max} haruffa",
+    "ig": "{n} / {max} mkpụrụedemede",
+    "yo": "{n} / {max} ohun kikọ"
+  },
+  "tgbroadcast.admin.chars-over": {
+    "ha": "Ya yi tsawo da yawa ga saƙon Telegram ɗaya.",
+    "ig": "Ọ dị ogologo karịa maka otu ozi Telegram.",
+    "yo": "Ó gùn jù fún ìfiránṣẹ́ Telegram kan."
+  },
+  "tgbroadcast.admin.en-required": {
+    "ha": "Turanci dole ne. Duk harshen da aka bar shi babu komai zai samu saƙon Turanci.",
+    "ig": "Bekee dị mkpa. Asụsụ ọ bụla a hapụrụ efu ga-enweta ozi Bekee.",
+    "yo": "Gẹ̀ẹ́sì pọn dandan. Èdè èyíkéyìí tí a fi sílẹ̀ lófo yóò gba ìfiránṣẹ́ Gẹ̀ẹ́sì."
+  },
+  "tgbroadcast.admin.empty-fallback": {
+    "ha": "Babu komai: masu karatun {lang} za su samu saƙon Turanci.",
+    "ig": "Efu: ndị na-agụ {lang} ga-enweta ozi Bekee.",
+    "yo": "Ó ṣófo: àwọn òǹkàwé {lang} yóò gba ìfiránṣẹ́ Gẹ̀ẹ́sì."
+  },
+  "tgbroadcast.admin.last-none": {
+    "ha": "Ba a aika saƙo ga kowa daga na'urar gudanarwa ba tukuna.",
+    "ig": "Ezibeghị ozi izugbe site na njikwa.",
+    "yo": "A kò tíì fi ìfiránṣẹ́ gbogbogbò ránṣẹ́ láti kọ́nsólù."
+  },
+  "tgbroadcast.admin.last-running": {
+    "ha": "Ana aikawa: saƙonni {posted} a tasha, an aika saƙonni kai tsaye {sent} cikin {audience}, {failed} sun kasa. Kana iya rufe wannan shafi; sabar za ta ci gaba.",
+    "ig": "A na-eziga: ozi {posted} n'ọwa, ezigala ozi kpọmkwem {sent} n'ime {audience}, {failed} dara. Ị nwere ike imechi peeji a; sava ga-aga n'ihu.",
+    "yo": "A ń fi ránṣẹ́: ìfiránṣẹ́ {posted} sórí ìkànnì, a ti fi ìfiránṣẹ́ tààrà {sent} nínú {audience} ránṣẹ́, {failed} kùnà. O lè pa ojú-ìwé yìí dé; sáfà yóò máa bá a lọ."
+  },
+  "tgbroadcast.admin.last-done": {
+    "ha": "Saƙon ƙarshe ya kammala: saƙonni {posted} a tasha, an aika saƙonni kai tsaye {sent} cikin {audience}, {failed} sun kasa.",
+    "ig": "Ozi ikpeazụ agwụla: ozi {posted} n'ọwa, ezigala ozi kpọmkwem {sent} n'ime {audience}, {failed} dara.",
+    "yo": "Ìfiránṣẹ́ tó kẹ́yìn ti parí: ìfiránṣẹ́ {posted} sórí ìkànnì, a fi ìfiránṣẹ́ tààrà {sent} nínú {audience} ránṣẹ́, {failed} kùnà."
+  },
+  "tgbroadcast.admin.last-interrupted": {
+    "ha": "Saƙon ƙarshe ya tsaya saboda sabar ta sake farawa: saƙonni kai tsaye {delivered} sun isa, {waiting} suna jira. Ci gaba da shi don isa ga sauran. Babu wanda zai samu sau biyu.",
+    "ig": "Ozi ikpeazụ kwụsịrị n'ihi na sava malitere ọzọ: ozi kpọmkwem {delivered} ruru, {waiting} ka na-eche. Gaa n'ihu iji ruo ndị fọdụrụ. Ọ dịghị onye ga-enweta ya ugboro abụọ.",
+    "yo": "Ìfiránṣẹ́ tó kẹ́yìn dúró nítorí sáfà tún bẹ̀rẹ̀: ìfiránṣẹ́ tààrà {delivered} ti dé, {waiting} ṣì ń dúró. Tẹ̀síwájú láti dé ọ̀dọ̀ àwọn tó kù. Kò sí ẹni tí yóò gbà á lẹ́ẹ̀mejì."
+  },
+  "tgbroadcast.admin.last-failed": {
+    "ha": "Saƙon ƙarshe ya tsaya da kuskure ({error}). {waiting} suna jira.",
+    "ig": "Ozi ikpeazụ kwụsịrị na njehie ({error}). {waiting} ka na-eche.",
+    "yo": "Ìfiránṣẹ́ tó kẹ́yìn dúró pẹ̀lú àṣìṣe ({error}). {waiting} ṣì ń dúró."
+  },
+  "tgbroadcast.admin.channels-live": {
+    "ha": "Tashoshinmu na Telegram suna aiki.",
+    "ig": "Ọwa Telegram anyị na-arụ ọrụ.",
+    "yo": "Àwọn ìkànnì Telegram wa ti ń ṣiṣẹ́."
+  },
+  "tgbroadcast.admin.preview": {
+    "ha": "Samfoti",
+    "ig": "Nlele",
+    "yo": "Àyẹ̀wò"
+  },
+  "tgbroadcast.admin.totals": {
+    "ha": "saƙonni {posts} a tasha · saƙonni kai tsaye {dms}",
+    "ig": "ozi {posts} n'ọwa · ozi kpọmkwem {dms}",
+    "yo": "ìfiránṣẹ́ {posts} sórí ìkànnì · ìfiránṣẹ́ tààrà {dms}"
+  },
+  "tgbroadcast.admin.preview-empty": {
+    "ha": "Rubuta saƙon Turanci don ganin abin da kowane mai karatu zai samu.",
+    "ig": "Dee ozi Bekee iji hụ ihe onye ọgụgụ ọ bụla ga-enweta.",
+    "yo": "Kọ ìfiránṣẹ́ Gẹ̀ẹ́sì láti rí ohun tí òǹkàwé kọ̀ọ̀kan yóò gbà."
+  },
+  "tgbroadcast.admin.no-own-channel": {
+    "ha": "Babu tashar kansa, don haka ba a saka komai don wannan harshe.",
+    "ig": "Enweghị ọwa nke ya, ya mere ọ dịghị ihe a na-etinye maka asụsụ a.",
+    "yo": "Kò ní ìkànnì tirẹ̀, nítorí náà a kò gbé nǹkan kan fún èdè yìí."
+  },
+  "tgbroadcast.admin.followers-get": {
+    "ha": "Masu bin gasa {n} za su samu shi a matsayin saƙo kai tsaye",
+    "ig": "Ndị na-eso {n} ga-enweta ya dịka ozi kpọmkwem",
+    "yo": "Àwọn tó ń tẹ̀lé {n} yóò gbà á gẹ́gẹ́ bí ìfiránṣẹ́ tààrà"
+  },
+  "tgbroadcast.admin.fallback-badge": {
+    "ha": "Rubutun Turanci: {lang} babu komai",
+    "ig": "Ederede Bekee: {lang} dị efu",
+    "yo": "Ọ̀rọ̀ Gẹ̀ẹ́sì: {lang} ṣófo"
+  },
+  "tgbroadcast.admin.waiting-note": {
+    "ha": "Masu bin gasa {waiting} ba su samu ba (misali, mutanen da suka toshe bot ɗin, ko waɗanda suka fara bi daga baya). Ci gaba zai sake gwada su kaɗai.",
+    "ig": "Ndị na-eso {waiting} enwetabeghị ya (dịka ọmụmaatụ, ndị gbochiri bot ahụ, ma ọ bụ ndị bidoro iso mgbe e mesịrị). Ịga n'ihu ga-anwale naanị ha ọzọ.",
+    "yo": "Àwọn tó ń tẹ̀lé {waiting} kò tíì gbà á (fún àpẹẹrẹ, àwọn tó dí bot náà, tàbí àwọn tó bẹ̀rẹ̀ sí í tẹ̀lé lẹ́yìn náà). Títẹ̀síwájú yóò tún gbìyànjú àwọn nìkan."
+  },
+  "tgbroadcast.admin.refused-sent": {
+    "ha": "An riga an aika wannan saƙon. Duba saƙon ƙarshe a ƙasa; ka sake rubuta SEND kawai idan kana son aika shi sau biyu.",
+    "ig": "Ezigalarị ozi a. Lelee ozi ikpeazụ n'okpuru; dee SEND ọzọ naanị ma ọ bụrụ na ị chọrọ iziga ya ugboro abụọ.",
+    "yo": "A ti fi ìfiránṣẹ́ yìí ránṣẹ́ tẹ́lẹ̀. Wo ìfiránṣẹ́ tó kẹ́yìn nísàlẹ̀; tún tẹ SEND kìkì bí o bá fẹ́ fi ránṣẹ́ lẹ́ẹ̀mejì."
+  },
+  "tgbroadcast.admin.refused-nothing": {
+    "ha": "Babu abin da ya rage a aika don wannan saƙon.",
+    "ig": "Ọ dịghị ihe fọdụrụ iziga maka ozi ahụ.",
+    "yo": "Kò sí ohun tó kù láti fi ránṣẹ́ fún ìfiránṣẹ́ náà."
+  },
+  "tgbroadcast.admin.refused-not-found": {
+    "ha": "Ba a sami wannan saƙon ba. Sabunta.",
+    "ig": "Ahụghị ozi ahụ. Megharịa.",
+    "yo": "A kò rí ìfiránṣẹ́ náà. Sọ ọ́ dọ̀tun."
+  },
+  "tgbroadcast.admin.started": {
+    "ha": "An fara: saƙonni {posts} a tasha da saƙonni kai tsaye {dms}.",
+    "ig": "Amalitela: ozi {posts} n'ọwa na ozi kpọmkwem {dms}.",
+    "yo": "Ó ti bẹ̀rẹ̀: ìfiránṣẹ́ {posts} sórí ìkànnì àti ìfiránṣẹ́ tààrà {dms}."
+  },
+  "tgbroadcast.admin.resumed": {
+    "ha": "An ci gaba: saƙonni {posts} a tasha da saƙonni kai tsaye {dms}.",
+    "ig": "Agala n'ihu: ozi {posts} n'ọwa na ozi kpọmkwem {dms}.",
+    "yo": "A ti tẹ̀síwájú: ìfiránṣẹ́ {posts} sórí ìkànnì àti ìfiránṣẹ́ tààrà {dms}."
+  },
+  "tgbroadcast.admin.load-error": {
+    "ha": "Ba a iya loda saƙon ba ({error}).",
+    "ig": "Enweghị ike ibugo ozi izugbe a ({error}).",
+    "yo": "Kò ṣeé gbé ìfiránṣẹ́ gbogbogbò wá ({error})."
+  },
+  "tgnotice.admin.reason-not-live": {
+    "ha": "Sanarwar tasha ba ta aiki ba, don haka ba za a iya aika sanarwar ba.",
+    "ig": "Ọkwa ọwa anaghị arụ ọrụ, ya mere enweghị ike iziga ọkwa a.",
+    "yo": "Ìkìlọ̀ ìkànnì kò tíì ṣiṣẹ́, nítorí náà a kò lè fi ìkéde náà ránṣẹ́."
+  },
+  "tgnotice.admin.reason-nobody": {
+    "ha": "Babu wanda ke jiran wannan sanarwa.",
+    "ig": "Ọ dịghị onye na-eche ọkwa a.",
+    "yo": "Kò sí ẹni tó ń dúró de ìkéde yìí."
+  }
+}

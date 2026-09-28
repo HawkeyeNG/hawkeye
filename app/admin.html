@@ -27,6 +27,19 @@
     .tabs { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
     .tab { border: 1px solid var(--border); background: var(--card); padding: 6px 14px; border-radius: 999px; cursor: pointer; font-weight: 700; font-size: 0.9rem; }
     .tab.on { background: var(--green); color: #fff; border-color: var(--green); }
+    /* Telegram broadcast composer. Its language tabs are NOT .tab: the incident
+       tabs' handler toggles .on on every .tab in the document. */
+    .tgb-langs { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 6px; }
+    .tgb-lang { border: 1px solid var(--border); background: var(--card); color: var(--ink, inherit); padding: 5px 12px; border-radius: 999px;
+                cursor: pointer; font-weight: 700; font-size: 0.88rem; width: auto; margin: 0; }
+    .tgb-lang.on { background: var(--green); color: #fff; border-color: var(--green); }
+    .tgb-lang.over { border-color: var(--danger, #b3261e); }
+    .tgb-text { width: 100%; min-height: 9.5em; resize: vertical; font: inherit; line-height: 1.45; box-sizing: border-box; padding: 8px 10px; }
+    .tgb-count.over { color: var(--text-danger, #b3261e); font-weight: 700; }
+    .tgb-target { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; font-weight: 400; }
+    .tgb-target input { width: auto; margin: 3px 0 0; flex: none; }
+    .tgb-pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0 0; font: inherit; max-height: 14em; overflow: auto; }
+    .tgb-reason { margin: 6px 0 0; }
     .inc { background: var(--card); border: 1px solid var(--border); border-left: 5px solid var(--green); padding: 14px; margin-bottom: 12px; }
     .inc.pending { border-left-color: #d4770c; }
     .inc.rejected { border-left-color: var(--muted); opacity: 0.7; }
@@ -367,6 +380,37 @@
         <summary data-i18n="admin.push-devices" style="cursor:pointer;font-weight:700">Push devices</summary>
         <div id="push-list"><p data-i18n="index.loading" class="empty">Loading…</p></div>
       </details>
+      <!-- TELEGRAM BROADCAST (services/tgBroadcast.js, /api/admin/tg-broadcast/*):
+           the owner's own words to our channels and/or race-alert followers,
+           one text per language, English required, plain text. Opening it
+           sends nothing; Send needs SEND typed and runs on the server, once
+           per broadcast. Loads on first open. -->
+      <details id="tgb-wrap" style="margin-top:10px">
+        <summary data-i18n="tgbroadcast.admin.title" style="cursor:pointer;font-weight:700">Telegram broadcast</summary>
+        <p data-i18n="tgbroadcast.admin.intro" class="hint">Write a message to post on our Telegram channels, to send to race-alert followers directly, or both. Plain text: line breaks are kept and nothing is formatted. Nothing is sent until you type SEND and press Send broadcast.</p>
+        <div class="tgb-langs" id="tgb-langs" role="tablist"></div>
+        <div id="tgb-fields"></div>
+        <p id="tgb-count" class="meta tgb-count" aria-live="polite"></p>
+        <p id="tgb-lang-note" class="meta"></p>
+        <fieldset style="border:0;padding:0;margin:10px 0 0">
+          <legend data-i18n="tgbroadcast.admin.targets" style="font-weight:700;padding:0">Send to</legend>
+          <label class="tgb-target"><input type="checkbox" id="tgb-t-channels" checked /> <span data-i18n="tgbroadcast.admin.target-channels">Post to our Telegram channels, each language to its own channel</span></label>
+          <label class="tgb-target"><input type="checkbox" id="tgb-t-followers" /> <span data-i18n="tgbroadcast.admin.target-followers">Also message race-alert followers directly, each in their language, paced, once per broadcast</span></label>
+        </fieldset>
+        <div class="row" style="margin-top:8px;gap:8px">
+          <button data-i18n="coverage.admin.refresh" id="tgb-refresh" class="secondary" style="width:auto;margin:0">Refresh</button>
+        </div>
+        <!-- Painted by the broadcast script: counts, then exactly what each language's readers get. -->
+        <div id="tgb-out"></div>
+        <div class="row" style="margin-top:10px;gap:8px;align-items:center;flex-wrap:wrap">
+          <label data-i18n="tgbroadcast.admin.confirm-label" for="tgb-confirm" style="margin:0;font-weight:700">Type SEND to confirm</label>
+          <input id="tgb-confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="width:140px;margin:0" />
+          <button id="tgb-send" type="button" style="width:auto;margin:0" disabled data-i18n="tgbroadcast.admin.send">Send broadcast</button>
+          <button id="tgb-resume" type="button" class="secondary" style="width:auto;margin:0" hidden data-i18n="tgbroadcast.admin.resume">Resume last broadcast</button>
+        </div>
+        <p id="tgb-reason" class="meta tgb-reason" role="status"></p>
+        <p id="tgb-status" class="status" role="status"></p>
+      </details>
       <!-- THE ONE-TIME TELEGRAM CHANNEL NOTICE (services/tgChannelNotice.js,
            /api/admin/tg-notice/*): one DM to everyone who got race alerts as
            Telegram DMs, saying alerts moved to the channel. Beside Push devices
@@ -386,6 +430,8 @@
           <input id="tgn-confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="width:120px;margin:0" disabled />
           <button id="tgn-send" type="button" style="width:auto;margin:0" disabled></button>
         </div>
+        <!-- Why Send is greyed out, in one line: the button never is without a reason. -->
+        <p id="tgn-reason" class="meta tgb-reason"></p>
         <p id="tgn-status" class="status" role="status"></p>
       </details>
       <details id="obs-wrap" style="margin-top:10px">
@@ -2660,6 +2706,7 @@
     const confirmLabel = document.getElementById('tgn-confirm-label');
     const sendBtn = document.getElementById('tgn-send');
     const refresh = document.getElementById('tgn-refresh');
+    const reason = document.getElementById('tgn-reason');
     if (!panel || !out || !sendBtn) return;
 
     const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
@@ -2695,6 +2742,13 @@
       const open = !!data && data.live && n > 0 && !running();
       confirmIn.disabled = !open;
       sendBtn.disabled = !open || sending || confirmIn.value !== 'SEND';
+      let why = '';
+      if (!data) why = err ? '' : T('index.loading', 'Loading…');
+      else if (!data.live) why = T('tgnotice.admin.reason-not-live', 'Channel alerts are not live, so the notice cannot be sent.');
+      else if (!n) why = T('tgnotice.admin.reason-nobody', 'Nobody is waiting for this notice.');
+      else if (running()) why = T('tgnotice.admin.refused-running', 'A send is already running.');
+      else if (!sending && confirmIn.value !== 'SEND') why = T('tgbroadcast.admin.reason-confirm', 'Type SEND in the box to confirm.');
+      if (reason) { reason.textContent = sendBtn.disabled ? why : ''; }
       status.textContent = msg ? msg.text : '';
       status.className = 'status' + (msg ? (msg.ok ? ' ok' : ' bad') : '');
     }
@@ -2831,6 +2885,363 @@
     panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });
     document.addEventListener('hawkeye-lang', () => { if (loaded) paint(); else paintControls(); });
     paintControls();
+  })();
+  </script>
+  <script>
+  /**
+   * TELEGRAM BROADCAST — POST /api/admin/tg-broadcast/preview (counts, channel
+   * links; sends nothing), POST …/send ({ texts, targets, confirm, max, id } or
+   * { resume, confirm, max }; returns at once) and GET …/status (progress).
+   * Every gate is on the server. The preview below is rendered HERE from the
+   * texts as typed, by the server's own rules (NFC, CRLF to LF, control
+   * characters dropped, trimmed, empty language = English), so typing costs no
+   * requests: /api/admin allows 60 per 10 minutes for the whole console.
+   * The broadcast id is made here and kept until a send starts, so a retried or
+   * double-clicked Send is refused as already_sent instead of sending twice.
+   */
+  (function () {
+    const panel = document.getElementById('tgb-wrap');
+    const $ = (id) => document.getElementById(id);
+    const out = $('tgb-out');
+    const tabsEl = $('tgb-langs');
+    const fieldsEl = $('tgb-fields');
+    const countEl = $('tgb-count');
+    const noteEl = $('tgb-lang-note');
+    const tCh = $('tgb-t-channels');
+    const tFo = $('tgb-t-followers');
+    const confirmIn = $('tgb-confirm');
+    const sendBtn = $('tgb-send');
+    const resumeBtn = $('tgb-resume');
+    const reasonEl = $('tgb-reason');
+    const status = $('tgb-status');
+    if (!panel || !out || !sendBtn) return;
+
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    const fill = (s, vars) => String(s).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const num = (n) => Number(n || 0).toLocaleString('en-NG');
+    const secret = () => sessionStorage.getItem('hawkeye_admin') || '';
+    const LANGS = ['en', 'ha', 'ig', 'yo'];
+    const NAMES = { en: 'English', ha: 'Hausa', ig: 'Igbo', yo: 'Yorùbá' };
+    const langName = (l) => T('lang.name.' + l, NAMES[l]);
+    const MAX = 4096;
+    const DRAFT = 'hawkeye_tgb_draft';
+    const newId = () => 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+
+    /* The server's cleanText, character for character. */
+    const clean = (s) => String(s || '').normalize('NFC').replace(/\r\n?/g, '\n')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim();
+
+    let active = 'en';
+    let draftId = newId();
+    let data = null;      // preview: channel links, follower counts, channelsLive, broadcast, busy
+    let err = null;
+    let loaded = false;
+    let seq = 0;
+    let msg = null;
+    let sending = false;
+    let pollTimer = null;
+    let polls = 0;
+
+    const areas = {};
+    for (const l of LANGS) {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'tgb-lang';
+      tab.dataset.l = l;
+      tab.setAttribute('role', 'tab');
+      tab.id = 'tgb-tab-' + l;
+      tabsEl.appendChild(tab);
+      const ta = document.createElement('textarea');
+      ta.className = 'tgb-text';
+      ta.id = 'tgb-text-' + l;
+      ta.rows = 8;
+      ta.lang = l;
+      ta.setAttribute('role', 'tabpanel');
+      ta.setAttribute('aria-labelledby', tab.id);
+      ta.hidden = l !== active;
+      fieldsEl.appendChild(ta);
+      areas[l] = ta;
+    }
+
+    // A reload must not eat a half-written message. Per viewer, this tab only.
+    try {
+      const d = JSON.parse(sessionStorage.getItem(DRAFT) || 'null');
+      if (d && d.texts) {
+        for (const l of LANGS) areas[l].value = typeof d.texts[l] === 'string' ? d.texts[l] : '';
+        if (d.targets) { tCh.checked = d.targets.channels !== false; tFo.checked = !!d.targets.followers; }
+        if (typeof d.id === 'string' && /^[A-Za-z0-9_-]{8,64}$/.test(d.id)) draftId = d.id;
+      }
+    } catch { /* no draft */ }
+    function saveDraft() {
+      try {
+        const texts = Object.fromEntries(LANGS.map((l) => [l, areas[l].value]));
+        sessionStorage.setItem(DRAFT, JSON.stringify({ texts, targets: targets(), id: draftId }));
+      } catch { /* storage off: the draft just does not survive a reload */ }
+    }
+
+    const texts = () => Object.fromEntries(LANGS.map((l) => [l, clean(areas[l].value)]));
+    const targets = () => ({ channels: tCh.checked, followers: tFo.checked });
+    const busy = () => !!(data && data.busy && (data.busy.broadcast || data.busy.notice));
+    const running = () => !!(data && data.broadcast && data.broadcast.state === 'running');
+
+    /** Why Send is disabled, in one line; '' when it is not. Order = what to fix first. */
+    function reason(tx, tg) {
+      if (busy() || running()) return T('tgnotice.admin.refused-running', 'A send is already running.');
+      if (!tx.en) return T('tgbroadcast.admin.reason-no-text', 'Type the English message first.');
+      const over = LANGS.find((l) => tx[l].length > MAX);
+      if (over) return fill(T('tgbroadcast.admin.reason-too-long', 'The {lang} message is over {max} characters.'), { lang: langName(over), max: num(MAX) });
+      if (!tg.channels && !tg.followers) return T('tgbroadcast.admin.reason-no-target', 'Choose where to send it: our channels, followers, or both.');
+      if (err === 'unlock') return T('coverage.admin.unlock-first', 'Unlock the console first.');
+      if (!data) return err ? fill(T('tgbroadcast.admin.load-error', 'Could not load the broadcast ({error}).'), { error: err }) : T('index.loading', 'Loading…');
+      if (tg.channels && !data.channelsLive) return T('tgbroadcast.admin.reason-not-live', 'Our Telegram channels are not live, so nothing can be posted there.');
+      if (tg.followers && !data.followers.total) return T('tgbroadcast.admin.reason-no-followers', 'No race-alert followers are linked to Telegram, so there is nobody to message.');
+      if (confirmIn.value !== 'SEND') return T('tgbroadcast.admin.reason-confirm', 'Type SEND in the box to confirm.');
+      return '';
+    }
+
+    function paintEditor() {
+      const tx = texts();
+      for (const b of tabsEl.children) {
+        const l = b.dataset.l;
+        b.textContent = langName(l) + (tx[l] ? ' •' : '');
+        b.classList.toggle('on', l === active);
+        b.classList.toggle('over', tx[l].length > MAX);
+        b.setAttribute('aria-selected', String(l === active));
+      }
+      for (const l of LANGS) {
+        areas[l].hidden = l !== active;
+        areas[l].placeholder = l === 'en'
+          ? T('tgbroadcast.admin.placeholder-en', 'Write the message. Press Enter for a new line.')
+          : fill(T('tgbroadcast.admin.placeholder-other', 'Optional. Leave empty and {lang} readers get the English message.'), { lang: langName(l) });
+      }
+      tabsEl.setAttribute('aria-label', T('tgbroadcast.admin.languages', 'Message language'));
+      const n = tx[active].length;
+      countEl.textContent = fill(T('tgbroadcast.admin.chars', '{n} / {max} characters'), { n: num(n), max: num(MAX) })
+        + (n > MAX ? ' ' + T('tgbroadcast.admin.chars-over', 'Too long for one Telegram message.') : '');
+      countEl.classList.toggle('over', n > MAX);
+      noteEl.textContent = active === 'en'
+        ? T('tgbroadcast.admin.en-required', 'English is required. Any language left empty gets the English message.')
+        : (tx[active] ? '' : fill(T('tgbroadcast.admin.empty-fallback', 'Empty: {lang} readers get the English message.'), { lang: langName(active) }));
+    }
+
+    function paintControls() {
+      const tx = texts();
+      const tg = targets();
+      const why = reason(tx, tg);
+      sendBtn.disabled = !!why || sending;
+      reasonEl.textContent = why;
+      const b = data && data.broadcast;
+      const canResume = !!b && !running() && (b.state === 'interrupted' || b.state === 'failed' || b.waiting > 0 || b.channelsFailed > 0);
+      resumeBtn.hidden = !canResume;
+      resumeBtn.disabled = !canResume || sending || busy() || confirmIn.value !== 'SEND';
+      status.textContent = msg ? msg.text : '';
+      status.className = 'status' + (msg ? (msg.ok ? ' ok' : ' bad') : '');
+    }
+
+    function lastLine(b) {
+      if (!b) return T('tgbroadcast.admin.last-none', 'No broadcast sent from the console yet.');
+      const v = { posted: num(b.channelsPosted), sent: num(b.sent), audience: num(b.audience), failed: num(b.failed),
+        delivered: num(b.delivered), waiting: num(b.waiting), error: b.error || '' };
+      if (b.state === 'running') return fill(T('tgbroadcast.admin.last-running', 'Sending: {posted} channel posts, {sent} of {audience} direct messages sent, {failed} failed. You can close this page; the server keeps going.'), v);
+      if (b.state === 'done') return fill(T('tgbroadcast.admin.last-done', 'Last broadcast finished: {posted} channel posts, {sent} of {audience} direct messages sent, {failed} failed.'), v);
+      if (b.state === 'interrupted') return fill(T('tgbroadcast.admin.last-interrupted', 'Last broadcast stopped because the server restarted: {delivered} direct messages delivered, {waiting} still waiting. Resume it to reach the rest. Nobody gets it twice.'), v);
+      return fill(T('tgbroadcast.admin.last-failed', 'Last broadcast stopped with an error ({error}). {waiting} still waiting.'), v);
+    }
+
+    function paintPreview() {
+      if (err && !data) {
+        out.innerHTML = '<p class="status bad">' + esc(err === 'unlock'
+          ? T('coverage.admin.unlock-first', 'Unlock the console first.')
+          : fill(T('tgbroadcast.admin.load-error', 'Could not load the broadcast ({error}).'), { error: err })) + '</p>';
+        return;
+      }
+      if (!data) { out.innerHTML = '<p class="empty">' + esc(T('index.loading', 'Loading…')) + '</p>'; return; }
+      const tx = texts();
+      const tg = targets();
+      const links = Object.fromEntries((data.channels || []).map((c) => [c.lang, c.link]));
+      const counts = Object.fromEntries(((data.followers || {}).byLang || []).map((c) => [c.lang, c.count]));
+      const p = [];
+      p.push('<p class="status ' + (data.channelsLive ? 'ok' : 'bad') + '">' + esc(data.channelsLive
+        ? T('tgbroadcast.admin.channels-live', 'Our Telegram channels are live.')
+        : T('tgbroadcast.admin.reason-not-live', 'Our Telegram channels are not live, so nothing can be posted there.')) + '</p>');
+      if (data.ignored && data.ignored.length) {
+        p.push('<p class="meta">' + esc(fill(T('tgnotice.admin.ignored', 'Ignored channel settings: {list}'), { list: data.ignored.join('; ') })) + '</p>');
+      }
+      const posts = tg.channels && data.channelsLive ? LANGS.filter((l) => links[l]).length : 0;
+      const dms = tg.followers ? (data.followers.total || 0) : 0;
+      p.push('<p><b>' + esc(T('tgbroadcast.admin.preview', 'Preview')) + '</b> · '
+        + esc(fill(T('tgbroadcast.admin.totals', '{posts} channel posts · {dms} direct messages'), { posts: num(posts), dms: num(dms) })) + '</p>');
+      if (!tx.en) {
+        p.push('<p class="meta">' + esc(T('tgbroadcast.admin.preview-empty', 'Type the English message to see what each reader gets.')) + '</p>');
+      } else {
+        for (const l of LANGS) {
+          const own = tx[l];
+          const text = own || tx.en;
+          const lines = [];
+          if (tg.channels) {
+            lines.push(links[l]
+              ? fill(T('tgnotice.admin.channel', 'Channel: {link}'), { link: links[l] })
+              : T('tgbroadcast.admin.no-own-channel', 'No channel of its own, so nothing is posted for this language.'));
+          }
+          if (tg.followers) lines.push(fill(T('tgbroadcast.admin.followers-get', '{n} followers get it as a direct message'), { n: num(counts[l] || 0) }));
+          p.push('<div class="card" style="margin:8px 0;padding:8px 12px">'
+            + '<p><b>' + esc(langName(l)) + '</b>'
+            + (own || l === 'en' ? '' : ' <span class="meta">' + esc(fill(T('tgbroadcast.admin.fallback-badge', 'English text: {lang} is empty'), { lang: langName(l) })) + '</span>')
+            + '</p>'
+            + lines.map((x) => '<p class="meta">' + esc(x) + '</p>').join('')
+            + '<pre class="tgb-pre">' + esc(text) + '</pre></div>');
+        }
+      }
+      p.push('<p class="meta" style="margin-top:10px">' + esc(lastLine(data.broadcast)) + '</p>');
+      const b = data.broadcast;
+      if (b && b.state === 'done' && b.waiting > 0) {
+        p.push('<p class="meta">' + esc(fill(T('tgbroadcast.admin.waiting-note', '{waiting} followers have not had it (for example, people who blocked the bot, or who followed since). Resume retries only them.'), { waiting: num(b.waiting) })) + '</p>');
+      }
+      if (b && b.unconfirmed && b.state !== 'running') {
+        p.push('<p class="meta">' + esc(fill(T('tgnotice.admin.unconfirmed', 'In flight when the server stopped: {n}. They are not sent again, so they may not have arrived.'), { n: num(b.unconfirmed) })) + '</p>');
+      }
+      out.innerHTML = p.join('');
+    }
+
+    function paint() { paintEditor(); paintControls(); paintPreview(); }
+
+    function failText(b, httpStatus) {
+      const code = (b && (b.refused || b.error)) || ('HTTP ' + httpStatus);
+      const map = {
+        no_text: () => T('tgbroadcast.admin.reason-no-text', 'Type the English message first.'),
+        too_long: () => fill(T('tgbroadcast.admin.reason-too-long', 'The {lang} message is over {max} characters.'), { lang: langName(b.lang || 'en'), max: num(MAX) }),
+        no_target: () => T('tgbroadcast.admin.reason-no-target', 'Choose where to send it: our channels, followers, or both.'),
+        channels_not_live: () => T('tgbroadcast.admin.reason-not-live', 'Our Telegram channels are not live, so nothing can be posted there.'),
+        no_followers: () => T('tgbroadcast.admin.reason-no-followers', 'No race-alert followers are linked to Telegram, so there is nobody to message.'),
+        confirm_required: () => T('tgnotice.admin.refused-confirm', 'Type SEND exactly, in capital letters.'),
+        max_required: () => T('tgnotice.admin.refused-max', 'Refresh the preview, then send again.'),
+        audience_exceeds_max: () => fill(T('tgnotice.admin.refused-more', 'More chats are waiting than the preview showed ({audience}, not {max}). Check the new numbers, then send again.'), { audience: b.audience, max: b.max }),
+        already_running: () => T('tgnotice.admin.refused-running', 'A send is already running.'),
+        already_sent: () => T('tgbroadcast.admin.refused-sent', 'This message was already sent. Check the last broadcast below; type SEND again only if you mean to send it twice.'),
+        nothing_to_send: () => T('tgbroadcast.admin.refused-nothing', 'Nothing is left to send for that broadcast.'),
+        not_found: () => T('tgbroadcast.admin.refused-not-found', 'That broadcast was not found. Refresh.'),
+        rate_limited: () => fill(T('tgnotice.admin.rate-limited', 'Too many console requests. Try again in {s} seconds.'), { s: (b && b.retryAfterS) || 60 }),
+      };
+      if (map[code]) return map[code]();
+      if (httpStatus === 401 || httpStatus === 403) return T('coverage.admin.unlock-first', 'Unlock the console first.');
+      return fill(T('tgnotice.admin.error', 'Could not send ({error}).'), { error: code });
+    }
+
+    /* 5 s for the first half-minute, then 15 s; a 429 waits as long as it says. */
+    function schedulePoll(ms) {
+      clearTimeout(pollTimer);
+      pollTimer = setTimeout(poll, ms || (polls < 6 ? 5000 : 15000));
+    }
+    async function poll() {
+      pollTimer = null;
+      polls++;
+      try {
+        const r = await fetch('/api/admin/tg-broadcast/status', { headers: { 'x-admin-secret': secret() } });
+        const body = await r.json().catch(() => null);
+        if (r.status === 429) { schedulePoll(Math.max(5, Number(body && body.retryAfterS) || 30) * 1000); return; }
+        if (r.ok && body && 'broadcast' in body) data = Object.assign({}, data, body);
+      } catch { /* the next poll tries again */ }
+      paint();
+      if (running() || busy()) schedulePoll(); else polls = 0;
+    }
+
+    async function load() {
+      loaded = true;
+      const mine = ++seq;
+      err = secret() ? null : 'unlock';
+      paint();
+      if (err) return;
+      try {
+        const r = await fetch('/api/admin/tg-broadcast/preview', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-admin-secret': secret() },
+          body: JSON.stringify({ texts: texts(), targets: targets() }),
+        });
+        const body = await r.json().catch(() => null);
+        if (mine !== seq) return;
+        if (!r.ok || !body || !body.followers) {
+          err = body && body.error === 'rate_limited' ? failText(body, r.status) : (body && body.error) || ('HTTP ' + r.status);
+        } else { data = body; err = null; }
+      } catch (e) {
+        if (mine !== seq) return;
+        err = e.message || String(e);
+      }
+      paint();
+      if ((running() || busy()) && !pollTimer) schedulePoll();
+    }
+
+    async function post(payload, started) {
+      sending = true;
+      msg = null;
+      paintControls();
+      try {
+        const r = await fetch('/api/admin/tg-broadcast/send', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-admin-secret': secret() },
+          body: JSON.stringify(payload),
+        });
+        const body = await r.json().catch(() => null);
+        if (r.status === 202 && body && body.started) {
+          data = Object.assign({}, data, body);
+          const x = body.broadcast || {};
+          msg = { ok: true, text: fill(started, { posts: num(x.channelsPlanned), dms: num(x.audience) }) };
+          confirmIn.value = '';
+          polls = 0;
+          schedulePoll();
+          return true;
+        }
+        msg = { ok: false, text: failText(body, r.status) };
+        // The first Send reached the server and its answer was lost. Sending it
+        // again is a new broadcast: a new id, and SEND typed again.
+        if (body && body.refused === 'already_sent') { draftId = newId(); confirmIn.value = ''; saveDraft(); }
+        if (body && 'broadcast' in body) data = Object.assign({}, data, { broadcast: body.broadcast, busy: body.busy });
+        if (running() || busy()) schedulePoll();
+      } catch (e) {
+        msg = { ok: false, text: fill(T('tgnotice.admin.error', 'Could not send ({error}).'), { error: e.message || String(e) }) };
+      } finally {
+        sending = false;
+        paint();
+      }
+      return false;
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      if (reason(texts(), targets())) return;
+      const tg = targets();
+      // `max` is the follower count on screen: the server refuses if more are waiting.
+      const ok = await post({ texts: texts(), targets: tg, confirm: confirmIn.value, max: tg.followers ? data.followers.total : undefined, id: draftId },
+        T('tgbroadcast.admin.started', 'Started: {posts} channel posts and {dms} direct messages.'));
+      if (ok) {
+        // Sent: a new message needs a new id, and an empty box.
+        for (const l of LANGS) areas[l].value = '';
+        draftId = newId();
+        active = 'en';
+        saveDraft();
+        paint();
+      }
+    });
+    resumeBtn.addEventListener('click', () => {
+      const b = data && data.broadcast;
+      if (!b || confirmIn.value !== 'SEND') return;
+      post({ resume: b.id, confirm: confirmIn.value, max: b.waiting },
+        T('tgbroadcast.admin.resumed', 'Resumed: {posts} channel posts and {dms} direct messages.'));
+    });
+    tabsEl.addEventListener('click', (e) => {
+      const b = e.target.closest('.tgb-lang');
+      if (!b) return;
+      active = b.dataset.l;
+      paintEditor();
+      areas[active].focus();
+    });
+    for (const l of LANGS) areas[l].addEventListener('input', () => { saveDraft(); paint(); });
+    for (const el of [tCh, tFo]) el.addEventListener('change', () => { saveDraft(); paint(); });
+    confirmIn.addEventListener('input', paintControls);
+    $('tgb-refresh').addEventListener('click', load);
+    panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });
+    document.addEventListener('hawkeye-lang', () => paint());
+    paint();
   })();
   </script>
 <script src="/i18n.js?v=10"></script>

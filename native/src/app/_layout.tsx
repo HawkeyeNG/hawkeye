@@ -207,7 +207,12 @@ function RootShell() {
     // invite link sends a signed-out reader from it to sign-up; bouncing it to
     // welcome here as well would race that and tear the sign-up screen down.
     // Every other target it routes to is still checked here when it lands.
-    const allowed = top === 'welcome' || top === 'sign-in' || top === 'practice' || top === 'open';
+    // 'join' — a campaign invite (app/join/[token].tsx). Its Join button pushes
+    // sign-in OVER it and becomes Join when the session lands, so the invite
+    // survives the hop; bouncing to welcome here threw the token away and the
+    // reader was left with no invitation to accept. It shows only the group's
+    // public name and the consent notice, and joining itself needs the session.
+    const allowed = top === 'welcome' || top === 'sign-in' || top === 'practice' || top === 'open' || top === 'join';
     if (allowed) return;
 
     /**
@@ -298,6 +303,10 @@ function RootShell() {
               <Stack.Screen name="assistant" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="chat" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="map" options={{ presentation: 'fullScreenModal' }} />
+              {/* Native twins of the website's my-groups.html and captain.html,
+                  which opened in a signed-OUT browser tab (lib/web-routes.ts). */}
+              <Stack.Screen name="my-groups" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="captain" options={{ presentation: 'fullScreenModal' }} />
             </Stack>
             {/* After the Stack, so it draws over every screen and the tab bar. One
                 instance for the whole app: mounted per-screen it would forget where

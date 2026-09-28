@@ -172,6 +172,20 @@
     .home-card .pnudge-x::after { content: ''; position: absolute; inset: -8px; }
     .home-card .pnudge-x:hover, .home-card .pnudge-x:focus-visible { color: var(--ink); background: var(--tint); filter: none; }
     .home-card .pnudge-x:active { transform: none; }
+
+    /* THE HAWK ALONE on the app welcome (Lite, signed out). styles.css puts
+       .aw-mark on a light rounded plate, which read as the launcher icon — a
+       square tile — above the wordmark. The owner wants the transparent hawk,
+       the way the splash already shows it on this same green; a soft shadow
+       lifts it off the gradient instead of a plate. Overridden HERE, the only
+       page with an .aw-mark, so styles.css and its version stamp on every page
+       stay as they are. */
+    .aw-mark { width: auto; height: auto; background: none; border-radius: 0; box-shadow: none; margin-bottom: 12px; }
+    .aw-mark img { display: block; width: 88px; height: 88px; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35)); }
+    @media (max-height: 700px) {
+      .aw-mark { margin-bottom: 8px; }
+      .aw-mark img { width: 66px; height: 66px; }
+    }
   </style>
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hawkeye" />
@@ -332,7 +346,7 @@
        html.native-app when signed out; CSS hides the marketing sections then. -->
   <section class="app-welcome" aria-labelledby="aw-title">
     <div class="aw-inner">
-      <span class="aw-mark"><img src="logo-crest.svg?v=98" alt="" width="62" height="62" /></span>
+      <span class="aw-mark"><img src="logo-crest.svg?v=98" alt="" width="88" height="88" /></span>
       <h1 id="aw-title">Hawkeye</h1>
       <p data-i18n="index.independent-election-results-monitor" class="aw-tag">Independent election results monitor</p>
       <!-- No feature bullets: anyone who installed the app already knows what it
@@ -891,7 +905,7 @@
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
   <script src="practice-day.js?v=1"></script>
-  <script src="menu.js?v=186"></script>
+  <script src="menu.js?v=187"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

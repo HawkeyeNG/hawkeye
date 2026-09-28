@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SectionLabel, Stat } from '@/components/content-kit';
 import { InfoDot } from '@/components/info-dot';
+import { ImageViewer } from '@/components/image-viewer';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { Prompt } from '@/components/wizard';
@@ -179,6 +180,8 @@ export default function Ledger() {
   const [raceSel, setRaceSel] = useState<string | null>(null);
   const [raceBusy, setRaceBusy] = useState(false);
   const [raceOut, setRaceOut] = useState<{ ok: boolean; text: string; link?: string } | null>(null);
+  /** The sheet photo open full screen (components/image-viewer.tsx), or null. */
+  const [photo, setPhoto] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -506,9 +509,8 @@ export default function Ledger() {
                 </Text>
               ) : (
                 <Pressable
-                  onPress={() =>
-                    WebBrowser.openBrowserAsync(`${BASE}/uploads/${item.image_sha256}.jpg`)
-                  }
+                  // In the app, zoomable — not a raw JPEG in a browser tab.
+                  onPress={() => setPhoto(`${BASE}/uploads/${item.image_sha256}.jpg`)}
                 >
                   <Text className="text-sm font-bold text-good-ink">{i18nT('n.app.ledger.sheet-photo')}</Text>
                 </Pressable>
@@ -541,6 +543,7 @@ export default function Ledger() {
           </Pressable>
         </View>
       ) : null}
+      <ImageViewer uri={photo} label={i18nT('n.app.ledger.sheet-photo')} onClose={() => setPhoto(null)} />
     </View>
   );
 }

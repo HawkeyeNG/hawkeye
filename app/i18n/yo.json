@@ -2169,5 +2169,6 @@
   "tgbroadcast.admin.resumed": "A ti tẹ̀síwájú: ìfiránṣẹ́ {posts} sórí ìkànnì àti ìfiránṣẹ́ tààrà {dms}.",
   "tgbroadcast.admin.load-error": "Kò ṣeé gbé ìfiránṣẹ́ gbogbogbò wá ({error}).",
   "tgnotice.admin.reason-not-live": "Ìkìlọ̀ ìkànnì kò tíì ṣiṣẹ́, nítorí náà a kò lè fi ìkéde náà ránṣẹ́.",
-  "tgnotice.admin.reason-nobody": "Kò sí ẹni tó ń dúró de ìkéde yìí."
+  "tgnotice.admin.reason-nobody": "Kò sí ẹni tó ń dúró de ìkéde yìí.",
+  "nav.apply-as-captain": "Béèrè Láti Di Olùdarí"
 }

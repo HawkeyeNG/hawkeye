@@ -2170,5 +2170,6 @@
   "tgbroadcast.admin.resumed": "An ci gaba: saƙonni {posts} a tasha da saƙonni kai tsaye {dms}.",
   "tgbroadcast.admin.load-error": "Ba a iya loda saƙon ba ({error}).",
   "tgnotice.admin.reason-not-live": "Sanarwar tasha ba ta aiki ba, don haka ba za a iya aika sanarwar ba.",
-  "tgnotice.admin.reason-nobody": "Babu wanda ke jiran wannan sanarwa."
+  "tgnotice.admin.reason-nobody": "Babu wanda ke jiran wannan sanarwa.",
+  "nav.apply-as-captain": "Nemi Zama Kyaftin"
 }

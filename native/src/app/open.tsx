@@ -28,6 +28,11 @@ const TARGETS: Record<string, string> = {
   ask: '/assistant',
   // Same target as app/open/index.html (App Store In-App Events link Lite there).
   practiceday: '/practice-day',
+  // Native screens for signed-in web pages (lib/web-routes.ts): a bot button
+  // must never hand the app to a signed-out browser tab. Same names on the web
+  // twin, app/open/index.html.
+  groups: '/my-groups',
+  captain: '/captain',
 };
 
 export default function Open() {

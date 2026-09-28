@@ -1,7 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { openBrowserAsync, WebBrowserPresentationStyle } from 'expo-web-browser';
 import Feather from '@expo/vector-icons/Feather';
 
 import { BASE } from '@/lib/api';
@@ -133,23 +132,19 @@ export default function JoinGroup() {
   }, [code, session]);
 
   /**
-   * THE ROOM IS NOT IN THE APP YET, so "Continue" opens the group's own page on
-   * the website rather than dropping someone on the Home tab with no sign that
-   * anything happened. my-groups is the right destination and not the situation
-   * room: whoever just accepted an invite is a member, and that page is where
-   * their unit, their campaigns and the way out of all of them live — it also
-   * carries the button into the room for the managers among them.
+   * "CONTINUE" GOES TO THE APP'S OWN MY GROUPS (app/my-groups.tsx) — where
+   * their unit, their campaigns and the way out of all of them live.
    *
-   * In-app browser, not the system one: the app's session travels with it, and
-   * a member who lands signed-out has been sent to a sign-in form for no
-   * reason. When rooms do arrive natively this becomes a router.push and the
-   * rest of the screen does not change.
+   * It used to open the website's my-groups page in an in-app browser tab, on
+   * the theory that the session travelled with it. It does not: that tab is a
+   * separate, signed-out browser, so every new member was met by the website's
+   * sign-in form — and signing in there took this phone's session slot and
+   * signed the APP out. REPLACE, so Back from My Groups goes home rather than
+   * to a "you are in" screen that has nothing more to do.
    */
-  const openGroups = useCallback(async () => {
-    await openBrowserAsync(`${BASE}/my-groups.html`, {
-      presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
-    }).catch(() => {});
-    router.replace('/(tabs)');
+  const openGroups = useCallback(() => {
+    // Cast: typed routes regenerate on the next `expo start`.
+    router.replace('/my-groups' as never);
   }, []);
 
   if (state === 'loading') {

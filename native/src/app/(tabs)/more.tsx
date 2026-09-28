@@ -68,6 +68,15 @@ const GROUPS: { title: string; titleKey: string; items: MenuItem[] }[] = [
       },
       { label: 'Practice Run', labelKey: 'nav.practice-run', href: 'native:/practice', icon: 'play-circle' },
       { label: 'Map a Polling Unit', labelKey: 'common.map-a-polling-unit', href: 'native:/map-unit', icon: 'map-pin' },
+      // YOUR GROUPS — campaigns and observer groups you joined by invite. The
+      // join screen's consent notice promises "every group you are in is listed
+      // under Your groups", and in the app that list had no door of its own:
+      // only the Continue after joining, or an alert. Native screen, never the
+      // website's page (a signed-out tab — see lib/web-routes.ts).
+      { label: 'Your groups', labelKey: 'my-groups.your-groups', href: 'native:/my-groups', icon: 'users' },
+      // Last, where app/menu.js puts it in Take part. The captain's guide rides
+      // inside this screen rather than as a web page.
+      { label: 'Apply as Captain', labelKey: 'nav.apply-as-captain', href: 'native:/captain', icon: 'flag' },
     ],
   },
   {

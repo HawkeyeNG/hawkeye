@@ -2143,5 +2143,6 @@
   "tgbroadcast.admin.resumed": "Resumed: {posts} channel posts and {dms} direct messages.",
   "tgbroadcast.admin.load-error": "Could not load the broadcast ({error}).",
   "tgnotice.admin.reason-not-live": "Channel alerts are not live, so the notice cannot be sent.",
-  "tgnotice.admin.reason-nobody": "Nobody is waiting for this notice."
+  "tgnotice.admin.reason-nobody": "Nobody is waiting for this notice.",
+  "nav.apply-as-captain": "Apply as Captain"
 }

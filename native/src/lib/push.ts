@@ -20,6 +20,7 @@ import { BRAND } from '@/lib/api';
 import { authedGet, renewSession, useAuth } from '@/lib/auth';
 import { t as i18nT } from '@/lib/i18n';
 import { FRESH_MS, bust as bustSignedIn, notePush } from '@/lib/signed-in-cache';
+import { webPageRoute } from '@/lib/web-routes';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -202,7 +203,7 @@ const ROUTES: Record<string, string> = {
 };
 
 /** Every route the table can produce, so a url already written as one is honoured. */
-const NATIVE = new Set([...Object.values(ROUTES).map((r) => r.split('?')[0]), '/case']);
+const NATIVE = new Set([...Object.values(ROUTES).map((r) => r.split('?')[0]), '/case', '/my-groups', '/captain']);
 
 function nativeRoute(url: string): string | null {
   // Absolute is what the backend sends today; a bare path is just as valid a
@@ -211,6 +212,15 @@ function nativeRoute(url: string): string | null {
   const origin = /^https?:\/\/[^/]+/i.exec(url)?.[0];
   if (origin && origin.toLowerCase() !== BASE) return null;
   const [file, query = ''] = url.slice(origin?.length ?? 0).replace(/^\//, '').split('?');
+  /**
+   * GROUPS, INVITES AND CAPTAINS FIRST (lib/web-routes.ts). The group alerts
+   * (invited, assigned a unit, made a manager) and the captain replies all
+   * point at signed-in web pages, and the in-app browser tab below is SIGNED
+   * OUT — it landed on the website's sign-in form, and signing in there took
+   * the phone's session slot and signed this app out. Each now has a screen.
+   */
+  const page = webPageRoute(`/${file}${query ? `?${query}` : ''}`);
+  if (page) return page;
   if (file === 'case.html') {
     // The case id is the whole point of the link; without one the docket index
     // is the honest destination rather than a case screen with nothing to show.

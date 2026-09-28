@@ -86,9 +86,16 @@ export default function Welcome() {
           fixed white at low alpha — bg-card/10 followed the theme and turned
           into a dark plate on dark green. */}
       <View className="flex-1 items-center justify-center px-8">
-        <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-white/10">
-          <Image source={require('../../assets/images/crest.png')} style={{ width: 96, height: 96 }} />
-        </View>
+        {/* THE HAWK ALONE, no tile. It sat on a rounded white/10 plate, which
+            read as the launcher icon — a square badge — above the wordmark.
+            crest.png is the transparent artwork the splash puts on this same
+            green, so the first two screens anyone sees now match. A little
+            larger than the old plate's 96, because the plate's own padding no
+            longer gives it presence. */}
+        <Image
+          source={require('../../assets/images/crest.png')}
+          style={{ width: 112, height: 112 }}
+        />
         <Text className="pt-5 text-3xl font-bold tracking-widest text-white">HAWKEYE</Text>
         <Text className="pt-1 text-sm font-semibold text-emerald-200">
           {i18nT('n.app.welcome.independent-election-results-monitor')}

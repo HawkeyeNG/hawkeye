@@ -2,7 +2,6 @@ import Feather from '@expo/vector-icons/Feather';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from '@/lib/secure-store';
-import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ImageViewer } from '@/components/image-viewer';
 import { ReportContent } from '@/components/report-content';
 import { ScreenHeader } from '@/components/screen-header';
 import { StatusChip, TallyBar, type Tally } from '@/components/tally';
@@ -96,6 +96,8 @@ export default function CaseScreen() {
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  /** The result sheet open full screen (components/image-viewer.tsx), or null. */
+  const [photo, setPhoto] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -304,14 +306,14 @@ export default function CaseScreen() {
               ) : (
                 <Pressable
                   className="flex-1"
-                  onPress={() => WebBrowser.openBrowserAsync(`${BASE}${s.sheetUrl}`)}
+                  onPress={() => setPhoto(`${BASE}${s.sheetUrl}`)}
                 >
                   <Image
                     source={{ uri: `${BASE}${s.sheetUrl}` }}
                     className="h-32 w-full rounded-xl bg-surface"
                     resizeMode="cover"
                   />
-                  <Text className="pt-1 text-[11px] text-muted">Result sheet — tap for full size</Text>
+                  <Text className="pt-1 text-[11px] text-muted">{i18nT('n.app.case.result-sheet-tap-full-size')}</Text>
                 </Pressable>
               )}
             </View>
@@ -473,6 +475,7 @@ export default function CaseScreen() {
           </Text>
         </View>
       ) : null}
+      <ImageViewer uri={photo} label={i18nT('n.app.ledger.sheet-photo')} onClose={() => setPhoto(null)} />
     </View>
   );
 }

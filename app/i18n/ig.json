@@ -2169,5 +2169,6 @@
   "tgbroadcast.admin.resumed": "Agala n'ihu: ozi {posts} n'ọwa na ozi kpọmkwem {dms}.",
   "tgbroadcast.admin.load-error": "Enweghị ike ibugo ozi izugbe a ({error}).",
   "tgnotice.admin.reason-not-live": "Ọkwa ọwa anaghị arụ ọrụ, ya mere enweghị ike iziga ọkwa a.",
-  "tgnotice.admin.reason-nobody": "Ọ dịghị onye na-eche ọkwa a."
+  "tgnotice.admin.reason-nobody": "Ọ dịghị onye na-eche ọkwa a.",
+  "nav.apply-as-captain": "Tinye Arịrịọ Ịbụ Onye Ndú"
 }

@@ -230,7 +230,10 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     Report: 'nav.report',
   };
   const GROUPS = [
-    ['Take part', ['profile.html', { acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'practice.html', 'map-unit.html'], 'tp'],
+    // "Apply as Captain" (captain.html) closes Take part, as on native's More
+    // screen. The guide stays under Learn & about: Take part is hidden on
+    // desktop, and the guide is the public page that leads to this one.
+    ['Take part', ['profile.html', { acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'practice.html', 'map-unit.html', 'captain.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html', 'incident-reports.html']],
     // Races is ONE LINK, not an accordion. It listed All Races / Osun 2026 /
     // Presidency 2027 — a hand-kept list of three, hardcoded in the menu, while
@@ -295,6 +298,15 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       cg.href = 'captain-guide.html';
       i18nSet(cg, 'captain-guide.title', "Ward Captain's Guide");
       panel.appendChild(cg);
+    }
+    // Apply as Captain (captain.html), last in Take part. Injected like the
+    // guide above: no page static-lists it. Gated (authgate), so a signed-out
+    // reader is sent to sign in and brought back to it.
+    if (!panel.querySelector('a[href="captain.html"]')) {
+      const ca = document.createElement('a');
+      ca.href = 'captain.html';
+      i18nSet(ca, 'nav.apply-as-captain', 'Apply as Captain');
+      panel.appendChild(ca);
     }
     // "Stay for the count" (stay.html), under Learn & about before the captain's
     // guide. Injected for the same reason: no page static-lists it. Public.

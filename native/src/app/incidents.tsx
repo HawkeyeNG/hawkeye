@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ImageViewer } from '@/components/image-viewer';
 import { InfoDot } from '@/components/info-dot';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { ReportContent } from '@/components/report-content';
@@ -57,6 +58,14 @@ function timeAgo(ts: number) {
 const mediaUrl = (file: string) => `${BASE}/uploads/${encodeURI(file)}`;
 
 /**
+ * A VIDEO STILL LEAVES THE APP, and only a video. Neither expo-video nor
+ * expo-av is in the binary, and a new native module cannot ship over the air —
+ * so a clip keeps opening the raw file in the browser until a store build adds
+ * a player. Photos open in components/image-viewer.tsx.
+ */
+const openVideo = (file: string) => WebBrowser.openBrowserAsync(mediaUrl(file));
+
+/**
  * Published incidents — native twin of app/incidents.html's feed.
  *
  * Public and signed-out on purpose: the point of publishing an incident is that
@@ -72,6 +81,8 @@ export default function Incidents() {
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const notice = useNotice();
+  /** The photo open full screen (components/image-viewer.tsx), or null. */
+  const [photo, setPhoto] = useState<string | null>(null);
 
   // Returns the failure so the caller can decide how loudly to say it: a first
   // load has an empty screen to explain itself in, a pull-to-refresh does not.
@@ -189,7 +200,7 @@ export default function Incidents() {
                       key={m.file}
                       className="mb-2 mr-2 h-24 w-24 overflow-hidden rounded-xl bg-surface active:opacity-80"
                       accessibilityLabel={i18nT('n.app.incidents.open-evidence-full-size', { v0: m.type === 'video' ? 'video' : 'photo' })}
-                      onPress={() => WebBrowser.openBrowserAsync(mediaUrl(m.file))}
+                      onPress={() => (m.type === 'video' ? openVideo(m.file) : setPhoto(mediaUrl(m.file)))}
                     >
                       {m.type === 'video' ? (
                         // No frame is extracted server-side, so a remote .mp4 in
@@ -234,6 +245,7 @@ export default function Incidents() {
       </View>
 
       <NoticeSheet {...notice.props} />
+      <ImageViewer uri={photo} label={i18nT('n.app.incidents.photo')} onClose={() => setPhoto(null)} />
     </View>
   );
 }

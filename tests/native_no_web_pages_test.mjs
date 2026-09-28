@@ -1,0 +1,193 @@
+/**
+ * THE APP NEVER OPENS OUR OWN WEB PAGES FOR GROUPS, CAPTAINS OR PHOTOS.
+ *
+ * Owner rule: native gets native screens. The bug this pins: the app opened the
+ * website's my-groups page (the Continue after joining, and every group alert)
+ * in an in-app browser tab. That tab does not share the app's session, so it
+ * landed on the website's SIGN-IN form — and signing in there took the phone's
+ * session slot (backend services/sessions.js) and signed the APP out. The
+ * captain-message alert did the same with captain.html, and the ledger, case
+ * and incident screens opened evidence photos as raw files in the browser.
+ *
+ * Three layers, each with a control that proves it can fail:
+ *   1. ROUTING — every url the backend actually writes into a group or captain
+ *      alert (read from backend/src, not typed here) resolves to a native route
+ *      through lib/web-routes.ts; and push.ts / +native-intent.tsx consult it.
+ *   2. CALL SITES — no browser-opening call anywhere in native/src is handed a
+ *      groups / captain / invite / room page or an evidence photo. The one
+ *      allowed exception is a VIDEO (no player in the binary), and it must sit
+ *      behind a `type === 'video'` guard.
+ *   3. OTA SAFETY — nothing here added a native module: native/package.json's
+ *      dependencies are unchanged from HEAD, and neither expo-video nor expo-av
+ *      is among them (so videos still open as before — a store-build item).
+ *
+ *   node tests/native_no_web_pages_test.mjs
+ */
+import { execSync } from 'node:child_process';
+import { stripTypeScriptTypes } from 'node:module';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const ROOT = '/home/elrio/hawkeye';
+const N = `${ROOT}/native/src/`;
+const read = (f) => fs.readFileSync(f, 'utf8');
+
+let fail = 0;
+const check = (label, got, want) => {
+  const ok = typeof want === 'function' ? want(got) : JSON.stringify(got) === JSON.stringify(want);
+  if (!ok) fail++;
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}${ok ? '' : `\n        got  ${JSON.stringify(got)}`}`);
+};
+
+// ------------------------------------------------------------- load the table
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hk-webroutes-'));
+const src = read(`${N}lib/web-routes.ts`);
+check('lib/web-routes.ts has no imports (loadable as plain JS)', /^import /m.test(src), false);
+const file = path.join(tmp, 'web-routes.mjs');
+fs.writeFileSync(file, stripTypeScriptTypes(src, { mode: 'strip' }));
+const W = await import(pathToFileURL(file).href);
+
+// ============================================================== 1. routing
+console.log('\n=== 1. every group / captain alert url lands on a native screen ===');
+/* The LIVE urls: every `url: 'https://hawkeye.com.ng/…'` the backend writes,
+   filtered to the pages this rule covers. Read from source so a new alert with
+   a new page cannot slip past a list typed into this test. */
+const walk = (d, out = []) => {
+  for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const p = path.join(d, e.name);
+    if (e.isDirectory()) { if (e.name !== 'node_modules') walk(p, out); } else if (/\.(m?js|tsx?)$/.test(e.name)) out.push(p);
+  }
+  return out;
+};
+const COVERED = /(my-groups|captain(-guide)?|situation-room|join)\.html|\/room\/|\/join\//;
+const backendUrls = [...new Set(walk(`${ROOT}/backend/src`)
+  .flatMap((f) => [...read(f).matchAll(/url:\s*[`'"](https:\/\/hawkeye\.com\.ng\/[^`'"]*)[`'"]/g)].map((m) => m[1])))]
+  .filter((u) => COVERED.test(u));
+check('CONTROL found the backend\'s group and captain alert urls', backendUrls.length >= 3, true);
+console.log(`        ${backendUrls.join('  ')}`);
+const routesAll = (fn) => backendUrls.every((u) => { const r = fn(u); return typeof r === 'string' && r.startsWith('/'); });
+check('every one resolves to a native route', backendUrls.map((u) => [u, W.webPageRoute(u)]), (rows) => rows.every(([, r]) => typeof r === 'string' && r.startsWith('/')));
+check('CONTROL the same check fails for a table that routes nothing', routesAll(() => null), false);
+
+const TOKEN = 'AbCdEfGhIjKlMnOpQrStUv';
+const TABLE = [
+  ['my-groups.html', 'https://hawkeye.com.ng/my-groups.html', '/my-groups'],
+  ['captain.html', 'https://hawkeye.com.ng/captain.html', '/captain'],
+  ['the captain guide opens inside the captain screen', 'https://hawkeye.com.ng/captain-guide.html', '/captain?guide=1'],
+  ['the made-manager alert (situation-room.html)', 'https://hawkeye.com.ng/situation-room.html', '/my-groups'],
+  ['a room address', 'https://hawkeye.com.ng/room/abc-campaign', '/my-groups'],
+  ['join.html?t= (the website sign-in round trip)', `https://hawkeye.com.ng/join.html?t=${TOKEN}`, `/join/${TOKEN}`],
+  ['join.html with no token', 'https://hawkeye.com.ng/join.html', '/my-groups'],
+  ['/join/<token> keeps its case', `https://hawkeye.com.ng/join/${TOKEN}`, `/join/${TOKEN}`],
+  ['a bare path', '/my-groups.html', '/my-groups'],
+  ['the app\'s own scheme', 'hawkeye://my-groups.html', '/my-groups'],
+  ['www.', 'https://www.hawkeye.com.ng/captain.html', '/captain'],
+  ['ANOTHER SITE is never rewritten', 'https://evil.example/my-groups.html', null],
+  ['a page this rule does not cover goes through untouched', 'https://hawkeye.com.ng/results.html', null],
+  ['an /open link goes through untouched (open.tsx owns it)', '/open?to=report&pu=1', null],
+  ['a malformed /join/ token goes through untouched', 'https://hawkeye.com.ng/join/x', null],
+];
+for (const [label, url, want] of TABLE) check(label, W.webPageRoute(url), want);
+
+console.log('\n=== inviteToken (the pasted-link box on My Groups) ===');
+for (const [label, text, want] of [
+  ['the whole link', `https://hawkeye.com.ng/join/${TOKEN}`, TOKEN],
+  ['the join.html form', `https://hawkeye.com.ng/join.html?t=${TOKEN}`, TOKEN],
+  ['pasted without https://', `hawkeye.com.ng/join/${TOKEN}`, TOKEN],
+  ['the bare token, with spaces round it', `  ${TOKEN} `, TOKEN],
+  ['someone else\'s site', `https://evil.example/join/${TOKEN}`, null],
+  ['prose', 'join my campaign please', null],
+  ['empty', '', null],
+]) check(label, W.inviteToken(text), want);
+
+console.log('\n=== the callers consult the table ===');
+const push = read(`${N}lib/push.ts`);
+const nr = push.slice(push.indexOf('function nativeRoute'), push.indexOf('export function openNotificationTarget'));
+check('push.ts nativeRoute asks webPageRoute', /webPageRoute\(/.test(nr), true);
+check('...BEFORE the table and the browser fallback', nr.indexOf('webPageRoute(') >= 0 && nr.indexOf('webPageRoute(') < nr.indexOf('Object.hasOwn(ROUTES'), true);
+const intent = read(`${N}app/+native-intent.tsx`);
+check('+native-intent returns the table\'s route', /const to = webPageRoute\(path\);\s*if \(to\) return to;/.test(intent), true);
+const open = read(`${N}app/open.tsx`);
+check('open.tsx knows groups and captain', /groups: '\/my-groups'/.test(open) && /captain: '\/captain'/.test(open), true);
+const join = read(`${N}app/join/[token].tsx`);
+check('the Continue after joining goes to the native screen', /router\.replace\('\/my-groups'/.test(join), true);
+check('...and the join screen no longer opens a browser at all', /openBrowserAsync|WebBrowser/.test(join), false);
+check('the screens are registered', ['my-groups', 'captain'].every((n) => new RegExp(`name="${n}"`).test(read(`${N}app/_layout.tsx`))), true);
+
+// ========================================================= 2. call sites
+console.log('\n=== 2. no browser-opening call is handed one of these pages or a photo ===');
+/** Every browser-opening call in a source, with its argument text. */
+const OPENERS = /\b(?:WebBrowser\.)?(openBrowserAsync|openAuthSessionAsync|openURL)\s*\(/g;
+function calls(text) {
+  const out = [];
+  for (const m of text.matchAll(OPENERS)) {
+    let i = m.index + m[0].length, depth = 1;
+    const start = i;
+    while (i < text.length && depth) { if (text[i] === '(') depth++; else if (text[i] === ')') depth--; i++; }
+    out.push({ at: m.index, arg: text.slice(start, i - 1), line: text.slice(0, m.index).split('\n').length });
+  }
+  return out;
+}
+const FORBIDDEN = /my-groups|captain|join\.html|\/join\/|situation-room|\/room\/|\/uploads\/|uploads|sheetUrl|image_sha256|mediaUrl\(/;
+/** A violation, unless it is the one video exception. */
+function violations(text, rel = '') {
+  return calls(text).filter((c) => FORBIDDEN.test(c.arg)).filter((c) => {
+    if (rel !== 'app/incidents.tsx') return true;
+    // THE VIDEO EXCEPTION: the call must be the body of `const openVideo`.
+    const lineText = text.split('\n')[c.line - 1];
+    return !/^const openVideo = \(file: string\) => WebBrowser\.openBrowserAsync\(mediaUrl\(file\)\);$/.test(lineText.trim());
+  }).map((c) => `${rel}:${c.line} ${c.arg.trim().slice(0, 70)}`);
+}
+const files = walk(N);
+const all = files.flatMap((f) => calls(read(f)));
+check('CONTROL the scan reaches the app source', files.length > 60 && all.length >= 8, true);
+check('no violations anywhere in native/src', files.flatMap((f) => violations(read(f), f.replace(N, ''))), []);
+
+/* CONTROLS: the scanner must flag each shape the old code had, and must not
+   flag an unrelated browser call (or it would just be flagging everything). */
+for (const [label, sample, want] of [
+  ['CONTROL flags the old join Continue', 'await openBrowserAsync(`${BASE}/my-groups.html`, { presentationStyle: X })', 1],
+  ['CONTROL flags the old ledger photo', 'WebBrowser.openBrowserAsync(`${BASE}/uploads/${item.image_sha256}.jpg`)', 1],
+  ['CONTROL flags the old case photo', 'onPress={() => WebBrowser.openBrowserAsync(`${BASE}${s.sheetUrl}`)}', 1],
+  ['CONTROL flags a captain page by Linking', "Linking.openURL(BASE + '/captain.html')", 1],
+  ['CONTROL flags a photo opened from the incident feed', 'onPress={() => WebBrowser.openBrowserAsync(mediaUrl(m.file))}', 1],
+  ['CONTROL does not flag an unrelated link', 'WebBrowser.openBrowserAsync(rekor)', 0],
+]) check(label, violations(sample).length, want);
+
+const inc = read(`${N}app/incidents.tsx`);
+check('a video is the only media that still leaves the app, behind its guard',
+  /m\.type === 'video' \? openVideo\(m\.file\) : setPhoto\(mediaUrl\(m\.file\)\)/.test(inc), true);
+check('CONTROL the exception does not excuse an unguarded photo',
+  violations("const openPhoto = (file: string) => WebBrowser.openBrowserAsync(mediaUrl(file));", 'app/incidents.tsx').length, 1);
+for (const f of ['app/ledger.tsx', 'app/case.tsx', 'app/incidents.tsx']) {
+  check(`${f} shows photos in the native viewer`, /<ImageViewer\b/.test(read(`${N}${f}`)), true);
+}
+
+/* The More screen opens any non-`native:` row in the browser; none of those may
+   be one of these pages. */
+const more = read(`${N}app/(tabs)/more.tsx`);
+const webRows = [...more.matchAll(/href: '([^']+)'/g)].map((m) => m[1]).filter((h) => !/^(native|action):/.test(h));
+check('CONTROL More has web rows to inspect', webRows.length >= 1, true);
+check('no More row opens a groups / captain page on the web', webRows.filter((h) => FORBIDDEN.test(h)), []);
+check('More carries Your groups and Apply as Captain, natively',
+  /href: 'native:\/my-groups'/.test(more) && /labelKey: 'nav\.apply-as-captain', href: 'native:\/captain'/.test(more), true);
+
+// ========================================================== 3. OTA safety
+console.log('\n=== 3. over the air: no new native module ===');
+const deps = (json) => Object.keys(JSON.parse(json).dependencies || {}).sort();
+let head = null;
+try { head = execSync('git -c safe.directory=* show HEAD:native/package.json', { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch { /* no git */ }
+check('CONTROL HEAD\'s package.json was readable', !!head, true);
+if (head) check('native dependencies unchanged from HEAD', deps(read(`${ROOT}/native/package.json`)), deps(head));
+const now = deps(read(`${ROOT}/native/package.json`));
+check('no video player is installed (videos stay as they were)', now.filter((d) => /^expo-(video|av)$/.test(d)), []);
+const viewer = read(`${N}components/image-viewer.tsx`);
+const viewerImports = [...viewer.matchAll(/from '([^'@.][^']*|@[^/']+\/[^/']+)'/g)].map((m) => m[1]).filter((m) => !m.startsWith('@/'));
+check('the viewer uses only packages already in the binary',
+  viewerImports.filter((m) => !['react', 'react-native'].includes(m) && !now.includes(m)), []);
+
+fs.rmSync(tmp, { recursive: true, force: true });
+console.log(`\n${fail ? `${fail} FAILED` : 'all passed'}`);
+process.exit(fail ? 1 : 0);

@@ -493,7 +493,8 @@ console.log('\n=== native sources ===');
   check('with welcome under it when there is nothing to go back to',
     /router\.replace\('\/welcome'\);\s*router\.push\('\/sign-in\?intent=signup'\);/.test(inviteBranch), true);
   check('the root layout lets a signed-out reader through /open (else it races the push)',
-    /const allowed = top === 'welcome' \|\| top === 'sign-in' \|\| top === 'practice' \|\| top === 'open';/.test(read('native/src/app/_layout.tsx')), true);
+    // Further entries after 'open' are allowed ('join' rides the same way).
+    /const allowed = top === 'welcome' \|\| top === 'sign-in' \|\| top === 'practice' \|\| top === 'open'(?: \|\| top === '[a-z-]+')*;/.test(read('native/src/app/_layout.tsx')), true);
   const onReq = signIn.slice(signIn.indexOf('const onRequest'), signIn.indexOf('const onRequest') + 700);
   check('a bad typed code stops Send code before any code goes out',
     onReq.indexOf("typedInviteCode(inviteCode) === null") > -1 && onReq.indexOf("typedInviteCode(inviteCode) === null") < onReq.indexOf("send('Sending')"), true);

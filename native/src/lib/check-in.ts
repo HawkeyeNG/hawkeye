@@ -56,6 +56,11 @@ export async function myRooms(): Promise<MyRoom[]> {
   }
 }
 
+/** Drop the kept roster answer, after a write that changes it (app/my-groups.tsx). */
+export function forgetRooms(): void {
+  bust(ROOMS_KEY);
+}
+
 export type CheckInResult =
   | { ok: true; standing: 'verified' | 'plausible' | 'unverified' }
   | { ok: false; error: string };
